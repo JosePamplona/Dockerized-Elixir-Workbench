@@ -53,7 +53,7 @@ if [ "$1" == "init" ]; then
     {
       echo yes
       echo yes
-    } | mix phx.new $PROJECT_PATH --app $PROJECT_NAME
+    } | mix phx.new $PROJECT_PATH --app $PROJECT_NAME --verbose
   elif [ $# -lt 2 ]; then
     echo "Missing arguments."
     exit 1
@@ -69,6 +69,21 @@ elif [ "$1" == "run" ]; then
     cd $SOURCE_CODE_PATH && \
     eval $@
     read -n 1 -p "Press any key to stop and remove container..."
+  else
+    echo "Missing arguments."
+    exit 1
+  fi
+elif [ "$1" == "setup" ]; then
+  shift
+  if [ $# -eq 1 ]; then
+    export SOURCE_CODE_PATH=$1
+    shift
+    cd $SOURCE_CODE_PATH && \
+    mix phx.gen.context \
+      Accounts \
+      User users \
+        name:string \
+        age:integer
   else
     echo "Missing arguments."
     exit 1

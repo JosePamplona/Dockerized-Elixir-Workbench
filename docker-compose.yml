@@ -23,8 +23,6 @@ services:
     container_name: Database
     hostname: database
     image: postgres:14
-    ports:
-      - 5432:5432
     restart: always
     environment: 
       POSTGRES_PASSWORD: postgres

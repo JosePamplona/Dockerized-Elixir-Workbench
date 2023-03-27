@@ -58,6 +58,7 @@
   if [ $# -gt 0 ]; then
     if   [ $1 == "init" ]; then
       shift
+      # Configuration to properly work with docker
       if [ -d $SOURCE_CODE_PATH ]; then
         confirm \
           "This action the overwrite the content of $SOURCE_CODE_PATH" \
@@ -75,7 +76,9 @@
         --name "${APP_NAME}___init" \
         --volume "$SOURCE_CODE_VOLUME" \
         $DEVELOP_IMAGE $RUN_FILE \
-        init $SOURCE_CODE_PATH $ELIXIR_PROJECT_NAME || \
+        init $SOURCE_CODE_PATH $ELIXIR_PROJECT_NAME && \
+      sed -i "s/hostname: \"localhost\"/hostname: \"database\"/" $DEV_FILE && \
+      sed -i "s/http: \[ip: {127, 0, 0, 1}/http: \[ip: {0, 0, 0, 0}/" $DEV_FILE || \
       failure
     elif [ $1 == "run" ]; then
       shift
@@ -94,9 +97,14 @@
       fi
     elif [ $1 == "setup" ]; then
       shift
-      confirm "This action will modify $DEV_FILE file content."
-      sed -i "s/hostname: \"localhost\"/hostname: \"database\"/" $DEV_FILE && \
-      sed -i "s/http: \[ip: {127, 0, 0, 1}/http: \[ip: {0, 0, 0, 0}/" $DEV_FILE
+      docker compose run \
+        --build \
+        --rm \
+        --name "${APP_NAME}___setup" \
+        --publish $HOST_PORT:$INTERNAL_PORT \
+        app $RUN_FILE \
+        setup $SOURCE_CODE_PATH || \
+      failure
     elif [ $1 == "set-version" ]; then
       shift
       if [ $# -eq 0 ]; then

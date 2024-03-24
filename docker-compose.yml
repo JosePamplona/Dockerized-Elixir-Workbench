@@ -1,34 +1,66 @@
 services:
   app:
-    container_name: Application
+    container_name: $CONTAINER_NAME
+    hostname: $APP_NAME
     build:
-      dockerfile: ./Dockerfile.dev
-    # environment:
+      dockerfile: $COMPOSE_DOCKERFILE
+    env_file: 
+      - $ENV_FILE
+    environment:
+      HOST: localhost
+      SECRET_KEY_BASE: dodwLlMWwvdkjZz2pok8fO2jPa/Fx8+RWceQjv6NbqsPHcLh/1AU5dEe9NZH5UwC
+      DATABASE_URL: ecto://$DB_USER:$DB_PASS@$DB_HOST/$DB_NAME
     ports:
       - $HOST_PORT:$INTERNAL_PORT
     volumes:
-      - ./src:/app/src
+      - $SOURCE_CODE_VOLUME
     links:
       - database
     depends_on: 
       database:
         condition: service_healthy
     healthcheck:
-      test: curl --fail http://localhost:4000 || exit 1
+      test: curl --fail http://localhost:$INTERNAL_PORT || exit 1
       timeout: 45s
       interval: 10s
       retries: 10
 
   database:
-    container_name: Database
-    hostname: database
-    image: postgres:14
+    container_name: database
+    hostname: $DB_HOST
+    image: postgres:latest
     restart: always
     environment: 
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: $DB_PASS
+      POSTGRES_USER: $DB_USER
+    ports:
+      - 5432:$DB_PORT
     healthcheck:
-      test: pg_isready -q -d postgres -U postgres
+      test: pg_isready -q -d $DB_PASS -U $DB_USER
       timeout: 45s
       interval: 10s
       retries: 10
+
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4:latest
+    entrypoint: >
+      /bin/sh -c "
+      cp -f /pgadmin4/pgpass /var/lib/pgadmin/;
+      chmod 600 /var/lib/pgadmin/pgpass;
+      /entrypoint.sh
+      "
+    environment:
+      PGADMIN_DEFAULT_EMAIL: $PGADMIN_EMAIL
+      PGADMIN_DEFAULT_PASSWORD: $PGADMIN_PASSWORD
+      PGADMIN_LISTEN_PORT: $PGADMIN_PORT
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    ports:
+      - 5050:$PGADMIN_PORT
+    depends_on:
+      - database
+    volumes:
+      - $PGADMIN_SERVERS_FILE:/pgadmin4/servers.json
+      - $PGADMIN_PASS_FILE:/pgadmin4/pgpass
+  

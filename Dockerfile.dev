@@ -1,7 +1,7 @@
 # Available versions: https://hub.docker.com/r/hexpm/elixir/tags
-ARG ELIXIR=1.14.3
-ARG OTP=25.3
-ARG DEBIAN=bullseye-20230227-slim
+ARG ELIXIR=1.16.2
+ARG OTP=26.2.3
+ARG DEBIAN=bullseye-20240130-slim
 ARG DEVELOP_IMAGE="hexpm/elixir:${ELIXIR}-erlang-${OTP}-debian-${DEBIAN}"
 
 FROM ${DEVELOP_IMAGE} as develop
@@ -15,7 +15,7 @@ RUN apt-get update -y && \
 # prepare build dir
 WORKDIR /app
 
-# install hex + rebar
+# install hex + rebar and Phoenix
 RUN mix local.hex --force && \
     mix local.rebar --force && \
     mix archive.install hex phx_new --force
@@ -23,3 +23,4 @@ RUN mix local.hex --force && \
 # Copies and makes excecutable the script to start the service.
 COPY run.sh ./
 RUN chmod +x run.sh
+CMD ./run.sh

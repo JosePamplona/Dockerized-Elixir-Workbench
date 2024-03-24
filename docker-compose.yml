@@ -34,7 +34,7 @@ services:
       POSTGRES_PASSWORD: $DB_PASS
       POSTGRES_USER: $DB_USER
     ports:
-      - 5432:$DB_PORT
+      - $DB_PORT:5432
     healthcheck:
       test: pg_isready -q -d $DB_PASS -U $DB_USER
       timeout: 45s
@@ -53,11 +53,11 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: $PGADMIN_EMAIL
       PGADMIN_DEFAULT_PASSWORD: $PGADMIN_PASSWORD
-      PGADMIN_LISTEN_PORT: $PGADMIN_PORT
+      PGADMIN_LISTEN_PORT: 5050
       PGADMIN_CONFIG_SERVER_MODE: 'False'
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
     ports:
-      - 5050:$PGADMIN_PORT
+      - $PGADMIN_PORT:5050
     depends_on:
       - database
     volumes:

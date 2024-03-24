@@ -29,11 +29,11 @@
   export               DB_USER="postgres"
   export               DB_PASS="postgres"
   export               DB_HOST="database_host"
-  export               DB_PORT="5432"
+  export               DB_PORT="5434"
   export               DB_NAME="lorem_ipsum_project_db"
 
   # PGAdmin configuration ----------------------------------------------------
-  export          PGADMIN_PORT="5050"
+  export          PGADMIN_PORT="5052"
   export         PGADMIN_EMAIL="pgadmin4@pgadmin.org"
   export      PGADMIN_PASSWORD="pass"
   export  PGADMIN_SERVERS_FILE="./servers.json"
@@ -47,8 +47,7 @@
   export              DEV_FILE="$SOURCE_CODE_PATH/config/dev.exs"
   export            TIMESTAMPS="utc_datetime_usec"
 
-  
-  # Color codes
+  # Console text format codes ------------------------------------------------
   export C1="\x1B[38;5;1m"
   #      Bold        Reset
   export B="\x1B[1m" R="\x1B[0m"
@@ -103,143 +102,177 @@
 
 # SCRIPT -----------------------------------------------------------------------
 
-if [ $# -gt 0 ]; then
-  # Only necesary for private docker images
-  if   [ $1 == "login" ]; then
-    shift && \
-    if [ $# -eq 0 ]; then
-      args_error \
-        "Github user name is missing." \
-        "Try add a user name as command argument."
-    elif [ $# -eq 1 ]; then
-      args_error \
-        "Github personal access token (classic) is missing." \
-        "Try add a token as command argument."
-    else
-      # This solves the error:
-      # retrieving credentials from store: error getting credentials -
-      #   err: exit status 1,
-      #   out: `exit status 2: gpg: decryption failed: No secret key`
+  if [ $# -gt 0 ]; then
+    if   [ $1 == "login" ]; then
+      shift && \
+      if [ $# -eq 0 ]; then
+        args_error \
+          "Github user name is missing." \
+          "Try add a user name as command argument."
+      elif [ $# -eq 1 ]; then
+        args_error \
+          "Github personal access token (classic) is missing." \
+          "Try add a token as command argument."
+      else
+        # This solves the error:
+        # retrieving credentials from store: error getting credentials -
+        #   err: exit status 1,
+        #   out: `exit status 2: gpg: decryption failed: No secret key`
+        #
+        # rm -rf ~/.password-store/docker-credential-helpers 
+        # gpg --generate-key
+        # pass init <your_generated_gpg-id_public_key>
+        GITHUB_USER=$1 && \
+        GITHUB_TOKEN=$2 && \
+        REGISTRY_SERVER="ghcr.io" && \
+        echo $GITHUB_TOKEN | docker login $REGISTRY_SERVER \
+          --username $GITHUB_USER \
+          --password-stdin
+      fi
+
+    elif [ $1 == "set-name" ]; then
+      shift && \
+      if [ $# -eq 0 ]; then
+        args_error \
+          "Project name is missing." \
+          "Try add a project name as command argument."
+      else
+        NEW_PROJECT_NAME=$@
+
+        sed -i "1s/.*/# $NEW_PROJECT_NAME/" $README_FILE && \
+        \
+        sed -i "3s/.*/# $NEW_PROJECT_NAME/" $0 && \
+        sed -i "s/PROJECT_NAME=\".*\"/PROJECT_NAME=\"$NEW_PROJECT_NAME\"/" $0 && \
+        sed -i "s/DB_NAME=\".*\"/DB_NAME=\"${APP_NAME}_db\"/" $0 && \
+        \
+        sed -i "s/ENV APP_NAME=\".*\"/ENV APP_NAME=\"${APP_NAME}\"/" \
+          $PRODUCTION_DOCKERFILE && \
+        \
+        echo "Project name \"$NEW_PROJECT_NAME\" succesfully set."
+      fi
+
+    elif [ $1 == "init" ]; then
+      # Tarball error will occur on Win11 using a XFAT drive for the repo on
+      # mix deps.get
       #
-      # rm -rf ~/.password-store/docker-credential-helpers 
-      # gpg --generate-key
-      # pass init <your_generated_gpg-id_public_key>
-      GITHUB_USER=$1 && \
-      GITHUB_TOKEN=$2 && \
-      REGISTRY_SERVER="ghcr.io" && \
-      echo $GITHUB_TOKEN | docker login $REGISTRY_SERVER \
-        --username $GITHUB_USER \
-        --password-stdin
-    fi
+      # 1. Generates a new Phoenix project
+      # 2. Configures the elixir project
+      #   2.1. Configuration to properly work with docker
+      #   2.2. Generates .env file
+      #   2.3. Set schema timestamps
+      RUN_COMMAND=$1 && \
+      shift && \
+      if [ -d $SOURCE_CODE_PATH ]; then
+        confirm \
+          "This action the overwrite the content of $SOURCE_CODE_PATH" \
+          "directory." && \
+        rm -r $SOURCE_CODE_PATH
+      fi && \
+      docker build \
+        --file $DEVELOP_DOCKERFILE \
+        --tag $IMAGE \
+        . && \
+      docker run \
+        --rm \
+        --tty \
+        --interactive \
+        --name "${APP_NAME}___${RUN_COMMAND}" \
+        --volume "$SOURCE_CODE_VOLUME" \
+        $IMAGE $RUN_FILE $RUN_COMMAND $ELIXIR_PROJECT_NAME && \
+      sed -i "s/version:\s*\"[0-9]*.[0-9]*.[0-9]*\"/version: \"0.0.0\"/" $MIX_FILE && \
+      sed -i "s/hostname: \"localhost\"/hostname: \"$DB_HOST\"/" $DEV_FILE && \
+      sed -i "s/http: \[ip: {127, 0, 0, 1}/http: \[ip: {0, 0, 0, 0}/" $DEV_FILE && \
+      echo "# .env\nexport PHX_SERVER=true" > $ENV_FILE && \
+      \
+      if [ ! -z "$TIMESTAMPS" ]; then
+        sed -i "s/\[timestamp_type: :.*\]/[timestamp_type: :$TIMESTAMPS]/" \
+          $CONFIG_FILE
+      fi
 
-  # Tarball error will occur on Win11 using a XFAT drive for the repo on mix deps.get
-  elif [ $1 == "init" ]; then
-    # Configuration to properly work with docker
-    RUN_COMMAND=$1 && \
-    shift && \
-    if [ -d $SOURCE_CODE_PATH ]; then
-      confirm \
-        "This action the overwrite the content of $SOURCE_CODE_PATH" \
-        "directory." && \
-      rm -r $SOURCE_CODE_PATH
-    fi && \
-    docker build \
-      --file $DEVELOP_DOCKERFILE \
-      --tag $IMAGE \
-      . && \
-    docker run \
-      --rm \
-      --tty \
-      --interactive \
-      --name "${APP_NAME}___${RUN_COMMAND}" \
-      --volume "$SOURCE_CODE_VOLUME" \
-      $IMAGE $RUN_FILE $RUN_COMMAND $ELIXIR_PROJECT_NAME && \
-    sed -i "s/version:\s*\"[0-9]*.[0-9]*.[0-9]*\"/version: \"0.0.0\"/" $MIX_FILE && \
-    sed -i "s/hostname: \"localhost\"/hostname: \"$DB_HOST\"/" $DEV_FILE && \
-    sed -i "s/http: \[ip: {127, 0, 0, 1}/http: \[ip: {0, 0, 0, 0}/" $DEV_FILE && \
-    echo "# .env\nexport PHX_SERVER=true" > $ENV_FILE
-
-  elif [ $1 == "setup" ]; then
-    # 1. Configures servers.json & pgpass files with credentials for PGAdmin
-    # 2. Configures the elixir project
-    #   2.1. Set schema timestamps
-    # 3. Generates schema, changesets, context functions, tests and migration files
-    # 4. Custom production ecto.reset
-    RUN_COMMAND=$1 && \
-    shift && \
-    export COMPOSE_DOCKERFILE=$DEVELOP_DOCKERFILE && \
-    sed -i "s/\"Host\": \"[^\"]\+\"/\"Host\": \"$DB_HOST\"/" \
-      $PGADMIN_SERVERS_FILE && \
-    sed -i "s/\"Port\": [^\"]\+/\"Port\": $DB_PORT,/" \
-      $PGADMIN_SERVERS_FILE && \
-    sed -i "s/\"Username\": \"[^\"]\+\"/\"Username\": \"$DB_USER\"/" \
-      $PGADMIN_SERVERS_FILE && \
-    echo $DB_HOST:$DB_PORT:\*:$DB_USER:$DB_PASS > $PGADMIN_PASS_FILE && \
-    \
-    if [ ! -z "$TIMESTAMPS" ]; then
-      sed -i "s/\[timestamp_type: :.*\]/[timestamp_type: :$TIMESTAMPS]/" \
-        $CONFIG_FILE
-    fi && \
-    \
-    docker compose run \
-      --build \
-      --rm \
-      --name "${APP_NAME}___${RUN_COMMAND}" \
-      --publish $HOST_PORT:$INTERNAL_PORT \
-      app $RUN_FILE $RUN_COMMAND
-      
-  elif [ $1 == "up" ]; then
-    export COMPOSE_DOCKERFILE=$PRODUCTION_DOCKERFILE && \
-    docker compose up --build
-
-  elif [ $1 == "run" ]; then
-    RUN_COMMAND=$1 && \
-    shift && \
-    if [ $# -gt 0 ]; then   
+    elif [ $1 == "schemas" ]; then
+      # 1. Configures servers.json & pgpass files with credentials for PGAdmin
+      # 3. Generates schema, changesets, context functions, tests and migration files
+      RUN_COMMAND=$1 && \
+      shift && \
+      export COMPOSE_DOCKERFILE=$DEVELOP_DOCKERFILE && \
+      sed -i "s/\"Host\": \"[^\"]\+\"/\"Host\": \"$DB_HOST\"/" \
+        $PGADMIN_SERVERS_FILE && \
+      sed -i "s/\"Port\": [^\"]\+/\"Port\": $DB_PORT,/" \
+        $PGADMIN_SERVERS_FILE && \
+      sed -i "s/\"Username\": \"[^\"]\+\"/\"Username\": \"$DB_USER\"/" \
+        $PGADMIN_SERVERS_FILE && \
+      echo $DB_HOST:$DB_PORT:\*:$DB_USER:$DB_PASS > $PGADMIN_PASS_FILE && \
+      \
+      docker compose run \
+        --build \
+        --rm \
+        --name "${APP_NAME}___${RUN_COMMAND}" \
+        --publish $HOST_PORT:$INTERNAL_PORT \
+        app $RUN_FILE $RUN_COMMAND
+        
+    elif [ $1 == "db-reset" ]; then
+      RUN_COMMAND=$1 && \
+      shift && \
       export COMPOSE_DOCKERFILE=$DEVELOP_DOCKERFILE && \
       docker compose run \
         --build \
         --rm \
         --name "${APP_NAME}___${RUN_COMMAND}" \
         --publish $HOST_PORT:$INTERNAL_PORT \
-        app $RUN_FILE $RUN_COMMAND $@
+        app $RUN_FILE $RUN_COMMAND
+        
+    elif [ $1 == "up" ]; then
+      export COMPOSE_DOCKERFILE=$PRODUCTION_DOCKERFILE && \
+      docker compose up --build
 
-    else args_error "Missing command for container initialization."; fi
+    elif [ $1 == "run" ]; then
+      RUN_COMMAND=$1 && \
+      shift && \
+      if [ $# -gt 0 ]; then   
+        export COMPOSE_DOCKERFILE=$DEVELOP_DOCKERFILE && \
+        docker compose run \
+          --build \
+          --rm \
+          --name "${APP_NAME}___${RUN_COMMAND}" \
+          --publish $HOST_PORT:$INTERNAL_PORT \
+          app $RUN_FILE $RUN_COMMAND $@
 
-  elif [ $1 == "set-version" ]; then
-    shift
-    if [ $# -eq 0 ]; then
-      args_error "Version is missing. Try add a version as command argument."
-    elif [ $# -eq 1 ]; then
-      export NEW_VERSION=$1
-      if [[ $NEW_VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-        confirm \
-          "This action will update '$MIX_FILE' and '$README_FILE' " \
-          "file contents." && \
-        sed -i "s/version: \"[0-9]*.[0-9]*.[0-9]*\"/version: \"$NEW_VERSION\"/" $MIX_FILE && \
-        sed -i "s/\[version - [0-9]*.[0-9]*.[0-9]*\]/[version - $NEW_VERSION]/" $README_FILE && \
-        sed -i "s/badge\/version-[0-9]*.[0-9]*.[0-9]*/badge\/version-$NEW_VERSION/" $README_FILE && \
-        echo "Version ${B}$NEW_VERSION${R} is now set." && \
-        echo "Don't forget to update the CHANGELOG.md file!"
-      else
-        args_error \
-          "${B}$NEW_VERSION${R} is not a valid version format. " \
-          "Use semantic versioning standard."
-      fi
+      else args_error "Missing command for container initialization."; fi
 
-    else args_error too_many; fi
-  elif [ $1 == "prune" ]; then
-    export CONTAINERS_TO_STOP="$(docker container ls -q)" && \
-    if [ ! -z "$CONTAINERS_TO_STOP" ]; then
-      echo "Stopping all containers...\n" && \
-      docker stop $CONTAINERS_TO_STOP && \
-      echo "\nAll containers are Stopped.\n"
-    fi && \
-    docker system prune -a --volumes
+    elif [ $1 == "set-version" ]; then
+      shift
+      if [ $# -eq 0 ]; then
+        args_error "Version is missing. Try add a version as command argument."
+      elif [ $# -eq 1 ]; then
+        export NEW_VERSION=$1
+        if [[ $NEW_VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          confirm \
+            "This action will update '$MIX_FILE' and '$README_FILE' " \
+            "file contents." && \
+          sed -i "s/version: \"[0-9]*.[0-9]*.[0-9]*\"/version: \"$NEW_VERSION\"/" $MIX_FILE && \
+          sed -i "s/\[version - [0-9]*.[0-9]*.[0-9]*\]/[version - $NEW_VERSION]/" $README_FILE && \
+          sed -i "s/badge\/version-[0-9]*.[0-9]*.[0-9]*/badge\/version-$NEW_VERSION/" $README_FILE && \
+          echo "Version ${B}$NEW_VERSION${R} is now set." && \
+          echo "Don't forget to update the CHANGELOG.md file!"
+        else
+          args_error \
+            "${B}$NEW_VERSION${R} is not a valid version format. " \
+            "Use semantic versioning standard."
+        fi
 
+      else args_error too_many; fi
+    elif [ $1 == "prune" ]; then
+      export CONTAINERS_TO_STOP="$(docker container ls -q)" && \
+      if [ ! -z "$CONTAINERS_TO_STOP" ]; then
+        echo "Stopping all containers...\n" && \
+        docker stop $CONTAINERS_TO_STOP && \
+        echo "\nAll containers are Stopped.\n"
+      fi && \
+      docker system prune -a --volumes
+
+    else
+      args_error invalid
+    fi
   else
-    args_error invalid
+    readme
   fi
-else
-  readme
-fi

@@ -2,33 +2,59 @@
 
 ![version - 0.0.0](https://img.shields.io/badge/version-0.0.0-white.svg?style=flat-sector&color=lightgray)
 
-# Development
+## Arquitecture 
 
-## Set project name
+<p align="center"><img src="arq.svg"></p>
+
+## Use
+
+### Database creation/reset
+
+Custom ecto.reset for first time initialization or reset the database service.
+
+```sh
+./app db-reset
+```
+
+### Deploy service on localhost
+
+Deploys the service along with its configured required services and **Workbench's** tools on localhost using Docker containers.
+
+```sh
+./app up
+```
+
+TODO: option --no-tools
+
+## Development
+
+### Set project name
+
+TODO
 
 Modify  README.md       - line 1,
         app             - lines 3, 11, 31
         Dockerfile.prod - line 86
 
-## Create project
+### Create project and configures it
 
 ```sh
 ./app init
 ```
 
-## Configures project, generate schema and migration files and DB initialization
+### Generate schema and migration files
 
 ```sh
-./app setup
+./app schemas
 ```
 
-## Runs custom command intitialization
+### Runs custom intitialization command
 
 ```sh
 ./app run [<COMMAND>...]
 ```
 
-## Set version
+### Set version
 
 Sets version on mix file and readme badge
 
@@ -36,25 +62,26 @@ Sets version on mix file and readme badge
 ./app set-version
 ```
 
-# Use
+### Generate release file
 
-## Deploy on localhost
+TODO
 
 ```sh
-./app up
+./app release
 ```
 
-# Docker
+## Docker
 
-## Login to Docker
+### Login to Docker
 
-Github user and token classic
+Github user and token classic.
+Only necesary for private docker images.
 
 ```sh
 ./app login
 ```
 
-## Prune Docker
+### Prune Docker
 
 ```sh
 ./app prune

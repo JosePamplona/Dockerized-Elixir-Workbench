@@ -1,0 +1,93 @@
+# Available versions: https://hub.docker.com/r/hexpm/elixir/tags
+ARG ELIXIR=1.16.2
+ARG OTP=26.2.3
+ARG DEBIAN=bullseye-20240130-slim
+ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR}-erlang-${OTP}-debian-${DEBIAN}"
+ARG RUNNER_IMAGE="debian:${DEBIAN}"
+
+# ------------------------------------------------------------------------------
+FROM ${BUILDER_IMAGE} as builder
+# ------------------------------------------------------------------------------
+
+# install build dependencies
+RUN apt-get update -y && apt-get install -y build-essential git \
+    && apt-get clean && rm -f /var/lib/apt/lists/*_*
+
+# prepare build dir
+WORKDIR /app
+ARG SOURCE_PATH=./src/
+
+# install hex + rebar
+RUN mix local.hex --force && \
+    mix local.rebar --force
+
+# set build ENV
+ENV MIX_ENV="prod"
+
+# install mix dependencies
+COPY ${SOURCE_PATH}mix.exs ${SOURCE_PATH}mix.lock ./
+RUN mix deps.get --only $MIX_ENV
+RUN mkdir config
+
+# copy compile-time config files before we compile dependencies
+# to ensure any relevant config change will trigger the dependencies
+# to be re-compiled.
+COPY ${SOURCE_PATH}config/config.exs ${SOURCE_PATH}config/${MIX_ENV}.exs config/
+RUN mix deps.compile
+
+COPY ${SOURCE_PATH}priv priv
+
+# note: if your project uses a tool like https://purgecss.com/,
+# which customizes asset compilation based on what it finds in
+# your Elixir templates, you will need to move the asset compilation
+# step down so that `lib` is available.
+COPY ${SOURCE_PATH}assets assets
+
+# compile assets
+RUN mix assets.deploy
+
+# Compile the release
+COPY ${SOURCE_PATH}lib lib
+
+RUN mix compile
+
+# Changes to config/runtime.exs don't require recompiling the code
+COPY ${SOURCE_PATH}config/runtime.exs config/
+
+# COPY rel rel
+RUN mix release
+
+# ------------------------------------------------------------------------------
+# start a new build stage so that the final image will only contain
+# the compiled release and other runtime necessities
+FROM ${RUNNER_IMAGE} as runner
+# ------------------------------------------------------------------------------
+
+RUN apt-get update -y \
+  && apt-get install -y \
+  libstdc++6 \
+  openssl \
+  libncurses5 \
+  locales \
+  && apt-get clean && rm -f /var/lib/apt/lists/*_*
+
+# Set the locale
+RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
+
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.UTF-8
+
+WORKDIR "/app"
+RUN chown nobody /app
+
+# set runner ENV
+ENV MIX_ENV="prod"
+ENV APP_NAME="lorem_ipsum_project"
+
+# Only copy the final release from the build stage
+COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/${APP_NAME} ./
+
+USER nobody
+RUN chmod 777 /app/bin/${APP_NAME}
+CMD /app/bin/${APP_NAME} start

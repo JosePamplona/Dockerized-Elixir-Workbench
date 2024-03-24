@@ -137,15 +137,17 @@
           "Project name is missing." \
           "Try add a project name as command argument."
       else
-        NEW_PROJECT_NAME=$@
-
+        NEW_PROJECT_NAME=$@ && \
+        NEW_LOWER_CASE=$( echo "$NEW_PROJECT_NAME" | tr '[:upper:]' '[:lower:]' ) && \
+        NEW_SNAKE_CASE_NAME=$( echo "$NEW_LOWER_CASE" | tr ' ' '_' ) && \
+        \
         sed -i "1s/.*/# $NEW_PROJECT_NAME/" $README_FILE && \
         \
         sed -i "3s/.*/# $NEW_PROJECT_NAME/" $0 && \
         sed -i "s/PROJECT_NAME=\".*\"/PROJECT_NAME=\"$NEW_PROJECT_NAME\"/" $0 && \
-        sed -i "s/DB_NAME=\".*\"/DB_NAME=\"${APP_NAME}_db\"/" $0 && \
+        sed -i "s/DB_NAME=\".*\"/DB_NAME=\"${NEW_SNAKE_CASE_NAME}_db\"/" $0 && \
         \
-        sed -i "s/ENV APP_NAME=\".*\"/ENV APP_NAME=\"${APP_NAME}\"/" \
+        sed -i "s/ENV APP_NAME=\".*\"/ENV APP_NAME=\"${NEW_SNAKE_CASE_NAME}\"/" \
           $PRODUCTION_DOCKERFILE && \
         \
         echo "Project name \"$NEW_PROJECT_NAME\" succesfully set."

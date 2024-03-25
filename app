@@ -46,6 +46,7 @@
   export           CONFIG_FILE="$SOURCE_CODE_PATH/config/config.exs"
   export              DEV_FILE="$SOURCE_CODE_PATH/config/dev.exs"
   export            TIMESTAMPS="utc_datetime_usec"
+  export               ID_TYPE="uuid"
 
   # Console text format codes ------------------------------------------------
   export C1="\x1B[38;5;1m"
@@ -186,9 +187,24 @@
       sed -i "s/http: \[ip: {127, 0, 0, 1}/http: \[ip: {0, 0, 0, 0}/" $DEV_FILE && \
       echo "# .env\nexport PHX_SERVER=true" > $ENV_FILE && \
       \
-      if [ ! -z "$TIMESTAMPS" ]; then
-        sed -i "s/\[timestamp_type: :.*\]/[timestamp_type: :$TIMESTAMPS]/" \
-          $CONFIG_FILE
+      if [ ! -z "$TIMESTAMPS" ] || [ ! -z "$ID_TYPE" ]; then
+        # Remove generators config
+        sed -i "s/\(ecto_repos: \[.*.Repo\]\),/\1/" $CONFIG_FILE
+        sed -i "/generators: \[timestamp_type: :utc_datetime\]/d" $CONFIG_FILE
+
+        # Set the database config
+        DATABASE_COMMENT="# Configure your database"
+        DB_CONFIG=""
+        if [ ! -z "$ID_TYPE" ]; then
+          DB_CONFIG+="  migration_primary_key: \[type: :$ID_TYPE\]"
+          if [ ! -z "$TIMESTAMPS" ]; then DB_CONFIG+=",\n"; fi
+        fi
+        if [ ! -z "$TIMESTAMPS" ]; then
+          DB_CONFIG+="  migration_timestamps: [type: :$TIMESTAMPS]"
+        fi
+
+        # Add the config to the file
+        sed -i "s/ecto_repos: \[\(.*.Repo\)\]/&\n\n$DATABASE_COMMENT\nconfig :$ELIXIR_PROJECT_NAME, \1,\n$DB_CONFIG/" $CONFIG_FILE
       fi
 
     elif [ $1 == "schemas" ]; then

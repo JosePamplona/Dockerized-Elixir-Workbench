@@ -29,19 +29,19 @@
   export               DB_USER="postgres"
   export               DB_PASS="postgres"
   export               DB_HOST="database_host"
-  export               DB_PORT="5434"
+  export               DB_PORT="5432"
   export               DB_NAME="lorem_ipsum_project_db"
 
   # PGAdmin configuration ----------------------------------------------------
-  export          PGADMIN_PORT="5052"
+  export          PGADMIN_PORT="5050"
   export         PGADMIN_EMAIL="pgadmin4@pgadmin.org"
   export      PGADMIN_PASSWORD="pass"
   export  PGADMIN_SERVERS_FILE="./servers.json"
   export     PGADMIN_PASS_FILE="./pgpass"
 
   # Elixir project configuration ---------------------------------------------
+  export             HOST_PORT="4002"
   export         INTERNAL_PORT="4000"
-  export             HOST_PORT="4000"
   export              MIX_FILE="$SOURCE_CODE_PATH/mix.exs"
   export           CONFIG_FILE="$SOURCE_CODE_PATH/config/config.exs"
   export              DEV_FILE="$SOURCE_CODE_PATH/config/dev.exs"

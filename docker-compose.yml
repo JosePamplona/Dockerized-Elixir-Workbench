@@ -28,7 +28,7 @@ services:
   database:
     container_name: database
     hostname: $DB_HOST
-    image: postgres:latest
+    image: postgres:16.2-alpine
     restart: always
     environment: 
       POSTGRES_PASSWORD: $DB_PASS
@@ -43,7 +43,7 @@ services:
 
   pgadmin:
     container_name: pgadmin
-    image: dpage/pgadmin4:latest
+    image: dpage/pgadmin4:8.4
     entrypoint: >
       /bin/sh -c "
       cp -f /pgadmin4/pgpass /var/lib/pgadmin/;

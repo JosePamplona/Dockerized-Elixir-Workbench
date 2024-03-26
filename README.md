@@ -2,91 +2,99 @@
 
 ![version - 0.0.0](https://img.shields.io/badge/version-0.0.0-white.svg?style=flat-sector&color=lightgray)
 
-**Dockerized Workbench** es un framework para crear, desarrollar y desplegar applicaciones en la maquina local con una arquitectura de servicios específica usando contenedores de Docker, sin la necesidad de instalar nada más que [Docker Desktop](https://www.docker.com/products/docker-desktop/).
+> **Lorem Ipsum Project** uses a framework to create, develop, and deploy an application on `localhost` with a specific service architecture using Docker containers, without the need to install anything other than [Docker Desktop](https://www.docker.com/products/docker-desktop/).<br/><br/>
+> Ensuring an application deployment just like it would run in a network-mounted production environment, with the exception that it is deployed on your local machine.
+
+## Table of Contents
+- [1. Application](#1-application)
+- [2. Framework](#2-framework)
+  - [2.1. Arquitecture](#22-arquitecture)
+  - [2.2. Deploy](#21-deploy)
+  - [2.3. Development](#23-development)
+    - [2.3.1. Create a brand new project](#231-create-a-brand-new-project)
+    - [2.3.2. Running commands](#234-running-commands)
+    - [2.3.3. Set version](#235-set-version)
+  - [2.4. Docker](#24-docker)
+    - [2.4.1. Login to Docker](#241-login-to-docker)
+    - [2.4.2. Prune Docker](#242-prune-docker)
+
+## 1. Application
+
+*Here goes the **Lorem Ipsum Project** documentation*
+
+## 2. Framework
 
 
-Garantizando un despliegue de aplicación justo como correría en un ambiente de producción montado en red, con la excepción de que se despliega en ambiente de *localhost*.
+### 2.1. Arquitecture
 
-## Arquitecture 
-
-| Service | Description | Tech | URL |
-| :-- | :-- | :-- | :-- |
-| app | API-REST server <br> Web server | Elixir 1.16.2 / OTP 26.2.3 | [localhost:4000](http://localhost:4000) |
-| database | Database server | PostgreSQL 16.2 | [localhost:5432](http://localhost:5432) |
-| pgadmin | PGAdmin server | PGAdmin 8.4 | [localhost:5050](http://localhost:5050) |
+| Service  | Description                     | URL                                     |
+| :------- | :------------------------------ | :-------------------------------------- |
+| app      | API-REST server <br> Web server | [localhost:4000](http://localhost:4000) |
+| database | Database server                 | [localhost:5432](http://localhost:5432) |
+| pgadmin  | PGAdmin server                  | [localhost:5050](http://localhost:5050) |
 
 <p align="center"><img src="arq.svg"></p>
 
-## Use
+### 2.2. Deploy
 
-### Database creation/reset
+1. This step is only required when deploying the service for the first time, a database reset is needed or the database container is detroyed. This command drops the project database (if any), creates a new one and run a seeding script:
 
-Custom ecto.reset for first time initialization or reset the database service.
+    ```sh
+    ./app db-reset
+    ```
 
-```sh
-./app db-reset
-```
+    Once having a configured database, run the following command to deploy the service along with its configured required services and tools.
 
-### Deploy service on localhost
+    ```sh
+    ./app up
+    ```
 
-Deploys the service along with its configured required services and **Workbench's** tools on localhost using Docker containers.
+### 2.3. Development
 
-```sh
-./app up
-```
+#### 2.3.1. Create a brand new project
 
-TODO: option --no-tools
+1. First, is needed to set a name for a new project. Run the following command replacing `<PROJECT_NAME>` with the desired name (Use capital casing with spaces):
 
-## Development
+    ```sh
+    ./app name <PROJECT_NAME>
+    ```
 
-### Set project name
+1. In order to create a new phoenix project, run the following command:
 
-Modify  README.md (line 1), app (lines 3, 11, 31) & Dockerfile.prod (line 86)
+    ```sh
+    ./app init
+    ```
 
-```sh
-./app set-name <PROJECT_NAME>
-```
+    This will generate all the files and apply specific configurations.
 
-### Create project and configures it
+1. Edit the `run.sh` file, adjust the `schemas()` function in order to create a migration generation script. Once saved, run the following command:
 
-  Tarball error will occur on Win11 using a XFAT drive for the repo on
-  mix deps.get
-  1. Generates a new Phoenix project
-  1. Configures the elixir project
-      1. Configuration to properly work with docker
-      1. Generates .env file
-      1. Set schema timestamps
+    ```sh
+    ./app schemas
+    ```
+    This Generate schema, changesets, context functions, tests and migration files and configures `servers.json` & `pgpass` files with credentials for PGAdmin.
 
-```sh
-./app init
-```
+#### 2.3.2. Running commands
 
-### Generate schema and migration files
+There is the possibility of deploying the service by executing custom server initialization commands, for example, to run the elixir interactive console `iex -S mix phx.server`.
 
-  Configures servers.json & pgpass files with credentials for PGAdmin.
-  Generates schema, changesets, context functions, tests and migration files
-
-```sh
-./app schemas
-```
-
-### Runs custom intitialization command
+In order to do this, execute the following command, replacing ` [<COMMAND>...]` with the commands to be executed.
 
 ```sh
 ./app run [<COMMAND>...]
 ```
 
-### Set version
+#### 2.3.3. Set version
 
-Sets version on mix file and readme badge
+Set application version on `src/mix.exs` file and `README.md` version badge.
 
 ```sh
-./app set-version
+./app set-version 0.0.0
 ```
 
-## Docker
+### 2.4. Docker
 
-### Login to Docker
+#### 2.4.1. Login to Docker
 
 Github user and token classic.
 Only necesary for private docker images.
@@ -95,7 +103,7 @@ Only necesary for private docker images.
 ./app login
 ```
 
-### Prune Docker
+#### 2.4.2. Prune Docker
 
 Stops all containers and prune Docker.
 

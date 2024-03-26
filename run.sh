@@ -200,12 +200,13 @@
   cd $SOURCE_CODE_PATH && \
   if [ "$1" == "init" ]; then
     shift
-    if [ $# -eq 1 ]; then
+    if [ $# -ge 1 ]; then
       PROJECT_NAME=$1 && \
+      shift && \
       {
         echo yes
         echo yes
-      } | mix phx.new ./ --app $PROJECT_NAME --verbose
+      } | mix phx.new ./ --app $PROJECT_NAME --verbose $@
 
     elif [ $# -lt 2 ]; then args_error missing
     else args_error too_many; fi

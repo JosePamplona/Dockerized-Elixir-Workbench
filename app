@@ -19,6 +19,7 @@
   export    DEVELOP_DOCKERFILE="./Dockerfile.dev"
   export PRODUCTION_DOCKERFILE="./Dockerfile.prod"
   export    COMPOSE_DOCKERFILE=$PRODUCTION_DOCKERFILE
+  # TODO changing this variable breaks everything
   export      SOURCE_CODE_PATH="./src"
   export    SOURCE_CODE_VOLUME="/$PWD/$SOURCE_CODE_PATH:/app/$SOURCE_CODE_PATH"
   export              ENV_FILE="./.env"
@@ -184,7 +185,7 @@
         --interactive \
         --name "${APP_NAME}___${RUN_COMMAND}" \
         --volume "$SOURCE_CODE_VOLUME" \
-        $IMAGE $RUN_FILE $RUN_COMMAND $ELIXIR_PROJECT_NAME && \
+        $IMAGE $RUN_FILE $RUN_COMMAND $ELIXIR_PROJECT_NAME $@ && \
       sed -i "s/version:\s*\"[0-9]*.[0-9]*.[0-9]*\"/version: \"0.0.0\"/" $MIX_FILE && \
       sed -i "s/hostname: \"localhost\"/hostname: \"$DB_HOST\"/" $DEV_FILE && \
       sed -i "s/http: \[ip: {127, 0, 0, 1}/http: \[ip: {0, 0, 0, 0}/" $DEV_FILE && \

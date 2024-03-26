@@ -44,6 +44,7 @@
     # Custom version of `mix ecto.reset` for production enviroment
   ecto_reset() {
     export MIX_ENV=prod \
+    && mix deps.get \
     && mix ecto.drop --force --force-drop \
     && mix ecto.create \
     && (
@@ -58,24 +59,7 @@
 
   default_cmd() { iex -S mix phx.server; }
 
-# SCRIPT -----------------------------------------------------------------------
-
-  cd $SOURCE_CODE_PATH && \
-  if [ "$1" == "init" ]; then
-
-    shift
-    if [ $# -eq 1 ]; then
-      PROJECT_NAME=$1 && \
-      {
-        echo yes
-        echo yes
-      } | mix phx.new ./ --app $PROJECT_NAME --verbose
-
-    elif [ $# -lt 2 ]; then args_error missing
-    else args_error too_many; fi
-
-  elif [ "$1" == "schemas" ]; then
-
+  schemas() {
     mix phx.gen.context \
       Lore \
       Army armies \
@@ -209,17 +193,28 @@
         position:string \
         --binary-id \
         --merge-with-existing-context
+  }
 
-  elif [ "$1" == "db-reset" ]; then
+# SCRIPT -----------------------------------------------------------------------
 
-    ecto_reset
+  cd $SOURCE_CODE_PATH && \
+  if [ "$1" == "init" ]; then
+    shift
+    if [ $# -eq 1 ]; then
+      PROJECT_NAME=$1 && \
+      {
+        echo yes
+        echo yes
+      } | mix phx.new ./ --app $PROJECT_NAME --verbose
 
+    elif [ $# -lt 2 ]; then args_error missing
+    else args_error too_many; fi
+  elif [ "$1" == "schemas" ];  then schemas;
+  elif [ "$1" == "db-reset" ]; then ecto_reset;
   elif [ "$1" == "run" ]; then
-
     shift
     if [ $# -gt 0 ]; then
       eval $@
       read -n 1 -p "Press any key to stop and remove container..."
     else args_error missing; fi
-
   else default_cmd; fi

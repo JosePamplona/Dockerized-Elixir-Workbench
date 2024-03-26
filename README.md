@@ -66,6 +66,7 @@ Application [README.md](./src/README.md)
     ```
 
     This will generate all the files and apply specific configurations.
+    It can accept all option flags from the task `mix phx.new` like `--no-html` or `--no-esbuild` (Full task [phx.new](https://hexdocs.pm/phoenix/Mix.Tasks.Phx.New.html) documentation).
 
 1. Edit the `run.sh` file, adjust the `schemas()` function in order to create a migration generation script. Once saved, run the following command:
 

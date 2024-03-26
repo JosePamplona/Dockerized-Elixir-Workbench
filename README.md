@@ -20,18 +20,18 @@
 
 ## 1. Application
 
-*Here goes the **Lorem Ipsum Project** documentation*
+Application [README.md](./src/README.md)
 
 ## 2. Framework
 
 
 ### 2.1. Arquitecture
 
-| Service  | Description                     | URL                                     |
-| :------- | :------------------------------ | :-------------------------------------- |
-| app      | API-REST server <br> Web server | [localhost:4000](http://localhost:4000) |
-| database | Database server                 | [localhost:5432](http://localhost:5432) |
-| pgadmin  | PGAdmin server                  | [localhost:5050](http://localhost:5050) |
+| Service  | URL                                     | Description                     |
+| :------- | :-------------------------------------- | :------------------------------ |
+| app      | [localhost:4000](http://localhost:4000) | API-REST server <br> Web server |
+| database | [localhost:5432](http://localhost:5432) | PostgreSQL database server                 |
+| pgadmin  | [localhost:5050](http://localhost:5050) | PGAdmin server                  |
 
 <p align="center"><img src="arq.svg"></p>
 

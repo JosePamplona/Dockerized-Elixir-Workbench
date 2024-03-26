@@ -139,12 +139,13 @@
           "Try add a project name as command argument."
       else
         NEW_PROJECT_NAME=$@ && \
+        ESCAPED_CODE_PATH=$(echo "$SOURCE_CODE_PATH" | sed 's/\//\\\//g') && \
         NEW_LOWER_CASE=$( echo "$NEW_PROJECT_NAME" | tr '[:upper:]' '[:lower:]' ) && \
         NEW_SNAKE_CASE_NAME=$( echo "$NEW_LOWER_CASE" | tr ' ' '_' ) && \
         \
         sed -i "1s/.*/# $NEW_PROJECT_NAME/" $README_FILE && \
         sed -i "5s/> \*\*.*\*\*/> **$NEW_PROJECT_NAME**/" $README_FILE && \
-        sed -i "s/\(\*Here goes the \*\*\).*\(\*\* documentation\*\)/\1$NEW_PROJECT_NAME\2/" $README_FILE && \
+        sed -i "s/\(Application \[README.md\](\).*\(\/README.md)\)/\1$ESCAPED_CODE_PATH\2/" $README_FILE && \
         \
         sed -i "3s/.*/# $NEW_PROJECT_NAME/" $0 && \
         sed -i "s/PROJECT_NAME=\".*\"/PROJECT_NAME=\"$NEW_PROJECT_NAME\"/" $0 && \

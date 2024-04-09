@@ -48,6 +48,7 @@
   export              DEV_FILE="$SOURCE_CODE_PATH/config/dev.exs"
   export            TIMESTAMPS="utc_datetime_usec"
   export               ID_TYPE="uuid"
+  export         API_INTERFACE="graphql"
 
   # Console text format codes ------------------------------------------------
   export C1="\x1B[38;5;1m"
@@ -167,6 +168,7 @@
       #   2.1. Configuration to properly work with docker
       #   2.2. Generates .env file
       #   2.3. Set schema timestamps
+      #   2.4. Set api inteface (REST - GRAPHQL)
       RUN_COMMAND=$1 && \
       shift && \
       if [ -d $SOURCE_CODE_PATH ]; then
@@ -209,6 +211,21 @@
 
         # Add the config to the file
         sed -i "s/ecto_repos: \[\(.*.Repo\)\]/&\n\n$DATABASE_COMMENT\nconfig :$ELIXIR_PROJECT_NAME, \1,\n$DB_CONFIG/" $CONFIG_FILE
+      fi && \
+      \
+      if [ $API_INTERFACE == "graphql" ]; then
+      # 1. create Web.Graphql files
+      #      graphql
+      #        resolvers
+      #          ecto_schema.ex
+      #        schemas
+      #          ecto_schema.ex
+      #        schema.ex
+      # 2. adjust router
+      # 3. add dependencies
+      #      {:absinthe, "~> 1.7"},
+      #      {:absinthe_plug, "~> 1.5"},
+      #      {:absinthe_error_payload, "~> 1.1"},
       fi
 
     elif [ $1 == "schemas" ]; then

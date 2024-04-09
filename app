@@ -133,7 +133,7 @@
           --password-stdin
       fi
 
-    elif [ $1 == "set-name" ]; then
+    elif [ $1 == "name" ]; then
       shift && \
       if [ $# -eq 0 ]; then
         args_error \

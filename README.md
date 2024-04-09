@@ -2,8 +2,8 @@
 
 ![version - 0.0.0](https://img.shields.io/badge/version-0.0.0-white.svg?style=flat-sector&color=lightgray)
 
-> **Lorem Ipsum Project** uses a framework to create, develop, and deploy an application on `localhost` with a specific service architecture using Docker containers, without the need to install anything other than [Docker Desktop](https://www.docker.com/products/docker-desktop/).<br/><br/>
-> Ensuring an application deployment just like it would run in a network-mounted production environment, with the exception that it is deployed on your local machine.
+> **Lorem Ipsum Project** uses a framework to create, develop, and deploy an application on `localhost` with a specific service architecture using Docker containers, without the need to install anything other than [Docker Desktop](https://www.docker.com/products/docker-desktop/). Ensuring an application deployment just like it would run in a network-mounted production environment, with the exception that it is deployed on the local machine.<br/><br/>
+> In order to deploy without the framework as normally, navigate to the `./src` directory and consult the application [README.md](./src/README.md) file.
 
 ## Table of Contents
 - [1. Application](#1-application)
@@ -12,7 +12,7 @@
   - [2.2. Deploy](#21-deploy)
   - [2.3. Development](#23-development)
     - [2.3.1. Create a brand new project](#231-create-a-brand-new-project)
-    - [2.3.2. Running commands](#234-running-commands)
+    - [2.3.2. Custom deploy commands](#234-custom-deploy-commands)
     - [2.3.3. Set version](#235-set-version)
   - [2.4. Docker](#24-docker)
     - [2.4.1. Login to Docker](#241-login-to-docker)
@@ -20,7 +20,7 @@
 
 ## 1. Application
 
-Application [README.md](./src/README.md)
+To consult the application documentation, refer to the [./src/README.md](./src/README.md) file.
 
 ## 2. Framework
 
@@ -75,7 +75,7 @@ Application [README.md](./src/README.md)
     ```
     This Generate schema, changesets, context functions, tests and migration files and configures `servers.json` & `pgpass` files with credentials for PGAdmin.
 
-#### 2.3.2. Running commands
+#### 2.3.2. Custom deploy commands
 
 There is the possibility of deploying the service by executing custom server initialization commands, for example, to run the elixir interactive console `iex -S mix phx.server`.
 
@@ -97,12 +97,13 @@ Set application version on `src/mix.exs` file and `README.md` version badge.
 
 #### 2.4.1. Login to Docker
 
-Github user and token classic.
-Only necesary for private docker images.
+In order to download private Docker images, you need to login to GitHub using a username and a token (classic, not fine-grained) and have access to the resource. To do this, execute the following command:
 
 ```sh
-./app login
+./app login <GITHUB_USER> <ACCESS_TOKEN>
 ```
+
+How to generate token: [Personal Access Token (classic)](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic)
 
 #### 2.4.2. Prune Docker
 

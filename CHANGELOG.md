@@ -16,6 +16,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 During development, milestones can be added to this section, and once finished working on them, it's only needed to adjust the title to include the version and date.
 
+    TODO: change all refernces of the ./src in readme to be changed on setname function
+    TODO: add graphql files creation system
+
 ## [0.0.0] - 0000-00-00
 
 ### Added

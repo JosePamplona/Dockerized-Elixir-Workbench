@@ -21,6 +21,6 @@ RUN mix local.hex --force && \
     mix archive.install hex phx_new --force
 
 # Copies and makes excecutable the script to start the service.
-COPY run.sh ./
-RUN chmod +x run.sh
-CMD ./run.sh
+COPY ./.framework/entrypoint.sh ./
+RUN chmod +x entrypoint.sh
+CMD ./entrypoint.sh

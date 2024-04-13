@@ -1,9 +1,9 @@
-# Lorem Ipsum Project
+# Kiolo
 
 ![version - 0.0.0](https://img.shields.io/badge/version-0.0.0-white.svg?style=flat-sector&color=lightgray)
 
-> **Lorem Ipsum Project** uses a framework to create, develop, and deploy an application on `localhost` with a specific service architecture using Docker containers, without the need to install anything other than [Docker Desktop](https://www.docker.com/products/docker-desktop/). Ensuring an application deployment just like it would run in a network-mounted production environment, with the exception that it is deployed on the local machine.<br/><br/>
-> In order to deploy without the framework as normally, navigate to the `./src` directory and consult the application [README.md](./src/README.md) file.
+> **Kiolo** uses a framework to create, develop, and deploy an application on `localhost` with a specific service architecture using Docker containers, without the need to install anything other than [Docker Desktop](https://www.docker.com/products/docker-desktop/). Ensuring an application deployment just like it would run in a network-mounted production environment, with the exception that it is deployed on the local machine.<br/><br/>
+> Once created the project, in order to deploy without the framework as normally, navigate to the `./src` directory and consult the application [README.md](./src/README.md) file.
 
 ## Table of Contents
 - [1. Application](#1-application)
@@ -27,13 +27,15 @@ To consult the application documentation, refer to the [./src/README.md](./src/R
 
 ### 2.1. Arquitecture
 
-| Service  | URL                                     | Description                     |
-| :------- | :-------------------------------------- | :------------------------------ |
-| app      | [localhost:4000](http://localhost:4000) | API-REST server <br> Web server |
-| database | [localhost:5432](http://localhost:5432) | PostgreSQL database server                 |
-| pgadmin  | [localhost:5050](http://localhost:5050) | PGAdmin server                  |
+| Service | URL                                 | Description                | DEV enviroment only |
+| :------ | :---------------------------------- | :----------------------------------------- | :-: |
+| app | [localhost:4000](http://localhost:4000) | API-REST server                            |     |
+| app | [localhost:4000/dashboard](http://localhost:4000/dashboard) | Phoenix Live Dashboard | ✔️  |
+| app | [localhost:4000/mailbox](http://localhost:4000/mailbox) | Swoosh mailbox             | ✔️  |
+| database | [localhost:5432](http://localhost:5432) | PostgreSQL database server            |     |
+| pgadmin  | [localhost:5050](http://localhost:5050) | PGAdmin server                        |     |
 
-<p align="center"><img src="arq.svg"></p>
+<p align="center"><img src=".framework/arq.svg"></p>
 
 ### 2.2. Deploy
 
@@ -43,10 +45,16 @@ To consult the application documentation, refer to the [./src/README.md](./src/R
     ./app db-reset
     ```
 
-    Once having a configured database, run the following command to deploy the service along with its configured required services and tools.
+    Once having a configured database, run the following command to deploy the service along with its configured required services and tools in a (local) production enviroment.
 
     ```sh
     ./app up
+    ```
+
+    Alternativamente, se puede hacer deploy en ambiente de desarrollo, basta con agregar la opción `--dev`.
+
+    ```sh
+    ./app up --dev
     ```
 
 ### 2.3. Development
@@ -59,7 +67,7 @@ To consult the application documentation, refer to the [./src/README.md](./src/R
     ./app name <PROJECT_NAME>
     ```
 
-1. In order to create a new phoenix project, run the following command:
+1. In order to create a new Phoenix project, run the following command:
 
     ```sh
     ./app init
@@ -68,7 +76,7 @@ To consult the application documentation, refer to the [./src/README.md](./src/R
     This will generate all the files and apply specific configurations.
     It can accept all option flags from the task `mix phx.new` like `--no-html` or `--no-esbuild` (Full task [phx.new](https://hexdocs.pm/phoenix/Mix.Tasks.Phx.New.html) documentation).
 
-1. Edit the `run.sh` file, adjust the `schemas()` function in order to create a migration generation script. Once saved, run the following command:
+1. Edit the `.framework/entrypoint.sh` file, adjust the `schemas()` function in order to create a migration generation script. Once saved, run the following command:
 
     ```sh
     ./app schemas

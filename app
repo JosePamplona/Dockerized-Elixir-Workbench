@@ -7,21 +7,16 @@
 #
 # CONFIGURATION ----------------------------------------------------------------
 
-  source "./config.conf"
-  export APP_PORT=$APP_PORT
-  export DB_PORT=$DB_PORT
-  export PGADMIN_PORT=$PGADMIN_PORT
-  export ID_TYPE=$ID_TYPE
-  export TIMESTAMPS=$TIMESTAMPS
+  source ./config.conf
   
-  export          PROJECT_NAME="Kiolo"
-                    LOWER_CASE=$( echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' ) && \
+  export          PROJECT_NAME="Lorem Ipsum"
+  LOWER_CASE=$( echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' ) && \
   export              APP_NAME=$( echo "$LOWER_CASE" | tr ' ' '-' ) && \
   export   ELIXIR_PROJECT_NAME=$( echo "$LOWER_CASE" | tr ' ' '_' )
   export  COMPOSE_PROJECT_NAME=$APP_NAME
   export        CONTAINER_NAME="back-end.elixir"
   export                 IMAGE="$APP_NAME:develop"
-  export          COMPOSE_FILE="./.framework/docker-compose.yml"
+  export          COMPOSE_FILE="./docker-compose.yml"
   export    DEVELOP_DOCKERFILE="./Dockerfile.dev"
   export PRODUCTION_DOCKERFILE="./Dockerfile.prod"
   export    COMPOSE_DOCKERFILE=$PRODUCTION_DOCKERFILE
@@ -29,24 +24,25 @@
   export      SOURCE_CODE_PATH="./src"
   export    SOURCE_CODE_VOLUME="/$PWD/$SOURCE_CODE_PATH:/app/$SOURCE_CODE_PATH"
   export              ENV_FILE="./.env"
-  export           README_FILE="./README.md"
   export            ENTRYPOINT="./entrypoint.sh"
+  export           README_FILE="./README.md"
 
   # Database configuration ---------------------------------------------------
+  export      DB_INTERNAL_PORT="5432"
   export               DB_USER="postgres"
   export               DB_PASS="postgres"
   export               DB_HOST="database_host"
-  export               DB_NAME="${ELIXIR_PROJECT_NAME}_db"
+  export               DB_NAME="${ELIXIR_PROJECT_NAME}_prod"
 
   # PGAdmin configuration ----------------------------------------------------
+  export PGADMIN_INTERNAL_PORT="5050"
   export         PGADMIN_EMAIL="pgadmin4@pgadmin.org"
   export      PGADMIN_PASSWORD="pass"
   export  PGADMIN_SERVERS_FILE="./.framework/servers.json"
   export     PGADMIN_PASS_FILE="./.framework/pgpass"
 
   # Elixir project configuration ---------------------------------------------
-  export             HOST_PORT=$APP_PORT
-  export         INTERNAL_PORT="4000"
+  export     APP_INTERNAL_PORT="4000"
   export              MIX_FILE="$SOURCE_CODE_PATH/mix.exs"
   export           CONFIG_FILE="$SOURCE_CODE_PATH/config/config.exs"
   export              DEV_FILE="$SOURCE_CODE_PATH/config/dev.exs"
@@ -193,8 +189,12 @@
       echo "# .env" > $ENV_FILE && \
       echo "export PHX_SERVER=true" >> $ENV_FILE && \
       echo "export PHX_HOST=localhost" >> $ENV_FILE && \
-      echo "export PORT=$HOST_PORT" >> $ENV_FILE && \
-      echo "export SECRET_KEY_BASE=dodwLlMWwvdkjZz2pok8fO2jPa/Fx8+RWceQjv6NbqsPHcLh/1AU5dEe9NZH5UwC" >> $ENV_FILE && \
+      echo "export PORT=$APP_INTERNAL_PORT" >> $ENV_FILE && \
+      echo "export SECRET_KEY_BASE=$(
+        head /dev/urandom | tr -dc '[:alnum:]' | head -c 64
+      )" >> $ENV_FILE && \
+      echo "export DATABASE_URL=ecto://$DB_USER:$DB_PASS@$DB_HOST/$DB_NAME" >> \
+        $ENV_FILE && \
       \
       if [ ! -z "$TIMESTAMPS" ] || [ ! -z "$ID_TYPE" ]; then
         # Remove generators config
@@ -236,35 +236,41 @@
       # 3. Generates schema, changesets, context functions, tests and migration files
       RUN_COMMAND=$1 && \
       shift && \
-      export COMPOSE_DOCKERFILE=$DEVELOP_DOCKERFILE && \
       sed -i "s/\"Host\": \"[^\"]\+\"/\"Host\": \"$DB_HOST\"/" \
-        $PGADMIN_SERVERS_FILE && \
-      sed -i "s/\"Port\": [^\"]\+/\"Port\": $DB_PORT,/" \
         $PGADMIN_SERVERS_FILE && \
       sed -i "s/\"Username\": \"[^\"]\+\"/\"Username\": \"$DB_USER\"/" \
         $PGADMIN_SERVERS_FILE && \
-      echo $DB_HOST:$DB_PORT:\*:$DB_USER:$DB_PASS > $PGADMIN_PASS_FILE && \
-      \
+      echo $DB_HOST:$DB_INTERNAL_PORT:\*:$DB_USER:$DB_PASS > $PGADMIN_PASS_FILE && \
+      export COMPOSE_DOCKERFILE=$DEVELOP_DOCKERFILE && \
       docker compose --file $COMPOSE_FILE run \
         --build \
         --rm \
         --name "${APP_NAME}___${RUN_COMMAND}" \
-        --publish $HOST_PORT:$INTERNAL_PORT \
+        --publish $APP_PORT:$APP_INTERNAL_PORT \
         app $ENTRYPOINT $RUN_COMMAND
         
     elif [ $1 == "db-reset" ]; then
       RUN_COMMAND=$1 && \
       shift && \
+      if [ "$1" == "--dev" ]
+      then ENV_ARG=dev
+      else ENV_ARG=prod
+      fi && \
       export COMPOSE_DOCKERFILE=$DEVELOP_DOCKERFILE && \
       docker compose --file $COMPOSE_FILE run \
         --build \
         --rm \
         --name "${APP_NAME}___${RUN_COMMAND}" \
-        --publish $HOST_PORT:$INTERNAL_PORT \
-        app $ENTRYPOINT $RUN_COMMAND
+        --publish $APP_PORT:$APP_INTERNAL_PORT \
+        app $ENTRYPOINT $RUN_COMMAND $ENV_ARG
         
     elif [ $1 == "up" ]; then
-      export COMPOSE_DOCKERFILE=$PRODUCTION_DOCKERFILE && \
+      shift && \
+      if [ "$1" == "--dev" ]; then
+        export COMPOSE_DOCKERFILE=$DEVELOP_DOCKERFILE
+      else
+        export COMPOSE_DOCKERFILE=$PRODUCTION_DOCKERFILE
+      fi && \
       docker compose --file $COMPOSE_FILE up --build
 
     elif [ $1 == "run" ]; then
@@ -276,7 +282,7 @@
           --build \
           --rm \
           --name "${APP_NAME}___${RUN_COMMAND}" \
-          --publish $HOST_PORT:$INTERNAL_PORT \
+          --publish $APP_PORT:$APP_INTERNAL_PORT \
           app $ENTRYPOINT $RUN_COMMAND $@
 
       else args_error "Missing command for container initialization."; fi

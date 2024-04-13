@@ -17,12 +17,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 During development, milestones can be added to this section, and once finished working on them, it's only needed to adjust the title to include the version and date.
 
     TODO: generar el arhivo changelog
+    TODO: Set src paths in all files afected in app
     TODO: change all refernces of the ./src in readme to be changed on setname function
     TODO: add graphql files creation system
     CHECK: An terminate-editing-project-options-forever command?
-    TODO: set framework files on a hidden dir `.framework/`
+        DONE: set framework files on a hidden dir `.framework/`
     CHECK: Automatic date on first entry in changelog
-    TODO: Set src paths in all files afected in app
 
 ## [0.0.0] - 0000-00-00
 

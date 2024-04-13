@@ -20,6 +20,8 @@ RUN mix local.hex --force && \
     mix local.rebar --force && \
     mix archive.install hex phx_new --force
 
+# Copies the script to generate mutation files.
+COPY ./schemas.sh ./
 # Copies and makes excecutable the script to start the service.
 COPY ./.framework/entrypoint.sh ./
 RUN chmod +x entrypoint.sh

@@ -3,13 +3,11 @@ services:
     container_name: $CONTAINER_NAME
     hostname: $APP_NAME
     build:
-      dockerfile: ../$COMPOSE_DOCKERFILE
+      dockerfile: ./$COMPOSE_DOCKERFILE
     env_file: 
-      - ../$ENV_FILE
-    environment:
-      DATABASE_URL: ecto://$DB_USER:$DB_PASS@$DB_HOST/$DB_NAME
+      - ./$ENV_FILE
     ports:
-      - $HOST_PORT:$INTERNAL_PORT
+      - $APP_PORT:$APP_INTERNAL_PORT
     volumes:
       - $SOURCE_CODE_VOLUME
     links:
@@ -18,7 +16,7 @@ services:
       database:
         condition: service_healthy
     healthcheck:
-      test: curl --fail http://localhost:$INTERNAL_PORT || exit 1
+      test: curl --fail http://localhost:$APP_INTERNAL_PORT || exit 1
       timeout: 45s
       interval: 10s
       retries: 10
@@ -27,12 +25,12 @@ services:
     container_name: database
     hostname: $DB_HOST
     image: postgres:16.2-alpine
-    restart: always
+    # restart: always
     environment: 
       POSTGRES_PASSWORD: $DB_PASS
       POSTGRES_USER: $DB_USER
     ports:
-      - $DB_PORT:5432
+      - $DB_PORT:$DB_INTERNAL_PORT
     healthcheck:
       test: pg_isready -q -d $DB_PASS -U $DB_USER
       timeout: 45s
@@ -51,11 +49,11 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: $PGADMIN_EMAIL
       PGADMIN_DEFAULT_PASSWORD: $PGADMIN_PASSWORD
-      PGADMIN_LISTEN_PORT: 5050
+      PGADMIN_LISTEN_PORT: $PGADMIN_INTERNAL_PORT
       PGADMIN_CONFIG_SERVER_MODE: 'False'
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
     ports:
-      - $PGADMIN_PORT:5050
+      - $PGADMIN_PORT:$PGADMIN_INTERNAL_PORT
     depends_on:
       - database
     volumes:

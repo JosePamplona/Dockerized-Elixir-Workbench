@@ -1,19 +1,21 @@
-# Kiolo
+<!-- markdownlint-disable MD033 -->
+# Lorem Ipsum
 
 ![version - 0.0.0](https://img.shields.io/badge/version-0.0.0-white.svg?style=flat-sector&color=lightgray)
 
-> **Kiolo** uses a framework to create, develop, and deploy an application on `localhost` with a specific service architecture using Docker containers, without the need to install anything other than [Docker Desktop](https://www.docker.com/products/docker-desktop/). Ensuring an application deployment just like it would run in a network-mounted production environment, with the exception that it is deployed on the local machine.<br/><br/>
-> Once created the project, in order to deploy without the framework as normally, navigate to the `./src` directory and consult the application [README.md](./src/README.md) file.
+> **Lorem Ipsum** uses a framework to create, develop, and deploy an application on `localhost` with a specific service architecture using Docker containers, without the need to install anything other than [Docker Desktop](https://www.docker.com/products/docker-desktop/). Ensuring an application deployment just like it would run in a network-mounted production environment, with the exception that it is deployed on the local machine.<br/><br/>
+> Once created the project, in order to start the server without the framework as normally, navigate to the `./src` directory and consult the application [README.md](./src/README.md) file.
 
 ## Table of Contents
+
 - [1. Application](#1-application)
 - [2. Framework](#2-framework)
-  - [2.1. Arquitecture](#22-arquitecture)
-  - [2.2. Deploy](#21-deploy)
+  - [2.1. Arquitecture](#21-arquitecture)
+  - [2.2. Deploy](#22-deploy)
   - [2.3. Development](#23-development)
     - [2.3.1. Create a brand new project](#231-create-a-brand-new-project)
-    - [2.3.2. Custom deploy commands](#234-custom-deploy-commands)
-    - [2.3.3. Set version](#235-set-version)
+    - [2.3.2. Custom deploy commands](#232-custom-deploy-commands)
+    - [2.3.3. Set version](#233-set-version)
   - [2.4. Docker](#24-docker)
     - [2.4.1. Login to Docker](#241-login-to-docker)
     - [2.4.2. Prune Docker](#242-prune-docker)
@@ -24,18 +26,17 @@ To consult the application documentation, refer to the [./src/README.md](./src/R
 
 ## 2. Framework
 
-
 ### 2.1. Arquitecture
 
 | Service | URL                                 | Description                | DEV enviroment only |
 | :------ | :---------------------------------- | :----------------------------------------- | :-: |
 | app | [localhost:4000](http://localhost:4000) | API-REST server                            |     |
-| app | [localhost:4000/dashboard](http://localhost:4000/dashboard) | Phoenix Live Dashboard | ✔️  |
-| app | [localhost:4000/mailbox](http://localhost:4000/mailbox) | Swoosh mailbox             | ✔️  |
+| app | [localhost:4000/dev/dashboard](http://localhost:4000/dev/dashboard) | Phoenix Live Dashboard | ✔️  |
+| app | [localhost:4000/dev/mailbox](http://localhost:4000/dev/mailbox) | Swoosh mailbox             | ✔️  |
 | database | [localhost:5432](http://localhost:5432) | PostgreSQL database server            |     |
 | pgadmin  | [localhost:5050](http://localhost:5050) | PGAdmin server                        |     |
 
-<p align="center"><img src=".framework/arq.svg"></p>
+<p align="center"><img alt="arquitecture diagram" src=".framework/arq.svg"></p>
 
 ### 2.2. Deploy
 
@@ -51,9 +52,10 @@ To consult the application documentation, refer to the [./src/README.md](./src/R
     ./app up
     ```
 
-    Alternativamente, se puede hacer deploy en ambiente de desarrollo, basta con agregar la opción `--dev`.
+    Alternatively, It is possible to deploy in development environment. Just add the `--dev` option to both commands. Otherwise the application will be deployed as production.
 
     ```sh
+    ./app db-reset --dev
     ./app up --dev
     ```
 
@@ -61,7 +63,9 @@ To consult the application documentation, refer to the [./src/README.md](./src/R
 
 #### 2.3.1. Create a brand new project
 
-1. First, is needed to set a name for a new project. Run the following command replacing `<PROJECT_NAME>` with the desired name (Use capital casing with spaces):
+1. Edit the `config.conf` to set the configuration of how the framework will behave and how the project will be created. This is not mandatory.
+
+1. Is needed to set a name for a new project. Run the following command replacing `<PROJECT_NAME>` with the desired name (Use capital casing with spaces):
 
     ```sh
     ./app name <PROJECT_NAME>
@@ -76,18 +80,19 @@ To consult the application documentation, refer to the [./src/README.md](./src/R
     This will generate all the files and apply specific configurations.
     It can accept all option flags from the task `mix phx.new` like `--no-html` or `--no-esbuild` (Full task [phx.new](https://hexdocs.pm/phoenix/Mix.Tasks.Phx.New.html) documentation).
 
-1. Edit the `.framework/entrypoint.sh` file, adjust the `schemas()` function in order to create a migration generation script. Once saved, run the following command:
+1. Edit the `schemas.sh` file in order to create a migration generation script. Once saved, run the following command:
 
     ```sh
     ./app schemas
     ```
-    This Generate schema, changesets, context functions, tests and migration files and configures `servers.json` & `pgpass` files with credentials for PGAdmin.
+
+    This generate schemas, changesets and contexts functions, tests and migration files and configures `servers.json` & `pgpass` files with credentials for PGAdmin.
 
 #### 2.3.2. Custom deploy commands
 
-There is the possibility of deploying the service by executing custom server initialization commands, for example, to run the elixir interactive console `iex -S mix phx.server`.
+There is the possibility of deploying the service by executing custom server initialization commands, for example, to run the elixir interactive console: `iex -S mix phx.server`.
 
-In order to do this, execute the following command, replacing ` [<COMMAND>...]` with the commands to be executed.
+In order to do this, execute the following command, replacing `[<COMMAND>...]` with the commands to be executed.
 
 ```sh
 ./app run [<COMMAND>...]

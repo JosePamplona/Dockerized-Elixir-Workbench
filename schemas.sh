@@ -10,7 +10,6 @@ mix phx.gen.context \
   Lore \
   Army armies \
     name:string \
-    --binary-id \
     --merge-with-existing-context && \
 sleep 1 && \
 mix phx.gen.context \
@@ -27,7 +26,6 @@ mix phx.gen.context \
     attack:array:string \
     defense:array:string \
     morale:array:string \
-    --binary-id \
     --merge-with-existing-context && \
 sleep 1 && \
 mix phx.gen.context \
@@ -36,7 +34,6 @@ mix phx.gen.context \
     name:string \
     type:enum:passive:action \
     range:integer \
-    --binary-id \
     --merge-with-existing-context && \
 sleep 1 && \
 mix phx.gen.context \
@@ -44,7 +41,6 @@ mix phx.gen.context \
   FormationAbility formation_abilities \
     formation_id:references:formations \
     ability_id:references:abilities \
-    --binary-id \
     --merge-with-existing-context && \
 sleep 1 && \
 mix phx.gen.context \
@@ -53,13 +49,11 @@ mix phx.gen.context \
     name:string \
     email:string \
     pass_hash:string \
-    --binary-id \
     --merge-with-existing-context && \
 sleep 1 && \
 mix phx.gen.context \
   Game \
   Match matches \
-    --binary-id \
     --merge-with-existing-context && \
 sleep 1 && \
 mix phx.gen.context \
@@ -67,7 +61,6 @@ mix phx.gen.context \
   Deck decks \
     match_id:references:matches \
     player_id:references:players \
-    --binary-id \
     --merge-with-existing-context && \
 sleep 1 && \
 mix phx.gen.context \
@@ -75,7 +68,6 @@ mix phx.gen.context \
   Turn turns \
     match_id:references:matches \
     player_id:references:players \
-    --binary-id \
     --merge-with-existing-context && \
 sleep 1 && \
 mix phx.gen.context \
@@ -85,7 +77,6 @@ mix phx.gen.context \
     damage:integer \
     position:string \
     status:enum:ok:dead \
-    --binary-id \
     --merge-with-existing-context && \
 sleep 1 && \
 mix phx.gen.context \
@@ -97,7 +88,6 @@ mix phx.gen.context \
     ability_id:references:abilities \
     initial_position:string \
     final_position:string \
-    --binary-id \
     --merge-with-existing-context && \
 sleep 1 && \
 mix phx.gen.context \
@@ -105,13 +95,11 @@ mix phx.gen.context \
   Target targets \
     command_id:references:commands \
     unit_id:references:units \
-    --binary-id \
     --merge-with-existing-context && \
 sleep 1 && \
 mix phx.gen.context \
   Battlefield \
   Terrain terrains \
-    --binary-id \
     --merge-with-existing-context && \
 sleep 1 && \
 mix phx.gen.context \
@@ -120,7 +108,6 @@ mix phx.gen.context \
     match_id:references:matches \
     terrain_id:references:terrains \
     position:string \
-    --binary-id \
     --merge-with-existing-context && \
 sleep 1 && \
 mix phx.gen.context \
@@ -128,7 +115,6 @@ mix phx.gen.context \
   Tile tiles \
     sheet_filename:string \
     sheet_position \
-    --binary-id \
     --merge-with-existing-context && \
 sleep 1 && \
 mix phx.gen.context \
@@ -137,5 +123,4 @@ mix phx.gen.context \
     terrain_id:references:terrains \
     tile_id:references:tiles \
     position:string \
-    --binary-id \
     --merge-with-existing-context

@@ -24,8 +24,12 @@
   export      SOURCE_CODE_PATH="./src"
   export    SOURCE_CODE_VOLUME="/$PWD/$SOURCE_CODE_PATH:/app/$SOURCE_CODE_PATH"
   export              ENV_FILE="./.env"
+  # On "/bin/bash^M: bad interpreter: No such file or directory" error.
+  # or "exec ./entrypoint.sh: no such file or directory"
+  # sed -i -e 's/\r$//' .framework/entrypoint.sh
   export            ENTRYPOINT="./entrypoint.sh"
   export           README_FILE="./README.md"
+  export    CHANGELOG_FILENAME="CHANGELOG.md"
 
   # Database configuration ---------------------------------------------------
   export      DB_INTERNAL_PORT="5432"
@@ -165,6 +169,7 @@
       #   2.3. Set schema timestamps
       #   2.4. Set api inteface (REST - GRAPHQL)
       RUN_COMMAND=$1 && \
+      CHANGELOG_FILE=$SOURCE_CODE_PATH/$CHANGELOG_FILENAME && \
       shift && \
       if [ -d $SOURCE_CODE_PATH ]; then
         confirm \
@@ -186,6 +191,7 @@
       sed -i "s/version:\s*\"[0-9]*.[0-9]*.[0-9]*\"/version: \"0.0.0\"/" $MIX_FILE && \
       sed -i "s/hostname: \"localhost\"/hostname: \"$DB_HOST\"/" $DEV_FILE && \
       sed -i "s/http: \[ip: {127, 0, 0, 1}/http: \[ip: {0, 0, 0, 0}/" $DEV_FILE && \
+      \
       echo "# .env" > $ENV_FILE && \
       echo "export PHX_SERVER=true" >> $ENV_FILE && \
       echo "export PHX_HOST=localhost" >> $ENV_FILE && \
@@ -195,6 +201,29 @@
       )" >> $ENV_FILE && \
       echo "export DATABASE_URL=ecto://$DB_USER:$DB_PASS@$DB_HOST/$DB_NAME" >> \
         $ENV_FILE && \
+      \
+      echo "# Changelog" > $CHANGELOG_FILE && \
+      echo "" >> $CHANGELOG_FILE && \
+      echo "All notable changes to this project will be documented in this file." >> $CHANGELOG_FILE && \
+      echo "" >> $CHANGELOG_FILE && \
+      echo "This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and the format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/):" >> $CHANGELOG_FILE && \
+      echo "" >> $CHANGELOG_FILE && \
+      echo "- \`Added\` for new features." >> $CHANGELOG_FILE && \
+      echo "- \`Changed\` for changes in existing functionality." >> $CHANGELOG_FILE && \
+      echo "- \`Deprecated\` for once-stable features removed in upcoming releases." >> $CHANGELOG_FILE && \
+      echo "- \`Removed\` for deprecated features removed in this release." >> $CHANGELOG_FILE && \
+      echo "- \`Fixed\` for any bug fixes." >> $CHANGELOG_FILE && \
+      echo "- \`Security\` to invite users to upgrade in case of vulnerabilities." >> $CHANGELOG_FILE && \
+      echo "" >> $CHANGELOG_FILE && \
+      echo "## [Unreleased] - 0000-00-00" >> $CHANGELOG_FILE && \
+      echo "" >> $CHANGELOG_FILE && \
+      echo "During development, milestones can be added to this section, and once finished working on them, it's only needed to adjust the title to include the version and date." >> $CHANGELOG_FILE && \
+      echo "" >> $CHANGELOG_FILE && \
+      echo "## [0.0.0] - $(date +%Y-%m-%d)" >> $CHANGELOG_FILE && \
+      echo "" >> $CHANGELOG_FILE && \
+      echo "### Added" >> $CHANGELOG_FILE && \
+      echo "" >> $CHANGELOG_FILE && \
+      echo "- Project created." >> $CHANGELOG_FILE && \
       \
       if [ ! -z "$TIMESTAMPS" ] || [ ! -z "$ID_TYPE" ]; then
         # Remove generators config
@@ -229,6 +258,9 @@
       #      {:absinthe, "~> 1.7"},
       #      {:absinthe_plug, "~> 1.5"},
       #      {:absinthe_error_payload, "~> 1.1"},
+      # fi
+      
+      # if [ $HEALTHCHECK == "true" ]; then
       # fi
 
     elif [ $1 == "schemas" ]; then

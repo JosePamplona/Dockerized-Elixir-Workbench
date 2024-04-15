@@ -58,7 +58,7 @@
 
   default_cmd() { mix phx.server; }
 
-  schemas() { ls; source ../schemas.sh; }
+  schemas() { source ../schemas.sh; }
 
 # SCRIPT -----------------------------------------------------------------------
 

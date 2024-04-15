@@ -12,17 +12,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - `Fixed` for any bug fixes.
 - `Security` to invite users to upgrade in case of vulnerabilities.
 
-## [Unreleased]
+## [Unreleased] - 0000-00-00
 
 During development, milestones can be added to this section, and once finished working on them, it's only needed to adjust the title to include the version and date.
 
-    TODO: generar el arhivo changelog
     TODO: Set src paths in all files afected in app
     TODO: change all refernces of the ./src in readme to be changed on setname function
     TODO: add graphql files creation system
     CHECK: An terminate-editing-project-options-forever command?
-        DONE: set framework files on a hidden dir `.framework/`
-    CHECK: Automatic date on first entry in changelog
+    TODO: export API_INTERFACE="graphql"
+    TODO: export HEALTHCHECK="true"
 
 ## [0.0.0] - 0000-00-00
 

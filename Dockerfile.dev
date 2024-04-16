@@ -25,4 +25,10 @@ COPY ./schemas.sh ./
 # Copies and makes excecutable the script to start the service.
 COPY ./.framework/entrypoint.sh ./
 RUN chmod +x entrypoint.sh
+# If the script is saved with win (\r\n) will throw the following error:
+# exec ./entrypoint.sh: no such file or directory
+# This line cleans it all.
+RUN sed -i -e 's/\r$//' schemas.sh
+RUN sed -i -e 's/\r$//' entrypoint.sh
+
 CMD ./entrypoint.sh

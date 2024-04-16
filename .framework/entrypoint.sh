@@ -63,7 +63,7 @@
 # SCRIPT -----------------------------------------------------------------------
 
   cd $SOURCE_CODE_PATH && \
-  if [ "$1" == "init" ]; then
+  if [ "$1" == "new" ]; then
     shift
     if [ $# -ge 1 ]; then
       PROJECT_NAME=$1 && \

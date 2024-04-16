@@ -14,9 +14,11 @@
   - [2.1. Arquitecture](#21-arquitecture)
   - [2.2. Development](#22-development)
     - [2.2.1. Create a brand new project](#221-create-a-brand-new-project)
-    - [2.2.2. Custom deploy commands](#222-custom-deploy-commands)
+    - [2.2.2. Custom commands](#222-custom-commands)
     - [2.2.3. Set version](#223-set-version)
   - [2.3. Deployment](#23-deployment)
+    - [2.3.1. Deploy in prod](#231-deploy-in-prod)
+    - [2.3.2. Deploy in dev](#232-deploy-in-dev)
   - [2.4. Docker](#24-docker)
     - [2.4.1. Login to Docker](#241-login-to-docker)
     - [2.4.2. Prune Docker](#242-prune-docker)
@@ -62,7 +64,7 @@ In order to use the framework, install [Docker Desktop](https://www.docker.com/p
 1. In order to create a new Phoenix project, run the following command:
 
     ```sh
-    ./app init
+    ./app new
     ```
 
     This will generate all the files and apply specific configurations.
@@ -76,7 +78,7 @@ In order to use the framework, install [Docker Desktop](https://www.docker.com/p
 
     This generate schemas, changesets and contexts functions, tests and migration files and configures `servers.json` & `pgpass` files with credentials for PGAdmin.
 
-#### 2.2.2. Custom deploy commands
+#### 2.2.2. Custom commands
 
 There is the possibility of deploying the service by executing custom server initialization commands. For example, to run the elixir interactive console: `iex -S mix phx.server`.
 
@@ -110,7 +112,7 @@ Set application version on `src/mix.exs` file and `README.md` version badge.
     ./app up
     ```
 
-### 2.3.1 Deploy in `dev`
+### 2.3.2 Deploy in `dev`
 
 1. Execute the same commands used in `prod`, just add the `--dev` option to both commands:
 

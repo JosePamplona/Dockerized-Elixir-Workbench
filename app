@@ -158,7 +158,7 @@
         echo "Project name \"$NEW_PROJECT_NAME\" succesfully set."
       fi
 
-    elif [ $1 == "init" ]; then
+    elif [ $1 == "new" ]; then
       # Tarball error will occur on Win11 using a XFAT drive for the repo on
       # mix deps.get
       #

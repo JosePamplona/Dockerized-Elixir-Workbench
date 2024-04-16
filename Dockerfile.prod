@@ -36,19 +36,17 @@ COPY ${SOURCE_PATH}config/config.exs ${SOURCE_PATH}config/${MIX_ENV}.exs config/
 RUN mix deps.compile
 
 COPY ${SOURCE_PATH}priv priv
-
+COPY ${SOURCE_PATH}assets assets
 # note: if your project uses a tool like https://purgecss.com/,
 # which customizes asset compilation based on what it finds in
 # your Elixir templates, you will need to move the asset compilation
 # step down so that `lib` is available.
-COPY ${SOURCE_PATH}assets assets
+COPY ${SOURCE_PATH}lib lib
 
-# compile assets
+# Compile assets
 RUN mix assets.deploy
 
 # Compile the release
-COPY ${SOURCE_PATH}lib lib
-
 RUN mix compile
 
 # Changes to config/runtime.exs don't require recompiling the code

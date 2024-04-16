@@ -24,12 +24,9 @@
   export      SOURCE_CODE_PATH="./src"
   export    SOURCE_CODE_VOLUME="/$PWD/$SOURCE_CODE_PATH:/app/$SOURCE_CODE_PATH"
   export              ENV_FILE="./.env"
-  # On "/bin/bash^M: bad interpreter: No such file or directory" error.
-  # or "exec ./entrypoint.sh: no such file or directory"
-  # sed -i -e 's/\r$//' .framework/entrypoint.sh
-  export            ENTRYPOINT="./entrypoint.sh"
   export           README_FILE="./README.md"
   export    CHANGELOG_FILENAME="CHANGELOG.md"
+  export            ENTRYPOINT="./entrypoint.sh"
 
   # Database configuration ---------------------------------------------------
   export      DB_INTERNAL_PORT="5432"
@@ -64,15 +61,65 @@
   # readme
     # Prints readme file
   readme() {
-    # wget https://github.com/charmbracelet/glow/releases/download/v1.4.1/glow_1.4.1_linux_amd64.deb	
-    # sudo apt install ./glow_1.4.1_linux_amd64.deb
-    if [ ! -f "$README_FILE" ]; then
-      echo "The file $README_FILE does not exist."
-      exit 1
-    fi
-    # cat "$README_FILE"
-    # echo ""
-    glow "$README_FILE"
+    echo \
+      "${B}Use: $0 [comands]${R}" \
+      "\n" \
+      "\nDescription:" \
+      "\n." \
+      "\n" \
+      "\nCommands:" \
+      "\n  ${B}name [project_name]${R}    Set the application name for project creation." \
+      "\n    Arguments:" \
+      "\n      project_name       Project name (Use capital casing with spaces). " \
+      "\n" \
+      "\n  ${B}new [opts]${R}" \
+      "\n    Options:" \
+      "\n      --umbrella         Generate an umbrella project." \
+      "\n      --database         Database adapter for Ecto:" \
+      "\n                           postgres, mysql, mssql, sqlite3" \
+      "\n      --adapter          Http adapter:" \
+      "\n                           cowboy, bandit" \
+      "\n      --no-assets        Equivalent to --no-esbuild and --no-tailwind." \
+      "\n      --no-dashboard     Do not include Phoenix.LiveDashboard." \
+      "\n      --no-ecto          Do not generate Ecto files." \
+      "\n      --no-esbuild       Do not include esbuild dependencies and assets." \
+      "\n      --no-gettext       Do not generate gettext files." \
+      "\n      --no-html          Do not generate HTML views." \
+      "\n      --no-live          Comment out LiveView socket setup in assets/js/app.js." \
+      "\n      --no-mailer        Do not generate Swoosh mailer files." \
+      "\n      --no-tailwind      Do not include tailwind dependencies and assets." \
+      "\n      --binary-id        Use binary_id as primary key type in Ecto schemas." \
+      "\n      --verbose          Use verbose output." \
+      "\n      -v, --version      Prints the Phoenix installer version." \
+      "\n" \
+      "\n  ${B}schemas${R}                Create schema, function, test and migration files." \
+      "\n" \
+      "\n  ${B}run [commands...]${R}      Deploy app executing custom entrypoint commands." \
+      "\n    Arguments:" \
+      "\n      commands...        Command(s) to be executed as app entrypoint. " \
+      "\n" \
+      "\n  ${B}set-version [version]${R}  Set application version on different files." \
+      "\n    Arguments:" \
+      "\n      version            Version to set. " \
+      "\n" \
+      "\n  ${B}db-reset [opts]${R}        Drops the database (if any), creates a new one and run a seeding script. (default: --prod)" \
+      "\n    Options:" \
+      "\n      --dev              Deploy the app in develop enviroment." \
+      "\n      --prod             Deploy the app in production enviroment." \
+      "\n" \
+      "\n  ${B}up [opts]${R}              Deploy the app in localhost. (default: --prod)" \
+      "\n    Options:" \
+      "\n      --dev              Deploy as develop enviroment." \
+      "\n      --prod             Deploy as production enviroment." \
+      "\n" \
+      "\n  ${B}login [user, token]${R}    Login to GitHub account." \
+      "\n    Arguments:" \
+      "\n      user               Github username. " \
+      "\n      token              Authentication token (classic). " \
+      "\n" \
+      "\n  ${B}prune${R}                  Stops all containers and prune Docker." \
+      "\n" \
+      ""
   }
 
   # confirm <MESSAGE>

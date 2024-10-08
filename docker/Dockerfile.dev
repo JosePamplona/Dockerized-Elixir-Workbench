@@ -1,10 +1,11 @@
 # Available versions: https://hub.docker.com/r/hexpm/elixir/tags
-ARG ELIXIR=1.16.2
-ARG OTP=26.2.3
-ARG DEBIAN=bullseye-20240130-slim
+ARG        ELIXIR="1.17.3"
+ARG           OTP="27.1.1"
+ARG        DEBIAN="buster-20240612-slim"
 ARG DEVELOP_IMAGE="hexpm/elixir:${ELIXIR}-erlang-${OTP}-debian-${DEBIAN}"
-
-FROM ${DEVELOP_IMAGE} as develop
+# ------------------------------------------------------------------------------
+FROM ${DEVELOP_IMAGE} AS develop
+# ------------------------------------------------------------------------------
 
 # install build dependencies
 RUN apt-get update -y && \
@@ -21,9 +22,10 @@ RUN mix local.hex --force && \
     mix archive.install hex phx_new --force
 
 # Copies the script to generate mutation files.
-COPY ./schemas.sh ./
 # Copies and makes excecutable the script to start the service.
-COPY ./.framework/entrypoint.sh ./
+COPY ./schemas.sh ./
+COPY ./entrypoint.sh ./
+RUN chmod +x schemas.sh
 RUN chmod +x entrypoint.sh
 # If the script is saved with win (\r\n) will throw the following error:
 # exec ./entrypoint.sh: no such file or directory
@@ -31,4 +33,4 @@ RUN chmod +x entrypoint.sh
 RUN sed -i -e 's/\r$//' schemas.sh
 RUN sed -i -e 's/\r$//' entrypoint.sh
 
-CMD ./entrypoint.sh
+CMD ["./entrypoint.sh"]

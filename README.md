@@ -30,7 +30,7 @@ This is a script to create [Elixir](https://elixir-lang.org/) projects with the 
 
 ## Create a new project
 
-1. Modify the `config.conf` file in order to configure the project name and project creation specifications.
+1. Modify the `config.conf` file in order to configure the project name and creation specifications.
 
 1. In order to create a new Phoenix project, run the following command:
 
@@ -41,7 +41,7 @@ This is a script to create [Elixir](https://elixir-lang.org/) projects with the 
     This will generate all the files and apply specific configurations.
     It can accept all option flags from the task `mix phx.new` like `--no-html` or `--no-esbuild` (Full task [phx.new](https://hexdocs.pm/phoenix/Mix.Tasks.Phx.New.html) documentation).
 
-    This command also generate schemas, changesets, context functions, tests,  migration files and configure `servers.json` & `pgpass` files with credentials for pgAdmin.
+    This command also generate schemas, changesets, context functions, tests and migration files.
 
 ## Deployment
 

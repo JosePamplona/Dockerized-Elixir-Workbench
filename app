@@ -445,23 +445,22 @@
 
       ENTRYPOINT_COMMAND=$1 && \
       shift && \
-      # IMAGE="$APP_NAME:develop" && \
-      # prepare_new_project && \
-      # cd "$WORKBENCH_DIR/$DOCKERFILES_DIR" && \
-      # docker build \
-      #   --file "$DEV_DOCKERFILE" \
-      #   --tag $IMAGE \
-      #   . && \
-      # docker run \
-      #   --rm \
-      #   --tty \
-      #   --interactive \
-      #   --name "${APP_NAME}___${ENTRYPOINT_COMMAND}" \
-      #   --volume $SOURCE_CODE_VOLUME \
-      #   $IMAGE $CONTAINER_ENTRYPOINT \
-      #   $ENTRYPOINT_COMMAND $ELIXIR_PROJECT_NAME $@ && \
-      # cd ../.. && \
-      cd ..
+      IMAGE="$APP_NAME:develop" && \
+      prepare_new_project && \
+      cd "$WORKBENCH_DIR/$DOCKERFILES_DIR" && \
+      docker build \
+        --file "$DEV_DOCKERFILE" \
+        --tag $IMAGE \
+        . && \
+      docker run \
+        --rm \
+        --tty \
+        --interactive \
+        --name "${APP_NAME}___${ENTRYPOINT_COMMAND}" \
+        --volume $SOURCE_CODE_VOLUME \
+        $IMAGE $CONTAINER_ENTRYPOINT \
+        $ENTRYPOINT_COMMAND $ELIXIR_PROJECT_NAME $@ && \
+      cd ../.. && \
       configure_elixir_files && \
       implement_features
              

@@ -32,7 +32,9 @@ This is a script to create [Elixir](https://elixir-lang.org/) projects with the 
 
 1. Modify the `config.conf` file in order to configure the project name and creation specifications.
 
-1. In order to create a new Phoenix project, run the following command:
+2. Modify the `docker/schemas.sh` file in order to configure the DB.
+
+3. Run the following command:
 
     ```sh
     ./app new

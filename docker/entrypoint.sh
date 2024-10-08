@@ -39,13 +39,7 @@
 
   # setup() <ENV>
     # Run specific setup scripts for given enviroment.
-  setup() {
-    if [ "$1" == "dev" ]; then
-      MIX_ENV="$1" mix setup
-    else
-      MIX_ENV="$1" mix setup.prod
-    fi
-  }
+  setup() { MIX_ENV="$1" mix ecto.drop --force --force-drop && mix ecto.setup; }
 
   # default_cmd()
     # Default command to initialize the server
@@ -62,20 +56,17 @@
     if [ $# -ge 1 ]; then
       PROJECT_NAME=$1 && \
       shift && \
-      # rm -rf config && \
-      cd .. && \
       {
         echo yes
         echo yes
-      } | mix phx.new ./src --app $PROJECT_NAME --verbose $@ && \
-      cd "src" && \
-      export MIX_ENV=prod && \
+      } | mix phx.new ./ --app $PROJECT_NAME --verbose $@ && \
+      MIX_ENV=prod && \
       mix deps.get && \
-      mix deps.compile
+      mix deps.compile && \
+      schemas
 
     elif [ $# -lt 2 ]; then args_error missing
     else args_error too_many; fi
-  elif [ "$1" == "schemas" ];  then schemas;
   elif [ "$1" == "setup" ]; then setup $2;
   elif [ "$1" == "run" ]; then
     shift

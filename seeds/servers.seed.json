@@ -3,9 +3,9 @@
     "1": {
       "Group": "Servers",
       "Name": "Dockerized workbench",
-      "Host": "database_host",
+      "Host": "%{db_host}",
       "MaintenanceDB": "postgres",
-      "Username": "postgres",
+      "Username": "%{db_user}",
       "PassFile": "../var/lib/pgadmin/pgpass",
       "SSLMode": "prefer"
     }

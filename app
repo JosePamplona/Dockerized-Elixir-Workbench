@@ -18,43 +18,54 @@
     export SOURCE_CODE_PATH=$(
       [ "$EXISTING_PROJECT" == true ] && echo $(dirname $PWD) || echo $PWD
     )
-    export    SOURCE_CODE_VOLUME="$SOURCE_CODE_PATH:/app/src"
-    export              APP_NAME=$( echo "$LOWER_CASE" | tr ' ' '-' )
-    export   ELIXIR_PROJECT_NAME=$( echo "$LOWER_CASE" | tr ' ' '_' )
-    export  COMPOSE_PROJECT_NAME=$APP_NAME
-    export       DOCKERFILES_DIR="docker"
-    export        DEV_DOCKERFILE="Dockerfile.dev"
-    export          COMPOSE_FILE="docker-compose.yml"
-    export  CONTAINER_ENTRYPOINT="bash entrypoint.sh"
-    export             SEEDS_DIR="seeds"
-    export              ENV_SEED="seed.env"
-    export           README_SEED="README.seed.md"
-    export        CHANGELOG_SEED="CHANGELOG.seed.md"
-    export  PROD_DOCKERFILE_SEED="Dockerfile.seed.prod"
+    export   SOURCE_CODE_VOLUME="$SOURCE_CODE_PATH:/app/src"
+    export             APP_NAME=$( echo "$LOWER_CASE" | tr ' ' '-' )
+    export  ELIXIR_PROJECT_NAME=$( echo "$LOWER_CASE" | tr ' ' '_' )
+    export COMPOSE_PROJECT_NAME=$APP_NAME
+    export      DOCKERFILES_DIR="docker"
+    export       DEV_DOCKERFILE="Dockerfile.dev"
+    export         COMPOSE_FILE="docker-compose.yml"
+    export CONTAINER_ENTRYPOINT="bash entrypoint.sh"
+    export            SEEDS_DIR="seeds"
+    export             ENV_SEED="seed.env"
+    export          README_SEED="README.seed.md"
+    export       CHANGELOG_SEED="CHANGELOG.seed.md"
+    export PROD_DOCKERFILE_SEED="Dockerfile.seed.prod"
+    export PGADMIN_SERVERS_SEED="servers.seed.json"
+    export    PGADMIN_PASS_SEED="pgpass.seed"
 
+    export   COMPOSE_DOCKERFILE="$DOCKERFILES_DIR/$DEV_DOCKERFILE"    
 
   # Elixir project configuration ---------------------------------------------
-    export     APP_INTERNAL_PORT="4000"
-    export              ENV_FILE=".env"
-    export              MIX_FILE="mix.exs"
-    export           CONFIG_FILE="config/config.exs"
-    export              DEV_FILE="config/dev.exs"
+    export APP_INTERNAL_PORT="4000"
+    export          ENV_FILE=".env"
+    export          MIX_FILE="mix.exs"
+    export       CONFIG_FILE="config/config.exs"
+    export          DEV_FILE="config/dev.exs"
+    export   PROD_DOCKERFILE="Dockerfile"
+
+    export          ENV_PATH="$SOURCE_CODE_PATH/$ENV_FILE"
 
   # Database configuration ---------------------------------------------------
-    export      DB_INTERNAL_PORT="5432"
-    export               DB_USER="postgres"
-    export               DB_PASS="postgres"
-    export               DB_HOST="database_host"
-    export               DB_NAME="${ELIXIR_PROJECT_NAME}_prod"
+    export DB_INTERNAL_PORT="5432"
+    export          DB_USER="postgres"
+    export          DB_PASS="postgres"
+    export          DB_HOST="database_host"
+    export          DB_NAME="${ELIXIR_PROJECT_NAME}_prod"
 
   # PGAdmin configuration ----------------------------------------------------
     export PGADMIN_INTERNAL_PORT="5050"
     export         PGADMIN_EMAIL="pgadmin4@pgadmin.org"
     export      PGADMIN_PASSWORD="pass"
-    export  PGADMIN_SERVERS_FILE="./servers.json"
-    export     PGADMIN_PASS_FILE="./pgpass"
+    export           PGADMIN_DIR="pgadmin"
+    export          SERVERS_FILE="servers.json"
+    export             PASS_FILE="pgpass"
+
+    export  PGADMIN_SERVERS_PATH="$SOURCE_CODE_PATH/$PGADMIN_DIR/$SERVERS_FILE"
+    export     PGADMIN_PASS_PATH="$SOURCE_CODE_PATH/$PGADMIN_DIR/$PASS_FILE"
 
   # Console text format codes ------------------------------------------------
+    #      Dark-red
     export C1="\x1B[38;5;1m"
     #      Bold        Reset
     export B="\x1B[1m" R="\x1B[0m"
@@ -168,9 +179,9 @@
     fi
   }
 
-  # configure_elixir_files
+  # configure_files
     # After project creation it configures some elixir files and add new ones.
-  configure_elixir_files() {
+  configure_files() {
     # FUNCTIONS --------------------------------------------------------------
 
       # pattern <action>, <file>, <pattern_identifier>, <new_content>
@@ -210,6 +221,28 @@
           mv "$temp_file" "$file"
         
         else args_error "Invalid action."; fi
+      }
+
+      # create_pgpass
+        # Create a pgpass file from seed for PGAdmin.
+      create_pgpass() {
+        local PASS_PATH="$WORKBENCH_DIR/$PGADMIN_DIR/$PASS_FILE"
+
+        cp "$WORKBENCH_DIR/$SEEDS_DIR/$PGADMIN_PASS_SEED" $PASS_PATH && \
+        sed -i "s/%{db_host}/$DB_HOST/" $PASS_PATH && \
+        sed -i "s/%{db_port}/$DB_PORT/" $PASS_PATH && \
+        sed -i "s/%{db_user}/$DB_USER/" $PASS_PATH && \
+        sed -i "s/%{db_pass}/$DB_PASS/" $PASS_PATH
+      }
+
+      # create_servers_json
+        # Create a servers.json file from seed for PGAdmin.
+      create_servers_json() {
+        local SERVERS_PATH="$WORKBENCH_DIR/$PGADMIN_DIR/$SERVERS_FILE"
+
+        cp "$WORKBENCH_DIR/$SEEDS_DIR/$PGADMIN_SERVERS_SEED" $SERVERS_PATH && \
+        sed -i "s/%{db_host}/$DB_HOST/" $SERVERS_PATH && \
+        sed -i "s/%{db_user}/$DB_USER/" $SERVERS_PATH
       }
 
       # adjust_mix
@@ -270,7 +303,7 @@
             tr -dc 'a-zA-Z0-9' | \
             head -c 64
         )
-        local DB_URL="ecto:\/\/$DB_USER:$DB_PASS@$DB_HOST\/$DB_NAME?ssl=true"
+        local DB_URL="ecto:\/\/$DB_USER:$DB_PASS@$DB_HOST\/$DB_NAME"
 
         cp "$WORKBENCH_DIR/$SEEDS_DIR/$ENV_SEED" $ENV_FILENAME && \
         if [ "$AUTH0" == true ]
@@ -284,7 +317,8 @@
         sed -i "s/%{app_internal_port}/$APP_INTERNAL_PORT/" $ENV_FILENAME && \
         sed -i "s/%{secret_key_base}/$SECRET_KEY_BASE/" $ENV_FILENAME && \
         sed -i "s/%{database_url}/$DB_URL/" $ENV_FILENAME && \
-        sed -i "s/%{app_name}/$APP_NAME/" $ENV_FILENAME
+        sed -i "s/%{app_name}/$APP_NAME/" $ENV_FILENAME && \
+        sed -i '1i\.env\n' .gitignore
       }
 
       # create_changelog
@@ -341,7 +375,6 @@
         # Adjust elixir, erlang and debian versions into Dockerfile.
         # Adjust project name directory for build path in Dockerfile.
       create_prod_dockerfile(){
-        local PROD_DOCKERFILE_FILENAME="Dockerfile"
         local DEV_SEED="$WORKBENCH_DIR/$DOCKERFILES_DIR/$DEV_DOCKERFILE"
         local APP_DIRNAME=$ELIXIR_PROJECT_NAME
         local ELIXIR_VERSION=$(
@@ -356,14 +389,20 @@
 
         cp \
           "$WORKBENCH_DIR/$SEEDS_DIR/$PROD_DOCKERFILE_SEED" \
-          $PROD_DOCKERFILE_FILENAME && \
-        sed -i "s/%{app_dirname}/$APP_DIRNAME/" $PROD_DOCKERFILE_FILENAME
-        sed -i "s/%{elixir_version}/$ELIXIR_VERSION/" $PROD_DOCKERFILE_FILENAME
-        sed -i "s/%{eralng_version}/$ERLANG_VERSION/" $PROD_DOCKERFILE_FILENAME
-        sed -i "s/%{debian_version}/$DEBIAN_VERSION/" $PROD_DOCKERFILE_FILENAME
+          $PROD_DOCKERFILE && \
+        sed -i "s/%{app_dirname}/$APP_DIRNAME/" $PROD_DOCKERFILE
+        sed -i "s/%{elixir_version}/$ELIXIR_VERSION/" $PROD_DOCKERFILE
+        sed -i "s/%{eralng_version}/$ERLANG_VERSION/" $PROD_DOCKERFILE
+        sed -i "s/%{debian_version}/$DEBIAN_VERSION/" $PROD_DOCKERFILE
       }
 
     # SCRIPT -----------------------------------------------------------------
+      if [ -d "$WORKBENCH_DIR/$PGADMIN_DIR" ];
+      then rm -rf "$WORKBENCH_DIR/$PGADMIN_DIR"
+      fi && \
+      mkdir "$WORKBENCH_DIR/$PGADMIN_DIR" && \
+      create_pgpass && \
+      create_servers_json && \
       adjust_mix && \
       adjust_config && \
       adjust_config_dev && \
@@ -379,25 +418,25 @@
       # implement_healthcheck
         #
       implement_healthcheck(){
-        echo "---------------------> 1"
+        echo "---------------------> implement_healthcheck"
       }
 
       # implement_auth0
         #
       implement_auth0(){
-        echo "---------------------> 2"
+        echo "---------------------> implement_auth0"
       }
 
       # implement_stripe
         #
       implement_stripe(){
-        echo "---------------------> 3"
+        echo "---------------------> implement_stripe"
       }
 
       # implement_graphql
         #
       implement_graphql(){
-        echo "---------------------> 4"
+        echo "---------------------> implement_graphql"
       }
 
     # SCRIPT -----------------------------------------------------------------
@@ -461,18 +500,18 @@
         $IMAGE $CONTAINER_ENTRYPOINT \
         $ENTRYPOINT_COMMAND $ELIXIR_PROJECT_NAME $@ && \
       cd ../.. && \
-      configure_elixir_files && \
+      configure_files && \
       implement_features
              
     elif [ $1 == "setup" ]; then
       ENTRYPOINT_COMMAND=$1 && \
       shift && \
-      if [ "$1" == "--prod" ]
-      then ENV_ARG=prod
+      if [ $# -gt 1 ] && [ "$1" == "--env" ]
+      then ENV_ARG="$2"
       else ENV_ARG=dev
       fi && \
-      export COMPOSE_DOCKERFILE=$DEVELOP_DOCKERFILE && \
-      docker compose --file $COMPOSE_FILE run \
+      export COMPOSE_DOCKERFILE=$DEV_DOCKERFILE && \
+      docker compose --file "$DOCKERFILES_DIR/$COMPOSE_FILE" run \
         --build \
         --rm \
         --name "${APP_NAME}___${ENTRYPOINT_COMMAND}" \
@@ -480,20 +519,33 @@
         app $CONTAINER_ENTRYPOINT $ENTRYPOINT_COMMAND $ENV_ARG
         
     elif [ $1 == "up" ]; then
+
       shift && \
-      if [ "$1" == "--prod" ]; then
-        export COMPOSE_DOCKERFILE=$PRODUCTION_DOCKERFILE
-      else
-        export COMPOSE_DOCKERFILE=$DEVELOP_DOCKERFILE
+      if [ $# -gt 1 ] && [ "$1" == "--env" ]
+      then ENV_ARG="$2"
+      else ENV_ARG=dev
       fi && \
-      docker compose --file $COMPOSE_FILE up --build
+      if [ "$ENV_ARG" == "prod" ]
+      then
+        cd .. && \
+        ls
+        export COMPOSE_DOCKERFILE="../../$PROD_DOCKERFILE" && \
+        docker compose \
+          --file "$WORKBENCH_DIR/$DOCKERFILES_DIR/$COMPOSE_FILE" up \
+          --build
+      else
+        export COMPOSE_DOCKERFILE=$DEV_DOCKERFILE && \
+        docker compose \
+          --file "$DOCKERFILES_DIR/$COMPOSE_FILE" up \
+          --build
+      fi
 
     elif [ $1 == "run" ]; then
       ENTRYPOINT_COMMAND=$1 && \
       shift && \
       if [ $# -gt 0 ]; then   
-        export COMPOSE_DOCKERFILE=$DEVELOP_DOCKERFILE && \
-        docker compose --file $COMPOSE_FILE run \
+        export COMPOSE_DOCKERFILE=$DEV_DOCKERFILE && \
+        docker compose --file "$DOCKERFILES_DIR/$COMPOSE_FILE" run \
           --build \
           --rm \
           --name "${APP_NAME}___${ENTRYPOINT_COMMAND}" \

@@ -1,62 +1,68 @@
 #!/bin/bash
-# v0.0.0
-#
-# ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-# ┃ Elixir App management script ┃ 
-# ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+# v0.1.0
+# ┏━━━━━━━━━━━━━━━━━━┓
+# ┃ Workbench script ┃ 
+# ┗━━━━━━━━━━━━━━━━━━┛
 #
 # CONFIGURATION ----------------------------------------------------------------
 
   source ./config.conf
-  
-  export          PROJECT_NAME="Lorem Ipsum"
-  LOWER_CASE=$( echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' ) && \
-  export              APP_NAME=$( echo "$LOWER_CASE" | tr ' ' '-' ) && \
-  export   ELIXIR_PROJECT_NAME=$( echo "$LOWER_CASE" | tr ' ' '_' )
-  export  COMPOSE_PROJECT_NAME=$APP_NAME
-  export        CONTAINER_NAME="back-end.elixir"
-  export                 IMAGE="$APP_NAME:develop"
-  export          COMPOSE_FILE="./docker-compose.yml"
-  export    DEVELOP_DOCKERFILE="./Dockerfile.dev"
-  export PRODUCTION_DOCKERFILE="./Dockerfile.prod"
-  export    COMPOSE_DOCKERFILE=$PRODUCTION_DOCKERFILE
-  # TODO changing this variable breaks everything
-  export      SOURCE_CODE_PATH="./src"
-  export    SOURCE_CODE_VOLUME="/$PWD/$SOURCE_CODE_PATH:/app/$SOURCE_CODE_PATH"
-  export              ENV_FILE="./.env"
-  export           README_FILE="./README.md"
-  export    CHANGELOG_FILENAME="CHANGELOG.md"
-  export            ENTRYPOINT="./entrypoint.sh"
 
-  # Database configuration ---------------------------------------------------
-  export      DB_INTERNAL_PORT="5432"
-  export               DB_USER="postgres"
-  export               DB_PASS="postgres"
-  export               DB_HOST="database_host"
-  export               DB_NAME="${ELIXIR_PROJECT_NAME}_prod"
+  # Workbench configuration --------------------------------------------------
+    
+    export WORKBENCH_DIR="_workbench"
+    export LOWER_CASE=$( echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' )
+    export EXISTING_PROJECT=$(
+      [ $(basename $PWD) == $WORKBENCH_DIR ] && echo true || echo false
+    )
+    export SOURCE_CODE_PATH=$(
+      [ "$EXISTING_PROJECT" == true ] && echo $(dirname $PWD) || echo $PWD
+    )
+    export    SOURCE_CODE_VOLUME="$SOURCE_CODE_PATH:/app/src"
+    export              APP_NAME=$( echo "$LOWER_CASE" | tr ' ' '-' )
+    export   ELIXIR_PROJECT_NAME=$( echo "$LOWER_CASE" | tr ' ' '_' )
+    export  COMPOSE_PROJECT_NAME=$APP_NAME
+    export       DOCKERFILES_DIR="docker"
+    export        DEV_DOCKERFILE="Dockerfile.dev"
+    export          COMPOSE_FILE="docker-compose.yml"
+    export  CONTAINER_ENTRYPOINT="bash entrypoint.sh"
+    export             SEEDS_DIR="seeds"
+    export              ENV_SEED="seed.env"
+    export           README_SEED="README.seed.md"
+    export        CHANGELOG_SEED="CHANGELOG.seed.md"
+    export  PROD_DOCKERFILE_SEED="Dockerfile.seed.prod"
 
-  # PGAdmin configuration ----------------------------------------------------
-  export PGADMIN_INTERNAL_PORT="5050"
-  export         PGADMIN_EMAIL="pgadmin4@pgadmin.org"
-  export      PGADMIN_PASSWORD="pass"
-  export  PGADMIN_SERVERS_FILE="./.framework/servers.json"
-  export     PGADMIN_PASS_FILE="./.framework/pgpass"
 
   # Elixir project configuration ---------------------------------------------
-  export     APP_INTERNAL_PORT="4000"
-  export              MIX_FILE="$SOURCE_CODE_PATH/mix.exs"
-  export           CONFIG_FILE="$SOURCE_CODE_PATH/config/config.exs"
-  export              DEV_FILE="$SOURCE_CODE_PATH/config/dev.exs"
+    export     APP_INTERNAL_PORT="4000"
+    export              ENV_FILE=".env"
+    export              MIX_FILE="mix.exs"
+    export           CONFIG_FILE="config/config.exs"
+    export              DEV_FILE="config/dev.exs"
+
+  # Database configuration ---------------------------------------------------
+    export      DB_INTERNAL_PORT="5432"
+    export               DB_USER="postgres"
+    export               DB_PASS="postgres"
+    export               DB_HOST="database_host"
+    export               DB_NAME="${ELIXIR_PROJECT_NAME}_prod"
+
+  # PGAdmin configuration ----------------------------------------------------
+    export PGADMIN_INTERNAL_PORT="5050"
+    export         PGADMIN_EMAIL="pgadmin4@pgadmin.org"
+    export      PGADMIN_PASSWORD="pass"
+    export  PGADMIN_SERVERS_FILE="./servers.json"
+    export     PGADMIN_PASS_FILE="./pgpass"
 
   # Console text format codes ------------------------------------------------
-  export C1="\x1B[38;5;1m"
-  #      Bold        Reset
-  export B="\x1B[1m" R="\x1B[0m"
-  
-  # If echo handles -e option, overrides the command
-  if [ "$(echo -e)" == "" ]; then echo() { command echo -e "$@"; } fi
+    export C1="\x1B[38;5;1m"
+    #      Bold        Reset
+    export B="\x1B[1m" R="\x1B[0m"
 
 # FUNCTIONS --------------------------------------------------------------------
+
+  # If echo handles -e option, overrides the command
+  if [ "$(echo -e)" == "" ]; then echo() { command echo -e "$@"; } fi
 
   # readme
     # Prints readme file
@@ -68,41 +74,11 @@
       "\n." \
       "\n" \
       "\nCommands:" \
-      "\n  ${B}name [project_name]${R}    Set the application name for project creation." \
-      "\n    Arguments:" \
-      "\n      project_name       Project name (Use capital casing with spaces). " \
-      "\n" \
-      "\n  ${B}new [opts]${R}" \
-      "\n    Options:" \
-      "\n      --umbrella         Generate an umbrella project." \
-      "\n      --database         Database adapter for Ecto:" \
-      "\n                           postgres, mysql, mssql, sqlite3" \
-      "\n      --adapter          Http adapter:" \
-      "\n                           cowboy, bandit" \
-      "\n      --no-assets        Equivalent to --no-esbuild and --no-tailwind." \
-      "\n      --no-dashboard     Do not include Phoenix.LiveDashboard." \
-      "\n      --no-ecto          Do not generate Ecto files." \
-      "\n      --no-esbuild       Do not include esbuild dependencies and assets." \
-      "\n      --no-gettext       Do not generate gettext files." \
-      "\n      --no-html          Do not generate HTML views." \
-      "\n      --no-live          Comment out LiveView socket setup in assets/js/app.js." \
-      "\n      --no-mailer        Do not generate Swoosh mailer files." \
-      "\n      --no-tailwind      Do not include tailwind dependencies and assets." \
-      "\n      --binary-id        Use binary_id as primary key type in Ecto schemas." \
-      "\n      --verbose          Use verbose output." \
-      "\n      -v, --version      Prints the Phoenix installer version." \
-      "\n" \
-      "\n  ${B}schemas${R}                Create schema, function, test and migration files." \
-      "\n" \
       "\n  ${B}run [commands...]${R}      Deploy app executing custom entrypoint commands." \
       "\n    Arguments:" \
       "\n      commands...        Command(s) to be executed as app entrypoint. " \
       "\n" \
-      "\n  ${B}set-version [version]${R}  Set application version on different files." \
-      "\n    Arguments:" \
-      "\n      version            Version to set. " \
-      "\n" \
-      "\n  ${B}db-reset [opts]${R}        Drops the database (if any), creates a new one and run a seeding script. (default: --prod)" \
+      "\n  ${B}setup [opts]${R}           Drops the database (if any), creates a new one and run a seeding script. (default: --prod)" \
       "\n    Options:" \
       "\n      --dev              Deploy the app in develop enviroment." \
       "\n      --prod             Deploy the app in production enviroment." \
@@ -151,6 +127,286 @@
     exit 1
   }
 
+  # prepare_new_project
+    # If no project is created, it will move all files into a script directory,
+    # if there is a project created already, will ask for confirmation to delete
+    # all project files.
+  prepare_new_project() {
+    if [ "$EXISTING_PROJECT" == true ]; then
+      # Ask for confirmation. Deletes all files and dirs, excluding the 
+      # script and hiddend files (exept .gitignore, .formatter.exs and .env).
+      confirm \
+        "A project is already created. This action will overwrite all files" \
+        "from the current project." && \
+      cd .. && \
+      find . \
+        -maxdepth 1 \
+        ! -name "." \
+        ! -name ".*" \
+        ! -name "$WORKBENCH_DIR" \
+        -exec rm -rf {} + && \
+      if [ -f ".env" ];           then rm ".env"; fi && \
+      if [ -f ".gitignore" ];     then rm ".gitignore"; fi && \
+      if [ -f ".formatter.exs" ]; then rm ".formatter.exs"; fi
+    else
+      # If a script directory is present its deleted. The script directory is
+      # created. Moves all root files (excluding hiddend files and dirs) into 
+      # the script directory.
+      if   [ -d $WORKBENCH_DIR ]
+      then rm -rf $WORKBENCH_DIR
+      else mkdir $WORKBENCH_DIR
+      fi && \
+      find . -maxdepth 1 \
+        \( -type f -o -type d \) \
+        ! -name "." \
+        ! -name ".*" \
+        ! -name "$WORKBENCH_DIR" \
+        ! -name "$(basename "$0")" \
+        -exec mv -t "$WORKBENCH_DIR" {} + && \
+      cp $0 "$WORKBENCH_DIR/$0" && \
+      rm $0
+    fi
+  }
+
+  # configure_elixir_files
+    # After project creation it configures some elixir files and add new ones.
+  configure_elixir_files() {
+    # FUNCTIONS --------------------------------------------------------------
+
+      # pattern <action>, <file>, <pattern_identifier>, <new_content>
+        # Function to manage seed patterns in the process of creating files.
+        # On the seed files these opening and closing tags exists:
+        #   <!-- workbench-<pattern_identifier> open -->
+        #   <!-- workbench-<pattern_identifier> close -->
+        # Using this function the content between tags can be deleted, replaced 
+        # or keeped depending on the given action:
+        #   action=keep : Delete tags keeping the content between them.
+        #   action=delete : Delete tags and the content between them.
+        #   action=replace : Delete tags replacing the content between them.
+      pattern() {
+        local action="$1" && \
+        local file="$2" && \
+        local pattern_identifier="$3" && \
+        local new_content="$4" && \
+        local start_pattern="<!-- workbench-$pattern_identifier open -->" && \
+        local end_pattern="<!-- workbench-$pattern_identifier close -->" && \
+        local temp_file="$(mktemp)" && \
+        start_pattern=$(echo "$start_pattern" | sed 's/[\/&]/\\&/g') && \
+        end_pattern=$(echo "$end_pattern" | sed 's/[\/&]/\\&/g') && \
+        if   [ $action == "keep" ]; then
+          sed "/$start_pattern/d; /$end_pattern/d" "$file" > "$temp_file" && \
+          mv "$temp_file" "$file"
+
+        elif [ $action == "delete" ]; then
+          sed "/$start_pattern/,/$end_pattern/d" "$file" > "$temp_file"  && \
+          mv "$temp_file" "$file"
+
+        elif [ $action == "replace" ]; then
+          sed "/$start_pattern/,/$end_pattern/{
+              /$start_pattern/d
+              /$end_pattern/d
+              c\\$new_content
+          }" "$file" > "$temp_file" && \
+          mv "$temp_file" "$file"
+        
+        else args_error "Invalid action."; fi
+      }
+
+      # adjust_mix
+        # Modify the version to 0.0.0
+      adjust_mix() {
+        sed -i \
+          "s/version:\s*\"[0-9]*.[0-9]*.[0-9]*\"/version: \"0.0.0\"/" \
+          $MIX_FILE
+      }
+
+      # adjust_config
+        # Configures the timestamps and id types in config.exs file.
+      adjust_config() {
+        if [ ! -z "$TIMESTAMPS" ] || [ ! -z "$ID_TYPE" ]; then
+          # Remove generators config
+          sed -i "s/\(ecto_repos: \[.*.Repo\]\),/\1/" $CONFIG_FILE
+          sed -i "/generators: \[timestamp_type: :utc_datetime\]/d" $CONFIG_FILE
+
+          # Set the database config
+          DATABASE_COMMENT="# Configure your database"
+          DB_CONFIG=""
+          if [ ! -z "$ID_TYPE" ]; then
+            DB_CONFIG+="  migration_primary_key: \[type: :$ID_TYPE\]"
+            if [ ! -z "$TIMESTAMPS" ]; then DB_CONFIG+=",\n"; fi
+          fi
+          if [ ! -z "$TIMESTAMPS" ]; then
+            DB_CONFIG+="  migration_timestamps: [type: :$TIMESTAMPS]"
+          fi
+
+          # Add the config to the file
+          sed -i \
+            "s/ecto_repos: \[\(.*.Repo\)\]/&\n\n$DATABASE_COMMENT\nconfig :$ELIXIR_PROJECT_NAME, \1,\n$DB_CONFIG/" \
+            $CONFIG_FILE
+        fi
+      }
+
+      # adjust_config_dev
+        # Modify the hostname to the Docker DB container hostname.
+        # Allow access to all machines in the Docker network.
+      adjust_config_dev() {
+        sed -i \
+          "s/hostname: \"localhost\"/hostname: \"$DB_HOST\"/" \
+          $DEV_FILE && \
+        sed -i \
+          "s/http: \[ip: {127, 0, 0, 1}/http: \[ip: {0, 0, 0, 0}/" \
+          $DEV_FILE
+      }
+
+      # create_env
+        # Create a new .env file from seed.
+        # According to the workbench/config.conf file it choose the necesary
+        # enviroment variables for the .env file.
+      create_env() {
+        local ENV_FILENAME=".env"
+        local SECRET_KEY_BASE=$(
+          head -c $((64 * 2)) /dev/urandom | \
+            base64 | \
+            tr -dc 'a-zA-Z0-9' | \
+            head -c 64
+        )
+        local DB_URL="ecto:\/\/$DB_USER:$DB_PASS@$DB_HOST\/$DB_NAME?ssl=true"
+
+        cp "$WORKBENCH_DIR/$SEEDS_DIR/$ENV_SEED" $ENV_FILENAME && \
+        if [ "$AUTH0" == true ]
+        then pattern keep $ENV_FILENAME "auth0"
+        else pattern delete $ENV_FILENAME "auth0"
+        fi && \
+        if [ "$STRIPE" == true ]
+        then pattern keep $ENV_FILENAME "stripe"
+        else pattern delete $ENV_FILENAME "stripe"
+        fi && \
+        sed -i "s/%{app_internal_port}/$APP_INTERNAL_PORT/" $ENV_FILENAME && \
+        sed -i "s/%{secret_key_base}/$SECRET_KEY_BASE/" $ENV_FILENAME && \
+        sed -i "s/%{database_url}/$DB_URL/" $ENV_FILENAME && \
+        sed -i "s/%{app_name}/$APP_NAME/" $ENV_FILENAME
+      }
+
+      # create_changelog
+        # Create a new CHANGELOG file from seed.
+        # Set the v0.0.0 entry date to actual date.
+      create_changelog() {
+        local CHANGELOG_FILENAME="CHANGELOG.md"
+        local TODAY_DATE=$( date +%Y-%m-%d )
+
+        cp "$WORKBENCH_DIR/$SEEDS_DIR/$CHANGELOG_SEED" $CHANGELOG_FILENAME && \
+        sed -i "s/%{creation_date}/$TODAY_DATE/" $CHANGELOG_FILENAME
+      }
+
+      # create_readme
+        # Create a new README file from seed.
+        # Adjust project name into README.
+        # According to the workbench/config.conf file it redact the README file.
+      create_readme(){
+        local README_FILENAME="README.md"
+        local ENV_CONTENT=""
+        while IFS= read -r line; do
+            ENV_CONTENT+="    ${line}\n"
+        done < "$ENV_FILE"
+
+        cp "$WORKBENCH_DIR/$SEEDS_DIR/$README_SEED" $README_FILENAME && \
+        pattern replace $README_FILENAME "project" "# $PROJECT_NAME" && \
+        pattern replace \
+          $README_FILENAME \
+          "env" \
+          "    \`\`\`elixir\n$ENV_CONTENT\n    \`\`\`" && \
+        if [ "$HEALTHCHECK" == true ]
+        then pattern keep $README_FILENAME "healthcheck"
+        else pattern delete $README_FILENAME "healthcheck"
+        fi && \
+        if [ "$AUTH0" == true ]
+        then pattern keep $README_FILENAME "auth0"
+        else pattern delete $README_FILENAME "auth0"
+        fi && \
+        if [ "$STRIPE" == true ]
+        then pattern keep $README_FILENAME "stripe"
+        else pattern delete $README_FILENAME "stripe"
+        fi && \
+        if [ "$API_INTERFACE" == "rest" ]; then
+          pattern keep $README_FILENAME "rest" && \
+          pattern delete $README_FILENAME "graphql"
+        elif [ "$API_INTERFACE" == "graphql" ]; then
+          pattern keep $README_FILENAME "graphql" && \
+          pattern delete $README_FILENAME "rest"
+        fi
+      }
+
+      # create_prod_dockerfile
+        # Create a new production Dockerfile file from seed.
+        # Adjust elixir, erlang and debian versions into Dockerfile.
+        # Adjust project name directory for build path in Dockerfile.
+      create_prod_dockerfile(){
+        local PROD_DOCKERFILE_FILENAME="Dockerfile"
+        local DEV_SEED="$WORKBENCH_DIR/$DOCKERFILES_DIR/$DEV_DOCKERFILE"
+        local APP_DIRNAME=$ELIXIR_PROJECT_NAME
+        local ELIXIR_VERSION=$(
+          sed -n 's/.*ARG[[:space:]]*ELIXIR="\([^"]*\)".*/\1/p' $DEV_SEED
+        )
+        local ERLANG_VERSION=$(
+          sed -n 's/.*ARG[[:space:]]*OTP="\([^"]*\)".*/\1/p' $DEV_SEED
+        )
+        local DEBIAN_VERSION=$(
+          sed -n 's/.*ARG[[:space:]]*DEBIAN="\([^"]*\)".*/\1/p' $DEV_SEED
+        )
+
+        cp \
+          "$WORKBENCH_DIR/$SEEDS_DIR/$PROD_DOCKERFILE_SEED" \
+          $PROD_DOCKERFILE_FILENAME && \
+        sed -i "s/%{app_dirname}/$APP_DIRNAME/" $PROD_DOCKERFILE_FILENAME
+        sed -i "s/%{elixir_version}/$ELIXIR_VERSION/" $PROD_DOCKERFILE_FILENAME
+        sed -i "s/%{eralng_version}/$ERLANG_VERSION/" $PROD_DOCKERFILE_FILENAME
+        sed -i "s/%{debian_version}/$DEBIAN_VERSION/" $PROD_DOCKERFILE_FILENAME
+      }
+
+    # SCRIPT -----------------------------------------------------------------
+      adjust_mix && \
+      adjust_config && \
+      adjust_config_dev && \
+      create_env && \
+      create_changelog && \
+      create_readme && \
+      create_prod_dockerfile
+  }
+
+  implement_features() {
+    # FUNCTIONS --------------------------------------------------------------
+
+      # implement_healthcheck
+        #
+      implement_healthcheck(){
+        echo "---------------------> 1"
+      }
+
+      # implement_auth0
+        #
+      implement_auth0(){
+        echo "---------------------> 2"
+      }
+
+      # implement_stripe
+        #
+      implement_stripe(){
+        echo "---------------------> 3"
+      }
+
+      # implement_graphql
+        #
+      implement_graphql(){
+        echo "---------------------> 4"
+      }
+
+    # SCRIPT -----------------------------------------------------------------
+      if [ "$HEALTHCHECK" == true ]; then implement_healthcheck; fi && \
+      if [ "$AUTH0" == true ]; then implement_auth0; fi && \
+      if [ "$STRIPE" == true ]; then implement_stripe; fi && \
+      if [ "$API_INTERFACE" == "graphql" ]; then implement_graphql; fi
+  }
+
 # SCRIPT -----------------------------------------------------------------------
 
   if [ $# -gt 0 ]; then
@@ -165,229 +421,88 @@
           "Github personal access token (classic) is missing." \
           "Try add a token as command argument."
       else
-        # This solves the error:
-        # retrieving credentials from store: error getting credentials -
-        #   err: exit status 1,
-        #   out: `exit status 2: gpg: decryption failed: No secret key`
-        #
-        # rm -rf ~/.password-store/docker-credential-helpers 
-        # gpg --generate-key
-        # pass init <your_generated_gpg-id_public_key>
         GITHUB_USER=$1 && \
         GITHUB_TOKEN=$2 && \
         REGISTRY_SERVER="ghcr.io" && \
         echo $GITHUB_TOKEN | docker login $REGISTRY_SERVER \
           --username $GITHUB_USER \
           --password-stdin
-      fi
 
-    elif [ $1 == "name" ]; then
-      shift && \
-      if [ $# -eq 0 ]; then
-        args_error \
-          "Project name is missing." \
-          "Try add a project name as command argument."
-      else
-        NEW_PROJECT_NAME=$@ && \
-        ESCAPED_CODE_PATH=$(echo "$SOURCE_CODE_PATH" | sed 's/\//\\\//g') && \
-        NEW_LOWER_CASE=$( echo "$NEW_PROJECT_NAME" | tr '[:upper:]' '[:lower:]' ) && \
-        NEW_SNAKE_CASE_NAME=$( echo "$NEW_LOWER_CASE" | tr ' ' '_' ) && \
-        \
-        sed -i "1s/.*/# $NEW_PROJECT_NAME/" $README_FILE && \
-        sed -i "5s/> \*\*.*\*\*/> **$NEW_PROJECT_NAME**/" $README_FILE && \
-        sed -i "s/\(Application \[README.md\](\).*\(\/README.md)\)/\1$ESCAPED_CODE_PATH\2/" $README_FILE && \
-        \
-        sed -i "s/PROJECT_NAME=\".*\"/PROJECT_NAME=\"$NEW_PROJECT_NAME\"/" $0 && \
-        \
-        sed -i "s/ENV APP_NAME=\".*\"/ENV APP_NAME=\"${NEW_SNAKE_CASE_NAME}\"/" \
-          $PRODUCTION_DOCKERFILE && \
-        \
-        echo "Project name \"$NEW_PROJECT_NAME\" succesfully set."
+        # ERROR:
+        # retrieving credentials from store: error getting credentials -
+        #   err: exit status 1,
+        #   out: `exit status 2: gpg: decryption failed: No secret key`
+        #
+        # SOLUTION:
+        # rm -rf ~/.password-store/docker-credential-helpers 
+        # gpg --generate-key
+        # pass init <your_generated_gpg-id_public_key>
       fi
 
     elif [ $1 == "new" ]; then
       # Tarball error will occur on Win11 using a XFAT drive for the repo on
       # mix deps.get
-      #
-      # 1. Generates a new Phoenix project
-      # 2. Configures the elixir project
-      #   2.1. Configuration to properly work with docker
-      #   2.2. Generates .env file
-      #   2.3. Set schema timestamps
-      #   2.4. Set api inteface (REST - GRAPHQL)
-      RUN_COMMAND=$1 && \
-      CHANGELOG_FILE=$SOURCE_CODE_PATH/$CHANGELOG_FILENAME && \
-      shift && \
-      if [ -d $SOURCE_CODE_PATH ]; then
-        confirm \
-          "This action the overwrite the content of $SOURCE_CODE_PATH" \
-          "directory." && \
-        rm -r $SOURCE_CODE_PATH
-      fi && \
-      docker build \
-        --file $DEVELOP_DOCKERFILE \
-        --tag $IMAGE \
-        . && \
-      docker run \
-        --rm \
-        --tty \
-        --interactive \
-        --name "${APP_NAME}___${RUN_COMMAND}" \
-        --volume "$SOURCE_CODE_VOLUME" \
-        $IMAGE $ENTRYPOINT $RUN_COMMAND $ELIXIR_PROJECT_NAME $@ && \
-      sed -i "s/version:\s*\"[0-9]*.[0-9]*.[0-9]*\"/version: \"0.0.0\"/" $MIX_FILE && \
-      sed -i "s/hostname: \"localhost\"/hostname: \"$DB_HOST\"/" $DEV_FILE && \
-      sed -i "s/http: \[ip: {127, 0, 0, 1}/http: \[ip: {0, 0, 0, 0}/" $DEV_FILE && \
-      \
-      echo "# .env" > $ENV_FILE && \
-      echo "export PHX_SERVER=true" >> $ENV_FILE && \
-      echo "export PHX_HOST=localhost" >> $ENV_FILE && \
-      echo "export PORT=$APP_INTERNAL_PORT" >> $ENV_FILE && \
-      echo "export SECRET_KEY_BASE=$(
-        head /dev/urandom | tr -dc '[:alnum:]' | head -c 64
-      )" >> $ENV_FILE && \
-      echo "export DATABASE_URL=ecto://$DB_USER:$DB_PASS@$DB_HOST/$DB_NAME" >> \
-        $ENV_FILE && \
-      \
-      echo "# Changelog" > $CHANGELOG_FILE && \
-      echo "" >> $CHANGELOG_FILE && \
-      echo "All notable changes to this project will be documented in this file." >> $CHANGELOG_FILE && \
-      echo "" >> $CHANGELOG_FILE && \
-      echo "This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and the format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/):" >> $CHANGELOG_FILE && \
-      echo "" >> $CHANGELOG_FILE && \
-      echo "- \`Added\` for new features." >> $CHANGELOG_FILE && \
-      echo "- \`Changed\` for changes in existing functionality." >> $CHANGELOG_FILE && \
-      echo "- \`Deprecated\` for once-stable features removed in upcoming releases." >> $CHANGELOG_FILE && \
-      echo "- \`Removed\` for deprecated features removed in this release." >> $CHANGELOG_FILE && \
-      echo "- \`Fixed\` for any bug fixes." >> $CHANGELOG_FILE && \
-      echo "- \`Security\` to invite users to upgrade in case of vulnerabilities." >> $CHANGELOG_FILE && \
-      echo "" >> $CHANGELOG_FILE && \
-      echo "## [Unreleased] - 0000-00-00" >> $CHANGELOG_FILE && \
-      echo "" >> $CHANGELOG_FILE && \
-      echo "During development, milestones can be added to this section, and once finished working on them, it's only needed to adjust the title to include the version and date." >> $CHANGELOG_FILE && \
-      echo "" >> $CHANGELOG_FILE && \
-      echo "## [0.0.0] - $(date +%Y-%m-%d)" >> $CHANGELOG_FILE && \
-      echo "" >> $CHANGELOG_FILE && \
-      echo "### Added" >> $CHANGELOG_FILE && \
-      echo "" >> $CHANGELOG_FILE && \
-      echo "- Project created." >> $CHANGELOG_FILE && \
-      \
-      if [ ! -z "$TIMESTAMPS" ] || [ ! -z "$ID_TYPE" ]; then
-        # Remove generators config
-        sed -i "s/\(ecto_repos: \[.*.Repo\]\),/\1/" $CONFIG_FILE
-        sed -i "/generators: \[timestamp_type: :utc_datetime\]/d" $CONFIG_FILE
 
-        # Set the database config
-        DATABASE_COMMENT="# Configure your database"
-        DB_CONFIG=""
-        if [ ! -z "$ID_TYPE" ]; then
-          DB_CONFIG+="  migration_primary_key: \[type: :$ID_TYPE\]"
-          if [ ! -z "$TIMESTAMPS" ]; then DB_CONFIG+=",\n"; fi
-        fi
-        if [ ! -z "$TIMESTAMPS" ]; then
-          DB_CONFIG+="  migration_timestamps: [type: :$TIMESTAMPS]"
-        fi
-
-        # Add the config to the file
-        sed -i "s/ecto_repos: \[\(.*.Repo\)\]/&\n\n$DATABASE_COMMENT\nconfig :$ELIXIR_PROJECT_NAME, \1,\n$DB_CONFIG/" $CONFIG_FILE
-      fi
-      
-      # if [ $API_INTERFACE == "graphql" ]; then
-      # 1. create Web.Graphql files
-      #      graphql
-      #        resolvers
-      #          ecto_schema.ex
-      #        schemas
-      #          ecto_schema.ex
-      #        schema.ex
-      # 2. adjust router
-      # 3. add dependencies
-      #      {:absinthe, "~> 1.7"},
-      #      {:absinthe_plug, "~> 1.5"},
-      #      {:absinthe_error_payload, "~> 1.1"},
-      # fi
-      
-      # if [ $HEALTHCHECK == "true" ]; then
-      # fi
-
-    elif [ $1 == "schemas" ]; then
-      # 1. Configures servers.json & pgpass files with credentials for PGAdmin
-      # 3. Generates schema, changesets, context functions, tests and migration files
-      RUN_COMMAND=$1 && \
+      ENTRYPOINT_COMMAND=$1 && \
       shift && \
-      sed -i "s/\"Host\": \"[^\"]\+\"/\"Host\": \"$DB_HOST\"/" \
-        $PGADMIN_SERVERS_FILE && \
-      sed -i "s/\"Username\": \"[^\"]\+\"/\"Username\": \"$DB_USER\"/" \
-        $PGADMIN_SERVERS_FILE && \
-      echo $DB_HOST:$DB_INTERNAL_PORT:\*:$DB_USER:$DB_PASS > $PGADMIN_PASS_FILE && \
-      export COMPOSE_DOCKERFILE=$DEVELOP_DOCKERFILE && \
-      docker compose --file $COMPOSE_FILE run \
-        --build \
-        --rm \
-        --name "${APP_NAME}___${RUN_COMMAND}" \
-        --publish $APP_PORT:$APP_INTERNAL_PORT \
-        app $ENTRYPOINT $RUN_COMMAND
-        
-    elif [ $1 == "db-reset" ]; then
-      RUN_COMMAND=$1 && \
+      # IMAGE="$APP_NAME:develop" && \
+      # prepare_new_project && \
+      # cd "$WORKBENCH_DIR/$DOCKERFILES_DIR" && \
+      # docker build \
+      #   --file "$DEV_DOCKERFILE" \
+      #   --tag $IMAGE \
+      #   . && \
+      # docker run \
+      #   --rm \
+      #   --tty \
+      #   --interactive \
+      #   --name "${APP_NAME}___${ENTRYPOINT_COMMAND}" \
+      #   --volume $SOURCE_CODE_VOLUME \
+      #   $IMAGE $CONTAINER_ENTRYPOINT \
+      #   $ENTRYPOINT_COMMAND $ELIXIR_PROJECT_NAME $@ && \
+      # cd ../.. && \
+      cd ..
+      configure_elixir_files && \
+      implement_features
+             
+    elif [ $1 == "setup" ]; then
+      ENTRYPOINT_COMMAND=$1 && \
       shift && \
-      if [ "$1" == "--dev" ]
-      then ENV_ARG=dev
-      else ENV_ARG=prod
+      if [ "$1" == "--prod" ]
+      then ENV_ARG=prod
+      else ENV_ARG=dev
       fi && \
       export COMPOSE_DOCKERFILE=$DEVELOP_DOCKERFILE && \
       docker compose --file $COMPOSE_FILE run \
         --build \
         --rm \
-        --name "${APP_NAME}___${RUN_COMMAND}" \
+        --name "${APP_NAME}___${ENTRYPOINT_COMMAND}" \
         --publish $APP_PORT:$APP_INTERNAL_PORT \
-        app $ENTRYPOINT $RUN_COMMAND $ENV_ARG
+        app $CONTAINER_ENTRYPOINT $ENTRYPOINT_COMMAND $ENV_ARG
         
     elif [ $1 == "up" ]; then
       shift && \
-      if [ "$1" == "--dev" ]; then
-        export COMPOSE_DOCKERFILE=$DEVELOP_DOCKERFILE
-      else
+      if [ "$1" == "--prod" ]; then
         export COMPOSE_DOCKERFILE=$PRODUCTION_DOCKERFILE
+      else
+        export COMPOSE_DOCKERFILE=$DEVELOP_DOCKERFILE
       fi && \
       docker compose --file $COMPOSE_FILE up --build
 
     elif [ $1 == "run" ]; then
-      RUN_COMMAND=$1 && \
+      ENTRYPOINT_COMMAND=$1 && \
       shift && \
       if [ $# -gt 0 ]; then   
         export COMPOSE_DOCKERFILE=$DEVELOP_DOCKERFILE && \
         docker compose --file $COMPOSE_FILE run \
           --build \
           --rm \
-          --name "${APP_NAME}___${RUN_COMMAND}" \
+          --name "${APP_NAME}___${ENTRYPOINT_COMMAND}" \
           --publish $APP_PORT:$APP_INTERNAL_PORT \
-          app $ENTRYPOINT $RUN_COMMAND $@
+          app $CONTAINER_ENTRYPOINT $ENTRYPOINT_COMMAND $@
 
       else args_error "Missing command for container initialization."; fi
 
-    elif [ $1 == "set-version" ]; then
-      shift
-      if [ $# -eq 0 ]; then
-        args_error "Version is missing. Try add a version as command argument."
-      elif [ $# -eq 1 ]; then
-        export NEW_VERSION=$1
-        if [[ $NEW_VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-          confirm \
-            "This action will update '$MIX_FILE' and '$README_FILE' " \
-            "file contents." && \
-          sed -i "s/version: \"[0-9]*.[0-9]*.[0-9]*\"/version: \"$NEW_VERSION\"/" $MIX_FILE && \
-          sed -i "s/\[version - [0-9]*.[0-9]*.[0-9]*\]/[version - $NEW_VERSION]/" $README_FILE && \
-          sed -i "s/badge\/version-[0-9]*.[0-9]*.[0-9]*/badge\/version-$NEW_VERSION/" $README_FILE && \
-          echo "Version ${B}$NEW_VERSION${R} is now set." && \
-          echo "Don't forget to update the CHANGELOG.md file!"
-        else
-          args_error \
-            "${B}$NEW_VERSION${R} is not a valid version format. " \
-            "Use semantic versioning standard."
-        fi
-
-      else args_error too_many; fi
     elif [ $1 == "prune" ]; then
       export CONTAINERS_TO_STOP="$(docker container ls -q)" && \
       if [ ! -z "$CONTAINERS_TO_STOP" ]; then
@@ -397,9 +512,5 @@
       fi && \
       docker system prune -a --volumes
 
-    else
-      args_error invalid
-    fi
-  else
-    readme
-  fi
+    else args_error invalid; fi
+  else readme; fi

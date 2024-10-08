@@ -1,0 +1,2 @@
+elixir %{elixir_version}-otp-%{erlang_mayor}
+erlang %{erlang_version}

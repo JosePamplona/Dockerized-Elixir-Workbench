@@ -138,27 +138,36 @@
     exit 1
   }
 
+  # scape_for_sed <STRING>
+  scape_for_sed() { echo "$1" | sed 's/[\/&]/\\&/g'; }
+
+  # delete_project_files
+    # Delete all files and dirs, excluding the script directory and hiddend files (exept .gitignore, .formatter.exs and .env).
+  delete_project_files() {
+    find . \
+      -maxdepth 1 \
+      ! -name "." \
+      ! -name ".*" \
+      ! -name "$WORKBENCH_DIR" \
+      -exec rm -rf {} + && \
+    if [ -f ".env" ];           then rm ".env"; fi && \
+    if [ -f ".gitignore" ];     then rm ".gitignore"; fi && \
+    if [ -f ".formatter.exs" ]; then rm ".formatter.exs"; fi
+  }
+
   # prepare_new_project
     # If no project is created, it will move all files into a script directory,
     # if there is a project created already, will ask for confirmation to delete
     # all project files.
   prepare_new_project() {
     if [ "$EXISTING_PROJECT" == true ]; then
-      # Ask for confirmation. Deletes all files and dirs, excluding the 
+      # Deletes all files and dirs, excluding the 
       # script and hiddend files (exept .gitignore, .formatter.exs and .env).
       confirm \
         "A project is already created. This action will overwrite all files" \
         "from the current project." && \
       cd .. && \
-      find . \
-        -maxdepth 1 \
-        ! -name "." \
-        ! -name ".*" \
-        ! -name "$WORKBENCH_DIR" \
-        -exec rm -rf {} + && \
-      if [ -f ".env" ];           then rm ".env"; fi && \
-      if [ -f ".gitignore" ];     then rm ".gitignore"; fi && \
-      if [ -f ".formatter.exs" ]; then rm ".formatter.exs"; fi
+      delete_project_files
     else
       # If a script directory is present its deleted. The script directory is
       # created. Moves all root files (excluding hiddend files and dirs) into 
@@ -177,6 +186,23 @@
       cp $0 "$WORKBENCH_DIR/$0" && \
       rm $0
     fi
+  }
+
+  # delete_project
+    # Ask for confirmation. Deletes all project files, the content of
+    # the script directory to root and delete the emptied script directory.
+  delete_project() {
+    confirm "This action will delete all files from the current project." && \
+    cd .. && \
+    delete_project_files && \
+    cd $WORKBENCH_DIR && \
+    find . -maxdepth 1 \
+      \( -type f -o -type d \) \
+      ! -name "." \
+      ! -name ".*" \
+      -exec mv -t ../ {} + && \
+    cd .. && \
+    rmdir $WORKBENCH_DIR
   }
 
   # configure_files
@@ -202,8 +228,8 @@
         local start_pattern="<!-- workbench-$pattern_identifier open -->" && \
         local end_pattern="<!-- workbench-$pattern_identifier close -->" && \
         local temp_file="$(mktemp)" && \
-        start_pattern=$(echo "$start_pattern" | sed 's/[\/&]/\\&/g') && \
-        end_pattern=$(echo "$end_pattern" | sed 's/[\/&]/\\&/g') && \
+        start_pattern=$(scape_for_sed "$start_pattern") && \
+        end_pattern=$(scape_for_sed "$end_pattern") && \
         if   [ $action == "keep" ]; then
           sed "/$start_pattern/d; /$end_pattern/d" "$file" > "$temp_file" && \
           mv "$temp_file" "$file"
@@ -367,7 +393,8 @@
         elif [ "$API_INTERFACE" == "graphql" ]; then
           pattern keep $README_FILENAME "graphql" && \
           pattern delete $README_FILENAME "rest"
-        fi
+        fi && \
+        sed -i "s/%{project_name}/$PROJECT_NAME/" $README_FILENAME
       }
 
       # create_prod_dockerfile
@@ -377,16 +404,6 @@
       create_prod_dockerfile(){
         local DEV_SEED="$WORKBENCH_DIR/$DOCKERFILES_DIR/$DEV_DOCKERFILE"
         local APP_DIRNAME=$ELIXIR_PROJECT_NAME
-        local ELIXIR_VERSION=$(
-          sed -n 's/.*ARG[[:space:]]*ELIXIR="\([^"]*\)".*/\1/p' $DEV_SEED
-        )
-        local ERLANG_VERSION=$(
-          sed -n 's/.*ARG[[:space:]]*OTP="\([^"]*\)".*/\1/p' $DEV_SEED
-        )
-        local DEBIAN_VERSION=$(
-          sed -n 's/.*ARG[[:space:]]*DEBIAN="\([^"]*\)".*/\1/p' $DEV_SEED
-        )
-
         cp \
           "$WORKBENCH_DIR/$SEEDS_DIR/$PROD_DOCKERFILE_SEED" \
           $PROD_DOCKERFILE && \
@@ -396,7 +413,29 @@
         sed -i "s/%{debian_version}/$DEBIAN_VERSION/" $PROD_DOCKERFILE
       }
 
+      # create_tool_versions
+        # Create a ASDF .tools-versions file from seed.
+      create_tool_versions() {
+        local erlang_mayor=$(echo $ERLANG_VERSION | cut -d '.' -f1)
+        cp \
+          "$WORKBENCH_DIR/$SEEDS_DIR/$TOOLS_VERSIONS_SEED" \
+          $TOOLS_VERSIONS_FILE && \
+        sed -i "s/%{elixir_version}/$ELIXIR_VERSION/" $TOOLS_VERSIONS_FILE && \
+        sed -i "s/%{erlang_version}/$ERLANG_VERSION/" $TOOLS_VERSIONS_FILE && \
+        sed -i "s/%{erlang_mayor}/$erlang_mayor/" $TOOLS_VERSIONS_FILE
+      }
+
     # SCRIPT -----------------------------------------------------------------
+      export ELIXIR_VERSION=$(
+        sed -n 's/.*ARG[[:space:]]*ELIXIR="\([^"]*\)".*/\1/p' $DEV_SEED
+      )
+      export ERLANG_VERSION=$(
+        sed -n 's/.*ARG[[:space:]]*OTP="\([^"]*\)".*/\1/p' $DEV_SEED
+      )
+      export DEBIAN_VERSION=$(
+        sed -n 's/.*ARG[[:space:]]*DEBIAN="\([^"]*\)".*/\1/p' $DEV_SEED
+      )
+
       if [ -d "$WORKBENCH_DIR/$PGADMIN_DIR" ];
       then rm -rf "$WORKBENCH_DIR/$PGADMIN_DIR"
       fi && \
@@ -409,7 +448,38 @@
       create_env && \
       create_changelog && \
       create_readme && \
-      create_prod_dockerfile
+      create_prod_dockerfile && \
+      create_tool_versions
+  }
+
+  # create_docker_compose_file
+    # Create a docker-compose.yml file from script one.
+  create_docker_compose_file() {
+    local scp_env_path=$(scape_for_sed "$ENV_PATH")
+    local scp_src_path=$(scape_for_sed "$SOURCE_CODE_VOLUME")
+    local scp_servers_path=$(scape_for_sed "$PGADMIN_SERVERS_PATH")
+    local scp_pass_path=$(scape_for_sed "$PGADMIN_PASS_PATH")
+    cp "$WORKBENCH_DIR/$DOCKERFILES_DIR/$COMPOSE_FILE"           $COMPOSE_FILE
+    sed -i "s/\$COMPOSE_DOCKERFILE/$COMPOSE_DOCKERFILE/"         $COMPOSE_FILE
+    sed -i "s/\$APP_NAME/$APP_NAME/"                             $COMPOSE_FILE
+    sed -i "s/\$APP_CONTAINER_NAME/$APP_CONTAINER_NAME/"         $COMPOSE_FILE
+    sed -i "s/\$APP_PORT/$APP_PORT/"                             $COMPOSE_FILE
+    sed -i "s/\$APP_INTERNAL_PORT/$APP_INTERNAL_PORT/"           $COMPOSE_FILE
+    sed -i "s/\$ENV_PATH/$scp_env_path/"                         $COMPOSE_FILE
+    sed -i "s/\$SOURCE_CODE_VOLUME/$scp_src_path/"               $COMPOSE_FILE
+    sed -i "s/\$DB_CONTAINER_NAME/$DB_CONTAINER_NAME/"           $COMPOSE_FILE
+    sed -i "s/\$DB_INTERNAL_PORT/$DB_INTERNAL_PORT/"             $COMPOSE_FILE
+    sed -i "s/\$DB_PORT/$DB_PORT/"                               $COMPOSE_FILE
+    sed -i "s/\$DB_HOST/$DB_HOST/"                               $COMPOSE_FILE
+    sed -i "s/\$DB_USER/$DB_USER/"                               $COMPOSE_FILE
+    sed -i "s/\$DB_PASS/$DB_PASS/"                               $COMPOSE_FILE
+    sed -i "s/\$PGADMIN_CONTAINER_NAME/$PGADMIN_CONTAINER_NAME/" $COMPOSE_FILE
+    sed -i "s/\$PGADMIN_EMAIL/$PGADMIN_EMAIL/"                   $COMPOSE_FILE
+    sed -i "s/\$PGADMIN_PASSWORD/$PGADMIN_PASSWORD/"             $COMPOSE_FILE
+    sed -i "s/\$PGADMIN_INTERNAL_PORT/$PGADMIN_INTERNAL_PORT/"   $COMPOSE_FILE
+    sed -i "s/\$PGADMIN_PORT/$PGADMIN_PORT/"                     $COMPOSE_FILE
+    sed -i "s/\$PGADMIN_SERVERS_PATH/$scp_servers_path/"         $COMPOSE_FILE
+    sed -i "s/\$PGADMIN_PASS_PATH/$scp_pass_path/"               $COMPOSE_FILE
   }
 
   implement_features() {
@@ -501,8 +571,25 @@
         $ENTRYPOINT_COMMAND $ELIXIR_PROJECT_NAME $@ && \
       cd ../.. && \
       configure_files && \
+      if [ "$RUN_SCHEMAS_SCRIPT" == true ]; then
+        cd "$WORKBENCH_DIR/$DOCKERFILES_DIR" && \
+        docker run \
+          --rm \
+          --tty \
+          --interactive \
+          --name "${APP_NAME}___${ENTRYPOINT_COMMAND}" \
+          --volume $SOURCE_CODE_VOLUME \
+          $IMAGE $CONTAINER_ENTRYPOINT schemas && \
+        cd ../..
+      fi && \
       implement_features
              
+    elif [ $1 == "delete" ]; then
+      if [ "$EXISTING_PROJECT" == true ]
+      then delete_project
+      else echo "🛑  ${B}${C1}Failure${R}${C1}:${R} There is no project to delete."
+      fi
+        
     elif [ $1 == "setup" ]; then
       ENTRYPOINT_COMMAND=$1 && \
       shift && \
@@ -519,7 +606,6 @@
         app $CONTAINER_ENTRYPOINT $ENTRYPOINT_COMMAND $ENV_ARG
         
     elif [ $1 == "up" ]; then
-
       shift && \
       if [ $# -gt 1 ] && [ "$1" == "--env" ]
       then ENV_ARG="$2"
@@ -528,11 +614,9 @@
       if [ "$ENV_ARG" == "prod" ]
       then
         cd .. && \
-        ls
-        export COMPOSE_DOCKERFILE="../../$PROD_DOCKERFILE" && \
-        docker compose \
-          --file "$WORKBENCH_DIR/$DOCKERFILES_DIR/$COMPOSE_FILE" up \
-          --build
+        export COMPOSE_DOCKERFILE=$PROD_DOCKERFILE && \
+        create_docker_compose_file && \
+        docker compose up --build
       else
         export COMPOSE_DOCKERFILE=$DEV_DOCKERFILE && \
         docker compose \

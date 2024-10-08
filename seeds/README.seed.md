@@ -4,7 +4,9 @@
 #
 <!-- workbench-project close -->
 
-![v0.0.0](https://img.shields.io/badge/version-0.0.0-white.svg?style=flat-squarex&color=lightgray)
+![v0.0.0](https://img.shields.io/badge/version-0.0.0-white.svg?style=flat-square&color=lightgray)
+
+**%{project_name}** project description.
 
 ## API endpoints
 
@@ -77,7 +79,7 @@
 
 1. Run `mix test` in order to run automated tests.
 
-    Alternatively, you can run `mix coverage` in order to run automated test and check its coverage. Also you can set all the `mix test` options like `--trace`, `--seed`, `--max-failures`, etc...
+    Alternatively, you can run `mix test --cover` in order to run automated test and check its coverage. Also you can set options like `--trace`, `--seed`, `--max-failures`, etc. (Full task [test](https://hexdocs.pm/mix/Mix.Tasks.Test.html) documentation).
 
 ## Learn more
 

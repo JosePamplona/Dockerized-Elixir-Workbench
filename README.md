@@ -59,7 +59,7 @@ This is a script to create [Elixir](https://elixir-lang.org/) projects with the 
     ./app up --env ENV
     ```
 
-For both commands the flag `--env` is optional. `ENV` corresponds to the desired enviroment configuration to be deployed, for default is `dev`.
+In both commands the flag `--env` is optional. `ENV` corresponds to the desired enviroment configuration to be deployed, by default is `dev`.
 
 ### Custom commands <!-- omit in toc -->
 

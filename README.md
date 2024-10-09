@@ -3,7 +3,9 @@
 
 # Dockerized Elixir Workbench
 
-![v0.1.0](https://img.shields.io/badge/version-0.1.0-white.svg?style=flat-squarex&color=lightgray)
+![v0.1.0](https://img.shields.io/badge/version-0.1.0-white.svg?style=flat-square&color=lightgray)
+[![License](https://img.shields.io/github/license/JosePamplona/Dockerized-Elixir-Workbench?style=flat-square)](https://github.com/JosePamplona/Dockerized-Elixir-Workbench/blob/main/LICENSE.md)
+[![Last Updated](https://img.shields.io/github/last-commit/JosePamplona/Dockerized-Elixir-Workbench.svg?style=flat-square)](https://github.com/JosePamplona/Dockerized-Elixir-Workbench/commits/main)
 
 This is a script to create [Elixir](https://elixir-lang.org/) projects with the [Phoenix](https://www.phoenixframework.org/) framework and deploy it on `localhost` with a specific service architecture using Docker containers, without the need to install anything other than [Docker Desktop](https://www.docker.com/products/docker-desktop/). Ensuring an application deployment just like it would run in a network-mounted production environment, with the exception that it is deployed on the local machine.
 

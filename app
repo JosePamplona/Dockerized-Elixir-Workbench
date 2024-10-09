@@ -33,18 +33,20 @@
     export PROD_DOCKERFILE_SEED="Dockerfile.seed.prod"
     export PGADMIN_SERVERS_SEED="servers.seed.json"
     export    PGADMIN_PASS_SEED="pgpass.seed"
-
+    export  TOOLS_VERSIONS_SEED="seed.tool-versions"
     export   COMPOSE_DOCKERFILE="$DOCKERFILES_DIR/$DEV_DOCKERFILE"    
 
   # Elixir project configuration ---------------------------------------------
-    export APP_INTERNAL_PORT="4000"
-    export          ENV_FILE=".env"
-    export          MIX_FILE="mix.exs"
-    export       CONFIG_FILE="config/config.exs"
-    export          DEV_FILE="config/dev.exs"
-    export   PROD_DOCKERFILE="Dockerfile"
-
-    export          ENV_PATH="$SOURCE_CODE_PATH/$ENV_FILE"
+    export   APP_INTERNAL_PORT="4000"
+    export            ENV_FILE=".env"
+    export            MIX_FILE="mix.exs"
+    export         CONFIG_FILE="config/config.exs"
+    export            DEV_FILE="config/dev.exs"
+    export     PROD_DOCKERFILE="Dockerfile"
+    export      GITIGNORE_FILE=".gitignore"
+    export TOOLS_VERSIONS_FILE=".tool-versions"
+    export      FORMATTER_FILE=".formatter.exs"
+    export            ENV_PATH="$SOURCE_CODE_PATH/$ENV_FILE"
 
   # Database configuration ---------------------------------------------------
     export DB_INTERNAL_PORT="5432"
@@ -150,9 +152,10 @@
       ! -name ".*" \
       ! -name "$WORKBENCH_DIR" \
       -exec rm -rf {} + && \
-    if [ -f ".env" ];           then rm ".env"; fi && \
-    if [ -f ".gitignore" ];     then rm ".gitignore"; fi && \
-    if [ -f ".formatter.exs" ]; then rm ".formatter.exs"; fi
+    if [ -f "$ENV_FILE" ];            then rm "$ENV_FILE"; fi && \
+    if [ -f "$GITIGNORE_FILE" ];      then rm "$GITIGNORE_FILE"; fi && \
+    if [ -f "$TOOLS_VERSIONS_FILE" ]; then rm "$TOOLS_VERSIONS_FILE"; fi && \
+    if [ -f "$FORMATTER_FILE" ];      then rm "$FORMATTER_FILE"; fi
   }
 
   # prepare_new_project
@@ -344,7 +347,14 @@
         sed -i "s/%{secret_key_base}/$SECRET_KEY_BASE/" $ENV_FILENAME && \
         sed -i "s/%{database_url}/$DB_URL/" $ENV_FILENAME && \
         sed -i "s/%{app_name}/$APP_NAME/" $ENV_FILENAME && \
-        sed -i '1i\.env\n' .gitignore
+        sed -i "1i\\$TOOLS_VERSIONS_FILE\\n" $GITIGNORE_FILE && \
+        sed -i \
+          "1i\\# ASDF .tools-versions file." \
+          $GITIGNORE_FILE && \
+        sed -i "1i\\$ENV_FILE\\n" $GITIGNORE_FILE && \
+        sed -i \
+          "1i\\# Secrets required to configure the application." \
+          $GITIGNORE_FILE
       }
 
       # create_changelog
@@ -402,7 +412,6 @@
         # Adjust elixir, erlang and debian versions into Dockerfile.
         # Adjust project name directory for build path in Dockerfile.
       create_prod_dockerfile(){
-        local DEV_SEED="$WORKBENCH_DIR/$DOCKERFILES_DIR/$DEV_DOCKERFILE"
         local APP_DIRNAME=$ELIXIR_PROJECT_NAME
         cp \
           "$WORKBENCH_DIR/$SEEDS_DIR/$PROD_DOCKERFILE_SEED" \
@@ -426,6 +435,7 @@
       }
 
     # SCRIPT -----------------------------------------------------------------
+      local DEV_SEED="$WORKBENCH_DIR/$DOCKERFILES_DIR/$DEV_DOCKERFILE"
       export ELIXIR_VERSION=$(
         sed -n 's/.*ARG[[:space:]]*ELIXIR="\([^"]*\)".*/\1/p' $DEV_SEED
       )

@@ -1,9 +1,10 @@
 {
   "Servers": {
     "1": {
-      "Group": "Servers",
-      "Name": "Dockerized workbench",
+      "Group": "Dockerized workbench",
+      "Name": "%{project_name}",
       "Host": "%{db_host}",
+      "Port": %{db_port},
       "MaintenanceDB": "postgres",
       "Username": "%{db_user}",
       "PassFile": "../var/lib/pgadmin/pgpass",

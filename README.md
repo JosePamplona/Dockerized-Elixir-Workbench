@@ -24,11 +24,11 @@ This is a script to create [Elixir](https://elixir-lang.org/) projects with the 
 
 | Service  | URL | Description |
 | :-- | :-- | :-- |
-| app      | http://localhost:4000 | API-REST & GraphiQL server |
-| database | http://localhost:5432 | PostgreSQL database server |
-| pgadmin  | http://localhost:5050 | PGAdmin server |
-| Stripe  | https://api.stripe.com:433 | Stripe API service |
-| Auth0  | https://dev-tenant.us.auth0.com:433 | Auth0 authentication service |
+| Elixir App  | http://localhost:4000 | API-REST and/or GraphiQL server |
+| Postgres DB | http://localhost:5432 | Relational database server |
+| pgAdmin     | http://localhost:5050 | Database management tool |
+| Stripe      | https://api.stripe.com:433 | Payment service provider |
+| Auth0       | https://dev-tenant.us.auth0.com:433 | Identity management platform |
 
 ## Create a new project
 

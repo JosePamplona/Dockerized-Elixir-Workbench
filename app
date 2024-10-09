@@ -62,9 +62,9 @@
     export           PGADMIN_DIR="pgadmin"
     export          SERVERS_FILE="servers.json"
     export             PASS_FILE="pgpass"
-
-    export  PGADMIN_SERVERS_PATH="$SOURCE_CODE_PATH/$PGADMIN_DIR/$SERVERS_FILE"
-    export     PGADMIN_PASS_PATH="$SOURCE_CODE_PATH/$PGADMIN_DIR/$PASS_FILE"
+    export          PGADMIN_PATH="$SOURCE_CODE_PATH/$WORKBENCH_DIR/$PGADMIN_DIR"
+    export  PGADMIN_SERVERS_PATH="$PGADMIN_PATH/$SERVERS_FILE"
+    export     PGADMIN_PASS_PATH="$PGADMIN_PATH/$PASS_FILE"
 
   # Console text format codes ------------------------------------------------
     #      Dark-red
@@ -270,7 +270,9 @@
         local SERVERS_PATH="$WORKBENCH_DIR/$PGADMIN_DIR/$SERVERS_FILE"
 
         cp "$WORKBENCH_DIR/$SEEDS_DIR/$PGADMIN_SERVERS_SEED" $SERVERS_PATH && \
+        sed -i "s/%{project_name}/$PROJECT_NAME/" $SERVERS_PATH && \
         sed -i "s/%{db_host}/$DB_HOST/" $SERVERS_PATH && \
+        sed -i "s/%{db_port}/$DB_PORT/" $SERVERS_PATH && \
         sed -i "s/%{db_user}/$DB_USER/" $SERVERS_PATH
       }
 

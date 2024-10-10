@@ -6,84 +6,86 @@
 
   source ./config.conf
 
+  WORKBENCH_DIR="_workbench"
+  LOWER_CASE=$( echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' )
+  EXISTING_PROJECT=$(
+    [ $(basename $PWD) == $WORKBENCH_DIR ] && echo true || echo false
+  )
+  SOURCE_CODE_PATH=$(
+    [ $EXISTING_PROJECT == true ] && echo $(dirname $PWD) || echo $PWD
+  )
+
   # Export variables for docker-compose.yml script ---------------------------
 
-    WORKBENCH_DIR="_workbench"
-    LOWER_CASE=$( echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' )
-    EXISTING_PROJECT=$(
-      [ $(basename $PWD) == $WORKBENCH_DIR ] && echo true || echo false
-    )
-    SOURCE_CODE_PATH=$(
-      [ "$EXISTING_PROJECT" == true ] && echo $(dirname $PWD) || echo $PWD
-    )
-
-    export APP_NAME=$( echo "$LOWER_CASE" | tr ' ' '-' )
-    export SOURCE_CODE_VOLUME="$SOURCE_CODE_PATH:/app/src"
-    export COMPOSE_PROJECT_NAME=$APP_NAME
-    export COMPOSE_DOCKERFILE=$PROD_DOCKERFILE
-    # Elixir configuration
-    export APP_INTERNAL_PORT="4000"
-    export ENV_PATH="$SOURCE_CODE_PATH/$ENV_FILE"
-    # Database
-    export DB_INTERNAL_PORT="5432"
-    export DB_USER="postgres"
-    export DB_PASS="postgres"
-    export DB_HOST="database_host"
-    # PGAdmin
-    export PGADMIN_INTERNAL_PORT="5050"
-    export PGADMIN_EMAIL="pgadmin4@pgadmin.org"
-    export PGADMIN_PASSWORD="pass"
-    export PGADMIN_SERVERS_PATH="$PGADMIN_PATH/$SERVERS_FILE"
-    export PGADMIN_PASS_PATH="$PGADMIN_PATH/$PASS_FILE"
+  # Compose project configuration
+  export APP_NAME=$( echo "$LOWER_CASE" | tr ' ' '-' )
+  export SOURCE_CODE_VOLUME="$SOURCE_CODE_PATH:/app/src"
+  export COMPOSE_PROJECT_NAME=$APP_NAME
+  export COMPOSE_DOCKERFILE=$PROD_DOCKERFILE
+  # App configuration
+  export APP_INTERNAL_PORT="4000"
+  export ENV_PATH="$SOURCE_CODE_PATH/$ENV_FILE"
+  # Database configuration
+  export DB_INTERNAL_PORT="5432"
+  export DB_USER="postgres"
+  export DB_PASS="postgres"
+  export DB_HOST="database_host"
+  # PGAdmin configuration
+  export PGADMIN_INTERNAL_PORT="5050"
+  export PGADMIN_EMAIL="pgadmin4@pgadmin.org"
+  export PGADMIN_PASSWORD="pass"
+  export PGADMIN_SERVERS_PATH="$PGADMIN_PATH/$SERVERS_FILE"
+  export PGADMIN_PASS_PATH="$PGADMIN_PATH/$PASS_FILE"
 
   # Workbench configuration --------------------------------------------------
 
-    # Scripts
-    SCRIPTS_DIR="scripts"
-    ENTRYPOINT_FILE="entrypoint.sh"
-    SCHEMAS_FILE="schemas.sh"
-    DEV_DOCKERFILE="Dockerfile.dev"
-    PROD_DOCKERFILE="Dockerfile"
-    COMPOSE_FILE="docker-compose.yml"
-    CONTAINER_ENTRYPOINT="bash $ENTRYPOINT_FILE"
-    # Seeds
-    SEEDS_DIR="seeds"
-    ENV_SEED="seed.env"
-    README_SEED="README.seed.md"
-    CHANGELOG_SEED="CHANGELOG.seed.md"
-    DEV_DOCKERFILE_SEED="Dockerfile.seed.dev"
-    PROD_DOCKERFILE_SEED="Dockerfile.seed.prod"
-    PGADMIN_SERVERS_SEED="servers.seed.json"
-    PGADMIN_PASS_SEED="pgpass.seed"
-    TOOLS_VERSIONS_SEED="seed.tool-versions"
+  # Scripts
+  SCRIPTS_DIR="scripts"
+  ENTRYPOINT_FILE="entrypoint.sh"
+  SCHEMAS_FILE="schemas.sh"
+  DEV_DOCKERFILE="Dockerfile.dev"
+  PROD_DOCKERFILE="Dockerfile"
+  COMPOSE_FILE="docker-compose.yml"
+  CONTAINER_ENTRYPOINT="bash $ENTRYPOINT_FILE"
+  # Seeds
+  SEEDS_DIR="seeds"
+  ENV_SEED="seed.env"
+  README_SEED="README.seed.md"
+  CHANGELOG_SEED="CHANGELOG.seed.md"
+  DEV_DOCKERFILE_SEED="Dockerfile.seed.dev"
+  PROD_DOCKERFILE_SEED="Dockerfile.seed.prod"
+  PGADMIN_SERVERS_SEED="servers.seed.json"
+  PGADMIN_PASS_SEED="pgpass.seed"
+  TOOLS_VERSIONS_SEED="seed.tool-versions"
 
-    # Elixir project configuration
-    ELIXIR_PROJECT_NAME=$( echo "$LOWER_CASE" | tr ' ' '_' )
-    ENV_FILE=".env"
-    MIX_FILE="mix.exs"
-    CONFIG_FILE="config/config.exs"
-    DEV_FILE="config/dev.exs"
-    README_FILE="README.md"
-    CHANGELOG_FILE="CHANGELOG.md"
-    PROD_DOCKERFILE="Dockerfile"
-    GITIGNORE_FILE=".gitignore"
-    TOOLS_VERSIONS_FILE=".tool-versions"
-    FORMATTER_FILE=".formatter.exs"
+  # Elixir project configuration
+  ELIXIR_PROJECT_NAME=$( echo "$LOWER_CASE" | tr ' ' '_' )
+  ENV_FILE=".env"
+  MIX_FILE="mix.exs"
+  CONFIG_FILE="config/config.exs"
+  DEV_FILE="config/dev.exs"
+  README_FILE="README.md"
+  CHANGELOG_FILE="CHANGELOG.md"
+  PROD_DOCKERFILE="Dockerfile"
+  GITIGNORE_FILE=".gitignore"
+  FORMATTER_FILE=".formatter.exs"
+  TOOLS_VERSIONS_FILE=".tool-versions"
 
-    # Database configuration
-    DB_NAME="${ELIXIR_PROJECT_NAME}_prod"
+  # Database configuration
+  DB_NAME="${ELIXIR_PROJECT_NAME}_prod"
 
-    # PGAdmin configuration
-    PGADMIN_DIR="pgadmin"
-    SERVERS_FILE="servers.json"
-    PASS_FILE="pgpass"
-    PGADMIN_PATH="$SOURCE_CODE_PATH/$WORKBENCH_DIR/$PGADMIN_DIR"
+  # PGAdmin configuration
+  PGADMIN_DIR="pgadmin"
+  SERVERS_FILE="servers.json"
+  PASS_FILE="pgpass"
+  PGADMIN_PATH="$SOURCE_CODE_PATH/$WORKBENCH_DIR/$PGADMIN_DIR"
 
   # Console text format codes ------------------------------------------------
-    #      Dark-red
-    C1="\x1B[38;5;1m"
-    #      Bold        Reset
-    B="\x1B[1m" R="\x1B[0m"
+
+  #      Dark-red
+  C1="\x1B[38;5;1m"
+  #      Bold        Reset
+  B="\x1B[1m" R="\x1B[0m"
 
 # FUNCTIONS --------------------------------------------------------------------
 
@@ -199,7 +201,7 @@
 
     # SCRIPT -----------------------------------------------------------------
 
-      if [ "$EXISTING_PROJECT" == true ]; then
+      if [ $EXISTING_PROJECT == true ]; then
         # Deletes all files and dirs, excluding the 
         # script and hiddend files (exept .gitignore, .formatter.exs and .env).
         confirm \
@@ -689,7 +691,6 @@
         docker compose \
           --file "$SCRIPTS_DIR/$COMPOSE_FILE" up \
           --build
-        
       fi
 
     elif [ $1 == "run" ]; then
@@ -707,7 +708,7 @@
       else args_error "Missing command for container initialization."; fi
 
     elif [ $1 == "delete" ]; then
-      if [ "$EXISTING_PROJECT" == true ]; then
+      if [ $EXISTING_PROJECT == true ]; then
         delete_project && \
         docker compose down -v --rmi all --remove-orphans
 
@@ -729,7 +730,7 @@
 
     elif [ $1 == "demo" ]; then
       WORKBENCH_SCRIPT="./$0"
-      [ "$EXISTING_PROJECT" == true ] && export WORKBENCH_DIR="."
+      [ $EXISTING_PROJECT == true ] && WORKBENCH_DIR="."
       
       eval \
         "$WORKBENCH_SCRIPT new && " \

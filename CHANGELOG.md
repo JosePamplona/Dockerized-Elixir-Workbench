@@ -18,6 +18,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 <!-- ## v0.0.0 - (0000-00-00) -->
 
 - solve with compose env variable the hostaname selection on dev config.exs
+- db port change breask pgadmin maybe back
 
 ## v0.1.0 - (2024-10-07)
 

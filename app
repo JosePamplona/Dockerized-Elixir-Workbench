@@ -656,22 +656,10 @@
       fi && \
       implement_features
              
-    elif [ $1 == "delete" ]; then
-      if [ "$EXISTING_PROJECT" == true ]
-      then delete_project
-      else
-        echo \
-          "🛑  ${B}${C1}Failure${R}${C1}:${R}" \
-          "There is no project to delete."
-      fi
-        
     elif [ $1 == "setup" ]; then
       ENTRYPOINT_COMMAND=$1 && \
       shift && \
-      if [ $# -gt 1 ] && [ "$1" == "--env" ]
-      then ENV_ARG="$2"
-      else ENV_ARG=dev
-      fi && \
+      [ $# -gt 1 ] && [ "$1" == "--env" ] && ENV_ARG="$2" || ENV_ARG=dev && \
       export COMPOSE_DOCKERFILE=$DEV_DOCKERFILE && \
       docker compose --file "$SCRIPTS_DIR/$COMPOSE_FILE" run \
         --build \
@@ -682,21 +670,19 @@
         
     elif [ $1 == "up" ]; then
       shift && \
-      if [ $# -gt 1 ] && [ "$1" == "--env" ]
-      then ENV_ARG="$2"
-      else ENV_ARG=dev
-      fi && \
-      if [ "$ENV_ARG" == "prod" ]
-      then
+      [ $# -gt 1 ] && [ "$1" == "--env" ] && ENV_ARG="$2" || ENV_ARG=dev && \
+      if [ "$ENV_ARG" == "prod" ]; then
         cd .. && \
         export COMPOSE_DOCKERFILE=$PROD_DOCKERFILE && \
         create_docker_compose_file && \
         docker compose up --build
+
       else
         export COMPOSE_DOCKERFILE=$DEV_DOCKERFILE && \
         docker compose \
           --file "$SCRIPTS_DIR/$COMPOSE_FILE" up \
           --build
+        
       fi
 
     elif [ $1 == "run" ]; then
@@ -713,14 +699,33 @@
 
       else args_error "Missing command for container initialization."; fi
 
+    elif [ $1 == "delete" ]; then
+      if [ "$EXISTING_PROJECT" == true ]; then
+        delete_project
+
+      else
+        echo \
+          "🛑  ${B}${C1}Failure${R}${C1}:${R}" \
+          "There is no project to delete."
+      fi
+        
     elif [ $1 == "prune" ]; then
-      export CONTAINERS_TO_STOP="$(docker container ls -q)" && \
+      export CONTAINERS_TO_STOP="" && \
       if [ ! -z "$CONTAINERS_TO_STOP" ]; then
         echo "Stopping all containers...\n" && \
         docker stop $CONTAINERS_TO_STOP && \
         echo "\nAll containers are Stopped.\n"
       fi && \
       docker system prune -a --volumes
+
+    elif [ $1 == "demo" ]; then
+      export WORKBENCH_SCRIPT="./$0"
+      eval \
+        "$WORKBENCH_SCRIPT new && " \
+        "cd $WORKBENCH_DIR && " \
+        "$WORKBENCH_SCRIPT setup && " \
+        "$WORKBENCH_SCRIPT up &&" \
+        "$WORKBENCH_SCRIPT delete"
 
     else args_error invalid; fi
   else readme; fi

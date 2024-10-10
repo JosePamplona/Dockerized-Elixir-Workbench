@@ -221,25 +221,6 @@
       create_dockerfile_dev
   }
 
-  # delete_project
-    # Ask for confirmation. Deletes all project files, the content of
-    # the script directory to root and delete the emptied script directory.
-  delete_project() {
-    confirm "This action will delete all files from the current project." && \
-    cd .. && \
-    delete_project_files && \
-    cd $WORKBENCH_DIR && \
-    find . -maxdepth 1 \
-      \( -type f -o -type d \) \
-      ! -name "." \
-      ! -name ".*" \
-      -exec mv -t ../ {} + && \
-    cd .. && \
-    rmdir $WORKBENCH_DIR
-    rm -rf $PGADMIN_DIR
-    rm "$SCRIPTS_DIR/$DEV_DOCKERFILE"
-  }
-
   # configure_files
     # After project creation it configures some elixir files and add new ones.
   configure_files() {
@@ -386,7 +367,9 @@
         sed -i "s/%{app_name}/$APP_NAME/" $file_path
       }
 
-      modify_gitignore() {
+      # adjust_gitignore
+        # Prepends .tool-sersions and .env filess.
+      adjust_gitignore() {
         sed -i "1i\\$TOOLS_VERSIONS_FILE\\n" $GITIGNORE_FILE && \
         sed -i \
           "1i\\# ASDF .tools-versions file." \
@@ -494,6 +477,7 @@
       adjust_mix && \
       adjust_config && \
       adjust_config_dev && \
+      adjust_gitignore && \
       create_env && \
       create_changelog && \
       create_readme && \
@@ -565,11 +549,43 @@
         echo "---------------------> implement_graphql"
       }
 
+      # 1. create Web.Graphql files
+      #      graphql
+      #        resolvers
+      #          ecto_schema.ex
+      #        schemas
+      #          ecto_schema.ex
+      #        schema.ex
+      # 2. adjust router
+      # 3. add dependencies
+      #      {:absinthe, "~> 1.7"},
+      #      {:absinthe_plug, "~> 1.5"},
+      #      {:absinthe_error_payload, "~> 1.1"},
+
     # SCRIPT -----------------------------------------------------------------
       if [ "$HEALTHCHECK" == true ]; then implement_healthcheck; fi && \
       if [ "$AUTH0" == true ]; then implement_auth0; fi && \
       if [ "$STRIPE" == true ]; then implement_stripe; fi && \
       if [ "$API_INTERFACE" == "graphql" ]; then implement_graphql; fi
+  }
+
+  # delete_project
+    # Ask for confirmation. Deletes all project files, the content of
+    # the script directory to root and delete the emptied script directory.
+  delete_project() {
+    confirm "This action will delete all files from the current project." && \
+    cd .. && \
+    delete_project_files && \
+    cd $WORKBENCH_DIR && \
+    find . -maxdepth 1 \
+      \( -type f -o -type d \) \
+      ! -name "." \
+      ! -name ".*" \
+      -exec mv -t ../ {} + && \
+    cd .. && \
+    rmdir $WORKBENCH_DIR
+    rm -rf $PGADMIN_DIR
+    rm "$SCRIPTS_DIR/$DEV_DOCKERFILE"
   }
 
 # SCRIPT -----------------------------------------------------------------------
@@ -643,7 +659,10 @@
     elif [ $1 == "delete" ]; then
       if [ "$EXISTING_PROJECT" == true ]
       then delete_project
-      else echo "🛑  ${B}${C1}Failure${R}${C1}:${R} There is no project to delete."
+      else
+        echo \
+          "🛑  ${B}${C1}Failure${R}${C1}:${R}" \
+          "There is no project to delete."
       fi
         
     elif [ $1 == "setup" ]; then

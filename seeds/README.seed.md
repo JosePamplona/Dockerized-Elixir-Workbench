@@ -1,8 +1,6 @@
 <!-- markdownlint-disable MD028 -->
 <!-- markdownlint-disable MD034 -->
-<!-- workbench-project open -->
-#
-<!-- workbench-project close -->
+# %{project_name}
 
 ![v0.0.0](https://img.shields.io/badge/version-0.0.0-white.svg?style=flat-square&color=lightgray)
 

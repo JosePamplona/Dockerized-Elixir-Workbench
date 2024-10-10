@@ -1,9 +1,6 @@
 #!/bin/bash
-#
-# ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-# ┃ Migrations generation script ┃ 
-# ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-#
+# Migrations generation script
+
 # SCHEMAS ----------------------------------------------------------------------
 
 mix phx.gen.context \

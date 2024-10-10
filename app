@@ -1,9 +1,7 @@
 #!/bin/bash
+# Dockerized workbench script
 # v0.1.0
-# ┏━━━━━━━━━━━━━━━━━━┓
-# ┃ Workbench script ┃ 
-# ┗━━━━━━━━━━━━━━━━━━┛
-#
+
 # CONFIGURATION ----------------------------------------------------------------
 
   source ./config.conf
@@ -18,23 +16,27 @@
     export SOURCE_CODE_PATH=$(
       [ "$EXISTING_PROJECT" == true ] && echo $(dirname $PWD) || echo $PWD
     )
-    export   SOURCE_CODE_VOLUME="$SOURCE_CODE_PATH:/app/src"
     export             APP_NAME=$( echo "$LOWER_CASE" | tr ' ' '-' )
     export  ELIXIR_PROJECT_NAME=$( echo "$LOWER_CASE" | tr ' ' '_' )
     export COMPOSE_PROJECT_NAME=$APP_NAME
+    export   SOURCE_CODE_VOLUME="$SOURCE_CODE_PATH:/app/src"
+
     export      DOCKERFILES_DIR="docker"
     export       DEV_DOCKERFILE="Dockerfile.dev"
+    export      PROD_DOCKERFILE="Dockerfile"
     export         COMPOSE_FILE="docker-compose.yml"
     export CONTAINER_ENTRYPOINT="bash entrypoint.sh"
+
     export            SEEDS_DIR="seeds"
     export             ENV_SEED="seed.env"
     export          README_SEED="README.seed.md"
     export       CHANGELOG_SEED="CHANGELOG.seed.md"
+    export  DEV_DOCKERFILE_SEED="Dockerfile.seed.dev"
     export PROD_DOCKERFILE_SEED="Dockerfile.seed.prod"
     export PGADMIN_SERVERS_SEED="servers.seed.json"
     export    PGADMIN_PASS_SEED="pgpass.seed"
     export  TOOLS_VERSIONS_SEED="seed.tool-versions"
-    export   COMPOSE_DOCKERFILE="$DOCKERFILES_DIR/$DEV_DOCKERFILE"    
+    export   COMPOSE_DOCKERFILE=$PROD_DOCKERFILE
 
   # Elixir project configuration ---------------------------------------------
     export   APP_INTERNAL_PORT="4000"
@@ -42,6 +44,8 @@
     export            MIX_FILE="mix.exs"
     export         CONFIG_FILE="config/config.exs"
     export            DEV_FILE="config/dev.exs"
+    export         README_FILE="README.md"
+    export      CHANGELOG_FILE="CHANGELOG.md"
     export     PROD_DOCKERFILE="Dockerfile"
     export      GITIGNORE_FILE=".gitignore"
     export TOOLS_VERSIONS_FILE=".tool-versions"
@@ -80,35 +84,39 @@
   # readme
     # Prints readme file
   readme() {
-    echo \
-      "${B}Use: $0 [comands]${R}" \
-      "\n" \
-      "\nDescription:" \
-      "\n." \
-      "\n" \
-      "\nCommands:" \
-      "\n  ${B}run [commands...]${R}      Deploy app executing custom entrypoint commands." \
-      "\n    Arguments:" \
-      "\n      commands...        Command(s) to be executed as app entrypoint. " \
-      "\n" \
-      "\n  ${B}setup [opts]${R}           Drops the database (if any), creates a new one and run a seeding script. (default: --prod)" \
-      "\n    Options:" \
-      "\n      --dev              Deploy the app in develop enviroment." \
-      "\n      --prod             Deploy the app in production enviroment." \
-      "\n" \
-      "\n  ${B}up [opts]${R}              Deploy the app in localhost. (default: --prod)" \
-      "\n    Options:" \
-      "\n      --dev              Deploy as develop enviroment." \
-      "\n      --prod             Deploy as production enviroment." \
-      "\n" \
-      "\n  ${B}login [user, token]${R}    Login to GitHub account." \
-      "\n    Arguments:" \
-      "\n      user               Github username. " \
-      "\n      token              Authentication token (classic). " \
-      "\n" \
-      "\n  ${B}prune${R}                  Stops all containers and prune Docker." \
-      "\n" \
-      ""
+    print_section() { echo "${B}$1${R}"; }    
+    local script_name=$(basename "$0")
+
+    print_section "NAME"
+    echo "  $script_name - $(sed -n '2s/# //p' $0)"
+    echo
+    
+    print_section "SYNOPSIS"
+    echo "  $script_name [COMMAND] <argument>"
+    echo
+    
+    print_section "DESCRIPTION"
+    echo "  This script demonstrates an advanced help implementation."
+    echo "  It supports multiple options and provides detailed help."
+    echo
+
+    print_section "VERSION"
+    echo "  $(sed -n '3s/# //p' $0)"
+    echo
+
+    print_section "COMMANDS"
+    echo "  ${B}new${R}                  Drops the database (if any), creates a new one and run a seeding script. (default: --prod)"
+    echo "  ${B}setup${R}                Drops the database (if any), creates a new one and run a seeding script."
+    echo "    --env <ENV>          Deploy the app with ENV enviroment configuration (Defalut: dev)."
+    echo "  ${B}up${R}                   Deploy the app in localhost."
+    echo "    --env <ENV>          Deploy the app with ENV enviroment configuration (Defalut: dev)."
+    echo "  ${B}run <commands...>${R}    Deploy app executing custom entrypoint commands."
+    echo "    commands...          Command(s) to be executed as app entrypoint. "
+    echo "  ${B}login <user, token>${R}  Login to GitHub account."
+    echo "    user                 Github username. "
+    echo "    token                Authentication token (classic). "
+    echo "  ${B}prune${R}                Stops all containers and prune Docker."
+    echo
   }
 
   # confirm <MESSAGE>
@@ -162,33 +170,51 @@
     # If no project is created, it will move all files into a script directory,
     # if there is a project created already, will ask for confirmation to delete
     # all project files.
+    # Creates Dockerfile.dev
   prepare_new_project() {
-    if [ "$EXISTING_PROJECT" == true ]; then
-      # Deletes all files and dirs, excluding the 
-      # script and hiddend files (exept .gitignore, .formatter.exs and .env).
-      confirm \
-        "A project is already created. This action will overwrite all files" \
-        "from the current project." && \
-      cd .. && \
-      delete_project_files
-    else
-      # If a script directory is present its deleted. The script directory is
-      # created. Moves all root files (excluding hiddend files and dirs) into 
-      # the script directory.
-      if   [ -d $WORKBENCH_DIR ]
-      then rm -rf $WORKBENCH_DIR
-      else mkdir $WORKBENCH_DIR
+    # FUNCTIONS --------------------------------------------------------------
+
+      # create_dockerfile_dev
+        # Create a Dockerfile.dev file from seed.
+      create_dockerfile_dev() {
+        local seed_path="$WORKBENCH_DIR/$SEEDS_DIR/$DEV_DOCKERFILE_SEED" 
+        local file_path="$WORKBENCH_DIR/$DOCKERFILES_DIR/$DEV_DOCKERFILE"
+
+        cp $seed_path $file_path
+        sed -i "s/%{elixir_version}/$ELIXIR_VERSION/" $file_path
+        sed -i "s/%{erlang_version}/$ERLANG_VERSION/" $file_path
+        sed -i "s/%{debian_version}/$DEBIAN_VERSION/" $file_path
+      }
+
+    # SCRIPT -----------------------------------------------------------------
+
+      if [ "$EXISTING_PROJECT" == true ]; then
+        # Deletes all files and dirs, excluding the 
+        # script and hiddend files (exept .gitignore, .formatter.exs and .env).
+        confirm \
+          "A project is already created. This action will overwrite all files" \
+          "from the current project." && \
+        cd .. && \
+        delete_project_files
+      else
+        # If a script directory is present its deleted. The script directory is
+        # created. Moves all root files (excluding hiddend files and dirs) into 
+        # the script directory.
+        if   [ -d $WORKBENCH_DIR ]
+        then rm -rf $WORKBENCH_DIR
+        else mkdir $WORKBENCH_DIR
+        fi && \
+        find . -maxdepth 1 \
+          \( -type f -o -type d \) \
+          ! -name "." \
+          ! -name ".*" \
+          ! -name "$WORKBENCH_DIR" \
+          ! -name "$(basename "$0")" \
+          -exec mv -t "$WORKBENCH_DIR" {} + && \
+        cp $0 "$WORKBENCH_DIR/$0" && \
+        rm $0
       fi && \
-      find . -maxdepth 1 \
-        \( -type f -o -type d \) \
-        ! -name "." \
-        ! -name ".*" \
-        ! -name "$WORKBENCH_DIR" \
-        ! -name "$(basename "$0")" \
-        -exec mv -t "$WORKBENCH_DIR" {} + && \
-      cp $0 "$WORKBENCH_DIR/$0" && \
-      rm $0
-    fi
+      create_dockerfile_dev
   }
 
   # delete_project
@@ -206,6 +232,8 @@
       -exec mv -t ../ {} + && \
     cd .. && \
     rmdir $WORKBENCH_DIR
+    rm -rf $PGADMIN_DIR
+    rm "$DOCKERFILES_DIR/$DEV_DOCKERFILE"
   }
 
   # configure_files
@@ -255,25 +283,27 @@
       # create_pgpass
         # Create a pgpass file from seed for PGAdmin.
       create_pgpass() {
-        local PASS_PATH="$WORKBENCH_DIR/$PGADMIN_DIR/$PASS_FILE"
+        local seed_path="$WORKBENCH_DIR/$SEEDS_DIR/$PGADMIN_PASS_SEED"
+        local file_path="$WORKBENCH_DIR/$PGADMIN_DIR/$PASS_FILE"
 
-        cp "$WORKBENCH_DIR/$SEEDS_DIR/$PGADMIN_PASS_SEED" $PASS_PATH && \
-        sed -i "s/%{db_host}/$DB_HOST/" $PASS_PATH && \
-        sed -i "s/%{db_port}/$DB_PORT/" $PASS_PATH && \
-        sed -i "s/%{db_user}/$DB_USER/" $PASS_PATH && \
-        sed -i "s/%{db_pass}/$DB_PASS/" $PASS_PATH
+        cp $seed_path $file_path
+        sed -i "s/%{db_host}/$DB_HOST/" $file_path
+        sed -i "s/%{db_port}/$DB_PORT/" $file_path
+        sed -i "s/%{db_user}/$DB_USER/" $file_path
+        sed -i "s/%{db_pass}/$DB_PASS/" $file_path
       }
 
       # create_servers_json
         # Create a servers.json file from seed for PGAdmin.
       create_servers_json() {
-        local SERVERS_PATH="$WORKBENCH_DIR/$PGADMIN_DIR/$SERVERS_FILE"
+        local seed_path="$WORKBENCH_DIR/$SEEDS_DIR/$PGADMIN_SERVERS_SEED"
+        local file_path="$WORKBENCH_DIR/$PGADMIN_DIR/$SERVERS_FILE"
 
-        cp "$WORKBENCH_DIR/$SEEDS_DIR/$PGADMIN_SERVERS_SEED" $SERVERS_PATH && \
-        sed -i "s/%{project_name}/$PROJECT_NAME/" $SERVERS_PATH && \
-        sed -i "s/%{db_host}/$DB_HOST/" $SERVERS_PATH && \
-        sed -i "s/%{db_port}/$DB_PORT/" $SERVERS_PATH && \
-        sed -i "s/%{db_user}/$DB_USER/" $SERVERS_PATH
+        cp $seed_path $file_path
+        sed -i "s/%{project_name}/$PROJECT_NAME/" $file_path
+        sed -i "s/%{db_host}/$DB_HOST/" $file_path
+        sed -i "s/%{db_port}/$DB_PORT/" $file_path
+        sed -i "s/%{db_user}/$DB_USER/" $file_path
       }
 
       # adjust_mix
@@ -327,28 +357,32 @@
         # According to the workbench/config.conf file it choose the necesary
         # enviroment variables for the .env file.
       create_env() {
-        local ENV_FILENAME=".env"
-        local SECRET_KEY_BASE=$(
+        local seed_path="$WORKBENCH_DIR/$SEEDS_DIR/$ENV_SEED"
+        local file_path="$ENV_FILE"
+        local secret_key_base=$(
           head -c $((64 * 2)) /dev/urandom | \
             base64 | \
             tr -dc 'a-zA-Z0-9' | \
             head -c 64
         )
-        local DB_URL="ecto:\/\/$DB_USER:$DB_PASS@$DB_HOST\/$DB_NAME"
+        local db_url="ecto:\/\/$DB_USER:$DB_PASS@$DB_HOST\/$DB_NAME"
 
-        cp "$WORKBENCH_DIR/$SEEDS_DIR/$ENV_SEED" $ENV_FILENAME && \
+        cp $seed_path $file_path
         if [ "$AUTH0" == true ]
-        then pattern keep $ENV_FILENAME "auth0"
-        else pattern delete $ENV_FILENAME "auth0"
-        fi && \
+        then pattern keep   $file_path "auth0"
+        else pattern delete $file_path "auth0"
+        fi
         if [ "$STRIPE" == true ]
-        then pattern keep $ENV_FILENAME "stripe"
-        else pattern delete $ENV_FILENAME "stripe"
-        fi && \
-        sed -i "s/%{app_internal_port}/$APP_INTERNAL_PORT/" $ENV_FILENAME && \
-        sed -i "s/%{secret_key_base}/$SECRET_KEY_BASE/" $ENV_FILENAME && \
-        sed -i "s/%{database_url}/$DB_URL/" $ENV_FILENAME && \
-        sed -i "s/%{app_name}/$APP_NAME/" $ENV_FILENAME && \
+        then pattern keep   $file_path "stripe"
+        else pattern delete $file_path "stripe"
+        fi
+        sed -i "s/%{app_internal_port}/$APP_INTERNAL_PORT/" $file_path
+        sed -i "s/%{secret_key_base}/$secret_key_base/" $file_path
+        sed -i "s/%{database_url}/$db_url/" $file_path
+        sed -i "s/%{app_name}/$APP_NAME/" $file_path
+      }
+
+      modify_gitignore() {
         sed -i "1i\\$TOOLS_VERSIONS_FILE\\n" $GITIGNORE_FILE && \
         sed -i \
           "1i\\# ASDF .tools-versions file." \
@@ -363,11 +397,12 @@
         # Create a new CHANGELOG file from seed.
         # Set the v0.0.0 entry date to actual date.
       create_changelog() {
-        local CHANGELOG_FILENAME="CHANGELOG.md"
-        local TODAY_DATE=$( date +%Y-%m-%d )
+        local seed_path="$WORKBENCH_DIR/$SEEDS_DIR/$CHANGELOG_SEED"
+        local file_path="$CHANGELOG_FILE"
+        local today=$( date +%Y-%m-%d )
 
-        cp "$WORKBENCH_DIR/$SEEDS_DIR/$CHANGELOG_SEED" $CHANGELOG_FILENAME && \
-        sed -i "s/%{creation_date}/$TODAY_DATE/" $CHANGELOG_FILENAME
+        cp $seed_path $file_path
+        sed -i "s/%{creation_date}/$today/" $file_path
       }
 
       # create_readme
@@ -375,79 +410,77 @@
         # Adjust project name into README.
         # According to the workbench/config.conf file it redact the README file.
       create_readme(){
-        local README_FILENAME="README.md"
-        local ENV_CONTENT=""
+        local seed_path="$WORKBENCH_DIR/$SEEDS_DIR/$README_SEED"
+        local file_path="$README_FILE"
+        local env_content=""
         while IFS= read -r line; do
-            ENV_CONTENT+="    ${line}\n"
+            env_content+="    ${line}\n"
         done < "$ENV_FILE"
 
-        cp "$WORKBENCH_DIR/$SEEDS_DIR/$README_SEED" $README_FILENAME && \
-        pattern replace $README_FILENAME "project" "# $PROJECT_NAME" && \
-        pattern replace \
-          $README_FILENAME \
+        cp $seed_path $file_path
+        sed -i "s/%{project_name}/$PROJECT_NAME/" $file_path
+        
+        pattern \
+          replace \
+          $file_path \
           "env" \
-          "    \`\`\`elixir\n$ENV_CONTENT\n    \`\`\`" && \
+          "    \`\`\`elixir\n$ENV_CONTENT\n    \`\`\`"
+        
         if [ "$HEALTHCHECK" == true ]
-        then pattern keep $README_FILENAME "healthcheck"
-        else pattern delete $README_FILENAME "healthcheck"
-        fi && \
+        then pattern keep   $file_path "healthcheck"
+        else pattern delete $file_path "healthcheck"
+        fi
+
         if [ "$AUTH0" == true ]
-        then pattern keep $README_FILENAME "auth0"
-        else pattern delete $README_FILENAME "auth0"
-        fi && \
+        then pattern keep   $file_path "auth0"
+        else pattern delete $file_path "auth0"
+        fi
+
         if [ "$STRIPE" == true ]
-        then pattern keep $README_FILENAME "stripe"
-        else pattern delete $README_FILENAME "stripe"
-        fi && \
-        if [ "$API_INTERFACE" == "rest" ]; then
-          pattern keep $README_FILENAME "rest" && \
-          pattern delete $README_FILENAME "graphql"
+        then pattern keep   $file_path "stripe"
+        else pattern delete $file_path "stripe"
+        fi
+
+        if   [ "$API_INTERFACE" == "rest" ]; then
+          pattern keep   $file_path "rest"
+          pattern delete $file_path "graphql"
+
         elif [ "$API_INTERFACE" == "graphql" ]; then
-          pattern keep $README_FILENAME "graphql" && \
-          pattern delete $README_FILENAME "rest"
-        fi && \
-        sed -i "s/%{project_name}/$PROJECT_NAME/" $README_FILENAME
+          pattern keep   $file_path "graphql"
+          pattern delete $file_path "rest"
+
+        fi
       }
 
-      # create_prod_dockerfile
+      # create_dockerfile_prod
         # Create a new production Dockerfile file from seed.
         # Adjust elixir, erlang and debian versions into Dockerfile.
         # Adjust project name directory for build path in Dockerfile.
-      create_prod_dockerfile(){
-        local APP_DIRNAME=$ELIXIR_PROJECT_NAME
-        cp \
-          "$WORKBENCH_DIR/$SEEDS_DIR/$PROD_DOCKERFILE_SEED" \
-          $PROD_DOCKERFILE && \
-        sed -i "s/%{app_dirname}/$APP_DIRNAME/" $PROD_DOCKERFILE
-        sed -i "s/%{elixir_version}/$ELIXIR_VERSION/" $PROD_DOCKERFILE
-        sed -i "s/%{eralng_version}/$ERLANG_VERSION/" $PROD_DOCKERFILE
-        sed -i "s/%{debian_version}/$DEBIAN_VERSION/" $PROD_DOCKERFILE
+      create_dockerfile_prod(){
+        local seed_path="$WORKBENCH_DIR/$SEEDS_DIR/$PROD_DOCKERFILE_SEED"
+        local file_path="$PROD_DOCKERFILE"
+
+        cp $seed_path $file_path
+        sed -i "s/%{app_dir}/$ELIXIR_PROJECT_NAME/" $file_path
+        sed -i "s/%{elixir_version}/$ELIXIR_VERSION/" $file_path
+        sed -i "s/%{erlang_version}/$ERLANG_VERSION/" $file_path
+        sed -i "s/%{debian_version}/$DEBIAN_VERSION/" $file_path
       }
 
       # create_tool_versions
         # Create a ASDF .tools-versions file from seed.
       create_tool_versions() {
+        local seed_path="$WORKBENCH_DIR/$SEEDS_DIR/$TOOLS_VERSIONS_SEED"
+        local file_path="$TOOLS_VERSIONS_FILE"
         local erlang_mayor=$(echo $ERLANG_VERSION | cut -d '.' -f1)
-        cp \
-          "$WORKBENCH_DIR/$SEEDS_DIR/$TOOLS_VERSIONS_SEED" \
-          $TOOLS_VERSIONS_FILE && \
-        sed -i "s/%{elixir_version}/$ELIXIR_VERSION/" $TOOLS_VERSIONS_FILE && \
-        sed -i "s/%{erlang_version}/$ERLANG_VERSION/" $TOOLS_VERSIONS_FILE && \
-        sed -i "s/%{erlang_mayor}/$erlang_mayor/" $TOOLS_VERSIONS_FILE
+
+        cp $seed_path $file_path
+        sed -i "s/%{elixir_version}/$ELIXIR_VERSION/" $file_path
+        sed -i "s/%{erlang_version}/$ERLANG_VERSION/" $file_path
+        sed -i "s/%{erlang_mayor}/$erlang_mayor/" $file_path
       }
 
     # SCRIPT -----------------------------------------------------------------
-      local DEV_SEED="$WORKBENCH_DIR/$DOCKERFILES_DIR/$DEV_DOCKERFILE"
-      export ELIXIR_VERSION=$(
-        sed -n 's/.*ARG[[:space:]]*ELIXIR="\([^"]*\)".*/\1/p' $DEV_SEED
-      )
-      export ERLANG_VERSION=$(
-        sed -n 's/.*ARG[[:space:]]*OTP="\([^"]*\)".*/\1/p' $DEV_SEED
-      )
-      export DEBIAN_VERSION=$(
-        sed -n 's/.*ARG[[:space:]]*DEBIAN="\([^"]*\)".*/\1/p' $DEV_SEED
-      )
-
       if [ -d "$WORKBENCH_DIR/$PGADMIN_DIR" ];
       then rm -rf "$WORKBENCH_DIR/$PGADMIN_DIR"
       fi && \
@@ -460,38 +493,43 @@
       create_env && \
       create_changelog && \
       create_readme && \
-      create_prod_dockerfile && \
+      create_dockerfile_prod && \
+      create_docker_compose_file && \
       create_tool_versions
   }
 
   # create_docker_compose_file
     # Create a docker-compose.yml file from script one.
   create_docker_compose_file() {
-    local scp_env_path=$(scape_for_sed "$ENV_PATH")
-    local scp_src_path=$(scape_for_sed "$SOURCE_CODE_VOLUME")
-    local scp_servers_path=$(scape_for_sed "$PGADMIN_SERVERS_PATH")
-    local scp_pass_path=$(scape_for_sed "$PGADMIN_PASS_PATH")
-    cp "$WORKBENCH_DIR/$DOCKERFILES_DIR/$COMPOSE_FILE"           $COMPOSE_FILE
-    sed -i "s/\$COMPOSE_DOCKERFILE/$COMPOSE_DOCKERFILE/"         $COMPOSE_FILE
-    sed -i "s/\$APP_NAME/$APP_NAME/"                             $COMPOSE_FILE
-    sed -i "s/\$APP_CONTAINER_NAME/$APP_CONTAINER_NAME/"         $COMPOSE_FILE
-    sed -i "s/\$APP_PORT/$APP_PORT/"                             $COMPOSE_FILE
-    sed -i "s/\$APP_INTERNAL_PORT/$APP_INTERNAL_PORT/"           $COMPOSE_FILE
-    sed -i "s/\$ENV_PATH/$scp_env_path/"                         $COMPOSE_FILE
-    sed -i "s/\$SOURCE_CODE_VOLUME/$scp_src_path/"               $COMPOSE_FILE
-    sed -i "s/\$DB_CONTAINER_NAME/$DB_CONTAINER_NAME/"           $COMPOSE_FILE
-    sed -i "s/\$DB_INTERNAL_PORT/$DB_INTERNAL_PORT/"             $COMPOSE_FILE
-    sed -i "s/\$DB_PORT/$DB_PORT/"                               $COMPOSE_FILE
-    sed -i "s/\$DB_HOST/$DB_HOST/"                               $COMPOSE_FILE
-    sed -i "s/\$DB_USER/$DB_USER/"                               $COMPOSE_FILE
-    sed -i "s/\$DB_PASS/$DB_PASS/"                               $COMPOSE_FILE
-    sed -i "s/\$PGADMIN_CONTAINER_NAME/$PGADMIN_CONTAINER_NAME/" $COMPOSE_FILE
-    sed -i "s/\$PGADMIN_EMAIL/$PGADMIN_EMAIL/"                   $COMPOSE_FILE
-    sed -i "s/\$PGADMIN_PASSWORD/$PGADMIN_PASSWORD/"             $COMPOSE_FILE
-    sed -i "s/\$PGADMIN_INTERNAL_PORT/$PGADMIN_INTERNAL_PORT/"   $COMPOSE_FILE
-    sed -i "s/\$PGADMIN_PORT/$PGADMIN_PORT/"                     $COMPOSE_FILE
-    sed -i "s/\$PGADMIN_SERVERS_PATH/$scp_servers_path/"         $COMPOSE_FILE
-    sed -i "s/\$PGADMIN_PASS_PATH/$scp_pass_path/"               $COMPOSE_FILE
+    local seed_path="$WORKBENCH_DIR/$DOCKERFILES_DIR/$COMPOSE_FILE"
+    local file_path="$COMPOSE_FILE"
+
+    local        scp_env_path=$(scape_for_sed "$ENV_PATH")
+    local        scp_src_path=$(scape_for_sed "$SOURCE_CODE_VOLUME")
+    local    scp_servers_path=$(scape_for_sed "$PGADMIN_SERVERS_PATH")
+    local       scp_pass_path=$(scape_for_sed "$PGADMIN_PASS_PATH")
+
+    cp $seed_path $file_path
+    sed -i "s/\$COMPOSE_DOCKERFILE/$COMPOSE_DOCKERFILE/"         $file_path
+    sed -i "s/\$APP_NAME/$APP_NAME/"                             $file_path
+    sed -i "s/\$APP_CONTAINER_NAME/$APP_CONTAINER_NAME/"         $file_path
+    sed -i "s/\$APP_PORT/$APP_PORT/"                             $file_path
+    sed -i "s/\$APP_INTERNAL_PORT/$APP_INTERNAL_PORT/"           $file_path
+    sed -i "s/\$ENV_PATH/$scp_env_path/"                         $file_path
+    sed -i "s/\$SOURCE_CODE_VOLUME/$scp_src_path/"               $file_path
+    sed -i "s/\$DB_CONTAINER_NAME/$DB_CONTAINER_NAME/"           $file_path
+    sed -i "s/\$DB_INTERNAL_PORT/$DB_INTERNAL_PORT/"             $file_path
+    sed -i "s/\$DB_PORT/$DB_PORT/"                               $file_path
+    sed -i "s/\$DB_HOST/$DB_HOST/"                               $file_path
+    sed -i "s/\$DB_USER/$DB_USER/"                               $file_path
+    sed -i "s/\$DB_PASS/$DB_PASS/"                               $file_path
+    sed -i "s/\$PGADMIN_CONTAINER_NAME/$PGADMIN_CONTAINER_NAME/" $file_path
+    sed -i "s/\$PGADMIN_EMAIL/$PGADMIN_EMAIL/"                   $file_path
+    sed -i "s/\$PGADMIN_PASSWORD/$PGADMIN_PASSWORD/"             $file_path
+    sed -i "s/\$PGADMIN_INTERNAL_PORT/$PGADMIN_INTERNAL_PORT/"   $file_path
+    sed -i "s/\$PGADMIN_PORT/$PGADMIN_PORT/"                     $file_path
+    sed -i "s/\$PGADMIN_SERVERS_PATH/$scp_servers_path/"         $file_path
+    sed -i "s/\$PGADMIN_PASS_PATH/$scp_pass_path/"               $file_path
   }
 
   implement_features() {

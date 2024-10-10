@@ -91,7 +91,7 @@ Replace `GITHUB_USER` and `ACCESS_TOKEN` with your corresponding user name and t
 
 ### Reset Docker
 
-Use this command in order to stop all containers and prune Docker. It's like a Docker data reset:
+Use this command in order to stop all containers and prune Docker. It's like a Docker data brute-force reset:
 
 ```sh
 ./app prune

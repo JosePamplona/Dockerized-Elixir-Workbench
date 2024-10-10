@@ -6,77 +6,84 @@
 
   source ./config.conf
 
-  # Workbench configuration --------------------------------------------------
-    
-    export WORKBENCH_DIR="_workbench"
-    export LOWER_CASE=$( echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' )
-    export EXISTING_PROJECT=$(
+  # Export variables for docker-compose.yml script ---------------------------
+
+    WORKBENCH_DIR="_workbench"
+    LOWER_CASE=$( echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' )
+    EXISTING_PROJECT=$(
       [ $(basename $PWD) == $WORKBENCH_DIR ] && echo true || echo false
     )
-    export SOURCE_CODE_PATH=$(
+    SOURCE_CODE_PATH=$(
       [ "$EXISTING_PROJECT" == true ] && echo $(dirname $PWD) || echo $PWD
     )
-    export             APP_NAME=$( echo "$LOWER_CASE" | tr ' ' '-' )
-    export  ELIXIR_PROJECT_NAME=$( echo "$LOWER_CASE" | tr ' ' '_' )
+
+    export APP_NAME=$( echo "$LOWER_CASE" | tr ' ' '-' )
+    export SOURCE_CODE_VOLUME="$SOURCE_CODE_PATH:/app/src"
     export COMPOSE_PROJECT_NAME=$APP_NAME
-    export   SOURCE_CODE_VOLUME="$SOURCE_CODE_PATH:/app/src"
-
-    export          SCRIPTS_DIR="scripts"
-    export      ENTRYPOINT_FILE="entrypoint.sh"
-    export         SCHEMAS_FILE="schemas.sh"
-    export       DEV_DOCKERFILE="Dockerfile.dev"
-    export      PROD_DOCKERFILE="Dockerfile"
-    export         COMPOSE_FILE="docker-compose.yml"
-    export CONTAINER_ENTRYPOINT="bash entrypoint.sh"
-    export   COMPOSE_DOCKERFILE=$PROD_DOCKERFILE
-
-    export            SEEDS_DIR="seeds"
-    export             ENV_SEED="seed.env"
-    export          README_SEED="README.seed.md"
-    export       CHANGELOG_SEED="CHANGELOG.seed.md"
-    export  DEV_DOCKERFILE_SEED="Dockerfile.seed.dev"
-    export PROD_DOCKERFILE_SEED="Dockerfile.seed.prod"
-    export PGADMIN_SERVERS_SEED="servers.seed.json"
-    export    PGADMIN_PASS_SEED="pgpass.seed"
-    export  TOOLS_VERSIONS_SEED="seed.tool-versions"
-
-  # Elixir project configuration ---------------------------------------------
-    export   APP_INTERNAL_PORT="4000"
-    export            ENV_FILE=".env"
-    export            MIX_FILE="mix.exs"
-    export         CONFIG_FILE="config/config.exs"
-    export            DEV_FILE="config/dev.exs"
-    export         README_FILE="README.md"
-    export      CHANGELOG_FILE="CHANGELOG.md"
-    export     PROD_DOCKERFILE="Dockerfile"
-    export      GITIGNORE_FILE=".gitignore"
-    export TOOLS_VERSIONS_FILE=".tool-versions"
-    export      FORMATTER_FILE=".formatter.exs"
-    export            ENV_PATH="$SOURCE_CODE_PATH/$ENV_FILE"
-
-  # Database configuration ---------------------------------------------------
+    export COMPOSE_DOCKERFILE=$PROD_DOCKERFILE
+    # Elixir configuration
+    export APP_INTERNAL_PORT="4000"
+    export ENV_PATH="$SOURCE_CODE_PATH/$ENV_FILE"
+    # Database
     export DB_INTERNAL_PORT="5432"
-    export          DB_USER="postgres"
-    export          DB_PASS="postgres"
-    export          DB_HOST="database_host"
-    export          DB_NAME="${ELIXIR_PROJECT_NAME}_prod"
-
-  # PGAdmin configuration ----------------------------------------------------
+    export DB_USER="postgres"
+    export DB_PASS="postgres"
+    export DB_HOST="database_host"
+    # PGAdmin
     export PGADMIN_INTERNAL_PORT="5050"
-    export         PGADMIN_EMAIL="pgadmin4@pgadmin.org"
-    export      PGADMIN_PASSWORD="pass"
-    export           PGADMIN_DIR="pgadmin"
-    export          SERVERS_FILE="servers.json"
-    export             PASS_FILE="pgpass"
-    export          PGADMIN_PATH="$SOURCE_CODE_PATH/$WORKBENCH_DIR/$PGADMIN_DIR"
-    export  PGADMIN_SERVERS_PATH="$PGADMIN_PATH/$SERVERS_FILE"
-    export     PGADMIN_PASS_PATH="$PGADMIN_PATH/$PASS_FILE"
+    export PGADMIN_EMAIL="pgadmin4@pgadmin.org"
+    export PGADMIN_PASSWORD="pass"
+    export PGADMIN_SERVERS_PATH="$PGADMIN_PATH/$SERVERS_FILE"
+    export PGADMIN_PASS_PATH="$PGADMIN_PATH/$PASS_FILE"
+
+  # Workbench configuration --------------------------------------------------
+
+    # Scripts
+    SCRIPTS_DIR="scripts"
+    ENTRYPOINT_FILE="entrypoint.sh"
+    SCHEMAS_FILE="schemas.sh"
+    DEV_DOCKERFILE="Dockerfile.dev"
+    PROD_DOCKERFILE="Dockerfile"
+    COMPOSE_FILE="docker-compose.yml"
+    CONTAINER_ENTRYPOINT="bash $ENTRYPOINT_FILE"
+    # Seeds
+    SEEDS_DIR="seeds"
+    ENV_SEED="seed.env"
+    README_SEED="README.seed.md"
+    CHANGELOG_SEED="CHANGELOG.seed.md"
+    DEV_DOCKERFILE_SEED="Dockerfile.seed.dev"
+    PROD_DOCKERFILE_SEED="Dockerfile.seed.prod"
+    PGADMIN_SERVERS_SEED="servers.seed.json"
+    PGADMIN_PASS_SEED="pgpass.seed"
+    TOOLS_VERSIONS_SEED="seed.tool-versions"
+
+    # Elixir project configuration
+    ELIXIR_PROJECT_NAME=$( echo "$LOWER_CASE" | tr ' ' '_' )
+    ENV_FILE=".env"
+    MIX_FILE="mix.exs"
+    CONFIG_FILE="config/config.exs"
+    DEV_FILE="config/dev.exs"
+    README_FILE="README.md"
+    CHANGELOG_FILE="CHANGELOG.md"
+    PROD_DOCKERFILE="Dockerfile"
+    GITIGNORE_FILE=".gitignore"
+    TOOLS_VERSIONS_FILE=".tool-versions"
+    FORMATTER_FILE=".formatter.exs"
+
+    # Database configuration
+    DB_NAME="${ELIXIR_PROJECT_NAME}_prod"
+
+    # PGAdmin configuration
+    PGADMIN_DIR="pgadmin"
+    SERVERS_FILE="servers.json"
+    PASS_FILE="pgpass"
+    PGADMIN_PATH="$SOURCE_CODE_PATH/$WORKBENCH_DIR/$PGADMIN_DIR"
 
   # Console text format codes ------------------------------------------------
     #      Dark-red
-    export C1="\x1B[38;5;1m"
+    C1="\x1B[38;5;1m"
     #      Bold        Reset
-    export B="\x1B[1m" R="\x1B[0m"
+    B="\x1B[1m" R="\x1B[0m"
 
 # FUNCTIONS --------------------------------------------------------------------
 
@@ -701,7 +708,8 @@
 
     elif [ $1 == "delete" ]; then
       if [ "$EXISTING_PROJECT" == true ]; then
-        delete_project
+        delete_project && \
+        docker compose down -v --rmi all --remove-orphans
 
       else
         echo \
@@ -710,16 +718,19 @@
       fi
         
     elif [ $1 == "prune" ]; then
-      export CONTAINERS_TO_STOP="" && \
+      CONTAINERS_TO_STOP="$(docker container ls -q)"
+
       if [ ! -z "$CONTAINERS_TO_STOP" ]; then
-        echo "Stopping all containers...\n" && \
+        echo "Stopping all containers...\n"
         docker stop $CONTAINERS_TO_STOP && \
         echo "\nAll containers are Stopped.\n"
       fi && \
       docker system prune -a --volumes
 
     elif [ $1 == "demo" ]; then
-      export WORKBENCH_SCRIPT="./$0"
+      WORKBENCH_SCRIPT="./$0"
+      [ "$EXISTING_PROJECT" == true ] && export WORKBENCH_DIR="."
+      
       eval \
         "$WORKBENCH_SCRIPT new && " \
         "cd $WORKBENCH_DIR && " \

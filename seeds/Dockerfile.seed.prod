@@ -1,6 +1,5 @@
-# Available versions: https://hub.docker.com/r/hexpm/elixir/tags
 ARG        ELIXIR="%{elixir_version}"
-ARG           OTP="%{eralng_version}"
+ARG           OTP="%{erlang_version}"
 ARG        DEBIAN="%{debian_version}"
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR}-erlang-${OTP}-debian-${DEBIAN}"
 ARG  RUNNER_IMAGE="debian:${DEBIAN}"
@@ -79,11 +78,10 @@ RUN chown nobody /app
 
 # set runner ENV
 ENV MIX_ENV="prod"
-ENV APP_DIR="%{app_dirname}"
 
 # Only copy the final release from the build stage
-COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/${APP_DIR} ./
+COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/%{app_dir} ./
 
 USER nobody
-RUN chmod 777 /app/bin/${APP_DIR}
-CMD /app/bin/${APP_DIR} start
+RUN chmod 777 /app/bin/%{app_dir}
+CMD /app/bin/%{app_dir} start

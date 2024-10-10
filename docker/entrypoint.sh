@@ -1,8 +1,8 @@
 #!/bin/bash
 # Elixir App image entrypoint script
 
-  # Prints service script name with arguments detail
-  if [ $# -gt 0 ]; then echo "[$HOSTNAME]$0($#): $@"; fi
+# Prints service script name with arguments detail
+if [ $# -gt 0 ]; then echo "[$HOSTNAME]$0($#): $@"; fi
 
 # CONFIGURATION ----------------------------------------------------------------
   # Text formatting codes

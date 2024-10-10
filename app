@@ -21,11 +21,14 @@
     export COMPOSE_PROJECT_NAME=$APP_NAME
     export   SOURCE_CODE_VOLUME="$SOURCE_CODE_PATH:/app/src"
 
-    export      DOCKERFILES_DIR="docker"
+    export          SCRIPTS_DIR="scripts"
+    export      ENTRYPOINT_FILE="entrypoint.sh"
+    export         SCHEMAS_FILE="schemas.sh"
     export       DEV_DOCKERFILE="Dockerfile.dev"
     export      PROD_DOCKERFILE="Dockerfile"
     export         COMPOSE_FILE="docker-compose.yml"
     export CONTAINER_ENTRYPOINT="bash entrypoint.sh"
+    export   COMPOSE_DOCKERFILE=$PROD_DOCKERFILE
 
     export            SEEDS_DIR="seeds"
     export             ENV_SEED="seed.env"
@@ -36,7 +39,6 @@
     export PGADMIN_SERVERS_SEED="servers.seed.json"
     export    PGADMIN_PASS_SEED="pgpass.seed"
     export  TOOLS_VERSIONS_SEED="seed.tool-versions"
-    export   COMPOSE_DOCKERFILE=$PROD_DOCKERFILE
 
   # Elixir project configuration ---------------------------------------------
     export   APP_INTERNAL_PORT="4000"
@@ -178,12 +180,14 @@
         # Create a Dockerfile.dev file from seed.
       create_dockerfile_dev() {
         local seed_path="$WORKBENCH_DIR/$SEEDS_DIR/$DEV_DOCKERFILE_SEED" 
-        local file_path="$WORKBENCH_DIR/$DOCKERFILES_DIR/$DEV_DOCKERFILE"
+        local file_path="$WORKBENCH_DIR/$SCRIPTS_DIR/$DEV_DOCKERFILE"
 
         cp $seed_path $file_path
         sed -i "s/%{elixir_version}/$ELIXIR_VERSION/" $file_path
         sed -i "s/%{erlang_version}/$ERLANG_VERSION/" $file_path
         sed -i "s/%{debian_version}/$DEBIAN_VERSION/" $file_path
+        sed -i "s/%{schemas}/$SCHEMAS_FILE/"          $file_path
+        sed -i "s/%{entrypoint}/$ENTRYPOINT_FILE/"    $file_path
       }
 
     # SCRIPT -----------------------------------------------------------------
@@ -233,7 +237,7 @@
     cd .. && \
     rmdir $WORKBENCH_DIR
     rm -rf $PGADMIN_DIR
-    rm "$DOCKERFILES_DIR/$DEV_DOCKERFILE"
+    rm "$SCRIPTS_DIR/$DEV_DOCKERFILE"
   }
 
   # configure_files
@@ -501,7 +505,7 @@
   # create_docker_compose_file
     # Create a docker-compose.yml file from script one.
   create_docker_compose_file() {
-    local seed_path="$WORKBENCH_DIR/$DOCKERFILES_DIR/$COMPOSE_FILE"
+    local seed_path="$WORKBENCH_DIR/$SCRIPTS_DIR/$COMPOSE_FILE"
     local file_path="$COMPOSE_FILE"
 
     local        scp_env_path=$(scape_for_sed "$ENV_PATH")
@@ -530,6 +534,8 @@
     sed -i "s/\$PGADMIN_PORT/$PGADMIN_PORT/"                     $file_path
     sed -i "s/\$PGADMIN_SERVERS_PATH/$scp_servers_path/"         $file_path
     sed -i "s/\$PGADMIN_PASS_PATH/$scp_pass_path/"               $file_path
+    sed -i "s/\$POSTGRES_IMAGE_VERSION/$POSTGRES_IMAGE_VERSION/" $file_path
+    sed -i "s/\$PGADMIN_IMAGE_VERSION/$PGADMIN_IMAGE_VERSION/"   $file_path
   }
 
   implement_features() {
@@ -606,7 +612,7 @@
       shift && \
       IMAGE="$APP_NAME:develop" && \
       prepare_new_project && \
-      cd "$WORKBENCH_DIR/$DOCKERFILES_DIR" && \
+      cd "$WORKBENCH_DIR/$SCRIPTS_DIR" && \
       docker build \
         --file "$DEV_DOCKERFILE" \
         --tag $IMAGE \
@@ -622,7 +628,7 @@
       cd ../.. && \
       configure_files && \
       if [ "$RUN_SCHEMAS_SCRIPT" == true ]; then
-        cd "$WORKBENCH_DIR/$DOCKERFILES_DIR" && \
+        cd "$WORKBENCH_DIR/$SCRIPTS_DIR" && \
         docker run \
           --rm \
           --tty \
@@ -648,7 +654,7 @@
       else ENV_ARG=dev
       fi && \
       export COMPOSE_DOCKERFILE=$DEV_DOCKERFILE && \
-      docker compose --file "$DOCKERFILES_DIR/$COMPOSE_FILE" run \
+      docker compose --file "$SCRIPTS_DIR/$COMPOSE_FILE" run \
         --build \
         --rm \
         --name "${APP_NAME}___${ENTRYPOINT_COMMAND}" \
@@ -670,7 +676,7 @@
       else
         export COMPOSE_DOCKERFILE=$DEV_DOCKERFILE && \
         docker compose \
-          --file "$DOCKERFILES_DIR/$COMPOSE_FILE" up \
+          --file "$SCRIPTS_DIR/$COMPOSE_FILE" up \
           --build
       fi
 
@@ -679,7 +685,7 @@
       shift && \
       if [ $# -gt 0 ]; then   
         export COMPOSE_DOCKERFILE=$DEV_DOCKERFILE && \
-        docker compose --file "$DOCKERFILES_DIR/$COMPOSE_FILE" run \
+        docker compose --file "$SCRIPTS_DIR/$COMPOSE_FILE" run \
           --build \
           --rm \
           --name "${APP_NAME}___${ENTRYPOINT_COMMAND}" \

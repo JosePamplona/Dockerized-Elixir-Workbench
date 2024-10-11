@@ -7,15 +7,17 @@
 [![License](https://img.shields.io/github/license/JosePamplona/Dockerized-Elixir-Workbench?style=flat-square)](https://github.com/JosePamplona/Dockerized-Elixir-Workbench/blob/main/LICENSE.md)
 [![Last Updated](https://img.shields.io/github/last-commit/JosePamplona/Dockerized-Elixir-Workbench.svg?style=flat-square)](https://github.com/JosePamplona/Dockerized-Elixir-Workbench/commits/main)
 
-This is a script to create [Elixir](https://elixir-lang.org/) projects with the [Phoenix](https://www.phoenixframework.org/) framework and deploy it on `localhost` with a specific service architecture using Docker containers, without the need to install anything other than [Docker Desktop](https://www.docker.com/products/docker-desktop/). Ensuring an application deployment just like it would run in a network-mounted production environment, with the exception that it is deployed on the local machine.
+This is a script for creating [Elixir](https://elixir-lang.org/) projects with the [Phoenix](https://www.phoenixframework.org/) framework and deploying them on `localhost` using a specific service architecture with Docker containers. It eliminates the need to install anything other than [Docker Desktop](https://www.docker.com/products/docker-desktop/) in order to create, develop and deploy it as *dev* or *prod* enviroment.
 
 - [Dockerized Elixir Workbench](#dockerized-elixir-workbench)
   - [Arquitecture](#arquitecture)
   - [Create a new project](#create-a-new-project)
   - [Deployment](#deployment)
+    - [Custom entrypoint](#custom-entrypoint)
   - [Maintenance](#maintenance)
     - [Private Github Registry Images](#private-github-registry-images)
     - [Reset Docker](#reset-docker)
+    - [Demo](#demo)
   - [License](#license)
 
 ## Arquitecture
@@ -34,7 +36,7 @@ This is a script to create [Elixir](https://elixir-lang.org/) projects with the 
 
 1. Modify the `config.conf` file in order to configure the project name and creation specifications.
 
-2. Modify the `docker/schemas.sh` file in order to configure the DB.
+2. If you have configured the schemas script to run, you will need to modify the `docker/schemas.sh` file to set up the initial schema-dependent files.
 
 3. Run the following command:
 
@@ -42,28 +44,27 @@ This is a script to create [Elixir](https://elixir-lang.org/) projects with the 
     ./app new
     ```
 
-    This will generate all the files and apply specific configurations.
-    It can accept all option flags from the task `mix phx.new` like `--no-html` or `--no-esbuild` (Full task [phx.new](https://hexdocs.pm/phoenix/Mix.Tasks.Phx.New.html) documentation).
+    This command generates schemas, changesets, context functions, tests, and migration files when applicable and apply specific configurations.
 
-    This command also generate schemas, changesets, context functions, tests and migration files.
+    It can accept all option flags from the task `mix phx.new` like `--no-html` or `--no-esbuild` (Full task [phx.new](https://hexdocs.pm/phoenix/Mix.Tasks.Phx.New.html) documentation).
 
 ## Deployment
 
 1. This step is only required when deploying the service for the first time, a database reset is needed or the database container is detroyed. This command drops the project database (if any), creates a new one and run a seeding script:
 
     ```sh
-    ./app setup --env ENV
+    ./app setup --env [ENV]
     ```
 
-1. Once having a configured database, run the following command to deploy the service along with its configured required services and tools in a (local) production enviroment.
+1. Once having a configured database, run the following command to deploy the service along with its configured required services and tools.
 
     ```sh
-    ./app up --env ENV
+    ./app up --env [ENV]
     ```
 
-In both commands the flag `--env` is optional. `ENV` corresponds to the desired enviroment configuration to be deployed, by default is `dev`.
+In both commands the flag `--env` is optional. The argument `[ENV]` can be `dev`, `prod` or other and corresponds to the desired enviroment configuration to be deployed, by default is `dev`.
 
-### Custom commands <!-- omit in toc -->
+### Custom entrypoint
 
 There is the possibility of deploying the application by executing custom server initialization commands. For example, to run an elixir interactive console: `iex -S mix phx.server` in the server:
 
@@ -84,10 +85,10 @@ Replace `[COMMAND...]` with the command(s) to be executed. For example:
 In order to download private github registry images, you need to login to GitHub using a username and a token (classic, not fine-grained) and have the rquired access level to the resource. To do this, execute the following command:
 
 ```sh
-./app login GITHUB_USER ACCESS_TOKEN
+./app login [GITHUB_USER] [ACCESS_TOKEN]
 ```
 
-Replace `GITHUB_USER` and `ACCESS_TOKEN` with your corresponding user name and token. How to generate a token: [Personal Access Token (classic)](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic)
+Replace `[GITHUB_USER]` and `[ACCESS_TOKEN]` with your corresponding user name and token. How to generate a token: [Personal Access Token (classic)](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic)
 
 ### Reset Docker
 
@@ -95,6 +96,14 @@ Use this command in order to stop all containers and prune Docker. It's like a D
 
 ```sh
 ./app prune
+```
+
+### Demo
+
+This command runs the **new**, **setup**, **up**, and **delete** commands consecutively for demonstration purposes: (aprox time: 2:30 min)
+
+```sh
+./app demo
 ```
 
 ## License

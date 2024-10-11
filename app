@@ -2,92 +2,106 @@
 # Dockerized workbench script
 # v0.1.0
 
-# CONFIGURATION ----------------------------------------------------------------
+# CONFIGURATION ================================================================
 
   source ./config.conf
 
   WORKBENCH_DIR="_workbench"
   LOWER_CASE=$( echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' )
   EXISTING_PROJECT=$(
-    [ $(basename $PWD) == $WORKBENCH_DIR ] && echo true || echo false
+    [ $(basename $PWD) == $WORKBENCH_DIR ] && \
+      echo true || \
+      echo false
   )
   SOURCE_CODE_PATH=$(
-    [ $EXISTING_PROJECT == true ] && echo $(dirname $PWD) || echo $PWD
+    [ $EXISTING_PROJECT == true ] && \
+      echo $(dirname $PWD) || \
+      echo $PWD
   )
-
-  # Export variables for docker-compose.yml script ---------------------------
-
-  # Compose project configuration
-  export APP_NAME=$( echo "$LOWER_CASE" | tr ' ' '-' )
-  export SOURCE_CODE_VOLUME="$SOURCE_CODE_PATH:/app/src"
-  export COMPOSE_PROJECT_NAME=$APP_NAME
-  export COMPOSE_DOCKERFILE=$PROD_DOCKERFILE
-  # App configuration
-  export APP_INTERNAL_PORT="4000"
-  export ENV_PATH="$SOURCE_CODE_PATH/$ENV_FILE"
-  # Database configuration
-  export DB_INTERNAL_PORT="5432"
-  export DB_USER="postgres"
-  export DB_PASS="postgres"
-  export DB_HOST="database_host"
-  # PGAdmin configuration
-  export PGADMIN_INTERNAL_PORT="5050"
-  export PGADMIN_EMAIL="pgadmin4@pgadmin.org"
-  export PGADMIN_PASSWORD="pass"
-  export PGADMIN_SERVERS_PATH="$PGADMIN_PATH/$SERVERS_FILE"
-  export PGADMIN_PASS_PATH="$PGADMIN_PATH/$PASS_FILE"
 
   # Workbench configuration --------------------------------------------------
 
-  # Scripts
-  SCRIPTS_DIR="scripts"
-  ENTRYPOINT_FILE="entrypoint.sh"
-  SCHEMAS_FILE="schemas.sh"
-  DEV_DOCKERFILE="Dockerfile.dev"
-  PROD_DOCKERFILE="Dockerfile"
-  COMPOSE_FILE="docker-compose.yml"
-  CONTAINER_ENTRYPOINT="bash $ENTRYPOINT_FILE"
-  # Seeds
-  SEEDS_DIR="seeds"
-  ENV_SEED="seed.env"
-  README_SEED="README.seed.md"
-  CHANGELOG_SEED="CHANGELOG.seed.md"
-  DEV_DOCKERFILE_SEED="Dockerfile.seed.dev"
-  PROD_DOCKERFILE_SEED="Dockerfile.seed.prod"
-  PGADMIN_SERVERS_SEED="servers.seed.json"
-  PGADMIN_PASS_SEED="pgpass.seed"
-  TOOLS_VERSIONS_SEED="seed.tool-versions"
+    # Directories
+      SCRIPTS_DIR="scripts"
+      SEEDS_DIR="seeds"
+      PGADMIN_DIR="pgadmin"
+    # Docker image
+      IMAGE="workbench-elixir:$(sed '3!d' $0 | sed -n 's/^.*v\(.*\).*/\1/p')"
+    # Script files
+      ENTRYPOINT_FILE="entrypoint.sh"
+      SCHEMAS_FILE="schemas.sh"
+      DEV_DOCKERFILE="Dockerfile.dev"
+      PROD_DOCKERFILE="Dockerfile"
+      COMPOSE_FILE="docker-compose.yml"
+      CONTAINER_ENTRYPOINT="bash $ENTRYPOINT_FILE"
+    # Seed files
+      ENV_SEED="seed.env"
+      README_SEED="README.seed.md"
+      CHANGELOG_SEED="CHANGELOG.seed.md"
+      DEV_DOCKERFILE_SEED="Dockerfile.seed.dev"
+      PROD_DOCKERFILE_SEED="Dockerfile.seed.prod"
+      PGADMIN_SERVERS_SEED="servers.seed.json"
+      PGADMIN_PASS_SEED="pgpass.seed"
+      TOOLS_VERSIONS_SEED="seed.tool-versions"
+    # Elixir project files
+      ELIXIR_PROJECT_NAME=$( echo "$LOWER_CASE" | tr ' ' '_' )
+      INIT_VERSION="0.0.0"
+      ENV_FILE=".env"
+      MIX_FILE="mix.exs"
+      CONFIG_FILE="config/config.exs"
+      DEV_FILE="config/dev.exs"
+      README_FILE="README.md"
+      CHANGELOG_FILE="CHANGELOG.md"
+      PROD_DOCKERFILE="Dockerfile"
+      GITIGNORE_FILE=".gitignore"
+      FORMATTER_FILE=".formatter.exs"
+      TOOLS_VERSIONS_FILE=".tool-versions"
+    # Production database
+      DB_NAME="${ELIXIR_PROJECT_NAME}_prod"
+    # PGAdmin configuration files
+      SERVERS_FILE="servers.json"
+      PASS_FILE="pgpass"
+      PGADMIN_PATH="$SOURCE_CODE_PATH/$WORKBENCH_DIR/$PGADMIN_DIR"
 
-  # Elixir project configuration
-  ELIXIR_PROJECT_NAME=$( echo "$LOWER_CASE" | tr ' ' '_' )
-  ENV_FILE=".env"
-  MIX_FILE="mix.exs"
-  CONFIG_FILE="config/config.exs"
-  DEV_FILE="config/dev.exs"
-  README_FILE="README.md"
-  CHANGELOG_FILE="CHANGELOG.md"
-  PROD_DOCKERFILE="Dockerfile"
-  GITIGNORE_FILE=".gitignore"
-  FORMATTER_FILE=".formatter.exs"
-  TOOLS_VERSIONS_FILE=".tool-versions"
+  # Export variables for docker-compose.yml script ---------------------------
 
-  # Database configuration
-  DB_NAME="${ELIXIR_PROJECT_NAME}_prod"
-
-  # PGAdmin configuration
-  PGADMIN_DIR="pgadmin"
-  SERVERS_FILE="servers.json"
-  PASS_FILE="pgpass"
-  PGADMIN_PATH="$SOURCE_CODE_PATH/$WORKBENCH_DIR/$PGADMIN_DIR"
+    # Docker compose project configuration
+    export APP_NAME=$( echo "$LOWER_CASE" | tr ' ' '-' )
+    export APP_VERSION=$(
+      [ $EXISTING_PROJECT == true ] && \
+        sed -n 's/^.*version: "\(.*\)".*/\1/p' "../$MIX_FILE" | head -n 1 || \
+        echo $INIT_VERSION
+    )
+    export SOURCE_CODE_VOLUME="$SOURCE_CODE_PATH:/app/src"
+    export COMPOSE_PROJECT_NAME=$APP_NAME
+    export COMPOSE_DOCKERFILE=$PROD_DOCKERFILE
+    # Elixir app configuration
+    export APP_INTERNAL_PORT="4000"
+    export ENV_PATH="$SOURCE_CODE_PATH/$ENV_FILE"
+    # Database configuration
+    export DB_INTERNAL_PORT="5432"
+    export DB_USER="postgres"
+    export DB_PASS="postgres"
+    export DB_HOST="database_host"
+    # PGAdmin configuration
+    export PGADMIN_INTERNAL_PORT="5050"
+    export PGADMIN_EMAIL="pgadmin4@pgadmin.org"
+    export PGADMIN_PASSWORD="pass"
+    export PGADMIN_SERVERS_PATH="$PGADMIN_PATH/$SERVERS_FILE"
+    export PGADMIN_PASS_PATH="$PGADMIN_PATH/$PASS_FILE"
 
   # Console text format codes ------------------------------------------------
 
-  #      Dark-red
-  C1="\x1B[38;5;1m"
-  #      Bold        Reset
-  B="\x1B[1m" R="\x1B[0m"
+    # Colors
+    C1="\x1B[38;5;1m" # Dark-red
+    C2="\x1B[38;5;4m" # Blue
+    # Format             
+    B="\x1B[1m" # Bold
+    R="\x1B[0m" # Reset
 
-# FUNCTIONS --------------------------------------------------------------------
+    Li=$C2 # Link format
+
+# FUNCTIONS ====================================================================
 
   # If echo handles -e option, overrides the command
   if [ "$(echo -e)" == "" ]; then echo() { command echo -e "$@"; } fi
@@ -95,7 +109,7 @@
   # readme
     # Prints readme file
   readme() {
-    print_section() { echo "${B}$1${R}"; }    
+    print_section() { echo " ${B}$1${R}"; }    
     local script_name=$(basename "$0")
 
     print_section "NAME"
@@ -103,40 +117,69 @@
     echo
     
     print_section "SYNOPSIS"
-    echo "  $script_name [COMMAND] <argument>"
+    echo "  $script_name [COMMAND]"
     echo
     
     print_section "DESCRIPTION"
-    echo "  This script demonstrates an advanced help implementation."
-    echo "  It supports multiple options and provides detailed help."
+    echo "  This is a script for creating Elixir (${Li}https://elixir-lang.org${R}) projects"
+    echo "  with the Phoenix (${Li}https://www.phoenixframework.org${R}) framework and"
+    echo "  deploying them on 'localhost' using a specific service architecture with"
+    echo "  Docker containers. It eliminates the need to install anything other than"
+    echo "  Docker Desktop (${Li}https://www.docker.com/products/docker-desktop${R}) in order"
+    echo "  to create, develop and deploy the project as 'dev' or 'prod' enviroment."
+    echo
+
+    print_section "COMMANDS"
+    echo " • ${B}login [USER] [TOKEN]${R}"
+    echo "   Login account in order to download private images."
+    echo "     ${B}ARGS:${R}"
+    echo "     [USER]  Github username. "
+    echo "     [TOKEN] Authentication token (classic). "
+    echo
+    echo " • ${B}new${R}"
+    echo "   Create a new project and configures it according to config.conf."
+    echo
+    echo " • ${B}setup [OPTIONS]${R}"
+    echo "   Set or reset the database (if any) and run the seeding script."
+    echo "     ${B}OPTIONS:${R}"
+    echo "     ${B}--env [ENV]${R}"
+    echo "       ${B}ARGS:${R}"
+    echo "       [ENV] Enviroment database to setup (Defalut: dev)."
+    echo
+    echo " • ${B}up [OPTIONS]:${R}"
+    echo "   Deploy the app in localhost."
+    echo "     ${B}OPTIONS:${R}"
+    echo "     ${B}--env [ENV]${R}"
+    echo "       ${B}ARGS:${R}"
+    echo "       [ENV] Enviroment to deploy (Defalut: dev)."
+    echo
+    echo " • ${B}run [COMMANDS...]${R}"
+    echo "   Deploy app executing custom entrypoint commands."
+    echo "     ${B}ARGS:${R}"
+    echo "     [COMMANDS...] Command(s) to be executed as app entrypoint. "
+    echo
+    echo " • ${B}delete${R}"
+    echo "   Deletes project files and Docker compose project."
+    echo
+    echo " • ${B}prune${R}"
+    echo "   Stops all containers and prune Docker."
+    echo
+    echo " • ${B}demo${R}"
+    echo "   Runs consecutively new, setup, up & delete commands."
     echo
 
     print_section "VERSION"
     echo "  $(sed -n '3s/# //p' $0)"
-    echo
-
-    print_section "COMMANDS"
-    echo "  ${B}new${R}                  Drops the database (if any), creates a new one and run a seeding script. (default: --prod)"
-    echo "  ${B}setup${R}                Drops the database (if any), creates a new one and run a seeding script."
-    echo "    --env <ENV>          Deploy the app with ENV enviroment configuration (Defalut: dev)."
-    echo "  ${B}up${R}                   Deploy the app in localhost."
-    echo "    --env <ENV>          Deploy the app with ENV enviroment configuration (Defalut: dev)."
-    echo "  ${B}run <commands...>${R}    Deploy app executing custom entrypoint commands."
-    echo "    commands...          Command(s) to be executed as app entrypoint. "
-    echo "  ${B}login <user, token>${R}  Login to GitHub account."
-    echo "    user                 Github username. "
-    echo "    token                Authentication token (classic). "
-    echo "  ${B}prune${R}                Stops all containers and prune Docker."
     echo
   }
 
   # confirm <MESSAGE>
     # Prints MESSAGE and spects input prompt for continue or exit the script 
   confirm() {
-    echo "⚠️  ${B}Warning${R}: $@"
+    echo "⚠️  ${B}Warning${R} $@"
     read -n 1 -p $'Should continue? [y/N] ' INPUT
     if [ "$INPUT" != "y" ]; then exit 0; fi
-    echo ""
+    echo
   }
   
   # failure
@@ -145,7 +188,7 @@
     echo "🛑  ${B}${C1}Failure${R}"
     read -n 1 -p $'Should continue? [y/N] ' INPUT
     if [ "$INPUT" != "y" ]; then exit 1; fi
-    echo ""
+    echo
   }
 
   # args_error <ERROR>
@@ -159,8 +202,14 @@
     exit 1
   }
 
+  # terminate <MESSAGE>
+    # Print error and terminate with sigerr 1
+  terminate() { echo "${B}${C1}Error${R} $@"; echo; exit 1; }
+
   # scape_for_sed <STRING>
   scape_for_sed() { echo "$1" | sed 's/[\/&]/\\&/g'; }
+
+  # --------------------------------------------------------------------------
 
   # delete_project_files
     # Delete all files and dirs, excluding the script directory and hiddend files (exept .gitignore, .formatter.exs and .env).
@@ -175,6 +224,25 @@
     if [ -f "$GITIGNORE_FILE" ];      then rm "$GITIGNORE_FILE"; fi && \
     if [ -f "$TOOLS_VERSIONS_FILE" ]; then rm "$TOOLS_VERSIONS_FILE"; fi && \
     if [ -f "$FORMATTER_FILE" ];      then rm "$FORMATTER_FILE"; fi
+  }
+  
+  # delete_project
+    # Ask for confirmation. Deletes all project files, the content of
+    # the script directory to root and delete the emptied script directory.
+  delete_project() {
+    confirm "This action will delete all files from the current project." && \
+    cd .. && \
+    delete_project_files && \
+    cd $WORKBENCH_DIR && \
+    find . -maxdepth 1 \
+      \( -type f -o -type d \) \
+      ! -name "." \
+      ! -name ".*" \
+      -exec mv -t ../ {} + && \
+    cd .. && \
+    rmdir $WORKBENCH_DIR && \
+    rm -rf $PGADMIN_DIR && \
+    rm "$SCRIPTS_DIR/$DEV_DOCKERFILE"
   }
 
   # prepare_new_project
@@ -304,7 +372,7 @@
         # Modify the version to 0.0.0
       adjust_mix() {
         sed -i \
-          "s/version:\s*\"[0-9]*.[0-9]*.[0-9]*\"/version: \"0.0.0\"/" \
+          "s/version:\s*\"[0-9]*.[0-9]*.[0-9]*\"/version: \"$INIT_VERSION\"/" \
           $MIX_FILE
       }
 
@@ -391,14 +459,15 @@
 
       # create_changelog
         # Create a new CHANGELOG file from seed.
-        # Set the v0.0.0 entry date to actual date.
+        # Set the initial version entry date to actual date.
       create_changelog() {
         local seed_path="$WORKBENCH_DIR/$SEEDS_DIR/$CHANGELOG_SEED"
         local file_path="$CHANGELOG_FILE"
         local today=$( date +%Y-%m-%d )
 
         cp $seed_path $file_path
-        sed -i "s/%{creation_date}/$today/" $file_path
+        sed -i "s/%{init_version}/$INIT_VERSION/" $file_path
+        sed -i "s/%{creation_date}/$today/"       $file_path
       }
 
       # create_readme
@@ -509,6 +578,7 @@
     cp $seed_path $file_path
     sed -i "s/\$COMPOSE_DOCKERFILE/$COMPOSE_DOCKERFILE/"         $file_path
     sed -i "s/\$APP_NAME/$APP_NAME/"                             $file_path
+    sed -i "s/\$APP_VERSION/$APP_VERSION/"                       $file_path
     sed -i "s/\$APP_CONTAINER_NAME/$APP_CONTAINER_NAME/"         $file_path
     sed -i "s/\$APP_PORT/$APP_PORT/"                             $file_path
     sed -i "s/\$APP_INTERNAL_PORT/$APP_INTERNAL_PORT/"           $file_path
@@ -537,25 +607,25 @@
       # implement_healthcheck
         #
       implement_healthcheck(){
-        echo "---------------------> implement_healthcheck"
+        echo "---> Coming soon --> implement_healthcheck"
       }
 
       # implement_auth0
         #
       implement_auth0(){
-        echo "---------------------> implement_auth0"
+        echo "---> Coming soon --> implement_auth0"
       }
 
       # implement_stripe
         #
       implement_stripe(){
-        echo "---------------------> implement_stripe"
+        echo "---> Coming soon --> implement_stripe"
       }
 
       # implement_graphql
         #
       implement_graphql(){
-        echo "---------------------> implement_graphql"
+        echo "---> Coming soon --> implement_graphql"
       }
 
       # 1. create Web.Graphql files
@@ -578,30 +648,12 @@
       if [ "$API_INTERFACE" == "graphql" ]; then implement_graphql; fi
   }
 
-  # delete_project
-    # Ask for confirmation. Deletes all project files, the content of
-    # the script directory to root and delete the emptied script directory.
-  delete_project() {
-    confirm "This action will delete all files from the current project." && \
-    cd .. && \
-    delete_project_files && \
-    cd $WORKBENCH_DIR && \
-    find . -maxdepth 1 \
-      \( -type f -o -type d \) \
-      ! -name "." \
-      ! -name ".*" \
-      -exec mv -t ../ {} + && \
-    cd .. && \
-    rmdir $WORKBENCH_DIR
-    rm -rf $PGADMIN_DIR
-    rm "$SCRIPTS_DIR/$DEV_DOCKERFILE"
-  }
-
-# SCRIPT -----------------------------------------------------------------------
+# SCRIPT =======================================================================
 
   if [ $# -gt 0 ]; then
     if   [ $1 == "login" ]; then
-      shift && \
+      shift
+
       if [ $# -eq 0 ]; then
         args_error \
           "Github user name is missing." \
@@ -611,9 +663,10 @@
           "Github personal access token (classic) is missing." \
           "Try add a token as command argument."
       else
-        GITHUB_USER=$1 && \
-        GITHUB_TOKEN=$2 && \
-        REGISTRY_SERVER="ghcr.io" && \
+        GITHUB_USER=$1
+        GITHUB_TOKEN=$2
+        REGISTRY_SERVER="ghcr.io"
+
         echo $GITHUB_TOKEN | docker login $REGISTRY_SERVER \
           --username $GITHUB_USER \
           --password-stdin
@@ -630,12 +683,8 @@
       fi
 
     elif [ $1 == "new" ]; then
-      # Tarball error will occur on Win11 using a XFAT drive for the repo on
-      # mix deps.get
-
-      ENTRYPOINT_COMMAND=$1 && \
-      shift && \
-      IMAGE="$APP_NAME:develop" && \
+      ENTRYPOINT_COMMAND=$1; shift
+      
       prepare_new_project && \
       cd "$WORKBENCH_DIR/$SCRIPTS_DIR" && \
       docker build \
@@ -648,8 +697,8 @@
         --interactive \
         --name "${APP_NAME}___${ENTRYPOINT_COMMAND}" \
         --volume $SOURCE_CODE_VOLUME \
-        $IMAGE $CONTAINER_ENTRYPOINT \
-        $ENTRYPOINT_COMMAND $ELIXIR_PROJECT_NAME $@ && \
+        $IMAGE $CONTAINER_ENTRYPOINT $ENTRYPOINT_COMMAND \
+        $ELIXIR_PROJECT_NAME $@ && \
       cd ../.. && \
       configure_files && \
       if [ "$RUN_SCHEMAS_SCRIPT" == true ]; then
@@ -665,58 +714,70 @@
       fi && \
       implement_features
              
+      # ERROR: Tarball error will occur on Win11 using a XFAT drive for the repo
+      # on 'mix deps.get' run.
     elif [ $1 == "setup" ]; then
-      ENTRYPOINT_COMMAND=$1 && \
-      shift && \
-      [ $# -gt 1 ] && [ "$1" == "--env" ] && ENV_ARG="$2" || ENV_ARG=dev && \
-      export COMPOSE_DOCKERFILE=$DEV_DOCKERFILE && \
-      docker compose --file "$SCRIPTS_DIR/$COMPOSE_FILE" run \
-        --build \
-        --rm \
-        --name "${APP_NAME}___${ENTRYPOINT_COMMAND}" \
-        --publish $APP_PORT:$APP_INTERNAL_PORT \
-        app $CONTAINER_ENTRYPOINT $ENTRYPOINT_COMMAND $ENV_ARG
+      ENTRYPOINT_COMMAND=$1; shift
+      if [ $EXISTING_PROJECT == true ]; then
+        [ $# -gt 1 ] && [ "$1" == "--env" ] && \
+          ENV_ARG="$2" || \
+          ENV_ARG=dev
         
-    elif [ $1 == "up" ]; then
-      shift && \
-      [ $# -gt 1 ] && [ "$1" == "--env" ] && ENV_ARG="$2" || ENV_ARG=dev && \
-      if [ "$ENV_ARG" == "prod" ]; then
-        cd .. && \
-        export COMPOSE_DOCKERFILE=$PROD_DOCKERFILE && \
-        create_docker_compose_file && \
-        docker compose up --build
-
-      else
-        export COMPOSE_DOCKERFILE=$DEV_DOCKERFILE && \
-        docker compose \
-          --file "$SCRIPTS_DIR/$COMPOSE_FILE" up \
-          --build
-      fi
-
-    elif [ $1 == "run" ]; then
-      ENTRYPOINT_COMMAND=$1 && \
-      shift && \
-      if [ $# -gt 0 ]; then   
-        export COMPOSE_DOCKERFILE=$DEV_DOCKERFILE && \
+        export COMPOSE_DOCKERFILE=$DEV_DOCKERFILE
         docker compose --file "$SCRIPTS_DIR/$COMPOSE_FILE" run \
           --build \
           --rm \
           --name "${APP_NAME}___${ENTRYPOINT_COMMAND}" \
           --publish $APP_PORT:$APP_INTERNAL_PORT \
-          app $CONTAINER_ENTRYPOINT $ENTRYPOINT_COMMAND $@
+          app $CONTAINER_ENTRYPOINT $ENTRYPOINT_COMMAND $ENV_ARG
 
-      else args_error "Missing command for container initialization."; fi
+      else terminate "There is no project to setup."; fi
+        
+    elif [ $1 == "up" ]; then
+      COMPOSE_COMMAND=$1; shift
+      if [ $EXISTING_PROJECT == true ]; then
+        [ $# -gt 1 ] && [ "$1" == "--env" ] && \
+          ENV_ARG="$2" || \
+          ENV_ARG=dev
+
+        if [ "$ENV_ARG" == "prod" ]; then
+          export COMPOSE_DOCKERFILE=$PROD_DOCKERFILE
+          cd .. && \
+          create_docker_compose_file && \
+          docker compose $COMPOSE_COMMAND --build
+
+        else
+          export COMPOSE_DOCKERFILE=$DEV_DOCKERFILE
+          docker compose \
+            --file "$SCRIPTS_DIR/$COMPOSE_FILE" \
+            $COMPOSE_COMMAND \
+            --build
+        fi
+
+      else terminate "There is no project to deploy."; fi
+
+    elif [ $1 == "run" ]; then
+      ENTRYPOINT_COMMAND=$1; shift
+      if [ $EXISTING_PROJECT == true ]; then
+        if [ $# -gt 0 ]; then
+          export COMPOSE_DOCKERFILE=$DEV_DOCKERFILE
+          docker compose --file "$SCRIPTS_DIR/$COMPOSE_FILE" run \
+            --build \
+            --rm \
+            --name "${APP_NAME}___${ENTRYPOINT_COMMAND}" \
+            --publish $APP_PORT:$APP_INTERNAL_PORT \
+            app $CONTAINER_ENTRYPOINT $ENTRYPOINT_COMMAND $@
+
+        else args_error "Missing command for container initialization."; fi
+      else terminate "There is no project to deploy."; fi
 
     elif [ $1 == "delete" ]; then
+      COMPOSE_COMMAND="down"
       if [ $EXISTING_PROJECT == true ]; then
         delete_project && \
-        docker compose down -v --rmi all --remove-orphans
+        docker compose $COMPOSE_COMMAND -v --rmi all --remove-orphans
 
-      else
-        echo \
-          "🛑  ${B}${C1}Failure${R}${C1}:${R}" \
-          "There is no project to delete."
-      fi
+      else terminate "There is no project to delete."; fi
         
     elif [ $1 == "prune" ]; then
       CONTAINERS_TO_STOP="$(docker container ls -q)"

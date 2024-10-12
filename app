@@ -7,6 +7,7 @@
   source ./config.conf
 
   WORKBENCH_DIR="_workbench"
+  WORKBENCH_VERSION=$( sed '3!d' $0 | sed -n 's/^.*v\(.*\).*/\1/p' )
   LOWER_CASE=$( echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' )
   EXISTING_PROJECT=$(
     [ $(basename $PWD) == $WORKBENCH_DIR ] && \
@@ -25,8 +26,6 @@
       SCRIPTS_DIR="scripts"
       SEEDS_DIR="seeds"
       PGADMIN_DIR="pgadmin"
-    # Docker image
-      IMAGE="workbench-elixir:$(sed '3!d' $0 | sed -n 's/^.*v\(.*\).*/\1/p')"
     # Script files
       ENTRYPOINT_FILE="entrypoint.sh"
       SCHEMAS_FILE="schemas.sh"
@@ -72,9 +71,15 @@
         sed -n 's/^.*version: "\(.*\)".*/\1/p' "../$MIX_FILE" | head -n 1 || \
         echo $INIT_VERSION
     )
+
+    # Docker images
+    DEV_IMAGE="$APP_NAME-workbench:$WORKBENCH_VERSION"
+    PROD_IMAGE="$APP_NAME:$APP_VERSION"
+
     export SOURCE_CODE_VOLUME="$SOURCE_CODE_PATH:/app/src"
     export COMPOSE_PROJECT_NAME=$APP_NAME
     export COMPOSE_DOCKERFILE=$PROD_DOCKERFILE
+    export COMPOSE_IMAGE=$PROD_IMAGE
     # Elixir app configuration
     export APP_INTERNAL_PORT="4000"
     export ENV_PATH="$SOURCE_CODE_PATH/$ENV_FILE"
@@ -99,7 +104,7 @@
     B="\x1B[1m" # Bold
     R="\x1B[0m" # Reset
 
-    Li=$C2 # Link format
+    Li=$C2 # Link color
 
 # FUNCTIONS ====================================================================
 
@@ -577,6 +582,7 @@
 
     cp $seed_path $file_path
     sed -i "s/\$COMPOSE_DOCKERFILE/$COMPOSE_DOCKERFILE/"         $file_path
+    sed -i "s/\$COMPOSE_IMAGE/$COMPOSE_IMAGE/"                   $file_path
     sed -i "s/\$APP_NAME/$APP_NAME/"                             $file_path
     sed -i "s/\$APP_VERSION/$APP_VERSION/"                       $file_path
     sed -i "s/\$APP_CONTAINER_NAME/$APP_CONTAINER_NAME/"         $file_path
@@ -646,6 +652,8 @@
       if [ "$AUTH0" == true ]; then implement_auth0; fi && \
       if [ "$STRIPE" == true ]; then implement_stripe; fi && \
       if [ "$API_INTERFACE" == "graphql" ]; then implement_graphql; fi
+
+      echo
   }
 
 # SCRIPT =======================================================================
@@ -684,46 +692,54 @@
 
     elif [ $1 == "new" ]; then
       ENTRYPOINT_COMMAND=$1; shift
-      
+
       prepare_new_project && \
       cd "$WORKBENCH_DIR/$SCRIPTS_DIR" && \
       docker build \
         --file "$DEV_DOCKERFILE" \
-        --tag $IMAGE \
+        --tag $DEV_IMAGE \
         . && \
       docker run \
-        --rm \
         --tty \
         --interactive \
         --name "${APP_NAME}___${ENTRYPOINT_COMMAND}" \
+        --rm \
         --volume $SOURCE_CODE_VOLUME \
-        $IMAGE $CONTAINER_ENTRYPOINT $ENTRYPOINT_COMMAND \
+        $DEV_IMAGE $CONTAINER_ENTRYPOINT $ENTRYPOINT_COMMAND \
         $ELIXIR_PROJECT_NAME $@ && \
       cd ../.. && \
       configure_files && \
       if [ "$RUN_SCHEMAS_SCRIPT" == true ]; then
         cd "$WORKBENCH_DIR/$SCRIPTS_DIR" && \
         docker run \
-          --rm \
           --tty \
           --interactive \
           --name "${APP_NAME}___${ENTRYPOINT_COMMAND}" \
+          --rm \
           --volume $SOURCE_CODE_VOLUME \
-          $IMAGE $CONTAINER_ENTRYPOINT schemas && \
+          $DEV_IMAGE $CONTAINER_ENTRYPOINT schemas && \
         cd ../..
       fi && \
-      implement_features
+      implement_features && \
+      if [ $EXISTING_PROJECT != true ]; then
+        echo \
+          "For further workbench script use, remember to navigate to the" \
+          "script directory:\n\n" \
+          "   $ cd $WORKBENCH_DIR\n"
+      fi
              
       # ERROR: Tarball error will occur on Win11 using a XFAT drive for the repo
       # on 'mix deps.get' run.
     elif [ $1 == "setup" ]; then
       ENTRYPOINT_COMMAND=$1; shift
+
       if [ $EXISTING_PROJECT == true ]; then
         [ $# -gt 1 ] && [ "$1" == "--env" ] && \
           ENV_ARG="$2" || \
           ENV_ARG=dev
         
         export COMPOSE_DOCKERFILE=$DEV_DOCKERFILE
+        export COMPOSE_IMAGE=$DEV_IMAGE
         docker compose --file "$SCRIPTS_DIR/$COMPOSE_FILE" run \
           --build \
           --rm \
@@ -742,12 +758,14 @@
 
         if [ "$ENV_ARG" == "prod" ]; then
           export COMPOSE_DOCKERFILE=$PROD_DOCKERFILE
+          export COMPOSE_IMAGE=$PROD_IMAGE
           cd .. && \
           create_docker_compose_file && \
           docker compose $COMPOSE_COMMAND --build
 
         else
           export COMPOSE_DOCKERFILE=$DEV_DOCKERFILE
+          export COMPOSE_IMAGE=$DEV_IMAGE
           docker compose \
             --file "$SCRIPTS_DIR/$COMPOSE_FILE" \
             $COMPOSE_COMMAND \
@@ -761,6 +779,7 @@
       if [ $EXISTING_PROJECT == true ]; then
         if [ $# -gt 0 ]; then
           export COMPOSE_DOCKERFILE=$DEV_DOCKERFILE
+          export COMPOSE_IMAGE=$DEV_IMAGE
           docker compose --file "$SCRIPTS_DIR/$COMPOSE_FILE" run \
             --build \
             --rm \
@@ -775,7 +794,11 @@
       COMPOSE_COMMAND="down"
       if [ $EXISTING_PROJECT == true ]; then
         delete_project && \
-        docker compose $COMPOSE_COMMAND -v --rmi all --remove-orphans
+        docker compose \
+          $COMPOSE_COMMAND \
+          --volumes \
+          --rmi local \
+          --remove-orphans
 
       else terminate "There is no project to delete."; fi
         
@@ -790,14 +813,18 @@
       docker system prune -a --volumes
 
     elif [ $1 == "demo" ]; then
-      WORKBENCH_SCRIPT="./$0"
+      WORKBENCH_SCRIPT="./$0"; shift;
+
       [ $EXISTING_PROJECT == true ] && WORKBENCH_DIR="."
+      [ $# -gt 1 ] && [ "$1" == "--env" ] && \
+        ENV_ARG="$2" || \
+        ENV_ARG=dev
       
       eval \
         "$WORKBENCH_SCRIPT new && " \
         "cd $WORKBENCH_DIR && " \
-        "$WORKBENCH_SCRIPT setup && " \
-        "$WORKBENCH_SCRIPT up &&" \
+        "$WORKBENCH_SCRIPT setup --env $ENV_ARG && " \
+        "$WORKBENCH_SCRIPT up --env $ENV_ARG &&" \
         "$WORKBENCH_SCRIPT delete"
 
     else args_error invalid; fi

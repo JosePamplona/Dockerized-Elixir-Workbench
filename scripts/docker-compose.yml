@@ -2,7 +2,7 @@ services:
   app:
     container_name: $APP_CONTAINER_NAME
     hostname: $APP_NAME
-    image: $APP_NAME:$APP_VERSION
+    image: $COMPOSE_IMAGE
     build:
       dockerfile: $COMPOSE_DOCKERFILE
     env_file: 

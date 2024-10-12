@@ -103,8 +103,10 @@ Use this command in order to stop all containers and prune Docker. It's like a D
 This command runs the **new**, **setup**, **up**, and **delete** commands consecutively for demonstration purposes: (aprox time: 2:30 min)
 
 ```sh
-./app demo
+./app demo --env [ENV]
 ```
+
+The flag `--env` is optional. The argument `[ENV]` can be `dev`, `prod` or other and corresponds to the desired enviroment configuration to be deployed, by default is `dev`.
 
 ## License
 

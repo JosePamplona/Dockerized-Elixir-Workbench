@@ -95,11 +95,21 @@
     export PGADMIN_SERVERS_PATH="$PGADMIN_PATH/$SERVERS_FILE"
     export PGADMIN_PASS_PATH="$PGADMIN_PATH/$PASS_FILE"
 
+  # Elixir project implementations -------------------------------------------
+
+    EXDOC_VERSION="~> 0.34"
+
+    if [ -d "../.git" ]; then
+      REPO_URL=$(git config --get remote.origin.url)
+    else
+      REPO_URL="https://github.com/user/repo"
+    fi
+
   # Console text format codes ------------------------------------------------
 
     # Colors
     C1="\x1B[38;5;1m" # Dark-red
-    C2="\x1B[38;5;4m" # Blue
+    C2="\x1B[4;34m" # Blue
     # Format             
     B="\x1B[1m" # Bold
     R="\x1B[0m" # Reset
@@ -114,68 +124,77 @@
   # readme
     # Prints readme file
   readme() {
-    print_section() { echo " ${B}$1${R}"; }    
+    section() { echo "${B}$1${R}"; }
+    print_command() { echo "  ${B}$1${R}"; }
+    section_content() {
+      for arg in "$@"
+      do
+        echo "  $arg"
+      done
+      echo
+    }
+
     local script_name=$(basename "$0")
 
-    print_section "NAME"
-    echo "  $script_name - $(sed -n '2s/# //p' $0)"
-    echo
-    
-    print_section "SYNOPSIS"
-    echo "  $script_name [COMMAND]"
-    echo
-    
-    print_section "DESCRIPTION"
-    echo "  This is a script for creating Elixir (${Li}https://elixir-lang.org${R}) projects"
-    echo "  with the Phoenix (${Li}https://www.phoenixframework.org${R}) framework and"
-    echo "  deploying them on 'localhost' using a specific service architecture with"
-    echo "  Docker containers. It eliminates the need to install anything other than"
-    echo "  Docker Desktop (${Li}https://www.docker.com/products/docker-desktop${R}) in order"
-    echo "  to create, develop and deploy the project as 'dev' or 'prod' enviroment."
-    echo
+    section "NAME"
+    section_content "$script_name - $(sed -n '2s/# //p' $0)"
 
-    print_section "COMMANDS"
-    echo " • ${B}login [USER] [TOKEN]${R}"
-    echo "   Login account in order to download private images."
-    echo "     ${B}ARGS:${R}"
-    echo "     [USER]  Github username. "
-    echo "     [TOKEN] Authentication token (classic). "
-    echo
-    echo " • ${B}new${R}"
-    echo "   Create a new project and configures it according to config.conf."
-    echo
-    echo " • ${B}setup [OPTIONS]${R}"
-    echo "   Set or reset the database (if any) and run the seeding script."
-    echo "     ${B}OPTIONS:${R}"
-    echo "     ${B}--env [ENV]${R}"
-    echo "       ${B}ARGS:${R}"
-    echo "       [ENV] Enviroment database to setup (Defalut: dev)."
-    echo
-    echo " • ${B}up [OPTIONS]:${R}"
-    echo "   Deploy the app in localhost."
-    echo "     ${B}OPTIONS:${R}"
-    echo "     ${B}--env [ENV]${R}"
-    echo "       ${B}ARGS:${R}"
-    echo "       [ENV] Enviroment to deploy (Defalut: dev)."
-    echo
-    echo " • ${B}run [COMMANDS...]${R}"
-    echo "   Deploy app executing custom entrypoint commands."
-    echo "     ${B}ARGS:${R}"
-    echo "     [COMMANDS...] Command(s) to be executed as app entrypoint. "
-    echo
-    echo " • ${B}delete${R}"
-    echo "   Deletes project files and Docker compose project."
-    echo
-    echo " • ${B}prune${R}"
-    echo "   Stops all containers and prune Docker."
-    echo
-    echo " • ${B}demo${R}"
-    echo "   Runs consecutively new, setup, up & delete commands."
-    echo
+    section "SYNOPSIS"
+    section_content "$script_name [COMMAND]"
+    
+    section "DESCRIPTION"
+    section_content \
+      "This is a script for creating ${B}Elixir${R} (${Li}https://elixir-lang.org${R}) projects" \
+      "with the ${B}Phoenix${R} (${Li}https://www.phoenixframework.org${R}) framework and" \
+      "deploying them on 'localhost' using a specific service architecture with" \
+      "Docker containers. It eliminates the need to install anything other than" \
+      "${B}Docker Desktop${R} (${Li}https://www.docker.com/products/docker-desktop${R}) in order" \
+      "to create, develop and deploy the project as 'dev' or 'prod' enviroment."
 
-    print_section "VERSION"
-    echo "  $(sed -n '3s/# //p' $0)"
-    echo
+    section "COMMANDS"
+    print_command "login USER TOKEN"
+    section_content \
+      "Login account in order to download private images." \
+      "USER:  Github username. " \
+      "TOKEN: Authentication token (classic). "
+
+    print_command "new OPTIONS"
+    section_content \
+      "Create a new project and configures it according to config.conf." \
+      "OPTIONS: It can accept all option flags from the task 'mix phx.new'" \
+      "  (${Li}https://hexdocs.pm/phoenix/Mix.Tasks.Phx.New.html${R})."
+
+    print_command "setup [-e, --env ENV]"
+    section_content \
+      "Set or reset the database (if any) and run the seeding script." \
+      "ENV: Enviroment database to setup (Defalut: dev)."
+
+    print_command "up [-e, --env ENV]"
+    section_content \
+      "Deploy the app in localhost." \
+      "ENV: Enviroment to deploy (Defalut: dev)."
+
+    print_command "run ARGS..."
+    section_content \
+      "Deploy back-end executing custom entrypoint commands." \
+      "ARGS: Command(s) to be executed as back-end entrypoint. "
+
+    print_command "demo [-e, --env ENV]"
+    section_content \
+      "Runs consecutively new, setup, up & delete commands." \
+      "ENV: Enviroment to deploy (Defalut: dev)."
+
+    print_command "delete"
+    section_content \
+      "Deletes project files and Docker compose project."
+
+    print_command "prune"
+    section_content \
+      "Stops all containers and prune Docker."
+
+    section "VERSION"
+    section_content \
+      "$(sed -n '3s/# //p' $0)"
   }
 
   # confirm <MESSAGE>
@@ -610,6 +629,71 @@
   implement_features() {
     # FUNCTIONS --------------------------------------------------------------
 
+      # mix_new_line FUNCTION LINE
+        # Insert a new line on mix.exs deps list
+      mix_new_line() {
+        [ $# -eq 2 ] && \
+        sed -i '/defp\? '"$1"' do/,/end/ {
+          /^ *\]/ i\      '"$2"'
+        }' $MIX_FILE
+      }
+
+      # mix_append FUNCTION STRING
+        # Append a string on the last line on mix.exs deps list
+      mix_append() {
+        [ $# -eq 2 ] && \
+        sed -i '/defp\? '"$1"' do/,/end/ {
+          /[/:/]/ {
+            s/\([^,]$\)/\1'"$2"'/
+          }
+        }' $MIX_FILE
+      }
+
+      # implement_exdoc
+        #
+      implement_exdoc(){
+        echo "<---> Coming <--> implement_exdoc"
+
+        if [ ! -f $MIX_FILE ]; then
+          terminate "El archivo $MIX_FILE no existe."
+        else
+          mix_append   project ","
+          mix_new_line project ""
+          mix_new_line project "# ExDocs documentation parameters"
+          mix_new_line project "name: \"$PROJECT_NAME\","
+          mix_new_line project "source_url: \"$REPO_URL\","
+          mix_new_line project "docs: ["
+          mix_new_line project "  source_ref:   \"main\","
+          mix_new_line project "  homepage_url: \"www.$APP_NAME.com\","
+          mix_new_line project "  authors:      [\"John Doe\"],"
+          mix_new_line project "  main:         \"readme\","
+          mix_new_line project "  output:       \"priv/static/doc\","
+          mix_new_line project \
+            "  logo:         \"assets/doc/images/app-logo.png\","
+          mix_new_line project "]"
+
+          mix_append   deps ","
+          mix_new_line deps ""
+          mix_new_line deps "# ExDoc documentation deps"
+          mix_new_line deps \
+            "{:ex_doc, \"$EXDOC_VERSION\", only: :dev, runtime: false}"
+        fi
+
+        echo "<---> soon <--> implement_exdoc"
+      }
+
+      # implement_rest
+        #
+      implement_rest(){
+        echo "---> Coming soon --> implement_rest"
+      }
+
+      # implement_graphql
+        #
+      implement_graphql(){
+        echo "---> Coming soon --> implement_graphql"
+      }
+
       # implement_healthcheck
         #
       implement_healthcheck(){
@@ -628,12 +712,6 @@
         echo "---> Coming soon --> implement_stripe"
       }
 
-      # implement_graphql
-        #
-      implement_graphql(){
-        echo "---> Coming soon --> implement_graphql"
-      }
-
       # 1. create Web.Graphql files
       #      graphql
       #        resolvers
@@ -648,10 +726,14 @@
       #      {:absinthe_error_payload, "~> 1.1"},
 
     # SCRIPT -----------------------------------------------------------------
-      if [ "$HEALTHCHECK" == true ]; then implement_healthcheck; fi && \
-      if [ "$AUTH0" == true ]; then implement_auth0; fi && \
-      if [ "$STRIPE" == true ]; then implement_stripe; fi && \
-      if [ "$API_INTERFACE" == "graphql" ]; then implement_graphql; fi
+      if [ "$EXDOC" == true ];              then implement_exdoc;      fi && \
+      if [ "$API_INTERFACE" == "rest" ] || [ "$HEALTHCHECK" == true ]; then
+        implement_rest;
+      fi && \
+      if [ "$API_INTERFACE" == "graphql" ]; then implement_graphql;     fi && \
+      if [ "$HEALTHCHECK" == true ];        then implement_healthcheck; fi && \
+      if [ "$AUTH0" == true ];              then implement_auth0;       fi && \
+      if [ "$STRIPE" == true ];             then implement_stripe;      fi && \
 
       echo
   }
@@ -734,7 +816,7 @@
       ENTRYPOINT_COMMAND=$1; shift
 
       if [ $EXISTING_PROJECT == true ]; then
-        [ $# -gt 1 ] && [ "$1" == "--env" ] && \
+        [ $# -gt 1 ] && [ "$1" == "--env" ] || [ "$1" == "-e" ] && \
           ENV_ARG="$2" || \
           ENV_ARG=dev
         
@@ -752,7 +834,7 @@
     elif [ $1 == "up" ]; then
       COMPOSE_COMMAND=$1; shift
       if [ $EXISTING_PROJECT == true ]; then
-        [ $# -gt 1 ] && [ "$1" == "--env" ] && \
+        [ $# -gt 1 ] && [ "$1" == "--env" ] || [ "$1" == "-e" ] && \
           ENV_ARG="$2" || \
           ENV_ARG=dev
 
@@ -816,7 +898,7 @@
       WORKBENCH_SCRIPT="./$0"; shift;
 
       [ $EXISTING_PROJECT == true ] && WORKBENCH_DIR="."
-      [ $# -gt 1 ] && [ "$1" == "--env" ] && \
+      [ $# -gt 1 ] && [ "$1" == "--env" ] || [ "$1" == "-e" ] && \
         ENV_ARG="$2" || \
         ENV_ARG=dev
       

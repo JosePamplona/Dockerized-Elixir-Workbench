@@ -16,8 +16,9 @@ This is a script for creating [Elixir](https://elixir-lang.org/) projects with t
     - [Custom entrypoint](#custom-entrypoint)
   - [Maintenance](#maintenance)
     - [Private Github Registry Images](#private-github-registry-images)
-    - [Reset Docker](#reset-docker)
     - [Demo](#demo)
+    - [Delete project](#delete-project)
+    - [Reset Docker](#reset-docker)
   - [License](#license)
 
 ## Arquitecture
@@ -46,7 +47,7 @@ This is a script for creating [Elixir](https://elixir-lang.org/) projects with t
 
     This command generates schemas, changesets, context functions, tests, and migration files when applicable and apply specific configurations.
 
-    It can accept all option flags from the task `mix phx.new` like `--no-html` or `--no-esbuild` (Full task [phx.new](https://hexdocs.pm/phoenix/Mix.Tasks.Phx.New.html) documentation).
+    It can accept all option flags from the task `mix phx.new` like `--no-html` or `--no-assets` (Full task [phx.new](https://hexdocs.pm/phoenix/Mix.Tasks.Phx.New.html) documentation).
 
 ## Deployment
 
@@ -90,6 +91,18 @@ In order to download private github registry images, you need to login to GitHub
 
 Replace `[GITHUB_USER]` and `[ACCESS_TOKEN]` with your corresponding user name and token. How to generate a token: [Personal Access Token (classic)](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic)
 
+### Demo
+
+This command runs the **new**, **setup**, **up**, and **delete** commands consecutively for demonstration purposes: (aprox time: 2:30 min)
+
+```sh
+./app demo [-e, --env ENV]
+```
+
+The flag `--env` is optional. The argument `[ENV]` can be `dev`, `prod` or other and corresponds to the desired enviroment configuration to be deployed, by default is `dev`.
+
+### Delete project
+
 ### Reset Docker
 
 Use this command in order to stop all containers and prune Docker. It's like a Docker data brute-force reset:
@@ -97,16 +110,6 @@ Use this command in order to stop all containers and prune Docker. It's like a D
 ```sh
 ./app prune
 ```
-
-### Demo
-
-This command runs the **new**, **setup**, **up**, and **delete** commands consecutively for demonstration purposes: (aprox time: 2:30 min)
-
-```sh
-./app demo --env [ENV]
-```
-
-The flag `--env` is optional. The argument `[ENV]` can be `dev`, `prod` or other and corresponds to the desired enviroment configuration to be deployed, by default is `dev`.
 
 ## License
 

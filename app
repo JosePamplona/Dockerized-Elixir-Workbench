@@ -43,7 +43,10 @@
       PGADMIN_PASS_SEED="pgpass.seed"
       TOOLS_VERSIONS_SEED="seed.tool-versions"
     # Elixir project files
-      ELIXIR_PROJECT_NAME=$( echo "$LOWER_CASE" | tr ' ' '_' )
+      ELIXIR_PROJECT_NAME=$( echo $LOWER_CASE | tr ' ' '_' )
+      ELIXIR_MODULE=$(
+        echo $LOWER_CASE | sed -E 's/(^| )(\w)/\U\2/g' | sed 's/ //g'
+      )
       INIT_VERSION="0.0.0"
       ENV_FILE=".env"
       MIX_FILE="mix.exs"
@@ -97,13 +100,20 @@
 
   # Elixir project implementations -------------------------------------------
 
+    # ExDoc implementation
     EXDOC_VERSION="~> 0.34"
 
     if [ -d "../.git" ]; then
-      REPO_URL=$(git config --get remote.origin.url)
+      REPO_URL=$(git config --get remote.origin.url | sed 's/\.git$//')
+      REPO_OWNER=$(
+        echo $REPO_URL | sed -E 's|https://[^/]+/([^/]+)/.*|\1|'
+      )
     else
       REPO_URL="https://github.com/user/repo"
+      REPO_OWNER="John Doe"
     fi
+
+    AUTH0_PROD_JS="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"
 
   # Console text format codes ------------------------------------------------
 
@@ -629,12 +639,18 @@
   implement_features() {
     # FUNCTIONS --------------------------------------------------------------
 
-      # mix_new_line FUNCTION LINE
+      # mix_line FUNCTION LINES...
         # Insert a new line on mix.exs deps list
-      mix_new_line() {
-        [ $# -eq 2 ] && \
-        sed -i '/defp\? '"$1"' do/,/end/ {
-          /^ *\]/ i\      '"$2"'
+      mix_line() {
+        local function="$1"; shift
+        local output=""
+
+        [ $# -ge 1 ] && \
+        for arg in "$@"; do
+          output+="      $arg\n"
+        done && \
+        sed -i '/defp\? '"$function"' do/,/end/ {
+          /^    \]/i\'"${output::-2}"'
         }' $MIX_FILE
       }
 
@@ -643,43 +659,172 @@
       mix_append() {
         [ $# -eq 2 ] && \
         sed -i '/defp\? '"$1"' do/,/end/ {
-          /[/:/]/ {
-            s/\([^,]$\)/\1'"$2"'/
-          }
+          /^\s*def project do/ b
+          /^    \[/ b
+          /^\s*$/ b
+          /^\s*#.*$/ b
+          /^.*\[$/ b
+          /^.*{$/ b
+          /^    \]/ b
+          /^ \{7,\}.*/ b
+          /^\s*end/ b
+          s/\([^,]$\)/\1'"$2"'/
+        }' $MIX_FILE
+
+        # sed -i '/defp\? '"$1"' do/,/end/ {
+        #   /[/:/]/ {
+        #     s/\([^,]$\)/\1'"$2"'/
+        #   }
+        # }' $MIX_FILE
+
+        # sed '/defp\? '"$1"' do/,/end/ {
+        #   /end/ {
+        #     x
+        #     /^$/ {
+        #       x
+        #       s/\([^,]$\)/\1'"$2"'/
+        #     }
+        #     x
+        #   }
+        #   G
+        #   h
+        #   s/.*\n//
+        # }' $MIX_FILE
+      }
+
+      # mix_function FUNCTION LINES...
+      mix_function() {
+        [ $# -ge 2 ] && \
+        local function="$1"; shift
+        local output=""
+
+        for arg in "$@"; do
+          output+="  $arg\n"
+        done && \
+        sed -i '/defp\? '"$function"' do/,/end/ {
+          /end/a\'"${output::-2}"'
         }' $MIX_FILE
       }
 
       # implement_exdoc
         #
       implement_exdoc(){
-        echo "<---> Coming <--> implement_exdoc"
+        echo "Implementing ExDoc... "
 
         if [ ! -f $MIX_FILE ]; then
           terminate "El archivo $MIX_FILE no existe."
         else
-          mix_append   project ","
-          mix_new_line project ""
-          mix_new_line project "# ExDocs documentation parameters"
-          mix_new_line project "name: \"$PROJECT_NAME\","
-          mix_new_line project "source_url: \"$REPO_URL\","
-          mix_new_line project "docs: ["
-          mix_new_line project "  source_ref:   \"main\","
-          mix_new_line project "  homepage_url: \"www.$APP_NAME.com\","
-          mix_new_line project "  authors:      [\"John Doe\"],"
-          mix_new_line project "  main:         \"readme\","
-          mix_new_line project "  output:       \"priv/static/doc\","
-          mix_new_line project \
-            "  logo:         \"assets/doc/images/app-logo.png\","
-          mix_new_line project "]"
 
-          mix_append   deps ","
-          mix_new_line deps ""
-          mix_new_line deps "# ExDoc documentation deps"
-          mix_new_line deps \
+          [ ! -d "assets" ] && mkdir "assets"
+          mkdir "assets/doc"
+          mkdir "assets/doc/images"
+          cp \
+            "$WORKBENCH_DIR/assets/images/logo.png" \
+            "assets/doc/images/app-logo.png"
+          mkdir "assets/doc/js"
+          cp -r \
+            "$WORKBENCH_DIR/assets/js" \
+            "assets/doc/js"
+
+          mix_append project ","
+          mix_line project \
+            "" \
+            "# ExDocs documentation parameters" \
+            "name: \"$PROJECT_NAME\"," \
+            "source_url: \"$REPO_URL\"," \
+            "docs: [" \
+            "  source_ref:   \"main\"," \
+            "  authors:      [\"$REPO_OWNER\"]," \
+            "  homepage_url: \"https://www.$APP_NAME.com\"," \
+            "  logo:         \"assets/doc/images/app-logo.png\"," \
+            "  output:       \"priv/static/doc\"," \
+            "  main:         \"readme\"," \
+            "  assets: %{" \
+            "    \"assets/doc/images\"        => \"/assets\"," \
+            "    \"assets/doc/js\"            => \"/assets\"," \
+            "    \"assets/doc/config\"        => \"/\"," \
+            "    \"assets/doc/coverage/html\" => \"/\"" \
+            "  }," \
+            "  extras: [" \
+            "    {\"README.md\",              [title: \"Overview\"]},"
+            # "    {\"assets/doc/database.md\", [title: \"Database\"]}," \
+
+          [ $AUTH0 == true ] && \
+          mix_line project \
+            "    {\"assets/doc/token.md\",    [title: \"Get access tokens\"]},"
+          
+          mix_line project \
+            "    {\"assets/doc/coding.md\",   [title: \"Coding guidelines\"]}," \
+            "    {\"assets/doc/testing.md\",  [title: \"Tests reports\"]}," \
+            "    {\"CHANGELOG.md\",           [title: \"Changelog\"]}" \
+            "  ]," \
+            "  groups_for_modules: [" \
+            "    \"Database contexts\": [" \
+            "      ${ELIXIR_MODULE}.Accounts," \
+            "      ${ELIXIR_MODULE}.Archive," \
+            "      ${ELIXIR_MODULE}.Auth," \
+            "      ${ELIXIR_MODULE}.Billing" \
+            "    ]," \
+            "    \"Schemas\": [" \
+            "      ${ELIXIR_MODULE}.Accounts.Address," \
+            "      ${ELIXIR_MODULE}.Accounts.CompanySize," \
+            "      ${ELIXIR_MODULE}.Accounts.Company," \
+            "      ${ELIXIR_MODULE}.Accounts.User," \
+            "      ${ELIXIR_MODULE}.Billing.Customer," \
+            "      ${ELIXIR_MODULE}.Billing.Seat," \
+            "      ${ELIXIR_MODULE}.Auth.Login," \
+            "    ]," \
+            "    \"Collections\": [" \
+            "      ${ELIXIR_MODULE}.Accounts.User.LevelEnum" \
+            "    ],"
+
+          [ "$API_INTERFACE" == "graphql" ] && \
+          mix_line project \
+            "    \"Authentication\": [" \
+            "      ${ELIXIR_MODULE}Web.Graphql.Context" \
+            "    ],"
+
+          mix_line project \
+            "    \"Web\": [" \
+            "      ${ELIXIR_MODULE}Web," \
+            "      ${ELIXIR_MODULE}Web.Endpoint," \
+            "      ${ELIXIR_MODULE}Web.ErrorJSON," \
+            "      ${ELIXIR_MODULE}Web.Gettext," \
+            "      ${ELIXIR_MODULE}Web.Router," \
+            "      ${ELIXIR_MODULE}Web.Telemetry" \
+            "    ]" \
+            "  ]," \
+            "  before_closing_head_tag: &before_closing_head_tag/1," \
+            "  before_closing_body_tag: &before_closing_body_tag/1" \
+            "]" \
+
+          html_body="  <script src=\"./assets/themedImage.js\"></script>"
+          if [ "$AUTH0" == true ]; then
+            html_body+="\n    <script src=\"$AUTH0_PROD_JS\"></script>"
+            html_body+="\n    <script src=\"./assets/auth_config.js\"></script>"
+            html_body+="\n    <script src=\"./assets/token.js\"></script>"
+          fi
+
+          mix_function project \
+            "" \
+            "defp before_closing_head_tag(:epub), do: \"\"" \
+            "defp before_closing_head_tag(:html), do: \"\"" \
+            "" \
+            "defp before_closing_body_tag(:epub), do: \"\"" \
+            "defp before_closing_body_tag(:html) do" \
+            "  \"\"\"" \
+            "$html_body" \
+            "  \"\"\"" \
+            "end"
+
+          mix_append deps ","
+          mix_line deps \
+            "" \
+            "# ExDoc documentation deps" \
             "{:ex_doc, \"$EXDOC_VERSION\", only: :dev, runtime: false}"
         fi
 
-        echo "<---> soon <--> implement_exdoc"
+        echo "ExDoc implemented"
       }
 
       # implement_rest
@@ -775,6 +920,7 @@
     elif [ $1 == "new" ]; then
       ENTRYPOINT_COMMAND=$1; shift
 
+      # cd ..
       prepare_new_project && \
       cd "$WORKBENCH_DIR/$SCRIPTS_DIR" && \
       docker build \

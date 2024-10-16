@@ -62,11 +62,8 @@ if [ $# -gt 0 ]; then echo "[$HOSTNAME]$0($#): $@"; fi
       
       {
         echo yes
-        echo yes
-      } | mix phx.new ./ --app $PROJECT_NAME --verbose $@ && \
-      MIX_ENV=prod && \
-      mix deps.get && \
-      mix deps.compile
+        echo no
+      } | mix phx.new ./ --app $PROJECT_NAME --verbose $@
 
     elif [ $# -lt 2 ]; then args_error missing
     else args_error too_many; fi

@@ -23,7 +23,7 @@ This is a script for creating [Elixir](https://elixir-lang.org/) projects with t
 
 ## Arquitecture
 
-<p align="center"><img alt="arquitecture diagram" src="assets/arq.svg"></p>
+<p align="center"><img alt="arquitecture diagram" src="assets/images/arq.svg"></p>
 
 | Service  | URL | Description |
 | :-- | :-- | :-- |

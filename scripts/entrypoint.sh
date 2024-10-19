@@ -37,6 +37,10 @@ if [ $# -gt 0 ]; then echo "[$HOSTNAME]$0($#): $@"; fi
     exit 1
   }
 
+  # default_cmd()
+    # Default command to initialize the server
+  default_cmd() { mix phx.server; }
+
   # setup() <ENV>
     # Run specific setup scripts for given enviroment.
   setup() { 
@@ -44,12 +48,6 @@ if [ $# -gt 0 ]; then echo "[$HOSTNAME]$0($#): $@"; fi
     mix ecto.drop --force --force-drop && \
     mix ecto.setup
   }
-
-  # default_cmd()
-    # Default command to initialize the server
-  default_cmd() { mix phx.server; }
-
-  schemas() { source ../schemas.sh; }
 
 # SCRIPT -----------------------------------------------------------------------
 
@@ -60,15 +58,24 @@ if [ $# -gt 0 ]; then echo "[$HOSTNAME]$0($#): $@"; fi
     if [ $# -ge 1 ]; then
       PROJECT_NAME=$1; shift
       
-      {
-        echo yes
-        echo no
-      } | mix phx.new ./ --app $PROJECT_NAME --verbose $@
+      { echo y; echo n; } | mix phx.new ./ --app $PROJECT_NAME --verbose $@
 
     elif [ $# -lt 2 ]; then args_error missing
     else args_error too_many; fi
 
-  elif [ "$1" == "schemas" ]; then schemas;
+  elif [ "$1" == "implementation_tasks" ]; then
+    shift
+    if [ $# -ge 2 ]; then
+      EXDOC=$1; shift
+      SCHEMAS=$1; shift
+      
+      mix deps.get
+      [ $EXDOC == true ]   && mix docs
+      [ $SCHEMAS == true ] && source ../schemas.sh
+
+    elif [ $# -lt 2 ]; then args_error missing
+    else args_error too_many; fi
+
   elif [ "$1" == "setup" ]; then setup $2;
   elif [ "$1" == "run" ]; then
     shift

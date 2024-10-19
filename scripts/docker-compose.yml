@@ -7,6 +7,8 @@ services:
       dockerfile: $COMPOSE_DOCKERFILE
     env_file: 
       - $ENV_PATH
+    environment:
+      DATABASE_HOST: $DB_HOST
     ports:
       - $APP_PORT:$APP_INTERNAL_PORT
     volumes:

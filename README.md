@@ -11,6 +11,7 @@ This is a script for creating [Elixir](https://elixir-lang.org/) projects with t
 
 - [Dockerized Elixir Workbench](#dockerized-elixir-workbench)
   - [Arquitecture](#arquitecture)
+  - [Configuration](#configuration)
   - [Create a new project](#create-a-new-project)
   - [Deployment](#deployment)
     - [Custom entrypoint](#custom-entrypoint)
@@ -23,7 +24,7 @@ This is a script for creating [Elixir](https://elixir-lang.org/) projects with t
 
 ## Arquitecture
 
-<p align="center"><img alt="arquitecture diagram" src="assets/images/arq.svg"></p>
+<p align="center"><img alt="arquitecture diagram" src="assets/arq.svg"></p>
 
 | Service  | URL | Description |
 | :-- | :-- | :-- |
@@ -32,6 +33,10 @@ This is a script for creating [Elixir](https://elixir-lang.org/) projects with t
 | pgAdmin     | http://localhost:5050 | Database management tool |
 | Stripe      | https://api.stripe.com:433 | Payment service provider |
 | Auth0       | https://dev-tenant.us.auth0.com:433 | Identity management platform |
+
+## Configuration
+
+Lorem ipsum
 
 ## Create a new project
 

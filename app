@@ -50,8 +50,10 @@
       INIT_VERSION="0.0.0"
       ENV_FILE=".env"
       MIX_FILE="mix.exs"
+      ROUTER_FILE="lib/${ELIXIR_PROJECT_NAME}_web/router.ex"
       CONFIG_FILE="config/config.exs"
       DEV_FILE="config/dev.exs"
+      RUNTIME_FILE="config/runtime.exs"
       README_FILE="README.md"
       CHANGELOG_FILE="CHANGELOG.md"
       PROD_DOCKERFILE="Dockerfile"
@@ -243,6 +245,46 @@
   # scape_for_sed <STRING>
   scape_for_sed() { echo "$1" | sed 's/[\/&]/\\&/g'; }
 
+  # pattern <action>, <file>, <pattern_identifier>, <new_content>
+    # Function to manage seed patterns in the process of creating files.
+    # On the seed files these opening and closing tags exists:
+    #   <!-- workbench-<pattern_identifier> open -->
+    #   <!-- workbench-<pattern_identifier> close -->
+    # Using this function the content between tags can be deleted, replaced 
+    # or keeped depending on the given action:
+    #   action=keep : Delete tags keeping the content between them.
+    #   action=delete : Delete tags and the content between them.
+    #   action=replace : Delete tags replacing the content between them.
+  pattern() {
+    [ $# -ge 3 ] && \
+      local action="$1" && \
+      local file="$2" && \
+      local pattern_identifier="$3" && \
+      local new_content="$4" && \
+      local start_pattern="<!-- workbench-$pattern_identifier open -->" && \
+      local end_pattern="<!-- workbench-$pattern_identifier close -->" && \
+      local temp_file="$(mktemp)" && \
+      start_pattern=$(scape_for_sed "$start_pattern") && \
+      end_pattern=$(scape_for_sed "$end_pattern") && \
+      if   [ $action == "keep" ]; then
+        sed "/$start_pattern/d; /$end_pattern/d" "$file" > "$temp_file" && \
+        mv "$temp_file" "$file"
+
+      elif [ $action == "delete" ]; then
+        sed "/$start_pattern/,/$end_pattern/d" "$file" > "$temp_file"  && \
+        mv "$temp_file" "$file"
+
+      elif [ $action == "replace" ]; then
+        sed "/$start_pattern/,/$end_pattern/{
+            /$start_pattern/d
+            /$end_pattern/d
+            c\\$new_content
+        }" "$file" > "$temp_file" && \
+        mv "$temp_file" "$file"
+      
+      else args_error "Invalid action."; fi
+  }
+
   # --------------------------------------------------------------------------
 
   # delete_project_files
@@ -336,46 +378,6 @@
     # After project creation it configures some elixir files and add new ones.
   configure_files() {
     # FUNCTIONS --------------------------------------------------------------
-
-      # pattern <action>, <file>, <pattern_identifier>, <new_content>
-        # Function to manage seed patterns in the process of creating files.
-        # On the seed files these opening and closing tags exists:
-        #   <!-- workbench-<pattern_identifier> open -->
-        #   <!-- workbench-<pattern_identifier> close -->
-        # Using this function the content between tags can be deleted, replaced 
-        # or keeped depending on the given action:
-        #   action=keep : Delete tags keeping the content between them.
-        #   action=delete : Delete tags and the content between them.
-        #   action=replace : Delete tags replacing the content between them.
-      pattern() {
-        local action="$1" && \
-        local file="$2" && \
-        local pattern_identifier="$3" && \
-        local new_content="$4" && \
-        local start_pattern="<!-- workbench-$pattern_identifier open -->" && \
-        local end_pattern="<!-- workbench-$pattern_identifier close -->" && \
-        local temp_file="$(mktemp)" && \
-        start_pattern=$(scape_for_sed "$start_pattern") && \
-        end_pattern=$(scape_for_sed "$end_pattern") && \
-        if   [ $action == "keep" ]; then
-          sed "/$start_pattern/d; /$end_pattern/d" "$file" > "$temp_file" && \
-          mv "$temp_file" "$file"
-
-        elif [ $action == "delete" ]; then
-          sed "/$start_pattern/,/$end_pattern/d" "$file" > "$temp_file"  && \
-          mv "$temp_file" "$file"
-
-        elif [ $action == "replace" ]; then
-          sed "/$start_pattern/,/$end_pattern/{
-              /$start_pattern/d
-              /$end_pattern/d
-              c\\$new_content
-          }" "$file" > "$temp_file" && \
-          mv "$temp_file" "$file"
-        
-        else args_error "Invalid action."; fi
-      }
-
       # create_pgpass
         # Create a pgpass file from seed for PGAdmin.
       create_pgpass() {
@@ -441,7 +443,7 @@
         # Allow access to all machines in the Docker network.
       adjust_config_dev() {
         sed -i \
-          "s/hostname: \"localhost\"/hostname: \"$DB_HOST\"/" \
+          "s/hostname: \"localhost\"/hostname: System.get_env(\"DATABASE_HOST\") || \"localhost\"/" \
           $DEV_FILE && \
         sed -i \
           "s/http: \[ip: {127, 0, 0, 1}/http: \[ip: {0, 0, 0, 0}/" \
@@ -513,17 +515,14 @@
         local file_path="$README_FILE"
         local env_content=""
         while IFS= read -r line; do
-            env_content+="    ${line}\n"
-        done < "$ENV_FILE"
+          env_content+="    ${line}\n"
+        done < $ENV_FILE
 
         cp $seed_path $file_path
         sed -i "s/%{project_name}/$PROJECT_NAME/" $file_path
-        
-        pattern \
-          replace \
-          $file_path \
-          "env" \
-          "    \`\`\`elixir\n$ENV_CONTENT\n    \`\`\`"
+
+        pattern replace $file_path "env" \
+          "    \`\`\`elixir\n$env_content\n    \`\`\`"
         
         if [ "$HEALTHCHECK" == true ]
         then pattern keep   $file_path "healthcheck"
@@ -639,9 +638,9 @@
   implement_features() {
     # FUNCTIONS --------------------------------------------------------------
 
-      # mix_line FUNCTION LINES...
+      # mix_add_list_line FUNCTION LINES...
         # Insert a new line on mix.exs deps list
-      mix_line() {
+      mix_add_list_line() {
         local function="$1"; shift
         local output=""
 
@@ -654,12 +653,12 @@
         }' $MIX_FILE
       }
 
-      # mix_append FUNCTION STRING
+      # mix_last_line_append FUNCTION STRING
         # Append a string on the last line on mix.exs deps list
-      mix_append() {
+      mix_last_line_append() {
         [ $# -eq 2 ] && \
         sed -i '/defp\? '"$1"' do/,/end/ {
-          /^\s*def project do/ b
+          /^\s*defp\? '"$1"' do/ b
           /^    \[/ b
           /^\s*$/ b
           /^\s*#.*$/ b
@@ -692,8 +691,8 @@
         # }' $MIX_FILE
       }
 
-      # mix_function FUNCTION LINES...
-      mix_function() {
+      # mix_insert_after_function FUNCTION LINES...
+      mix_insert_after_function() {
         [ $# -ge 2 ] && \
         local function="$1"; shift
         local output=""
@@ -706,57 +705,202 @@
         }' $MIX_FILE
       }
 
+      # router_add_pipeline
+        #
+      router_add_pipeline() {
+        # [ $# -ge 1 ] && \
+        local output=""
+        for arg in "$@"; do
+          output+="  $arg\n"
+        done && \
+        output=${output::-2}
+        local last_pipeline=$(
+          awk '
+            /^ *pipeline .* do *$/ {
+              in_block = 1
+              match($0, /^ *pipeline (.*) do *$/, arr)
+              last = arr[1]
+            }
+            /^end$/ {
+              if (in_block) {
+                in_block = 0
+              }
+            }
+            END {
+              print last
+            }
+          ' $ROUTER_FILE
+        )
+
+        sed -i '/pipeline '"${last_pipeline}"' do/,/end/ {
+          /end/ {
+            a\\n'"${output}"'
+          }
+        }
+        ' $ROUTER_FILE
+      }
+
+      # router_add_scope SCOPE IDENTATION_LEVEL
+      router_add_scope() {
+        # [ $# -ge 3 ] && \
+        local scope="$1"; shift
+        local ident="$1"; shift
+        local spaces=$(printf '%*s' $((ident * 2)) '')
+        local output=""
+        for arg in "$@"; do
+          output+="$spaces$arg\n"
+        done && \
+        output=${output::-2}
+
+        sed -i '/scope '"${scope}"' do/,/end/ {
+          /end/ {
+            a\\n'"${output}"'
+          }
+        }
+        ' $ROUTER_FILE
+      }
+
       # implement_exdoc
         #
       implement_exdoc(){
+        # inject_frontend_vars_in_runtime
+          #
+        inject_frontend_vars_in_runtime() {
+          local output=""
+          for arg in "$@"; do
+            output+="$arg\n"
+          done
+          
+          sed -i '/if System.get_env/i\'"$output" $RUNTIME_FILE
+        }
+
         echo "Implementing ExDoc... "
 
         if [ ! -f $MIX_FILE ]; then
           terminate "El archivo $MIX_FILE no existe."
         else
+          RESOURCE_DIR="doc"
+          ASSETS_DIR="assets"
+          ASSETS_EXDOC_DIR="exdoc"
+          ASSETS_IMG_PATH="$WORKBENCH_DIR/$ASSETS_DIR/$ASSETS_EXDOC_DIR/images"
+          ASSETS_JS_PATH="$WORKBENCH_DIR/$ASSETS_DIR/$ASSETS_EXDOC_DIR/js"
+          APP_LOGO_FILE="logo.png"
+          TOKEN_SEED_FILE="token.seed.md"
+          TESTING_SEED_FILE="testing.seed.md"
+          EXDOC_CONTROLLER_SEED_FILE="exdoc_controller.seed.ex"
+          EXDOC_ENDPOINT="docs"
 
-          [ ! -d "assets" ] && mkdir "assets"
-          mkdir "assets/doc"
-          mkdir "assets/doc/images"
+          # GUIDELINE_USER="rrrene"
+          # GUIDELINE_REPO="elixir-style-guide"
+          # GUIDELINE_BRANCH="master"
+          # GUIDELINE_FILE="README.md"
+          GUIDELINE_USER="JosePamplona"
+          GUIDELINE_REPO="Elixir-Coding-Conventions"
+          GUIDELINE_BRANCH="master"
+          GUIDELINE_FILE="README.en_US.md"
+
+          GUIDELINE_URL="https://raw.githubusercontent.com/"
+          GUIDELINE_URL+="$GUIDELINE_USER/"
+          GUIDELINE_URL+="$GUIDELINE_REPO/"
+          GUIDELINE_URL+="$GUIDELINE_BRANCH/"
+          GUIDELINE_URL+="$GUIDELINE_FILE"
+
+          ELIXIR_CONTROLLERS_DIR="lib/${ELIXIR_PROJECT_NAME}_web/controllers"
+          ELIXIR_ASSETS_DIR="assets"
+          EXDOC_ASSETS_DIR="exdoc"
+          EXDOC_ASSETS_PATH="$ELIXIR_ASSETS_DIR/$EXDOC_ASSETS_DIR"
+          EXDOC_ASSETS_IMG_PATH="$EXDOC_ASSETS_PATH/images"
+          EXDOC_APP_LOGO_FILE="$EXDOC_ASSETS_IMG_PATH/app-logo.png"
+          EXDOC_ASSETS_JS_PATH="$EXDOC_ASSETS_PATH/js"
+          EXDOC_ASSETS_CONFIG_PATH="$EXDOC_ASSETS_PATH/config"
+          EXDOC_ASSETS_COVERAGE_PATH="$EXDOC_ASSETS_PATH/coverage/html"
+          EXDOC_WORKBENCH_FILE="$EXDOC_ASSETS_PATH/workbench.md"
+          EXDOC_WORKBENCH_ARQ_FILE="$EXDOC_ASSETS_IMG_PATH/arq.svg"
+          EXDOC_TOKEN_FILE="$EXDOC_ASSETS_PATH/token.md"
+          EXDOC_TESTING_FILE="$EXDOC_ASSETS_PATH/testing.md"
+          EXDOC_GUIDELINE_FILE="$EXDOC_ASSETS_PATH/coding.md"
+          EXDOC_CONTROLLER_FILE="$ELIXIR_CONTROLLERS_DIR/exdoc_controller.ex"
+          EXDOC_CONTORLLER_MODULE="ExDocController"
+
+          # Create ExDoc assets directory
+          [ ! -d $ELIXIR_ASSETS_DIR ] && mkdir $ELIXIR_ASSETS_DIR
+          mkdir "$EXDOC_ASSETS_PATH"
+
+          # Create image asset files
+          mkdir $EXDOC_ASSETS_IMG_PATH
+          cp "$ASSETS_IMG_PATH/$APP_LOGO_FILE" $EXDOC_APP_LOGO_FILE
+          cp "$WORKBENCH_DIR/$ASSETS_DIR/arq.svg" $EXDOC_WORKBENCH_ARQ_FILE
+          
+          # Create js asset files
+          mkdir $EXDOC_ASSETS_JS_PATH
+          cp -r $ASSETS_JS_PATH $EXDOC_ASSETS_PATH
+
+          # Set workbench page
+          cp "$WORKBENCH_DIR/README.md" $EXDOC_WORKBENCH_FILE
+
+          # Plant testing page
+          cp "$WORKBENCH_DIR/$SEEDS_DIR/$TESTING_SEED_FILE" $EXDOC_TESTING_FILE
+
+          # Plant token page
+          [ "$AUTH0" == true ] && \
+            cp "$WORKBENCH_DIR/$SEEDS_DIR/$TOKEN_SEED_FILE" $EXDOC_TOKEN_FILE
+
+          # Download codeguide
+          curl -LO $GUIDELINE_URL && \
+          mv $GUIDELINE_FILE $EXDOC_GUIDELINE_FILE
+
+          # Plant controller page
           cp \
-            "$WORKBENCH_DIR/assets/images/logo.png" \
-            "assets/doc/images/app-logo.png"
-          mkdir "assets/doc/js"
-          cp -r \
-            "$WORKBENCH_DIR/assets/js" \
-            "assets/doc/js"
+            "$WORKBENCH_DIR/$SEEDS_DIR/$EXDOC_CONTROLLER_SEED_FILE" \
+            $EXDOC_CONTROLLER_FILE
+          
+          sed -i "s/%{elixir_module}/$ELIXIR_MODULE/" $EXDOC_CONTROLLER_FILE
+          sed -i "s/%{resource_dir}/$RESOURCE_DIR/" $EXDOC_CONTROLLER_FILE
+          sed -i "s/%{project_name}/$ELIXIR_PROJECT_NAME/" $EXDOC_CONTROLLER_FILE
+          sed -i "s/%{exdoc_endpoint}/$EXDOC_ENDPOINT/" $EXDOC_CONTROLLER_FILE
 
-          mix_append project ","
-          mix_line project \
+          [ $COVERALLS == true ] && \
+            pattern keep $EXDOC_CONTROLLER_FILE "coveralls" || \
+            pattern delete $EXDOC_CONTROLLER_FILE "coveralls"
+
+          # Mix configuration
+          mix_last_line_append project ","
+          mix_add_list_line project \
             "" \
-            "# ExDocs documentation parameters" \
+            "# ExDoc documentation parameters" \
             "name: \"$PROJECT_NAME\"," \
             "source_url: \"$REPO_URL\"," \
             "docs: [" \
-            "  source_ref:   \"main\"," \
-            "  authors:      [\"$REPO_OWNER\"]," \
+            "  source_ref: \"main\"," \
+            "  authors: [\"$REPO_OWNER\"]," \
             "  homepage_url: \"https://www.$APP_NAME.com\"," \
-            "  logo:         \"assets/doc/images/app-logo.png\"," \
-            "  output:       \"priv/static/doc\"," \
-            "  main:         \"readme\"," \
+            "  logo: \"$EXDOC_APP_LOGO_FILE\"," \
+            "  output: \"priv/static/$RESOURCE_DIR\"," \
+            "  main: \"readme\"," \
             "  assets: %{" \
-            "    \"assets/doc/images\"        => \"/assets\"," \
-            "    \"assets/doc/js\"            => \"/assets\"," \
-            "    \"assets/doc/config\"        => \"/\"," \
-            "    \"assets/doc/coverage/html\" => \"/\"" \
+            "    \"$EXDOC_ASSETS_CONFIG_PATH\" => \"/\","
+          
+          [ $COVERALLS == true ] && \
+          mix_add_list_line project \
+            "    \"$EXDOC_ASSETS_COVERAGE_PATH\" => \"/\","
+
+          mix_add_list_line project \
+            "    \"$EXDOC_ASSETS_IMG_PATH\" => \"/assets\"," \
+            "    \"$EXDOC_ASSETS_JS_PATH\" => \"/assets\"" \
             "  }," \
             "  extras: [" \
-            "    {\"README.md\",              [title: \"Overview\"]},"
+            "    {\"$README_FILE\", [title: \"Overview\"]}," \
+            "    {\"$EXDOC_WORKBENCH_FILE\", [title: \"Workbench\"]},"
             # "    {\"assets/doc/database.md\", [title: \"Database\"]}," \
 
           [ $AUTH0 == true ] && \
-          mix_line project \
-            "    {\"assets/doc/token.md\",    [title: \"Get access tokens\"]},"
+          mix_add_list_line project \
+            "    {\"$EXDOC_TOKEN_FILE\", [title: \"Get access tokens\"]},"
           
-          mix_line project \
-            "    {\"assets/doc/coding.md\",   [title: \"Coding guidelines\"]}," \
-            "    {\"assets/doc/testing.md\",  [title: \"Tests reports\"]}," \
-            "    {\"CHANGELOG.md\",           [title: \"Changelog\"]}" \
+          mix_add_list_line project \
+            "    {\"$EXDOC_GUIDELINE_FILE\", [title: \"Coding guidelines\"]}," \
+            "    {\"$EXDOC_TESTING_FILE\", [title: \"Tests reports\"]}," \
+            "    {\"$CHANGELOG_FILE\", [title: \"Changelog\"]}" \
             "  ]," \
             "  groups_for_modules: [" \
             "    \"Database contexts\": [" \
@@ -778,13 +922,13 @@
             "      ${ELIXIR_MODULE}.Accounts.User.LevelEnum" \
             "    ],"
 
-          [ "$API_INTERFACE" == "graphql" ] && \
-          mix_line project \
+          [ "$API_INTERFACE" == "graphql" ] && [ $AUTH0 == true ] && \
+          mix_add_list_line project \
             "    \"Authentication\": [" \
             "      ${ELIXIR_MODULE}Web.Graphql.Context" \
             "    ],"
 
-          mix_line project \
+          mix_add_list_line project \
             "    \"Web\": [" \
             "      ${ELIXIR_MODULE}Web," \
             "      ${ELIXIR_MODULE}Web.Endpoint," \
@@ -805,7 +949,7 @@
             html_body+="\n    <script src=\"./assets/token.js\"></script>"
           fi
 
-          mix_function project \
+          mix_insert_after_function project \
             "" \
             "defp before_closing_head_tag(:epub), do: \"\"" \
             "defp before_closing_head_tag(:html), do: \"\"" \
@@ -817,11 +961,68 @@
             "  \"\"\"" \
             "end"
 
-          mix_append deps ","
-          mix_line deps \
+          mix_last_line_append deps ","
+          mix_add_list_line deps \
             "" \
             "# ExDoc documentation deps" \
             "{:ex_doc, \"$EXDOC_VERSION\", only: :dev, runtime: false}"
+        fi
+
+        # Router configuration
+        router_add_pipeline \
+          "pipeline :exdoc do" \
+          "  plug Plug.Static," \
+          "    at: \"/$EXDOC_ENDPOINT\"," \
+          "    from: {:$ELIXIR_PROJECT_NAME, \"priv/static/$RESOURCE_DIR\"}," \
+          "    cache_control_for_etags: \"public, max-age=86400\"," \
+          "    gzip: true" \
+          "end"
+
+        router_add_scope "\"\/dev\"" 2 \
+          "# ExDocs documentation service" \
+          "scope \"/\", ${ELIXIR_MODULE}Web do" \
+          "  pipe_through [:exdoc]" \
+          "" \
+          "  get \"/$EXDOC_ENDPOINT/\",      ${EXDOC_CONTORLLER_MODULE}, :index" \
+          "  get \"/$EXDOC_ENDPOINT/cover\", ${EXDOC_CONTORLLER_MODULE}, :cover" \
+          "  get \"/$EXDOC_ENDPOINT/*path\", ${EXDOC_CONTORLLER_MODULE}, :not_found" \
+          "end" \
+
+        # Adjust runtime
+        if [ "$AUTH0" == true ]; then
+          client_id=$(
+            head -c $((32 * 2)) /dev/urandom | \
+              base64 | \
+              tr -dc 'a-zA-Z0-9' | \
+              head -c 32
+          )
+          inject_frontend_vars_in_runtime \
+            "# Auth0 & ExDoc implementation:" \
+            "# Create auth_config.js file for token request in ExDoc token page." \
+            "if config_env() != :prod do" \
+            "  File.mkdir_p!(\"./priv/static/doc/assets/\")" \
+            "  File.write(" \
+            "    \"./priv/static/doc/assets/auth_config.js\"," \
+            "    \"\"\"" \
+            "    var authConfig = {" \
+            "      domain: \"#{" \
+            "        System.get_env(\"AUTH0_DOMAIN\") ||" \
+            "          raise \"\"\"" \
+            "          environment variable AUTH0_DOMAIN is missing." \
+            "          For example: dev-tenant.us.auth0.com" \
+            "          \"\"\"" \
+            "      }\"," \
+            "      client_id: \"#{" \
+            "        System.get_env(\"AUTH0_CLIENT_ID\") ||" \
+            "          raise \"\"\"" \
+            "          environment variable AUTH0_CLIENT_ID is missing." \
+            "          For example: $client_id" \
+            "          \"\"\"" \
+            "      }\"" \
+            "    }" \
+            "    \"\"\"" \
+            "  )" \
+            "end"
         fi
 
         echo "ExDoc implemented"
@@ -858,20 +1059,20 @@
       }
 
       # 1. create Web.Graphql files
-      #      graphql
-      #        resolvers
-      #          ecto_schema.ex
-      #        schemas
-      #          ecto_schema.ex
-      #        schema.ex
-      # 2. adjust router
-      # 3. add dependencies
-      #      {:absinthe, "~> 1.7"},
-      #      {:absinthe_plug, "~> 1.5"},
-      #      {:absinthe_error_payload, "~> 1.1"},
+        #      graphql
+        #        resolvers
+        #          ecto_schema.ex
+        #        schemas
+        #          ecto_schema.ex
+        #        schema.ex
+        # 2. adjust router
+        # 3. add dependencies
+        #      {:absinthe, "~> 1.7"},
+        #      {:absinthe_plug, "~> 1.5"},
+        #      {:absinthe_error_payload, "~> 1.1"},
 
     # SCRIPT -----------------------------------------------------------------
-      if [ "$EXDOC" == true ];              then implement_exdoc;      fi && \
+      if [ "$EXDOC" == true ];              then implement_exdoc;       fi && \
       if [ "$API_INTERFACE" == "rest" ] || [ "$HEALTHCHECK" == true ]; then
         implement_rest;
       fi && \
@@ -920,35 +1121,30 @@
     elif [ $1 == "new" ]; then
       ENTRYPOINT_COMMAND=$1; shift
 
-      # cd ..
       prepare_new_project && \
       cd "$WORKBENCH_DIR/$SCRIPTS_DIR" && \
-      docker build \
-        --file "$DEV_DOCKERFILE" \
-        --tag $DEV_IMAGE \
-        . && \
+      docker build --file $DEV_DOCKERFILE --tag $DEV_IMAGE . && \
       docker run \
         --tty \
         --interactive \
         --name "${APP_NAME}___${ENTRYPOINT_COMMAND}" \
         --rm \
         --volume $SOURCE_CODE_VOLUME \
-        $DEV_IMAGE $CONTAINER_ENTRYPOINT $ENTRYPOINT_COMMAND \
+        $DEV_IMAGE $CONTAINER_ENTRYPOINT new \
         $ELIXIR_PROJECT_NAME $@ && \
       cd ../.. && \
       configure_files && \
-      if [ "$RUN_SCHEMAS_SCRIPT" == true ]; then
-        cd "$WORKBENCH_DIR/$SCRIPTS_DIR" && \
-        docker run \
-          --tty \
-          --interactive \
-          --name "${APP_NAME}___${ENTRYPOINT_COMMAND}" \
-          --rm \
-          --volume $SOURCE_CODE_VOLUME \
-          $DEV_IMAGE $CONTAINER_ENTRYPOINT schemas && \
-        cd ../..
-      fi && \
       implement_features && \
+      cd "$WORKBENCH_DIR/$SCRIPTS_DIR" && \
+      docker run \
+        --tty \
+        --interactive \
+        --name "${APP_NAME}___${ENTRYPOINT_COMMAND}" \
+        --rm \
+        --volume $SOURCE_CODE_VOLUME \
+        $DEV_IMAGE $CONTAINER_ENTRYPOINT implementation_tasks \
+        $EXDOC $RUN_SCHEMAS_SCRIPT && \
+      cd ../.. && \
       if [ $EXISTING_PROJECT != true ]; then
         echo \
           "For further workbench script use, remember to navigate to the" \

@@ -41,14 +41,6 @@ if [ $# -gt 0 ]; then echo "[$HOSTNAME]$0($#): $@"; fi
     # Default command to initialize the server
   default_cmd() { mix phx.server; }
 
-  # setup() <ENV>
-    # Run specific setup scripts for given enviroment.
-  setup() { 
-    export MIX_ENV="$1" && \
-    mix ecto.drop --force --force-drop && \
-    mix ecto.setup
-  }
-
 # SCRIPT -----------------------------------------------------------------------
 
   cd "src"
@@ -76,10 +68,17 @@ if [ $# -gt 0 ]; then echo "[$HOSTNAME]$0($#): $@"; fi
     elif [ $# -lt 2 ]; then args_error missing
     else args_error too_many; fi
 
-  elif [ "$1" == "setup" ]; then setup $2;
+  elif [ "$1" == "setup" ]; then
+    shift
+    if [ $# -gt 0 ]; then
+      export MIX_ENV="$1" && \
+      mix ecto.drop --force --force-drop && \
+      mix ecto.setup
+    
+    else args_error missing; fi
+    
   elif [ "$1" == "run" ]; then
     shift
-
     if [ $# -gt 0 ]; then
       eval $@
       read -n 1 -p "Press any key to stop and remove container..."

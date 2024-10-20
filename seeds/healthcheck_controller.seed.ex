@@ -1,6 +1,5 @@
-defmodule PitchersWeb.HealthController do  
-  @moduledoc false
-  use PitchersWeb, :controller
+defmodule %{elixir_module}Web.HealthcheckController do
+  use %{elixir_module}Web, :controller
   use OpenApiSpex.ControllerSpecs
 
   @env Mix.env()
@@ -36,12 +35,12 @@ defmodule PitchersWeb.HealthController do
       ok: {
         "Health-check response on development enviroment.",
         "application/json",
-        PitchersWeb.OpenApi.Schemas.Health
+        %{elixir_module}Web.OpenApi.Schemas.Health
       }
     ]
 
   def health(conn, params) do
-    if Application.get_env(:pitchers, :dev_routes),
+    if Application.get_env(:%{elixir_module}, :dev_routes),
       do:   json(conn, info(params)),
       else: json(conn, %{health: "😊"})
   end
@@ -95,8 +94,7 @@ defmodule PitchersWeb.HealthController do
 
     %{
       app: app,
-      databases: databases,
-      documentation: url(~p"/doc")
+      databases: databases
     }
   end
 end

@@ -70,8 +70,8 @@ if [ $# -gt 0 ]; then echo "[$HOSTNAME]$0($#): $@"; fi
       SCHEMAS=$1; shift
       
       mix deps.get
-      [ $EXDOC == true ] && mix docs
       [ $SCHEMAS == true ] && source ../schemas.sh
+      [ $EXDOC == true ]   && mix docs
 
     elif [ $# -lt 2 ]; then args_error missing
     else args_error too_many; fi

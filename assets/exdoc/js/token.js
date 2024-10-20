@@ -51,12 +51,14 @@ function setTokenButton() {
                         border-color 250ms cubic-bezier(0.4, 0, 0.2, 1),
                         color 250ms cubic-bezier(0.4, 0, 0.2, 1);
       color:            rgb(255, 255, 255);
-      background-color: rgb(244, 35, 88);
+      background-color: rgb(135, 117, 228);
       box-shadow:       none;
       height:           48px;
       font-size:        15px;
       width:            202px;
       `;
+      // background-color: rgb(159, 144, 234);
+      // background-color: rgb(103, 79,  222);
 
     let userDisplay = document.createElement("blockquote");
     let tokenDisplay = document.createElement("blockquote");
@@ -78,7 +80,7 @@ function setTokenButton() {
         clientId: authConfig.client_id,
         authorizationParams: {
           redirect_uri: window.location.origin,
-          audience: 'https://pitchers.io',
+          audience: authConfig.audience,
           scopes: 'openid profile email'
         }
       }).then(async (auth0Client) => {

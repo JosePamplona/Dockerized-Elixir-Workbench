@@ -3,8 +3,9 @@
 # %{project_name}
 
 ![v0.0.0](https://img.shields.io/badge/version-0.0.0-white.svg?style=flat-square&color=lightgray)
+[![Last Updated](https://img.shields.io/github/last-commit/%{repo_badge}.svg?style=flat-square)](%{repo_url}/commits/main)
 
-**%{project_name}** project description.
+**%{project_name}** is a web application that offers a %{api_type} API for its usage. It also incorporates various development and monitoring tools available only for development deployments.
 
 ## API endpoints
 

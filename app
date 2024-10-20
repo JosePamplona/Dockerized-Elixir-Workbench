@@ -6,6 +6,13 @@
 
   source ./config.conf
 
+  if [ -d "../.git" ]
+  then REPO_URL=$(git config --get remote.origin.url | sed 's/\.git$//')
+  else REPO_URL="https://github.com/user/repo"
+  fi
+  REPO_OWNER=$( echo $REPO_URL | sed -E 's|https://[^/]+/([^/]+)/.*|\1|' )
+  REPO_NAME=$(  echo $REPO_URL | sed 's|.*/||' )
+
   WORKBENCH_DIR="_workbench"
   WORKBENCH_VERSION=$( sed '3!d' $0 | sed -n 's/^.*v\(.*\).*/\1/p' )
   LOWER_CASE=$( echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' )
@@ -105,16 +112,6 @@
     # ExDoc implementation
     EXDOC_VERSION="~> 0.34"
 
-    if [ -d "../.git" ]; then
-      REPO_URL=$(git config --get remote.origin.url | sed 's/\.git$//')
-      REPO_OWNER=$(
-        echo $REPO_URL | sed -E 's|https://[^/]+/([^/]+)/.*|\1|'
-      )
-    else
-      REPO_URL="https://github.com/user/repo"
-      REPO_OWNER="John Doe"
-    fi
-
     AUTH0_PROD_JS="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"
 
   # Console text format codes ------------------------------------------------
@@ -133,9 +130,9 @@
   # If echo handles -e option, overrides the command
   if [ "$(echo -e)" == "" ]; then echo() { command echo -e "$@"; } fi
 
-  # readme
-    # Prints readme file
-  readme() {
+  # help
+    # Prints help
+  help() {
     section() { echo "${B}$1${R}"; }
     print_command() { echo "  ${B}$1${R}"; }
     section_content() {
@@ -518,8 +515,17 @@
           env_content+="    ${line}\n"
         done < $ENV_FILE
 
+        if [ "$API_INTERFACE" == "graphql" ]
+        then local api_type="GraphQL"
+        elif [ "$API_INTERFACE" == "rest" ]
+        then local api_type="REST"
+        fi
+
         cp $seed_path $file_path
-        sed -i "s/%{project_name}/$PROJECT_NAME/" $file_path
+        sed -i "s/%{project_name}/$PROJECT_NAME/"          $file_path
+        sed -i "s/%{api_type}/$api_type/"                  $file_path
+        sed -i "s/%{repo_url}/$(scape_for_sed $REPO_URL)/" $file_path
+        sed -i "s/%{repo_badge}/$REPO_OWNER\/$REPO_NAME/"  $file_path
 
         pattern replace $file_path "env" \
           "    \`\`\`elixir\n$env_content\n    \`\`\`"
@@ -779,61 +785,97 @@
         if [ ! -f $MIX_FILE ]; then
           terminate "El archivo $MIX_FILE no existe."
         else
-          RESOURCE_DIR="doc"
-          ASSETS_DIR="assets"
-          ASSETS_EXDOC_DIR="exdoc"
-          ASSETS_IMG_PATH="$WORKBENCH_DIR/$ASSETS_DIR/$ASSETS_EXDOC_DIR/images"
-          ASSETS_JS_PATH="$WORKBENCH_DIR/$ASSETS_DIR/$ASSETS_EXDOC_DIR/js"
-          APP_LOGO_FILE="logo.png"
-          TOKEN_SEED_FILE="token.seed.md"
-          TESTING_SEED_FILE="testing.seed.md"
-          EXDOC_CONTROLLER_SEED_FILE="exdoc_controller.seed.ex"
-          EXDOC_ENDPOINT="docs"
+          local RESOURCE_DIR="doc"
+          local ASSETS_DIR="assets"
+          local ASSETS_EXDOC_DIR="exdoc"
+          local ASSETS_IMG_PATH="$WORKBENCH_DIR/$ASSETS_DIR/$ASSETS_EXDOC_DIR/images"
+          local ASSETS_JS_PATH="$WORKBENCH_DIR/$ASSETS_DIR/$ASSETS_EXDOC_DIR/js"
+          local APP_LOGO_FILE="logo.png"
+          local TOKEN_SEED_FILE="token.seed.md"
+          local TESTING_SEED_FILE="testing.seed.md"
+          local EXDOC_CONTROLLER_SEED_FILE="exdoc_controller.seed.ex"
+          local EXDOC_ENDPOINT="docs"
 
-          GUIDELINE_USER="rrrene"
-          GUIDELINE_REPO="elixir-style-guide"
-          GUIDELINE_BRANCH="master"
-          GUIDELINE_FILE="README.md"
-          # GUIDELINE_USER="JosePamplona"
-          # GUIDELINE_REPO="Elixir-Coding-Conventions"
-          # GUIDELINE_BRANCH="master"
-          # GUIDELINE_FILE="README.en_US.md"
+          # local GUIDELINE_USER="rrrene"
+          # local GUIDELINE_REPO="elixir-style-guide"
+          # local GUIDELINE_BRANCH="master"
+          # local GUIDELINE_FILE="README.md"
 
-          GUIDELINE_URL="https://raw.githubusercontent.com/"
-          GUIDELINE_URL+="$GUIDELINE_USER/"
-          GUIDELINE_URL+="$GUIDELINE_REPO/"
-          GUIDELINE_URL+="$GUIDELINE_BRANCH/"
-          GUIDELINE_URL+="$GUIDELINE_FILE"
+          local GUIDELINE_USER="JosePamplona"
+          local GUIDELINE_REPO="Elixir-Coding-Conventions"
+          local GUIDELINE_BRANCH="master"
+          local GUIDELINE_FILE="README.en_US.md"
 
-          ELIXIR_CONTROLLERS_DIR="lib/${ELIXIR_PROJECT_NAME}_web/controllers"
-          ELIXIR_ASSETS_DIR="assets"
-          EXDOC_ASSETS_DIR="exdoc"
-          EXDOC_ASSETS_PATH="$ELIXIR_ASSETS_DIR/$EXDOC_ASSETS_DIR"
-          EXDOC_ASSETS_IMG_PATH="$EXDOC_ASSETS_PATH/images"
-          EXDOC_APP_LOGO_FILE="$EXDOC_ASSETS_IMG_PATH/app-logo.png"
-          EXDOC_ASSETS_JS_PATH="$EXDOC_ASSETS_PATH/js"
-          EXDOC_ASSETS_CONFIG_PATH="$EXDOC_ASSETS_PATH/config"
-          EXDOC_ASSETS_COVERAGE_PATH="$EXDOC_ASSETS_PATH/coverage/html"
-          EXDOC_WORKBENCH_FILE="$EXDOC_ASSETS_PATH/workbench.md"
-          EXDOC_WORKBENCH_ARQ_FILE="$EXDOC_ASSETS_IMG_PATH/arq.svg"
-          EXDOC_TOKEN_FILE="$EXDOC_ASSETS_PATH/token.md"
-          EXDOC_TESTING_FILE="$EXDOC_ASSETS_PATH/testing.md"
-          EXDOC_GUIDELINE_FILE="$EXDOC_ASSETS_PATH/coding.md"
-          EXDOC_CONTROLLER_FILE="$ELIXIR_CONTROLLERS_DIR/exdoc_controller.ex"
-          EXDOC_CONTORLLER_MODULE="ExDocController"
+          local GUIDELINE_URL="https://raw.githubusercontent.com/"
+          local GUIDELINE_URL+="$GUIDELINE_USER/"
+          local GUIDELINE_URL+="$GUIDELINE_REPO/"
+          local GUIDELINE_URL+="$GUIDELINE_BRANCH/"
+          local GUIDELINE_URL+="$GUIDELINE_FILE"
+
+          local ELIXIR_CONTROLLERS_DIR="lib/${ELIXIR_PROJECT_NAME}_web/controllers"
+          local ELIXIR_ASSETS_DIR="assets"
+          local EXDOC_ASSETS_DIR="exdoc"
+          local EXDOC_ASSETS_PATH="$ELIXIR_ASSETS_DIR/$EXDOC_ASSETS_DIR"
+          local EXDOC_ASSETS_IMG_PATH="$EXDOC_ASSETS_PATH/images"
+          local EXDOC_APP_LOGO_FILE="$EXDOC_ASSETS_IMG_PATH/app-logo.png"
+          local EXDOC_ASSETS_JS_PATH="$EXDOC_ASSETS_PATH/js"
+          local EXDOC_ASSETS_CONFIG_PATH="$EXDOC_ASSETS_PATH/config"
+          local EXDOC_ASSETS_COVERAGE_PATH="$EXDOC_ASSETS_PATH/coverage/html"
+          local EXDOC_WORKBENCH_FILE="$EXDOC_ASSETS_PATH/workbench.md"
+          local EXDOC_WORKBENCH_ARQ_FILE="$EXDOC_ASSETS_IMG_PATH/arq.svg"
+          local EXDOC_TOKEN_FILE="$EXDOC_ASSETS_PATH/token.md"
+          local EXDOC_TESTING_FILE="$EXDOC_ASSETS_PATH/testing.md"
+          local EXDOC_GUIDELINE_FILE="$EXDOC_ASSETS_PATH/coding.md"
+          local EXDOC_CONTROLLER_FILE="$ELIXIR_CONTROLLERS_DIR/exdoc_controller.ex"
+          local EXDOC_CONTORLLER_MODULE="ExDocController"
+
+          # COTINUE
+          # local ELIXIR_CONTEXTS
+          # local ELIXIR_SCHEMAS
+
+          # for dir in "$MAIN_DIR"/*/; do
+          #   if [ -d "$dir" ]; then
+          #     dir_name=$(basename "$dir")
+          #     echo "Procesando directorio: $dir_name"
+              
+          #     # Recorrer los archivos en el directorio actual
+          #     for file in "$dir"*; do
+          #       if [ -f "$file" ]; then
+          #         file_name=$(basename "$file")
+          #         echo "  Archivo encontrado: $file_name"
+                  
+          #         # Aquí puedes agregar el código para procesar cada archivo
+          #         # Por ejemplo:
+          #         # echo "    Tamaño del archivo: $(du -h "$file" | cut -f1)"
+                  
+          #         # O realizar alguna operación con el archivo:
+          #         # cat "$file" | grep "palabra_clave"
+          #       fi
+          #     done
+              
+          #     echo "Finalizado el procesamiento del directorio: $dir_name"
+          #     echo "----------------------------------------"
+          #   fi
+          # done
 
           # Create ExDoc assets directory
           [ ! -d $ELIXIR_ASSETS_DIR ] && mkdir $ELIXIR_ASSETS_DIR
           mkdir "$EXDOC_ASSETS_PATH"
 
           # Create image asset files
-          mkdir $EXDOC_ASSETS_IMG_PATH
+          [ ! -d $EXDOC_ASSETS_IMG_PATH ] && mkdir $EXDOC_ASSETS_IMG_PATH
           cp "$ASSETS_IMG_PATH/$APP_LOGO_FILE" $EXDOC_APP_LOGO_FILE
           cp "$WORKBENCH_DIR/$ASSETS_DIR/arq.svg" $EXDOC_WORKBENCH_ARQ_FILE
           
           # Create js asset files
-          mkdir $EXDOC_ASSETS_JS_PATH
+          [ ! -d $EXDOC_ASSETS_JS_PATH ] && mkdir $EXDOC_ASSETS_JS_PATH
           cp -r $ASSETS_JS_PATH $EXDOC_ASSETS_PATH
+
+          # Set the docs_config.js file
+          [ ! -d $EXDOC_ASSETS_CONFIG_PATH ] && mkdir $EXDOC_ASSETS_CONFIG_PATH
+          mv \
+            "$EXDOC_ASSETS_JS_PATH/docs_config.js" \
+            "$EXDOC_ASSETS_CONFIG_PATH/docs_config.js"
 
           # Set workbench page
           cp "$WORKBENCH_DIR/README.md" $EXDOC_WORKBENCH_FILE
@@ -888,21 +930,38 @@
             "    \"$EXDOC_ASSETS_JS_PATH\" => \"/assets\"" \
             "  }," \
             "  extras: [" \
-            "    {\"$README_FILE\", [title: \"Overview\"]}," \
-            "    {\"$EXDOC_WORKBENCH_FILE\", [title: \"Workbench\"]},"
-            # "    {\"assets/doc/database.md\", [title: \"Database\"]}," \
+            "    {\"$README_FILE\", [title: \"Overview\"]},"
 
           [ $AUTH0 == true ] && \
           mix_add_list_line project \
             "    {\"$EXDOC_TOKEN_FILE\", [title: \"Get access tokens\"]},"
-          
+
+          # "    {\"assets/doc/database.md\", [title: \"Database\"]}," \
           mix_add_list_line project \
-            "    {\"$EXDOC_GUIDELINE_FILE\", [title: \"Coding guidelines\"]}," \
             "    {\"$EXDOC_TESTING_FILE\", [title: \"Tests reports\"]}," \
+            "    {\"$EXDOC_GUIDELINE_FILE\", [title: \"Coding guidelines\"]}," \
+            "    {\"$EXDOC_WORKBENCH_FILE\", [title: \"Workbench\"]}," \
             "    {\"$CHANGELOG_FILE\", [title: \"Changelog\"]}" \
             "  ]," \
+            "  groups_for_extras: [" \
+            "    \"Project\": [" \
+            "      \"$README_FILE\","
+
+          [ $AUTH0 == true ] && \
+          mix_add_list_line project \
+            "      \"$EXDOC_TOKEN_FILE\","
+
+          mix_add_list_line project \
+            "      \"$EXDOC_TESTING_FILE\"," \
+            "      \"$CHANGELOG_FILE\"" \
+            "    ]," \
+            "    \"Support\": [" \
+            "      \"$EXDOC_GUIDELINE_FILE\"," \
+            "      \"$EXDOC_WORKBENCH_FILE\"" \
+            "    ]" \
+            "  ]," \
             "  groups_for_modules: [" \
-            "    \"Database contexts\": [" \
+            "    \"Contexts\": [" \
             "      ${ELIXIR_MODULE}.Accounts," \
             "      ${ELIXIR_MODULE}.Archive," \
             "      ${ELIXIR_MODULE}.Auth," \
@@ -991,9 +1050,9 @@
         if [ "$AUTH0" == true ]; then
           client_id=$(
             head -c $((32 * 2)) /dev/urandom | \
-              base64 | \
-              tr -dc 'a-zA-Z0-9' | \
-              head -c 32
+            base64 | \
+            tr -dc 'a-zA-Z0-9' | \
+            head -c 32
           )
           inject_frontend_vars_in_runtime \
             "# Auth0 & ExDoc implementation:" \
@@ -1017,6 +1076,13 @@
             "          environment variable AUTH0_CLIENT_ID is missing." \
             "          For example: $client_id" \
             "          \"\"\"" \
+            "      }\"," \
+            "      audience: \"#{" \
+            "        System.get_env(\"AUTH0_AUDIENCE\") ||" \
+            "          raise \"\"\"" \
+            "          environment variable AUTH0_AUDIENCE is missing." \
+            "          For example: https://www.$APP_NAME.com" \
+            "          \"\"\"" \
             "      }\"" \
             "    }" \
             "    \"\"\"" \
@@ -1025,6 +1091,12 @@
         fi
 
         echo "ExDoc implemented"
+      }
+
+      # implement_healthcheck
+        #
+      implement_healthcheck(){
+        echo "---> Coming soon --> implement_healthcheck"
       }
 
       # implement_rest
@@ -1037,12 +1109,6 @@
         #
       implement_graphql(){
         echo "---> Coming soon --> implement_graphql"
-      }
-
-      # implement_healthcheck
-        #
-      implement_healthcheck(){
-        echo "---> Coming soon --> implement_healthcheck"
       }
 
       # implement_auth0
@@ -1072,11 +1138,11 @@
 
     # SCRIPT -----------------------------------------------------------------
       if [ "$EXDOC" == true ];              then implement_exdoc;       fi && \
+      if [ "$HEALTHCHECK" == true ];        then implement_healthcheck; fi && \
       if [ "$API_INTERFACE" == "rest" ] || [ "$HEALTHCHECK" == true ]; then
         implement_rest;
       fi && \
       if [ "$API_INTERFACE" == "graphql" ]; then implement_graphql;     fi && \
-      if [ "$HEALTHCHECK" == true ];        then implement_healthcheck; fi && \
       if [ "$AUTH0" == true ];              then implement_auth0;       fi && \
       if [ "$STRIPE" == true ];             then implement_stripe;      fi && \
 
@@ -1251,4 +1317,4 @@
         "$WORKBENCH_SCRIPT delete"
 
     else args_error invalid; fi
-  else readme; fi
+  else help; fi

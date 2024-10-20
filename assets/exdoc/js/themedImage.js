@@ -79,9 +79,9 @@ function setThemedImage(original_src, light_src, dark_src) {
     function setThemeImage() {
       if(document.body.classList.contains(target_class)) {
         img.src = dark_src;
-       } else {
+      } else {
         img.src = light_src;
-       }
+      }
     }
 
     // The img.src is modified according to the body class.
@@ -100,16 +100,16 @@ function setThemedImage(original_src, light_src, dark_src) {
 
 // -----------------------------------------------------------------------------
 
-// Pitcher's logo on overview page
-document.addEventListener("DOMContentLoaded", setThemedImage(
-  './assets/doc/images/logo-light.svg',
-  './assets/logo-light.svg',
-  './assets/logo-dark.svg'
-));
+// // Pitcher's logo on overview page
+// document.addEventListener("DOMContentLoaded", setThemedImage(
+//   './assets/doc/images/logo-light.svg',
+//   './assets/logo-light.svg',
+//   './assets/logo-dark.svg'
+// ));
 
-// Model diagram on database page
-document.addEventListener("DOMContentLoaded", setThemedImage(
-  './images/model-light.svg',
-  './assets/model-light.svg',
-  './assets/model-dark.svg'
-));
+// // Model diagram on database page
+// document.addEventListener("DOMContentLoaded", setThemedImage(
+//   './images/model-light.svg',
+//   './assets/model-light.svg',
+//   './assets/model-dark.svg'
+// ));

@@ -512,7 +512,7 @@
         # According to the workbench/config.conf file it redact the README file.
       create_readme(){
         local seed_path="$WORKBENCH_DIR/$SEEDS_DIR/$README_SEED"
-        local file_path="$README_FILE"
+        local file_path=$README_FILE
         local env_content=""
         while IFS= read -r line; do
           env_content+="    ${line}\n"
@@ -790,14 +790,14 @@
           EXDOC_CONTROLLER_SEED_FILE="exdoc_controller.seed.ex"
           EXDOC_ENDPOINT="docs"
 
-          # GUIDELINE_USER="rrrene"
-          # GUIDELINE_REPO="elixir-style-guide"
-          # GUIDELINE_BRANCH="master"
-          # GUIDELINE_FILE="README.md"
-          GUIDELINE_USER="JosePamplona"
-          GUIDELINE_REPO="Elixir-Coding-Conventions"
+          GUIDELINE_USER="rrrene"
+          GUIDELINE_REPO="elixir-style-guide"
           GUIDELINE_BRANCH="master"
-          GUIDELINE_FILE="README.en_US.md"
+          GUIDELINE_FILE="README.md"
+          # GUIDELINE_USER="JosePamplona"
+          # GUIDELINE_REPO="Elixir-Coding-Conventions"
+          # GUIDELINE_BRANCH="master"
+          # GUIDELINE_FILE="README.en_US.md"
 
           GUIDELINE_URL="https://raw.githubusercontent.com/"
           GUIDELINE_URL+="$GUIDELINE_USER/"
@@ -846,8 +846,7 @@
             cp "$WORKBENCH_DIR/$SEEDS_DIR/$TOKEN_SEED_FILE" $EXDOC_TOKEN_FILE
 
           # Download codeguide
-          curl -LO $GUIDELINE_URL && \
-          mv $GUIDELINE_FILE $EXDOC_GUIDELINE_FILE
+          curl -o $EXDOC_GUIDELINE_FILE $GUIDELINE_URL
 
           # Plant controller page
           cp \

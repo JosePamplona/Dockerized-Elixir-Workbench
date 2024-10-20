@@ -1,5 +1,4 @@
-defmodule %{elixir_module}Web.ExDocController do  
-  @moduledoc false
+defmodule %{elixir_module}Web.ExDocController do
   use %{elixir_module}Web, :controller
   
   def index(conn, _params) do
@@ -13,7 +12,11 @@ defmodule %{elixir_module}Web.ExDocController do
   
   <!-- workbench-coveralls close -->
   def not_found(conn, _params) do
-    file_path = Path.join(:code.priv_dir(:%{project_name}), "static/%{resource_dir}/404.html")
+    file_path = Path.join(
+      :code.priv_dir(:%{project_name}),
+      "static/%{resource_dir}/404.html"
+    )
+    
     conn
     |> put_resp_content_type("text/html")
     |> send_resp(404, File.read!(file_path))

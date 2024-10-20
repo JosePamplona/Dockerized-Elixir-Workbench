@@ -6,73 +6,77 @@
 
   source ./config.conf
 
-  if [ -d "../.git" ]
+  WORKBENCH_DIR="_workbench"
+  WORKBENCH_VERSION=$( sed '3!d' $0 | sed -n 's/^.*v\(.*\).*/\1/p' )
+  LOWER_CASE=$( echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' )
+  EXISTING_PROJECT=$(
+    [ $(basename $PWD) == $WORKBENCH_DIR ] && \
+    echo true || \
+    echo false
+  )
+  SOURCE_CODE_PATH=$(
+    [ $EXISTING_PROJECT == true ] && \
+    echo $(dirname $PWD) || \
+    echo $PWD
+  )
+  GIT_FILE=$(
+    [ $EXISTING_PROJECT == true ] && \
+    echo "../.git" || \
+    echo ".git"
+  )  
+  if [ -d $GIT_FILE ]
   then REPO_URL=$(git config --get remote.origin.url | sed 's/\.git$//')
   else REPO_URL="https://github.com/user/repo"
   fi
   REPO_OWNER=$( echo $REPO_URL | sed -E 's|https://[^/]+/([^/]+)/.*|\1|' )
   REPO_NAME=$(  echo $REPO_URL | sed 's|.*/||' )
 
-  WORKBENCH_DIR="_workbench"
-  WORKBENCH_VERSION=$( sed '3!d' $0 | sed -n 's/^.*v\(.*\).*/\1/p' )
-  LOWER_CASE=$( echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' )
-  EXISTING_PROJECT=$(
-    [ $(basename $PWD) == $WORKBENCH_DIR ] && \
-      echo true || \
-      echo false
-  )
-  SOURCE_CODE_PATH=$(
-    [ $EXISTING_PROJECT == true ] && \
-      echo $(dirname $PWD) || \
-      echo $PWD
-  )
-
   # Workbench configuration --------------------------------------------------
 
     # Directories
-      SCRIPTS_DIR="scripts"
-      SEEDS_DIR="seeds"
-      PGADMIN_DIR="pgadmin"
+    SCRIPTS_DIR="scripts"
+    SEEDS_DIR="seeds"
+    PGADMIN_DIR="pgadmin"
     # Script files
-      ENTRYPOINT_FILE="entrypoint.sh"
-      SCHEMAS_FILE="schemas.sh"
-      DEV_DOCKERFILE="Dockerfile.dev"
-      PROD_DOCKERFILE="Dockerfile"
-      COMPOSE_FILE="docker-compose.yml"
-      CONTAINER_ENTRYPOINT="bash $ENTRYPOINT_FILE"
+    ENTRYPOINT_FILE="entrypoint.sh"
+    SCHEMAS_FILE="schemas.sh"
+    DEV_DOCKERFILE="Dockerfile.dev"
+    PROD_DOCKERFILE="Dockerfile"
+    COMPOSE_FILE="docker-compose.yml"
+    CONTAINER_ENTRYPOINT="bash $ENTRYPOINT_FILE"
     # Seed files
-      ENV_SEED="seed.env"
-      README_SEED="README.seed.md"
-      CHANGELOG_SEED="CHANGELOG.seed.md"
-      DEV_DOCKERFILE_SEED="Dockerfile.seed.dev"
-      PROD_DOCKERFILE_SEED="Dockerfile.seed.prod"
-      PGADMIN_SERVERS_SEED="servers.seed.json"
-      PGADMIN_PASS_SEED="pgpass.seed"
-      TOOLS_VERSIONS_SEED="seed.tool-versions"
+    ENV_SEED="seed.env"
+    README_SEED="README.seed.md"
+    CHANGELOG_SEED="CHANGELOG.seed.md"
+    DEV_DOCKERFILE_SEED="Dockerfile.seed.dev"
+    PROD_DOCKERFILE_SEED="Dockerfile.seed.prod"
+    PGADMIN_SERVERS_SEED="servers.seed.json"
+    PGADMIN_PASS_SEED="pgpass.seed"
+    TOOLS_VERSIONS_SEED="seed.tool-versions"
     # Elixir project files
-      ELIXIR_PROJECT_NAME=$( echo $LOWER_CASE | tr ' ' '_' )
-      ELIXIR_MODULE=$(
-        echo $LOWER_CASE | sed -E 's/(^| )(\w)/\U\2/g' | sed 's/ //g'
-      )
-      INIT_VERSION="0.0.0"
-      ENV_FILE=".env"
-      MIX_FILE="mix.exs"
-      ROUTER_FILE="lib/${ELIXIR_PROJECT_NAME}_web/router.ex"
-      CONFIG_FILE="config/config.exs"
-      DEV_FILE="config/dev.exs"
-      RUNTIME_FILE="config/runtime.exs"
-      README_FILE="README.md"
-      CHANGELOG_FILE="CHANGELOG.md"
-      PROD_DOCKERFILE="Dockerfile"
-      GITIGNORE_FILE=".gitignore"
-      FORMATTER_FILE=".formatter.exs"
-      TOOLS_VERSIONS_FILE=".tool-versions"
+    ELIXIR_PROJECT_NAME=$( echo $LOWER_CASE | tr ' ' '_' )
+    ELIXIR_MODULE=$(
+      echo $LOWER_CASE | sed -E 's/(^| )(\w)/\U\2/g' | sed 's/ //g'
+    )
+    INIT_VERSION="0.0.0"
+    ENV_FILE=".env"
+    MIX_FILE="mix.exs"
+    ROUTER_FILE="lib/${ELIXIR_PROJECT_NAME}_web/router.ex"
+    CONFIG_FILE="config/config.exs"
+    DEV_FILE="config/dev.exs"
+    RUNTIME_FILE="config/runtime.exs"
+    README_FILE="README.md"
+    CHANGELOG_FILE="CHANGELOG.md"
+    PROD_DOCKERFILE="Dockerfile"
+    GITIGNORE_FILE=".gitignore"
+    FORMATTER_FILE=".formatter.exs"
+    TOOLS_VERSIONS_FILE=".tool-versions"
     # Production database
-      DB_NAME="${ELIXIR_PROJECT_NAME}_prod"
+    DB_NAME="${ELIXIR_PROJECT_NAME}_prod"
     # PGAdmin configuration files
-      SERVERS_FILE="servers.json"
-      PASS_FILE="pgpass"
-      PGADMIN_PATH="$SOURCE_CODE_PATH/$WORKBENCH_DIR/$PGADMIN_DIR"
+    SERVERS_FILE="servers.json"
+    PASS_FILE="pgpass"
+    PGADMIN_PATH="$SOURCE_CODE_PATH/$WORKBENCH_DIR/$PGADMIN_DIR"
 
   # Export variables for docker-compose.yml script ---------------------------
 
@@ -112,13 +116,15 @@
     # ExDoc implementation
     EXDOC_VERSION="~> 0.34"
 
+    # Auth0 implementation
     AUTH0_PROD_JS="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"
 
   # Console text format codes ------------------------------------------------
 
     # Colors
     C1="\x1B[38;5;1m" # Dark-red
-    C2="\x1B[4;34m" # Blue
+    C2="\x1B[4;34m"   # Blue underline
+    C3="\x1B[38;5;2m" # Green
     # Format             
     B="\x1B[1m" # Bold
     R="\x1B[0m" # Reset
@@ -780,131 +786,101 @@
           sed -i '/if System.get_env/i\'"$output" $RUNTIME_FILE
         }
 
-        echo "Implementing ExDoc... "
+        echo "${C3}* implementing${R} ExDoc"
+
+        local RESOURCE_DIR="doc"
+        local ASSETS_DIR="assets"
+        local ASSETS_EXDOC_DIR="exdoc"
+        local ASSETS_IMG_PATH="$WORKBENCH_DIR/$ASSETS_DIR/$ASSETS_EXDOC_DIR/images"
+        local ASSETS_JS_PATH="$WORKBENCH_DIR/$ASSETS_DIR/$ASSETS_EXDOC_DIR/js"
+        local APP_LOGO_FILE="logo.png"
+        local TOKEN_SEED_FILE="token.seed.md"
+        local TESTING_SEED_FILE="testing.seed.md"
+        local EXDOC_CONTROLLER_SEED_FILE="exdoc_controller.seed.ex"
+        local EXDOC_ENDPOINT="docs"
+
+        # local GUIDELINE_USER="rrrene"
+        # local GUIDELINE_REPO="elixir-style-guide"
+        # local GUIDELINE_BRANCH="master"
+        # local GUIDELINE_FILE="README.md"
+        local GUIDELINE_USER="JosePamplona"
+        local GUIDELINE_REPO="Elixir-Coding-Conventions"
+        local GUIDELINE_BRANCH="master"
+        local GUIDELINE_FILE="README.en_US.md"
+
+        local GUIDELINE_URL="https://raw.githubusercontent.com/"
+        local GUIDELINE_URL+="$GUIDELINE_USER/"
+        local GUIDELINE_URL+="$GUIDELINE_REPO/"
+        local GUIDELINE_URL+="$GUIDELINE_BRANCH/"
+        local GUIDELINE_URL+="$GUIDELINE_FILE"
+
+        local ELIXIR_CONTROLLERS_DIR="lib/${ELIXIR_PROJECT_NAME}_web/controllers"
+        local EXDOC_CONTROLLER_FILE="$ELIXIR_CONTROLLERS_DIR/exdoc_controller.ex"
+        local EXDOC_CONTORLLER_MODULE="ExDocController"
+
+        local ELIXIR_ASSETS_DIR="assets"
+        local EXDOC_ASSETS_DIR="exdoc"
+        local EXDOC_ASSETS_PATH="$ELIXIR_ASSETS_DIR/$EXDOC_ASSETS_DIR"
+        local EXDOC_ASSETS_IMG_PATH="$EXDOC_ASSETS_PATH/images"
+        local EXDOC_APP_LOGO_FILE="$EXDOC_ASSETS_IMG_PATH/app-logo.png"
+        local EXDOC_ASSETS_JS_PATH="$EXDOC_ASSETS_PATH/js"
+        local EXDOC_ASSETS_CONFIG_PATH="$EXDOC_ASSETS_PATH/config"
+        local EXDOC_ASSETS_COVERAGE_PATH="$EXDOC_ASSETS_PATH/coverage/html"
+        local EXDOC_WORKBENCH_FILE="$EXDOC_ASSETS_PATH/workbench.md"
+        local EXDOC_WORKBENCH_ARQ_FILE="$EXDOC_ASSETS_IMG_PATH/arq.svg"
+        local EXDOC_TOKEN_FILE="$EXDOC_ASSETS_PATH/token.md"
+        local EXDOC_TESTING_FILE="$EXDOC_ASSETS_PATH/testing.md"
+        local EXDOC_GUIDELINE_FILE="$EXDOC_ASSETS_PATH/coding.md"
+
+        # Create ExDoc assets directory
+        [ ! -d $ELIXIR_ASSETS_DIR ] && mkdir $ELIXIR_ASSETS_DIR
+        mkdir "$EXDOC_ASSETS_PATH"
+
+        # Create image asset files
+        [ ! -d $EXDOC_ASSETS_IMG_PATH ] && mkdir $EXDOC_ASSETS_IMG_PATH
+        cp "$ASSETS_IMG_PATH/$APP_LOGO_FILE" $EXDOC_APP_LOGO_FILE
+        cp "$WORKBENCH_DIR/$ASSETS_DIR/arq.svg" $EXDOC_WORKBENCH_ARQ_FILE
+        
+        # Create js asset files
+        [ ! -d $EXDOC_ASSETS_JS_PATH ] && mkdir $EXDOC_ASSETS_JS_PATH
+        cp -r $ASSETS_JS_PATH $EXDOC_ASSETS_PATH
+
+        # Set the docs_config.js file
+        [ ! -d $EXDOC_ASSETS_CONFIG_PATH ] && mkdir $EXDOC_ASSETS_CONFIG_PATH
+        mv \
+          "$EXDOC_ASSETS_JS_PATH/docs_config.js" \
+          "$EXDOC_ASSETS_CONFIG_PATH/docs_config.js"
+
+        # Set workbench page
+        cp "$WORKBENCH_DIR/README.md" $EXDOC_WORKBENCH_FILE
+
+        # Plant testing page
+        cp "$WORKBENCH_DIR/$SEEDS_DIR/$TESTING_SEED_FILE" $EXDOC_TESTING_FILE
+
+        # Plant token page
+        [ "$AUTH0" == true ] && \
+          cp "$WORKBENCH_DIR/$SEEDS_DIR/$TOKEN_SEED_FILE" $EXDOC_TOKEN_FILE
+
+        # Download codeguide
+        curl -o $EXDOC_GUIDELINE_FILE $GUIDELINE_URL
+
+        # Plant ExDoc Controller
+        cp \
+          "$WORKBENCH_DIR/$SEEDS_DIR/$EXDOC_CONTROLLER_SEED_FILE" \
+          $EXDOC_CONTROLLER_FILE
+        
+        sed -i "s/%{elixir_module}/$ELIXIR_MODULE/"      $EXDOC_CONTROLLER_FILE
+        sed -i "s/%{resource_dir}/$RESOURCE_DIR/"        $EXDOC_CONTROLLER_FILE
+        sed -i "s/%{project_name}/$ELIXIR_PROJECT_NAME/" $EXDOC_CONTROLLER_FILE
+        sed -i "s/%{exdoc_endpoint}/$EXDOC_ENDPOINT/"    $EXDOC_CONTROLLER_FILE
+
+        [ $COVERALLS == true ] && \
+        pattern keep $EXDOC_CONTROLLER_FILE "coveralls" || \
+        pattern delete $EXDOC_CONTROLLER_FILE "coveralls"
 
         if [ ! -f $MIX_FILE ]; then
-          terminate "El archivo $MIX_FILE no existe."
+          terminate "The $MIX_FILE file does not exist."
         else
-          local RESOURCE_DIR="doc"
-          local ASSETS_DIR="assets"
-          local ASSETS_EXDOC_DIR="exdoc"
-          local ASSETS_IMG_PATH="$WORKBENCH_DIR/$ASSETS_DIR/$ASSETS_EXDOC_DIR/images"
-          local ASSETS_JS_PATH="$WORKBENCH_DIR/$ASSETS_DIR/$ASSETS_EXDOC_DIR/js"
-          local APP_LOGO_FILE="logo.png"
-          local TOKEN_SEED_FILE="token.seed.md"
-          local TESTING_SEED_FILE="testing.seed.md"
-          local EXDOC_CONTROLLER_SEED_FILE="exdoc_controller.seed.ex"
-          local EXDOC_ENDPOINT="docs"
-
-          # local GUIDELINE_USER="rrrene"
-          # local GUIDELINE_REPO="elixir-style-guide"
-          # local GUIDELINE_BRANCH="master"
-          # local GUIDELINE_FILE="README.md"
-
-          local GUIDELINE_USER="JosePamplona"
-          local GUIDELINE_REPO="Elixir-Coding-Conventions"
-          local GUIDELINE_BRANCH="master"
-          local GUIDELINE_FILE="README.en_US.md"
-
-          local GUIDELINE_URL="https://raw.githubusercontent.com/"
-          local GUIDELINE_URL+="$GUIDELINE_USER/"
-          local GUIDELINE_URL+="$GUIDELINE_REPO/"
-          local GUIDELINE_URL+="$GUIDELINE_BRANCH/"
-          local GUIDELINE_URL+="$GUIDELINE_FILE"
-
-          local ELIXIR_CONTROLLERS_DIR="lib/${ELIXIR_PROJECT_NAME}_web/controllers"
-          local ELIXIR_ASSETS_DIR="assets"
-          local EXDOC_ASSETS_DIR="exdoc"
-          local EXDOC_ASSETS_PATH="$ELIXIR_ASSETS_DIR/$EXDOC_ASSETS_DIR"
-          local EXDOC_ASSETS_IMG_PATH="$EXDOC_ASSETS_PATH/images"
-          local EXDOC_APP_LOGO_FILE="$EXDOC_ASSETS_IMG_PATH/app-logo.png"
-          local EXDOC_ASSETS_JS_PATH="$EXDOC_ASSETS_PATH/js"
-          local EXDOC_ASSETS_CONFIG_PATH="$EXDOC_ASSETS_PATH/config"
-          local EXDOC_ASSETS_COVERAGE_PATH="$EXDOC_ASSETS_PATH/coverage/html"
-          local EXDOC_WORKBENCH_FILE="$EXDOC_ASSETS_PATH/workbench.md"
-          local EXDOC_WORKBENCH_ARQ_FILE="$EXDOC_ASSETS_IMG_PATH/arq.svg"
-          local EXDOC_TOKEN_FILE="$EXDOC_ASSETS_PATH/token.md"
-          local EXDOC_TESTING_FILE="$EXDOC_ASSETS_PATH/testing.md"
-          local EXDOC_GUIDELINE_FILE="$EXDOC_ASSETS_PATH/coding.md"
-          local EXDOC_CONTROLLER_FILE="$ELIXIR_CONTROLLERS_DIR/exdoc_controller.ex"
-          local EXDOC_CONTORLLER_MODULE="ExDocController"
-
-          # COTINUE
-          # local ELIXIR_CONTEXTS
-          # local ELIXIR_SCHEMAS
-
-          # for dir in "$MAIN_DIR"/*/; do
-          #   if [ -d "$dir" ]; then
-          #     dir_name=$(basename "$dir")
-          #     echo "Procesando directorio: $dir_name"
-              
-          #     # Recorrer los archivos en el directorio actual
-          #     for file in "$dir"*; do
-          #       if [ -f "$file" ]; then
-          #         file_name=$(basename "$file")
-          #         echo "  Archivo encontrado: $file_name"
-                  
-          #         # Aquí puedes agregar el código para procesar cada archivo
-          #         # Por ejemplo:
-          #         # echo "    Tamaño del archivo: $(du -h "$file" | cut -f1)"
-                  
-          #         # O realizar alguna operación con el archivo:
-          #         # cat "$file" | grep "palabra_clave"
-          #       fi
-          #     done
-              
-          #     echo "Finalizado el procesamiento del directorio: $dir_name"
-          #     echo "----------------------------------------"
-          #   fi
-          # done
-
-          # Create ExDoc assets directory
-          [ ! -d $ELIXIR_ASSETS_DIR ] && mkdir $ELIXIR_ASSETS_DIR
-          mkdir "$EXDOC_ASSETS_PATH"
-
-          # Create image asset files
-          [ ! -d $EXDOC_ASSETS_IMG_PATH ] && mkdir $EXDOC_ASSETS_IMG_PATH
-          cp "$ASSETS_IMG_PATH/$APP_LOGO_FILE" $EXDOC_APP_LOGO_FILE
-          cp "$WORKBENCH_DIR/$ASSETS_DIR/arq.svg" $EXDOC_WORKBENCH_ARQ_FILE
-          
-          # Create js asset files
-          [ ! -d $EXDOC_ASSETS_JS_PATH ] && mkdir $EXDOC_ASSETS_JS_PATH
-          cp -r $ASSETS_JS_PATH $EXDOC_ASSETS_PATH
-
-          # Set the docs_config.js file
-          [ ! -d $EXDOC_ASSETS_CONFIG_PATH ] && mkdir $EXDOC_ASSETS_CONFIG_PATH
-          mv \
-            "$EXDOC_ASSETS_JS_PATH/docs_config.js" \
-            "$EXDOC_ASSETS_CONFIG_PATH/docs_config.js"
-
-          # Set workbench page
-          cp "$WORKBENCH_DIR/README.md" $EXDOC_WORKBENCH_FILE
-
-          # Plant testing page
-          cp "$WORKBENCH_DIR/$SEEDS_DIR/$TESTING_SEED_FILE" $EXDOC_TESTING_FILE
-
-          # Plant token page
-          [ "$AUTH0" == true ] && \
-            cp "$WORKBENCH_DIR/$SEEDS_DIR/$TOKEN_SEED_FILE" $EXDOC_TOKEN_FILE
-
-          # Download codeguide
-          curl -o $EXDOC_GUIDELINE_FILE $GUIDELINE_URL
-
-          # Plant controller page
-          cp \
-            "$WORKBENCH_DIR/$SEEDS_DIR/$EXDOC_CONTROLLER_SEED_FILE" \
-            $EXDOC_CONTROLLER_FILE
-          
-          sed -i "s/%{elixir_module}/$ELIXIR_MODULE/" $EXDOC_CONTROLLER_FILE
-          sed -i "s/%{resource_dir}/$RESOURCE_DIR/" $EXDOC_CONTROLLER_FILE
-          sed -i "s/%{project_name}/$ELIXIR_PROJECT_NAME/" $EXDOC_CONTROLLER_FILE
-          sed -i "s/%{exdoc_endpoint}/$EXDOC_ENDPOINT/" $EXDOC_CONTROLLER_FILE
-
-          [ $COVERALLS == true ] && \
-            pattern keep $EXDOC_CONTROLLER_FILE "coveralls" || \
-            pattern delete $EXDOC_CONTROLLER_FILE "coveralls"
-
-          # Mix configuration
           mix_last_line_append project ","
           mix_add_list_line project \
             "" \
@@ -944,6 +920,10 @@
             "    {\"$CHANGELOG_FILE\", [title: \"Changelog\"]}" \
             "  ]," \
             "  groups_for_extras: [" \
+            "    \"Support\": [" \
+            "      \"$EXDOC_GUIDELINE_FILE\"," \
+            "      \"$EXDOC_WORKBENCH_FILE\"" \
+            "    ]," \
             "    \"Project\": [" \
             "      \"$README_FILE\","
 
@@ -954,31 +934,12 @@
           mix_add_list_line project \
             "      \"$EXDOC_TESTING_FILE\"," \
             "      \"$CHANGELOG_FILE\"" \
-            "    ]," \
-            "    \"Support\": [" \
-            "      \"$EXDOC_GUIDELINE_FILE\"," \
-            "      \"$EXDOC_WORKBENCH_FILE\"" \
             "    ]" \
             "  ]," \
             "  groups_for_modules: [" \
-            "    \"Contexts\": [" \
-            "      ${ELIXIR_MODULE}.Accounts," \
-            "      ${ELIXIR_MODULE}.Archive," \
-            "      ${ELIXIR_MODULE}.Auth," \
-            "      ${ELIXIR_MODULE}.Billing" \
-            "    ]," \
-            "    \"Schemas\": [" \
-            "      ${ELIXIR_MODULE}.Accounts.Address," \
-            "      ${ELIXIR_MODULE}.Accounts.CompanySize," \
-            "      ${ELIXIR_MODULE}.Accounts.Company," \
-            "      ${ELIXIR_MODULE}.Accounts.User," \
-            "      ${ELIXIR_MODULE}.Billing.Customer," \
-            "      ${ELIXIR_MODULE}.Billing.Seat," \
-            "      ${ELIXIR_MODULE}.Auth.Login," \
-            "    ]," \
-            "    \"Collections\": [" \
-            "      ${ELIXIR_MODULE}.Accounts.User.LevelEnum" \
-            "    ],"
+            "    \"Contexts\": ~r/^${ELIXIR_MODULE}\\\.(?!(.*\\\..*|Mailer|Repo)$).*$/," \
+            "    \"Schemas\": ~r/^${ELIXIR_MODULE}\\\..*\\\.(?!.*(Enum)$).*$/," \
+            "    \"Collections\": ~r/^${ELIXIR_MODULE}\\\..*(Enum)$/,"
 
           [ "$API_INTERFACE" == "graphql" ] && [ $AUTH0 == true ] && \
           mix_add_list_line project \
@@ -987,14 +948,8 @@
             "    ],"
 
           mix_add_list_line project \
-            "    \"Web\": [" \
-            "      ${ELIXIR_MODULE}Web," \
-            "      ${ELIXIR_MODULE}Web.Endpoint," \
-            "      ${ELIXIR_MODULE}Web.ErrorJSON," \
-            "      ${ELIXIR_MODULE}Web.Gettext," \
-            "      ${ELIXIR_MODULE}Web.Router," \
-            "      ${ELIXIR_MODULE}Web.Telemetry" \
-            "    ]" \
+            "    \"Web\": ~r/^${ELIXIR_MODULE}Web(?!.*(Controller|HTML|JSON)$)/," \
+            "    \"Controllers\": ~r/^${ELIXIR_MODULE}Web.*(Controller|HTML|JSON)$/" \
             "  ]," \
             "  before_closing_head_tag: &before_closing_head_tag/1," \
             "  before_closing_body_tag: &before_closing_body_tag/1" \
@@ -1026,71 +981,78 @@
             "{:ex_doc, \"$EXDOC_VERSION\", only: :dev, runtime: false}"
         fi
 
-        # Router configuration
-        router_add_pipeline \
-          "pipeline :exdoc do" \
-          "  plug Plug.Static," \
-          "    at: \"/$EXDOC_ENDPOINT\"," \
-          "    from: {:$ELIXIR_PROJECT_NAME, \"priv/static/$RESOURCE_DIR\"}," \
-          "    cache_control_for_etags: \"public, max-age=86400\"," \
-          "    gzip: true" \
-          "end"
+        if [ ! -f $ROUTER_FILE ]; then
+          terminate "The $ROUTER_FILE file does not exist."
+        else
+          router_add_pipeline \
+            "pipeline :exdoc do" \
+            "  plug Plug.Static," \
+            "    at: \"/$EXDOC_ENDPOINT\"," \
+            "    from: {:$ELIXIR_PROJECT_NAME, \"priv/static/$RESOURCE_DIR\"}," \
+            "    cache_control_for_etags: \"public, max-age=86400\"," \
+            "    gzip: true" \
+            "end"
 
-        router_add_scope "\"\/dev\"" 2 \
-          "# ExDocs documentation service" \
-          "scope \"/\", ${ELIXIR_MODULE}Web do" \
-          "  pipe_through [:exdoc]" \
-          "" \
-          "  get \"/$EXDOC_ENDPOINT/\",      ${EXDOC_CONTORLLER_MODULE}, :index" \
-          "  get \"/$EXDOC_ENDPOINT/cover\", ${EXDOC_CONTORLLER_MODULE}, :cover" \
-          "  get \"/$EXDOC_ENDPOINT/*path\", ${EXDOC_CONTORLLER_MODULE}, :not_found" \
-          "end" \
-
-        # Adjust runtime
-        if [ "$AUTH0" == true ]; then
-          client_id=$(
-            head -c $((32 * 2)) /dev/urandom | \
-            base64 | \
-            tr -dc 'a-zA-Z0-9' | \
-            head -c 32
-          )
-          inject_frontend_vars_in_runtime \
-            "# Auth0 & ExDoc implementation:" \
-            "# Create auth_config.js file for token request in ExDoc token page." \
-            "if config_env() != :prod do" \
-            "  File.mkdir_p!(\"./priv/static/doc/assets/\")" \
-            "  File.write(" \
-            "    \"./priv/static/doc/assets/auth_config.js\"," \
-            "    \"\"\"" \
-            "    var authConfig = {" \
-            "      domain: \"#{" \
-            "        System.get_env(\"AUTH0_DOMAIN\") ||" \
-            "          raise \"\"\"" \
-            "          environment variable AUTH0_DOMAIN is missing." \
-            "          For example: dev-tenant.us.auth0.com" \
-            "          \"\"\"" \
-            "      }\"," \
-            "      client_id: \"#{" \
-            "        System.get_env(\"AUTH0_CLIENT_ID\") ||" \
-            "          raise \"\"\"" \
-            "          environment variable AUTH0_CLIENT_ID is missing." \
-            "          For example: $client_id" \
-            "          \"\"\"" \
-            "      }\"," \
-            "      audience: \"#{" \
-            "        System.get_env(\"AUTH0_AUDIENCE\") ||" \
-            "          raise \"\"\"" \
-            "          environment variable AUTH0_AUDIENCE is missing." \
-            "          For example: https://www.$APP_NAME.com" \
-            "          \"\"\"" \
-            "      }\"" \
-            "    }" \
-            "    \"\"\"" \
-            "  )" \
+          router_add_scope "\"\/dev\"" 2 \
+            "# ExDocs documentation service" \
+            "scope \"/\", ${ELIXIR_MODULE}Web do" \
+            "  pipe_through [:exdoc]" \
+            "" \
+            "  get \"/$EXDOC_ENDPOINT/\",      ${EXDOC_CONTORLLER_MODULE}, :index" \
+            "  get \"/$EXDOC_ENDPOINT/cover\", ${EXDOC_CONTORLLER_MODULE}, :cover" \
+            "  get \"/$EXDOC_ENDPOINT/*path\", ${EXDOC_CONTORLLER_MODULE}, :not_found" \
             "end"
         fi
 
-        echo "ExDoc implemented"
+        if [ ! -f $RUNTIME_FILE ]; then
+          terminate "The $RUNTIME_FILE file does not exist."
+        else
+          if [ "$AUTH0" == true ]; then
+            client_id=$(
+              head -c $((32 * 2)) /dev/urandom | \
+              base64 | \
+              tr -dc 'a-zA-Z0-9' | \
+              head -c 32
+            )
+
+            inject_frontend_vars_in_runtime \
+              "# Auth0 & ExDoc implementation:" \
+              "# Create auth_config.js file for token request in ExDoc token page." \
+              "if config_env() != :prod do" \
+              "  File.mkdir_p!(\"./priv/static/doc/assets/\")" \
+              "  File.write(" \
+              "    \"./priv/static/doc/assets/auth_config.js\"," \
+              "    \"\"\"" \
+              "    var authConfig = {" \
+              "      domain: \"#{" \
+              "        System.get_env(\"AUTH0_DOMAIN\") ||" \
+              "          raise \"\"\"" \
+              "          environment variable AUTH0_DOMAIN is missing." \
+              "          For example: dev-tenant.us.auth0.com" \
+              "          \"\"\"" \
+              "      }\"," \
+              "      client_id: \"#{" \
+              "        System.get_env(\"AUTH0_CLIENT_ID\") ||" \
+              "          raise \"\"\"" \
+              "          environment variable AUTH0_CLIENT_ID is missing." \
+              "          For example: $client_id" \
+              "          \"\"\"" \
+              "      }\"," \
+              "      audience: \"#{" \
+              "        System.get_env(\"AUTH0_AUDIENCE\") ||" \
+              "          raise \"\"\"" \
+              "          environment variable AUTH0_AUDIENCE is missing." \
+              "          For example: https://www.$APP_NAME.com" \
+              "          \"\"\"" \
+              "      }\"" \
+              "    }" \
+              "    \"\"\"" \
+              "  )" \
+              "end"
+          fi
+        fi
+
+        echo "${C3}✔${R} ExDoc  ${C3}Implemented${R}"
       }
 
       # implement_healthcheck

@@ -64,6 +64,7 @@
     ROUTER_FILE="lib/${ELIXIR_PROJECT_NAME}_web/router.ex"
     CONFIG_FILE="config/config.exs"
     DEV_FILE="config/dev.exs"
+    TEST_FILE="config/test.exs"
     RUNTIME_FILE="config/runtime.exs"
     README_FILE="README.md"
     CHANGELOG_FILE="CHANGELOG.md"
@@ -431,6 +432,24 @@
       # adjust_config
         # Configures the timestamps and id types in config.exs file.
       adjust_config() {
+
+        # prepend_config
+          #
+        prepend_config() {
+          local output=""
+          for arg in "$@"; do
+            output+="$arg\n"
+          done && \
+          output=${output::-2}
+
+          sed -i '/import Config/a \'"$output" $CONFIG_FILE
+        }
+
+        prepend_config \
+          "" \
+          "# Enabling ANSI color codes for TTY emulation" \
+          "config :elixir, ansi_enabled: true"
+
         if [ ! -z "$TIMESTAMPS" ] || [ ! -z "$ID_TYPE" ]; then
           # Remove generators config
           sed -i "s/\(ecto_repos: \[.*.Repo\]\),/\1/" $CONFIG_FILE
@@ -464,6 +483,15 @@
         sed -i \
           "s/http: \[ip: {127, 0, 0, 1}/http: \[ip: {0, 0, 0, 0}/" \
           $DEV_FILE
+      }
+
+      # adjust_config_test
+        # Modify the hostname to the Docker DB container hostname.
+        # Allow access to all machines in the Docker network.
+      adjust_config_test() {
+        sed -i \
+          "s/hostname: \"localhost\"/hostname: System.get_env(\"DATABASE_HOST\") || \"localhost\"/" \
+          $TEST_FILE
       }
 
       # create_env
@@ -1074,7 +1102,9 @@
           fi
         fi
 
-        # CONTINUE: Test reports!
+        # CONTINUE: Test reports! coveralls for html or
+        # OPEN API (imprevements)
+        # HEALTHCHECK
 
         echo "${C3}✔${R} ExDoc  ${C3}Implemented${R}"
       }

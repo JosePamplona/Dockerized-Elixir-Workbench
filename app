@@ -19,12 +19,12 @@
     echo $(dirname $PWD) || \
     echo $PWD
   )
-  GIT_FILE=$(
+  GIT_DIR=$(
     [ $EXISTING_PROJECT == true ] && \
     echo "../.git" || \
     echo ".git"
   )  
-  if [ -d $GIT_FILE ]
+  if [ -d $GIT_DIR ]
   then REPO_URL=$(git config --get remote.origin.url | sed 's/\.git$//')
   else REPO_URL="https://github.com/user/repo"
   fi
@@ -377,9 +377,22 @@
       create_dockerfile_dev
   }
 
-  # configure_files
+  # configure_files PHOENIX_NEW_OPTIONS
     # After project creation it configures some elixir files and add new ones.
   configure_files() {
+    local PHOENIX_NEW_OPTIONS="$@"
+    local NO_HTML=$(
+      local result=false
+      for arg in $PHOENIX_NEW_OPTIONS; do
+        if [ "$arg" = "--no-html" ]; then
+          result=true
+          break
+        fi
+      done
+      
+      echo $result
+    )
+
     # FUNCTIONS --------------------------------------------------------------
       # create_pgpass
         # Create a pgpass file from seed for PGAdmin.
@@ -536,6 +549,11 @@
         pattern replace $file_path "env" \
           "    \`\`\`elixir\n$env_content\n    \`\`\`"
         
+        if [ "$NO_HTML" == true ]
+        then pattern delete $file_path "html"
+        else pattern keep   $file_path "html"
+        fi
+
         if [ "$HEALTHCHECK" == true ]
         then pattern keep   $file_path "healthcheck"
         else pattern delete $file_path "healthcheck"
@@ -832,6 +850,20 @@
         local EXDOC_TESTING_FILE="$EXDOC_ASSETS_PATH/testing.md"
         local EXDOC_GUIDELINE_FILE="$EXDOC_ASSETS_PATH/coding.md"
 
+        # Plant ExDoc Controller
+        cp \
+          "$WORKBENCH_DIR/$SEEDS_DIR/$EXDOC_CONTROLLER_SEED_FILE" \
+          $EXDOC_CONTROLLER_FILE
+        
+        sed -i "s/%{elixir_module}/$ELIXIR_MODULE/"      $EXDOC_CONTROLLER_FILE
+        sed -i "s/%{resource_dir}/$RESOURCE_DIR/"        $EXDOC_CONTROLLER_FILE
+        sed -i "s/%{project_name}/$ELIXIR_PROJECT_NAME/" $EXDOC_CONTROLLER_FILE
+        sed -i "s/%{exdoc_endpoint}/$EXDOC_ENDPOINT/"    $EXDOC_CONTROLLER_FILE
+
+        [ $COVERALLS == true ] && \
+        pattern keep $EXDOC_CONTROLLER_FILE "coveralls" || \
+        pattern delete $EXDOC_CONTROLLER_FILE "coveralls"
+
         # Create ExDoc assets directory
         [ ! -d $ELIXIR_ASSETS_DIR ] && mkdir $ELIXIR_ASSETS_DIR
         mkdir "$EXDOC_ASSETS_PATH"
@@ -854,29 +886,16 @@
         # Set workbench page
         cp "$WORKBENCH_DIR/README.md" $EXDOC_WORKBENCH_FILE
 
+        # Download codeguide
+        curl -o $EXDOC_GUIDELINE_FILE $GUIDELINE_URL
+
         # Plant testing page
-        cp "$WORKBENCH_DIR/$SEEDS_DIR/$TESTING_SEED_FILE" $EXDOC_TESTING_FILE
+        [ $COVERALLS == true ] && \
+          cp "$WORKBENCH_DIR/$SEEDS_DIR/$TESTING_SEED_FILE" $EXDOC_TESTING_FILE
 
         # Plant token page
         [ "$AUTH0" == true ] && \
           cp "$WORKBENCH_DIR/$SEEDS_DIR/$TOKEN_SEED_FILE" $EXDOC_TOKEN_FILE
-
-        # Download codeguide
-        curl -o $EXDOC_GUIDELINE_FILE $GUIDELINE_URL
-
-        # Plant ExDoc Controller
-        cp \
-          "$WORKBENCH_DIR/$SEEDS_DIR/$EXDOC_CONTROLLER_SEED_FILE" \
-          $EXDOC_CONTROLLER_FILE
-        
-        sed -i "s/%{elixir_module}/$ELIXIR_MODULE/"      $EXDOC_CONTROLLER_FILE
-        sed -i "s/%{resource_dir}/$RESOURCE_DIR/"        $EXDOC_CONTROLLER_FILE
-        sed -i "s/%{project_name}/$ELIXIR_PROJECT_NAME/" $EXDOC_CONTROLLER_FILE
-        sed -i "s/%{exdoc_endpoint}/$EXDOC_ENDPOINT/"    $EXDOC_CONTROLLER_FILE
-
-        [ $COVERALLS == true ] && \
-        pattern keep $EXDOC_CONTROLLER_FILE "coveralls" || \
-        pattern delete $EXDOC_CONTROLLER_FILE "coveralls"
 
         if [ ! -f $MIX_FILE ]; then
           terminate "The $MIX_FILE file does not exist."
@@ -907,14 +926,17 @@
             "  }," \
             "  extras: [" \
             "    {\"$README_FILE\", [title: \"Overview\"]},"
+            # "    {\"assets/doc/database.md\", [title: \"Database\"]}," \
 
           [ $AUTH0 == true ] && \
           mix_add_list_line project \
             "    {\"$EXDOC_TOKEN_FILE\", [title: \"Get access tokens\"]},"
 
-          # "    {\"assets/doc/database.md\", [title: \"Database\"]}," \
+          [ $COVERALLS == true ] && \
           mix_add_list_line project \
             "    {\"$EXDOC_TESTING_FILE\", [title: \"Tests reports\"]}," \
+
+          mix_add_list_line project \
             "    {\"$EXDOC_GUIDELINE_FILE\", [title: \"Coding guidelines\"]}," \
             "    {\"$EXDOC_WORKBENCH_FILE\", [title: \"Workbench\"]}," \
             "    {\"$CHANGELOG_FILE\", [title: \"Changelog\"]}" \
@@ -987,7 +1009,7 @@
           router_add_pipeline \
             "pipeline :exdoc do" \
             "  plug Plug.Static," \
-            "    at: \"/$EXDOC_ENDPOINT\"," \
+            "    at: \"/dev/$EXDOC_ENDPOINT\"," \
             "    from: {:$ELIXIR_PROJECT_NAME, \"priv/static/$RESOURCE_DIR\"}," \
             "    cache_control_for_etags: \"public, max-age=86400\"," \
             "    gzip: true" \
@@ -995,7 +1017,7 @@
 
           router_add_scope "\"\/dev\"" 2 \
             "# ExDocs documentation service" \
-            "scope \"/\", ${ELIXIR_MODULE}Web do" \
+            "scope \"/dev\", ${ELIXIR_MODULE}Web do" \
             "  pipe_through [:exdoc]" \
             "" \
             "  get \"/$EXDOC_ENDPOINT/\",      ${EXDOC_CONTORLLER_MODULE}, :index" \
@@ -1051,6 +1073,8 @@
               "end"
           fi
         fi
+
+        # CONTINUE: Test reports!
 
         echo "${C3}✔${R} ExDoc  ${C3}Implemented${R}"
       }
@@ -1160,7 +1184,7 @@
         $DEV_IMAGE $CONTAINER_ENTRYPOINT new \
         $ELIXIR_PROJECT_NAME $@ && \
       cd ../.. && \
-      configure_files && \
+      configure_files $@ && \
       implement_features && \
       cd "$WORKBENCH_DIR/$SCRIPTS_DIR" && \
       docker run \

@@ -15,24 +15,30 @@
 
 | Service | URL |
 | --:     | :-- |
+<!-- workbench-html open -->
+| Web page | [http://localhost:4000/](../..)                                   |
+<!-- workbench-html close -->
 <!-- workbench-healthcheck open -->
-| Healthcheck endpoint   | [http://localhost:4000/health](../health)       |
+| Healthcheck endpoint   | [http://localhost:4000/health](../../health)        |
 <!-- workbench-healthcheck close -->
 <!-- workbench-graphql open -->
-| GraphQL endpoint & IDE | [http://localhost:4000/graphiql](../graphiql)   |
+| GraphQL endpoint & IDE | [http://localhost:4000/graphiql](../../graphiql)    |
 <!-- workbench-graphql close -->
 <!-- workbench-rest open -->
-| API-REST endpoints     | [http://localhost:4000/api](../api)             |
-| API-REST documentation | [http://localhost:4000/swagger](../swagger)     |
+| API-REST endpoints     | [http://localhost:4000/api/v1](../../api/v1)        |
+| API-REST documentation | [http://localhost:4000/dev/swagger](../swagger)     |
 <!-- workbench-rest close -->
-| Mailbox                | [http://localhost:4000/mailbox](../mailbox)     |
-| Phoenix LiveDashboard  | [http://localhost:4000/dashboard](../dashboard) |
-| Project documentation  | [http://localhost:4000/docs](./)                 |
+| Mailbox                | [http://localhost:4000/dev/mailbox](../mailbox)     |
+| Phoenix LiveDashboard  | [http://localhost:4000/dev/dashboard](../dashboard) |
+| Project documentation  | [http://localhost:4000/dev/docs](./)                |
 
 ### Production
 
 | Service | URL |
 | --:     | :-- |
+<!-- workbench-html open -->
+| Web page | [http://localhost:4000/](../..)                                   |
+<!-- workbench-html close -->
 <!-- workbench-healthcheck open -->
 | Healthcheck endpoint | [http://localhost:4000/health](../health)     |
 <!-- workbench-healthcheck close -->
@@ -40,7 +46,7 @@
 | GraphQL endpoint     | [http://localhost:4000/graphiql](../graphiql) |
 <!-- workbench-graphql close -->
 <!-- workbench-rest open -->
-| API-REST endpoints   | [http://localhost:4000/api](../api)           |
+| API-REST endpoints   | [http://localhost:4000/api/v1](../api/v1)           |
 <!-- workbench-rest close -->
 
 <!-- tabs-close -->

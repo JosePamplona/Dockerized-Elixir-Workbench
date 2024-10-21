@@ -2,12 +2,12 @@ defmodule %{elixir_module}Web.ExDocController do
   use %{elixir_module}Web, :controller
   
   def index(conn, _params) do
-    redirect(conn, to: ~p"/%{exdoc_endpoint}/index.html") 
+    redirect(conn, to: ~p"/dev/%{exdoc_endpoint}/index.html") 
   end
   
   <!-- workbench-coveralls open -->
   def cover(conn, _params) do
-    redirect(conn, to: ~p"/%{exdoc_endpoint}/excoveralls.html")
+    redirect(conn, to: ~p"/dev/%{exdoc_endpoint}/excoveralls.html")
   end
   
   <!-- workbench-coveralls close -->

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Dockerized workbench script
-# v0.1.0
+# v0.1.1
 
 # CONFIGURATION ================================================================
 
@@ -1100,7 +1100,7 @@
               "    {\"$EXDOC_TOKEN_FILE\", [title: \"Get access tokens\"]},"
             [ $COVERALLS == true ] && \
             mix_add_list_line project \
-              "    {\"$EXDOC_TESTING_FILE\", [title: \"Tests reports\"]}," \
+              "    {\"$EXDOC_TESTING_FILE\", [title: \"Tests reports\"]},"
             [ $CODING_GUIDELINES == true ] && \
             mix_add_list_line project \
               "    {\"$EXDOC_GUIDELINE_FILE\", [title: \"Coding guidelines\"]},"

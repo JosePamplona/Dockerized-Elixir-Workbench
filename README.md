@@ -59,16 +59,16 @@ Lorem ipsum
 1. This step is only required when deploying the service for the first time, a database reset is needed or the database container is detroyed. This command drops the project database (if any), creates a new one and run a seeding script:
 
     ```sh
-    ./app setup --env [ENV]
+    ./app setup [-e, --env ENV]
     ```
 
 1. Once having a configured database, run the following command to deploy the service along with its configured required services and tools.
 
     ```sh
-    ./app up --env [ENV]
+    ./app up [-e, --env ENV]
     ```
 
-In both commands the flag `--env` is optional. The argument `[ENV]` can be `dev`, `prod` or other and corresponds to the desired enviroment configuration to be deployed, by default is `dev`.
+In both commands the flag `[-e, --env ENV]` is optional. The argument `ENV` can be `dev`, `prod` or other, it corresponds to the desired enviroment configuration to be deployed, by default is `dev`.
 
 ### Custom entrypoint
 
@@ -98,13 +98,13 @@ Replace `[GITHUB_USER]` and `[ACCESS_TOKEN]` with your corresponding user name a
 
 ### Demo
 
-This command runs the **new**, **setup**, **up**, and **delete** commands consecutively for demonstration purposes: (aprox time: 2:30 min)
+This command runs the **new**, **setup**, **up**, and **delete** commands consecutively for demonstration purposes:
 
 ```sh
 ./app demo [-e, --env ENV]
 ```
 
-The flag `--env` is optional. The argument `[ENV]` can be `dev`, `prod` or other and corresponds to the desired enviroment configuration to be deployed, by default is `dev`.
+In both commands the flag `[-e, --env ENV]` is optional. The argument `ENV` can be `dev`, `prod` or other, it corresponds to the desired enviroment configuration to be deployed, by default is `dev`.
 
 ### Delete project
 

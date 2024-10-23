@@ -1,0 +1,14 @@
+{
+  "coverage_options": {
+    "output_dir": "./assets/doc/coverage/html",
+    "template_path": "./assets/doc/coverage/template",
+    "minimum_coverage": 85
+  },
+  "terminal_options": {
+    "file_column_width": 60
+  },
+  "skip_files": [
+    "deps",
+    "test"
+  ]
+}

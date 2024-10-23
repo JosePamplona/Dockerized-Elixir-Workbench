@@ -1,6 +1,6 @@
 #!/bin/bash
 # Dockerized workbench script
-# v0.1.1
+# v0.1.0
 
 # CONFIGURATION ================================================================
 
@@ -571,7 +571,7 @@
         elif [ "$API_INTERFACE" == "rest" ]
         then local api_type="REST"
         fi
-
+        
         cp $seed_path $file_path
         sed -i "s/%{project_name}/$PROJECT_NAME/"          $file_path
         sed -i "s/%{api_type}/$api_type/"                  $file_path
@@ -1040,7 +1040,12 @@
           # Create image asset files
           [ ! -d $EXDOC_ASSETS_IMG_PATH ] && mkdir $EXDOC_ASSETS_IMG_PATH
           cp "$ASSETS_IMG_PATH/$APP_LOGO_FILE" $EXDOC_APP_LOGO_FILE
-          cp "$WORKBENCH_DIR/$ASSETS_DIR/$ARQ_FILE" $EXDOC_WORKBENCH_ARQ_FILE
+
+          [ "$AUTH0" == true ] && [ "$STRIPE" == true ] && local arq="arq.svg"
+          [ "$AUTH0" != true ] && [ "$STRIPE" == true ] && local arq="arq-1.svg"
+          [ "$AUTH0" == true ] && [ "$STRIPE" != true ] && local arq="arq-2.svg"
+          [ "$AUTH0" != true ] && [ "$STRIPE" != true ] && local arq="arq-3.svg"
+          cp "$WORKBENCH_DIR/$ASSETS_DIR/$arq" $EXDOC_WORKBENCH_ARQ_FILE
           
           # Create js asset files
           [ ! -d $EXDOC_ASSETS_JS_PATH ] && mkdir $EXDOC_ASSETS_JS_PATH
@@ -1054,6 +1059,11 @@
 
           # Set workbench page
           cp "$WORKBENCH_DIR/$README_FILE" $EXDOC_WORKBENCH_FILE
+
+          [ "$STRIPE" != true ] && \
+          sed -i "/|.*Stripe.*|/d" $EXDOC_WORKBENCH_FILE
+          [ "$AUTH0" != true ] && \
+          sed -i "/|.*Auth0.*|/d" $EXDOC_WORKBENCH_FILE
 
           # Download codeguide
           [ $CODING_GUIDELINES == true ] && \

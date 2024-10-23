@@ -14,8 +14,7 @@ defmodule %{elixir_module}Web.HealthcheckController do
     summary: "Health check endpoint.",
     description: """
       In production eviroment works just as a server healthcheck enpoint.
-      In develop enviroment returns application information with optional extra 
-      output.
+      In develop enviroment returns application information with optional extra output.
       """,
     parameters: [
       verbose: [
@@ -40,7 +39,7 @@ defmodule %{elixir_module}Web.HealthcheckController do
     ]
 
   def health(conn, params) do
-    if Application.get_env(:%{elixir_module}, :dev_routes),
+    if Application.get_env(:%{elixir_project_name}, :dev_routes),
       do:   json(conn, info(params)),
       else: json(conn, %{health: "😊"})
   end

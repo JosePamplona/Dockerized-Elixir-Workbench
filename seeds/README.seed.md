@@ -16,37 +16,37 @@
 | Service | URL |
 | --:     | :-- |
 <!-- workbench-html open -->
-| Web page | [http://localhost:4000/](../..)                                   |
+| Web page | <http://localhost:%{port}> |
 <!-- workbench-html close -->
 <!-- workbench-healthcheck open -->
-| Healthcheck endpoint   | [http://localhost:4000/health](../../health)        |
+| Healthcheck endpoint | <http://localhost:%{port}/health> |
 <!-- workbench-healthcheck close -->
 <!-- workbench-graphql open -->
-| GraphQL endpoint & IDE | [http://localhost:4000/graphiql](../../graphiql)    |
+| GraphQL endpoint & IDE | <http://localhost:%{port}/graphiql> |
 <!-- workbench-graphql close -->
 <!-- workbench-rest open -->
-| API-REST endpoints     | [http://localhost:4000/api/v1](../../api/v1)        |
-| API-REST documentation | [http://localhost:4000/dev/swagger](../swagger)     |
+| API-REST endpoints | <http://localhost:%{port}/api/v1> |
+| API-REST documentation | <http://localhost:%{port}/dev/swagger> |
 <!-- workbench-rest close -->
-| Mailbox                | [http://localhost:4000/dev/mailbox](../mailbox)     |
-| Phoenix LiveDashboard  | [http://localhost:4000/dev/dashboard](../dashboard) |
-| Project documentation  | [http://localhost:4000/dev/docs](./)                |
+| Mailbox | <http://localhost:%{port}/dev/mailbox> |
+| Phoenix LiveDashboard | <http://localhost:%{port}/dev/dashboard> |
+| Project documentation | <http://localhost:%{port}/dev/docs> |
 
 ### Production
 
 | Service | URL |
 | --:     | :-- |
 <!-- workbench-html open -->
-| Web page | [http://localhost:4000/](../..)                                   |
+| Web page | <http://localhost:%{port}> |
 <!-- workbench-html close -->
 <!-- workbench-healthcheck open -->
-| Healthcheck endpoint | [http://localhost:4000/health](../health)     |
+| Healthcheck endpoint | <http://localhost:%{port}/health> |
 <!-- workbench-healthcheck close -->
 <!-- workbench-graphql open -->
-| GraphQL endpoint     | [http://localhost:4000/graphiql](../graphiql) |
+| GraphQL endpoint | <http://localhost:%{port}/graphiql> |
 <!-- workbench-graphql close -->
 <!-- workbench-rest open -->
-| API-REST endpoints   | [http://localhost:4000/api/v1](../api/v1)           |
+| API-REST endpoints | <http://localhost:%{port}/api/v1> |
 <!-- workbench-rest close -->
 
 <!-- tabs-close -->
@@ -143,8 +143,11 @@
 >   - stripity_stripe: https://hex.pm/packages/stripity_stripe
 
 <!-- workbench-stripe close -->
+<!-- workbench-coveralls open -->
 > ### Coveralls
 >
 > - Official website: https://docs.coveralls.io/
 > - Deps used:
 >   - excoveralls: https://hex.pm/packages/excoveralls
+
+<!-- workbench-coveralls close -->

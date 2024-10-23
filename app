@@ -61,7 +61,9 @@
     INIT_VERSION="0.0.0"
     ENV_FILE=".env"
     MIX_FILE="mix.exs"
-    ROUTER_FILE="lib/${ELIXIR_PROJECT_NAME}_web/router.ex"
+    WEB_DIR="lib/${ELIXIR_PROJECT_NAME}_web"
+    CONTROLLERS_DIR="$WEB_DIR/controllers"
+    ROUTER_FILE="$WEB_DIR/router.ex"
     CONFIG_FILE="config/config.exs"
     DEV_FILE="config/dev.exs"
     TEST_FILE="config/test.exs"
@@ -114,8 +116,10 @@
 
   # Elixir project implementations -------------------------------------------
 
-    # ExDoc implementation
+    # ExDoc documentation implementation
     EXDOC_VERSION="~> 0.34"
+    # API REST documentation implementation
+    OPEN_API_VERSION="~> 3.21"
 
     # Auth0 implementation
     AUTH0_PROD_JS="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"
@@ -573,6 +577,7 @@
         sed -i "s/%{api_type}/$api_type/"                  $file_path
         sed -i "s/%{repo_url}/$(scape_for_sed $REPO_URL)/" $file_path
         sed -i "s/%{repo_badge}/$REPO_OWNER\/$REPO_NAME/"  $file_path
+        sed -i "s/%{port}/$APP_INTERNAL_PORT/"             $file_path
 
         pattern replace $file_path "env" \
           "    \`\`\`elixir\n$env_content\n    \`\`\`"
@@ -580,6 +585,11 @@
         if [ "$NO_HTML" == true ]
         then pattern delete $file_path "html"
         else pattern keep   $file_path "html"
+        fi
+
+        if [ "$COVERALLS" == true ]
+        then pattern keep   $file_path "coveralls"
+        else pattern delete $file_path "coveralls"
         fi
 
         if [ "$HEALTHCHECK" == true ]
@@ -696,6 +706,10 @@
   implement_features() {
     # FUNCTIONS --------------------------------------------------------------
 
+      feature_init() { echo "${C3}* implementing${R} $@"; }
+      feature_done() { dude="ok"; }
+        # echo "${C3}✔${R} $@  ${C3}Implemented${R}"; }
+
       # mix_add_list_line FUNCTION LINES...
         # Insert a new line on mix.exs deps list
       mix_add_list_line() {
@@ -798,10 +812,11 @@
         ' $ROUTER_FILE
       }
 
-      # router_add_scope SCOPE IDENTATION_LEVEL
+      # router_add_scope SCOPE PIPE IDENTATION_LEVEL
       router_add_scope() {
-        # [ $# -ge 3 ] && \
+        # [ $# -ge 4 ] && \
         local scope="$1"; shift
+        local pipe="$1"; shift
         local ident="$1"; shift
         local spaces=$(printf '%*s' $((ident * 2)) '')
         local output=""
@@ -811,332 +826,523 @@
         output=${output::-2}
 
         sed -i '/scope '"${scope}"' do/,/end/ {
-          /end/ {
-            a\\n'"${output}"'
+          /pipe_through '"${pipe}"'/,/end/ {
+            /end/ {
+              a\\n'"${output}"'
+            }
           }
         }
         ' $ROUTER_FILE
       }
 
-      # implement_exdoc
-        #
-      implement_exdoc(){
-        # inject_frontend_vars_in_runtime
-          #
-        inject_frontend_vars_in_runtime() {
-          local output=""
-          for arg in "$@"; do
-            output+="$arg\n"
-          done
-          
-          sed -i '/if System.get_env/i\'"$output" $RUNTIME_FILE
-        }
-
-        echo "${C3}* implementing${R} ExDoc"
-
-        local RESOURCE_DIR="doc"
-        local ASSETS_DIR="assets"
-        local ASSETS_EXDOC_DIR="exdoc"
-        local ASSETS_IMG_PATH="$WORKBENCH_DIR/$ASSETS_DIR/$ASSETS_EXDOC_DIR/images"
-        local ASSETS_JS_PATH="$WORKBENCH_DIR/$ASSETS_DIR/$ASSETS_EXDOC_DIR/js"
-        local APP_LOGO_FILE="logo.png"
-        local TOKEN_SEED_FILE="token.seed.md"
-        local TESTING_SEED_FILE="testing.seed.md"
-        local EXDOC_CONTROLLER_SEED_FILE="exdoc_controller.seed.ex"
-        local EXDOC_ENDPOINT="docs"
-
-        # local GUIDELINE_USER="rrrene"
-        # local GUIDELINE_REPO="elixir-style-guide"
-        # local GUIDELINE_BRANCH="master"
-        # local GUIDELINE_FILE="README.md"
-        local GUIDELINE_USER="JosePamplona"
-        local GUIDELINE_REPO="Elixir-Coding-Conventions"
-        local GUIDELINE_BRANCH="master"
-        local GUIDELINE_FILE="README.en_US.md"
-
-        local GUIDELINE_URL="https://raw.githubusercontent.com/"
-        local GUIDELINE_URL+="$GUIDELINE_USER/"
-        local GUIDELINE_URL+="$GUIDELINE_REPO/"
-        local GUIDELINE_URL+="$GUIDELINE_BRANCH/"
-        local GUIDELINE_URL+="$GUIDELINE_FILE"
-
-        local ELIXIR_CONTROLLERS_DIR="lib/${ELIXIR_PROJECT_NAME}_web/controllers"
-        local EXDOC_CONTROLLER_FILE="$ELIXIR_CONTROLLERS_DIR/exdoc_controller.ex"
-        local EXDOC_CONTORLLER_MODULE="ExDocController"
-
-        local ELIXIR_ASSETS_DIR="assets"
-        local EXDOC_ASSETS_DIR="exdoc"
-        local EXDOC_ASSETS_PATH="$ELIXIR_ASSETS_DIR/$EXDOC_ASSETS_DIR"
-        local EXDOC_ASSETS_IMG_PATH="$EXDOC_ASSETS_PATH/images"
-        local EXDOC_APP_LOGO_FILE="$EXDOC_ASSETS_IMG_PATH/app-logo.png"
-        local EXDOC_ASSETS_JS_PATH="$EXDOC_ASSETS_PATH/js"
-        local EXDOC_ASSETS_CONFIG_PATH="$EXDOC_ASSETS_PATH/config"
-        local EXDOC_ASSETS_COVERAGE_PATH="$EXDOC_ASSETS_PATH/coverage/html"
-        local EXDOC_WORKBENCH_FILE="$EXDOC_ASSETS_PATH/workbench.md"
-        local EXDOC_WORKBENCH_ARQ_FILE="$EXDOC_ASSETS_IMG_PATH/arq.svg"
-        local EXDOC_TOKEN_FILE="$EXDOC_ASSETS_PATH/token.md"
-        local EXDOC_TESTING_FILE="$EXDOC_ASSETS_PATH/testing.md"
-        local EXDOC_GUIDELINE_FILE="$EXDOC_ASSETS_PATH/coding.md"
-
-        # Plant ExDoc Controller
-        cp \
-          "$WORKBENCH_DIR/$SEEDS_DIR/$EXDOC_CONTROLLER_SEED_FILE" \
-          $EXDOC_CONTROLLER_FILE
-        
-        sed -i "s/%{elixir_module}/$ELIXIR_MODULE/"      $EXDOC_CONTROLLER_FILE
-        sed -i "s/%{resource_dir}/$RESOURCE_DIR/"        $EXDOC_CONTROLLER_FILE
-        sed -i "s/%{project_name}/$ELIXIR_PROJECT_NAME/" $EXDOC_CONTROLLER_FILE
-        sed -i "s/%{exdoc_endpoint}/$EXDOC_ENDPOINT/"    $EXDOC_CONTROLLER_FILE
-
-        [ $COVERALLS == true ] && \
-        pattern keep $EXDOC_CONTROLLER_FILE "coveralls" || \
-        pattern delete $EXDOC_CONTROLLER_FILE "coveralls"
-
-        # Create ExDoc assets directory
-        [ ! -d $ELIXIR_ASSETS_DIR ] && mkdir $ELIXIR_ASSETS_DIR
-        mkdir "$EXDOC_ASSETS_PATH"
-
-        # Create image asset files
-        [ ! -d $EXDOC_ASSETS_IMG_PATH ] && mkdir $EXDOC_ASSETS_IMG_PATH
-        cp "$ASSETS_IMG_PATH/$APP_LOGO_FILE" $EXDOC_APP_LOGO_FILE
-        cp "$WORKBENCH_DIR/$ASSETS_DIR/arq.svg" $EXDOC_WORKBENCH_ARQ_FILE
-        
-        # Create js asset files
-        [ ! -d $EXDOC_ASSETS_JS_PATH ] && mkdir $EXDOC_ASSETS_JS_PATH
-        cp -r $ASSETS_JS_PATH $EXDOC_ASSETS_PATH
-
-        # Set the docs_config.js file
-        [ ! -d $EXDOC_ASSETS_CONFIG_PATH ] && mkdir $EXDOC_ASSETS_CONFIG_PATH
-        mv \
-          "$EXDOC_ASSETS_JS_PATH/docs_config.js" \
-          "$EXDOC_ASSETS_CONFIG_PATH/docs_config.js"
-
-        # Set workbench page
-        cp "$WORKBENCH_DIR/README.md" $EXDOC_WORKBENCH_FILE
-
-        # Download codeguide
-        curl -o $EXDOC_GUIDELINE_FILE $GUIDELINE_URL
-
-        # Plant testing page
-        [ $COVERALLS == true ] && \
-          cp "$WORKBENCH_DIR/$SEEDS_DIR/$TESTING_SEED_FILE" $EXDOC_TESTING_FILE
-
-        # Plant token page
-        [ "$AUTH0" == true ] && \
-          cp "$WORKBENCH_DIR/$SEEDS_DIR/$TOKEN_SEED_FILE" $EXDOC_TOKEN_FILE
-
-        if [ ! -f $MIX_FILE ]; then
-          terminate "The $MIX_FILE file does not exist."
-        else
-          mix_last_line_append project ","
-          mix_add_list_line project \
-            "" \
-            "# ExDoc documentation parameters" \
-            "name: \"$PROJECT_NAME\"," \
-            "source_url: \"$REPO_URL\"," \
-            "docs: [" \
-            "  source_ref: \"main\"," \
-            "  authors: [\"$REPO_OWNER\"]," \
-            "  homepage_url: \"https://www.$APP_NAME.com\"," \
-            "  logo: \"$EXDOC_APP_LOGO_FILE\"," \
-            "  output: \"priv/static/$RESOURCE_DIR\"," \
-            "  main: \"readme\"," \
-            "  assets: %{" \
-            "    \"$EXDOC_ASSETS_CONFIG_PATH\" => \"/\","
-          
-          [ $COVERALLS == true ] && \
-          mix_add_list_line project \
-            "    \"$EXDOC_ASSETS_COVERAGE_PATH\" => \"/\","
-
-          mix_add_list_line project \
-            "    \"$EXDOC_ASSETS_IMG_PATH\" => \"/assets\"," \
-            "    \"$EXDOC_ASSETS_JS_PATH\" => \"/assets\"" \
-            "  }," \
-            "  extras: [" \
-            "    {\"$README_FILE\", [title: \"Overview\"]},"
-            # "    {\"assets/doc/database.md\", [title: \"Database\"]}," \
-
-          [ $AUTH0 == true ] && \
-          mix_add_list_line project \
-            "    {\"$EXDOC_TOKEN_FILE\", [title: \"Get access tokens\"]},"
-
-          [ $COVERALLS == true ] && \
-          mix_add_list_line project \
-            "    {\"$EXDOC_TESTING_FILE\", [title: \"Tests reports\"]}," \
-
-          mix_add_list_line project \
-            "    {\"$EXDOC_GUIDELINE_FILE\", [title: \"Coding guidelines\"]}," \
-            "    {\"$EXDOC_WORKBENCH_FILE\", [title: \"Workbench\"]}," \
-            "    {\"$CHANGELOG_FILE\", [title: \"Changelog\"]}" \
-            "  ]," \
-            "  groups_for_extras: [" \
-            "    \"Support\": [" \
-            "      \"$EXDOC_GUIDELINE_FILE\"," \
-            "      \"$EXDOC_WORKBENCH_FILE\"" \
-            "    ]," \
-            "    \"Project\": [" \
-            "      \"$README_FILE\","
-
-          [ $AUTH0 == true ] && \
-          mix_add_list_line project \
-            "      \"$EXDOC_TOKEN_FILE\","
-
-          mix_add_list_line project \
-            "      \"$EXDOC_TESTING_FILE\"," \
-            "      \"$CHANGELOG_FILE\"" \
-            "    ]" \
-            "  ]," \
-            "  groups_for_modules: [" \
-            "    \"Contexts\": ~r/^${ELIXIR_MODULE}\\\.(?!(.*\\\..*|Mailer|Repo)$).*$/," \
-            "    \"Schemas\": ~r/^${ELIXIR_MODULE}\\\..*\\\.(?!.*(Enum)$).*$/," \
-            "    \"Collections\": ~r/^${ELIXIR_MODULE}\\\..*(Enum)$/,"
-
-          [ "$API_INTERFACE" == "graphql" ] && [ $AUTH0 == true ] && \
-          mix_add_list_line project \
-            "    \"Authentication\": [" \
-            "      ${ELIXIR_MODULE}Web.Graphql.Context" \
-            "    ],"
-
-          mix_add_list_line project \
-            "    \"Web\": ~r/^${ELIXIR_MODULE}Web(?!.*(Controller|HTML|JSON)$)/," \
-            "    \"Controllers\": ~r/^${ELIXIR_MODULE}Web.*(Controller|HTML|JSON)$/" \
-            "  ]," \
-            "  before_closing_head_tag: &before_closing_head_tag/1," \
-            "  before_closing_body_tag: &before_closing_body_tag/1" \
-            "]" \
-
-          html_body="  <script src=\"./assets/themedImage.js\"></script>"
-          if [ "$AUTH0" == true ]; then
-            html_body+="\n    <script src=\"$AUTH0_PROD_JS\"></script>"
-            html_body+="\n    <script src=\"./assets/auth_config.js\"></script>"
-            html_body+="\n    <script src=\"./assets/token.js\"></script>"
-          fi
-
-          mix_insert_after_function project \
-            "" \
-            "defp before_closing_head_tag(:epub), do: \"\"" \
-            "defp before_closing_head_tag(:html), do: \"\"" \
-            "" \
-            "defp before_closing_body_tag(:epub), do: \"\"" \
-            "defp before_closing_body_tag(:html) do" \
-            "  \"\"\"" \
-            "$html_body" \
-            "  \"\"\"" \
-            "end"
-
-          mix_last_line_append deps ","
-          mix_add_list_line deps \
-            "" \
-            "# ExDoc documentation deps" \
-            "{:ex_doc, \"$EXDOC_VERSION\", only: :dev, runtime: false}"
-        fi
-
-        if [ ! -f $ROUTER_FILE ]; then
-          terminate "The $ROUTER_FILE file does not exist."
-        else
-          router_add_pipeline \
-            "pipeline :exdoc do" \
-            "  plug Plug.Static," \
-            "    at: \"/dev/$EXDOC_ENDPOINT\"," \
-            "    from: {:$ELIXIR_PROJECT_NAME, \"priv/static/$RESOURCE_DIR\"}," \
-            "    cache_control_for_etags: \"public, max-age=86400\"," \
-            "    gzip: true" \
-            "end"
-
-          router_add_scope "\"\/dev\"" 2 \
-            "# ExDocs documentation service" \
-            "scope \"/dev\", ${ELIXIR_MODULE}Web do" \
-            "  pipe_through [:exdoc]" \
-            "" \
-            "  get \"/$EXDOC_ENDPOINT/\",      ${EXDOC_CONTORLLER_MODULE}, :index" \
-            "  get \"/$EXDOC_ENDPOINT/cover\", ${EXDOC_CONTORLLER_MODULE}, :cover" \
-            "  get \"/$EXDOC_ENDPOINT/*path\", ${EXDOC_CONTORLLER_MODULE}, :not_found" \
-            "end"
-        fi
-
-        if [ ! -f $RUNTIME_FILE ]; then
-          terminate "The $RUNTIME_FILE file does not exist."
-        else
-          if [ "$AUTH0" == true ]; then
-            client_id=$(
-              head -c $((32 * 2)) /dev/urandom | \
-              base64 | \
-              tr -dc 'a-zA-Z0-9' | \
-              head -c 32
-            )
-
-            inject_frontend_vars_in_runtime \
-              "# Auth0 & ExDoc implementation:" \
-              "# Create auth_config.js file for token request in ExDoc token page." \
-              "if config_env() != :prod do" \
-              "  File.mkdir_p!(\"./priv/static/doc/assets/\")" \
-              "  File.write(" \
-              "    \"./priv/static/doc/assets/auth_config.js\"," \
-              "    \"\"\"" \
-              "    var authConfig = {" \
-              "      domain: \"#{" \
-              "        System.get_env(\"AUTH0_DOMAIN\") ||" \
-              "          raise \"\"\"" \
-              "          environment variable AUTH0_DOMAIN is missing." \
-              "          For example: dev-tenant.us.auth0.com" \
-              "          \"\"\"" \
-              "      }\"," \
-              "      client_id: \"#{" \
-              "        System.get_env(\"AUTH0_CLIENT_ID\") ||" \
-              "          raise \"\"\"" \
-              "          environment variable AUTH0_CLIENT_ID is missing." \
-              "          For example: $client_id" \
-              "          \"\"\"" \
-              "      }\"," \
-              "      audience: \"#{" \
-              "        System.get_env(\"AUTH0_AUDIENCE\") ||" \
-              "          raise \"\"\"" \
-              "          environment variable AUTH0_AUDIENCE is missing." \
-              "          For example: https://www.$APP_NAME.com" \
-              "          \"\"\"" \
-              "      }\"" \
-              "    }" \
-              "    \"\"\"" \
-              "  )" \
-              "end"
-          fi
-        fi
-
-        # CONTINUE: Test reports! coveralls for html or
-        # OPEN API (imprevements)
-        # HEALTHCHECK
-
-        echo "${C3}✔${R} ExDoc  ${C3}Implemented${R}"
-      }
-
-      # implement_healthcheck
-        #
-      implement_healthcheck(){
-        echo "---> Coming soon --> implement_healthcheck"
-      }
+      # CONTINUE: Test reports! coveralls for html
 
       # implement_rest
         #
       implement_rest(){
-        echo "---> Coming soon --> implement_rest"
+        # CONFIGURATION --------------------------------------------------------
+          local FEATURE="OpenAPI"
+
+          local OPEN_API_ENDPOINT="openapi"
+          local SWAGGER_ENDPOINT="swagger"
+          local SCHEMAS_FILE="schemas.ex"
+          local SPEC_FILE="spec.ex"
+          local SCHEMAS_SEED_FILE="schemas.seed.ex"
+          local SPEC_SEED_FILE="spec.seed.ex"
+          local ELIXIR_OPEN_API_DIR="$WEB_DIR/open_api"
+          local ELIXIR_API_SCHEMAS_FILE="$ELIXIR_OPEN_API_DIR/schemas.ex"
+          local ELIXIR_API_SPEC_FILE="$ELIXIR_OPEN_API_DIR/spec.ex"
+
+        # SCRIPT ---------------------------------------------------------------
+          feature_init $FEATURE
+
+          [ ! -d $ELIXIR_OPEN_API_DIR ] && mkdir $ELIXIR_OPEN_API_DIR
+
+          # Plant schemas.ex file
+          cp \
+            "$WORKBENCH_DIR/$SEEDS_DIR/$SCHEMAS_SEED_FILE" \
+            $ELIXIR_API_SCHEMAS_FILE
+
+          sed -i "s/%{elixir_module}/$ELIXIR_MODULE/" $ELIXIR_API_SCHEMAS_FILE
+          sed -i \
+            "s/%{project_name}/$ELIXIR_PROJECT_NAME/" \
+            $ELIXIR_API_SCHEMAS_FILE
+
+          [ $HEALTHCHECK == true ] && \
+          pattern keep $ELIXIR_API_SCHEMAS_FILE "healthcheck" || \
+          pattern delete $ELIXIR_API_SCHEMAS_FILE "healthcheck"
+
+          # Plant spec.ex file
+          cp \
+            "$WORKBENCH_DIR/$SEEDS_DIR/$SPEC_SEED_FILE" \
+            $ELIXIR_API_SPEC_FILE
+          
+          sed -i "s/%{elixir_module}/$ELIXIR_MODULE/" $ELIXIR_API_SPEC_FILE
+          sed -i "s/%{project_name}/$PROJECT_NAME/"   $ELIXIR_API_SPEC_FILE
+
+          if [ ! -f $MIX_FILE ]; then
+            terminate "The $MIX_FILE file does not exist."
+          else
+            mix_last_line_append deps ","
+            mix_add_list_line deps \
+              "" \
+              "# OpenAPI documentation deps" \
+              "{:open_api_spex, \"$OPEN_API_VERSION\"}"
+          fi
+
+          if [ ! -f $ROUTER_FILE ]; then
+            terminate "The $ROUTER_FILE file does not exist."
+          else
+            alias="  alias OpenApiSpex.Plug.{PutApiSpec, RenderSpec, SwaggerUI}"
+            sed -i '4i\'"$alias"'\n' $ROUTER_FILE
+
+            sed -i '/# Other scopes may use custom stacks\./,/# end/ {
+                /^.*# Other .*/d
+                s/^\(.*\)# scope \(.*\)/\1scope \2/
+                s/^\(.*\)#   pipe_through \(.*\)/\1  pipe_through \2/
+                s/^\(.*\)# end/\1end/
+              }' \
+              $ROUTER_FILE
+
+            sed -i \
+              "s/\(\(.*\)scope \"\/api\".*\)/\2# API REST endpoints scope\n\1/" \
+              $ROUTER_FILE
+
+            sed -i \
+              "s/scope \"\/api\"\(.*\)/scope \"\/api\/v1\"\1/" \
+              $ROUTER_FILE
+
+            router_add_pipeline \
+              "pipeline :open_api_spec do" \
+              "  plug PutApiSpec, module: ${ELIXIR_MODULE}Web.OpenApi.Spec" \
+              "end"
+
+            router_add_scope "\"\/dev\"" "\(:browser\|\[:fetch.*\]\)" 2 \
+              "# OpenAPI schema (json file)" \
+              "scope \"/dev\" do" \
+              "  pipe_through [:api, :open_api_spec]" \
+              "" \
+              "  get \"/$OPEN_API_ENDPOINT\", RenderSpec, []" \
+              "end"
+
+            swagger=""
+            swagger+="\n      # SwaggerUI interface for REST-API documentation"
+            swagger+="\n      get \"/$SWAGGER_ENDPOINT\", SwaggerUI"
+            swagger+=", path: \"/dev/$OPEN_API_ENDPOINT\""
+
+            sed -i '/forward "\/mailbox", .*$/a\'"$swagger" $ROUTER_FILE
+          fi
+
+          feature_done $FEATURE
       }
 
       # implement_graphql
         #
       implement_graphql(){
-        echo "---> Coming soon --> implement_graphql"
+        # CONFIGURATION --------------------------------------------------------
+        local FEATURE="API GraphQL"
+
+        # SCRIPT ---------------------------------------------------------------
+        feature_init $FEATURE
+
+        echo "---> Coming soon --> $FEATURE"
+
+        feature_done $FEATURE
+      }
+
+      # implement_exdoc
+        #
+      implement_exdoc(){
+        # FUNCTIONS ------------------------------------------------------------
+          # inject_frontend_vars_in_runtime
+            #
+          inject_frontend_vars_in_runtime() {
+            local output=""
+            for arg in "$@"; do
+              output+="$arg\n"
+            done
+            
+            sed -i '/if System.get_env/i\'"$output" $RUNTIME_FILE
+          }
+
+        # CONFIGURATION --------------------------------------------------------
+
+          local FEATURE="ExDoc"
+          # Estas variables está alojadas aqui para representar que solo son usadas
+          # para implementar ex_doc y mantenerlo isolado, si otra implementación
+          # usa alguna de estas variables se sacará al script principal.
+          local    EXDOC_ENDPOINT="docs"
+          local      RESOURCE_DIR="doc"
+          local        ASSETS_DIR="assets"
+          local  ASSETS_EXDOC_DIR="exdoc"
+          local ASSETS_EXDOC_PATH="$WORKBENCH_DIR/$ASSETS_DIR/$ASSETS_EXDOC_DIR"
+          local   ASSETS_IMG_PATH="$ASSETS_EXDOC_PATH/images"
+          local    ASSETS_JS_PATH="$ASSETS_EXDOC_PATH/js"
+          local     APP_LOGO_FILE="logo.png"
+          local          ARQ_FILE="arq.svg"
+          local   TOKEN_SEED_FILE="token.seed.md"
+          local TESTING_SEED_FILE="testing.seed.md"
+          local EXDOC_CONTROLLER_SEED_FILE="exdoc_controller.seed.ex"
+
+          local EXDOC_CONTROLLER_FILE="$CONTROLLERS_DIR/exdoc_controller.ex"
+          local EXDOC_CONTORLLER_MODULE="ExDocController"
+
+          # local   GUIDELINE_USER="rrrene"
+          # local   GUIDELINE_REPO="elixir-style-guide"
+          # local GUIDELINE_BRANCH="master"
+          # local   GUIDELINE_FILE="README.md"
+          local   GUIDELINE_USER="JosePamplona"
+          local   GUIDELINE_REPO="Elixir-Coding-Conventions"
+          local GUIDELINE_BRANCH="master"
+          local   GUIDELINE_FILE="README.en_US.md"
+
+          local GUIDELINE_URL="https://raw.githubusercontent.com/"
+          local GUIDELINE_URL+="$GUIDELINE_USER/"
+          local GUIDELINE_URL+="$GUIDELINE_REPO/"
+          local GUIDELINE_URL+="$GUIDELINE_BRANCH/"
+          local GUIDELINE_URL+="$GUIDELINE_FILE"
+
+          local          ELIXIR_ASSETS_DIR="assets"
+          local           EXDOC_ASSETS_DIR="exdoc"
+          local          EXDOC_ASSETS_PATH="$ELIXIR_ASSETS_DIR/$EXDOC_ASSETS_DIR"
+          local      EXDOC_ASSETS_IMG_PATH="$EXDOC_ASSETS_PATH/images"
+          local       EXDOC_ASSETS_JS_PATH="$EXDOC_ASSETS_PATH/js"
+          local   EXDOC_ASSETS_CONFIG_PATH="$EXDOC_ASSETS_PATH/config"
+          local EXDOC_ASSETS_COVERAGE_PATH="$EXDOC_ASSETS_PATH/coverage/html"
+          local        EXDOC_APP_LOGO_FILE="$EXDOC_ASSETS_IMG_PATH/app-logo.png"
+          local   EXDOC_WORKBENCH_ARQ_FILE="$EXDOC_ASSETS_IMG_PATH/arq.svg"
+          local       EXDOC_WORKBENCH_FILE="$EXDOC_ASSETS_PATH/workbench.md"
+          local           EXDOC_TOKEN_FILE="$EXDOC_ASSETS_PATH/token.md"
+          local         EXDOC_TESTING_FILE="$EXDOC_ASSETS_PATH/testing.md"
+          local       EXDOC_GUIDELINE_FILE="$EXDOC_ASSETS_PATH/coding.md"
+
+        # SCRIPT ---------------------------------------------------------------
+          feature_init $FEATURE
+
+          # Plant ExDoc Controller
+          cp \
+            "$WORKBENCH_DIR/$SEEDS_DIR/$EXDOC_CONTROLLER_SEED_FILE" \
+            $EXDOC_CONTROLLER_FILE
+          
+          sed -i "s/%{elixir_module}/$ELIXIR_MODULE/"      $EXDOC_CONTROLLER_FILE
+          sed -i "s/%{resource_dir}/$RESOURCE_DIR/"        $EXDOC_CONTROLLER_FILE
+          sed -i "s/%{project_name}/$ELIXIR_PROJECT_NAME/" $EXDOC_CONTROLLER_FILE
+          sed -i "s/%{exdoc_endpoint}/$EXDOC_ENDPOINT/"    $EXDOC_CONTROLLER_FILE
+
+          [ $COVERALLS == true ] && \
+          pattern keep $EXDOC_CONTROLLER_FILE "coveralls" || \
+          pattern delete $EXDOC_CONTROLLER_FILE "coveralls"
+
+          # Create ExDoc assets directory
+          [ ! -d $ELIXIR_ASSETS_DIR ] && mkdir $ELIXIR_ASSETS_DIR
+          [ ! -d $EXDOC_ASSETS_PATH ] && mkdir $EXDOC_ASSETS_PATH
+
+          # Create image asset files
+          [ ! -d $EXDOC_ASSETS_IMG_PATH ] && mkdir $EXDOC_ASSETS_IMG_PATH
+          cp "$ASSETS_IMG_PATH/$APP_LOGO_FILE" $EXDOC_APP_LOGO_FILE
+          cp "$WORKBENCH_DIR/$ASSETS_DIR/$ARQ_FILE" $EXDOC_WORKBENCH_ARQ_FILE
+          
+          # Create js asset files
+          [ ! -d $EXDOC_ASSETS_JS_PATH ] && mkdir $EXDOC_ASSETS_JS_PATH
+          cp -r $ASSETS_JS_PATH $EXDOC_ASSETS_PATH
+
+          # Set the docs_config.js file
+          [ ! -d $EXDOC_ASSETS_CONFIG_PATH ] && mkdir $EXDOC_ASSETS_CONFIG_PATH
+          mv \
+            "$EXDOC_ASSETS_JS_PATH/docs_config.js" \
+            "$EXDOC_ASSETS_CONFIG_PATH/docs_config.js"
+
+          # Set workbench page
+          cp "$WORKBENCH_DIR/$README_FILE" $EXDOC_WORKBENCH_FILE
+
+          # Download codeguide
+          [ $CODING_GUIDELINES == true ] && \
+          curl -o $EXDOC_GUIDELINE_FILE $GUIDELINE_URL
+
+          # Plant testing page
+          [ $COVERALLS == true ] && \
+          cp "$WORKBENCH_DIR/$SEEDS_DIR/$TESTING_SEED_FILE" $EXDOC_TESTING_FILE
+
+          # Plant token page
+          [ "$AUTH0" == true ] && \
+          cp "$WORKBENCH_DIR/$SEEDS_DIR/$TOKEN_SEED_FILE" $EXDOC_TOKEN_FILE
+
+          if [ ! -f $MIX_FILE ]; then
+            terminate "The $MIX_FILE file does not exist."
+          else
+            mix_last_line_append project ","
+            mix_add_list_line project \
+              "" \
+              "# ExDoc documentation parameters" \
+              "name: \"$PROJECT_NAME\"," \
+              "source_url: \"$REPO_URL\"," \
+              "docs: [" \
+              "  source_ref: \"main\"," \
+              "  authors: [\"$REPO_OWNER\"]," \
+              "  homepage_url: \"https://www.$APP_NAME.com\"," \
+              "  logo: \"$EXDOC_APP_LOGO_FILE\"," \
+              "  output: \"priv/static/$RESOURCE_DIR\"," \
+              "  main: \"readme\"," \
+              "  assets: %{" \
+              "    \"$EXDOC_ASSETS_CONFIG_PATH\" => \"/\","
+            [ $COVERALLS == true ] && \
+            mix_add_list_line project \
+              "    \"$EXDOC_ASSETS_COVERAGE_PATH\" => \"/\","
+            mix_add_list_line project \
+              "    \"$EXDOC_ASSETS_IMG_PATH\" => \"/assets\"," \
+              "    \"$EXDOC_ASSETS_JS_PATH\" => \"/assets\"" \
+              "  }," \
+              "  extras: [" \
+              "    {\"$README_FILE\", [title: \"Overview\"]},"
+              # "    {\"assets/doc/database.md\", [title: \"Database\"]}," \
+            [ $AUTH0 == true ] && \
+            mix_add_list_line project \
+              "    {\"$EXDOC_TOKEN_FILE\", [title: \"Get access tokens\"]},"
+            [ $COVERALLS == true ] && \
+            mix_add_list_line project \
+              "    {\"$EXDOC_TESTING_FILE\", [title: \"Tests reports\"]}," \
+            [ $CODING_GUIDELINES == true ] && \
+            mix_add_list_line project \
+              "    {\"$EXDOC_GUIDELINE_FILE\", [title: \"Coding guidelines\"]},"
+            mix_add_list_line project \
+              "    {\"$EXDOC_WORKBENCH_FILE\", [title: \"Workbench\"]}," \
+              "    {\"$CHANGELOG_FILE\", [title: \"Changelog\"]}" \
+              "  ]," \
+              "  groups_for_extras: [" \
+              "    \"Support\": [" \
+              "      \"$EXDOC_GUIDELINE_FILE\"," \
+              "      \"$EXDOC_WORKBENCH_FILE\"" \
+              "    ]," \
+              "    \"Project\": [" \
+              "      \"$README_FILE\","
+            [ $AUTH0 == true ] && \
+            mix_add_list_line project \
+              "      \"$EXDOC_TOKEN_FILE\","
+            mix_add_list_line project \
+              "      \"$EXDOC_TESTING_FILE\"," \
+              "      \"$CHANGELOG_FILE\"" \
+              "    ]" \
+              "  ]," \
+              "  groups_for_modules: [" \
+              "    \"Contexts\": ~r/^${ELIXIR_MODULE}\\\.(?!(.*\\\..*|Mailer|Repo)$).*$/," \
+              "    \"Schemas\": ~r/^${ELIXIR_MODULE}\\\..*\\\.(?!.*(Enum)$).*$/," \
+              "    \"Collections\": ~r/^${ELIXIR_MODULE}\\\..*(Enum)$/,"
+            [ "$API_INTERFACE" == "graphql" ] && [ $AUTH0 == true ] && \
+            mix_add_list_line project \
+              "    \"Authentication\": [" \
+              "      ${ELIXIR_MODULE}Web.Graphql.Context" \
+              "    ],"
+            mix_add_list_line project \
+              "    \"Web\": ~r/^${ELIXIR_MODULE}Web(?!.*(Controller|HTML|JSON)$)/," \
+              "    \"Controllers\": ~r/^${ELIXIR_MODULE}Web.*(Controller|HTML|JSON)$/" \
+              "  ]," \
+              "  before_closing_head_tag: &before_closing_head_tag/1," \
+              "  before_closing_body_tag: &before_closing_body_tag/1" \
+              "]"
+
+            html_body="  <script src=\"./assets/themedImage.js\"></script>"
+            if [ "$AUTH0" == true ]; then
+              html_body+="\n    <script src=\"$AUTH0_PROD_JS\"></script>"
+              html_body+="\n    <script src=\"./assets/auth_config.js\"></script>"
+              html_body+="\n    <script src=\"./assets/token.js\"></script>"
+            fi
+
+            mix_insert_after_function project \
+              "" \
+              "defp before_closing_head_tag(:epub), do: \"\"" \
+              "defp before_closing_head_tag(:html), do: \"\"" \
+              "" \
+              "defp before_closing_body_tag(:epub), do: \"\"" \
+              "defp before_closing_body_tag(:html) do" \
+              "  \"\"\"" \
+              "$html_body" \
+              "  \"\"\"" \
+              "end"
+
+            mix_last_line_append deps ","
+            mix_add_list_line deps \
+              "" \
+              "# ExDoc documentation deps" \
+              "{:ex_doc, \"$EXDOC_VERSION\", only: :dev, runtime: false}"
+          fi
+
+          if [ ! -f $ROUTER_FILE ]; then
+            terminate "The $ROUTER_FILE file does not exist."
+          else
+            router_add_pipeline \
+              "pipeline :exdoc do" \
+              "  plug Plug.Static," \
+              "    at: \"/dev/$EXDOC_ENDPOINT\"," \
+              "    from: {:$ELIXIR_PROJECT_NAME, \"priv/static/$RESOURCE_DIR\"}," \
+              "    cache_control_for_etags: \"public, max-age=86400\"," \
+              "    gzip: true" \
+              "end"
+
+            router_add_scope "\"\/dev\"" "\(:browser\|\[:fetch.*\]\)" 2 \
+              "# ExDoc documentation site" \
+              "scope \"/dev\", ${ELIXIR_MODULE}Web do" \
+              "  pipe_through :exdoc" \
+              "" \
+              "  get \"/$EXDOC_ENDPOINT/\",      ${EXDOC_CONTORLLER_MODULE}, :index" \
+              "  get \"/$EXDOC_ENDPOINT/cover\", ${EXDOC_CONTORLLER_MODULE}, :cover" \
+              "  get \"/$EXDOC_ENDPOINT/*path\", ${EXDOC_CONTORLLER_MODULE}, :not_found" \
+              "end"
+          fi
+
+          if [ ! -f $RUNTIME_FILE ]; then
+            terminate "The $RUNTIME_FILE file does not exist."
+          else
+            if [ "$AUTH0" == true ]; then
+              client_id=$(
+                head -c $((32 * 2)) /dev/urandom | \
+                base64 | \
+                tr -dc 'a-zA-Z0-9' | \
+                head -c 32
+              )
+
+              inject_frontend_vars_in_runtime \
+                "# Auth0 & ExDoc implementation:" \
+                "# Create auth_config.js file for token request in ExDoc token page." \
+                "if config_env() != :prod do" \
+                "  File.mkdir_p!(\"./priv/static/doc/assets/\")" \
+                "  File.write(" \
+                "    \"./priv/static/doc/assets/auth_config.js\"," \
+                "    \"\"\"" \
+                "    var authConfig = {" \
+                "      domain: \"#{" \
+                "        System.get_env(\"AUTH0_DOMAIN\") ||" \
+                "          raise \"\"\"" \
+                "          environment variable AUTH0_DOMAIN is missing." \
+                "          For example: dev-tenant.us.auth0.com" \
+                "          \"\"\"" \
+                "      }\"," \
+                "      client_id: \"#{" \
+                "        System.get_env(\"AUTH0_CLIENT_ID\") ||" \
+                "          raise \"\"\"" \
+                "          environment variable AUTH0_CLIENT_ID is missing." \
+                "          For example: $client_id" \
+                "          \"\"\"" \
+                "      }\"," \
+                "      audience: \"#{" \
+                "        System.get_env(\"AUTH0_AUDIENCE\") ||" \
+                "          raise \"\"\"" \
+                "          environment variable AUTH0_AUDIENCE is missing." \
+                "          For example: https://www.$APP_NAME.com" \
+                "          \"\"\"" \
+                "      }\"" \
+                "    }" \
+                "    \"\"\"" \
+                "  )" \
+                "end"
+            fi
+          fi
+
+          feature_done $FEATURE
+      }
+
+      # implement_coveralls
+        #
+      implement_coveralls(){
+        # CONFIGURATION --------------------------------------------------------
+        local FEATURE="Coveralls"
+
+        # SCRIPT ---------------------------------------------------------------
+        feature_init $FEATURE
+
+        echo "---> Coming soon --> $FEATURE"
+        # Plant: coveralls.seed.json
+
+        # Add mix:
+          # "# Coverage parameters" \
+          # "test_coverage: [tool: ExCoveralls]," \
+          # "preferred_cli_env: [" \
+          # "  coveralls: :test," \
+          # "  "coveralls.detail": :test," \
+          # "  "coveralls.post": :test," \
+          # "  "coveralls.html": :test," \
+          # "  "coveralls.cobertura": :test," \
+          # "  coverage: :test," \
+          # "  "docs.coverage": :test" \
+          # "]"
+
+        feature_done $FEATURE
+      }
+
+      # implement_healthcheck
+        #
+      implement_healthcheck(){
+        # CONFIGURATION --------------------------------------------------------
+          local FEATURE="Healthcheck"
+
+          local HEALTHCHECK_ENDPOINT="health"
+          local CONTROLLER_FILE="healthcheck_controller.ex"
+          local CONTROLLER_SEED_FILE="healthcheck_controller.seed.ex"
+
+          local ELIXIR_CONTROLLER_FILE="$CONTROLLERS_DIR/$CONTROLLER_FILE"
+
+        # SCRIPT ---------------------------------------------------------------
+          feature_init $FEATURE
+
+          # Plant healthcheck_controller.ex file
+          cp \
+            "$WORKBENCH_DIR/$SEEDS_DIR/$CONTROLLER_SEED_FILE" \
+            $ELIXIR_CONTROLLER_FILE
+
+          sed -i "s/%{elixir_module}/$ELIXIR_MODULE/" $ELIXIR_CONTROLLER_FILE
+          sed -i \
+            "s/%{elixir_project_name}/$ELIXIR_PROJECT_NAME/" \
+            $ELIXIR_CONTROLLER_FILE
+
+
+          if [ ! -f $ROUTER_FILE ]; then
+            terminate "The $ROUTER_FILE file does not exist."
+          else
+            router_add_scope "\"\/api\/v1\", ${ELIXIR_MODULE}Web" ":api" 1 \
+              "# Healthcheck endpoint" \
+              "scope \"/$HEALTHCHECK_ENDPOINT\", ${ELIXIR_MODULE}Web do" \
+              "  pipe_through :api" \
+              "" \
+              "  get \"/\", HealthcheckController, :health" \
+              "end"
+          fi
+
+          feature_done $FEATURE
       }
 
       # implement_auth0
         #
       implement_auth0(){
-        echo "---> Coming soon --> implement_auth0"
+        # CONFIGURATION --------------------------------------------------------
+        local FEATURE="Auth0"
+
+        # SCRIPT ---------------------------------------------------------------
+        feature_init $FEATURE
+
+        echo "---> Coming soon --> $FEATURE"
+        # add ENV /assets/doc/js/auth_config.js
+
+        # Add router
+        # "pipeline :auth do" \
+        # "plug ValidateToken, no_halt: true" \
+        # "plug GetUser, no_halt: true, user_from_claim: &Auth.login_from_claim/2" \
+        # "plug PitchersWeb.Graphql.Context"
+        # end
+
+        feature_done $FEATURE
       }
 
       # implement_stripe
         #
       implement_stripe(){
-        echo "---> Coming soon --> implement_stripe"
+        # CONFIGURATION --------------------------------------------------------
+        local FEATURE="Stripe"
+
+        # SCRIPT ---------------------------------------------------------------
+        feature_init $FEATURE
+
+        echo "---> Coming soon --> $FEATURE"
+
+        feature_done $FEATURE
       }
 
       # 1. create Web.Graphql files
@@ -1153,15 +1359,16 @@
         #      {:absinthe_error_payload, "~> 1.1"},
 
     # SCRIPT -----------------------------------------------------------------
-      if [ "$EXDOC" == true ];              then implement_exdoc;       fi && \
-      if [ "$HEALTHCHECK" == true ];        then implement_healthcheck; fi && \
+
       if [ "$API_INTERFACE" == "rest" ] || [ "$HEALTHCHECK" == true ]; then
         implement_rest;
       fi && \
       if [ "$API_INTERFACE" == "graphql" ]; then implement_graphql;     fi && \
+      if [ "$EXDOC" == true ];              then implement_exdoc;       fi && \
+      if [ "$COVERALLS" == true ];          then implement_coveralls;   fi && \
+      if [ "$HEALTHCHECK" == true ];        then implement_healthcheck; fi && \
       if [ "$AUTH0" == true ];              then implement_auth0;       fi && \
       if [ "$STRIPE" == true ];             then implement_stripe;      fi && \
-
       echo
   }
 
@@ -1202,6 +1409,7 @@
     elif [ $1 == "new" ]; then
       ENTRYPOINT_COMMAND=$1; shift
 
+      # cd ..
       prepare_new_project && \
       cd "$WORKBENCH_DIR/$SCRIPTS_DIR" && \
       docker build --file $DEV_DOCKERFILE --tag $DEV_IMAGE . && \

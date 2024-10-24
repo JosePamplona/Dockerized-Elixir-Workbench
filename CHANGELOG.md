@@ -19,8 +19,28 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - db port change breask pgadmin maybe back
 
+### Changed
+
+- Workbench script refactor.
+- The workspace script and its files are moved to a subfolder, leaving the new project files in root directory instead of creating the project in a subfolder.
+
+### Added
+
+- Workbench script implementation: **ExDoc**. The pages and content are adjusted following `config.conf` file.
+- Workbench script in *ExDoc* documentation.
+- Multiple architecture images and content for different project configurations in the *ExDoc* workbench documentation.
+- Workbench script implementation: **Coveralls**.
+- Mix task `mix cover` for test report generation for ExDoc
+- Workbench script implementation: **Healthcheck**.
+- Workbench script implementation: **OpenAPI**.
+- Workbench script implementation: **Stripe**.
+- Workbench script implementation: **Auth0**.
+- **Delete** command in workbench script.
+- **Demo** command in workbench script.
+- **Help** command in workbench script.
+
 ## v0.1.0 - (2024-10-07)
 
 ### Added
 
-- Second version after Bengaru
+- Second version after *Pitchers* testing cycle (Untracked changes).

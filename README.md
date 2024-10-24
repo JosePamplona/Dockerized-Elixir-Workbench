@@ -3,7 +3,7 @@
 
 # Dockerized Elixir Workbench
 
-![v0.1.0](https://img.shields.io/badge/version-0.1.0-white.svg?style=flat-square&color=lightgray)
+![v0.2.0](https://img.shields.io/badge/version-0.2.0-white.svg?style=flat-square&color=lightgray)
 [![License](https://img.shields.io/github/license/JosePamplona/Dockerized-Elixir-Workbench?style=flat-square)](https://github.com/JosePamplona/Dockerized-Elixir-Workbench/blob/main/LICENSE.md)
 [![Last Updated](https://img.shields.io/github/last-commit/JosePamplona/Dockerized-Elixir-Workbench.svg?style=flat-square)](https://github.com/JosePamplona/Dockerized-Elixir-Workbench/commits/main)
 
@@ -20,6 +20,7 @@ This is a script for creating [Elixir](https://elixir-lang.org/) projects with t
     - [Demo](#demo)
     - [Delete project](#delete-project)
     - [Reset Docker](#reset-docker)
+    - [Help](#help)
   - [License](#license)
 
 ## Arquitecture
@@ -72,13 +73,13 @@ In both commands the flag `[-e, --env ENV]` is optional. The argument `ENV` can 
 
 ### Custom entrypoint
 
-There is the possibility of deploying the application by executing custom server initialization commands. For example, to run an elixir interactive console: `iex -S mix phx.server` in the server:
+There is the possibility of deploying the application by executing custom server initialization commands:
 
 ```sh
-./app run [COMMAND...]
+./app run [ARGS...]
 ```
 
-Replace `[COMMAND...]` with the command(s) to be executed. For example:
+Replace `[ARGS...]` with the command(s) to be executed. For example, to run an elixir interactive console:
 
 ```sh
 ./app run iex -S mix phx.server
@@ -108,12 +109,26 @@ In both commands the flag `[-e, --env ENV]` is optional. The argument `ENV` can 
 
 ### Delete project
 
+Use this command for deleting all project files and the Docker compose project:
+
+```sh
+./app delete
+```
+
 ### Reset Docker
 
 Use this command in order to stop all containers and prune Docker. It's like a Docker data brute-force reset:
 
 ```sh
 ./app prune
+```
+
+### Help
+
+Shows the workbech script help section:
+
+```sh
+./app help
 ```
 
 ## License

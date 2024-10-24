@@ -873,8 +873,6 @@
         ' $ROUTER_FILE
       }
 
-      # CONTINUE: Test reports! coveralls for html
-
       # implement_rest
         #
       implement_rest() {
@@ -1150,18 +1148,19 @@
               "    {\"$CHANGELOG_FILE\", [title: \"Changelog\"]}" \
               "  ]," \
               "  groups_for_extras: [" \
-              "    \"Support\": [" \
-              "      \"$EXDOC_GUIDELINE_FILE\"," \
-              "      \"$EXDOC_WORKBENCH_FILE\"" \
-              "    ]," \
               "    \"Project\": [" \
-              "      \"$README_FILE\","
+              "      \"$README_FILE\"," \
+              "      \"$CHANGELOG_FILE\"" \
+              "    ]," \
+              "    \"Support\": [" \
+              "      \"$EXDOC_WORKBENCH_FILE\"," \
+              "      \"$EXDOC_GUIDELINE_FILE\","
             [ $AUTH0 == true ] && \
             mix_insert project \
               "      \"$EXDOC_TOKEN_FILE\","
+            [ $AUTH0 == true ] && [ $COVERALLS == true ] && \
             mix_insert project \
               "      \"$EXDOC_TESTING_FILE\"," \
-              "      \"$CHANGELOG_FILE\"" \
               "    ]" \
               "  ]," \
               "  groups_for_modules: [" \
@@ -1225,7 +1224,7 @@
               "" \
               "  get \"/$EXDOC_ENDPOINT/\",      ${EXDOC_CONTORLLER_MODULE}, :index" \
               "  get \"/$EXDOC_ENDPOINT/cover\", ${EXDOC_CONTORLLER_MODULE}, :cover" \
-              "  get \"/$EXDOC_ENDPOINT/*path\", ${EXDOC_CONTORLLER_MODULE}, :not_found" \
+              "  get \"/$EXDOC_ENDPOINT/*path\", ${EXDOC_CONTORLLER_MODULE}, :handle" \
               "end"
           fi
 
@@ -1422,36 +1421,36 @@
         #
       implement_auth0(){
         # CONFIGURATION --------------------------------------------------------
-        local FEATURE="Auth0"
+          local FEATURE="Auth0"
 
         # SCRIPT ---------------------------------------------------------------
-        feature_init $FEATURE
+          feature_init $FEATURE
 
-        echo "---> Coming soon --> $FEATURE"
-        # add ENV /assets/doc/js/auth_config.js
+          echo "  ---> Coming soon --> $FEATURE"
+          # add ENV /assets/doc/js/auth_config.js
 
-        # Add router
-        # "pipeline :auth do" \
-        # "plug ValidateToken, no_halt: true" \
-        # "plug GetUser, no_halt: true, user_from_claim: &Auth.login_from_claim/2" \
-        # "plug PitchersWeb.Graphql.Context"
-        # end
+          # Add router
+          # "pipeline :auth do" \
+          # "plug ValidateToken, no_halt: true" \
+          # "plug GetUser, no_halt: true, user_from_claim: &Auth.login_from_claim/2" \
+          # "plug PitchersWeb.Graphql.Context"
+          # end
 
-        feature_done $FEATURE
+          feature_done $FEATURE
       }
 
       # implement_stripe
         #
       implement_stripe(){
         # CONFIGURATION --------------------------------------------------------
-        local FEATURE="Stripe"
+          local FEATURE="Stripe"
 
         # SCRIPT ---------------------------------------------------------------
-        feature_init $FEATURE
+          feature_init $FEATURE
 
-        echo "---> Coming soon --> $FEATURE"
+          echo "  ---> Coming soon --> $FEATURE"
 
-        feature_done $FEATURE
+          feature_done $FEATURE
       }
 
       # 1. create Web.Graphql files
@@ -1468,6 +1467,13 @@
         #      {:absinthe_error_payload, "~> 1.1"},
 
     # SCRIPT -----------------------------------------------------------------
+
+      # CONTINUE
+      # default Enhancements
+        # credo:
+        # flame_on
+        # Dashboard: psql_extras, os_mon
+
 
       if [ "$API_INTERFACE" == "rest" ] || [ "$HEALTHCHECK" == true ]; then
         implement_rest;
@@ -1544,8 +1550,7 @@
         app $CONTAINER_ENTRYPOINT $ENTRYPOINT_COMMAND \
           $EXDOC \
           $COVERALLS \
-          $RUN_SCHEMAS_SCRIPT
-        
+          $RUN_SCHEMAS_SCRIPT && \
       if [ $EXISTING_PROJECT != true ]; then
         echo \
           "For further workbench script use, remember to navigate to the" \

@@ -779,26 +779,6 @@
           /^\s*end/ b
           s/\([^,]$\)/\1'"$2"'/
         }' $MIX_FILE
-
-        # sed -i '/defp\? '"$1"' do/,/end/ {
-        #   /[/:/]/ {
-        #     s/\([^,]$\)/\1'"$2"'/
-        #   }
-        # }' $MIX_FILE
-
-        # sed '/defp\? '"$1"' do/,/end/ {
-        #   /end/ {
-        #     x
-        #     /^$/ {
-        #       x
-        #       s/\([^,]$\)/\1'"$2"'/
-        #     }
-        #     x
-        #   }
-        #   G
-        #   h
-        #   s/.*\n//
-        # }' $MIX_FILE
       }
 
       # mix_insert_after_function FUNCTION LINES...
@@ -888,6 +868,7 @@
             # flame_on
             # Dashboard: psql_extras, os_mon
             # credo:
+            # exdebug
 
           feature_done $FEATURE
       }
@@ -1000,6 +981,19 @@
           feature_init $FEATURE
 
           echo "---> Coming soon --> $FEATURE"
+
+          # 1. create Web.Graphql files
+            #      graphql
+            #        resolvers
+            #          ecto_schema.ex
+            #        schemas
+            #          ecto_schema.ex
+            #        schema.ex
+            # 2. adjust router
+            # 3. add dependencies
+            #      {:absinthe, "~> 1.7"},
+            #      {:absinthe_plug, "~> 1.5"},
+            #      {:absinthe_error_payload, "~> 1.1"},
 
           feature_done $FEATURE
       }
@@ -1471,19 +1465,6 @@
 
           feature_done $FEATURE
       }
-
-      # 1. create Web.Graphql files
-        #      graphql
-        #        resolvers
-        #          ecto_schema.ex
-        #        schemas
-        #          ecto_schema.ex
-        #        schema.ex
-        # 2. adjust router
-        # 3. add dependencies
-        #      {:absinthe, "~> 1.7"},
-        #      {:absinthe_plug, "~> 1.5"},
-        #      {:absinthe_error_payload, "~> 1.1"},
 
     # SCRIPT -----------------------------------------------------------------
 

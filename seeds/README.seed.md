@@ -74,6 +74,7 @@
 
 1. Run `export $(grep -v '^#' .env | xargs)` to export these enviroment variables.
 1. Run `mix setup` to install and setup dependencies and create database.
+1. Optionally, run `mix cover` in order to generate the testing and coverage reports.
 1. Start server with `mix phx.server` or inside IEx with `iex -S mix phx.server`.
   The available endpoints will depend on each different enviroment.
 
@@ -98,6 +99,14 @@
 >   - phoenix_live_dashboard: https://hexdocs.pm/phoenix_live_dashboard
 >   - flame_on: https://hexdocs.pm/flame_on
 
+<!-- workbench-coveralls open -->
+> ### Coveralls
+>
+> - Official website: https://docs.coveralls.io/
+> - Deps used:
+>   - excoveralls: https://hex.pm/packages/excoveralls
+
+<!-- workbench-coveralls close -->
 <!-- workbench-graphql open -->
 > ### Graphql
 >
@@ -143,11 +152,3 @@
 >   - stripity_stripe: https://hex.pm/packages/stripity_stripe
 
 <!-- workbench-stripe close -->
-<!-- workbench-coveralls open -->
-> ### Coveralls
->
-> - Official website: https://docs.coveralls.io/
-> - Deps used:
->   - excoveralls: https://hex.pm/packages/excoveralls
-
-<!-- workbench-coveralls close -->

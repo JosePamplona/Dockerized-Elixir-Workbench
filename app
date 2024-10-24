@@ -1,42 +1,49 @@
 #!/bin/bash
 # Dockerized workbench script
-# v0.1.0
+# v0.2.0
 
 # CONFIGURATION ================================================================
 
   source ./config.conf
 
-  WORKBENCH_DIR="_workbench"
-  WORKBENCH_VERSION=$( sed '3!d' $0 | sed -n 's/^.*v\(.*\).*/\1/p' )
-  LOWER_CASE=$( echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' )
-  EXISTING_PROJECT=$(
-    [ $(basename $PWD) == $WORKBENCH_DIR ] && \
-    echo true || \
-    echo false
-  )
-  SOURCE_CODE_PATH=$(
-    [ $EXISTING_PROJECT == true ] && \
-    echo $(dirname $PWD) || \
-    echo $PWD
-  )
-  GIT_DIR=$(
-    [ $EXISTING_PROJECT == true ] && \
-    echo "../.git" || \
-    echo ".git"
-  )  
-  if [ -d $GIT_DIR ]
-  then REPO_URL=$(git config --get remote.origin.url | sed 's/\.git$//')
-  else REPO_URL="https://github.com/user/repo"
-  fi
-  REPO_OWNER=$( echo $REPO_URL | sed -E 's|https://[^/]+/([^/]+)/.*|\1|' )
-  REPO_NAME=$(  echo $REPO_URL | sed 's|.*/||' )
-
   # Workbench configuration --------------------------------------------------
+
+    WORKBENCH_DIR="_workbench"
+    WORKBENCH_VERSION=$( sed '3!d' $0 | sed -n 's/^.*v\(.*\).*/\1/p' )
+    WORKBENCH_README_FILE="README.md"
+    EXISTING_PROJECT=$(
+      [ $(basename $PWD) == $WORKBENCH_DIR ] && \
+      echo true || \
+      echo false
+    )
+    SOURCE_CODE_PATH=$(
+      [ $EXISTING_PROJECT == true ] && \
+      echo $(dirname $PWD) || \
+      echo $PWD
+    )
+    GIT_DIR=$(
+      [ $EXISTING_PROJECT == true ] && \
+      echo "../.git" || \
+      echo ".git"
+    )  
+    if [ -d $GIT_DIR ]
+    then REPO_URL=$(git config --get remote.origin.url | sed 's/\.git$//')
+    else REPO_URL="https://github.com/user/repo"
+    fi
+    REPO_OWNER=$( echo $REPO_URL | sed -E 's|https://[^/]+/([^/]+)/.*|\1|' )
+    REPO_NAME=$(  echo $REPO_URL | sed 's|.*/||' )
+
+    # Update script README.md file
+    sed -i "s/\(!\[v\).*\(\]\)/\1$WORKBENCH_VERSION\2/" $WORKBENCH_README_FILE
+    sed -i \
+      "s/\(version-\).*\(-white.*\)/\1$WORKBENCH_VERSION\2/" \
+      $WORKBENCH_README_FILE
 
     # Directories
     SCRIPTS_DIR="scripts"
     SEEDS_DIR="seeds"
     PGADMIN_DIR="pgadmin"
+
     # Script files
     ENTRYPOINT_FILE="entrypoint.sh"
     SCHEMAS_FILE="schemas.sh"
@@ -44,6 +51,7 @@
     PROD_DOCKERFILE="Dockerfile"
     COMPOSE_FILE="docker-compose.yml"
     CONTAINER_ENTRYPOINT="bash $ENTRYPOINT_FILE"
+
     # Seed files
     ENV_SEED="seed.env"
     README_SEED="README.seed.md"
@@ -53,7 +61,9 @@
     PGADMIN_SERVERS_SEED="servers.seed.json"
     PGADMIN_PASS_SEED="pgpass.seed"
     TOOLS_VERSIONS_SEED="seed.tool-versions"
+
     # Elixir project files
+    LOWER_CASE=$( echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' )
     ELIXIR_PROJECT_NAME=$( echo $LOWER_CASE | tr ' ' '_' )
     ELIXIR_MODULE=$(
       echo $LOWER_CASE | sed -E 's/(^| )(\w)/\U\2/g' | sed 's/ //g'
@@ -61,6 +71,7 @@
     INIT_VERSION="0.0.0"
     ENV_FILE=".env"
     MIX_FILE="mix.exs"
+    ASSETS_DIR="assets"
     WEB_DIR="lib/${ELIXIR_PROJECT_NAME}_web"
     CONTROLLERS_DIR="$WEB_DIR/controllers"
     ROUTER_FILE="$WEB_DIR/router.ex"
@@ -74,19 +85,21 @@
     GITIGNORE_FILE=".gitignore"
     FORMATTER_FILE=".formatter.exs"
     TOOLS_VERSIONS_FILE=".tool-versions"
+
     # Production database
     DB_NAME="${ELIXIR_PROJECT_NAME}_prod"
+
     # PGAdmin configuration files
     SERVERS_FILE="servers.json"
     PASS_FILE="pgpass"
     PGADMIN_PATH="$SOURCE_CODE_PATH/$WORKBENCH_DIR/$PGADMIN_DIR"
 
-  # Export variables for docker-compose.yml script ---------------------------
+  # docker-compose.yml script export variables -------------------------------
 
     # Docker compose project configuration
     export APP_NAME=$( echo "$LOWER_CASE" | tr ' ' '-' )
     export APP_VERSION=$(
-      [ $EXISTING_PROJECT == true ] && \
+      [ $EXISTING_PROJECT == true ] && [ -f $MIX_FILE ] && \
         sed -n 's/^.*version: "\(.*\)".*/\1/p' "../$MIX_FILE" | head -n 1 || \
         echo $INIT_VERSION
     )
@@ -114,17 +127,20 @@
     export PGADMIN_SERVERS_PATH="$PGADMIN_PATH/$SERVERS_FILE"
     export PGADMIN_PASS_PATH="$PGADMIN_PATH/$PASS_FILE"
 
-  # Elixir project implementations -------------------------------------------
+  # Implementations fo elixir project  ---------------------------------------
 
     # ExDoc documentation implementation
     EXDOC_VERSION="~> 0.34"
     # API REST documentation implementation
     OPEN_API_VERSION="~> 3.21"
+    # Coveralls report implementation
+    COVERALLS_VERSION="~> 0.18"
+    MINIMUM_COVERAGE="85"
 
     # Auth0 implementation
     AUTH0_PROD_JS="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"
 
-  # Console text format codes ------------------------------------------------
+  # Format codes -------------------------------------------------------------
 
     # Colors
     C1="\x1B[38;5;1m" # Dark-red
@@ -157,10 +173,10 @@
     local script_name=$(basename "$0")
 
     section "NAME"
-    section_content "$script_name - $(sed -n '2s/# //p' $0)"
+    section_content "$(sed -n '2s/# //p' $0)"
 
-    section "SYNOPSIS"
-    section_content "$script_name [COMMAND]"
+    section "SYNTAXIS"
+    section_content "./$script_name [COMMAND]"
     
     section "DESCRIPTION"
     section_content \
@@ -172,37 +188,37 @@
       "to create, develop and deploy the project as 'dev' or 'prod' enviroment."
 
     section "COMMANDS"
-    print_command "login USER TOKEN"
+    print_command "login [USER] [TOKEN]"
     section_content \
       "Login account in order to download private images." \
-      "USER:  Github username. " \
-      "TOKEN: Authentication token (classic). "
+      "- USER:  Github username. " \
+      "- TOKEN: Authentication token (classic). "
 
-    print_command "new OPTIONS"
+    print_command "new [OPTIONS]"
     section_content \
       "Create a new project and configures it according to config.conf." \
-      "OPTIONS: It can accept all option flags from the task 'mix phx.new'" \
+      "- OPTIONS: It can accept all option flags from the task 'mix phx.new'" \
       "  (${Li}https://hexdocs.pm/phoenix/Mix.Tasks.Phx.New.html${R})."
 
     print_command "setup [-e, --env ENV]"
     section_content \
       "Set or reset the database (if any) and run the seeding script." \
-      "ENV: Enviroment database to setup (Defalut: dev)."
+      "- ENV: Enviroment database to setup (Defalut: dev)."
 
     print_command "up [-e, --env ENV]"
     section_content \
-      "Deploy the app in localhost." \
-      "ENV: Enviroment to deploy (Defalut: dev)."
+      "Deploy the application on localhost." \
+      "- ENV: Enviroment to deploy (Defalut: dev)."
 
-    print_command "run ARGS..."
+    print_command "run [ARGS...]"
     section_content \
-      "Deploy back-end executing custom entrypoint commands." \
-      "ARGS: Command(s) to be executed as back-end entrypoint. "
+      "Deploy the application executing custom entrypoint commands." \
+      "- ARGS: Command(s) to be executed as back-end entrypoint. "
 
     print_command "demo [-e, --env ENV]"
     section_content \
       "Runs consecutively new, setup, up & delete commands." \
-      "ENV: Enviroment to deploy (Defalut: dev)."
+      "- ENV: Enviroment to deploy (Defalut: dev)."
 
     print_command "delete"
     section_content \
@@ -212,9 +228,13 @@
     section_content \
       "Stops all containers and prune Docker."
 
+    print_command "help"
+    section_content \
+      "Shows the workbech script help section."
+
     section "VERSION"
     section_content \
-      "$(sed -n '3s/# //p' $0)"
+      "$WORKBENCH_VERSION"
   }
 
   # confirm <MESSAGE>
@@ -482,7 +502,7 @@
         # Allow access to all machines in the Docker network.
       adjust_config_dev() {
         sed -i \
-          "s/hostname: \"localhost\"/hostname: System.get_env(\"DATABASE_HOST\") || \"localhost\"/" \
+          "s/\(hostname: \)\"\(.*\)\"/\1System.get_env(\"DATABASE_HOST\") || \"\2\"/" \
           $DEV_FILE && \
         sed -i \
           "s/http: \[ip: {127, 0, 0, 1}/http: \[ip: {0, 0, 0, 0}/" \
@@ -494,7 +514,7 @@
         # Allow access to all machines in the Docker network.
       adjust_config_test() {
         sed -i \
-          "s/hostname: \"localhost\"/hostname: System.get_env(\"DATABASE_HOST\") || \"localhost\"/" \
+          "s/\(hostname: \)\"\(.*\)\"/\1System.get_env(\"DATABASE_HOST\") || \"\2\"/" \
           $TEST_FILE
       }
 
@@ -656,6 +676,7 @@
       adjust_mix && \
       adjust_config && \
       adjust_config_dev && \
+      adjust_config_test && \
       adjust_gitignore && \
       create_env && \
       create_changelog && \
@@ -704,15 +725,32 @@
   }
 
   implement_features() {
+    # CONFIGURATION --------------------------------------------------------
+      local ELIXIR_ASSETS_PATH="assets"
+
+      # Shared between ExDoc & Coveralls
+      # EcDoc
+      local EXDOC_ASSETS_DIR="exdoc"
+      local ELIXIR_EXDOC_ASSETS_PATH="$ELIXIR_ASSETS_PATH/$EXDOC_ASSETS_DIR"
+      # Coveralls
+      local ELIXIR_COVERALLS_DIR="cover"
+      local COVERALLS_OUTPUT_DIR="html"
+      if [ "$EXDOC" == true ]
+      then local COVERALLS_PATH="$ELIXIR_EXDOC_ASSETS_PATH/$ELIXIR_COVERALLS_DIR";
+      else local COVERALLS_PATH="$ELIXIR_ASSETS_PATH/$ELIXIR_COVERALLS_DIR";
+      fi
+      local COVERALLS_OUTPUT_PATH="$COVERALLS_PATH/$COVERALLS_OUTPUT_DIR"
+      local EXDOC_TEST_FILE="testing.md"
+      
     # FUNCTIONS --------------------------------------------------------------
 
       feature_init() { echo "${C3}* implementing${R} $@"; }
       feature_done() { dude="ok"; }
         # echo "${C3}✔${R} $@  ${C3}Implemented${R}"; }
 
-      # mix_add_list_line FUNCTION LINES...
+      # mix_insert FUNCTION LINES...
         # Insert a new line on mix.exs deps list
-      mix_add_list_line() {
+      mix_insert() {
         local function="$1"; shift
         local output=""
 
@@ -725,9 +763,9 @@
         }' $MIX_FILE
       }
 
-      # mix_last_line_append FUNCTION STRING
+      # mix_append FUNCTION STRING
         # Append a string on the last line on mix.exs deps list
-      mix_last_line_append() {
+      mix_append() {
         [ $# -eq 2 ] && \
         sed -i '/defp\? '"$1"' do/,/end/ {
           /^\s*defp\? '"$1"' do/ b
@@ -815,9 +853,9 @@
       # router_add_scope SCOPE PIPE IDENTATION_LEVEL
       router_add_scope() {
         # [ $# -ge 4 ] && \
-        local scope="$1"; shift
-        local pipe="$1"; shift
-        local ident="$1"; shift
+        local  scope="$1"; shift
+        local   pipe="$1"; shift
+        local  ident="$1"; shift
         local spaces=$(printf '%*s' $((ident * 2)) '')
         local output=""
         for arg in "$@"; do
@@ -839,7 +877,7 @@
 
       # implement_rest
         #
-      implement_rest(){
+      implement_rest() {
         # CONFIGURATION --------------------------------------------------------
           local FEATURE="OpenAPI"
 
@@ -883,9 +921,8 @@
           if [ ! -f $MIX_FILE ]; then
             terminate "The $MIX_FILE file does not exist."
           else
-            mix_last_line_append deps ","
-            mix_add_list_line deps \
-              "" \
+            mix_append deps ","
+            mix_insert deps \
               "# OpenAPI documentation deps" \
               "{:open_api_spex, \"$OPEN_API_VERSION\"}"
           fi
@@ -938,7 +975,7 @@
 
       # implement_graphql
         #
-      implement_graphql(){
+      implement_graphql() {
         # CONFIGURATION --------------------------------------------------------
         local FEATURE="API GraphQL"
 
@@ -952,7 +989,7 @@
 
       # implement_exdoc
         #
-      implement_exdoc(){
+      implement_exdoc() {
         # FUNCTIONS ------------------------------------------------------------
           # inject_frontend_vars_in_runtime
             #
@@ -973,9 +1010,7 @@
           # usa alguna de estas variables se sacará al script principal.
           local    EXDOC_ENDPOINT="docs"
           local      RESOURCE_DIR="doc"
-          local        ASSETS_DIR="assets"
-          local  ASSETS_EXDOC_DIR="exdoc"
-          local ASSETS_EXDOC_PATH="$WORKBENCH_DIR/$ASSETS_DIR/$ASSETS_EXDOC_DIR"
+          local ASSETS_EXDOC_PATH="$WORKBENCH_DIR/$ELIXIR_EXDOC_ASSETS_PATH"
           local   ASSETS_IMG_PATH="$ASSETS_EXDOC_PATH/images"
           local    ASSETS_JS_PATH="$ASSETS_EXDOC_PATH/js"
           local     APP_LOGO_FILE="logo.png"
@@ -1002,19 +1037,15 @@
           local GUIDELINE_URL+="$GUIDELINE_BRANCH/"
           local GUIDELINE_URL+="$GUIDELINE_FILE"
 
-          local          ELIXIR_ASSETS_DIR="assets"
-          local           EXDOC_ASSETS_DIR="exdoc"
-          local          EXDOC_ASSETS_PATH="$ELIXIR_ASSETS_DIR/$EXDOC_ASSETS_DIR"
-          local      EXDOC_ASSETS_IMG_PATH="$EXDOC_ASSETS_PATH/images"
-          local       EXDOC_ASSETS_JS_PATH="$EXDOC_ASSETS_PATH/js"
-          local   EXDOC_ASSETS_CONFIG_PATH="$EXDOC_ASSETS_PATH/config"
-          local EXDOC_ASSETS_COVERAGE_PATH="$EXDOC_ASSETS_PATH/coverage/html"
-          local        EXDOC_APP_LOGO_FILE="$EXDOC_ASSETS_IMG_PATH/app-logo.png"
-          local   EXDOC_WORKBENCH_ARQ_FILE="$EXDOC_ASSETS_IMG_PATH/arq.svg"
-          local       EXDOC_WORKBENCH_FILE="$EXDOC_ASSETS_PATH/workbench.md"
-          local           EXDOC_TOKEN_FILE="$EXDOC_ASSETS_PATH/token.md"
-          local         EXDOC_TESTING_FILE="$EXDOC_ASSETS_PATH/testing.md"
-          local       EXDOC_GUIDELINE_FILE="$EXDOC_ASSETS_PATH/coding.md"
+          local    EXDOC_ASSETS_IMG_PATH="$ELIXIR_EXDOC_ASSETS_PATH/images"
+          local     EXDOC_ASSETS_JS_PATH="$ELIXIR_EXDOC_ASSETS_PATH/js"
+          local EXDOC_ASSETS_CONFIG_PATH="$ELIXIR_EXDOC_ASSETS_PATH/config"
+          local      EXDOC_APP_LOGO_FILE="$EXDOC_ASSETS_IMG_PATH/app-logo.png"
+          local EXDOC_WORKBENCH_ARQ_FILE="$EXDOC_ASSETS_IMG_PATH/arq.svg"
+          local     EXDOC_WORKBENCH_FILE="$ELIXIR_EXDOC_ASSETS_PATH/workbench.md"
+          local         EXDOC_TOKEN_FILE="$ELIXIR_EXDOC_ASSETS_PATH/token.md"
+          local       EXDOC_TESTING_FILE="$ELIXIR_EXDOC_ASSETS_PATH/$EXDOC_TEST_FILE"
+          local     EXDOC_GUIDELINE_FILE="$ELIXIR_EXDOC_ASSETS_PATH/coding.md"
 
         # SCRIPT ---------------------------------------------------------------
           feature_init $FEATURE
@@ -1034,8 +1065,8 @@
           pattern delete $EXDOC_CONTROLLER_FILE "coveralls"
 
           # Create ExDoc assets directory
-          [ ! -d $ELIXIR_ASSETS_DIR ] && mkdir $ELIXIR_ASSETS_DIR
-          [ ! -d $EXDOC_ASSETS_PATH ] && mkdir $EXDOC_ASSETS_PATH
+          [ ! -d $ELIXIR_ASSETS_PATH ] && mkdir $ELIXIR_ASSETS_PATH
+          [ ! -d $ELIXIR_EXDOC_ASSETS_PATH ] && mkdir $ELIXIR_EXDOC_ASSETS_PATH
 
           # Create image asset files
           [ ! -d $EXDOC_ASSETS_IMG_PATH ] && mkdir $EXDOC_ASSETS_IMG_PATH
@@ -1049,7 +1080,7 @@
           
           # Create js asset files
           [ ! -d $EXDOC_ASSETS_JS_PATH ] && mkdir $EXDOC_ASSETS_JS_PATH
-          cp -r $ASSETS_JS_PATH $EXDOC_ASSETS_PATH
+          cp -r $ASSETS_JS_PATH $ELIXIR_EXDOC_ASSETS_PATH
 
           # Set the docs_config.js file
           [ ! -d $EXDOC_ASSETS_CONFIG_PATH ] && mkdir $EXDOC_ASSETS_CONFIG_PATH
@@ -1058,7 +1089,7 @@
             "$EXDOC_ASSETS_CONFIG_PATH/docs_config.js"
 
           # Set workbench page
-          cp "$WORKBENCH_DIR/$README_FILE" $EXDOC_WORKBENCH_FILE
+          cp "$WORKBENCH_DIR/$WORKBENCH_README_FILE" $EXDOC_WORKBENCH_FILE
 
           [ "$STRIPE" != true ] && \
           sed -i "/|.*Stripe.*|/d" $EXDOC_WORKBENCH_FILE
@@ -1080,8 +1111,8 @@
           if [ ! -f $MIX_FILE ]; then
             terminate "The $MIX_FILE file does not exist."
           else
-            mix_last_line_append project ","
-            mix_add_list_line project \
+            mix_append project ","
+            mix_insert project \
               "" \
               "# ExDoc documentation parameters" \
               "name: \"$PROJECT_NAME\"," \
@@ -1096,9 +1127,9 @@
               "  assets: %{" \
               "    \"$EXDOC_ASSETS_CONFIG_PATH\" => \"/\","
             [ $COVERALLS == true ] && \
-            mix_add_list_line project \
-              "    \"$EXDOC_ASSETS_COVERAGE_PATH\" => \"/\","
-            mix_add_list_line project \
+            mix_insert project \
+              "    \"$COVERALLS_OUTPUT_PATH\" => \"/\","
+            mix_insert project \
               "    \"$EXDOC_ASSETS_IMG_PATH\" => \"/assets\"," \
               "    \"$EXDOC_ASSETS_JS_PATH\" => \"/assets\"" \
               "  }," \
@@ -1106,15 +1137,15 @@
               "    {\"$README_FILE\", [title: \"Overview\"]},"
               # "    {\"assets/doc/database.md\", [title: \"Database\"]}," \
             [ $AUTH0 == true ] && \
-            mix_add_list_line project \
+            mix_insert project \
               "    {\"$EXDOC_TOKEN_FILE\", [title: \"Get access tokens\"]},"
             [ $COVERALLS == true ] && \
-            mix_add_list_line project \
+            mix_insert project \
               "    {\"$EXDOC_TESTING_FILE\", [title: \"Tests reports\"]},"
             [ $CODING_GUIDELINES == true ] && \
-            mix_add_list_line project \
+            mix_insert project \
               "    {\"$EXDOC_GUIDELINE_FILE\", [title: \"Coding guidelines\"]},"
-            mix_add_list_line project \
+            mix_insert project \
               "    {\"$EXDOC_WORKBENCH_FILE\", [title: \"Workbench\"]}," \
               "    {\"$CHANGELOG_FILE\", [title: \"Changelog\"]}" \
               "  ]," \
@@ -1126,24 +1157,24 @@
               "    \"Project\": [" \
               "      \"$README_FILE\","
             [ $AUTH0 == true ] && \
-            mix_add_list_line project \
+            mix_insert project \
               "      \"$EXDOC_TOKEN_FILE\","
-            mix_add_list_line project \
+            mix_insert project \
               "      \"$EXDOC_TESTING_FILE\"," \
               "      \"$CHANGELOG_FILE\"" \
               "    ]" \
               "  ]," \
               "  groups_for_modules: [" \
-              "    \"Contexts\": ~r/^${ELIXIR_MODULE}\\\.(?!(.*\\\..*|Mailer|Repo)$).*$/," \
-              "    \"Schemas\": ~r/^${ELIXIR_MODULE}\\\..*\\\.(?!.*(Enum)$).*$/," \
+              "    \"Contexts\":    ~r/^${ELIXIR_MODULE}\\\.(?!(.*\\\..*|Mailer|Repo)$).*$/," \
+              "    \"Schemas\":     ~r/^${ELIXIR_MODULE}\\\..*\\\.(?!.*(Enum)$).*$/," \
               "    \"Collections\": ~r/^${ELIXIR_MODULE}\\\..*(Enum)$/,"
             [ "$API_INTERFACE" == "graphql" ] && [ $AUTH0 == true ] && \
-            mix_add_list_line project \
+            mix_insert project \
               "    \"Authentication\": [" \
               "      ${ELIXIR_MODULE}Web.Graphql.Context" \
               "    ],"
-            mix_add_list_line project \
-              "    \"Web\": ~r/^${ELIXIR_MODULE}Web(?!.*(Controller|HTML|JSON)$)/," \
+            mix_insert project \
+              "    \"Web\":         ~r/^${ELIXIR_MODULE}Web(?!.*(Controller|HTML|JSON)$)/," \
               "    \"Controllers\": ~r/^${ELIXIR_MODULE}Web.*(Controller|HTML|JSON)$/" \
               "  ]," \
               "  before_closing_head_tag: &before_closing_head_tag/1," \
@@ -1169,9 +1200,8 @@
               "  \"\"\"" \
               "end"
 
-            mix_last_line_append deps ","
-            mix_add_list_line deps \
-              "" \
+            mix_append deps ","
+            mix_insert deps \
               "# ExDoc documentation deps" \
               "{:ex_doc, \"$EXDOC_VERSION\", only: :dev, runtime: false}"
           fi
@@ -1252,30 +1282,99 @@
 
       # implement_coveralls
         #
-      implement_coveralls(){
+      implement_coveralls() {
         # CONFIGURATION --------------------------------------------------------
-        local FEATURE="Coveralls"
+          local FEATURE="Coveralls"
+
+          local COVERALLS_DIR="coverage"
+          local TEMPLATE_DIR="template"
+          local COVER_TASK_SEED_FILE="cover.seed.ex"
+          local COVERALLS_SEED_FILE="coveralls.seed.json"
+          local ELIXIR_COVERALLS_FILE="coveralls.json"
+          local COVERALLS_TEMPLATE_PATH="$COVERALLS_PATH/$TEMPLATE_DIR"
+          local MIX_DIR_PATH="lib/mix"
+          local MIX_TASK_PATH="$MIX_DIR_PATH/task"
+          local COVER_TASK_PATH="$MIX_TASK_PATH/cover.ex"
 
         # SCRIPT ---------------------------------------------------------------
-        feature_init $FEATURE
+          feature_init $FEATURE
 
-        echo "---> Coming soon --> $FEATURE"
-        # Plant: coveralls.seed.json
+          # Create directories
+          [ ! -d $COVERALLS_PATH ]          && mkdir $COVERALLS_PATH
+          [ ! -d $COVERALLS_OUTPUT_PATH ]   && mkdir $COVERALLS_OUTPUT_PATH
+          [ ! -d $COVERALLS_TEMPLATE_PATH ] && mkdir $COVERALLS_TEMPLATE_PATH
 
-        # Add mix:
-          # "# Coverage parameters" \
-          # "test_coverage: [tool: ExCoveralls]," \
-          # "preferred_cli_env: [" \
-          # "  coveralls: :test," \
-          # "  "coveralls.detail": :test," \
-          # "  "coveralls.post": :test," \
-          # "  "coveralls.html": :test," \
-          # "  "coveralls.cobertura": :test," \
-          # "  coverage: :test," \
-          # "  "docs.coverage": :test" \
-          # "]"
+          # Copy template files
+          cp -r \
+            "$WORKBENCH_DIR/$ASSETS_DIR/$COVERALLS_DIR/$TEMPLATE_DIR" \
+            $COVERALLS_PATH
 
-        feature_done $FEATURE
+          # Plant: coveralls.seed.json
+          cp \
+            "$WORKBENCH_DIR/$SEEDS_DIR/$COVERALLS_SEED_FILE" \
+            $ELIXIR_COVERALLS_FILE
+
+          sed -i \
+            "s/%{output_dir}/$(scape_for_sed $COVERALLS_OUTPUT_PATH)/" \
+            $ELIXIR_COVERALLS_FILE
+
+          sed -i \
+            "s/%{template_path}/$(scape_for_sed $COVERALLS_TEMPLATE_PATH)/" \
+            $ELIXIR_COVERALLS_FILE
+
+          sed -i \
+            "s/%{minimum_coverage}/$MINIMUM_COVERAGE/" \
+            $ELIXIR_COVERALLS_FILE
+
+          # Plant: cover.seed.ex
+          if [ "$EXDOC" == true ]
+          then
+            [ ! -d $MIX_DIR_PATH ]  && mkdir $MIX_DIR_PATH
+            [ ! -d $MIX_TASK_PATH ] && mkdir $MIX_TASK_PATH
+          
+            cp \
+              "$WORKBENCH_DIR/$SEEDS_DIR/$COVER_TASK_SEED_FILE" \
+              $COVER_TASK_PATH
+            
+            sed -i \
+              "s/%{target_filename}/$EXDOC_TEST_FILE/" \
+              $COVER_TASK_PATH
+
+            sed -i \
+              "s/%{coverage_config}/$ELIXIR_COVERALLS_FILE/" \
+              $COVER_TASK_PATH
+              
+            sed -i \
+              "s/%{exdoc_assets}/$(scape_for_sed $ELIXIR_EXDOC_ASSETS_PATH)/" \
+              $COVER_TASK_PATH
+          fi
+
+          # mix.exs file configuration
+          if [ ! -f $MIX_FILE ]
+          then
+            terminate "The $MIX_FILE file does not exist."
+          else
+            mix_append project ","
+            mix_insert project \
+              "" \
+              "# Coverage parameters" \
+              "test_coverage: [tool: ExCoveralls]," \
+              "preferred_cli_env: [" \
+              "  cover: :test," \
+              "  coveralls: :test," \
+              "  \"coveralls.detail\": :test," \
+              "  \"coveralls.post\": :test," \
+              "  \"coveralls.html\": :test," \
+              "  \"coveralls.cobertura\": :test," \
+              "]"
+
+            mix_append deps ","
+            mix_insert deps \
+              "# Coverage report deps" \
+              "{:excoveralls, \"$COVERALLS_VERSION\", only: :test}"
+          fi
+
+          feature_done $FEATURE
       }
 
       # implement_healthcheck
@@ -1434,16 +1533,19 @@
       cd ../.. && \
       configure_files $@ && \
       implement_features && \
-      cd "$WORKBENCH_DIR/$SCRIPTS_DIR" && \
-      docker run \
-        --tty \
-        --interactive \
-        --name "${APP_NAME}___${ENTRYPOINT_COMMAND}" \
+      cd $WORKBENCH_DIR && \
+      ENTRYPOINT_COMMAND="implementation_tasks" && \
+      export COMPOSE_DOCKERFILE=$DEV_DOCKERFILE && \
+      export COMPOSE_IMAGE=$DEV_IMAGE && \
+      docker compose --file "$SCRIPTS_DIR/$COMPOSE_FILE" run \
         --rm \
-        --volume $SOURCE_CODE_VOLUME \
-        $DEV_IMAGE $CONTAINER_ENTRYPOINT implementation_tasks \
-        $EXDOC $RUN_SCHEMAS_SCRIPT && \
-      cd ../.. && \
+        --name "${APP_NAME}___${ENTRYPOINT_COMMAND}" \
+        --publish $APP_PORT:$APP_INTERNAL_PORT \
+        app $CONTAINER_ENTRYPOINT $ENTRYPOINT_COMMAND \
+          $EXDOC \
+          $COVERALLS \
+          $RUN_SCHEMAS_SCRIPT
+        
       if [ $EXISTING_PROJECT != true ]; then
         echo \
           "For further workbench script use, remember to navigate to the" \
@@ -1550,5 +1652,7 @@
         "$WORKBENCH_SCRIPT up --env $ENV_ARG &&" \
         "$WORKBENCH_SCRIPT delete"
 
+    elif [ $1 == "help" ]; then
+      help
     else args_error invalid; fi
   else help; fi

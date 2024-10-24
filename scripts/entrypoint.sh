@@ -57,13 +57,26 @@ if [ $# -gt 0 ]; then echo "[$HOSTNAME]$0($#): $@"; fi
 
   elif [ "$1" == "implementation_tasks" ]; then
     shift
-    if [ $# -ge 2 ]; then
-      EXDOC=$1; shift
-      SCHEMAS=$1; shift
+    if [ $# -ge 3 ]; then
+      EXDOC=$1;     shift
+      COVERALLS=$1; shift
+      SCHEMAS=$1;   shift
       
       mix deps.get
-      [ $SCHEMAS == true ] && source ../schemas.sh
-      [ $EXDOC == true ]   && mix docs
+
+      if [ $SCHEMAS == true ]; then
+        source ../schemas.sh
+      fi
+
+      if [ $EXDOC == true ] && [ $COVERALLS == true ]; then
+        mix ecto.create --quiet && \
+        mix ecto.migrate --quiet && \
+        mix cover
+      fi
+
+      if [ $EXDOC == true ]; then
+        mix docs
+      fi
 
     elif [ $# -lt 2 ]; then args_error missing
     else args_error too_many; fi

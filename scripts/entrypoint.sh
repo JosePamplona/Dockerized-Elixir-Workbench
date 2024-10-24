@@ -63,20 +63,14 @@ if [ $# -gt 0 ]; then echo "[$HOSTNAME]$0($#): $@"; fi
       SCHEMAS=$1;   shift
       
       mix deps.get
-
-      if [ $SCHEMAS == true ]; then
-        source ../schemas.sh
-      fi
-
+      [ $SCHEMAS == true ] && source ../schemas.sh
       if [ $EXDOC == true ] && [ $COVERALLS == true ]; then
-        mix ecto.create --quiet && \
-        mix ecto.migrate --quiet && \
+        MIX_ENV="test" && mix ecto.drop --force --force-drop
+        MIX_ENV="test" && mix ecto.create --quiet && \
+        MIX_ENV="test" && mix ecto.migrate --quiet && \
         mix cover
       fi
-
-      if [ $EXDOC == true ]; then
-        mix docs
-      fi
+      [ $EXDOC == true ] && mix docs
 
     elif [ $# -lt 2 ]; then args_error missing
     else args_error too_many; fi

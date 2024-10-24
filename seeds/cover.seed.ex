@@ -136,7 +136,7 @@ defmodule Mix.Tasks.Cover do
               line,
               "```",
               "",
-              "## Tests coverage",
+              "## Coverage",
               "",
               "Full test coverage report: #{@coverage_link}.",
               "",

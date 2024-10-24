@@ -21,11 +21,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
+- `README.md` adjustments.
 - Workbench script refactor.
 - The workspace script and its files are moved to a subfolder, leaving the new project files in root directory instead of creating the project in a subfolder.
 
 ### Added
 
+- Updating the workbench script version at the beginning of the file will update the version badge in the `README.md` file during the next script run.
 - Workbench script implementation: **ExDoc**. The pages and content are adjusted following `config.conf` file.
 - Workbench script in *ExDoc* documentation.
 - Multiple architecture images and content for different project configurations in the *ExDoc* workbench documentation.

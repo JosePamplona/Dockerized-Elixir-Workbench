@@ -873,6 +873,25 @@
         ' $ROUTER_FILE
       }
 
+      # implement_default_enhancements
+        #
+      implement_default_enhancements() {
+        # CONFIGURATION --------------------------------------------------------
+          local FEATURE="Default enhancements"
+
+        # SCRIPT ---------------------------------------------------------------
+          feature_init $FEATURE
+
+          echo "---> Coming soon --> $FEATURE"
+          # CONTINUE
+          # default Enhancements
+            # flame_on
+            # Dashboard: psql_extras, os_mon
+            # credo:
+
+          feature_done $FEATURE
+      }
+
       # implement_rest
         #
       implement_rest() {
@@ -975,14 +994,14 @@
         #
       implement_graphql() {
         # CONFIGURATION --------------------------------------------------------
-        local FEATURE="API GraphQL"
+          local FEATURE="API GraphQL"
 
         # SCRIPT ---------------------------------------------------------------
-        feature_init $FEATURE
+          feature_init $FEATURE
 
-        echo "---> Coming soon --> $FEATURE"
+          echo "---> Coming soon --> $FEATURE"
 
-        feature_done $FEATURE
+          feature_done $FEATURE
       }
 
       # implement_exdoc
@@ -1468,13 +1487,7 @@
 
     # SCRIPT -----------------------------------------------------------------
 
-      # CONTINUE
-      # default Enhancements
-        # credo:
-        # flame_on
-        # Dashboard: psql_extras, os_mon
-
-
+      implement_default_enhancements && \
       if [ "$API_INTERFACE" == "rest" ] || [ "$HEALTHCHECK" == true ]; then
         implement_rest;
       fi && \

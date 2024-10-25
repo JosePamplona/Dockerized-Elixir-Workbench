@@ -16,7 +16,7 @@
 | Service | URL |
 | --:     | :-- |
 <!-- workbench-html open -->
-| Web page | <http://localhost:%{port}> |
+| Phoenix web page | <http://localhost:%{port}> |
 <!-- workbench-html close -->
 <!-- workbench-healthcheck open -->
 | Healthcheck endpoint | <http://localhost:%{port}/health> |
@@ -37,7 +37,7 @@
 | Service | URL |
 | --:     | :-- |
 <!-- workbench-html open -->
-| Web page | <http://localhost:%{port}> |
+| Phoenix web page | <http://localhost:%{port}> |
 <!-- workbench-html close -->
 <!-- workbench-healthcheck open -->
 | Healthcheck endpoint | <http://localhost:%{port}/health> |

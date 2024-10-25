@@ -1,9 +1,8 @@
 <!-- markdownlint-disable MD033 -->
-<!-- markdownlint-disable MD034 -->
 
 # Dockerized Elixir Workbench
 
-![v0.2.0](https://img.shields.io/badge/version-0.2.0-white.svg?style=flat-square&color=lightgray)
+![v0.1.0](https://img.shields.io/badge/version-0.1.0-white.svg?style=flat-square&color=lightgray)
 [![License](https://img.shields.io/github/license/JosePamplona/Dockerized-Elixir-Workbench?style=flat-square)](https://github.com/JosePamplona/Dockerized-Elixir-Workbench/blob/main/LICENSE.md)
 [![Last Updated](https://img.shields.io/github/last-commit/JosePamplona/Dockerized-Elixir-Workbench.svg?style=flat-square)](https://github.com/JosePamplona/Dockerized-Elixir-Workbench/commits/main)
 
@@ -18,8 +17,8 @@ This is a script for creating [Elixir](https://elixir-lang.org/) projects with t
   - [Maintenance](#maintenance)
     - [Private Github Registry Images](#private-github-registry-images)
     - [Demo](#demo)
-    - [Delete project](#delete-project)
     - [Reset Docker](#reset-docker)
+    - [Delete project](#delete-project)
     - [Help](#help)
   - [License](#license)
 
@@ -29,11 +28,11 @@ This is a script for creating [Elixir](https://elixir-lang.org/) projects with t
 
 | Service  | URL | Description |
 | :-- | :-- | :-- |
-| Elixir App  | http://localhost:4000 | API-REST and/or GraphiQL server |
-| Postgres DB | http://localhost:5432 | Relational database server |
-| pgAdmin     | http://localhost:5050 | Database management tool |
-| Stripe      | https://api.stripe.com:433 | Payment service provider |
-| Auth0       | https://dev-tenant.us.auth0.com:433 | Identity management platform |
+| Elixir App  | <http://localhost:4000> | API-REST and/or GraphiQL server |
+| Postgres DB | <http://localhost:5432> | Relational database server |
+| pgAdmin     | <http://localhost:5050> | Database management tool |
+| Stripe      | <https://api.stripe.com:433> | Payment service provider |
+| Auth0       | <https://dev-tenant.us.auth0.com:433> | Identity management platform |
 
 ## Configuration
 
@@ -107,20 +106,20 @@ This command runs the **new**, **setup**, **up**, and **delete** commands consec
 
 In both commands the flag `[-e, --env ENV]` is optional. The argument `ENV` can be `dev`, `prod` or other, it corresponds to the desired enviroment configuration to be deployed, by default is `dev`.
 
-### Delete project
-
-Use this command for deleting all project files and the Docker compose project:
-
-```sh
-./app delete
-```
-
 ### Reset Docker
 
 Use this command in order to stop all containers and prune Docker. It's like a Docker data brute-force reset:
 
 ```sh
 ./app prune
+```
+
+### Delete project
+
+Use this command for deleting all project files and the Docker compose project:
+
+```sh
+./app delete
 ```
 
 ### Help

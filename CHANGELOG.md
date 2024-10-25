@@ -18,6 +18,24 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 <!-- ## v0.0.0 - (0000-00-00) -->
 
 - db port change breask pgadmin maybe back
+- Solve Gettext incompatibility when HTML (maybe it doesnt worth the time):
+  
+    <https://github.com/elixir-gettext/gettext/blob/main/CHANGELOG.md>
+
+    mix.lock -> "gettext": {:hex, :gettext, "0.26.1" >= 0.26
+
+    1. Change the file lib/my_app_web.ex
+
+        (+/-) line 46: change from import MyAppWeb.Gettext to use Gettext, backend: MyAppWeb.Gettext;
+        (+/-) line 88: change import MyAppWeb.Gettext to use Gettext, backend: MyAppWeb.Gettext
+
+    2. Change the file lib/my_app_web/components/core_components.ex:
+
+        (+/-) line 20: change import MyAppWeb.Gettext to use Gettext, backend: MyAppWeb.Gettext
+
+    3. Change the file: lib/my_app_web/gettext.ex:
+
+        (+/-) line 23: change from use Gettext, otp_app: :my_app to use Gettext.Backend, otp_app: :my_app
 
 ### Changed
 

@@ -62,15 +62,15 @@ if [ $# -gt 0 ]; then echo "[$HOSTNAME]$0($#): $@"; fi
       COVERALLS=$1; shift
       SCHEMAS=$1;   shift
       
-      mix deps.get
-      [ $SCHEMAS == true ] && source ../schemas.sh
+      mix deps.get && \
+      if [ $SCHEMAS == true ]; then source ../schemas.sh; fi && \
       if [ $EXDOC == true ] && [ $COVERALLS == true ]; then
-        MIX_ENV="test" && mix ecto.drop --force --force-drop
+        MIX_ENV="test" && mix ecto.drop --force --force-drop && \
         MIX_ENV="test" && mix ecto.create --quiet && \
         MIX_ENV="test" && mix ecto.migrate --quiet && \
-        mix cover
-      fi
-      [ $EXDOC == true ] && mix docs
+        mix cover || true
+      fi && \
+      if [ $EXDOC == true ]; then mix docs; fi
 
     elif [ $# -lt 2 ]; then args_error missing
     else args_error too_many; fi

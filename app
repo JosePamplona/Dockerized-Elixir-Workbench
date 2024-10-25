@@ -1,6 +1,6 @@
 #!/bin/bash
 # Dockerized workbench script
-# v0.2.0
+# v0.1.0
 
 # CONFIGURATION ================================================================
 
@@ -8,43 +8,23 @@
 
   # Workbench configuration --------------------------------------------------
 
+    # Directory name to allocate the script files upon creation.
     WORKBENCH_DIR="_workbench"
-    WORKBENCH_VERSION=$( sed '3!d' $0 | sed -n 's/^.*v\(.*\).*/\1/p' )
     WORKBENCH_README_FILE="README.md"
+    WORKBENCH_VERSION=$( sed '3!d' $0 | sed -n 's/^.*v\(.*\).*/\1/p' )
     EXISTING_PROJECT=$(
-      [ $(basename $PWD) == $WORKBENCH_DIR ] && \
-      echo true || \
-      echo false
+      [ $(basename $PWD) == $WORKBENCH_DIR ] && echo true || echo false
     )
     SOURCE_CODE_PATH=$(
-      [ $EXISTING_PROJECT == true ] && \
-      echo $(dirname $PWD) || \
-      echo $PWD
+      [ $EXISTING_PROJECT == true ] && echo $(dirname $PWD) || echo $PWD
     )
-    GIT_DIR=$(
-      [ $EXISTING_PROJECT == true ] && \
-      echo "../.git" || \
-      echo ".git"
-    )  
-    if [ -d $GIT_DIR ]
-    then REPO_URL=$(git config --get remote.origin.url | sed 's/\.git$//')
-    else REPO_URL="https://github.com/user/repo"
-    fi
-    REPO_OWNER=$( echo $REPO_URL | sed -E 's|https://[^/]+/([^/]+)/.*|\1|' )
-    REPO_NAME=$(  echo $REPO_URL | sed 's|.*/||' )
 
-    # Update script README.md file
-    sed -i "s/\(!\[v\).*\(\]\)/\1$WORKBENCH_VERSION\2/" $WORKBENCH_README_FILE
-    sed -i \
-      "s/\(version-\).*\(-white.*\)/\1$WORKBENCH_VERSION\2/" \
-      $WORKBENCH_README_FILE
-
-    # Directories
+    # Directories - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     SCRIPTS_DIR="scripts"
-    SEEDS_DIR="seeds"
     PGADMIN_DIR="pgadmin"
+    SEEDS_DIR="seeds"
 
-    # Script files
+    # Script files - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     ENTRYPOINT_FILE="entrypoint.sh"
     SCHEMAS_FILE="schemas.sh"
     DEV_DOCKERFILE="Dockerfile.dev"
@@ -52,7 +32,7 @@
     COMPOSE_FILE="docker-compose.yml"
     CONTAINER_ENTRYPOINT="bash $ENTRYPOINT_FILE"
 
-    # Seed files
+    # Seed files - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     ENV_SEED="seed.env"
     README_SEED="README.seed.md"
     CHANGELOG_SEED="CHANGELOG.seed.md"
@@ -62,23 +42,23 @@
     PGADMIN_PASS_SEED="pgpass.seed"
     TOOLS_VERSIONS_SEED="seed.tool-versions"
 
-    # Elixir project files
+    # Elixir project files - - - - - - - - - - - - - - - - - - - - - - - - - -
     LOWER_CASE=$( echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' )
     ELIXIR_PROJECT_NAME=$( echo $LOWER_CASE | tr ' ' '_' )
     ELIXIR_MODULE=$(
       echo $LOWER_CASE | sed -E 's/(^| )(\w)/\U\2/g' | sed 's/ //g'
     )
-    INIT_VERSION="0.0.0"
-    ENV_FILE=".env"
-    MIX_FILE="mix.exs"
     ASSETS_DIR="assets"
     WEB_DIR="lib/${ELIXIR_PROJECT_NAME}_web"
     CONTROLLERS_DIR="$WEB_DIR/controllers"
+    ENV_FILE=".env"
+    MIX_FILE="mix.exs"
     ROUTER_FILE="$WEB_DIR/router.ex"
     CONFIG_FILE="config/config.exs"
     DEV_FILE="config/dev.exs"
     TEST_FILE="config/test.exs"
     RUNTIME_FILE="config/runtime.exs"
+    HOMEPAGE_FILE="$CONTROLLERS_DIR/page_html/home.html.heex"
     README_FILE="README.md"
     CHANGELOG_FILE="CHANGELOG.md"
     PROD_DOCKERFILE="Dockerfile"
@@ -86,13 +66,22 @@
     FORMATTER_FILE=".formatter.exs"
     TOOLS_VERSIONS_FILE=".tool-versions"
 
-    # Production database
+    # Production database - - - - - - - - - - - - - - - - - - - - - - - - - - -
     DB_NAME="${ELIXIR_PROJECT_NAME}_prod"
 
-    # PGAdmin configuration files
+    # PGAdmin configuration files - - - - - - - - - - - - - - - - - - - - - - -
     SERVERS_FILE="servers.json"
     PASS_FILE="pgpass"
     PGADMIN_PATH="$SOURCE_CODE_PATH/$WORKBENCH_DIR/$PGADMIN_DIR"
+
+    # Git - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    GIT_DIR=$( [ $EXISTING_PROJECT == true ] && echo "../.git" || echo ".git" )
+    if [ -d $GIT_DIR ]
+    then REPO_URL=$(git config --get remote.origin.url | sed 's/\.git$//')
+    else REPO_URL="https://github.com/user/repo"
+    fi
+    REPO_OWNER=$( echo $REPO_URL | sed -E 's|https://[^/]+/([^/]+)/.*|\1|' )
+    REPO_NAME=$(  echo $REPO_URL | sed 's|.*/||' )
 
   # docker-compose.yml script export variables -------------------------------
 
@@ -107,7 +96,6 @@
     # Docker images
     DEV_IMAGE="$APP_NAME-workbench:$WORKBENCH_VERSION"
     PROD_IMAGE="$APP_NAME:$APP_VERSION"
-
     export SOURCE_CODE_VOLUME="$SOURCE_CODE_PATH:/app/src"
     export COMPOSE_PROJECT_NAME=$APP_NAME
     export COMPOSE_DOCKERFILE=$PROD_DOCKERFILE
@@ -138,7 +126,8 @@
     MINIMUM_COVERAGE="85"
 
     # Auth0 implementation
-    AUTH0_PROD_JS="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"
+    AUTH0_PROD_JS="https://cdn.auth0.com/js/auth0-spa-js"
+    AUTH0_PROD_JS+="/2.0/auth0-spa-js.production.js"
 
   # Format codes -------------------------------------------------------------
 
@@ -269,6 +258,15 @@
   # terminate <MESSAGE>
     # Print error and terminate with sigerr 1
   terminate() { echo "${B}${C1}Error${R} $@"; echo; exit 1; }
+
+  # update_version
+    # Update version badge in README.md file
+  update_version() {
+    sed -i "s/\(!\[v\).*\(\]\)/\1$WORKBENCH_VERSION\2/" $WORKBENCH_README_FILE
+    sed -i \
+      "s/\(version-\).*\(-white.*\)/\1$WORKBENCH_VERSION\2/" \
+      $WORKBENCH_README_FILE
+  }
 
   # scape_for_sed <STRING>
   scape_for_sed() { echo "$1" | sed 's/[\/&]/\\&/g'; }
@@ -402,21 +400,59 @@
       create_dockerfile_dev
   }
 
+  # create_docker_compose_file
+    # Create a docker-compose.yml file from script one.
+  create_docker_compose_file() {
+    local seed_path="$WORKBENCH_DIR/$SCRIPTS_DIR/$COMPOSE_FILE"
+    local file_path="$COMPOSE_FILE"
+
+    local        scp_env_path=$(scape_for_sed "$ENV_PATH")
+    local        scp_src_path=$(scape_for_sed "$SOURCE_CODE_VOLUME")
+    local    scp_servers_path=$(scape_for_sed "$PGADMIN_SERVERS_PATH")
+    local       scp_pass_path=$(scape_for_sed "$PGADMIN_PASS_PATH")
+
+    cp $seed_path $file_path
+    sed -i "s/\$COMPOSE_DOCKERFILE/$COMPOSE_DOCKERFILE/"         $file_path
+    sed -i "s/\$COMPOSE_IMAGE/$COMPOSE_IMAGE/"                   $file_path
+    sed -i "s/\$APP_NAME/$APP_NAME/"                             $file_path
+    sed -i "s/\$APP_VERSION/$APP_VERSION/"                       $file_path
+    sed -i "s/\$APP_CONTAINER_NAME/$APP_CONTAINER_NAME/"         $file_path
+    sed -i "s/\$APP_PORT/$APP_PORT/"                             $file_path
+    sed -i "s/\$APP_INTERNAL_PORT/$APP_INTERNAL_PORT/"           $file_path
+    sed -i "s/\$ENV_PATH/$scp_env_path/"                         $file_path
+    sed -i "s/\$SOURCE_CODE_VOLUME/$scp_src_path/"               $file_path
+    sed -i "s/\$DB_CONTAINER_NAME/$DB_CONTAINER_NAME/"           $file_path
+    sed -i "s/\$DB_INTERNAL_PORT/$DB_INTERNAL_PORT/"             $file_path
+    sed -i "s/\$DB_PORT/$DB_PORT/"                               $file_path
+    sed -i "s/\$DB_HOST/$DB_HOST/"                               $file_path
+    sed -i "s/\$DB_USER/$DB_USER/"                               $file_path
+    sed -i "s/\$DB_PASS/$DB_PASS/"                               $file_path
+    sed -i "s/\$PGADMIN_CONTAINER_NAME/$PGADMIN_CONTAINER_NAME/" $file_path
+    sed -i "s/\$PGADMIN_EMAIL/$PGADMIN_EMAIL/"                   $file_path
+    sed -i "s/\$PGADMIN_PASSWORD/$PGADMIN_PASSWORD/"             $file_path
+    sed -i "s/\$PGADMIN_INTERNAL_PORT/$PGADMIN_INTERNAL_PORT/"   $file_path
+    sed -i "s/\$PGADMIN_PORT/$PGADMIN_PORT/"                     $file_path
+    sed -i "s/\$PGADMIN_SERVERS_PATH/$scp_servers_path/"         $file_path
+    sed -i "s/\$PGADMIN_PASS_PATH/$scp_pass_path/"               $file_path
+    sed -i "s/\$POSTGRES_IMAGE_VERSION/$POSTGRES_IMAGE_VERSION/" $file_path
+    sed -i "s/\$PGADMIN_IMAGE_VERSION/$PGADMIN_IMAGE_VERSION/"   $file_path
+  }
+
   # configure_files PHOENIX_NEW_OPTIONS
     # After project creation it configures some elixir files and add new ones.
   configure_files() {
-    local PHOENIX_NEW_OPTIONS="$@"
-    local NO_HTML=$(
-      local result=false
-      for arg in $PHOENIX_NEW_OPTIONS; do
-        if [ "$arg" = "--no-html" ]; then
-          result=true
-          break
-        fi
-      done
-      
-      echo $result
-    )
+    # CONFIGURATION ----------------------------------------------------------
+      local PHOENIX_NEW_OPTIONS="$@"
+      local NO_HTML=$(
+        local result=false
+        for arg in $PHOENIX_NEW_OPTIONS; do
+          if [ "$arg" = "--no-html" ]; then
+            result=true
+            break
+          fi
+        done
+        echo $result
+      )
 
     # FUNCTIONS --------------------------------------------------------------
       # create_pgpass
@@ -516,6 +552,98 @@
         sed -i \
           "s/\(hostname: \)\"\(.*\)\"/\1System.get_env(\"DATABASE_HOST\") || \"\2\"/" \
           $TEST_FILE
+      }
+
+      # adjust_homepage
+        #
+      adjust_homepage() {
+        # add_workbench_version
+          #
+        add_workbench_version() {
+          local  ident="$1"; shift
+          local spaces=$(printf '%*s' $((ident * 2)) '')
+          local output=""
+          for arg in "$@"; do
+            output+="$spaces$arg\n"
+          done && \
+          output=${output::-2}
+
+          sed -i '/v<%= Application.spec(:phoenix, :vsn) %>/,/<\/h1>/ {
+            /<\/h1>/ {
+              a\'"${output}"'
+            }
+          }
+          ' $HOMEPAGE_FILE
+        }
+
+        # add_icon_button
+          #
+        add_icon_button() {
+          local  ident="$1"; shift
+          local spaces=$(printf '%*s' $((ident * 2)) '')
+          local output=""
+          for arg in "$@"; do
+            output+="$spaces$arg\n"
+          done && \
+          output=${output::-2}
+
+          sed -i '/Changelog/,/<\/a>/ {
+            /<\/a>/ {
+              a\'"${output}"'
+            }
+          }
+          ' $HOMEPAGE_FILE
+        }
+
+        if [ -f $HOMEPAGE_FILE ]
+        then
+          add_workbench_version 2 \
+            "<h1 class=\"text-brand mt-0 flex items-center text-sm font-semibold leading-6\">" \
+            "  Dockerized workbench" \
+            "  <small class=\"bg-brand/5 text-[0.8125rem] ml-3 rounded-full px-2 font-medium leading-6\">" \
+            "    v$WORKBENCH_VERSION" \
+            "  </small>" \
+            "</h1>"
+          if [ $EXDOC == true ]
+          then
+            # Reduce overall top padding
+            sed -i \
+              "s/\(\"px-4 py-10 sm\:px-6 sm\:py-28 lg\:px-8 xl\:px-28 xl\:py-32\"\)/\1 style=\"    padding-top\: 3\.85rem\;\"/" \
+              $HOMEPAGE_FILE
+
+            # Set icon buttons columns to 2
+            sed -i \
+              "s/\(mt-10 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols\)-.*\"/\1-2\"/" \
+              $HOMEPAGE_FILE
+
+            add_icon_button 5 \
+              "<a" \
+              "  href=\"dev/docs/index.html\"" \
+              "  class=\"group relative rounded-2xl px-6 py-4 text-sm font-semibold leading-6 text-zinc-900 sm:py-6\"" \
+              ">" \
+              "  <span class=\"absolute inset-0 rounded-2xl bg-zinc-50 transition group-hover:bg-zinc-100 sm:group-hover:scale-105\" style=\"background-color: #f07260\">" \
+              "  </span>" \
+              "  <span class=\"relative flex items-center gap-4 sm:flex-col\" style=\"color: white\">" \
+              "    <svg viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\" class=\"h-6 w-6\">" \
+              "      <path d=\"m12 4 10-2v18l-10 2V4Z\" fill=\"#FFFFFF\" fill-opacity=\".15\" />" \
+              "      <path" \
+              "        d=\"M12 4 2 2v18l10 2m0-18v18m0-18 10-2v18l-10 2\"" \
+              "        stroke=\"#FFFFFF\"" \
+              "        stroke-width=\"2\"" \
+              "        stroke-linecap=\"round\"" \
+              "        stroke-linejoin=\"round\"" \
+              "      />" \
+              "    </svg>" \
+              "    $PROJECT_NAME ExDoc" \
+              "  </span>" \
+              "</a>"
+          else
+            # Reduce overall top padding
+            sed -i \
+              "s/\(\"px-4 py-10 sm\:px-6 sm\:py-28 lg\:px-8 xl\:px-28 xl\:py-32\"\)/\1 style=\"    padding-top\: 6\.5rem\;\"/" \
+              $HOMEPAGE_FILE
+          fi
+        fi
       }
 
       # create_env
@@ -678,6 +806,7 @@
       adjust_config_dev && \
       adjust_config_test && \
       adjust_gitignore && \
+      adjust_homepage && \
       create_env && \
       create_changelog && \
       create_readme && \
@@ -686,46 +815,10 @@
       create_tool_versions
   }
 
-  # create_docker_compose_file
-    # Create a docker-compose.yml file from script one.
-  create_docker_compose_file() {
-    local seed_path="$WORKBENCH_DIR/$SCRIPTS_DIR/$COMPOSE_FILE"
-    local file_path="$COMPOSE_FILE"
-
-    local        scp_env_path=$(scape_for_sed "$ENV_PATH")
-    local        scp_src_path=$(scape_for_sed "$SOURCE_CODE_VOLUME")
-    local    scp_servers_path=$(scape_for_sed "$PGADMIN_SERVERS_PATH")
-    local       scp_pass_path=$(scape_for_sed "$PGADMIN_PASS_PATH")
-
-    cp $seed_path $file_path
-    sed -i "s/\$COMPOSE_DOCKERFILE/$COMPOSE_DOCKERFILE/"         $file_path
-    sed -i "s/\$COMPOSE_IMAGE/$COMPOSE_IMAGE/"                   $file_path
-    sed -i "s/\$APP_NAME/$APP_NAME/"                             $file_path
-    sed -i "s/\$APP_VERSION/$APP_VERSION/"                       $file_path
-    sed -i "s/\$APP_CONTAINER_NAME/$APP_CONTAINER_NAME/"         $file_path
-    sed -i "s/\$APP_PORT/$APP_PORT/"                             $file_path
-    sed -i "s/\$APP_INTERNAL_PORT/$APP_INTERNAL_PORT/"           $file_path
-    sed -i "s/\$ENV_PATH/$scp_env_path/"                         $file_path
-    sed -i "s/\$SOURCE_CODE_VOLUME/$scp_src_path/"               $file_path
-    sed -i "s/\$DB_CONTAINER_NAME/$DB_CONTAINER_NAME/"           $file_path
-    sed -i "s/\$DB_INTERNAL_PORT/$DB_INTERNAL_PORT/"             $file_path
-    sed -i "s/\$DB_PORT/$DB_PORT/"                               $file_path
-    sed -i "s/\$DB_HOST/$DB_HOST/"                               $file_path
-    sed -i "s/\$DB_USER/$DB_USER/"                               $file_path
-    sed -i "s/\$DB_PASS/$DB_PASS/"                               $file_path
-    sed -i "s/\$PGADMIN_CONTAINER_NAME/$PGADMIN_CONTAINER_NAME/" $file_path
-    sed -i "s/\$PGADMIN_EMAIL/$PGADMIN_EMAIL/"                   $file_path
-    sed -i "s/\$PGADMIN_PASSWORD/$PGADMIN_PASSWORD/"             $file_path
-    sed -i "s/\$PGADMIN_INTERNAL_PORT/$PGADMIN_INTERNAL_PORT/"   $file_path
-    sed -i "s/\$PGADMIN_PORT/$PGADMIN_PORT/"                     $file_path
-    sed -i "s/\$PGADMIN_SERVERS_PATH/$scp_servers_path/"         $file_path
-    sed -i "s/\$PGADMIN_PASS_PATH/$scp_pass_path/"               $file_path
-    sed -i "s/\$POSTGRES_IMAGE_VERSION/$POSTGRES_IMAGE_VERSION/" $file_path
-    sed -i "s/\$PGADMIN_IMAGE_VERSION/$PGADMIN_IMAGE_VERSION/"   $file_path
-  }
-
+  # implement_features
+    #
   implement_features() {
-    # CONFIGURATION --------------------------------------------------------
+    # CONFIGURATION ----------------------------------------------------------
       local ELIXIR_ASSETS_PATH="assets"
 
       # Shared between ExDoc & Coveralls
@@ -853,6 +946,8 @@
         ' $ROUTER_FILE
       }
 
+      # ----------------------------------------------------------------------
+
       # implement_default_enhancements
         #
       implement_default_enhancements() {
@@ -862,13 +957,18 @@
         # SCRIPT ---------------------------------------------------------------
           feature_init $FEATURE
 
-          echo "---> Coming soon --> $FEATURE"
+          echo "  ---> Coming soon --> $FEATURE"
+
           # CONTINUE
-          # default Enhancements
+          # 2 exdocs & helthcheck docs and tests
+          # 3 default Enhancements
             # flame_on
             # Dashboard: psql_extras, os_mon
             # credo:
+            #   git hooks
             # exdebug
+          # 4 Auth0
+          # 5 Stripe
 
           feature_done $FEATURE
       }
@@ -1482,6 +1582,8 @@
   }
 
 # SCRIPT =======================================================================
+
+  update_version
 
   if [ $# -gt 0 ]; then
     if   [ $1 == "login" ]; then

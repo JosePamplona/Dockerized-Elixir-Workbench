@@ -117,13 +117,17 @@
 
   # Implementations fo elixir project  ---------------------------------------
 
+    # Flame on implementation
+    FLAMEON_VERSION="~> 0.7"
+    # ExDebug implementation
+    EXDEBUG_VERSION="~> 1.0"
     # ExDoc documentation implementation
     EXDOC_VERSION="~> 0.34"
     # API REST documentation implementation
     OPEN_API_VERSION="~> 3.21"
     # Coveralls report implementation
     COVERALLS_VERSION="~> 0.18"
-    MINIMUM_COVERAGE="85"
+    MINIMUM_COVERAGE="90"
 
     # Auth0 implementation
     AUTH0_PROD_JS="https://cdn.auth0.com/js/auth0-spa-js"
@@ -599,7 +603,7 @@
         then
           add_workbench_version 2 \
             "<h1 class=\"text-brand mt-0 flex items-center text-sm font-semibold leading-6\">" \
-            "  Dockerized workbench" \
+            "  Dockerized Elixir Workbench" \
             "  <small class=\"bg-brand/5 text-[0.8125rem] ml-3 rounded-full px-2 font-medium leading-6\">" \
             "    v$WORKBENCH_VERSION" \
             "  </small>" \
@@ -618,7 +622,7 @@
 
             add_icon_button 5 \
               "<a" \
-              "  href=\"dev/docs/index.html\"" \
+              "  href=\"dev/docs/\"" \
               "  class=\"group relative rounded-2xl px-6 py-4 text-sm font-semibold leading-6 text-zinc-900 sm:py-6\"" \
               ">" \
               "  <span class=\"absolute inset-0 rounded-2xl bg-zinc-50 transition group-hover:bg-zinc-100 sm:group-hover:scale-105\" style=\"background-color: #f07260\">" \
@@ -644,6 +648,19 @@
               $HOMEPAGE_FILE
           fi
         fi
+      }
+
+      # adjust_gitignore
+        # Prepends .tool-sersions and .env files.
+      adjust_gitignore() {
+        sed -i "1i\\$TOOLS_VERSIONS_FILE\\n" $GITIGNORE_FILE && \
+        sed -i \
+          "1i\\# ASDF .tools-versions file." \
+          $GITIGNORE_FILE && \
+        sed -i "1i\\$ENV_FILE\\n" $GITIGNORE_FILE && \
+        sed -i \
+          "1i\\# Secrets required to configure the application." \
+          $GITIGNORE_FILE
       }
 
       # create_env
@@ -674,19 +691,6 @@
         sed -i "s/%{secret_key_base}/$secret_key_base/" $file_path
         sed -i "s/%{database_url}/$db_url/" $file_path
         sed -i "s/%{app_name}/$APP_NAME/" $file_path
-      }
-
-      # adjust_gitignore
-        # Prepends .tool-sersions and .env filess.
-      adjust_gitignore() {
-        sed -i "1i\\$TOOLS_VERSIONS_FILE\\n" $GITIGNORE_FILE && \
-        sed -i \
-          "1i\\# ASDF .tools-versions file." \
-          $GITIGNORE_FILE && \
-        sed -i "1i\\$ENV_FILE\\n" $GITIGNORE_FILE && \
-        sed -i \
-          "1i\\# Secrets required to configure the application." \
-          $GITIGNORE_FILE
       }
 
       # create_changelog
@@ -735,9 +739,23 @@
         else pattern keep   $file_path "html"
         fi
 
+        if [ "$ENHANCEMENTS" == true ]
+        then pattern keep   $file_path "enhancements"
+        else pattern delete $file_path "enhancements"
+        fi
+
+        if [ "$EXDOC" == true ]
+        then pattern keep   $file_path "exdoc"
+        else pattern delete $file_path "exdoc"
+        fi
+
         if [ "$COVERALLS" == true ]
-        then pattern keep   $file_path "coveralls"
-        else pattern delete $file_path "coveralls"
+        then
+          sed -i "s/%{coverage_command}/mix cover/" $file_path
+          pattern keep $file_path "coveralls"
+        else
+          sed -i "s/%{coverage_command}/mix test --cover/" $file_path
+          pattern delete $file_path "coveralls"
         fi
 
         if [ "$HEALTHCHECK" == true ]
@@ -820,9 +838,11 @@
   implement_features() {
     # CONFIGURATION ----------------------------------------------------------
       local ELIXIR_ASSETS_PATH="assets"
+      local MIX_DIR_PATH="lib/mix"
+      local MIX_TASK_PATH="$MIX_DIR_PATH/task"
 
       # Shared between ExDoc & Coveralls
-      # EcDoc
+      # ExDoc
       local EXDOC_ASSETS_DIR="exdoc"
       local ELIXIR_EXDOC_ASSETS_PATH="$ELIXIR_ASSETS_PATH/$EXDOC_ASSETS_DIR"
       # Coveralls
@@ -948,26 +968,76 @@
 
       # ----------------------------------------------------------------------
 
-      # implement_default_enhancements
+      # implement_enhancements
         #
-      implement_default_enhancements() {
+      implement_enhancements() {
         # CONFIGURATION --------------------------------------------------------
           local FEATURE="Default enhancements"
+
+        # FUNCTIONS ------------------------------------------------------------
+          # implement_exdebug
+            #
+          implement_exdebug() {
+            mix_append deps ","
+            mix_insert deps \
+              "# Enhancements implementation deps set" \
+              "{:ex_debug, \"$EXDEBUG_VERSION\"},"
+          }
+
+          # implement_flameon
+            #
+          implement_flameon() {
+            mix_insert deps \
+              "{:flame_on, \"$FLAMEON_VERSION\"}"
+
+            
+            add_pages="live_dashboard \"\/dashboard\","
+            add_pages+="\n        metrics: ${ELIXIR_MODULE}Web.Telemetry,"
+            add_pages+="\n        additional_pages: ["
+            add_pages+="\n          flame_on: FlameOn.DashboardPage"
+            add_pages+="\n        ]"
+            add_pages+="\n"
+            sed -i "s/live_dashboard.*Telemetry/$add_pages/" $ROUTER_FILE
+          }
+
+          # implement_osmon
+            #
+          implement_osmon() {
+            sed -i "s/\(extra_applications: \[.*\)]/\1, :os_mon\]/" $MIX_FILE
+          }
+
+          # implement_version_task
+            #
+          implement_version_task() {
+            local VERSION_TASK_SEED_FILE="version.seed.ex"
+            local VERSION_TASK_PATH="$MIX_TASK_PATH/version.ex"
+
+            [ ! -d $MIX_DIR_PATH ]  && mkdir $MIX_DIR_PATH
+            [ ! -d $MIX_TASK_PATH ] && mkdir $MIX_TASK_PATH
+          
+            cp \
+              "$WORKBENCH_DIR/$SEEDS_DIR/$VERSION_TASK_SEED_FILE" \
+              $VERSION_TASK_PATH
+            
+            sed -i "s/%{readme_file}/$README_FILE/" $VERSION_TASK_PATH
+            sed -i "s/%{mix_file}/$MIX_FILE/" $VERSION_TASK_PATH
+          }
 
         # SCRIPT ---------------------------------------------------------------
           feature_init $FEATURE
 
-          echo "  ---> Coming soon --> $FEATURE"
+
+          implement_flameon && \
+          implement_exdebug &&
+          implement_osmon && \
+          implement_version_task
 
           # CONTINUE
           # 2 exdocs & helthcheck docs and tests
           # 3 default Enhancements
-            # flame_on
-            # Dashboard: psql_extras, os_mon
             # credo:
             #   git hooks
-            # exdebug
-          # 4 Auth0
+          # 4 Auth0 <-------------- al terminar aqui, te pasas al sitio JayParcade
           # 5 Stripe
 
           feature_done $FEATURE
@@ -1273,7 +1343,8 @@
               "      \"$EXDOC_TOKEN_FILE\","
             [ $AUTH0 == true ] && [ $COVERALLS == true ] && \
             mix_insert project \
-              "      \"$EXDOC_TESTING_FILE\"," \
+              "      \"$EXDOC_TESTING_FILE\","
+            mix_insert project \
               "    ]" \
               "  ]," \
               "  groups_for_modules: [" \
@@ -1404,8 +1475,6 @@
           local COVERALLS_SEED_FILE="coveralls.seed.json"
           local ELIXIR_COVERALLS_FILE="coveralls.json"
           local COVERALLS_TEMPLATE_PATH="$COVERALLS_PATH/$TEMPLATE_DIR"
-          local MIX_DIR_PATH="lib/mix"
-          local MIX_TASK_PATH="$MIX_DIR_PATH/task"
           local COVER_TASK_PATH="$MIX_TASK_PATH/cover.ex"
 
         # SCRIPT ---------------------------------------------------------------
@@ -1568,16 +1637,16 @@
 
     # SCRIPT -----------------------------------------------------------------
 
-      implement_default_enhancements && \
+      if [ "$ENHANCEMENTS" == true ];       then implement_enhancements; fi && \
       if [ "$API_INTERFACE" == "rest" ] || [ "$HEALTHCHECK" == true ]; then
         implement_rest;
       fi && \
-      if [ "$API_INTERFACE" == "graphql" ]; then implement_graphql;     fi && \
-      if [ "$EXDOC" == true ];              then implement_exdoc;       fi && \
-      if [ "$COVERALLS" == true ];          then implement_coveralls;   fi && \
-      if [ "$HEALTHCHECK" == true ];        then implement_healthcheck; fi && \
-      if [ "$AUTH0" == true ];              then implement_auth0;       fi && \
-      if [ "$STRIPE" == true ];             then implement_stripe;      fi && \
+      if [ "$API_INTERFACE" == "graphql" ]; then implement_graphql;      fi && \
+      if [ "$EXDOC" == true ];              then implement_exdoc;        fi && \
+      if [ "$COVERALLS" == true ];          then implement_coveralls;    fi && \
+      if [ "$HEALTHCHECK" == true ];        then implement_healthcheck;  fi && \
+      if [ "$AUTH0" == true ];              then implement_auth0;        fi && \
+      if [ "$STRIPE" == true ];             then implement_stripe;       fi && \
       echo
   }
 
@@ -1667,7 +1736,6 @@
         export COMPOSE_DOCKERFILE=$DEV_DOCKERFILE
         export COMPOSE_IMAGE=$DEV_IMAGE
         docker compose --file "$SCRIPTS_DIR/$COMPOSE_FILE" run \
-          --build \
           --rm \
           --name "${APP_NAME}___${ENTRYPOINT_COMMAND}" \
           --publish $APP_PORT:$APP_INTERNAL_PORT \
@@ -1693,9 +1761,7 @@
           export COMPOSE_DOCKERFILE=$DEV_DOCKERFILE
           export COMPOSE_IMAGE=$DEV_IMAGE
           docker compose \
-            --file "$SCRIPTS_DIR/$COMPOSE_FILE" \
-            $COMPOSE_COMMAND \
-            --build
+            --file "$SCRIPTS_DIR/$COMPOSE_FILE" $COMPOSE_COMMAND
         fi
 
       else terminate "There is no project to deploy."; fi
@@ -1707,7 +1773,6 @@
           export COMPOSE_DOCKERFILE=$DEV_DOCKERFILE
           export COMPOSE_IMAGE=$DEV_IMAGE
           docker compose --file "$SCRIPTS_DIR/$COMPOSE_FILE" run \
-            --build \
             --rm \
             --name "${APP_NAME}___${ENTRYPOINT_COMMAND}" \
             --publish $APP_PORT:$APP_INTERNAL_PORT \

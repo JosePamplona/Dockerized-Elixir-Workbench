@@ -51,7 +51,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Workbench script in *ExDoc* documentation.
 - Multiple architecture images and content for different project configurations in the *ExDoc* workbench documentation.
 - Workbench script implementation: **Coveralls**.
-- Mix task `mix cover` for test report generation for ExDoc
+- Mix task `mix cover` for test report generation for ExDoc.
 - Workbench script implementation: **Healthcheck**.
 - Workbench script implementation: **OpenAPI**.
 - Workbench script implementation: **Stripe**.
@@ -59,6 +59,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Delete** command in workbench script.
 - **Demo** command in workbench script.
 - **Help** command in workbench script.
+- Workbench script implementation: **Flame On**.
+- Mix task `mix version` for update project version on `mix.exs` and `README.md` file.
+- Workbench script implementation: **Ex Debug**.
+- Workbench script implementation: **OS mon**.
 
 ## v0.1.0 - (2024-10-07)
 

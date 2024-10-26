@@ -117,6 +117,8 @@
 
   # Implementations fo elixir project  ---------------------------------------
 
+    # PSQL extras implementation
+    PSQL_EXTRAS_VERSION="~> 0.8"
     # Flame on implementation
     FLAMEON_VERSION="~> 0.7"
     # Credo implementation
@@ -993,12 +995,19 @@
             sed -i "s/\(extra_applications: \[.*\)]/\1, :os_mon\]/" $MIX_FILE
           }
 
+          # implement_psql_extras
+            #
+          implement_psql_extras() {
+            mix_insert deps \
+              "" \
+              "# Enhancements implementation deps set" \
+              "{:ecto_psql_extras, \"$PSQL_EXTRAS_VERSION\", only: :dev},"
+          }
+
           # implement_flameon
             #
           implement_flameon() {
             mix_insert deps \
-              "" \
-              "# Enhancements implementation deps set" \
               "{:flame_on, \"$FLAMEON_VERSION\"},"
 
             
@@ -1046,14 +1055,14 @@
             #
           implement_exmachina() {
             mix_insert deps \
-              "{:ex_machina, \"$EXMACHINA_VERSION\",  only: :test}"
+              "{:ex_machina, \"$EXMACHINA_VERSION\",  only: :test},"
           }
 
           # implement_mock
             #
           implement_mock() {
             mix_insert deps \
-              "{:mock, \"$MOCK_VERSION\",  only: :test}"
+              "{:mock, \"$MOCK_VERSION\",  only: :test},"
           }
 
           # implement_exdebug
@@ -1069,6 +1078,7 @@
 
           mix_append deps "," && \
           implement_osmon && \
+          implement_psql_extras && \
           implement_flameon && \
           implement_credo && \
           implement_githooks && \

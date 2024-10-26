@@ -48,6 +48,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
         (+/-) line 23: change from use Gettext, otp_app: :my_app to use Gettext.Backend, otp_app: :my_app
 
+## v0.2.0 - (2024-10-24)
+
 ### Changed
 
 - `README.md` adjustments.

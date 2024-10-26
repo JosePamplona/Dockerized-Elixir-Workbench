@@ -1,6 +1,6 @@
 defmodule %{elixir_module}Web.OpenApi.Spec do
   @moduledoc false
-  
+
   alias OpenApiSpex.{Info, OpenApi, Paths, Server}
   alias %{elixir_module}Web.{Endpoint, Router}
 

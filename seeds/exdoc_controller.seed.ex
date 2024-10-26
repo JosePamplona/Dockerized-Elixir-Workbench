@@ -3,7 +3,7 @@ defmodule %{elixir_module}Web.ExDocController do
     The Accounts context.
     """
   use %{elixir_module}Web, :controller
-  
+
   @priv_dir :code.priv_dir(:%{project_name})
   @resource_dir "/static/%{resource_dir}"
   @exdoc_dir "#{@priv_dir}#{@resource_dir}"
@@ -34,7 +34,7 @@ defmodule %{elixir_module}Web.ExDocController do
     page_path = Path.join(@exdoc_dir, "index.html")
     send_file(conn, 200, page_path)
   end
-  
+
   <!-- workbench-coveralls open -->
   @doc """
     Creates a Pitcher's account.
@@ -62,7 +62,7 @@ defmodule %{elixir_module}Web.ExDocController do
     page_path = Path.join(@exdoc_dir, "excoveralls.html")
     send_file(conn, 200, page_path)
   end
-  
+
   <!-- workbench-coveralls close -->
   @doc """
     Creates a Pitcher's account.
@@ -88,7 +88,7 @@ defmodule %{elixir_module}Web.ExDocController do
   @spec handle(conn :: Plug.Conn.t, params :: map) :: conn :: Plug.Conn.t
   def handle(conn, %{"path" => path}) do
     page_path = Path.join(@exdoc_dir, path)
-    
+
     case File.exists?(page_path) do
       true  -> send_file(conn, 200, page_path)
       false -> not_found(conn, path)

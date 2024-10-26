@@ -3,7 +3,7 @@ defmodule Mix.Tasks.Version do
 
   @readme_file "%{readme_file}"
   @mix_file    "%{mix_file}"
-  
+
   @moduledoc """
     Adjusts version on `#{@mix_file}` file and the version badge on 
     `#{@readme_file}` file.
@@ -46,7 +46,7 @@ defmodule Mix.Tasks.Version do
       _ -> {:error, @readme_file}
     end
   end
-  
+
   defp format_mix_file(content, version) do
     ~r/.*?version: "(.*)"/
     |> Regex.scan(content)

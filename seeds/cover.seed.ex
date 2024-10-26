@@ -1,6 +1,6 @@
 defmodule Mix.Tasks.Cover do
   use Mix.Task
-  
+
   import ExUnit.CaptureIO
 
   @test_filename     "%{target_filename}" # Target filename.
@@ -14,18 +14,18 @@ defmodule Mix.Tasks.Cover do
     |> Jason.decode!(keys: :atoms)
     |> Map.fetch!(:coverage_options)
   )
-  
+
   @version   Mix.Project.config[:version]
   # Regex patterns
   @tests ~r/(\e\[.*?m)*?\d* test(s)?, (\d*) failure/
   @total ~r/(\e\[.*?m)*?\[TOTAL] (.*?%)/
   @cover ~r/(\e\[.*?m)*?FAILED: Expected minimum coverage of (.*?%)/
-  
+
   @moduledoc """
     Generates a testing report file into `#{@test_output_path}` and a
     coverage report file into `#{@coverage_options.output_dir}` to enable ExDoc 
     to integrate the test & coverage documentation files.
-    
+
     Compatible with [ExCoveralls](https://hex.pm/packages/excoveralls) v0.18.1
     """
 
@@ -52,12 +52,12 @@ defmodule Mix.Tasks.Cover do
         # coveralls-ignore-stop
       end
     end)
-    
+
     formatted_output = format_tests_report(output)
     File.write!("#{@test_output_path}/#{@test_filename}", formatted_output)
 
     # Coverage report ----------------------------------------------------------
-    
+
     output
     |> validate_output()
     |> case do
@@ -141,7 +141,7 @@ defmodule Mix.Tasks.Cover do
   defp format_test_line(line, _i) do
     # Delete everything before a \r return cartridge escape character (win)
     line = line |> String.split("\r") |> Enum.at(-1)
-    
+
     # Check if the line is an excluded test to comment out the line
     ~r/\* test.*?\(excluded\) \[L#\d+\]/
     |> Regex.scan(line)
@@ -177,7 +177,7 @@ defmodule Mix.Tasks.Cover do
     end
   end
 
-  defp validate_output(output) do    
+  defp validate_output(output) do
     case {
       Regex.scan(@tests, output),
       Regex.scan(@total, output),

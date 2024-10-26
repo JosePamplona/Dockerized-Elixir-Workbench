@@ -119,6 +119,14 @@
 
     # Flame on implementation
     FLAMEON_VERSION="~> 0.7"
+    # Credo implementation
+    CREDO_VERSION="~> 1.7"
+    # Git hooks implementation
+    GITHOOKS_VERSION="~> 0.7"
+    # Ex Machina implementation
+    EXMACHINA_VERSION="~> 2.8"
+    # Mock implementation
+    MOCK_VERSION="~> 0.3"
     # ExDebug implementation
     EXDEBUG_VERSION="~> 1.0"
     # ExDoc documentation implementation
@@ -952,7 +960,10 @@
         local spaces=$(printf '%*s' $((ident * 2)) '')
         local output=""
         for arg in "$@"; do
-          output+="$spaces$arg\n"
+          if [ "$arg" != "" ]; then
+            output+="$spaces$arg"
+          fi
+          output+="\n"
         done && \
         output=${output::-2}
 
@@ -975,20 +986,20 @@
           local FEATURE="Default enhancements"
 
         # FUNCTIONS ------------------------------------------------------------
-          # implement_exdebug
+
+          # implement_osmon
             #
-          implement_exdebug() {
-            mix_append deps ","
-            mix_insert deps \
-              "# Enhancements implementation deps set" \
-              "{:ex_debug, \"$EXDEBUG_VERSION\"},"
+          implement_osmon() {
+            sed -i "s/\(extra_applications: \[.*\)]/\1, :os_mon\]/" $MIX_FILE
           }
 
           # implement_flameon
             #
           implement_flameon() {
             mix_insert deps \
-              "{:flame_on, \"$FLAMEON_VERSION\"}"
+              "" \
+              "# Enhancements implementation deps set" \
+              "{:flame_on, \"$FLAMEON_VERSION\"},"
 
             
             add_pages="live_dashboard \"\/dashboard\","
@@ -998,12 +1009,6 @@
             add_pages+="\n        ]"
             add_pages+="\n"
             sed -i "s/live_dashboard.*Telemetry/$add_pages/" $ROUTER_FILE
-          }
-
-          # implement_osmon
-            #
-          implement_osmon() {
-            sed -i "s/\(extra_applications: \[.*\)]/\1, :os_mon\]/" $MIX_FILE
           }
 
           # implement_version_task
@@ -1023,20 +1028,57 @@
             sed -i "s/%{mix_file}/$MIX_FILE/" $VERSION_TASK_PATH
           }
 
+          # implement_credo
+            #
+          implement_credo() {
+            mix_insert deps \
+              "{:credo, \"$CREDO_VERSION\", only: [:dev, :test], runtime: false},"
+          }
+
+          # implement_githooks
+            #
+          implement_githooks() {
+            mix_insert deps \
+              "{:git_hooks, \"$GITHOOKS_VERSION\", only: :dev, runtime: false},"
+          }
+
+          # implement_exmachina
+            #
+          implement_exmachina() {
+            mix_insert deps \
+              "{:ex_machina, \"$EXMACHINA_VERSION\",  only: :test}"
+          }
+
+          # implement_mock
+            #
+          implement_mock() {
+            mix_insert deps \
+              "{:mock, \"$MOCK_VERSION\",  only: :test}"
+          }
+
+          # implement_exdebug
+            #
+          implement_exdebug() {
+            mix_insert deps \
+              "{:ex_debug, \"$EXDEBUG_VERSION\"}"
+          }
+          
         # SCRIPT ---------------------------------------------------------------
           feature_init $FEATURE
 
 
-          implement_flameon && \
-          implement_exdebug &&
+          mix_append deps "," && \
           implement_osmon && \
+          implement_flameon && \
+          implement_credo && \
+          implement_githooks && \
+          implement_exmachina && \
+          implement_mock && \
+          implement_exdebug && \
           implement_version_task
 
           # CONTINUE
           # 2 exdocs & helthcheck docs and tests
-          # 3 default Enhancements
-            # credo:
-            #   git hooks
           # 4 Auth0 <-------------- al terminar aqui, te pasas al sitio JayParcade
           # 5 Stripe
 

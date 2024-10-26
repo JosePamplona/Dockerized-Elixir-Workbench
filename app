@@ -49,6 +49,7 @@
       echo $LOWER_CASE | sed -E 's/(^| )(\w)/\U\2/g' | sed 's/ //g'
     )
     ASSETS_DIR="assets"
+    PROJECT_DIR="lib/${ELIXIR_PROJECT_NAME}"
     WEB_DIR="lib/${ELIXIR_PROJECT_NAME}_web"
     CONTROLLERS_DIR="$WEB_DIR/controllers"
     ENV_FILE=".env"
@@ -138,6 +139,8 @@
     # Coveralls report implementation
     COVERALLS_VERSION="~> 0.18"
     MINIMUM_COVERAGE="90"
+    # Schemas enhancements implementation
+    ECTO_ENUM_VERSION="~> 1.4"
 
     # Auth0 implementation
     AUTH0_PROD_JS="https://cdn.auth0.com/js/auth0-spa-js"
@@ -284,6 +287,45 @@
 
   # scape_for_sed <STRING>
   scape_for_sed() { echo "$1" | sed 's/[\/&]/\\&/g'; }
+
+  # lines VARIABLE_NAME IDENTATION_LEVEL LINES...
+    #
+  lines() {
+    if [ $# -ge 3 ]; then
+      local var="$1"; shift
+      local ident="$1"; shift
+      local spaces=$(printf '%*s' $((ident * 2)) '')
+      local output=""
+      local escaped_output
+      
+      for arg in "$@"; do
+        [ "$arg" != "" ] && output+="$spaces$arg"
+        output+="\n"
+      done
+
+      eval "$var=\"${output::-2}\""
+    fi
+  }
+
+  # lines VARIABLE_NAME IDENTATION_LEVEL LINES...
+    #
+  sed_lines() {
+    if [ $# -ge 3 ]; then
+      local var="$1"; shift
+      local ident="$1"; shift
+      local spaces=$(printf '%*s' $((ident * 2)) '')
+      local output=""
+      local escaped_output
+      
+      for arg in "$@"; do
+        [ "$arg" != "" ] && output+="$spaces$arg"
+        output+="\n"
+      done
+
+      printf -v escaped_output "%q" "${output::-2}"
+      eval "$var=\"$escaped_output\""
+    fi
+  }
 
   # pattern <action>, <file>, <pattern_identifier>, <new_content>
     # Function to manage seed patterns in the process of creating files.
@@ -510,13 +552,8 @@
         # prepend_config
           #
         prepend_config() {
-          local output=""
-          for arg in "$@"; do
-            output+="$arg\n"
-          done && \
-          output=${output::-2}
-
-          sed -i '/import Config/a \'"$output" $CONFIG_FILE
+          sed_lines "content" 0 "$@"
+          sed -i '/import Config/a\'"$content" $CONFIG_FILE
         }
 
         prepend_config \
@@ -574,17 +611,13 @@
         # add_workbench_version
           #
         add_workbench_version() {
-          local  ident="$1"; shift
-          local spaces=$(printf '%*s' $((ident * 2)) '')
-          local output=""
-          for arg in "$@"; do
-            output+="$spaces$arg\n"
-          done && \
-          output=${output::-2}
+          local ident="$1"; shift
+
+          sed_lines "content" $ident "$@"
 
           sed -i '/v<%= Application.spec(:phoenix, :vsn) %>/,/<\/h1>/ {
             /<\/h1>/ {
-              a\'"${output}"'
+              a\'"${content}"'
             }
           }
           ' $HOMEPAGE_FILE
@@ -594,16 +627,12 @@
           #
         add_icon_button() {
           local  ident="$1"; shift
-          local spaces=$(printf '%*s' $((ident * 2)) '')
-          local output=""
-          for arg in "$@"; do
-            output+="$spaces$arg\n"
-          done && \
-          output=${output::-2}
+
+          sed_lines "content" $ident "$@"
 
           sed -i '/Changelog/,/<\/a>/ {
             /<\/a>/ {
-              a\'"${output}"'
+              a\'"${content}"'
             }
           }
           ' $HOMEPAGE_FILE
@@ -875,14 +904,9 @@
         # Insert a new line on mix.exs deps list
       mix_insert() {
         local function="$1"; shift
-        local output=""
-
-        [ $# -ge 1 ] && \
-        for arg in "$@"; do
-          output+="      $arg\n"
-        done && \
+        sed_lines "content" 3 "$@"
         sed -i '/defp\? '"$function"' do/,/end/ {
-          /^    \]/i\'"${output::-2}"'
+          /^    \]/i\'"${content}"'
         }' $MIX_FILE
       }
 
@@ -908,25 +932,15 @@
       mix_insert_after_function() {
         [ $# -ge 2 ] && \
         local function="$1"; shift
-        local output=""
-
-        for arg in "$@"; do
-          output+="  $arg\n"
-        done && \
+        sed_lines "content" 1 "$@"
         sed -i '/defp\? '"$function"' do/,/end/ {
-          /end/a\'"${output::-2}"'
+          /end/a\'"${content}"'
         }' $MIX_FILE
       }
 
       # router_add_pipeline
         #
       router_add_pipeline() {
-        # [ $# -ge 1 ] && \
-        local output=""
-        for arg in "$@"; do
-          output+="  $arg\n"
-        done && \
-        output=${output::-2}
         local last_pipeline=$(
           awk '
             /^ *pipeline .* do *$/ {
@@ -944,10 +958,10 @@
             }
           ' $ROUTER_FILE
         )
-
+        sed_lines "content" 1 "$@"
         sed -i '/pipeline '"${last_pipeline}"' do/,/end/ {
           /end/ {
-            a\\n'"${output}"'
+            a\\n'"${content}"'
           }
         }
         ' $ROUTER_FILE
@@ -959,20 +973,11 @@
         local  scope="$1"; shift
         local   pipe="$1"; shift
         local  ident="$1"; shift
-        local spaces=$(printf '%*s' $((ident * 2)) '')
-        local output=""
-        for arg in "$@"; do
-          if [ "$arg" != "" ]; then
-            output+="$spaces$arg"
-          fi
-          output+="\n"
-        done && \
-        output=${output::-2}
-
+        sed_lines "content" $ident "$@"
         sed -i '/scope '"${scope}"' do/,/end/ {
           /pipe_through '"${pipe}"'/,/end/ {
             /end/ {
-              a\\n'"${output}"'
+              a\\n'"${content}"'
             }
           }
         }
@@ -999,8 +1004,6 @@
             #
           implement_psql_extras() {
             mix_insert deps \
-              "" \
-              "# Enhancements implementation deps set" \
               "{:ecto_psql_extras, \"$PSQL_EXTRAS_VERSION\", only: :dev},"
           }
 
@@ -1010,31 +1013,15 @@
             mix_insert deps \
               "{:flame_on, \"$FLAMEON_VERSION\"},"
 
-            
-            add_pages="live_dashboard \"\/dashboard\","
-            add_pages+="\n        metrics: ${ELIXIR_MODULE}Web.Telemetry,"
-            add_pages+="\n        additional_pages: ["
-            add_pages+="\n          flame_on: FlameOn.DashboardPage"
-            add_pages+="\n        ]"
-            add_pages+="\n"
-            sed -i "s/live_dashboard.*Telemetry/$add_pages/" $ROUTER_FILE
-          }
+            sed_lines "add_pages" 3 \
+              "live_dashboard \"\/dashboard\"," \
+              "  metrics: ${ELIXIR_MODULE}Web.Telemetry," \
+              "  additional_pages: [" \
+              "    flame_on: FlameOn.DashboardPage" \
+              "  ]" \
+              ""
 
-          # implement_version_task
-            #
-          implement_version_task() {
-            local VERSION_TASK_SEED_FILE="version.seed.ex"
-            local VERSION_TASK_PATH="$MIX_TASK_PATH/version.ex"
-
-            [ ! -d $MIX_DIR_PATH ]  && mkdir $MIX_DIR_PATH
-            [ ! -d $MIX_TASK_PATH ] && mkdir $MIX_TASK_PATH
-          
-            cp \
-              "$WORKBENCH_DIR/$SEEDS_DIR/$VERSION_TASK_SEED_FILE" \
-              $VERSION_TASK_PATH
-            
-            sed -i "s/%{readme_file}/$README_FILE/" $VERSION_TASK_PATH
-            sed -i "s/%{mix_file}/$MIX_FILE/" $VERSION_TASK_PATH
+            sed -i "s/^.*live_dashboard.*Telemetry$/$add_pages/" $ROUTER_FILE
           }
 
           # implement_credo
@@ -1061,22 +1048,68 @@
           # implement_mock
             #
           implement_mock() {
-            mix_insert deps \
-              "{:mock, \"$MOCK_VERSION\",  only: :test},"
+            mix_insert deps "{:mock, \"$MOCK_VERSION\",  only: :test},"
+          }
+
+          # implement_version_task
+            #
+          implement_version_task() {
+            local VERSION_TASK_SEED_FILE="version.seed.ex"
+            local VERSION_TASK_PATH="$MIX_TASK_PATH/version.ex"
+
+            [ ! -d $MIX_DIR_PATH ]  && mkdir $MIX_DIR_PATH
+            [ ! -d $MIX_TASK_PATH ] && mkdir $MIX_TASK_PATH
+          
+            cp \
+              "$WORKBENCH_DIR/$SEEDS_DIR/$VERSION_TASK_SEED_FILE" \
+              $VERSION_TASK_PATH
+            
+            sed -i "s/%{readme_file}/$README_FILE/" $VERSION_TASK_PATH
+            sed -i "s/%{mix_file}/$MIX_FILE/" $VERSION_TASK_PATH
+          }
+
+          # implement_schema_enhancement
+            #
+          implement_schema_enhancement() {
+            local SCHEMA_SEED_FILE="schema.seed.ex"
+            local SCHEMA_FILE="$PROJECT_DIR/schema.ex"
+
+            mix_insert deps "{:ecto_enum, \"$ECTO_ENUM_VERSION\"},"
+
+            # Plant Schema.ex Controller
+            cp \
+              "$WORKBENCH_DIR/$SEEDS_DIR/$SCHEMA_SEED_FILE" \
+              $SCHEMA_FILE
+
+            id_type=$(
+              if [ "$ID_TYPE" == "uuid" ]
+              then echo "Ecto.UUID"
+              else echo ":$ID_TYPE"
+              fi
+            )
+            
+            sed -i "s/%{elixir_module}/$ELIXIR_MODULE/" $SCHEMA_FILE
+            sed -i "s/%{id_type}/$id_type/"             $SCHEMA_FILE
+            sed -i "s/%{timestamps_type}/$TIMESTAMPS/"  $SCHEMA_FILE
+
+            [ $EXDOC == true ] && \
+            pattern keep $SCHEMA_FILE "exdoc" || \
+            pattern delete $SCHEMA_FILE "exdoc"
           }
 
           # implement_exdebug
             #
           implement_exdebug() {
-            mix_insert deps \
-              "{:ex_debug, \"$EXDEBUG_VERSION\"}"
+            mix_insert deps "{:ex_debug, \"$EXDEBUG_VERSION\"}"
           }
           
         # SCRIPT ---------------------------------------------------------------
           feature_init $FEATURE
 
-
           mix_append deps "," && \
+          mix_insert deps \
+            "" \
+            "# Workbench enhancement implementation deps set" && \
           implement_osmon && \
           implement_psql_extras && \
           implement_flameon && \
@@ -1084,13 +1117,9 @@
           implement_githooks && \
           implement_exmachina && \
           implement_mock && \
-          implement_exdebug && \
-          implement_version_task
-
-          # CONTINUE
-          # 2 exdocs & helthcheck docs and tests
-          # 4 Auth0 <-------------- al terminar aqui, te pasas al sitio JayParcade
-          # 5 Stripe
+          implement_version_task && \
+          implement_schema_enhancement  && \
+          implement_exdebug
 
           feature_done $FEATURE
       }
@@ -1182,10 +1211,10 @@
               "  get \"/$OPEN_API_ENDPOINT\", RenderSpec, []" \
               "end"
 
-            swagger=""
-            swagger+="\n      # SwaggerUI interface for REST-API documentation"
-            swagger+="\n      get \"/$SWAGGER_ENDPOINT\", SwaggerUI"
-            swagger+=", path: \"/dev/$OPEN_API_ENDPOINT\""
+            sed_lines "swagger" 3 \
+              "" \
+              "# SwaggerUI interface for REST-API documentation" \
+              "get \"/$SWAGGER_ENDPOINT\", SwaggerUI, path: \"/dev/$OPEN_API_ENDPOINT\""
 
             sed -i '/forward "\/mailbox", .*$/a\'"$swagger" $ROUTER_FILE
           fi
@@ -1227,12 +1256,8 @@
           # inject_frontend_vars_in_runtime
             #
           inject_frontend_vars_in_runtime() {
-            local output=""
-            for arg in "$@"; do
-              output+="$arg\n"
-            done
-            
-            sed -i '/if System.get_env/i\'"$output" $RUNTIME_FILE
+            sed_lines "content" 0 "$@"
+            sed -i '/if System.get_env/i\'"$content" $RUNTIME_FILE
           }
 
         # CONFIGURATION --------------------------------------------------------
@@ -1279,6 +1304,13 @@
           local         EXDOC_TOKEN_FILE="$ELIXIR_EXDOC_ASSETS_PATH/token.md"
           local       EXDOC_TESTING_FILE="$ELIXIR_EXDOC_ASSETS_PATH/$EXDOC_TEST_FILE"
           local     EXDOC_GUIDELINE_FILE="$ELIXIR_EXDOC_ASSETS_PATH/coding.md"
+
+          local MOD=$ELIXIR_MODULE
+          local     REGEX_CONTEXT="~r/^${MOD}\\\.(?!(.*\\\..*|Mailer|Repo)$).*$/"
+          local     REGEX_SCHEMAS="~r/^${MOD}\\\..*\\\.(?!.*(Enum)$).*$/"
+          local REGEX_COLLECTIONS="~r/^${MOD}\\\..*(Enum)$/"
+          local         REGEX_WEB="~r/^${MOD}Web(?!.*(Controller|HTML|JSON)$)/"
+          local REGEX_CONTROLLERS="~r/^${MOD}Web.*(Controller|HTML|JSON)$/"
 
         # SCRIPT ---------------------------------------------------------------
           feature_init $FEATURE
@@ -1359,69 +1391,78 @@
               "  main: \"readme\"," \
               "  assets: %{" \
               "    \"$EXDOC_ASSETS_CONFIG_PATH\" => \"/\","
-            [ $COVERALLS == true ] && \
-            mix_insert project \
+
+            [ $COVERALLS == true ] && mix_insert project \
               "    \"$COVERALLS_OUTPUT_PATH\" => \"/\","
+            
             mix_insert project \
               "    \"$EXDOC_ASSETS_IMG_PATH\" => \"/assets\"," \
               "    \"$EXDOC_ASSETS_JS_PATH\" => \"/assets\"" \
               "  }," \
               "  extras: [" \
-              "    {\"$README_FILE\", [title: \"Overview\"]},"
+              "    {\"$README_FILE\",                 [title: \"Overview\"]}," \
+              "    {\"$CHANGELOG_FILE\",              [title: \"Changelog\"]},"
               # "    {\"assets/doc/database.md\", [title: \"Database\"]}," \
-            [ $AUTH0 == true ] && \
+
+            [ $AUTH0 == true ] && mix_insert project \
+              "    {\"$EXDOC_TOKEN_FILE\",     [title: \"Get access tokens\"]},"
+
+            [ $COVERALLS == true ] && mix_insert project \
+              "    {\"$EXDOC_TESTING_FILE\",   [title: \"Tests reports\"]},"
+
+            [ $CODING_GUIDELINES == true ] && mix_insert project \
+              "    {\"$EXDOC_GUIDELINE_FILE\",    [title: \"Coding guidelines\"]},"
+
             mix_insert project \
-              "    {\"$EXDOC_TOKEN_FILE\", [title: \"Get access tokens\"]},"
-            [ $COVERALLS == true ] && \
-            mix_insert project \
-              "    {\"$EXDOC_TESTING_FILE\", [title: \"Tests reports\"]},"
-            [ $CODING_GUIDELINES == true ] && \
-            mix_insert project \
-              "    {\"$EXDOC_GUIDELINE_FILE\", [title: \"Coding guidelines\"]},"
-            mix_insert project \
-              "    {\"$EXDOC_WORKBENCH_FILE\", [title: \"Workbench\"]}," \
-              "    {\"$CHANGELOG_FILE\", [title: \"Changelog\"]}" \
+              "    {\"$EXDOC_WORKBENCH_FILE\", [title: \"Workbench\"]}" \
               "  ]," \
               "  groups_for_extras: [" \
               "    \"Project\": [" \
               "      \"$README_FILE\"," \
               "      \"$CHANGELOG_FILE\"" \
               "    ]," \
-              "    \"Support\": [" \
-              "      \"$EXDOC_WORKBENCH_FILE\"," \
-              "      \"$EXDOC_GUIDELINE_FILE\","
-            [ $AUTH0 == true ] && \
-            mix_insert project \
+              "    \"Support\": ["
+
+            [ $AUTH0 == true ] && mix_insert project \
               "      \"$EXDOC_TOKEN_FILE\","
-            [ $AUTH0 == true ] && [ $COVERALLS == true ] && \
-            mix_insert project \
+
+            [ $AUTH0 == true ] && [ $COVERALLS == true ] && mix_insert project \
               "      \"$EXDOC_TESTING_FILE\","
+
             mix_insert project \
+              "      \"$EXDOC_GUIDELINE_FILE\"," \
+              "      \"$EXDOC_WORKBENCH_FILE\"" \
               "    ]" \
               "  ]," \
               "  groups_for_modules: [" \
-              "    \"Contexts\":    ~r/^${ELIXIR_MODULE}\\\.(?!(.*\\\..*|Mailer|Repo)$).*$/," \
-              "    \"Schemas\":     ~r/^${ELIXIR_MODULE}\\\..*\\\.(?!.*(Enum)$).*$/," \
-              "    \"Collections\": ~r/^${ELIXIR_MODULE}\\\..*(Enum)$/,"
+              "    \"Contexts\":    $REGEX_CONTEXT," \
+              "    \"Schemas\":     $REGEX_SCHEMAS," \
+              "    \"Collections\": $REGEX_COLLECTIONS,"
+
             [ "$API_INTERFACE" == "graphql" ] && [ $AUTH0 == true ] && \
             mix_insert project \
               "    \"Authentication\": [" \
               "      ${ELIXIR_MODULE}Web.Graphql.Context" \
               "    ],"
+
             mix_insert project \
-              "    \"Web\":         ~r/^${ELIXIR_MODULE}Web(?!.*(Controller|HTML|JSON)$)/," \
-              "    \"Controllers\": ~r/^${ELIXIR_MODULE}Web.*(Controller|HTML|JSON)$/" \
+              "    \"Web\":         $REGEX_WEB," \
+              "    \"Controllers\": $REGEX_CONTROLLERS" \
               "  ]," \
               "  before_closing_head_tag: &before_closing_head_tag/1," \
               "  before_closing_body_tag: &before_closing_body_tag/1" \
               "]"
 
-            html_body="  <script src=\"./assets/themedImage.js\"></script>"
-            if [ "$AUTH0" == true ]; then
-              html_body+="\n    <script src=\"$AUTH0_PROD_JS\"></script>"
-              html_body+="\n    <script src=\"./assets/auth_config.js\"></script>"
-              html_body+="\n    <script src=\"./assets/token.js\"></script>"
-            fi
+            lines "body" 1 \
+              "<script src=\"./assets/themedImage.js\"></script>"
+
+            lines "auth0_body" 2 \
+              "<script src=\"$AUTH0_PROD_JS\"></script>" \
+              "<script src=\"./assets/auth_config.js\"></script>" \
+              "<script src=\"./assets/token.js\"></script>"
+
+            html_body=$body
+            [ $AUTH0 == true ] && html_body+="\n$auth0_body"
 
             mix_insert_after_function project \
               "" \
@@ -1476,6 +1517,7 @@
               )
 
               inject_frontend_vars_in_runtime \
+                "" \
                 "# Auth0 & ExDoc implementation:" \
                 "# Create auth_config.js file for token request in ExDoc token page." \
                 "if config_env() != :prod do" \

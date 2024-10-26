@@ -16,7 +16,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 > During development, milestones can be added to this section. Once finished working on them, it's only needed to copy the commented title template line, adjust the title version & date and uncomment it.
 <!-- ## v0.0.0 - (0000-00-00) -->
-
+<!--
     # CONTINUE
     2 exdocs & helthcheck controllers docs and tests
     3 Enhancements
@@ -47,6 +47,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
     3. Change the file: lib/my_app_web/gettext.ex:
 
         (+/-) line 23: change from use Gettext, otp_app: :my_app to use Gettext.Backend, otp_app: :my_app
+-->
+
+### Added
+
+- Workbench script implementation: **Stripe**.
+- Workbench script implementation: **Auth0**.
 
 ## v0.2.0 - (2024-10-24)
 
@@ -67,8 +73,6 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Mix task `mix cover` for test report generation for ExDoc.
 - Workbench script implementation: **Healthcheck**.
 - Workbench script implementation: **OpenAPI**.
-- Workbench script implementation: **Stripe**.
-- Workbench script implementation: **Auth0**.
 - **Delete** command in workbench script.
 - **Demo** command in workbench script.
 - **Help** command in workbench script.

@@ -40,7 +40,7 @@ defmodule %{elixir_module}Web.HealthcheckController do
         %{elixir_module}Web.OpenApi.Schemas.Health
       }
     ]
-    
+
   @doc """
     Creates a Pitcher's account.
 
@@ -77,7 +77,7 @@ defmodule %{elixir_module}Web.HealthcheckController do
         nil   -> false
         value -> String.downcase(value) == "true"
       end
-    
+
     app =
       [verbose, %{service: @service, env: @env, version: @version}]
       |> case do

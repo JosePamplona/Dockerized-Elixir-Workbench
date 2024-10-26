@@ -2,7 +2,7 @@ defmodule %{elixir_module}Web.OpenApi.Schemas do
   @moduledoc false
   <!-- workbench-healthcheck open -->
   alias OpenApiSpex.Schema
-    
+
   defmodule Health do
     @moduledoc false
     require OpenApiSpex

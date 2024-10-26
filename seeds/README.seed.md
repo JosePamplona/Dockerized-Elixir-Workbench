@@ -16,23 +16,23 @@
 | Service | URL |
 | --:     | :-- |
 <!-- workbench-html open -->
-| Phoenix web page | <http://localhost:%{port}> |
+| Phoenix web page | <http://localhost:%{port}/> |
 <!-- workbench-html close -->
 <!-- workbench-healthcheck open -->
-| Healthcheck endpoint | <http://localhost:%{port}/health> |
+| Healthcheck endpoint | <http://localhost:%{port}/health/> |
 <!-- workbench-healthcheck close -->
 <!-- workbench-graphql open -->
-| GraphQL endpoint & IDE | <http://localhost:%{port}/graphiql> |
+| GraphQL endpoint & IDE | <http://localhost:%{port}/graphiql/> |
 <!-- workbench-graphql close -->
 <!-- workbench-rest open -->
-| API-REST endpoints | <http://localhost:%{port}/api/v1> |
-| API-REST documentation | <http://localhost:%{port}/dev/swagger> |
+| API-REST endpoints | <http://localhost:%{port}/api/v1/> |
+| API-REST documentation | <http://localhost:%{port}/dev/swagger/> |
 <!-- workbench-rest close -->
-| Mailbox | <http://localhost:%{port}/dev/mailbox> |
-| Phoenix LiveDashboard | <http://localhost:%{port}/dev/dashboard> |
+| Mailbox | <http://localhost:%{port}/dev/mailbox/> |
+| Phoenix LiveDashboard | <http://localhost:%{port}/dev/dashboard/> |
 | Project documentation | <http://localhost:%{port}/dev/docs/> |
 <!-- workbench-coveralls open -->
-| Test coverage report | <http://localhost:%{port}/dev/docs/cover> |
+| Test coverage report | <http://localhost:%{port}/dev/docs/cover/> |
 <!-- workbench-coveralls close -->
 
 ### Production

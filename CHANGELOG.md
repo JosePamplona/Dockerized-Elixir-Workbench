@@ -17,6 +17,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 > During development, milestones can be added to this section. Once finished working on them, it's only needed to copy the commented title template line, adjust the title version & date and uncomment it.
 <!-- ## v0.0.0 - (0000-00-00) -->
 
+    # CONTINUE
+    2 exdocs & helthcheck controllers docs and tests
+    3 Enhancements
+        ecto enhacements for exdocs and schemas
+        -> error: field types in documentation all are any() 
+        -> change schema module name
+        remove githooks?
+    4 Auth0 <-------------- al terminar aqui, te pasas al sitio JayParcade
+    5 Stripe
+          
+
 - db port change breask pgadmin maybe back
 - Solve Gettext incompatibility when HTML (maybe it doesnt worth the time):
   

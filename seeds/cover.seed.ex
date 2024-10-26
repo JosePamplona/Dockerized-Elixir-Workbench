@@ -14,14 +14,15 @@ defmodule Mix.Tasks.Cover do
     |> Jason.decode!(keys: :atoms)
     |> Map.fetch!(:coverage_options)
   )
-
+  
+  @version   Mix.Project.config[:version]
   # Regex patterns
   @tests ~r/(\e\[.*?m)*?\d* test(s)?, (\d*) failure/
   @total ~r/(\e\[.*?m)*?\[TOTAL] (.*?%)/
   @cover ~r/(\e\[.*?m)*?FAILED: Expected minimum coverage of (.*?%)/
   
   @moduledoc """
-    Generates an unit testing report file into `#{@test_output_path}` and a
+    Generates a testing report file into `#{@test_output_path}` and a
     coverage report file into `#{@coverage_options.output_dir}` to enable ExDoc 
     to integrate the test & coverage documentation files.
     
@@ -87,10 +88,38 @@ defmodule Mix.Tasks.Cover do
   # == Private =================================================================
 
   defp format_tests_report(content) do
+    %{
+      year: year,
+      month: month,
+      day: day,
+      hour: hour,
+      minute: minute,
+      second: second,
+      microsecond: {microsecond, 6}
+    } = NaiveDateTime.utc_now()
+
+    now =
+      "`#{year}"
+      |> Kernel.<>("-")
+      |> Kernel.<>(String.pad_leading("#{month}", 2, "0"))
+      |> Kernel.<>("-")
+      |> Kernel.<>(String.pad_leading("#{day}", 2, "0"))
+      |> Kernel.<>("` at `")
+      |> Kernel.<>(String.pad_leading("#{hour}", 2, "0"))
+      |> Kernel.<>(":")
+      |> Kernel.<>(String.pad_leading("#{minute}", 2, "0"))
+      |> Kernel.<>(":")
+      |> Kernel.<>(String.pad_leading("#{second}", 2, "0"))
+      |> Kernel.<>(".")
+      |> Kernel.<>(String.pad_leading("#{microsecond}", 3, "0"))
+      |> Kernel.<>("`")
+
     [
       "# Tests reports",
       "",
-      "## Unit testing",
+      "Reports generated on #{now} for version: **#{@version}**.",
+      "",
+      "## Automated tests",
       "",
       "```elixir"
     ] ++ (

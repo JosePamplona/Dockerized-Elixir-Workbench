@@ -45,19 +45,19 @@
 | Application Service | URL |
 | --: | :-- |
 <!-- workbench-html open -->
-| Phoenix web page | <http://localhost:%{port}> |
+| Phoenix web page | <http://localhost:%{port}/> |
 <!-- workbench-html close -->
 <!-- workbench-graphql open -->
-| GraphQL endpoint | <http://localhost:%{port}/graphiql> |
+| GraphQL endpoint | <http://localhost:%{port}/graphiql/> |
 <!-- workbench-graphql close -->
 <!-- workbench-rest open -->
-| API-REST endpoints | <http://localhost:%{port}/api/v1> |
+| API-REST endpoints | <http://localhost:%{port}/api/v1/> |
 <!-- workbench-rest close -->
 
 <!-- workbench-healthcheck open -->
 | Development Operations | URL |
 | --:                    | :-- |
-| Healthcheck endpoint | <http://localhost:%{port}/health> |
+| Healthcheck endpoint | <http://localhost:%{port}/health/> |
 <!-- workbench-healthcheck close -->
 
 <!-- tabs-close -->

@@ -11,34 +11,30 @@ defmodule %{elixir_module}Web.HealthcheckController do
 
   # --- Development Information & Production Server health check ---------------
 
-  tags ["Health-check"]
+  tags ["Development Operations"]
 
   operation :health,
-    summary: "Health check endpoint.",
+    summary: "Healthcheck endpoint.",
     description: """
-      In production eviroment works just as a server healthcheck enpoint.
-      In develop enviroment returns application information with optional extra output.
+      In production eviroment works just as a server healthcheck enpoint. In develop enviroment returns application information with optional extra output.
       """,
     parameters: [
       verbose: [
         in: :query,
         description: """
-          If is set to `true` the endpoint will give full information (only for
-          develop enviroment). <br/>
-          *Note: Request verbose increment system calls and database
-          queries, so it takes a little longer to respond (not very suitable for
-          health-cheks).*
+          If is set to `true` the endpoint will give full information (only for develop enviroment). <br/>
+          <p><b><i>Note:</i></b> Request verbose increment system calls and database queries, so it takes a little longer to respond (not very suitable for health-cheks).</p>
           """,
         type: :boolean,
         example: false
       ]
     ],
     responses: [
-      ok: {
-        "Health-check response on development enviroment.",
+      {200, {
+        "Healthcheck response on development enviroment.",
         "application/json",
-        %{elixir_module}Web.OpenApi.Schemas.Health
-      }
+        %{elixir_module}Web.OpenApi.Schemas.Healthcheck
+      }}
     ]
 
   @doc """

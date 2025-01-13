@@ -24,7 +24,15 @@ defmodule %{elixir_module}Web.OpenApi.Spec do
           """
       },
       # Populate the paths from a phoenix router
-      paths: Paths.from_router(Router)
+      paths: Paths.from_router(Router),
+      tags: [
+        <!-- workbench-healthcheck open -->
+        %OpenApiSpex.Tag{
+          name: "Development Operations",
+          description: "Collection of development operations endpoints intended for system monitoring."
+        }
+        <!-- workbench-healthcheck close -->
+      ]
     }
     # Discover request/response schemas from path specs
     |> OpenApiSpex.resolve_schema_modules()

@@ -23,7 +23,7 @@ defmodule %{elixir_module}Web.HealthcheckController do
         in: :query,
         description: """
           If is set to `true` the endpoint will give full information (only for develop enviroment). <br/>
-          <p><b><i>Note:</i></b> Request verbose increment system calls and database queries, so it takes a little longer to respond (not very suitable for health-cheks).</p>
+          <small><b>Note:</b> Request verbose increment system calls and database queries, so it takes a little longer to respond (not very suitable for health cheks).</small>
           """,
         type: :boolean,
         example: false

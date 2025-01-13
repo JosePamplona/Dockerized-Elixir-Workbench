@@ -1532,13 +1532,7 @@
                 "          For example: $client_id" \
                 "          \"\"\"" \
                 "      }\"," \
-                "      audience: \"#{" \
-                "        System.get_env(\"AUTH0_AUDIENCE\") ||" \
-                "          raise \"\"\"" \
-                "          environment variable AUTH0_AUDIENCE is missing." \
-                "          For example: https://www.$APP_NAME.com" \
-                "          \"\"\"" \
-                "      }\"" \
+                "      audience: \"#{System.get_env(\"AUTH0_AUDIENCE\")}\"" \
                 "    }" \
                 "    \"\"\"" \
                 "  )" \

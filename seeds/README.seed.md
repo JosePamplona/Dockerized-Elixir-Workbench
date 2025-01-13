@@ -7,25 +7,30 @@
 
 **%{project_name}** is a web application that offers a %{api_type} API for its usage. It also incorporates various development and monitoring tools available only for development deployments.
 
-## API endpoints
+## Application Interfaces
 
 <!-- tabs-open -->
 
 ### Development
 
-| Service | URL |
-| --:     | :-- |
+| Application Service | URL |
+| --: | :-- |
 <!-- workbench-html open -->
 | Phoenix web page | <http://localhost:%{port}/> |
 <!-- workbench-html close -->
-<!-- workbench-healthcheck open -->
-| Healthcheck endpoint | <http://localhost:%{port}/health/> |
-<!-- workbench-healthcheck close -->
 <!-- workbench-graphql open -->
 | GraphQL endpoint & IDE | <http://localhost:%{port}/graphiql/> |
 <!-- workbench-graphql close -->
 <!-- workbench-rest open -->
 | API-REST endpoints | <http://localhost:%{port}/api/v1/> |
+<!-- workbench-rest close -->
+
+| Development Operations | URL |
+| --: | :-- |
+<!-- workbench-healthcheck open -->
+| Healthcheck endpoint | <http://localhost:%{port}/health/> |
+<!-- workbench-healthcheck close -->
+<!-- workbench-rest open -->
 | API-REST documentation | <http://localhost:%{port}/dev/swagger/> |
 <!-- workbench-rest close -->
 | Mailbox | <http://localhost:%{port}/dev/mailbox/> |
@@ -37,20 +42,23 @@
 
 ### Production
 
-| Service | URL |
-| --:     | :-- |
+| Application Service | URL |
+| --: | :-- |
 <!-- workbench-html open -->
 | Phoenix web page | <http://localhost:%{port}> |
 <!-- workbench-html close -->
-<!-- workbench-healthcheck open -->
-| Healthcheck endpoint | <http://localhost:%{port}/health> |
-<!-- workbench-healthcheck close -->
 <!-- workbench-graphql open -->
 | GraphQL endpoint | <http://localhost:%{port}/graphiql> |
 <!-- workbench-graphql close -->
 <!-- workbench-rest open -->
 | API-REST endpoints | <http://localhost:%{port}/api/v1> |
 <!-- workbench-rest close -->
+
+<!-- workbench-healthcheck open -->
+| Development Operations | URL |
+| --:                    | :-- |
+| Healthcheck endpoint | <http://localhost:%{port}/health> |
+<!-- workbench-healthcheck close -->
 
 <!-- tabs-close -->
 

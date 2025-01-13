@@ -36,15 +36,21 @@ This is a script for creating [Elixir](https://elixir-lang.org/) projects with t
 
 ## Configuration
 
-Lorem ipsum
+1. Give execution permissions to `app` file (This step only needs to be performed once):
 
-## Create a new project
+    ```sh
+    sudo chmod +x app
+    ```
 
 1. Modify the `config.conf` file in order to configure the project name and creation specifications.
 
-2. If you have configured the schemas script to run, you will need to modify the `docker/schemas.sh` file to set up the initial schema-dependent files.
+1. If you have configured the schemas script to run, you will need to modify the `docker/schemas.sh` file to set up the initial schema-dependent files.
 
-3. Run the following command:
+1. Make sure [Docker Desktop](https://www.docker.com/products/docker-desktop/) is running before running any script command.
+
+## Create a new project
+
+1. Run the following command:
 
     ```sh
     ./app new

@@ -1114,12 +1114,15 @@
           implement_psql_extras && \
           implement_flameon && \
           implement_credo && \
-          implement_githooks && \
+          \
           implement_exmachina && \
           implement_mock && \
           implement_version_task && \
           implement_schema_enhancement  && \
           implement_exdebug
+
+          # implement_flameon && \
+          # implement_githooks && \
 
           feature_done $FEATURE
       }
@@ -1166,6 +1169,10 @@
           
           sed -i "s/%{elixir_module}/$ELIXIR_MODULE/" $ELIXIR_API_SPEC_FILE
           sed -i "s/%{project_name}/$PROJECT_NAME/"   $ELIXIR_API_SPEC_FILE
+
+          [ $HEALTHCHECK == true ] && \
+          pattern keep $ELIXIR_API_SPEC_FILE "healthcheck" || \
+          pattern delete $ELIXIR_API_SPEC_FILE "healthcheck"
 
           if [ ! -f $MIX_FILE ]; then
             terminate "The $MIX_FILE file does not exist."
@@ -1280,21 +1287,6 @@
           local EXDOC_CONTROLLER_FILE="$CONTROLLERS_DIR/exdoc_controller.ex"
           local EXDOC_CONTORLLER_MODULE="ExDocController"
 
-          # local   GUIDELINE_USER="rrrene"
-          # local   GUIDELINE_REPO="elixir-style-guide"
-          # local GUIDELINE_BRANCH="master"
-          # local   GUIDELINE_FILE="README.md"
-          local   GUIDELINE_USER="JosePamplona"
-          local   GUIDELINE_REPO="Elixir-Coding-Conventions"
-          local GUIDELINE_BRANCH="master"
-          local   GUIDELINE_FILE="README.en_US.md"
-
-          local GUIDELINE_URL="https://raw.githubusercontent.com/"
-          local GUIDELINE_URL+="$GUIDELINE_USER/"
-          local GUIDELINE_URL+="$GUIDELINE_REPO/"
-          local GUIDELINE_URL+="$GUIDELINE_BRANCH/"
-          local GUIDELINE_URL+="$GUIDELINE_FILE"
-
           local    EXDOC_ASSETS_IMG_PATH="$ELIXIR_EXDOC_ASSETS_PATH/images"
           local     EXDOC_ASSETS_JS_PATH="$ELIXIR_EXDOC_ASSETS_PATH/js"
           local EXDOC_ASSETS_CONFIG_PATH="$ELIXIR_EXDOC_ASSETS_PATH/config"
@@ -1363,7 +1355,7 @@
 
           # Download codeguide
           [ $CODING_GUIDELINES == true ] && \
-          curl -o $EXDOC_GUIDELINE_FILE $GUIDELINE_URL
+          curl -o $EXDOC_GUIDELINE_FILE $CODING_GUIDELINES_URL
 
           # Plant testing page
           [ $COVERALLS == true ] && \

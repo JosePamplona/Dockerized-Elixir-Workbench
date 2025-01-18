@@ -14,3 +14,4 @@ mix phx.gen.context \
     picture:string \
     token_sub:string:unique \
     --merge-with-existing-context
+sleep 1

@@ -9,6 +9,9 @@ defmodule %{elixir_module}.EctoSchema do
       import EctoEnum
 
       alias %{elixir_module}.Repo
+      <!-- workbench-auth0 open -->
+      alias %{elixir_module}.EctoURI
+      <!-- workbench-auth0 close -->
 
       @primary_key {:id, %{id_type}, autogenerate: true}
       @foreign_key_type %{id_type}
@@ -28,9 +31,9 @@ defmodule %{elixir_module}.EctoSchema do
     fields = Module.get_attribute(env.module, :ecto_fields)
     fields = fields ++ Module.get_attribute(env.module, :ecto_virtual_fields)
     fields = fields ++ Module.get_attribute(env.module, :ecto_assocs)
-    fields = fields ++ [__meta__: meta_module]
+    fields = fields ++ [__meta__: {meta_module, :always}]
     key_types =
-      for {field, type} <- fields do {field, type_to_spec(type)} end
+      for {field, {type, _}} <- fields do {field, type_to_spec(type)} end
 
     quote do
       @type t :: %__MODULE__{unquote_splicing(key_types)}

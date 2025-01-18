@@ -1,6 +1,6 @@
 #!/bin/bash
 # Dockerized workbench script
-# v0.2.0
+# v0.3.0
 
 # CONFIGURATION ================================================================
 
@@ -21,12 +21,14 @@
 
     # Directories - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     SCRIPTS_DIR="scripts"
+    CONTEXTS_DIR="contexts"
     PGADMIN_DIR="pgadmin"
     SEEDS_DIR="seeds"
 
     # Script files - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     ENTRYPOINT_FILE="entrypoint.sh"
     SCHEMAS_FILE="schemas.sh"
+    AUTH0_CONTEXT_FILE="auth0.sh"
     DEV_DOCKERFILE="Dockerfile.dev"
     PROD_DOCKERFILE="Dockerfile"
     COMPOSE_FILE="docker-compose.yml"
@@ -416,13 +418,23 @@
       create_dockerfile_dev() {
         local seed_path="$WORKBENCH_DIR/$SEEDS_DIR/$DEV_DOCKERFILE_SEED" 
         local file_path="$WORKBENCH_DIR/$SCRIPTS_DIR/$DEV_DOCKERFILE"
+        local scp_contexts_dir_path=$(scape_for_sed "$CONTEXTS_DIR")
+        local scp_auth0_context_path=$(scape_for_sed "$AUTH0_CONTEXT_FILE")
 
         cp $seed_path $file_path
-        sed -i "s/%{elixir_version}/$ELIXIR_VERSION/" $file_path
-        sed -i "s/%{erlang_version}/$ERLANG_VERSION/" $file_path
-        sed -i "s/%{debian_version}/$DEBIAN_VERSION/" $file_path
-        sed -i "s/%{schemas}/$SCHEMAS_FILE/"          $file_path
-        sed -i "s/%{entrypoint}/$ENTRYPOINT_FILE/"    $file_path
+
+        if [ "$AUTH0" == true ]
+        then pattern keep   $file_path "auth0"
+        else pattern delete $file_path "auth0"
+        fi
+
+        sed -i "s/%{elixir_version}/$ELIXIR_VERSION/"        $file_path
+        sed -i "s/%{erlang_version}/$ERLANG_VERSION/"        $file_path
+        sed -i "s/%{debian_version}/$DEBIAN_VERSION/"        $file_path
+        sed -i "s/%{entrypoint}/$ENTRYPOINT_FILE/"           $file_path
+        sed -i "s/%{contexts}/$scp_contexts_dir_path/"       $file_path
+        sed -i "s/%{auth0_context}/$scp_auth0_context_path/" $file_path
+
       }
 
     # SCRIPT -----------------------------------------------------------------
@@ -893,10 +905,13 @@
       fi
       local COVERALLS_OUTPUT_PATH="$COVERALLS_PATH/$COVERALLS_OUTPUT_DIR"
       local EXDOC_TEST_FILE="testing.md"
+
+      local ECTO_URI_SEED_FILE="ecto_uri.seed.ex"
+      local ECTO_URI_FILE="$PROJECT_DIR/ecto_uri.ex"
       
     # FUNCTIONS --------------------------------------------------------------
 
-      feature_init() { echo "${C3}* implementing${R} $@"; }
+      feature_init() { echo "${C3}* implementing ${R} $@"; }
       feature_done() { dude="ok"; }
         # echo "${C3}✔${R} $@  ${C3}Implemented${R}"; }
 
@@ -1095,6 +1110,10 @@
             [ $EXDOC == true ] && \
             pattern keep $SCHEMA_FILE "exdoc" || \
             pattern delete $SCHEMA_FILE "exdoc"
+
+            [ $AUTH0 == true ] && \
+            pattern keep $SCHEMA_FILE "auth0" || \
+            pattern delete $SCHEMA_FILE "auth0"
           }
 
           # implement_exdebug
@@ -1688,10 +1707,16 @@
         # SCRIPT ---------------------------------------------------------------
           feature_init $FEATURE
 
-          echo "  ---> Coming soon --> $FEATURE"
+          echo "  ---> WIP --> $FEATURE"
+          # Plant ecto_uri.ex file
+          cp "$WORKBENCH_DIR/$SEEDS_DIR/$ECTO_URI_SEED_FILE" $ECTO_URI_FILE
+          sed -i "s/%{elixir_module}/$ELIXIR_MODULE/" $ECTO_URI_FILE
+
+
           # add ENV /assets/doc/js/auth_config.js
 
-          # Add router
+
+          # Add router (Diferent for API and GrpahQL)
           # "pipeline :auth do" \
           # "plug ValidateToken, no_halt: true" \
           # "plug GetUser, no_halt: true, user_from_claim: &Auth.login_from_claim/2" \
@@ -1728,6 +1753,93 @@
       if [ "$AUTH0" == true ];              then implement_auth0;        fi && \
       if [ "$STRIPE" == true ];             then implement_stripe;       fi && \
       echo
+  }
+
+  # after_implementation_tasks
+    #
+  after_implementation_tasks() {
+    # CONFIGURATION ----------------------------------------------------------
+    local MIGRATIONS_DIR="priv/repo/migrations"
+    # FUNCTIONS --------------------------------------------------------------
+
+      refinement_init() { echo "${C3}* refining ${R} $@"; }
+
+      # implement_auth0
+        #
+      refinement_auth0(){
+        # CONFIGURATION --------------------------------------------------------
+          local FEATURE="Auth0"
+
+        # SCRIPT ---------------------------------------------------------------
+          local FILE="lib/$ELIXIR_PROJECT_NAME/accounts/user.ex"
+          refinement_init "schema: $FILE"
+
+          local USER_STATUS=$(
+            sed -n 's/    field :status, Ecto.Enum, values: \(.*\)/\1/p' $FILE
+          )
+
+          sed -i "s/use Ecto.Schema/use $ELIXIR_MODULE.EctoSchema/" $FILE
+          sed -i "3d" $FILE
+          sed -i "3i\\\n  defenum StatusEnum, :user_status, $USER_STATUS" $FILE
+          sed -i \
+            "2i\  @moduledoc \"\"\"\n  User from Accounts context.\n  \"\"\"\n" \
+            $FILE
+
+          sed -i \
+            's/field :status, .*/field :status, StatusEnum/' \
+            $FILE
+          sed -i \
+            's/field :picture, .*/field :picture, EctoURI/' \
+            $FILE         
+      }
+
+    # SCRIPT -----------------------------------------------------------------
+
+    if [ "$AUTH0" == true ]; then refinement_auth0; fi
+
+    for FILE in $MIGRATIONS_DIR/*; do
+      if [[ -f "$FILE" && "$(basename "$FILE")" != ".formatter.exs" ]]
+      then
+        refinement_init "migration: $FILE"
+        local TABLE_NAME=$(
+          sed -n 's/    create table(:\([^)]*\)) do/\1/p' $FILE
+        )
+        sed -i "s/:$TABLE_NAME/@table/g" $FILE
+        sed -i "3i\  @table :$TABLE_NAME" $FILE
+        sed -i "2i\  @moduledoc false\n" $FILE
+        sed -i "s/timestamps()/timestamps(default: fragment(\"NOW()\"))/g" $FILE
+
+        if [[ "$AUTH0" == true && "$FILE" == *create_users.exs ]]
+        then
+          sed -i "5i\  alias $ELIXIR_MODULE.Accounts.User.StatusEnum" $FILE
+          sed -i "9i\    StatusEnum.create_type()\n" $FILE
+
+
+          sed -i \
+            's/:name, :string/:name,           :string, null: false/' \
+            $FILE
+          sed -i \
+            's/:status, :string/:status,         StatusEnum.type(), null: false/' \
+            $FILE
+          sed -i \
+            's/:email, :string/:email,          :string, null: false/' \
+            $FILE
+          sed -i \
+            's/:phone_number, :string/:phone_number,   :string/' \
+            $FILE
+          sed -i \
+            's/:token_sub, :string/:token_sub,      :string, null: false/' \
+            $FILE
+          sed -i \
+            's/:picture, :string/:picture,        :string/' \
+            $FILE
+
+
+          sed -i '/^\s*add :email, :string$/s/$/, null: false/' $FILE
+          sed -i '/^\s*add :name, :string$/s/$/, null: false/' $FILE
+        fi
+      fi
+    done
   }
 
 # SCRIPT =======================================================================
@@ -1795,14 +1907,16 @@
         app $CONTAINER_ENTRYPOINT $ENTRYPOINT_COMMAND \
           $EXDOC \
           $COVERALLS \
-          $RUN_SCHEMAS_SCRIPT && \
+          $AUTH0 $AUTH0_CONTEXT_FILE && \
+      cd .. && \
+      after_implementation_tasks && \
       if [ $EXISTING_PROJECT != true ]; then
         echo \
           "For further workbench script use, remember to navigate to the" \
           "script directory:\n\n" \
           "   $ cd $WORKBENCH_DIR\n"
       fi
-             
+      
       # ERROR: Tarball error will occur on Win11 using a XFAT drive for the repo
       # on 'mix deps.get' run.
     elif [ $1 == "setup" ]; then

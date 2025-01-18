@@ -29,11 +29,17 @@ RUN sed -i -e 's/\r$//' %{entrypoint}
 #   exec ./script.sh: no such file or directory
 # SOLUTION: RUN sed -i -e 's/\r$//'
 
-<!-- workbench-auth0 open -->
+#<!-- workbench-auth0 open -->
 # Copies the script to generate Auth0 context files.
 COPY %{contexts} ./
 RUN chmod +x %{auth0_context}
 RUN sed -i -e 's/\r$//' %{auth0_context}
-<!-- workbench-auth0 close -->
+#<!-- workbench-auth0 close -->
+
+#<!-- workbench-custom-schemas open -->
+# Copies the script to generate custom schemas context files.
+RUN chmod +x %{custom_context}
+RUN sed -i -e 's/\r$//' %{custom_context}
+#<!-- workbench-custom-schemas close -->
 
 CMD ["./%{entrypoint}"]

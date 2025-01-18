@@ -58,13 +58,26 @@ if [ $# -gt 0 ]; then echo "[$HOSTNAME]$0($#): $@"; fi
   elif [ "$1" == "implementation_tasks" ]; then
     shift
     if [ $# -ge 4 ]; then
-      EXDOC=$1; shift
-      COVERALLS=$1; shift
       AUTH0=$1; shift
-      AUTH0_MIGRATIONS_FILE=$1; shift
+      AUTH0_CONTEXT_FILE=$1; shift
+      CUSTOM_SCHEMAS=$1; shift
+      CUSTOM_SCHEMAS_CONTEXT_FILE=$1; shift
       
       mix deps.get && \
-      if [ $AUTH0 == true ]; then source ../$AUTH0_MIGRATIONS_FILE; fi && \
+      if [ $AUTH0 == true ]; then source ../$AUTH0_CONTEXT_FILE; fi && \
+      if [ $CUSTOM_SCHEMAS == true ]; then
+        source ../$CUSTOM_SCHEMAS_CONTEXT_FILE
+      fi
+
+    elif [ $# -lt 4 ]; then args_error missing
+    else args_error too_many; fi
+
+  elif [ "$1" == "documentation" ]; then
+    shift
+    if [ $# -ge 2 ]; then
+      EXDOC=$1; shift
+      COVERALLS=$1; shift
+      
       if [ $EXDOC == true ] && [ $COVERALLS == true ]; then
         MIX_ENV="test" && mix ecto.drop --force --force-drop && \
         MIX_ENV="test" && mix ecto.create --quiet && \
@@ -73,7 +86,7 @@ if [ $# -gt 0 ]; then echo "[$HOSTNAME]$0($#): $@"; fi
       fi && \
       if [ $EXDOC == true ]; then mix docs; fi
 
-    elif [ $# -lt 4 ]; then args_error missing
+    elif [ $# -lt 2 ]; then args_error missing
     else args_error too_many; fi
 
   elif [ "$1" == "setup" ]; then

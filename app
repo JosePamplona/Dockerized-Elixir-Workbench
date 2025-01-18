@@ -29,6 +29,7 @@
     ENTRYPOINT_FILE="entrypoint.sh"
     SCHEMAS_FILE="schemas.sh"
     AUTH0_CONTEXT_FILE="auth0.sh"
+    CUSTOM_SCHEMAS_CONTEXT_FILE="schemas.sh"
     DEV_DOCKERFILE="Dockerfile.dev"
     PROD_DOCKERFILE="Dockerfile"
     COMPOSE_FILE="docker-compose.yml"
@@ -420,6 +421,9 @@
         local file_path="$WORKBENCH_DIR/$SCRIPTS_DIR/$DEV_DOCKERFILE"
         local scp_contexts_dir_path=$(scape_for_sed "$CONTEXTS_DIR")
         local scp_auth0_context_path=$(scape_for_sed "$AUTH0_CONTEXT_FILE")
+        local scp_custom_context_path=$(
+          scape_for_sed "$CUSTOM_SCHEMAS_CONTEXT_FILE"
+        )
 
         cp $seed_path $file_path
 
@@ -428,12 +432,18 @@
         else pattern delete $file_path "auth0"
         fi
 
-        sed -i "s/%{elixir_version}/$ELIXIR_VERSION/"        $file_path
-        sed -i "s/%{erlang_version}/$ERLANG_VERSION/"        $file_path
-        sed -i "s/%{debian_version}/$DEBIAN_VERSION/"        $file_path
-        sed -i "s/%{entrypoint}/$ENTRYPOINT_FILE/"           $file_path
-        sed -i "s/%{contexts}/$scp_contexts_dir_path/"       $file_path
-        sed -i "s/%{auth0_context}/$scp_auth0_context_path/" $file_path
+        if [ "$CUSTOM_SCHEMAS" == true ]
+        then pattern keep   $file_path "custom-schemas"
+        else pattern delete $file_path "custom-schemas"
+        fi
+
+        sed -i "s/%{elixir_version}/$ELIXIR_VERSION/"          $file_path
+        sed -i "s/%{erlang_version}/$ERLANG_VERSION/"          $file_path
+        sed -i "s/%{debian_version}/$DEBIAN_VERSION/"          $file_path
+        sed -i "s/%{entrypoint}/$ENTRYPOINT_FILE/"             $file_path
+        sed -i "s/%{contexts}/$scp_contexts_dir_path/"         $file_path
+        sed -i "s/%{auth0_context}/$scp_auth0_context_path/"   $file_path
+        sed -i "s/%{custom_context}/$scp_custom_context_path/" $file_path
 
       }
 
@@ -1759,44 +1769,57 @@
     #
   after_implementation_tasks() {
     # CONFIGURATION ----------------------------------------------------------
-    local MIGRATIONS_DIR="priv/repo/migrations"
+      local MIGRATIONS_DIR="priv/repo/migrations"
     # FUNCTIONS --------------------------------------------------------------
 
       refinement_init() { echo "${C3}* refining ${R} $@"; }
 
-      # implement_auth0
-        #
-      refinement_auth0(){
-        # CONFIGURATION --------------------------------------------------------
-          local FEATURE="Auth0"
+    # SCRIPT -----------------------------------------------------------------
 
-        # SCRIPT ---------------------------------------------------------------
-          local FILE="lib/$ELIXIR_PROJECT_NAME/accounts/user.ex"
-          refinement_init "schema: $FILE"
+    # Schema refininf
+    for DIR in $PROJECT_DIR/*/; do
+      for FILE in $DIR*; do
+        refinement_init "schema: $FILE"
 
+        local BASE="${FILE##*/}"; BASE="${BASE%.ex}"
+        local SCHEMA=$(
+          echo "$BASE" | 
+          sed -r 's/([a-z0-9])([A-Z])/\1 \2/g' | 
+          sed 's/_/ /g' | 
+          awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) tolower(substr($i,2))}1'
+        )
+        local CONTEXT=$(
+          echo "$DIR" | 
+          sed -r 's/([a-z0-9])([A-Z])/\1 \2/g' | 
+          sed 's/_/ /g' | 
+          awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) tolower(substr($i,2))}1'
+        )
+        
+        sed -i "s/use Ecto.Schema/use $ELIXIR_MODULE.EctoSchema/" $FILE
+        sed -i "3d" $FILE
+        sed -i \
+          "2i\  @moduledoc \"\"\"\n  $SCHEMA from $CONTEXT context.\n  \"\"\"" \
+          $FILE
+
+        if [[ "$AUTH0" == true && "$FILE" == *user.ex ]]
+        then
           local USER_STATUS=$(
             sed -n 's/    field :status, Ecto.Enum, values: \(.*\)/\1/p' $FILE
           )
-
-          sed -i "s/use Ecto.Schema/use $ELIXIR_MODULE.EctoSchema/" $FILE
-          sed -i "3d" $FILE
-          sed -i "3i\\\n  defenum StatusEnum, :user_status, $USER_STATUS" $FILE
           sed -i \
-            "2i\  @moduledoc \"\"\"\n  User from Accounts context.\n  \"\"\"\n" \
+            "7i\  defenum StatusEnum, :user_status, $USER_STATUS\n" \
             $FILE
-
           sed -i \
             's/field :status, .*/field :status, StatusEnum/' \
             $FILE
           sed -i \
             's/field :picture, .*/field :picture, EctoURI/' \
-            $FILE         
-      }
+            $FILE  
+        fi
+      done
+    done
 
-    # SCRIPT -----------------------------------------------------------------
-
-    if [ "$AUTH0" == true ]; then refinement_auth0; fi
-
+    # Migration refining
     for FILE in $MIGRATIONS_DIR/*; do
       if [[ -f "$FILE" && "$(basename "$FILE")" != ".formatter.exs" ]]
       then
@@ -1905,11 +1928,23 @@
         --name "${APP_NAME}___${ENTRYPOINT_COMMAND}" \
         --publish $APP_PORT:$APP_INTERNAL_PORT \
         app $CONTAINER_ENTRYPOINT $ENTRYPOINT_COMMAND \
-          $EXDOC \
-          $COVERALLS \
-          $AUTH0 $AUTH0_CONTEXT_FILE && \
+          $AUTH0 $AUTH0_CONTEXT_FILE \
+          $CUSTOM_SCHEMAS $CUSTOM_SCHEMAS_CONTEXT_FILE && \
       cd .. && \
       after_implementation_tasks && \
+      if [ $EXDOC == true ]; then
+        cd $WORKBENCH_DIR && \
+        ENTRYPOINT_COMMAND="documentation" && \
+        docker compose --file "$SCRIPTS_DIR/$COMPOSE_FILE" run \
+          --rm \
+          --name "${APP_NAME}___${ENTRYPOINT_COMMAND}" \
+          --publish $APP_PORT:$APP_INTERNAL_PORT \
+          app $CONTAINER_ENTRYPOINT $ENTRYPOINT_COMMAND \
+            $EXDOC \
+            $COVERALLS && \
+        cd ..
+      fi
+
       if [ $EXISTING_PROJECT != true ]; then
         echo \
           "For further workbench script use, remember to navigate to the" \

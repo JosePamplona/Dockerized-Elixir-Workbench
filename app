@@ -122,30 +122,43 @@
   # Implementations fo elixir project  ---------------------------------------
 
     # PSQL extras implementation
+    # https://hex.pm/packages/ecto_psql_extras
     PSQL_EXTRAS_VERSION="~> 0.8"
     # Flame on implementation
+    # https://hex.pm/packages/flame_on
     FLAMEON_VERSION="~> 0.7"
     # Credo implementation
+    # https://hex.pm/packages/credo
     CREDO_VERSION="~> 1.7"
     # Git hooks implementation
+    # https://hex.pm/packages/git_hooks
     GITHOOKS_VERSION="~> 0.7"
     # Ex Machina implementation
+    # https://hex.pm/packages/ex_machina
     EXMACHINA_VERSION="~> 2.8"
     # Mock implementation
+    # https://hex.pm/packages/mock
     MOCK_VERSION="~> 0.3"
     # ExDebug implementation
+    # https://hex.pm/packages/ex_debug
     EXDEBUG_VERSION="~> 1.0"
     # ExDoc documentation implementation
-    EXDOC_VERSION="~> 0.34"
+    # https://hex.pm/packages/ex_doc
+    EXDOC_VERSION="~> 0.36"
     # API REST documentation implementation
+    # https://hex.pm/packages/open_api_spex
     OPEN_API_VERSION="~> 3.21"
     # Coveralls report implementation
+    # https://hex.pm/packages/excoveralls
     COVERALLS_VERSION="~> 0.18"
     MINIMUM_COVERAGE="90"
     # Schemas enhancements implementation
+    # https://hex.pm/packages/ecto_enum
     ECTO_ENUM_VERSION="~> 1.4"
 
     # Auth0 implementation
+    # https://hex.pm/packages/auth0_jwks
+    AUTH0_JWKS_VERSION="~> 0.3"
     AUTH0_PROD_JS="https://cdn.auth0.com/js/auth0-spa-js"
     AUTH0_PROD_JS+="/2.0/auth0-spa-js.production.js"
 
@@ -837,11 +850,9 @@
         if   [ "$API_INTERFACE" == "rest" ]; then
           pattern keep   $file_path "rest"
           pattern delete $file_path "graphql"
-
         elif [ "$API_INTERFACE" == "graphql" ]; then
           pattern keep   $file_path "graphql"
           pattern delete $file_path "rest"
-
         fi
       }
 
@@ -899,6 +910,7 @@
   implement_features() {
     # CONFIGURATION ----------------------------------------------------------
       local ELIXIR_ASSETS_PATH="assets"
+      local ELIXIR_PLUGS_PATH="${PROJECT_DIR}_web/plugs"
       local MIX_DIR_PATH="lib/mix"
       local MIX_TASK_PATH="$MIX_DIR_PATH/task"
 
@@ -918,12 +930,13 @@
 
       local ECTO_URI_SEED_FILE="ecto_uri.seed.ex"
       local ECTO_URI_FILE="$PROJECT_DIR/ecto_uri.ex"
+
+      local AUTH0_PLUG_SEED_FILE="bearer_token.seed.ex"
+      local AUTH0_PLUG_FILE="$ELIXIR_PLUGS_PATH/bearer_token.ex"
       
     # FUNCTIONS --------------------------------------------------------------
 
       feature_init() { echo "${C3}* implementing ${R} $@"; }
-      feature_done() { dude="ok"; }
-        # echo "${C3}✔${R} $@  ${C3}Implemented${R}"; }
 
       # mix_insert FUNCTION LINES...
         # Insert a new line on mix.exs deps list
@@ -1007,6 +1020,17 @@
           }
         }
         ' $ROUTER_FILE
+      }
+
+      # router_change_scope_pipeline SCOPE PIPELINE_SELECTION
+        #
+      router_change_scope_pipeline() {
+        local  scope=$(scape_for_sed "$1"); shift
+        local   pipe="$1"; shift
+
+        sed -i '/scope "'"${scope}"'", '"${ELIXIR_MODULE}"'Web do/,/end/ {
+          s/pipe_through .*/pipe_through '"${pipe}"'/
+        }' $ROUTER_FILE
       }
 
       # ----------------------------------------------------------------------
@@ -1152,8 +1176,6 @@
 
           # implement_flameon && \
           # implement_githooks && \
-
-          feature_done $FEATURE
       }
 
       # implement_rest
@@ -1254,8 +1276,6 @@
 
             sed -i '/forward "\/mailbox", .*$/a\'"$swagger" $ROUTER_FILE
           fi
-
-          feature_done $FEATURE
       }
 
       # implement_graphql
@@ -1281,8 +1301,6 @@
             #      {:absinthe, "~> 1.7"},
             #      {:absinthe_plug, "~> 1.5"},
             #      {:absinthe_error_payload, "~> 1.1"},
-
-          feature_done $FEATURE
       }
 
       # implement_exdoc
@@ -1327,9 +1345,9 @@
           local     EXDOC_GUIDELINE_FILE="$ELIXIR_EXDOC_ASSETS_PATH/coding.md"
 
           local MOD=$ELIXIR_MODULE
-          local     REGEX_CONTEXT="~r/^${MOD}\\\.(?!(.*\\\..*|Mailer|Repo)$).*$/"
+          local     REGEX_CONTEXT="~r/^${MOD}\\\.(?!(.*\\\..*|Mailer|Repo|.*Ecto.*)$).*$/"
           local     REGEX_SCHEMAS="~r/^${MOD}\\\..*\\\.(?!.*(Enum)$).*$/"
-          local REGEX_COLLECTIONS="~r/^${MOD}\\\..*(Enum)$/"
+          local REGEX_COLLECTIONS="~r/^${MOD}\\\..*(Enum|EctoURI)$/"
           local         REGEX_WEB="~r/^${MOD}Web(?!.*(Controller|HTML|JSON)$)/"
           local REGEX_CONTROLLERS="~r/^${MOD}Web.*(Controller|HTML|JSON)$/"
 
@@ -1456,9 +1474,9 @@
               "    ]" \
               "  ]," \
               "  groups_for_modules: [" \
-              "    \"Contexts\":    $REGEX_CONTEXT," \
-              "    \"Schemas\":     $REGEX_SCHEMAS," \
-              "    \"Collections\": $REGEX_COLLECTIONS,"
+              "    \"Contexts\": $REGEX_CONTEXT," \
+              "    \"Schemas\":  $REGEX_SCHEMAS," \
+              "    \"Types\":    $REGEX_COLLECTIONS,"
 
             [ "$API_INTERFACE" == "graphql" ] && [ $AUTH0 == true ] && \
             mix_insert project \
@@ -1568,8 +1586,6 @@
                 "end"
             fi
           fi
-
-          feature_done $FEATURE
       }
 
       # implement_coveralls
@@ -1663,8 +1679,6 @@
               "# Coverage report deps" \
               "{:excoveralls, \"$COVERALLS_VERSION\", only: :test}"
           fi
-
-          feature_done $FEATURE
       }
 
       # implement_healthcheck
@@ -1704,8 +1718,6 @@
               "  get \"/\", HealthcheckController, :health" \
               "end"
           fi
-
-          feature_done $FEATURE
       }
 
       # implement_auth0
@@ -1722,18 +1734,39 @@
           cp "$WORKBENCH_DIR/$SEEDS_DIR/$ECTO_URI_SEED_FILE" $ECTO_URI_FILE
           sed -i "s/%{elixir_module}/$ELIXIR_MODULE/" $ECTO_URI_FILE
 
+          # Plant bearer_token.ex file
+          [ ! -d $ELIXIR_PLUGS_PATH ] && mkdir $ELIXIR_PLUGS_PATH
 
-          # add ENV /assets/doc/js/auth_config.js
+          cp "$WORKBENCH_DIR/$SEEDS_DIR/$AUTH0_PLUG_SEED_FILE" $AUTH0_PLUG_FILE
+          sed -i "s/%{elixir_module}/$ELIXIR_MODULE/" $AUTH0_PLUG_FILE
+          sed -i \
+            "s/%{elixir_project_name}/$ELIXIR_PROJECT_NAME/" \
+            $AUTH0_PLUG_FILE
 
+          if   [ "$API_INTERFACE" == "rest" ]; then
+            pattern keep   $AUTH0_PLUG_FILE "rest"
+            pattern delete $AUTH0_PLUG_FILE "graphql"
+          elif [ "$API_INTERFACE" == "graphql" ]; then
+            pattern keep   $AUTH0_PLUG_FILE "graphql"
+            pattern delete $AUTH0_PLUG_FILE "rest"
+          fi
 
           # Add router (Diferent for API and GrpahQL)
-          # "pipeline :auth do" \
-          # "plug ValidateToken, no_halt: true" \
-          # "plug GetUser, no_halt: true, user_from_claim: &Auth.login_from_claim/2" \
-          # "plug PitchersWeb.Graphql.Context"
-          # end
+          sed -i "4i\  alias Auth0Jwks.Plug.{GetUser, ValidateToken}" $ROUTER_FILE
+          sed -i "4i\  alias $ELIXIR_MODULE.Accounts" $ROUTER_FILE
+          router_add_pipeline \
+            "pipeline :auth do" \
+            "  plug ValidateToken, no_halt: true" \
+            "  plug GetUser, no_halt: true, user_from_claim: &Accounts.user_from_claim/2" \
+            "  plug ${ELIXIR_MODULE}Web.Plugs.BearerToken" \
+            "end"
 
-          feature_done $FEATURE
+          router_change_scope_pipeline "/api/v1" "[:api, :auth]"
+
+          mix_append deps ","
+          mix_insert deps \
+            "# Auth0 API integration deps" \
+            "{:auth0_jwks, \"$AUTH0_JWKS_VERSION\"}"
       }
 
       # implement_stripe
@@ -1746,8 +1779,6 @@
           feature_init $FEATURE
 
           echo "  ---> Coming soon --> $FEATURE"
-
-          feature_done $FEATURE
       }
 
     # SCRIPT -----------------------------------------------------------------
@@ -1770,11 +1801,30 @@
   after_implementation_tasks() {
     # CONFIGURATION ----------------------------------------------------------
       local MIGRATIONS_DIR="priv/repo/migrations"
+      local AUTH0_ACCOUNTS_FILE="$PROJECT_DIR/accounts.ex"
+      local AUTH0_ACCOUNTS_SEED_FILE="accounts.seed.ex"
+
     # FUNCTIONS --------------------------------------------------------------
 
       refinement_init() { echo "${C3}* refining ${R} $@"; }
 
+      # refine_auth0
+        #
+      refine_auth0() {
+        local FEATURE="Auth0"
+
+        refinement_init $FEATURE
+        # Adjust accounts.ex to add Accounts.user_from_claim/2 function
+        sed -i "7i\\\n  alias Auth0Jwks.Config" $AUTH0_ACCOUNTS_FILE
+        sed -i '13,105d' $AUTH0_ACCOUNTS_FILE
+        sed -i \
+          "12r $WORKBENCH_DIR/$SEEDS_DIR/$AUTH0_ACCOUNTS_SEED_FILE" \
+          $AUTH0_ACCOUNTS_FILE
+      }
+
     # SCRIPT -----------------------------------------------------------------
+
+    if [ "$AUTH0" == true ]; then refine_auth0; fi
 
     # Schema refininf
     for DIR in $PROJECT_DIR/*/; do

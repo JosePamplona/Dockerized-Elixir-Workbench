@@ -1,6 +1,6 @@
 defmodule %{elixir_module}Web.HealthcheckController do
   @moduledoc """
-    The Accounts context.
+    Development Operations (DevOps) controller.
     """
   use %{elixir_module}Web, :controller
   use OpenApiSpex.ControllerSpecs

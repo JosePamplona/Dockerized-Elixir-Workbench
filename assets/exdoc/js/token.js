@@ -56,6 +56,7 @@ function setTokenButton() {
       height:           48px;
       font-size:        15px;
       width:            202px;
+      margin-right:     1em;
       `;
       // background-color: rgb(159, 144, 234);
       // background-color: rgb(103, 79,  222);
@@ -64,13 +65,26 @@ function setTokenButton() {
     let tokenDisplay = document.createElement("blockquote");
     userDisplay.style = displayStyle;
     tokenDisplay.style = displayStyle;
+    
+    let testerButton = document.createElement("button");
+    testerButton.style = buttonStyle
+    testerButton.textContent = "Log in tester";
+    testerButton.id = 'log_in_tester';
+    testerButton.addEventListener("click", async (e) => {
+      window.open(`https://${
+        authConfig.domain
+      }/authorize?client_id=${
+        authConfig.client_id
+      }&response_type=code&prompt=login&scope=openid%20profile&redirect_uri=https://manage.auth0.com/tester/callback`, '_blank');
+    });
 
     let tokenButton = document.createElement("button");
     tokenButton.style = buttonStyle
-    tokenButton.textContent = "Log in";
-    tokenButton.id = 'login';
+    tokenButton.textContent = "Request token";
+    tokenButton.id = 'request_token';
 
     reference.parentNode.insertBefore(tokenButton, reference);
+    reference.parentNode.insertBefore(testerButton, reference);
     reference.parentNode.insertBefore(userDisplay, reference);
     reference.parentNode.insertBefore(tokenDisplay, reference);
 
@@ -80,7 +94,7 @@ function setTokenButton() {
         clientId: authConfig.client_id,
         authorizationParams: {
           redirect_uri: window.location.origin,
-          audience: authConfig.audience,
+          audience: `https://${authConfig.domain}/api/v2/`,
           scopes: 'openid profile email'
         }
       }).then(async (auth0Client) => {

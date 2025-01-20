@@ -57,6 +57,7 @@
     CONTROLLERS_DIR="$WEB_DIR/controllers"
     ENV_FILE=".env"
     MIX_FILE="mix.exs"
+    APPLICATION_FILE="$PROJECT_DIR/application.ex"
     ROUTER_FILE="$WEB_DIR/router.ex"
     CONFIG_FILE="config/config.exs"
     DEV_FILE="config/dev.exs"
@@ -640,6 +641,12 @@
           $TEST_FILE
       }
 
+      adjust_application() {
+        if [ "$AUTH0" == true ]; then
+          sed -i '20s/$/,\n      # Start the process to generate the JWT (with RS256) validation keys.\n      Auth0Jwks.Strategy/' $APPLICATION_FILE
+        fi
+      }
+
       # adjust_homepage
         #
       adjust_homepage() {
@@ -895,6 +902,7 @@
       adjust_config && \
       adjust_config_dev && \
       adjust_config_test && \
+      adjust_application && \
       adjust_gitignore && \
       adjust_homepage && \
       create_env && \
@@ -1165,7 +1173,7 @@
             "# Workbench enhancement implementation deps set" && \
           implement_osmon && \
           implement_psql_extras && \
-          implement_flameon && \
+          \
           implement_credo && \
           \
           implement_exmachina && \
@@ -1306,14 +1314,6 @@
       # implement_exdoc
         #
       implement_exdoc() {
-        # FUNCTIONS ------------------------------------------------------------
-          # inject_frontend_vars_in_runtime
-            #
-          inject_frontend_vars_in_runtime() {
-            sed_lines "content" 0 "$@"
-            sed -i '/if System.get_env/i\'"$content" $RUNTIME_FILE
-          }
-
         # CONFIGURATION --------------------------------------------------------
 
           local FEATURE="ExDoc"
@@ -1330,6 +1330,7 @@
           local   TOKEN_SEED_FILE="token.seed.md"
           local TESTING_SEED_FILE="testing.seed.md"
           local EXDOC_CONTROLLER_SEED_FILE="exdoc_controller.seed.ex"
+          local AUTH0_RUNTIME_SEED_FILE="runtime.seed.exs"
 
           local EXDOC_CONTROLLER_FILE="$CONTROLLERS_DIR/exdoc_controller.ex"
           local EXDOC_CONTORLLER_MODULE="ExDocController"
@@ -1555,35 +1556,9 @@
                 head -c 32
               )
 
-              inject_frontend_vars_in_runtime \
-                "" \
-                "# Auth0 & ExDoc implementation:" \
-                "# Create auth_config.js file for token request in ExDoc token page." \
-                "if config_env() != :prod do" \
-                "  File.mkdir_p!(\"./priv/static/doc/assets/\")" \
-                "  File.write(" \
-                "    \"./priv/static/doc/assets/auth_config.js\"," \
-                "    \"\"\"" \
-                "    var authConfig = {" \
-                "      domain: \"#{" \
-                "        System.get_env(\"AUTH0_DOMAIN\") ||" \
-                "          raise \"\"\"" \
-                "          environment variable AUTH0_DOMAIN is missing." \
-                "          For example: dev-tenant.us.auth0.com" \
-                "          \"\"\"" \
-                "      }\"," \
-                "      client_id: \"#{" \
-                "        System.get_env(\"AUTH0_CLIENT_ID\") ||" \
-                "          raise \"\"\"" \
-                "          environment variable AUTH0_CLIENT_ID is missing." \
-                "          For example: $client_id" \
-                "          \"\"\"" \
-                "      }\"," \
-                "      audience: \"#{System.get_env(\"AUTH0_AUDIENCE\")}\"" \
-                "    }" \
-                "    \"\"\"" \
-                "  )" \
-                "end"
+              sed -i \
+                "18r $WORKBENCH_DIR/$SEEDS_DIR/$AUTH0_RUNTIME_SEED_FILE" \
+                $RUNTIME_FILE
             fi
           fi
       }
@@ -1729,7 +1704,6 @@
         # SCRIPT ---------------------------------------------------------------
           feature_init $FEATURE
 
-          echo "  ---> WIP --> $FEATURE"
           # Plant ecto_uri.ex file
           cp "$WORKBENCH_DIR/$SEEDS_DIR/$ECTO_URI_SEED_FILE" $ECTO_URI_FILE
           sed -i "s/%{elixir_module}/$ELIXIR_MODULE/" $ECTO_URI_FILE
@@ -1760,9 +1734,9 @@
             "  plug GetUser, no_halt: true, user_from_claim: &Accounts.user_from_claim/2" \
             "  plug ${ELIXIR_MODULE}Web.Plugs.BearerToken" \
             "end"
-
           router_change_scope_pipeline "/api/v1" "[:api, :auth]"
 
+          # Add dependency to mix.exs file
           mix_append deps ","
           mix_insert deps \
             "# Auth0 API integration deps" \

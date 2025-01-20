@@ -56,7 +56,7 @@ defmodule %{elixir_module}Web.Plugs.BearerToken do
 
       #<!-- workbench-graphql close -->
       # The Accounts.user_from_claim/2 function have returned an error.
-      token_authentication_failed?(conn) -> halt_auth_error(conn, dev_routes)
+      token_validation_failed?(conn) -> halt_token_error(conn, dev_routes)
 
       # One or both previous Auth0 plugs in the pipeline have failed.
       unauthorized -> halt(conn, 401, "unauthorized")
@@ -120,11 +120,11 @@ defmodule %{elixir_module}Web.Plugs.BearerToken do
   end
   #<!-- workbench-graphql close -->
 
-  defp token_authentication_failed?(%{assigns: context} = _conn) do
+  defp token_validation_failed?(%{assigns: context} = _conn) do
     match?({:error, _error}, context[:current_user])
   end
 
-  defp halt_auth_error(%{assigns: context} = conn, dev_routes) do
+  defp halt_token_error(%{assigns: context} = conn, dev_routes) do
     {:error, error} = context.current_user
     
     # If the enviroment is a development route, gives extra error details. 

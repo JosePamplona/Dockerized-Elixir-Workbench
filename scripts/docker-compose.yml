@@ -40,26 +40,26 @@ services:
       interval: 10s
       retries: 10
 
-  # pgadmin:
-  #   container_name: $PGADMIN_CONTAINER_NAME
-  #   image: dpage/pgadmin4:$PGADMIN_IMAGE_VERSION
-  #   entrypoint: >
-  #     /bin/sh -c "
-  #     cp -f /pgadmin4/pgpass /var/lib/pgadmin/;
-  #     chmod 600 /var/lib/pgadmin/pgpass;
-  #     /entrypoint.sh
-  #     "
-  #   environment:
-  #     PGADMIN_DEFAULT_EMAIL: $PGADMIN_EMAIL
-  #     PGADMIN_DEFAULT_PASSWORD: $PGADMIN_PASSWORD
-  #     PGADMIN_LISTEN_PORT: $PGADMIN_INTERNAL_PORT
-  #     PGADMIN_CONFIG_SERVER_MODE: 'False'
-  #     PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
-  #   ports:
-  #     - $PGADMIN_PORT:$PGADMIN_INTERNAL_PORT
-  #   depends_on:
-  #     - database
-  #   volumes:
-  #     - $PGADMIN_SERVERS_PATH:/pgadmin4/servers.json
-  #     - $PGADMIN_PASS_PATH:/pgadmin4/pgpass
+  pgadmin:
+    container_name: $PGADMIN_CONTAINER_NAME
+    image: dpage/pgadmin4:$PGADMIN_IMAGE_VERSION
+    entrypoint: >
+      /bin/sh -c "
+      cp -f /pgadmin4/pgpass /var/lib/pgadmin/;
+      chmod 600 /var/lib/pgadmin/pgpass;
+      /entrypoint.sh
+      "
+    environment:
+      PGADMIN_DEFAULT_EMAIL: $PGADMIN_EMAIL
+      PGADMIN_DEFAULT_PASSWORD: $PGADMIN_PASSWORD
+      PGADMIN_LISTEN_PORT: $PGADMIN_INTERNAL_PORT
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    ports:
+      - $PGADMIN_PORT:$PGADMIN_INTERNAL_PORT
+    depends_on:
+      - database
+    volumes:
+      - $PGADMIN_SERVERS_PATH:/pgadmin4/servers.json
+      - $PGADMIN_PASS_PATH:/pgadmin4/pgpass
   

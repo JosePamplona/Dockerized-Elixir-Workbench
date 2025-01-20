@@ -39,7 +39,8 @@
       |> case do
         nil ->
           with \
-            {:ok, attrs} <- from_token(token),
+            {:ok, user_info} <- from_token(token),
+            attrs = Map.put(user_info, "token_sub", user_info["sub"]),
             {:ok, user} <- create_user!(attrs)
           do
             user
@@ -82,9 +83,9 @@
             headers
             |> Enum.find(fn {k, _v} -> k == "WWW-Authenticate" end)
             |> case do
-                nil -> nil
-                {_, value} -> value
-             end
+              nil -> nil
+              {_, value} -> value
+            end
         }}
 
       {:error, error} ->
@@ -96,16 +97,16 @@
     end
   end
 
-  defp get_user(sub), do: Repo.get_by(User, sub: sub)
+  defp get_user(sub), do: Repo.get_by(User, token_sub: sub)
 
   defp create_user!(attrs) do
     %User{}
-    |> User.changeset(attrs)
-    |> Repo.insert()
+    |> User.create_changeset(attrs)
+    |> Repo.insert!()
   end
 
   defp update_user!(user, attrs) do
     user
-    |> User.changeset(attrs)
+    |> User.update_changeset(attrs)
     |> Repo.update!()
   end

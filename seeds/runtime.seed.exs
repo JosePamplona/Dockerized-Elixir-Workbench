@@ -41,7 +41,5 @@ end
 
 config :auth0_jwks,
   iss: auth0_issuer,
-  aud: auth0_audience,
-  domain: auth0_domain,
-  client_id: auth0_client_id
+  aud: auth0_audience
 

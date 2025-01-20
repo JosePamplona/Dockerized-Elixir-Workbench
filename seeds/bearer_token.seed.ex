@@ -39,7 +39,6 @@ defmodule %{elixir_module}Web.Plugs.BearerToken do
   #<!-- workbench-graphql open -->
   def call(%{assigns: context} = conn, _) do
   #<!-- workbench-graphql close -->
-    ExDebug.console(conn)
     #<!-- workbench-rest open -->
     {unauthorized, unverified} = extract_context_data(conn)
     #<!-- workbench-rest close -->

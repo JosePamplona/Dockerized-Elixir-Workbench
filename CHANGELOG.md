@@ -18,18 +18,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 <!-- ## v0.0.0 - (0000-00-00) -->
 <!--
     # CONTINUE
-    2 exdocs & helthcheck controllers docs and tests
-    3 Enhancements
-        ecto enhacements for exdocs and schemas
-        -> error: field types in documentation all are any() 
-        -> change schema module name
-        remove githooks?
-    4 Auth0 <-------------- al terminar aqui, te pasas al sitio JayParcade
     5 Stripe
           
-
-- Migrations refinement
-- Separate contexts scripts for features
 - db port change breask pgadmin maybe back
 - Solve Gettext incompatibility when HTML (maybe it doesnt worth the time):
   
@@ -49,12 +39,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
     3. Change the file: lib/my_app_web/gettext.ex:
 
         (+/-) line 23: change from use Gettext, otp_app: :my_app to use Gettext.Backend, otp_app: :my_app
+
+- Workbench script implementation: **Stripe**.
 -->
+
+## v0.3.0 - (2025-01-20)
 
 ### Added
 
-- Workbench script implementation: **Stripe**.
 - Workbench script implementation: **Auth0**.
+- Migrations & schema files refinement.
 
 ## v0.2.0 - (2024-10-24)
 

@@ -641,12 +641,6 @@
           $TEST_FILE
       }
 
-      adjust_application() {
-        if [ "$AUTH0" == true ]; then
-          sed -i '20s/$/,\n      # Start the process to generate the JWT (with RS256) validation keys.\n      Auth0Jwks.Strategy/' $APPLICATION_FILE
-        fi
-      }
-
       # adjust_homepage
         #
       adjust_homepage() {
@@ -902,7 +896,6 @@
       adjust_config && \
       adjust_config_dev && \
       adjust_config_test && \
-      adjust_application && \
       adjust_gitignore && \
       adjust_homepage && \
       create_env && \
@@ -923,24 +916,18 @@
       local MIX_TASK_PATH="$MIX_DIR_PATH/task"
 
       # Shared between ExDoc & Coveralls
-      # ExDoc
-      local EXDOC_ASSETS_DIR="exdoc"
-      local ELIXIR_EXDOC_ASSETS_PATH="$ELIXIR_ASSETS_PATH/$EXDOC_ASSETS_DIR"
-      # Coveralls
-      local ELIXIR_COVERALLS_DIR="cover"
-      local COVERALLS_OUTPUT_DIR="html"
-      if [ "$EXDOC" == true ]
-      then local COVERALLS_PATH="$ELIXIR_EXDOC_ASSETS_PATH/$ELIXIR_COVERALLS_DIR";
-      else local COVERALLS_PATH="$ELIXIR_ASSETS_PATH/$ELIXIR_COVERALLS_DIR";
-      fi
-      local COVERALLS_OUTPUT_PATH="$COVERALLS_PATH/$COVERALLS_OUTPUT_DIR"
-      local EXDOC_TEST_FILE="testing.md"
-
-      local ECTO_URI_SEED_FILE="ecto_uri.seed.ex"
-      local ECTO_URI_FILE="$PROJECT_DIR/ecto_uri.ex"
-
-      local AUTH0_PLUG_SEED_FILE="bearer_token.seed.ex"
-      local AUTH0_PLUG_FILE="$ELIXIR_PLUGS_PATH/bearer_token.ex"
+        # ExDoc
+        local EXDOC_ASSETS_DIR="exdoc"
+        local ELIXIR_EXDOC_ASSETS_PATH="$ELIXIR_ASSETS_PATH/$EXDOC_ASSETS_DIR"
+        # Coveralls
+        local ELIXIR_COVERALLS_DIR="cover"
+        local COVERALLS_OUTPUT_DIR="html"
+        if [ "$EXDOC" == true ]
+        then local COVERALLS_PATH="$ELIXIR_EXDOC_ASSETS_PATH/$ELIXIR_COVERALLS_DIR";
+        else local COVERALLS_PATH="$ELIXIR_ASSETS_PATH/$ELIXIR_COVERALLS_DIR";
+        fi
+        local COVERALLS_OUTPUT_PATH="$COVERALLS_PATH/$COVERALLS_OUTPUT_DIR"
+        local EXDOC_TEST_FILE="testing.md"
       
     # FUNCTIONS --------------------------------------------------------------
 
@@ -1698,10 +1685,15 @@
       # implement_auth0
         #
       implement_auth0(){
-        # CONFIGURATION --------------------------------------------------------
+        # CONFIGURATION ------------------------------------------------------
           local FEATURE="Auth0"
 
-        # SCRIPT ---------------------------------------------------------------
+          local ECTO_URI_SEED_FILE="ecto_uri.seed.ex"
+          local ECTO_URI_FILE="$PROJECT_DIR/ecto_uri.ex"
+          local AUTH0_PLUG_SEED_FILE="bearer_token.seed.ex"
+          local AUTH0_PLUG_FILE="$ELIXIR_PLUGS_PATH/bearer_token.ex"
+
+        # SCRIPT -------------------------------------------------------------
           feature_init $FEATURE
 
           # Plant ecto_uri.ex file
@@ -1710,7 +1702,6 @@
 
           # Plant bearer_token.ex file
           [ ! -d $ELIXIR_PLUGS_PATH ] && mkdir $ELIXIR_PLUGS_PATH
-
           cp "$WORKBENCH_DIR/$SEEDS_DIR/$AUTH0_PLUG_SEED_FILE" $AUTH0_PLUG_FILE
           sed -i "s/%{elixir_module}/$ELIXIR_MODULE/" $AUTH0_PLUG_FILE
           sed -i \
@@ -1741,6 +1732,17 @@
           mix_insert deps \
             "# Auth0 API integration deps" \
             "{:auth0_jwks, \"$AUTH0_JWKS_VERSION\"}"
+
+          # Adjust application.ex file
+          sed -i \
+            "20s/$/,\n      # Start the process to request the JSON Web Key Set (with RS256 alg).\n      {Auth0Jwks.Strategy, first_fetch_sync: true}/" \
+            $APPLICATION_FILE
+
+          # Adjust config.ex
+          prepend_config \
+            "" \
+            "# Configuration for Auth0 JWKs" \
+            "config :auth0_jwks, json_library: Jason"
       }
 
       # implement_stripe
@@ -1770,13 +1772,12 @@
       echo
   }
 
-  # after_implementation_tasks
+  # post_implementation_tasks
     #
-  after_implementation_tasks() {
+  post_implementation_tasks() {
     # CONFIGURATION ----------------------------------------------------------
       local MIGRATIONS_DIR="priv/repo/migrations"
-      local AUTH0_ACCOUNTS_FILE="$PROJECT_DIR/accounts.ex"
-      local AUTH0_ACCOUNTS_SEED_FILE="accounts.seed.ex"
+      local USER_SEED_FILE="auth0_user_changesets.seed.ex"
 
     # FUNCTIONS --------------------------------------------------------------
 
@@ -1785,22 +1786,30 @@
       # refine_auth0
         #
       refine_auth0() {
+        # CONFIGURATION ------------------------------------------------------
         local FEATURE="Auth0"
+          
+        local AUTH0_ACCOUNTS_FILE="$PROJECT_DIR/accounts.ex"
+        local AUTH0_ACCOUNTS_SEED_FILE="accounts.seed.ex"
 
+        # SCRIPT -------------------------------------------------------------
         refinement_init $FEATURE
+
         # Adjust accounts.ex to add Accounts.user_from_claim/2 function
         sed -i "7i\\\n  alias Auth0Jwks.Config" $AUTH0_ACCOUNTS_FILE
         sed -i '13,105d' $AUTH0_ACCOUNTS_FILE
         sed -i \
           "12r $WORKBENCH_DIR/$SEEDS_DIR/$AUTH0_ACCOUNTS_SEED_FILE" \
           $AUTH0_ACCOUNTS_FILE
+
+        # user.ex file adjustments in Schema refining ⮧
       }
 
     # SCRIPT -----------------------------------------------------------------
 
     if [ "$AUTH0" == true ]; then refine_auth0; fi
 
-    # Schema refininf
+    # Schema refining
     for DIR in $PROJECT_DIR/*/; do
       for FILE in $DIR*; do
         refinement_init "schema: $FILE"
@@ -1825,20 +1834,22 @@
           "2i\  @moduledoc \"\"\"\n  $SCHEMA from $CONTEXT context.\n  \"\"\"" \
           $FILE
 
+        # Auth0 post implementation user.ex adjustment
         if [[ "$AUTH0" == true && "$FILE" == *user.ex ]]
         then
-          local USER_STATUS=$(
+          # User status Ecto.Enum type asignment
+          local STATUS_VALUES=$(
             sed -n 's/    field :status, Ecto.Enum, values: \(.*\)/\1/p' $FILE
           )
-          sed -i \
-            "7i\  defenum StatusEnum, :user_status, $USER_STATUS\n" \
-            $FILE
-          sed -i \
-            's/field :status, .*/field :status, StatusEnum/' \
-            $FILE
-          sed -i \
-            's/field :picture, .*/field :picture, EctoURI/' \
-            $FILE  
+          sed -i "7i\  defenum StatusEnum, :user_status, $STATUS_VALUES\n" $FILE
+          sed -i "s/field :status, .*/field :status, StatusEnum/" $FILE
+
+          # User picture EctoURI type asignment
+          sed -i "s/field :picture, .*/field :picture, EctoURI/" $FILE
+
+          # Reeplacement of changesets
+          sed -i "20,28d" $FILE
+          sed -i "19r $WORKBENCH_DIR/$SEEDS_DIR/$USER_SEED_FILE" $FILE
         fi
       done
     done
@@ -1955,7 +1966,7 @@
           $AUTH0 $AUTH0_CONTEXT_FILE \
           $CUSTOM_SCHEMAS $CUSTOM_SCHEMAS_CONTEXT_FILE && \
       cd .. && \
-      after_implementation_tasks && \
+      post_implementation_tasks && \
       if [ $EXDOC == true ]; then
         cd $WORKBENCH_DIR && \
         ENTRYPOINT_COMMAND="documentation" && \

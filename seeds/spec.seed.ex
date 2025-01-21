@@ -20,7 +20,7 @@ defmodule %{elixir_module}Web.OpenApi.Spec do
         title: "%{project_name}",
         version: @version,
         description: """
-          %{project_name} has this collection of API-REST endpoints.
+          %{project_name} provides this collection of REST API endpoints.
           """
       },
       # Populate the paths from a phoenix router
@@ -29,7 +29,7 @@ defmodule %{elixir_module}Web.OpenApi.Spec do
         <!-- workbench-healthcheck open -->
         %OpenApiSpex.Tag{
           name: "Development Operations",
-          description: "Collection of development operations endpoints intended for system monitoring."
+          description: "Set of development operations endpoints intended for system monitoring."
         }
         <!-- workbench-healthcheck close -->
       ]

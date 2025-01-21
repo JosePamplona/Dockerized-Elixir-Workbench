@@ -40,13 +40,26 @@ defmodule %{elixir_module}.EctoSchema do
     end
   end
   
+  defp type_to_spec(:id),                  do: quote(do: term)
   defp type_to_spec(:boolean),             do: quote(do: boolean)
   defp type_to_spec(:integer),             do: quote(do: integer)
   defp type_to_spec(:map),                 do: quote(do: map)
-  defp type_to_spec(:string),              do: quote(do: String.t)
+  defp type_to_spec(:string),              do: quote(do: binary)
   defp type_to_spec(:naive_datetime_usec), do: quote(do: NaiveDateTime.t)
+  defp type_to_spec(:naive_datetime),      do: quote(do: NaiveDateTime.t)
+  defp type_to_spec(:datetime_usec),       do: quote(do: DateTime.t)
+  defp type_to_spec(:datetime),            do: quote(do: DateTime.t)
   defp type_to_spec({:array, type}) do
     quote(do: [unquote(type_to_spec(type))])
+  end
+  defp type_to_spec({:parameterized, {Ecto.Enum, %{on_cast: on_cast}}}) do
+    atoms = Enum.map(on_cast, fn {_k, v} -> v end)
+    
+    types = atoms
+      |> Enum.reverse()
+      |> Enum.reduce(fn(atom, acc) -> {:|, [], [atom, acc]} end)
+      
+    quote(do: unquote(types))
   end
     
   defp type_to_spec(%{related: module, cardinality: :one}) do

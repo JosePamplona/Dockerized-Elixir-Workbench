@@ -70,36 +70,39 @@ defmodule %{elixir_module}Web.HealthcheckController do
   defp info(%{} = params) do
     verbose =
       case params["verbose"] do
-        nil   -> false
-        value -> String.downcase(value) == "true"
+        nil -> false
+        value -> String.downcase(value) == "true" || value == "1"
       end
 
-    app =
-      [verbose, %{service: @service, env: @env, version: @version}]
-      |> case do
-        [false, data] -> data
-        [true, data] ->
-          time = NaiveDateTime.utc_now()
+    {time, erlang, elixir} =
+      case verbose do
+        false ->
+          {nil, nil, nil}
+
+        true ->
           [erlang, elixir] =
             try do
               {versions, 0} = System.cmd("elixir", ["-v"])
               versions
               |> String.split("\n")
               |> Enum.reject(fn(e) -> e == "" end)
-            rescue error -> ["", inspect(error)] end
+            rescue
+              error -> ["", inspect(error)]
+            end
 
-          data |> Map.merge(%{elixir: elixir, erlang: erlang, time: time})
+          {NaiveDateTime.utc_now(), erlang, elixir}
       end
-
+      
     databases =
       @service
       |> Application.get_env(:ecto_repos)
       |> Enum.map(fn(repo) ->
-        [verbose, %{repo: repo}]
-        |> case do
-          [false, data] -> data
-          [true, data] ->
-            [version, time] =
+        [version, time] =
+          case verbose do
+            false ->
+              [nil, nil]
+
+            true ->
               try do
                 {:ok, %{rows: [[version]]}} = repo.query("SELECT version();")
                 {:ok, %{rows: [[time]]}}    = repo.query("SELECT now();")
@@ -107,13 +110,20 @@ defmodule %{elixir_module}Web.HealthcheckController do
               rescue
                 error -> [inspect(error), ""]
               end
-
-            Map.merge(data, %{version: version, time: time})
-        end
+          end
+          
+        %{repo: repo, version: version, time: time}
       end)
 
     %{
-      app: app,
+      app: %{
+        service: @service,
+        env: @env,
+        version: @version,
+        elixir: elixir,
+        erlang: erlang,
+        time: time
+      },
       databases: databases
     }
   end

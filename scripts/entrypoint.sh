@@ -79,11 +79,10 @@ if [ $# -gt 0 ]; then echo "[$HOSTNAME]$0($#): $@"; fi
       COVERALLS=$1; shift
       
       if [ $EXDOC == true ] && [ $COVERALLS == true ]; then
-        # MIX_ENV="test" && mix ecto.drop --force --force-drop && \
-        # MIX_ENV="test" && mix ecto.create --quiet && \
-        # MIX_ENV="test" && mix ecto.migrate --quiet && \
-        # mix cover || true
-        true
+        MIX_ENV="test" && mix ecto.drop --force --force-drop && \
+        MIX_ENV="test" && mix ecto.create --quiet && \
+        MIX_ENV="test" && mix ecto.migrate --quiet && \
+        mix cover || true
       fi && \
       if [ $EXDOC == true ]; then mix docs; fi
 

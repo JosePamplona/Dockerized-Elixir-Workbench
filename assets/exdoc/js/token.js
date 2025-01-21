@@ -67,31 +67,30 @@ function setTokenButton() {
       `;
       // background-color: rgb(159, 144, 234);
       // background-color: rgb(103, 79,  222);
+    
+    let loginButton = document.createElement("button");
+    loginButton.style = buttonStyle
+    loginButton.textContent = "Login with Redirect";
+    loginButton.id = 'login';
 
+    let tokenButton = document.createElement("button");
+    tokenButton.style = buttonStyle
+    tokenButton.textContent = "Login with Pop-Up";
+    tokenButton.id = 'request_token';
+    
+    let logoutButton = document.createElement("button");
+    logoutButton.style = buttonStyle
+    logoutButton.textContent = "Logout";
+    logoutButton.id = 'logout';
+    
     let userDisplay = document.createElement("blockquote");
     let tokenDisplay = document.createElement("blockquote");
     userDisplay.style = displayStyle;
     tokenDisplay.style = displayStyle;
-    
-    let testerButton = document.createElement("button");
-    testerButton.style = buttonStyle
-    testerButton.textContent = "Log in tester";
-    testerButton.id = 'log_in_tester';
-    testerButton.addEventListener("click", async (e) => {
-      window.open(`https://${
-        authConfig.domain
-      }/authorize?client_id=${
-        authConfig.client_id
-      }&response_type=code&prompt=login&scope=openid%20profile&redirect_uri=https://manage.auth0.com/tester/callback`, '_blank');
-    });
-
-    let tokenButton = document.createElement("button");
-    tokenButton.style = buttonStyle
-    tokenButton.textContent = "Request token";
-    tokenButton.id = 'request_token';
 
     reference.parentNode.insertBefore(tokenButton, reference);
-    reference.parentNode.insertBefore(testerButton, reference);
+    reference.parentNode.insertBefore(loginButton, reference);
+    reference.parentNode.insertBefore(logoutButton, reference);
     reference.parentNode.insertBefore(userDisplay, reference);
     reference.parentNode.insertBefore(tokenDisplay, reference);
 
@@ -105,44 +104,90 @@ function setTokenButton() {
           scopes: 'openid profile email'
         }
       }).then(async (auth0Client) => {
-        const loginButton = tokenButton;
-      
+        const tokenPageRoute = "/dev/docs/token.html";
+        const isAuthenticated = await auth0Client.isAuthenticated();        
+
+        if (isAuthenticated) {
+          await printUser(auth0Client);
+        }
+        else {
+          // Check for the code and state parameters
+          const query = window.location.search;
+          if (query.includes("code=") && query.includes("state=")) {
+  
+            // Process the login state
+            await auth0Client.handleRedirectCallback();
+            await printUser(auth0Client);
+  
+            // Use replaceState to redirect the user away
+            // and remove the querystring parameters
+            window.history.replaceState({}, document.title, tokenPageRoute);
+          }
+        }
+        
         loginButton.addEventListener("click", async (e) => {
+          e.preventDefault();
+      
+          await auth0Client.loginWithRedirect({
+            authorizationParams: {
+              redirect_uri: `${window.location.origin}${tokenPageRoute}`
+            }
+          });
+        });
+      
+        tokenButton.addEventListener("click", async (e) => {
           e.preventDefault();
   
           try {
-            await auth0Client.loginWithPopup();          
+            await auth0Client.loginWithPopup();
             const isAuthenticated = await auth0Client.isAuthenticated();
-            const userProfile = await auth0Client.getUser();
               
-            if (isAuthenticated) {
-  
-              const token = await auth0Client.getTokenSilently();
-  
-              userDisplay.style.display = 'flex';
-              userDisplay.innerHTML = `<img alt='profile' src='${
-                userProfile.picture
-              }' width='96px' height='96px'/><div style='margin: 0 0 0 1em;'>${
-                JSON.stringify(userProfile, null, 2)
-              }<div>`;
-  
-              tokenDisplay.style.display = 'flex';
-              tokenDisplay.innerHTML = `<div>${JSON.stringify({
-                authorization: `Bearer ${token}`
-              }, null, 2)}<div>`;
-            }
-  
-          } catch(e) {          
-            tokenDisplay.style.display = 'none';
-            userDisplay.style.display = 'flex';
-            userDisplay.innerHTML = `Popup was closed before login completed`;
+            if (isAuthenticated) { await printUser(auth0Client); }
+
+          } catch(e) {
+            printMessage(`Popup was closed before login completed`);
           }
         });
+        
+        logoutButton.addEventListener("click", async (e) => {
+          window.open(
+            `https://${
+              authConfig.domain
+            }/v2/logout?returnTo=${
+              window.location.origin
+            }${tokenPageRoute}`, 
+            '_blank'
+          );
+        });
+
       });
-    } else {
+    }
+    else { printMessage(`Configuration variables not found`); }
+
+    async function printUser(auth0Client) {
+      const userProfile = await auth0Client.getUser();
+      const token = await auth0Client.getTokenSilently();
+
+      userDisplay.style.display = 'flex';
+      tokenDisplay.style.display = 'flex';
+
+      userDisplay.innerHTML =
+        `<img alt='profile' src='${
+          userProfile.picture
+        }' width='96px' height='96px'/><div style='margin: 0 0 0 1em;'>${
+          JSON.stringify(userProfile, null, 2)
+        }<div>`;
+
+      tokenDisplay.innerHTML =
+        `<div>${
+          JSON.stringify({authorization: `Bearer ${token}`}, null, 2)
+        }<div>`;
+    }
+
+    function printMessage(message) {
       tokenDisplay.style.display = 'none';
       userDisplay.style.display = 'flex';
-      userDisplay.innerHTML = `Configuration variables not found`;
+      userDisplay.innerHTML = message;
     }
   }
 }

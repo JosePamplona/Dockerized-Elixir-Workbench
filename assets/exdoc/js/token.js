@@ -14,7 +14,7 @@ console.info(
 // scope=openid%20profile
 // redirect_uri=https://manage.auth0.com/tester/callback
 
-function setTokenButton() {
+function setButtons() {
   let reference = document.querySelector(`code[class="auth_token"]`);
   if(reference) {
     reference.style.display = 'none';
@@ -156,7 +156,7 @@ function setTokenButton() {
             }/v2/logout?returnTo=${
               window.location.origin
             }${tokenPageRoute}`, 
-            '_blank'
+            '_self'
           );
         });
 
@@ -194,4 +194,4 @@ function setTokenButton() {
 
 // -----------------------------------------------------------------------------
 
-document.addEventListener("DOMContentLoaded", setTokenButton());
+document.addEventListener("DOMContentLoaded", setButtons());

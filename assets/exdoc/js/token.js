@@ -7,7 +7,7 @@ console.info(
   'color: #3d6fe3;'
 )
 
-function setTokenButton() {
+function setButtons() {
   let reference = document.querySelector(`code[class="auth_token"]`);
   if(reference) {
     reference.style.display = 'none';
@@ -149,7 +149,7 @@ function setTokenButton() {
             }/v2/logout?returnTo=${
               window.location.origin
             }${tokenPageRoute}`, 
-            '_blank'
+            '_self'
           );
         });
 
@@ -187,4 +187,4 @@ function setTokenButton() {
 
 // -----------------------------------------------------------------------------
 
-document.addEventListener("DOMContentLoaded", setTokenButton());
+document.addEventListener("DOMContentLoaded", setButtons());

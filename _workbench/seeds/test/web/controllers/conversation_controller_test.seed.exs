@@ -1,0 +1,732 @@
+defmodule %{elixir_module}Web.ConversationControllerTest do
+  @moduledoc false
+
+  use %{elixir_module}Web.ConnCase
+
+  import Mock
+  import %{elixir_module}.Fixtures
+  import %{elixir_module}.AssistantFixtures
+
+  setup [:sessions]
+
+  # Get the user's conversations list.
+  describe "[REST] GET /api/v1/coversation" do
+    test "return 200: success retrieving paginated list", %{
+      conn: conn,
+      sessions: %{valid: %{user: session_user, token: token}}
+    } do
+      with_mocks mocks(:authentication, session_user) do
+        conversation_01 = conversation_fixture(session_user)
+        conversation_02 = conversation_fixture(session_user)
+        conversation_03 = conversation_fixture(session_user)
+
+        response =
+          conn
+          |> put_req_header("authorization", token)
+          |> get(~p"/api/v1/conversation")
+          |> json_response(200)
+
+        # Check response
+        assert response == %{
+          "data" => [
+            %{
+              "id" => conversation_01.id,
+              "name" => conversation_01.name
+            },
+            %{
+              "id" => conversation_02.id,
+              "name" => conversation_02.name
+            },
+            %{
+              "id" => conversation_03.id,
+              "name" => conversation_03.name
+            }
+          ],
+          "meta" => %{
+            "count" => 3,
+            "page" => 1,
+            "total_count" => 3,
+            "total_pages" => 1,
+            "query" => %{
+              "limit" => 15,
+              "offset" => 0,
+              "field" => "inserted_at",
+              "order" => "asc"
+            }
+          }
+        }
+      end
+    end
+
+    test "return 401: unauthorized error response", %{conn: conn} do
+      with_mocks mocks(:authentication) do
+        response =
+          conn
+          |> put_req_header("authorization", "invalid-token")
+          |> get(~p"/api/v1/conversation")
+          |> json_response(401)
+
+        # Check response
+        assert response == %{"error" => "Unauthorized"}
+      end
+    end
+
+    test "return 403: forbidden error response", %{
+      conn: conn,
+      sessions: %{unverified_email: %{user: session_user, token: token}}
+    } do
+      with_mocks mocks(:authentication, session_user) do
+        response =
+          conn
+          |> put_req_header("authorization", token)
+          |> get(~p"/api/v1/conversation")
+          |> json_response(403)
+
+        # Check response
+        assert response == %{"error" => "Forbidden"}
+      end
+    end
+  end
+
+  # Get a user's single conversation.
+  describe "[REST] GET /api/v1/coversation/{id}" do
+
+    setup [:conversations]
+
+    test "return 200: success retrieving the coversation", %{
+      conn: conn,
+      sessions: %{valid: %{user: session_user, token: token}},
+      conversations: %{
+        conversation_01: conversation
+      }
+    } do
+      with_mocks mocks(:authentication, session_user) do
+        response =
+          conn
+          |> put_req_header("authorization", token)
+          |> get(~p"/api/v1/conversation/#{conversation.id}")
+          |> json_response(200)
+
+        # Check response
+        assert response == %{
+          "data" => %{
+            "id" => conversation.id,
+            "name" => conversation.name,
+            "messages" => [
+              %{
+                "content" => Enum.at(conversation.messages, 0).content,
+                "role" =>
+                  conversation.messages
+                  |> Enum.at(0)
+                  |> Map.fetch!(:role)
+                  |> Atom.to_string()
+              },
+              %{
+                "content" => Enum.at(conversation.messages, 1).content,
+                "role" =>
+                  conversation.messages
+                  |> Enum.at(1)
+                  |> Map.fetch!(:role)
+                  |> Atom.to_string()
+              },
+              %{
+                "content" => Enum.at(conversation.messages, 2).content,
+                "role" =>
+                  conversation.messages
+                  |> Enum.at(2)
+                  |> Map.fetch!(:role)
+                  |> Atom.to_string()
+              }
+            ],
+            "inserted_at" => NaiveDateTime.to_iso8601(conversation.inserted_at),
+            "updated_at" => NaiveDateTime.to_iso8601(conversation.updated_at)
+          }
+        }
+      end
+    end
+
+    test "return 400: invalid path id", %{
+      conn: conn,
+      sessions: %{valid: %{user: session_user, token: token}}
+    } do
+      with_mocks mocks(:authentication, session_user) do
+        response =
+          conn
+          |> put_req_header("authorization", token)
+          |> get(~p"/api/v1/conversation/invalid-uuid")
+          |> json_response(400)
+
+        # Check response
+        assert response == %{"error" => %{"id" => ["is invalid"]}}
+      end
+    end
+
+    test "return 401: unauthorized error response", %{
+      conn: conn,
+      conversations: %{
+        conversation_01: conversation
+      }
+    } do
+      with_mocks mocks(:authentication) do
+        response =
+          conn
+          |> put_req_header("authorization", "invalid-token")
+          |> get(~p"/api/v1/conversation/#{conversation.id}")
+          |> json_response(401)
+
+        # Check response
+        assert response == %{"error" => "Unauthorized"}
+      end
+    end
+
+    test "return 403: forbidden error response", %{
+      conn: conn,
+      sessions: %{unverified_email: %{user: session_user, token: token}},
+      conversations: %{
+        conversation_01: conversation
+      }
+    } do
+      with_mocks mocks(:authentication, session_user) do
+        response =
+          conn
+          |> put_req_header("authorization", token)
+          |> get(~p"/api/v1/conversation/#{conversation.id}")
+          |> json_response(403)
+
+        # Check response
+        assert response == %{"error" => "Forbidden"}
+      end
+    end
+
+    test "return 404: not found error response", %{
+      conn: conn,
+      sessions: %{valid: %{user: session_user, token: token}}
+    } do
+      with_mocks mocks(:authentication, session_user) do
+        response =
+          conn
+          |> put_req_header("authorization", token)
+          |> get(~p"/api/v1/conversation/00000000-0000-0000-0000-000000000000")
+          |> json_response(404)
+
+        # Check response
+        assert response == %{"error" => "Not Found"}
+      end
+    end
+
+    test "return 404: not found error response when resource does not belongs", %{
+      conn: conn,
+      sessions: %{not_owner: %{user: session_user, token: token}},
+      conversations: %{
+        conversation_01: conversation
+      }
+    } do
+      with_mocks mocks(:authentication, session_user) do
+        response =
+          conn
+          |> put_req_header("authorization", token)
+          |> get(~p"/api/v1/conversation/#{conversation.id}")
+          |> json_response(404)
+
+        # Check response
+        assert response == %{"error" => "Not Found"}
+      end
+    end
+  end
+
+  # Start a new conversation with the assistant.
+  describe "[REST] POST /api/v1/coversation" do
+    test "return 201: success creating the conversation", %{
+      conn: conn,
+      sessions: %{valid: %{user: session_user, token: token}}
+    } do
+      with_mocks \
+        mocks(:authentication, session_user) ++ 
+        mocks(:chat_completion_response)
+      do
+        response =
+          conn
+          |> put_req_header("authorization", token)
+          |> post(~p"/api/v1/conversation", %{
+            name: "Test",
+            messages: [%{role: "user", content: "Hello."}]
+          })
+          |> json_response(201)
+
+        # Check response
+        assert %{
+          "data" => %{
+            "id" => _,
+            "name" => "Test",
+            "messages" => [
+              %{"role" => "user",      "content" => "Hello."},
+              %{"role" => "assistant", "content" => "Mocked response message."}
+            ],
+            "inserted_at" => _,
+            "updated_at" => _
+          }
+        } = response
+      end
+    end
+
+    test "return 400: invalid request body response", %{
+      conn: conn,
+      sessions: %{valid: %{user: session_user, token: token}}
+    } do
+      with_mocks mocks(:authentication, session_user) do
+        response =
+          conn
+          |> put_req_header("authorization", token)
+          |> post(~p"/api/v1/conversation", %{})
+          |> json_response(400)
+
+        # Check response
+        assert response == %{
+          "error" => %{
+            "name" => ["can't be blank"],
+            "messages" => ["can't be blank"]
+          }
+        }
+      end
+    end
+
+    test "return 401: unauthorized error response", %{conn: conn} do
+      with_mocks mocks(:authentication) do
+        response =
+          conn
+          |> put_req_header("authorization", "invalid-token")
+          |> post(~p"/api/v1/conversation", %{
+            name: "Test",
+            messages: [%{role: "user",   content: "Hello."}]
+          })
+          |> json_response(401)
+
+        # Check response
+        assert response == %{"error" => "Unauthorized"}
+      end
+    end
+
+    test "return 403: forbidden error response", %{
+      conn: conn,
+      sessions: %{unverified_email: %{user: session_user, token: token}}
+    } do
+      with_mocks mocks(:authentication, session_user) do
+        response =
+          conn
+          |> put_req_header("authorization", token)
+          |> post(~p"/api/v1/conversation", %{
+            name: "Test",
+            messages: [%{role: "user",   content: "Hello."}]
+          })
+          |> json_response(403)
+
+        # Check response
+        assert response == %{"error" => "Forbidden"}
+      end
+    end
+
+    test "return 502: bad gateway error for unreachable AI assistant service", %{
+      conn: conn,
+      sessions: %{valid: %{user: _session_user, token: token}}
+    } do
+      with_mocks \
+        mocks(:authentication) ++
+        mocks(:chat_completion_response, :error, :econnrefused)
+      do
+        response =
+          conn
+          |> put_req_header("authorization", token)
+          |> post(~p"/api/v1/conversation", %{
+            name: "Test",
+            messages: [%{role: "user",   content: "Hello."}]
+          })
+          |> json_response(502)
+
+        # Check response
+        assert response == %{"error" => "Bad Gateway"}
+      end
+    end
+
+    test "return 504: gateway timeout error for unresponsive AI assistant service", %{
+      conn: conn,
+      sessions: %{valid: %{user: _session_user, token: token}}
+    } do
+      with_mocks \
+        mocks(:authentication) ++
+        mocks(:chat_completion_response, :error, :timeout)
+      do
+        response =
+          conn
+          |> put_req_header("authorization", token)
+          |> post(~p"/api/v1/conversation", %{
+            name: "Test",
+            messages: [%{role: "user",   content: "Hello."}]
+          })
+          |> json_response(504)
+
+        # Check response
+        assert response == %{"error" => "Gateway Timeout"}
+      end
+    end
+
+    test "pass through the AI assistant error response (code and message)", %{
+      conn: conn,
+      sessions: %{valid: %{user: _session_user, token: token}}
+    } do
+      error_message = """
+      The model 'invalid-model' does not exist or you do not have access to it.
+      """
+
+      with_mocks \
+        mocks(:authentication) ++
+        mocks(:chat_completion_response, 404, error_message)
+      do
+        response =
+          conn
+          |> put_req_header("authorization", token)
+          |> post(~p"/api/v1/conversation?model=invalid-model", %{
+            name: "Test",
+            messages: [%{role: "user",   content: "Hello."}]
+          })
+          |> json_response(404)
+
+        # Check response
+        assert response == %{"error" => error_message}
+      end
+    end
+  end
+
+  # Send new message(s) within an existing conversation.
+  describe "[REST] POST /api/v1/coversation/{id}" do
+
+    setup [:conversations]
+
+    test "return 201: success continuing the conversation", %{
+      conn: conn,
+      sessions: %{valid: %{user: session_user, token: token}},
+      conversations: %{
+        conversation_01: conversation
+      }
+    } do
+      with_mocks \
+        mocks(:authentication, session_user) ++ 
+        mocks(:chat_completion_response)
+      do
+        response =
+          conn
+          |> put_req_header("authorization", token)
+          |> post(~p"/api/v1/conversation/#{conversation.id}", %{
+            name: "Test",
+            messages: [%{role: "user", content: "I need something else..."}]
+          })
+          |> json_response(201)
+
+        # Check response
+        assert response == %{
+          "data" => %{
+            "role" => "assistant",
+            "content" => "Mocked response message."
+          }
+        }
+      end
+    end
+
+    test "return 400: invalid path id", %{
+      conn: conn,
+      sessions: %{valid: %{user: session_user, token: token}}
+    } do
+      with_mocks mocks(:authentication, session_user) do
+        response =
+          conn
+          |> put_req_header("authorization", token)
+          |> post(~p"/api/v1/conversation/invalid-uuid")
+          |> json_response(400)
+
+        # Check response
+        assert response == %{"error" => %{"id" => ["is invalid"]}}
+      end
+    end
+
+    test "return 400: invalid request body response", %{
+      conn: conn,
+      sessions: %{valid: %{user: session_user, token: token}},
+      conversations: %{
+        conversation_01: conversation
+      }
+    } do
+      with_mocks mocks(:authentication, session_user) do
+        response =
+          conn
+          |> put_req_header("authorization", token)
+          |> post(~p"/api/v1/conversation/#{conversation.id}", %{})
+          |> json_response(400)
+
+        # Check response
+        assert response == %{"error" => %{"messages" => ["can't be blank"]}}
+      end
+    end
+
+    test "return 401: unauthorized error response", %{
+      conn: conn,
+      conversations: %{
+        conversation_01: conversation
+      }
+    } do
+      with_mocks mocks(:authentication) do
+        response =
+          conn
+          |> put_req_header("authorization", "invalid-token")
+          |> post(~p"/api/v1/conversation/#{conversation.id}", %{
+            name: "Test",
+            messages: [%{role: "user",   content: "Hello."}]
+          })
+          |> json_response(401)
+
+        # Check response
+        assert response == %{"error" => "Unauthorized"}
+      end
+    end
+
+    test "return 403: forbidden error response", %{
+      conn: conn,
+      sessions: %{unverified_email: %{user: session_user, token: token}},
+      conversations: %{
+        conversation_01: conversation
+      }
+    } do
+      with_mocks mocks(:authentication, session_user) do
+        response =
+          conn
+          |> put_req_header("authorization", token)
+          |> post(~p"/api/v1/conversation/#{conversation.id}", %{
+            name: "Test",
+            messages: [%{role: "user",   content: "Hello."}]
+          })
+          |> json_response(403)
+
+        # Check response
+        assert response == %{"error" => "Forbidden"}
+      end
+    end
+
+    test "return 404: not found error response when resource does not belongs", %{
+      conn: conn,
+      sessions: %{not_owner: %{user: session_user, token: token}},
+      conversations: %{
+        conversation_01: conversation
+      }
+    } do
+      with_mocks \
+        mocks(:authentication, session_user) ++ 
+        mocks(:chat_completion_response)
+      do
+        response =
+          conn
+          |> put_req_header("authorization", token)
+          |> post(~p"/api/v1/conversation/#{conversation.id}", %{
+            name: "Test",
+            messages: [%{role: "user", content: "I need something else..."}]
+          })
+          |> json_response(404)
+
+        # Check response
+        assert response == %{"error" => "Not Found"}
+      end
+    end
+
+    test "return 502: bad gateway error for unreachable AI assistant service", %{
+      conn: conn,
+      sessions: %{valid: %{user: _session_user, token: token}},
+      conversations: %{
+        conversation_01: conversation
+      }
+    } do
+      with_mocks \
+        mocks(:authentication) ++
+        mocks(:chat_completion_response, :error, :econnrefused)
+      do
+        response =
+          conn
+          |> put_req_header("authorization", token)
+          |> post(~p"/api/v1/conversation/#{conversation.id}", %{
+            name: "Test",
+            messages: [%{role: "user", content: "I need something else..."}]
+          })
+          |> json_response(502)
+
+        # Check response
+        assert response == %{"error" => "Bad Gateway"}
+      end
+    end
+
+    test "return 504: gateway timeout error for unresponsive AI assistant service", %{
+      conn: conn,
+      sessions: %{valid: %{user: _session_user, token: token}},
+      conversations: %{
+        conversation_01: conversation
+      }
+    } do
+      with_mocks \
+        mocks(:authentication) ++
+        mocks(:chat_completion_response, :error, :timeout)
+      do
+        response =
+          conn
+          |> put_req_header("authorization", token)
+          |> post(~p"/api/v1/conversation/#{conversation.id}", %{
+            name: "Test",
+            messages: [%{role: "user", content: "I need something else..."}]
+          })
+          |> json_response(504)
+
+        # Check response
+        assert response == %{"error" => "Gateway Timeout"}
+      end
+    end
+
+    test "pass through the AI assistant error response (code and message)", %{
+      conn: conn,
+      sessions: %{valid: %{user: _session_user, token: token}},
+      conversations: %{
+        conversation_01: conversation
+      }
+    } do
+      error_message = """
+      The model 'invalid-model' does not exist or you do not have access to it.
+      """
+
+      with_mocks \
+        mocks(:authentication) ++
+        mocks(:chat_completion_response, 404, error_message)
+      do
+        response =
+          conn
+          |> put_req_header("authorization", token)
+          |> post(
+            ~p"/api/v1/conversation/#{conversation.id}?model=invalid-model",
+            %{
+              name: "Test",
+              messages: [%{role: "user", content: "I need something else..."}]
+            }
+          )
+          |> json_response(404)
+
+        # Check response
+        assert response == %{"error" => error_message}
+      end
+    end
+  end
+
+  # Delete a user's single conversation.
+  describe "[REST] DELETE /api/v1/coversation/{id}" do
+
+    setup [:conversations]
+
+    test "return 200: success deleting the coversation", %{
+      conn: conn,
+      sessions: %{valid: %{user: session_user, token: token}},
+      conversations: %{
+        conversation_01: conversation
+      }
+    } do
+      with_mocks mocks(:authentication, session_user) do
+        response =
+          conn
+          |> put_req_header("authorization", token)
+          |> delete(~p"/api/v1/conversation/#{conversation.id}")
+          |> json_response(200)
+
+        # Check response
+        assert response == %{"data" => %{"id" => conversation.id}}
+      end
+    end
+
+    test "return 400: invalid path id", %{
+      conn: conn,
+      sessions: %{valid: %{user: session_user, token: token}}
+    } do
+      with_mocks mocks(:authentication, session_user) do
+        response =
+          conn
+          |> put_req_header("authorization", token)
+          |> delete(~p"/api/v1/conversation/invalid-uuid")
+          |> json_response(400)
+
+        # Check response
+        assert response == %{"error" => %{"id" => ["is invalid"]}}
+      end
+    end
+
+    test "return 401: unauthorized error response", %{
+      conn: conn,
+      conversations: %{
+        conversation_01: conversation
+      }
+    } do
+      with_mocks mocks(:authentication) do
+        response =
+          conn
+          |> put_req_header("authorization", "invalid-token")
+          |> delete(~p"/api/v1/conversation/#{conversation.id}")
+          |> json_response(401)
+
+        # Check response
+        assert response == %{"error" => "Unauthorized"}
+      end
+    end
+
+    test "return 403: forbidden error response", %{
+      conn: conn,
+      sessions: %{unverified_email: %{user: session_user, token: token}},
+      conversations: %{
+        conversation_01: conversation
+      }
+    } do
+      with_mocks mocks(:authentication, session_user) do
+        response =
+          conn
+          |> put_req_header("authorization", token)
+          |> delete(~p"/api/v1/conversation/#{conversation.id}")
+          |> json_response(403)
+
+        # Check response
+        assert response == %{"error" => "Forbidden"}
+      end
+    end
+
+    test "return 404: not found error response", %{
+      conn: conn,
+      sessions: %{valid: %{user: session_user, token: token}}
+    } do
+      with_mocks mocks(:authentication, session_user) do
+        response =
+          conn
+          |> put_req_header("authorization", token)
+          |> delete(~p"/api/v1/conversation/00000000-0000-0000-0000-000000000000")
+          |> json_response(404)
+
+        # Check response
+        assert response == %{"error" => "Not Found"}
+      end
+    end
+
+    test "return 404: not found error response when resource does not belongs", %{
+      conn: conn,
+      sessions: %{not_owner: %{user: session_user, token: token}},
+      conversations: %{
+        conversation_01: conversation
+      }
+    } do
+      with_mocks mocks(:authentication, session_user) do
+        response =
+          conn
+          |> put_req_header("authorization", token)
+          |> delete(~p"/api/v1/conversation/#{conversation.id}")
+          |> json_response(404)
+
+        # Check response
+        assert response == %{"error" => "Not Found"}
+      end
+    end
+  end
+end

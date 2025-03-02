@@ -1,0 +1,16 @@
+{
+  "coverage_options": {
+    "output_dir": "assets/exdoc/cover/html",
+    "template_path": "assets/exdoc/cover/template",
+    "minimum_coverage": 80
+  },
+  "terminal_options": {
+    "file_column_width": 60
+  },
+  "skip_files": [
+    "lorem_ipsum_web/open_api",
+    "lorem_ipsum_web/components",
+    "deps",
+    "test"
+  ]
+}

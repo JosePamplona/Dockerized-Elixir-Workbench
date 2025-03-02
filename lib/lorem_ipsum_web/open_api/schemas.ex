@@ -1,0 +1,15 @@
+defmodule LoremIpsumWeb.OpenApi.Schemas do
+  @moduledoc false
+
+  alias OpenApiSpex.Schema
+
+  def take_fields(schema_module, fields) do
+    schema = schema_module.schema()
+    %Schema{
+      type: schema.type,
+      description: schema.description,
+      properties: Map.take(schema.properties, fields),
+      example: Map.take(schema.example, fields)
+    }
+  end
+end

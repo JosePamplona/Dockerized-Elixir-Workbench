@@ -1,0 +1,20 @@
+{
+  "coverage_options": {
+    "output_dir": "%{output_dir}",
+    "template_path": "%{template_path}",
+    "minimum_coverage": %{minimum_coverage}
+  },
+  "terminal_options": {
+    "file_column_width": 60
+  },
+  "skip_files": [
+    //<!-- workbench-rest open -->
+    "%{elixir_project_name}_web/open_api",
+    //<!-- workbench-rest close -->
+    //<!-- workbench-html open -->
+    "%{elixir_project_name}_web/components",
+    //<!-- workbench-html close -->
+    "deps",
+    "test"
+  ]
+}

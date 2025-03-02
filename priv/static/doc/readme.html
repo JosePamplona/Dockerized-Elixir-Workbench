@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.35.1">
+    <meta name="project" content="Lorem Ipsum v0.0.0">
+
+      <meta name="author" content="JosePamplona">
+
+
+    <title>Overview — Lorem Ipsum v0.0.0</title>
+    <link rel="stylesheet" href="dist/html-elixir-P45HOAC7.css" />
+
+
+    <script src="dist/handlebars.runtime-NWIB6V2M.js"></script>
+    <script src="dist/handlebars.templates-K7URE6B4.js"></script>
+    <script src="dist/sidebar_items-0BB9EC6D.js"></script>
+    <script src="docs_config.js"></script>
+    <script async src="dist/html-PVRIOB7F.js"></script>
+
+  </head>
+  <body data-type="extras" class="page-extra">
+    <script>
+
+      try {
+        var settings = JSON.parse(localStorage.getItem('ex_doc:settings') || '{}');
+
+        if (settings.theme === 'dark' ||
+           ((settings.theme === 'system' || settings.theme == null) &&
+             window.matchMedia('(prefers-color-scheme: dark)').matches)
+           ) {
+          document.body.classList.add('dark')
+        }
+      } catch (error) { }
+    </script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+        <a href="https://www.lorem-ipsum.com" class="sidebar-projectImage">
+          <img src="assets/logo.png" alt="Lorem Ipsum" />
+        </a>
+
+      <div>
+        <a href="https://www.lorem-ipsum.com" class="sidebar-projectName" translate="no">
+Lorem Ipsum
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.0.0
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-listNav" class="sidebar-listNav" role="tablist">
+      <li>
+        <button id="extras-list-tab-button" role="tab" data-type="extras" aria-controls="extras-tab-panel" aria-selected="true" tabindex="0">
+Pages
+        </button>
+      </li>
+
+        <li>
+          <button id="modules-list-tab-button" role="tab" data-type="modules" aria-controls="modules-tab-panel" aria-selected="false" tabindex="-1">
+            Modules
+          </button>
+        </li>
+
+
+        <li>
+          <button id="tasks-list-tab-button" role="tab" data-type="tasks" aria-controls="tasks-tab-panel" aria-selected="false" tabindex="-1">
+            <span translate="no">Mix</span> Tasks
+          </button>
+        </li>
+
+    </ul>
+  </div>
+
+  <div id="extras-tab-panel" class="sidebar-tabpanel" role="tabpanel" aria-labelledby="extras-list-tab-button">
+    <ul id="extras-full-list" class="full-list"></ul>
+  </div>
+
+    <div id="modules-tab-panel" class="sidebar-tabpanel" role="tabpanel" aria-labelledby="modules-list-tab-button" hidden>
+      <ul id="modules-full-list" class="full-list"></ul>
+    </div>
+
+
+    <div id="tasks-tab-panel" class="sidebar-tabpanel" role="tabpanel" aria-labelledby="tasks-list-tab-button" hidden>
+      <ul id="tasks-full-list" class="full-list"></ul>
+    </div>
+
+</nav>
+
+<main class="content">
+  <output role="status" id="toast"></output>
+
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of Lorem Ipsum</span>
+            <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          </label>
+          <button type="submit" class="search-button" aria-label="Submit Search">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true" title="Submit search"></i>
+          </button>
+          <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+            <i class="ri-close-line ri-lg" title="Cancel search"></i>
+          </button>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <h1>
+
+      <a href="https://github.com/JosePamplona/Dockerized-Elixir-Workbench/blob/main/README.md#L1" title="View Source" class="icon-action" rel="help">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+
+    <span>Lorem Ipsum</span>
+  </h1>
+
+<p><img src="https://img.shields.io/badge/version-0.0.0-white.svg?style=flat-square&color=lightgray" alt="v0.0.0"/>
+<a href="https://github.com/JosePamplona/Dockerized-Elixir-Workbench/commits/main"><img src="https://img.shields.io/github/last-commit/JosePamplona/Dockerized-Elixir-Workbench.svg?style=flat-square" alt="Last Updated"/></a></p><p><strong>Lorem Ipsum</strong> is a web application that offers a REST API for its usage. It also incorporates various development and monitoring tools available only for development deployments.</p><h2 id="application-interfaces" class="section-heading">
+  <a href="#application-interfaces" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Application Interfaces</span>
+</h2>
+<!-- tabs-open --><h3 id="development" class="section-heading">
+  <a href="#development" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Development</span>
+</h3>
+<table><thead><tr><th style="text-align: right;">Application Service</th><th style="text-align: left;">URL</th></tr></thead><tbody><tr><td style="text-align: right;">Phoenix web page</td><td style="text-align: left;"><a href="http://localhost:4000/">http://localhost:4000/</a></td></tr><tr><td style="text-align: right;">API-REST endpoints</td><td style="text-align: left;"><a href="http://localhost:4000/api/v1/">http://localhost:4000/api/v1/</a></td></tr></tbody></table><table><thead><tr><th style="text-align: right;">Development Operations</th><th style="text-align: left;">URL</th></tr></thead><tbody><tr><td style="text-align: right;">Healthcheck endpoint</td><td style="text-align: left;"><a href="http://localhost:4000/health/">http://localhost:4000/health/</a></td></tr><tr><td style="text-align: right;">API-REST documentation</td><td style="text-align: left;"><a href="http://localhost:4000/dev/swagger/">http://localhost:4000/dev/swagger/</a></td></tr><tr><td style="text-align: right;">Mailbox</td><td style="text-align: left;"><a href="http://localhost:4000/dev/mailbox/">http://localhost:4000/dev/mailbox/</a></td></tr><tr><td style="text-align: right;">Phoenix LiveDashboard</td><td style="text-align: left;"><a href="http://localhost:4000/dev/dashboard/">http://localhost:4000/dev/dashboard/</a></td></tr><tr><td style="text-align: right;">Project documentation</td><td style="text-align: left;"><a href="http://localhost:4000/dev/docs/">http://localhost:4000/dev/docs/</a></td></tr><tr><td style="text-align: right;">Test coverage report</td><td style="text-align: left;"><a href="http://localhost:4000/dev/docs/cover/">http://localhost:4000/dev/docs/cover/</a></td></tr></tbody></table><h3 id="production" class="section-heading">
+  <a href="#production" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Production</span>
+</h3>
+<table><thead><tr><th style="text-align: right;">Application Service</th><th style="text-align: left;">URL</th></tr></thead><tbody><tr><td style="text-align: right;">Phoenix web page</td><td style="text-align: left;"><a href="http://localhost:4000/">http://localhost:4000/</a></td></tr><tr><td style="text-align: right;">API-REST endpoints</td><td style="text-align: left;"><a href="http://localhost:4000/api/v1/">http://localhost:4000/api/v1/</a></td></tr></tbody></table><table><thead><tr><th style="text-align: right;">Development Operations</th><th style="text-align: left;">URL</th></tr></thead><tbody><tr><td style="text-align: right;">Healthcheck endpoint</td><td style="text-align: left;"><a href="http://localhost:4000/health/">http://localhost:4000/health/</a></td></tr></tbody></table><!-- tabs-close --><h2 id="start-the-server" class="section-heading">
+  <a href="#start-the-server" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Start the server</span>
+</h2>
+<ol><li><p>In case you already have not, create a <code class="inline">.env</code> file in the elixir project source directory and write down the following content:</p><pre><code class="makeup elixir" translate="no"><span class="w"> </span><span class="c1"># .env</span><span class="w">
+ </span><span class="c1"># Variables used to configure the application.</span><span class="w">
+ 
+ </span><span class="c1"># Elixir Application</span><span class="w">
+ </span><span class="nc">PHX_SERVER</span><span class="o">=</span><span class="no">true</span><span class="w">
+ </span><span class="nc">PHX_HOST</span><span class="o">=</span><span class="s">&quot;www.lorem-ipsum.com&quot;</span><span class="w">
+ </span><span class="nc">PORT</span><span class="o">=</span><span class="s">&quot;4000&quot;</span><span class="w">
+ </span><span class="nc">DATABASE_URL</span><span class="o">=</span><span class="s">&quot;ecto://postgres:postgres@database_host/lorem_ipsum_prod&quot;</span><span class="w">
+ </span><span class="nc">SECRET_KEY_BASE</span><span class="o">=</span><span class="s">&quot;5InKJFovsKhps5OqdNuJOf4xoBqqeCQ7msitNRvU8Cbn29FQ1jwwyyvxC5RvCJOk&quot;</span><span class="w">
+ 
+ </span><span class="c1"># Auth0 API credentials (Single Page Application)</span><span class="w">
+ </span><span class="c1"># Login client attributes (Documentation token request)</span><span class="w">
+ </span><span class="nc">AUTH0_DOMAIN</span><span class="o">=</span><span class="s">&quot;dev-tenant.us.auth0.com&quot;</span><span class="w">
+ </span><span class="nc">AUTH0_CLIENT_ID</span><span class="o">=</span><span class="s">&quot;...&quot;</span><span class="w">
+ </span><span class="c1"># JWKS attributes (Backend token validation)</span><span class="w">
+ </span><span class="nc">AUTH0_AUDIENCE</span><span class="o">=</span><span class="s">&quot;https://dev-tenant.us.auth0.com/api/v2/&quot;</span><span class="w">
+ </span><span class="nc">AUTH0_ISSUER</span><span class="o">=</span><span class="s">&quot;https://dev-tenant.us.auth0.com/&quot;</span><span class="w">
+ 
+ </span><span class="c1"># AI Assistant credentials</span><span class="w">
+ </span><span class="nc">AI_ASSISTANT_API_URL</span><span class="o">=</span><span class="s">&quot;https://api.openai.com/v1&quot;</span><span class="w">
+ </span><span class="nc">AI_ASSISTANT_API_KEY</span><span class="o">=</span><span class="s">&quot;sk-proj-...&quot;</span><span class="w">
+ 
+ </span><span class="c1"># Stripe API credentials</span><span class="w">
+ </span><span class="nc">STRIPE_SECRET</span><span class="o">=</span><span class="s">&quot;sk_test_secret&quot;</span><span class="w">
+ 
+ </span><span class="c1"># Docker Compose project name</span><span class="w">
+ </span><span class="nc">COMPOSE_PROJECT_NAME</span><span class="o">=</span><span class="s">&quot;lorem-ipsum&quot;</span><span class="w">
+</span></code></pre><table><thead><tr><th style="text-align: left;">Variable</th><th style="text-align: left;">Description</th></tr></thead><tbody><tr><td style="text-align: left;">PHX_SERVER</td><td style="text-align: left;">Indicates a Phoenix server.</td></tr><tr><td style="text-align: left;">PHX_HOST</td><td style="text-align: left;">Elixir application host.</td></tr><tr><td style="text-align: left;">PORT</td><td style="text-align: left;">Elixir application port.</td></tr><tr><td style="text-align: left;">DATABASE_URL</td><td style="text-align: left;">Database name, host and credetials.</td></tr><tr><td style="text-align: left;">SECRET_KEY_BASE</td><td style="text-align: left;">Use your own, it can be generated by running <a href="https://hexdocs.pm/phoenix/1.7.20/Mix.Tasks.Phx.Gen.Secret.html"><code class="inline">mix phx.gen.secret</code></a>.</td></tr><tr><td style="text-align: left;">AUTH0_DOMAIN</td><td style="text-align: left;">Auth0 application domain name.</td></tr><tr><td style="text-align: left;">AUTH0_CLIENT_ID</td><td style="text-align: left;">Auth0 application client identifier.</td></tr><tr><td style="text-align: left;">AUTH0_ISSUER</td><td style="text-align: left;">Auth0 tenant URL to request JSON Web Ket Sets.</td></tr><tr><td style="text-align: left;">AUTH0_AUDIENCE</td><td style="text-align: left;">Auth0 API identifier (Auth0 Management API by default).</td></tr><tr><td style="text-align: left;">AI_ASSISTANT_API_URL</td><td style="text-align: left;">URL used to make requests request to the AI assistant.</td></tr><tr><td style="text-align: left;">AI_ASSISTANT_API_KEY</td><td style="text-align: left;">API Key used to make request to the AI assistant.</td></tr><tr><td style="text-align: left;">STRIPE_SECRET</td><td style="text-align: left;">Stripe account's secret test key.</td></tr><tr><td style="text-align: left;">COMPOSE_PROJECT_NAME</td><td style="text-align: left;">Used as Docker Compose project name.</td></tr></tbody></table></li><li><p>Run <code class="inline">export $(grep -v '^#' .env | xargs)</code> to export these enviroment variables.</p></li><li><p>Run <code class="inline">mix setup</code> to install and setup dependencies and create database.</p></li><li><p>Start server with <a href="https://hexdocs.pm/phoenix/1.7.20/Mix.Tasks.Phx.Server.html"><code class="inline">mix phx.server</code></a> or inside IEx with <code class="inline">iex -S mix phx.server</code>.
+The available endpoints will depend on each different enviroment.</p></li></ol><h2 id="test-the-code" class="section-heading">
+  <a href="#test-the-code" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Test the code</span>
+</h2>
+<h3 id="unit-testing" class="section-heading">
+  <a href="#unit-testing" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Unit testing</span>
+</h3>
+<ol><li>Run <a href="https://hexdocs.pm/mix/Mix.Tasks.Test.html"><code class="inline">mix test</code></a> in order to execute automated tests.</li></ol><h3 id="coverage" class="section-heading">
+  <a href="#coverage" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Coverage</span>
+</h3>
+<ol><li>Run <a href="Mix.Tasks.Cover.html"><code class="inline">mix cover</code></a> in order to generate testing and coverage reports.</li></ol><h2 id="learn-more" class="section-heading">
+  <a href="#learn-more" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Learn more</span>
+</h2>
+<blockquote><h3 id="phoenix" class="section-heading">
+  <a href="#phoenix" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Phoenix</span>
+</h3>
+<ul><li>Official website: <a href="https://www.phoenixframework.org/">https://www.phoenixframework.org/</a></li><li>Guides: <a href="https://hexdocs.pm/phoenix/overview.html">https://hexdocs.pm/phoenix/overview.html</a></li><li>Forum: <a href="https://elixirforum.com/c/phoenix-forum">https://elixirforum.com/c/phoenix-forum</a></li><li>Source: <a href="https://github.com/phoenixframework/phoenix">https://github.com/phoenixframework/phoenix</a></li><li>Deps used:<ul><li>phoenix_live_dashboard: <a href="https://hexdocs.pm/phoenix_live_dashboard">https://hexdocs.pm/phoenix_live_dashboard</a></li><li>swoosh: <a href="https://hexdocs.pm/swoosh">https://hexdocs.pm/swoosh</a></li><li>credo: <a href="https://hexdocs.pm/credo">https://hexdocs.pm/credo</a></li><li>flame_on: <a href="https://hexdocs.pm/flame_on">https://hexdocs.pm/flame_on</a></li><li>ex_debug: <a href="https://hexdocs.pm/ex_debug">https://hexdocs.pm/ex_debug</a></li><li>ex_doc: <a href="https://hexdocs.pm/ex_doc">https://hexdocs.pm/ex_doc</a></li></ul></li></ul></blockquote><blockquote><h3 id="coveralls" class="section-heading">
+  <a href="#coveralls" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Coveralls</span>
+</h3>
+<ul><li>Official website: <a href="https://docs.coveralls.io/">https://docs.coveralls.io/</a></li><li>Deps used:<ul><li>excoveralls: <a href="https://hex.pm/packages/excoveralls">https://hex.pm/packages/excoveralls</a></li></ul></li></ul></blockquote><blockquote><h3 id="open-api" class="section-heading">
+  <a href="#open-api" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Open API</span>
+</h3>
+<ul><li>Official website: <a href="https://swagger.io/specification/">https://swagger.io/specification/</a></li><li>Deps used:<ul><li>open_api_spex: <a href="https://hex.pm/packages/open_api_spex">https://hex.pm/packages/open_api_spex</a></li></ul></li></ul></blockquote><blockquote><h3 id="open-ai" class="section-heading">
+  <a href="#open-ai" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Open AI</span>
+</h3>
+<ul><li>Developer Platform: <a href="https://platform.openai.com/docs/overview">https://platform.openai.com/docs/overview</a></li><li>API Docs: <a href="https://platform.openai.com/docs/api-reference/introduction">https://platform.openai.com/docs/api-reference/introduction</a></li></ul></blockquote><blockquote><h3 id="auth0" class="section-heading">
+  <a href="#auth0" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Auth0</span>
+</h3>
+<ul><li>Documentation: <a href="https://auth0.com/docs">https://auth0.com/docs</a></li><li>Management API Docs: <a href="https://auth0.com/docs/api/management/v2/introduction">https://auth0.com/docs/api/management/v2/introduction</a></li><li>Authentication API Docs: <a href="https://auth0.com/docs/api/authentication">https://auth0.com/docs/api/authentication</a></li><li>JSON Web Tokens: <a href="https://jwt.io/">https://jwt.io/</a></li><li>Auth0 SPA SDK: <a href="https://auth0.github.io/auth0-spa-js/classes/Auth0Client.html">https://auth0.github.io/auth0-spa-js/classes/Auth0Client.html</a></li><li>Deps used:<ul><li>auth0_jwks: <a href="https://hex.pm/packages/auth0_jwks">https://hex.pm/packages/auth0_jwks</a></li></ul></li></ul></blockquote><blockquote><h3 id="stripe" class="section-heading">
+  <a href="#stripe" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Stripe</span>
+</h3>
+<ul><li>Official website: <a href="https://docs.stripe.com/">https://docs.stripe.com/</a></li><li>Stripe Development: <a href="https://docs.stripe.com/development">https://docs.stripe.com/development</a></li><li>Stripe API Docs: <a href="https://docs.stripe.com/api">https://docs.stripe.com/api</a></li><li>Stripe JS Docs: <a href="https://docs.stripe.com/api">https://docs.stripe.com/api</a></li><li>Stripe JS github: <a href="https://github.com/stripe/stripe-js">https://github.com/stripe/stripe-js</a></li><li>React reference: <a href="https://docs.stripe.com/stripe-js/react">https://docs.stripe.com/stripe-js/react</a></li><li>Testing Cards: <a href="https://docs.stripe.com/testing?testing-method=payment-methods#cards">https://docs.stripe.com/testing?testing-method=payment-methods#cards</a></li><li>Deps used:<ul><li>stripity_stripe: <a href="https://hex.pm/packages/stripity_stripe">https://hex.pm/packages/stripity_stripe</a></li></ul></li></ul></blockquote>
+</div>
+
+<div class="bottom-actions" id="bottom-actions">
+  <div class="bottom-actions-item">
+
+      <a href="api-reference.html" class="bottom-actions-button" rel="prev">
+        <span class="subheader">
+          ← Previous Page
+        </span>
+        <span class="title">
+API Reference
+        </span>
+      </a>
+
+  </div>
+  <div class="bottom-actions-item">
+
+      <a href="changelog.html" class="bottom-actions-button" rel="next">
+        <span class="subheader">
+          Next Page →
+        </span>
+        <span class="title">
+Changelog
+        </span>
+      </a>
+
+  </div>
+</div>
+    <footer class="footer">
+      <p>
+
+        <span class="line">
+          <button class="a-main footer-button display-quick-switch" title="Search HexDocs packages">
+            Search HexDocs
+          </button>
+
+            <a href="Lorem Ipsum.epub" title="ePub version">
+              Download ePub version
+            </a>
+
+        </span>
+      </p>
+
+      <p class="built-using">
+        Built using
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.35.1) for the
+
+          <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+      </p>
+
+    </footer>
+  </div>
+</main>
+</div>
+<script src=./assets/themedImage.js></script>
+<script src=https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js></script>
+<script src=./assets/auth_config.js></script>
+<script src=./assets/token.js></script>
+
+  </body>
+</html>

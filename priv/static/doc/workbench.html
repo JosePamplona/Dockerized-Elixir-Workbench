@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.35.1">
+    <meta name="project" content="Lorem Ipsum v0.0.0">
+
+      <meta name="author" content="JosePamplona">
+
+
+    <title>Workbench — Lorem Ipsum v0.0.0</title>
+    <link rel="stylesheet" href="dist/html-elixir-P45HOAC7.css" />
+
+
+    <script src="dist/handlebars.runtime-NWIB6V2M.js"></script>
+    <script src="dist/handlebars.templates-K7URE6B4.js"></script>
+    <script src="dist/sidebar_items-0BB9EC6D.js"></script>
+    <script src="docs_config.js"></script>
+    <script async src="dist/html-PVRIOB7F.js"></script>
+
+  </head>
+  <body data-type="extras" class="page-extra">
+    <script>
+
+      try {
+        var settings = JSON.parse(localStorage.getItem('ex_doc:settings') || '{}');
+
+        if (settings.theme === 'dark' ||
+           ((settings.theme === 'system' || settings.theme == null) &&
+             window.matchMedia('(prefers-color-scheme: dark)').matches)
+           ) {
+          document.body.classList.add('dark')
+        }
+      } catch (error) { }
+    </script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+        <a href="https://www.lorem-ipsum.com" class="sidebar-projectImage">
+          <img src="assets/logo.png" alt="Lorem Ipsum" />
+        </a>
+
+      <div>
+        <a href="https://www.lorem-ipsum.com" class="sidebar-projectName" translate="no">
+Lorem Ipsum
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.0.0
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-listNav" class="sidebar-listNav" role="tablist">
+      <li>
+        <button id="extras-list-tab-button" role="tab" data-type="extras" aria-controls="extras-tab-panel" aria-selected="true" tabindex="0">
+Pages
+        </button>
+      </li>
+
+        <li>
+          <button id="modules-list-tab-button" role="tab" data-type="modules" aria-controls="modules-tab-panel" aria-selected="false" tabindex="-1">
+            Modules
+          </button>
+        </li>
+
+
+        <li>
+          <button id="tasks-list-tab-button" role="tab" data-type="tasks" aria-controls="tasks-tab-panel" aria-selected="false" tabindex="-1">
+            <span translate="no">Mix</span> Tasks
+          </button>
+        </li>
+
+    </ul>
+  </div>
+
+  <div id="extras-tab-panel" class="sidebar-tabpanel" role="tabpanel" aria-labelledby="extras-list-tab-button">
+    <ul id="extras-full-list" class="full-list"></ul>
+  </div>
+
+    <div id="modules-tab-panel" class="sidebar-tabpanel" role="tabpanel" aria-labelledby="modules-list-tab-button" hidden>
+      <ul id="modules-full-list" class="full-list"></ul>
+    </div>
+
+
+    <div id="tasks-tab-panel" class="sidebar-tabpanel" role="tabpanel" aria-labelledby="tasks-list-tab-button" hidden>
+      <ul id="tasks-full-list" class="full-list"></ul>
+    </div>
+
+</nav>
+
+<main class="content">
+  <output role="status" id="toast"></output>
+
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of Lorem Ipsum</span>
+            <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          </label>
+          <button type="submit" class="search-button" aria-label="Submit Search">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true" title="Submit search"></i>
+          </button>
+          <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+            <i class="ri-close-line ri-lg" title="Cancel search"></i>
+          </button>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <h1>
+
+      <a href="https://github.com/JosePamplona/Dockerized-Elixir-Workbench/blob/main/assets/exdoc/workbench.md#L1" title="View Source" class="icon-action" rel="help">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+
+    <span>Dockerized Elixir Workbench</span>
+  </h1>
+
+<p><img src="https://img.shields.io/badge/version-0.4.0-white.svg?style=flat-square&color=lightgray" alt="v0.4.0"/>
+<a href="https://github.com/JosePamplona/Dockerized-Elixir-Workbench/blob/main/LICENSE.md"><img src="https://img.shields.io/github/license/JosePamplona/Dockerized-Elixir-Workbench?style=flat-square" alt="License"/></a></p><!-- [![Last Updated](https://img.shields.io/github/last-commit/JosePamplona/Dockerized-Elixir-Workbench.svg?style=flat-square)](https://github.com/JosePamplona/Dockerized-Elixir-Workbench/commits/main)--><p>This is a script for creating <a href="https://elixir-lang.org/">Elixir</a> projects with the <a href="https://www.phoenixframework.org/">Phoenix</a> framework and deploying them on <code class="inline">localhost</code> using a specific service architecture with Docker containers. It eliminates the need to install anything other than <a href="https://www.docker.com/products/docker-desktop/">Docker Desktop</a> to create, develop, and deploy the project in either a development or production environment.</p><ul><li><a href="#dockerized-elixir-workbench">Dockerized Elixir Workbench</a><ul><li><a href="#arquitecture">Arquitecture</a></li><li><a href="#configuration">Configuration</a></li><li><a href="#create-a-new-project">Create a new project</a></li><li><a href="#deployment">Deployment</a><ul><li><a href="#custom-entrypoint">Custom entrypoint</a></li></ul></li><li><a href="#delete-project">Delete project</a></li><li><a href="#maintenance">Maintenance</a><ul><li><a href="#private-github-registry-images">Private Github Registry Images</a></li><li><a href="#demo">Demo</a></li><li><a href="#reset-docker">Reset Docker</a></li><li><a href="#remove-workbench">Remove workbench</a></li><li><a href="#help">Help</a></li></ul></li><li><a href="#license">License</a></li></ul></li></ul><h2 id="arquitecture" class="section-heading">
+  <a href="#arquitecture" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Arquitecture</span>
+</h2>
+<p align="center"><img alt="arquitecture diagram" src="assets/arq.svg"></p><table><thead><tr><th style="text-align: left;">Service</th><th style="text-align: left;">URL</th><th style="text-align: left;">Description</th></tr></thead><tbody><tr><td style="text-align: left;">Elixir App</td><td style="text-align: left;"><a href="http://localhost:4000">http://localhost:4000</a></td><td style="text-align: left;">API-REST, GraphiQL and/or Web server</td></tr><tr><td style="text-align: left;">Postgres DB</td><td style="text-align: left;"><a href="http://localhost:5432">http://localhost:5432</a></td><td style="text-align: left;">Relational database server</td></tr><tr><td style="text-align: left;">pgAdmin</td><td style="text-align: left;"><a href="http://localhost:5050">http://localhost:5050</a></td><td style="text-align: left;">Database management tool</td></tr><tr><td style="text-align: left;">Auth0</td><td style="text-align: left;"><a href="https://dev-tenant.us.auth0.com:433">https://dev-tenant.us.auth0.com:433</a></td><td style="text-align: left;">Identity management platform</td></tr><tr><td style="text-align: left;">Open AI</td><td style="text-align: left;"><a href="https://api.openai.com/v1:433">https://api.openai.com/v1:433</a></td><td style="text-align: left;">AI Assistant service</td></tr><tr><td style="text-align: left;">Stripe</td><td style="text-align: left;"><a href="https://api.stripe.com:433">https://api.stripe.com:433</a></td><td style="text-align: left;">Payment service provider</td></tr></tbody></table><h2 id="configuration" class="section-heading">
+  <a href="#configuration" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Configuration</span>
+</h2>
+<ol><li><p>Give execution permissions to <code class="inline">app</code> file (This step only needs to be performed once):</p><pre><code class="makeup sh" translate="no"><span class=""> sudo chmod +x app
+</span></code></pre><p> For complete configuration instruccions consult: <a href="config.html">Configuration File</a></p></li><li><p>Modify the <code class="inline">config.conf</code> file in order to configure the project name and creation specifications.</p></li><li><p>Make sure <a href="https://www.docker.com/products/docker-desktop/">Docker Desktop</a> is running before running any script command.</p></li></ol><h2 id="create-a-new-project" class="section-heading">
+  <a href="#create-a-new-project" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Create a new project</span>
+</h2>
+<ol><li><p>Run the following command:</p><pre><code class="makeup sh" translate="no"><span class=""> ./app new
+</span></code></pre><p> This command generates schemas, changesets, context functions, tests, and migration files when applicable and apply specific configurations.</p><p> It can accept all option flags from the task <code class="inline">mix phx.new</code> like <code class="inline">--no-html</code> or <code class="inline">--no-ecto</code> (Full task <a href="https://hexdocs.pm/phoenix/Mix.Tasks.Phx.New.html">phx.new</a> documentation).</p></li></ol><h2 id="deployment" class="section-heading">
+  <a href="#deployment" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Deployment</span>
+</h2>
+<ol><li><p>This step is only required when deploying the service for the first time, a database reset is needed or the database container is detroyed. This command drops the project database (if any), creates a new one and run a seeding script:</p><pre><code class="makeup sh" translate="no"><span class=""> ./app setup [-e, --env ENV]
+</span></code></pre></li><li><p>Once having a configured database, run the following command to deploy the service along with its configured required services and tools.</p><pre><code class="makeup sh" translate="no"><span class=""> ./app up [-e, --env ENV]
+</span></code></pre></li></ol><p>In both commands the flag <code class="inline">[-e, --env ENV]</code> is optional. The argument <code class="inline">ENV</code> can be <strong>dev</strong>, <strong>prod</strong> or other, it corresponds to the desired enviroment configuration to be deployed, by default is <strong>dev</strong>.</p><h3 id="custom-entrypoint" class="section-heading">
+  <a href="#custom-entrypoint" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Custom entrypoint</span>
+</h3>
+<p>There is the possibility of deploying the application by executing custom server initialization commands:</p><pre><code class="makeup sh" translate="no"><span class="">./app run [ARGS...]
+</span></code></pre><p>Replace <code class="inline">[ARGS...]</code> with the command(s) to be executed. For example, to run an elixir interactive console:</p><pre><code class="makeup sh" translate="no"><span class="">./app run iex -S mix phx.server
+</span></code></pre><h2 id="delete-project" class="section-heading">
+  <a href="#delete-project" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Delete project</span>
+</h2>
+<p>Use this command for deleting all project files and the Docker compose project:</p><pre><code class="makeup sh" translate="no"><span class="">./app delete
+</span></code></pre><blockquote><p>⚠️ <strong>Warning</strong>: This action is destructive. Once executed, the current project files will be deleted, and neither the files nor the docker containers can be recovered. Before proceeding, make sure you are absolutely certain that you want to remove them.</p></blockquote><h2 id="maintenance" class="section-heading">
+  <a href="#maintenance" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Maintenance</span>
+</h2>
+<h3 id="private-github-registry-images" class="section-heading">
+  <a href="#private-github-registry-images" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Private Github Registry Images</span>
+</h3>
+<p>In order to download private github registry images, you need to login to GitHub using a username and a token (classic, not fine-grained) and have the rquired access level to the resource. To do this, execute the following command:</p><pre><code class="makeup sh" translate="no"><span class="">./app login [GITHUB_USER] [ACCESS_TOKEN]
+</span></code></pre><p>Replace <code class="inline">[GITHUB_USER]</code> and <code class="inline">[ACCESS_TOKEN]</code> with your corresponding user name and token. How to generate a token: <a href="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic">Personal Access Token (classic)</a></p><h3 id="demo" class="section-heading">
+  <a href="#demo" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Demo</span>
+</h3>
+<p>This command runs the <strong>new</strong>, <strong>setup</strong>, <strong>up</strong>, and <strong>delete</strong> commands consecutively for demonstration purposes:</p><pre><code class="makeup sh" translate="no"><span class="">./app demo [-e, --env ENV]
+</span></code></pre><p>The flag <code class="inline">[-e, --env ENV]</code> is optional. The argument <code class="inline">ENV</code> can be <strong>dev</strong>, <strong>prod</strong> or other, it corresponds to the desired enviroment configuration to be deployed, by default is <strong>dev</strong>.</p><blockquote><p>⚠️ <strong>Warning</strong>: This action is destructive. Once executed, the current project files (if any) will be deleted, new ones will be created and finally deleted again and cannot be recovered. Before proceeding, make sure is safe to remove them if there is any.</p></blockquote><h3 id="reset-docker" class="section-heading">
+  <a href="#reset-docker" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Reset Docker</span>
+</h3>
+<p>Use this command in order to stop all containers and prune Docker. It's like a Docker data brute-force reset:</p><pre><code class="makeup sh" translate="no"><span class="">./app prune
+</span></code></pre><blockquote><p>⚠️ <strong>Warning</strong>: This action is destructive. Once executed, all Docker resources (not just the project's resources, but ALL resources in Docker) images, containers, volumes, networks, cache, etc.) will no longer exist and cannot be recovered, only rebuilt. Before proceeding, make sure you are absolutely certain that you want to remove them.</p></blockquote><h3 id="remove-workbench" class="section-heading">
+  <a href="#remove-workbench" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Remove workbench</span>
+</h3>
+<p>Removes the workbench script along with all its files and configurations from the generated project, leaving no trace, as if it had never been there.</p><pre><code class="makeup sh" translate="no"><span class="">./app remove-workbench
+</span></code></pre><blockquote><p>🛑 <strong>Critical Action</strong>: This operation is irreversible! Once executed, the workbench script files and configurations will be permanently deleted and cannot be recovered. Before proceeding, please ensure you are absolutely certain about this action and proceed with extreme caution.</p></blockquote><h3 id="help" class="section-heading">
+  <a href="#help" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">Help</span>
+</h3>
+<p>Shows the workbech script help section:</p><pre><code class="makeup sh" translate="no"><span class="">./app help
+</span></code></pre><h2 id="license" class="section-heading">
+  <a href="#license" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
+  </a>
+  <span class="text">License</span>
+</h2>
+<p>This software is released under the <a href="https://mit-license.org/">MIT</a> license.</p><p>Permission is granted to use, copy, modify, and distribute the code in both commercial and non-commercial projects. It only requires that the copyright notice and permission statement be maintained in all copies. No warranties are provided and the authors bear no liability.</p><p>Copyright © 2024 José Luis Pamplona Stoever.</p>
+</div>
+
+<div class="bottom-actions" id="bottom-actions">
+  <div class="bottom-actions-item">
+
+      <a href="coding.html" class="bottom-actions-button" rel="prev">
+        <span class="subheader">
+          ← Previous Page
+        </span>
+        <span class="title">
+Coding guidelines
+        </span>
+      </a>
+
+  </div>
+  <div class="bottom-actions-item">
+
+      <a href="config.html" class="bottom-actions-button" rel="next">
+        <span class="subheader">
+          Next Page →
+        </span>
+        <span class="title">
+Configuration File
+        </span>
+      </a>
+
+  </div>
+</div>
+    <footer class="footer">
+      <p>
+
+        <span class="line">
+          <button class="a-main footer-button display-quick-switch" title="Search HexDocs packages">
+            Search HexDocs
+          </button>
+
+            <a href="Lorem Ipsum.epub" title="ePub version">
+              Download ePub version
+            </a>
+
+        </span>
+      </p>
+
+      <p class="built-using">
+        Built using
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.35.1) for the
+
+          <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+      </p>
+
+    </footer>
+  </div>
+</main>
+</div>
+<script src=./assets/themedImage.js></script>
+<script src=https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js></script>
+<script src=./assets/auth_config.js></script>
+<script src=./assets/token.js></script>
+
+  </body>
+</html>

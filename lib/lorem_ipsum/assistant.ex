@@ -1,0 +1,178 @@
+defmodule LoremIpsum.Assistant do
+  @moduledoc """
+  The Assistant context handles operations related to user conversations with 
+  the OpenAI API. 
+
+  This module provides functionality for managing conversations, including 
+  creating, retrieving, continuing, and deleting them. It ensures that all 
+  operations are scoped to the authenticated user, maintaining proper access 
+  control.
+
+  This module acts as the bridge between user interactions and the OpenAI API, 
+  while also persisting conversation data securely in the database.
+  """
+
+  import Ecto.Query, warn: false
+
+  alias Ecto.Changeset
+  alias LoremIpsum.Accounts.User
+  alias LoremIpsum.Assistant.Conversation
+  alias LoremIpsum.{Helper, Repo}
+
+  @doc """
+    Returns the list of conversations belonging to the given user.
+
+    ## Examples
+        iex> list_conversations(attrs, %User{})
+        {:ok, %{
+          records: [
+            %Conversation{},
+            ...
+          ],
+          count: 15,
+          total_count: 47,
+          page: 1,
+          total_pages: 5,
+          query: %{limit: 15, offset: 0, field: :name, order: :asc}
+        }}
+    """
+  
+  @spec list_conversations(attrs :: map, current_user :: User.t) ::
+    {:ok, %{
+      records: [Conversation.t],
+      count: pos_integer,
+      total_count: pos_integer,
+      page: non_neg_integer,
+      total_pages: non_neg_integer,
+      query: %{
+        limit: pos_integer,
+        offset: non_neg_integer,
+        field: atom,
+        order: :asc | :desc
+      }
+    }}
+
+  def list_conversations(attrs, %User{} = current_user) do
+    Conversation
+    |> where([c], c.user_id == ^current_user.id)
+    |> Helper.paginate(attrs)
+  end
+
+  @doc """
+    Retrieves a single conversation with all its messages if it belongs to the given user.
+
+    ## Examples
+        iex> get_conversation(attrs, %User{})
+        {:ok, %Conversation{}}
+        
+        iex> get_conversation(attrs, %User{})
+        {:error, %Ecto.Changeset{}}
+
+        iex> get_conversation(attrs, %User{})
+        {:error, :not_found}
+
+        iex> get_conversation(attrs, %User{})
+        {:error, :not_owner}
+    """
+  
+  @spec get_conversation(attrs :: map, current_user :: User.t) ::
+    {:ok, Conversation.t} | {:error, Changeset.t | :not_found | :not_owner}
+
+  def get_conversation(attrs, %User{id: current_user_id} = _current_user) do
+    with \
+      changeset <- Conversation.get_changeset(attrs),
+      {:ok, %schema{id: id}} <- Changeset.apply_action(changeset, :validate)
+    do
+      schema
+      |> Repo.get(id)
+      |> case do
+        nil -> {:error, :not_found}
+        %{user_id: ^current_user_id} = conversation -> {:ok, conversation}
+        _ -> {:error, :not_owner}
+      end
+    end
+  end
+
+  @doc """
+    Sends a request to the OpenAI API to process all conversation messages. If the
+    request is successful, it saves the messages to the conversation and returns 
+    the newly created conversation.
+
+    ## Examples
+        iex> create_conversation(attrs, %User{})
+        {:ok, %Conversation{}}
+
+        iex> create_conversation(attrs, %User{})
+        {:error, %Ecto.Changeset{}}
+
+        iex> continue_conversation(attrs, %User{})
+        {:error, :not_found}
+
+        iex> continue_conversation(attrs, %User{})
+        {:error, :not_owner}
+    """
+  
+  @spec create_conversation(attrs :: map, current_user :: User.t) ::
+    {:ok, Conversation.t} | {:error, Changeset.t}
+
+  def create_conversation(attrs, %User{} = current_user) do
+    %Conversation{}
+    |> Conversation.create_changeset(attrs, current_user)
+    |> Repo.insert()
+  end
+
+  @doc """
+    Sends a request to the OpenAI API to process all conversation messages, 
+    including the new ones. If the request is successful, it saves the messages to
+    the conversation and returns the updated conversation.
+
+    ## Examples
+        iex> continue_conversation(attrs, %User{})
+        {:ok, %Conversation{}}
+        
+        iex> get_conversation(attrs, %User{})
+        {:error, %Ecto.Changeset{}}
+
+        iex> continue_conversation(attrs, %User{})
+        {:error, :not_found}
+
+        iex> continue_conversation(attrs, %User{})
+        {:error, :not_owner}
+    """
+
+  @spec continue_conversation(attrs :: map, current_user :: User.t) ::
+    {:ok, Conversation.t} | {:error, Changeset.t | :not_found | :not_owner}
+
+  def continue_conversation(attrs, %User{} = current_user) do
+    with \
+      {:ok, conversation} <- get_conversation(attrs, current_user),
+      conversation <- Repo.preload(conversation, :messages),
+      changeset <- Conversation.continue_changeset(conversation, attrs)
+    do
+      Repo.update(changeset)
+    end
+  end
+
+  @doc """
+    Deletes a conversation if it belongs to the given user.
+
+    ## Examples
+        iex> delete_conversation(attrs, %User{})
+        {:ok, %Conversation{}}
+
+        iex> delete_conversation(attrs, %User{})
+        {:error, :not_found}
+
+        iex> delete_conversation(attrs, %User{})
+        {:error, :not_owner}
+    """
+  
+  @spec delete_conversation(attrs :: map, current_user :: User.t) ::
+    {:ok, Conversation.t} | {:error, :not_found | :not_owner}
+  
+  def delete_conversation(attrs, %User{} = current_user) do
+    with {:ok, conversation} <- get_conversation(attrs, current_user) do
+      Repo.delete(conversation)
+    end
+  end
+end

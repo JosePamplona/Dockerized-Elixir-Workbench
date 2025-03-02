@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project name="PostgreSQL" database="PostgreSQL" id="PostgreSQL-52b" >
+	<schema name="public" >
+		<comment><![CDATA[standard public schema]]></comment>
+		<udt name="message_role" udt_java_type="12" udt_precision="NONE" >
+			<udt_script><![CDATA[CREATE TYPE ${name} AS ENUM ('system','user','assistant','function');]]></udt_script>
+		</udt>
+		<udt name="user_status" udt_java_type="12" udt_precision="NONE" >
+			<udt_script><![CDATA[CREATE TYPE ${name} AS ENUM ('active','blocked');]]></udt_script>
+		</udt>
+		<table name="conversations" row_count="0" spec="" >
+			<column name="id" type="uuid" jt="102" mandatory="y" />
+			<column name="user_id" type="uuid" jt="102" mandatory="y" />
+			<column name="name" type="varchar" length="255" jt="12" mandatory="y" />
+			<column name="inserted_at" type="timestamp" jt="93" mandatory="y" >
+				<defo><![CDATA[now()]]></defo>
+			</column>
+			<column name="updated_at" type="timestamp" jt="93" mandatory="y" >
+				<defo><![CDATA[now()]]></defo>
+			</column>
+			<index name="conversations_pkey" unique="PRIMARY_KEY" >
+				<column name="id" />
+			</index>
+			<index name="conversations_user_id_name_index" unique="UNIQUE_INDEX" spec="USING  btree" >
+				<column name="user_id" />
+				<column name="name" />
+			</index>
+			<fk name="conversations_user_id_fkey" to_schema="public" to_table="users" options="" >
+				<fk_column name="user_id" pk="id" />
+			</fk>
+		</table>
+		<table name="messages" row_count="0" spec="" >
+			<column name="id" type="uuid" jt="102" mandatory="y" />
+			<column name="conversation_id" type="uuid" jt="102" mandatory="y" />
+			<column name="index" type="integer" jt="4" mandatory="y" />
+			<column name="role" type="message_role" jt="12" mandatory="y" />
+			<column name="content" type="text" jt="12" mandatory="y" />
+			<column name="inserted_at" type="timestamp" jt="93" mandatory="y" >
+				<defo><![CDATA[now()]]></defo>
+			</column>
+			<column name="updated_at" type="timestamp" jt="93" mandatory="y" >
+				<defo><![CDATA[now()]]></defo>
+			</column>
+			<index name="messages_pkey" unique="PRIMARY_KEY" >
+				<column name="id" />
+			</index>
+			<index name="messages_conversation_id_index_index" unique="UNIQUE_INDEX" spec="USING  btree" >
+				<column name="conversation_id" />
+				<column name="index" />
+			</index>
+			<constraint name="index_positive" type="CHECK" options="" >
+				<string><![CDATA[(index >= 0)]]></string>
+			</constraint>
+			<fk name="messages_conversation_id_fkey" to_schema="public" to_table="conversations" delete_action="cascade" options="" >
+				<fk_column name="conversation_id" pk="id" />
+			</fk>
+		</table>
+		<table name="schema_migrations" row_count="0" spec="" >
+			<column name="version" type="bigint" length="64" jt="-5" mandatory="y" />
+			<column name="inserted_at" type="timestamp" length="0" jt="93" />
+			<index name="schema_migrations_pkey" unique="PRIMARY_KEY" >
+				<column name="version" />
+			</index>
+		</table>
+		<table name="users" row_count="0" spec="" >
+			<column name="id" type="uuid" jt="102" mandatory="y" />
+			<column name="name" type="varchar" length="255" jt="12" mandatory="y" />
+			<column name="status" type="user_status" jt="12" mandatory="y" />
+			<column name="email" type="varchar" length="255" jt="12" mandatory="y" />
+			<column name="email_verified" type="boolean" jt="16" mandatory="y" >
+				<defo><![CDATA[false]]></defo>
+			</column>
+			<column name="phone_number" type="varchar" length="255" jt="12" />
+			<column name="picture" type="varchar" length="255" jt="12" />
+			<column name="token_sub" type="varchar" length="255" jt="12" mandatory="y" />
+			<column name="inserted_at" type="timestamp" jt="93" mandatory="y" >
+				<defo><![CDATA[now()]]></defo>
+			</column>
+			<column name="updated_at" type="timestamp" jt="93" mandatory="y" >
+				<defo><![CDATA[now()]]></defo>
+			</column>
+			<index name="users_pkey" unique="PRIMARY_KEY" >
+				<column name="id" />
+			</index>
+			<index name="users_token_sub_index" unique="UNIQUE_INDEX" spec="USING  btree" >
+				<column name="token_sub" />
+			</index>
+			<index name="users_email_index" unique="UNIQUE_INDEX" spec="USING  btree" >
+				<column name="email" />
+			</index>
+		</table>
+	</schema>
+	<layout name="Main Layout" id="Layout-c98" joined_routing="y" show_column_type="y" show_relation="columns" >
+		<comment><![CDATA[%{project_name} - Entity-Relationship Diagram]]></comment>
+		<entity schema="public" name="conversations" color="80B3B3" x="425" y="272" />
+		<entity schema="public" name="messages" color="80B3B3" x="425" y="85" />
+		<entity schema="public" name="schema_migrations" color="3986C1" x="680" y="323" />
+		<entity schema="public" name="users" color="B380B3" x="51" y="187" />
+		<group name="Accounts" color="B380B3" >
+			<entity schema="public" name="users" />
+		</group>
+		<group name="Assistant" color="80B3B3" >
+			<entity schema="public" name="conversations" />
+			<entity schema="public" name="messages" />
+		</group>
+	</layout>
+	<layout name="~Layout with Sample Tools" id="Layout-2348" show_column_type="y" show_relation="columns" >
+		<entity schema="public" name="conversations" color="BED3F4" x="85" y="51" />
+		<entity schema="public" name="messages" color="BED3F4" x="51" y="272" />
+		<entity schema="public" name="schema_migrations" color="3986C1" x="680" y="51" />
+		<entity schema="public" name="users" color="BED3F4" x="357" y="51" />
+		<script name="SQL Editor" id="Editor-e9f" language="SQL" >
+			<string><![CDATA[SELECT
+	id, user_id, name, inserted_at, updated_at
+FROM
+	"public".conversations s;]]></string>
+		</script>
+		<browser id="Browse-af" name="Relational Data Editor" confirm_updates="y" >
+			<browse_table schema="public" entity="conversations" x="20" y="20" width="270" height="-60" >
+				<browse_table schema="public" entity="messages" fk="messages_conversation_id_fkey" x="310" y="20" width="500" height="350" />
+			</browse_table>
+		</browser>
+	</layout>
+</project>

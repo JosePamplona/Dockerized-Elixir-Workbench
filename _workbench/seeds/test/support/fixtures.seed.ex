@@ -1,0 +1,145 @@
+defmodule %{elixir_module}.Fixtures do
+  @moduledoc """
+  This module defines different fixture setups to configure tests.
+
+  They include user sessions (registered users with a generated fake valid
+  token), conversation sets, and resource sets for pagination tests.
+  """
+
+  # <!-- workbench-auth0 open -->
+  import %{elixir_module}.AccountsFixtures
+  # <!-- workbench-auth0 close -->
+  # <!-- workbench-openai open -->
+  import %{elixir_module}.AssistantFixtures
+  # <!-- workbench-openai close -->
+
+  # <!-- workbench-auth0 open -->
+  @doc """
+  Generate user's authentication sessions.
+  A session includes a user fixture and a fake valid token (intented to be used
+  in combination with authentication mocks).
+  """
+  def sessions(attrs \\ %{}) do
+    verified_user = user_fixture()
+    not_owner_user = user_fixture()
+    unverified_user = user_fixture(%{email_verified: false})
+
+    Map.put(attrs, :sessions, %{
+      # This user has a valid state
+      valid: %{
+        user: verified_user,
+        token: fake_token(verified_user)
+      },
+      # This user is not associated to the valid one resourses
+      not_owner: %{
+        user: not_owner_user,
+        token: fake_token(not_owner_user)
+      },
+      # This user is blocked from access because the email has not been verified
+      unverified_email: %{
+        user: unverified_user,
+        token: fake_token(unverified_user)
+      }
+    })
+  end
+
+  # <!-- workbench-auth0 close -->
+  # <!-- workbench-openai open -->
+  @doc """
+  Generate conversations fixtures.
+  """
+  def conversations(attrs \\ %{}) do
+    Map.put(attrs, :conversations, %{
+      # This is a standard conversation
+      conversation_01: conversation_fixture(attrs.sessions.valid.user)
+    })
+  end
+
+  # <!-- workbench-openai close -->
+  # <!-- workbench-ecto open -->
+  @doc """
+  Generate users fixtures for paginated listing tests.
+  """
+  def pagination_records(attrs \\ %{}) do
+    Map.put(attrs, :pagination_records, %{
+      # <!-- workbench-auth0 open -->
+      user_01: user_fixture(%{name: "David Dawson"}),
+      user_02: user_fixture(%{name: "Jack Johnson"}),
+      user_03: user_fixture(%{name: "Brian Bennett"}),
+      user_04: user_fixture(%{name: "Alice Anderson"}),
+      user_05: user_fixture(%{name: "Franklin Foster"}),
+      user_06: user_fixture(%{name: "Charlie Carter"}),
+      user_07: user_fixture(%{name: "Emma Evans"}),
+      user_08: user_fixture(%{name: "Grace Green"}),
+      user_09: user_fixture(%{name: "Isla Ingram"}),
+      user_10: user_fixture(%{name: "Henry Harrison"})
+      # <!-- workbench-auth0 close -->
+      # <!-- workbench-no-auth0 open -->
+      user_01: %{id: 1, name: "David Dawson"},
+      user_02: %{id: 2, name: "Jack Johnson"},
+      user_03: %{id: 3, name: "Brian Bennett"},
+      user_04: %{id: 4, name: "Alice Anderson"},
+      user_05: %{id: 5, name: "Franklin Foster"},
+      user_06: %{id: 6, name: "Charlie Carter"},
+      user_07: %{id: 7, name: "Emma Evans"},
+      user_08: %{id: 8, name: "Grace Green"},
+      user_09: %{id: 9, name: "Isla Ingram"},
+      user_10: %{id: 10, name: "Henry Harrison"}
+      # <!-- workbench-no-auth0 close -->
+    })
+  end
+
+  # <!-- workbench-ecto close -->
+  # <!-- workbench-auth0 open -->
+  # --- Private ----------------------------------------------------------------
+
+  defp fake_token(user) do
+    now = DateTime.utc_now()
+    header = %{
+      "alg" => "RS256",
+      "typ" => "JWT",
+      "kid" => jwks_key_id()
+    }
+    payload = %{
+      "scope" => "openid profile email",
+      "sub" => user.token_sub,
+      "iat" => DateTime.to_unix(now),
+      "exp" => DateTime.to_unix(DateTime.add(now, 1 * 3600)),
+      "azp" => Application.get_env(:%{elixir_project_name}, :auth0_client_id),
+      "iss" => Application.get_env(:%{elixir_project_name}, :auth0_issuer),
+      "aud" => [
+        Application.get_env(:%{elixir_project_name}, :auth0_audience),
+        "https://#{Application.get_env(:%{elixir_project_name}, :auth0_domain)}/userinfo"
+      ]
+    }
+
+    # This is why we can't generate valid tokens:
+    #
+    # Once the header and payload are constructed, we need to sign the JWT with
+    # a private key. This key is held by Auth0, and we do not have access to it.
+    # As a result, any token we generate will not be validated by Auth0.
+    #
+    # To build the JWT, we use a randomly generated private key. Keeping
+    # track of this key is not necessary, as the correct mock configuration
+    # replaces the validation with a direct fetch of the JWT claims.
+    private_key = JOSE.JWK.generate_key({:rsa, 2048})
+
+    {%{alg: :jose_jws_alg_rsa_pkcs1_v1_5}, jwt} =
+      private_key
+      |> JOSE.JWT.sign(header, payload)
+      |> JOSE.JWS.compact()
+
+    "Bearer #{jwt}"
+  end
+
+  defp jwks_key_id do
+    Auth0Jwks.Strategy.EtsCache
+    |> :ets.lookup(:signers)
+    |> case do
+      [{:signers, signers}] -> signers |> Map.keys() |> List.first()
+      _ ->
+        raise "Well known JWKS falied to be fetched from Auth0Jwks ETS table"
+    end
+  end
+  # <!-- workbench-auth0 close -->
+end

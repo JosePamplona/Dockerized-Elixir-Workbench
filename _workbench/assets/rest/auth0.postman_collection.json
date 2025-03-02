@@ -1,0 +1,81 @@
+{
+	"info": {
+		"_postman_id": "139005cd-1b94-411f-be27-92812e3f937c",
+		"name": "%{project_name}",
+		"description": "%{project_name} provides this collection of REST API endpoints.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "37853537"
+	},
+	"item": [
+		{
+			"name": "User Operations",
+			"item": [
+				{
+					"name": "Get session user",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/api/v1/user",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"user"
+							]
+						},
+						"description": "Retrieves the user associated to the 'sub' claim of the session token in the authorization header of the request."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints set for managing and interacting with system's users data. These endpoints ensure secure handling of user information."
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{token}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "host",
+			"value": "http://localhost:4000",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

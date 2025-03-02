@@ -1,0 +1,207 @@
+defmodule LoremIpsum.Assistant.Conversation do
+  @moduledoc """
+  Conversation identity of `LoremIpsum.Assistant` context. Represents a complete
+  dialogue context, tracking the sequence of messages.
+  """
+  use LoremIpsum.Schema
+
+  alias LoremIpsum.Accounts.User
+  alias LoremIpsum.Assistant.Message
+
+  # Minimum messages to send to the AI assistant API each time.
+  @minimum_messages 1
+
+  schema "conversations" do
+    belongs_to :user, User
+
+    field :name, :string
+
+    has_many :messages, Message
+
+    timestamps()
+  end
+
+  @doc false
+  def get_changeset(attrs) do
+    %__MODULE__{}
+    |> cast(attrs, [:id])
+    |> validate_required([:id])
+  end
+
+  @doc false
+  def create_changeset(conversation, attrs, %User{id: current_user_id}) do
+    conversation
+    |> cast(attrs, [:name])
+    |> validate_required([:name])
+    |> put_change(:user_id, current_user_id)
+    |> validate_unique_name()
+    |> cast_assoc(:messages, required: true, with: &Message.changeset/2)
+    |> validate_length(:messages, [min: @minimum_messages])
+    |> put_messages_idexes()
+    |> put_assistant_message(attrs)
+  end
+
+  @doc false
+  def continue_changeset(conversation, attrs) do
+    %__MODULE__{}
+    |> cast(attrs, [])
+    |> cast_assoc(:messages, required: true, with: &Message.changeset/2)
+    |> validate_length(:messages, [min: @minimum_messages])
+    |> case do
+      %{valid?: false} = changeset -> changeset
+      _ ->
+        current_messages = Enum.map(
+          conversation.messages,
+          fn message -> %{id: message.id} end
+        )
+        attrs = %{attrs | "messages" => current_messages ++ attrs["messages"]}
+
+        conversation
+        |> cast(attrs, [])
+        |> cast_assoc(:messages, required: true, with: &Message.changeset/2)
+        |> put_messages_idexes()
+        |> put_assistant_message(attrs)
+    end
+  end
+
+  # --- Private ----------------------------------------------------------------
+
+  defp validate_unique_name(changeset) do
+    changeset
+    |> errors_on?(:name)
+    |> case do
+      true -> changeset
+      _ ->
+        user_id = get_field(changeset, :user_id)
+        name = get_field(changeset, :name)
+
+        query =
+          from c in __MODULE__,
+          where: c.user_id == ^user_id and c.name == ^name
+
+        query
+        |> Repo.exists?()
+        |> case do
+          false -> changeset
+          _     -> add_error(changeset, :name, "has already been taken")
+        end
+    end
+  end
+
+  defp put_messages_idexes(changeset) do
+    changeset
+    |> errors_on?(:messages)
+    |> case do
+      true -> changeset
+      _ ->
+        messages =
+          changeset
+          |> get_field(:messages)
+          |> Enum.with_index(&put_index_if_missing(&1, &2))
+
+        put_change(changeset, :messages, messages)
+    end
+  end
+
+  defp put_index_if_missing(%{index: index} = message, i) do
+    case index do
+      nil -> %{message | index: i}
+      _   -> message
+    end
+  end
+
+  defp put_assistant_message(changeset, attrs) do
+    changeset
+    |> errors_on?()
+    |> case do
+      true -> changeset
+      _    ->
+        changeset
+        |> request_chat_completion(get_assistant_params(attrs))
+        |> case do
+          {:ok, %{status: 200} = response} ->
+            current_messages = get_field(changeset, :messages)
+            message =
+              response.body
+              |> Jason.decode!()
+              |> Map.fetch!("choices")
+              |> Enum.at(0)
+              |> Map.fetch!("message")
+
+            all_messages = current_messages ++ [
+              %Message{
+                index: length(current_messages),
+                role: String.to_existing_atom(message["role"]),
+                content: message["content"]
+              }
+            ]
+
+            put_change(changeset, :messages, all_messages)
+
+          {:ok, %{status: status} = response} ->
+            add_error(changeset, :assistant, "", [
+              code: status,
+              message:
+                response.body
+                |> Jason.decode!()
+                |> Map.get("error", %{})
+                |> Map.get("message", "")
+            ])
+
+          {:error, :timeout} -> add_error(changeset, :connection, "", code: 504)
+          {:error, _}        -> add_error(changeset, :connection, "", code: 502)
+        end
+    end
+  end
+
+  defp request_chat_completion(changeset, {model, temperature, max_tokens}) do
+    api_url = Application.get_env(:lorem_ipsum, :ai_assistant_api_url)
+    api_key = Application.get_env(:lorem_ipsum, :ai_assistant_api_key)
+    messages =
+      changeset
+      |> get_field(:messages)
+      |> Enum.map(&Map.take(&1, [:role, :content]))
+
+      Finch.request(
+      Finch.build(
+        :post,
+        "#{api_url}/chat/completions",
+        [
+          {"Authorization", "Bearer #{api_key}"},
+          {"Content-Type", "application/json"}
+        ],
+        Jason.encode!(%{
+          messages: messages,
+          model: model,
+          temperature: temperature,
+          max_tokens: max_tokens
+        })
+      ),
+      LoremIpsum.Finch
+    )
+  end
+
+  defp get_assistant_params(attrs) when is_map(attrs) do
+    model = Map.get(attrs, "model", "gpt-4o-mini")
+    temperature =
+      attrs
+      |> Map.get("temperature", "")
+      |> Float.parse()
+      |> case do
+        {float, ""} when float > 1 -> 1
+        {float, ""} when float > 0 -> float
+        _ -> 0
+      end
+
+    max_tokens =
+      attrs
+      |> Map.get("max_tokens", "")
+      |> Integer.parse()
+      |> case do
+        {int, ""} when int >= 1 -> int
+        _ -> 1
+      end
+
+    {model, temperature, max_tokens}
+  end
+end

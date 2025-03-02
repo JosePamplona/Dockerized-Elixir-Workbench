@@ -1,0 +1,18 @@
+defmodule LoremIpsumWeb.MailboxControllerTest do
+  @moduledoc false
+
+  use LoremIpsumWeb.ConnCase, async: true
+
+  # Swoosh Mailbox
+  describe "[HTML] /dev/mailbox" do
+    test "return 200 with Swoosh Mailbox page", %{conn: conn} do
+      response =
+        conn
+        |> get(~p"/dev/mailbox")
+        |> response(200)
+
+      # Check response
+      assert response =~ "<title>Swoosh Mailbox Viewer</title>"
+    end
+  end
+end

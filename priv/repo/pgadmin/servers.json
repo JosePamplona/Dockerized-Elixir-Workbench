@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "1": {
+      "Group": "Dockerized workbench",
+      "Name": "Lorem Ipsum",
+      "Host": "database_host",
+      "Port": 5432,
+      "MaintenanceDB": "postgres",
+      "Username": "postgres",
+      "PassFile": "../var/lib/pgadmin/pgpass",
+      "SSLMode": "prefer"
+    }
+  }
+}

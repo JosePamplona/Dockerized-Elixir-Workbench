@@ -1,163 +1,162 @@
-<!-- markdownlint-disable MD028 -->
-<!-- markdownlint-disable MD034 -->
-# Lorem Ipsum
+<!-- markdownlint-disable MD033 -->
 
-![v0.0.0](https://img.shields.io/badge/version-0.0.0-white.svg?style=flat-square&color=lightgray)
-[![Last Updated](https://img.shields.io/github/last-commit/JosePamplona/Dockerized-Elixir-Workbench.svg?style=flat-square)](https://github.com/JosePamplona/Dockerized-Elixir-Workbench/commits/main)
+# Dockerized Elixir Workbench
 
-**Lorem Ipsum** is a web application that offers a REST API for its usage. It also incorporates various development and monitoring tools available only for development deployments.
+![v0.4.0](https://img.shields.io/badge/version-0.4.0-white.svg?style=flat-square&color=lightgray)
+[![License](https://img.shields.io/github/license/JosePamplona/Dockerized-Elixir-Workbench?style=flat-square)](https://github.com/JosePamplona/Dockerized-Elixir-Workbench/blob/main/LICENSE.md)
+<!-- [![Last Updated](https://img.shields.io/github/last-commit/JosePamplona/Dockerized-Elixir-Workbench.svg?style=flat-square)](https://github.com/JosePamplona/Dockerized-Elixir-Workbench/commits/main)
+-->
 
-## Application Interfaces
+This is a script for creating [Elixir](https://elixir-lang.org/) projects with the [Phoenix](https://www.phoenixframework.org/) framework and deploying them on `localhost` using a specific service architecture with Docker containers. It eliminates the need to install anything other than [Docker Desktop](https://www.docker.com/products/docker-desktop/) to create, develop, and deploy the project in either a development or production environment.
 
-<!-- tabs-open -->
+- [Dockerized Elixir Workbench](#dockerized-elixir-workbench)
+  - [Arquitecture](#arquitecture)
+  - [Configuration](#configuration)
+  - [Create a new project](#create-a-new-project)
+  - [Deployment](#deployment)
+    - [Custom entrypoint](#custom-entrypoint)
+  - [Delete project](#delete-project)
+  - [Maintenance](#maintenance)
+    - [Private Github Registry Images](#private-github-registry-images)
+    - [Demo](#demo)
+    - [Reset Docker](#reset-docker)
+    - [Remove workbench](#remove-workbench)
+    - [Help](#help)
+  - [License](#license)
 
-### Development
+## Arquitecture
 
-| Application Service | URL |
-| --: | :-- |
-| Phoenix web page | <http://localhost:4000/> |
-| API-REST endpoints | <http://localhost:4000/api/v1/> |
+<p align="center"><img alt="arquitecture diagram" src="assets/arq.svg"></p>
 
-| Development Operations | URL |
-| --: | :-- |
-| Healthcheck endpoint | <http://localhost:4000/health/> |
-| API-REST documentation | <http://localhost:4000/dev/swagger/> |
-| Mailbox | <http://localhost:4000/dev/mailbox/> |
-| Phoenix LiveDashboard | <http://localhost:4000/dev/dashboard/> |
-| Project documentation | <http://localhost:4000/dev/docs/> |
-| Test coverage report | <http://localhost:4000/dev/docs/cover/> |
+| Service  | URL | Description |
+| :-- | :-- | :-- |
+| Elixir App  | <http://localhost:4000> | API-REST, GraphiQL and/or Web server |
+| Postgres DB | <http://localhost:5432> | Relational database server |
+| pgAdmin     | <http://localhost:5050> | Database management tool |
+| Auth0       | <https://dev-tenant.us.auth0.com:433> | Identity management platform |
+| Open AI     | <https://api.openai.com/v1:433> | AI Assistant service |
+| Stripe      | <https://api.stripe.com:433> | Payment service provider |
 
-### Production
+## Configuration
 
-| Application Service | URL |
-| --: | :-- |
-| Phoenix web page | <http://localhost:4000/> |
-| API-REST endpoints | <http://localhost:4000/api/v1/> |
+1. Give execution permissions to `app` file (This step only needs to be performed once):
 
-| Development Operations | URL |
-| --:                    | :-- |
-| Healthcheck endpoint | <http://localhost:4000/health/> |
-
-<!-- tabs-close -->
-
-## Start the server
-
-1. In case you already have not, create a `.env` file in the elixir project source directory and write down the following content:
-
-    ```elixir
-    # .env
-    # Variables used to configure the application.
-    
-    # Elixir Application
-    PHX_SERVER=true
-    PHX_HOST="www.lorem-ipsum.com"
-    PORT="4000"
-    DATABASE_URL="ecto://postgres:postgres@database_host/lorem_ipsum_prod"
-    SECRET_KEY_BASE="5InKJFovsKhps5OqdNuJOf4xoBqqeCQ7msitNRvU8Cbn29FQ1jwwyyvxC5RvCJOk"
-    
-    # Auth0 API credentials (Single Page Application)
-    # Login client attributes (Documentation token request)
-    AUTH0_DOMAIN="dev-tenant.us.auth0.com"
-    AUTH0_CLIENT_ID="..."
-    # JWKS attributes (Backend token validation)
-    AUTH0_AUDIENCE="https://dev-tenant.us.auth0.com/api/v2/"
-    AUTH0_ISSUER="https://dev-tenant.us.auth0.com/"
-    
-    # AI Assistant credentials
-    AI_ASSISTANT_API_URL="https://api.openai.com/v1"
-    AI_ASSISTANT_API_KEY="sk-proj-..."
-    
-    # Stripe API credentials
-    STRIPE_SECRET="sk_test_secret"
-    
-    # Docker Compose project name
-    COMPOSE_PROJECT_NAME="lorem-ipsum"
-
+    ```sh
+    sudo chmod +x app
     ```
 
-    | Variable        | Description |
-    | :--             | :--         |
-    | PHX_SERVER      | Indicates a Phoenix server. |
-    | PHX_HOST        | Elixir application host. |
-    | PORT            | Elixir application port. |
-    | DATABASE_URL    | Database name, host and credetials. |
-    | SECRET_KEY_BASE | Use your own, it can be generated by running `mix phx.gen.secret`. |
-    | AUTH0_DOMAIN    | Auth0 application domain name. |
-    | AUTH0_CLIENT_ID | Auth0 application client identifier. |
-    | AUTH0_ISSUER    | Auth0 tenant URL to request JSON Web Ket Sets. |
-    | AUTH0_AUDIENCE  | Auth0 API identifier (Auth0 Management API by default). |
-    | AI_ASSISTANT_API_URL | URL used to make requests request to the AI assistant. |
-    | AI_ASSISTANT_API_KEY | API Key used to make request to the AI assistant. |
-    | STRIPE_SECRET   | Stripe account's secret test key. |
-    | COMPOSE_PROJECT_NAME | Used as Docker Compose project name. |
+1. Modify the `config.conf` file in order to configure the project name and creation specifications. For complete configuration instruccions consult: [Configuration File](./CONFIG.md/).
 
-1. Run `export $(grep -v '^#' .env | xargs)` to export these enviroment variables.
-1. Run `mix setup` to install and setup dependencies and create database.
-1. Start server with `mix phx.server` or inside IEx with `iex -S mix phx.server`.
-  The available endpoints will depend on each different enviroment.
+1. Make sure [Docker Desktop](https://www.docker.com/products/docker-desktop/) is running before running any script command.
 
-## Test the code
+## Create a new project
 
-### Unit testing
+1. Run the following command:
 
-1. Run `mix test` in order to execute automated tests.
+    ```sh
+    ./app new
+    ```
 
-### Coverage
+    This command generates schemas, changesets, context functions, tests, and migration files when applicable and apply specific configurations.
 
-1. Run `mix cover` in order to generate testing and coverage reports.
+    It can accept all option flags from the task `mix phx.new` like `--no-html` or `--no-ecto` (Full task [phx.new](https://hexdocs.pm/phoenix/Mix.Tasks.Phx.New.html) documentation).
 
-## Learn more
+## Deployment
 
-> ### Phoenix
->
-> - Official website: https://www.phoenixframework.org/
-> - Guides: https://hexdocs.pm/phoenix/overview.html
-> - Forum: https://elixirforum.com/c/phoenix-forum
-> - Source: https://github.com/phoenixframework/phoenix
-> - Deps used:
->   - phoenix_live_dashboard: https://hexdocs.pm/phoenix_live_dashboard
->   - swoosh: https://hexdocs.pm/swoosh
->   - credo: https://hexdocs.pm/credo
->   - flame_on: https://hexdocs.pm/flame_on
->   - ex_debug: https://hexdocs.pm/ex_debug
->   - ex_doc: https://hexdocs.pm/ex_doc
+1. This step is only required when deploying the service for the first time, a database reset is needed or the database container is detroyed. This command drops the project database (if any), creates a new one and run a seeding script:
 
-> ### Coveralls
->
-> - Official website: https://docs.coveralls.io/
-> - Deps used:
->   - excoveralls: https://hex.pm/packages/excoveralls
+    ```sh
+    ./app setup [-e, --env ENV]
+    ```
 
-> ### Open API
->
-> - Official website: https://swagger.io/specification/
-> - Deps used:
->   - open_api_spex: https://hex.pm/packages/open_api_spex
+1. Once having a configured database, run the following command to deploy the service along with its configured required services and tools.
 
-> ### Open AI
->
-> - Developer Platform: https://platform.openai.com/docs/overview
-> - API Docs: https://platform.openai.com/docs/api-reference/introduction
+    ```sh
+    ./app up [-e, --env ENV]
+    ```
 
-> ### Auth0
->
-> - Documentation: https://auth0.com/docs
-> - Management API Docs: https://auth0.com/docs/api/management/v2/introduction
-> - Authentication API Docs: https://auth0.com/docs/api/authentication
-> - JSON Web Tokens: https://jwt.io/
-> - Auth0 SPA SDK: https://auth0.github.io/auth0-spa-js/classes/Auth0Client.html
-> - Deps used:
->   - auth0_jwks: https://hex.pm/packages/auth0_jwks
+In both commands the flag `[-e, --env ENV]` is optional. The argument `ENV` can be **dev**, **prod** or other, it corresponds to the desired enviroment configuration to be deployed, by default is **dev**.
 
-> ### Stripe
->
-> - Official website: https://docs.stripe.com/
-> - Stripe Development: https://docs.stripe.com/development
-> - Stripe API Docs: https://docs.stripe.com/api
-> - Stripe JS Docs: https://docs.stripe.com/api
-> - Stripe JS github: https://github.com/stripe/stripe-js
-> - React reference: https://docs.stripe.com/stripe-js/react
-> - Testing Cards: https://docs.stripe.com/testing?testing-method=payment-methods#cards
-> - Deps used:
->   - stripity_stripe: https://hex.pm/packages/stripity_stripe
+### Custom entrypoint
 
+There is the possibility of deploying the application by executing custom server initialization commands:
+
+```sh
+./app run [ARGS...]
+```
+
+Replace `[ARGS...]` with the command(s) to be executed. For example, to run an elixir interactive console:
+
+```sh
+./app run iex -S mix phx.server
+```
+
+## Delete project
+
+Use this command for deleting all project files and the Docker compose project:
+
+```sh
+./app delete
+```
+
+> ⚠️ **Warning**: This action is destructive. Once executed, the current project files will be deleted, and neither the files nor the docker containers can be recovered. Before proceeding, make sure you are absolutely certain that you want to remove them.
+
+## Maintenance
+
+### Private Github Registry Images
+
+In order to download private github registry images, you need to login to GitHub using a username and a token (classic, not fine-grained) and have the rquired access level to the resource. To do this, execute the following command:
+
+```sh
+./app login [GITHUB_USER] [ACCESS_TOKEN]
+```
+
+Replace `[GITHUB_USER]` and `[ACCESS_TOKEN]` with your corresponding user name and token. How to generate a token: [Personal Access Token (classic)](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic)
+
+### Demo
+
+This command runs the **new**, **setup**, **up**, and **delete** commands consecutively for demonstration purposes:
+
+```sh
+./app demo [-e, --env ENV]
+```
+
+The flag `[-e, --env ENV]` is optional. The argument `ENV` can be **dev**, **prod** or other, it corresponds to the desired enviroment configuration to be deployed, by default is **dev**.
+
+> ⚠️ **Warning**: This action is destructive. Once executed, the current project files (if any) will be deleted, new ones will be created and finally deleted again and cannot be recovered. Before proceeding, make sure is safe to remove them if there is any.
+
+### Reset Docker
+
+Use this command in order to stop all containers and prune Docker. It's like a Docker data brute-force reset:
+
+```sh
+./app prune
+```
+
+> ⚠️ **Warning**: This action is destructive. Once executed, all Docker resources (not just the project's resources, but ALL resources in Docker) images, containers, volumes, networks, cache, etc.) will no longer exist and cannot be recovered, only rebuilt. Before proceeding, make sure you are absolutely certain that you want to remove them.
+
+### Remove workbench
+
+Removes the workbench script along with all its files and configurations from the generated project, leaving no trace, as if it had never been there.
+
+```sh
+./app remove-workbench
+```
+
+> 🛑 **Critical Action**: This operation is irreversible! Once executed, the workbench script files and configurations will be permanently deleted and cannot be recovered. Before proceeding, please ensure you are absolutely certain about this action and proceed with extreme caution.
+
+### Help
+
+Shows the workbech script help section:
+
+```sh
+./app help
+```
+
+## License
+
+This software is released under the [MIT](https://mit-license.org/) license.
+
+Permission is granted to use, copy, modify, and distribute the code in both commercial and non-commercial projects. It only requires that the copyright notice and permission statement be maintained in all copies. No warranties are provided and the authors bear no liability.
+
+Copyright © 2024 José Luis Pamplona Stoever.

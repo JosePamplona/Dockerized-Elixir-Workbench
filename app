@@ -4,7 +4,8 @@
 
 # CONFIGURATION ================================================================
 
-  source ./config.conf
+  SCRIPT_CONFIG_FILE="config.conf"
+  source ./$SCRIPT_CONFIG_FILE
 
   # Workbench configuration --------------------------------------------------
 
@@ -18,7 +19,6 @@
     # Directory name to allocate the script files upon creation.
     WORKBENCH_DIR="_workbench"
     WORKBENCH_README_FILE="README.md"
-    WORKBENCH_CONFIG_FILE="CONFIG.md"
     WORKBENCH_VERSION=$( sed '3!d' $0 | sed -n 's/^.*v\(.*\).*/\1/p' )
     EXISTING_PROJECT=$(
       [ $(basename $PWD) == $WORKBENCH_DIR ] && echo true || echo false
@@ -1826,6 +1826,8 @@
           # Estas variables está alojadas aqui para representar que solo son usadas
           # para implementar ex_doc y mantenerlo isolado, si otra implementación
           # usa alguna de estas variables se sacará al script principal.
+          local script_name=$(basename "$0")
+
           local    EXDOC_ENDPOINT="docs"
           local      RESOURCE_DIR="doc"
           local  ARQUITECTURE_DIR="$WORKBENCH_DIR/$ASSETS_DIR/arq"
@@ -1837,7 +1839,6 @@
           local   TOKEN_SEED_FILE="exdoc/token.seed.md"
           local TESTING_SEED_FILE="exdoc/testing.seed.md"
           local EXDOC_CONTROLLER_SEED_FILE="exdoc/exdoc_controller.seed.ex"
-          local CONFIG_SEED_PAGE="$WORKBENCH_DIR/$WORKBENCH_CONFIG_FILE"
 
           local EXDOC_CONTROLLER_FILE="$CONTROLLERS_DIR/exdoc_controller.ex"
           local EXDOC_CONTORLLER_MODULE="ExDocController"
@@ -1850,9 +1851,8 @@
           local     EXDOC_WORKBENCH_FILE="$ELIXIR_EXDOC_ASSETS_PATH/workbench.md"
           local         EXDOC_TOKEN_FILE="$ELIXIR_EXDOC_ASSETS_PATH/token.md"
           local            EXDOC_DB_FILE="$ELIXIR_EXDOC_ASSETS_PATH/database.md"
-          local       EXDOC_TESTING_FILE="$ELIXIR_EXDOC_ASSETS_PATH/$EXDOC_TEST_FILE"
           local     EXDOC_GUIDELINE_FILE="$ELIXIR_EXDOC_ASSETS_PATH/coding.md"
-          local CONFIG_PAGE="$ELIXIR_EXDOC_ASSETS_PATH/$WORKBENCH_CONFIG_FILE"
+          local       EXDOC_TESTING_FILE="$ELIXIR_EXDOC_ASSETS_PATH/$EXDOC_TEST_FILE"
 
           local MOD=$ELIXIR_MODULE
           local     REGEX_CONTEXT="~r/^${MOD}\\\.(?!(.*\\\..*|Mailer|Repo|Helper|.*Ecto.*)$).*$/"
@@ -1951,11 +1951,18 @@
 
         # Set workbench page
         cp "$WORKBENCH_DIR/$WORKBENCH_README_FILE" $EXDOC_WORKBENCH_FILE
-
-        # Plant config page    
-        cp $CONFIG_SEED_PAGE $CONFIG_PAGE
-        # WIP
-        # sed -i "s/^.*CONFIG.*$/quiondas/" $README_FILE
+        # Adjust workbench.md new command routes
+        sed -i \
+          "s|\`./$script_name\`|\`./$WORKBENCH_DIR/$script_name\`|g" \
+          $EXDOC_WORKBENCH_FILE
+        sed -i \
+          "s|\`./$SCRIPT_CONFIG_FILE\`|\`./$WORKBENCH_DIR/$SCRIPT_CONFIG_FILE\`|g" \
+          $EXDOC_WORKBENCH_FILE
+        sed -i \
+          "s/sudo chmod +x app/cd $WORKBENCH_DIR\n    sudo chmod +x app/" \
+          $EXDOC_WORKBENCH_FILE
+        # sed -i "s|CONFIG.md|$WORKBENCH_DIR/config.html|g" $EXDOC_WORKBENCH_FILE
+        sed -i "/^.*CONFIG.*$/d" $EXDOC_WORKBENCH_FILE
 
         # Remove workbench page arquitecture table rows
         [ "$AUTH0" != true ] && \
@@ -2027,8 +2034,7 @@
             "    {\"$EXDOC_GUIDELINE_FILE\",    [title: \"Coding guidelines\"]},"
 
           mix_insert project \
-            "    {\"$EXDOC_WORKBENCH_FILE\", [title: \"Workbench\"]}," \
-            "    {\"$CONFIG_PAGE\", [title: \"Configuration File\"]}" \
+            "    {\"$EXDOC_WORKBENCH_FILE\", [title: \"Workbench\"]}" \
             "  ]," \
             "  groups_for_extras: [" \
             "    \"Project\": [" \
@@ -2048,8 +2054,7 @@
 
           mix_insert project \
             "      \"$EXDOC_GUIDELINE_FILE\"," \
-            "      \"$EXDOC_WORKBENCH_FILE\"", \
-            "      \"$CONFIG_PAGE\"" \
+            "      \"$EXDOC_WORKBENCH_FILE\"" \
             "    ]" \
             "  ]," \
             "  groups_for_modules: [" \
@@ -2497,17 +2502,17 @@
 
     # SCRIPT -----------------------------------------------------------------
 
-    if [ "$ENHANCE" == true ];       then implement_enhancements; fi && \
+    if [ "$ENHANCE" == true ]; then implement_enhancements; fi && \
     if [[ "$INTERFACE" == "rest" || "$HEALTH" == true ]]; then
       implement_rest;
     fi && \
-    if [ "$INTERFACE" == "graphql" ]; then implement_graphql;      fi && \
-    if [ "$EXDOC" == true ];              then implement_exdoc;        fi && \
-    if [ "$COVERALLS" == true ];          then implement_coveralls;    fi && \
-    if [ "$HEALTH" == true ];        then implement_healthcheck;  fi && \
-    if [ "$AUTH0" == true ];              then implement_auth0;        fi && \
-    if [ "$STRIPE" == true ];             then implement_stripe;       fi && \
-    if [ "$OPENAI" == true ];             then implement_openai;       fi && \
+    if [ "$INTERFACE" == "graphql" ]; then implement_graphql;     fi && \
+    if [ "$EXDOC" == true ];          then implement_exdoc;       fi && \
+    if [ "$COVERALLS" == true ];      then implement_coveralls;   fi && \
+    if [ "$HEALTH" == true ];         then implement_healthcheck; fi && \
+    if [ "$AUTH0" == true ];          then implement_auth0;       fi && \
+    if [ "$STRIPE" == true ];         then implement_stripe;      fi && \
+    if [ "$OPENAI" == true ];         then implement_openai;      fi && \
     echo
   }
 

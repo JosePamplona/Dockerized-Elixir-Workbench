@@ -10,6 +10,8 @@ defmodule %{elixir_module}.Assistant.Conversation do
 
   # Minimum messages to send to the AI assistant API each time.
   @minimum_messages 1
+  @temeprature_default 0.7
+  @max_tokens_default 2048
 
   schema "conversations" do
     belongs_to :user, User
@@ -190,7 +192,7 @@ defmodule %{elixir_module}.Assistant.Conversation do
       |> case do
         {float, ""} when float > 1 -> 1
         {float, ""} when float > 0 -> float
-        _ -> 0
+        _ -> @temeprature_default
       end
 
     max_tokens =
@@ -199,7 +201,7 @@ defmodule %{elixir_module}.Assistant.Conversation do
       |> Integer.parse()
       |> case do
         {int, ""} when int >= 1 -> int
-        _ -> 1
+        _ -> @max_tokens_default
       end
 
     {model, temperature, max_tokens}

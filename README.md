@@ -4,8 +4,7 @@
 
 ![v0.4.0](https://img.shields.io/badge/version-0.4.0-white.svg?style=flat-square&color=lightgray)
 [![License](https://img.shields.io/github/license/JosePamplona/Dockerized-Elixir-Workbench?style=flat-square)](https://github.com/JosePamplona/Dockerized-Elixir-Workbench/blob/main/LICENSE.md)
-<!-- [![Last Updated](https://img.shields.io/github/last-commit/JosePamplona/Dockerized-Elixir-Workbench.svg?style=flat-square)](https://github.com/JosePamplona/Dockerized-Elixir-Workbench/commits/main)
--->
+[![Last Updated](https://img.shields.io/github/last-commit/JosePamplona/Dockerized-Elixir-Workbench.svg?style=flat-square)](https://github.com/JosePamplona/Dockerized-Elixir-Workbench/commits/main)
 
 This is a script for creating [Elixir](https://elixir-lang.org/) projects with the [Phoenix](https://www.phoenixframework.org/) framework and deploying them on `localhost` using a specific service architecture with Docker containers. It eliminates the need to install anything other than [Docker Desktop](https://www.docker.com/products/docker-desktop/) to create, develop, and deploy the project in either a development or production environment.
 
@@ -39,13 +38,14 @@ This is a script for creating [Elixir](https://elixir-lang.org/) projects with t
 
 ## Configuration
 
-1. Give execution permissions to `app` file (This step only needs to be performed once):
+1. Give execution permissions to `./app` file (This step only needs to be performed once):
 
     ```sh
     sudo chmod +x app
     ```
 
-1. Modify the `config.conf` file in order to configure the project name and creation specifications. For complete configuration instruccions consult: [Configuration File](./CONFIG.md/).
+1. Modify the `./config.conf` file in order to configure the project name and creation specifications.
+  For complete configuration instruccions consult: [Configuration File](./CONFIG.md).
 
 1. Make sure [Docker Desktop](https://www.docker.com/products/docker-desktop/) is running before running any script command.
 

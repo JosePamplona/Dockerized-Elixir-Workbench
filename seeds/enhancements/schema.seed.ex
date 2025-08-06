@@ -41,11 +41,11 @@ defmodule %{elixir_module}.Schema do
 
   # coveralls-ignore-start
   defmacro __before_compile__(env) do
-    %meta_module{} = Module.get_attribute(env.module, :__struct__).__meta__
     fields = Module.get_attribute(env.module, :ecto_fields)
     fields = fields ++ Module.get_attribute(env.module, :ecto_virtual_fields)
     fields = fields ++ Module.get_attribute(env.module, :ecto_assocs)
-    fields = fields ++ [__meta__: {meta_module, :always}]
+    fields = fields ++ [__meta__: {Ecto.Schema.Metadata, :always}]
+    
     key_types =
       for {field, type} <- fields do
         type = case type do

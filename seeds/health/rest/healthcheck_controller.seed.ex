@@ -164,7 +164,7 @@ defmodule %{elixir_module}Web.HealthcheckController do
 
   def health(conn, params) do
     info =
-      case Application.get_env(:%{elixir_project_name}, :dev_routes) do
+      case Application.get_env(:%{elixir_project_name}, :dev_routes, false) do
         true -> info(params)
         _    -> %{health: "😊"}
       end

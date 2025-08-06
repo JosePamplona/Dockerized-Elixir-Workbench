@@ -59,7 +59,7 @@ defmodule %{elixir_module}Web.ConversationController do
     summary: "Get a user's single conversation.",
     description: "Retrieve a single conversation with the assistant that belongs to the active session user. This endpoint returns the full messages list.",
     security: Requests.security(),
-    required: [:id],
+    # required: [:id],
     parameters: [
       id: [
         in: :path,
@@ -247,7 +247,7 @@ defmodule %{elixir_module}Web.ConversationController do
     summary: "Send new message(s) within an existing conversation.",
     description: "Continue a specified conversation by adding new message(s) and requesting a response. The updated conversation, including the assistant's response, is saved in the database. This endpoint returns only the assistant's latest response message.",
     security: Requests.security(),
-    required: [:id],
+    # required: [:id],
     parameters: [
       id: [
         in: :path,
@@ -383,7 +383,7 @@ defmodule %{elixir_module}Web.ConversationController do
     summary: "Delete a user's single conversation.",
     description: "Remove a single conversation with the assistant that belongs to the active session user.",
     security: Requests.security(),
-    required: [:id],
+    # required: [:id],
     parameters: [
       id: [
         in: :path,

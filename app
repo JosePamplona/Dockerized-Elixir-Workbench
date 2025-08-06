@@ -174,7 +174,7 @@
     EXDEBUG_VERSION="~> 1.0"
     # ExDoc documentation implementation
     # https://hex.pm/packages/ex_doc
-    EXDOC_VERSION="~> 0.35.0"
+    EXDOC_VERSION="~> 0.38"
     # API REST documentation implementation
     # https://hex.pm/packages/open_api_spex
     OPEN_API_VERSION="~> 3.21"
@@ -2412,8 +2412,9 @@
           "{:auth0_jwks, \"$AUTH0_JWKS_VERSION\"}"
 
         # Adjust application.ex file
+        # SMELL: Apuntar a la linea 18 es muy rígido y depende de la versión de Phoenix
         sed -i \
-          "20s/$/,\n      # Start the process to request the JSON Web Key Set (with RS256 alg).\n      {Auth0Jwks.Strategy, first_fetch_sync: true}/" \
+          "18s/$/,\n      # Start the process to request the JSON Web Key Set (with RS256 alg).\n      {Auth0Jwks.Strategy, first_fetch_sync: true}/" \
           $APPLICATION_FILE
 
         # Adjust config.ex

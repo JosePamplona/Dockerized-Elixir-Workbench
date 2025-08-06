@@ -111,7 +111,7 @@
 
 ### Coverage
 
-1. Run `%{coverage_command}` in order to generate testing and coverage reports.
+1. Run `MIX_ENV=test %{coverage_command}` in order to generate testing and coverage reports.
 
 ## Learn more
 

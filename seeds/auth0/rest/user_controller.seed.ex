@@ -16,7 +16,7 @@ defmodule %{elixir_module}Web.UserController do
       Retrieves the user associated to the 'sub' claim of the session token in the authorization header of the request.
       """,
     security: Requests.security(),
-    produces: "application/json",
+    # produces: "application/json",
     responses: [
       Responses.build(
         200,

@@ -22,7 +22,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Configuration file documentation.
 - **Remove workbench** command in workbench script.
   - creates Dockerfile.dev
-  - adjust docker-compose
+  - adjust docker-compose to work independently from script
 - Workbench script implementation: **Stripe**.
 - Workbench script implementation: **GraphQL**.
 - Generated all missing documentation for functions in `app` script.

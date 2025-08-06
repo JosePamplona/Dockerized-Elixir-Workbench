@@ -42,13 +42,7 @@ defmodule Mix.Tasks.Cover do
         IO.puts(test_report_output)
       else
         # coveralls-ignore-start
-        try do
-          Mix.Task.run(
-            "coveralls.html", ["--trace", "--seed", "0"]
-          )
-        rescue e in Mix.Error -> e
-        catch kind, reason -> {kind, reason}
-        end
+        Mix.Task.run("coveralls.html", ["--trace", "--seed", "0"])
         # coveralls-ignore-stop
       end
     end)

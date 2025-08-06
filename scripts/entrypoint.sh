@@ -44,13 +44,13 @@ if [ $# -gt 0 ]; then echo "[$HOSTNAME]$0($#): $@"; fi
 # SCRIPT -----------------------------------------------------------------------
 
   cd "src"
-
+  
   if   [ "$1" == "new" ]; then
     shift
     if [ $# -ge 1 ]; then
       PROJECT_NAME=$1; shift
-      
-      { echo y; echo n; } | mix phx.new ./ --app $PROJECT_NAME --verbose $@
+
+      { echo y; echo n; } | mix phx.new . --app $PROJECT_NAME --verbose $@
 
     elif [ $# -lt 2 ]; then args_error missing
     else args_error too_many; fi
@@ -85,11 +85,13 @@ if [ $# -gt 0 ]; then echo "[$HOSTNAME]$0($#): $@"; fi
       if [ $EXDOC == true ]; then
         if [ $ECTO == true ]; then
           mix db && \
-          MIX_ENV="test" && mix ecto.drop --force --force-drop && \
-          MIX_ENV="test" && mix ecto.create --quiet && \
-          MIX_ENV="test" && mix ecto.migrate --quiet
+          MIX_ENV="test" mix ecto.drop --force --force-drop && \
+          MIX_ENV="test" mix ecto.create --quiet && \
+          MIX_ENV="test" mix ecto.migrate --quiet
         fi && \
-        if [ $COVERALLS == true ]; then mix cover || true; fi && \
+        if [ $COVERALLS == true ]; then
+          MIX_ENV="test" mix cover || true;
+        fi && \
         mix docs
       fi
 

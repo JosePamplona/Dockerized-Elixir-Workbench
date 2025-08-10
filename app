@@ -1,6 +1,6 @@
 #!/bin/bash
 # Dockerized workbench script
-# v0.4.0
+# v0.4.1
 
 # CONFIGURATION ================================================================
 
@@ -48,6 +48,7 @@
     README_SEED="README.seed.md"
     CHANGELOG_SEED="CHANGELOG.seed.md"
     DEV_DOCKERFILE_SEED="Dockerfile.seed.dev"
+    DOCKERIGNORE_SEED=".dockerignore.seed"
     PROD_DOCKERFILE_SEED="Dockerfile.seed.prod"
     PGADMIN_SERVERS_SEED="servers.seed.json"
     PGADMIN_PASS_SEED="pgpass.seed"
@@ -76,6 +77,7 @@
     HOMEPAGE_FILE="$CONTROLLERS_DIR/page_html/home.html.heex"
     README_FILE="README.md"
     CHANGELOG_FILE="CHANGELOG.md"
+    DOCKERIGNORE=".dockerignore"
     PROD_DOCKERFILE="Dockerfile"
     GITIGNORE_FILE=".gitignore"
     FORMATTER_FILE=".formatter.exs"
@@ -769,10 +771,10 @@
       # adjust_gitignore
         # Prepends .tool-sersions and .env files.
       adjust_gitignore() {
+        # sed -i \
+        #   "1i\\# ASDF .tools-versions file." \
+        #   $GITIGNORE_FILE && \
         sed -i "1i\\$TOOLS_VERSIONS_FILE\\n" $GITIGNORE_FILE && \
-        sed -i \
-          "1i\\# ASDF .tools-versions file." \
-          $GITIGNORE_FILE && \
         sed -i "1i\\$ENV_FILE\\n" $GITIGNORE_FILE && \
         sed -i \
           "1i\\# Secrets required to configure the application." \
@@ -1003,6 +1005,17 @@
         fi
       }
 
+      # create_dockerignore
+        # Create a new production Dockerfile file from seed.
+        # Adjust elixir, erlang and debian versions into Dockerfile.
+        # Adjust project name directory for build path in Dockerfile.
+      create_dockerignore(){
+        local seed_path="$WORKBENCH_DIR/$SEEDS_DIR/$DOCKERIGNORE_SEED"
+        local file_path="$DOCKERIGNORE"
+
+        cp $seed_path $file_path
+      }
+
       # create_dockerfile_prod
         # Create a new production Dockerfile file from seed.
         # Adjust elixir, erlang and debian versions into Dockerfile.
@@ -1061,6 +1074,7 @@
     create_env && \
     create_changelog && \
     create_readme && \
+    create_dockerignore && \
     create_dockerfile_prod && \
     create_docker_compose_file && \
     create_tool_versions
@@ -1855,7 +1869,7 @@
           local       EXDOC_TESTING_FILE="$ELIXIR_EXDOC_ASSETS_PATH/$EXDOC_TEST_FILE"
 
           local MOD=$ELIXIR_MODULE
-          local     REGEX_CONTEXT="~r/^${MOD}\\\.(?!(.*\\\..*|Mailer|Repo|Helper|.*Ecto.*)$).*$/"
+          local     REGEX_CONTEXT="~r/^${MOD}\\\.(?!(.*\\\..*|Mailer|Repo|Helper|Release|.*Ecto.*)$).*$/"
           local     REGEX_SCHEMAS="~r/^${MOD}\\\..*\\\.(?!.*(Enum)$).*$/"
           local       REGEX_TYPES="~r/^${MOD}\\\..*(Enum|EctoURI)$/"
           local         REGEX_WEB="~r/^${MOD}Web(?!(.Plug..*|.*(Controller|HTML|JSON))$)/"
@@ -2028,7 +2042,7 @@
             "    {\"$EXDOC_DB_FILE\",  [title: \"Database\"]},"
 
           [ $COVERALLS == true ] && mix_insert project \
-            "    {\"$EXDOC_TESTING_FILE\",   [title: \"Tests reports\"]},"
+            "    {\"$EXDOC_TESTING_FILE\",   [title: \"Testing reports\"]},"
 
           [ $CODING_GUIDELINES == true ] && mix_insert project \
             "    {\"$EXDOC_GUIDELINE_FILE\",    [title: \"Coding guidelines\"]},"
@@ -2233,16 +2247,20 @@
           mix_append project ","
           mix_insert project \
             "" \
-            "# Coverage parameters" \
-            "test_coverage: [tool: ExCoveralls]," \
-            "preferred_cli_env: [" \
+            "# Coverage configuration" \
+            "test_coverage: [tool: ExCoveralls]"
+
+          sed_lines "prefered_env" 3 \
+            "preferred_envs: [" \
+            "  precommit: :test," \
             "  cover: :test," \
             "  coveralls: :test," \
             "  \"coveralls.detail\": :test," \
             "  \"coveralls.post\": :test," \
             "  \"coveralls.html\": :test," \
-            "  \"coveralls.cobertura\": :test," \
+            "  \"coveralls.cobertura\": :test" \
             "]"
+          sed -i "s/^.*preferred_envs: \[precommit: :test\]/$prefered_env/" $MIX_FILE
 
           mix_append deps ","
           mix_insert deps \

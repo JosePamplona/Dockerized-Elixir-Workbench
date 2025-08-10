@@ -3,17 +3,19 @@ defmodule Mix.Tasks.Cover do
 
   import ExUnit.CaptureIO
 
-  @test_filename     "%{target_filename}" # Target filename.
-  @test_output_path  "%{exdoc_assets}" # Processed files output path.
-  @coverage_config   "%{coverage_config}"
+  @test_filename     "testing.md" # Target filename.
+  @test_output_path  "assets/exdoc" # Processed files output path.
+  @coverage_config   "coveralls.json"
   @coverage_filename "excoveralls.html"
-  @coverage_link     "[Coverage report](./#{@coverage_filename})"
+  @coverage_link     "[Test Coverage Overview](./#{@coverage_filename})"
   @coverage_options (
     @coverage_config
     |> File.read!()
     |> Jason.decode!(keys: :atoms)
     |> Map.fetch!(:coverage_options)
   )
+  @section_coverage "Coverage Report"
+  @section_tests "Unit Tests Summary"
 
   @version   Mix.Project.config[:version]
   # Regex patterns
@@ -82,53 +84,31 @@ defmodule Mix.Tasks.Cover do
   # == Private =================================================================
 
   defp format_tests_report(content) do
-    %{
-      year: year,
-      month: month,
-      day: day,
-      hour: hour,
-      minute: minute,
-      second: second,
-      microsecond: {microsecond, 6}
-    } = NaiveDateTime.utc_now()
+    # Fecha/hora: `YYYY-MM-DD` at `HH:MM:SS.mmmmmm`
+    t = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:microsecond)
+    [date, time] = t |> NaiveDateTime.to_string() |> String.split(" ")
+    now = "`#{date}` at `#{time}`"
 
-    now =
-      "`#{year}"
-      |> Kernel.<>("-")
-      |> Kernel.<>(String.pad_leading("#{month}", 2, "0"))
-      |> Kernel.<>("-")
-      |> Kernel.<>(String.pad_leading("#{day}", 2, "0"))
-      |> Kernel.<>("` at `")
-      |> Kernel.<>(String.pad_leading("#{hour}", 2, "0"))
-      |> Kernel.<>(":")
-      |> Kernel.<>(String.pad_leading("#{minute}", 2, "0"))
-      |> Kernel.<>(":")
-      |> Kernel.<>(String.pad_leading("#{second}", 2, "0"))
-      |> Kernel.<>(".")
-      |> Kernel.<>(String.pad_leading("#{microsecond}", 3, "0"))
-      |> Kernel.<>("`")
-
-    [
-      "# Tests reports",
-      "",
-      "Reports generated on #{now} for version: **#{@version}**.",
-      "",
-      "## Automated tests",
-      "",
-      "```elixir"
-    ] ++ (
+    output =
       content
       |> String.split("\n")
       |> Enum.with_index(&format_test_line/2)
       |> List.flatten()
-    ) ++ [
+
+    [
+      "# Testing reports",
+      "",
+      "Reports generated on #{now} for version: **#{@version}**.",
+      "",
+      "## #{@section_tests}",
+      "",
+      "```elixir"
+    ] ++ output ++ [
       "```",
       ""
     ]
-    |> Enum.reduce({[], nil}, fn line, {acc, last} ->
-      if line == last, do: {acc, last}, else: {acc ++ [line], line}
-    end)
-    |> elem(0)
+    |> Enum.dedup()
+    |> invert_sections()
     |> Enum.join("\n")
   end
 
@@ -137,15 +117,22 @@ defmodule Mix.Tasks.Cover do
     line = line |> String.split("\r") |> Enum.at(-1)
 
     # Check if the line is an excluded test to comment out the line
-    ~r/\* test.*?\(excluded\) \[L#\d+\]/
-    |> Regex.scan(line)
-    |> case do
-      [] -> line
-      _matches -> String.replace(line, ~r/(\* test)/, "# test")
-    end
-    |> String.replace(~r/\e\[.*?m/, "")
-    |> String.replace(~r/\\e\[.*?m/, "")
+    line =
+      ~r/\* test.*?\(excluded\) \[L#\d+\]/
+      |> Regex.scan(line)
+      |> case do
+        [] -> line
+        _matches -> String.replace(line, ~r/(\* test)/, "# test")
+      end
+
+    # ANSI codes replaced by HTML tags
+    line =
+      line
+      |> String.replace(~r/\e\[.*?m/, "")
+      |> String.replace(~r/\\e\[.*?m/, "")
+
     # Matches are checked against lines that require additional formatting.
+    line
     |> case do
       "----------------" -> []
       "Generating report..." -> []
@@ -159,9 +146,9 @@ defmodule Mix.Tasks.Cover do
               line,
               "```",
               "",
-              "## Coverage",
+              "## #{@section_coverage}",
               "",
-              "Full test coverage report: #{@coverage_link}.",
+              "- Full unit tests coverage report: #{@coverage_link}.",
               "",
               "```elixir"
             ]
@@ -182,5 +169,52 @@ defmodule Mix.Tasks.Cover do
       {_, _, [[_, _, min]]}                        -> {:error, 1, {:cover, min}}
       _                                            -> {:error, 1, :raise}
     end
+  end
+
+  defp invert_sections(lines, header_prefix \\ "## ") do
+    {preface, sections} = split_sections(lines, header_prefix)
+
+    case sections do
+      [] -> lines
+      _  -> preface ++ (sections |> Enum.reverse() |> List.flatten())
+    end
+  end
+
+  defp split_sections(lines, header_prefix) do
+    {preface, rest} =
+      Enum.split_while(
+        lines,
+        fn line -> not String.starts_with?(line, header_prefix) end
+      )
+
+    {preface, collect_sections(rest, header_prefix)}
+  end
+
+  defp collect_sections([], _prefix), do: []
+  defp collect_sections(rest, header_prefix) do
+    {current_rev, acc} =
+      Enum.reduce(rest, {[], []}, fn line, {current, acc} ->
+        if String.starts_with?(line, header_prefix) do
+          {
+            [line],
+            # Nuevo encabezado: guardar la sección anterior (si hay) y empezar otra
+            case current do
+              [] -> acc
+              _ -> [Enum.reverse(current) | acc]
+            end
+          }
+        else
+          {[line | current], acc}
+        end
+      end)
+
+    # Empujar la última sección y devolver en orden original
+    acc =
+      case current_rev do
+        [] -> acc
+        _ -> [Enum.reverse(current_rev) | acc]
+      end
+
+    Enum.reverse(acc)
   end
 end

@@ -8,14 +8,10 @@
   </head>
   <body>
     <div id='coverage'>
-      <h1 id='overview'>Coverage</h1>
+      <h1 id='overview'>🧪 Test Coverage Overview</h1>
       <div id="menu">
-        <li>
-          <a id='back' href='./testing.html#coverage'>
-            ⮌ Back to documentation
-          </a>
-        </li>
-        <li><a href='#'>overview</a></li>
+        <li><a href='/dev/docs/testing.html'>🔙 Back</a></li>
+        <li><a href='#'>🧪 Test Coverage Overview</a></li>
         <%= for file <- @cov.files do %>
           <%= if not @filter_full_covered or file.coverage < 100 do %>
             <li>
@@ -33,10 +29,12 @@
       </div>
 
       <div id='stats' class='<%= ExCoveralls.Html.View.coverage_class(@cov.coverage) %>'>
-        <div class='percentage'><%= @cov.coverage || 0 %></div>
-        <div class='sloc'><%= @cov.sloc %></div>
-        <div class='hits'><%= @cov.hits %></div>
-        <div class='misses'><%= @cov.misses %></div>
+          <span class='dashboard'>
+            <div class='percentage'><%= @cov.coverage || 0 %></div>
+            <div class='sloc'><%= @cov.sloc %></div>
+            <div class='hits'><%= @cov.hits %></div>
+            <div class='misses'><%= @cov.misses %></div>
+          </span>
       </div>
       <div id='files'>
         <%= for file <- @cov.files do %>
@@ -44,10 +42,13 @@
             <div class='file'>
               <h2 id='<%= file.filename %>'><%= file.filename %></h2>
               <div id='stats' class='<%= ExCoveralls.Html.View.coverage_class(file.coverage, file.sloc) %>'>
-                <div class='percentage'><%= file.coverage || 0 %></div>
-                <div class='sloc'><%= file.sloc %></div>
-                <div class='hits'><%= file.hits %></div>
-                <div class='misses'><%= file.misses %></div>
+                <div class='file'><%= file.filename %></div>
+                <span class='dashboard'>
+                  <div class='percentage'><%= file.coverage || 0 %></div>
+                  <div class='sloc'><%= file.sloc %></div>
+                  <div class='hits'><%= file.hits %></div>
+                  <div class='misses'><%= file.misses %></div>
+                </span>
               </div>
               <table id='source'>
                 <thead>

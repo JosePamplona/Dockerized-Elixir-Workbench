@@ -1,11 +1,15 @@
-// themedImage.js v1.0.0
+// themedImage.js v1.0.1
 // This script is injected at the end of the <body> tag on all ExDoc generated 
 // HTML files, to enable image version switch on page theme change.
 console.info(
-  `ExDoc | body injected script: %cthemedImage.js %cv1.0.0`,
+  `ExDoc | body injected script: %cthemedImage.js %cv1.0.1`,
   'font-weight: bold;',
   'color: #3d6fe3;'
 )
+
+const target_source = './images/model-light.svg';
+const light_source = './assets/model-light.svg';
+const dark_source = './assets/model-dark.svg';
 
 // ExDoc HTML page settings
 // console.log(settings)
@@ -59,7 +63,11 @@ class ClassWatcher {
 // If the <body> tag have the class 'dark' sets the img.src='dark_src',
 // If the <body> tag doesn't have the class 'dark' sets the img.src='light_src'.
 // Add a listener on body element to keep updating src whenever class changes.
-function setThemedImage(original_src, light_src, dark_src) {
+function setThemedImage() {
+  let original_src = target_source;
+  let light_src = light_source;
+  let dark_src = dark_source;
+
   // Class of the body element to listen for changes
   const target_class = 'dark';
 
@@ -107,9 +115,11 @@ function setThemedImage(original_src, light_src, dark_src) {
 //   './assets/logo-dark.svg'
 // ));
 
-// Model diagram on database page
-document.addEventListener("DOMContentLoaded", setThemedImage(
-  './images/model-light.svg',
-  './assets/model-light.svg',
-  './assets/model-dark.svg'
-));
+// // Model diagram on database page
+// document.addEventListener("DOMContentLoaded", setThemedImage);
+
+// ExDoc: cada navegación
+window.addEventListener("exdoc:loaded", setThemedImage);
+// Swup (por si usas tu propio theme/versión)
+document.addEventListener("swup:pageView", setThemedImage);
+document.addEventListener("swup:contentReplaced", setThemedImage);

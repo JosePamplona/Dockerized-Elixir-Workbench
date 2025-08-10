@@ -1,8 +1,8 @@
-// token.js v1.1.0
+// token.js v1.1.1
 // This script is injected at the end of the <body> tag on all ExDoc generated 
 // HTML files, to enable image version switch on page theme change.
 console.info(
-  `ExDoc | body injected script: %ctoken.js %cv1.1.0`,
+  `ExDoc | body injected script: %ctoken.js %cv1.1.1`,
   'font-weight: bold;',
   'color: #3d6fe3;'
 )
@@ -206,4 +206,10 @@ function setButtons() {
 
 // -----------------------------------------------------------------------------
 
-window.addEventListener("DOMContentLoaded", setButtons());
+// window.addEventListener("DOMContentLoaded", setButtons());
+
+// ExDoc: cada navegación
+window.addEventListener("exdoc:loaded", setButtons);
+// Swup (por si usas tu propio theme/versión)
+document.addEventListener("swup:pageView", setButtons);
+document.addEventListener("swup:contentReplaced", setButtons);

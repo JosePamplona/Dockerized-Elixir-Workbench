@@ -39,7 +39,7 @@ Generated using [DbSchema](https://dbschema.com)
 | * &#128273;  | id| uuid  |
 | * &#128269; &#11016; | conversation\_id| uuid  |
 | * &#128269; | index| integer  |
-| * | role| "public".message\_role  |
+| * | role| public.message\_role  |
 | * | content| text  |
 | * | inserted\_at| timestamp  DEFAULT now() |
 | * | updated\_at| timestamp  DEFAULT now() |
@@ -84,7 +84,7 @@ Generated using [DbSchema](https://dbschema.com)
 |---|---|---|
 | * &#128273;  &#11019; | id| uuid  |
 | * | name| varchar(255)  |
-| * | status| "public".user\_status  |
+| * | status| public.user\_status  |
 | * &#128269; | email| varchar(255)  |
 | * | email\_verified| boolean  DEFAULT false |
 |  | phone\_number| varchar(255)  |

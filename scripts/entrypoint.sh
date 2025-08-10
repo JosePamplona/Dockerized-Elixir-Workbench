@@ -66,6 +66,7 @@ if [ $# -gt 0 ]; then echo "[$HOSTNAME]$0($#): $@"; fi
       CUSTOM_SCHEMAS_CONTEXT_FILE=$1; shift
       
       mix deps.get && \
+      mix phx.gen.release && \
       if [ $AUTH0 == true ]; then source ../$AUTH0_CONTEXT_FILE; fi && \
       if [ $OPENAI == true ]; then source ../$OPENAI_CONTEXT_FILE; fi && \
       if [ $CUSTOM_SCHEMAS == true ]; then
@@ -89,9 +90,7 @@ if [ $# -gt 0 ]; then echo "[$HOSTNAME]$0($#): $@"; fi
           MIX_ENV="test" mix ecto.create --quiet && \
           MIX_ENV="test" mix ecto.migrate --quiet
         fi && \
-        if [ $COVERALLS == true ]; then
-          MIX_ENV="test" mix cover || true;
-        fi && \
+        if [ $COVERALLS == true ]; then mix cover || true; fi && \
         mix docs
       fi
 

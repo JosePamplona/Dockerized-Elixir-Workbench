@@ -16,21 +16,38 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 > During development, milestones can be added to this section. Once finished working on them, it's only needed to copy the commented title template line, adjust the title version & date and uncomment it.
 <!-- ## v0.0.0 - (0000-00-00) -->
-<!-- # CONTINUE -->
-# Added
+### Added
 
+<!-- # CONTINUE -->
 - Configuration file documentation.
 - **Remove workbench** command in workbench script.
-  - creates Dockerfile.dev
   - adjust docker-compose to work independently from script
 - Workbench script implementation: **Stripe**.
 - Workbench script implementation: **GraphQL**.
 - Generated all missing documentation for functions in `app` script.
 
-# Fixed
+### Fixed
 
-- ExDoc Locked on 0.35 because error on Dom event listening.
 - DB port change breaks pgadmin maybe back?
+
+## v0.4.1 - (0025-08-10)
+
+### Added
+
+- Project configuration completed with `mix release` generation files and suggested `.dockerignore` file.
+- **Watchman** was added to the `Dockerfile.dev` configuration since the updated Phoenix version `1.8` uses it.
+
+### Changed
+
+- The **coverage report HTML styles** template was updated, with new CSS styles.
+- The sections in **Testing Reports** were reordered.
+
+### Fixed
+
+- ExDoc unlocked from version `0.35` due error on **DomLoaded event listening**. With better understanding of the new front-end framework (`"swup"` and `"exdoc"` events), now the **Get Access Tokens** and **Database** sections in ExDocs does not need to reload the page to get the scripts works properly.
+- Adjustments for elixir `1.18` support.
+  - Deprecations on **CLI prefered envs**.
+  - `lib/lorem_ipsum/application.ex` file changes.
 
 ## v0.4.0 - (2025-03-01)
 

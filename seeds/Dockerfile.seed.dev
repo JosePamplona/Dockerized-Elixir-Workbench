@@ -2,13 +2,12 @@ ARG        ELIXIR="%{elixir_version}"
 ARG           OTP="%{erlang_version}"
 ARG        DEBIAN="%{debian_version}"
 ARG DEVELOP_IMAGE="hexpm/elixir:${ELIXIR}-erlang-${OTP}-debian-${DEBIAN}"
-# ------------------------------------------------------------------------------
+
 FROM ${DEVELOP_IMAGE} AS develop
-# ------------------------------------------------------------------------------
 
 # install build dependencies
 RUN apt-get update -y && \
-    apt-get install -y build-essential git inotify-tools && \
+    apt-get install -y build-essential git inotify-tools watchman && \
     apt-get clean && \
     rm -f /var/lib/apt/lists/*_*
 

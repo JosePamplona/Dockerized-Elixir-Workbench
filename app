@@ -1,6 +1,6 @@
 #!/bin/bash
 # Dockerized workbench script
-# v0.4.1
+# v0.4.2
 
 # CONFIGURATION ================================================================
 
@@ -38,8 +38,9 @@
     AUTH0_CONTEXT_FILE="auth0.sh"
     OPENAI_CONTEXT_FILE="open_ai.sh"
     CUSTOM_SCHEMAS_CONTEXT_FILE="schemas.sh"
+    APP_DOCKERFILE="Dockerfile.app"
     DEV_DOCKERFILE="Dockerfile.dev"
-    PROD_DOCKERFILE="Dockerfile"
+    PROD_DOCKERFILE="Dockerfile.prod"
     COMPOSE_FILE="docker-compose.yml"
     CONTAINER_ENTRYPOINT="bash $ENTRYPOINT_FILE"
 
@@ -47,8 +48,9 @@
     ENV_SEED="seed.env"
     README_SEED="README.seed.md"
     CHANGELOG_SEED="CHANGELOG.seed.md"
-    DEV_DOCKERFILE_SEED="Dockerfile.seed.dev"
     DOCKERIGNORE_SEED=".dockerignore.seed"
+    APP_DOCKERFILE_SEED="Dockerfile.seed.app"
+    DEV_DOCKERFILE_SEED="Dockerfile.seed.dev"
     PROD_DOCKERFILE_SEED="Dockerfile.seed.prod"
     PGADMIN_SERVERS_SEED="servers.seed.json"
     PGADMIN_PASS_SEED="pgpass.seed"
@@ -78,7 +80,7 @@
     README_FILE="README.md"
     CHANGELOG_FILE="CHANGELOG.md"
     DOCKERIGNORE=".dockerignore"
-    PROD_DOCKERFILE="Dockerfile"
+    # PROD_DOCKERFILE="Dockerfile"(duplicated)
     GITIGNORE_FILE=".gitignore"
     FORMATTER_FILE=".formatter.exs"
     TOOLS_VERSIONS_FILE=".tool-versions"
@@ -130,12 +132,12 @@
     )
 
     # Docker images
-    DEV_IMAGE="$APP_NAME:$WORKBENCH_VERSION-dev"
-    PROD_IMAGE="$APP_NAME:$APP_VERSION"
+    DEV_IMAGE="$APP_NAME:$APP_VERSION-dev"
+    PROD_IMAGE="$APP_NAME:$APP_VERSION-prod"
     export SOURCE_CODE_VOLUME="$SOURCE_CODE_PATH:/app/src"
     export COMPOSE_PROJECT_NAME=$APP_NAME
-    export COMPOSE_DOCKERFILE=$PROD_DOCKERFILE
-    export COMPOSE_IMAGE=$PROD_IMAGE
+    export COMPOSE_DOCKERFILE=$DEV_DOCKERFILE
+    export COMPOSE_IMAGE=$DEV_IMAGE
     # Elixir app configuration
     export APP_INTERNAL_PORT="4000"
     export ENV_PATH="$SOURCE_CODE_PATH/$ENV_FILE"
@@ -460,22 +462,22 @@
       -exec mv -t ../ {} + && \
     cd .. && \
     rmdir $WORKBENCH_DIR && \
-    rm "$SCRIPTS_DIR/$DEV_DOCKERFILE"
+    rm "$SCRIPTS_DIR/$APP_DOCKERFILE"
   }
 
   # prepare_new_project
     # If no project is created, it will move all files into a script directory,
     # if there is a project created already, will ask for confirmation to delete
     # all project files.
-    # Creates Dockerfile.dev
+    # Creates Dockerfile.app
   prepare_new_project() {
     # FUNCTIONS --------------------------------------------------------------
 
-      # create_dockerfile_dev
-        # Create a Dockerfile.dev file from seed.
-      create_dockerfile_dev() {
-        local seed_path="$WORKBENCH_DIR/$SEEDS_DIR/$DEV_DOCKERFILE_SEED" 
-        local file_path="$WORKBENCH_DIR/$SCRIPTS_DIR/$DEV_DOCKERFILE"
+      # create_dockerfile_app
+        # Create a Dockerfile.app file from seed.
+      create_dockerfile_app() {
+        local seed_path="$WORKBENCH_DIR/$SEEDS_DIR/$APP_DOCKERFILE_SEED" 
+        local file_path="$WORKBENCH_DIR/$SCRIPTS_DIR/$APP_DOCKERFILE"
         local scp_contexts_dir_path=$(scape_for_sed "$CONTEXTS_DIR")
         local scp_auth0_context_path=$(scape_for_sed "$AUTH0_CONTEXT_FILE")
         local scp_openai_context_path=$(scape_for_sed "$OPENAI_CONTEXT_FILE")
@@ -539,7 +541,7 @@
         cp $0 "$WORKBENCH_DIR/$0" && \
         rm $0
       fi && \
-      create_dockerfile_dev
+      create_dockerfile_app
   }
 
   # create_docker_compose_file
@@ -584,6 +586,9 @@
     sed -i "s/\$PGADMIN_PASS_PATH/$scp_pass_path/"               $file_path
     sed -i "s/\$POSTGRES_IMAGE_VERSION/$POSTGRES_IMAGE_VERSION/" $file_path
     sed -i "s/\$PGADMIN_IMAGE_VERSION/$PGADMIN_IMAGE_VERSION/"   $file_path
+
+    # sed -i "/^[[:space:]]*volumes:[[:space:]]*$/,+1d" $file_path
+    sed -i '14,15d' $file_path;
 
     if [ $ECTO == false ]; then sed -i '26,65d' $file_path; fi
   }
@@ -1032,20 +1037,18 @@
       }
 
       # create_dockerfile_dev
-        # Create a new devuction Dockerfile file from seed.
+        # Create a new development Dockerfile file from seed.
         # Adjust elixir, erlang and debian versions into Dockerfile.
         # Adjust project name directory for build path in Dockerfile.
       create_dockerfile_dev(){
-        # TODO
-        echo "create_dockerfile_dev -WIP"
-        # local seed_path="$WORKBENCH_DIR/$SEEDS_DIR/$DEV_DOCKERFILE_SEED"
-        # local file_path="$DEV_DOCKERFILE"
+        local seed_path="$WORKBENCH_DIR/$SEEDS_DIR/$DEV_DOCKERFILE_SEED"
+        local file_path="$DEV_DOCKERFILE"
 
-        # cp $seed_path $file_path
-        # sed -i "s/%{app_dir}/$ELIXIR_PROJECT_NAME/" $file_path
-        # sed -i "s/%{elixir_version}/$ELIXIR_VERSION/" $file_path
-        # sed -i "s/%{erlang_version}/$ERLANG_VERSION/" $file_path
-        # sed -i "s/%{debian_version}/$DEBIAN_VERSION/" $file_path
+        cp $seed_path $file_path
+        sed -i "s/%{app_dir}/$ELIXIR_PROJECT_NAME/" $file_path
+        sed -i "s/%{elixir_version}/$ELIXIR_VERSION/" $file_path
+        sed -i "s/%{erlang_version}/$ERLANG_VERSION/" $file_path
+        sed -i "s/%{debian_version}/$DEBIAN_VERSION/" $file_path
       }
 
       # create_tool_versions
@@ -1075,10 +1078,10 @@
     create_changelog && \
     create_readme && \
     create_dockerignore && \
+    create_dockerfile_dev && \
     create_dockerfile_prod && \
     create_docker_compose_file && \
     create_tool_versions
-    # create_dockerfile_dev && \
   }
 
   # implement_features
@@ -1675,9 +1678,18 @@
         [ ! -d $OPEN_API_DIR ] && mkdir $OPEN_API_DIR
 
         # Adjust app_web.ex file
-        sed -i "48i\\      alias OpenApiSpex.Schema" $WEB_MODULE_FILE
+        # Para mejorar este codigo se debe construir un reconocimiento de patrón
+        # para que inserte las siguientes lineas despues de:
+        #
+        # def controller do
+        # quote do
+        #   ...
+        #   import Plug.Conn
+        #
+        # En lugar de insertarlo en la linea (46) concreta.
+        sed -i "46i\\      alias OpenApiSpex.Schema" $WEB_MODULE_FILE
         sed -i \
-          "48i\\      alias ${ELIXIR_MODULE}Web.OpenApi.{Requests, Responses, Schemas}" \
+          "46i\\\n      alias ${ELIXIR_MODULE}Web.OpenApi.{Requests, Responses, Schemas}" \
           $WEB_MODULE_FILE
 
         # Plant spec.ex file
@@ -2888,7 +2900,7 @@ if [ $# -gt 0 ]; then
     # cd ..
     prepare_new_project && \
     cd "$WORKBENCH_DIR/$SCRIPTS_DIR" && \
-    docker build --file $DEV_DOCKERFILE --tag $DEV_IMAGE . && \
+    docker build --file $APP_DOCKERFILE --tag $DEV_IMAGE . && \
     docker run \
       --tty \
       --interactive \
@@ -2902,7 +2914,7 @@ if [ $# -gt 0 ]; then
     implement_features && \
     cd $WORKBENCH_DIR && \
     ENTRYPOINT_COMMAND="implementation_tasks" && \
-    export COMPOSE_DOCKERFILE=$DEV_DOCKERFILE && \
+    export COMPOSE_DOCKERFILE=$APP_DOCKERFILE && \
     export COMPOSE_IMAGE=$DEV_IMAGE && \
     docker compose --file "$SCRIPTS_DIR/$COMPOSE_FILE" run \
       --rm \
@@ -2945,7 +2957,7 @@ if [ $# -gt 0 ]; then
         ENV_ARG="$2" || \
         ENV_ARG=dev
       
-      export COMPOSE_DOCKERFILE=$DEV_DOCKERFILE
+      export COMPOSE_DOCKERFILE=$APP_DOCKERFILE
       export COMPOSE_IMAGE=$DEV_IMAGE
       docker compose --file "$SCRIPTS_DIR/$COMPOSE_FILE" run \
         --rm \
@@ -2970,7 +2982,7 @@ if [ $# -gt 0 ]; then
         docker compose $COMPOSE_COMMAND --build
 
       else
-        export COMPOSE_DOCKERFILE=$DEV_DOCKERFILE
+        export COMPOSE_DOCKERFILE=$APP_DOCKERFILE
         export COMPOSE_IMAGE=$DEV_IMAGE
         docker compose \
           --file "$SCRIPTS_DIR/$COMPOSE_FILE" $COMPOSE_COMMAND
@@ -2982,7 +2994,7 @@ if [ $# -gt 0 ]; then
     ENTRYPOINT_COMMAND=$1; shift
     if [ $EXISTING_PROJECT == true ]; then
       if [ $# -gt 0 ]; then
-        export COMPOSE_DOCKERFILE=$DEV_DOCKERFILE
+        export COMPOSE_DOCKERFILE=$APP_DOCKERFILE
         export COMPOSE_IMAGE=$DEV_IMAGE
         docker compose --file "$SCRIPTS_DIR/$COMPOSE_FILE" run \
           --rm \

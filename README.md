@@ -2,7 +2,7 @@
 
 # Dockerized Elixir Workbench
 
-![v0.4.1](https://img.shields.io/badge/version-0.4.1-white.svg?style=flat-square&color=lightgray)
+![v0.4.2](https://img.shields.io/badge/version-0.4.2-white.svg?style=flat-square&color=lightgray)
 [![License](https://img.shields.io/github/license/JosePamplona/Dockerized-Elixir-Workbench?style=flat-square)](https://github.com/JosePamplona/Dockerized-Elixir-Workbench/blob/main/LICENSE.md)
 [![Last Updated](https://img.shields.io/github/last-commit/JosePamplona/Dockerized-Elixir-Workbench.svg?style=flat-square)](https://github.com/JosePamplona/Dockerized-Elixir-Workbench/commits/main)
 

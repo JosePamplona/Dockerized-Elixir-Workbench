@@ -30,7 +30,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - DB port change breaks pgadmin maybe back?
 
-## v0.4.1 - (0025-08-10)
+## v0.4.2 - (2025-11-09)
+
+### Added
+
+- Different Dockerfile generation for `dev` and `prod` deployments.
+
+## v0.4.1 - (2025-08-10)
 
 ### Added
 

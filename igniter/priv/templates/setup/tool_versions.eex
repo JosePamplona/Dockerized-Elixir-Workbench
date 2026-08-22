@@ -1,0 +1,2 @@
+elixir <%= @elixir_version %>-otp-<%= @erlang_major %>
+erlang <%= @erlang_version %>

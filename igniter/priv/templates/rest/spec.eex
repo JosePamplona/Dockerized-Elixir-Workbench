@@ -1,0 +1,40 @@
+@moduledoc false
+
+alias OpenApiSpex.{<%= @open_api_aliases %>}
+
+alias <%= @web_module %>.{Endpoint, Router}
+
+@behaviour OpenApi
+@impl OpenApi
+@version Mix.Project.config()[:version]
+
+@doc false
+def spec do
+  %OpenApi{
+    servers: [
+      # Populate the Server info from a phoenix endpoint
+      Server.from_endpoint(Endpoint)
+    ],
+    info: %Info{
+      title: "<%= @project_name %>",
+      version: @version,
+      description: """
+      <%= @project_name %> provides this collection of REST API endpoints.
+      """
+    },
+    # Populate the paths from a phoenix router
+    paths: Paths.from_router(Router),
+<%= if @auth0 do %>
+    components: %Components{
+      securitySchemes: %{
+        "authorization" => %SecurityScheme{type: "http", scheme: "bearer"}
+      }
+    },
+<% end %>
+    tags: [
+<%= @tags %>
+    ]
+  }
+  # Discover request/response schemas from path specs
+  |> OpenApiSpex.resolve_schema_modules()
+end

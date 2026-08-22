@@ -1,0 +1,16 @@
+# Generated on each `wb.sh new` from scripts/Dockerfile.seed.local.
+/scripts/Dockerfile.local
+
+# Deploy logs.
+*.log
+
+# Elixir build artifacts of the igniter package.
+/igniter/_build/
+/igniter/deps/
+/igniter/erl_crash.dump
+
+# Generated workspaces (projects live here, not in the workbench repo).
+/workspaces/
+
+# Disposable workspaces used for workbench validation runs.
+/_tests_workspace/

@@ -1,6 +1,6 @@
 <!-- markdownlint-disable MD033 -->
 
-# Dockerized Elixir Workbench
+# Dockerized Elixir Workbench <!-- omit in toc -->
 
 ![v0.4.2](https://img.shields.io/badge/version-0.4.2-white.svg?style=flat-square&color=lightgray)
 [![License](https://img.shields.io/github/license/JosePamplona/Dockerized-Elixir-Workbench?style=flat-square)](https://github.com/JosePamplona/Dockerized-Elixir-Workbench/blob/main/LICENSE.md)
@@ -8,20 +8,19 @@
 
 This is a script for creating [Elixir](https://elixir-lang.org/) projects with the [Phoenix](https://www.phoenixframework.org/) framework and deploying them on `localhost` using a specific service architecture with Docker containers. It eliminates the need to install anything other than [Docker Desktop](https://www.docker.com/products/docker-desktop/) to create, develop, and deploy the project in either a development or production environment.
 
-- [Dockerized Elixir Workbench](#dockerized-elixir-workbench)
-  - [Arquitecture](#arquitecture)
-  - [Configuration](#configuration)
-  - [Create a new project](#create-a-new-project)
-  - [Deployment](#deployment)
-    - [Custom entrypoint](#custom-entrypoint)
-  - [Delete project](#delete-project)
-  - [Maintenance](#maintenance)
-    - [Private Github Registry Images](#private-github-registry-images)
-    - [Demo](#demo)
-    - [Reset Docker](#reset-docker)
-    - [Remove workbench](#remove-workbench)
-    - [Help](#help)
-  - [License](#license)
+- [Arquitecture](#arquitecture)
+- [Configuration](#configuration)
+- [Create a new project](#create-a-new-project)
+- [Deployment](#deployment)
+  - [Custom entrypoint](#custom-entrypoint)
+- [Delete project](#delete-project)
+- [Maintenance](#maintenance)
+  - [Private Github Registry Images](#private-github-registry-images)
+  - [Demo](#demo)
+  - [Reset Docker](#reset-docker)
+  - [Remove workbench](#remove-workbench)
+  - [Help](#help)
+- [License](#license)
 
 ## Arquitecture
 
@@ -38,10 +37,10 @@ This is a script for creating [Elixir](https://elixir-lang.org/) projects with t
 
 ## Configuration
 
-1. Give execution permissions to `./app` file (This step only needs to be performed once):
+1. Give execution permissions to `./app.sh` file (This step only needs to be performed once):
 
     ```sh
-    sudo chmod +x app
+    sudo chmod +x app.sh
     ```
 
 1. Modify the `./config.conf` file in order to configure the project name and creation specifications.
@@ -54,7 +53,7 @@ This is a script for creating [Elixir](https://elixir-lang.org/) projects with t
 1. Run the following command:
 
     ```sh
-    ./app new
+    ./app.sh new
     ```
 
     This command generates schemas, changesets, context functions, tests, and migration files when applicable and apply specific configurations.
@@ -66,13 +65,13 @@ This is a script for creating [Elixir](https://elixir-lang.org/) projects with t
 1. This step is only required when deploying the service for the first time, a database reset is needed or the database container is detroyed. This command drops the project database (if any), creates a new one and run a seeding script:
 
     ```sh
-    ./app setup [-e, --env ENV]
+    ./app.sh setup [-e, --env ENV]
     ```
 
 1. Once having a configured database, run the following command to deploy the service along with its configured required services and tools.
 
     ```sh
-    ./app up [-e, --env ENV]
+    ./app.sh up [-e, --env ENV]
     ```
 
 In both commands the flag `[-e, --env ENV]` is optional. The argument `ENV` can be **dev**, **prod** or other, it corresponds to the desired enviroment configuration to be deployed, by default is **dev**.
@@ -82,13 +81,13 @@ In both commands the flag `[-e, --env ENV]` is optional. The argument `ENV` can 
 There is the possibility of deploying the application by executing custom server initialization commands:
 
 ```sh
-./app run [ARGS...]
+./app.sh run [ARGS...]
 ```
 
 Replace `[ARGS...]` with the command(s) to be executed. For example, to run an elixir interactive console:
 
 ```sh
-./app run iex -S mix phx.server
+./app.sh run iex -S mix phx.server
 ```
 
 ## Delete project
@@ -96,7 +95,7 @@ Replace `[ARGS...]` with the command(s) to be executed. For example, to run an e
 Use this command for deleting all project files and the Docker compose project:
 
 ```sh
-./app delete
+./app.sh delete
 ```
 
 > ⚠️ **Warning**: This action is destructive. Once executed, the current project files will be deleted, and neither the files nor the docker containers can be recovered. Before proceeding, make sure you are absolutely certain that you want to remove them.
@@ -108,7 +107,7 @@ Use this command for deleting all project files and the Docker compose project:
 In order to download private github registry images, you need to login to GitHub using a username and a token (classic, not fine-grained) and have the rquired access level to the resource. To do this, execute the following command:
 
 ```sh
-./app login [GITHUB_USER] [ACCESS_TOKEN]
+./app.sh login [GITHUB_USER] [ACCESS_TOKEN]
 ```
 
 Replace `[GITHUB_USER]` and `[ACCESS_TOKEN]` with your corresponding user name and token. How to generate a token: [Personal Access Token (classic)](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic)
@@ -118,7 +117,7 @@ Replace `[GITHUB_USER]` and `[ACCESS_TOKEN]` with your corresponding user name a
 This command runs the **new**, **setup**, **up**, and **delete** commands consecutively for demonstration purposes:
 
 ```sh
-./app demo [-e, --env ENV]
+./app.sh demo [-e, --env ENV]
 ```
 
 The flag `[-e, --env ENV]` is optional. The argument `ENV` can be **dev**, **prod** or other, it corresponds to the desired enviroment configuration to be deployed, by default is **dev**.
@@ -130,7 +129,7 @@ The flag `[-e, --env ENV]` is optional. The argument `ENV` can be **dev**, **pro
 Use this command in order to stop all containers and prune Docker. It's like a Docker data brute-force reset:
 
 ```sh
-./app prune
+./app.sh prune
 ```
 
 > ⚠️ **Warning**: This action is destructive. Once executed, all Docker resources (not just the project's resources, but ALL resources in Docker) images, containers, volumes, networks, cache, etc.) will no longer exist and cannot be recovered, only rebuilt. Before proceeding, make sure you are absolutely certain that you want to remove them.
@@ -140,7 +139,7 @@ Use this command in order to stop all containers and prune Docker. It's like a D
 Removes the workbench script along with all its files and configurations from the generated project, leaving no trace, as if it had never been there.
 
 ```sh
-./app remove-workbench
+./app.sh remove-workbench
 ```
 
 > 🛑 **Critical Action**: This operation is irreversible! Once executed, the workbench script files and configurations will be permanently deleted and cannot be recovered. Before proceeding, please ensure you are absolutely certain about this action and proceed with extreme caution.
@@ -150,7 +149,7 @@ Removes the workbench script along with all its files and configurations from th
 Shows the workbech script help section:
 
 ```sh
-./app help
+./app.sh help
 ```
 
 ## License

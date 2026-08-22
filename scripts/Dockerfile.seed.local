@@ -1,0 +1,57 @@
+# Elixir toolchain image: a bare development environment with no project
+# code. The workbench builds it once per stack (workbench:ELIXIR-OTP) and
+# every workspace shares it; each project also keeps a baked copy of this
+# file as its own Dockerfile.local, so a standalone clone can rebuild the
+# same image without the workbench.
+#
+# The source is bind-mounted at /app/src by the workspace's
+# docker-compose.yml, and everything derived from it (deps, _build,
+# assets) lives inside the mount — host edits hot-reload through
+# Phoenix's code reloader, and code or dependency changes never require
+# rebuilding this image.
+#
+# We use Ubuntu/Debian instead of Alpine to avoid DNS resolution issues.
+#
+#   - https://hub.docker.com/r/hexpm/elixir/tags?name=debian
+ARG ELIXIR="%{elixir_version}"
+ARG    OTP="%{erlang_version}"
+ARG DEBIAN="%{debian_version}"
+
+ARG TOOLCHAIN_IMAGE="hexpm/elixir:${ELIXIR}-erlang-${OTP}-debian-${DEBIAN}"
+
+FROM ${TOOLCHAIN_IMAGE} AS toolchain
+
+# install build dependencies (inotify-tools powers Phoenix live reload)
+RUN apt-get update -y && \
+    apt-get install -y build-essential git inotify-tools curl && \
+    apt-get clean && \
+    rm -f /var/lib/apt/lists/*_*
+
+# The image is always built locally, so it is born with the identity of
+# the building user (pass --build-arg UID/GID if yours is not the
+# typical single-user Linux 1000:1000): everything written into the
+# mounted workspace keeps the right ownership.
+ARG UID=1000
+ARG GID=1000
+RUN groupadd --gid ${GID} elixir && \
+    useradd --uid ${UID} --gid ${GID} --create-home elixir
+
+# Parent of the source mount point.
+WORKDIR /app
+RUN chown elixir:elixir /app
+
+# Robust Hex fetches on flaky networks.
+ENV HEX_HTTP_CONCURRENCY=1 HEX_HTTP_TIMEOUT=120
+
+USER elixir
+
+# install hex + rebar and Phoenix (into the user's own home)
+RUN mix local.hex --force && \
+    mix local.rebar --force && \
+    mix archive.install hex phx_new --force
+
+# Self-initializing container: fetches dependencies, sets up the
+# database (idempotent) and starts the server — all from the mounted
+# source. The workspace's docker-compose.yml can override this with
+# its `command:`. Mirrored in the compose seed's comment: keep in sync.
+CMD ["sh", "-c", "cd /app/src && mix setup && mix phx.server"]

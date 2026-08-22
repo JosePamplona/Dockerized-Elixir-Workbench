@@ -1,5 +1,5 @@
 #!/bin/bash
-# Elixir App image entrypoint script
+# Elixir App image entrypoint script (Igniter edition)
 
 # Prints service script name with arguments detail
 if [ $# -gt 0 ]; then echo "[$HOSTNAME]$0($#): $@"; fi
@@ -55,26 +55,28 @@ if [ $# -gt 0 ]; then echo "[$HOSTNAME]$0($#): $@"; fi
     elif [ $# -lt 2 ]; then args_error missing
     else args_error too_many; fi
 
-  elif [ "$1" == "implementation_tasks" ]; then
+  elif [ "$1" == "workbench_setup" ]; then
     shift
-    if [ $# -ge 4 ]; then
-      AUTH0=$1; shift
-      AUTH0_CONTEXT_FILE=$1; shift
-      OPENAI=$1; shift
-      OPENAI_CONTEXT_FILE=$1; shift
-      CUSTOM_SCHEMAS=$1; shift
-      CUSTOM_SCHEMAS_CONTEXT_FILE=$1; shift
-      
-      mix deps.get && \
-      mix phx.gen.release && \
-      if [ $AUTH0 == true ]; then source ../$AUTH0_CONTEXT_FILE; fi && \
-      if [ $OPENAI == true ]; then source ../$OPENAI_CONTEXT_FILE; fi && \
-      if [ $CUSTOM_SCHEMAS == true ]; then
-        source ../$CUSTOM_SCHEMAS_CONTEXT_FILE
-      fi
 
-    elif [ $# -lt 4 ]; then args_error missing
-    else args_error too_many; fi
+    mix deps.get && \
+    mix workbench.setup "$@" --yes && \
+    # New deps may conflict with versions pinned by the initial lock
+    # (e.g. swoosh locks idna 7.x while hackney needs ~> 6.1): on
+    # failure, re-resolve the whole lock.
+    { mix deps.get || { mix deps.unlock --all && mix deps.get; }; } && \
+    mix phx.gen.release && \
+    mix release.init
+
+  elif [ "$1" == "add" ]; then
+    shift
+    if [ $# -ge 1 ]; then
+      FEATURE=$1; shift
+
+      mix deps.get && \
+      mix "workbench.install.$FEATURE" "$@" --yes && \
+      mix deps.get
+
+    else args_error missing; fi
 
   elif [ "$1" == "documentation" ]; then
     shift

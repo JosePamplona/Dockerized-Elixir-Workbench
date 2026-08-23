@@ -58,7 +58,7 @@ actually does.
 ## Contents
 
 | File | Role |
-|---|---|
+| --- | --- |
 | `rest.ex` | Manifest + logic |
 | `task.ex` | `Mix.Tasks.Workbench.Install.Rest` shell |
 | `templates/spec.eex` | `OpenApi.Spec` (conditional tags/security) |

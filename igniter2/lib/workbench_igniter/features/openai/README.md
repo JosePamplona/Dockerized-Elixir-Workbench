@@ -52,7 +52,7 @@ Swagger page like the rest of the API.
 ## Contents
 
 | File | Role |
-|---|---|
+| --- | --- |
 | `openai.ex` | Manifest + logic |
 | `task.ex` | `Mix.Tasks.Workbench.Install.Openai` shell |
 | `templates/assistant.eex`, `conversation.eex`, `message.eex` | Context and schemas |

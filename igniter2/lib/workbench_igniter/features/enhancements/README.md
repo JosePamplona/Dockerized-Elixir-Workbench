@@ -63,7 +63,7 @@ no-op.
 ## Contents
 
 | File | Role |
-|---|---|
+| --- | --- |
 | `enhancements.ex` | Manifest + logic |
 | `task.ex` | `Mix.Tasks.Workbench.Install.Enhancements` shell |
 | `templates/*.eex` (16) | Helper/Schema, db/version tasks, error_json, base tests, fixtures, mock_helper |

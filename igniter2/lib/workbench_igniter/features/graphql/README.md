@@ -44,7 +44,7 @@ creation: a project speaks REST or GraphQL, not both.
 ## Contents
 
 | File | Role |
-|---|---|
+| --- | --- |
 | `graphql.ex` | Manifest + logic |
 | `task.ex` | `Mix.Tasks.Workbench.Install.Graphql` shell |
 | `templates/schema.eex` | `MyAppWeb.Graphql.Schema` |

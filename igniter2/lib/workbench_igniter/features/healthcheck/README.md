@@ -53,7 +53,7 @@ router edit is not idempotent by itself).
 ## Contents
 
 | File | Role |
-|---|---|
+| --- | --- |
 | `healthcheck.ex` | Manifest + logic (`info/2`, `install/1`) |
 | `task.ex` | `Mix.Tasks.Workbench.Install.Healthcheck` shell |
 | `templates/controller.eex` | Controller (with/without OpenAPI variants) |

@@ -27,7 +27,7 @@ them) and its own `README.md`. Its test:
 manifest + logic + task shell in one `<feature>.ex`.
 
 | File | Installs | Enabled by |
-|---|---|---|
+| --- | --- | --- |
 | `credo.ex` | `{:credo, "~> 1.7", only: [:dev, :test], runtime: false}` | `--enhance` |
 | `mock.ex` | `{:mock, "~> 0.3", only: :test}` | `--enhance` (also composed by healthcheck, coveralls and enhancements) |
 | `exdebug.ex` | `{:ex_debug, "~> 1.0"}` | `--enhance` |

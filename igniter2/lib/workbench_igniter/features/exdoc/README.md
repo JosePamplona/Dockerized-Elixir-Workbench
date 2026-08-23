@@ -55,7 +55,7 @@ documents.
 ## Contents
 
 | File | Role |
-|---|---|
+| --- | --- |
 | `exdoc.ex` | Manifest + logic |
 | `task.ex` | `Mix.Tasks.Workbench.Install.Exdoc` shell |
 | `templates/controller.eex` | `ExDocController` |

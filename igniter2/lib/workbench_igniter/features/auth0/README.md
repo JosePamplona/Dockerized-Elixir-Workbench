@@ -51,7 +51,7 @@ openai's conversations and stripe's subscriptions both require it.
 ## Contents
 
 | File | Role |
-|---|---|
+| --- | --- |
 | `auth0.ex` | Manifest + logic |
 | `task.ex` | `Mix.Tasks.Workbench.Install.Auth0` shell |
 | `templates/accounts.eex`, `user.eex`, `create_users.eex` | Context, schema and migration |

@@ -57,7 +57,7 @@ ran them sees and become part of what the project shows about itself.
 ## Contents
 
 | File | Role |
-|---|---|
+| --- | --- |
 | `coveralls.ex` | Manifest + logic |
 | `task.ex` | `Mix.Tasks.Workbench.Install.Coveralls` shell |
 | `templates/coveralls_json.eex` | `coveralls.json` |

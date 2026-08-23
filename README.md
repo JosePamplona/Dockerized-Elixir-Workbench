@@ -26,14 +26,14 @@ This is a script for creating [Elixir](https://elixir-lang.org/) projects with t
 
 <p align="center"><img alt="arquitecture diagram" src="assets/arq.svg"></p>
 
-| Service  | URL | Description |
+| Service | URL | Description |
 | :-- | :-- | :-- |
-| Elixir App  | <http://localhost:4000> | API-REST, GraphiQL and/or Web server |
+| Elixir App | <http://localhost:4000> | API-REST, GraphiQL and/or Web server |
 | Postgres DB | <http://localhost:5432> | Relational database server |
-| pgAdmin     | <http://localhost:5050> | Database management tool |
-| Auth0       | <https://dev-tenant.us.auth0.com:433> | Identity management platform |
-| Open AI     | <https://api.openai.com/v1:433> | AI Assistant service |
-| Stripe      | <https://api.stripe.com:433> | Payment service provider |
+| pgAdmin | <http://localhost:5050> | Database management tool |
+| Auth0 | <https://dev-tenant.us.auth0.com:433> | Identity management platform |
+| Open AI | <https://api.openai.com/v1:433> | AI Assistant service |
+| Stripe | <https://api.stripe.com:433> | Payment service provider |
 
 ## Configuration
 

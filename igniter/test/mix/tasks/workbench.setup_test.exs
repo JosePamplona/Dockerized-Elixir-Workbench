@@ -149,8 +149,8 @@ defmodule Mix.Tasks.Workbench.SetupTest do
       assert files[".gitignore"] =~ "/COVERAGE.md\n/TESTING.md"
       assert files["COVERAGE.md"] =~ "mix cover"
       assert files["TESTING.md"] =~ "mix cover"
-      assert files["mix.exs"] =~ ~s|{"COVERAGE.md", [title: "Coverage"]}|
-      assert files["mix.exs"] =~ ~s|{"TESTING.md", [title: "Unit Testing"]}|
+      assert files["mix.exs"] =~ ~s|{"COVERAGE.md", [title: "Test Coverage"]}|
+      assert files["mix.exs"] =~ ~s|{"TESTING.md", [title: "Test Suite"]}|
     end
 
     test "--enhance composes the trivial installers group" do

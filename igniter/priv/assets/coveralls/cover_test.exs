@@ -167,8 +167,8 @@ defmodule Mix.Tasks.CoverTest do
     test "render the coverage table with per-file links and totals." do
       {content, _testing} = run_capturing_report(@passing_output, @passing_json)
 
-      assert content =~ "# Coverage"
-      assert content =~ "Full unit tests coverage report: [Test Coverage Overview](./excoveralls.html)."
+      assert content =~ "# Test Coverage"
+      assert content =~ "Full test coverage report: [Test Coverage Overview](./excoveralls.html)."
       assert content =~ "Total coverage: **95.0%** — minimum required: **"
       assert content =~ "| Status | Coverage | File | Lines | Relevant | Missed |"
       assert content =~ "| ✅ | 90.0% | [`lib/my_app/foo.ex`](excoveralls.html#lib/my_app/foo.ex) | 20 | 10 | 1 |"
@@ -178,7 +178,7 @@ defmodule Mix.Tasks.CoverTest do
     test "render the run metadata and totals summary." do
       {_coverage, content} = run_capturing_report(@passing_output, @passing_json)
 
-      assert content =~ "# Unit Testing"
+      assert content =~ "# Test Suite"
       assert content =~ "Ran **ExUnit** with: seed: **0**, max_cases: **1**"
       assert content =~ "Time: **4.5s** (**0.8s** async, **3.7s** sync)"
       assert content =~ "| Total Tests | 4 | |"

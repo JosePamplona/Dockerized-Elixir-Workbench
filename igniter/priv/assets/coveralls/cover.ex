@@ -89,9 +89,17 @@ defmodule Mix.Tasks.Cover do
       |> case do
         nil ->
           # coveralls-ignore-start
-          json = File.read!(@tests_json)
-          File.rm!(@tests_json)
-          json
+          # A suite that does not compile never runs the formatter and
+          # leaves no dump behind: fall back to an empty report and let
+          # the console validation surface the error.
+          case File.read(@tests_json) do
+            {:ok, json} ->
+              File.rm!(@tests_json)
+              json
+
+            {:error, _} ->
+              ~s({"meta": {}, "tests": []})
+          end
 
         # coveralls-ignore-stop
 
@@ -176,11 +184,11 @@ defmodule Mix.Tasks.Cover do
 
     coverage_report =
       ([
-         "# Coverage",
+         "# Test Coverage",
          "",
          generated,
          "",
-         "Full unit tests coverage report: #{@coverage_link}.",
+         "Full test coverage report: #{@coverage_link}.",
          ""
        ] ++ coverage_to_table(coverage_lines))
       |> Enum.dedup()
@@ -188,7 +196,7 @@ defmodule Mix.Tasks.Cover do
 
     testing_report =
       ([
-         "# Unit Testing",
+         "# Test Suite",
          "",
          generated,
          ""

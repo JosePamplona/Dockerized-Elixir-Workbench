@@ -94,8 +94,8 @@ defmodule Mix.Tasks.Workbench.Install.ExdocTest do
       assert files["COVERAGE.md"] =~ "mix cover"
       assert files["TESTING.md"] =~ "mix cover"
       refute Map.has_key?(files, "assets/exdoc/testing.md")
-      assert files["mix.exs"] =~ ~s|{"COVERAGE.md", [title: "Coverage"]}|
-      assert files["mix.exs"] =~ ~s|{"TESTING.md", [title: "Unit Testing"]}|
+      assert files["mix.exs"] =~ ~s|{"COVERAGE.md", [title: "Test Coverage"]}|
+      assert files["mix.exs"] =~ ~s|{"TESTING.md", [title: "Test Suite"]}|
       assert Map.has_key?(files, "doc/excoveralls.html")
       assert files["mix.exs"] =~ ~s|"cover" => "/"|
     end

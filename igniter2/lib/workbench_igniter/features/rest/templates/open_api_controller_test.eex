@@ -1,0 +1,25 @@
+@moduledoc false
+
+use <%= @web_module %>.ConnCase, async: true
+
+# OpenAPI Specification
+describe "[REST] /dev/openapi" do
+  test "return 200 with the OpenAPI specification in JSON format",
+       %{conn: conn} do
+    response =
+      conn
+      |> get(~p"/dev/openapi")
+      |> json_response(200)
+
+    # Check response
+    assert %{
+             "components" => %{"schemas" => %{}},
+             "info" => %{},
+             "openapi" => _,
+             "paths" => %{},
+             "security" => _,
+             "servers" => [%{"url" => _, "variables" => _}],
+             "tags" => _
+           } = response
+  end
+end

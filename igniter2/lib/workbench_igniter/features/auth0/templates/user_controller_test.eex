@@ -1,0 +1,71 @@
+defmodule <%= @app_module %>Web.UserControllerTest do
+  @moduledoc false
+
+  use <%= @app_module %>Web.ConnCase
+
+  import Mock
+  import <%= @app_module %>.Fixtures
+
+  setup [:sessions]
+
+  # Get a user's single conversation.
+  describe "[REST] GET /api/v1/user" do
+    test "return 200: success retrieval of current session user data", %{
+      conn: conn,
+      sessions: %{valid: %{user: session_user, token: token}}
+    } do
+      with_mocks mocks(:authentication, session_user) do
+        response =
+          conn
+          |> put_req_header("authorization", token)
+          |> get(~p"/api/v1/user")
+          |> json_response(200)
+
+        # Check response
+        assert response == %{
+          "data" => %{
+            "id" => session_user.id,
+            "status" => Atom.to_string(session_user.status),
+            "token_sub" => session_user.token_sub,
+            "email" => session_user.email,
+            "name" => session_user.name,
+            "email_verified" => session_user.email_verified,
+            "phone_number" => session_user.phone_number,
+            "picture" => URI.to_string(session_user.picture),
+            "inserted_at" => NaiveDateTime.to_iso8601(session_user.inserted_at),
+            "updated_at" => NaiveDateTime.to_iso8601(session_user.updated_at)
+          }
+        }
+      end
+    end
+
+    test "return 401: unauthorized error response", %{conn: conn} do
+      with_mocks mocks(:authentication) do
+        response =
+          conn
+          |> put_req_header("authorization", "invalid-token")
+          |> get(~p"/api/v1/user")
+          |> json_response(401)
+
+        # Check response
+        assert response == %{"error" => "Unauthorized"}
+      end
+    end
+
+    test "return 403: forbidden error response", %{
+      conn: conn,
+      sessions: %{unverified_email: %{user: session_user, token: token}}
+    } do
+      with_mocks mocks(:authentication, session_user) do
+        response =
+          conn
+          |> put_req_header("authorization", token)
+          |> get(~p"/api/v1/user")
+          |> json_response(403)
+
+        # Check response
+        assert response == %{"error" => "Forbidden"}
+      end
+    end
+  end
+end

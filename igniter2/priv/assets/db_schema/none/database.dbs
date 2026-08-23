@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project name="PostgreSQL" database="PostgreSQL" id="PostgreSQL-52b" >
+	<schema name="public" >
+		<comment><![CDATA[standard public schema]]></comment>
+		<udt name="message_role" udt_java_type="12" udt_precision="NONE" >
+			<udt_script><![CDATA[CREATE TYPE ${name} AS ENUM ('system','user','assistant','function');]]></udt_script>
+		</udt>
+		<udt name="user_status" udt_java_type="12" udt_precision="NONE" >
+			<udt_script><![CDATA[CREATE TYPE ${name} AS ENUM ('active','blocked');]]></udt_script>
+		</udt>
+		<table name="schema_migrations" row_count="0" spec="" >
+			<column name="version" type="bigint" length="64" jt="-5" mandatory="y" />
+			<column name="inserted_at" type="timestamp" length="0" jt="93" />
+			<index name="schema_migrations_pkey" unique="PRIMARY_KEY" >
+				<column name="version" />
+			</index>
+		</table>
+	</schema>
+	<layout name="Main Layout" id="Layout-c98" joined_routing="y" show_column_type="y" show_relation="columns" >
+		<comment><![CDATA[%{project_name} - Entity-Relationship Diagram]]></comment>
+		<entity schema="public" name="schema_migrations" color="3986C1" x="51" y="51" />
+	</layout>
+	<layout name="~Layout with Sample Tools" id="Layout-2348" show_column_type="y" show_relation="columns" >
+		<entity schema="public" name="schema_migrations" color="3986C1" x="51" y="51" />
+		<script name="SQL Editor" id="Editor-e9f" language="SQL" >
+			<string><![CDATA[SELECT
+	id, user_id, name, inserted_at, updated_at
+FROM
+	"public".conversations s;]]></string>
+		</script>
+	</layout>
+</project>

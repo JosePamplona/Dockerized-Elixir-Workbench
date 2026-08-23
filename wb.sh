@@ -34,6 +34,10 @@
 
     WORKBENCH_VERSION=$( sed '3!d' $0 | sed -n 's/^.*v\(.*\).*/\1/p' )
 
+    # Igniter package directory inside the workbench, env-overridable:
+    # IGNITER_DIR=igniter2 ./wb.sh new  tests the cartridge edition.
+    IGNITER_DIR="${IGNITER_DIR:-igniter}"
+
     # Workspace: directory where the project is generated (volume mount
     # point). Relative paths are resolved from the workbench directory.
     WORKSPACE_PATH="${WORKSPACE_PATH_OVERRIDE:-$WORKSPACE_PATH}"
@@ -208,7 +212,8 @@
 \      do: [{:workbench_igniter, path: path, only: [:dev, :test], runtime: false}],\
 \      else: []\
 \  end\
-' "$file_path"
+' "$file_path" && \
+    sed -i "s|}/igniter\"|}/$IGNITER_DIR\"|" "$file_path"
   }
 
   # bake_compose <IMAGE> <DOCKERFILE> <TARGET_FILE>

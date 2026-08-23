@@ -28,10 +28,10 @@ defmodule Mix.Tasks.Workbench.Setup do
     `dev_routes` in test
   * prepends `.env` and `.elixir_ls` to `.gitignore`
   * generates the project text files from templates: `README.md`,
-    `CHANGELOG.md`, `.env.sample`, `.env`, `.dockerignore`,
-    `Dockerfile` (production) and `.tool-versions` — the dev
-    `Dockerfile.local` is a copy of the workbench toolchain dockerfile,
-    placed by the workbench script
+    `CHANGELOG.md`, `.env.sample`, `.env` and `.tool-versions` — the
+    dev `Dockerfile.local` is a copy of the workbench toolchain
+    dockerfile placed by the workbench script, and the production
+    `Dockerfile`/`.dockerignore` come from `mix phx.gen.release --docker`
   * composes the requested feature installers (`--enhance`, `--health`, …)
 
   Flags map 1:1 to `config.conf`; `app.sh` translates that file into this
@@ -324,8 +324,6 @@ defmodule Mix.Tasks.Workbench.Setup do
     |> plant("setup/env.eex", ".env", env_assigns, on_exists: :skip)
     |> plant("setup/readme.eex", "README.md", readme_assigns, on_exists: :overwrite)
     |> plant("setup/changelog.eex", "CHANGELOG.md", changelog_assigns, on_exists: :skip)
-    |> plant("setup/dockerignore.eex", ".dockerignore", [], on_exists: :overwrite)
-    |> plant("setup/dockerfile.eex", "Dockerfile", stack_assigns, on_exists: :overwrite)
     |> plant("setup/tool_versions.eex", ".tool-versions", stack_assigns, on_exists: :overwrite)
 
   end

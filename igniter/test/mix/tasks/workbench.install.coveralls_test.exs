@@ -48,8 +48,8 @@ defmodule Mix.Tasks.Workbench.Install.CoverallsTest do
       assert files["test/mix/tasks/cover_test.exs"] =~ "defmodule Mix.Tasks.CoverTest do"
       # The cover task tests use Mock.
       assert files["mix.exs"] =~ "{:mock,"
-      # The generated TESTING.md report is not a source file.
-      assert files[".gitignore"] =~ "/TESTING.md"
+      # The generated reports are not source files.
+      assert files[".gitignore"] =~ "/COVERAGE.md\n/TESTING.md"
     end
 
     test "keeps file paths untruncated for the mix cover parser" do

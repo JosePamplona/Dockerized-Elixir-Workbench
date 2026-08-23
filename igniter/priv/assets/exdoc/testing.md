@@ -1,3 +1,3 @@
-# Testing reports
+# Unit Testing
 
-> Run `mix cover` to generate the testing & coverage reports.
+> Run `mix cover` to generate the testing report.

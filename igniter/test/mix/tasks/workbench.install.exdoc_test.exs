@@ -88,11 +88,14 @@ defmodule Mix.Tasks.Workbench.Install.ExdocTest do
                ~s|get("/docs/cover", ExDocController, :cover)|
 
       assert files["lib/test_web/controllers/exdoc_controller.ex"] =~ "def cover"
-      # The TESTING.md placeholder lands at the project root, where
-      # `mix cover` regenerates it, and is referenced from the docs extras.
+      # The COVERAGE.md and TESTING.md placeholders land at the project
+      # root, where `mix cover` regenerates them, and are referenced from
+      # the docs extras.
+      assert files["COVERAGE.md"] =~ "mix cover"
       assert files["TESTING.md"] =~ "mix cover"
       refute Map.has_key?(files, "assets/exdoc/testing.md")
-      assert files["mix.exs"] =~ ~s|{"TESTING.md", [title: "Testing reports"]}|
+      assert files["mix.exs"] =~ ~s|{"COVERAGE.md", [title: "Coverage"]}|
+      assert files["mix.exs"] =~ ~s|{"TESTING.md", [title: "Unit Testing"]}|
       assert Map.has_key?(files, "doc/excoveralls.html")
       assert files["mix.exs"] =~ ~s|"cover" => "/"|
     end

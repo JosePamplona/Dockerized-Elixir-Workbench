@@ -27,8 +27,8 @@ defmodule Mix.Tasks.Workbench.Install.Coveralls do
   * plants the custom excoveralls HTML report template under
     `assets/cover/template/`
   * with `--exdoc`, plants the `mix cover` task (testing & coverage reports
-    integrated into ExDoc) along with its unit tests, and gitignores the
-    generated `TESTING.md` report
+    integrated into ExDoc) along with its ExUnit formatter and unit tests,
+    and gitignores the generated `COVERAGE.md` and `TESTING.md` reports
 
   ## Example
 
@@ -42,7 +42,8 @@ defmodule Mix.Tasks.Workbench.Install.Coveralls do
   * `--no-html` - The project was created with `--no-html` (skips the
     components folder exclusion).
   * `--exdoc` - The project uses the ExDoc feature: the `mix cover` task
-    (which generates `TESTING.md` for the docs) is installed.
+    (which generates `COVERAGE.md` and `TESTING.md` for the docs) is
+    installed.
   """
 
   @impl Igniter.Mix.Task
@@ -159,13 +160,18 @@ defmodule Mix.Tasks.Workbench.Install.Coveralls do
         on_exists: :skip
       )
       |> Igniter.create_new_file(
+        "lib/mix/tasks/cover/formatter.ex",
+        WorkbenchIgniter.asset("coveralls/formatter.ex"),
+        on_exists: :skip
+      )
+      |> Igniter.create_new_file(
         "test/mix/tasks/cover_test.exs",
         WorkbenchIgniter.asset("coveralls/cover_test.exs"),
         on_exists: :skip
       )
       |> WorkbenchIgniter.gitignore_entry(
-        "Generated testing report (mix cover).",
-        "/TESTING.md"
+        "Generated testing & coverage reports (mix cover).",
+        "/COVERAGE.md\n/TESTING.md"
       )
     else
       igniter

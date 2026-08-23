@@ -1,8 +1,12 @@
 defmodule Mix.Tasks.Cover do
   use Mix.Task
 
-  # Target filename.
+  # Target filenames.
   @test_filename "TESTING.md"
+  @coverage_report "COVERAGE.md"
+  # Structured test results dumped by Mix.Tasks.Cover.Formatter during
+  # the suite run; consumed (and removed) right after it.
+  @tests_json "cover/tests.json"
   # Processed files output path.
   @test_output_path "."
   @coverage_config "coveralls.json"
@@ -12,8 +16,7 @@ defmodule Mix.Tasks.Cover do
                     |> File.read!()
                     |> Jason.decode!(keys: :atoms)
                     |> Map.fetch!(:coverage_options)
-  @section_coverage "Coverage"
-  @section_tests "Unit Testing"
+  @minimum_coverage Map.get(@coverage_options, :minimum_coverage, 0)
 
   @version Mix.Project.config()[:version]
 
@@ -31,20 +34,16 @@ defmodule Mix.Tasks.Cover do
   @total ~r/(\e\[.*?m)*?\[TOTAL]\s+(.*?%)/
   @cover ~r/(\e\[.*?m)*?FAILED: Expected minimum coverage of (.*?%)/
 
-  # ExUnit output parsing (applied after ANSI is stripped)
-  @ex_seed ~r/Running ExUnit with seed: (\d+), max_cases: (\d+)/
-  @ex_finished ~r/Finished in (\S+) seconds \((\S+) async, (\S+) sync\)/
-  @ex_count ~r/^(\d+) tests?, (\d+) failures?(?:, (\d+) skipped)?/
-  @ex_mod ~r/^([A-Z]\S+) \[(.+\.exs)\]$/
-  @ex_pass ~r/^\s+\* test (.+?) \(([\d.]+)ms\) \[L#(\d+)\]/
-  @ex_skip ~r/^\s+# test (.+?) \((excluded|skipped)\) \[L#(\d+)\]/
-  @ex_fail_start ~r/^\s+\d+\) test (.+) \(\S+\)/
-
   @moduledoc """
-  Generates a testing report file on `#{@test_output_path}/#{@test_filename}`
-  and a HTML page coverage report file on
-  `#{@coverage_options.output_dir}/#{@coverage_filename}` to enable ExDoc to
-  integrate the test & coverage documentation files.
+  Generates a coverage report file on
+  `#{@test_output_path}/#{@coverage_report}`, a testing report file on
+  `#{@test_output_path}/#{@test_filename}` and a HTML page coverage report
+  file on `#{@coverage_options.output_dir}/#{@coverage_filename}` to enable
+  ExDoc to integrate the test & coverage documentation files.
+
+  The test results are collected structurally by the
+  `Mix.Tasks.Cover.Formatter` ExUnit formatter (`#{@tests_json}`); only
+  the coverage table is parsed from the console output.
 
   Compatible with [ExCoveralls](https://hex.pm/packages/excoveralls) v0.18.1
   """
@@ -63,7 +62,17 @@ defmodule Mix.Tasks.Cover do
           # coveralls-ignore-start
           System.cmd(
             "mix",
-            ["coveralls.html", "--trace", "--seed", "0", "--color"],
+            [
+              "coveralls.html",
+              "--trace",
+              "--seed",
+              "0",
+              "--color",
+              "--formatter",
+              "ExUnit.CLIFormatter",
+              "--formatter",
+              "Mix.Tasks.Cover.Formatter"
+            ],
             stderr_to_stdout: true,
             env: [{"MIX_ENV", "test"}]
           )
@@ -74,8 +83,26 @@ defmodule Mix.Tasks.Cover do
           {output, 0}
       end
 
-    formatted_output = format_tests_report(output)
-    File.write!("#{@test_output_path}/#{@test_filename}", formatted_output)
+    report =
+      opts
+      |> Keyword.get(:test_report_json)
+      |> case do
+        nil ->
+          # coveralls-ignore-start
+          json = File.read!(@tests_json)
+          File.rm!(@tests_json)
+          json
+
+        # coveralls-ignore-stop
+
+        json ->
+          json
+      end
+      |> Jason.decode!(keys: :atoms)
+
+    {coverage_report, testing_report} = format_reports(output, report)
+    File.write!("#{@test_output_path}/#{@coverage_report}", coverage_report)
+    File.write!("#{@test_output_path}/#{@test_filename}", testing_report)
 
     output
     |> validate_output(exit_code)
@@ -83,6 +110,7 @@ defmodule Mix.Tasks.Cover do
       {:ok, total} ->
         Mix.shell().info(
           "Success! testing & coverage reports were generated:\n" <>
+            "  #{@test_output_path}/#{@coverage_report}\n" <>
             "  #{@test_output_path}/#{@test_filename}\n" <>
             "  #{@coverage_options.output_dir}/#{@coverage_filename}\n" <>
             "Test checks:\n" <>
@@ -129,44 +157,46 @@ defmodule Mix.Tasks.Cover do
     end
   end
 
-  defp format_tests_report(content) do
+  defp format_reports(content, report) do
     [date, time] =
       NaiveDateTime.utc_now()
       |> NaiveDateTime.truncate(:microsecond)
       |> NaiveDateTime.to_string()
       |> String.split(" ")
 
-    now = "`#{date}` at `#{time}`"
+    generated =
+      "Report generated on `#{date}` at `#{time}` " <>
+        "for version: **#{@version}**."
 
-    {tests_lines, coverage_lines} =
+    coverage_lines =
       content
       |> String.split("\n")
       |> Enum.map(&clean_line/1)
       |> Enum.reject(&noise_line?/1)
-      |> split_at_tests_summary()
 
-    header = [
-      "# Testing reports",
-      "",
-      "Reports generated on #{now} for version: **#{@version}**.",
-      "",
-      "## #{@section_coverage}",
-      "",
-      "Full unit tests coverage report: #{@coverage_link}.",
-      ""
-    ]
+    coverage_report =
+      ([
+         "# Coverage",
+         "",
+         generated,
+         "",
+         "Full unit tests coverage report: #{@coverage_link}.",
+         ""
+       ] ++ coverage_to_table(coverage_lines))
+      |> Enum.dedup()
+      |> Enum.join("\n")
 
-    footer = [
-      "",
-      "## #{@section_tests}",
-      ""
-    ]
+    testing_report =
+      ([
+         "# Unit Testing",
+         "",
+         generated,
+         ""
+       ] ++ tests_to_markdown(report))
+      |> Enum.dedup()
+      |> Enum.join("\n")
 
-    (header ++
-       coverage_to_table(coverage_lines) ++
-       footer ++ tests_to_markdown(tests_lines))
-    |> Enum.dedup()
-    |> Enum.join("\n")
+    {coverage_report, testing_report}
   end
 
   defp clean_line(line) do
@@ -176,26 +206,12 @@ defmodule Mix.Tasks.Cover do
     |> List.last()
     |> String.replace(~r/\e\[[\d;]+m/, "")
     |> String.replace(~r/\\e\[[\d;]+m/, "")
-    |> then(fn l ->
-      if Regex.match?(~r/\* test.*?\((excluded|skipped)\) \[L#\d+\]/, l),
-        do: String.replace(l, "* test", "# test"),
-        else: l
-    end)
   end
 
   defp noise_line?(line) do
     line == "----------------" or
       line == "Generating report..." or
       String.starts_with?(line, "Saved to:")
-  end
-
-  defp split_at_tests_summary(lines) do
-    lines
-    |> Enum.split_while(&(not Regex.match?(@tests, &1)))
-    |> case do
-      {before, [pivot | rest]} -> {before ++ [pivot], rest}
-      {all, []} -> {all, []}
-    end
   end
 
   # -- Coverage table ----------------------------------------------------------
@@ -212,23 +228,38 @@ defmodule Mix.Tasks.Cover do
         table_rows = Enum.map(rows, &format_coverage_row/1)
 
         total_row =
-          "| **#{total}** " <>
+          "| #{status(total, sums.relevant)} " <>
+            "| **#{total}** " <>
             "| " <>
             "| **#{sums.lines}** " <>
             "| **#{sums.relevant}** " <>
             "| **#{sums.missed}** |"
 
+        summary = [
+          "Total coverage: **#{total}** — " <>
+            "minimum required: **#{@minimum_coverage}%**.",
+          ""
+        ]
+
         table =
           [
-            "| Coverage | File | Lines | Relevant | Missed |",
-            "| :------: | :--- | :---- | :------- | :----- |"
+            "| Status | Coverage | File | Lines | Relevant | Missed |",
+            "| :----: | :------: | :--- | :---- | :------- | :----- |"
           ] ++ table_rows ++ [total_row]
 
         case tail do
-          [_ | _] -> table ++ [""] ++ format_tail(tail)
-          _ -> table
+          [_ | _] -> summary ++ table ++ [""] ++ format_tail(tail)
+          _ -> summary ++ table
         end
     end
+  end
+
+  # A file with no relevant lines cannot miss the minimum; anything else
+  # is checked against the configured minimum coverage.
+  defp status(cov, relevant) do
+    {pct, _} = Float.parse(cov)
+
+    if relevant == 0 or pct >= @minimum_coverage, do: "✅", else: "❌"
   end
 
   defp parse_coverage_lines(lines) do
@@ -290,7 +321,9 @@ defmodule Mix.Tasks.Cover do
          missed: missed
        }) do
     link = "[`#{file}`](#{@coverage_filename}##{file})"
-    "| #{cov} | #{link} | #{lines} | #{relevant} | #{missed} |"
+
+    "| #{status(cov, relevant)} " <>
+      "| #{cov} | #{link} | #{lines} | #{relevant} | #{missed} |"
   end
 
   defp format_tail(tail) do
@@ -302,143 +335,34 @@ defmodule Mix.Tasks.Cover do
 
   # -- Tests markdown ----------------------------------------------------------
 
-  defp tests_to_markdown(lines) do
-    init = %{
-      mods_rev: [],
-      mod: nil,
-      tests_rev: [],
-      failed: MapSet.new(),
-      fail_details: %{},
-      capturing_fail: nil,
-      meta: %{}
-    }
-
-    state = Enum.reduce(lines, init, &parse_test_line/2)
-
-    all_mods =
-      state
-      |> flush_mod()
-      |> Map.get(:mods_rev)
-      |> Enum.reverse()
-
-    mod_sections =
-      Enum.flat_map(
-        all_mods,
-        &render_mod_section(&1, state.failed, state.fail_details)
-      )
-
-    render_test_meta(state.meta) ++ ["", "### Modules", ""] ++ mod_sections
+  defp tests_to_markdown(%{meta: meta, tests: tests}) do
+    render_test_meta(meta, tests) ++ [""] ++ module_sections(tests)
   end
 
-  defp parse_test_line(line, state) do
-    cond do
-      m = Regex.run(@ex_seed, line) ->
-        [_, seed, max] = m
-
-        %{
-          state
-          | capturing_fail: nil,
-            meta: Map.merge(state.meta, %{seed: seed, max_cases: max})
-        }
-
-      m = Regex.run(@ex_finished, line) ->
-        [_, t, a, s] = m
-
-        %{
-          state
-          | capturing_fail: nil,
-            meta: Map.merge(state.meta, %{time: t, async: a, sync: s})
-        }
-
-      m = Regex.run(@ex_count, line) ->
-        [_, total, failures | rest] = m
-        skipped = if rest == [] or hd(rest) == "", do: "0", else: hd(rest)
-
-        state
-        |> flush_mod()
-        |> Map.merge(%{mod: nil, tests_rev: [], capturing_fail: nil})
-        |> Map.update!(
-          :meta,
-          &Map.merge(&1, %{total: total, failures: failures, skipped: skipped})
-        )
-
-      m = Regex.run(@ex_mod, line) ->
-        [_, name, path] = m
-
-        state
-        |> flush_mod()
-        |> Map.merge(%{mod: {name, path}, tests_rev: [], capturing_fail: nil})
-
-      m = Regex.run(@ex_pass, line) ->
-        [_, desc, time, lnum] = m
-
-        if state.mod,
-          do: %{
-            state
-            | capturing_fail: nil,
-              tests_rev: [{:pass, desc, time, lnum} | state.tests_rev]
-          },
-          else: %{state | capturing_fail: nil}
-
-      m = Regex.run(@ex_skip, line) ->
-        [_, desc, _kind, lnum] = m
-
-        if state.mod,
-          do: %{
-            state
-            | capturing_fail: nil,
-              tests_rev: [{:skip, desc, lnum} | state.tests_rev]
-          },
-          else: %{state | capturing_fail: nil}
-
-      m = Regex.run(@ex_fail_start, line) ->
-        [_, desc] = m
-
-        %{
-          state
-          | failed: MapSet.put(state.failed, desc),
-            capturing_fail: desc,
-            fail_details: Map.put(state.fail_details, desc, [line])
-        }
-
-      true ->
-        case state.capturing_fail do
-          nil ->
-            state
-
-          desc ->
-            %{
-              state
-              | fail_details:
-                  Map.update!(state.fail_details, desc, &[line | &1])
-            }
-        end
-    end
+  defp module_sections(tests) do
+    tests
+    |> Enum.map(& &1.module)
+    |> Enum.uniq()
+    # Alphabetical, so the report is stable across runs.
+    |> Enum.sort()
+    |> Enum.flat_map(fn module ->
+      render_mod_section(module, Enum.filter(tests, &(&1.module == module)))
+    end)
   end
 
-  defp flush_mod(%{mod: nil} = state), do: state
+  defp render_mod_section(module, entries) do
+    path = entries |> List.first() |> Map.fetch!(:file)
 
-  defp flush_mod(%{mod: mod, tests_rev: tests_rev, mods_rev: mods_rev} = state) do
-    %{state | mods_rev: [{mod, Enum.reverse(tests_rev)} | mods_rev]}
-  end
-
-  defp render_mod_section({{name, path}, tests}, failed_set, fail_details) do
-    n_fail =
-      Enum.count(tests, fn
-        {:pass, desc, _, _} -> MapSet.member?(failed_set, desc)
-        _ -> false
-      end)
-
-    n_pass = Enum.count(tests, &match?({:pass, _, _, _}, &1)) - n_fail
-    n_skip = Enum.count(tests, &match?({:skip, _, _}, &1))
-    n_total = n_pass + n_fail + n_skip
+    n_fail = Enum.count(entries, &(&1.state == "failed"))
+    n_skip = Enum.count(entries, &(&1.state == "skipped"))
+    n_total = length(entries)
+    n_pass = n_total - n_fail - n_skip
 
     total_ms =
-      tests
-      |> Enum.filter(&match?({:pass, _, _, _}, &1))
-      |> Enum.reduce(0.0, fn {:pass, _, time, _}, acc ->
-        acc + parse_ms(time)
-      end)
+      entries
+      |> Enum.map(&(&1.time_us || 0))
+      |> Enum.sum()
+      |> Kernel./(1000)
 
     summary_parts =
       [
@@ -453,68 +377,106 @@ defmodule Mix.Tasks.Cover do
 
     path_link = maybe_link("`#{path}`", source_link(path))
 
-    rows =
-      Enum.map(tests, fn
-        {:pass, desc, time, lnum} ->
-          lnum_cell = maybe_link("`L##{lnum}`", source_link(path, lnum))
+    # Failures numbered across the module, in execution order.
+    fail_index =
+      entries
+      |> Enum.filter(&(&1.state == "failed"))
+      |> Enum.with_index(1)
+      |> Map.new()
 
-          failed_set
-          |> MapSet.member?(desc)
-          |> case do
-            true -> "| #{lnum_cell} | ❌ | #{desc} | #{time}ms |"
-            false -> "| #{lnum_cell} | ✅ | #{desc} | #{time}ms |"
-          end
+    # Describe blocks nest as H3 under the module H2, in execution order.
+    # Tests without a describe render first, right under the module — a
+    # headingless table after an H3 would read as part of that describe.
+    groups =
+      entries
+      |> Enum.map(& &1.describe)
+      |> Enum.uniq()
+      |> Enum.sort_by(&is_binary/1)
+      |> Enum.flat_map(fn describe ->
+        group = Enum.filter(entries, &(&1.describe == describe))
+        heading = if describe, do: ["### #{describe}", ""], else: []
 
-        {:skip, desc, lnum} ->
-          lnum_cell = maybe_link("`L##{lnum}`", source_link(path, lnum))
-          "| #{lnum_cell} | ➖ | #{desc} | |"
-      end)
-
-    test_table =
-      case rows do
-        [] ->
-          []
-
-        _ ->
-          [
-            "| Line | Status | Test | Time |",
-            "| :--- | :----: | :--- | :--- |"
-          ] ++ rows
-      end
-
-    fail_blocks =
-      tests
-      |> Enum.filter(fn
-        {:pass, desc, _, _} -> MapSet.member?(failed_set, desc)
-        _ -> false
-      end)
-      |> Enum.flat_map(fn {:pass, desc, _, _} ->
-        case Map.get(fail_details, desc) do
-          nil ->
-            []
-
-          lines_rev ->
-            detail = lines_rev |> Enum.reverse() |> Enum.join("\n")
-            ["", "```", detail, "```"]
-        end
+        heading ++ test_table(group) ++ fail_blocks(group, fail_index) ++ [""]
       end)
 
     [
-      "#### #{name}",
+      "## #{module}",
       "",
       "#{summary_parts} #{path_link}",
       ""
-    ] ++ test_table ++ fail_blocks ++ [""]
+    ] ++ groups
+  end
+
+  defp test_table([]), do: []
+
+  defp test_table(group) do
+    [
+      "| Line | Status | Test | Time |",
+      "| :--- | :----: | :--- | :--- |"
+    ] ++ Enum.map(group, &test_row/1)
+  end
+
+  defp test_row(entry) do
+    lnum_cell = maybe_link("`L##{entry.line}`", source_link(entry.file, entry.line))
+
+    case entry.state do
+      "skipped" -> "| #{lnum_cell} | ➖ | #{entry.name} | |"
+      "failed" -> "| #{lnum_cell} | ❌ | #{entry.name} | #{format_ms(entry.time_us)} |"
+      _ -> "| #{lnum_cell} | ✅ | #{entry.name} | #{format_ms(entry.time_us)} |"
+    end
+  end
+
+  # Failure details render as ExDoc error admonitions (`{: .error}`):
+  # a numbered title with the test line, the failure message as a list
+  # item, and the assertion/stacktrace body fenced under it — every
+  # line carrying the blockquote prefix.
+  defp fail_blocks(group, fail_index) do
+    group
+    |> Enum.filter(&(&1.state == "failed" and &1.detail))
+    |> Enum.flat_map(fn entry ->
+      {message, body} = split_detail(entry.detail)
+
+      [
+        "",
+        "> #### Fail #{fail_index[entry]} (L##{entry.line}) - " <>
+          "#{entry.name} {: .error}",
+        ">",
+        "> - #{message}"
+      ] ++ fenced_detail(body)
+    end)
+  end
+
+  # The ExUnit failure detail opens with its own numbering and location
+  # ("1) test ...", "file:line") — both already carried by the title —
+  # then the failure message and the assertion/stacktrace body.
+  defp split_detail(detail) do
+    [_numbering, _location | rest] =
+      detail |> String.split("\n") |> Enum.map(&String.trim_trailing/1)
+
+    dedent =
+      rest
+      |> Enum.reject(&(&1 == ""))
+      |> Enum.map(&(String.length(&1) - String.length(String.trim_leading(&1))))
+      |> Enum.min(fn -> 0 end)
+
+    [message | body] = Enum.map(rest, &String.slice(&1, dedent..-1//1))
+
+    {message, body}
+  end
+
+  defp fenced_detail([]), do: []
+
+  defp fenced_detail(lines) do
+    [">", ">   ```elixir"] ++
+      Enum.map(lines, &String.trim_trailing(">   " <> &1)) ++ [">   ```"]
   end
 
   # -- Helpers -----------------------------------------------------------------
 
-  defp parse_ms(time) do
-    case Float.parse(time) do
-      {ms, _} -> ms
-      :error -> 0.0
-    end
-  end
+  defp format_ms(nil), do: ""
+  defp format_ms(us), do: "#{:erlang.float_to_binary(us / 1000, decimals: 1)}ms"
+
+  defp seconds(us), do: :erlang.float_to_binary(us / 1_000_000, decimals: 1)
 
   defp source_link(path, line \\ nil) do
     case @source_url_pattern do
@@ -535,11 +497,11 @@ defmodule Mix.Tasks.Cover do
   defp maybe_link(text, nil), do: text
   defp maybe_link(text, url), do: "[#{text}](#{url})"
 
-  defp render_test_meta(meta) do
-    total = meta[:total] && String.to_integer(meta[:total])
-    failures = meta[:failures] && String.to_integer(meta[:failures])
-    skipped = meta[:skipped] && String.to_integer(meta[:skipped])
-    success = total && failures && skipped && total - failures - skipped
+  defp render_test_meta(meta, tests) do
+    total = length(tests)
+    failures = Enum.count(tests, &(&1.state == "failed"))
+    skipped = Enum.count(tests, &(&1.state == "skipped"))
+    success = total - failures - skipped
 
     seed_parts =
       [
@@ -557,15 +519,15 @@ defmodule Mix.Tasks.Cover do
 
     count_rows =
       [
-        success && success > 0 && "| passing | #{success} | ✅ |",
-        skipped && skipped > 0 && "| skipped | #{skipped} | ➖ |",
-        failures && failures > 0 && "| failures | #{failures} | ❌ |"
+        success > 0 && "| passing | #{success} | ✅ |",
+        skipped > 0 && "| skipped | #{skipped} | ➖ |",
+        failures > 0 && "| failures | #{failures} | ❌ |"
       ]
       |> Enum.filter(& &1)
 
     count_table =
       case total do
-        nil ->
+        0 ->
           []
 
         _ ->
@@ -573,15 +535,20 @@ defmodule Mix.Tasks.Cover do
       end
 
     time_line =
-      if meta[:time] do
-        [
-          "",
-          "Time: **#{meta[:time]}s** " <>
-            "(**#{meta[:async]}** async, **#{meta[:sync]}** sync)",
-          ""
-        ]
-      else
-        []
+      case meta[:run_us] do
+        nil ->
+          []
+
+        run_us ->
+          async_us = meta[:async_us] || 0
+
+          [
+            "",
+            "Time: **#{seconds(run_us)}s** " <>
+              "(**#{seconds(async_us)}s** async, " <>
+              "**#{seconds(run_us - async_us)}s** sync)",
+            ""
+          ]
       end
 
     run_line ++ time_line ++ count_table

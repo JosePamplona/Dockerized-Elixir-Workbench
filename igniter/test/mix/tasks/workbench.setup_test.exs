@@ -67,8 +67,6 @@ defmodule Mix.Tasks.Workbench.SetupTest do
       |> assert_creates(".env")
       |> assert_creates(".env.sample")
       |> assert_creates("CHANGELOG.md")
-      |> assert_creates(".dockerignore")
-      |> assert_creates("Dockerfile")
       |> assert_creates(".tool-versions")
     end
 
@@ -102,7 +100,7 @@ defmodule Mix.Tasks.Workbench.SetupTest do
       assert sample =~ ~s|PHX_HOST="localhost"|
     end
 
-    test "renders stack versions into Dockerfiles and .tool-versions" do
+    test "renders stack versions into .tool-versions" do
       igniter =
         setup_project([
           "--elixir-version",
@@ -114,11 +112,8 @@ defmodule Mix.Tasks.Workbench.SetupTest do
         ])
         |> apply_igniter!()
 
-      dockerfile = igniter.assigns[:test_files]["Dockerfile"]
       tool_versions = igniter.assigns[:test_files][".tool-versions"]
 
-      assert dockerfile =~ ~r/ARG\s+ELIXIR="1\.19\.5"/
-      assert dockerfile =~ ~r/ARG\s+DEBIAN="trixie-20260112-slim"/
       assert tool_versions == "elixir 1.19.5-otp-27\nerlang 27.3\n"
     end
 
@@ -143,7 +138,7 @@ defmodule Mix.Tasks.Workbench.SetupTest do
   end
 
   describe "feature composition" do
-    test "--coveralls --exdoc integrate the TESTING.md report" do
+    test "--coveralls --exdoc integrate the COVERAGE.md and TESTING.md reports" do
       igniter = setup_project(["--coveralls", "--exdoc"]) |> apply_igniter!()
 
       files = igniter.assigns[:test_files]
@@ -151,9 +146,11 @@ defmodule Mix.Tasks.Workbench.SetupTest do
       # Both .gitignore updates (setup's and coveralls') land in one patch
       # set; the doc/cover outputs are already in phx.new's stock entries.
       assert files[".gitignore"] =~ ".env"
-      assert files[".gitignore"] =~ "/TESTING.md"
+      assert files[".gitignore"] =~ "/COVERAGE.md\n/TESTING.md"
+      assert files["COVERAGE.md"] =~ "mix cover"
       assert files["TESTING.md"] =~ "mix cover"
-      assert files["mix.exs"] =~ ~s|{"TESTING.md", [title: "Testing reports"]}|
+      assert files["mix.exs"] =~ ~s|{"COVERAGE.md", [title: "Coverage"]}|
+      assert files["mix.exs"] =~ ~s|{"TESTING.md", [title: "Unit Testing"]}|
     end
 
     test "--enhance composes the trivial installers group" do

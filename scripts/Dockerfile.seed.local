@@ -23,7 +23,7 @@ FROM ${TOOLCHAIN_IMAGE} AS toolchain
 
 # install build dependencies (inotify-tools powers Phoenix live reload)
 RUN apt-get update -y && \
-    apt-get install -y build-essential git inotify-tools curl && \
+    apt-get install -y build-essential git inotify-tools && \
     apt-get clean && \
     rm -f /var/lib/apt/lists/*_*
 
@@ -39,9 +39,6 @@ RUN groupadd --gid ${GID} elixir && \
 # Parent of the source mount point.
 WORKDIR /app
 RUN chown elixir:elixir /app
-
-# Robust Hex fetches on flaky networks.
-ENV HEX_HTTP_CONCURRENCY=1 HEX_HTTP_TIMEOUT=120
 
 USER elixir
 

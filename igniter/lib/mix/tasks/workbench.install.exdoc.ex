@@ -20,7 +20,8 @@ defmodule Mix.Tasks.Workbench.Install.Exdoc do
     `/dev/docs`
   * plants the documentation assets under `assets/exdoc/`: logo, theme
     JS, and the conditional pages (token, coding guidelines, database
-    placeholder), plus the root `TESTING.md` placeholder for `mix cover`
+    placeholder), plus the root `COVERAGE.md` and `TESTING.md`
+    placeholders for `mix cover`
   * seeds dummy pages in `doc/` so the test suite passes before the first
     `mix docs` run
 
@@ -170,7 +171,8 @@ defmodule Mix.Tasks.Workbench.Install.Exdoc do
           ~s|{"CHANGELOG.md", [title: "Changelog"]}|,
           only(opts[:auth0], ~s|{"assets/exdoc/token.md", [title: "Get access tokens"]}|),
           only(opts[:ecto], ~s|{"assets/exdoc/database.md", [title: "Database"]}|),
-          only(opts[:coveralls], ~s|{"TESTING.md", [title: "Testing reports"]}|),
+          only(opts[:coveralls], ~s|{"COVERAGE.md", [title: "Coverage"]}|),
+          only(opts[:coveralls], ~s|{"TESTING.md", [title: "Unit Testing"]}|),
           only(
             opts[:guidelines_url],
             ~s|{"assets/exdoc/coding.md", [title: "Coding guidelines"]}|
@@ -183,6 +185,7 @@ defmodule Mix.Tasks.Workbench.Install.Exdoc do
       join(
         [
           only(opts[:auth0], ~s|"assets/exdoc/token.md"|),
+          only(opts[:coveralls], ~s|"COVERAGE.md"|),
           only(opts[:coveralls], ~s|"TESTING.md"|),
           only(opts[:ecto], ~s|"assets/exdoc/database.md"|),
           only(opts[:guidelines_url], ~s|"assets/exdoc/coding.md"|)
@@ -311,13 +314,19 @@ defmodule Mix.Tasks.Workbench.Install.Exdoc do
     if condition, do: plant_asset(igniter, asset, path), else: igniter
   end
 
-  # TESTING.md is generated (and overwritten) by `mix cover` at the project
-  # root; a placeholder keeps `mix docs` from failing on a missing extra
-  # file, and an existing report is never clobbered.
+  # COVERAGE.md and TESTING.md are generated (and overwritten) by
+  # `mix cover` at the project root; placeholders keep `mix docs` from
+  # failing on missing extra files, and existing reports are never
+  # clobbered.
   defp plant_testing_placeholder(igniter, opts) do
     if opts[:coveralls] do
-      Igniter.create_new_file(
-        igniter,
+      igniter
+      |> Igniter.create_new_file(
+        "COVERAGE.md",
+        WorkbenchIgniter.asset("exdoc/coverage.md"),
+        on_exists: :skip
+      )
+      |> Igniter.create_new_file(
         "TESTING.md",
         WorkbenchIgniter.asset("exdoc/testing.md"),
         on_exists: :skip

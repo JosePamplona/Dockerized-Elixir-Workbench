@@ -64,7 +64,10 @@ if [ $# -gt 0 ]; then echo "[$HOSTNAME]$0($#): $@"; fi
     # (e.g. swoosh locks idna 7.x while hackney needs ~> 6.1): on
     # failure, re-resolve the whole lock.
     { mix deps.get || { mix deps.unlock --all && mix deps.get; }; } && \
-    mix phx.gen.release && \
+    # --docker: the production Dockerfile and .dockerignore come from
+    # Phoenix itself, with the stack versions detected from this
+    # toolchain — no workbench-maintained template.
+    mix phx.gen.release --docker && \
     mix release.init
 
   elif [ "$1" == "add" ]; then

@@ -9,43 +9,43 @@ in the original `igniter/` directory and the git log.
 
 ## Structure
 
-```
-igniter/
-├── mix.exs                                       # :workbench_igniter package
-├── lib/
-│   ├── workbench_igniter.ex                      # priv/ template/asset helpers
-│   ├── workbench_igniter/
-│   │   ├── feature.ex                            # Feature behaviour + embed_templates/embed_assets
-│   │   ├── features.ex                           # registry (composition order)
-│   │   └── features/
-│   │       ├── healthcheck/                      # directory cartridge (feature with templates):
-│   │       │   ├── healthcheck.ex                #   manifest + install logic
-│   │       │   ├── task.ex                       #   Mix.Tasks.Workbench.Install.Healthcheck shell
-│   │       │   └── templates/*.eex               #   compile-time embedded templates
-│   │       ├── rest/                             # same (6 templates)
-│   │       ├── graphql/                          # same (2 templates)
-│   │       ├── auth0/                            # same (14 templates)
-│   │       ├── openai/                           # same (13 templates)
-│   │       ├── enhancements/                     # same (16 templates; its diagrams/postman
-│   │       │                                     #   are multi-feature and stay in priv/assets/)
-│   │       ├── coveralls/                        # same, + embedded verbatim assets/
-│   │       │   └── assets/{cover.ex.asset, ...}  #   .asset suffix: mix won't compile them
-│   │       ├── exdoc/                            # same, + text assets/; the binary PNG logo
-│   │       │                                     #   lives in priv/features/exdoc/
-│   │       ├── credo.ex, mock.ex, osmon.ex, ...  # single-file cartridges (dep-only):
-│   │       │                                     #   manifest + logic + shell in one file
-│   │       ├── githooks.ex, exmachina.ex         # standalone cartridges (setup never composes them)
-│   │       └── stripe.ex                         # pending manifest (installer not ported)
-│   └── mix/tasks/
-│       └── workbench.setup.ex                    # umbrella task: configure_files + Features.compose/2
-├── priv/
-│   ├── templates/setup/                          # setup task templates (README, .env, …)
-│   ├── features/exdoc/                           # a cartridge's heavy binaries (feature_asset/2)
-│   └── assets/                                   # multi-feature binaries (db_schema, postman)
-└── test/
-    └── workbench_igniter/
-        ├── setup_test.exs
-        └── features/*_test.exs                   # one test per cartridge (deps_test: trivial group)
+```text
+📁 igniter/
+├── 📄 mix.exs                                       # :workbench_igniter package
+├── 📁 lib/
+│   ├── 📄 workbench_igniter.ex                      # priv/ template/asset helpers
+│   ├── 📁 workbench_igniter/
+│   │   ├── 📄 feature.ex                            # Feature behaviour + embed_templates/embed_assets
+│   │   ├── 📄 features.ex                           # registry (composition order)
+│   │   └── 📁 features/
+│   │       ├── 📦 healthcheck/                      # directory cartridge (feature with templates):
+│   │       │   ├── 📄 healthcheck.ex                #   manifest + install logic
+│   │       │   ├── 📄 task.ex                       #   Mix.Tasks.Workbench.Install.Healthcheck shell
+│   │       │   └── 📄 templates/*.eex               #   compile-time embedded templates
+│   │       ├── 📦 rest/                             # same (6 templates)
+│   │       ├── 📦 graphql/                          # same (2 templates)
+│   │       ├── 📦 auth0/                            # same (14 templates)
+│   │       ├── 📦 openai/                           # same (13 templates)
+│   │       ├── 📦 enhancements/                     # same (16 templates; its diagrams/postman
+│   │       │                                        #   are multi-feature and stay in priv/assets/)
+│   │       ├── 📦 coveralls/                        # same, + embedded verbatim assets/
+│   │       │   └── 📁 assets/{cover.ex.asset, ...}  #   .asset suffix: mix won't compile them
+│   │       ├── 📦 exdoc/                            # same, + text assets/; the binary PNG logo
+│   │       │                                        #   lives in priv/features/exdoc/
+│   │       ├── 📦 credo.ex, mock.ex, osmon.ex, ...  # single-file cartridges (dep-only):
+│   │       │                                        #   manifest + logic + shell in one file
+│   │       ├── 📦 githooks.ex, exmachina.ex         # standalone cartridges (setup never composes them)
+│   │       └── 📦 stripe.ex                         # pending manifest (installer not ported)
+│   └── 📁 mix/tasks/
+│       └── 📄 workbench.setup.ex                    # umbrella task: configure_files + Features.compose/2
+├── 📁 priv/
+│   ├── 📁 templates/setup/                          # setup task templates (README, .env, …)
+│   ├── 📁 features/exdoc/                           # a cartridge's heavy binaries (feature_asset/2)
+│   └── 📁 assets/                                   # multi-feature binaries (db_schema, postman)
+└── 📁 test/
+    └── 📁 workbench_igniter/
+        ├── 📄 setup_test.exs
+        └── 📄 features/*_test.exs                   # one test per cartridge (deps_test: trivial group)
 ```
 
 Package modules use the `WorkbenchIgniter` prefix; the Mix tasks keep the
@@ -62,32 +62,32 @@ general index is
 [`lib/workbench_igniter/features/README.md`](lib/workbench_igniter/features/README.md).
 `healthcheck/` is the reference:
 
-* **`<feature>.ex`** — a `WorkbenchIgniter.Features.<Feature>` module with
+- **`<feature>.ex`** — a `WorkbenchIgniter.Features.<Feature>` module with
   `use WorkbenchIgniter.Feature`. It gathers the *manifest* (what used to
   be spread across `workbench.setup.ex`) and the install logic:
-  * `task/0` — installer mix task name (public interface, never changes).
-  * `flag/0` / `enabled?/1` — when the setup options turn it on.
-  * `implies/0` — flags it forces (e.g. `openai` ⇒ `auth0`).
-  * `argv/1` — arguments setup forwards when composing it.
-  * `pending?/0` — documented but not ported yet (setup emits a notice).
-  * `install/1` — the installer's `igniter/1` body.
-  * Ordering constraints are documented in the `@moduledoc`; the actual
+  - `task/0` — installer mix task name (public interface, never changes).
+  - `flag/0` / `enabled?/1` — when the setup options turn it on.
+  - `implies/0` — flags it forces (e.g. `openai` ⇒ `auth0`).
+  - `argv/1` — arguments setup forwards when composing it.
+  - `pending?/0` — documented but not ported yet (setup emits a notice).
+  - `install/1` — the installer's `igniter/1` body.
+  - Ordering constraints are documented in the `@moduledoc`; the actual
     order is the `WorkbenchIgniter.Features` registry list.
-* **`task.ex`** — a `Mix.Tasks.Workbench.Install.<Feature>` shell (~15
+- **`task.ex`** — a `Mix.Tasks.Workbench.Install.<Feature>` shell (~15
   lines) delegating `info/2` and `igniter/1` to the feature module. Elixir
   doesn't require Mix tasks to live in `lib/mix/tasks/`: only the module
   name matters, so the task lives inside the cartridge.
-* **`templates/*.eex`** — templates embedded at compile time by
+- **`templates/*.eex`** — templates embedded at compile time by
   `embed_templates()` (each one is an `@external_resource`: editing it
   recompiles). Rendered through the module's local `template/2`, with the
   same semantics as `WorkbenchIgniter.template/2`.
-* **`assets/`** — files the feature copies verbatim (no rendering):
+- **`assets/`** — files the feature copies verbatim (no rendering):
   `embed_assets()` embeds them as a local `asset/1` (see coveralls).
   Careful: a `*.ex` asset would be compiled by mix along with the package
   — it is stored with an extra `.asset` suffix (`cover.ex.asset`) and the
   macro strips it from the key. Heavy or multi-feature binaries (db_schema
   SVGs, Postman collections) stay in `priv/assets/`.
-* **test** — at `test/workbench_igniter/features/<feature>_test.exs`,
+- **test** — at `test/workbench_igniter/features/<feature>_test.exs`,
   exercising the task by name with `Igniter.Test`.
 
 Minimal variant: a feature with no templates or assets (dep-only ones like

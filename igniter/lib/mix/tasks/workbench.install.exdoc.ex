@@ -171,8 +171,8 @@ defmodule Mix.Tasks.Workbench.Install.Exdoc do
           ~s|{"CHANGELOG.md", [title: "Changelog"]}|,
           only(opts[:auth0], ~s|{"assets/exdoc/token.md", [title: "Get access tokens"]}|),
           only(opts[:ecto], ~s|{"assets/exdoc/database.md", [title: "Database"]}|),
-          only(opts[:coveralls], ~s|{"COVERAGE.md", [title: "Test Coverage"]}|),
           only(opts[:coveralls], ~s|{"TESTING.md", [title: "Test Suite"]}|),
+          only(opts[:coveralls], ~s|{"COVERAGE.md", [title: "Test Coverage"]}|),
           only(
             opts[:guidelines_url],
             ~s|{"assets/exdoc/coding.md", [title: "Coding guidelines"]}|

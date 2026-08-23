@@ -170,20 +170,24 @@ defmodule Mix.Tasks.CoverTest do
       assert content =~ "# Test Coverage"
       assert content =~ "Full test coverage report: [Test Coverage Overview](./excoveralls.html)."
       assert content =~ "Total coverage: **95.0%** — minimum required: **"
-      assert content =~ "| Status | Coverage | File | Lines | Relevant | Missed |"
-      assert content =~ "| ✅ | 90.0% | [`lib/my_app/foo.ex`](excoveralls.html#lib/my_app/foo.ex) | 20 | 10 | 1 |"
-      assert content =~ "| **95.0%** | | **30** | **15** | **1** |"
+      assert content =~ "| Coverage | Status | File | Lines | Relevant | Missed |"
+      assert content =~ "| 90.0% | ✅ | [`lib/my_app/foo.ex`](excoveralls.html#lib/my_app/foo.ex) | 20 | 10 | 1 |"
+      assert content =~ "| **95.0%** | ✅ | | **30** | **15** | **1** |"
     end
 
-    test "render the run metadata and totals summary." do
+    test "render the execution result board." do
       {_coverage, content} = run_capturing_report(@passing_output, @passing_json)
 
       assert content =~ "# Test Suite"
-      assert content =~ "Ran **ExUnit** with: seed: **0**, max_cases: **1**"
-      assert content =~ "Time: **4.5s** (**0.8s** async, **3.7s** sync)"
-      assert content =~ "| Total Tests | 4 | |"
-      assert content =~ "| passing | 3 | ✅ |"
-      assert content =~ "| skipped | 1 | ➖ |"
+      assert content =~ "> #### Execution Result Board {: .info}"
+      assert content =~ "> | Test Success ratio | 100% | 100% | ✅ |"
+      assert content =~ "> | Test Coverage ratio | 95% | 80% | ✅ |"
+      assert content =~ "> | Total Tests | 4 | |"
+      assert content =~ "> | passing | 3 | ✅ |"
+      assert content =~ "> | skipped | 1 | ➖ |"
+      assert content =~ "> - Ran ExUnit with: seed: **0**, max_cases: **1**"
+      assert content =~ "> - Time: **4.5s** (**0.8s** async, **3.7s** sync)"
+      assert content =~ "> - Status: ✅ **Pass**"
     end
 
     test "render one section per test module with per-test rows." do
@@ -242,7 +246,12 @@ defmodule Mix.Tasks.CoverTest do
       # The report is still written, marking the failed test and its detail
       assert_received {:write, "./TESTING.md", content}
       assert content =~ "| ❌ | does something | 12.5ms |"
-      assert content =~ "| failures | 1 | ❌ |"
+      # No coverage total in the output: the board only scores the suite
+      assert content =~ "> #### Execution Result Board {: .error}"
+      assert content =~ "> | Test Success ratio | 50% | 100% | ❌ |"
+      refute content =~ "Test Coverage ratio"
+      assert content =~ "> | failures | 1 | ❌ |"
+      assert content =~ "> - Status: ❌ **Not Pass**"
       # The failure detail renders as an ExDoc error admonition: numbered
       # title with the test line, the message as a list item, and the
       # assertion body fenced under it — all inside the blockquote

@@ -182,6 +182,8 @@ defmodule Mix.Tasks.Cover do
       |> Enum.map(&clean_line/1)
       |> Enum.reject(&noise_line?/1)
 
+    {_rows, coverage_total, _tail} = parse_coverage_lines(coverage_lines)
+
     coverage_report =
       ([
          "# Test Coverage",
@@ -196,11 +198,12 @@ defmodule Mix.Tasks.Cover do
 
     testing_report =
       ([
+         "<!-- markdownlint-disable MD028 -->",
          "# Test Suite",
          "",
          generated,
          ""
-       ] ++ tests_to_markdown(report))
+       ] ++ tests_to_markdown(report, coverage_total))
       |> Enum.dedup()
       |> Enum.join("\n")
 
@@ -236,8 +239,8 @@ defmodule Mix.Tasks.Cover do
         table_rows = Enum.map(rows, &format_coverage_row/1)
 
         total_row =
-          "| #{status(total, sums.relevant)} " <>
-            "| **#{total}** " <>
+          "| **#{total}** " <>
+            "| #{status(total, sums.relevant)} " <>
             "| " <>
             "| **#{sums.lines}** " <>
             "| **#{sums.relevant}** " <>
@@ -251,8 +254,8 @@ defmodule Mix.Tasks.Cover do
 
         table =
           [
-            "| Status | Coverage | File | Lines | Relevant | Missed |",
-            "| :----: | :------: | :--- | :---- | :------- | :----- |"
+            "| Coverage | Status | File | Lines | Relevant | Missed |",
+            "| :------: | :----: | :--- | :---- | :------- | :----- |"
           ] ++ table_rows ++ [total_row]
 
         case tail do
@@ -330,8 +333,8 @@ defmodule Mix.Tasks.Cover do
        }) do
     link = "[`#{file}`](#{@coverage_filename}##{file})"
 
-    "| #{status(cov, relevant)} " <>
-      "| #{cov} | #{link} | #{lines} | #{relevant} | #{missed} |"
+    "| #{cov} " <>
+      "| #{status(cov, relevant)} | #{link} | #{lines} | #{relevant} | #{missed} |"
   end
 
   defp format_tail(tail) do
@@ -343,8 +346,8 @@ defmodule Mix.Tasks.Cover do
 
   # -- Tests markdown ----------------------------------------------------------
 
-  defp tests_to_markdown(%{meta: meta, tests: tests}) do
-    render_test_meta(meta, tests) ++ [""] ++ module_sections(tests)
+  defp tests_to_markdown(%{meta: meta, tests: tests}, coverage_total) do
+    render_board(meta, tests, coverage_total) ++ [""] ++ module_sections(tests)
   end
 
   defp module_sections(tests) do
@@ -505,11 +508,56 @@ defmodule Mix.Tasks.Cover do
   defp maybe_link(text, nil), do: text
   defp maybe_link(text, url), do: "[#{text}](#{url})"
 
-  defp render_test_meta(meta, tests) do
+  # The "Execution Result Board": one admonition — `.info` on pass,
+  # `.error` otherwise — with each metric scored against its target
+  # (success ratio vs 100%, coverage vs the configured minimum), the
+  # test counts, and the run detail as bullets.
+  defp render_board(_meta, [], _coverage_total), do: []
+
+  defp render_board(meta, tests, coverage_total) do
     total = length(tests)
     failures = Enum.count(tests, &(&1.state == "failed"))
     skipped = Enum.count(tests, &(&1.state == "skipped"))
     success = total - failures - skipped
+
+    # Skipped tests count neither for nor against the success ratio.
+    executed = total - skipped
+    success_pct = if executed > 0, do: success / executed * 100, else: 0.0
+    success_ok? = failures == 0 and executed > 0
+
+    {coverage_pct, coverage_ok?} =
+      case coverage_total do
+        nil ->
+          {nil, true}
+
+        cov ->
+          {pct, _} = Float.parse(cov)
+          {pct, pct >= @minimum_coverage}
+      end
+
+    {class, status} =
+      if success_ok? and coverage_ok?,
+        do: {".info", "✅ **Pass**"},
+        else: {".error", "❌ **Not Pass**"}
+
+    metric_rows =
+      [
+        "> | Test Success ratio | #{percent(success_pct)} | 100% " <>
+          "| #{if success_ok?, do: "✅", else: "❌"} |",
+        coverage_pct &&
+          "> | Test Coverage ratio | #{percent(coverage_pct)} " <>
+            "| #{@minimum_coverage}% " <>
+            "| #{if coverage_ok?, do: "✅", else: "❌"} |"
+      ]
+      |> Enum.filter(& &1)
+
+    count_rows =
+      [
+        success > 0 && "> | passing | #{success} | ✅ |",
+        skipped > 0 && "> | skipped | #{skipped} | ➖ |",
+        failures > 0 && "> | failures | #{failures} | ❌ |"
+      ]
+      |> Enum.filter(& &1)
 
     seed_parts =
       [
@@ -519,46 +567,47 @@ defmodule Mix.Tasks.Cover do
       |> Enum.filter(& &1)
       |> Enum.join(", ")
 
-    run_line =
-      case seed_parts do
-        "" -> []
-        _ -> ["Ran **ExUnit** with: #{seed_parts}", ""]
-      end
-
-    count_rows =
-      [
-        success > 0 && "| passing | #{success} | ✅ |",
-        skipped > 0 && "| skipped | #{skipped} | ➖ |",
-        failures > 0 && "| failures | #{failures} | ❌ |"
-      ]
-      |> Enum.filter(& &1)
-
-    count_table =
-      case total do
-        0 ->
-          []
-
-        _ ->
-          ["| Total Tests | #{total} | |", "| :-: | :-: | :-: |"] ++ count_rows
-      end
-
-    time_line =
+    time_bullet =
       case meta[:run_us] do
         nil ->
-          []
+          nil
 
         run_us ->
           async_us = meta[:async_us] || 0
 
-          [
-            "",
-            "Time: **#{seconds(run_us)}s** " <>
-              "(**#{seconds(async_us)}s** async, " <>
-              "**#{seconds(run_us - async_us)}s** sync)",
-            ""
-          ]
+          "> - Time: **#{seconds(run_us)}s** " <>
+            "(**#{seconds(async_us)}s** async, " <>
+            "**#{seconds(run_us - async_us)}s** sync)"
       end
 
-    run_line ++ time_line ++ count_table
+    bullets =
+      [
+        seed_parts != "" && "> - Ran ExUnit with: #{seed_parts}",
+        time_bullet,
+        "> - Status: #{status}"
+      ]
+      |> Enum.filter(& &1)
+
+    [
+      "> #### Execution Result Board {: #{class}}",
+      ">",
+      "> | Metric | Score | Target | |",
+      "> | :----- | :---: | :----: | :-: |"
+    ] ++
+      metric_rows ++
+      [
+        ">",
+        "> | Total Tests | #{total} | |",
+        "> | :---------- | :-: | :-: |"
+      ] ++ count_rows ++ [">"] ++ bullets
+  end
+
+  # One decimal, trimmed when whole: 100%, 93.2%.
+  defp percent(pct) do
+    pct
+    |> Float.round(1)
+    |> :erlang.float_to_binary(decimals: 1)
+    |> String.replace_suffix(".0", "")
+    |> Kernel.<>("%")
   end
 end

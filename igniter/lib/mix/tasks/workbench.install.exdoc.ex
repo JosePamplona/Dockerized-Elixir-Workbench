@@ -358,6 +358,10 @@ defmodule Mix.Tasks.Workbench.Install.Exdoc do
         igniter
 
       url ->
+        # Mix tasks don't start dependency applications, and Req needs its
+        # Finch pool running before it can make requests.
+        {:ok, _} = Application.ensure_all_started(:req)
+
         try do
           Igniter.create_new_file(igniter, "assets/exdoc/coding.md", Req.get!(url).body,
             on_exists: :overwrite

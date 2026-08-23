@@ -27,6 +27,10 @@ RUN apt-get update -y && \
     apt-get clean && \
     rm -f /var/lib/apt/lists/*_*
 
+# `mix phx.new` runs `git init` in the fresh project; without a default
+# branch configured, git names it `master` and prints a hint block.
+RUN git config --system init.defaultBranch main
+
 # The image is always built locally, so it is born with the identity of
 # the building user (pass --build-arg UID/GID if yours is not the
 # typical single-user Linux 1000:1000): everything written into the

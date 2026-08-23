@@ -10,7 +10,4 @@
 /igniter/erl_crash.dump
 
 # Generated workspaces (projects live here, not in the workbench repo).
-/workspaces/
-
-# Disposable workspaces used for workbench validation runs.
-/_tests_workspace/
+/_workspaces/

@@ -53,6 +53,29 @@ the NES wordmark or its typefaces either. This seal is our own
 equivalent, which is also what we actually want: a workbench cartridge,
 not a counterfeit.
 
+### Stamping it
+
+The seal lives at `assets/covers/seal.png`, and `assets/covers/stamp.sh`
+puts it on:
+
+```sh
+./assets/covers/stamp.sh clustering --corner br
+```
+
+It reads `assets/covers/art/<feature>.jpg` — the raw generated artwork —
+and writes the stamped cover to `assets/covers/<feature>.jpg`. Keep both:
+regenerating a cover means replacing the art and stamping again.
+
+Size and inset are **fractions of each cover's width**, not pixels,
+because covers come out at different resolutions — the first six were
+765px wide and 687px wide. A fixed pixel size would make the seal look
+bigger on the narrow ones. Defaults: `0.24` of the width, inset `0.04`.
+
+Corners are a per-cover choice, but two are constrained: the top ones
+collide with the band and need `--margin 0.11` or so to clear it, and the
+bottom left is usually where the badge sits. Bottom right is the default
+for a reason.
+
 ## Tier 2 — band and house colour
 
 Both go into every prompt verbatim. The band renders reliably — it came
@@ -138,6 +161,7 @@ is one more thing the generator can get wrong.
 | **Hero** | One concrete scene depicting the *mechanism*, not the abstraction. See below. |
 | **Accent** | One colour beside the violet, contrasting in value, chosen because it suits the feature. |
 | **Unit badge** | The "1-2 PLAYERS" slot, in the feature's own units. One line, one short phrase. |
+| **Seal corner** | Which corner the composition keeps quiet for the seal. Bottom right unless the art wants otherwise. |
 
 ## The craft: writing the hero
 
@@ -191,12 +215,19 @@ Bottom left: a small rectangular badge reading "<UNIT BADGE>".
 
 [optional: one or two pieces of period furniture]
 
+The <SEAL CORNER> of the artwork is composed as a quiet area: low detail,
+no focal element, an even field of tone.
+
 Palette: [HOUSE COLOUR — verbatim], CRT phosphor haze in the background.
 No photographic elements. No real brand marks or logos.
 Accent: <ACCENT>.
 ```
 
-Leave the bottom right corner clear for the seal.
+The last line is the seal's corner, and it is art direction rather than a
+reservation: **ask for calm, not for emptiness**. A generator told to
+leave a corner clear leaves a hole in the picture. Told that the corner
+is an even field of tone with no focal element, it composes around it and
+the seal drops in as if it had always been there.
 
 If the lettering comes out wrong on a take that is otherwise good,
 compositing it is always available — it just is not the default any more,
@@ -225,21 +256,27 @@ came back with a wrong digit while the two large ones were right. Hence
 *the same size, all in the foreground*: the plates stay, they just stop
 being background texture.
 
-## Accent record
+## Cover record
 
-A mirror, not a gate. Fill a row when a cover is generated, so the
-distribution of the shelf is visible at a glance — the point is to
-notice when six covers in a row have drifted to the same colour, not to
-stop the seventh from reusing one.
+The accent column is a mirror, not a gate: the point is to notice when
+six covers in a row have drifted to the same colour, not to stop the
+seventh from reusing one. The corner column is what `stamp.sh` was
+passed, so a cover can be restamped identically.
 
-| Cartridge | Accent |
-| --- | --- |
-| clustering | electric magenta |
-| coveralls | phosphor green |
-| healthcheck | vital signal green |
-| exdebug | electric cyan |
-| exdoc | *unassigned* — parchment ivory failed the contrast rule |
-| enhancements | hot forge orange |
+| Cartridge | Accent | Seal corner |
+| --- | --- | --- |
+| clustering | electric magenta | — |
+| coveralls | phosphor green | — |
+| healthcheck | vital signal green | — |
+| exdebug | electric cyan | — |
+| exdoc | *unassigned* — parchment ivory failed the contrast rule | — |
+| enhancements | hot forge orange | — |
+
+The corners are empty because these six predate the seal: each carries a
+*generated* seal baked into the artwork, including the one on
+`healthcheck.jpg` that says "Nintendo". They want regenerating from the
+current guide — artwork into `art/`, then stamped — and healthcheck wants
+it first.
 
 Coveralls and healthcheck sharing green is fine: covered lines are green
 and so is a vital-signs trace, and both covers read instantly because of

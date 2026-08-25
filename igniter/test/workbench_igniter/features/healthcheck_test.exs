@@ -127,7 +127,11 @@ defmodule WorkbenchIgniter.Features.HealthcheckTest do
         igniter.assigns[:test_files]["lib/test_web/controllers/healthcheck_controller.ex"]
 
       refute controller =~ "OpenApiSpex.ControllerSpecs"
-      refute Map.has_key?(igniter.assigns[:test_files], "lib/test_web/open_api/schemas/healthcheck.ex")
+
+      refute Map.has_key?(
+               igniter.assigns[:test_files],
+               "lib/test_web/open_api/schemas/healthcheck.ex"
+             )
     end
 
     test "with the REST feature installed it generates the OpenApiSpex variant" do

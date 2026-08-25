@@ -19,6 +19,7 @@ defmodule WorkbenchIgniter.Features.Auth0Test do
       files = installed()
 
       assert files["mix.exs"] =~ ~s|{:auth0_jwks, "~> 0.3"}|
+
       assert files["lib/test/application.ex"] =~
                "{Auth0Jwks.Strategy, [first_fetch_sync: true]}"
 
@@ -47,7 +48,9 @@ defmodule WorkbenchIgniter.Features.Auth0Test do
       assert [migration] =
                files
                |> Map.keys()
-               |> Enum.filter(&String.match?(&1, ~r|priv/repo/migrations/\d{14}_create_users\.exs|))
+               |> Enum.filter(
+                 &String.match?(&1, ~r|priv/repo/migrations/\d{14}_create_users\.exs|)
+               )
 
       assert files[migration] =~ "defmodule Test.Repo.Migrations.CreateUsers do"
       assert files[migration] =~ "StatusEnum.create_type()"
@@ -81,6 +84,7 @@ defmodule WorkbenchIgniter.Features.Auth0Test do
       assert files["test/test/accounts_test.exs"] =~ "defmodule Test.AccountsTest do"
       assert files["test/test/ecto_uri_test.exs"]
       assert files["test/test_web/plugs/token_test.exs"]
+
       assert files["test/support/fixtures/accounts_fixtures.ex"] =~
                "defmodule Test.AccountsFixtures do"
     end

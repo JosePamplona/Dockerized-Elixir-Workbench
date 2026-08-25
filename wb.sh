@@ -886,6 +886,11 @@ if [ $# -gt 0 ]; then
       parse_deploy_args "$@"
 
       if [ "$ENV_ARG" == "cluster" ]; then
+        # Checked before building: without the feature the release is
+        # assembled with Mix's default rel/env.sh.eex and comes out
+        # non-distributed, so the image would be useless — after several
+        # minutes of build.
+        cluster_precheck && \
         # Every replica shares one image: building app1 builds them all.
         bake_cluster_compose && \
         docker compose \

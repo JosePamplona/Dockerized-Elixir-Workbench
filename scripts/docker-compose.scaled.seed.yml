@@ -1,17 +1,17 @@
 # Compose seed, baked by wb.sh into one file of the workspace:
 #
-#   docker-compose.cluster.yml  (cluster) - 'up --env cluster'
+#   docker-compose.scaled.yml  (scaled) - 'up --deploy scaled'
 #
 # The dev and prod files come from a different seed, docker-compose.seed.yml,
 # which keeps the pod pattern this one deliberately replaces.
 #
-# Unlike that one, this seed is not copied verbatim: 'bake_cluster_compose'
+# Unlike that one, this seed is not copied verbatim: 'bake_scaled_compose'
 # expands the %{...} markers below into as many replicas as --replicas asks
 # for, and drops the balancer when --no-balancer is given.
 
 name: %{app_name}
 
-# Cluster deployment: the production replicas live on a regular bridge
+# Scaled deployment: the production replicas live on a regular bridge
 # network — one IP each — all answering to the `app` network alias, so
 # Docker's embedded DNS returns every address for that single name. That
 # is exactly what DNSCluster queries through DNS_CLUSTER_QUERY, and how
@@ -25,9 +25,10 @@ name: %{app_name}
 # localhost, hence the DATABASE_URL the app anchor overrides in projects
 # that have one.
 #
-# Requires the clustering feature ('wb.sh add clustering'): its
-# rel/env.sh.eex is what makes the release boot as a named distributed
-# node. Without it the replicas start with short names and never connect.
+# The replicas form a BEAM cluster only with the clustering feature
+# ('wb.sh add clustering'): its rel/env.sh.eex is what makes the release
+# boot as a named distributed node. Without it they run isolated, which is
+# a valid deployment on its own, and DNS_CLUSTER_QUERY is left out.
 
 x-app: &app
   image: %{compose_image}
@@ -105,7 +106,7 @@ configs:
         ''      close;
       }
 
-      upstream cluster {
+      upstream replicas {
 %{upstream_servers}
       }
 
@@ -113,7 +114,7 @@ configs:
         listen 80;
 
         location / {
-          proxy_pass http://cluster;
+          proxy_pass http://replicas;
           proxy_http_version 1.1;
           proxy_set_header Host $$host;
           proxy_set_header X-Real-IP $$remote_addr;

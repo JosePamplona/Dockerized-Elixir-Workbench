@@ -146,7 +146,7 @@ this cartridge wrote there would be overwritten on the next creation.
 
 ## Seeing it work
 
-That topology is what `./wb.sh up --env cluster` deploys: production
+That topology is what `./wb.sh up --deploy scaled` deploys: production
 replicas behind an nginx balancer, one host port each plus the
 balancer's, all sharing the `app` network alias so a single DNS name
 answers with every address. `--replicas N` and `--no-balancer` shape what
@@ -162,8 +162,8 @@ reach) and the replicas run isolated.
 
 ```sh
 ./wb.sh add clustering
-./wb.sh up --env cluster
-docker compose --file _workspaces/<ws>/docker-compose.cluster.yml \
+./wb.sh up --deploy scaled
+docker compose --file _workspaces/<ws>/docker-compose.scaled.yml \
   exec app1 /app/bin/<app> remote
 ```
 
@@ -206,7 +206,7 @@ each other exists. Distribution buys **coordination** instead:
 * Attaching to any node with `bin/<app> remote` and seeing the whole
   cluster from it.
 
-The `--env cluster` deployment publishes one host port per replica
+The `--deploy scaled` deployment publishes one host port per replica
 precisely because it demonstrates *clustering*, not scaling: there is no
 load balancer in front, which a real deployment would have.
 
@@ -226,7 +226,7 @@ the application, not of the database's own topology.
 **Connections multiply by the replica count.** `phx.new` defaults
 production to `POOL_SIZE=10`, so four replicas open forty connections
 against a Postgres whose own default `max_connections` is a hundred. The
-four of `--env cluster` fit comfortably; twenty replicas do not. The
+four of `--deploy scaled` fit comfortably; twenty replicas do not. The
 usual answer is PgBouncer in transaction mode — and then Ecto needs
 `prepare: :unnamed`, because named prepared statements do not survive
 the pooler. The commented `# POOL_SIZE="10"` in `.env` stops being

@@ -39,19 +39,24 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   to cluster with inside a single-container workspace: it prepares the
   project for a multi-replica deployment.
 
-- New `up --env cluster` deployment: four production replicas that form
-  a real BEAM cluster, baked from `scripts/docker-compose.cluster.seed.yml`.
+- New `scaled` deployment (`up --deploy scaled`): production replicas of
+  the release image, baked from `scripts/docker-compose.scaled.seed.yml`.
   It drops the pod pattern on purpose — replicas sharing a network
   namespace would share one IP and one port, so only the first would
   bind the server and every `RELEASE_NODE` would collide — and puts the
   replicas on a bridge network with one host port each and a shared
   `app` network alias, which makes Docker's DNS answer that single name
-  with the four addresses `DNSCluster` queries. Leaving the pod means the
-  database is reached by name, so `DATABASE_URL` is overridden and a
-  one-shot `migrate` service runs before the replicas start. It refuses
-  to deploy without the `clustering` feature. `build`, `logs`, `ps`,
-  `stop` and `down` take the same `--env`.
-- The cluster deployment puts an nginx balancer in front of the replicas
+  with every address. Leaving the pod means the database is reached by
+  name, so `DATABASE_URL` is overridden and a one-shot `migrate` service
+  runs before the replicas start.
+  With the `clustering` feature installed the replicas also form a real
+  BEAM cluster, since that alias is what `DNSCluster` queries. Without it
+  they run isolated — a valid deployment for a stateless application — so
+  `up` and `build` warn and carry on rather than refusing, and the compose
+  leaves `DNS_CLUSTER_QUERY` unset, keeping `DNSCluster` out of the
+  supervision tree instead of letting it poll for peers a short-named
+  release could never reach.
+- The scaled deployment puts an nginx balancer in front of the replicas
   (single entry point, WebSocket upgrade for LiveView and Channels, and
   an `X-Served-By` header carrying the address of the replica that
   answered — the same address its node name shows). The per-replica
@@ -66,17 +71,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   are customization scaffolding whose defaults Mix already carries built
   in, and they now belong to the clustering cartridge. `new` keeps
   running it from the entrypoint, unchanged.
-- The cluster deployment no longer requires the `clustering` feature: the
-  compose topology is identical either way, since what the cartridge adds
-  lives inside the release image. Replicas behind a balancer is how a
-  stateless application scales and they need not know each other exists,
-  so `up` and `build` warn and carry on instead of refusing, and the
-  compose leaves `DNS_CLUSTER_QUERY` unset when the feature is absent —
-  keeping DNSCluster out of the supervision tree rather than letting it
-  poll for peers it could never reach.
+- Deployments are selected with `--deploy`, not `--env`: `up`, `build`,
+  `logs`, `ps`, `stop`, `down`, `iex` and `bash` pick a compose file, not
+  an environment, and the third value (`scaled`) is a topology rather than
+  a `MIX_ENV`. The old spelling is rejected with a message pointing at the
+  new one instead of being silently accepted. `setup` and `demo` keep
+  `--env`, where the value really is `MIX_ENV`.
 - `up` and `down` pass `--remove-orphans`. Every deployment of a
   workspace shares one compose project but not the same services — dev
-  has `app`, the cluster has `app1..N` plus `balancer` and `migrate`, and
+  has `app`, the scaled one has `app1..N` plus `balancer` and `migrate`, and
   `--replicas`/`--no-balancer` change that set between runs — so the
   containers of the previous shape used to stay up, unmanaged and
   invisible to `ps`. `stop` and `ps` do not accept the flag.

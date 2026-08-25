@@ -6,8 +6,8 @@
 #
 # Both come from here: 'bake_prod_compose' calls the same 'bake_compose'
 # with the production image and Dockerfile, then strips what only makes
-# sense in dev. The cluster deployment does not: it has its own seed,
-# docker-compose.cluster.seed.yml, because it replaces the pod pattern
+# sense in dev. The scaled deployment does not: it has its own seed,
+# docker-compose.scaled.seed.yml, because it replaces the pod pattern
 # below with a bridge network.
 
 name: %{app_name}

@@ -51,11 +51,11 @@
     # `new`, then copied into the workspace under the same name.
     PROD_DOCKERFILE="Dockerfile"
     PROD_COMPOSE_FILE="docker-compose.prod.yml"
-    CLUSTER_COMPOSE_FILE="docker-compose.cluster.yml"
-    CLUSTER_COMPOSE_SEED="docker-compose.cluster.seed.yml"
-    # Replicas the cluster deployment starts unless --replicas says
+    SCALED_COMPOSE_FILE="docker-compose.scaled.yml"
+    SCALED_COMPOSE_SEED="docker-compose.scaled.seed.yml"
+    # Replicas the scaled deployment starts unless --replicas says
     # otherwise; the balancer sits in front of them.
-    DEFAULT_CLUSTER_REPLICAS=4
+    DEFAULT_REPLICAS=4
     LOCAL_DOCKERFILE="Dockerfile.local"
     LOCAL_DOCKERFILE_SEED="Dockerfile.seed.local"
     COMPOSE_FILE="docker-compose.yml"
@@ -137,6 +137,18 @@
     exit 1
   }
 
+  # env_flag_error
+    # --env selected a compose file until it also had to name the scaled
+    # deployment, which is not an environment at all. The deploy commands
+    # take --deploy now, and say so instead of quietly accepting the old
+    # spelling: 'setup' and 'demo' keep --env, where it really is MIX_ENV.
+  env_flag_error() {
+    terminate \
+      "Deployments are selected with ${B}--deploy${R}, not --env:" \
+      "  ./$(basename $0) $COMMAND_NAME --deploy dev|prod|scaled" \
+      "(--env stays on 'setup' and 'demo', where it means MIX_ENV.)"
+  }
+
   # warning <MESSAGE>
     # Prints a warning without interrupting: the command carries on.
   warning() { echo "⚠️  ${B}Warning${R} $@"; echo; }
@@ -164,10 +176,10 @@
 
   # compose_file_for <ENV>
     # Compose file each environment deploys with. dev is the workspace's
-    # own docker-compose.yml; prod and cluster are baked on demand.
+    # own docker-compose.yml; prod and scaled are baked on demand.
   compose_file_for() {
     case "$1" in
-      cluster) echo "$CLUSTER_COMPOSE_FILE" ;;
+      scaled)  echo "$SCALED_COMPOSE_FILE" ;;
       prod)    echo "$PROD_COMPOSE_FILE" ;;
       *)       echo "$COMPOSE_FILE" ;;
     esac
@@ -184,7 +196,7 @@
 
     [ -f "$COMPOSE_TARGET" ] || terminate \
       "This workspace has no '$1' deployment ($(basename "$COMPOSE_TARGET")" \
-      "does not exist). Create it with: ./$(basename $0) up --env $1"
+      "does not exist). Create it with: ./$(basename $0) up --deploy $1"
   }
 
   # app_is_running [FILE] [SERVICE]
@@ -303,7 +315,7 @@
 
   # bake_prod_compose
     # Generates the workspace's production compose file (used by the
-    # 'up --env prod' and 'build --env prod' commands): same seed and
+    # 'up --deploy prod' and 'build --deploy prod' commands): same seed and
     # application port as the dev compose, versioned production image,
     # and — the production image being self-contained — no source code
     # volume nor build identity (its Dockerfile runs as nobody).
@@ -325,40 +337,41 @@
   }
 
   # parse_deploy_args [ARGS...]
-    # Reads the options 'up' and 'build' share into ENV_ARG,
-    # CLUSTER_REPLICAS and CLUSTER_BALANCER, leaving everything it did
+    # Reads the options 'up' and 'build' share into DEPLOY_ARG,
+    # REPLICAS and BALANCER, leaving everything it did
     # not consume in DEPLOY_REST (passed through to docker compose).
-    # --replicas and --balancer only shape how the cluster compose file
+    # --replicas and --balancer only shape how the scaled compose file
     # is baked, so 'logs', 'ps', 'stop' and 'down' never need them: the
     # file they act on is the same either way.
   parse_deploy_args() {
-    ENV_ARG=dev
-    CLUSTER_REPLICAS=$DEFAULT_CLUSTER_REPLICAS
-    CLUSTER_BALANCER=true
+    DEPLOY_ARG=dev
+    REPLICAS=$DEFAULT_REPLICAS
+    BALANCER=true
     DEPLOY_REST=()
 
     while [ $# -gt 0 ]; do
       case "$1" in
-        -e|--env)      ENV_ARG="$2";          shift 2 ;;
-        --replicas)    CLUSTER_REPLICAS="$2"; shift 2 ;;
-        --balancer)    CLUSTER_BALANCER=true;  shift ;;
-        --no-balancer) CLUSTER_BALANCER=false; shift ;;
+        --deploy)      DEPLOY_ARG="$2";          shift 2 ;;
+        -e|--env)      env_flag_error ;;
+        --replicas)    REPLICAS="$2"; shift 2 ;;
+        --balancer)    BALANCER=true;  shift ;;
+        --no-balancer) BALANCER=false; shift ;;
         *)             DEPLOY_REST+=( "$1" );  shift ;;
       esac
     done
 
-    case "$CLUSTER_REPLICAS" in
+    case "$REPLICAS" in
       ''|*[!0-9]*|0) args_error "--replicas expects a positive integer." ;;
     esac
   }
 
-  # bake_cluster_compose
-    # Generates the workspace's cluster compose file from its seed: the
-    # production image replicated CLUSTER_REPLICAS times on a bridge
+  # bake_scaled_compose
+    # Generates the workspace's scaled compose file from its seed: the
+    # production image replicated REPLICAS times on a bridge
     # network, each replica with its own host port. Leaves the chosen
-    # ports in the CLUSTER_PORTS array.
-  bake_cluster_compose() {
-    local file_path="$WORKSPACE_PATH/$CLUSTER_COMPOSE_FILE"
+    # ports in the REPLICA_PORTS array.
+  bake_scaled_compose() {
+    local file_path="$WORKSPACE_PATH/$SCALED_COMPOSE_FILE"
     local services depends upstream
     local port=4000
     local i=1
@@ -368,23 +381,25 @@
       head -n 1
     )
 
-    cp "$SCRIPTS_DIR/$CLUSTER_COMPOSE_SEED" "$file_path"
+    cp "$SCRIPTS_DIR/$SCALED_COMPOSE_SEED" "$file_path"
 
-    # The balancer takes the first free port: it is the cluster's single
+    # The balancer takes the first free port: it is the deployment's single
     # entry point. Every replica publishes its own too, so a specific
     # node can still be addressed — which is how the cross-node
     # behaviour is demonstrated.
-    BALANCER_PORT=$(first_free_port $port)
-    port=$((BALANCER_PORT + 1))
+    if [ "$BALANCER" == true ]; then
+      BALANCER_PORT=$(first_free_port $port)
+      port=$((BALANCER_PORT + 1))
+    fi
 
     services=$(mktemp)
     depends=$(mktemp)
     upstream=$(mktemp)
-    CLUSTER_PORTS=()
+    REPLICA_PORTS=()
 
-    while [ $i -le $CLUSTER_REPLICAS ]; do
+    while [ $i -le $REPLICAS ]; do
       port=$(first_free_port $port)
-      CLUSTER_PORTS+=( $port )
+      REPLICA_PORTS+=( $port )
 
       printf '  app%s:\n    <<: *app\n    ports:\n      - %s:%s\n\n' \
         "$i" "$port" "$APP_INTERNAL_PORT" >> "$services"
@@ -419,7 +434,7 @@
 
     # Without a balancer the replicas are only reachable on their own
     # ports; its nginx config goes with it.
-    if [ "$CLUSTER_BALANCER" == false ]; then
+    if [ "$BALANCER" == false ]; then
       sed -i '/^  # Single entry point/,/^$/d' $file_path
       sed -i '/^configs:/,$d'                  $file_path
     fi
@@ -467,38 +482,38 @@
       "stop everything with ${B}./$(basename $0) stop${R}."
   }
 
-  # cluster_deployed_message
-    # Printed after a successful 'up --env cluster': one URL per replica
-    # and how to look at the cluster from the inside.
-  cluster_deployed_message() {
+  # scaled_deployed_message
+    # Printed after a successful 'up --deploy scaled': one URL per replica
+    # and how to look at the deployment from the inside.
+  scaled_deployed_message() {
     local i=1
 
     echo
     clustering_warning
-    echo "Cluster deploying with $CLUSTER_REPLICAS replicas:"
-    if [ "$CLUSTER_BALANCER" == true ]; then
+    echo "Scaled deployment coming up with $REPLICAS replicas:"
+    if [ "$BALANCER" == true ]; then
       echo "  balancer  ${Li}http://localhost:$BALANCER_PORT${R}  (round-robin entry point)"
     fi
-    for port in "${CLUSTER_PORTS[@]}"
+    for port in "${REPLICA_PORTS[@]}"
     do
       echo "  app$i      ${Li}http://localhost:$port${R}"
       i=$((i + 1))
     done
     echo
     echo "Attach to a node's release shell:"
-    echo "  ${B}docker compose --file $WORKSPACE_PATH/$CLUSTER_COMPOSE_FILE \\${R}"
+    echo "  ${B}docker compose --file $WORKSPACE_PATH/$SCALED_COMPOSE_FILE \\${R}"
     echo "  ${B}  exec app1 /app/bin/$ELIXIR_PROJECT_NAME remote${R}"
     if clustering_installed; then
       echo "  iex> node()      # $ELIXIR_PROJECT_NAME@172.x.x.x"
-      echo "  iex> Node.list() # the other $((CLUSTER_REPLICAS - 1))"
+      echo "  iex> Node.list() # the other $((REPLICAS - 1))"
     fi
-    if [ "$CLUSTER_BALANCER" == true ]; then
+    if [ "$BALANCER" == true ]; then
       echo
       echo "See the balancing: the X-Served-By address is the node that answered."
       echo "  ${B}curl -sI http://localhost:$BALANCER_PORT | grep X-Served-By${R}"
     fi
     echo
-    echo "Stop everything with ${B}./$(basename $0) down --env cluster${R}."
+    echo "Stop everything with ${B}./$(basename $0) down --deploy scaled${R}."
   }
 
   # help
@@ -571,7 +586,7 @@
       "     .env.sample (the compose env_file) and lists .env in .gitignore." \
       "  4. 'mix phx.gen.release --docker' adds the production Dockerfile," \
       "     .dockerignore and rel/overlays, which phx.new does not generate" \
-      "     but 'up --env prod' needs. Distributed releases are not set up:" \
+      "     but 'up --deploy prod' needs. Distributed releases are not set up:" \
       "     that is the 'clustering' feature." \
       "  5. The workspace gets its Dockerfile.local and docker-compose.yml." \
       "The Elixir project keeps its phx.new configuration untouched: install" \
@@ -592,12 +607,13 @@
       "Set or reset the database (if any) and run the seeding script." \
       "- ENV: Enviroment database to setup (Defalut: dev)."
 
-    print_command "up [-e, --env ENV] [--replicas N] [--no-balancer]"
+    print_command "up [--deploy TARGET] [--replicas N] [--no-balancer]"
     section_content \
       "Deploy the application on localhost, detached: the terminal stays" \
       "free and the containers keep running ('logs' follows their output)." \
-      "- ENV: Enviroment to deploy (Defalut: dev)." \
-      "  ${B}cluster${R} deploys production replicas behind an nginx balancer:" \
+      "- TARGET: Deployment to bring up (Defalut: dev). 'setup' and 'demo'" \
+      "  keep --env: there it means MIX_ENV, not a compose file." \
+      "  ${B}scaled${R} deploys production replicas behind an nginx balancer:" \
       "  each one gets its own IP and host port, and they all share the" \
       "  'app' network alias. It replaces the pod network layout of the" \
       "  dev compose, so the database is reached by name, not on" \
@@ -608,45 +624,45 @@
       "  every address, which is what DNSCluster queries to connect them." \
       "  Without it they run isolated, which is a valid deployment for a" \
       "  stateless application — the command warns and carries on." \
-      "- N: Replicas of the cluster deployment (Default: $DEFAULT_CLUSTER_REPLICAS)." \
+      "- N: Replicas of the scaled deployment (Default: $DEFAULT_REPLICAS)." \
       "- --no-balancer: Skip the nginx front and publish only the" \
       "  per-replica ports. Both options are baked into the compose file," \
       "  so 'logs', 'ps', 'stop' and 'down' never need them."
 
-    print_command "build [-e, --env ENV] [OPTIONS]"
+    print_command "build [--deploy TARGET] [OPTIONS]"
     section_content \
       "(Re)build the workspace's app image without deploying it: the" \
       "dev image from the project's Dockerfile.local, or the production" \
-      "release image ('up --env prod' also rebuilds it on each deploy)." \
-      "- ENV: Enviroment image to build (Defalut: dev). 'cluster' builds" \
-      "  the same production image every replica shares, and accepts the" \
-      "  same --replicas and --no-balancer as 'up'. Whether that image is" \
+      "release image ('up --deploy prod' also rebuilds it on each deploy)." \
+      "- TARGET: Deployment whose image to build (Defalut: dev). 'scaled'" \
+      "  builds the same production image every replica shares, and takes" \
+      "  the same --replicas and --no-balancer as 'up'. Whether that image is" \
       "  distributed is baked in by the 'clustering' feature, so" \
       "  installing it afterwards means building again." \
       "- OPTIONS: Flags for 'docker compose build', e.g. --no-cache."
 
-    print_command "logs [-e, --env ENV] [SERVICE...]"
+    print_command "logs [--deploy TARGET] [SERVICE...]"
     section_content \
       "Follow the workspace containers logs (Ctrl+C detaches, the" \
       "containers keep running)." \
-      "- ENV: Enviroment whose deployment to read (Defalut: dev)." \
+      "- TARGET: Deployment whose logs to read (Defalut: dev)." \
       "- SERVICE: Restrict to some services (app, database, pgadmin;" \
-      "  app1..appN, balancer and migrate with '--env cluster')."
+      "  app1..appN, balancer and migrate with '--deploy scaled')."
 
-    print_command "stop | down | ps [-e, --env ENV]"
+    print_command "stop | down | ps [--deploy TARGET]"
     section_content \
       "Stop, remove or list the workspace containers ('stop' keeps them" \
       "for a fast restart with 'up'; 'down' removes them)." \
-      "- ENV: Enviroment deployment to act on (Defalut: dev)."
+      "- TARGET: Deployment to act on (Defalut: dev)."
 
-    print_command "iex | bash [-e, --env ENV] [SERVICE]"
+    print_command "iex | bash [--deploy TARGET] [SERVICE]"
     section_content \
       "Open an IEx shell (or a plain shell) on a running container of the" \
       "workspace; exiting does not stop the application." \
-      "- ENV: Enviroment deployment to attach to (Defalut: dev). Outside" \
+      "- TARGET: Deployment to attach to (Defalut: dev). Outside" \
       "  dev the container runs the release, which carries no Mix, so" \
       "  'iex' opens its remote shell ('bin/<app> remote') instead." \
-      "- SERVICE: Service to attach to (Defalut: app). The cluster" \
+      "- SERVICE: Service to attach to (Defalut: app). The scaled" \
       "  deployment names its replicas app1..appN."
 
     print_command "mix [ARGS...]"
@@ -664,7 +680,9 @@
       "Runs consecutively new, setup, up, logs & delete commands: the" \
       "logs block the demo while the application is tried out, and" \
       "Ctrl+C moves on to the teardown." \
-      "- ENV: Enviroment to deploy (Defalut: dev)."
+      "- ENV: Enviroment to run end to end, database included (Defalut:" \
+      "  dev). It is --env and not --deploy because it reaches 'setup'" \
+      "  too, where the value is MIX_ENV."
 
     print_command "help"
     section_content \
@@ -782,7 +800,7 @@
     # Its build points to the project-owned Dockerfile.local — and must
     # stay there: its app service also runs the workbench one-off
     # commands (setup, add, mix), which need the toolchain. The
-    # production deployment never touches this file: 'up --env prod'
+    # production deployment never touches this file: 'up --deploy prod'
     # bakes docker-compose.prod.yml from the same seed with the
     # production Dockerfile.
     bake_compose "$LOCAL_IMAGE" "$LOCAL_DOCKERFILE" "$COMPOSE_FILE"
@@ -791,6 +809,9 @@
 # SCRIPT =======================================================================
 
 if [ $# -gt 0 ]; then
+  # The invoked command, for messages written before any branch shifts it.
+  COMMAND_NAME="$1"
+
   if   [ "$1" == "login" ]; then
     shift
 
@@ -864,6 +885,8 @@ if [ $# -gt 0 ]; then
     ENTRYPOINT_COMMAND=$1; shift
 
     if [ $EXISTING_PROJECT == true ]; then
+      # --env, not --deploy: this one really is MIX_ENV. It sets up a
+      # database, it does not pick a compose file.
       [ $# -gt 1 ] && [ "$1" == "--env" ] || [ "$1" == "-e" ] && \
         ENV_ARG="$2" || \
         ENV_ARG=dev
@@ -882,18 +905,18 @@ if [ $# -gt 0 ]; then
       parse_deploy_args "$@"
 
       # Every deployment of a workspace shares one compose project, but
-      # not the same services: dev has 'app', the cluster has app1..N
+      # not the same services: dev has 'app', the scaled one has app1..N
       # plus balancer and migrate, and --replicas/--no-balancer change
       # that set between runs. Without --remove-orphans the containers of
       # the previous shape stay up, unmanaged and invisible to 'ps'.
-      if [ "$ENV_ARG" == "cluster" ]; then
-        bake_cluster_compose && \
+      if [ "$DEPLOY_ARG" == "scaled" ]; then
+        bake_scaled_compose && \
         docker compose \
-          --file "$WORKSPACE_PATH/$CLUSTER_COMPOSE_FILE" \
+          --file "$WORKSPACE_PATH/$SCALED_COMPOSE_FILE" \
           $COMPOSE_COMMAND --detach --build --remove-orphans && \
-        cluster_deployed_message
+        scaled_deployed_message
 
-      elif [ "$ENV_ARG" == "prod" ]; then
+      elif [ "$DEPLOY_ARG" == "prod" ]; then
         bake_prod_compose && \
         docker compose \
           --file "$WORKSPACE_PATH/$PROD_COMPOSE_FILE" \
@@ -912,17 +935,17 @@ if [ $# -gt 0 ]; then
     if [ $EXISTING_PROJECT == true ]; then
       parse_deploy_args "$@"
 
-      if [ "$ENV_ARG" == "cluster" ]; then
+      if [ "$DEPLOY_ARG" == "scaled" ]; then
         # Said before building: whether the image comes out distributed is
         # decided by rel/env.sh.eex, which mix release bakes into it, so
         # installing the feature afterwards means building again.
         clustering_warning
         # Every replica shares one image: building app1 builds them all.
-        bake_cluster_compose && \
+        bake_scaled_compose && \
         docker compose \
-          --file "$WORKSPACE_PATH/$CLUSTER_COMPOSE_FILE" build app1 "${DEPLOY_REST[@]}"
+          --file "$WORKSPACE_PATH/$SCALED_COMPOSE_FILE" build app1 "${DEPLOY_REST[@]}"
 
-      elif [ "$ENV_ARG" == "prod" ]; then
+      elif [ "$DEPLOY_ARG" == "prod" ]; then
         bake_prod_compose && \
         docker compose \
           --file "$WORKSPACE_PATH/$PROD_COMPOSE_FILE" build app "${DEPLOY_REST[@]}"
@@ -939,11 +962,13 @@ if [ $# -gt 0 ]; then
   elif [ "$1" == "logs" ]; then
     shift
     if [ $EXISTING_PROJECT == true ]; then
-      if [ "$1" == "-e" ] || [ "$1" == "--env" ]
-      then ENV_ARG="$2"; shift 2
-      else ENV_ARG=dev; fi
+      case "$1" in
+        --deploy) DEPLOY_ARG="$2"; shift 2 ;;
+        -e|--env) env_flag_error ;;
+        *)        DEPLOY_ARG=dev ;;
+      esac
 
-      resolve_compose_file $ENV_ARG && \
+      resolve_compose_file $DEPLOY_ARG && \
       docker compose --file "$COMPOSE_TARGET" logs --follow $@
 
     else terminate "There is no project."; fi
@@ -951,15 +976,17 @@ if [ $# -gt 0 ]; then
   elif [ "$1" == "stop" ] || [ "$1" == "down" ] || [ "$1" == "ps" ]; then
     COMPOSE_COMMAND=$1; shift
     if [ $EXISTING_PROJECT == true ]; then
-      if [ "$1" == "-e" ] || [ "$1" == "--env" ]
-      then ENV_ARG="$2"; shift 2
-      else ENV_ARG=dev; fi
+      case "$1" in
+        --deploy) DEPLOY_ARG="$2"; shift 2 ;;
+        -e|--env) env_flag_error ;;
+        *)        DEPLOY_ARG=dev ;;
+      esac
 
       # 'down' clears the project, orphans of other deployments included;
       # 'stop' and 'ps' do not accept the flag.
       [ "$COMPOSE_COMMAND" == "down" ] && ORPHANS="--remove-orphans" || ORPHANS=""
 
-      resolve_compose_file $ENV_ARG && \
+      resolve_compose_file $DEPLOY_ARG && \
       docker compose --file "$COMPOSE_TARGET" $COMPOSE_COMMAND $ORPHANS
 
     else terminate "There is no project."; fi
@@ -967,26 +994,28 @@ if [ $# -gt 0 ]; then
   elif [ "$1" == "iex" ] || [ "$1" == "bash" ]; then
     SESSION_KIND=$1; shift
     if [ $EXISTING_PROJECT == true ]; then
-      if [ "$1" == "-e" ] || [ "$1" == "--env" ]
-      then ENV_ARG="$2"; shift 2
-      else ENV_ARG=dev; fi
+      case "$1" in
+        --deploy) DEPLOY_ARG="$2"; shift 2 ;;
+        -e|--env) env_flag_error ;;
+        *)        DEPLOY_ARG=dev ;;
+      esac
 
-      # The service to attach to: 'app' everywhere but in the cluster,
-      # where the replicas are app1..appN.
+      # The service to attach to: 'app' everywhere but in the scaled
+      # deployment, where the replicas are app1..appN.
       SERVICE="${1:-app}"
-      resolve_compose_file $ENV_ARG
+      resolve_compose_file $DEPLOY_ARG
 
       app_is_running "$COMPOSE_TARGET" "$SERVICE" || terminate \
-        "The $SERVICE container of the $ENV_ARG deployment is not running." \
-        "Start it with: ./$(basename $0) up --env $ENV_ARG"
+        "The $SERVICE container of the $DEPLOY_ARG deployment is not running." \
+        "Start it with: ./$(basename $0) up --deploy $DEPLOY_ARG"
 
       # The release remote shell stops the node it is attached to when its
       # input reaches EOF, so a redirected or piped stdin would take the
       # application down instead of just detaching. Only dev is safe: its
       # 'iex -S mix' runs its own VM inside the container.
-      if [ "$SESSION_KIND" == "iex" ] && [ "$ENV_ARG" != "dev" ] && [ ! -t 0 ]
+      if [ "$SESSION_KIND" == "iex" ] && [ "$DEPLOY_ARG" != "dev" ] && [ ! -t 0 ]
       then terminate \
-        "'iex --env $ENV_ARG' opens the release remote shell, which stops" \
+        "'iex --deploy $DEPLOY_ARG' opens the release remote shell, which stops" \
         "the node when its input reaches EOF: it needs an interactive" \
         "terminal. To evaluate one expression without attaching, use:" \
         "  docker compose --file $COMPOSE_TARGET \\" \
@@ -994,8 +1023,8 @@ if [ $# -gt 0 ]; then
       fi
 
       # Only the dev image carries Mix and the mounted source; prod and
-      # cluster run the release, whose shell is 'bin/<app> remote'.
-      if [ "$ENV_ARG" == "dev" ]
+      # scaled run the release, whose shell is 'bin/<app> remote'.
+      if [ "$DEPLOY_ARG" == "dev" ]
       then
         if [ "$SESSION_KIND" == "iex" ]
         then SESSION_COMMAND="iex -S mix"
@@ -1050,13 +1079,15 @@ if [ $# -gt 0 ]; then
   elif [ "$1" == "demo" ]; then
     WORKBENCH_SCRIPT="$WORKBENCH_PATH/$(basename $0)"; shift;
 
+    # The demo runs one environment end to end, database included, so it
+    # takes --env like 'setup' does and hands it to both.
     [ $# -gt 1 ] && [ "$1" == "--env" ] || [ "$1" == "-e" ] && \
       ENV_ARG="$2" || \
       ENV_ARG=dev
 
     "$WORKBENCH_SCRIPT" new && \
     "$WORKBENCH_SCRIPT" setup --env $ENV_ARG && \
-    "$WORKBENCH_SCRIPT" up --env $ENV_ARG && \
+    "$WORKBENCH_SCRIPT" up --deploy $ENV_ARG && \
     {
       # Following the logs blocks the demo while the application is
       # tried out. Ctrl+C hits the whole foreground process group, so

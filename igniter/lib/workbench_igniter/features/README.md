@@ -52,6 +52,11 @@ Dep-only cartridges have no `priv/features/<feature>/` directory:
 Each cartridge README explains what it brings (mock's carries the pending
 migration to Mox).
 
+[clustering](clustering/) is standalone too, and adds no dependency: it
+writes the `rel/*.eex` release templates with the distributed-node
+exports DNSCluster needs, plus `DNS_CLUSTER_QUERY` in the environment
+files. Installed by hand with `wb.sh add clustering`.
+
 ## The manifest (`WorkbenchIgniter.Feature` behaviour)
 
 * `task/0` - installer mix task name (public interface).

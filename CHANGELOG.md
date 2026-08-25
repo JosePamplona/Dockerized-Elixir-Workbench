@@ -12,6 +12,78 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - `Fixed` for any bug fixes.
 - `Security` to invite users to upgrade in case of vulnerabilities.
 
+## v0.8.0 - (2026-08-24)
+
+### Added
+
+- New `new2` command: the vanilla project creation. It generates a stock
+  `phx.new` project and applies only what the dockerized workspace
+  requires to boot it — the dev endpoint bound to `0.0.0.0` (the compose
+  pod pattern delivers the published port on the namespace interface,
+  never on loopback), the `.env`/`.env.sample` pair the compose
+  `env_file` declaration requires, and the `.env` entry in `.gitignore`.
+  The application and feature settings in `config.conf` are ignored, so
+  no base config, no `README.md`/`CHANGELOG.md`/`.tool-versions` and no
+  feature installer: they are added afterwards with `add`. It is driven
+  by the new `mix workbench.setup2` task (6 options, `composes: []`),
+  and is the base for the ongoing restructuring of the igniter package.
+- New `clustering` cartridge (`./wb.sh add clustering`): boots the
+  production release as a named distributed node so DNSCluster can
+  connect the replicas. `phx.new` already ships the `:dns_cluster`
+  dependency, its supervision-tree child and the `DNS_CLUSTER_QUERY`
+  read in `config/runtime.exs`; what it leaves open is the release
+  running in distributed mode, which the cartridge writes into
+  `rel/env.sh.eex` along with the other three `mix release.init`
+  templates — generated from the running Elixir rather than copied into
+  this repo — and `DNS_CLUSTER_QUERY` in the environment files. Nothing
+  to cluster with inside a single-container workspace: it prepares the
+  project for a multi-replica deployment.
+
+- New `up --env cluster` deployment: four production replicas that form
+  a real BEAM cluster, baked from `scripts/docker-compose.cluster.seed.yml`.
+  It drops the pod pattern on purpose — replicas sharing a network
+  namespace would share one IP and one port, so only the first would
+  bind the server and every `RELEASE_NODE` would collide — and puts the
+  replicas on a bridge network with one host port each and a shared
+  `app` network alias, which makes Docker's DNS answer that single name
+  with the four addresses `DNSCluster` queries. Leaving the pod means the
+  database is reached by name, so `DATABASE_URL` is overridden and a
+  one-shot `migrate` service runs before the replicas start. It refuses
+  to deploy without the `clustering` feature. `build`, `logs`, `ps`,
+  `stop` and `down` take the same `--env`.
+- The cluster deployment puts an nginx balancer in front of the replicas
+  (single entry point, WebSocket upgrade for LiveView and Channels, and
+  an `X-Served-By` header carrying the address of the replica that
+  answered — the same address its node name shows). The per-replica
+  ports stay published so a specific node can still be addressed.
+  `up` and `build` take `--replicas N` (default 4) and `--no-balancer`;
+  both only shape how the compose file is baked, so `logs`, `ps`, `stop`
+  and `down` never need them. New `NGINX_IMAGE_VERSION` in `config.conf`.
+
+### Updated
+
+- `new2` no longer runs `mix release.init`. Its four `rel/*.eex` files
+  are customization scaffolding whose defaults Mix already carries built
+  in, and they now belong to the clustering cartridge. `new` keeps
+  running it from the entrypoint, unchanged.
+- `up` and `down` pass `--remove-orphans`. Every deployment of a
+  workspace shares one compose project but not the same services — dev
+  has `app`, the cluster has `app1..N` plus `balancer` and `migrate`, and
+  `--replicas`/`--no-balancer` change that set between runs — so the
+  containers of the previous shape used to stay up, unmanaged and
+  invisible to `ps`. `stop` and `ps` do not accept the flag.
+- `new` and `new2` share their body in the `create_project` function,
+  and the template planting, the `SECRET_KEY_BASE` generation and the
+  new `env_entry/3` (the `.env`/`.env.sample` counterpart of
+  `gitignore_entry/3`, so a cartridge owns its own variables) live in
+  `WorkbenchIgniter`.
+- The `.env` template no longer carries `DATABASE_URL`, `ECTO_IPV6` and
+  `POOL_SIZE` in projects generated with `--no-ecto`.
+- `DNS_CLUSTER_QUERY`, `RELEASE_DISTRIBUTION` and `RELEASE_NODE` left the
+  `workbench.setup` `.env` template, where they sat commented out. The
+  clustering cartridge owns them now, each where it belongs: the query in
+  `.env`/`.env.sample`, the release pair in `rel/env.sh.eex`.
+
 ## v0.7.0 - (2026-08-23)
 
 ### Fixed

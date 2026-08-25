@@ -23,6 +23,48 @@ defmodule WorkbenchIgniter do
   end
 
   @doc """
+  Renders a `priv/setup/templates` template with `template/2` and creates
+  it at `path` in the target project.
+
+  EEx's `trim: true` still leaves stray newlines around block tags, so
+  runs of blank lines are collapsed: a conditional section that renders
+  nothing leaves no gap behind.
+
+  `opts` are `Igniter.create_new_file/4` options, with `on_exists: :skip`
+  honored for files that only exist on disk too — igniter honors it just
+  for sources already loaded in the patch set, so a file that must never
+  be overwritten (`.env`, carrying its generated secret) would still be
+  replaced.
+  """
+  @spec plant_template(Igniter.t(), String.t(), String.t(), Keyword.t(), Keyword.t()) ::
+          Igniter.t()
+  def plant_template(igniter, name, path, assigns, opts) do
+    if opts[:on_exists] == :skip and Igniter.exists?(igniter, path) do
+      igniter
+    else
+      content =
+        name
+        |> template(assigns)
+        |> String.replace(~r/\n{3,}/, "\n\n")
+        |> String.trim_trailing("\n")
+
+      Igniter.create_new_file(igniter, path, content <> "\n", opts)
+    end
+  end
+
+  @doc """
+  A 64-character alphanumeric `SECRET_KEY_BASE`, the value the setup tasks
+  plant in the generated `.env`.
+  """
+  @spec secret_key_base() :: String.t()
+  def secret_key_base do
+    :crypto.strong_rand_bytes(96)
+    |> Base.encode64()
+    |> String.replace(~r/[^A-Za-z0-9]/, "")
+    |> binary_part(0, 64)
+  end
+
+  @doc """
   Reads a file from `priv/features/<feature>` verbatim — a cartridge's
   binary assets (images and the like), which stay out of the compiled
   module unlike the text assets embedded with `embed_assets/1`.
@@ -76,6 +118,42 @@ defmodule WorkbenchIgniter do
       end)
     else
       Igniter.create_new_file(igniter, ".gitignore", entry)
+    end
+  end
+
+  @doc """
+  Appends an entry (comment + lines) to the project `.env` and
+  `.env.sample`, creating the files when the project has none. A no-op
+  when the first variable of `body` is already declared.
+
+  The counterpart of `gitignore_entry/3` for the environment files: it
+  lets a cartridge own its own variables instead of parking them,
+  commented out, in the `workbench.setup` template. Never use it for a
+  secret — `.env.sample` is meant to be committed, so both files receive
+  the very same text.
+  """
+  @spec env_entry(Igniter.t(), String.t(), String.t()) :: Igniter.t()
+  def env_entry(igniter, comment, body) do
+    entry = "# #{comment}\n" <> String.trim_trailing(body, "\n") <> "\n"
+    # The first `KEY=` of the body marks the entry as already present.
+    marker = body |> String.split("=", parts: 2) |> hd() |> String.trim()
+
+    Enum.reduce([".env", ".env.sample"], igniter, &append_env_entry(&2, &1, entry, marker))
+  end
+
+  defp append_env_entry(igniter, path, entry, marker) do
+    if Igniter.exists?(igniter, path) do
+      igniter
+      |> Igniter.include_existing_file(path)
+      |> Igniter.update_file(path, fn source ->
+        Rewrite.Source.update(source, :content, fn content ->
+          if String.contains?(content, marker),
+            do: content,
+            else: String.trim_trailing(content, "\n") <> "\n\n" <> entry
+        end)
+      end)
+    else
+      Igniter.create_new_file(igniter, path, entry)
     end
   end
 

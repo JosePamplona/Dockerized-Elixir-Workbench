@@ -1,3 +1,15 @@
+# Compose seed, baked by wb.sh into two files of the workspace:
+#
+#   docker-compose.yml       (dev)  - dev toolchain image, source mounted
+#   docker-compose.prod.yml  (prod) - release image, no source volume and
+#                                     no build identity args
+#
+# Both come from here: 'bake_prod_compose' calls the same 'bake_compose'
+# with the production image and Dockerfile, then strips what only makes
+# sense in dev. The cluster deployment does not: it has its own seed,
+# docker-compose.cluster.seed.yml, because it replaces the pod pattern
+# below with a bridge network.
+
 name: %{app_name}
 
 services:

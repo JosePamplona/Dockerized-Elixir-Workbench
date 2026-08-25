@@ -7,6 +7,8 @@ The configuration file `config.conf` is used to setup new projects to be created
 
 If the following specs are updated they will have no impact in a current created project, this configuration is meant to set up new projects.
 
+The `./wb.sh new2` command (vanilla project) reads only `WORKSPACE_PATH`, `PROJECT_NAME` and the three stack versions: they shape the workspace, the project generation and the Docker images. Everything else in this table configures the Elixir project, which `new2` deliberately leaves stock — those features are installed afterwards with `./wb.sh add`.
+
 | Variable | Type | Example | Description |
 | --: | :-- | :-- | :-- |
 | `WORKSPACE_PATH` | string | `"./_workspace"` | (`wb.sh` only) Directory where the project is generated, used as the container volume mount point. Relative paths resolve from the workbench directory; any absolute path works. The workbench itself stays permanently in its own directory. |
@@ -29,9 +31,10 @@ If the following specs are updated they will have no impact in a current created
 
 ## Docker containers specs
 
-There is no host ports configuration: each workspace gets the first available ports at creation (application from `4000`, pgAdmin from `5050`), baked into its own `docker-compose.yml` — that file is the source of truth of the workspace orchestration; edit it to change ports or images. The database is not published to the host: it is only reachable from inside its workspace (the `app` service shares its network namespace). Several workspaces can run simultaneously without conflicts.
+There is no host ports configuration: each workspace gets the first available ports at creation (application from `4000`, pgAdmin from `5050`), baked into its own `docker-compose.yml` (`up --env cluster` picks four free ports of its own, one per replica, when it bakes `docker-compose.cluster.yml`) — that file is the source of truth of the workspace orchestration; edit it to change ports or images. The database is not published to the host: it is only reachable from inside its workspace (the `app` service shares its network namespace). Several workspaces can run simultaneously without conflicts.
 
 | Variable | Type | Example | Description |
 | --: | :-- | :-- | :-- |
 | `POSTGRES_IMAGE_VERSION` | string | `"latest"` | _Postgres_ docker image baked into new workspaces.<br/>Available versions: <https://hub.docker.com/_/postgres/tags> |
 | `PGADMIN_IMAGE_VERSION` | string | `"latest"` | _PgAdmin_ docker image baked into new workspaces.<br/>Available versions: <https://hub.docker.com/r/dpage/pgadmin4/tags> |
+| `NGINX_IMAGE_VERSION` | string | `"alpine"` | _nginx_ docker image used as the load balancer of the cluster deployment (`up --env cluster`).<br/>Available versions: <https://hub.docker.com/_/nginx/tags> |

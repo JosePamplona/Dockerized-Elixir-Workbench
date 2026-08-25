@@ -266,7 +266,8 @@ defmodule Mix.Tasks.Workbench.Setup do
       # workspace compose port mapping.
       port: opts[:internal_port],
       database_url: database_url,
-      secret_key_base: secret_key_base(),
+      secret_key_base: WorkbenchIgniter.secret_key_base(),
+      ecto: opts[:ecto],
       auth0: opts[:auth0],
       openai: opts[:openai],
       stripe: opts[:stripe]
@@ -323,23 +324,9 @@ defmodule Mix.Tasks.Workbench.Setup do
     |> plant("tool_versions.eex", ".tool-versions", stack_assigns, on_exists: :overwrite)
   end
 
-  defp plant(igniter, template, path, assigns, opts) do
-    # create_new_file only honors :skip for sources already loaded in the
-    # patch set — a file that exists just on disk would still be replaced.
-    if opts[:on_exists] == :skip and Igniter.exists?(igniter, path) do
-      igniter
-    else
-      # EEx's :trim leaves stray newlines around block tags; collapse runs
-      # of blank lines so conditional sections don't leave gaps behind.
-      content =
-        template
-        |> WorkbenchIgniter.template(assigns)
-        |> String.replace(~r/\n{3,}/, "\n\n")
-        |> String.trim_trailing("\n")
-
-      Igniter.create_new_file(igniter, path, content <> "\n", opts)
-    end
-  end
+  # Planting lives in WorkbenchIgniter: workbench.setup2 shares it.
+  defp plant(igniter, name, path, assigns, opts),
+    do: WorkbenchIgniter.plant_template(igniter, name, path, assigns, opts)
 
   defp api_type("graphql"), do: "GraphQL"
   defp api_type(_), do: "REST"
@@ -350,12 +337,5 @@ defmodule Mix.Tasks.Workbench.Setup do
     |> String.split("/")
     |> Enum.take(-2)
     |> Enum.join("/")
-  end
-
-  defp secret_key_base do
-    :crypto.strong_rand_bytes(96)
-    |> Base.encode64()
-    |> String.replace(~r/[^A-Za-z0-9]/, "")
-    |> binary_part(0, 64)
   end
 end

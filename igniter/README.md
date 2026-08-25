@@ -35,17 +35,20 @@ the legacy `app.sh` and the earlier package editions lives in the git log.
 │   │       │                                        #   lives in priv/features/exdoc/
 │   │       ├── 📦 credo/, mock/, osmon/, ...        # dep-only cartridges: README + <f>.ex + task.ex
 │   │       ├── 📦 githooks/, exmachina/             # standalone cartridges (setup never composes them)
+│   │       ├── 📦 clustering/                       #   standalone too: rel/*.eex + distributed exports
 │   │       └── 📦 stripe/                           # pending manifest (installer not ported)
 │   └── 📁 mix/tasks/
 │       ├── 📄 workbench.setup.ex                    # umbrella task: configure_files + Features.compose/2
+│       ├── 📄 workbench.setup2.ex                   # vanilla setup: only what the workspace needs to boot
 │       └── 📄 workbench.plant_asset.ex              # after-apply byte-for-byte copy of binary assets
 ├── 📁 priv/
-│   ├── 📁 setup/templates/                          # workbench.setup templates (README, .env, …)
+│   ├── 📁 setup/templates/                          # setup tasks templates (README, .env, …)
 │   └── 📁 features/<feature>/                       # mirror of lib/…/features/<feature>/ for binary
 │       └── 📁 exdoc/images/                         #   assets (priv_asset/1, plant_binary_asset/3)
 └── 📁 test/
     └── 📁 workbench_igniter/
         ├── 📄 setup_test.exs
+        ├── 📄 setup2_test.exs
         └── 📄 features/<feature>_test.exs           # one test per cartridge
 ```
 
@@ -100,8 +103,43 @@ and the role of each file; the general index is
 Dep-only cartridges (credo, mock, …) keep the same shape minus
 `templates/` and `assets/`: README, `<feature>.ex` and `task.ex`.
 
-Every feature is in cartridge form; `lib/mix/tasks/` only keeps the
-`workbench.setup` umbrella task and the `workbench.plant_asset` plumbing.
+Every feature is in cartridge form; `lib/mix/tasks/` only keeps the two
+setup tasks and the `workbench.plant_asset` plumbing.
+
+## The two setups
+
+| | `workbench.setup` | `workbench.setup2` |
+| --- | --- | --- |
+| Driven by | all of `config.conf` | nothing |
+| Options | 27 | 6 |
+| `composes:` | the 13 ported cartridges | `[]` |
+| `config/dev.exs` `ip: {0,0,0,0}` | ✅ | ✅ |
+| `.env` / `.env.sample` | ✅ | ✅ |
+| `.gitignore` `.env` | ✅ | ✅ |
+| `.gitignore` `/.elixir_ls/` | ✅ | ❌ |
+| `mix.exs` initial version | ✅ | ❌ |
+| ANSI colors, `:utc_datetime_usec`, migration types | ✅ | ❌ |
+| `dev_routes: true` in test | ✅ | ❌ |
+| `README.md`, `CHANGELOG.md`, `.tool-versions` | ✅ | ❌ |
+| Feature installers | ✅ | ❌ |
+| `mix release.init` (from the entrypoint) | ✅ | ❌ — see [clustering](lib/workbench_igniter/features/clustering/) |
+
+`workbench.setup2` is the vanilla edition: a stock `phx.new` project plus
+*only* what the dockerized workspace requires to boot it. The endpoint
+must bind `0.0.0.0` because the compose pod pattern
+(`network_mode: "service:network"`) delivers the published port on the
+namespace interface and never on loopback; `.env` must exist because the
+workspace compose declares `env_file: ./.env`. Everything else is a
+workbench opinion, and is left to the `add` command.
+
+`./wb.sh new2` is the command that drives it, and it is the base for the
+ongoing restructuring of this package.
+
+Note: `workbench.setup` declares `--db-port` and documents it as part of
+`DATABASE_URL`, but never reads it — the `ecto://` URL it builds carries
+no port. `workbench.setup2` does use it. With the default `5432` both
+produce an equivalent URL, so this is a divergence to settle when the
+restructuring reaches the setup options, not a bug to chase now.
 
 ## Adding a feature (checklist)
 
@@ -150,6 +188,12 @@ and then, to configure a freshly generated project (equivalent to app.sh's
 ```sh
 mix workbench.setup --project-name "Lorem Ipsum" \
   --enhance --health --id-type uuid --timestamps naive_datetime_usec --yes
+```
+
+or, for a vanilla project that only has to run inside the workspace:
+
+```sh
+mix workbench.setup2 --yes
 ```
 
 or individual installers:

@@ -100,11 +100,18 @@ the seal, CRT phosphor haze in the background. No photographic elements.
 No real brand marks or logos.
 ```
 
-The accent must **contrast in value against the violet**. Warm neutrals
-are banned: `exdoc.jpg` used parchment ivory and dissolved into the
-background, and it is the least legible cover of the set. Saturated
-magenta, green and forge orange all held. See the
-[accent registry](#accent-registry) before choosing.
+The accent must **contrast in value against the violet**. That is the
+only hard rule: warm neutrals are banned, because `exdoc.jpg` used
+parchment ivory, dissolved into the background, and is the least legible
+cover of the set. Saturated magenta, green and forge orange all held.
+
+Beyond contrast, pick whatever suits the feature — including a colour
+another cartridge already uses. Accents are not allocated. Green means
+"healthy" and "covered" alike, gold means money, orange means forge; a
+uniqueness rule would trade that legibility for bookkeeping, and would
+run out of usable colours long before the shelf runs out of cartridges.
+What binds the set is the violet, the gold, the seal and the layout, not
+one colour per box.
 
 **Trademarks**: never ask for the Nintendo logo, the "Official Nintendo
 Seal of Quality", the NES wordmark or its typefaces. The band and the
@@ -121,7 +128,7 @@ is one more thing the generator can get wrong.
 | **Title** | The cartridge name, uppercase. Nothing else. |
 | **Subtitle** | Two to four words, imperative or boastful. It is a tagline, not a description. |
 | **Hero** | One concrete scene depicting the *mechanism*, not the abstraction. See below. |
-| **Accent** | One colour beside the violet, contrasting in value, not already taken. |
+| **Accent** | One colour beside the violet, contrasting in value, chosen because it suits the feature. |
 | **Unit badge** | The "1-2 PLAYERS" slot, in the feature's own units. One line, one short phrase, composited with a safe margin from the box edge. |
 
 ### Writing the hero
@@ -200,10 +207,12 @@ The first version also asked for four floating address plates reading
 `172.26.0.3` through `.6`. Two came back wrong, and they are gone from
 the hero above — that is the "text is decorative" rule, learned here.
 
-## Accent registry
+## Accent record
 
-Fill a row when a cover is generated, so the next one is chosen knowing
-what is taken.
+A mirror, not a gate. Fill a row when a cover is generated, so the
+distribution of the shelf is visible at a glance — the point is to
+notice when six covers in a row have drifted to the same colour, not to
+stop the seventh from reusing one.
 
 | Cartridge | Accent |
 | --- | --- |
@@ -211,13 +220,16 @@ what is taken.
 | coveralls | phosphor green |
 | healthcheck | vital signal green |
 | exdebug | electric cyan |
-| exdoc | *needs reassignment* — parchment ivory failed |
+| exdoc | *unassigned* — parchment ivory failed the contrast rule |
 | enhancements | hot forge orange |
 
-Two notes on the state of this table: coveralls and healthcheck are both
-green and sit next to each other on the shelf, and exdoc has no working
-accent at all. Both want fixing on the next pass — a brass or amber dial
-suits coveralls better than green, and exdoc needs something saturated.
+Coveralls and healthcheck sharing green is fine: covered lines are green
+and so is a vital-signs trace, and both covers read instantly because of
+it. If two neighbours on the shelf feel too alike, shift the hue — a
+cooler or warmer green — rather than the meaning.
+
+exdoc is the one that actually needs redoing, and not because ivory was
+taken: it failed the contrast rule.
 
 ## Slot suggestions for the rest
 

@@ -1,98 +1,184 @@
 # WorkbenchIgniter
 
-Port de las features del script `app.sh` a tareas
-[Igniter](https://hexdocs.pm/igniter), que parchean el proyecto destino de
-forma semántica (AST) en lugar de con `sed`. El plan completo de migración
-está en [MIGRATION.md](MIGRATION.md).
+Port of the `app.sh` script features to
+[Igniter](https://hexdocs.pm/igniter) tasks, which patch the target
+project semantically (AST-based) instead of with `sed`. The only feature
+documented but not ported yet is stripe (see
+`lib/workbench_igniter/features/stripe/`); the migration history from
+the legacy `app.sh` and the earlier package editions lives in the git log.
 
-## Estructura
+## Structure
 
+```text
+📁 igniter/
+├── 📄 mix.exs                                       # :workbench_igniter package
+├── 📁 lib/
+│   ├── 📄 workbench_igniter.ex                      # priv/ template/asset helpers
+│   ├── 📁 workbench_igniter/
+│   │   ├── 📄 feature.ex                            # Feature behaviour + embed_templates/embed_assets
+│   │   ├── 📄 features.ex                           # registry (composition order)
+│   │   └── 📁 features/                             # one directory per cartridge, each with its README:
+│   │       ├── 📦 healthcheck/                      #   the reference cartridge
+│   │       │   ├── 📄 README.md                     #   what it installs, options, contents
+│   │       │   ├── 📄 healthcheck.ex                #   manifest + install logic
+│   │       │   ├── 📄 task.ex                       #   Mix.Tasks.Workbench.Install.Healthcheck shell
+│   │       │   └── 📄 templates/*.eex               #   compile-time embedded templates
+│   │       ├── 📦 rest/                             # same (6 templates)
+│   │       ├── 📦 graphql/                          # same (2 templates)
+│   │       ├── 📦 auth0/                            # same (14 templates)
+│   │       ├── 📦 openai/                           # same (13 templates)
+│   │       ├── 📦 enhancements/                     # same (16 templates), + verbatim assets/
+│   │       │   └── 📁 assets/{db_schema, postman}/  #   DbSchema diagrams and Postman collections
+│   │       ├── 📦 coveralls/                        # same, + embedded verbatim assets/
+│   │       │   └── 📁 assets/{cover.ex.asset, ...}  #   .asset suffix: mix won't compile them
+│   │       ├── 📦 exdoc/                            # same, + text assets/; the binary PNG logo
+│   │       │                                        #   lives in priv/features/exdoc/
+│   │       ├── 📦 credo/, mock/, osmon/, ...        # dep-only cartridges: README + <f>.ex + task.ex
+│   │       ├── 📦 githooks/, exmachina/             # standalone cartridges (setup never composes them)
+│   │       └── 📦 stripe/                           # pending manifest (installer not ported)
+│   └── 📁 mix/tasks/
+│       ├── 📄 workbench.setup.ex                    # umbrella task: configure_files + Features.compose/2
+│       └── 📄 workbench.plant_asset.ex              # after-apply byte-for-byte copy of binary assets
+├── 📁 priv/
+│   ├── 📁 setup/templates/                          # workbench.setup templates (README, .env, …)
+│   └── 📁 features/<feature>/                       # mirror of lib/…/features/<feature>/ for binary
+│       └── 📁 exdoc/images/                         #   assets (priv_asset/1, plant_binary_asset/3)
+└── 📁 test/
+    └── 📁 workbench_igniter/
+        ├── 📄 setup_test.exs
+        └── 📄 features/<feature>_test.exs           # one test per cartridge
 ```
-igniter/
-├── mix.exs                                       # paquete :workbench_igniter
-├── lib/
-│   ├── workbench_igniter.ex                      # helper de templates EEx
-│   └── mix/tasks/
-│       ├── workbench.setup.ex                    # tarea paraguas (configure_files + orquestación)
-│       ├── workbench.install.rest.ex             # port de implement_rest (OpenAPI/Swagger)
-│       ├── workbench.install.coveralls.ex        # port de implement_coveralls
-│       ├── workbench.install.exdoc.ex            # port de implement_exdoc
-│       ├── workbench.install.enhancements.ex     # port de implement_enhancements (módulos)
-│       ├── workbench.install.graphql.ex          # API GraphQL (nuevo: en app.sh era un stub)
-│       ├── workbench.install.auth0.ex            # port de implement/refine_auth0 + contexto
-│       ├── workbench.install.openai.ex           # port de implement/refine_openai + contexto
-│       ├── workbench.install.healthcheck.ex      # port de implement_healthcheck
-│       ├── workbench.install.credo.ex            # ┐
-│       ├── workbench.install.githooks.ex         # │
-│       ├── workbench.install.exmachina.ex        # │ grupo trivial (fase 1):
-│       ├── workbench.install.mock.ex             # │ una dep cada uno
-│       ├── workbench.install.exdebug.ex          # │
-│       ├── workbench.install.psql_extras.ex      # ┘
-│       └── workbench.install.osmon.ex            # :os_mon en extra_applications
-├── priv/templates/
-│   ├── healthcheck/
-│   │   ├── controller.eex                        # antes: seeds/health/rest/*.seed.ex
-│   │   └── controller_test.eex                   # antes: seeds/test/web/controllers/*.seed.exs
-│   ├── rest/                                     # antes: seeds/rest/*
-│   └── setup/                                    # antes: seeds/* (README, .env, Dockerfiles…)
-└── test/
-    └── mix/tasks/
-        ├── workbench.setup_test.exs
-        ├── workbench.install.rest_test.exs
-        ├── workbench.install.healthcheck_test.exs
-        ├── workbench.install.deps_test.exs       # suite parametrizada del grupo trivial
-        └── workbench.install.osmon_test.exs
-```
 
-Los módulos del paquete usan el prefijo `WorkbenchIgniter`; las tareas Mix
-conservan el namespace corto `workbench.*` como interfaz de línea de comandos.
+Package modules use the `WorkbenchIgniter` prefix; the Mix tasks keep the
+short `workbench.*` namespace as the command-line interface.
 
-## Uso
+## Anatomy of a cartridge
 
-Con `wb.sh` no hay nada que configurar: el comando `new` inyecta en el
-`mix.exs` generado una dep condicional que apunta al workbench montado en
-`/app/workbench` (función `workbench_dep/0`). Para usar el paquete a mano
-en cualquier proyecto:
+Each feature is a *cartridge*: a folder under
+`lib/workbench_igniter/features/<feature>/` that self-contains everything
+defining it, so reviewing the folder equals knowing its full
+functionality. Every cartridge — dep-only ones included — is a directory
+with its own `README.md` explaining what it installs, how it is enabled
+and the role of each file; the general index is
+[`lib/workbench_igniter/features/README.md`](lib/workbench_igniter/features/README.md).
+`healthcheck/` is the reference:
+
+- **`<feature>.ex`** — a `WorkbenchIgniter.Features.<Feature>` module with
+  `use WorkbenchIgniter.Feature`. It gathers the *manifest* (what used to
+  be spread across `workbench.setup.ex`) and the install logic:
+  - `task/0` — installer mix task name (public interface, never changes).
+  - `flag/0` / `enabled?/1` — when the setup options turn it on.
+  - `implies/0` — flags it forces (e.g. `openai` ⇒ `auth0`).
+  - `argv/1` — arguments setup forwards when composing it.
+  - `pending?/0` — documented but not ported yet (setup emits a notice).
+  - `install/1` — the installer's `igniter/1` body.
+  - Ordering constraints are documented in the `@moduledoc`; the actual
+    order is the `WorkbenchIgniter.Features` registry list.
+- **`task.ex`** — a `Mix.Tasks.Workbench.Install.<Feature>` shell (~15
+  lines) delegating `info/2` and `igniter/1` to the feature module. Elixir
+  doesn't require Mix tasks to live in `lib/mix/tasks/`: only the module
+  name matters, so the task lives inside the cartridge.
+- **`templates/*.eex`** — templates embedded at compile time by
+  `embed_templates()` (each one is an `@external_resource`: editing it
+  recompiles). Rendered through the module's local `template/2`, with the
+  same semantics as `WorkbenchIgniter.template/2`.
+- **`assets/`** — files the feature copies verbatim (no rendering):
+  `embed_assets()` embeds them as a local `asset/1` (see coveralls).
+  Careful: a `*.ex` asset would be compiled by mix along with the package
+  — it is stored with an extra `.asset` suffix (`cover.ex.asset`) and the
+  macro strips it from the key.
+- **`priv/features/<feature>/`** — the cartridge's mirror under `priv/`
+  for binary assets that must stay out of the compiled module (the exdoc
+  logo). Read at runtime
+  with the local `priv_asset/1`, or planted byte-for-byte after the patch
+  set is applied with `plant_binary_asset/3` (binaries must never go
+  through the igniter rewrite pipeline, which normalizes trailing bytes).
+  Both helpers derive the feature name from the cartridge directory.
+- **test** — at `test/workbench_igniter/features/<feature>_test.exs`,
+  exercising the task by name with `Igniter.Test`.
+
+Dep-only cartridges (credo, mock, …) keep the same shape minus
+`templates/` and `assets/`: README, `<feature>.ex` and `task.ex`.
+
+Every feature is in cartridge form; `lib/mix/tasks/` only keeps the
+`workbench.setup` umbrella task and the `workbench.plant_asset` plumbing.
+
+## Adding a feature (checklist)
+
+- [ ] Create the cartridge directory under
+      `lib/workbench_igniter/features/<feature>/`: feature module with
+      `use WorkbenchIgniter.Feature` (manifest + `info/2` + `install/1`)
+      in `<feature>.ex` and the `Mix.Tasks.Workbench.Install.<Feature>`
+      shell in `task.ex`.
+- [ ] Register it in the `WorkbenchIgniter.Features` list at the right
+      composition position; declare `flag`/`enabled?`, `implies` and
+      `argv` as needed.
+- [ ] Idempotency guard if it touches the router or any other
+      non-idempotent edit (`module_exists` + `add_notice`; see
+      healthcheck).
+- [ ] Templates as EEx module *bodies* in `templates/`
+      (`embed_templates()`); verbatim files in `assets/`
+      (`embed_assets()`, `.asset` suffix for `*.ex` files); binary
+      assets in the `priv/features/<feature>/` mirror.
+- [ ] Register `dont_move_file_pattern` for files outside the
+      module-name → path convention (e.g. `controllers/`,
+      `test/support/fixtures/`).
+- [ ] Tests with `Igniter.Test.phx_test_project()`: creation, patches,
+      idempotency (apply twice ⇒ `assert_unchanged`). Add the cartridge's
+      `README.md`.
+- [ ] Manual validation: `./wb.sh new` with the feature enabled in
+      `config.conf`.
+
+Possible future step: moving the package to its own git repo, so projects
+that already ran `remove-workbench` can keep installing features via
+`{:workbench_igniter, git: "..."}`.
+
+## Usage
+
+With `wb.sh` there is nothing to configure: the `new` command injects into
+the generated `mix.exs` a conditional dep pointing at the workbench
+mounted at `/app/workbench` (the `workbench_dep/0` function). To use the
+package by hand in any project:
 
 ```elixir
-{:workbench_igniter, path: "ruta/al/workbench/igniter", only: [:dev, :test], runtime: false}
+{:workbench_igniter, path: "path/to/workbench/igniter", only: [:dev, :test], runtime: false}
 ```
 
-y luego, para configurar un proyecto recién generado (equivalente a
-`configure_files` + `config.conf` de app.sh):
+and then, to configure a freshly generated project (equivalent to app.sh's
+`configure_files` + `config.conf`):
 
 ```sh
 mix workbench.setup --project-name "Lorem Ipsum" \
   --enhance --health --id-type uuid --timestamps naive_datetime_usec --yes
 ```
 
-o instaladores individuales:
+or individual installers:
 
 ```sh
-mix workbench.install.healthcheck          # muestra el diff y pide confirmación
-mix workbench.install.healthcheck --yes    # aplica directo (para uso en Docker/CI)
-mix workbench.install.healthcheck --endpoint /status   # ruta configurable
+mix workbench.install.healthcheck          # shows the diff and asks for confirmation
+mix workbench.install.healthcheck --yes    # applies directly (for Docker/CI use)
+mix workbench.install.healthcheck --endpoint /status   # configurable route
 ```
 
-La tarea hace, en un solo patch set atómico:
+The task performs, in a single atomic patch set:
 
-| Cambio | API de Igniter | Equivalente en app.sh |
+| Change | Igniter API | app.sh equivalent |
 | --- | --- | --- |
-| Añade `{:mock, "~> 0.3", only: :test}` | `Igniter.Project.Deps.add_dep/3` | `mix_insert` |
-| `dev_routes: true` en `config/test.exs` | `Igniter.Project.Config.configure/5` | `adjust_config_test` |
-| Crea `MyAppWeb.HealthcheckController` | `Igniter.Project.Module.create_module/4` | `cp seed + sed placeholders` |
-| Crea el test del controller | `Igniter.Project.Module.create_module/4` | `unit_testing` |
-| Scope en el router | `Igniter.Libs.Phoenix.add_scope/4` | `router_add_scope` |
+| Adds `{:mock, "~> 0.3", only: :test}` | `Igniter.Project.Deps.add_dep/3` | `mix_insert` |
+| `dev_routes: true` in `config/test.exs` | `Igniter.Project.Config.configure/5` | `adjust_config_test` |
+| Creates `MyAppWeb.HealthcheckController` | `Igniter.Project.Module.create_module/4` | `cp seed + sed placeholders` |
+| Creates the controller test | `Igniter.Project.Module.create_module/4` | `unit_testing` |
+| Router scope | `Igniter.Libs.Phoenix.add_scope/4` | `router_add_scope` |
 
-El nombre del módulo, el módulo web y el nombre de la app se **deducen del
-proyecto destino** (`app_name/1`, `web_module/1`, `module_name_prefix/1`):
-no hay placeholders `%{elixir_module}` que inyectar desde fuera.
+The module name, web module and app name are **derived from the target
+project** (`app_name/1`, `web_module/1`, `module_name_prefix/1`): there
+are no `%{elixir_module}` placeholders injected from outside.
 
-## Idempotencia
+## Idempotency
 
-Ejecutar la tarea dos veces es un no-op: si `MyAppWeb.HealthcheckController`
-ya existe, la tarea emite un aviso y no toca nada. Esto permite instalar
-features sobre proyectos ya existentes, no solo recién generados.
+Running a task twice is a no-op: if `MyAppWeb.HealthcheckController`
+already exists, the task emits a notice and touches nothing. This allows
+installing features on existing projects, not just freshly generated ones.
 
 ## Tests
 
@@ -100,31 +186,31 @@ features sobre proyectos ya existentes, no solo recién generados.
 mix test
 ```
 
-Los tests usan `Igniter.Test`: cada caso corre contra un proyecto Phoenix
-simulado **en memoria** (`phx_test_project/0`, requiere la dep de test
-`:phx_new`) — sin tocar disco, sin base de datos y sin generar proyectos
-reales. Se verifica la creación de archivos en las rutas convencionales de
-Phoenix, los patches sobre router/config/mix.exs y la idempotencia
-(aplicar dos veces ⇒ sin cambios + aviso).
+Tests use `Igniter.Test`: each case runs against a simulated **in-memory**
+Phoenix project (`phx_test_project/0`, requires the `:phx_new` test dep) —
+no disk writes, no database, no real project generation. They verify file
+creation at Phoenix's conventional paths, the patches on
+router/config/mix.exs, and idempotency (applying twice ⇒ no changes + a
+notice).
 
-## Lecciones aprendidas (para portar el resto de features)
+## Lessons learned (for future features)
 
-- **Igniter reubica módulos nuevos** a la ruta derivada de su nombre
-  (`module_location: :outside_matching_folder`), lo que rompe la convención
-  `controllers/` de Phoenix. La solución es registrar el patrón en el
-  `.igniter.exs` del proyecto destino con
-  `Igniter.Project.IgniterConfig.dont_move_file_pattern/2` (la tarea ya lo
-  hace; el archivo `.igniter.exs` generado debe commitearse).
-- **`add_scope` no es idempotente** (siempre añade). Cualquier instalador
-  que toque el router necesita su propio guard — aquí, la existencia del
-  controller vía `Igniter.Project.Module.module_exists/2`.
-- Los templates EEx son el *cuerpo* del módulo: `create_module/4` añade el
-  `defmodule` externo y el formateador del proyecto normaliza la indentación.
+- **Igniter relocates new modules** to the path derived from their name
+  (`module_location: :outside_matching_folder`), which breaks Phoenix's
+  `controllers/` convention. The fix is registering the pattern in the
+  target project's `.igniter.exs` with
+  `Igniter.Project.IgniterConfig.dont_move_file_pattern/2` (the task
+  already does; the generated `.igniter.exs` must be committed).
+- **`add_scope` is not idempotent** (it always appends). Any installer
+  touching the router needs its own guard — here, the controller's
+  existence via `Igniter.Project.Module.module_exists/2`.
+- EEx templates are the module *body*: `create_module/4` adds the outer
+  `defmodule` and the target project's formatter normalizes indentation.
 
-## Validado con
+## Validated with
 
-Elixir 1.19.5 / OTP 27, Phoenix 1.8.9, Igniter 0.8.3. Además de la suite de
-tests, se validó de punta a punta contra un proyecto real generado con
-`mix phx.new demo --no-assets --no-mailer --no-dashboard`: instalación
-aplicada, re-ejecución no-op, `mix compile` limpio y los 5 tests generados
-en verde.
+Elixir 1.19.5 / OTP 27, Phoenix 1.8.9, Igniter 0.8.3. Besides the test
+suite, it was validated end-to-end against a real project generated with
+`mix phx.new demo --no-assets --no-mailer --no-dashboard`: install
+applied, re-run no-op, clean `mix compile` and the 5 generated tests
+green.

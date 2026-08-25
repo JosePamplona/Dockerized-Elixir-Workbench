@@ -15,11 +15,17 @@ services:
       - %{app_port}:%{internal_port}
       # pgAdmin port. The database is not published: it is only
       # reachable from inside this workspace.
-      - %{pgadmin_port}:5050
+      - %{pgadmin_port}:%{pgadmin_internal_port}
 
   app:
     image: %{compose_image}
     build:
+      # Baked by the workbench: Dockerfile.local (dev toolchain) in
+      # docker-compose.yml — whose app service also runs the workbench
+      # one-off commands (setup, add, mix), which need the toolchain —
+      # and the production Dockerfile in docker-compose.prod.yml, baked
+      # by 'up --env prod'. Do not point docker-compose.yml at the
+      # production Dockerfile.
       dockerfile: %{compose_dockerfile}
       # These arguments are only relevant for 'Dockerfile.local'.
       # Build identity for standalone builds (no workbench): the image is
@@ -79,7 +85,7 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: pgadmin4@pgadmin.org
       PGADMIN_DEFAULT_PASSWORD: pass
-      PGADMIN_LISTEN_PORT: 5050
+      PGADMIN_LISTEN_PORT: %{pgadmin_internal_port}
       PGADMIN_CONFIG_SERVER_MODE: 'False'
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
     depends_on:

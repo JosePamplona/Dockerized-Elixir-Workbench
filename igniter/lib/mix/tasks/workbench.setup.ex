@@ -4,17 +4,6 @@ defmodule Mix.Tasks.Workbench.Setup do
   @example "mix workbench.setup --project-name \"Lorem Ipsum\" --enhance --health --yes"
   @shortdoc "Configures a freshly generated Phoenix project the workbench way"
 
-  @trivial_group ~w(
-    workbench.install.osmon
-    workbench.install.psql_extras
-    workbench.install.credo
-    workbench.install.mock
-    workbench.install.exdebug
-  )
-  @pending_installers [
-    stripe: "workbench.install.stripe"
-  ]
-
   @moduledoc """
   #{@shortdoc}
 
@@ -35,8 +24,9 @@ defmodule Mix.Tasks.Workbench.Setup do
   * composes the requested feature installers (`--enhance`, `--health`, …)
 
   Flags map 1:1 to `config.conf`; `app.sh` translates that file into this
-  task's arguments. Feature dependencies are encoded here: `--stripe` or
-  `--openai` imply `--auth0`.
+  task's arguments. Feature order, dependencies (`--stripe` or `--openai`
+  imply `--auth0`) and per-feature argv live in the
+  `WorkbenchIgniter.Features` registry and each feature's manifest.
 
   ## Example
 
@@ -64,6 +54,8 @@ defmodule Mix.Tasks.Workbench.Setup do
     the `phx.new` options the project was created with.
   * `--enhance`, `--exdoc`, `--coveralls`, `--health`, `--auth0`,
     `--openai`, `--stripe` - Feature toggles (`config.conf`).
+  * `--coverage-theme` - HTML coverage report theme forwarded to the
+    coveralls feature (`exdoc-ish` | `custom`). Optional.
   """
 
   @impl Igniter.Mix.Task
@@ -71,16 +63,7 @@ defmodule Mix.Tasks.Workbench.Setup do
     %Igniter.Mix.Task.Info{
       group: :workbench_igniter,
       example: @example,
-      composes: [
-        "workbench.install.healthcheck",
-        "workbench.install.rest",
-        "workbench.install.coveralls",
-        "workbench.install.exdoc",
-        "workbench.install.enhancements",
-        "workbench.install.graphql",
-        "workbench.install.auth0",
-        "workbench.install.openai" | @trivial_group
-      ],
+      composes: WorkbenchIgniter.Features.tasks(),
       schema: [
         project_name: :string,
         version: :string,
@@ -106,6 +89,7 @@ defmodule Mix.Tasks.Workbench.Setup do
         enhance: :boolean,
         exdoc: :boolean,
         coveralls: :boolean,
+        coverage_theme: :string,
         health: :boolean,
         auth0: :boolean,
         openai: :boolean,
@@ -154,15 +138,27 @@ defmodule Mix.Tasks.Workbench.Setup do
     |> base_config(app_name, repo, endpoint, opts)
     |> adjust_gitignore()
     |> create_text_files(app_name, opts)
-    |> compose_features(opts)
+    # The fresh phx.new lock can pin transitive deps against the feature
+    # deps this setup adds (e.g. it locks idna 7.x while auth0_jwks
+    # needs hackney's idna ~> 6.1): igniter's automatic post-apply fetch
+    # tolerates that resolution failure, but the queued feature tasks
+    # below (binary asset planting) run `mix` in the project and abort
+    # on unresolved deps. Re-resolving the lock from scratch first —
+    # queued here so it runs ahead of every feature task; unlock and get
+    # are Mix builtins, runnable even with broken deps — makes the
+    # feature deps land whole. On a minutes-old generated lock this is
+    # loss-free.
+    |> Igniter.add_task("deps.unlock", ["--all"])
+    |> Igniter.add_task("deps.get", [])
+    |> WorkbenchIgniter.Features.compose(opts)
   end
 
   # --- Options ----------------------------------------------------------------
 
   defp normalize(opts) do
     opts
-    # Feature dependencies, as encoded at the top of app.sh.
-    |> Keyword.update!(:auth0, &(&1 || opts[:openai] || opts[:stripe]))
+    # Feature dependencies, as declared by each feature's implies/0.
+    |> WorkbenchIgniter.Features.normalize()
     |> Keyword.put_new_lazy(:project_name, fn ->
       Mix.Project.config()[:app] |> to_string() |> String.capitalize()
     end)
@@ -319,13 +315,12 @@ defmodule Mix.Tasks.Workbench.Setup do
     ]
 
     igniter
-    |> plant("setup/env.eex", ".env.sample", sample_assigns, on_exists: :overwrite)
+    |> plant("env.eex", ".env.sample", sample_assigns, on_exists: :overwrite)
     # Secrets are generated once: an existing .env is never overwritten.
-    |> plant("setup/env.eex", ".env", env_assigns, on_exists: :skip)
-    |> plant("setup/readme.eex", "README.md", readme_assigns, on_exists: :overwrite)
-    |> plant("setup/changelog.eex", "CHANGELOG.md", changelog_assigns, on_exists: :skip)
-    |> plant("setup/tool_versions.eex", ".tool-versions", stack_assigns, on_exists: :overwrite)
-
+    |> plant("env.eex", ".env", env_assigns, on_exists: :skip)
+    |> plant("readme.eex", "README.md", readme_assigns, on_exists: :overwrite)
+    |> plant("changelog.eex", "CHANGELOG.md", changelog_assigns, on_exists: :skip)
+    |> plant("tool_versions.eex", ".tool-versions", stack_assigns, on_exists: :overwrite)
   end
 
   defp plant(igniter, template, path, assigns, opts) do
@@ -362,140 +357,5 @@ defmodule Mix.Tasks.Workbench.Setup do
     |> Base.encode64()
     |> String.replace(~r/[^A-Za-z0-9]/, "")
     |> binary_part(0, 64)
-  end
-
-  # --- Feature composition ----------------------------------------------------
-
-  defp compose_features(igniter, opts) do
-    igniter
-    |> then(fn igniter ->
-      if opts[:enhance] do
-        Enum.reduce(@trivial_group, igniter, &Igniter.compose_task(&2, &1, []))
-      else
-        igniter
-      end
-    end)
-    |> then(fn igniter ->
-      case opts[:interface] do
-        "rest" ->
-          Igniter.compose_task(igniter, "workbench.install.rest", rest_argv(opts))
-
-        "graphql" ->
-          Igniter.compose_task(igniter, "workbench.install.graphql", [])
-
-        _ ->
-          igniter
-      end
-    end)
-    |> then(fn igniter ->
-      if opts[:coveralls] do
-        Igniter.compose_task(igniter, "workbench.install.coveralls", coveralls_argv(opts))
-      else
-        igniter
-      end
-    end)
-    |> then(fn igniter ->
-      if opts[:exdoc] do
-        Igniter.compose_task(igniter, "workbench.install.exdoc", exdoc_argv(opts))
-      else
-        igniter
-      end
-    end)
-    |> then(fn igniter ->
-      if opts[:enhance] do
-        Igniter.compose_task(
-          igniter,
-          "workbench.install.enhancements",
-          enhancements_argv(opts)
-        )
-      else
-        igniter
-      end
-    end)
-    # After enhancements: the User schema uses MyApp.Schema.
-    |> then(fn igniter ->
-      if opts[:auth0] do
-        Igniter.compose_task(igniter, "workbench.install.auth0", [
-          "--project-name",
-          opts[:project_name],
-          "--interface",
-          opts[:interface]
-        ])
-      else
-        igniter
-      end
-    end)
-    # After auth0: conversations belong to users.
-    |> then(fn igniter ->
-      if opts[:openai] do
-        Igniter.compose_task(igniter, "workbench.install.openai", [
-          "--project-name",
-          opts[:project_name],
-          "--interface",
-          opts[:interface]
-        ])
-      else
-        igniter
-      end
-    end)
-    # After rest, so the healthcheck autodetects the OpenApi.Spec module in
-    # the patch set and generates its OpenApiSpex-documented variant.
-    |> then(fn igniter ->
-      if opts[:health] do
-        Igniter.compose_task(igniter, "workbench.install.healthcheck", [])
-      else
-        igniter
-      end
-    end)
-    |> notice_pending(opts)
-  end
-
-  defp enhancements_argv(opts) do
-    ["--project-name", opts[:project_name], "--interface", opts[:interface]] ++
-      if(opts[:id_type], do: ["--id-type", opts[:id_type]], else: []) ++
-      if(opts[:timestamps], do: ["--timestamps", opts[:timestamps]], else: []) ++
-      Enum.flat_map([:exdoc, :auth0, :openai, :stripe, :health], fn flag ->
-        if opts[flag], do: ["--#{flag}"], else: []
-      end) ++
-      Enum.flat_map([:ecto, :html, :mailer, :dashboard], fn flag ->
-        if opts[flag], do: [], else: ["--no-#{flag}"]
-      end)
-  end
-
-  defp exdoc_argv(opts) do
-    ["--project-name", opts[:project_name], "--repo-url", opts[:repo_url]] ++
-      if(opts[:guidelines_url], do: ["--guidelines-url", opts[:guidelines_url]], else: []) ++
-      Enum.flat_map([:coveralls, :auth0, :openai, :stripe], fn flag ->
-        if opts[flag], do: ["--#{flag}"], else: []
-      end) ++
-      if opts[:ecto], do: [], else: ["--no-ecto"]
-  end
-
-  defp coveralls_argv(opts) do
-    ["--interface", opts[:interface]] ++
-      if(opts[:exdoc], do: ["--exdoc"], else: []) ++
-      if opts[:html], do: [], else: ["--no-html"]
-  end
-
-  defp rest_argv(opts) do
-    ["--project-name", opts[:project_name]] ++
-      Enum.flat_map([:auth0, :openai, :health], fn flag ->
-        if opts[flag], do: ["--#{flag}"], else: []
-      end)
-  end
-
-  defp notice_pending(igniter, opts) do
-    case Enum.filter(@pending_installers, fn {flag, _task} -> opts[flag] end) do
-      [] ->
-        igniter
-
-      pending ->
-        tasks = Enum.map_join(pending, ", ", fn {_flag, task} -> task end)
-
-        Igniter.add_notice(igniter, """
-        The following features were documented in README.md and .env, but \
-        their installers are not ported yet (see MIGRATION.md): #{tasks}.\
-        """)
-    end
   end
 end

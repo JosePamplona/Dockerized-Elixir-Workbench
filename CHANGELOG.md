@@ -12,6 +12,145 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - `Fixed` for any bug fixes.
 - `Security` to invite users to upgrade in case of vulnerabilities.
 
+## v0.7.0 - (2026-08-23)
+
+### Fixed
+
+- Igniter features planted their files under module-derived directories
+  (`Macro.underscore/1`), which diverge from the phx.new app-name
+  directories when the app name carries digits (app `:lorem_3` →
+  `Lorem3Web` → `lib/lorem3_web/` instead of `lib/lorem_3_web/`),
+  forking a parallel source tree with duplicated modules whose tests
+  mask each other. Every feature now derives `web_dir`/`app_dir` from
+  the app name, exactly like phx.new.
+
+### Added
+
+- Igniter cartridges now hold only code: every non-code file — EEx
+  templates, verbatim assets, binaries — moved from
+  `lib/workbench_igniter/features/<f>/{templates,assets}/` to
+  `priv/features/<f>/`, where nothing is compiled, so Elixir assets drop
+  the `.asset` suffix (`cover.ex.asset` → `cover.ex`). `embed_templates`/
+  `embed_assets` resolve the cartridge's `priv/features/<name>/`
+  directory automatically.
+- Coverage report themes for the coveralls feature: the excoveralls HTML
+  template is now picked from
+  `priv/features/coveralls/assets/template/<theme>/` in the igniter
+  cartridge, selected with `mix workbench.install.coveralls --theme` (or
+  `COVERAGE_THEME` in `config.conf`, forwarded by `workbench.setup
+  --coverage-theme`). `custom` keeps the original report; the new
+  `exdoc-ish` theme (default) mimics the ExDoc pages (sidebar with project logo and
+  tabs, search-style file filter, light/dark synced with ExDoc's own
+  setting, Lato and Remixicon reused from `doc/dist/`, coverage vs.
+  minimum target cards, lines covered / missed / line hits stats).
+- `mix cover`: a failing module is flagged with a leading ❌ in its
+  `TESTING.md` heading, so broken modules stand out in the ExDoc sidebar
+  (passing modules stay unmarked).
+- `mix cover`: `COVERAGE.md` and `TESTING.md` merged into a single
+  `TESTING.md` ("Test Suite Report"): execution result board, then the
+  coverage section, then the per-module sections. The report links
+  (overview and per file) point at the `/dev/docs/cover` route instead
+  of `excoveralls.html`, and the report page moved to
+  `/dev/docs/testing.html`.
+
+- `wb.sh` lifecycle commands over the workspace compose, Makefile-style:
+  `logs [SERVICE...]` (follow, Ctrl+C detaches), `stop`, `down` and `ps`.
+- `build [-e, --env ENV] [OPTIONS]` command: (re)builds the workspace's
+  app image without deploying it — the dev image from the project-owned
+  `Dockerfile.local` (previously only `new` built it, destructively), or
+  the production release image with `-e prod`. Extra OPTIONS go to
+  `docker compose build` (e.g. `--no-cache`). The production compose
+  baking moved into a `bake_prod_compose` function, shared by `build`
+  and `up --env prod`.
+- `wb.sh` session commands running on the **already running** app
+  container via `docker compose exec` (instant, and exiting never stops
+  the application): `iex` (IEx shell), `bash`, and `mix [ARGS...]` for
+  any mix task (`cover`, `docs`, `test`...). With the system down, `mix`
+  falls back to a one-off container, starting the database dependency.
+
+### Updated
+
+- `igniter/` is now the restructured cartridge edition: the legacy
+  package and the first cartridge edition (`igniter2/`) were removed, and
+  with a single edition left the `IGNITER_DIR` override is gone too.
+  - Every cartridge is a directory with its own `README.md` — the
+    dep-only ones (credo, mock, exdebug, psql_extras, osmon, githooks,
+    exmachina, stripe) split into `<feature>.ex` + `task.ex` like the
+    rest; the "single-file cartridge" format is gone.
+  - One test file per cartridge: the parameterized `deps_test.exs`
+    became `credo_test.exs`, `mock_test.exs`, etc.
+  - `priv/assets/` disappeared: the DbSchema diagrams and Postman
+    collections are text, so they moved into the enhancements cartridge
+    (`assets/{db_schema,postman}/`, embedded like any other asset); the
+    setup templates moved to `priv/setup/templates/`. `priv/features/`
+    mirrors the cartridges for binary assets only (the exdoc logo).
+    `WorkbenchIgniter.asset/1` was removed; cartridges reach `priv/` with
+    the local `priv_asset/1` / `plant_binary_asset/3`, derived from the
+    cartridge directory name.
+- `up` now deploys **detached** (both dev and prod): the terminal stays
+  free, and the command prints the application URL plus the `logs`/`stop`
+  hints. Previously it followed the containers in the foreground and
+  Ctrl+C stopped them.
+- `demo` follows the logs between `up` and `delete`: the demo blocks
+  while the application is tried out, and Ctrl+C moves on to the
+  teardown (a no-op SIGINT trap keeps the script alive through the
+  Ctrl+C that detaches the log follower).
+
+### Removed
+
+- `run` command (and its entrypoint branch): it was a workaround to run
+  `iex` and mix tasks, superseded by the `iex`/`mix`/`bash` exec
+  commands. Its blocking "Press any key" prompt is gone with it.
+- `prune` command: it stopped ALL containers on the host and ran
+  `docker system prune -a --volumes` — a machine-wide blast radius out
+  of the workbench's scope. Workspace cleanup is covered by `delete`
+  (`down --volumes --rmi local`) and the new `stop`/`down`.
+
+### Fixed
+
+- The generated `mix cover` task broke the production image build: it
+  read `coveralls.json` at compile time (`File.read!` in a module
+  attribute) and the production Dockerfile never copies that file. It
+  now falls back to defaults when the file is absent — harmless, since
+  releases carry no Mix and the task cannot run in them — and declares
+  `@external_resource`, so editing `coveralls.json` recompiles the task
+  (before, a changed `minimum_coverage` was silently ignored until a
+  forced recompile). Fixed in both igniter editions and documented here
+  because the asset ships into every generated project.
+- Misleading guidance removed: comments in `wb.sh` and the compose seed
+  suggested switching the workspace's `docker-compose.yml` to the
+  production Dockerfile by hand. That breaks every toolchain command
+  (`setup`, `add`, `mix`, `iex` run through the same app service) — the
+  production deployment has its own `docker-compose.prod.yml`, baked by
+  `up --env prod`. The entrypoint now also fails with a clear message
+  when it lands in a mix-less production image instead of a cryptic
+  "mix: command not found".
+- `workbench.setup` (cartridge edition) now re-resolves the dependency
+  lock — `deps.unlock --all` + `deps.get`, queued ahead of every feature
+  task — instead of leaving the known phx.new-lock conflict (idna 7.x vs
+  the `auth0_jwks`→hackney chain needing ~> 6.1) to the entrypoint's
+  after-setup fallback. Igniter's automatic post-apply fetch tolerates
+  that resolution failure, but the queued binary-asset task runs `mix`
+  in the project and aborted setup on the unresolved deps, so auth0
+  projects failed to generate. The moved medicine also fixes standalone
+  `mix workbench.setup` runs without the workbench script.
+- Binary assets are no longer routed through the igniter rewrite
+  pipeline, which normalizes every file it writes
+  (`String.trim_trailing/1` plus a final newline) and corrupts binaries
+  — the planted ExDoc logo carried an appended byte, and a binary
+  ending in whitespace-like bytes would have been truncated. The
+  cartridge edition now plants them verbatim: a new internal
+  `mix workbench.plant_asset` task copies the file byte-for-byte, and
+  installers compose it via `WorkbenchIgniter.plant_binary_asset/4`
+  (an `Igniter.add_task/3` after-apply step, so dry-run semantics stay
+  intact). The legacy edition keeps the old behavior: it is on its way
+  out once the cartridge edition proves itself.
+- Internal container ports are no longer magic numbers: the `:4000` in
+  the host-port parser and the `:5050` anchors now reference
+  `APP_INTERNAL_PORT` / the new `PGADMIN_INTERNAL_PORT`, and the compose
+  seed takes pgAdmin's listen port as a `%{pgadmin_internal_port}`
+  placeholder.
+
 ## v0.6.0 - (2026-08-21)
 
 ### Added

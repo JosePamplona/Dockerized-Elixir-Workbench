@@ -7,7 +7,7 @@ defmodule WorkbenchIgniter do
   """
 
   @doc """
-  Renders an EEx template from `priv/templates`.
+  Renders a `workbench.setup` EEx template from `priv/setup/templates`.
 
   Templates receive `assigns`, accessible as `@key` inside the template.
   Rendered with `trim: true` so block tags (`<%= if ... do %>`) that sit
@@ -17,24 +17,42 @@ defmodule WorkbenchIgniter do
   def template(path, assigns) do
     :workbench_igniter
     |> :code.priv_dir()
-    |> Path.join("templates")
+    |> Path.join("setup/templates")
     |> Path.join(path)
     |> EEx.eval_file([assigns: assigns], trim: true)
   end
 
   @doc """
-  Reads a file from `priv/assets` verbatim — no EEx rendering.
-
-  For content that must be copied as-is, like the excoveralls report
-  templates (whose own `<%= %>` tags belong to the target project).
+  Reads a file from `priv/features/<feature>` verbatim — a cartridge's
+  binary assets (images and the like), which stay out of the compiled
+  module unlike the text assets embedded with `embed_assets/1`.
+  Cartridges call it through the local `priv_asset/1`.
   """
-  @spec asset(String.t()) :: String.t()
-  def asset(path) do
+  @spec feature_asset(String.t(), String.t()) :: binary()
+  def feature_asset(feature, path) do
     :workbench_igniter
     |> :code.priv_dir()
-    |> Path.join("assets")
+    |> Path.join("features")
+    |> Path.join(feature)
     |> Path.join(path)
     |> File.read!()
+  end
+
+  @doc """
+  Plants a `priv/features/<feature>` asset into the project verbatim,
+  through an after-apply task.
+
+  Binary assets must never go through `Igniter.create_new_file/4`: the
+  rewrite pipeline trims trailing bytes and appends a newline on every
+  write, corrupting them. Composing `mix workbench.plant_asset` instead
+  copies the file byte-for-byte once the patch set is confirmed and
+  applied, keeping dry-run semantics intact. Cartridges call it through
+  the local `plant_binary_asset/3`.
+  """
+  @spec plant_binary_asset(Igniter.t(), String.t(), String.t(), String.t()) ::
+          Igniter.t()
+  def plant_binary_asset(igniter, feature, asset, target) do
+    Igniter.add_task(igniter, "workbench.plant_asset", [feature, asset, target])
   end
 
   @doc """

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExCoveralls">
+    <% project = Mix.Project.config() %>
+    <title>Coverage — <%= project[:name] || project[:app] %> v<%= project[:version] %></title>
+    <%= ExCoveralls.Html.View.partial "_style.html.eex" %>
+    <%= ExCoveralls.Html.View.partial "_script.html.eex" %>
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",o=new URLSearchParams(window.location.search).get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(o==="dark"||o!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add("dark");var s=sessionStorage.getItem("sidebar_state"),a=s!=="closed"&&!window.matchMedia("screen and (max-width: 768px)").matches;document.body.classList.toggle("sidebar-open",a);})();</script>
+
+    <%!-- ExDoc's icon font, when its dist/ is around; inline SVG otherwise --%>
+    <% remixicon? = Path.wildcard("doc/dist/remixicon-*.woff2") != [] %>
+    <div class="body-wrapper">
+      <button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar" title="Collapse/expand sidebar">
+        <%= if remixicon? do %>
+          <i class="ri-menu-line ri-lg" aria-hidden="true"></i>
+        <% else %>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h18v2H3V4zm0 7h18v2H3v-2zm0 7h18v2H3v-2z"/></svg>
+        <% end %>
+      </button>
+
+      <nav id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-projectInfo">
+            <a href="/dev/docs" class="sidebar-projectImage">
+              <img src="assets/logo.png" alt="<%= project[:name] || project[:app] %>" onerror="this.parentNode.hidden = true" />
+            </a>
+            <div>
+              <a href="/dev/docs" class="sidebar-projectName" translate="no"><%= project[:name] || project[:app] %></a>
+              <div class="sidebar-projectVersion" translate="no">v<%= project[:version] %></div>
+            </div>
+          </div>
+          <ul class="sidebar-list-nav" role="tablist">
+            <li><a href="/dev/docs/testing.html" role="tab">Pages</a></li>
+            <li><a href="/dev/docs/cover#" role="tab" aria-selected="true">Coverage</a></li>
+          </ul>
+        </div>
+
+        <ul id="full-list" class="full-list">
+          <li class="group">Files</li>
+          <%= for file <- @cov.files do %>
+            <%= if not @filter_full_covered or file.coverage < 100 do %>
+              <% dirname = Path.dirname(file.filename) %>
+              <% # Zero-width spaces after "/" and "_" let long paths wrap at
+                 # their natural boundaries instead of mid-word. %>
+              <% breakable = &String.replace(&1, ["/", "_"], fn sep -> sep <> "\u200B" end) %>
+              <li data-filename="<%= file.filename %>">
+                <a href="#<%= file.filename %>" translate="no" title="<%= file.sloc - file.misses %>/<%= file.sloc %> lines covered, <%= file.hits %> line hits">
+                  <span class="path">
+                    <span class="basename"><%= breakable.(Path.basename(file.filename)) %></span>
+                    <%= if dirname != "." do %>
+                      <span class="dirname"><%= breakable.(dirname <> "/") %></span>
+                    <% end %>
+                  </span>
+                  <span class="cov <%= ExCoveralls.Html.View.coverage_class(file.coverage, file.sloc) %>"><%= file.coverage || 0 %></span>
+                </a>
+              </li>
+            <% end %>
+          <% end %>
+        </ul>
+      </nav>
+
+      <main class="content" id="main">
+        <div id="content" class="content-inner">
+          <div class="top-search">
+            <div class="search-settings">
+              <form class="search-bar" onsubmit="return false">
+                <label class="search-label">
+                  <span class="sr-only">Filter the covered files</span>
+                  <div class="search-input-wrapper">
+                    <input id="file-filter" name="q" type="text" class="search-input" placeholder="Press / to filter files" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+                    <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true" title="Clear filter">
+                      <%= if remixicon? do %>
+                        <i class="ri-close-line ri-lg"></i>
+                      <% else %>
+                        <svg viewBox="0 0 24 24"><path d="M12 10.586l4.95-4.95 1.414 1.414-4.95 4.95 4.95 4.95-1.414 1.414-4.95-4.95-4.95 4.95-1.414-1.414 4.95-4.95-4.95-4.95L7.05 5.636z"/></svg>
+                      <% end %>
+                    </button>
+                  </div>
+                </label>
+              </form>
+              <button type="button" id="theme-toggle" class="icon-settings" title="Toggle light/dark theme">
+                <%= if remixicon? do %>
+                  <i class="ri-settings-3-line" aria-hidden="true"></i>
+                <% else %>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.34 17a10.018 10.018 0 0 1-.978-2.326 3 3 0 0 0 .002-5.347A9.99 9.99 0 0 1 4.865 4.99a3 3 0 0 0 4.631-2.674 9.99 9.99 0 0 1 5.007.002 3 3 0 0 0 4.632 2.672c.579.59 1.093 1.261 1.525 2.01.433.749.757 1.53.978 2.326a3 3 0 0 0-.002 5.347 9.99 9.99 0 0 1-2.501 4.337 3 3 0 0 0-4.631 2.674 9.99 9.99 0 0 1-5.007-.002 3 3 0 0 0-4.632-2.672A10.018 10.018 0 0 1 3.34 17zm5.66.196a4.993 4.993 0 0 1 2.25 2.77c.499.047 1 .048 1.499.001A4.993 4.993 0 0 1 15 17.197a4.993 4.993 0 0 1 3.525-.565c.29-.408.54-.843.748-1.298A4.993 4.993 0 0 1 18 12c0-1.26.47-2.437 1.273-3.334a8.126 8.126 0 0 0-.75-1.298A4.993 4.993 0 0 1 15 6.804a4.993 4.993 0 0 1-2.25-2.77c-.499-.047-1-.048-1.499-.001A4.993 4.993 0 0 1 9 6.803a4.993 4.993 0 0 1-3.525.565 7.99 7.99 0 0 0-.748 1.298A4.993 4.993 0 0 1 6 12c0 1.26-.47 2.437-1.273 3.334a8.126 8.126 0 0 0 .75 1.298A4.993 4.993 0 0 1 9 17.196zM12 15a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0-2a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>
+                <% end %>
+                <span class="sr-only">Toggle light/dark theme</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="top-content">
+            <div class="heading-with-actions top-heading">
+              <h1 id="overview"><span translate="no">Test Coverage</span></h1>
+            </div>
+
+            <section id="moduledoc">
+              <%!-- ExCoveralls' `hits` is the sum of every line's hit count
+                   (how many times the tests touched it), not a line count:
+                   covered lines are derived as relevant - missed. --%>
+              <% target = (case ExCoveralls.Settings.get_coverage_options()["minimum_coverage"] do
+                             %{"total" => total} -> total
+                             value when is_number(value) -> value
+                             _ -> 0
+                           end) %>
+              <% total_class = ExCoveralls.Html.View.coverage_class(@cov.coverage) %>
+              <div class="summary-stats">
+                <div class="stat percentage <%= total_class %> <%= if target == 0, do: "wide" %>">
+                  <span class="value"><%= @cov.coverage || 0 %>%</span>
+                  <span class="label">coverage</span>
+                </div>
+                <%= if target > 0 do %>
+                  <div class="stat percentage target <%= if (@cov.coverage || 0) >= target, do: "high", else: "low" %>">
+                    <span class="value"><%= target %>%</span>
+                    <span class="label">minimum coverage<%= if (@cov.coverage || 0) >= target, do: " · reached", else: " · not reached" %></span>
+                  </div>
+                <% end %>
+                <div class="stat small sloc"><span class="value"><%= @cov.sloc %></span><span class="label">relevant lines</span></div>
+                <div class="stat small covered"><span class="value"><%= @cov.sloc - @cov.misses %></span><span class="label">lines covered</span></div>
+                <div class="stat small misses"><span class="value"><%= @cov.misses %></span><span class="label">lines missed</span></div>
+                <div class="stat small hits"><span class="value"><%= @cov.hits %></span><span class="label">line hits</span></div>
+              </div>
+            </section>
+          </div>
+
+          <section id="files" class="details-list">
+            <h2 class="section-heading">
+              <a class="hover-link" href="#files"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.364 15.536L16.95 14.12l1.414-1.414a5 5 0 1 0-7.071-7.071L9.879 7.05 8.464 5.636 9.88 4.222a7 7 0 0 1 9.9 9.9l-1.415 1.414zm-2.828 2.828l-1.415 1.414a7 7 0 0 1-9.9-9.9l1.415-1.414L7.05 9.88l-1.414 1.414a5 5 0 1 0 7.071 7.071l1.414-1.414 1.415 1.414zm-.708-10.607l1.415 1.415-7.071 7.07-1.415-1.414 7.071-7.07z"/></svg></a>
+              <span class="text">Files</span>
+            </h2>
+
+            <%= for file <- @cov.files do %>
+              <%= if not @filter_full_covered or file.coverage < 100 do %>
+                <% class = ExCoveralls.Html.View.coverage_class(file.coverage, file.sloc) %>
+                <section class="detail file" id="<%= file.filename %>">
+                  <div class="detail-header">
+                    <a href="#<%= file.filename %>" class="detail-link" title="Link to this file"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.364 15.536L16.95 14.12l1.414-1.414a5 5 0 1 0-7.071-7.071L9.879 7.05 8.464 5.636 9.88 4.222a7 7 0 0 1 9.9 9.9l-1.415 1.414zm-2.828 2.828l-1.415 1.414a7 7 0 0 1-9.9-9.9l1.415-1.414L7.05 9.88l-1.414 1.414a5 5 0 1 0 7.071 7.071l1.414-1.414 1.415 1.414zm-.708-10.607l1.415 1.415-7.071 7.07-1.415-1.414 7.071-7.07z"/></svg></a>
+                    <h3 class="signature" translate="no"><%= file.filename %></h3>
+                    <span class="badge cov <%= class %>"><%= file.coverage || 0 %>%</span>
+                  </div>
+                  <div class="detail-stats">
+                    <span><b><%= file.sloc %></b> relevant lines</span>
+                    <span class="high"><b><%= file.sloc - file.misses %></b> covered</span>
+                    <span class="<%= if file.misses > 0, do: "low", else: "none" %>"><b><%= file.misses %></b> missed</span>
+                    <span title="Total number of times the tests hit a line of this file"><b><%= file.hits %></b> line hits</span>
+                  </div>
+                  <div class="source-wrapper">
+                    <table class="source">
+                      <thead>
+                        <tr><th>Line</th><th>Hits</th><th>Source</th></tr>
+                      </thead>
+                      <tbody>
+                        <%= for {line, number} <- Enum.with_index(file.source, 1) do %>
+                          <%= cond do %>
+                            <% line.coverage != nil && line.coverage > 0 -> %>
+                              <tr class="hit">
+                                <td class="line"><%= number %></td>
+                                <td class="hits"><%= line.coverage %></td>
+                                <td class="code"><%= ExCoveralls.Html.View.safe line.source %></td>
+                              </tr>
+                            <% 0 == line.coverage -> %>
+                              <tr class="miss">
+                                <td class="line"><%= number %></td>
+                                <td class="hits">0</td>
+                                <td class="code"><%= ExCoveralls.Html.View.safe line.source %></td>
+                              </tr>
+                            <% true -> %>
+                              <tr>
+                                <td class="line"><%= number %></td>
+                                <td class="hits"></td>
+                                <td class="code"><%= ExCoveralls.Html.View.safe(line.source || ~c' ') %></td>
+                              </tr>
+                          <% end %>
+                        <% end %>
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+              <% end %>
+            <% end %>
+          </section>
+
+          <footer class="footer">
+            <% excoveralls_version = (case :application.get_key(:excoveralls, :vsn) do
+                                        {:ok, vsn} -> " (v#{vsn})"
+                                        _ -> ""
+                                      end) %>
+            <p>
+              <span class="line">Built using <a href="https://github.com/parroty/excoveralls" rel="help">ExCoveralls</a><%= excoveralls_version %>.</span>
+              <span class="line">ExDoc HTML theme by <a href="https://github.com/JosePamplona/Dockerized-Elixir-Workbench" rel="help">Dockerized Elixir Workbench</a>.</span>
+            </p>
+          </footer>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

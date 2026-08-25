@@ -1,6 +1,6 @@
 #!/bin/bash
 # Dockerized workbench script (Igniter edition)
-# v0.6.0
+# v0.7.0
 #
 # Thin Docker wrapper: project creation and Elixir configuration are
 # delegated to the :workbench_igniter package (igniter/) via
@@ -34,10 +34,6 @@
 
     WORKBENCH_VERSION=$( sed '3!d' $0 | sed -n 's/^.*v\(.*\).*/\1/p' )
 
-    # Igniter package directory inside the workbench, env-overridable:
-    # IGNITER_DIR=igniter2 ./wb.sh new  tests the cartridge edition.
-    IGNITER_DIR="${IGNITER_DIR:-igniter}"
-
     # Workspace: directory where the project is generated (volume mount
     # point). Relative paths are resolved from the workbench directory.
     WORKSPACE_PATH="${WORKSPACE_PATH_OVERRIDE:-$WORKSPACE_PATH}"
@@ -53,11 +49,11 @@
     # Script files - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     # Dev toolchain dockerfile: baked from the seed into scripts/ on each
     # `new`, then copied into the workspace under the same name.
+    PROD_DOCKERFILE="Dockerfile"
+    PROD_COMPOSE_FILE="docker-compose.prod.yml"
     LOCAL_DOCKERFILE="Dockerfile.local"
     LOCAL_DOCKERFILE_SEED="Dockerfile.seed.local"
-    PROD_DOCKERFILE="Dockerfile"
     COMPOSE_FILE="docker-compose.yml"
-    PROD_COMPOSE_FILE="docker-compose.prod.yml"
     COMPOSE_SEED="docker-compose.seed.yml"
     # The entrypoint script runs from the mounted workbench (workdir /app).
     CONTAINER_ENTRYPOINT="bash workbench/scripts/entrypoint.sh"
@@ -93,9 +89,10 @@
     # project's Dockerfile.local; with the workbench present, `new` seeds
     # it as an alias (docker tag) of the shared toolchain image.
     LOCAL_IMAGE="$APP_NAME:local"
-    # Port the server binds INSIDE the containers; the host ports are
-    # chosen per workspace and mapped to this one in its compose file.
+    # Ports the services bind INSIDE the containers; the host ports are
+    # chosen per workspace and mapped to these in its compose file.
     APP_INTERNAL_PORT="4000"
+    PGADMIN_INTERNAL_PORT="5050"
     SOURCE_CODE_VOLUME="$WORKSPACE_PATH:/app/src"
     WORKBENCH_VOLUME="$WORKBENCH_PATH:/app/workbench:ro"
 
@@ -156,6 +153,12 @@
     docker compose --file "$WORKSPACE_PATH/$COMPOSE_FILE" "$@"
   }
 
+  # app_is_running
+    # Succeeds when the workspace's app container is up (exec target).
+  app_is_running() {
+    [ -n "$(workspace_compose ps --status running --quiet app 2>/dev/null)" ]
+  }
+
   # --------------------------------------------------------------------------
 
   # wipe_workspace
@@ -212,8 +215,7 @@
 \      do: [{:workbench_igniter, path: path, only: [:dev, :test], runtime: false}],\
 \      else: []\
 \  end\
-' "$file_path" && \
-    sed -i "s|}/igniter\"|}/$IGNITER_DIR\"|" "$file_path"
+' "$file_path"
   }
 
   # bake_compose <IMAGE> <DOCKERFILE> <TARGET_FILE>
@@ -236,6 +238,7 @@
     sed -i "s/%{app_port}/$APP_PORT/"                            $file_path
     sed -i "s/%{internal_port}/$APP_INTERNAL_PORT/g"             $file_path
     sed -i "s/%{pgadmin_port}/$PGADMIN_PORT/"                    $file_path
+    sed -i "s/%{pgadmin_internal_port}/$PGADMIN_INTERNAL_PORT/g" $file_path
     sed -i "s/%{postgres_image_version}/$POSTGRES_IMAGE_VERSION/" $file_path
     sed -i "s/%{pgadmin_image_version}/$PGADMIN_IMAGE_VERSION/"  $file_path
 
@@ -245,15 +248,39 @@
     then
       sed -i '/^  database:/,$d'            $file_path
       sed -i '/^    depends_on:/,+2d'       $file_path
-      sed -i '/# pgAdmin port/,/:5050$/d'   $file_path
+      sed -i "/# pgAdmin port/,/:$PGADMIN_INTERNAL_PORT\$/d" $file_path
     fi
   }
 
   # workspace_app_port
     # Reads the application host port from the workspace's compose file.
   workspace_app_port() {
-    sed -n 's/^ *- \([0-9]*\):4000$/\1/p' "$WORKSPACE_PATH/$COMPOSE_FILE" | \
+    sed -n "s/^ *- \([0-9]*\):$APP_INTERNAL_PORT\$/\1/p" \
+      "$WORKSPACE_PATH/$COMPOSE_FILE" | \
     head -n 1
+  }
+
+  # bake_prod_compose
+    # Generates the workspace's production compose file (used by the
+    # 'up --env prod' and 'build --env prod' commands): same seed and
+    # application port as the dev compose, versioned production image,
+    # and — the production image being self-contained — no source code
+    # volume nor build identity (its Dockerfile runs as nobody).
+  bake_prod_compose() {
+    APP_PORT=$(workspace_app_port)
+    PGADMIN_PORT=$(first_free_port 5050)
+    APP_VERSION=$(
+      sed -n 's/^.*version: "\(.*\)".*/\1/p' "$WORKSPACE_PATH/$MIX_FILE" | \
+      head -n 1
+    )
+
+    bake_compose \
+      "$APP_NAME:$APP_VERSION-prod" \
+      "$PROD_DOCKERFILE" \
+      "$PROD_COMPOSE_FILE" && \
+    sed -i '/^    volumes:/,+1d' "$WORKSPACE_PATH/$PROD_COMPOSE_FILE" && \
+    sed -i '/^      # These arguments/,/GID:/d' \
+      "$WORKSPACE_PATH/$PROD_COMPOSE_FILE"
   }
 
   # help
@@ -328,13 +355,43 @@
 
     print_command "up [-e, --env ENV]"
     section_content \
-      "Deploy the application on localhost." \
+      "Deploy the application on localhost, detached: the terminal stays" \
+      "free and the containers keep running ('logs' follows their output)." \
       "- ENV: Enviroment to deploy (Defalut: dev)."
 
-    print_command "run [ARGS...]"
+    print_command "build [-e, --env ENV] [OPTIONS]"
     section_content \
-      "Deploy the application executing custom entrypoint commands." \
-      "- ARGS: Command(s) to be executed as back-end entrypoint. "
+      "(Re)build the workspace's app image without deploying it: the" \
+      "dev image from the project's Dockerfile.local, or the production" \
+      "release image ('up --env prod' also rebuilds it on each deploy)." \
+      "- ENV: Enviroment image to build (Defalut: dev)." \
+      "- OPTIONS: Flags for 'docker compose build', e.g. --no-cache."
+
+    print_command "logs [SERVICE...]"
+    section_content \
+      "Follow the workspace containers logs (Ctrl+C detaches, the" \
+      "containers keep running)." \
+      "- SERVICE: Restrict to some services (app, database, pgadmin)."
+
+    print_command "stop | down | ps"
+    section_content \
+      "Stop, remove or list the workspace containers ('stop' keeps them" \
+      "for a fast restart with 'up'; 'down' removes them)."
+
+    print_command "iex"
+    section_content \
+      "Open an IEx shell on the running app container (exiting does not" \
+      "stop the application)."
+
+    print_command "mix [ARGS...]"
+    section_content \
+      "Run a mix task: on the running app container when the system is" \
+      "up (fast), or on a one-off container otherwise." \
+      "- ARGS: The task and its options, e.g.: cover, docs, test."
+
+    print_command "bash"
+    section_content \
+      "Open a shell on the running app container."
 
     print_command "delete"
     section_content \
@@ -342,12 +399,10 @@
 
     print_command "demo [-e, --env ENV]"
     section_content \
-      "Runs consecutively new, setup, up & delete commands." \
+      "Runs consecutively new, setup, up, logs & delete commands: the" \
+      "logs block the demo while the application is tried out, and" \
+      "Ctrl+C moves on to the teardown." \
       "- ENV: Enviroment to deploy (Defalut: dev)."
-
-    print_command "prune"
-    section_content \
-      "Stops all containers and prune Docker."
 
     print_command "help"
     section_content \
@@ -392,6 +447,7 @@
     [ "$ENHANCE" == true ]   && SETUP_FLAGS+=( --enhance )
     [ "$EXDOC" == true ]     && SETUP_FLAGS+=( --exdoc )
     [ "$COVERALLS" == true ] && SETUP_FLAGS+=( --coveralls )
+    [ -n "$COVERAGE_THEME" ] && SETUP_FLAGS+=( --coverage-theme "$COVERAGE_THEME" )
     [ "$HEALTH" == true ]    && SETUP_FLAGS+=( --health )
     [ "$AUTH0" == true ]     && SETUP_FLAGS+=( --auth0 )
     [ "$OPENAI" == true ]    && SETUP_FLAGS+=( --openai )
@@ -465,8 +521,12 @@ if [ $# -gt 0 ]; then
     # image: the compose build points at it.
     cp "$SCRIPTS_DIR/$LOCAL_DOCKERFILE" "$WORKSPACE_PATH/$LOCAL_DOCKERFILE" && \
     # The workspace owns its orchestration: compose with real values.
-    # Its build points to the project-owned Dockerfile.local; switching
-    # to the production Dockerfile is a manual edit of the compose file.
+    # Its build points to the project-owned Dockerfile.local — and must
+    # stay there: its app service also runs the workbench one-off
+    # commands (setup, add, mix), which need the toolchain. The
+    # production deployment never touches this file: 'up --env prod'
+    # bakes docker-compose.prod.yml from the same seed with the
+    # production Dockerfile.
     bake_compose "$LOCAL_IMAGE" "$LOCAL_DOCKERFILE" "$COMPOSE_FILE" && \
     if [ $EXDOC == true ]; then
       workspace_compose run \
@@ -517,42 +577,84 @@ if [ $# -gt 0 ]; then
         ENV_ARG=dev
 
       if [ "$ENV_ARG" == "prod" ]; then
-        APP_PORT=$(workspace_app_port)
-        PGADMIN_PORT=$(first_free_port 5050)
-        APP_VERSION=$(
-          sed -n 's/^.*version: "\(.*\)".*/\1/p' "$WORKSPACE_PATH/$MIX_FILE" | \
-          head -n 1
-        )
-        bake_compose \
-          "$APP_NAME:$APP_VERSION-prod" \
-          "$PROD_DOCKERFILE" \
-          "$PROD_COMPOSE_FILE" && \
-        # The production image is self-contained: no source code volume,
-        # and its Dockerfile takes no build identity (runs as nobody).
-        sed -i '/^    volumes:/,+1d' "$WORKSPACE_PATH/$PROD_COMPOSE_FILE" && \
-        sed -i '/^      # These arguments/,/GID:/d' \
-          "$WORKSPACE_PATH/$PROD_COMPOSE_FILE" && \
+        bake_prod_compose && \
         docker compose \
-          --file "$WORKSPACE_PATH/$PROD_COMPOSE_FILE" $COMPOSE_COMMAND --build
+          --file "$WORKSPACE_PATH/$PROD_COMPOSE_FILE" \
+          $COMPOSE_COMMAND --detach --build
 
       else
-        workspace_compose $COMPOSE_COMMAND
+        workspace_compose $COMPOSE_COMMAND --detach
+      fi && \
+      echo && \
+      echo "Application deploying at ${Li}http://localhost:$(workspace_app_port)${R}" \
+        "(first boot compiles: give it a moment)." && \
+      echo "Follow the logs with ${B}./$(basename $0) logs${R}," \
+        "stop everything with ${B}./$(basename $0) stop${R}."
+
+    else terminate "There is no project to deploy."; fi
+
+  elif [ "$1" == "build" ]; then
+    shift
+    if [ $EXISTING_PROJECT == true ]; then
+      if [ "$1" == "-e" ] || [ "$1" == "--env" ]
+      then ENV_ARG="$2"; shift 2
+      else ENV_ARG=dev; fi
+
+      if [ "$ENV_ARG" == "prod" ]; then
+        bake_prod_compose && \
+        docker compose \
+          --file "$WORKSPACE_PATH/$PROD_COMPOSE_FILE" build app $@
+
+      else
+        # Rebuilds the workspace's own dev image (APP:local) from its
+        # project-owned Dockerfile.local; the next 'up' recreates the
+        # containers with it.
+        workspace_compose build app $@
       fi
 
-    else terminate "There is no project to deploy."; fi
+    else terminate "There is no project to build."; fi
 
-  elif [ "$1" == "run" ]; then
-    ENTRYPOINT_COMMAND=$1; shift
+  elif [ "$1" == "logs" ]; then
+    shift
+    if [ $EXISTING_PROJECT == true ]
+    then workspace_compose logs --follow $@
+    else terminate "There is no project."; fi
+
+  elif [ "$1" == "stop" ] || [ "$1" == "down" ] || [ "$1" == "ps" ]; then
+    if [ $EXISTING_PROJECT == true ]
+    then workspace_compose $1
+    else terminate "There is no project."; fi
+
+  elif [ "$1" == "iex" ] || [ "$1" == "bash" ]; then
     if [ $EXISTING_PROJECT == true ]; then
-      if [ $# -gt 0 ]; then
+      app_is_running || terminate \
+        "The app container is not running." \
+        "Start it with: ./$(basename $0) up"
+
+      if [ "$1" == "iex" ]
+      then SESSION_COMMAND="iex -S mix"
+      else SESSION_COMMAND="bash"; fi
+
+      workspace_compose exec --workdir /app/src app $SESSION_COMMAND
+
+    else terminate "There is no project."; fi
+
+  elif [ "$1" == "mix" ]; then
+    shift
+    if [ $EXISTING_PROJECT == true ]; then
+      # Warm path: exec on the running app container (fast, no startup).
+      # Cold path: one-off container (starts the database dependency too).
+      if app_is_running; then
+        workspace_compose exec --workdir /app/src app mix $@
+      else
         workspace_compose run \
           --rm \
-          --name "${APP_NAME}___${ENTRYPOINT_COMMAND}" \
-          --volume $WORKBENCH_VOLUME \
-          app $CONTAINER_ENTRYPOINT $ENTRYPOINT_COMMAND $@
+          --name "${APP_NAME}___mix" \
+          --workdir /app/src \
+          app mix $@
+      fi
 
-      else args_error "Missing command for container initialization."; fi
-    else terminate "There is no project to deploy."; fi
+    else terminate "There is no project."; fi
 
   elif [ "$1" == "delete" ]; then
     if [ $EXISTING_PROJECT == true ]; then
@@ -581,17 +683,18 @@ if [ $# -gt 0 ]; then
     "$WORKBENCH_SCRIPT" new && \
     "$WORKBENCH_SCRIPT" setup --env $ENV_ARG && \
     "$WORKBENCH_SCRIPT" up --env $ENV_ARG && \
-    "$WORKBENCH_SCRIPT" delete
-
-  elif [ "$1" == "prune" ]; then
-    CONTAINERS_TO_STOP="$(docker container ls -q)"
-
-    if [ ! -z "$CONTAINERS_TO_STOP" ]; then
-      echo "Stopping all containers...\n"
-      docker stop $CONTAINERS_TO_STOP && \
-      echo "\nAll containers are Stopped.\n"
-    fi && \
-    docker system prune -a --volumes
+    {
+      # Following the logs blocks the demo while the application is
+      # tried out. Ctrl+C hits the whole foreground process group, so
+      # without the no-op trap it would also kill this script and the
+      # delete step would never run ('' instead of ':' would not do:
+      # children inherit an ignored SIGINT and the follower would not
+      # detach).
+      trap ':' INT
+      "$WORKBENCH_SCRIPT" logs
+      trap - INT
+      "$WORKBENCH_SCRIPT" delete
+    }
 
   elif [ "$1" == "help" ]; then
     help

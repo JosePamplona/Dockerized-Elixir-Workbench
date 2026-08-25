@@ -43,6 +43,19 @@ if [ $# -gt 0 ]; then echo "[$HOSTNAME]$0($#): $@"; fi
 
 # SCRIPT -----------------------------------------------------------------------
 
+  # Every branch of this entrypoint runs mix: it requires the dev
+  # toolchain image (Dockerfile.local). Fail with a clear message when
+  # the app service points at the production image (release only, no
+  # Elixir) instead of a cryptic "mix: command not found".
+  if ! command -v mix > /dev/null; then
+    echo "🛑  ${B}${C1}Error${R} This entrypoint requires the dev toolchain image."
+    echo "The app service seems to be running the production image: point the"
+    echo "workspace's docker-compose.yml back to 'Dockerfile.local' and its"
+    echo "':local' image. Production deployments use their own compose file,"
+    echo "baked by 'up --env prod'."
+    exit 1
+  fi
+
   cd "src"
   
   if   [ "$1" == "new" ]; then
@@ -105,18 +118,23 @@ if [ $# -gt 0 ]; then echo "[$HOSTNAME]$0($#): $@"; fi
   elif [ "$1" == "setup" ]; then
     shift
     if [ $# -gt 0 ]; then
-      export MIX_ENV="$1" && \
+      export MIX_ENV="$1"
+
+      # Outside dev, the seeds step boots the app from the mounted
+      # source and Phoenix logs a "Could not warm up static assets"
+      # error: digested assets only exist inside the release image.
+      # Announce it as expected so the log explains itself.
+      if [ "$MIX_ENV" != "dev" ]; then
+        echo "ℹ️  ${B}Note${R} A 'Could not warm up static assets' error may" \
+          "appear below. It is expected and harmless here: digested" \
+          "production assets only exist inside the release image, and this" \
+          "setup boots the app from the mounted source, where they are" \
+          "never generated."
+      fi
+
       mix ecto.drop --force --force-drop && \
       mix ecto.setup
-    
-    else args_error missing; fi
-    
-  elif [ "$1" == "run" ]; then
-    shift
-    if [ $# -gt 0 ]; then
-      eval $@
-      read -n 1 -p "Press any key to stop and remove container..."
-    
-    else args_error missing; fi
 
+    else args_error missing; fi
+    
   else default_cmd; fi

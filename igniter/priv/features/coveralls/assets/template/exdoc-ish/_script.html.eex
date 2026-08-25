@@ -1,0 +1,88 @@
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var body = document.body;
+  var SETTINGS = 'ex_doc:settings';
+  var SIDEBAR = 'sidebar_state';
+
+  // --- Sidebar toggle (same session key ExDoc uses) ---------------------
+  var toggle = document.getElementById('sidebar-menu');
+  if (toggle) {
+    toggle.addEventListener('click', function () {
+      var open = body.classList.toggle('sidebar-open');
+      try { sessionStorage.setItem(SIDEBAR, open ? 'open' : 'closed'); } catch (e) {}
+    });
+  }
+
+  // --- Theme toggle (persists in ExDoc's own settings key) --------------
+  var theme = document.getElementById('theme-toggle');
+  if (theme) {
+    theme.addEventListener('click', function () {
+      var dark = body.classList.toggle('dark');
+      try {
+        var settings = JSON.parse(localStorage.getItem(SETTINGS) || '{}');
+        settings.theme = dark ? 'dark' : 'light';
+        localStorage.setItem(SETTINGS, JSON.stringify(settings));
+      } catch (e) {}
+    });
+  }
+
+  // --- File filter --------------------------------------------------------
+  var filter = document.getElementById('file-filter');
+  var items = Array.prototype.slice.call(document.querySelectorAll('#full-list li[data-filename]'));
+  var bar = filter && filter.closest('.search-bar');
+  var clear = bar && bar.querySelector('.search-close-button');
+  function applyFilter() {
+    var q = filter.value.trim().toLowerCase();
+    items.forEach(function (li) {
+      li.hidden = q !== '' && li.dataset.filename.toLowerCase().indexOf(q) === -1;
+    });
+    if (bar) bar.classList.toggle('has-value', q !== '');
+  }
+  if (filter) {
+    filter.addEventListener('input', applyFilter);
+    if (clear) clear.addEventListener('click', function () { filter.value = ''; applyFilter(); filter.focus(); });
+    // "/" focuses the filter, Escape clears it (ExDoc's search shortcuts)
+    document.addEventListener('keydown', function (e) {
+      var typing = /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName);
+      if (e.key === '/' && !typing) { e.preventDefault(); filter.focus(); }
+      if (e.key === 'Escape' && document.activeElement === filter) { filter.value = ''; applyFilter(); filter.blur(); }
+    });
+  }
+
+  // --- Highlight the file in view -----------------------------------------
+  var sections = Array.prototype.slice.call(document.querySelectorAll('section.detail.file'));
+  var links = Array.prototype.slice.call(document.querySelectorAll('#full-list a[href^="#"]'));
+
+  function current(y) {
+    var i = sections.length;
+    while (i--) {
+      if (y + 40 >= sections[i].offsetTop) return sections[i];
+    }
+    return null;
+  }
+
+  function highlight() {
+    var section = current(window.scrollY);
+    var id = section ? '#' + section.id : '';
+    links.forEach(function (link) {
+      var active = link.getAttribute('href') === id;
+      link.classList.toggle('active', active);
+      if (active && link.scrollIntoView) {
+        var rect = link.getBoundingClientRect();
+        var list = link.closest('#full-list');
+        if (list && (rect.top < list.getBoundingClientRect().top || rect.bottom > list.getBoundingClientRect().bottom)) {
+          link.scrollIntoView({ block: 'nearest' });
+        }
+      }
+    });
+  }
+
+  var ticking = false;
+  window.addEventListener('scroll', function () {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(function () { highlight(); ticking = false; });
+  });
+  highlight();
+});
+</script>

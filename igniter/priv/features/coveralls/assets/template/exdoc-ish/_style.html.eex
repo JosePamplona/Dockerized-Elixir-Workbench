@@ -1,0 +1,710 @@
+<%!-- Lato, ExDoc's sans font: the report lands in `doc/` next to `dist/`,
+     so reuse the woff2 files ExDoc bundles there. Their names carry a
+     content hash, so they are discovered at render time; when `doc/`
+     does not exist yet the font stack falls back to system-ui. --%>
+<% remixicon = Path.wildcard("doc/dist/remixicon-*.woff2") |> Enum.map(&("dist/" <> Path.basename(&1))) |> List.first() %>
+<% fonts = "doc/dist/lato-latin*-normal-*.woff2"
+           |> Path.wildcard()
+           |> Enum.map(fn path ->
+             [_, subset, weight] = Regex.run(~r{lato-(latin|latin-ext)-(\d+)-normal-}, path)
+             {subset, weight, "dist/" <> Path.basename(path)}
+           end) %>
+<style>
+<%= for {subset, weight, url} <- fonts do %>
+@font-face {
+  font-family: "Lato";
+  font-style: normal;
+  font-display: swap;
+  font-weight: <%= weight %>;
+  src: url("<%= url %>") format("woff2");
+  unicode-range: <%= if subset == "latin-ext",
+    do: "U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF",
+    else: "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD" %>;
+}
+<% end %>
+<%= if remixicon do %>
+@font-face { font-family: remixicon; src: url("<%= remixicon %>") format("woff2"); font-display: swap; }
+<% end %>
+/* ExDoc look-alike: tokens lifted from ex_doc's html-elixir theme so the
+   coverage page blends in with the generated docs (light & dark). */
+:root {
+  --main: hsl(250, 68%, 69%);
+  --mainDark: hsl(250, 68%, 59%);
+  --mainDarkest: hsl(250, 68%, 49%);
+  --mainLight: hsl(250, 68%, 74%);
+  --mainLightest: hsl(250, 68%, 79%);
+  --sidebarWidth: 300px;
+  --sidebarMinWidth: 300px;
+  --content-width: 949px;
+  --content-gutter: 60px;
+  --borderRadius-lg: 14px;
+  --borderRadius-base: 8px;
+  --borderRadius-sm: 3px;
+  --sansFontFamily: "Lato", system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --monoFontFamily: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+  --baseLineHeight: 1.5em;
+  --gray10: hsl(207, 43%, 98.5%);
+  --gray25: hsl(207, 43%, 98%);
+  --gray50: hsl(207, 43%, 96%);
+  --gray100: hsl(212, 33%, 91%);
+  --gray200: hsl(210, 29%, 88%);
+  --gray300: hsl(210, 26%, 76%);
+  --gray400: hsl(210, 21%, 64%);
+  --gray450: hsl(210, 21%, 49%);
+  --gray500: hsl(210, 21%, 34%);
+  --gray600: hsl(210, 27%, 26%);
+  --gray650: hsl(211, 32%, 22%);
+  --gray700: hsl(212, 35%, 17%);
+  --gray750: hsl(214, 46%, 14%);
+  --gray800: hsl(216, 52%, 11%);
+  --gray850: hsl(216, 63%, 8%);
+  --gray900: hsl(218, 73%, 4%);
+  --coldGrayFaint: hsl(240, 5%, 97%);
+  --coldGrayLight: hsl(240, 5%, 88%);
+  --coldGray: hsl(240, 5%, 46%);
+  --coldGray-lightened-10: hsl(240, 5%, 56%);
+  --green: hsl(90, 100%, 35%);
+  --green-lightened-10: hsl(90, 100%, 45%);
+  --white: hsl(0, 0%, 100%);
+  --black: hsl(0, 0%, 0%);
+  --text-xs: .75rem;
+  --text-sm: .875rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --transition-all: all .15s cubic-bezier(.4, 0, .2, 1);
+
+  --background: var(--white);
+  --contrast: var(--black);
+  --textBody: var(--gray800);
+  --textHeaders: var(--gray900);
+  --textDetailBackground: var(--coldGrayFaint);
+  --iconAction: var(--coldGray);
+  --iconActionHover: var(--gray800);
+  --tableHeadBorder: var(--gray100);
+  --tableBodyBorder: var(--gray50);
+  --codeBackground: var(--gray10);
+  --codeBorder: var(--gray100);
+  --success: var(--green);
+  --link-color: var(--mainDark);
+  --sidebarBackground: var(--gray50);
+  --sidebarAccentMain: var(--black);
+  --sidebarInactiveItemBorder: var(--gray500);
+  --sidebarHeader: var(--gray100);
+  --sidebarMuted: var(--gray800);
+  --sidebarHover: var(--black);
+  --sidebarSubheadings: var(--gray500);
+  --sidebarItem: var(--black);
+  --sidebarActiveItem: var(--mainDarkest);
+  --sidebarInactiveItemMarker: var(--gray200);
+  --sidebarLanguageAccentBar: var(--mainDark);
+  --searchBarBorder: var(--gray200);
+  --searchBarFocusColor: #8E7CE6;
+  --searchAccentMain: var(--gray600);
+  --searchSearch: var(--white);
+  --settingsInputBackground: var(--white);
+  --settingsInput: var(--gray500);
+
+  /* ExDoc admonition palette: tip (green) / warning / error */
+  --tipHue: 142;
+  --warningHue: 34;
+  --errorHue: 7;
+  --admMixCol: var(--gray100);
+  --admMixAmt: 25%;
+  --tipHeading: hsl(var(--tipHue), 55%, 25%);
+  --tipBackground: color-mix(in xyz, var(--admMixCol) var(--admMixAmt), hsl(var(--tipHue), 40%, 93%) 100%);
+  --warningHeading: hsl(var(--warningHue), 95%, 38%);
+  --warningBackground: color-mix(in xyz, var(--admMixCol) var(--admMixAmt), hsl(var(--warningHue), 100%, 96%) 100%);
+  --errorHeading: hsl(var(--errorHue), 80%, 40%);
+  --errorBackground: color-mix(in xyz, var(--admMixCol) var(--admMixAmt), hsl(var(--errorHue), 85%, 96%) 100%);
+
+  --covHigh: var(--tipHeading);
+  --covMedium: var(--warningHeading);
+  --covLow: var(--errorHeading);
+  --covNone: var(--gray450);
+  --hitBackground: var(--tipBackground);
+  --missBackground: var(--errorBackground);
+}
+
+body.dark {
+  --background: var(--gray900);
+  --contrast: var(--white);
+  --textBody: var(--gray200);
+  --textHeaders: var(--gray100);
+  --textDetailBackground: var(--gray700);
+  --iconAction: var(--coldGray-lightened-10);
+  --iconActionHover: var(--white);
+  --tableHeadBorder: var(--gray600);
+  --tableBodyBorder: var(--gray700);
+  --codeBackground: var(--gray800);
+  --codeBorder: var(--gray650);
+  --success: var(--green-lightened-10);
+  --link-color: var(--mainLightest);
+  --sidebarBackground: var(--gray800);
+  --sidebarAccentMain: var(--gray50);
+  --sidebarInactiveItemBorder: var(--gray400);
+  --sidebarHeader: var(--gray700);
+  --sidebarMuted: var(--gray300);
+  --sidebarHover: var(--white);
+  --sidebarSubheadings: var(--gray400);
+  --sidebarItem: var(--gray200);
+  --sidebarActiveItem: var(--mainLightest);
+  --sidebarInactiveItemMarker: var(--gray600);
+  --sidebarLanguageAccentBar: var(--mainLight);
+  --searchBarBorder: var(--gray500);
+  --searchAccentMain: var(--gray300);
+  --searchSearch: var(--gray900);
+  --settingsInputBackground: var(--gray700);
+  --settingsInput: var(--white);
+
+  --admMixCol: var(--gray900);
+  --admMixAmt: 40%;
+  --tipHeading: hsl(var(--tipHue), 55%, 48%);
+  --tipBackground: color-mix(in xyz, var(--admMixCol) var(--admMixAmt), hsl(var(--tipHue), 40%, 14%) 100%);
+  --warningHeading: hsl(var(--warningHue), 100%, 50%);
+  --warningBackground: color-mix(in xyz, var(--admMixCol) var(--admMixAmt), hsl(var(--warningHue), 40%, 14%) 100%);
+  --errorHeading: hsl(var(--errorHue), 100%, 52%);
+  --errorBackground: color-mix(in xyz, var(--admMixCol) var(--admMixAmt), hsl(var(--errorHue), 40%, 14%) 100%);
+
+  /* Aliases resolve where declared: re-point them at the dark values.
+     The red is toned down: ExDoc's error heading is too loud on gray900. */
+  --covHigh: var(--tipHeading);
+  --covMedium: var(--warningHeading);
+  --covLow: hsl(var(--errorHue), 70%, 64%);
+  --covNone: var(--gray400);
+  --hitBackground: var(--tipBackground);
+  --missBackground: var(--errorBackground);
+}
+
+/* --- Base ------------------------------------------------------------- */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  font-family: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  font-size: var(--text-md);
+  line-height: 1.6875em;
+  color: var(--textBody);
+  background-color: var(--background);
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--link-color); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+svg { width: 1.25em; height: 1.25em; fill: currentColor; vertical-align: middle; }
+
+[class^="ri-"], [class*=" ri-"] { font-family: remixicon; font-style: normal; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+.ri-lg { font-size: 1.3333em; line-height: .75em; vertical-align: -.0667em; }
+.ri-menu-line::before { content: "\ef3e"; }
+.ri-settings-3-line::before { content: "\f0e6"; }
+.ri-close-line::before { content: "\eb99"; }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+/* --- Layout (ExDoc .body-wrapper / .sidebar / .content) ---------------- */
+
+.body-wrapper { display: flex; min-height: 100vh; }
+
+.sidebar {
+  font-family: var(--sansFontFamily);
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  width: var(--sidebarWidth);
+  min-width: var(--sidebarMinWidth);
+  display: flex;
+  flex-direction: column;
+  background: var(--sidebarBackground);
+  color: var(--sidebarItem);
+  transform: translateX(-100%);
+  transition: transform .3s ease;
+  z-index: 100;
+  overflow: hidden;
+}
+
+body.sidebar-open .sidebar { transform: translateX(0); }
+
+.content {
+  flex: 1;
+  min-width: 0;
+  margin-left: 0;
+  transition: margin-left .3s ease;
+}
+
+body.sidebar-open .content { margin-left: var(--sidebarWidth); }
+
+.content-inner {
+  max-width: var(--content-width);
+  padding: 0 var(--content-gutter) 20px;
+  margin: 0 auto;
+}
+
+.sidebar-button {
+  position: fixed;
+  top: 0; left: 0;
+  z-index: 200;
+  padding: 20px 12px 18px 19px;
+  border: 0;
+  background: transparent;
+  font-size: var(--text-md);
+  line-height: 1;
+  color: var(--contrast);
+  cursor: pointer;
+  will-change: transform;
+  transform: translate(0);
+  transition: transform .3s ease, color .15s;
+}
+.sidebar-button:hover { color: var(--sidebarHover); }
+.sidebar-button svg { display: block; width: 1.3333em; height: 1.3333em; }
+body.sidebar-open .sidebar-button { color: var(--sidebarAccentMain); transform: translate(calc(var(--sidebarWidth) - 100%)); }
+
+/* --- Sidebar header (ExDoc .sidebar-header) ---------------------------- */
+
+.sidebar-header { width: 100%; background: var(--sidebarHeader); }
+
+.sidebar-projectInfo {
+  display: flex;
+  justify-content: start;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 34px 12px 14px;
+}
+.sidebar-projectInfo > div { flex: 1; min-width: 0; }
+.sidebar-projectImage { align-self: flex-end; }
+.sidebar-projectImage img { display: block; max-width: 48px; max-height: 48px; }
+
+.sidebar-projectName {
+  display: block;
+  width: calc(100% - 12px);
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: 700;
+  line-height: 24px;
+  color: var(--sidebarAccentMain);
+  word-wrap: break-word;
+}
+.sidebar-projectName:hover { text-decoration: none; }
+
+.sidebar-projectVersion {
+  display: block;
+  width: calc(100% - 12px);
+  margin: 0;
+  font-size: var(--text-md);
+  line-height: 20px;
+  color: var(--sidebarMuted);
+}
+
+.sidebar-list-nav {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow: auto;
+  scrollbar-width: thin;
+}
+.sidebar-list-nav li {
+  display: inline-block;
+  padding: 0;
+  font-size: var(--text-sm);
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--sidebarSubheadings);
+}
+.sidebar-list-nav a {
+  display: inline-block;
+  padding: 4px 14px;
+  line-height: 27px;
+  font-weight: inherit;
+  color: inherit;
+  border-bottom: 2px solid transparent;
+  transition: var(--transition-all);
+}
+.sidebar-list-nav a:hover { text-decoration: none; }
+.sidebar-list-nav a:not([aria-selected]):hover { color: var(--sidebarAccentMain); border-bottom-color: var(--sidebarInactiveItemBorder); }
+.sidebar-list-nav a[aria-selected] { color: var(--sidebarAccentMain); border-bottom-color: var(--sidebarLanguageAccentBar); }
+
+/* --- Top search (ExDoc .top-search, rules copied verbatim) ------------- */
+
+.top-search { position: relative; z-index: 99; width: 100%; padding: 10px 0; background: var(--background); }
+
+.search-settings { display: flex; align-items: center; column-gap: 12px; width: 100%; position: relative; }
+
+.search-bar {
+  position: relative;
+  width: 100%;
+  height: 40px;
+  border: 1px solid var(--searchBarBorder);
+  border-radius: var(--borderRadius-base);
+}
+.search-label { position: relative; display: block; }
+.search-input-wrapper { position: relative; display: flex; align-items: center; }
+
+.search-input {
+  position: relative;
+  width: 100%;
+  height: 38px;
+  padding: 8px 40px 8px 12px;
+  font-family: inherit;
+  font-size: 100%;
+  line-height: 1.15;
+  color: var(--searchAccentMain);
+  background: var(--searchSearch);
+  border: 1px solid transparent;
+  border-radius: var(--borderRadius-base);
+  outline: none;
+  transition: var(--transition-all);
+}
+.search-input::placeholder { color: var(--searchAccentMain); opacity: .5; }
+.search-input:focus { border: 1px solid var(--searchBarFocusColor); border-radius: calc(var(--borderRadius-base) - 1px); }
+
+.search-close-button {
+  position: absolute;
+  right: 0; top: 50%;
+  display: flex;
+  align-items: center;
+  padding: 5px;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  color: var(--searchAccentMain);
+  font-size: var(--text-md);
+  cursor: pointer;
+  opacity: .5;
+  transform: translateY(-50%) scaleY(0);
+  transition: var(--transition-all);
+}
+.search-close-button:hover { opacity: .7; }
+.search-close-button svg { width: 1.25em; height: 1.25em; }
+.search-bar.has-value .search-close-button { transform: translateY(-50%) scaleY(1); }
+
+.icon-settings {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--iconAction);
+  font-size: var(--text-xl);
+  cursor: pointer;
+  transition: color .3s ease-in-out;
+}
+.icon-settings:hover { color: var(--iconActionHover); }
+.icon-settings svg { width: 1em; height: 1em; }
+
+/* --- Sidebar file list ------------------------------------------------- */
+
+.full-list {
+  flex: 1;
+  margin: 0;
+  padding: 8px 0 40px;
+  list-style: none;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.full-list li.group {
+  margin: 12px 20px 4px;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--sidebarSubheadings);
+}
+
+.full-list li[hidden] { display: none; }
+
+.full-list li > a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 20px 5px 30px;
+  font-size: var(--text-sm);
+  line-height: 1.4;
+  color: var(--sidebarItem);
+  border-left: 2px solid transparent;
+  transition: var(--transition-all);
+}
+.full-list li > a:hover { color: var(--sidebarHover); text-decoration: none; background: var(--sidebarHeader); }
+.full-list li > a.active { color: var(--sidebarActiveItem); border-left-color: var(--sidebarActiveItem); font-weight: 700; }
+
+.full-list .path { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+.full-list .basename { overflow-wrap: anywhere; }
+.full-list .dirname { font-size: var(--text-xs); opacity: .55; overflow-wrap: anywhere; }
+
+.full-list .cov {
+  flex-shrink: 0;
+  min-width: 34px;
+  padding: 0 6px;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  border-radius: 999px;
+  background: var(--sidebarInactiveItemMarker);
+}
+
+/* --- Coverage colours -------------------------------------------------- */
+
+.high { color: var(--covHigh); }
+.medium { color: var(--covMedium); }
+.low, .terrible { color: var(--covLow); }
+.terrible { font-weight: 700; }
+.none { color: var(--covNone); }
+
+/* --- Top heading (ExDoc .top-heading) ---------------------------------- */
+
+#top-content { padding-top: 0; }
+.top-heading { padding-top: 1rem; }
+.top-heading h1 { margin-top: 0; }
+
+.heading-with-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.heading-with-actions h1 { flex: 1; }
+
+h1, h2, h3 {
+  font-family: var(--sansFontFamily);
+}
+
+h1 {
+  margin: 1.5em 0 .75em;
+  font-size: 2em;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--textHeaders);
+}
+
+
+.icon-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2em; height: 2em;
+  padding: 0;
+  border: 0;
+  border-radius: var(--borderRadius-base);
+  font: inherit;
+  color: var(--iconAction);
+  background: transparent;
+  cursor: pointer;
+  transition: var(--transition-all);
+}
+.icon-action:hover { color: var(--iconActionHover); background: var(--textDetailBackground); text-decoration: none; }
+.icon-action svg { width: 1.4em; height: 1.4em; }
+
+
+/* --- Summary stats (ExDoc summary cards) ------------------------------- */
+
+.summary-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 0 1.5em;
+}
+
+.summary-stats .stat {
+  padding: 14px 16px;
+  background: var(--codeBackground);
+  border: 1px solid var(--codeBorder);
+  border-radius: var(--borderRadius-base);
+}
+.summary-stats .stat .value {
+  display: block;
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  color: var(--textHeaders);
+}
+.summary-stats .stat .label {
+  display: block;
+  margin-top: 4px;
+  font-size: var(--text-sm);
+  color: var(--iconAction);
+}
+
+/* Main figure(s): coverage and, when configured, the minimum target */
+.summary-stats .percentage {
+  grid-column: span 2;
+  padding: 20px 22px;
+  border-left: 4px solid currentColor;
+}
+.summary-stats .percentage.wide { grid-column: span 4; }
+.summary-stats .percentage .value { font-size: 2.75em; color: inherit; }
+.summary-stats .percentage .label { font-size: var(--text-md); }
+.summary-stats .percentage.high { background: var(--tipBackground); }
+.summary-stats .percentage.medium { background: var(--warningBackground); }
+.summary-stats .percentage.low, .summary-stats .percentage.terrible { background: var(--errorBackground); }
+/* A reached target is no longer news: neutral, like the secondary figures */
+.summary-stats .percentage.target.high { color: var(--textHeaders); background: var(--codeBackground); border-left-color: var(--codeBorder); }
+
+/* Secondary figures */
+.summary-stats .small { padding: 10px 14px; }
+.summary-stats .small .value { font-size: 1.35em; }
+.summary-stats .small .label { font-size: var(--text-xs); }
+.summary-stats .covered .value { color: var(--covHigh); }
+.summary-stats .misses .value { color: var(--covLow); }
+.summary-stats .hits .value { color: var(--iconAction); }
+
+@media screen and (max-width: 640px) {
+  .summary-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .summary-stats .percentage, .summary-stats .percentage.wide { grid-column: span 2; }
+}
+
+/* --- Section heading (ExDoc .section-heading) -------------------------- */
+
+.section-heading {
+  position: relative;
+  margin: 2em 0 .75em;
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--textHeaders);
+}
+
+.section-heading .hover-link,
+.detail-link {
+  position: absolute;
+  left: -1.6em;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  color: var(--iconAction);
+  transition: var(--transition-all);
+}
+.section-heading:hover .hover-link,
+.detail-header:hover .detail-link { opacity: 1; }
+.hover-link:hover, .detail-link:hover { color: var(--iconActionHover); }
+.hover-link svg, .detail-link svg { width: 1em; height: 1em; }
+
+/* --- Per-file detail (ExDoc .detail) ----------------------------------- */
+
+.detail {
+  margin: 0 0 2em;
+  scroll-margin-top: 1em;
+}
+
+.detail-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding: 10px 16px;
+  background: var(--textDetailBackground);
+  border-left: 3px solid var(--main);
+  border-radius: var(--borderRadius-sm);
+}
+
+.detail:target .detail-header { border-left-color: var(--sidebarActiveItem); }
+
+.detail-header .signature {
+  flex: 1;
+  margin: 0;
+  font-family: var(--monoFontFamily);
+  font-size: var(--text-md);
+  font-weight: 700;
+  color: var(--textHeaders);
+  word-break: break-all;
+}
+
+.badge {
+  padding: 1px 10px;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  border-radius: 999px;
+  background: var(--codeBackground);
+  border: 1px solid var(--codeBorder);
+}
+
+.detail-stats {
+  display: flex;
+  gap: 18px;
+  padding: 8px 16px;
+  font-size: var(--text-sm);
+  color: var(--iconAction);
+}
+.detail-stats b { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* --- Source table (ExDoc code block) ----------------------------------- */
+
+.source-wrapper {
+  overflow-x: auto;
+  background: var(--codeBackground);
+  border: 1px solid var(--codeBorder);
+  border-radius: var(--borderRadius-base);
+}
+
+table.source {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--monoFontFamily);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+}
+
+table.source thead { display: none; }
+
+table.source td { padding: 0 8px; border: 0; vertical-align: baseline; }
+
+table.source td.line,
+table.source td.hits {
+  width: 1%;
+  color: var(--covNone);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+  white-space: nowrap;
+}
+table.source td.line { padding-left: 14px; }
+table.source td.hits { padding-right: 12px; border-right: 1px solid var(--codeBorder); font-size: var(--text-xs); }
+
+table.source td.code {
+  padding-left: 16px;
+  padding-right: 16px;
+  white-space: pre;
+  color: var(--textBody);
+}
+
+table.source tr.hit td { background: var(--hitBackground); }
+table.source tr.hit td.hits { color: var(--covHigh); font-weight: 700; }
+table.source tr.miss td { background: var(--missBackground); }
+table.source tr.miss td.line, table.source tr.miss td.hits { color: var(--covLow); font-weight: 700; }
+
+table.source tr:first-child td { padding-top: 10px; }
+table.source tr:last-child td { padding-bottom: 10px; }
+
+/* --- Footer ------------------------------------------------------------ */
+
+.footer {
+  margin: 4em auto 1em;
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--textBody);
+}
+.footer .line { display: inline-block; }
+
+/* --- Responsive -------------------------------------------------------- */
+
+@media screen and (max-width: 768px) {
+  :root { --content-gutter: 20px; }
+  body.sidebar-open .content { margin-left: 0; }
+  .sidebar { width: 100%; }
+  .top-search { padding-left: 44px; }
+}
+
+@media print {
+  .sidebar, .sidebar-button, .icon-action, .footer { display: none !important; }
+  body.sidebar-open .content { margin-left: 0; }
+}
+</style>

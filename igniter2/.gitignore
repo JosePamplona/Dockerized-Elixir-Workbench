@@ -1,8 +1,0 @@
-/_build/
-/deps/
-/doc/
-erl_crash.dump
-*.ez
-
-# Disposable workspaces used for workbench validation runs.
-/_tests_workspace/

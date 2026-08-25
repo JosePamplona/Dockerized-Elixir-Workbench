@@ -152,11 +152,14 @@ Five habits, in order of how much they buy you:
   what they are doing. "The needle risen just past the 80 notch" produced
   a perfect dial with the needle at 15. Say "the needle resting against
   the red notch" — a position, not a movement.
-* **Text inside the art is decorative.** One short string, large and
-  central, is reliable: `/health`, `/dev/docs` and `200` all came out
-  right. Four small exact strings are not: two of clustering's four IP
-  addresses came back as `172.28.x` instead of `172.26.x`. Never put a
-  fact in the art that has to be correct.
+* **Text inside the art has a size threshold.** Above it the generator is
+  reliable — `/health`, `/dev/docs` and `200` all came out right, and so
+  did the two large foreground address plates on clustering. Below it,
+  digits flip: the two plates set small and far back on that same cover
+  came back reading `172.28.x` instead of `172.26.x`. So use as many
+  strings as the composition wants, but give every one of them the size
+  of a foreground element. If a label has to sit far back, let it be
+  texture rather than a fact, or composite it afterwards.
 * **Fix the figure's scale.** Say how big the body is in the frame, or it
   will drift: coveralls' droid is a speck at the foot of its gauge while
   clustering's fill half the panel. "Waist-high to the gauge" or
@@ -194,8 +197,11 @@ Note the seal is not in the template at all, on either path.
 > **Hero** — four identical armored server-droids standing in formation
 > across the lower half of the panel on a vast circuit-board plain under
 > a deep violet sky, each linked to every other by taut glowing energy
-> beams, a full mesh of six beams crossing between them; behind the
-> formation a monolithic beacon tower emits a widening ring of light
+> beams, a full mesh of six beams crossing between them; one large
+> holographic address plate hovering beside each droid, all four the same
+> size and all in the foreground, reading 172.26.0.3, 172.26.0.4,
+> 172.26.0.5 and 172.26.0.6; behind the formation a monolithic beacon
+> tower emits a widening ring of light
 >
 > **Title** CLUSTERING · **Subtitle** CONNECT THE NODES ·
 > **Accent** electric magenta · **Badge** 1-4 NODES
@@ -203,9 +209,11 @@ Note the seal is not in the template at all, on either path.
 The counts come from the real thing: four is the `--replicas` default and
 six is how many links four nodes need.
 
-The first version also asked for four floating address plates reading
-`172.26.0.3` through `.6`. Two came back wrong, and they are gone from
-the hero above — that is the "text is decorative" rule, learned here.
+The address plates are the size rule in practice. The first version let
+the generator place them freely, and the two it put small and far back
+came back with a wrong digit while the two large ones were right. Hence
+*the same size, all in the foreground*: the plates stay, they just stop
+being background texture.
 
 ## Accent record
 
@@ -260,7 +268,7 @@ Measured on the first six covers. Read this before blaming a prompt.
 | Art bled to the edges on half the set, and two came out as photographed 3D boxes on different backgrounds | `healthcheck`, `exdoc`, `enhancements` | The presentation invariant |
 | Two covers came out visibly narrower than the rest | `exdebug`, `enhancements` | Proportions stated inside the prompt, not only as a generator setting |
 | A warm neutral accent dissolved into the violet | `exdoc` | Accents must contrast in value |
-| Two of four small IP strings came back with wrong digits | `clustering` | Text in the art is decorative |
+| The two small background IP labels came back with wrong digits, while the two large foreground ones were correct | `clustering` | Text in the art needs foreground size |
 | A dial rendered perfectly with its needle in the wrong place | `coveralls` | Describe compositions, not states |
 | The badge split its number into a second box, and once got clipped by the edge | `healthcheck`, `exdebug`, `enhancements` | Badge is one line, composited, with a safe margin |
 | The figure went from half the panel to a speck | `clustering` vs `coveralls` | State the figure's scale in the frame |

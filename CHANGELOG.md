@@ -66,6 +66,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   are customization scaffolding whose defaults Mix already carries built
   in, and they now belong to the clustering cartridge. `new` keeps
   running it from the entrypoint, unchanged.
+- The cluster deployment no longer requires the `clustering` feature: the
+  compose topology is identical either way, since what the cartridge adds
+  lives inside the release image. Replicas behind a balancer is how a
+  stateless application scales and they need not know each other exists,
+  so `up` and `build` warn and carry on instead of refusing, and the
+  compose leaves `DNS_CLUSTER_QUERY` unset when the feature is absent —
+  keeping DNSCluster out of the supervision tree rather than letting it
+  poll for peers it could never reach.
 - `up` and `down` pass `--remove-orphans`. Every deployment of a
   workspace shares one compose project but not the same services — dev
   has `app`, the cluster has `app1..N` plus `balancer` and `migrate`, and

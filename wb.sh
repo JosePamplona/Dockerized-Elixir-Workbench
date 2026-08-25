@@ -137,6 +137,10 @@
     exit 1
   }
 
+  # warning <MESSAGE>
+    # Prints a warning without interrupting: the command carries on.
+  warning() { echo "⚠️  ${B}Warning${R} $@"; echo; }
+
   # terminate <MESSAGE>
     # Print error and terminate with sigerr 1
   terminate() { echo "${B}${C1}Error${R} $@"; echo; exit 1; }
@@ -407,6 +411,12 @@
     sed -i "s/%{nginx_image_version}/$NGINX_IMAGE_VERSION/"        $file_path
     sed -i "s/%{postgres_image_version}/$POSTGRES_IMAGE_VERSION/"  $file_path
 
+    # Without the clustering feature the release is not distributed, so
+    # DNSCluster would poll DNS forever, connect to nobody and warn about
+    # it on every boot. Leaving the variable unset keeps it out of the
+    # supervision tree (runtime.exs falls back to :ignore).
+    clustering_installed || sed -i '/^    DNS_CLUSTER_QUERY:/d' $file_path
+
     # Without a balancer the replicas are only reachable on their own
     # ports; its nginx config goes with it.
     if [ "$CLUSTER_BALANCER" == false ]; then
@@ -424,17 +434,27 @@
     fi
   }
 
-  # cluster_precheck
-    # The cluster deployment is useless without the clustering feature:
-    # its rel/env.sh.eex is what boots the release as a named distributed
-    # node. Without it the replicas come up with short names and never
-    # connect to each other.
-  cluster_precheck() {
-    grep -qs "Workbench clustering:" "$WORKSPACE_PATH/rel/env.sh.eex" || \
-    terminate \
-      "The cluster deployment requires the 'clustering' feature, which" \
-      "makes the release boot as a named distributed node." \
-      "Install it first with: ./$(basename $0) add clustering"
+  # clustering_installed
+    # Whether the clustering feature is installed in the workspace. Its
+    # block in rel/env.sh.eex is what boots the release as a named
+    # distributed node; without it the release starts with a short name
+    # and the replicas cannot connect to each other.
+  clustering_installed() {
+    grep -qs "Workbench clustering:" "$WORKSPACE_PATH/rel/env.sh.eex"
+  }
+
+  # clustering_warning
+    # The deployment is valid either way — replicas behind a balancer is
+    # how a stateless application scales, and they need not know each
+    # other exists — but running isolated must never be silent, so it is
+    # said here instead of being left to a log line inside each replica.
+  clustering_warning() {
+    clustering_installed || warning \
+      "The 'clustering' feature is not installed: these replicas run" \
+      "isolated, behind the balancer but without forming a BEAM cluster." \
+      "That is a valid deployment for a stateless application. To connect" \
+      "them (PubSub across nodes, Presence, distributed registries), stop" \
+      "here and run: ./$(basename $0) add clustering"
   }
 
   # deployed_message
@@ -454,6 +474,7 @@
     local i=1
 
     echo
+    clustering_warning
     echo "Cluster deploying with $CLUSTER_REPLICAS replicas:"
     if [ "$CLUSTER_BALANCER" == true ]; then
       echo "  balancer  ${Li}http://localhost:$BALANCER_PORT${R}  (round-robin entry point)"
@@ -464,11 +485,13 @@
       i=$((i + 1))
     done
     echo
-    echo "Attach to a node's release shell and look at the cluster:"
+    echo "Attach to a node's release shell:"
     echo "  ${B}docker compose --file $WORKSPACE_PATH/$CLUSTER_COMPOSE_FILE \\${R}"
     echo "  ${B}  exec app1 /app/bin/$ELIXIR_PROJECT_NAME remote${R}"
-    echo "  iex> node()      # $ELIXIR_PROJECT_NAME@172.x.x.x"
-    echo "  iex> Node.list() # the other $((CLUSTER_REPLICAS - 1))"
+    if clustering_installed; then
+      echo "  iex> node()      # $ELIXIR_PROJECT_NAME@172.x.x.x"
+      echo "  iex> Node.list() # the other $((CLUSTER_REPLICAS - 1))"
+    fi
     if [ "$CLUSTER_BALANCER" == true ]; then
       echo
       echo "See the balancing: the X-Served-By address is the node that answered."
@@ -574,14 +597,17 @@
       "Deploy the application on localhost, detached: the terminal stays" \
       "free and the containers keep running ('logs' follows their output)." \
       "- ENV: Enviroment to deploy (Defalut: dev)." \
-      "  ${B}cluster${R} deploys production replicas that form a real BEAM" \
-      "  cluster behind an nginx balancer: each replica gets its own IP" \
-      "  and host port, and they all share the 'app' network alias, so" \
-      "  Docker's DNS answers with every address and DNSCluster connects" \
-      "  them. It requires the 'clustering' feature and replaces the pod" \
-      "  network layout of the dev compose, so the database is reached by" \
-      "  name, not on localhost. Meant for seeing the cluster work, not" \
+      "  ${B}cluster${R} deploys production replicas behind an nginx balancer:" \
+      "  each one gets its own IP and host port, and they all share the" \
+      "  'app' network alias. It replaces the pod network layout of the" \
+      "  dev compose, so the database is reached by name, not on" \
+      "  localhost. Meant for seeing a replicated deployment work, not" \
       "  for developing." \
+      "  With the 'clustering' feature installed the replicas also form a" \
+      "  real BEAM cluster: Docker's DNS answers that shared alias with" \
+      "  every address, which is what DNSCluster queries to connect them." \
+      "  Without it they run isolated, which is a valid deployment for a" \
+      "  stateless application — the command warns and carries on." \
       "- N: Replicas of the cluster deployment (Default: $DEFAULT_CLUSTER_REPLICAS)." \
       "- --no-balancer: Skip the nginx front and publish only the" \
       "  per-replica ports. Both options are baked into the compose file," \
@@ -594,7 +620,9 @@
       "release image ('up --env prod' also rebuilds it on each deploy)." \
       "- ENV: Enviroment image to build (Defalut: dev). 'cluster' builds" \
       "  the same production image every replica shares, and accepts the" \
-      "  same --replicas and --no-balancer as 'up'." \
+      "  same --replicas and --no-balancer as 'up'. Whether that image is" \
+      "  distributed is baked in by the 'clustering' feature, so" \
+      "  installing it afterwards means building again." \
       "- OPTIONS: Flags for 'docker compose build', e.g. --no-cache."
 
     print_command "logs [-e, --env ENV] [SERVICE...]"
@@ -859,7 +887,6 @@ if [ $# -gt 0 ]; then
       # that set between runs. Without --remove-orphans the containers of
       # the previous shape stay up, unmanaged and invisible to 'ps'.
       if [ "$ENV_ARG" == "cluster" ]; then
-        cluster_precheck && \
         bake_cluster_compose && \
         docker compose \
           --file "$WORKSPACE_PATH/$CLUSTER_COMPOSE_FILE" \
@@ -886,11 +913,10 @@ if [ $# -gt 0 ]; then
       parse_deploy_args "$@"
 
       if [ "$ENV_ARG" == "cluster" ]; then
-        # Checked before building: without the feature the release is
-        # assembled with Mix's default rel/env.sh.eex and comes out
-        # non-distributed, so the image would be useless — after several
-        # minutes of build.
-        cluster_precheck && \
+        # Said before building: whether the image comes out distributed is
+        # decided by rel/env.sh.eex, which mix release bakes into it, so
+        # installing the feature afterwards means building again.
+        clustering_warning
         # Every replica shares one image: building app1 builds them all.
         bake_cluster_compose && \
         docker compose \

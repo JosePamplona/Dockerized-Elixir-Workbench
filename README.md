@@ -137,7 +137,9 @@ Deploys **four production replicas that form a real BEAM cluster, behind an ngin
 
 The balancer publishes the cluster's single entry point. Every replica also publishes its own port, so a **specific** node can still be addressed — which is how cross-node behaviour is demonstrated: open a page on one replica, another on a different one, and watch a broadcast cross.
 
-It refuses to deploy without the `clustering` feature: that feature's `rel/env.sh.eex` is what makes the release boot as a named distributed node, and without it the replicas come up with short names and never connect.
+Whether those replicas form a **cluster** depends on the `clustering` feature. Its `rel/env.sh.eex` is what makes the release boot as a named distributed node; without it the release starts with a short name and `DNSCluster` cannot connect anything, so the compose leaves `DNS_CLUSTER_QUERY` unset and the replicas run isolated.
+
+That is a perfectly valid deployment — replicas behind a balancer is how a stateless application scales, and they need not know each other exists. So the command warns and carries on rather than refusing. Install the feature when you want them connected (PubSub across nodes, Presence, distributed registries); since the distribution is baked into the release image, doing it afterwards means building again.
 
 Look at the cluster from the inside:
 

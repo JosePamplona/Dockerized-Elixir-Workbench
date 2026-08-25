@@ -149,9 +149,16 @@ this cartridge wrote there would be overwritten on the next creation.
 That topology is what `./wb.sh up --env cluster` deploys: production
 replicas behind an nginx balancer, one host port each plus the
 balancer's, all sharing the `app` network alias so a single DNS name
-answers with every address. It refuses to start without this cartridge
-installed — its `rel/env.sh.eex` is the piece that makes the release
-distributed. `--replicas N` and `--no-balancer` shape what gets baked.
+answers with every address. `--replicas N` and `--no-balancer` shape what
+gets baked.
+
+The deployment does not require this cartridge — replicas behind a
+balancer is a valid topology on its own, and the compose is identical
+either way. What the cartridge adds lives entirely inside the release
+image: without it the release boots with a short name, so the command
+warns, leaves `DNS_CLUSTER_QUERY` unset (keeping DNSCluster out of the
+supervision tree instead of letting it poll for peers it can never
+reach) and the replicas run isolated.
 
 ```sh
 ./wb.sh add clustering

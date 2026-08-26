@@ -268,15 +268,15 @@ passed, so a cover can be restamped identically.
 | clustering | electric magenta | — |
 | coveralls | phosphor green | — |
 | healthcheck | vital signal green | — |
-| exdebug | electric cyan | — |
+| exdebug | electric cyan | br |
 | exdoc | *unassigned* — parchment ivory failed the contrast rule | — |
 | enhancements | hot forge orange | — |
 
-The corners are empty because these six predate the seal: each carries a
-*generated* seal baked into the artwork, including the one on
-`healthcheck.jpg` that says "Nintendo". They want regenerating from the
-current guide — artwork into `art/`, then stamped — and healthcheck wants
-it first.
+exdebug is the first cover made the current way: artwork generated
+without a seal into `art/`, then stamped. The other five predate it and
+each carries a *generated* seal baked into the artwork, including the one
+on `healthcheck.jpg` that says "Nintendo" — which is why their corners
+are blank. They want regenerating, and healthcheck wants it first.
 
 Coveralls and healthcheck sharing green is fine: covered lines are green
 and so is a vital-signs trace, and both covers read instantly because of

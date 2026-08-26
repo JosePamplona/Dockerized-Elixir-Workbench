@@ -634,6 +634,70 @@ not the tool's.
 | — | A five-word headline ran to two lines and into the blurb | The headline must fit one line at the house size; shorten the copy, keep the face |
 | The treatment would be overdone | It was fine at scanlines 15% and blur 0.3 | Those are the defaults |
 
+## Making a box, start to finish
+
+The generator is not in the repository, and neither is the judgement. A
+box is made by two parties — whoever writes the prompts and whoever
+runs the generator and looks at what comes back — and the steps below
+say which does what. **Nothing here says what a cover should look
+like.** That is what the rest of this guide is for, and it is written
+from the covers that came out wrong, one table row per cover, with the
+guesses deleted as they fail. The steps are the same every time; the
+verdicts are not, and are not meant to be.
+
+### The front
+
+1. Read the cartridge's own README under
+   [`features/<feature>/`](../../igniter/lib/workbench_igniter/features/).
+   The hero comes from what it actually does: the counts, the bodies.
+2. Roll the era — `shuf -i 1-6 -n 1` — and keep the roll unless it
+   fights the feature. One veto.
+3. Choose the register and fill the slots: title, subtitle, hero,
+   accent, badge, seal corner. Under an era whose lettering runs the
+   full width, ask for a *top* corner quiet.
+4. Assemble the prompt from [the template](#the-template) and save it
+   verbatim as `<feature>/cover.prompt.txt`.
+5. Generate it, outside the repository, at 5:7, and save the result
+   untouched — no seal, no retouching — as `<feature>/art/cover.jpg`.
+6. Look at it against the prompt: every count, every string, every
+   position. What came back wrong is a row in
+   [What the generator gets wrong](#what-the-generator-gets-wrong),
+   named after the cover. A take that is wrong on a fact is retired to
+   `_archived/art/cover-N.jpg` and regenerated; a take that is wrong to
+   the eye of whoever is looking goes the same way, and that eye is not
+   something this guide tries to write down.
+7. Pick the seal corner from the art, then
+   `./assets/covers/stamp.sh <feature> --corner <c>`, with `--size` and
+   `--margin` if the art wants them.
+8. Fill the row in the [cover record](#cover-record): era, register,
+   accent, corner and the options `stamp.sh` was given.
+
+### The back
+
+Only once the front's row is complete.
+
+1. Write the plate prompt — era, format and band verbatim, the back
+   layout clause, the front's accent — save it as
+   `<feature>/back.prompt.txt`, generate, and save the plate as
+   `<feature>/art/back.jpg`.
+2. Measure the plate into `<feature>/back/layout.env`: the frames'
+   inner rectangles, the field, the strip, as fractions of the width.
+   A scan for the bright chrome pixels along one row and one column
+   finds the frames; ImageMagick or PIL both do it. `PANEL=""` if the
+   plate brought its own field, and `ACCENT=` from the record.
+3. Write `<feature>/back/copy.md` from the cartridge README, in the
+   front's register, one `##` per piece.
+4. Take the screenshots from a generated project that has the feature
+   installed, **at the frames' ratio**: browser pages through
+   `playwright-cli` served over local HTTP, terminal output captured
+   with a TTY and rendered through `aha`. Save them as
+   `<feature>/back/shot-N.png`, 1 the leftmost.
+5. `./assets/covers/back.sh <feature>`. Look at it. Adjust the layout
+   or the copy — never the plate — and run it again.
+6. Record it: a line in the feature's paragraph of the cover record,
+   and whatever the plate did differently in
+   [Measured on the first back](#measured-on-the-first-back).
+
 ## Cover record
 
 The accent column is a mirror, not a gate: the point is to notice when

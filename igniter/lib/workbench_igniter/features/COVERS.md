@@ -8,10 +8,11 @@ pipeline rather than a folder of images:
 
 ```text
 assets/covers/
-├── seal.png              the stamp, generated once, never regenerated
-├── stamp.sh              puts it on
-├── art/<feature>.jpg     the generated artwork, unstamped
-└── sealed/<feature>.jpg  the finished cover
+├── seal.png                  the stamp, generated once, never regenerated
+├── stamp.sh                  puts it on
+├── art/<feature>.jpg         the generated artwork, unstamped
+├── sealed/<feature>.jpg      the finished cover
+└── archived/<feature>-N.jpg  superseded artwork, 1 is the oldest
 ```
 
 They are documentation art, not project assets — nothing plants them
@@ -87,6 +88,24 @@ Corners are a per-cover choice, but two are constrained: the top ones
 collide with the band and need `--margin 0.11` or so to clear it, and the
 bottom left is usually where the badge sits. Bottom right is the default
 for a reason.
+
+### Archiving
+
+A cover that gets superseded moves to `archived/<feature>-N.jpg`, where
+the number is assigned **at archive time as one more than the highest
+already there for that feature**. So 1 is the first ever made, n is the
+one most recently retired, and nothing is ever renumbered.
+
+What goes in is the **artwork**, not the sealed cover. Stamping is one
+command, so the art is the half worth keeping: it is what a new prompt
+gets compared against, and what you would re-stamp if a regeneration
+turns out worse than what it replaced.
+
+The six `-1` files are the exception that proves it. They were made
+before the seal existed, with a generated one baked into the artwork, so
+there is no separable art to archive — the sealed cover is all there is.
+That is also why `sealed/` holds only what was made the current way:
+the directory is a standard, not an inventory.
 
 ## Tier 2 — band and house colour
 
@@ -284,11 +303,11 @@ passed, so a cover can be restamped identically.
 | exdoc | *unassigned* — parchment ivory failed the contrast rule | — |
 | enhancements | hot forge orange | — |
 
-exdebug is the first cover made the current way: artwork generated
-without a seal into `art/`, then stamped. The other five predate it and
-each carries a *generated* seal baked into the artwork, including the one
-on `healthcheck.jpg` that says "Nintendo" — which is why their corners
-are blank. They want regenerating, and healthcheck wants it first.
+exdebug is the first cover made the current way, and for now the only
+one in `sealed/`. The other five are in `archived/` as `-1`: each carries
+a *generated* seal baked into the artwork, including the one that says
+"Nintendo", which is why their corners are blank. They want regenerating,
+and healthcheck wants it first.
 
 Coveralls and healthcheck sharing green is fine: covered lines are green
 and so is a vital-signs trace, and both covers read instantly because of

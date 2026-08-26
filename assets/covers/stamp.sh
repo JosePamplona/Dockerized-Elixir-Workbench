@@ -8,18 +8,18 @@
 # scaled as a fraction of each cover's width rather than to a fixed size.
 #
 #   ./assets/covers/stamp.sh clustering --corner br
+#   ./assets/covers/stamp.sh coveralls --face back --corner bl --size 0.12
 #
-# Reads  assets/covers/art/<feature>.jpg      (the generated artwork)
-# Writes assets/covers/sealed/<feature>.jpg   (the stamped cover)
+# Reads  assets/covers/<feature>/art/<face>.jpg      (the generated artwork)
+# Writes assets/covers/<feature>/sealed/<face>.jpg   (the stamped cover)
 
 set -euo pipefail
 
 # CONFIGURATION ================================================================
 
   COVERS_DIR="$( cd "$( dirname "$0" )" && pwd )"
-  ART_DIR="$COVERS_DIR/art"
-  SEALED_DIR="$COVERS_DIR/sealed"
   SEAL="$COVERS_DIR/seal.png"
+  FACE="cover"
 
   # Both are fractions of the cover's width, so every seal lands at the
   # same relative size and inset whatever the cover's resolution.
@@ -44,16 +44,17 @@ set -euo pipefail
     echo
     echo "  ./$(basename $0) FEATURE [OPTIONS]"
     echo
-    echo "  FEATURE            Cover to stamp: reads art/FEATURE.jpg,"
-    echo "                     writes sealed/FEATURE.jpg."
+    echo "  FEATURE            Cover to stamp: reads FEATURE/art/FACE.jpg,"
+    echo "                     writes FEATURE/sealed/FACE.jpg."
+    echo "  -f, --face F       cover | back (default: $FACE)."
     echo "  -c, --corner C     br | bl | tr | tl (default: $CORNER). Pick the"
     echo "                     quiet corner of the artwork, per cover."
     echo "  -s, --size F       Seal width as a fraction of the cover's"
     echo "                     width (default: $SIZE)."
     echo "  -m, --margin F     Inset from both edges, same units"
     echo "                     (default: $MARGIN)."
-    echo "      --art PATH     Read this artwork instead of art/FEATURE.jpg."
-    echo "  -o, --output PATH  Write here instead of sealed/FEATURE.jpg."
+    echo "      --art PATH     Read this artwork instead of FEATURE/art/FACE.jpg."
+    echo "  -o, --output PATH  Write here instead of FEATURE/sealed/FACE.jpg."
     echo "  -h, --help         This."
     echo
     exit 0
@@ -83,6 +84,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     -h|--help)   usage ;;
     -c|--corner) CORNER="$2"; shift 2 ;;
+    -f|--face)   FACE="$2";   shift 2 ;;
     -s|--size)   SIZE="$2";   shift 2 ;;
     -m|--margin) MARGIN="$2"; shift 2 ;;
     --art)       ART="$2";    shift 2 ;;
@@ -94,8 +96,9 @@ done
 
 [ -n "$FEATURE" ] || terminate "Missing the feature name. Try: --help"
 
-ART="${ART:-$ART_DIR/$FEATURE.jpg}"
-OUTPUT="${OUTPUT:-$SEALED_DIR/$FEATURE.jpg}"
+case "$FACE" in cover|back) ;; *) terminate "Unknown face '$FACE'. Use cover or back." ;; esac
+ART="${ART:-$COVERS_DIR/$FEATURE/art/$FACE.jpg}"
+OUTPUT="${OUTPUT:-$COVERS_DIR/$FEATURE/sealed/$FACE.jpg}"
 
 command -v magick > /dev/null || \
   terminate "ImageMagick is required (the 'magick' command)."

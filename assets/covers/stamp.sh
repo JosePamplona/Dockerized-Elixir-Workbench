@@ -2,7 +2,7 @@
 # Stamps the workbench seal onto a cartridge cover.
 #
 # The seal is the one element the image generator must never draw (see
-# lib/workbench_igniter/features/COVERS.md), so it is composited here
+# the README beside this script), so it is composited here
 # instead — which is also the only way its size stays identical across
 # the shelf. Covers come out at different pixel widths, so the seal is
 # scaled as a fraction of each cover's width rather than to a fixed size.

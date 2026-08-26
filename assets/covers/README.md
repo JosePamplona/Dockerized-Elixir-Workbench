@@ -1,10 +1,9 @@
 # Cartridge covers
 
-Every feature in this folder is a *cartridge*, so every one of them can
-have a box cover. This file is how the covers get made.
-
-Covers live in the repository's `assets/covers/`, which is a small
-pipeline rather than a folder of images:
+Every feature of the workbench is a *cartridge*
+([the cartridges themselves](../../igniter/lib/workbench_igniter/features/)),
+so every one of them can have a box cover. This directory is how those
+covers get made — a small pipeline rather than a folder of images:
 
 ```text
 assets/covers/
@@ -15,8 +14,9 @@ assets/covers/
 └── archived/<feature>-N.jpg  superseded artwork, 1 is the oldest
 ```
 
-They are documentation art, not project assets — nothing plants them
-into a generated project.
+The covers are documentation art, not project assets — nothing plants
+them into a generated project. Commands below are written to be run from
+the repository root.
 
 ## What makes them a collection
 
@@ -66,8 +66,7 @@ not a counterfeit.
 
 ### Stamping it
 
-The seal lives at `assets/covers/seal.png`, and `assets/covers/stamp.sh`
-puts it on:
+`stamp.sh` puts the seal on:
 
 ```sh
 ./assets/covers/stamp.sh clustering --corner br

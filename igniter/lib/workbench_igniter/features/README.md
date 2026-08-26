@@ -58,7 +58,8 @@ exports DNSCluster needs, plus `DNS_CLUSTER_QUERY` in the environment
 files. Installed by hand with `wb.sh add clustering`.
 
 Box cover art for the cartridges — the fixed elements, the per-cartridge
-slots and the prompt template — is in [COVERS.md](COVERS.md).
+slots and the prompt template — lives with the art it produces, in
+[`assets/covers/`](../../../../assets/covers/).
 
 ## The manifest (`WorkbenchIgniter.Feature` behaviour)
 

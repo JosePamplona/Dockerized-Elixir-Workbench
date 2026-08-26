@@ -25,6 +25,7 @@ set -euo pipefail
   FRAMES="0.0604,0.1827,0.264,0.3736 0.3681,0.1827,0.265,0.3736 0.6772,0.1827,0.264,0.3736"
   CAPTION_Y=0.574
   HEAD_Y=0.628
+  HEAD_SIZE=0.054
   PANEL="0.05,0.700,0.90,0.525"
   BLURB_Y=0.722
   FEAT_Y=0.955
@@ -126,16 +127,19 @@ for rect in $FRAMES; do
 done
 
 # Headline.
-args+=( -gravity northwest -font "$F_COND" -pointsize "$(px 0.054)" -fill "$ACCENT"
+args+=( -gravity northwest -font "$F_COND" -pointsize "$(px $HEAD_SIZE)" -fill "$ACCENT"
         -size "${TEXT_W}x" caption:"$HEADLINE" -geometry "+${X0}+$(px $HEAD_Y)" -composite )
 
-# The copy panel: the even field the plate may not bring.
-IFS=, read -r pxf pyf pwf phf <<< "$PANEL"
-PX=$(px $pxf); PY=$(px $pyf); PW=$(px $pwf); PH=$(px $phf)
-magick -size "${PW}x${PH}" xc:none -fill "rgba(14,6,22,0.62)" -draw "roundrectangle 0,0 $((PW-1)),$((PH-1)) 6,6" \
-  -stroke "rgba(220,210,230,0.35)" -strokewidth 1 -fill none -draw "roundrectangle 1,1 $((PW-2)),$((PH-2)) 6,6" \
-  "$TMP/panel.png"
-args+=( "$TMP/panel.png" -geometry "+${PX}+${PY}" -composite )
+# The copy panel: the even field the plate may not bring. An empty PANEL
+# in layout.env skips it, for a plate that brought its own field.
+if [ -n "$PANEL" ]; then
+  IFS=, read -r pxf pyf pwf phf <<< "$PANEL"
+  PX=$(px $pxf); PY=$(px $pyf); PW=$(px $pwf); PH=$(px $phf)
+  magick -size "${PW}x${PH}" xc:none -fill "rgba(14,6,22,0.62)" -draw "roundrectangle 0,0 $((PW-1)),$((PH-1)) 6,6" \
+    -stroke "rgba(220,210,230,0.35)" -strokewidth 1 -fill none -draw "roundrectangle 1,1 $((PW-2)),$((PH-2)) 6,6" \
+    "$TMP/panel.png"
+  args+=( "$TMP/panel.png" -geometry "+${PX}+${PY}" -composite )
+fi
 args+=( -font "$F_TEXT" -pointsize "$(px 0.0235)" -fill "$INK" -interline-spacing "$(px 0.006)"
         -size "${TEXT_W}x" caption:"$BLURB" -geometry "+${X0}+$(px $BLURB_Y)" -composite )
 args+=( -font "$F_COND" -pointsize "$(px 0.030)" -fill "$INK" -interline-spacing "$(px 0.011)"

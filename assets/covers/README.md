@@ -539,11 +539,13 @@ what it is negotiating:
   screen. The generator repeats the shape it was given. Do not fight it
   in the prompt: retake the screenshots at the frames' ratio instead
   (below).
-* **The even field did not come.** The middle third became the era's
-  perspective grid, which is the era block winning over the layout
-  clause, and the copy needs a ground to be read on. `back.sh` draws
-  that ground itself: a translucent panel behind the blurb, features and
-  flash — the copy box every real back has anyway.
+* **The even field is a coin toss.** On the CD-ROM plate the middle
+  third became the era's perspective grid — the era block winning over
+  the layout clause; on the console plate it came back as asked, an
+  airbrushed flat. The copy needs a ground either way, so `back.sh` can
+  draw one itself — a translucent panel behind the blurb, features and
+  flash, the copy box every real back has anyway — and skips it when
+  `layout.env` sets `PANEL=""` because the plate brought its own.
 
 ### The copy
 
@@ -554,7 +556,7 @@ requirements flash. Keep it to what fits a back in one glance:
 
 | Piece | Length | Source |
 | --- | --- | --- |
-| Headline | Up to six words, in the front's register | New — a second tagline, not the subtitle again |
+| Headline | Up to six words, in the front's register, and **one line at the house size** — five words ran to two on exdebug, and the fix was a shorter headline, not a smaller face | New — a second tagline, not the subtitle again |
 | Blurb | 40-70 words | The cartridge README's *Description*, cut to its first paragraph |
 | Features | Three or four bullets, up to eight words each | *What it installs* |
 | Requirements flash | One line in the idiom of a system-requirements box | *Options*, and the workbench itself: `REQUIRES: DOCKER, ONE WORKBENCH` |
@@ -618,7 +620,9 @@ to `stamp.sh`, which writes `<feature>/sealed/back.jpg`. It was written
 after the coveralls back was composed by hand, from that composition,
 and reproduces it pixel for pixel: the same order `stamp.sh` came in.
 Making a back is therefore: generate the plate, measure it into
-`layout.env`, write `copy.md`, take the shots, run `back.sh`.
+`layout.env`, write `copy.md`, take the shots, run `back.sh`. The
+accent goes in `layout.env` too (`ACCENT=`), since it is the front's and
+not the tool's.
 
 ### Measured on the first back
 
@@ -626,7 +630,8 @@ Making a back is therefore: generate the plate, measure it into
 | --- | --- | --- |
 | Blank panels would fill with pseudo-text | They did not, on the first try | Deleted. Ask for "no lettering, no placeholder text" and expect to get it |
 | The frames would not be where the prompt put them | They were roughly there, but in the box's 5:7, not a screen's shape | Measure the plate into `layout.env`; take the shots at the frames' ratio |
-| — | The even field for the copy never came; the era's grid took its place | The copy panel is composed, not asked for |
+| — | The even field came on one plate of two: the era's grid took its place on the CD-ROM one, the console one brought it | The copy panel is composed when the plate has none, `PANEL=""` when it has |
+| — | A five-word headline ran to two lines and into the blurb | The headline must fit one line at the house size; shorten the copy, keep the face |
 | The treatment would be overdone | It was fine at scanlines 15% and blur 0.3 | Those are the defaults |
 
 ## Cover record
@@ -650,7 +655,11 @@ each one is regenerated rather than reconstructed now.
 | exdoc | console, late 80s | — | *unassigned* — parchment ivory failed the contrast rule | — |
 | enhancements | console, late 80s | — | hot forge orange | — |
 
-exdebug is the first cover made the current way. The ones still blank
+exdebug is the first cover made the current way, and the second with a
+back: a console-era plate that brought its own field, two real
+`ExDebug.console/2` runs at `width: 56` (the 80-column default does not
+fit a 5:7 frame) and the library's HexDocs page, in cyan. The ones still
+blank
 in the corner column are in `_archived/sealed/` as `-1`: each carries a
 *generated* seal baked into the artwork, including the one that says
 "Nintendo". They want regenerating, and healthcheck wants it first.

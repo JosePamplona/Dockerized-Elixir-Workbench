@@ -9,8 +9,8 @@
 #
 #   ./assets/covers/stamp.sh clustering --corner br
 #
-# Reads  assets/covers/art/<feature>.jpg   (the generated artwork)
-# Writes assets/covers/<feature>.jpg       (the stamped cover)
+# Reads  assets/covers/art/<feature>.jpg      (the generated artwork)
+# Writes assets/covers/sealed/<feature>.jpg   (the stamped cover)
 
 set -euo pipefail
 
@@ -18,6 +18,7 @@ set -euo pipefail
 
   COVERS_DIR="$( cd "$( dirname "$0" )" && pwd )"
   ART_DIR="$COVERS_DIR/art"
+  SEALED_DIR="$COVERS_DIR/sealed"
   SEAL="$COVERS_DIR/seal.png"
 
   # Both are fractions of the cover's width, so every seal lands at the
@@ -44,7 +45,7 @@ set -euo pipefail
     echo "  ./$(basename $0) FEATURE [OPTIONS]"
     echo
     echo "  FEATURE            Cover to stamp: reads art/FEATURE.jpg,"
-    echo "                     writes FEATURE.jpg beside it."
+    echo "                     writes sealed/FEATURE.jpg."
     echo "  -c, --corner C     br | bl | tr | tl (default: $CORNER). Pick the"
     echo "                     quiet corner of the artwork, per cover."
     echo "  -s, --size F       Seal width as a fraction of the cover's"
@@ -52,7 +53,7 @@ set -euo pipefail
     echo "  -m, --margin F     Inset from both edges, same units"
     echo "                     (default: $MARGIN)."
     echo "      --art PATH     Read this artwork instead of art/FEATURE.jpg."
-    echo "  -o, --output PATH  Write here instead of FEATURE.jpg."
+    echo "  -o, --output PATH  Write here instead of sealed/FEATURE.jpg."
     echo "  -h, --help         This."
     echo
     exit 0
@@ -94,12 +95,14 @@ done
 [ -n "$FEATURE" ] || terminate "Missing the feature name. Try: --help"
 
 ART="${ART:-$ART_DIR/$FEATURE.jpg}"
-OUTPUT="${OUTPUT:-$COVERS_DIR/$FEATURE.jpg}"
+OUTPUT="${OUTPUT:-$SEALED_DIR/$FEATURE.jpg}"
 
 command -v magick > /dev/null || \
   terminate "ImageMagick is required (the 'magick' command)."
 [ -f "$SEAL" ] || terminate "The seal is missing: $SEAL"
 [ -f "$ART" ]  || terminate "No artwork at $ART"
+
+mkdir -p "$(dirname "$OUTPUT")"
 
 GRAVITY=$(gravity "$CORNER")
 COVER_WIDTH=$(magick identify -format "%w" "$ART")

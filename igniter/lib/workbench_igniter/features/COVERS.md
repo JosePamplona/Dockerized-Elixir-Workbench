@@ -3,7 +3,17 @@
 Every feature in this folder is a *cartridge*, so every one of them can
 have a box cover. This file is how the covers get made.
 
-Generated covers live in the repository's `assets/covers/<feature>.jpg`.
+Covers live in the repository's `assets/covers/`, which is a small
+pipeline rather than a folder of images:
+
+```text
+assets/covers/
+├── seal.png              the stamp, generated once, never regenerated
+├── stamp.sh              puts it on
+├── art/<feature>.jpg     the generated artwork, unstamped
+└── sealed/<feature>.jpg  the finished cover
+```
+
 They are documentation art, not project assets — nothing plants them
 into a generated project.
 
@@ -62,9 +72,11 @@ puts it on:
 ./assets/covers/stamp.sh clustering --corner br
 ```
 
-It reads `assets/covers/art/<feature>.jpg` — the raw generated artwork —
-and writes the stamped cover to `assets/covers/<feature>.jpg`. Keep both:
-regenerating a cover means replacing the art and stamping again.
+It reads `art/<feature>.jpg` — the raw generated artwork — and writes the
+finished cover to `sealed/<feature>.jpg`. The two directories are what
+keep an unstamped cover from being mistaken for a finished one, and they
+mean regenerating is always the same two steps: replace the art, stamp
+again.
 
 Size and inset are **fractions of each cover's width**, not pixels,
 because covers come out at different resolutions — the first six were

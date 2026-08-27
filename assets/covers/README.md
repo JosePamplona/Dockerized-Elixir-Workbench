@@ -133,7 +133,13 @@ exdebug's front, from the four-sided board to the banner — the name
 band across the top, a strip along the bottom, the sides open — so
 exdebug's hero, generated at the old window's 2:3, was generated
 again the same day at the new window's 4:5, from the same prompt, and
-is the first cover made with `covers.py` end to end. Each box had been made under a different
+is the first cover made with `covers.py` end to end. Its back is the
+third plate (two archived): two 6:5 frames measured into `layout.env`,
+the name as a two-line chrome flash, a blind-stamped shield for the
+device, and two real screens — `ExDebug.console/2` in an `iex` session
+recorded with a TTY in the `test_27` workspace, and the library's page
+on HexDocs — composed and sealed by `covers.py back` with the seal at
+0.12, bottom left. Each box had been made under a different
 version of the flow — coveralls and exdebug before the overlay existed,
 with a generated band in their art; clustering under the first overlay,
 whose sides covered a quarter of the height; healthcheck's prompt under
@@ -165,6 +171,8 @@ took, and they are the reason the section above is as long as it is.
 | Dropping the redundant width clause would let "the same height" survive | It did not. Tops level, bottoms 115px apart, twice out of two | Relations lose to proportions. Give each frame its rectangle |
 | — | A colophon asked for without its contents came back holding a monogram | Name the interior of anything you name |
 | The positive-only format block — "flat illustration, all of it in one plane" — would hold on a plate as it half-held on the cover | It did not: a photographed box, bevel, rim and shadow on all four edges, with everything else on the plate exactly as asked | The format block keeps its enumerated list of what a photograph would add — after the positive description, as the backstop the rule allows, and the only form that ever came back clean |
+| Frame edges given as words for the height — "from one fifth of the height down to two fifths" — beside hundredths for the width | The widths landed within 0.02 (6–48 → 6.2–47.7, 52–94 → 52.9–94.4); the heights came back 0.23–0.54, the frames nearly square, and the copy under them had 0.50 of the width — composed, the flash sat on the strip | `exdebug-2`: the same rule a third time, from the other side. Hundredths land, fifths do not; and give each frame its own proportion — *three wide by two tall* |
+| Heights in hundredths (20–40) and each frame *three wide by two tall* would land the frames, as 5:7 had landed twice | The widths landed again (6–48 → 6.7–46.4, 52–94 → 53.2–93.0); the frames came back 0.26–0.49 of the height at 1.20 — and the name, asked on one line in a 0.05–0.125 rectangle, came back on **two** lines in a box to 0.21 that pushed the frames' top down | `exdebug-3`: a stated internal proportion can miss too, when something above it moves. The name is the mover: 26 characters of chrome wordmark at foreground size do not fit one line of a 0.8-wide rectangle, and the genre breaks them rather than shrink them. Kept: composed, the copy fits at 0.56 of the width of room, and the two-line flash is the era's own form. Next time, ask the name in two lines from the start, and give the frames their rectangle below where those two lines end |
 
 ## What the generator gets wrong
 

@@ -8,26 +8,59 @@ covers get made — a small pipeline rather than a folder of images:
 ```text
 assets/covers/
 ├── seal.png                the stamp, generated once, never regenerated
-├── stamp.sh                puts it on
-├── back.sh                 composes a back and puts it on
+├── overlay.xcf             the overlay's source, drawn by hand
+├── overlay.png             the overlay: the violet banner, name on its band, the window below it
+├── covers.py               the pipeline: window, pad, cut, stamp, back — PIL, nothing else
 └── <feature>/              one directory per cartridge, the whole box
-    ├── art/cover.jpg       the generated artwork, unstamped
+    ├── art/hero.jpg        turn 1: the hero, generated at the proportion nearest the window's
+    ├── art/padded.jpg      covers.py pad: the hero in the window of a 5:7 canvas, grey margins
+    ├── art/expanded.jpg    turn 2: that canvas with its margins painted by the generator
+    ├── art/cover.jpg       the 5:7 face covers.py cut from it, unstamped
+    ├── art/lockup.png      the title lockup cut from a take, only when the art had to be generated without one
     ├── art/back.jpg        the generated back plate, blank
     ├── sealed/cover.jpg    the finished cover
     ├── sealed/back.jpg     the finished back
     ├── back/copy.md        the facts the back is typeset from
     ├── back/shot-N.png     real screenshots, 1 is the leftmost
     ├── back/layout.env     positions measured off that plate
-    ├── cover.prompt.txt    the prompt that made the current art
-    ├── back.prompt.txt     the prompt that made the current plate
+    ├── eras.md             six proposals, one per era; the one recommended; the one chosen
+    ├── cover.prompt.txt    the prompt to generate the cover from, now
+    ├── back.prompt.txt     the prompt to generate the plate from, now
     └── _archived/          superseded work, local only, never in the repo
-        ├── art/cover-N.jpg
-        └── sealed/cover-N.jpg
+        ├── art/cover-N.jpg         a retired take, and beside it
+        ├── art/cover-N.prompt.txt  the prompt that made it
+        ├── art/back-N.jpg          the same for plates, on their own count
+        └── back-N/                 a whole back — copy, shots, layout — when a box starts over
 ```
 
 The covers are documentation art, not project assets — nothing plants
-them into a generated project. Commands below are written to be run from
-the repository root.
+them into a generated project.
+
+**The overlay is the one source of every number about the face.** Its
+design is free to change — four sides, a banner, a strip — and when
+it does, only the XCF and the PNG change: `covers.py` reads the window
+off the PNG as the largest fully transparent rectangle, takes the
+face's size, the window, the sides that have board and the hero's
+proportion from it, and `covers.py window` says what it leaves in
+words, for the prompt. No script, prompt or document repeats those
+numbers. That rule came from the second overlay: the first had its
+four widths copied into the stamping script and its window's
+proportion, 2:3, written into six files, and the banner that replaced
+it — 105 above, 55 below, nothing at the sides, art showing above the
+band — made every copy wrong at once. The pipeline is one file for the
+same reason: it was three shell scripts and a Python helper, two
+languages and two image engines (ImageMagick for the compositing, PIL
+for the geometry), and a fact that lives in two engines is two facts.
+
+**This file is the record, not the procedure.** What a cover is, what
+the collection has decided and what every take has taught are here; how
+one is actually made is the `cartridge-covers` skill, in
+`.claude/skills/cartridge-covers/`. The split is by lifetime: the skill
+holds the steps, which are the same every time, and this file holds the
+verdicts and the evidence, which are different every time and are what
+the next rule gets written from. Nothing is duplicated across the two —
+a rule that exists twice diverges by the third cartridge, and then
+neither copy is the one that governs.
 
 ## What makes them a collection
 
@@ -39,756 +72,99 @@ is identical on all of them. That is the model here, in three tiers:
 | Tier | What | Varies? |
 | --- | --- | --- |
 | **The seal** | `WORKBENCH SEAL OF QUALITY` | Never. Shared by every workbench there could be |
-| **Band, colour, format** | `DOCKERIZED ELIXIR WORKBENCH`, Elixir violet, a 5:7 portrait face | Never within a workbench; band and colour change if there is ever a Python or a JS one, the format not even then |
-| **Everything else** | Era, art, layout, finish, wear, stickers | Freely, cover to cover — the era is drawn from a repertoire |
+| **Overlay, colour, format** | The overlay — the printed board in Elixir violet, `DOCKERIZED ELIXIR WORKBENCH` on its band, the window at its socket — composited like the seal, and carrying the house colour for the art it frames; a 5:7 portrait face | Never within a workbench; overlay and colour change if there is ever a Python or a JS one, the format not even then |
+| **Everything else** | Era, art, layout, finish | Freely, cover to cover — the era is chosen from a repertoire |
 
 So the covers are meant to be **collected, not manufactured**: generated
 one at a time, each in whatever era and register suit its feature, and
-none of them obliged to match the last. The band and the colour say which
-workbench; the seal says it is one of ours; the format is what lets a
-shelf of them line up.
+none of them obliged to match the last. The overlay and the colour say
+which workbench; the seal says it is one of ours; the format is what
+lets a shelf of them line up.
+
+Wear, stickers and the rest of a box's furniture are not on the list
+because they are not generated any more, on either face: the art comes
+out clean, and what happens to a box after printing is deferred to a
+pass over the finished cover that does not exist yet. The reason is the
+overlay — a scuff drawn in the art stops at its edge.
 
 Everything below that reads like a rule was learned from a cover that
 came out wrong. [What the generator gets wrong](#what-the-generator-gets-wrong)
 has the evidence.
 
-## Tier 1 — the seal
-
-```text
-Bottom right corner: a circular gold starburst seal with a scalloped
-edge and an embossed bevel, reading "WORKBENCH SEAL OF QUALITY" in small
-caps around its rim.
-```
-
-**Never ask the generator for this.** Render it once, keep it as a
-transparent PNG, and composite it onto every cover. It is the only
-element that is composited, and the rule is not an optimisation:
-
-* It came out different on all six of the first covers — three lines,
-  four lines, a star in the middle, an empty middle.
-* On `healthcheck.jpg` the generator wrote **"Nintendo"** into it, in a
-  prompt that said `No real brand marks or logos`. Describing 80s console
-  packaging summons the trademark, and a negative instruction does not
-  hold it back. The only reliable defence is not asking for the seal.
-
-Never ask for the Nintendo logo, the "Official Nintendo Seal of Quality",
-the NES wordmark or its typefaces either. This seal is our own
-equivalent, which is also what we actually want: a workbench cartridge,
-not a counterfeit.
-
-### Stamping it
-
-`stamp.sh` puts the seal on:
-
-```sh
-./assets/covers/stamp.sh clustering --corner br
-./assets/covers/stamp.sh coveralls --face back --corner bl --size 0.12
-```
-
-It reads `<feature>/art/<face>.jpg` — the raw generated artwork — and
-writes the finished cover to `<feature>/sealed/<face>.jpg`; the face is
-`cover` unless told otherwise. The two directories are what keep an
-unstamped cover from being mistaken for a finished one, and they mean
-regenerating is always the same two steps: replace the art, stamp again.
-
-Size and inset are **fractions of each cover's width**, not pixels,
-because covers come out at different resolutions — the first six were
-765px wide and 687px wide. A fixed pixel size would make the seal look
-bigger on the narrow ones. Defaults: `0.24` of the width, inset `0.04`.
-
-Corners are a per-cover choice, but two are constrained: the top ones
-collide with the band and need `--margin 0.11` or so to clear it, and the
-bottom left is usually where the badge sits. Bottom right is the default
-for a reason.
-
-### Archiving
-
-A cover that gets superseded moves to `<feature>/_archived/art/cover-N.jpg`,
-where the number is assigned **at archive time as one more than the
-highest already there for that feature**. So 1 is the first ever made, n
-is the one most recently retired, and nothing is ever renumbered. This
-guide writes those as `coveralls-3` for short.
-
-`_archived/` is **local and gitignored**, like `_workspaces/`: retired
-art is what a new prompt gets compared against on the machine where the
-prompt is being written, and nothing else ever reads it. Git never
-forgets a binary, and a shelf of eighteen cartridges at four takes each
-would be a repository nobody wants to clone. The cost is that the
-evidence this guide cites by number cannot be opened from a fresh clone
-— which is why every table row carries what the image showed, in words,
-and the image is only ever the footnote.
-
-What goes in is the **artwork**, not the sealed cover. Stamping is one
-command, so the art is the half worth keeping: it is what a new prompt
-gets compared against, and what you would re-stamp if a regeneration
-turns out worse than what it replaced.
-
-The six `-1` files are the exception that proves it. They were made
-before the seal existed, with a generated one baked into the artwork, so
-there is no separable art to archive — the sealed cover is all there is,
-and it goes in `_archived/sealed/` instead. That is also why `sealed/`
-holds only what was made the current way: the directory is a standard,
-not an inventory.
-
-## Tier 2 — band, house colour and format
-
-All three go into every prompt verbatim. The band renders reliably — it
-came out identical on all six of the first covers — so unlike the seal,
-it is generated with the rest.
-
-```text
-Top band across the full width, dark with a thin chrome rule, reading
-"DOCKERIZED ELIXIR WORKBENCH" in condensed sans-serif caps.
-```
-
-```text
-Elixir violet (#4B275F) as the dominant colour of the composition.
-```
-
-```text
-Flat front face reproduced straight on, filling the frame edge to edge:
-not a photograph of a physical box, no perspective, no drop shadow, no
-surrounding background, no visible spine or side panels. Proportions 5:7
-portrait.
-```
-
-The band never names the feature: the console is the workbench, the
-cartridges are its features. And the violet is this workbench's mark —
-a Python or a JS workbench would swap the band and the colour together,
-and keep the same seal.
-
-A cover may leave the violet when the feature genuinely demands it
-(money green, forensic monochrome), but that is a departure to make on
-purpose, one cover at a time — not a free choice per cartridge.
-
-**The accent**, the one colour beside the violet, must **contrast in
-value against it**. That is the one hard rule about colour: warm neutrals
-are banned, because `exdoc.jpg` used parchment ivory, dissolved into the
-background, and is the least legible cover of the set. Otherwise pick
-whatever suits the feature, repeats included — green reads as "healthy"
-and as "covered" alike, and both covers are better for it. See the
-[cover record](#cover-record).
-
-### The format
-
-That third block used to be the second half of the house style. It moved
-here because the shape of the face is platform furniture in exactly the
-way the band is: it says which workbench, not which cartridge.
-
-It is an invariant rather than a default for a downstream reason. The
-covers are headed for a catalogue in a GUI, and a catalogue lays cards
-out in a grid: with one aspect ratio that is arithmetic, with six it is
-letterboxing, ragged rows or a crop — and a crop eats precisely the top
-band and the seal corner, the two things that identify the collection.
-One ratio is what keeps six eras a shelf instead of a pile.
-
-State it **inside the prompt**, not only as a generator setting: two of
-the first six drifted narrower when it was only a setting.
-
-Two consequences, written down before someone tries to fix them:
-
-* At 5:7 a mid-90s big box **is not** a mid-90s big box. Each era is a
-  *quotation* of its graphic language on our face, not a facsimile of its
-  packaging. A shelf of reissues looks exactly like that — every spine
-  the same height — and that is the trade, made on purpose.
-* The flat front face is part of this block, so the photographed 3D box
-  breaks it. That departure stays available as a deliberate collector's
-  edition one-off: the *image* is still 5:7, which is all the catalogue
-  grid cares about.
-
-## Tier 3 — the era repertoire
-
-The house style is a repertoire of six. **Roll for it**, then keep the
-roll unless it fights the feature, in which case roll once more. One
-veto, and the result goes in the [cover record](#cover-record) so a
-regenerated cover keeps its era.
-
-The die is the point. Choosing each era on taste converges on whatever is
-in favour that month; rolling is what produces a shelf that looks
-accumulated over twenty years, which is the whole conceit.
-
-Each block below replaces the *first* paragraph of what used to be the
-house style. The second paragraph — flat face, 5:7 — is Tier 2 now and
-does not move.
-
-Two rules bind every entry.
-
-**Describe technique and material, never a publisher.** The hardest-won
-lesson in this document is that describing 80s console packaging summons
-"Nintendo" into the artwork, and that a negative instruction does not
-hold it back. Every era has its own magnets, and naming one invites its
-logo, its typefaces and its trade dress along with it. If an era cannot
-be described without naming who printed it, the description is not
-finished.
-
-**Never mention the format of that era's own box.** Not "big box", not
-"cassette folio", not "landscape sleeve". Say it and the generator draws
-that box *inside* our portrait face, and the result is a photograph of a
-box instead of a cover.
-
-### 1 · Early carton, ~1978-82
-
-```text
-Late-1970s computer game packaging art. Two-colour offset printing on
-uncoated board, ink very slightly out of register: a line illustration or
-a technical schematic rather than a painted scene, flat fields of one
-spot colour, plain grotesque type set by hand, visible paper tooth and
-yellowed edges.
-```
-
-### 2 · Home computer, ~1982-85
-
-```text
-Early-1980s home computer game cover art. Coarse airbrush over a short,
-hard-edged palette that reads as a limited display: heavy black outlines,
-a receding grid floor, wide empty fields of flat colour, geometric slab
-lettering, matte board with rubbed corners.
-```
-
-### 3 · Editorial cover, mid-1980s
-
-```text
-Mid-1980s literary game cover art. Restrained editorial design rather
-than illustration: an even ground of a single colour, one carefully lit
-object centred with generous space around it, serif type set small, a
-subtle deboss, clean printing on coated stock.
-```
-
-### 4 · Console, late 1980s
-
-```text
-Late-1980s console game box cover art. Painted airbrush illustration with
-the slightly stiff, heroic look of North American 8-bit era packaging:
-hard airbrush gradients, chunky specular highlights, visible matte
-cardboard grain and faint edge wear.
-```
-
-### 5 · CD-ROM, early 1990s
-
-```text
-Early-1990s CD-ROM game cover art. Chrome and lens flare over an
-airbrushed starfield: extruded metallic lettering with deep bevels,
-rainbow specular edges, a perspective grid, saturated gradients pushed
-just past taste, a glossy laminated finish.
-```
-
-### 6 · Big box PC, ~1992-96
-
-```text
-Mid-1990s PC game cover art. Dense oil-painted illustration in the
-fully-rendered style of the 256-colour era: deep chiaroscuro, heavy
-detail carried down into the shadows, dramatic single-source lighting,
-extruded fantasy lettering with a hard bevel, a glossy laminated finish.
-```
-
-### Layout is free, and independent of the era
-
-Half of the first six put the art in an inset panel with a cardboard
-margin and half bled it to the edges; both look right, and the inset
-version leaves the lettering more room. Neither belongs to an era — pick
-per cover, or leave it to the generator.
-
-### Material furniture
-
-Optional, and the thing that makes a collection look collected rather
-than printed in one run: a crooked price and a knocked corner are what
-turn an image into an object somebody owned.
-
-Keyed to the era, because the table is a **guard** and not a menu. A
-barcode on a 1979 carton, or an age rating on a 1988 box when rated game
-packaging is a 1994-and-after thing, gives the forgery away faster than
-any drawing error could. The right-hand column is the half that earns its
-keep.
-
-Two rules:
-
-* **One commercial mark and one wear mark, at most.** The old advice here
-  was "sprinkle, do not stack", which a per-era menu makes much easier to
-  ignore. A count is harder to ignore: one of price / barcode / rating /
-  requirements flash, and one of scuff / ring stain / fade / crushed
-  corner.
-* **Furniture is texture, never fact.** All of it is small print, and the
-  measured failure of this generator is that text below foreground size
-  flips digits — the two small address plates on `clustering`. Ask for "a
-  barcode block", never for its digits; for a ratings flash by its shape,
-  never by its wording. The price sticker is the exception: it sits at
-  legible size and can carry a real number.
-
-| Era | Its own furniture | Anachronism to veto |
-| --- | --- | --- |
-| Early carton | Price in grease pencil, a lot number hand-stamped in ink, a tape or staple seal, yellowing and a crushed corner | Any barcode, any age rating, shrink-wrap sheen |
-| Home computer | A die-cut hang tab, a compatibility strip along one edge, a format mark (tape / disk), a hand-written computer-shop price | Modern barcode, holograms, disc flashes |
-| Editorial cover | A bookshop price sticker, a review-quote flash, a remainder mark on one edge, rubbed board edges | Large barcode, starbursts, any technical flash |
-| Console | A half-peeled `$49.95` sticker, a rental label with a hand-written number, a `2ND PRINT` band, a small UPC block on the bottom edge | Age rating, security hologram |
-| CD-ROM | A security hologram, shrink-wrap sheen, an award flash, anti-theft strip residue, a UPC | Uncoated board wear, hand-written price |
-| Big box PC | A requirements flash in the idiom of `256 COLORS` (as a shape), a disk-format mark, a store UPC, a ring stain in a corner | Console rental label, hang tab |
-
-None of this is an invariant. A cover with a rental sticker and one
-without belong to the same shelf precisely because the seal, the band and
-the format do not move.
-
-## The slots
-
-Seven things change per cartridge. Keep them short — every extra clause
-is one more thing the generator can get wrong.
-
-| Slot | Rule |
-| --- | --- |
-| **Era** | Rolled from the repertoire, kept unless it fights the feature. One veto, then recorded. |
-| **Register** | The stance the hero and the subtitle take. Chosen, never rolled. Has no text of its own. |
-| **Title** | The cartridge name, uppercase. Nothing else. |
-| **Subtitle** | Two to four words, imperative or boastful. It is a tagline, not a description. |
-| **Hero** | One concrete scene depicting the *mechanism*, not the abstraction. See below. |
-| **Accent** | One colour beside the violet, contrasting in value, chosen because it suits the feature. |
-| **Unit badge** | The "1-2 PLAYERS" slot, in the feature's own units. One line, one short phrase. |
-| **Seal corner** | Which corner the composition keeps quiet for the seal. Bottom right unless the art wants otherwise. |
-
-## The craft: writing the hero
-
-This is the part that has nothing to do with consistency. A cover earns
-its place by being *true*: **draw what the cartridge actually does**,
-literally, and let the era's style make it heroic. Clustering is four
-droids linked by a mesh of beams because a four-node cluster is six
-connections. Coveralls is a beam sweeping a plain of code panels toward
-a red target line, because what the report does is show precisely how
-far the tests reach and how far they have to.
-
-Five habits, in order of how much they buy you:
-
-* **Count things.** Four replicas, six links, three watchers, six
-  lecterns. The most reliable instruction in the whole document: every
-  count of a *whole* asked for came back correct. Counts give the
-  generator something to compose around, and they make the picture true.
-  The reliable count is of *separate bodies*: four droids, six beams.
-  Counting marked members inside a field is not — "ten segments with
-  eight lit" came back seven lit, and "exactly three panels that stay
-  dark" came back as two. Use those counts to compose, and never for a
-  number the cover has to get right; if the number is a fact, give it a
-  body of its own.
-* **Give the mechanism a body.** A beacon tower, a gauge, a gate, a
-  foundation slab. Abstractions render as fog.
-* **Describe compositions, not states.** The generator draws objects, not
-  what they are doing. "The needle risen just past the 80 notch" produced
-  a perfect dial with the needle at 15. Say "the needle resting against
-  the red notch" — a position, not a movement.
-* **Give text in the art foreground size.** Above that threshold the
-  generator is reliable: `/health`, `/dev/docs`, `200` and the two large
-  address plates on clustering all came out right. Below it digits flip —
-  the two plates set small and far back on that same cover came back
-  reading `172.28.x` instead of `172.26.x`. Use as many strings as the
-  composition wants, all at foreground size; anything that must sit far
-  back should be texture rather than a fact.
-* **Fix the figure's scale.** Say how big the body is in the frame, or it
-  will drift: coveralls' droid is a speck at the foot of its gauge while
-  clustering's fill half the panel. "Waist-high to the gauge" or
-  "occupying the lower third" is enough.
-
-### When the era has no scene
-
-Those five habits assume an illustrated era. Two entries in the
-repertoire are graphic rather than illustrative — the early carton and
-the editorial cover — and on those there is no figure whose scale to fix
-and no formation of droids to count. The hero becomes **a symbol or a
-schematic**, and the counts move into the geometry: six nodes on a
-diagram, four banners on a chart, three hooks in a line drawing. The
-truth still comes from the count; it just stops being a cast.
-
-## The template
-
-Everything except the seal, which is composited afterwards.
-
-```text
-[ERA — one block from the repertoire, verbatim]
-
-[FORMAT — verbatim]
-
-[BAND — verbatim]
-
-Hero illustration: <HERO>.
-
-Title lockup in the lower third: "<TITLE>" set large in <THE ERA'S
-LETTERING>, and beneath it a smaller subtitle "<SUBTITLE>".
-
-Bottom left: a small rectangular badge reading "<UNIT BADGE>".
-
-[optional: one commercial mark and one wear mark from the era's furniture]
-
-The <SEAL CORNER> of the artwork is composed as a quiet area: low detail,
-no focal element, an even field of tone.
-
-Palette: [HOUSE COLOUR — verbatim], CRT phosphor haze in the background.
-No photographic elements. No real brand marks or logos.
-Accent: <ACCENT>.
-```
-
-**The lockup follows the era.** A beveled chrome-and-violet wordmark with
-a hard drop shadow is the console entry's lettering, and still the right
-answer there — but it cannot land on a two-colour carton from 1979. Each
-era block names its own type; the title takes it from there. This is the
-one place where the template would otherwise smuggle a house style back
-in through the door the repertoire opened.
-
-The last line is the seal's corner, and it is art direction rather than a
-reservation: **ask for calm, not for emptiness**. A generator told to
-leave a corner clear leaves a hole in the picture. Told that the corner
-is an even field of tone with no focal element, it composes around it and
-the seal drops in as if it had always been there.
-
-If the lettering comes out wrong on a take that is otherwise good,
-compositing it is always available — it just is not the default any more,
-because band, title, subtitle and badge all render well enough.
-
-The prompt that made the current art is kept beside it, verbatim, as
-`<feature>/cover.prompt.txt` (and `back.prompt.txt` for the plate). The
-cover record says what was decided; the prompt file is what was actually
-sent, and the first thing to diff when a regeneration comes back
-different.
-
-## Worked example: clustering
-
-> **Hero** — four identical armored server-droids standing in formation
-> across the lower half of the panel on a vast circuit-board plain under
-> a deep violet sky, each linked to every other by taut glowing energy
-> beams, a full mesh of six beams crossing between them; one large
-> holographic address plate hovering beside each droid, all four the same
-> size and all in the foreground, reading 172.26.0.3, 172.26.0.4,
-> 172.26.0.5 and 172.26.0.6; behind the formation a monolithic beacon
-> tower emits a widening ring of light
->
-> **Era** console, late 80s · **Register** heroic ·
-> **Title** CLUSTERING · **Subtitle** CONNECT THE NODES ·
-> **Accent** electric magenta · **Badge** 1-4 NODES
-
-The counts come from the real thing: four is the `--replicas` default and
-six is how many links four nodes need.
-
-The address plates are the size rule in practice. The first version let
-the generator place them freely, and the two it put small and far back
-came back with a wrong digit while the two large ones were right. Hence
-*the same size, all in the foreground*: the plates stay, they just stop
-being background texture.
-
-## The back of the box
-
-Only once the front is validated. The back is the other face of the
-same box, so it takes **era, accent and register from the front's row in
-the [cover record](#cover-record)** and rolls nothing: a box whose two
-faces come from different decades is two boxes.
-
-The front draws the mechanism. The back shows the **evidence**: what a
-real back has always carried is a blurb, two or three screenshots, a
-list of features, the badge again, a requirements flash, a legal strip
-with the seal set small in it. Nearly all of that is text below
-foreground size, which is the one thing this generator measurably cannot
-do. So the rule that follows is the opposite of the front's:
-
-**The back is composed, not generated.** The generator makes only the
-*plate* — the era's material with blank panels and fields on it. Every
-fact is typeset and composited afterwards, at any size, because typeset
-text does not flip digits.
-
-| Made by | What |
-| --- | --- |
-| The generator | The plate: band, era material and finish, empty frames for the screenshots, an even field for the copy, a darker strip for the legal line |
-| Composition | The copy, the screenshots, the badge, the requirements flash, the legal line, the seal |
-
-One back has been made this way — coveralls — and the rules below are
-what it left. Where a guess survived contact it says so; where it did
-not, it is gone.
-
-### The plate
-
-The template is the front's with the hero swapped for a layout. Era,
-format and band go in verbatim, so the plate is unmistakably the same
-box; the era block already carries the material, and the layout is
-described in era-neutral words so it does not fight it.
-
-```text
-[ERA — verbatim, the same block as the front]
-
-[FORMAT — verbatim]
-
-[BAND — verbatim]
-
-Back face layout, with no printed text anywhere except the band. In the
-upper half, <N> empty rectangular inset frames of equal size arranged in
-a row, each with a thin bevelled edge. Below them, an even unprinted
-field of tone taking the middle third of the face. Along the bottom
-edge, a narrow darker unprinted strip across the full width. Every
-frame, field and strip is blank: no lettering, no placeholder text, no
-glyphs, no pictures inside the frames.
-
-Palette: [HOUSE COLOUR — verbatim], CRT phosphor haze in the background.
-No photographic elements. No real brand marks or logos.
-Accent: <the front's accent>.
-```
-
-Two or three frames, never more: it is a count of separate bodies, which
-is the kind the generator gets right — three asked, three delivered. The
-plate's furniture follows the era table exactly as the front's does — a
-barcode block is asked for as texture, and only where the era allows
-one; the coveralls plate brought one, blank, exactly where asked.
-
-What the first plate did and did not bring, so the next prompt knows
-what it is negotiating:
-
-* **It came back clean.** No pseudo-text, no glyphs, nothing inside the
-  frames. The guess that blank panels would fill themselves with
-  lettering was wrong, and is deleted.
-* **The frames came back 5:7**, the box's own format, not the 16:10 of a
-  screen. The generator repeats the shape it was given. Do not fight it
-  in the prompt: retake the screenshots at the frames' ratio instead
-  (below).
-* **The even field is a coin toss.** On the CD-ROM plate the middle
-  third became the era's perspective grid — the era block winning over
-  the layout clause; on the console plate it came back as asked, an
-  airbrushed flat. The copy needs a ground either way, so `back.sh` can
-  draw one itself — a translucent panel behind the blurb, features and
-  flash, the copy box every real back has anyway — and skips it when
-  `layout.env` sets `PANEL=""` because the plate brought its own.
-
-### The copy
-
-Written by hand, in the front's register, and mostly already written:
-the cartridge's own README is the source. Its *Description* is the
-blurb, *What it installs* is the feature list, *Options* is the
-requirements flash. Keep it to what fits a back in one glance:
-
-| Piece | Length | Source |
-| --- | --- | --- |
-| Headline | Up to six words, in the front's register, and **one line at the house size** — five words ran to two on exdebug, and the fix was a shorter headline, not a smaller face | New — a second tagline, not the subtitle again |
-| Blurb | 40-70 words | The cartridge README's *Description*, cut to its first paragraph |
-| Features | Three or four bullets, up to eight words each | *What it installs* |
-| Requirements flash | One line in the idiom of a system-requirements box | *Options*, and the workbench itself: `REQUIRES: DOCKER, ONE WORKBENCH` |
-| Badge | The front's, verbatim | Cover record |
-| Legal strip | Repository, licence, "actual screens shown" | Small, and true |
-
-It lives in `<feature>/back/copy.md`, one heading per piece, so a back
-can be re-set without rewriting it.
-
-### The screenshots
-
-**Real ones**, of what the cartridge actually installs, which is the
-truth principle applied to the back: coveralls shows its HTML report,
-the `TESTING.md` page in the docs and the `mix cover` run in a terminal.
-"Actual screens shown" is the period phrase for it, and here it is not
-a lie.
-
-Take them from a generated project **at the ratio of the frames that
-came back**, not at a desktop width. The coveralls plate's frames are
-5:7, and a 1280×800 window squeezed into one is unreadable; the same
-pages at a 420×595 viewport are their own mobile layout — the report's
-big number, the result board's table — and read at frame size. The
-pages are responsive, so a narrow viewport is still an actual screen.
-The terminal is rendered from the real `mix cover` output (ANSI through
-`aha`, in a fake window) at whatever size the frame wants.
-
-Then the period treatment before they go in — a slight softening and a
-faint scanline overlay is enough to make a 2026 browser window read as
-a printed screen — but stop before they lose legibility: a screenshot
-that cannot be read is decoration, and the front has enough of that.
-
-### Assembly
-
-ImageMagick, in **fractions of the plate's width** like `stamp.sh`, so
-a back set at 728px and one at 1024px come out identical. Fonts are the
-system's, and the choice is what keeps the back in the era without
-asking the generator for type:
-
-* Headline and features: a condensed grotesque, `Liberation Sans
-  Narrow` or `Nimbus Sans Narrow`, uppercase.
-* Blurb: `Inter`, sentence case, generous leading.
-* Terminal screenshots and the legal strip: `Liberation Mono`.
-
-The seal goes on last, through `stamp.sh`, **small** — `--size 0.12`
-or so — in the legal strip, bottom left, where a back has always carried
-it. It is the
-one element that appears on both faces, which is the point: either side
-up on the shelf, the box says it is one of ours.
-
-`back.sh` does all of this:
-
-```sh
-./assets/covers/back.sh coveralls
-```
-
-It reads `<feature>/art/back.jpg`, and from `<feature>/back/` the copy,
-the shots and `layout.env` — the frame rectangles and text positions
-**measured off that plate**, as fractions of its width, since no two
-plates put the frames in the same place — composes, and hands the result
-to `stamp.sh`, which writes `<feature>/sealed/back.jpg`. It was written
-after the coveralls back was composed by hand, from that composition,
-and reproduces it pixel for pixel: the same order `stamp.sh` came in.
-Making a back is therefore: generate the plate, measure it into
-`layout.env`, write `copy.md`, take the shots, run `back.sh`. The
-accent goes in `layout.env` too (`ACCENT=`), since it is the front's and
-not the tool's.
-
-### Measured on the first back
-
-| Guess | What happened | Rule it left |
-| --- | --- | --- |
-| Blank panels would fill with pseudo-text | They did not, on the first try | Deleted. Ask for "no lettering, no placeholder text" and expect to get it |
-| The frames would not be where the prompt put them | They were roughly there, but in the box's 5:7, not a screen's shape | Measure the plate into `layout.env`; take the shots at the frames' ratio |
-| — | The even field came on one plate of two: the era's grid took its place on the CD-ROM one, the console one brought it | The copy panel is composed when the plate has none, `PANEL=""` when it has |
-| — | A five-word headline ran to two lines and into the blurb | The headline must fit one line at the house size; shorten the copy, keep the face |
-| The treatment would be overdone | It was fine at scanlines 15% and blur 0.3 | Those are the defaults |
-
-## Making a box, start to finish
-
-The generator is not in the repository, and neither is the judgement. A
-box is made by two parties — whoever writes the prompts and whoever
-runs the generator and looks at what comes back — and the steps below
-say which does what. **Nothing here says what a cover should look
-like.** That is what the rest of this guide is for, and it is written
-from the covers that came out wrong, one table row per cover, with the
-guesses deleted as they fail. The steps are the same every time; the
-verdicts are not, and are not meant to be.
-
-### The front
-
-1. Read the cartridge's own README under
-   [`features/<feature>/`](../../igniter/lib/workbench_igniter/features/).
-   The hero comes from what it actually does: the counts, the bodies.
-2. Roll the era — `shuf -i 1-6 -n 1` — and keep the roll unless it
-   fights the feature. One veto.
-3. Choose the register and fill the slots: title, subtitle, hero,
-   accent, badge, seal corner. Under an era whose lettering runs the
-   full width, ask for a *top* corner quiet.
-4. Assemble the prompt from [the template](#the-template) and save it
-   verbatim as `<feature>/cover.prompt.txt`.
-5. Generate it, outside the repository, at 5:7, and save the result
-   untouched — no seal, no retouching — as `<feature>/art/cover.jpg`.
-6. Look at it against the prompt: every count, every string, every
-   position. What came back wrong is a row in
-   [What the generator gets wrong](#what-the-generator-gets-wrong),
-   named after the cover. A take that is wrong on a fact is retired to
-   `_archived/art/cover-N.jpg` and regenerated; a take that is wrong to
-   the eye of whoever is looking goes the same way, and that eye is not
-   something this guide tries to write down.
-7. Pick the seal corner from the art, then
-   `./assets/covers/stamp.sh <feature> --corner <c>`, with `--size` and
-   `--margin` if the art wants them.
-8. Fill the row in the [cover record](#cover-record): era, register,
-   accent, corner and the options `stamp.sh` was given.
-
-### The back
-
-Only once the front's row is complete.
-
-1. Write the plate prompt — era, format and band verbatim, the back
-   layout clause, the front's accent — save it as
-   `<feature>/back.prompt.txt`, generate, and save the plate as
-   `<feature>/art/back.jpg`.
-2. Measure the plate into `<feature>/back/layout.env`: the frames'
-   inner rectangles, the field, the strip, as fractions of the width.
-   A scan for the bright chrome pixels along one row and one column
-   finds the frames; ImageMagick or PIL both do it. `PANEL=""` if the
-   plate brought its own field, and `ACCENT=` from the record.
-3. Write `<feature>/back/copy.md` from the cartridge README, in the
-   front's register, one `##` per piece.
-4. Take the screenshots from a generated project that has the feature
-   installed, **at the frames' ratio**: browser pages through
-   `playwright-cli` served over local HTTP, terminal output captured
-   with a TTY and rendered through `aha`. Save them as
-   `<feature>/back/shot-N.png`, 1 the leftmost.
-5. `./assets/covers/back.sh <feature>`. Look at it. Adjust the layout
-   or the copy — never the plate — and run it again.
-6. Record it: a line in the feature's paragraph of the cover record,
-   and whatever the plate did differently in
-   [Measured on the first back](#measured-on-the-first-back).
-
 ## Cover record
+
+What each cartridge decided, and nothing about how its cover looks:
+a cartridge started over is designed from its own feature README and
+this table's *other* rows, never from a description of what it used to
+be. That is why there are no stories here — a finished hero written
+down is the first thing a fresh proposal copies — and why a row is
+cleared, not annotated, when its cartridge starts over.
 
 The accent column is a mirror, not a gate: the point is to notice when
 six covers in a row have drifted to the same colour, not to stop the
-seventh from reusing one. The corner column is what `stamp.sh` was
-passed, so a cover can be restamped identically. The era column is
-retrospective for all but coveralls: the other five predate the
-repertoire, so all of them are its fourth entry. The register column is
-empty for the same five — it was never written down at the time, and
-reading it back off a finished cover is a guess, so it gets filled in as
-each one is regenerated rather than reconstructed now.
+seventh from reusing one (a repeat that *means* the same thing — green
+for healthy, green for covered — is fine; shift the hue, not the
+meaning). **The era column is the same, and is the one worth
+watching**: it is what a die used to guarantee and a choice does not.
+Nothing here rations the eras — a rule that forces the wrong cover onto
+a cartridge to even out a shelf would cost more than the unevenness —
+but three cartridges running that pick the same era is the signal, and
+the rule gets written then, from that evidence. The corner column is
+what `covers.py stamp` was passed, so a cover can be restamped identically;
+since exdebug the seal straddles the window's corner by default, half
+on the board and half on the art.
+Exdebug, exdoc and enhancements predate the repertoire; their register
+was never written down, and gets filled in when each is made again
+rather than read back off a cover.
 
 | Cartridge | Era | Register | Accent | Seal corner |
 | --- | --- | --- | --- | --- |
-| clustering | console, late 80s | — | electric magenta | — |
-| coveralls | CD-ROM, early 90s (rolled) | ominous | acid lime green | tr, `--size 0.20 --margin 0.11` |
-| healthcheck | console, late 80s | — | vital signal green | — |
-| exdebug | console, late 80s | deadpan | electric cyan | br, `--size 0.20 --margin 0.03` |
-| exdoc | console, late 80s | — | *unassigned* — parchment ivory failed the contrast rule | — |
-| enhancements | console, late 80s | — | hot forge orange | — |
+| clustering | *starting over* | — | — | — |
+| coveralls | *starting over* | — | — | — |
+| healthcheck | *starting over* | — | — | — |
+| exdebug | console, late 80s | deadpan | amber phosphor | tl, `--inside`, default size — the art in two turns under the banner overlay, hero at 4:5 with its own lockup, badge and price sticker, the padded canvas painted, cut by `covers.py cut`; straddling the band at a top corner covers the name's letters, so the seal sits inside the quiet quadrant instead |
+| exdoc | *starting over* | — | — | — |
+| enhancements | *starting over* | — | — | — |
 
-exdebug is the first cover made the current way, and the second with a
-back: a console-era plate that brought its own field, two real
-`ExDebug.console/2` runs at `width: 56` (the 80-column default does not
-fit a 5:7 frame) and the library's HexDocs page, in cyan. The ones still
-blank
-in the corner column are in `_archived/sealed/` as `-1`: each carries a
-*generated* seal baked into the artwork, including the one that says
-"Nintendo". They want regenerating, and healthcheck wants it first.
+The whole shelf was archived on 2026-08-27, every box on its own
+counts under `_archived/`, and the flow is being finished before any
+of them is made again. The overlay was redrawn the same day, after
+exdebug's front, from the four-sided board to the banner — the name
+band across the top, a strip along the bottom, the sides open — so
+exdebug's hero, generated at the old window's 2:3, was generated
+again the same day at the new window's 4:5, from the same prompt, and
+is the first cover made with `covers.py` end to end. Each box had been made under a different
+version of the flow — coveralls and exdebug before the overlay existed,
+with a generated band in their art; clustering under the first overlay,
+whose sides covered a quarter of the height; healthcheck's prompt under
+the same — and none of them under the overlay as it is now, the printed
+board with its socket, which moved the house violet from the art to
+the box. What each shelf row used to say is in its archived prompt and
+`eras.md`; the accents are free again, and get chosen fresh under the
+colour rule as it stands when the box is made.
 
-coveralls is the first cover started over from the repertoire. Both of
-its gauge-and-droid versions are in `_archived/` (`-1` with a generated
-seal, under `sealed/`; `-2` made the current way, under `art/`), and nothing from them carries over: the
-die was rolled — it came up CD-ROM and was kept — the register was chosen,
-and the hero is a new one. The first attempt at it is `-3`: a beam of ten
-segments with eight lit, which is 80% as a count and a battery indicator
-as a picture. A hero that is also a UI icon reads as the icon, and so
-does anything that "fills up" — so the hero is now the report itself as
-terrain: a lens sweeping a plain of code panels, lit behind the beam, dark
-ahead of it, and a red target line labelled at foreground size. The dark
-panels asked for on the lit side never held: "exactly three" came back as
-two on `-4`, "a few" came back as none on the cover, and both were kept,
-because unlike 80% that number was never a fact. The sweep is written as
-a position, not a motion. Green stays because
-covered lines are green, shifted to acid lime so it does not sit next to
-healthcheck's vital-signal green as a twin: shift the hue, not the
-meaning.
+## Measured on the backs
 
-The sweep's first take is `-4`, retired for three things the prompt let
-happen: the light curtain fell from the right edge of the lens rather
-than from its centre, because lens and curtain were placed independently;
-the red target line explained nothing, because nothing in the art named
-it; and the lockup filled the bottom right corner that the prompt had
-asked to keep quiet, while the top right fallback overlapped the edge of
-the lens. That last one was first answered by shrinking the seal to
-`0.16` in the gap between the title and the badge — the wrong trade. The
-rim's edge is not a focal element, and a seal the same size as its
-neighbours matters more than a corner with nothing under it: shrink the
-seal last, not first. The regeneration ties the curtain to the lens's
-centre, hangs a foreground plate on the red line, and asks for the top
-right quiet from the start — all three came back as asked, and the seal
-sits in the starfield over the red line at the standard `0.20`.
+Three cartridges, eight plates. The first three rows are from
+`coveralls` and `exdebug`; the rest are the six plates `healthcheck`
+took, and they are the reason the section above is as long as it is.
 
-Its back is the first one made. The plate came back clean with three
-5:7 frames and the barcode; the three screens are real — the coverage
-report at 81.7% against the 80% gate, the *Test Suite Report* page with
-39 passing tests, and the `mix cover` run — taken from a generated
-project at a 5:7 viewport. `coveralls/back/` holds the copy, the shots
-and the measured layout; `back.sh coveralls` rebuilds it.
-
-exdoc is the one that actually needs redoing, and not because ivory was
-taken: it failed the contrast rule.
-
-## Slot suggestions for the rest
-
-Starting points, not decisions. The hero column is a seed — expand it
-with the counts, the body and the scale before generating.
-
-| Cartridge | Subtitle | Badge | Hero seed |
-| --- | --- | --- | --- |
-| rest | SPEAK THE SPEC | 4 VERBS | Four heraldic banners (GET, POST, PUT, DELETE) over a marble API temple |
-| graphql | ASK FOR EXACTLY THIS | 1 QUERY | A single beam splitting through a prism into a queried subtree |
-| auth0 | NONE SHALL PASS | 1 TOKEN | A gate warden inspecting a glowing signed key against a wall of claims |
-| openai | ASK THE ORACLE | 1 ASSISTANT | A monolith face answering a small figure across a conversation thread |
-| credo | STYLE IS LAW | 0 WARNINGS | An inspector droid stamping verdicts on a scrolling wall of code |
-| githooks | NOTHING GETS THROUGH | 3 HOOKS | Three iron hooks suspended over a commit conveyor belt |
-| exmachina | BUILD THE WITNESSES | 1 FACTORY | An assembly line stamping out identical test subjects |
-| mock | TRUST NO ONE | 1 DOUBLE | A shapeshifter mid-transformation into a service it is impersonating |
-| psql_extras | INTERROGATE THE STORE | 20 QUERIES | A diagnostician droid with a stethoscope on a database obelisk |
-| osmon | WATCH THE MACHINE | 4 GAUGES | Four dial gauges (CPU, memory, disk, ports) on a brass control panel |
-| stripe | TAKE THE MONEY | 1 CHARGE | A vault door opening on a stream of coins routed into a ledger |
+| Guess | What happened | Rule it left |
+| --- | --- | --- |
+| The frames would not be where the prompt put them | They were roughly there | Measure the plate into `layout.env` |
+| — | A five-word headline ran to two lines and into the blurb | The headline must fit one line at the house size; shorten the copy, keep the face |
+| The treatment would be overdone | It was fine at scanlines 15% and blur 0.3 | Those are the defaults |
+| Blank panels would fill with pseudo-text | They did not on `coveralls`, so the guess was deleted — and `healthcheck-1` came back with a neon sigma and "SUM OF THE PHOSPHOR" under it | Restored, and a second rule with it: **one confirming sample is not enough to delete a guess.** It takes a failure to keep a rule and more than one success to drop one |
+| — | The prohibition ended "…no pictures inside the frames", and everything outside them stayed fair game | Scope a prohibition to the face, and enumerate: no title, no caption, no signature, no glyphs, no words of any kind |
+| — | With the lettering finally banned, the era block's *one carefully lit object centred* put a photographed bottle in the middle third, over a frame's edge | Cut from a plate's era block whatever clause places a subject. A downstream prohibition cannot beat the prompt's own first paragraph |
+| — | With the object clause cut too, the plate came back inert: a flat violet field with no paper, no deboss, no era | The clause that caused the bottle was also carrying the era's material. Cut what *places*, keep what *renders* |
+| A plate that reads dead is dead | That inert plate composed well: the copy filled it, and an editorial back is supposed to be plain | **Judge a plate composed, not bare.** One `back.sh` run is cheaper than a regeneration and answers it |
+| — | Three plates ran with a pure white margin on all four edges — a photograph of a box on a white ground, which Tier 2's format block forbids in those words — and none of the three reviews caught it | Check the **invariants** every take, not only the clauses that changed. Naming them is now step 9 |
+| — | The band came back in the accent colour on two plates of three, on the one element defined as never varying | Tier 2 never fixed the lettering's colour. Saying *pale chrome white* held — and then the band left the art altogether: it is on the overlay now, composited, and the back carries the name in the era's own form instead |
+| "Narrow and upright" would give a 5:7 frame | It gave 0.479, and `back.sh` cropped a third of the terminal away | Say proportions in numbers. Both plates asked in numbers came back within 0.02 |
+| Dropping the redundant width clause would let "the same height" survive | It did not. Tops level, bottoms 115px apart, twice out of two | Relations lose to proportions. Give each frame its rectangle |
+| — | A colophon asked for without its contents came back holding a monogram | Name the interior of anything you name |
+| The positive-only format block — "flat illustration, all of it in one plane" — would hold on a plate as it half-held on the cover | It did not: a photographed box, bevel, rim and shadow on all four edges, with everything else on the plate exactly as asked | The format block keeps its enumerated list of what a photograph would add — after the positive description, as the backstop the rule allows, and the only form that ever came back clean |
 
 ## What the generator gets wrong
 
@@ -800,6 +176,7 @@ Measured on the first six covers. Read this before blaming a prompt.
 | A warm neutral accent dissolved into the violet | `exdoc` | Accents must contrast in value |
 | The two small background IP labels came back with wrong digits, while the two large foreground ones were correct | `clustering` | Text in the art needs foreground size |
 | A dial rendered perfectly with its needle in the wrong place | `coveralls` | Describe compositions, not states |
+| A hero built as a bar of segments with some lit read as a battery icon, not as a scene | `coveralls-3` | A hero that is also a UI icon reads as the icon, and so does anything that "fills up": give the fact a body, not a widget |
 | The figure went from half the panel to a speck | `clustering` vs `coveralls` | State the figure's scale in the frame |
 | Proportions drifted narrower on two of six | `exdebug`, `enhancements` | State them inside the prompt, not only as a generator setting |
 | The title lockup ran into the corner the prompt had asked to keep quiet | `coveralls` (regenerated) | Choose the seal corner after seeing the art; top right with `--margin 0.11` is the fallback |
@@ -808,10 +185,35 @@ Measured on the first six covers. Read this before blaming a prompt.
 | The lockup filled the bottom right corner again; the top right fallback overlapped the hero's edge | `coveralls-4` | An edge is not a focal element: keep the size, take the corner. Under a full-width lockup, ask for a *top* corner quiet from the start |
 | Lens and light beam placed by separate clauses came back misaligned — the beam left the lens off-centre | `coveralls-4` | Tie linked objects to one axis in one sentence |
 | A bare threshold line read as decoration | `coveralls-4` | A mark that carries a fact needs a label at foreground size |
+| "One clean upward curve" of light came back as an arch, ends down — twice | `healthcheck-2`, `healthcheck-3` | A curve stated as a direction is read as one. Pin it by position: the lowest point *here*, both ends lifted |
+| The editorial era's composition arrived and its material did not: even ground, one object, generous space, small serif — over a glossy modern render | `healthcheck` | A metal-and-glass hero overrides the era's finish. Asking for print as an adjective ("no digital gloss") half-works; the lever is the object, or the technique ("no gradients") |
+| The title lockup filled the bottom right a third time, now in a different era | `healthcheck` | Not an era's fault: any lockup set full-width across the lower third takes that corner. Under one, ask for a top corner from the start |
+| A composition given nothing about the overlay put the badge at the face's bottom left, where the overlay covers it, and everything else close enough to the edges that the window cropped the title tight | `clustering-2` | The bleed is in the format block, in numbers, and every position is given inside the rectangle it leaves — never on the face |
+| The bleed asked for as "the rectangle they leave" came back drawn — a thin rule at a tenth of the face all round, a third of the inset asked for — and the badge placed at *its* corner, half under the overlay | `clustering-3` | Name no rectangle; it is a container, and it gets drawn. Measure every element from the edges of the face, one number each |
+| Six patch cords between four posts came back six on one take and eight on the next, from the same sentence | `clustering-2`, `clustering-3` | Bodies that cross are not separate bodies: count them where they meet — *three cords leave every post* |
+| The badge, given its position in numbers from the edges — a fifth in, an eighth up — came back at the face's corner, 50px from either edge, under the overlay; the second take in a row under it | `clustering-4` | Numbers do not move the badge: the genre puts it at the corner. It is a fact string, so it is typeset now, by `stamp.sh --badge`, inside the window |
+| Six cords asked by position *and* as three per post came back nine — the hanging cords grew loops | `clustering-4` | Cords that hang invite slack. Ask for them taut and straight; if that fails, change the body — bars, not cords |
+| The seal at `0.20` of the face met the hero on the first overlaid cover: on the window that shows it was 0.275, larger than on any cover before | `clustering-4` | `stamp.sh` measures the seal on the window's width now, so the seal keeps the size it has always had on the face that shows |
+| Told the image was "the printed front face itself, its own printed surface", the generator photographed one: pale lit edges and a shadow all round — every one of them inside the bleed | `clustering` | A *face* is an object. Say *illustration*, *image*, *plane* — and judge an overlaid cover composed, not bare: the bleed exists to absorb exactly this |
+| Two 4:3 frames given as rectangles in percentages — 6–48 and 52–94 across, 16–38 down — came back at 9–47, 53–91 and 18–38 | `clustering` | Percentages land within a few points; measure anyway, and never lay out from the prompt |
+| A sheet of six sketches, one per era, came back in one finish with six motifs — the eras bled into each other and none was itself | `clustering`'s sheet, not kept | Six materials in one prompt average. The era is chosen from six *written* proposals and a recommendation, which is where the sheet's value was anyway |
+| The title lockup, given its baseline at four fifths and its width at three quarters, came back with the baseline at 0.89 and the word 0.81 wide — the first and last letters under the overlay's sides — and the subtitle wholly under its bottom | `exdebug-4` | Numbers do not move the lockup either: the genre sets it on the bottom edge, the way it sets the badge in the corner. Give the lockup a top *and* a baseline, both inward of the bleed, say what fills the ground below it, and ask the word narrower than it should be — it comes back wider |
+| `["Lorem", "Ipsum"]` at foreground size came back as `[Lorem]` over `[Ipsum]`: the words right, the quotation marks and the comma gone, one line made two | `exdebug-4` | Words at foreground size land; punctuation is not a word. Spell the characters out in order, and say *one line* |
+| A porthole rim asked for with eight bolts came back with twelve | `exdebug-4` | Bolts on a rim are members of one body, not separate bodies — the same rule as segments in a field. Ask for *a bolted rim* and count nothing |
+| The lockup, given a top at 0.70, a baseline at 0.75 and half the width, and the ground below it described, came back on the bottom edge again, 0.80 wide, the E and the G under the sides and the subtitle under the bottom — the second take in a row | `exdebug-5` | The console genre sets its title at the bottom edge at full width, and no number moves it. Generate the art with its lettering left out, and composite the lockup with `stamp.sh --lockup`, cut from a take whose lettering came out right |
+| `["Lorem", "Ipsum"]` spelled out character by character came back with every character right — and wrapped in two lines inside the round porthole | `exdebug-5` | Spelling the characters holds. A round window wraps a line; a line that must stay one line needs a body wider than it is tall |
+| With the lockup left out and "the cover's lettering is printed afterwards" said in its place, the illustration came back as an inset panel on a flat blue-grey margin, 52px and 37px at the sides, about 75px top and bottom | `exdebug-6` | Say nothing about what happens to the art afterwards: "printed afterwards" makes it a print, and a print gets a margin. The margin fell under the overlay on every side, so the take was kept at the time — and retired to the eye: the hero was squeezed into the middle of a face the window showed half of |
+| Given the hero's size in numbers — pipe a third of the height, figure from a fifth to three quarters — the generator filled the image: the pipe came half the height and the figure's back ran to 0.94 of the width, under the board at 0.86; the take before, told the margins were empty ground, had squeezed everything into the middle | `exdebug-7` | Centres and heights land; extents and absences do not. A body that must stop short of the board is given the position of its far edge — *its back at four fifths of the width* — not a size. (Generating the art at the window's own 2:3 and setting it into the socket was written up here and taken out: the overlay's transparency is not promised to be a clean rectangle, and the art has to be congruent across the whole face) |
+| "Extend this image to fill 3:4" on the 2:3 hero came back 765×1024 with the hero still 685×1021 inside it: 40px added at each side, none above or below | `exdebug`, `expanded-1` | The generator keeps its output size, so it cannot add height to a full-height picture. Make the space first — `bleed.sh --pad`, the hero in the window of a 5:7 canvas with grey margins — and ask it only to paint the grey |
+| The badge asked for in the 2:3 hero as a flash in the top right corner — "DEV & TEST", with its ampersand — the term with straight quotes and its space, one hand on the pipe and the other at the side, and a half-peeled `$49.95` sticker in the bottom left all came back as asked, with the hero described as composition rather than by numbered edges | `exdebug` | Inside the hero, with nothing to keep clear of, the generator does what it is told; the numbers that matter are counts and strings. The badge is generated now, `--badge` a fallback |
+| The lockup asked for in the 2:3 hero — two thirds of the width, baseline at nine tenths — came back on the bottom edge at nine tenths of the width, as the genre sets it: inside the window, whole, with the subtitle nearly as wide as the window | `exdebug` | With the hero the window, the genre's bottom-edge lockup is where it should be, and compositing one is no longer needed. What it costs is the bottom corners: the badge goes to a top corner (`--badge-corner tr`), and the seal takes the other |
+| The padded 5:7 canvas came back painted, at 5:7 — the generator kept the canvas's proportion — with the hero 2–11px off the window from its own resize; the margins continued the scene and brought one thing not asked for, a guard rail on the catwalk, under the board | `exdebug` | Painting a blank border is a task the generator does as told. `bleed.sh` tolerates a few pixels of resize by repeating edge pixels; check the margins for what they add, since the prompt's "nothing new" is a backstop, not a guarantee |
 
-What it gets right, consistently: the band, the title and subtitle
-lockup, the badge, every count it was given, and any string given
-foreground size.
+What it gets right, consistently: the lettering of the title and
+subtitle (their *position* is another matter, above), the badge, every
+count of separate bodies it was given, any word given foreground size —
+and, while it was still asked for, the band's wording, which is why the
+back can carry it as generated text.
 
 Layout drift — inset panel or bleed, flat face or photographed box — is
 no longer on this list. That is the collection working as intended.
@@ -827,42 +229,20 @@ defended.
 * A wider repertoire is a wider trademark surface — more eras, more
   houses whose trade dress the generator has memorised.
 * Furniture asked for as a fact rather than as texture will come back
-  with wrong digits, exactly as the small address plates did.
-
-## The register
-
-The register is a **stance, not a finish**: what the mechanism is doing to
-whoever is looking, and what the subtitle promises them. It lives in two
-slots and no others — the hero and the subtitle — and it is the only thing
-in this document with no block of its own to paste.
-
-That is also why it must never carry a technique, which is the whole rule
-here: **a register that can only be described in the vocabulary of one era
-is not a register.** Airbrushed skies, obsidian and fog, thick linework and
-flat saturated colour are all ways of printing, and they belong to the era
-blocks. This section used to name three variants in exactly those terms,
-two of them by region — the moment the die stopped always coming up
-console, all three stopped meaning anything.
-
-So the list is **open**. A register is any stance that can be stated in one
-line without naming a medium; the era renders it:
-
-* **Heroic** — the mechanism triumphs, and the viewer is invited to join
-  it. Subtitles boast or command (`CONNECT THE NODES`).
-* **Ominous** — the mechanism is superior to the viewer, and withholds.
-  Subtitles threaten (`THEY SPEAK AS ONE`).
-* **Comic** — the mechanism is friendly, and a little silly about it.
-  Subtitles endear (`NOBODY DEPLOYS ALONE`).
-* **Deadpan** — the mechanism is documented apparatus and needs no
-  selling. Subtitles state (`ALIVE FROM THE CODE`).
-
-Four landmarks, not four options. Add one when a cartridge wants a stance
-none of these name, and describe it the same way: one line, no medium.
-
-Era and register are independent axes, and their cross is where the shelf
-gets its range. Ominous on the editorial cover is one lit object on an
-empty ground; ominous on the CD-ROM entry is chrome and a lens flare over
-the same threat. Same stance, two objects, and only the era moved.
-
-The era is rolled, the register is chosen. Both go in the
-[cover record](#cover-record), so a regenerated cover keeps them.
+  with wrong digits, exactly as the small address plates did. Deferred
+  with the furniture itself; kept for the wear pass.
+* The era blocks' genre — "console game box cover art" — carries a top
+  band in its memory, and the generator may draw one in the top bleed
+  even though the prompt asks for ground there. Harmless while it
+  falls under the overlay's band; the banner as it is now shows the
+  art above its band, so a drawn band would show there.
+* A laminated finish (CD-ROM, big box) renders as a sheen across the
+  face, and the overlay has none: the join may show. If it does, the
+  gloss clause goes to the wear pass with the rest.
+* The back's name, asked for as a stats panel or a readout, will bring
+  flipped digits with it — texture, never a fact.
+* Choosing the era on a recommendation will drift toward one taste over
+  eighteen cartridges, the way the die was meant to prevent — the
+  recommender's taste now, not the sheet's. Watched in the era column
+  of the [cover record](#cover-record), which every recommendation has
+  to quote; unwritten as a rule until a shelf shows it.

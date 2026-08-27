@@ -1,0 +1,83 @@
+Late-1980s console game box cover art. Painted airbrush illustration with
+the slightly stiff, heroic look of North American 8-bit era packaging:
+hard airbrush gradients, chunky specular highlights, visible matte
+cardboard grain.
+
+Flat cover illustration filling the entire image edge to edge, all of
+it in one plane: the four edges of the image are the four edges of the
+illustration, and the illustration is all there is — not a product
+photograph, not a box or a board: no bevel, no lip, no rim of light, no
+edge, no shadow, no surface behind it, no margin of any colour around
+it. Proportions 4:5 portrait. Every position below is measured from
+the edges of the image.
+
+Hero illustration: a great horizontal pipeline of riveted steel
+crossing the whole width of the image at its middle, filling about a
+third of the height, airbrushed with hard gradients and one chunky
+specular highlight along its top, running off both edges without a
+break. The ground is deep steel blue at the top edge, airbrushed down
+to near-black at the bottom edge, and the same ground continues behind
+everything to all four edges. Set into the pipe, left of centre, one
+rectangular sight glass with rounded corners in a bolted steel frame,
+twice as wide as it is tall, and floating in its glass, glowing amber,
+in bold squared capitals at foreground size, one single line of text
+made of exactly these characters in this order: an opening square
+bracket, the word Lorem between double quotation marks, a comma, a
+space, the word Ipsum between double quotation marks, a closing square
+bracket — that is,
+
+    ["Lorem", "Ipsum"]
+
+on one line, with both pairs of quotation marks and the comma drawn.
+Standing on a steel catwalk in front of the pipe, to the right of the
+sight glass, one technician in grey coveralls and a hard hat painted
+Elixir violet (#4B275F), seen from the side in profile, facing left,
+as tall as the pipe is wide and a half again: one hand laid on the
+pipe with the palm flat against the steel, the other hand at the side,
+the face turned to the sight glass, airbrushed in the stiff, heroic
+stance of the era — looking, not touching. The sight glass's amber
+glow is on the technician's face, on the hand and on the frame, and
+fades out on the pipe to either side. Below the catwalk, the
+near-black ground with its faint CRT haze, calm, and the catwalk's one
+diagonal strut going down into it on the right.
+
+Title lockup across the lower part of the image, over the near-black
+ground below the catwalk: "EXDEBUG" set large in a beveled chrome
+wordmark with a hard drop shadow, the lettering of the era, centred on
+the width and two thirds of the width wide; and beneath it, in smaller
+squared capitals, the subtitle "SEEN IN PASSING".
+
+In the top right corner of the image, a small rectangular flash in the
+era's lettering, a thin white rule around it on the steel-blue ground,
+reading "DEV & TEST" in white capitals at foreground size.
+
+In the bottom left corner of the image, over the near-black ground
+beside the title, one round price sticker printed on the cover:
+fluorescent orange, its top edge lifting and curling away as if half
+peeled, reading "$49.95" in black.
+
+The term in the glass, the title, the subtitle, the flash and the
+sticker are all the lettering in the image.
+
+The top left of the artwork is composed as a quiet area: low detail,
+no focal element, an even field of the steel-blue ground.
+
+Palette: the ground of the composition, edge to edge, is one tone that
+reads clearly lighter or darker in value than Elixir violet (#4B275F);
+the violet appears in the composition in details, as a secondary
+colour, and not as the ground. CRT phosphor haze in the background.
+Every mark on the face is printed illustration or type, and the marks
+named above are all of them.
+Accent: amber phosphor (#FFB000), the sight glass's glow and the term
+in it.
+
+--- second turn, with art/padded.jpg from covers.py pad ---
+
+The flat grey border around this picture is blank. Paint it by
+continuing the picture outward into it on every side, to the edges —
+the riveted steel pipe runs on to both edges at the same height, the
+steel-blue ground continues above it to the top edge, the near-black
+ground continues below the catwalk to the bottom edge, and the
+steel catwalk runs on to the left edge. Keep the picture inside
+exactly as it is, and add nothing new: no figure, no object, no
+lettering.

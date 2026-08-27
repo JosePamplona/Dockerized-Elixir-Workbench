@@ -1,0 +1,54 @@
+Mid-1990s PC game cover art. Dense oil-painted illustration in the
+fully-rendered style of the 256-colour era: deep chiaroscuro, heavy
+detail carried down into the shadows, dramatic single-source lighting,
+extruded fantasy lettering with a hard bevel, a glossy laminated finish.
+
+Flat cover illustration filling the entire image edge to edge, all of
+it in one plane: the four edges of the image are the four edges of the
+illustration, and the illustration is all there is — not a product
+photograph, not a box or a board: no bevel, no lip, no rim of light, no
+edge, no shadow, no surface behind it, no margin of any colour around
+it. Proportions 5:7 portrait. Every position below is measured from
+the edges of the image.
+
+Back face layout. This face carries no subject: no figure, no scene, no
+picture of anything. The face is the printed board in deep Elixir
+violet (#4B275F), even across the whole face, under the glossy
+laminate. One thing on it is lettered, and only one: the words
+"DOCKERIZED ELIXIR WORKBENCH", set in extruded fantasy lettering with a
+hard bevel, gold, on two lines — "DOCKERIZED" on the first line and
+"ELIXIR WORKBENCH" on the second — at foreground size, centred on the
+width, inside a rectangle that runs from ten hundredths of the width to
+ninety hundredths of the width and from four hundredths of the height
+to twenty hundredths of the height. Nothing else on the face is
+lettered: no title, no caption, no signature, no placeholder text, no
+glyphs, no words of any kind anywhere else, neither inside the frames
+nor outside them.
+
+Two empty inset frames, each outlined by a thin gilt rule, each filled
+with one flat near-black tone, unlit, with nothing in it, each frame
+three wide by two tall. Both run from twenty-four hundredths of the
+height down to forty-four hundredths of the height. The left one runs
+from fourteen hundredths of the width to forty-four hundredths of the
+width; the right one from fifty-six hundredths of the width to
+eighty-six hundredths of the width. Between the two frames, and
+between each frame and the side edge, the board is bare.
+
+Below them the printed board continues across the middle third of the
+face, and one round guild seal is printed into it in the same violet
+ink as the board, centred on the width, its centre at sixty-two
+hundredths of the height, a quarter of the width across, barely darker
+than the board it sits on — a watermark rather than a print, and the
+one mark on this face. Inside the seal's rim there is one open book
+seen from above, its two pages plain, and nothing else. It carries no
+lettering.
+
+Across the bottom edge, over the full width, a band of the same board
+printed in a darker ink, about a fifteenth of the height of the face.
+
+Palette: Elixir violet (#4B275F) as the dominant colour of the
+composition. CRT phosphor haze in the background. Every mark on the
+face is printed material or type, and the marks named above are all
+of them.
+Accent: vermilion ink (#D9432B), the light on the gold of the
+lettering and of the frames' rules.

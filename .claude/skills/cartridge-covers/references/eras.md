@@ -257,8 +257,11 @@ line without naming a medium; the era renders it:
 * **Laconic** — the mechanism answers the one question it is asked, in
   as few words as it can, and nothing more. Subtitles answer
   (`ARE YOU ALIVE? — YES.`).
+* **Hospitable** — the mechanism receives whoever arrives and has
+  already laid everything out for them. Subtitles invite
+  (`ONE URL AWAY`). Added for exdoc.
 
-Four landmarks, not four options. Add one when a cartridge wants a stance
+Five landmarks, not five options. Add one when a cartridge wants a stance
 none of these name, and describe it the same way: one line, no medium.
 
 Era and register are independent axes, and their cross is where the shelf

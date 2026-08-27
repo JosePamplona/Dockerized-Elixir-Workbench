@@ -1,0 +1,67 @@
+Mid-1990s PC game cover art. Dense oil-painted illustration in the
+fully-rendered style of the 256-colour era: deep chiaroscuro, heavy
+detail carried down into the shadows, dramatic single-source lighting,
+extruded fantasy lettering with a hard bevel, a glossy laminated finish.
+
+Flat cover illustration filling the entire image edge to edge, all of
+it in one plane: the four edges of the image are the four edges of the
+illustration, and the illustration is all there is — not a product
+photograph, not a box or a board: no bevel, no lip, no rim of light, no
+edge, no shadow, no surface behind it, no margin of any colour around
+it. Proportions 4:5 portrait. Every position below is measured from
+the edges of the image.
+
+Hero illustration, dense oil painting: a vaulted library at night, one
+great oak reading desk in the foreground filling the lower half of the
+image, and on it one enormous open tome lit by one oil lamp standing at
+its right — the lamp the single source of light, the vault behind
+falling into chiaroscuro with the spines of shelved books carried down
+into the shadow as texture. On the tome's open pages, an illuminated
+diagram in red and gold ink: boxes joined by ruled lines, drawn as
+ornament, no words in it. Hanging from the desk's front edge on a
+chain, one brass plate engraved with the address
+
+    /dev/docs
+
+in the era's extruded lettering at foreground size, one line, a
+forward slash, the word dev, a forward slash, the word docs. The dark
+of the vault continues to the top edge of the image, the oak of the
+desk to the bottom edge, and the shadowed shelves to both side edges.
+
+Title lockup across the lower part of the image, over the oak of the
+desk's front: "EXDOC" set large in extruded fantasy lettering with a
+hard bevel, gold catching the lamp's light, centred on the width and
+two thirds of the width wide; and beneath it, in smaller capitals of
+the same lettering, the subtitle "ONE URL AWAY".
+
+In the top right corner of the image, a small rectangular flash in the
+era's lettering, reading "DEV ONLY" in white capitals at foreground
+size on a vermilion ground.
+
+In the bottom right corner of the image, printed on the cover, one
+small round vermilion flash carrying the white silhouette of a floppy
+disk and no words.
+
+The address on the plate, the title, the subtitle and the flash are
+all the lettering in the image.
+
+The top left of the image is composed as a quiet area: low detail, no
+focal element, the even dark of the vault.
+
+Palette: the ground of the composition, edge to edge, is one tone that
+reads clearly lighter or darker in value than Elixir violet (#4B275F);
+the violet appears in the composition in details, as a secondary
+colour, and not as the ground. CRT phosphor haze in the background.
+Every mark on the face is printed illustration or type, and the marks
+named above are all of them.
+Accent: vermilion ink (#D9432B), the red of the diagram and of the
+flashes.
+
+--- second turn, with art/padded.jpg from covers.py pad ---
+
+The flat grey border around this picture is blank. Paint it by
+continuing the picture outward into it on every side, to the edges —
+the dark of the vault continues above to the top edge, the oak of the
+desk's front continues below to the bottom edge, and the shadowed
+shelves continue to both side edges. Keep the picture inside exactly
+as it is, and add nothing new: no figure, no object, no lettering.

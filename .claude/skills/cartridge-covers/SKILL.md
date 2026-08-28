@@ -34,6 +34,22 @@ And when a fix produces *zero* observable change in the thing it
 targeted, the first hypothesis is that it never arrived, not that it
 failed.
 
+**A hero can be manual.** Some art is made in conversation with the
+generator — instructions and its reinterpretations, turn after turn —
+and has no single prompt, the way the overlay has none. The image is
+then the source, like `overlay.xcf`, and the rule above holds in a
+different form: `cover.prompt.txt` opens by saying the hero is manual
+and which proposal it started from, and below that it is a **log of
+the changes asked of the image**, each written there before the take
+that tests it; every turn is the current `art/hero.jpg` plus the last
+entry. Everything downstream is the same — the proportion `covers.py
+window` names, `pad`, the second turn, `cut`, the invariants, the
+counts, the stamping — and the cover record's era column says
+*manual* and what it started from, since the six eras are briefs for
+prompts and this was not one. What is lost is the recipe: a manual
+hero cannot be regenerated, only continued, so it is archived before
+anything overwrites it, without exception.
+
 ## The invariants
 
 These do not vary, and they are the things a review forgets to look at

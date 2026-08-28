@@ -552,6 +552,14 @@ BACK_DEFAULTS = dict(
     MARGIN=0.075,
     SEAL_SIZE=0.12, SEAL_MARGIN="0.03", SEAL_CORNER="bl",
     ACCENT="#B6F542", INK=INK, MUTED="#CDBFDA",
+    # The frames' rules, when the plate is generated without frames and
+    # they are drawn here around each FRAMES rectangle: outer colour and
+    # width, inner colour and width, in pixels of a 728px plate. Empty
+    # when the plate brought its own frames. Five plates in a row put
+    # generated frames between 0.5 and 0.6 of the height whatever the
+    # prompt said, and the copy under them never fit; a drawn frame
+    # goes where the layout puts it.
+    FRAME_RULE="",
     # Type follows the era, so the composed half of the back is in the
     # same decade as the generated half. layout.env names the era (from
     # the cover record); F_HEAD, F_TEXT and F_MONO set there override
@@ -664,6 +672,14 @@ def cmd_back(args):
         for yy in range(0, h, 3):
             d.line((0, yy, w, yy), fill=(0, 0, 0, round(0.15 * 255)))
         shot.alpha_composite(scan)
+        if L["FRAME_RULE"]:
+            # The frame drawn around the shot: a rule outside the rectangle,
+            # and a thinner line just inside the rule.
+            oc, ow, ic, iw = L["FRAME_RULE"].split(",")
+            ow, iw = px(W / 728, int(ow)), px(W / 728, int(iw))
+            d = ImageDraw.Draw(plate)
+            d.rectangle((x - ow - iw, y - ow - iw, x + w - 1 + ow + iw, y + h - 1 + ow + iw), outline=rgba(oc), width=ow)
+            d.rectangle((x - iw, y - iw, x + w - 1 + iw, y + h - 1 + iw), outline=rgba(ic), width=iw)
         plate.alpha_composite(shot, (x, y))
         if n <= len(captions):
             caption(plate, (x, P(fl("CAPTION_Y"))), captions[n-1], font(f_mono, P(0.0155)), muted, w)

@@ -25,8 +25,21 @@ text does not flip digits.
 
 | Made by | What |
 | --- | --- |
-| The generator | The plate: era material and finish, the workbench's name in the era's own form, empty frames for the screenshots, an even field for the copy, a darker strip for the legal line |
-| Composition | The copy, the screenshots, the badge, the requirements flash, the legal line, the seal |
+| The generator | The plate: era material and finish, the workbench's name in the era's own form, the era's device ghosted into the middle, a darker strip for the legal line |
+| Composition | The frames and the screenshots in them, the copy, the badge, the requirements flash, the legal line, the seal |
+
+The frames used to be the generator's. Five plates in a row put them
+between 0.5 and 0.6 of the height whatever rectangle the prompt gave —
+two frames or one, in hundredths or fifths, with or without their own
+proportion — and the copy under them never fit without cutting. So the
+plate is generated **without frames**, and `covers.py back` draws them
+around each `FRAMES` rectangle, with `FRAME_RULE` in `layout.env`
+naming the rule: outer colour and width, inner colour and width, in
+the era's idiom (a heavy black rule with a thin accent line inside for
+the home computer; a gilt rule for the big box). The frame's rectangle
+is then a layout decision, measured against the copy's budget instead
+of the plate. The plate prompt's layout clause loses its frames
+paragraph; everything else in it stays.
 
 One back has been made this way — coveralls — and the rules below are
 what it left. Where a guess survived contact it says so; where it did
@@ -56,13 +69,8 @@ no title, no caption, no signature, no placeholder text, no glyphs, no
 words of any kind anywhere else, neither inside the frames nor outside
 them.
 
-Two empty inset frames, each outlined by <THE ERA'S RULE>. Both run from
-<a fifth> of the way down the face to <two fifths>. The left one goes
-from the left margin to <a third> of the way across, the right one from
-<just past a third> to the right margin.
-
-Below them the printed board continues across the middle third of the
-face, and one <DEVICE> is ghosted into it, centred, barely darker than
+Across the middle of the face the printed board continues, bare, and
+one <DEVICE> is ghosted into it, centred, barely darker than
 the stock it sits on — a watermark rather than a print, and the one mark
 on this face. <What is inside it, exactly.> It carries no lettering.
 
@@ -75,15 +83,18 @@ above are all of them.
 Accent: <the front's accent>.
 ```
 
-Two or three frames, never more: it is a count of separate bodies, which
-is the kind the generator gets right — three asked, three delivered.
-**Prefer two.** What shrinks a screenshot is not the frame's shape but
-how many share the width: on a 728px face, three 5:7 frames in a row are
-192px wide each, while two of the same height at 4:3 are 340px — 77%
-more linear resolution for the same band of the face. Mixed shapes in
-one row cost nothing: `layout.env` gives every frame its own `w` and `h`
-already, so a narrow upright frame for a console print beside a wide one
-for a page is a layout decision, not a tooling one.
+Two or three frames, or one wide one, and now that they are drawn the
+choice is the layout's: what shrinks a screenshot is not the frame's
+shape but how many share the width. On a 728px face, three 5:7 frames
+in a row are 192px wide each, two of the same height at 4:3 are 340px
+— 77% more linear resolution for the same band of the face — and one
+wide frame across the face holds a terminal at 80 columns. Mixed
+shapes in one row cost nothing: `layout.env` gives every frame its
+own `w` and `h`, so a narrow upright frame for a console print beside
+a wide one for a page is a layout decision, not a tooling one. What
+the frames leave below them is the copy's budget, and it is set here
+too: frames ending above two fifths of the face keep the back
+writable.
 
 Match the shot's aspect to its frame. `covers.py back` scales the shot
 to cover the frame and crops from the top, so a mismatch is not letterboxed — it silently
@@ -95,22 +106,27 @@ Three things in that template are not obvious, and each one cost a
 plate. They are set out below; what the plates actually did is in
 [Measured on the backs](../../../assets/covers/README.md#measured-on-the-backs).
 
-**Rectangles, not relations.** Say where each frame's edges are as a
-fraction of the face. Do not say "of equal size", "the same height" or
-"twice the width of the other": a stated internal proportion lands every
-time — 5 wide by 7 tall came back at 0.717 and 0.727 on two plates — and
-a stated *relation between two objects* is what gets dropped when the
-generator has to choose. Asked for both, it keeps the proportions and
-loses the relation, twice out of two.
+**Rectangles, not relations.** Say where each thing's edges are as a
+fraction of the face — the name's rectangle, the device's centre and
+width. Do not say "of equal size", "the same height" or "twice the
+width of the other": a stated *relation between two objects* is what
+gets dropped when the generator has to choose. This was learned on the
+frames, when the plate still carried them — 5 wide by 7 tall landed
+twice, and then 3 by 2 did not, when the name above grew and pushed
+them — and it is the reason they are drawn now: a rectangle whose
+position matters is composited, not asked for.
 
 **The frames set the copy's budget.** A back has room for the frames and
 then for headline, blurb, features, flash and legal strip, and the
 second half is what makes it a back. `coveralls` left the copy 0.84 of
-the width in height; a plate whose taller frame ran half the face left
-0.51, and no `layout.env` recovers that — the blurb loses a line, then a
-feature bullet goes, then the flash lands in the legal strip. Frames
-that end above two fifths of the face are the constraint that keeps the
-back writable.
+the width in height; plates whose frames ran to half the face left
+0.42–0.56, and no `layout.env` recovers that — the blurb loses a line,
+then a feature bullet goes, then the flash lands in the legal strip.
+With the frames drawn, the budget is set in `layout.env`: frames ending
+above two fifths of the face keep the back writable, and the wide era
+faces (Bookman, Palatino, the Noto blacks) want the copy at its floor —
+one line of headline, four of blurb, three bullets — before the
+layout is blamed.
 
 **The device is asked for, not forbidden.** See below. So is the name.
 

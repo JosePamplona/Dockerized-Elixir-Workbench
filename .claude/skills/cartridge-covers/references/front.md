@@ -196,6 +196,12 @@ whatever scale fits its output — and cuts the 5:7 face around it so
 the hero lands in the window, wherever the overlay's design leaves it:
 nothing but the overlay knows where. If the result is short on a side,
 the generator cropped or moved the picture, and the turn is rerun.
+When the hero's margins are flat colour — a field with nothing in it
+above and below, as on clustering — the second turn is not sent at
+all: the expansion is made by hand, the field's tone sampled off the
+hero and the hero's edge pixels repeated into the side slivers, and
+`covers.py cut` takes it from there. The generator repaints what it is
+told to keep; a flat margin gives it nothing to repaint.
 
 The last two lines used to read `No photographic elements. No real
 brand marks or logos.` — the line that was in the prompt the day the

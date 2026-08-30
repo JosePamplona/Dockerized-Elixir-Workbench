@@ -63,7 +63,9 @@ defmodule Mix.Tasks.Workbench.Catalog do
         String.pad_trailing(entry.name, width),
         String.pad_trailing(version_column(entry), 8),
         String.pad_trailing(kind_column(entry), 12),
-        entry.summary || ""
+        # The shelf's line is the developer's need (NEED.md); a
+        # cartridge without one still shows what it installs.
+        (entry.need && entry.need.line) || entry.summary || ""
       ]
       |> Enum.join("  ")
       |> String.trim_trailing()

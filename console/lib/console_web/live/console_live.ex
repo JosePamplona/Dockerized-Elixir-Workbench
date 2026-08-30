@@ -265,7 +265,7 @@ defmodule ConsoleWeb.ConsoleLive do
         <%= if e["covers"]["front"] do %>
           <img src={"/covers/#{e["covers"]["front"]}"} alt={e["name"]} draggable="false" />
         <% else %>
-          <div class="face plain"><b>{e["name"]}</b><small>{e["summary"]}</small></div>
+          <div class="face plain"><b>{e["name"]}</b><small>{(e["need"] && e["need"]["line"]) || e["summary"]}</small></div>
         <% end %>
         <span :if={@status && installed?(@status, e["name"])} class="chip good">inserted</span>
       </button>
@@ -292,7 +292,7 @@ defmodule ConsoleWeb.ConsoleLive do
             <div class="card">
               <div class="side front">
                 <img :if={@box["covers"]["front"]} src={"/covers/#{@box["covers"]["front"]}"} alt={@box["name"]} draggable="false" />
-                <div :if={is_nil(@box["covers"]["front"])} class="typeset"><h4>{@box["name"]}</h4><p>{@box["summary"]}</p><span class="nocover">no cover yet</span></div>
+                <div :if={is_nil(@box["covers"]["front"])} class="typeset"><h4>{@box["name"]}</h4><p>{(@box["need"] && @box["need"]["line"]) || @box["summary"]}</p><span class="nocover">no cover yet</span></div>
               </div>
             </div>
           </div>
@@ -306,7 +306,7 @@ defmodule ConsoleWeb.ConsoleLive do
               <span :if={@installed} class="chip good">inserted</span>
             </div>
             <h4>{@box["name"]}</h4>
-            <p>{@box["summary"]}</p>
+            <p>{(@box["need"] && @box["need"]["line"]) || @box["summary"]}</p>
           </div>
 
           <form class={"insert #{if @locked, do: "locked"}"} phx-submit="insert">

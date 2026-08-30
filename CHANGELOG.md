@@ -60,6 +60,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `html`, `live` (mark: `config :phoenix_live_view`, the one thing only
   `--live` brings) and `dashboard`. A default project shows them all
   inserted.
+- `NEED.md` in the cartridge anatomy: the developer's need the
+  cartridge answers, in their situation and not the mechanism's — one
+  sentence, then *Before*, *After* and *Not for*. `need/0` reads it off
+  the file the way `version/0` reads the changelog; the catalog carries
+  it (`need`), `mix workbench.catalog` and the console's shelf show its
+  line instead of the task's `@shortdoc`, and the box art starts from
+  it. Every cartridge has one, pending stripe included; the catalog
+  test refuses one without. Written because the first eight base
+  cartridge covers were proposed from the papers and came out as
+  pictures of the engine with nobody's problem in them.
 - A `DESIGN.md` for each of the eight base cartridges, written from
   `phx.new`'s generator and templates, the libraries' own installation
   guides and Phoenix's guides, with the engine's argument in mailer's

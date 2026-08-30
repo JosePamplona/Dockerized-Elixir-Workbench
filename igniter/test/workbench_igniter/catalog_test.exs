@@ -47,6 +47,12 @@ defmodule WorkbenchIgniter.CatalogTest do
           assert is_binary(entry.summary), "#{entry.name} has no @shortdoc"
           assert is_binary(entry.example)
         end
+
+        # The developer's need is part of the anatomy: one line the shelf
+        # shows, off the cartridge's NEED.md, pending cartridges included.
+        assert %{line: line, body: body} = entry.need, "#{entry.name} has no NEED.md"
+        assert line =~ ~r/\S/ and not String.starts_with?(line, "**")
+        assert body =~ "**Before:**" and body =~ "**After:**" and body =~ "**Not for:**"
       end
     end
 
@@ -170,7 +176,7 @@ defmodule WorkbenchIgniter.CatalogTest do
     test "mix workbench.catalog prints a table" do
       output = capture_io(fn -> Mix.Tasks.Workbench.Catalog.run([]) end)
 
-      assert output =~ ~r/^healthcheck2 +v0\.1\.0 +standalone +Adds liveness/m
+      assert output =~ ~r/^healthcheck2 +v0\.1\.0 +standalone +Your platform polls/m
       assert output =~ ~r/^stripe +- +pending/m
       assert output =~ ~r/^credo +- +composed/m
       assert output =~ ~r/^exdoc +- +--exdoc/m

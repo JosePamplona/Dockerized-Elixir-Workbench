@@ -198,11 +198,14 @@ still exact, which a sketch a third of the width of a face never was.
 2. **The six heroes**, numbered 1 to 6 in the repertoire's order, each
    under its era's name. Each is the hero paragraph as it would go into
    the cover prompt: bodies, counts, positions, scale in the frame,
-   every string at foreground size. The bodies and the counts come from
-   the cartridge's README; what the scene is *about* — the thesis, the
-   thing that goes wrong without it — from its `DESIGN.md`, which is
-   also where the register's voice is heard before the prompt invents
-   one. Not the era block — that goes into
+   every string at foreground size. What the scene is *about* — the
+   developer's situation, what goes wrong without the cartridge and
+   what changes with it — comes from `NEED.md`, in the developer's
+   words, and so does the register: a need read as a stance. The
+   bodies and the counts come from the README; `DESIGN.md` says what is
+   at stake underneath and is not where a hero starts — heroes written
+   from the papers alone drew the mechanism and nobody's problem. Not
+   the era block — that goes into
    the cover prompt verbatim and in full once its era has won, and is
    the one part of a proposal that is never rewritten.
 3. **The recommendation**, then **the choice** — one number each.
@@ -264,8 +267,21 @@ line without naming a medium; the era renders it:
 * **Hospitable** — the mechanism receives whoever arrives and has
   already laid everything out for them. Subtitles invite
   (`ONE URL AWAY`). Added for exdoc.
+* **Rehearsing** — the mechanism lets you run the real thing with
+  nothing at stake. Subtitles reassure (`SENT. NOWHERE.`). Added for
+  mailer.
+* **Courteous** — the mechanism addresses whoever arrives in their
+  own words. Subtitles greet (`IN THEIR OWN WORDS`). Added for gettext.
+* **Custodial** — the mechanism holds what you hand it and gives it
+  back unchanged. Subtitles vow (`NOTHING FORGOTTEN`). Added for ecto.
+* **Attentive** — the mechanism watches the page and moves it as you
+  act. Subtitles promise (`NO RELOAD`). Added for live.
+* **Candid** — the mechanism shows what is happening while it
+  happens, and leaves the judgement to you. Subtitles disclose
+  (`STOP GUESSING`). Added for dashboard.
 
-Five landmarks, not five options. Add one when a cartridge wants a stance
+Landmarks, not options — each one was a cartridge's need read as a
+stance, which is where a register comes from now (`NEED.md`). Add one when a cartridge wants a stance
 none of these name, and describe it the same way: one line, no medium.
 
 Era and register are independent axes, and their cross is where the shelf

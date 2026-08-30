@@ -91,6 +91,9 @@ defmodule WorkbenchIgniter.Features do
       name: feature.name(),
       task: feature.task(),
       summary: feature.summary(),
+      # The developer's need, off NEED.md: the one line the shelf shows
+      # and the whole note the box carries.
+      need: need(feature.need()),
       version: version(feature.version()),
       flag: feature.flag(),
       enabled_by: enabled_by(feature.enabled_by()),
@@ -131,6 +134,9 @@ defmodule WorkbenchIgniter.Features do
 
   defp version(nil), do: nil
   defp version({version, date}), do: %{version: version, date: date}
+
+  defp need(nil), do: nil
+  defp need({line, body}), do: %{line: line, body: body}
 
   # What the cartridge adds to the console, as plain maps: doors with
   # their condition (or nil), probes, tabs.

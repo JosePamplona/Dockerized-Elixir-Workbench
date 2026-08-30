@@ -30,6 +30,15 @@ Every cartridge is a directory `features/<feature>/` holding:
   alternatives it beat, what was verified and what was not, open
   questions, numbered references. Paper-shaped, short for a dep-only
   cartridge. Same backfill rule as the changelog.
+* `NEED.md` — the developer's need the cartridge answers, in their
+  situation and not the mechanism's: a title, **one sentence** (the
+  line the shelf, the catalog and the console show — `need/0` reads it
+  off the file, as `version/0` reads the changelog), then three short
+  paragraphs, **Before:**, **After:** and **Not for:**. Second person,
+  one situation, no feature list — a list is the README's. The box art
+  starts from it: the register and the hero come from the need, the
+  bodies and counts from the README. Every cartridge has one; the
+  catalog test says so.
 
 The cartridge directory holds only code. Everything that is not code
 lives under `priv/features/<feature>/` (never compiled, so files keep

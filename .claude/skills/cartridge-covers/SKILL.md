@@ -295,17 +295,24 @@ time; the verdicts are not, and are not meant to be.
 
 ### The front
 
-1. Read the cartridge's own README and `DESIGN.md` under
+1. Read the cartridge's own `NEED.md` first, then its README and
+   `DESIGN.md`, under
    [`features/<feature>/`](../../../igniter/lib/workbench_igniter/features/).
-   The heroes come from what it actually does and why: the README for
-   the bodies and the counts, the design for the thesis and what is at
-   stake — what goes wrong without it is what a hero dramatises. Read
-   **nothing else about this cartridge**: not its `_archived/`, not a
-   previous `eras.md` or prompt, not the cover record's old row.
-   A finished hero, read before the six are written, is the hero all
-   six turn into.
-2. Choose the register, and write **six heroes** — one per era, each
-   composed from what that era can do, not one hero restyled six times.
+   The need is what the picture is *about*: the developer's situation
+   before and after, in their words — the register is chosen from it
+   and the hero dramatises it, never the mechanism. The README gives
+   the bodies and the counts; the design gives what is at stake
+   underneath and where the need's claims are proved. Eight heroes
+   were once written from the papers alone and came out as pictures
+   of the engine — sorting offices, funnels — with nobody's problem in
+   them; that is what `NEED.md` exists to prevent. Read **nothing else
+   about this cartridge**: not its `_archived/`, not a previous
+   `eras.md` or prompt, not the cover record's old row. A finished
+   hero, read before the six are written, is the hero all six turn
+   into.
+2. Choose the register from the need, and write **six heroes** — one
+   per era, each composed from what that era can do, not one hero
+   restyled six times.
 3. Save them as `<feature>/eras.md`, numbered in the repertoire's
    order, and under them **the recommendation**: one number, one reason
    drawn from the cartridge and not from the style, and the era column

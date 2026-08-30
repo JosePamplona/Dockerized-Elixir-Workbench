@@ -252,6 +252,15 @@ defmodule WorkbenchIgniter.Feature do
       @doc "One line on what the cartridge installs: its task's `@shortdoc`."
       def summary, do: WorkbenchIgniter.Feature.shortdoc(task())
 
+      @doc """
+      The developer's need the cartridge answers, in one line — the
+      first paragraph of its NEED.md, the sentence the shelf shows —
+      and the whole file's body beside it: `{line, body}`, or `nil`
+      while the cartridge has no NEED.md. Read off the file, so the
+      shelf, the console and the box art say the same thing.
+      """
+      def need, do: WorkbenchIgniter.Feature.need(@cartridge_dir)
+
       @doc false
       def priv_asset(path), do: WorkbenchIgniter.feature_asset(@feature_name, path)
 
@@ -468,6 +477,26 @@ defmodule WorkbenchIgniter.Feature do
          [_, version, date] <-
            Regex.run(~r/^## v?(\S+?)\s*-\s*\((\d{4}-\d{2}-\d{2})\)/m, File.read!(path)) do
       {version, date}
+    else
+      _ -> nil
+    end
+  end
+
+  @doc false
+  # A cartridge's NEED.md as {line, body}: the line is the first
+  # paragraph after the title — the situation in one sentence, what the
+  # shelf shows — and the body the file from that paragraph on. The
+  # file's shape is fixed by features/README.md: a title, the sentence,
+  # then **Before:**, **After:** and **Not for:** paragraphs.
+  def need(cartridge_dir) do
+    path = Path.join(cartridge_dir, "NEED.md")
+
+    with true <- File.regular?(path),
+         body = path |> File.read!() |> String.replace(~r/\A#[^\n]*\n+/, "") |> String.trim(),
+         [line | _] <- String.split(body, ~r/\n\s*\n/, parts: 2),
+         line = line |> String.split("\n") |> Enum.map_join(" ", &String.trim/1),
+         false <- line == "" do
+      {line, body}
     else
       _ -> nil
     end

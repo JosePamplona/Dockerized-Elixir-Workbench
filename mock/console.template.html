@@ -1,0 +1,1901 @@
+<title>Workbench Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+{{TOKENS_CSS}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--serif);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+  button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .mono{font-family:var(--mono);font-size:12.5px}
+  .label{font-family:var(--cond);font-weight:600;text-transform:uppercase;letter-spacing:.12em;font-size:12px;color:var(--muted)}
+  .btn{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:12px;color:var(--ink);border:1px solid var(--line);padding:5px 10px;border-radius:2px;background:var(--surface);white-space:nowrap}
+  .btn:hover{border-color:var(--ink)}
+  .btn[aria-pressed="true"]{border-color:var(--ink);background:var(--surface-2)}
+  .btn[disabled]{opacity:.4;cursor:not-allowed}
+  .btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent;box-shadow:0 2px 0 rgba(0,0,0,.25)}
+  .btn.danger{color:var(--bad);border-color:var(--bad)}
+
+  /* --- the band --------------------------------------------------------- */
+  header.band{
+    background:var(--board);color:var(--board-ink);
+    display:flex;align-items:center;justify-content:space-between;gap:24px;
+    padding:0 28px;height:56px;border-bottom:3px solid var(--accent);
+  }
+  header.band h1{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.14em;font-size:22px;margin:0;line-height:1}
+  header.band h1 small{display:block;font-weight:500;letter-spacing:.2em;font-size:10.5px;opacity:.8;margin-top:3px}
+  header.band .right{display:flex;align-items:center;gap:18px;font-family:var(--mono);font-size:12px}
+  header.band .ver{font-family:var(--cond);font-weight:700;letter-spacing:.12em;text-transform:uppercase;font-size:12px;color:var(--board-ink);border:1px solid rgba(255,255,255,.45);padding:4px 10px;border-radius:2px;display:inline-flex;gap:8px;align-items:center}
+  header.band .ver:hover{background:rgba(255,255,255,.1)}
+  header.band .ver small{font-weight:500;letter-spacing:.14em;opacity:.75}
+  header.band .mock{border:1px solid rgba(255,255,255,.35);padding:3px 8px;border-radius:2px;letter-spacing:.08em;text-transform:uppercase;font-family:var(--cond);font-weight:600;font-size:11px}
+
+  /* --- layout ------------------------------------------------------------ */
+  .app{display:grid;grid-template-columns:minmax(340px,420px) minmax(0,1fr);min-height:calc(100vh - 56px)}
+  .console{border-right:1px solid var(--line);background:var(--surface);padding:22px 22px 40px;display:flex;flex-direction:column;gap:22px}
+  .screen{min-width:0;display:flex;flex-direction:column;min-height:calc(100vh - 56px)}
+  @media (max-width:900px){.app{grid-template-columns:1fr}.console{border-right:0;border-bottom:1px solid var(--line)}}
+
+  section h2{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:15px;margin:0 0 10px;display:flex;align-items:baseline;gap:10px}
+  section h2 .label{font-weight:500;letter-spacing:.1em}
+
+  /* --- console blocks ---------------------------------------------------- */
+  .ws{display:grid;gap:8px}
+  .ws .name{font-family:var(--cond);font-weight:700;font-size:30px;letter-spacing:.02em;line-height:1;margin:0;overflow-wrap:anywhere}
+  .ws .path{color:var(--muted)}
+  .urls{display:flex;flex-wrap:wrap;gap:8px}
+  .urls a{font-family:var(--mono);font-size:12px;text-decoration:none;border:1px solid var(--line);padding:4px 8px;border-radius:2px;background:var(--surface-2)}
+  .urls a b{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:11px;color:var(--muted);margin-right:6px}
+
+  table.rows{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px}
+  table.rows td{padding:7px 0;border-top:1px solid var(--line);vertical-align:middle;overflow-wrap:anywhere}
+  table.rows tr:first-child td{border-top:0}
+  table.rows td.k{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px;width:27%}
+  table.rows td.muted{color:var(--muted)}
+  table.rows td .hint{display:block;font-size:11.5px;color:var(--muted);margin-top:4px}
+  .chip{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:11px;padding:2px 7px;border-radius:2px;border:1px solid var(--line);color:var(--muted)}
+  .chip::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+  .chip.good{color:var(--good);border-color:var(--good)}
+  .chip.warn{color:var(--warn);border-color:var(--warn)}
+  .chip.bad{color:var(--bad);border-color:var(--bad)}
+  .chip.off{opacity:.6}
+  .chip.off::before{background:transparent;border:1px solid currentColor}
+  .chip.busy::before{animation:pulse 1s infinite}
+  @keyframes pulse{50%{opacity:.2}}
+
+  .slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+  .slot{
+    position:relative;border:1px solid var(--line);background:var(--surface-2);
+    border-radius:3px;padding:12px 12px 10px;min-height:76px;display:flex;flex-direction:column;justify-content:space-between;gap:8px;
+    background-image:repeating-linear-gradient(90deg,transparent 0 10px,rgba(212,178,126,.10) 10px 14px);
+    background-size:100% 6px;background-repeat:no-repeat;background-position:0 0;
+  }
+  .slot.empty{border-style:dashed;justify-content:center;align-items:center;color:var(--muted);font-family:var(--cond);letter-spacing:.12em;text-transform:uppercase;font-size:11px;background-image:none}
+  .slot .v{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .slot.new{animation:seat .5s ease-out}
+  @keyframes seat{from{transform:translateY(-10px);opacity:0}to{transform:none;opacity:1}}
+  .lozenge{display:inline-block;font-family:var(--cond);font-weight:600;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink);background:var(--surface);border:1px solid var(--ink);border-radius:999px;padding:3px 10px;line-height:1.3}
+
+  .urls a.off{opacity:.45;pointer-events:none}
+  .urls a small{font-family:var(--cond);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--soft);margin-left:6px}
+  .deployment{border:1px solid var(--line);background:var(--surface);border-radius:3px;padding:16px 18px;display:grid;gap:12px}
+  .deployment .now{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:14px}
+  .deployment .pick{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+  .deployment .pick label{display:grid;gap:6px;border:1px solid var(--line);border-radius:3px;padding:10px 12px;cursor:pointer;align-content:start}
+  .deployment .pick label.on{border-color:var(--accent);background:var(--accent-soft)}
+  .deployment .pick label b{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:13px}
+  .deployment .pick label p{margin:0;font-size:12.5px;color:var(--muted)}
+  .deployment .pick .opts{display:flex;gap:8px 12px;align-items:center;flex-wrap:wrap;font-family:var(--mono);font-size:12px;min-width:0}
+  .deployment .pick .opts label{display:inline-flex;gap:6px;align-items:center;border:0;padding:0;background:none;border-radius:0;cursor:pointer}
+  .deployment .pick .opts input[type=number]{width:52px;font-family:var(--mono);font-size:12px;padding:2px 4px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px}
+  .deployment .acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .deployment .acts .sep{width:1px;height:22px;background:var(--line);margin:0 4px}
+  .deployment .cmd{font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .term{display:grid;grid-template-rows:auto 1fr auto;gap:10px;height:calc(100vh - 56px - 52px - 44px);min-height:420px}
+  .term .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .term .toolbar select{font-family:var(--mono);font-size:12px;padding:4px 6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px}
+  .term .screen{background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;overflow:auto;padding:12px 14px;font-family:var(--mono);font-size:12.5px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+  .term .screen .p{color:var(--accent)}
+  .term .screen .dim{color:var(--term-dim)}
+  .term .screen .empty{color:var(--term-dim);font-style:italic}
+  .term .in{display:flex;gap:8px;align-items:center;font-family:var(--mono);font-size:12.5px}
+  .term .in .p{color:var(--accent)}
+  .term .in input{flex:1;font-family:var(--mono);font-size:12.5px;padding:6px 8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px}
+  .cluster{display:grid;gap:14px;align-content:start}
+  .cluster table{border-collapse:collapse;width:100%;font-family:var(--mono);font-size:12.5px}
+  .cluster th{text-align:left;font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--line)}
+  .cluster td{padding:6px 8px;border-bottom:1px solid var(--line)}
+  .cluster .probe{border:1px solid var(--line);background:var(--surface);border-radius:3px;padding:12px 14px;display:grid;gap:8px}
+  .cluster .probe h3{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:13px}
+  .cluster .probe .acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .probes{display:grid;gap:6px;font-family:var(--mono);font-size:12.5px}
+  .probes div{display:flex;justify-content:space-between;gap:10px;align-items:center}
+  .probes .code{color:var(--good)}
+  .probes .code.bad{color:var(--bad)}
+  .note{font-size:13px;color:var(--muted);font-style:italic;margin:0}
+
+  /* --- tabs ---------------------------------------------------------------- */
+  .tabs{display:flex;gap:2px;padding:14px 28px 0;border-bottom:1px solid var(--line);background:var(--ground);position:sticky;top:0;z-index:2;flex-wrap:wrap;row-gap:0}
+  .tab{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.12em;font-size:14px;color:var(--muted);padding:8px 14px 10px;border-bottom:3px solid transparent;margin-bottom:-1px;display:inline-flex;gap:8px;align-items:center}
+  .tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+  .tab .badge{font-family:var(--mono);font-size:10.5px;padding:1px 6px;border-radius:999px;background:var(--surface-2);color:var(--muted);letter-spacing:0}
+  .tab .badge.bad{background:var(--bad);color:#fff}
+  .tab .live{width:7px;height:7px;border-radius:50%;background:var(--good);animation:pulse 1.4s infinite}
+  .panel{display:none;padding:22px 28px 60px;flex:1;min-width:0}
+  .panel.on{display:block}
+
+  /* --- the shelf --------------------------------------------------------- */
+  .shelf-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:4px;flex-wrap:wrap}
+  .shelf-head h2{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:15px;display:flex;gap:10px;align-items:baseline}
+  .filters{display:flex;gap:6px;flex-wrap:wrap}
+  .filters .btn{color:var(--muted)}
+  .filters .btn[aria-pressed="true"]{color:var(--ink)}
+  .row{margin-top:18px}
+  .row .label{margin-bottom:10px;display:block}
+  .boxes{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:22px 18px;align-items:end;padding:0 14px 18px}
+  .plank{height:10px;background:var(--shelf);border-bottom:6px solid var(--shelf-edge);border-radius:1px;box-shadow:0 8px 14px rgba(0,0,0,.22)}
+  .box{position:relative;display:block;width:100%;text-align:left;border-radius:2px}
+  .box .face{aspect-ratio:5/7;width:100%;background:var(--board);border-radius:2px;overflow:hidden;box-shadow:var(--shadow);transition:transform .18s ease, box-shadow .18s ease;position:relative}
+  .box .face img{display:block;width:100%;height:100%;object-fit:cover}
+  .box:hover .face,.box:focus-visible .face{transform:translateY(-6px) rotate(-.6deg)}
+  .box .face.socket .name{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#F3ECF5;text-align:center;font-size:clamp(11px,1.6vw,15px);line-height:1.15;padding:6px 8px;background:rgba(20,10,28,.72);border:1px solid rgba(212,178,126,.6);border-radius:2px;max-width:88%}
+  .box .cap{display:flex;justify-content:space-between;align-items:baseline;gap:6px;margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .box .cap b{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);font-size:12px}
+  .box .stamp{position:absolute;right:-6px;top:10px;transform:rotate(8deg);font-family:var(--cond);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:10.5px;color:var(--accent-ink);background:var(--accent);padding:3px 8px;border-radius:2px;box-shadow:0 2px 4px rgba(0,0,0,.3)}
+  .box.pending .face{opacity:.55;filter:saturate(.5)}
+
+  /* --- logs ---------------------------------------------------------------- */
+  .logs{display:grid;grid-template-rows:auto auto 1fr;gap:10px;height:calc(100vh - 56px - 52px - 44px);min-height:420px}
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .toolbar .sep{width:1px;height:22px;background:var(--line);margin:0 4px}
+  .toolbar input[type=search]{font-family:var(--mono);font-size:12.5px;padding:5px 9px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;min-width:200px}
+  .toolbar select{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px;padding:5px 8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px}
+  .svc{display:inline-flex;align-items:center;gap:6px}
+  .svc::before{content:"";width:8px;height:8px;border-radius:2px;background:var(--svc)}
+  .svc[aria-pressed="false"]{opacity:.45}
+  .logmeta{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+  .viewport{position:relative;background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;overflow:hidden;display:grid}
+  .lines{overflow:auto;padding:10px 0;font-family:var(--mono);font-size:12px;line-height:1.5;scrollbar-gutter:stable}
+  .ln{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:0 12px;padding:0 14px;white-space:pre-wrap;word-break:break-word;border-left:3px solid transparent}
+  .ln:hover{background:rgba(255,255,255,.04)}
+  .ln .t{color:var(--term-dim);font-variant-numeric:tabular-nums}
+  .ln .s{color:var(--svc);width:72px;overflow:hidden;text-overflow:ellipsis}
+  .ln.debug .m{color:var(--term-dim)}
+  .ln.warn{border-left-color:var(--warn)}.ln.warn .m{color:#F0C87A}
+  .ln.error{border-left-color:var(--bad);background:rgba(224,108,95,.08)}.ln.error .m{color:#F3A196}
+  .ln.cont .s,.ln.cont .t{visibility:hidden}
+  .ln.hit .m mark{background:var(--accent);color:var(--accent-ink);padding:0 2px}
+  .lines.no-ts .ln{grid-template-columns:auto minmax(0,1fr)}.lines.no-ts .t{display:none}
+  .newpill{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);background:var(--accent);color:var(--accent-ink);font-family:var(--cond);font-weight:700;letter-spacing:.12em;text-transform:uppercase;font-size:12px;padding:6px 14px;border-radius:999px;box-shadow:0 4px 12px rgba(0,0,0,.4);display:none}
+  .newpill.on{display:block}
+  .empty{color:var(--term-dim);font-style:italic;padding:14px}
+
+  /* --- deploy -------------------------------------------------------------- */
+  .targets{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+  .target{border:1px solid var(--line);background:var(--surface);border-radius:3px;padding:16px;display:grid;gap:12px;align-content:start}
+  .target h3{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:18px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .target p{margin:0;font-size:13.5px;color:var(--muted)}
+  .target .opts{display:flex;gap:10px;align-items:center;font-family:var(--mono);font-size:12px}
+  .target .opts input[type=number]{width:56px;font-family:var(--mono);padding:3px 6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px}
+  .target .acts{display:flex;flex-wrap:wrap;gap:6px}
+  .target .cmd{font-family:var(--mono);font-size:11.5px;color:var(--muted);overflow-x:auto;white-space:nowrap}
+  .target .cmd::before{content:"$ "}
+  .newcard{border:1px solid var(--line);background:var(--surface);border-radius:3px;padding:18px 20px;display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:18px 32px;margin-bottom:18px}
+  @media (max-width:900px){.newcard{grid-template-columns:1fr}}
+  .newcard h3{grid-column:1/-1;margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:18px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .newcard .form{display:grid;gap:12px}
+  .newcard .frow{display:grid;grid-template-columns:130px minmax(0,1fr);gap:10px;align-items:center}
+  .newcard .frow label{font-family:var(--mono);font-size:12.5px}
+  .newcard .frow input[type=text]{font-family:var(--mono);font-size:13px;padding:6px 8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;width:100%}
+  .newcard .flags select{font-family:var(--mono);font-size:12px;margin-left:4px;padding:2px 4px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px}
+  .newcard .bases label.out{color:var(--muted);text-decoration:line-through}
+  .newcard .bases label.sub{margin-left:-2px;padding-left:10px;border-left:1px solid var(--line);color:var(--muted)}
+  .newcard .bases label.sub.out{text-decoration:none;opacity:.5}
+  .newcard .frow .ro{font-family:var(--mono);font-size:12.5px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .newcard .frow .ro a{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:11px;color:var(--accent)}
+  .newcard .flags{display:flex;flex-wrap:wrap;gap:6px 14px;font-family:var(--mono);font-size:12.5px}
+  .newcard .flags label{display:inline-flex;gap:6px;align-items:center}
+  .newcard .flags input{accent-color:var(--accent)}
+  .newcard .kind{display:grid;gap:10px;align-content:start}
+  .newcard .kind label.opt{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;align-items:start;border:1px solid var(--line);padding:10px 12px;border-radius:3px;cursor:pointer}
+  .newcard .kind label.opt:has(input:checked){border-color:var(--ink)}
+  .newcard .kind input{accent-color:var(--accent);margin-top:4px}
+  .newcard .kind b{font-family:var(--cond);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:13px}
+  .newcard .kind p{margin:0;grid-column:2;font-size:13px;color:var(--muted)}
+  .newcard .kind .composes{grid-column:2;display:flex;flex-wrap:wrap;gap:4px}
+  .newcard .kind .composes .chip{font-size:10px;padding:1px 5px;color:var(--ink)}
+  .newcard .foot{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .newcard .foot .cmd{flex:1;min-width:240px}
+  .dangerzone{margin-top:22px;border:1px solid var(--line);border-left:3px solid var(--bad);padding:14px 16px;display:grid;gap:10px;background:var(--surface)}
+  .dangerzone h3{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:15px}
+  .dangerzone .acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .dangerzone select{font-family:var(--mono);font-size:12px;padding:4px 6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px}
+  .confirm{font-family:var(--serif);font-size:13.5px;color:var(--bad);display:none;gap:8px;align-items:center}
+  .confirm.on{display:inline-flex}
+
+  /* --- the jobs tray -------------------------------------------------------- */
+  .tray{position:sticky;bottom:0;border-top:1px solid var(--line);background:var(--surface);z-index:2}
+  .tray .bar{display:flex;align-items:center;gap:14px;padding:8px 28px;cursor:pointer}
+  .tray .bar h4{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.12em;font-size:13px}
+  .tray .bar .last{font-family:var(--mono);font-size:12px;color:var(--muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tray .bar .caret{font-family:var(--mono);color:var(--muted)}
+  .tray .list{display:none;max-height:42vh;overflow:auto;border-top:1px solid var(--line)}
+  .tray.open .list{display:block}
+  .job{display:grid;grid-template-columns:auto 1fr auto auto;gap:14px;align-items:center;padding:8px 28px;border-top:1px solid var(--line);font-family:var(--mono);font-size:12px;cursor:pointer}
+  .job:first-child{border-top:0}
+  .job .cmdline{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .job .dur{color:var(--muted);font-variant-numeric:tabular-nums}
+  .job .out{grid-column:1/-1;display:none;background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:10px 14px;white-space:pre-wrap;line-height:1.55;max-height:220px;overflow:auto}
+  .job.open .out{display:block}
+  .out .dim{color:var(--term-dim)}.out .add{color:#9BD99A}.out .upd{color:#E3B25C}.out .ok{color:#D4B27E;font-weight:500}.out .err{color:#F3A196}
+
+  /* --- the box in hand (drawer) ----------------------------------------- */
+  /* The box in hand sits in the middle of the room; the scrim is light
+     enough that the board on the left keeps reading — it changes while
+     a cartridge goes in. */
+  .scrim{position:fixed;inset:0;background:rgba(10,4,14,.42);backdrop-filter:blur(1.5px);opacity:0;pointer-events:none;transition:opacity .2s;z-index:5}
+  .scrim.on{opacity:1;pointer-events:auto}
+  .drawer{
+    position:fixed;inset:0;margin:auto;width:min(1040px,94vw);height:min(88vh,920px);
+    background:var(--surface);border:1px solid var(--line);border-radius:4px;
+    transform:translateY(14px) scale(.985);opacity:0;pointer-events:none;
+    transition:transform .22s cubic-bezier(.2,.7,.2,1),opacity .18s;
+    overflow-y:auto;box-shadow:0 30px 70px rgba(0,0,0,.45);display:grid;grid-template-rows:auto 1fr;z-index:6
+  }
+  .drawer.on{transform:none;opacity:1;pointer-events:auto}
+  @media (max-width:700px){.drawer{width:100vw;height:100vh;border-radius:0;border:0}}
+  .drawer .top{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--surface);z-index:1}
+  .drawer .top h3{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:16px}
+  .drawer .top{flex-wrap:wrap;row-gap:8px}
+  .dtabs{display:flex;gap:2px;width:100%;margin-bottom:-14px;margin-top:6px}
+  .dtab{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.12em;font-size:12.5px;color:var(--muted);padding:6px 12px 8px;border-bottom:3px solid transparent;display:inline-flex;gap:6px;align-items:center}
+  .dtab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+  .dtab small{font-family:var(--mono);font-size:10px;letter-spacing:0;color:var(--muted)}
+  .drawer .body{display:grid;grid-template-columns:320px minmax(0,1fr);gap:32px;padding:26px 28px 32px;align-content:start}
+  .drawer .body[hidden]{display:none}
+  .booklet{display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:32px;padding:26px 32px 60px}
+  .booklet[hidden]{display:none}
+  .booklet.notoc{grid-template-columns:minmax(0,1fr)}
+  .booklet .toc{position:sticky;top:104px;align-self:start;display:grid;gap:6px;font-family:var(--cond);font-weight:600;letter-spacing:.06em;font-size:12.5px;text-transform:uppercase;border-left:1px solid var(--line);padding-left:12px}
+  .booklet .toc a{color:var(--muted);text-decoration:none}
+  .booklet .toc a:hover{color:var(--ink)}
+  .booklet .toc .doctitle{color:var(--ink);font-size:13.5px;letter-spacing:.08em;margin-bottom:6px;text-wrap:balance}
+  .booklet .toc .doctitle:hover{color:var(--accent)}
+  /* Where a heading lands when the index scrolls to it: below the fixed
+     top of its container, with air — the modal's top bar and tabs, or the
+     screen's tab bar — so the heading itself is what comes into view. */
+  .booklet{--fixed-above:112px}
+  .pdocs .booklet{--fixed-above:72px}
+  .md{scroll-margin-top:var(--fixed-above)}
+  .md h1,.md h2,.md h3{scroll-margin-top:calc(var(--fixed-above) + 6px)}
+  @media (max-width:640px){.booklet{grid-template-columns:1fr}.booklet .toc{display:none}}
+  .md{font-family:var(--serif);font-size:15.5px;line-height:1.6;max-width:68ch;min-width:0}
+  .md>*:first-child{margin-top:0}
+  .md h1,.md h2,.md h3,.md h4{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.06em;line-height:1.1;text-wrap:balance;margin:1.6em 0 .5em}
+  .md h1{font-size:28px;margin-top:0}.md h2{font-size:21px;padding-top:.6em;border-top:1px solid var(--line)}.md h3{font-size:16px}.md h4{font-size:14px;color:var(--muted)}
+  .md p,.md ul,.md ol{margin:0 0 1em}
+  .md li{margin:.2em 0}
+  .md a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:3px}
+  .md a[data-open]{font-family:var(--cond);font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-size:.85em;text-decoration:none;border:1px solid var(--accent);padding:1px 6px;border-radius:2px}
+  .md code{font-family:var(--mono);font-size:.86em;background:var(--surface-2);padding:.1em .35em;border-radius:2px}
+  .md pre{background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:12px 14px;overflow-x:auto;font-size:12.5px;line-height:1.5;margin:0 0 1.2em}
+  .md pre code{background:none;padding:0;font-size:inherit;color:inherit}
+  .md blockquote{margin:0 0 1em;padding:.2em 0 .2em 14px;border-left:3px solid var(--accent);color:var(--muted);font-style:italic}
+  .md table{border-collapse:collapse;font-size:13.5px;margin:0 0 1.2em;display:block;overflow-x:auto;max-width:100%}
+  .md th,.md td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+  .md th{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px;background:var(--surface-2)}
+  .md hr{border:0;border-top:1px solid var(--line);margin:1.5em 0}
+  .md img{max-width:100%}
+  .md svg.diagram{width:100%;height:auto;display:block;margin:0 0 1.2em;max-width:none}
+  .md p:has(> svg.diagram){max-width:none}
+  .md .revision{font-family:var(--mono);font-size:12px;color:var(--muted)}
+  @media (max-width:700px){.drawer .body{grid-template-columns:1fr}}
+  .hand{display:grid;gap:10px;align-content:start}
+  /* A two-sided card: both faces are in the DOM, the flip is one
+     transition of the card, and backface-visibility picks the side that
+     shows. Nothing is swapped mid-turn, so no frame shows the wrong face. */
+  .hand .face{aspect-ratio:5/7;position:relative;perspective:1100px}
+  .hand .card{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .55s cubic-bezier(.4,.1,.2,1)}
+  .hand .card.back{transform:rotateY(180deg)}
+  .hand .side{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:var(--board);border-radius:2px;overflow:hidden;box-shadow:var(--shadow)}
+  .hand .side.back{transform:rotateY(180deg)}
+  .hand .side img{width:100%;height:100%;object-fit:cover;display:block}
+  .hand .typeset{position:absolute;inset:0;padding:14px;color:#F3ECF5;background:linear-gradient(180deg,rgba(20,10,28,.15),rgba(20,10,28,.85));display:flex;flex-direction:column;justify-content:flex-end;gap:6px}
+  .hand .typeset h4{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:17px;margin:0;line-height:1.05;text-wrap:balance}
+  .hand .typeset p{margin:0;font-size:12px;line-height:1.35}
+  .hand .typeset .nocover{font-family:var(--mono);font-size:10px;opacity:.75}
+  .sheet{display:grid;gap:18px;align-content:start;min-width:0}
+  .sheet .head{display:grid;gap:6px}
+  .sheet .head .kicker{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .sheet .head h4{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:28px;line-height:1;text-wrap:balance}
+  .sheet .head p{margin:0;font-size:16px;max-width:60ch}
+  .sheet .req{display:flex;flex-wrap:wrap;gap:6px}
+  .sheet .req .chip{color:var(--ink)}
+  form.insert{display:grid;gap:14px;border:1px solid var(--line);border-radius:3px;padding:14px;background:var(--surface-2)}
+  form.insert #d-fields{display:grid;gap:0}
+  form.insert #d-fields>.field{padding:14px 0;border-top:1px solid var(--line)}
+  form.insert #d-fields>.field:first-child{padding-top:4px;border-top:0}
+  form.insert #d-fields>.field:last-child{padding-bottom:6px}
+  form.insert .label{margin-bottom:-4px}
+  .field{display:grid;grid-template-columns:150px minmax(0,1fr);gap:10px;align-items:center}
+  .field label{font-family:var(--mono);font-size:12.5px}
+  .field input[type=text]{font-family:var(--mono);font-size:13px;padding:6px 8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;width:100%}
+  .field .doc{grid-column:2;font-size:12.5px;color:var(--muted);margin:2px 0 0;max-width:60ch;line-height:1.45}
+  .field .doc code{font-family:var(--mono);font-size:.9em;background:var(--surface-2);padding:0 .3em;border-radius:2px}
+  .field input[type=checkbox],.field input[type=radio]{width:15px;height:15px;accent-color:var(--accent);margin:0}
+  .field.stack{align-items:start}
+  .field.stack>label{padding-top:2px}
+  /* One choice per line, its comment beside it; a plain list of names
+     (no comments) goes in two columns so a long one stays a list. */
+  .choices{display:grid;grid-template-columns:1fr;gap:10px 16px;font-family:var(--mono);font-size:12.5px}
+  .choices.plain{gap:6px 16px}
+  .choices.plain{grid-template-columns:1fr 1fr}
+  .choices label{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:0 8px;align-items:baseline}
+  .choices label input{align-self:center}
+  .choices label .doc{font-family:var(--serif);font-size:12.5px;color:var(--muted);line-height:1.35}
+  .choices label .doc::before{content:"— "}
+  .choices label .in.def{color:var(--soft)}
+  .groups{display:grid;gap:8px}
+  .groups .g{display:grid;grid-template-columns:96px minmax(0,1fr);gap:8px;align-items:start}
+  .groups .g .gl{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:11px;color:var(--muted);padding-top:3px}
+  .other{display:flex;gap:8px;align-items:center;font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .other input[type=text]{font-family:var(--mono);font-size:12.5px;padding:4px 8px;border:1px dashed var(--line);background:var(--surface);color:var(--ink);border-radius:2px;flex:1;max-width:320px}
+  .cmd{font-family:var(--mono);font-size:12.5px;background:var(--surface);border:1px solid var(--line);padding:8px 10px;border-radius:2px;overflow-x:auto;white-space:nowrap}
+  .cmd::before{content:"$ ";color:var(--muted)}
+  .go{justify-self:start;font-family:var(--cond);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:13px;background:var(--accent);color:var(--accent-ink);padding:9px 16px;border-radius:2px;box-shadow:0 2px 0 rgba(0,0,0,.25)}
+  .go[disabled]{opacity:.45;cursor:not-allowed;box-shadow:none}
+  form.insert .acts{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  form.insert .eject{font-family:var(--cond);font-weight:600;letter-spacing:.12em;text-transform:uppercase;font-size:12px;color:var(--bad);border:1px solid var(--bad);padding:8px 12px;border-radius:2px;background:var(--surface)}
+  form.insert .eject[disabled]{opacity:.4;cursor:not-allowed}
+  form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
+  .deps{display:grid;grid-template-columns:max-content 1fr;gap:8px 14px;align-items:baseline;margin:14px 0 4px;padding-top:12px;border-top:1px solid var(--line)}
+  .deps .k{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);white-space:nowrap}
+  .deps .v{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:13px}
+  .deps .why{display:inline-flex;gap:6px;align-items:center;font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .deps button.chip{cursor:pointer;background:none}
+  .deps .after{font-size:13px;color:var(--muted);font-style:italic}
+  .field .in.need{color:var(--warn);border-color:var(--warn)}
+  .choices label.need>span:first-of-type{color:var(--muted)}
+  .field .in{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:9.5px;color:var(--muted);border:1px solid var(--line);padding:0 4px;border-radius:2px;margin-left:6px}
+  .choices label.has{color:var(--muted)}
+  .choices label.has input{accent-color:var(--muted)}
+  .git{display:grid;gap:6px;font-family:var(--mono);font-size:12px}
+  .git .row{display:flex;justify-content:space-between;gap:10px;align-items:center}
+  .git .row .k{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px;color:var(--muted)}
+  .git .ins{display:flex;gap:6px;flex-wrap:wrap}
+  .go.done{background:var(--surface);color:var(--ink);border:1px solid var(--ink);box-shadow:none}
+  .log{font-family:var(--mono);font-size:12px;line-height:1.55;background:var(--term);color:var(--term-ink);border-radius:3px;padding:12px 14px;min-height:120px;max-height:260px;overflow:auto;white-space:pre-wrap;border:1px solid var(--term-line)}
+  .log .dim{color:var(--term-dim)}.log .add{color:#9BD99A}.log .upd{color:#E3B25C}.log .ok{color:#D4B27E;font-weight:500}
+  .log:empty::before{content:"The install output will stream here — and into the jobs tray.";color:var(--term-dim);font-style:italic}
+  .log-cap{display:flex;justify-content:space-between;align-items:baseline}
+
+  /* --- config.conf as a form ------------------------------------------- */
+  .cfg{display:grid;gap:26px;padding:26px 32px 60px;max-width:860px}
+  .cfg .bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;position:sticky;top:64px;background:var(--surface);padding:10px 0;border-bottom:1px solid var(--line);z-index:1}
+  .cfg .bar .note{flex:1;min-width:200px}
+  .cfg .sec{display:grid;gap:14px}
+  .cfg .sec .intro{margin:-6px 0 0;font-size:13.5px;color:var(--muted);max-width:60ch}
+  .cfg .sec h4{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:16px;display:flex;gap:10px;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:6px}
+  .cfg .row{display:grid;grid-template-columns:220px minmax(0,1fr);gap:4px 16px;align-items:center}
+  .cfg .row label{font-family:var(--mono);font-size:12.5px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .cfg .row .help{grid-column:2;font-size:12.5px;color:var(--muted);margin:0}
+  .cfg .row .help a{color:var(--accent)}
+  .cfg .row input[type=text],.cfg .row select{font-family:var(--mono);font-size:13px;padding:6px 8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;width:100%;max-width:520px}
+  .cfg .row input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent)}
+  .cfg .row.changed label::after{content:"●";color:var(--accent);font-size:10px}
+  .cfg .row.off label,.cfg .row.off input{opacity:.55}
+  .cfg .chip.new{font-size:10px;padding:1px 5px}
+  .cfg .stack{display:grid;gap:8px}
+  .cfg pre.raw{font-family:var(--mono);font-size:12px;line-height:1.5;background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:14px;overflow:auto;margin:0;white-space:pre}
+  .cfg pre.raw .c{color:var(--term-dim)}.cfg pre.raw .k{color:#D4B27E}.cfg pre.raw .v{color:#9BD99A}
+  @media (max-width:700px){.cfg .row{grid-template-columns:1fr}.cfg .row .help{grid-column:1}}
+
+  /* --- the project's own documents --------------------------------------- */
+  .pdocs{display:grid;gap:14px}
+  .pdocs .dtabs{margin:0;border-bottom:1px solid var(--line)}
+  .pdocs .booklet{padding:10px 0 40px}
+  .pdocs pre.env{font-family:var(--mono);font-size:12.5px;line-height:1.6;background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:14px 16px;overflow:auto;margin:0}
+  .pdocs pre.env .c{color:var(--term-dim)}.pdocs pre.env .k{color:#D4B27E}.pdocs pre.env .m{color:#F3A196}
+  .pdocs .missing{border:1px dashed var(--line);padding:18px;color:var(--muted);font-style:italic;max-width:60ch}
+
+  /* --- figures: a hint on hover, a viewer on click --------------------------- */
+  .fig{position:relative;margin:0 0 1.2em}
+  .fig>svg.diagram,.fig>img{margin:0;cursor:zoom-in}
+  .fig .expand{position:absolute;right:8px;top:8px;font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:11px;color:var(--ink);background:var(--surface);border:1px solid var(--line);padding:3px 8px;border-radius:2px;opacity:0;transition:opacity .15s;pointer-events:none}
+  .fig:hover .expand,.fig:focus-within .expand{opacity:1}
+  .hand .face{cursor:zoom-in}
+  .viewer{position:fixed;inset:0;z-index:9;background:rgba(10,4,14,.86);display:none;flex-direction:column}
+  .viewer.on{display:flex}
+  .viewer .bar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--line)}
+  .viewer .bar .title{flex:1;min-width:0;font-family:var(--cond);font-weight:700;letter-spacing:.1em;text-transform:uppercase;font-size:13px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .viewer .bar .pct{font-family:var(--mono);font-size:12px;color:var(--muted);min-width:56px;text-align:center}
+  .viewer .stage{flex:1;overflow:hidden;position:relative;cursor:grab;touch-action:none}
+  .viewer .stage.dragging{cursor:grabbing}
+  /* The zoom is a real size, not a transform scale: a scaled layer is a
+     bitmap the GPU stretches, while a resized SVG is drawn again from
+     the vector at every level. transform only moves the canvas. */
+  .viewer .canvas{position:absolute;left:0;top:0}
+  .viewer .canvas>svg,.viewer .canvas>img{display:block;width:100%;height:100%;max-width:none;background:var(--ground);border-radius:4px}
+  /* A vector figure is not moved as an element — it would be a huge
+     composited layer, rasterised in tiles that go missing while it is
+     dragged. The svg fills the stage and its viewBox says what shows. */
+  .viewer .canvas.vector{inset:0;width:auto!important;height:auto!important;transform:none!important}
+  .viewer .canvas.vector>svg{background:transparent;border-radius:0}
+  /* Images are looked at and dragged around, never dragged out: no
+     native image drag anywhere on the page, no text selection in the viewer. */
+  img{-webkit-user-drag:none;user-drag:none}
+  .viewer{user-select:none;-webkit-user-select:none}
+  .viewer .hint{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);font-family:var(--mono);font-size:11px;color:rgba(255,255,255,.7);pointer-events:none}
+  .toast{position:fixed;left:50%;bottom:64px;transform:translate(-50%,20px);opacity:0;transition:.25s;background:var(--ink);color:var(--ground);font-family:var(--cond);font-weight:600;letter-spacing:.12em;text-transform:uppercase;font-size:12px;padding:9px 14px;border-radius:2px;pointer-events:none;z-index:7}
+  .toast.on{transform:translate(-50%,0);opacity:1}
+
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="band">
+  <h1>Dockerized Elixir Workbench <small>Console</small></h1>
+  <div class="right">
+    <button class="ver" id="wb-open" title="The workbench: its manual, its changelog, its config">wb.sh <span id="wb-ver"></span> <small>manual · config</small></button>
+    <span id="clock"></span>
+    <span class="mock" title="A mock to judge the interaction. The workspace and the catalog are real (./wb.sh status --json, ./wb.sh catalog --json); the logs are a real capture of this workspace replayed; the install and deploy output is staged.">mock · replayed logs · staged jobs</span>
+  </div>
+</header>
+
+<div class="app">
+  <aside class="console" aria-label="The console: the configured workspace">
+    <section class="ws">
+      <span class="label">Workspace</span>
+      <p class="name" id="ws-name"></p>
+      <div class="path mono" id="ws-path"></div>
+      <div class="urls" id="ws-urls"></div>
+    </section>
+    <section>
+      <h2>Doors <span class="label" id="doors-sum"></span></h2>
+      <div class="urls" id="doors"></div>
+    </section>
+    <section>
+      <h2>Containers <span class="label" id="containers-sum"></span></h2>
+      <table class="rows" id="containers"></table>
+    </section>
+    <section>
+      <h2>Deployments <span class="label">baked · running</span></h2>
+      <table class="rows" id="deployments"></table>
+    </section>
+    <section>
+      <h2>Git <span class="label" id="git-sum"></span></h2>
+      <div class="git" id="git"></div>
+    </section>
+    <section>
+      <h2>Probes <span class="label">what cartridges answer</span></h2>
+      <div id="probes"></div>
+    </section>
+    <section>
+      <h2>Inserted <span class="label" id="slots-sum"></span></h2>
+      <div class="slots" id="slots"></div>
+    </section>
+  </aside>
+
+  <main class="screen">
+    <div class="tabs" role="tablist" aria-label="Screens">
+      <button class="tab" role="tab" data-tab="deploy" aria-selected="true">Deploy</button>
+      <button class="tab" role="tab" data-tab="logs" aria-selected="false">Logs <span class="live" id="logs-live" title="following"></span><span class="badge" id="logs-badge" hidden></span></button>
+      <button class="tab" role="tab" data-tab="project" aria-selected="false">Project</button>
+      <button class="tab" role="tab" data-tab="terminal" aria-selected="false">Terminal <span class="live" id="term-live" hidden title="a session is open"></span></button>
+      <button class="tab" role="tab" data-tab="cluster" aria-selected="false" id="tab-cluster" hidden>Cluster</button>
+      <button class="tab" role="tab" data-tab="shelf" aria-selected="false">Cartridges <span class="badge" id="shelf-badge"></span></button>
+    </div>
+
+    <section class="panel" id="panel-terminal" role="tabpanel">
+      <div class="term" id="term"></div>
+    </section>
+
+    <section class="panel" id="panel-cluster" role="tabpanel">
+      <div class="cluster" id="cluster"></div>
+    </section>
+
+    <section class="panel" id="panel-shelf" role="tabpanel">
+      <div class="shelf-head">
+        <h2>Cartridges <span class="label" id="shelf-sum"></span></h2>
+        <div class="filters" role="group" aria-label="Filter the shelf">
+          <button class="btn" data-filter="all" aria-pressed="true">All</button>
+          <button class="btn" data-filter="standalone" aria-pressed="false">Standalone</button>
+          <button class="btn" data-filter="composed" aria-pressed="false">Composed by setup</button>
+          <button class="btn" data-filter="covered" aria-pressed="false">With a box</button>
+        </div>
+      </div>
+      <div id="shelf"></div>
+    </section>
+
+    <section class="panel" id="panel-logs" role="tabpanel">
+      <div class="logs">
+        <div class="toolbar">
+          <span id="svc-chips" style="display:inline-flex;gap:6px;flex-wrap:wrap"></span>
+          <span class="sep"></span>
+          <select id="level" aria-label="Level">
+            <option value="debug">All levels</option>
+            <option value="info">Info and up</option>
+            <option value="warn">Warnings and up</option>
+            <option value="error">Errors only</option>
+          </select>
+          <input type="search" id="q" placeholder="Search the lines…" aria-label="Search">
+          <span class="sep"></span>
+          <button class="btn" id="follow" aria-pressed="true">Following</button>
+          <button class="btn" id="ts" aria-pressed="true">Timestamps</button>
+          <button class="btn" id="clear">Clear</button>
+        </div>
+        <div class="logmeta"><span id="log-count"></span><span>docker compose logs --follow · since the deployment came up · capped at 2 000 lines in the page</span></div>
+        <div class="viewport">
+          <div class="lines" id="lines" aria-live="off"></div>
+          <button class="newpill" id="newpill">↓ new lines</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel on" id="panel-deploy" role="tabpanel">
+      <div class="newcard" id="newcard"></div>
+      <div class="targets" id="targets"></div>
+      <div class="dangerzone">
+        <h3>Database and workspace</h3>
+        <div class="acts">
+          <select id="setup-env" aria-label="MIX_ENV"><option value="dev">dev</option><option value="prod">prod</option></select>
+          <button class="btn" id="setup">Setup the database</button>
+          <span class="note">drops it, creates it, seeds it</span>
+        </div>
+        <div class="acts">
+          <button class="btn danger" id="delete">Delete the project</button>
+          <span class="confirm" id="delete-confirm">Files, containers, images and volumes go. <button class="btn danger" id="delete-yes">Yes, delete</button><button class="btn" id="delete-no">Keep it</button></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-project" role="tabpanel">
+      <div class="pdocs">
+        <div class="dtabs" role="tablist" aria-label="The project's own documents" id="p-tabs"></div>
+        <div class="booklet" id="p-booklet" hidden><article class="md" id="p-md"></article><nav class="toc" id="p-toc"></nav></div>
+        <pre class="env" id="p-env" hidden></pre>
+        <div class="missing" id="p-missing" hidden></div>
+      </div>
+    </section>
+
+    <div class="tray" id="tray">
+      <div class="bar" id="tray-bar">
+        <h4>Jobs</h4>
+        <span class="chip off" id="tray-state">idle</span>
+        <span class="last" id="tray-last">Every command the console runs is a job: its output, its exit code, how long it took.</span>
+        <span class="caret">▴</span>
+      </div>
+      <div class="list" id="jobs"></div>
+    </div>
+  </main>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-hidden="true" aria-label="The box in hand">
+  <div class="top">
+    <h3 id="d-title">Cartridge</h3>
+    <button class="btn" id="d-close">Put back</button>
+    <div class="dtabs" role="tablist" aria-label="The box and what comes inside it" id="d-tabs"></div>
+  </div>
+  <div class="booklet" id="d-booklet" hidden>
+    <article class="md" id="d-md"></article>
+    <nav class="toc" id="d-toc" aria-label="In this document"></nav>
+  </div>
+  <div class="body" id="d-body">
+    <div class="hand">
+      <div class="face" id="d-face"></div>
+      <button class="btn" id="d-flip">Turn it over</button>
+    </div>
+    <div class="sheet">
+      <div class="head">
+        <div class="kicker" id="d-kicker"></div>
+        <h4 id="d-name"></h4>
+        <p id="d-summary"></p>
+        <div class="req" id="d-req"></div>
+      </div>
+      <form class="insert" id="d-form">
+        <span class="label">Options</span>
+        <div id="d-fields"></div>
+        <div class="deps" id="d-deps" hidden></div>
+        <div class="cmd" id="d-cmd"></div>
+        <div class="acts"><button class="go" id="d-go" type="submit">Insert cartridge</button><button class="eject" id="d-eject" type="button" hidden>Eject</button><span class="note" id="d-note"></span></div>
+      </form>
+      <div>
+        <div class="log-cap"><span class="label">Output</span><span class="note">staged in the mock</span></div>
+        <div class="log" id="d-log" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</aside>
+<aside class="drawer" id="wb-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-label="The workbench">
+  <div class="top">
+    <h3>Dockerized Elixir Workbench <span class="chip" id="wb-ver2"></span></h3>
+    <button class="btn" id="wb-close">Close</button>
+    <div class="dtabs" role="tablist" aria-label="The workbench's documents" id="wb-tabs"></div>
+  </div>
+  <div class="booklet" id="wb-booklet" hidden><article class="md" id="wb-md"></article><nav class="toc" id="wb-toc"></nav></div>
+  <div class="cfg" id="wb-cfg" hidden></div>
+</aside>
+<div class="viewer" id="viewer" role="dialog" aria-modal="true" aria-label="Figure viewer">
+  <div class="bar">
+    <span class="title" id="v-title"></span>
+    <button class="btn" id="v-out" title="Zoom out (−)">−</button>
+    <span class="pct" id="v-pct">100%</span>
+    <button class="btn" id="v-in" title="Zoom in (+)">+</button>
+    <button class="btn" id="v-100" title="Actual size (0)">1:1</button>
+    <button class="btn" id="v-fit" title="Fit (f)">Fit</button>
+    <button class="btn" id="v-close" title="Close (Esc)">Close</button>
+  </div>
+  <div class="stage" id="v-stage"><div class="canvas" id="v-canvas"></div><span class="hint">scroll to zoom · drag to pan · esc to close</span></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// Real data, read off the workbench: ./wb.sh catalog --json (with --covers)
+// and ./wb.sh status --json, on the workspace test_28; LOGS is a capture
+// of `docker compose logs --timestamps` of the same workspace.
+const CATALOG = {{CATALOG}};
+const STATUS = {{STATUS}};
+const LOGS = {{LOGS}};
+// DOCS: each cartridge's README.md, DESIGN.md and CHANGELOG.md, as they
+// are in igniter/lib/workbench_igniter/features/<name>/ (the console reads
+// them off the mounted workbench; the mock carries them along).
+const DOCS = {{DOCS}};
+// WB: the workbench itself — its version (wb.sh, line 3), README.md,
+// CHANGELOG.md, config.conf and the workspaces it has. PROJ: what the
+// workspace generated for itself (README.md, CHANGELOG.md, .env with its
+// secrets masked at build time).
+const WB = {{WB}};
+const PROJ = {{PROJ}};
+const ART = {{ART}};
+const SOCKET = "{{SOCKET}}";
+
+const APP = STATUS.project ? STATUS.project.app : "app";
+const WEB = APP + "_web";
+const MOD = APP.split("_").map(s => s[0].toUpperCase() + s.slice(1)).join("");
+const IMAGE = STATUS.compose_project.replace(/_/g, "-");
+const TOUCH = {
+  osmon:        [["upd","mix.exs"],["  ","  extra_applications: [:logger, :runtime_tools, :os_mon]"]],
+  psql_extras:  [["upd","mix.exs"],["  ","  + {:ecto_psql_extras, \"~> 0.8\", only: :dev}"]],
+  credo:        [["upd","mix.exs"],["  ","  + {:credo, \"~> 1.7\", only: [:dev, :test], runtime: false}"]],
+  mock:         [["upd","mix.exs"],["  ","  + {:mock, \"~> 0.3\", only: :test}"]],
+  exdebug:      [["upd","mix.exs"],["  ","  + {:ex_debug, \"~> 1.0\"}"]],
+  githooks:     [["upd","mix.exs"],["  ","  + {:git_hooks, \"~> 0.7\", only: :dev, runtime: false}"]],
+  exmachina:    [["upd","mix.exs"],["  ","  + {:ex_machina, \"~> 2.8\", only: :test}"]],
+  rest:         [["add",`lib/${WEB}/open_api/spec.ex`],["add",`lib/${WEB}/open_api/schemas.ex`],["upd",`lib/${WEB}/router.ex`],["upd","mix.exs"]],
+  graphql:      [["add",`lib/${WEB}/graphql/schema.ex`],["upd",`lib/${WEB}/router.ex`],["upd","mix.exs"]],
+  coveralls:    [["add","coveralls.json"],["add","lib/mix/tasks/cover.ex"],["add","test/cover/template/exdoc-ish/coverage.html.eex"],["upd","mix.exs"]],
+  exdoc:        [["add",`lib/${WEB}/controllers/ex_doc_controller.ex`],["add","assets/exdoc/guidelines.md"],["upd",`lib/${WEB}/router.ex`],["upd","mix.exs"]],
+  enhancements: [["add","lib/mix/tasks/version.ex"],["add","lib/mix/tasks/db.ex"],["add",`lib/${APP}/helper.ex`],["upd",`lib/${WEB}/controllers/error_json.ex`],["upd","mix.exs"]],
+  auth0:        [["add",`lib/${APP}/accounts.ex`],["add",`lib/${APP}/accounts/user.ex`],["add",`lib/${WEB}/plugs/token.ex`],["add","priv/repo/migrations/20260828000000_create_users.exs"],["upd","config/runtime.exs"]],
+  openai:       [["add",`lib/${APP}/assistant.ex`],["add",`lib/${APP}/assistant/conversation.ex`],["add",`lib/${WEB}/controllers/conversation_controller.ex`],["upd","config/runtime.exs"]],
+  healthcheck:  [["add",`lib/${WEB}/controllers/healthcheck_controller.ex`],["add",`test/${WEB}/controllers/healthcheck_controller_test.exs`],["upd",`lib/${WEB}/router.ex`],["upd","config/test.exs"]],
+  healthcheck2: [["add",`lib/${WEB}/plugs/health.ex`],["add",`test/${WEB}/plugs/health_test.exs`],["upd",`lib/${WEB}/endpoint.ex`],["  ",`  + plug ${MOD}Web.Plugs.Health`]],
+  clustering:   [["add","rel/vm.args.eex"],["add","rel/remote.vm.args.eex"],["add","rel/env.bat.eex"],["upd","rel/env.sh.eex"],["upd",".env"],["upd",".env.sample"]],
+};
+
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const el = (tag, attrs = {}, ...kids) => {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") n.className = v;
+    else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+    else if (v !== null && v !== undefined && v !== false) n.setAttribute(k, v === true ? "" : v);
+  }
+  for (const k of kids) n.append(k instanceof Node ? k : document.createTextNode(String(k)));
+  return n;
+};
+const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const state = {
+  entries: CATALOG.map(e => ({ ...e, installed: installedNow(e.name), state: stateNow(e.name) })),
+  filter: "all", current: null, face: "front",
+  containers: STATUS.containers.map(c => ({ service: c.Service, state: c.State, health: c.Health, image: c.Image })),
+  git: STATUS.git ? { ...STATUS.git, inserts: [...(STATUS.git.inserts || [])] } : { repo: false },
+  baked: { ...STATUS.baked },
+  jobs: [],
+  tab: "deploy",
+};
+function installedNow(name) {
+  const c = STATUS.project && STATUS.project.cartridges.find(c => c.name === name);
+  return !!(c && c.installed);
+}
+function stateNow(name) {
+  const c = STATUS.project && STATUS.project.cartridges.find(c => c.name === name);
+  return (c && c.state) || {};
+}
+const byName = name => state.entries.find(e => e.name === name);
+const title = e => e.name.replace(/(\d+)$/, " $1").replace(/_/g, " ");
+
+// --- the console (left board): re-rendered whenever the state moves ---------
+function renderConsole() {
+  $("#ws-name").textContent = state.project === false ? "no project" : STATUS.compose_project;
+  $("#ws-path").textContent = STATUS.workspace;
+  const urls = $("#ws-urls"); urls.replaceChildren();
+  if (STATUS.ports.app) urls.append(el("a", { href: `http://localhost:${STATUS.ports.app}`, target: "_blank" }, el("b", {}, "app"), `localhost:${STATUS.ports.app}`));
+  if (STATUS.ports.pgadmin) urls.append(el("a", { href: `http://localhost:${STATUS.ports.pgadmin}`, target: "_blank" }, el("b", {}, "pgAdmin"), `localhost:${STATUS.ports.pgadmin}`));
+
+  const t = $("#containers"); t.replaceChildren();
+  const running = state.containers.filter(c => c.state === "running").length;
+  $("#containers-sum").textContent = state.containers.length ? `${running} of ${state.containers.length} running` : "none";
+  if (!state.containers.length) t.append(el("tr", {}, el("td", { class: "muted" }, state.project === false ? "The workspace is empty: Deploy → New project." : "No containers: the project is down. Deploy → Up.")));
+  for (const c of state.containers) {
+    const label = c.health || c.state;
+    const cls = c.health === "healthy" || (!c.health && c.state === "running") ? "good" : c.state === "running" || c.health === "starting" ? "warn busy" : "bad";
+    t.append(el("tr", {}, el("td", { class: "k" }, c.service), el("td", {}, el("span", { class: "chip " + cls }, label)), el("td", { class: "muted" }, c.image)));
+  }
+
+  const d = $("#deployments"); d.replaceChildren();
+  for (const name of ["dev", "prod", "scaled"]) {
+    const up = deploymentUp(name), baked = state.baked[name];
+    const cell = el("td", {}, el("span", { class: "chip " + (up ? "good" : "off") }, up ? "running" : baked ? "baked · down" : "not baked"));
+    if (!up && baked) cell.append(el("span", { class: "hint" }, `./wb.sh up --deploy ${name}`));
+    d.append(el("tr", {}, el("td", { class: "k" }, name), cell));
+  }
+  renderProbes(); renderSlots(); renderGit(); renderTargets(); renderDoors(); renderCluster(); renderTerminal(); if ($("#newcard")) renderNewCard();
+}
+function renderGit() {
+  const g = state.git, box = $("#git"); box.replaceChildren();
+  if (!g.repo) { $("#git-sum").textContent = "no repository"; box.append(el("p", { class: "note" }, "phx.new initialises the repository; new2 makes the first commit.")); return; }
+  $("#git-sum").textContent = g.clean ? "clean" : "changes git does not have";
+  box.append(el("div", { class: "row" }, el("span", { class: "k" }, "tree"), el("span", { class: "chip " + (g.clean ? "good" : "warn") }, g.clean ? "clean" : "dirty")));
+  box.append(el("div", { class: "row" }, el("span", { class: "k" }, "head"), el("span", {}, g.head || "no commits yet")));
+  box.append(el("div", { class: "row" }, el("span", { class: "k" }, "signs as"), el("span", { title: g.identity }, (g.identity || "").replace(/ <.*/, ""))));
+  const ins = el("div", { class: "ins" });
+  for (const i of g.inserts) ins.append(el("span", { class: "chip", title: i.sha.slice(0, 7) + " · " + i.date }, i.feature));
+  box.append(el("div", { class: "row" }, el("span", { class: "k" }, "inserts"), g.inserts.length ? ins : el("span", { class: "note" }, "none yet")));
+  if (!g.clean) box.append(el("button", { class: "btn", onclick: commitPending }, "Commit pending changes"));
+}
+function commitPending() {
+  runJob("./wb.sh commit", [["ok", `Committed Workbench: commit pending changes (as ${state.git.identity}).`]], { onDone: () => { state.git.clean = true; state.git.head = "a1b2c3d Workbench: commit pending changes"; renderConsole(); renderForm(); } });
+  $("#tray").classList.add("open");
+}
+function deploymentUp(name) {
+  const c = state.containers;
+  if (name === "scaled") return c.some(x => /^app\d+$/.test(x.service) && x.state === "running");
+  if (name === "prod") return c.some(x => x.service === "app" && /-prod$/.test(x.image) && x.state === "running");
+  return c.some(x => x.service === "app" && /:local$/.test(x.image) && x.state === "running");
+}
+function appUp() { return state.containers.some(c => /^app\d*$/.test(c.service) && c.state === "running"); }
+
+// What each inserted cartridge adds to the console — a door (a link on
+// the app's port), a probe on the board, a tab — as the catalog carries
+// it (the manifest's `console/0`): the cartridge lights the console up
+// the day it is inserted, and nothing is written here by hand.
+function holds(e, cond) {
+  if (!cond) return true;
+  if (cond.with) return ((e.state && e.state.with) || []).includes(cond.with);
+  if (cond.cartridge) return !!(byName(cond.cartridge) || {}).installed;
+  return true;
+}
+// `{option}` in a path: the option's value as the project reports it, or its default.
+function fillPath(e, path) {
+  return path.replace(/\{(\w+)\}/g, (_, o) => (e.state && e.state[o]) || ((e.options.find(x => x.name === o) || {}).default) || "");
+}
+function contributions(kind) {
+  return state.entries.filter(e => e.installed && e.console && e.console[kind] && e.console[kind].length).flatMap(e => e.console[kind].map(x => [e, x]));
+}
+function renderDoors() {
+  const box = $("#doors"); box.replaceChildren();
+  const up = appUp(), doors = contributions("doors").filter(([e, d]) => holds(e, d.when));
+  $("#doors-sum").textContent = doors.length ? `${doors.length} open by cartridges` : "none yet";
+  if (!doors.length) box.append(el("p", { class: "note" }, "Cartridges open doors here: docs, dashboard, mailbox, swagger, graphiql, admin…"));
+  for (const [e, d] of doors) { const path = fillPath(e, d.path); box.append(el("a", { href: `http://localhost:${STATUS.ports.app}${path}`, target: "_blank", class: up ? "" : "off", title: up ? `${e.name}: ${path}` : `${e.name}: ${path} — the app is down` }, el("b", {}, d.label), path, el("small", {}, e.name))); }
+  // Tabs a cartridge lights up.
+  const tabs = new Set(contributions("tabs").map(([, t]) => t));
+  $("#tab-cluster").hidden = !tabs.has("cluster");
+  if (!tabs.has("cluster") && state.tab === "cluster") showTab("deploy");
+}
+function renderProbes() {
+  const p = $("#probes"); p.replaceChildren();
+  const probes = contributions("probes"), up = appUp();
+  if (probes.length) {
+    const list = el("div", { class: "probes" });
+    for (const [e, pr] of probes) { const path = fillPath(e, pr.path); list.append(el("div", {}, el("span", { title: e.name }, `GET ${path}`), el("span", { class: "code" + (up ? "" : " bad") }, up ? "200 ok" : "no answer"))); }
+    p.append(list);
+    p.append(el("p", { class: "note" }, "Polled by the console. (Values staged in the mock.)"));
+  } else {
+    p.append(el("p", { class: "note" }, "Insert a cartridge with probes (healthcheck2) and they light up here."));
+  }
+}
+function renderSlots() {
+  const s = $("#slots"); s.replaceChildren();
+  const ins = state.entries.filter(e => e.installed);
+  $("#slots-sum").textContent = `${ins.length} cartridge${ins.length === 1 ? "" : "s"}`;
+  for (const e of ins) {
+    s.append(el("div", { class: "slot" + (e.justInserted ? " new" : "") },
+      el("span", { class: "lozenge" }, title(e)),
+      el("span", { class: "v" }, e.version ? `v${e.version.version} · ${e.version.date}` : "unversioned")));
+    e.justInserted = false;
+  }
+  s.append(el("div", { class: "slot empty" }, "free slot"));
+}
+
+// --- tabs --------------------------------------------------------------------
+function showTab(name) {
+  state.tab = name;
+  for (const t of $$(".tab")) t.setAttribute("aria-selected", String(t.dataset.tab === name));
+  for (const p of $$(".panel")) p.classList.toggle("on", p.id === "panel-" + name);
+  if (name === "logs") { logs.unseenErrors = 0; renderLogBadge(); if (logs.follow) scrollToEnd(); }
+}
+for (const t of $$(".tab")) t.addEventListener("click", () => showTab(t.dataset.tab));
+
+// --- the shelf ---------------------------------------------------------------
+function renderShelf() {
+  const shelf = $("#shelf"); shelf.replaceChildren();
+  const f = state.filter;
+  const visible = state.entries.filter(e => f === "all" ? true : f === "standalone" ? e.standalone : f === "composed" ? !e.standalone : !!ART[e.name]);
+  const withBox = state.entries.filter(e => ART[e.name]).length;
+  $("#shelf-sum").textContent = `${state.entries.length} cartridges · ${withBox} with a box`;
+  $("#shelf-badge").textContent = `${state.entries.filter(e => e.installed).length} in`;
+  const groups = [["Standalone — inserted by hand, one at a time", visible.filter(e => e.standalone)], ["Composed by setup — in composition order", visible.filter(e => !e.standalone)]];
+  for (const [label, list] of groups) {
+    if (!list.length) continue;
+    const row = el("div", { class: "row" }, el("span", { class: "label" }, label));
+    const boxes = el("div", { class: "boxes" });
+    for (const e of list) boxes.append(boxEl(e));
+    row.append(boxes, el("div", { class: "plank" }));
+    shelf.append(row);
+  }
+}
+function boxEl(e) {
+  const face = el("div", { class: "face" + (ART[e.name] ? "" : " socket") });
+  if (ART[e.name]) face.append(el("img", { src: ART[e.name].front, alt: `${title(e)} — box cover`, draggable: "false" }));
+  else face.append(el("img", { src: SOCKET, alt: "", draggable: "false" }), el("span", { class: "name" }, title(e)));
+  const box = el("button", { class: "box" + (e.pending ? " pending" : ""), type: "button", "aria-label": `${title(e)}: pick up the box`, onclick: () => open(e.name) }, face);
+  if (e.installed) box.append(el("span", { class: "stamp" }, "inserted"));
+  box.append(el("div", { class: "cap" }, el("b", {}, e.name), el("span", {}, e.pending ? "pending" : e.version ? "v" + e.version.version : e.flag ? "--" + e.flag : e.standalone ? "add" : "setup")));
+  return box;
+}
+for (const b of $$(".filters .btn")) b.addEventListener("click", () => {
+  for (const o of $$(".filters .btn")) o.setAttribute("aria-pressed", "false");
+  b.setAttribute("aria-pressed", "true"); state.filter = b.dataset.filter; renderShelf();
+});
+
+// --- the box in hand ---------------------------------------------------------
+const DOC_TABS = [["box", "Box", null], ["readme", "Manual", "README.md"], ["design", "Design", "DESIGN.md"], ["changelog", "Changelog", "CHANGELOG.md"]];
+function renderDrawerTabs() {
+  const e = state.current, docs = DOCS[e.name] || {}, box = $("#d-tabs"); box.replaceChildren();
+  for (const [key, label, file] of DOC_TABS) {
+    if (key !== "box" && !docs[key]) continue;
+    const t = el("button", { class: "dtab", role: "tab", "aria-selected": String(state.dtab === key), onclick: () => showDrawerTab(key) }, label);
+    if (file) t.append(el("small", {}, file));
+    box.append(t);
+  }
+}
+function showDrawerTab(key) {
+  state.dtab = key; renderDrawerTabs();
+  $("#d-body").hidden = key !== "box";
+  $("#d-booklet").hidden = key === "box";
+  if (key !== "box") renderDoc(key);
+  $("#drawer").scrollTop = 0;
+}
+const GH = "https://github.com/JosePamplona/Dockerized-Elixir-Workbench/blob/main/";
+// Markdown into a booklet: the article, a table of contents from the h2s
+// when there are enough, and every relative link rewritten by `rewrite`
+// (what the console can open) or sent to the repository on GitHub.
+function renderMarkdown(md, art, toc, booklet, base, rewrite, idp, fallbackTitle) {
+  art.innerHTML = marked.parse(md, { gfm: true });
+  for (const a of $$("a[href]", art)) {
+    const href = a.getAttribute("href");
+    if (/^(https?:|mailto:|#)/.test(href)) { if (!href.startsWith("#")) a.target = "_blank"; continue; }
+    if (rewrite && rewrite(a, href)) continue;
+    a.href = GH + base + href.replace(/^\.\//, ""); a.target = "_blank";
+  }
+  for (const p of $$("p", art)) if (/^Revision:/.test(p.textContent)) p.classList.add("revision");
+  // Every figure — an inline diagram, an image — gets the expand hint and opens the viewer.
+  for (const fig of $$("svg.diagram, img", art)) {
+    if (fig.closest(".fig")) continue;
+    const wrap = el("figure", { class: "fig" });
+    fig.replaceWith(wrap); wrap.append(fig, el("span", { class: "expand" }, "⤢ expand"));
+    wrap.addEventListener("click", () => openViewer(fig, fig.tagName === "svg" ? ($("title", fig)?.textContent || "Figure") : (fig.alt || "Image")));
+  }
+  const heads = $$("h2", art), h1 = $("h1", art);
+  const goTo = target => ev => { ev.preventDefault(); target.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "start" }); };
+  toc.replaceChildren();
+  booklet.classList.toggle("notoc", heads.length < 3);
+  if (heads.length >= 3) {
+    // The document's own title heads the index and takes you back to the top.
+    toc.append(el("a", { class: "doctitle", href: "#" + idp + "top", onclick: goTo(art) }, h1 ? h1.textContent : fallbackTitle || "Top"));
+    heads.forEach((h, i) => { h.id = idp + i; toc.append(el("a", { href: "#" + idp + i, onclick: goTo(h) }, h.textContent.replace(/^\d+\.\s*/, ""))); });
+  }
+}
+function renderDoc(key) {
+  const e = state.current;
+  renderMarkdown(DOCS[e.name][key], $("#d-md"), $("#d-toc"), $("#d-booklet"), "igniter/lib/workbench_igniter/features/" + e.name + "/", (a, href) => {
+    let m;
+    if ((m = href.match(/^(README|DESIGN|CHANGELOG)\.md(#.*)?$/i))) { const k = m[1].toLowerCase(); a.href = "#" + k; a.dataset.tab = k; return true; }
+    if ((m = href.match(/^\.\.\/([a-z0-9_]+)\/?(README\.md)?$/))) { const other = byName(m[1]); if (other) { a.href = "#" + other.name; a.dataset.open = other.name; a.textContent = title(other) + " ▸"; return true; } }
+    return false;
+  }, "h-", DOC_TABS.find(t => t[0] === key)[2]);
+}
+$("#d-md").addEventListener("click", ev => {
+  const a = ev.target.closest("a"); if (!a) return;
+  if (a.dataset.tab) { ev.preventDefault(); showDrawerTab(a.dataset.tab); }
+  else if (a.dataset.open) { ev.preventDefault(); open(a.dataset.open); }
+});
+
+function open(name) {
+  const e = byName(name);
+  state.current = e; state.face = "front"; state.dtab = "box";
+  renderDrawerTabs(); showDrawerTab("box");
+  $("#d-title").textContent = e.name;
+  $("#d-name").textContent = title(e);
+  $("#d-summary").textContent = e.summary || "Documented in the generated project, but the installer is not ported yet.";
+  const k = $("#d-kicker"); k.replaceChildren();
+  k.append(el("span", { class: "chip" }, e.standalone ? "standalone" : "composed by setup"));
+  if (e.flag) k.append(el("span", { class: "chip" }, "--" + e.flag));
+  if (e.version) k.append(el("span", { class: "chip" }, `v${e.version.version}`));
+  if (e.pending) k.append(el("span", { class: "chip warn" }, "pending"));
+  if (e.installed) k.append(el("span", { class: "chip good" }, "inserted"));
+  const docs = DOCS[e.name] || {};
+  if (docs.design) k.append(el("span", { class: "chip", title: "This box comes with its design paper" }, "with design paper"));
+  const req = $("#d-req"); req.replaceChildren();
+  if (e.name === "rest" || e.name === "graphql") req.append(el("span", { class: "chip" }, "one interface: rest | graphql"));
+  renderFace(); renderForm();
+  $("#d-log").replaceChildren();
+  $("#drawer").classList.add("on"); $("#drawer").setAttribute("aria-hidden", "false");
+  $("#scrim").classList.add("on");
+  $("#d-close").focus();
+}
+function close() {
+  $("#drawer").classList.remove("on"); $("#drawer").setAttribute("aria-hidden", "true");
+  $("#scrim").classList.remove("on");
+}
+// Both sides are built once per box; flipping only turns the card.
+function renderFace() {
+  const e = state.current, face = $("#d-face"); face.replaceChildren();
+  const art = ART[e.name];
+  const front = el("div", { class: "side front" }), back = el("div", { class: "side back" });
+  if (art) {
+    front.append(el("img", { src: art.front, alt: `${title(e)} — box cover` }));
+    back.append(el("img", { src: art.back, alt: `${title(e)} — box back` }));
+  } else {
+    const opts = e.options.length ? e.options.map(o => `--${o.name.replace(/_/g, "-")}` + (o.default !== null && o.default !== undefined ? ` (${o.default})` : "")).join(" · ") : "no options";
+    // (choices are {value, doc} objects; the back lists the flags only)
+    front.append(el("img", { src: SOCKET, alt: "" }), el("div", { class: "typeset" }, el("h4", {}, title(e)), el("span", { class: "nocover" }, "no box yet — the socket stands in")));
+    back.append(el("img", { src: SOCKET, alt: "" }), el("div", { class: "typeset" }, el("h4", {}, e.summary || title(e)), el("p", {}, e.example ? "$ " + e.example : ""), el("p", {}, opts), el("span", { class: "nocover" }, "typeset back — the composed back would go here")));
+  }
+  const card = el("div", { class: "card" + (state.face === "back" ? " back" : ""), id: "d-card" }, front, back);
+  if (reduced()) card.style.transition = "none";
+  face.append(card);
+  $("#d-flip").textContent = state.face === "front" ? "Turn it over" : "Turn it back";
+}
+function flip() {
+  state.face = state.face === "front" ? "back" : "front";
+  $("#d-card").classList.toggle("back", state.face === "back");
+  $("#d-flip").textContent = state.face === "front" ? "Turn it over" : "Turn it back";
+}
+// What the project carries of an option, for a cartridge that adds:
+// the state's value, or the values in its list.
+function inState(o, v) {
+  const st = state.current.state || {}; if (!(o.name in st)) return false;
+  const cur = st[o.name];
+  if (cur === true) return "group"; // the piece is in, its detail unreadable: lock the group, mark nothing
+  return cur === v || (Array.isArray(cur) && cur.includes(v));
+}
+// The options a one-shot cartridge was inserted with, read off the
+// subject of its insert commit: `--key value`, `--key`, `--no-key`.
+// Absent from the subject means the default was taken. Null when the
+// cartridge has no insert commit (inserted by hand).
+function insertedArgs(e) {
+  const insert = state.git.inserts.find(i => i.feature === e.name);
+  if (!insert) return null;
+  const args = {}, parts = insert.subject.split(/\s+/).slice(2);
+  for (let i = 0; i < parts.length; i++) {
+    const m = parts[i].match(/^--(no-)?([\w-]+)$/); if (!m) continue;
+    const key = m[2].replace(/-/g, "_"), opt = e.options.find(o => o.name === key);
+    if (!opt) continue;
+    if (opt.type === "boolean") args[key] = !m[1];
+    else if (i + 1 < parts.length && !parts[i + 1].startsWith("--")) args[key] = parts[++i].replace(/^"|"$/g, "");
+  }
+  return args;
+}
+// The cartridges `requires` names — every one when `all`, the missing
+// ones otherwise — each with whether the project carries it.
+function missingRequires(e, all) {
+  return (e.requires || []).map(name => ({ name, in: !!(state.entries.find(x => x.name === name) || {}).installed })).filter(n => all || !n.in);
+}
+function inProject(name) { return !!(state.entries.find(x => x.name === name) || {}).installed; }
+// What each choice value builds on, from the catalog: {option: {value: [names]}}.
+function valueRequires(e) {
+  const m = {};
+  for (const o of e.options) {
+    if (!o.choices) continue;
+    const groups = "group" in o.choices[0] ? o.choices : [{ values: o.choices }];
+    for (const g of groups) for (const c of g.values) if (c.requires && c.requires.length) (m[o.name] = m[o.name] || {})[c.value] = c.requires;
+  }
+  return m;
+}
+// What the form as filled builds on: [{why, name, in}], one per chosen value and cartridge.
+function optionRequires(e) {
+  const vr = valueRequires(e), out = [];
+  for (const o of e.options) {
+    if (!vr[o.name] || !$("#opt-" + o.name + "-other") && !$$("input[name='opt-" + o.name + "']").length) continue;
+    for (const v of choiceValue(o)) for (const n of vr[o.name][v] || []) out.push({ why: "--" + o.name.replace(/_/g, "-") + " " + v, name: n, in: inProject(n) });
+  }
+  return out;
+}
+// Everything the insert as asked builds on and the project lacks, by name.
+function missingAll(e) {
+  const seen = new Set(), out = [];
+  for (const r of [...missingRequires(e), ...optionRequires(e).filter(r => !r.in)]) if (!seen.has(r.name)) { seen.add(r.name); out.push(r); }
+  return out;
+}
+// What follows the insert, from the manifest (`afterwards/0`); ash's
+// only matters with a database data layer on a project without Ecto.
+function afterwards(e) {
+  if (e.name === "ash") { const o = e.options.find(x => x.name === "data_layer"); if (!o || !$$("input[name='opt-data_layer']").length || !choiceValue(o).some(v => ["postgres", "sqlite"].includes(v)) || inProject("ecto")) return null; }
+  return e.afterwards || null;
+}
+// The Dependencies section: what the cartridge builds on, what the
+// chosen options add to that, what it comes with, and what follows.
+function renderDeps() {
+  const e = state.current, box = $("#d-deps"); box.replaceChildren();
+  const row = (k, ...items) => box.append(el("span", { class: "k" }, k), el("span", { class: "v" }, ...items));
+  const dep = n => el("button", { type: "button", class: "chip " + (inProject(n) ? "good" : "warn"), title: (inProject(n) ? "inserted" : "not in the project yet") + " — open its box", onclick: () => open(n) }, n + (inProject(n) ? " ✓" : " ✗"));
+  if (e.requires && e.requires.length) row("Builds on", ...e.requires.map(dep));
+  const opt = optionRequires(e);
+  if (opt.length) row("With these options", ...opt.map(r => el("span", { class: "why" }, r.why + " →", dep(r.name))));
+  if (e.implies.length) row("Comes with", ...e.implies.map(n => el("button", { type: "button", class: "chip", title: "new composes it alongside — open its box", onclick: () => open(n) }, n)));
+  const after = e.installed && e.rerun !== "adds" ? null : afterwards(e);
+  if (after) row("Afterwards", el("span", { class: "after" }, after));
+  box.hidden = !box.children.length;
+}
+function renderForm() {
+  const e = state.current, fields = $("#d-fields"); fields.replaceChildren();
+  const locked = e.installed && e.rerun !== "adds";
+  const inserted = locked ? insertedArgs(e) : null;
+  $("#d-form").classList.toggle("locked", locked);
+  if (!e.options.length) fields.append(el("p", { class: "note" }, "This cartridge takes no options."));
+  for (const o of e.options) {
+    const id = "opt-" + o.name, flag = "--" + o.name.replace(/_/g, "-");
+    if (o.choices) { fields.append(withDoc(choiceField(o, id, flag), o)); continue; }
+    const row = el("div", { class: "field" }, el("label", { for: id }, flag + (locked ? "" : "")));
+    const known = inserted && (o.name in inserted ? inserted[o.name] : o.default);
+    if (o.type === "boolean") row.append(el("input", { type: "checkbox", id, name: o.name, checked: inserted ? !!known : !!o.default, disabled: locked, onchange: renderCmd }));
+    else row.append(el("input", { type: "text", id, name: o.name, value: locked ? (inserted ? (known ?? "") : "") : (o.default ?? ""), placeholder: locked ? (inserted ? "" : "inserted by hand: value unknown") : o.type, disabled: locked, oninput: renderCmd }));
+    fields.append(withDoc(row, o));
+  }
+  if (locked) for (const i of $$("input,select", fields)) i.disabled = true;
+  renderGo();
+}
+function renderGo() {
+  const e = state.current, locked = e.installed && e.rerun !== "adds", inserted = locked ? insertedArgs(e) : null;
+  const go = $("#d-go"), eject = $("#d-eject"), note = $("#d-note");
+  const dirty = state.git.repo && !state.git.clean;
+  const adds = e.installed && e.rerun === "adds";
+  const missing = missingAll(e);
+  go.disabled = e.pending || locked || dirty || missing.length > 0;
+  go.className = "go" + (locked ? " done" : "");
+  go.textContent = e.pending ? "Not ported yet" : locked ? "Already inserted" : missing.length ? "Insert " + missing[0].name + " first" : adds ? "Add to cartridge" : "Insert cartridge";
+  const insert = state.git.inserts.find(i => i.feature === e.name);
+  eject.hidden = !e.installed; eject.disabled = !insert || dirty;
+  eject.title = insert ? `git revert ${insert.sha.slice(0, 7)} — ${insert.subject}` : "Inserted by hand: no commit to revert";
+  note.textContent = dirty ? "the tree has changes git does not have — commit first" : locked ? (inserted ? "inserted once, with these options (from its commit); eject to change them" : "inserted once; its options are not on record — eject to change them") : adds ? "every option is a package: what is in stays, what you add is queued" : !e.installed ? "" : "";
+  const born = STATUS.project && STATUS.project.phx && STATUS.project.phx[e.name] === true;
+  if (e.installed && !insert && !dirty) note.textContent = born ? "came with the project: phx.new generated it — nothing to eject" : "inserted by hand: no commit to eject";
+  if (!e.installed && missing.length && !dirty) note.textContent = "builds on " + missing.map(n => n.name).join(" and ") + ", not in the project yet";
+  renderCmd();
+}
+function eject(ev) {
+  ev.preventDefault();
+  const e = state.current, insert = state.git.inserts.find(i => i.feature === e.name);
+  if (!insert) return;
+  const log = $("#d-log"); log.replaceChildren();
+  runJob(`./wb.sh eject ${e.name}`, [["dim", `Reverting ${insert.sha.slice(0, 7)} ${insert.subject}`], ["ok", `Ejected ${e.name}: 9f3e1c2 Revert "${insert.subject}" (as ${state.git.identity}).`]], {
+    onLine: (cls, text) => { log.append(el("div", { class: cls }, text)); },
+    onDone: () => {
+      e.installed = false; e.state = {};
+      state.git.inserts = state.git.inserts.filter(i => i !== insert); state.git.head = `9f3e1c2 Revert "${insert.subject}"`;
+      renderConsole(); renderShelf(); renderForm();
+      for (const c of $$("#d-kicker .chip.good")) c.remove();
+      toast(`${title(e)} ejected`);
+    },
+  });
+  $("#tray").classList.add("open");
+}
+$("#d-eject").addEventListener("click", eject);
+function withDoc(row, o) {
+  if (o.doc) { const d = el("p", { class: "doc" }); d.innerHTML = marked.parseInline(o.doc); row.append(d); }
+  return row;
+}
+// An option with declared values: one of them (radios) or several
+// (checkboxes, in the catalog's sections when it has them), and a free
+// field beside them when the installer takes other values too.
+function choiceField(o, id, flag) {
+  // Choices come as {value, doc}; sections as {group, values}.
+  const grouped = "group" in o.choices[0];
+  const groups = grouped ? o.choices : [{ group: null, values: o.choices }];
+  const box = el("div", { class: grouped ? "groups" : "choices", "data-opt": o.name });
+  for (const g of groups) {
+    const plain = !g.values.some(c => c.doc);
+    const list = grouped ? el("div", { class: "choices" + (plain ? " plain" : "") }) : box;
+    if (!grouped && plain) box.classList.add("plain");
+    for (const { value: v, doc, requires } of g.values) {
+      const need = (requires || []).filter(n => !inProject(n));
+      const st = inState(o, v), has = st === true, locked = state.current.installed && state.current.rerun !== "adds";
+      const ins = locked ? insertedArgs(state.current) : null;
+      const chosen = !!ins && (o.name in ins ? String(ins[o.name]).split(",").includes(v) : (!o.multiple && v === o.default));
+      const input = el("input", { type: o.multiple ? "checkbox" : "radio", name: id, value: v, checked: has || chosen || (!o.multiple && !locked && !state.current.installed && v === o.default), disabled: has || st === "group" || locked, onchange: renderCmd });
+      const isDefault = !o.multiple && v === o.default && !state.current.installed;
+      if (need.length) { input.disabled = true; input.checked = false; input.title = "builds on " + need.join(" and ") + ", not in the project yet"; }
+      const lab = el("label", { class: has ? "has" : need.length ? "need" : "" }, input, el("span", {}, v, has ? el("span", { class: "in" }, "in") : need.length ? el("span", { class: "in need" }, "needs " + need.join(" + ")) : isDefault ? el("span", { class: "in def" }, "default") : ""));
+      if (doc) lab.append(el("span", { class: "doc" }, doc)); else lab.append(el("span", {}));
+      list.append(lab);
+    }
+    if (grouped) box.append(el("div", { class: "g" }, el("span", { class: "gl" }, String(g.group).replace(/_/g, " ")), list));
+  }
+  const wrap = el("div", {}, box);
+  const st = state.current.state || {};
+  if (o.name === "auth" && st.auth === true) wrap.append(el("p", { class: "note" }, "authentication is in: more strategies go through mix ash_authentication.add_strategy, not here"));
+  if (o.open) wrap.append(el("div", { class: "other" }, "other:", el("input", { type: "text", id: id + "-other", placeholder: o.multiple ? "name, name — anything the installer takes" : "another value", oninput: renderCmd })));
+  return el("div", { class: "field stack" }, el("label", {}, flag + (o.multiple ? " (several)" : "")), wrap);
+}
+function choiceValue(o) {
+  const id = "opt-" + o.name, other = $("#" + id + "-other");
+  const picked = $$(`input[name="${id}"]:checked:not(:disabled)`).map(i => i.value);
+  const extra = other && other.value.trim() ? other.value.split(/[,\s]+/).filter(Boolean) : [];
+  return [...picked, ...extra];
+}
+function currentArgs() {
+  const e = state.current, args = [];
+  for (const o of e.options) {
+    const flag = "--" + o.name.replace(/_/g, "-");
+    if (o.choices) {
+      const v = choiceValue(o);
+      if (o.multiple ? v.length : (v[0] !== undefined && (v[0] !== (o.default ?? "") || state.current.installed))) args.push(flag, v.join(","));
+      continue;
+    }
+    const input = $("#opt-" + o.name); if (!input) continue;
+    if (o.type === "boolean") { if (input.checked !== !!o.default) args.push(input.checked ? flag : flag.replace("--", "--no-")); }
+    else if (input.value !== "" && input.value !== (o.default ?? "")) args.push(flag, /\s/.test(input.value) ? JSON.stringify(input.value) : input.value);
+  }
+  return args;
+}
+function renderCmd() { $("#d-cmd").textContent = ["./wb.sh", "add", state.current.name, ...currentArgs()].join(" "); renderDeps(); }
+
+function insert(ev) {
+  ev.preventDefault();
+  const e = state.current;
+  if (e.pending || (e.installed && e.rerun !== "adds")) return;
+  const go = $("#d-go"); go.disabled = true; go.textContent = "Inserting…";
+  const args = currentArgs();
+  const path = $("#opt-path") ? $("#opt-path").value : null;
+  const log = $("#d-log"); log.replaceChildren();
+  const cid = Math.random().toString(16).slice(2, 14);
+  const lines = [
+    ["dim", `[${cid}]workbench/scripts/entrypoint.sh(${1 + args.length}): add ${e.name} ${args.join(" ")}`.trim()],
+    ["", "Resolving Hex dependencies..."], ["", "All dependencies are up to date"], ["dim", "==> workbench_igniter"],
+    ...(TOUCH[e.name] || [["upd", "mix.exs"]]).map(([k, t]) => [k === "add" ? "add" : k === "upd" ? "upd" : "", k === "add" ? "Create: " + t : k === "upd" ? "Update: " + t : t]),
+    ["dim", "Resolving Hex dependencies..."], ["ok", `Committed Insert ${[e.name, ...args].join(" ")} (as ${state.git.identity}).`],
+  ];
+  runJob(["./wb.sh", "add", e.name, ...args].join(" "), lines, {
+    onLine: (cls, text) => { log.append(el("div", { class: cls }, text)); log.scrollTop = log.scrollHeight; },
+    onDone: () => {
+      const subject = `Insert ${[e.name, ...args].join(" ")}`;
+      state.git.inserts.unshift({ sha: Math.random().toString(16).slice(2, 42), feature: e.name, subject, date: new Date().toISOString().slice(0, 19).replace("T", " ") });
+      state.git.head = state.git.inserts[0].sha.slice(0, 7) + " " + subject;
+      if (e.rerun === "adds") { e.state = { ...(e.state || {}) }; for (const o of e.options) { const v = choiceValue(o); if (!v.length) continue; if (o.multiple) e.state[o.name] = [...(e.state[o.name] || []), ...v]; else e.state[o.name] = v[0]; } if (e.state.auth) e.state.auth = true; }
+      e.installed = true; e.justInserted = true; e.opts = { path };
+      renderConsole(); renderShelf(); renderForm();
+      $("#d-kicker").append(el("span", { class: "chip good" }, "inserted"));
+      toast(`${title(e)} inserted`);
+    },
+  });
+}
+
+// --- jobs: every command the console runs -------------------------------------
+function runJob(cmdline, lines, { onLine, onDone, exit = 0 } = {}) {
+  const job = { id: Date.now() + Math.random(), cmdline, lines: [], state: "running", started: Date.now(), exit: null };
+  state.jobs.unshift(job); renderJobs();
+  let t = 0;
+  const all = [["dim", "$ " + cmdline], ...lines];
+  all.forEach(([cls, text], i) => {
+    setTimeout(() => {
+      job.lines.push([cls, text]); onLine && i > 0 && onLine(cls, text);
+      if (i === all.length - 1) { job.state = exit === 0 ? "done" : "failed"; job.exit = exit; job.ended = Date.now(); onDone && onDone(); }
+      renderJobs();
+    }, reduced() ? 0 : (t += 120 + Math.random() * 240));
+  });
+  return job;
+}
+function renderJobs() {
+  const list = $("#jobs"); list.replaceChildren();
+  const running = state.jobs.filter(j => j.state === "running").length;
+  const st = $("#tray-state");
+  st.className = "chip " + (running ? "warn busy" : state.jobs[0]?.state === "failed" ? "bad" : state.jobs.length ? "good" : "off");
+  st.textContent = running ? `${running} running` : state.jobs.length ? `${state.jobs.length} done` : "idle";
+  if (state.jobs[0]) $("#tray-last").textContent = state.jobs[0].cmdline;
+  for (const j of state.jobs) {
+    const dur = ((j.ended || Date.now()) - j.started) / 1000;
+    const row = el("div", { class: "job" + (j.open ? " open" : ""), onclick: () => { j.open = !j.open; renderJobs(); } },
+      el("span", { class: "chip " + (j.state === "running" ? "warn busy" : j.state === "done" ? "good" : "bad") }, j.state === "running" ? "running" : `exit ${j.exit}`),
+      el("span", { class: "cmdline" }, j.cmdline),
+      el("span", { class: "dur" }, dur.toFixed(1) + "s"),
+      el("span", { class: "caret" }, j.open ? "▾" : "▸"));
+    const out = el("div", { class: "out" });
+    for (const [cls, text] of j.lines) out.append(el("div", { class: cls }, text));
+    row.append(out); list.append(row);
+  }
+}
+$("#tray-bar").addEventListener("click", () => $("#tray").classList.toggle("open"));
+
+// --- deploy -------------------------------------------------------------------
+const TARGETS = {
+  dev:    { blurb: "The dev toolchain image with the source mounted. Recompiles on boot; iex -S mix on the container." },
+  prod:   { blurb: "The release image, built from the project's Dockerfile on each up. No source, no Mix." },
+  scaled: { blurb: "N production replicas behind an nginx balancer, on a bridge network. A BEAM cluster if clustering is inserted." },
+};
+// The three composes share one project name: one deployment is up at a
+// time, `up` replaces what was up (--remove-orphans), `down` clears it
+// all, and stop/logs act on whatever is up. So: pick a target, Up; the
+// rest is about the running deployment.
+function runningDeployment() { return ["dev", "prod", "scaled"].find(deploymentUp) || null; }
+function scaledExtra() { return (state.replicas && state.replicas !== 4 ? ` --replicas ${state.replicas}` : "") + (state.balancer === false ? " --no-balancer" : ""); }
+function renderTargets() {
+  const box = $("#targets"); box.replaceChildren();
+  const running = runningDeployment(), pick = state.target || running || "dev";
+  const busy = state.jobs.some(j => j.state === "running" && /wb\.sh (up|stop|down|build)\b/.test(j.cmdline));
+  const extra = pick === "scaled" ? scaledExtra() : "";
+  const card = el("div", { class: "deployment" });
+  card.append(el("div", { class: "now" },
+    el("span", { class: "chip " + (busy ? "warn busy" : running ? "good" : "off") }, busy ? "working" : running ? `${running} is running` : "nothing is up"),
+    el("span", { class: "note" }, running ? "one deployment at a time: the composes share the project name, so Up replaces it" : "pick a target and bring it up")));
+  const picks = el("div", { class: "pick" });
+  for (const name of ["dev", "prod", "scaled"]) {
+    const on = name === pick, r = el("input", { type: "radio", name: "target", value: name, checked: on, onchange: () => { state.target = name; renderTargets(); } });
+    const lab = el("label", { class: on ? "on" : "" }, el("div", {}, r, " ", el("b", {}, name), " ", el("span", { class: "chip " + (deploymentUp(name) ? "good" : state.baked[name] ? "off" : "off") }, deploymentUp(name) ? "running" : state.baked[name] ? "baked" : "not baked")), el("p", {}, TARGETS[name].blurb));
+    if (name === "scaled") {
+      const replicas = el("input", { type: "number", min: "1", value: state.replicas || 4, oninput: () => { state.replicas = +replicas.value; $("#deploy-cmd").textContent = deployCmd(); } });
+      const bal = el("input", { type: "checkbox", checked: state.balancer !== false, onchange: () => { state.balancer = bal.checked; renderTargets(); } });
+      lab.append(el("div", { class: "opts" }, "--replicas ", replicas, el("label", {}, bal, " balancer")));
+      if (!byName("clustering").installed) lab.append(el("span", { class: "chip warn" }, "no clustering: replicas run isolated"));
+    }
+    picks.append(lab);
+  }
+  card.append(picks);
+  function deployCmd() { return `./wb.sh up --deploy ${pick}${pick === "scaled" ? scaledExtra() : ""}`; }
+  card.append(el("div", { class: "acts" },
+    el("button", { class: "btn primary", disabled: busy || deploymentUp(pick), onclick: () => deploy("up", pick, extra) }, running && running !== pick ? `Replace ${running} with ${pick}` : `Up ${pick}`),
+    el("button", { class: "btn", disabled: busy || !state.baked[pick], onclick: () => deploy("build", pick, extra) }, `Build ${pick}`),
+    el("span", { class: "sep" }),
+    el("button", { class: "btn", disabled: busy || !running, onclick: () => deploy("stop", running) }, "Stop"),
+    el("button", { class: "btn", disabled: busy || !running, onclick: () => deploy("down", running) }, "Down"),
+    el("button", { class: "btn", disabled: !running, onclick: () => showTab("logs") }, "Logs"),
+    el("span", { class: "note" }, running ? `on ${running}` : "nothing is up")));
+  card.append(el("div", { class: "cmd", id: "deploy-cmd" }, deployCmd()));
+  box.append(card);
+}
+// --- the terminal ------------------------------------------------------------
+// A shell on the app container (the console: Docker's exec API over the
+// socket, xterm.js in the page), or on a one-off toolchain container
+// when the app is down — as ./wb.sh bash and ./wb.sh iex do. Staged here.
+// Where a session can open: every running app container — `app` in dev
+// and prod, `app1..appN` in scaled — or a one-off toolchain container
+// with the source when nothing runs. The shell depends on the image:
+// the dev image has Mix (bash, iex -S mix); the release has its remote
+// console (bin/<app> remote — a hidden node joining that replica's, so
+// Node.list() there is the cluster), and bash.
+state.term = { target: null, shell: "bash", open: false, lines: [], n: 1 };
+function termTargets() {
+  const apps = state.containers.filter(c => /^app\d*$/.test(c.service) && c.state === "running").map(c => ({ name: c.service, release: !/:local$/.test(c.image), ip: c.service === "app" ? null : `172.18.0.${2 + +c.service.replace("app", "")}` }));
+  return apps.length ? apps : [{ name: "toolchain", release: false, ip: null, oneoff: true }];
+}
+function termTarget() { const ts = termTargets(); return ts.find(t => t.name === state.term.target) || ts[0]; }
+function termShells(t) { return t.release ? [["bash", "bash"], ["remote", `remote console — bin/${APP} remote`]] : [["bash", "bash"], ["iex", "iex -S mix"]]; }
+function termPrompt() {
+  const t = termTarget(), sh = state.term.shell;
+  if (sh === "iex" || sh === "remote") return `iex(${t.ip ? `${APP}@${t.ip}` : APP}${sh === "remote" ? "" : ""})${state.term.n}> `;
+  return `${t.release ? "nobody" : "elixir"}@${t.name}:${t.release ? "/app" : "/app/src"}$ `;
+}
+function termOpen(target, shell) { state.term.target = target; if (shell) state.term.shell = shell; state.term.open = false; showTab("terminal"); renderTerminal(); $("#term .btn.primary").click(); }
+function renderTerminal() {
+  const box = $("#term"); if (!box) return; box.replaceChildren();
+  const t = state.term, targets = termTargets(), target = termTarget();
+  if (!termShells(target).some(([v]) => v === t.shell)) t.shell = "bash";
+  const where = el("select", { disabled: t.open, onchange: () => { t.target = where.value; renderTerminal(); } }, ...targets.map(x => el("option", { value: x.name, selected: x.name === target.name }, x.oneoff ? "toolchain (one-off, source mounted)" : `${x.name} — ${x.release ? "release" : "dev image"}${x.ip ? " · " + x.ip : ""}`)));
+  const shell = el("select", { disabled: t.open, onchange: () => { t.shell = shell.value; renderTerminal(); } }, ...termShells(target).map(([v, label]) => el("option", { value: v, selected: t.shell === v }, label)));
+  const running = runningDeployment();
+  const cmd = target.oneoff ? `./wb.sh ${t.shell === "iex" ? "iex" : "bash"}` : `./wb.sh ${t.shell === "bash" ? "bash" : "iex"}${running && running !== "dev" ? " --deploy " + running : ""}${target.name !== "app" ? " " + target.name : ""}`;
+  box.append(el("div", { class: "toolbar" },
+    el("span", { class: "label" }, "Where"), where,
+    el("span", { class: "label" }, "Shell"), shell,
+    el("span", { class: "note mono" }, cmd),
+    el("span", { class: "sep" }),
+    t.open ? el("button", { class: "btn", title: t.shell === "remote" ? "detaches with Ctrl+G q — never by cutting the socket: the remote shell stops the node on EOF" : "", onclick: () => { t.open = false; t.lines = []; $("#term-live").hidden = true; renderTerminal(); } }, t.shell === "remote" ? "Detach (Ctrl+G q)" : "Close session")
+           : el("button", { class: "btn primary", onclick: () => { t.open = true; t.n = 1; t.lines = [["dim", `${cmd}  → ${target.oneoff ? "a one-off toolchain container with the source mounted (nothing runs)" : "docker exec on " + target.name}`], ...(t.shell === "iex" ? [["dim", "Erlang/OTP 28 [erts-16.1] [source] [64-bit] [smp:8:8] [ds:8:8:10] [async-threads:1] [jit]"], ["", "Interactive Elixir (1.19.2) - press Ctrl+C to exit (type h() ENTER for help)"]] : t.shell === "remote" ? [["dim", `Erlang/OTP 28 [erts-16.1] [source] [64-bit] [smp:8:8] [ds:8:8:10] [async-threads:1] [jit]`], ["", `Interactive Elixir (1.19.2) - press Ctrl+C to exit (type h() ENTER for help)`], ["dim", `— a hidden node attached to ${APP}@${target.ip}; Ctrl+G q detaches, EOF would stop the node`]] : [])]; $("#term-live").hidden = false; renderTerminal(); $("#term-input").focus(); } }, "Open a session")));
+  const screen = el("div", { class: "screen" });
+  if (!t.open) screen.append(el("span", { class: "empty" }, "No session. Open one: bash or iex, on the app when it runs. (Staged in the mock; the console runs a real one.)"));
+  for (const [cls, text] of t.lines) screen.append(el("div", { class: cls }, text));
+  box.append(screen);
+  const input = el("input", { type: "text", id: "term-input", disabled: !t.open, placeholder: t.open ? "type a command and press Enter" : "", onkeydown: ev => { if (ev.key === "Enter") { termRun(input.value); input.value = ""; } } });
+  box.append(el("div", { class: "in" }, el("span", { class: "p" }, termPrompt()), input));
+  screen.scrollTop = screen.scrollHeight;
+}
+function termRun(cmd) {
+  const t = state.term, say = (...ls) => { for (const l of ls) t.lines.push(["", l]); };
+  t.lines.push(["p", termPrompt() + cmd]);
+  const c = cmd.trim();
+  if (t.shell === "iex" || t.shell === "remote") {
+    const me = termTarget(), peers = termTargets().filter(x => x.name !== me.name && x.ip);
+    t.n++;
+    if (c === "1+1" || c === "1 + 1") say("2");
+    else if (c === "node()") say(me.ip ? `:"${APP}@${me.ip}"` : ":nonode@nohost");
+    else if (c === "Node.list()") say(peers.length ? `[${peers.map(x => `:"${APP}@${x.ip}"`).join(", ")}]` : "[]");
+    else if (c === "self()") say("#PID<0.1042.0>");
+    else if (c === "System.version()") say(`"1.19.2"`);
+    else if (c === "exit" || c === "System.halt()") { t.open = false; t.lines = []; $("#term-live").hidden = true; }
+    else say("** staged in the mock: the console evaluates it in the container");
+  } else {
+    if (c === "ls") say("AGENTS.md  Dockerfile  Dockerfile.local  README.md  _build  assets  config  deps  docker-compose.yml  lib  mix.exs  mix.lock  priv  rel  test");
+    else if (c === "pwd") say("/app/src");
+    else if (c === "mix --version") say("Mix 1.19.2 (compiled with Erlang/OTP 28)");
+    else if (c === "mix test") say("..........", "Finished in 0.4 seconds (0.2s async, 0.2s sync)", "10 tests, 0 failures");
+    else if (c === "iex" || c === "iex -S mix") { if (termTarget().release) say("bash: iex: not found — the release image has no Mix; use the remote console (bin/" + APP + " remote)"); else { t.shell = "iex"; t.n = 1; say("Interactive Elixir (1.19.2) - press Ctrl+C to exit (type h() ENTER for help)"); } }
+    else if (c === `bin/${APP} remote`) { t.shell = "remote"; t.n = 1; say("Interactive Elixir (1.19.2) - press Ctrl+C to exit (type h() ENTER for help)"); }
+    else if (c === "exit") { t.open = false; t.lines = []; $("#term-live").hidden = true; }
+    else if (c) say(`bash: ${c}: staged in the mock — the console runs it in the container`);
+  }
+  renderTerminal();
+}
+
+// --- the cluster -------------------------------------------------------------
+// Lit by the clustering cartridge: the replicas of the scaled deployment
+// as nodes — who answers behind the balancer, who is connected to whom.
+function renderCluster() {
+  const box = $("#cluster"); if (!box) return; box.replaceChildren();
+  const reps = state.containers.filter(c => /^app\d+$/.test(c.service) && c.state === "running").map(c => c.service).sort();
+  if (!reps.length) {
+    box.append(el("p", { class: "note" }, "The cluster is the scaled deployment: N replicas of the release behind the balancer, booting as named nodes that find each other through Docker's DNS. Nothing is up."));
+    box.append(el("div", { class: "acts" }, el("button", { class: "btn primary", onclick: () => deploy("up", "scaled", scaledExtra()) }, "Up scaled"), el("span", { class: "note" }, `./wb.sh up --deploy scaled${scaledExtra()}`)));
+    return;
+  }
+  const bal = state.containers.some(c => c.service === "balancer" && c.state === "running");
+  box.append(el("div", { class: "now" }, el("span", { class: "chip good" }, `${reps.length} replicas`), el("span", { class: "chip " + (bal ? "good" : "off") }, bal ? `balancer on :${STATUS.ports.app}` : "no balancer"), el("span", { class: "note" }, "addresses and peers as the nodes report them (staged in the mock)")));
+  const table = el("table", {}, el("tr", {}, ...["replica", "address", "host port", "node", "peers", ""].map(h => el("th", {}, h))));
+  reps.forEach((r, i) => {
+    const ip = `172.18.0.${3 + i}`, peers = reps.filter(x => x !== r).length;
+    table.append(el("tr", {}, el("td", {}, r), el("td", {}, ip), el("td", {}, el("a", { href: `http://localhost:${STATUS.ports.app + 1 + i}`, target: "_blank" }, `:${STATUS.ports.app + 1 + i}`)), el("td", {}, `${APP}@${ip}`), el("td", {}, el("span", { class: "chip " + (peers === reps.length - 1 ? "good" : "warn") }, `${peers} of ${reps.length - 1}`)), el("td", {}, el("button", { class: "btn", title: `./wb.sh iex --deploy scaled ${r} — bin/${APP} remote on this node`, onclick: () => termOpen(r, "remote") }, "remote console"))));
+  });
+  box.append(table);
+  box.append(el("div", { class: "probe" }, el("h3", {}, "Who answers?"),
+    el("p", { class: "note" }, "Four requests to the balancer's port: the X-Served-By header names the replica each one landed on."),
+    el("div", { class: "acts" }, el("button", { class: "btn", disabled: !bal, onclick: () => { runJob(`for i in 1 2 3 4; do curl -sI http://localhost:${STATUS.ports.app} | grep -i x-served-by; done`, reps.slice(0, 4).map((r, i) => ["", `X-Served-By: 172.18.0.${3 + i}`]), {}); $("#tray").classList.add("open"); } }, "Ask four times"))));
+  box.append(el("div", { class: "probe" }, el("h3", {}, "Who is connected?"),
+    el("p", { class: "note" }, "Node.list() on the first replica, through the release's rpc — the nodes DNSCluster found."),
+    el("div", { class: "acts" }, el("button", { class: "btn", onclick: () => { runJob(`docker compose --file docker-compose.scaled.yml exec ${reps[0]} bin/${APP} rpc "IO.inspect(Node.list())"`, [["", `[${reps.slice(1).map((r, i) => `:"${APP}@172.18.0.${4 + i}"`).join(", ")}]`]], {}); $("#tray").classList.add("open"); } }, "Node.list()"))));
+}
+
+function composeLines(name, verb) {
+  const svcs = name === "scaled"
+    ? ["network", "database", "migrate", ...Array.from({ length: state.replicas || 4 }, (_, i) => "app" + (i + 1)), ...(state.balancer === false ? [] : ["balancer"])]
+    : ["network", "database", "app", "pgadmin"];
+  const word = { up: ["Created", "Started"], stop: ["Stopping", "Stopped"], down: ["Stopping", "Removed"] }[verb];
+  const out = [];
+  for (const s of svcs) { out.push(["dim", ` Container ${STATUS.compose_project}-${s}-1  ${word[0]}`]); out.push(["", ` Container ${STATUS.compose_project}-${s}-1  ${word[1]}`]); }
+  return out;
+}
+function deploy(verb, name, extra = "") {
+  const cmd = `./wb.sh ${verb}${name === "dev" && verb !== "up" && verb !== "build" ? "" : " --deploy " + name}${verb === "up" || verb === "build" ? extra : ""}`;
+  let lines = [], onDone = () => {};
+  const image = name === "dev" ? `${IMAGE}:local` : `${IMAGE}:0.1.0-prod`;
+  if (verb === "up") {
+    lines = [...(name !== "dev" ? [["dim", `[+] Building ${image}`], ["", " => [runner 5/5] COPY --from=builder /app/_build/prod/rel/" + APP], ["", " => exporting to image"]] : []), ...composeLines(name, "up"),
+      ["ok", name === "scaled" ? `Scaled deployment coming up with ${state.replicas || 4} replicas:` : `Application deploying at http://localhost:${STATUS.ports.app} (first boot compiles: give it a moment).`],
+      ...(name === "scaled" ? [["", `  balancer  http://localhost:${STATUS.ports.app}  (round-robin entry point)`], ...Array.from({ length: state.replicas || 4 }, (_, i) => ["", `  app${i + 1}      http://localhost:${STATUS.ports.app + 1 + i}`])] : [])];
+    onDone = () => {
+      state.baked[name] = true;
+      const svcs = name === "scaled" ? ["network", "database", ...Array.from({ length: state.replicas || 4 }, (_, i) => "app" + (i + 1)), ...(state.balancer === false ? [] : ["balancer"])] : ["network", "database", "app", "pgadmin"];
+      state.containers = svcs.map(s => ({ service: s, state: "running", health: /^app|database/.test(s) ? "starting" : null, image: s === "network" ? "registry.k8s.io/pause:3.10" : s === "database" ? "postgres:latest" : s === "pgadmin" ? "dpage/pgadmin4:latest" : s === "balancer" ? "nginx:alpine" : image }));
+      renderConsole(); logs.appendBoot(name);
+      setTimeout(() => { for (const c of state.containers) if (c.health === "starting") c.health = "healthy"; renderConsole(); }, reduced() ? 0 : 6000);
+    };
+  } else if (verb === "build") {
+    lines = [["dim", `[+] Building ${image}`], ["", " => [builder 7/12] RUN mix deps.compile"], ["", " => [builder 12/12] RUN mix release"], ["", " => exporting to image"], ["ok", `✓ ${image} built.`]];
+  } else {
+    lines = composeLines(name, verb);
+    onDone = () => { state.containers = verb === "stop" ? state.containers.map(c => ({ ...c, state: "exited", health: null })) : []; renderConsole(); };
+  }
+  runJob(cmd, lines, { onDone });
+  renderTargets();
+  $("#tray").classList.add("open");
+}
+// --- a new project: the start of the lifecycle ----------------------------------
+// What `new` composes from config.conf's toggles, off each cartridge's
+// `enabled_by` (a flag → the toggle of that name; {interface: x} → the
+// INTERFACE value) and `implies`, resolved until stable, as setup does.
+// What phx.new decides at generation time. The capabilities are the
+// base cartridges of the catalog — in from birth unless left out
+// (`--no-x`), insertable later from the shelf; the rest shapes the
+// generation itself and stays a flag.
+const BASE = CATALOG.filter(e => e.base).map(e => e.name);
+// Generation-only flags. --database and --binary-id are phx.new flags
+// too, but only Ecto reads them: they are the ecto cartridge's options,
+// offered with its box (from its catalog entry).
+const GEN_FLAGS = [["adapter", ["bandit", "cowboy"]]];
+state.newp = { kind: "new2", name: null, out: {}, gen: {}, confirm: false };
+// A base cartridge left out takes with it the ones that build on it (phx.new: live only with html).
+function baseOut(name) { const e = byName(name); return !!state.newp.out[name] || (e.requires || []).some(baseOut); }
+function configValues() {
+  const f = {}; for (const sec of parseConfig(cfg.text).sections) for (const x of sec.fields) f[x.key] = x.key in cfg.edited ? cfg.edited[x.key] : x.value; return f;
+}
+function newComposes(conf) {
+  const on = new Set(Object.entries(conf).filter(([, v]) => v === "true").map(([k]) => k.toLowerCase()));
+  const enabled = e => typeof e.enabled_by === "string" ? on.has(e.enabled_by)
+    : e.enabled_by && typeof e.enabled_by === "object" ? Object.entries(e.enabled_by).every(([opt, v]) => (conf[opt.toUpperCase()] || "") === v) : false;
+  let grew = true;
+  while (grew) { grew = false; for (const e of state.entries) if (enabled(e)) for (const i of e.implies) if (!on.has(i)) { on.add(i); grew = true; } }
+  return state.entries.filter(e => !e.standalone && enabled(e)).map(e => e.name);
+}
+function newFlags() {
+  const flags = [];
+  for (const [k, values] of GEN_FLAGS) { const v = state.newp.gen[k]; if (values ? v && v !== values[0] : v) flags.push("--" + k, ...(values ? [v] : [])); }
+  for (const n of BASE) if (baseOut(n)) flags.push("--no-" + n);
+  if (!baseOut("ecto")) for (const o of byName("ecto").options) { const v = state.newp.gen[o.name]; if (o.type === "boolean" ? v : v && v !== o.default) flags.push("--" + o.name.replace(/_/g, "-"), ...(o.type === "boolean" ? [] : [v])); }
+  return flags;
+}
+function newCommand() { return ["./wb.sh", state.newp.kind, ...newFlags()].join(" "); }
+function renderNewCard() {
+  const box = $("#newcard"); box.replaceChildren();
+  const conf = configValues(), busy = state.jobs.some(j => j.state === "running" && /wb\.sh new/.test(j.cmdline));
+  const name = state.newp.name ?? conf.PROJECT_NAME;
+  const composes = newComposes(conf);
+  box.append(el("h3", {}, "New project", el("span", { class: "chip " + (state.project === false ? "warn" : "off") }, state.project === false ? "the workspace is empty" : "a project exists here")));
+  const form = el("div", { class: "form" });
+  form.append(el("div", { class: "frow" }, el("label", { for: "np-name" }, "project name"), el("input", { type: "text", id: "np-name", value: name, oninput: ev => { state.newp.name = ev.target.value; $("#np-cmd").textContent = newCommand(); } })));
+  form.append(el("div", { class: "frow" }, el("label", {}, "workspace"), el("span", { class: "ro" }, conf.WORKSPACE_PATH, el("a", { href: "#config", onclick: ev => { ev.preventDefault(); openWb("config"); } }, "change in config"))));
+  form.append(el("div", { class: "frow" }, el("label", {}, "stack"), el("span", { class: "ro" }, `elixir ${conf.ELIXIR_VERSION} · erlang ${conf.ERLANG_VERSION} · ${conf.DEBIAN_VERSION}`, el("a", { href: "#config", onclick: ev => { ev.preventDefault(); openWb("config"); } }, "change in config"))));
+  const gen = el("div", { class: "flags" });
+  for (const [k, values] of GEN_FLAGS) {
+    if (values) { const sel = el("select", { onchange: () => { state.newp.gen[k] = sel.value; $("#np-cmd").textContent = newCommand(); } }, ...values.map(v => el("option", { value: v, selected: (state.newp.gen[k] || values[0]) === v }, v))); gen.append(el("label", {}, "--" + k, sel)); }
+    else { const cb = el("input", { type: "checkbox", checked: !!state.newp.gen[k], onchange: () => { state.newp.gen[k] = cb.checked; $("#np-cmd").textContent = newCommand(); } }); gen.append(el("label", {}, cb, "--" + k)); }
+  }
+  form.append(el("div", { class: "frow" }, el("label", {}, "phx.new"), gen));
+  const bases = el("div", { class: "flags bases" });
+  for (const n of BASE) {
+    const e = byName(n), forced = (e.requires || []).some(baseOut);
+    const cb = el("input", { type: "checkbox", checked: !baseOut(n), disabled: forced, title: forced ? "goes with " + e.requires.join(" and ") + ": phx.new generates it only with them" : e.summary, onchange: () => { state.newp.out[n] = !cb.checked; renderNewCard(); } });
+    bases.append(el("label", { class: baseOut(n) ? "out" : "" }, cb, n));
+    if (n === "ecto") for (const o of e.options) {
+      const flag = "--" + o.name.replace(/_/g, "-"), out = baseOut(n);
+      if (o.choices) { const sel = el("select", { disabled: out, title: o.doc, onchange: () => { state.newp.gen[o.name] = sel.value; $("#np-cmd").textContent = newCommand(); } }, ...o.choices.map(c => el("option", { value: c.value, selected: (state.newp.gen[o.name] || o.default) === c.value, title: c.doc }, c.value))); bases.append(el("label", { class: "sub" + (out ? " out" : "") }, flag, sel)); }
+      else { const cb2 = el("input", { type: "checkbox", disabled: out, checked: !!state.newp.gen[o.name], title: o.doc, onchange: () => { state.newp.gen[o.name] = cb2.checked; $("#np-cmd").textContent = newCommand(); } }); bases.append(el("label", { class: "sub" + (out ? " out" : "") }, cb2, flag)); }
+    }
+  }
+  form.append(el("div", { class: "frow" }, el("label", { title: "In from birth; leave one out and insert it later from the shelf" }, "base cartridges"), bases));
+  box.append(form);
+  const kind = el("div", { class: "kind" });
+  for (const [k, label, blurb] of [["new2", "new2 — vanilla", "A stock phx.new project plus only what the workspace needs to boot. Then insert cartridges from the shelf, one at a time."], ["new", "new — composed", "The same, plus the base configuration and the cartridges config.conf switches on. What it would insert now:"]]) {
+    const r = el("input", { type: "radio", name: "np-kind", value: k, checked: state.newp.kind === k, onchange: () => { state.newp.kind = k; renderNewCard(); } });
+    const opt = el("label", { class: "opt" }, r, el("b", {}, label), el("p", {}, blurb));
+    if (k === "new") { const c = el("div", { class: "composes" }); for (const n of composes) c.append(el("span", { class: "chip" }, n)); if (!composes.length) c.append(el("span", { class: "note" }, "nothing: every toggle is off")); opt.append(c); }
+    kind.append(opt);
+  }
+  box.append(kind);
+  const foot = el("div", { class: "foot" }, el("div", { class: "cmd", id: "np-cmd" }, newCommand()));
+  if (state.newp.confirm) foot.append(el("span", { class: "confirm on" }, "A project already exists in this workspace: every file in it goes.", el("button", { class: "btn danger", onclick: () => { state.newp.confirm = false; createProject(); } }, "Yes, overwrite"), el("button", { class: "btn", onclick: () => { state.newp.confirm = false; renderNewCard(); } }, "Keep it")));
+  else foot.append(el("button", { class: "btn primary", disabled: busy, onclick: () => { if (state.project !== false) { state.newp.confirm = true; renderNewCard(); } else createProject(); } }, busy ? "Creating…" : "Create project"));
+  box.append(foot);
+}
+function createProject() {
+  const conf = configValues(), kind = state.newp.kind;
+  const name = (state.newp.name ?? conf.PROJECT_NAME).trim() || "app";
+  const app = name.toLowerCase().replace(/\s+/g, "_"), image = name.toLowerCase().replace(/\s+/g, "-");
+  const flags = newFlags(), bases = BASE.filter(n => !baseOut(n));
+  const composes = kind === "new" ? newComposes(conf) : [];
+  const lines = [
+    ...(state.project !== false ? [["dim", `⚠️ Warning A project already exists in ${conf.WORKSPACE_PATH}. This action will overwrite all its files.`], ["dim", "Continuing (--yes)."]] : []),
+    ["dim", `[+] Building workbench:${conf.ELIXIR_VERSION}-${conf.ERLANG_VERSION}`], ["", ` => [1/6] FROM hexpm/elixir:${conf.ELIXIR_VERSION}-erlang-${conf.ERLANG_VERSION}-debian-${conf.DEBIAN_VERSION}`], ["", " => exporting to image"],
+    ["dim", `[a1b2c3d4e5f6]workbench/scripts/entrypoint.sh(${2 + flags.length}): new ${app} ${flags.join(" ")}`.trim()],
+    ["add", "* creating mix.exs"], ["add", `* creating lib/${app}/application.ex`], ["add", `* creating lib/${app}_web/endpoint.ex`], ["add", `* creating lib/${app}_web/router.ex`], ["dim", "* running mix deps.get"],
+    ["upd", "Update: mix.exs"], ["  ", "  + defp workbench_dep — the igniter tasks, while the workbench is mounted"],
+    ["dim", `[a1b2c3d4e5f6]workbench/scripts/entrypoint.sh(2): workbench_${kind === "new" ? "setup" : "setup2"} …`],
+    ["upd", "Update: config/dev.exs"], ["  ", "  http: [ip: {0, 0, 0, 0}, port: 4000]"], ["add", "Create: .env"], ["add", "Create: .env.sample"], ["upd", "Update: .gitignore"],
+    ...(kind === "new" ? [["add", "Create: README.md"], ["add", "Create: CHANGELOG.md"], ["add", "Create: .tool-versions"], ...composes.map(n => ["dim", `==> workbench.install.${n}`])] : []),
+    ["", "* creating Dockerfile"], ["", "* creating .dockerignore"], ["", "* creating rel/overlays/bin/server"],
+    ["add", "Create: Dockerfile.local"], ["add", "Create: docker-compose.yml"], ["  ", `  name: ${app} · app port ${STATUS.ports.app}` + (bases.includes("ecto") && (state.newp.gen.database || "postgres") !== "sqlite3" ? ` · pgAdmin ${STATUS.ports.pgadmin}` : " · no database service")],
+    ["ok", `Committed New project: ${app} (${kind}) (as ${conf.GIT_IDENTITY === "workbench" ? "Dockerized Elixir Workbench <wb.sh@localhost>" : state.git.identity || "Dockerized Elixir Workbench <wb.sh@localhost>"}).`],
+    ["ok", `✓ ${name} created in ${conf.WORKSPACE_PATH}. Set up the database and bring it up: ./wb.sh setup && ./wb.sh up`],
+  ];
+  runJob(newCommand(), lines, { onDone: () => {
+    state.project = true; STATUS.compose_project = app;
+    STATUS.project = { app, cartridges: [], phx: Object.fromEntries(BASE.map(n => [n, bases.includes(n)])) };
+    state.git = { repo: true, clean: true, head: `0a1b2c3 New project: ${app} (${kind})`, identity: conf.GIT_IDENTITY === "workbench" ? "Dockerized Elixir Workbench <wb.sh@localhost>" : (state.git.identity || "Dockerized Elixir Workbench <wb.sh@localhost>"), inserts: [] };
+    state.containers = []; state.baked = { dev: true, prod: false, scaled: false };
+    for (const e of state.entries) e.installed = composes.includes(e.name) || bases.includes(e.name);
+    logs.all = []; rerenderLines();
+    renderConsole(); renderShelf(); renderNewCard(); toast(`${name} created`);
+  } });
+  renderNewCard(); $("#tray").classList.add("open");
+}
+
+$("#setup").addEventListener("click", () => {
+  const env = $("#setup-env").value;
+  runJob(`./wb.sh setup --env ${env}`, [["dim", `[7c1e]workbench/scripts/entrypoint.sh(2): setup ${env}`], ["", `The database for ${MOD}.Repo has been dropped`], ["", `The database for ${MOD}.Repo has been created`], ["", "Running migrations: none pending"], ["", "Seeding: priv/repo/seeds.exs"], ["ok", "✓ database ready."]]);
+  $("#tray").classList.add("open");
+});
+$("#delete").addEventListener("click", () => $("#delete-confirm").classList.add("on"));
+$("#delete-no").addEventListener("click", () => $("#delete-confirm").classList.remove("on"));
+$("#delete-yes").addEventListener("click", () => {
+  $("#delete-confirm").classList.remove("on");
+  runJob("./wb.sh --yes delete", [["dim", "⚠️ Warning This action will delete all project files from " + STATUS.workspace], ["dim", "Continuing (--yes)."], ...composeLines("dev", "down"), ["", ` Volume ${STATUS.compose_project}_pgdata  Removed`], ["", ` Image ${IMAGE}:local  Removed`], ["ok", "✓ workspace wiped. Deploy → New project starts the next one."]], { onDone: () => { state.project = false; state.containers = []; state.baked = { dev: false, prod: false, scaled: false }; for (const e of state.entries) e.installed = false; renderConsole(); renderShelf(); renderNewCard(); } });
+  $("#tray").classList.add("open");
+});
+
+// --- logs: a real capture, replayed ---------------------------------------------
+const logs = {
+  all: [], shown: 0, follow: true, ts: true, level: "debug", q: "",
+  services: {}, unseenErrors: 0, cap: 2000,
+};
+const SVC_COLORS = ["app", "database", "pgadmin", "network", "balancer", "migrate"];
+function svcColor(s) { const base = s.replace(/\d+$/, ""); return SVC_COLORS.includes(base) ? `var(--svc-${base})` : "var(--svc-network)"; }
+function levelOf(text, prev) {
+  if (/^\s*\[error\]|ERROR:|FATAL:|\*\* \(|CRITICAL|\berror\b.*\bfailed\b/i.test(text)) return "error";
+  if (/^\s*\[warning\]|WARNING:|warning:|HINT:/.test(text)) return "warn";
+  if (/^\s*\[info\]|LOG:|^\S+ - - \[/.test(text)) return "info";
+  if (/^\s*\[debug\]/.test(text)) return "debug";
+  return prev ? prev.level : "info";
+}
+function isCont(text, prev) { return !!prev && (/^\s/.test(text) || (!/^\s*\[(info|debug|warning|error)\]|LOG:|ERROR:|WARNING:|HINT:|^\S+ - - \[/.test(text) && prev.service === undefined)); }
+function pushLine(service, ts, text) {
+  const prev = logs.all[logs.all.length - 1];
+  const cont = prev && prev.service === service && /^\s/.test(text);
+  const line = { service, ts, text, level: cont ? prev.level : levelOf(text, null), cont };
+  logs.all.push(line);
+  if (logs.all.length > logs.cap) logs.all.shift();
+  if (!(service in logs.services)) { logs.services[service] = true; renderSvcChips(); }
+  if (line.level === "error" && state.tab !== "logs") { logs.unseenErrors++; renderLogBadge(); }
+  if (passes(line)) appendLineEl(line);
+  renderLogCount();
+}
+function passes(l) {
+  if (logs.services[l.service] === false) return false;
+  const rank = { debug: 0, info: 1, warn: 2, error: 3 };
+  if (rank[l.level] < rank[logs.level]) return false;
+  if (logs.q && !l.text.toLowerCase().includes(logs.q.toLowerCase())) return false;
+  return true;
+}
+function lineEl(l) {
+  const m = el("span", { class: "m" });
+  if (logs.q) {
+    const i = l.text.toLowerCase().indexOf(logs.q.toLowerCase());
+    m.append(l.text.slice(0, i), el("mark", {}, l.text.slice(i, i + logs.q.length)), l.text.slice(i + logs.q.length));
+  } else m.textContent = l.text;
+  return el("div", { class: "ln " + l.level + (l.cont ? " cont" : "") + (logs.q ? " hit" : ""), style: `--svc:${svcColor(l.service)}` },
+    el("span", { class: "t" }, fmtTs(l.ts)), el("span", { class: "s" }, l.service), m);
+}
+function fmtTs(iso) { const d = new Date(iso); return d.toTimeString().slice(0, 8) + "." + String(d.getMilliseconds()).padStart(3, "0"); }
+function appendLineEl(l) {
+  const box = $("#lines");
+  const atEnd = box.scrollHeight - box.scrollTop - box.clientHeight < 24;
+  box.append(lineEl(l));
+  while (box.children.length > logs.cap) box.firstChild.remove();
+  if (logs.follow && atEnd) box.scrollTop = box.scrollHeight;
+  else if (logs.follow && !atEnd) { /* the reader scrolled up: hold */ logs.follow = false; $("#follow").setAttribute("aria-pressed", "false"); $("#follow").textContent = "Paused"; logs.pending = 1; $("#newpill").classList.add("on"); $("#newpill").textContent = "↓ 1 new line"; }
+  else { logs.pending = (logs.pending || 0) + 1; $("#newpill").classList.add("on"); $("#newpill").textContent = `↓ ${logs.pending} new line${logs.pending === 1 ? "" : "s"}`; }
+}
+function rerenderLines() {
+  const box = $("#lines"); box.replaceChildren();
+  const vis = logs.all.filter(passes);
+  for (const l of vis) box.append(lineEl(l));
+  if (!vis.length) box.append(el("div", { class: "empty" }, logs.all.length ? "Nothing matches." : "No lines yet."));
+  if (logs.follow) scrollToEnd();
+  renderLogCount();
+}
+function scrollToEnd() { const box = $("#lines"); box.scrollTop = box.scrollHeight; logs.pending = 0; $("#newpill").classList.remove("on"); }
+function renderLogCount() { const vis = logs.all.filter(passes).length; $("#log-count").textContent = `${vis} of ${logs.all.length} lines` + (logs.q ? ` matching “${logs.q}”` : ""); }
+function renderLogBadge() { const b = $("#logs-badge"); b.hidden = !logs.unseenErrors; b.className = "badge bad"; b.textContent = logs.unseenErrors + " err"; $("#logs-live").style.display = logs.follow ? "" : "none"; }
+function renderSvcChips() {
+  const box = $("#svc-chips"); box.replaceChildren();
+  for (const s of Object.keys(logs.services)) {
+    box.append(el("button", { class: "btn svc", style: `--svc:${svcColor(s)}`, "aria-pressed": String(logs.services[s] !== false), onclick: ev => { logs.services[s] = !(logs.services[s] !== false); ev.currentTarget.setAttribute("aria-pressed", String(logs.services[s])); rerenderLines(); } }, s));
+  }
+}
+$("#level").addEventListener("change", ev => { logs.level = ev.target.value; rerenderLines(); });
+$("#q").addEventListener("input", ev => { logs.q = ev.target.value.trim(); rerenderLines(); });
+$("#follow").addEventListener("click", () => { logs.follow = !logs.follow; $("#follow").setAttribute("aria-pressed", String(logs.follow)); $("#follow").textContent = logs.follow ? "Following" : "Paused"; if (logs.follow) scrollToEnd(); renderLogBadge(); });
+$("#ts").addEventListener("click", () => { logs.ts = !logs.ts; $("#ts").setAttribute("aria-pressed", String(logs.ts)); $("#lines").classList.toggle("no-ts", !logs.ts); });
+$("#clear").addEventListener("click", () => { logs.all = []; rerenderLines(); });
+$("#newpill").addEventListener("click", () => { logs.follow = true; $("#follow").setAttribute("aria-pressed", "true"); $("#follow").textContent = "Following"; scrollToEnd(); renderLogBadge(); });
+$("#lines").addEventListener("scroll", () => { const box = $("#lines"); if (box.scrollHeight - box.scrollTop - box.clientHeight < 24 && logs.pending) { logs.pending = 0; $("#newpill").classList.remove("on"); } });
+
+// Replay: the capture's first 70% lands at once (what --tail gives on
+// attach), the rest trickles in with the capture's own rhythm compressed,
+// then a quiet tail of the kind these services really emit.
+function replay() {
+  const now = Date.now();
+  const rows = LOGS.map(([s, ts, text], i) => ({ s, ts, text, i }));
+  const cut = Math.floor(rows.length * 0.7);
+  const t0 = new Date(rows[cut].ts).getTime();
+  const span = new Date(rows[rows.length - 1].ts).getTime() - t0 || 1;
+  const rebase = ts => new Date(now - (span - (new Date(ts).getTime() - t0)) / (span / 90000)).toISOString();
+  for (const r of rows.slice(0, cut)) pushLine(r.s, new Date(now - 60 * 60 * 1000 + r.i * 1000).toISOString(), r.text);
+  scrollToEnd();
+  for (const r of rows.slice(cut)) {
+    const delay = reduced() ? 0 : ((new Date(r.ts).getTime() - t0) / span) * 90000;
+    setTimeout(() => pushLine(r.s, new Date().toISOString(), r.text), delay);
+  }
+  const quiet = [
+    ["app", "[info] GET /health/ready"], ["app", "[info] Sent 200 in 412µs"],
+    ["database", "LOG:  checkpoint starting: time"], ["database", "LOG:  checkpoint complete: wrote 3 buffers (0.0%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled"],
+    ["app", "[info] GET /"], ["app", "[debug] Processing with " + MOD + "Web.PageController.home/2"], ["app", "  Parameters: %{}"], ["app", "  Pipelines: [:browser]"], ["app", "[info] Sent 200 in 1ms"],
+    ["app", "[info] GET /health/live"], ["app", "[info] Sent 200 in 209µs"],
+    ["app", "[warning] [libcluster] unable to connect to :\"" + APP + "@172.18.0.9\""],
+    ["app", "[info] GET /nope"], ["app", "[debug] ** (Phoenix.Router.NoRouteError) no route found for GET /nope (" + MOD + "Web.Router)"], ["app", "    (phoenix 1.8.9) lib/phoenix/router.ex:527: " + MOD + "Web.Router.call/2"], ["app", "[info] Sent 404 in 3ms"],
+  ];
+  let k = 0;
+  setInterval(() => { if (!appUp()) return; const [s, t] = quiet[k++ % quiet.length]; pushLine(s, new Date().toISOString(), t); }, reduced() ? 60000 : 2600);
+}
+logs.appendBoot = name => {
+  const boot = name === "scaled"
+    ? [["migrate", "[info] Migrations already up"], ["app1", "[notice] Application " + APP + " started at 172.18.0.3"], ["app2", "[notice] Application " + APP + " started at 172.18.0.4"], ["app1", "[info] Running " + MOD + "Web.Endpoint with Bandit 1.8.0 at 0.0.0.0:4000 (http)"], ["app1", "[info] [libcluster] connected to :\"" + APP + "@172.18.0.4\""]]
+    : [["database", "LOG:  database system is ready to accept connections"], ["app", "[info] Running " + MOD + "Web.Endpoint with Bandit 1.8.0 at 0.0.0.0:4000 (http)"], ["app", "[info] Access " + MOD + "Web.Endpoint at http://localhost:" + STATUS.ports.app]];
+  boot.forEach(([s, t], i) => setTimeout(() => pushLine(s, new Date().toISOString(), t), reduced() ? 0 : 800 * (i + 1)));
+};
+
+// --- the workbench: manual, changelog, config ----------------------------------
+$("#wb-ver").textContent = "v" + WB.version; $("#wb-ver2").textContent = "v" + WB.version;
+const WB_TABS = [["readme", "Manual", "README.md"], ["changelog", "Changelog", "CHANGELOG.md"], ["config", "Config", "config.conf"]];
+state.wbtab = "readme";
+function openWb(tab) {
+  state.wbtab = tab || state.wbtab; renderWbTabs(); showWbTab(state.wbtab);
+  $("#wb-modal").classList.add("on"); $("#wb-modal").setAttribute("aria-hidden", "false"); $("#scrim").classList.add("on");
+  $("#wb-close").focus();
+}
+function closeWb() { $("#wb-modal").classList.remove("on"); $("#wb-modal").setAttribute("aria-hidden", "true"); if (!$("#drawer").classList.contains("on")) $("#scrim").classList.remove("on"); }
+function renderWbTabs() {
+  const box = $("#wb-tabs"); box.replaceChildren();
+  for (const [key, label, file] of WB_TABS) box.append(el("button", { class: "dtab", role: "tab", "aria-selected": String(state.wbtab === key), onclick: () => showWbTab(key) }, label, el("small", {}, file)));
+}
+function showWbTab(key) {
+  state.wbtab = key; renderWbTabs();
+  $("#wb-booklet").hidden = key === "config"; $("#wb-cfg").hidden = key !== "config";
+  if (key === "config") renderConfig();
+  else renderMarkdown(WB[key], $("#wb-md"), $("#wb-toc"), $("#wb-booklet"), "", (a, href) => {
+    if (/^CHANGELOG\.md/i.test(href)) { a.href = "#changelog"; a.onclick = ev => { ev.preventDefault(); showWbTab("changelog"); }; return true; }
+    return false;
+  }, "w-", WB_TABS.find(t => t[0] === key)[2]);
+  $("#wb-modal").scrollTop = 0;
+}
+$("#wb-open").addEventListener("click", () => openWb());
+$("#wb-close").addEventListener("click", closeWb);
+
+// config.conf, read as the form it already is: every `export KEY=value`
+// a field, the comments above it its help, the `# ---` lines its
+// sections, the commented-out exports and the stack tags its choices.
+function parseConfig(text) {
+  const sections = [{ title: "Workspace", intro: [], fields: [] }];
+  const alts = {}, stack = [];
+  let help = [], heading = true; // the file's own header, then each section's intro: not a field's help
+  for (const raw of text.split("\n")) {
+    const line = raw.trim();
+    const sec = sections[sections.length - 1];
+    let m;
+    if (!line) { heading = false; }
+    else if ((m = line.match(/^# ---\s*(.*?)[\s.-]*$/))) { sections.push({ title: m[1].replace(/\.$/, ""), intro: [], fields: [] }); help = []; heading = true; }
+    else if ((m = line.match(/^# (\d[\w.]*-erlang-[\w.]*-debian-[\w.-]*)$/))) stack.push(m[1]);
+    else if ((m = line.match(/^# export (\w+)="?([^"]*)"?/))) (alts[m[1]] = alts[m[1]] || []).push(m[2]);
+    else if ((m = line.match(/^export\s+(\w+)=("?)([^"#]*)\2\s*(?:#\s*(.*))?$/))) {
+      sec.fields.push({ key: m[1], value: m[3].trim(), quoted: m[2] === '"', help: help.join(" ").trim(), inline: m[4] || "" });
+      help = []; heading = false;
+    }
+    else if ((m = line.match(/^#\s?(.*)$/))) { if (m[1].trim()) (heading ? sec.intro : help).push(m[1].trim()); }
+  }
+  sections[0].intro = []; // the file's header says what the file is, not what the workspace is
+  return { sections, alts, stack };
+}
+const CHOICES = { GIT_IDENTITY: ["user", "workbench"], INTERFACE: ["rest", "graphql"], COVERAGE_THEME: ["exdoc-ish", "custom"], ID_TYPE: ["uuid", "id"], TIMESTAMPS: ["naive_datetime_usec", "utc_datetime_usec", "naive_datetime", "utc_datetime"] };
+const cfg = { text: WB.config, edited: {} };
+function renderConfig() {
+  const box = $("#wb-cfg"); box.replaceChildren();
+  const parsed = parseConfig(cfg.text);
+  const changed = Object.keys(cfg.edited).length;
+  box.append(el("div", { class: "bar" },
+    el("button", { class: "btn primary", disabled: !changed, onclick: saveConfig }, changed ? `Save ${changed} change${changed === 1 ? "" : "s"}` : "Saved"),
+    el("button", { class: "btn", disabled: !changed, onclick: () => { cfg.edited = {}; renderConfig(); } }, "Reload"),
+    el("button", { class: "btn", "aria-pressed": String(!!cfg.raw), onclick: () => { cfg.raw = !cfg.raw; renderConfig(); } }, "Raw"),
+    el("span", { class: "note" }, "Values are written back in place; comments and order stay. Everything but the workspace only takes effect on new.")));
+  if (cfg.raw) { box.append(rawConfig()); return; }
+  for (const sec of parsed.sections) {
+    if (!sec.fields.length) continue;
+    const s = el("div", { class: "sec" }, el("h4", {}, sec.title));
+    if (sec.intro.length) s.append(el("p", { class: "intro" }, sec.intro.join(" ")));
+    for (const f of sec.fields) {
+      if (f.key === "ELIXIR_VERSION") {
+        const cur = ["ELIXIR_VERSION", "ERLANG_VERSION", "DEBIAN_VERSION"].map(k => val(sec, k)).join("|");
+        const sel = el("select", { onchange: ev => { const [ex, er, de] = ev.target.value.split("|"); setField("ELIXIR_VERSION", ex); setField("ERLANG_VERSION", er); setField("DEBIAN_VERSION", de); renderConfig(); } });
+        for (const tag of parsed.stack) { const m = tag.match(/^(.*)-erlang-(.*)-debian-(.*)$/); const v = [m[1], m[2], m[3]].join("|"); sel.append(el("option", { value: v, selected: v === cur }, tag)); }
+        if (![...sel.options].some(o => o.selected)) sel.append(el("option", { value: cur, selected: true }, "custom: " + cur.replace(/\|/g, " / ")));
+        s.append(el("div", { class: "row" }, el("label", {}, "stack", el("span", { class: "chip new" }, "new only")), sel, el("p", { class: "help" }, "One hexpm/elixir tag on Docker Hub, of the ones the file lists; it sets the three versions below.")));
+      }
+      s.append(fieldRow(f, parsed));
+    }
+    box.append(s);
+  }
+}
+function val(sec, key) { const f = sec.fields.find(f => f.key === key); return f ? (key in cfg.edited ? cfg.edited[key] : f.value) : ""; }
+function setField(key, v) { const orig = parseConfig(cfg.text).sections.flatMap(s => s.fields).find(f => f.key === key); if (orig && orig.value === v) delete cfg.edited[key]; else cfg.edited[key] = v; }
+function fieldRow(f, parsed) {
+  const v = f.key in cfg.edited ? cfg.edited[f.key] : f.value;
+  const id = "cfg-" + f.key;
+  const label = el("label", { for: id }, f.key);
+  if (f.key !== "WORKSPACE_PATH") label.append(el("span", { class: "chip new" }, "new only"));
+  let input;
+  const choices = f.key === "WORKSPACE_PATH" ? WB.workspaces : CHOICES[f.key] || (parsed.alts[f.key] ? [f.value, ...parsed.alts[f.key]] : null);
+  if (v === "true" || v === "false") input = el("input", { type: "checkbox", id, checked: v === "true", onchange: ev => { setField(f.key, String(ev.target.checked)); renderConfig(); } });
+  else if (choices) { input = el("select", { id, onchange: ev => { setField(f.key, ev.target.value); renderConfig(); } }); for (const c of [...new Set([...choices, v])]) input.append(el("option", { value: c, selected: c === v }, c)); }
+  else input = el("input", { type: "text", id, value: v, oninput: ev => { setField(f.key, ev.target.value); $("#wb-cfg .bar .btn").disabled = !Object.keys(cfg.edited).length; $("#wb-cfg .bar .btn").textContent = `Save ${Object.keys(cfg.edited).length} change${Object.keys(cfg.edited).length === 1 ? "" : "s"}`; ev.target.closest(".row").classList.add("changed"); } });
+  const row = el("div", { class: "row" + (f.key in cfg.edited ? " changed" : "") + (v === "false" ? " off" : "") }, label, input);
+  const help = (f.help + (f.inline ? " — " + f.inline : "")).trim();
+  if (help) row.append(el("p", { class: "help" }, ...linkify(help)));
+  return row;
+}
+function linkify(text) { return text.split(/(https?:\/\/\S+)/).map(part => /^https?:/.test(part) ? el("a", { href: part, target: "_blank" }, part.replace(/^https?:\/\//, "")) : part); }
+function saveConfig() {
+  let text = cfg.text;
+  for (const [key, v] of Object.entries(cfg.edited)) text = text.replace(new RegExp("^(export\\s+" + key + "=)(\"?)[^\"#\\n]*\\2", "m"), (_, a, q) => a + q + v + q);
+  cfg.text = text; WB.config = text; cfg.edited = {};
+  renderConfig(); toast("config.conf saved · staged in the mock");
+}
+function rawConfig() {
+  const pre = el("pre", { class: "raw" });
+  for (const line of cfg.text.split("\n")) {
+    const m = line.match(/^(export\s+\w+=)(.*?)(\s*#.*)?$/);
+    if (line.trim().startsWith("#") || !line.trim()) pre.append(el("span", { class: "c" }, line + "\n"));
+    else if (m) pre.append(el("span", { class: "k" }, m[1]), el("span", { class: "v" }, m[2]), el("span", { class: "c" }, (m[3] || "") + "\n"));
+    else pre.append(line + "\n");
+  }
+  return pre;
+}
+
+// --- the project's own documents ------------------------------------------------
+const P_TABS = [["readme", "README", "README.md"], ["changelog", "CHANGELOG", "CHANGELOG.md"], ["env", ".env", ".env"]];
+state.ptab = "readme";
+function renderProject() {
+  const tabs = $("#p-tabs"); tabs.replaceChildren();
+  for (const [key, label, file] of P_TABS) tabs.append(el("button", { class: "dtab", role: "tab", "aria-selected": String(state.ptab === key), onclick: () => { state.ptab = key; renderProject(); } }, label, el("small", {}, PROJ[key] ? file : "missing")));
+  const key = state.ptab, has = !!PROJ[key];
+  $("#p-booklet").hidden = !(has && key !== "env"); $("#p-env").hidden = !(has && key === "env"); $("#p-missing").hidden = has;
+  if (!has) { $("#p-missing").textContent = key === "changelog" ? "This workspace has no CHANGELOG.md: it was created with new2, which generates none (new does, from the workbench's own template). The cartridges keep their own." : `No ${P_TABS.find(t => t[0] === key)[2]} in this workspace.`; return; }
+  if (key === "env") {
+    const pre = $("#p-env"); pre.replaceChildren();
+    for (const line of PROJ.env.split("\n")) {
+      const m = line.match(/^(\w+=)(.*)$/);
+      if (line.trim().startsWith("#") || !line.trim()) pre.append(el("span", { class: "c" }, line + "\n"));
+      else if (m) pre.append(el("span", { class: "k" }, m[1]), /•/.test(m[2]) ? el("span", { class: "m" }, m[2] + "\n") : m[2] + "\n");
+      else pre.append(line + "\n");
+    }
+  } else renderMarkdown(PROJ[key], $("#p-md"), $("#p-toc"), $("#p-booklet"), "", (a, href) => false, "p-", P_TABS.find(t => t[0] === key)[2]);
+}
+
+// --- the figure viewer: fit, zoom about the cursor, pan --------------------------------
+const viewer = { scale: 1, x: 0, y: 0, w: 0, h: 0, drag: null };
+function openViewer(source, title) {
+  const canvas = $("#v-canvas"); canvas.replaceChildren();
+  const node = source.cloneNode(true);
+  node.setAttribute("draggable", "false");
+  viewer.vector = node.tagName === "svg";
+  canvas.classList.toggle("vector", viewer.vector);
+  if (viewer.vector) {
+    const [, , vw, vh] = (node.getAttribute("viewBox") || "0 0 960 600").split(/\s+/).map(Number);
+    viewer.w = vw; viewer.h = vh;
+    node.removeAttribute("width"); node.removeAttribute("height");
+    node.setAttribute("preserveAspectRatio", "xMinYMin meet");
+    uniqueIds(node, "-v" + Date.now().toString(36));
+  } else { viewer.w = source.naturalWidth || source.width; viewer.h = source.naturalHeight || source.height; }
+  canvas.append(node);
+  $("#v-title").textContent = title;
+  $("#viewer").classList.add("on");
+  fitViewer();
+  $("#v-close").focus();
+}
+// A copy of an inline SVG carries its ids — the arrow markers, the
+// title — and a page with two of each resolves url(#id) to the first:
+// the original's, which may be hidden by then. Every id in the copy
+// gets a suffix, and so does every reference to it.
+function uniqueIds(svg, suffix) {
+  const ids = [...svg.querySelectorAll("[id]")].map(n => n.id);
+  for (const n of svg.querySelectorAll("[id]")) n.id += suffix;
+  const attrs = ["marker-start", "marker-mid", "marker-end", "fill", "stroke", "clip-path", "mask", "filter", "href", "xlink:href", "aria-labelledby"];
+  for (const el of [svg, ...svg.querySelectorAll("*")]) {
+    for (const a of attrs) {
+      const v = el.getAttribute(a); if (!v) continue;
+      let nv = v;
+      for (const id of ids) nv = nv.replace(new RegExp(`(url\\(#|#|^|\\s)${id}(\\)|\\s|$)`, "g"), (m, pre, post) => pre + id + suffix + post);
+      if (nv !== v) el.setAttribute(a, nv);
+    }
+  }
+}
+// Where a point of the stage falls in the figure's coordinates, asked of
+// the SVG itself (its screen matrix knows the viewBox and the fit).
+function figurePoint(svg, clientX, clientY) {
+  const p = svg.createSVGPoint(); p.x = clientX; p.y = clientY;
+  return p.matrixTransform(svg.getScreenCTM().inverse());
+}
+function closeViewer() { $("#viewer").classList.remove("on"); $("#v-canvas").replaceChildren(); }
+function applyViewer() {
+  const c = $("#v-canvas");
+  if (viewer.vector) {
+    // viewer.x/y: where the figure's origin sits on the stage, in px;
+    // the viewBox is the stage's rectangle in the figure's units.
+    const st = $("#v-stage").getBoundingClientRect();
+    const svg = $("svg", c);
+    svg.setAttribute("viewBox", `${-viewer.x / viewer.scale} ${-viewer.y / viewer.scale} ${st.width / viewer.scale} ${st.height / viewer.scale}`);
+  } else {
+    c.style.width = viewer.w * viewer.scale + "px"; c.style.height = viewer.h * viewer.scale + "px";
+    c.style.transform = `translate(${viewer.x}px, ${viewer.y}px)`;
+  }
+  $("#v-pct").textContent = Math.round(viewer.scale * 100) + "%";
+}
+function fitViewer() {
+  const st = $("#v-stage").getBoundingClientRect();
+  viewer.scale = Math.min((st.width - 48) / viewer.w, (st.height - 48) / viewer.h, 4);
+  viewer.x = (st.width - viewer.w * viewer.scale) / 2; viewer.y = (st.height - viewer.h * viewer.scale) / 2;
+  applyViewer();
+}
+function zoomViewer(factor, cx, cy) {
+  const st = $("#v-stage").getBoundingClientRect();
+  if (cx === undefined) { cx = st.width / 2; cy = st.height / 2; }
+  const next = Math.min(8, Math.max(0.1, viewer.scale * factor));
+  if (viewer.vector) {
+    // The figure point under the cursor, from the SVG's own matrix; after
+    // the zoom the origin sits so that this point is still under the cursor.
+    const fp = figurePoint($("svg", $("#v-canvas")), st.left + cx, st.top + cy);
+    viewer.x = cx - fp.x * next; viewer.y = cy - fp.y * next;
+  } else {
+    viewer.x = cx - (cx - viewer.x) * (next / viewer.scale);
+    viewer.y = cy - (cy - viewer.y) * (next / viewer.scale);
+  }
+  viewer.scale = next; applyViewer();
+}
+function actualSize() {
+  const st = $("#v-stage").getBoundingClientRect();
+  viewer.scale = 1; viewer.x = (st.width - viewer.w) / 2; viewer.y = (st.height - viewer.h) / 2; applyViewer();
+}
+$("#v-close").addEventListener("click", closeViewer);
+$("#v-in").addEventListener("click", () => zoomViewer(1.25));
+$("#v-out").addEventListener("click", () => zoomViewer(0.8));
+$("#v-fit").addEventListener("click", fitViewer);
+$("#v-100").addEventListener("click", actualSize);
+$("#v-stage").addEventListener("wheel", ev => {
+  ev.preventDefault();
+  const r = $("#v-stage").getBoundingClientRect();
+  zoomViewer(ev.deltaY < 0 ? 1.12 : 1 / 1.12, ev.clientX - r.left, ev.clientY - r.top);
+}, { passive: false });
+$("#v-stage").addEventListener("dragstart", ev => ev.preventDefault());
+$("#v-stage").addEventListener("pointerdown", ev => { ev.preventDefault(); viewer.drag = { x: ev.clientX - viewer.x, y: ev.clientY - viewer.y }; $("#v-stage").classList.add("dragging"); $("#v-stage").setPointerCapture(ev.pointerId); });
+$("#v-stage").addEventListener("pointermove", ev => { if (!viewer.drag) return; viewer.x = ev.clientX - viewer.drag.x; viewer.y = ev.clientY - viewer.drag.y; applyViewer(); });
+for (const t of ["pointerup", "pointercancel"]) $("#v-stage").addEventListener(t, () => { viewer.drag = null; $("#v-stage").classList.remove("dragging"); });
+$("#v-stage").addEventListener("dblclick", ev => { const r = $("#v-stage").getBoundingClientRect(); zoomViewer(viewer.scale < 1.5 ? 2 : 0.5, ev.clientX - r.left, ev.clientY - r.top); });
+window.addEventListener("resize", () => { if ($("#viewer").classList.contains("on")) fitViewer(); });
+// The box in hand opens in the viewer too, at the cover's own size.
+$("#d-face").addEventListener("click", ev => { const img = $(state.face === "back" ? ".side.back img" : ".side.front img", $("#d-face")); if (img) openViewer(img, `${title(state.current)} — ${state.face}`); });
+
+// --- wiring ------------------------------------------------------------------
+$("#d-close").addEventListener("click", close);
+$("#scrim").addEventListener("click", close);
+$("#d-flip").addEventListener("click", flip);
+$("#d-form").addEventListener("submit", insert);
+document.addEventListener("dragstart", ev => { if (ev.target.tagName === "IMG") ev.preventDefault(); });
+document.addEventListener("keydown", ev => {
+  if ($("#viewer").classList.contains("on")) {
+    if (ev.key === "Escape") closeViewer();
+    else if (ev.key === "+" || ev.key === "=") zoomViewer(1.25);
+    else if (ev.key === "-") zoomViewer(0.8);
+    else if (ev.key === "0") actualSize();
+    else if (ev.key === "f") fitViewer();
+    return;
+  }
+  if (ev.key === "Escape") { close(); closeWb(); }
+});
+$("#scrim").addEventListener("click", closeWb);
+function toast(text) { const t = $("#toast"); t.textContent = text; t.classList.add("on"); setTimeout(() => t.classList.remove("on"), 2200); }
+const tick = () => { $("#clock").textContent = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); };
+tick(); setInterval(tick, 30000);
+
+renderConsole(); renderShelf(); renderJobs(); renderProject(); replay();
+</script>

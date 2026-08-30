@@ -80,38 +80,23 @@ every take, front or back:
   `covers.py cut` from the hero's expansion, with the hero in the window.
 * **The colour.** The house violet (#4B275F) is the overlay's: the
   printed board around the window carries it on every cover, so the
-  front's art does not — its ground is one tone that contrasts in
-  value against the violet, so the window reads as a socket holding
-  something and not as a hole in the same board, and its accent
-  contrasts against both. The back has no overlay, and keeps the
-  violet dominant in its own art.
+  front's ground is one tone that contrasts in value against it, and
+  the window reads as a socket holding something and not as a hole in
+  the same board. The back has no overlay, and keeps the violet
+  dominant in its own art. Nothing else about colour is asked for:
+  the era decides.
 
 Three plates in a row were reviewed clause by clause while sitting on a
 white photographic ground that the format rule forbids by name. Read the
 invariants first, then the prompt.
 
-Both blocks go into every prompt **verbatim**, each in the form its
-face takes: the format block says the window's proportion for the
-front's hero — the one `covers.py window` names — whose image is the
-window, and 5:7 for the back, which is the whole face;
-the colour block has one form for the front, which sits in the violet
-board, and one for the back, which carries the violet itself. Unlike the seal and the overlay, they
-generate reliably.
-
-Colour, on the front:
-
-```text
-The ground of the composition, edge to edge, is one tone that reads
-clearly lighter or darker in value than Elixir violet (#4B275F); the
-violet appears in the composition in details, as a secondary colour,
-and not as the ground.
-```
-
-Colour, on the back:
-
-```text
-Elixir violet (#4B275F) as the dominant colour of the composition.
-```
+The format block goes into every prompt **verbatim**, in the form its
+face takes: the window's proportion for the front's hero — the one
+`covers.py window` names — whose image is the window, and 5:7 for the
+back, which is the whole face. Its last sentence is the one line about
+colour, one form for the front, which sits in the violet board, and
+one for the back, which carries the violet itself. Unlike the seal and
+the overlay, it generates reliably.
 
 Format, for the front's hero:
 
@@ -122,7 +107,9 @@ illustration, and the illustration is all there is — not a product
 photograph, not a box or a board: no bevel, no lip, no rim of light, no
 edge, no shadow, no surface behind it, no margin of any colour around
 it. Proportions <RATIO> portrait. Every position below is measured from
-the edges of the image.
+the edges of the image. The ground of the illustration, edge to edge,
+is one tone that reads clearly lighter or darker in value than Elixir
+violet (#4B275F).
 ```
 
 `<RATIO>` is the one line of the block that is not verbatim: it is
@@ -139,7 +126,8 @@ illustration, and the illustration is all there is — not a product
 photograph, not a box or a board: no bevel, no lip, no rim of light, no
 edge, no shadow, no surface behind it, no margin of any colour around
 it. Proportions 5:7 portrait. Every position below is measured from
-the edges of the image.
+the edges of the image. Elixir violet (#4B275F) is the dominant colour
+of the illustration.
 ```
 
 The front's second turn, sent in the same chat with the *padded*
@@ -222,8 +210,8 @@ is in `references/front.md`.
 Both are composited by `covers.py stamp`. Asking a generator for the seal
 produced four different seals and, once, the word "Nintendo" inside one
 — in a prompt that said `No real brand marks or logos`. Asking it for
-the band produced a band that was never twice the same and twice in the
-accent colour. Never ask for either, and never ask for any real
+the band produced a band that was never twice the same and twice in a
+colour of its own. Never ask for either, and never ask for any real
 console's marks, wordmarks or typefaces. The full rule, and how
 `covers.py stamp` places them, is in `references/front.md`.
 
@@ -249,7 +237,8 @@ window is the hero — and the art runs on under the board, whole, so
 whatever the overlay lets through has art behind it. The board is the one place the violet is guaranteed,
 which is why the art under it contrasts with the violet instead of
 matching it. The front gets it; the back does not, and carries the
-workbench's name its own way — see `references/back.md`.
+workbench's name as a typeset lozenge in its legal strip, beside the
+seal — see `references/back.md`.
 
 ## What to read, and when
 
@@ -306,11 +295,13 @@ time; the verdicts are not, and are not meant to be.
 
 ### The front
 
-1. Read the cartridge's own README under
+1. Read the cartridge's own README and `DESIGN.md` under
    [`features/<feature>/`](../../../igniter/lib/workbench_igniter/features/).
-   The heroes come from what it actually does: the counts, the bodies.
-   Read **nothing else about this cartridge**: not its `_archived/`,
-   not a previous `eras.md` or prompt, not the cover record's old row.
+   The heroes come from what it actually does and why: the README for
+   the bodies and the counts, the design for the thesis and what is at
+   stake — what goes wrong without it is what a hero dramatises. Read
+   **nothing else about this cartridge**: not its `_archived/`, not a
+   previous `eras.md` or prompt, not the cover record's old row.
    A finished hero, read before the six are written, is the hero all
    six turn into.
 2. Choose the register, and write **six heroes** — one per era, each
@@ -322,8 +313,12 @@ time; the verdicts are not, and are not meant to be.
    [what the file holds](references/eras.md) is there.
 4. The user picks. The era comes with the proposal, the choice goes in
    the same file, and the five that lost stay in it.
-5. Fill the remaining slots for the winner: title, subtitle, accent,
-   badge, furniture, seal corner. The lockup takes the bottom of the
+5. Fill the remaining slots for the winner: title, subtitle (the
+   design's thesis in two to four words), badge (a fact the design
+   states — its platforms, its units), furniture, seal corner. No
+   version and no date anywhere in the hero: they are the back's,
+   typeset from the changelog, and a version drawn in the art is wrong
+   at the next release. The lockup takes the bottom of the
    hero, the badge a top corner, and the seal straddles the other top
    corner, so what the art keeps calm there is a quarter-disc.
 6. Assemble the prompt from [the template](references/front.md) — the winning
@@ -379,20 +374,21 @@ time; the verdicts are not, and are not meant to be.
     way, because the generator set it at the face's corner and the
     corner was under the overlay, and the corner is in the window now.
 11. Fill the row in the [cover record](../../../assets/covers/README.md#cover-record): era, register,
-    accent, corner and the options `covers.py stamp` was given.
+    corner and the options `covers.py stamp` was given.
 
 ### The back
 
 Only once the front's row is complete.
 
 1. Write the plate prompt — format verbatim, the era block **cut of
-   whatever clause places a subject**, the back layout clause with each
-   frame given as a rectangle, the workbench's name as the one lettered
-   element in the era's own form and with its own rectangle, the era's
-   device named with its contents, the front's accent — save it as
+   whatever clause places a subject**, the back layout clause with
+   nothing lettered on the face, the era's device named with its
+   contents, the darker strip along the foot — save it as
    `<feature>/back.prompt.txt`, generate, and save the plate as
-   `<feature>/art/back.jpg`.
-   Check the invariants first, as on the front: the name's wording, the
+   `<feature>/art/back.jpg`. The workbench's name is not on the plate:
+   it is the lozenge `covers.py back` typesets in the strip beside the
+   seal.
+   Check the invariants first, as on the front: nothing lettered, the
    face filling the frame with no border or background, the 5:7, no
    furniture. Then that the frames end above two fifths of the face, or
    the copy will not fit under them.
@@ -400,7 +396,8 @@ Only once the front's row is complete.
    inner rectangles, the field, the strip, as fractions of the width.
    A scan for the bright chrome pixels along one row and one column
    finds the frames; PIL does it. `PANEL=""` if the
-   plate brought its own field, and `ACCENT=` from the record.
+   plate brought its own field, and `ACCENT=` read off the front's art
+   — the one colour the era put beside the ground.
 3. Write `<feature>/back/copy.md` from the cartridge README, in the
    front's register, one `##` per piece.
 4. Take the screenshots from a generated project that has the feature

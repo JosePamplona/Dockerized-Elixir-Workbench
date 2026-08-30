@@ -6,7 +6,7 @@ rules were drawn from is in `assets/covers/README.md`.
 
 ## Band, house colour and format
 
-The three blocks themselves are in `SKILL.md`; this is why they do not
+The format block itself is in `SKILL.md`; this is why it does not
 move.
 
 The band is on the overlay, not in the art, and it never names the
@@ -16,30 +16,21 @@ would swap the overlay and the colour together, and keep the same seal.
 
 The violet lives on the overlay: the printed board around the window is
 #4B275F on every cover, close to half the face, so the house colour is
-guaranteed before the art is generated. What the art does with that is
-contrast. The window is a socket, and what sits in it has to read as a
-thing set into the board — a label, a screen, a chip — which it does
-only when its ground is clearly lighter or darker than the board. This
-was seen on the first three covers stamped under the board: a violet
-ground in the art ran into the violet board with nothing but the pads
-and the silkscreen line to hold the window's edge, and the one cover
-whose ground was black and green was the one that read as set in. So
-the front's colour block asks for a ground that contrasts in value with
-the violet, and the violet returns in the art only in details. A cover
-whose ground *is* the violet is now the departure to make on purpose,
-one cover at a time, and it needs a reason the board cannot give it.
-
-The back has no overlay, so nothing guarantees the violet there but the
-art: its colour block still asks for the violet dominant.
-
-**The accent**, the one colour beside the ground, must **contrast in
-value against the ground and against the board's violet both**. That is
-the one hard rule about colour: warm neutrals are banned, because
-`exdoc.jpg` used parchment ivory, dissolved into the violet, and is the
-least legible cover of the set. Otherwise pick whatever suits the
-feature, repeats included — green reads as "healthy" and as "covered"
-alike, and both covers are better for it. See the
-[cover record](../../../assets/covers/README.md#cover-record).
+guaranteed before the art is generated. The window is a socket, and
+what sits in it reads as a thing set into the board only when its
+ground is clearly lighter or darker than the board — seen on the first
+three covers stamped under it, where a violet ground ran into the
+violet board and the one black-and-green ground was the one that read
+as set in. So the format block's last sentence asks for a ground that
+contrasts in value with the violet; the back has no overlay, and its
+form asks for the violet dominant. That is all that is said about
+colour. The era chooses the rest — the ground's tone, the one colour
+beside it — and the choice is read off the art afterwards, never
+decided before it; an accent slot used to be filled here and was
+dropped on 2026-08-28, since every colour it chose the era would have
+chosen alone. A cover whose ground *is* the violet is the departure to
+make on purpose, one cover at a time, and it needs a reason the board
+cannot give it.
 
 ### Why the format is an invariant
 
@@ -70,7 +61,7 @@ Two consequences, written down before someone tries to fix them:
 
 ## The slots
 
-Seven things change per cartridge. Keep them short — every extra clause
+Eight things change per cartridge. Keep them short — every extra clause
 is one more thing the generator can get wrong.
 
 | Slot | Rule |
@@ -78,12 +69,17 @@ is one more thing the generator can get wrong.
 | **Era** | Chosen from the six written proposals in `eras.md`, one of them recommended, then recorded. |
 | **Register** | The stance the hero and the subtitle take. Chosen before the proposals, since all six share it. Has no text of its own. |
 | **Title** | The cartridge name, uppercase. Nothing else. |
-| **Subtitle** | Two to four words, imperative or boastful. It is a tagline, not a description. |
+| **Subtitle** | Two to four words, imperative or boastful. It is a tagline, not a description — the design's thesis, from `DESIGN.md`, in the register's voice. |
 | **Hero** | One concrete scene depicting the *mechanism*, not the abstraction. See below. |
-| **Accent** | One colour beside the ground, contrasting in value against the ground and against the board's violet, chosen because it suits the feature. |
-| **Unit badge** | The "1-2 PLAYERS" slot, in the feature's own units. One line, one short phrase, asked for in the hero as a small flash in a top corner, in the era's lettering. `covers.py stamp --badge` typesets one instead when the generated one is wrong; it was the only way while the corner the generator puts it in was under the overlay. |
+| **Unit badge** | The "1-2 PLAYERS" slot, in the feature's own units — a fact `DESIGN.md` states, like the platforms it was designed for. One line, one short phrase, asked for in the hero as a small flash in a top corner, in the era's lettering. `covers.py stamp --badge` typesets one instead when the generated one is wrong; it was the only way while the corner the generator puts it in was under the overlay. |
 | **Furniture** | One commercial mark from the era's column in `eras.md` — a price sticker, a rental label — printed on the cover inside the hero, with its position; or none. Wear is not asked for. |
 | **Seal corner** | Which corner of the window the seal straddles; the composition keeps a quarter-disc there calm. Chosen from the art. |
+
+Two things are never slots. The **version** and the **date**: they
+belong to the back, typeset from the cartridge's `CHANGELOG.md`, and
+a version drawn into the hero is wrong at the next release — the
+healthcheck2 hero carries a `VERSION 0.1.0` the generator drew on its
+own, and it is asked out at the next continuation.
 
 The back adds one of its own, the **device**: the mark ghosted into its
 middle third, keyed to the era and named with its contents. See
@@ -166,10 +162,8 @@ all the lettering in the image.
 The <SEAL CORNER> of the artwork is composed as a quiet area: low detail,
 no focal element, an even field of tone.
 
-Palette: [HOUSE COLOUR — verbatim], CRT phosphor haze in the background.
 Every mark on the face is printed illustration or type, and the marks
 named above are all of them.
-Accent: <ACCENT>.
 
 --- second turn, with the padded canvas from covers.py pad ---
 
@@ -203,10 +197,10 @@ hero and the hero's edge pixels repeated into the side slivers, and
 `covers.py cut` takes it from there. The generator repaints what it is
 told to keep; a flat margin gives it nothing to repaint.
 
-The last two lines used to read `No photographic elements. No real
-brand marks or logos.` — the line that was in the prompt the day the
-seal said "Nintendo". They now say what the marks are and that the list
-is complete, under the rule in `SKILL.md`: the prohibited thing has to
+The marks line used to read `No photographic elements. No real brand
+marks or logos.` — the line that was in the prompt the day the seal
+said "Nintendo". It now says what the marks are and that the list is
+complete, under the rule in `SKILL.md`: the prohibited thing has to
 have nowhere to be, not a name.
 
 **The lockup follows the era.** A beveled chrome-and-violet wordmark with

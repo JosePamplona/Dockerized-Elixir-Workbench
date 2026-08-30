@@ -1,0 +1,26 @@
+# The console mock
+
+`workbench-console.html`, here, is a static mock of the workbench console,
+made to judge its interaction with the eyes before any backend exists.
+Open it in a browser. This directory is how it gets built:
+
+```text
+mock/
+├── workbench-console.html the page itself: open it in a browser
+├── build.py               the generator: ./mock/build.py, from the repository root
+├── console.template.html  the page, with {{CATALOG}} … {{SOCKET}} where the data goes
+├── catalog.json           ./wb.sh catalog --json (with the covers)   ─┐ refreshed by
+├── status.json            ./wb.sh status --json                      ─┘ build.py --refresh
+├── logs.json              a docker compose logs capture, as [service, timestamp, text] rows
+└── marked.min.js          the Markdown renderer, inlined so the page stays self-contained
+```
+
+Everything else the page shows is read from the repository at build
+time: the colours and type from `assets/design/` (`generated/tokens.css`), the sealed covers and the socket under `assets/covers/`, each
+cartridge's README/DESIGN/CHANGELOG, the workbench's README, CHANGELOG
+and `config.conf`, `wb.sh`'s version, and the workspace's README,
+CHANGELOG and `.env` (secrets masked in the build, never in the page).
+
+What is real and what is staged: the workspace, the catalog and the
+documents are real; the logs are a real capture replayed; the output of
+inserting, deploying, creating and saving is staged.

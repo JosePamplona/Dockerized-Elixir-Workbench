@@ -1,13 +1,13 @@
 # The back
 
 Read this only once the front's row in the cover record is complete. The
-back takes era, accent and register from that row and decides nothing of
-its own.
+back takes era and register from that row and decides nothing of its
+own.
 
 ## The back of the box
 
 Only once the front is validated. The back is the other face of the
-same box, so it takes **era, accent and register from the front's row in
+same box, so it takes **era and register from the front's row in
 the [cover record](../../../assets/covers/README.md#cover-record)** and decides nothing of its own: a
 box whose two faces come from different decades is two boxes.
 
@@ -25,8 +25,8 @@ text does not flip digits.
 
 | Made by | What |
 | --- | --- |
-| The generator | The plate: era material and finish, the workbench's name in the era's own form, the era's device ghosted into the middle, a darker strip for the legal line |
-| Composition | The frames and the screenshots in them, the copy, the badge, the requirements flash, the legal line, the seal |
+| The generator | The plate: era material and finish, the era's device ghosted into the middle, a darker strip for the legal line — and nothing lettered |
+| Composition | The frames and the screenshots in them, the copy, the badge, the requirements flash, the name lozenge, the legal line, the seal |
 
 The frames used to be the generator's. Five plates in a row put them
 between 0.5 and 0.6 of the height whatever rectangle the prompt gave —
@@ -61,13 +61,10 @@ product photograph would add matters *more* here: a rim the front's
 overlay would cover, the back shows]
 
 Back face layout. This face carries no subject: no figure, no scene, no
-picture of anything. One thing on it is lettered, and only one: the
-words "DOCKERIZED ELIXIR WORKBENCH", set <in the era's own form: a
-rubber stamp, a flash, a stats panel, an announcement> inside <its
-rectangle>, at foreground size. Nothing else on the face is lettered:
-no title, no caption, no signature, no placeholder text, no glyphs, no
-words of any kind anywhere else, neither inside the frames nor outside
-them.
+picture of anything. The face is <the era's material, even across the
+whole face>. Nothing on the face is lettered: no title, no caption, no
+signature, no placeholder text, no glyphs, no words of any kind
+anywhere on the face.
 
 Across the middle of the face the printed board continues, bare, and
 one <DEVICE> is ghosted into it, centred, barely darker than
@@ -77,10 +74,8 @@ on this face. <What is inside it, exactly.> It carries no lettering.
 Across the bottom edge, over the full width, a band of the same board
 printed in a darker ink, about a fifteenth of the height of the face.
 
-Palette: [HOUSE COLOUR — verbatim], CRT phosphor haze in the background.
 Every mark on the face is printed material or type, and the marks named
 above are all of them.
-Accent: <the front's accent>.
 ```
 
 Two or three frames, or one wide one, and now that they are drawn the
@@ -107,7 +102,7 @@ plate. They are set out below; what the plates actually did is in
 [Measured on the backs](../../../assets/covers/README.md#measured-on-the-backs).
 
 **Rectangles, not relations.** Say where each thing's edges are as a
-fraction of the face — the name's rectangle, the device's centre and
+fraction of the face — the device's centre and
 width. Do not say "of equal size", "the same height" or "twice the
 width of the other": a stated *relation between two objects* is what
 gets dropped when the generator has to choose. This was learned on the
@@ -128,34 +123,36 @@ faces (Bookman, Palatino, the Noto blacks) want the copy at its floor —
 one line of headline, four of blurb, three bullets — before the
 layout is blamed.
 
-**The device is asked for, not forbidden.** See below. So is the name.
+**The device is asked for, not forbidden.** See below.
 
 ### The name
 
-The front's band is on the overlay, and the back does not get the overlay:
-the plate carries the workbench's name itself, and it is the one piece
-of text this face lets the generator draw. **The words stay, the form
-is free** — a rubber stamp across a corner, a flash, a stats panel, an
-announcement strip, whatever composes the plate in the era's own idiom.
-That is the point of it: the front says which workbench by the overlay,
-and the back gets to say it the way its decade would have.
+The front's band is on the overlay, and the back does not get the
+overlay: it carries the workbench's name as a **membership badge in
+the legal strip**, beside the seal — a lozenge in the form of the
+platform lozenges a hero carries, a pale field with a thin ink rule
+and the name in small capitals of the era's headline face, padded evenly from the letters' ink. `covers.py
+back` typesets it (`NAME_Y`, `NAME_X`, `NAME_POINT` and `NAME_KERN` in
+`layout.env`; its size follows its type; an empty `NAME_Y` leaves it
+off),
+and it is the same on every back, like the seal: it says whose the
+cartridge is, not which era it is.
 
-Three rules, all from the tables:
+It used to be generated on the plate, at foreground size, in the era's
+own form — the one piece of text the back let the generator draw, and
+the reason the plate had a foreground element at all. Three plates on
+`healthcheck2` ended that: given a rectangle, the name came back inside
+a drawn panel that took a sixth of the face; asked out of the panel, it
+kept the panel's place and size; and either way the top third of the
+face was the name's, with the screenshots squeezed to 0.30 of the width
+under it and the blurb cut to fit. A back's top is for its screens, and
+its foot is where a box says who published it — which is what the name
+is. With it typeset, the plate carries no lettering, and the one
+prohibition on this face is the whole of it.
 
-* **Foreground size.** That is the threshold above which generated text
-  is reliable, and `DOCKERIZED ELIXIR WORKBENCH` came back right on
-  every band that was ever asked for. Below it the words go the way of
-  the small address plates.
-* **If it is a stats panel, the numbers are texture.** A form that
-  carries figures — a dial, a readout, a score — carries flipped digits.
-  Ask for the shape; never for a number the back has to get right.
-* **It has a rectangle.** Say where it sits, as fractions of the face,
-  like a frame; then measure it into `layout.env` as a place the copy
-  keeps clear. A name left to float lands on a frame or under the blurb.
-
-Its shape is still the era's furniture, and the anachronism column in
-`references/eras.md` still vetoes it: no hologram flash on a carton, no
-grease-pencil stamp on a CD-ROM.
+The backs made while the plate still carried the name — coveralls,
+exdebug, exdoc, clustering — keep their generated name until they are
+remade, and their `layout.env` has no `NAME_Y`.
 
 ### The device
 
@@ -204,18 +201,25 @@ and technique stay; anything that places something goes.
 
 ### The copy
 
-Written by hand, in the front's register, and mostly already written:
-the cartridge's own README is the source. Its *Description* is the
-blurb, *What it installs* is the feature list, *Options* is the
-requirements flash. Keep it to what fits a back in one glance:
+Written by hand, in the front's register. It has two sources in the
+cartridge's anatomy, and which one is which matters: the README says
+what the cartridge *installs*, and copy drawn from it alone is a
+spec sheet — healthcheck2's first back read "`/health/ready`: `SELECT
+1` on the repo, 1 s timeout" and was retired for it. `DESIGN.md` says
+*why* — the problem, the decisions, what each one buys — and that is
+what a back sells. Keep it to what fits a back in one glance:
 
 | Piece | Length | Source |
 | --- | --- | --- |
-| Headline | Up to six words, in the front's register, and **one line at the house size** — five words ran to two on exdebug, and the fix was a shorter headline, not a smaller face | New — a second tagline, not the subtitle again |
-| Blurb | 40-70 words | The cartridge README's *Description*, cut to its first paragraph |
-| Features | Three or four bullets, up to eight words each | *What it installs* |
-| Requirements flash | One line in the idiom of a system-requirements box | *Options*, and the workbench itself: `REQUIRES: DOCKER, ONE WORKBENCH` |
+| Headline | Up to six words, in the front's register, and **one line at the house size** — five words ran to two on exdebug, and the fix was a shorter headline, not a smaller face | New — the design's thesis, not the subtitle again: *Alive is not ready* |
+| Blurb | 40-70 words | `DESIGN.md`, the *Abstract* and the *Problem*: the question the cartridge answers and what goes wrong without it, in the reader's second person |
+| Features | Three or four bullets, up to eight words each | `DESIGN.md`'s decisions, each as the benefit it buys — *readiness that sheds traffic before requests time out* — never the file it lives in |
+| Requirements flash | Two lines in the idiom of a system-requirements box — what it needs, what it works with; commas inside a line, since ` · ` is the line break | `DESIGN.md`'s *Evaluation* (what the generated code was verified on) and its platform survey: `REQUIRES: PHOENIX 1.8, ELIXIR 1.19 / OTP 27` / `WORKS WITH KUBERNETES, FLY.IO, AWS ECS` |
+| Quote | One sentence and its attribution, `words — who`, set in the era's italic between the features and the flash (`QUOTE_Y`, `F_QUOTE`); optional, the editorial era's review-quote flash and other eras' at their discretion | A verbatim quotation from `DESIGN.md`'s sources — the design already quotes them exactly |
+| Version | Not written: `covers.py back` reads `cartridge vX.Y.Z · date` off the first entry of the cartridge's `CHANGELOG.md` and sets it under the legal line, so the back never carries a version the cartridge does not | `CHANGELOG.md` |
+| Install | The one command, as a second lozenge under the name's — the same pill inverted, ink field and pale type, in the caption face (`INSTALL_POINT`; `INSTALL_ROW=beside` puts it after the name in one row, smaller, where the band is short) | The README's install line |
 | Badge | The front's, verbatim | Cover record |
+| Captions | One line each, in the same register | What the screen shows, said the way the blurb would say it |
 | Legal strip | Repository, licence, "actual screens shown" | Small, and true |
 
 It lives in `<feature>/back/copy.md`, one heading per piece, so a back
@@ -305,22 +309,48 @@ measured with, so `FEAT_LEAD` is per era — zero for the Noto faces,
 up a hair besides. A re-set back is judged the way a plate is:
 composed, and looked at.
 
-**The name is the exception to this face's own doctrine**, on purpose.
-Everything else on a back is typeset here precisely because generated
-text is what fails; the name is generated, at the one size where it does
-not, and in a form the era chooses. It used to be the band, verbatim,
-and on `healthcheck` two plates of three put it in the accent colour —
-which is when the band left the art for the overlay. The front got the
-overlay; the back was deliberately left without it, so the two faces are
-one box by the seal, the colour and the era, and the back is where the
-era gets to play. The two backs made before this carry a generated band
-and differ until they are remade.
+**Nothing on a back is generated text any more.** The name was the
+exception — generated at the one size where text does not fail, in a
+form the era chose, after the band it used to be came back in the
+accent colour on two `healthcheck` plates of three — and it was the
+exception that cost the face its top third. It is the lozenge now, set
+here with everything else; the two faces are one box by the seal, the
+colour, the era and the lozenge.
 
 The seal goes on last, through the same stamping as the front, **small** — `SEAL_SIZE=0.12`
-or so — in the legal strip, bottom left, where a back has always carried
-it. It is the
-one element that appears on both faces, which is the point: either side
-up on the shelf, the box says it is one of ours.
+— in the legal strip at the left of the lozenge, **centred on the
+block the lozenge and the legal line make**: `SEAL_MARGIN="X,Y"` sets
+its height, and `NAME_X=centre` centres the three — seal, a gap, the
+wider of lozenge and legal line — on the width as one block and sets
+the seal's `X` from it, so no back computes the strip by hand. It is the one element that appears on both
+faces, which is the point: either side up on the shelf, the box says it
+is one of ours.
+
+### The layout, as healthcheck2 set it
+
+The first back made whole this way is `healthcheck2`, and its
+`back/layout.env` is the worked example the next back starts from,
+measured again against its own plate. Top to bottom: the screenshots
+first, under the plate's top edge, two frames at the shots' own
+proportion and as wide as the face allows (0.40 of the width each,
+about 2× reduction); their captions; the headline; the blurb; the
+features; the requirements flash and the badge in one row on the
+material; and on the darker band, the name lozenge, the install command's
+lozenge under it, the legal line and the version under those, and the
+seal as tall as the three and centred on them, the whole centred on
+the width. All of the strip is `covers.py back`'s defaults from one
+number, `NAME_Y` — where the name lozenge starts on the band; the
+install row, the legal line's place, the seal's size and margins and
+the block's centring follow from it (`INSTALL_ROW`, `LEGAL_Y`,
+`SEAL_SIZE`, `SEAL_MARGIN`, `NAME_X` override one at a time; the backs
+made before the pattern set them by hand). The band is the strip's
+room whatever the plate draws across it — healthcheck2's embossed frame
+runs through its band, and the block ignores it. `covers.py back`
+warns when a row runs wider than the margins; `NAME_POINT`, `NAME_KERN`
+and `INSTALL_POINT` bring it in. The plate carries nothing
+lettered, the copy comes from `DESIGN.md`, and the frames are drawn.
+What changes from box to box is the plate's material and where its
+band and device fall — everything else is this order.
 
 `covers.py back` does all of this:
 
@@ -338,8 +368,9 @@ reproduced it pixel for pixel; the port to PIL was checked the same way
 against exdebug's archived back. Making a back is therefore: generate
 the plate, measure it into `layout.env`, write `copy.md`, take the
 shots, run `covers.py back`. The
-accent goes in `layout.env` too (`ACCENT=`), since it is the front's and
-not the tool's.
+accent goes in `layout.env` too (`ACCENT=`), read off the front's art
+— the one colour the era put beside the ground — since it is the box's
+and not the tool's.
 
 ### What every plate has taught
 

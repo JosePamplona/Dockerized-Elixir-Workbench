@@ -1,0 +1,79 @@
+MANUAL HERO. The image in art/hero.jpg is the source, the way
+overlay.xcf is: it was made in conversation with the generator,
+turn after turn, starting from proposal 3 (editorial cover) in
+eras.md and the prompt archived beside cover-2 — the brass desk bell
+on an even ground, the two routes engraved on its base, the title
+lockup in a classical serif, the platform line, the badge flash. It
+cannot be regenerated, only continued: every change asked of the
+image from here on is logged below, before the take that tests it,
+and the previous image is archived before the new one overwrites it.
+
+What the image carries beyond that prompt, read off it on 2026-08-28
+(the turns that produced it were not logged — the log starts here):
+
+- The ground is a dark plum leather, near black at the edges and
+  lit at the centre — violet in hue, darker than the board in value.
+- Three platform lozenges across the top, each with the platform's
+  own mark drawn by the generator beside the name; the same three
+  marks again as inlays on the bell's base.
+- A cutaway window in the dome showing the mechanism; four thin
+  callout lines to small technical captions; a faint grid behind.
+- A magazine credit line at the bottom right, small.
+- The badge "EVERY ENV" as a brushed-metal plate under the subtitle.
+
+--- log of changes asked of the image ---
+
+1. (2026-08-28, asked outside the log; the image before it is
+   `_archived/art/cover-3.jpg`) The hero remade as a technical
+   drawing: an exploded view of the bell on cream graph paper inside
+   a drawing frame, the two routes on the bell's band, three platform
+   tables across the top with each platform's mark, callouts in
+   pseudo-Cyrillic as texture, two stamps, a drawing-office title
+   block along the bottom with a signature, the title in stencil,
+   "EVERY ENV" as a stamp at the lower right.
+
+--- second turn: not sent ---
+
+Outside the drawing frame the hero is plain cream paper, so the
+expansion is made by hand: the paper tone sampled off the hero's
+edges and repeated into the padded canvas's margins, then `covers.py
+cut` takes it from there.
+
+2. (2026-08-28, asked outside the log again; the image before it is
+   the technical drawing, kept whole in the window of
+   `_archived/art/cover-4.jpg` — the hero file itself was overwritten
+   before it was archived) The hero returned to the leather: the
+   brass bell of `cover-3` printed flat, as an illustration and not
+   a render — the cutaway, the callouts, the grid and the credit
+   line gone; the ground the dark plum leather again, lit at the
+   centre; a thin embossed frame with rounded corners drawn a little
+   inside the edges; the three platform lozenges across the top with
+   their marks; "EVERY ENV" as an outlined stamp under them, above
+   the bell; the two routes on the bell's band; the title lockup in
+   the classical serif, the subtitle under it, and "VERSION 0.1.0"
+   as a small line under the subtitle. Both bottom corners are calm.
+
+--- second turn, sent with art/padded.jpg ---
+
+(The expansion was first made by hand — the hero's edge rows and
+columns repeated outward — and did not hold: that cut is
+`_archived/art/cover-5.jpg`. The leather outside the frame is lit
+and grained, not one tone, so the generator paints the margins.)
+
+The flat grey border around this picture is blank. Paint it by
+continuing the picture outward into it on every side, to the edges —
+the dark plum leather outside the embossed frame runs on above,
+below and at both sides to the edges of the image, its grain
+continuing and its tone darkening evenly toward the edges, and the
+frame stays closed exactly where it is. Keep the picture inside
+exactly as it is, and add nothing new: no figure, no object, no
+lettering.
+
+--- log of changes asked of the image, continued ---
+
+3. (2026-08-28, written before the take) The line "VERSION 0.1.0"
+   under the subtitle is gone: where it was, the leather continues
+   bare, the same leather as around it, its grain and lighting
+   unbroken. Everything else in the picture stays exactly as it is.
+   The version is the back's, typeset from the changelog; a version
+   drawn in the hero is wrong at the next release.

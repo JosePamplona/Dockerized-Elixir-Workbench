@@ -252,6 +252,49 @@ def outlined_box(size, fill, outline, stroke):
     return box
 
 
+# The workbench's name, on the back: a membership badge in the legal
+# strip beside the seal, typeset here like everything else on a back
+# — a lozenge in the form of the platform lozenges a hero carries, a
+# pale field with a thin ink rule and the name in small capitals. The plate carries no lettering at all,
+# so the screenshots take the top of the face. The same on every back,
+# like the seal: it says whose the cartridge is, not which era it is.
+NAME = "DOCKERIZED ELIXIR WORKBENCH"
+NAME_FIELD = "#EEE8DF"
+NAME_INK = "#2A1830"
+
+
+def lozenge(text, fnt, field, ink, kerning=0, pad=0.85, side=1.3, radius=0.35):
+    """A lozenge as wide and as tall as its text asks: the pill the
+    platform badges on a hero take, a field with a thin rule of the ink.
+    The padding is measured from the ink of the letters — `pad` of the
+    text's height above and below, `side` of it at the ends, a little
+    more so the rounded ends do not crowd the first and last letter — so
+    capitals do not sit high in a box sized for descenders they have not
+    got. `radius` is the corners', as a fraction of the height."""
+    x0, y0, x1, y1 = fnt.getbbox(text)
+    text_w = (x1 - x0) + kerning * max(0, len(text) - 1)
+    text_h = y1 - y0
+    py, px_ = round(text_h * pad), round(text_h * side)
+    w, h = round(text_w + 2 * px_), round(text_h + 2 * py)
+    stroke = max(1, round(h * 0.045))
+    badge = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    d = ImageDraw.Draw(badge)
+    d.rounded_rectangle((0, 0, w - 1, h - 1), radius=round(h * radius), fill=rgba(field), outline=rgba(ink), width=stroke)
+    draw_line(d, (px_ - x0, py - y0), text, fnt, rgba(ink), kerning)
+    return badge
+
+
+def name_badge(fnt, kerning=0):
+    """The name lozenge: pale field, ink rule, the name in small capitals."""
+    return lozenge(NAME, fnt, NAME_FIELD, NAME_INK, kerning)
+
+
+def install_badge(text, fnt):
+    """The install command's lozenge, set under the name's: the same pill
+    inverted, ink field and pale type, in the caption face — a command."""
+    return lozenge(text, fnt, NAME_INK, NAME_FIELD)
+
+
 # THE FRONT: PAD AND CUT ======================================================
 
 def cmd_window(args):
@@ -548,9 +591,28 @@ BACK_DEFAULTS = dict(
     FRAMES="0.0604,0.1827,0.264,0.3736 0.3681,0.1827,0.265,0.3736 0.6772,0.1827,0.264,0.3736",
     CAPTION_Y=0.574, HEAD_Y=0.628, HEAD_SIZE=0.054,
     PANEL="0.05,0.700,0.90,0.525",
-    BLURB_Y=0.722, FEAT_Y=0.955, REQ_Y=1.128, LEGAL_Y=1.285,
+    BLURB_Y=0.722, FEAT_Y=0.955, REQ_Y=1.128, LEGAL_Y="",
     MARGIN=0.075,
-    SEAL_SIZE=0.12, SEAL_MARGIN="0.03", SEAL_CORNER="bl",
+    # The seal: "block" sizes it to the strip's block when the name lozenge
+    # is set (the pattern), and its margins are then computed; a number
+    # and a margin set it by hand, as the backs before the pattern do.
+    SEAL_SIZE="block", SEAL_MARGIN="", SEAL_CORNER="bl",
+    # The name lozenge in the legal strip: its top edge and its left edge,
+    # as fractions of the width; its size follows its type. Empty NAME_Y leaves it off,
+    # for the backs made while the plate still carried the name. NAME_X
+    # "centre" centres seal, lozenge and legal line on the width as one
+    # block, and the seal's horizontal margin is computed from it.
+    # NAME_KERN is the name's tracking; the install command's lozenge follows
+    # the name's in the same row, in the caption face at INSTALL_POINT.
+    NAME_Y="", NAME_X="centre", NAME_POINT=0.022, NAME_KERN=0.003, INSTALL_POINT=0.016,
+    # INSTALL_ROW: below (under the name, its own row — the pattern) or
+    # beside (after it in one row, smaller, where the band is short).
+    INSTALL_ROW="below",
+    # The legal line's left edge; empty follows NAME_X.
+    LEGAL_X="",
+    # The quote's top edge; empty leaves it off. F_QUOTE overrides the
+    # blurb face for it (an italic, where the era has one).
+    QUOTE_Y="", F_QUOTE="",
     ACCENT="#B6F542", INK=INK, MUTED="#CDBFDA",
     # The frames' rules, when the plate is generated without frames and
     # they are drawn here around each FRAMES rectangle: outer colour and
@@ -590,6 +652,22 @@ def read_env(path):
                 key, value = token.split("=", 1)
                 values[key] = value
     return values
+
+
+FEATURES_DIR = os.path.normpath(os.path.join(COVERS_DIR, "..", "..", "igniter", "lib", "workbench_igniter", "features"))
+
+
+def cartridge_version(feature):
+    """The cartridge's current version and its date, read off the first
+    entry of its CHANGELOG.md — the one source, so the back never says a
+    version the cartridge does not. None when the cartridge has no
+    changelog yet."""
+    p = os.path.join(FEATURES_DIR, feature, "CHANGELOG.md")
+    if not os.path.isfile(p):
+        return None
+    with open(p) as f:
+        m = re.search(r"^## v?(\S+?)\s*-\s*\((\d{4}-\d{2}-\d{2})\)", f.read(), re.M)
+    return (m.group(1), m.group(2)) if m else None
 
 
 def read_copy(path):
@@ -646,6 +724,12 @@ def cmd_back(args):
     req = "\n".join(section("Requirements")).replace("  ·  ", "\n")
     badge = "\n".join(section("Badge"))
     legal = "\n".join(l.rstrip() for l in section("Legal"))
+    quote = " ".join(section("Quote"))
+    install = " ".join(section("Install"))
+    version = cartridge_version(args.feature)
+    if version:
+        v, date = version
+        legal += f"\ncartridge v{v} · {date}"
     captions = [strip_copy(re.sub(r"^[0-9]+\. `[^`]*` — ", "", l)) for l in copy.get("Screenshots", [])]
 
     plate = Image.open(plate_p).convert("RGBA")
@@ -701,6 +785,21 @@ def cmd_back(args):
     caption(plate, (x0, P(fl("BLURB_Y"))), blurb, font(f_text, P(0.0235)), ink, text_w, interline=P(0.006))
     caption(plate, (x0, P(fl("FEAT_Y"))), features, font(f_head, P(0.030)), ink, text_w, interline=P(feat_lead))
 
+    # The quote, when the copy carries one and the layout gives it a
+    # place: a line of the source's words in the blurb face, its
+    # attribution under it in the caption face, in the era's own
+    # review-quote form.
+    if quote and L["QUOTE_Y"]:
+        m = re.match(r"^(.*?)\s+—\s+(.*)$", quote)
+        words, who = (m.group(1), m.group(2)) if m else (quote, "")
+        qfnt = font(L["F_QUOTE"] or f_text, P(0.0235))
+        caption(plate, (x0, P(fl("QUOTE_Y"))), f"\u201c{words}\u201d", qfnt, ink, text_w, interline=P(0.006))
+        if who:
+            n = len(wrap(f"\u201c{words}\u201d", qfnt, text_w))
+            ascent, descent = qfnt.getmetrics()
+            caption(plate, (x0, P(fl("QUOTE_Y")) + n * (ascent + descent + P(0.006)) + P(0.004)),
+                    f"— {who}", font(f_mono, P(0.0155)), muted, text_w)
+
     # Requirements flash (left) and badge (right), one row.
     rw, rh = P(0.56), P(0.078)
     flash = outlined_box((rw, rh), rgba((0, 0, 0), 0.35), accent, 2)
@@ -711,14 +810,71 @@ def cmd_back(args):
     centred(box, badge, font(f_head, P(0.032)), ink)
     plate.alpha_composite(box, (x0 + text_w - bw, P(fl("REQ_Y"))))
 
-    # Legal line in the strip, between the seal and the barcode.
-    caption(plate, (P(0.18), P(fl("LEGAL_Y"))), legal, font(f_mono, P(0.0145)), muted, P(0.52))
+    # The strip: the seal at the left, the name lozenge beside it with the
+    # legal line under it. NAME_X=centre centres the three on the width
+    # as one block — seal, a gap, the wider of lozenge and legal — and
+    # sets the seal's horizontal margin from it; LEGAL_X empty follows
+    # NAME_X.
+    legal_fnt = font(f_mono, P(0.0145))
+    name_loz = inst_loz = None
+    gap = P(0.02)
+    below = str(L["INSTALL_ROW"]) == "below"
+    seal_size = fl("SEAL_SIZE") if str(L["SEAL_SIZE"]) != "block" else 0.12
+    la, ld = legal_fnt.getmetrics()
+    legal_h = len(legal.split("\n")) * (la + ld) if legal else 0
+    if L["NAME_Y"]:
+        # The pattern: the name lozenge, the install lozenge under it, the
+        # legal line under those, and the seal as tall as the three, centred
+        # on them; the block centred on the width.
+        name_y = P(fl("NAME_Y"))
+        name_loz = name_badge(font(f_head, P(fl("NAME_POINT"))), kerning=P(fl("NAME_KERN")))
+        if install:
+            inst_loz = install_badge(install, font(f_mono, P(fl("INSTALL_POINT"))))
+        stack_h = name_loz.height + (P(0.012) + inst_loz.height if inst_loz and below else 0)
+        legal_y = P(fl("LEGAL_Y")) if str(L["LEGAL_Y"]) != "" else name_y + stack_h + P(0.014)
+        block_h = legal_y + legal_h - name_y
+        if str(L["SEAL_SIZE"]) == "block":
+            seal_size = block_h / W
+        margin_y = (plate.height - (name_y + block_h / 2 + P(seal_size) / 2)) / W
+    else:
+        name_y = 0
+        legal_y = P(fl("LEGAL_Y")) if str(L["LEGAL_Y"]) != "" else P(1.285)
+        margin_y = None
+    row_w = max(name_loz.width if name_loz else 0, inst_loz.width if inst_loz else 0) if below else \
+        (name_loz.width if name_loz else 0) + (gap + inst_loz.width if inst_loz else 0)
+    if str(L["NAME_X"]) == "centre" and L["NAME_Y"]:
+        legal_w = max(legal_fnt.getlength(l) for l in legal.split("\n")) if legal else 0
+        block = P(seal_size) + gap + max(row_w, legal_w)
+        seal_x = (W - block) / 2
+        name_x = seal_x + P(seal_size) + gap
+        margin_x = seal_x / W
+        if block > W * (1 - 2 * fl("MARGIN")):
+            warn(f"the strip's block is {block / W:.2f} of the width, wider than the margins allow: "
+                 "shrink NAME_POINT, NAME_KERN or INSTALL_POINT.")
+    else:
+        name_x = P(fl("NAME_X")) if str(L["NAME_X"]) != "centre" else P(0.18)
+        margin_x = None
+    if str(L["SEAL_MARGIN"]) != "":
+        parts = str(L["SEAL_MARGIN"]).split(",")
+        mx = parts[0] if margin_x is None else f"{margin_x:.4f}"
+        my = (parts[1] if len(parts) > 1 else parts[0]) if margin_y is None else f"{margin_y:.4f}"
+        seal_margin = f"{mx},{my}" if len(parts) > 1 or margin_x is not None or margin_y is not None else parts[0]
+    else:
+        seal_margin = f"{margin_x if margin_x is not None else 0.03:.4f},{margin_y if margin_y is not None else 0.03:.4f}"
+    legal_x = P(fl("LEGAL_X")) if str(L["LEGAL_X"]) != "" else name_x
+    caption(plate, (legal_x, legal_y), legal, legal_fnt, muted, P(0.52))
+    if name_loz:
+        plate.alpha_composite(name_loz, (round(name_x), round(name_y)))
+    if inst_loz and below:
+        plate.alpha_composite(inst_loz, (round(name_x), round(name_y + name_loz.height + P(0.012))))
+    elif inst_loz:
+        plate.alpha_composite(inst_loz, (round(name_x + name_loz.width + gap), round(name_y)))
 
     with tempfile.NamedTemporaryFile(suffix=".jpg") as composed:
         plate.convert("RGB").save(composed.name, quality=QUALITY)
-        stamp(composed.name, output, face="back", corner=L["SEAL_CORNER"], size=fl("SEAL_SIZE"),
-              margin=str(L["SEAL_MARGIN"]), quiet=True)
-    print(f"Composed {B}{os.path.basename(output)}{R}: {len(frames)} frames, seal {L['SEAL_SIZE']} {L['SEAL_CORNER']}, {W}px wide.")
+        stamp(composed.name, output, face="back", corner=L["SEAL_CORNER"], size=seal_size,
+              margin=seal_margin, quiet=True)
+    print(f"Composed {B}{os.path.basename(output)}{R}: {len(frames)} frames, seal {seal_size:.3f} {L['SEAL_CORNER']}, {W}px wide.")
 
 
 # THE COMMAND LINE ============================================================

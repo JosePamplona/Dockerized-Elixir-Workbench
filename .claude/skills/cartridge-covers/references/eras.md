@@ -198,7 +198,11 @@ still exact, which a sketch a third of the width of a face never was.
 2. **The six heroes**, numbered 1 to 6 in the repertoire's order, each
    under its era's name. Each is the hero paragraph as it would go into
    the cover prompt: bodies, counts, positions, scale in the frame,
-   every string at foreground size. Not the era block — that goes into
+   every string at foreground size. The bodies and the counts come from
+   the cartridge's README; what the scene is *about* — the thesis, the
+   thing that goes wrong without it — from its `DESIGN.md`, which is
+   also where the register's voice is heard before the prompt invents
+   one. Not the era block — that goes into
    the cover prompt verbatim and in full once its era has won, and is
    the one part of a proposal that is never rewritten.
 3. **The recommendation**, then **the choice** — one number each.

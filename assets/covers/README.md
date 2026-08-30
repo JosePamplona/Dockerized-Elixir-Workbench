@@ -145,9 +145,13 @@ sight glass against *look at a value without dressing it up*, exdoc's
 lit library against *readable, served by the project itself*, ash's
 craftsman against *set up the way its own site does it*. All five
 kept: each hero was already the need, because those cartridges'
-READMEs had been written from one. Nothing archived. The base
-cartridges' first proposals were the ones that had drawn the engine,
-and only those were redone.
+READMEs had been written from one. Their backs the same — each blurb
+and headline read against the need and kept (*ALIVE IS NOT READY* is
+the need's sentence compressed) — so the copy table's blurb now names
+`NEED.md` as its source and `DESIGN.md` as the precision behind it,
+which is what those backs had been doing through the DESIGN's
+Abstract. Nothing archived. The base cartridges' first proposals were
+the ones that had drawn the engine, and only those were redone.
 
 The whole shelf was archived on 2026-08-27, every box on its own
 counts under `_archived/`, and the flow is being finished before any

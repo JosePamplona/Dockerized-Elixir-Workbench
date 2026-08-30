@@ -201,18 +201,23 @@ and technique stay; anything that places something goes.
 
 ### The copy
 
-Written by hand, in the front's register. It has two sources in the
-cartridge's anatomy, and which one is which matters: the README says
-what the cartridge *installs*, and copy drawn from it alone is a
-spec sheet — healthcheck2's first back read "`/health/ready`: `SELECT
-1` on the repo, 1 s timeout" and was retired for it. `DESIGN.md` says
-*why* — the problem, the decisions, what each one buys — and that is
-what a back sells. Keep it to what fits a back in one glance:
+Written by hand, in the front's register. It has three sources in the
+cartridge's anatomy, and which one is which matters. `NEED.md` is the
+developer's situation in their own second person — what a back's blurb
+*is*, and the register's home. The README says what the cartridge
+*installs*, and copy drawn from it alone is a spec sheet —
+healthcheck2's first back read "`/health/ready`: `SELECT 1` on the
+repo, 1 s timeout" and was retired for it; healthcheck2's kept back
+was drawn from `DESIGN.md` because the need had no file yet, and what
+it drew from the Abstract and Problem is what `NEED.md` now says
+directly. `DESIGN.md` remains the source for what only it knows: the
+decisions as benefits, the verified requirements, the quotable
+sources. Keep it to what fits a back in one glance:
 
 | Piece | Length | Source |
 | --- | --- | --- |
-| Headline | Up to six words, in the front's register, and **one line at the house size** — five words ran to two on exdebug, and the fix was a shorter headline, not a smaller face | New — the design's thesis, not the subtitle again: *Alive is not ready* |
-| Blurb | 40-70 words | `DESIGN.md`, the *Abstract* and the *Problem*: the question the cartridge answers and what goes wrong without it, in the reader's second person |
+| Headline | Up to six words, in the front's register, and **one line at the house size** — five words ran to two on exdebug, and the fix was a shorter headline, not a smaller face | New — the need read in the register, not the subtitle again: *Alive is not ready* |
+| Blurb | 40-70 words | `NEED.md` — its sentence and its *Before*/*After*, already in the reader's second person; `DESIGN.md`'s *Problem* for the precision the need compresses. The *Not for* line belongs here too when it saves a buyer a mistake |
 | Features | Three or four bullets, up to eight words each | `DESIGN.md`'s decisions, each as the benefit it buys — *readiness that sheds traffic before requests time out* — never the file it lives in |
 | Requirements flash | Two lines in the idiom of a system-requirements box — what it needs, what it works with; commas inside a line, since ` · ` is the line break | `DESIGN.md`'s *Evaluation* (what the generated code was verified on) and its platform survey: `REQUIRES: PHOENIX 1.8, ELIXIR 1.19 / OTP 27` / `WORKS WITH KUBERNETES, FLY.IO, AWS ECS` |
 | Quote | One sentence and its attribution, `words — who`, set in the era's italic between the features and the flash (`QUOTE_Y`, `F_QUOTE`); optional, the editorial era's review-quote flash and other eras' at their discretion | A verbatim quotation from `DESIGN.md`'s sources — the design already quotes them exactly |

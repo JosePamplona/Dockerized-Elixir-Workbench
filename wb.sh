@@ -97,8 +97,11 @@
   # Docker ---------------------------------------------------------------------
 
     APP_NAME=$( echo "$LOWER_CASE" | tr ' ' '-' )
-    # Bare toolchain image, shared by every workspace of the same stack.
-    TOOLCHAIN_IMAGE="workbench:${ELIXIR_VERSION}-${ERLANG_VERSION}"
+    # Bare toolchain image, shared by every workspace of the same stack —
+    # the Phoenix installer included: it is the generator the base
+    # cartridges take their delta with, so another installer is another
+    # image, and a workspace keeps the one that made its project.
+    TOOLCHAIN_IMAGE="workbench:${ELIXIR_VERSION}-${ERLANG_VERSION}-phx${PHX_NEW_VERSION}"
     # The workspace's own dev image name. Standalone it is built from the
     # project's Dockerfile.local; with the workbench present, `new` seeds
     # it as an alias (docker tag) of the shared toolchain image.
@@ -282,6 +285,7 @@
     sed -i "s/%{elixir_version}/$ELIXIR_VERSION/" $file_path
     sed -i "s/%{erlang_version}/$ERLANG_VERSION/" $file_path
     sed -i "s/%{debian_version}/$DEBIAN_VERSION/" $file_path
+    sed -i "s/%{phx_new_version}/$PHX_NEW_VERSION/" $file_path
   }
 
   # prepare_workspace

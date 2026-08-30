@@ -1,6 +1,7 @@
 # Elixir toolchain image: a bare development environment with no project
-# code. The workbench builds it once per stack (workbench:ELIXIR-OTP) and
-# every workspace shares it; each project also keeps a baked copy of this
+# code. The workbench builds it once per stack and Phoenix installer
+# (workbench:ELIXIR-OTP-phxVERSION) and every workspace of that stack
+# shares it; each project also keeps a baked copy of this
 # file as its own Dockerfile.local, so a standalone clone can rebuild the
 # same image without the workbench.
 #
@@ -46,10 +47,14 @@ RUN chown elixir:elixir /app
 
 USER elixir
 
-# install hex + rebar and Phoenix (into the user's own home)
+# install hex + rebar and Phoenix (into the user's own home). The
+# installer is pinned: it generates the project and, later, the delta
+# every base cartridge takes — which refuses a phx.new other than the
+# one that made the project. Same version, same generator, same delta.
+ARG PHX_NEW="%{phx_new_version}"
 RUN mix local.hex --force && \
     mix local.rebar --force && \
-    mix archive.install hex phx_new --force
+    mix archive.install hex phx_new ${PHX_NEW} --force
 
 # Self-initializing container: fetches dependencies, sets up the
 # database (idempotent) and starts the server — all from the mounted

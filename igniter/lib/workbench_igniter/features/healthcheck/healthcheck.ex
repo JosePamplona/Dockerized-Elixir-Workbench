@@ -21,7 +21,20 @@ defmodule WorkbenchIgniter.Features.Healthcheck do
   def task, do: "workbench.install.healthcheck"
 
   @impl true
+  def console, do: [probes: [{"health", "{endpoint}"}]]
+
+  @impl true
   def flag, do: :health
+
+  # The installer's options, one line each: the task's "## Options"
+  # section and the help a form shows are rendered from here.
+  @impl true
+  def option_docs do
+    [
+      endpoint: "Route for the healthcheck scope. Defaults to `/health`.",
+      open_api: "Generate the OpenApiSpex-documented variant even if the REST feature is not detected (it must be installed for it to compile)."
+    ]
+  end
 
   @doc "Task metadata, exposed unchanged through the mix task shell."
   def info(_argv, _composing_task) do
@@ -34,6 +47,15 @@ defmodule WorkbenchIgniter.Features.Healthcheck do
     }
   end
 
+  # The mark: the controller (add_scope is not idempotent, so the whole
+  # install is guarded by it).
+  @impl true
+  def installed?(igniter),
+    do: Igniter.Project.Module.module_exists(igniter, controller_module(igniter))
+
+  defp controller_module(igniter),
+    do: Module.concat(Igniter.Libs.Phoenix.web_module(igniter), HealthcheckController)
+
   @doc "Installer body, run by the mix task shell as its `igniter/1`."
   def install(igniter) do
     endpoint = igniter.args.options[:endpoint]
@@ -43,7 +65,7 @@ defmodule WorkbenchIgniter.Features.Healthcheck do
     app_name = Igniter.Project.Application.app_name(igniter)
     app_module = Igniter.Project.Module.module_name_prefix(igniter)
     web_module = Igniter.Libs.Phoenix.web_module(igniter)
-    controller = Module.concat(web_module, HealthcheckController)
+    controller = controller_module(igniter)
     test_module = Module.concat(web_module, HealthcheckControllerTest)
     # phx.new derives its directories from the app name; deriving them from
     # the module (Macro.underscore/1) diverges on names carrying digits
@@ -71,7 +93,7 @@ defmodule WorkbenchIgniter.Features.Healthcheck do
     # Deps and config patches are idempotent by themselves, but add_scope
     # always appends — so the whole install is guarded by the controller's
     # existence to make re-runs a no-op.
-    case Igniter.Project.Module.module_exists(igniter, controller) do
+    case installed?(igniter) do
       {true, igniter} ->
         Igniter.add_notice(
           igniter,

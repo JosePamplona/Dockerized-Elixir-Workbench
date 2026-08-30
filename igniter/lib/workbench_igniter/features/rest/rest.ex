@@ -49,11 +49,29 @@ defmodule WorkbenchIgniter.Features.Rest do
   def task, do: "workbench.install.rest"
 
   @impl true
+  def console, do: [doors: [{"swagger", "/dev/swagger"}, {"openapi", "/dev/openapi"}]]
+
+  @impl true
   def enabled?(opts), do: opts[:interface] == "rest"
+
+  @impl true
+  def enabled_by, do: {:interface, "rest"}
 
   @impl true
   def argv(opts) do
     ["--project-name", opts[:project_name]] ++ flags(opts, [:auth0, :openai, :health])
+  end
+
+  # The installer's options, one line each: the task's "## Options"
+  # section and the help a form shows are rendered from here.
+  @impl true
+  def option_docs do
+    [
+      project_name: "Display name for the OpenAPI Info title (default: capitalized app name).",
+      auth0: "Include the bearer security scheme and the users tag.",
+      openai: "Include the assistant request params and conversations tag.",
+      health: "Include the development operations tag."
+    ]
   end
 
   @doc "Task metadata, exposed unchanged through the mix task shell."
@@ -71,6 +89,14 @@ defmodule WorkbenchIgniter.Features.Rest do
     }
   end
 
+  # The mark: the OpenAPI spec module.
+  @impl true
+  def installed?(igniter),
+    do: Igniter.Project.Module.module_exists(igniter, open_api_spec(igniter))
+
+  defp open_api_spec(igniter),
+    do: Module.concat([Igniter.Libs.Phoenix.web_module(igniter), OpenApi, Spec])
+
   @doc "Installer body, run by the mix task shell as its `igniter/1`."
   def install(igniter) do
     opts =
@@ -80,13 +106,13 @@ defmodule WorkbenchIgniter.Features.Rest do
 
     app_name = Igniter.Project.Application.app_name(igniter)
     web_module = Igniter.Libs.Phoenix.web_module(igniter)
-    spec_module = Module.concat([web_module, OpenApi, Spec])
+    spec_module = open_api_spec(igniter)
     # phx.new derives its directories from the app name; deriving them from
     # the module (Macro.underscore/1) diverges on names carrying digits
     # (app :lorem_3 -> Lorem3Web -> "lorem3_web" instead of "lorem_3_web").
     web_dir = "#{app_name}_web"
 
-    case Igniter.Project.Module.module_exists(igniter, spec_module) do
+    case installed?(igniter) do
       {true, igniter} ->
         Igniter.add_notice(
           igniter,

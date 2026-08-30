@@ -32,16 +32,7 @@ defmodule Mix.Tasks.Workbench.Install.Exdoc do
 
   ## Options
 
-  * `--project-name` - Display name (default: capitalized app name).
-  * `--repo-url` - Repository URL for `source_url`/`authors`.
-  * `--guidelines-url` - URL of a coding guidelines markdown to download
-    as the "Coding guidelines" page. Optional.
-  * `--coveralls` - The project uses the coveralls feature (adds the
-    coverage assets, page and controller action).
-  * `--auth0`, `--openai`, `--stripe` - Feature flags (auth0 adds the
-    token page and scripts).
-  * `--no-ecto` - Project created without Ecto (skips the database page
-    and diagram).
+  #{WorkbenchIgniter.Feature.options_doc(Exdoc)}
   """
 
   @impl Igniter.Mix.Task

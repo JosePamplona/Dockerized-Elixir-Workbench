@@ -31,11 +31,7 @@ defmodule Mix.Tasks.Workbench.Install.Rest do
 
   ## Options
 
-  * `--project-name` - Display name for the OpenAPI Info title
-    (default: capitalized app name).
-  * `--auth0` - Include the bearer security scheme and the users tag.
-  * `--openai` - Include the assistant request params and conversations tag.
-  * `--health` - Include the development operations tag.
+  #{WorkbenchIgniter.Feature.options_doc(Rest)}
   """
 
   @impl Igniter.Mix.Task

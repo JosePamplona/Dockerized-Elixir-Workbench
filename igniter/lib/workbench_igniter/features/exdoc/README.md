@@ -6,8 +6,9 @@ per-feature extra pages (coverage, auth token, database diagram).
 * **Task**: `mix workbench.install.exdoc`
 * **Enabled by**: `--exdoc` (config.conf: `EXDOC`)
 * **Argv from setup**: `--project-name` `--repo-url`
-  `[--guidelines-url]` `[--coveralls --auth0 --openai --stripe]`
-  `[--no-ecto]`
+  `[--guidelines-url]` `[--coveralls --auth0]` — whether the project has
+  Ecto (the database page and diagram) is read off the project, not
+  asked.
 
 ## Description
 

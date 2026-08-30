@@ -36,10 +36,7 @@ defmodule Mix.Tasks.Workbench.Install.Clustering do
 
   ## Options
 
-  * `--dns-query` - Value for `DNS_CLUSTER_QUERY`, the DNS name that
-    resolves to the replica IPs. Defaults to
-    `<app>.default.svc.cluster.local` (Kubernetes); on Fly.io it is
-    usually `<app>.internal`.
+  #{WorkbenchIgniter.Feature.options_doc(Clustering)}
   """
 
   @impl Igniter.Mix.Task

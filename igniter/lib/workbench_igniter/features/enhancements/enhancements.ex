@@ -33,8 +33,24 @@ defmodule WorkbenchIgniter.Features.Enhancements do
     ["--project-name", opts[:project_name], "--interface", opts[:interface]] ++
       if(opts[:id_type], do: ["--id-type", opts[:id_type]], else: []) ++
       if(opts[:timestamps], do: ["--timestamps", opts[:timestamps]], else: []) ++
-      flags(opts, [:exdoc, :auth0, :openai, :stripe, :health]) ++
-      no_flags(opts, [:ecto, :html, :mailer, :dashboard])
+      flags(opts, [:exdoc, :auth0, :openai, :stripe, :health])
+  end
+
+  # The installer's options, one line each: the task's "## Options"
+  # section and the help a form shows are rendered from here.
+  @impl true
+  def option_docs do
+    [
+      project_name: "Display name (default: capitalized app name).",
+      id_type: "Primary key type (`uuid` maps to `Ecto.UUID`). Default: `uuid`.",
+      timestamps: "Timestamps type. Default: `naive_datetime_usec`.",
+      interface: "`rest` | `graphql` | `none`. Default: `rest`. `rest` adds the changeset-aware `error_json.ex`, the error view test and the Postman collection.",
+      exdoc: "The exdoc feature is composed too: `MyApp.Schema` carries the `@moduledoc` sections its pages read.",
+      auth0: "The auth0 feature is composed too: the DbSchema diagrams and Postman collection of that combo, the User fixtures, and the `MyApp.Schema` bits its User schema uses.",
+      openai: "The openai feature is composed too: the diagrams and Postman collection of that combo, and the assistant fixtures.",
+      stripe: "The stripe feature is composed too: the DbSchema diagrams of that combo.",
+      health: "The healthcheck feature is composed too: the Postman collection of that combo."
+    ]
   end
 
   @doc "Task metadata, exposed unchanged through the mix task shell."
@@ -48,10 +64,6 @@ defmodule WorkbenchIgniter.Features.Enhancements do
         id_type: :string,
         timestamps: :string,
         interface: :string,
-        ecto: :boolean,
-        html: :boolean,
-        mailer: :boolean,
-        dashboard: :boolean,
         exdoc: :boolean,
         auth0: :boolean,
         openai: :boolean,
@@ -62,10 +74,6 @@ defmodule WorkbenchIgniter.Features.Enhancements do
         id_type: "uuid",
         timestamps: "naive_datetime_usec",
         interface: "rest",
-        ecto: true,
-        html: true,
-        mailer: true,
-        dashboard: true,
         exdoc: false,
         auth0: false,
         openai: false,
@@ -75,6 +83,10 @@ defmodule WorkbenchIgniter.Features.Enhancements do
     }
   end
 
+  # The mark: the version mix task, the first file the installer writes.
+  @impl true
+  def installed?(igniter), do: file_installed?(igniter, "lib/mix/tasks/version.ex")
+
   @doc "Installer body, run by the mix task shell as its `igniter/1`."
   def install(igniter) do
     opts =
@@ -82,13 +94,19 @@ defmodule WorkbenchIgniter.Features.Enhancements do
         Mix.Project.config()[:app] |> to_string() |> String.capitalize()
       end)
 
-    if Igniter.exists?(igniter, "lib/mix/tasks/version.ex") do
-      Igniter.add_notice(
-        igniter,
-        "lib/mix/tasks/version.ex already exists: enhancements are already installed, skipping."
-      )
-    else
-      install(igniter, opts)
+    case installed?(igniter) do
+      {true, igniter} ->
+        Igniter.add_notice(
+          igniter,
+          "lib/mix/tasks/version.ex already exists: enhancements are already installed, skipping."
+        )
+
+      {false, igniter} ->
+        # What the project has of phx.new's capabilities is read off it,
+        # not asked: the Ecto group, and the page, dashboard and mailbox
+        # tests, follow the project as it is.
+        {facts, igniter} = WorkbenchIgniter.PhxDelta.facts(igniter)
+        install(igniter, Keyword.merge(opts, Map.to_list(Map.take(facts, [:ecto, :html, :mailer, :dashboard]))))
     end
   end
 

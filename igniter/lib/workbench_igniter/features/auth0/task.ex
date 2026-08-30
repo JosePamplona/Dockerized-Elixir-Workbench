@@ -35,8 +35,7 @@ defmodule Mix.Tasks.Workbench.Install.Auth0 do
 
   ## Options
 
-  * `--project-name` - Display name (default: capitalized app name).
-  * `--interface` - `rest` | `graphql` | `none`. Default: `rest`.
+  #{WorkbenchIgniter.Feature.options_doc(Auth0)}
   """
 
   @impl Igniter.Mix.Task

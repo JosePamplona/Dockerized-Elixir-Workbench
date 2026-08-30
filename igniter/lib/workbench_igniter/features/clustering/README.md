@@ -152,6 +152,11 @@ balancer's, all sharing the `app` network alias so a single DNS name
 answers with every address. `--replicas N` and `--no-balancer` shape what
 gets baked.
 
+![The scaled deployment, and what clustering adds inside it: a browser reaching the nginx balancer on the host port, four replicas of the release sharing the alias app on the bridge network, Docker's embedded DNS answering that alias with four addresses, the database reached by name, a one-shot migrate — and, in gold, the replicas booting as named nodes that find each other](../../../../../assets/diagrams/clustering/scaled-deployment.svg)
+
+*Everything in the picture but the gold is the deployment's; the gold
+is this cartridge — a line in the boot script and the edge it opens.*
+
 The deployment does not require this cartridge — replicas behind a
 balancer is a valid topology on its own, and the compose is identical
 either way. What the cartridge adds lives entirely inside the release
@@ -243,6 +248,10 @@ generated `Release.migrate/0` iterates over `:ecto_repos`, repos known
 at compile time, not tenants resolved at runtime.
 
 ## Related
+
+Why it is built this way — DNSCluster over libcluster and static
+names, the boot script over `.env` and `vm.args`, the alias topology,
+and what was measured — is in the [design paper](DESIGN.md).
 
 Only the release's boot environment is set up here. For strategies
 beyond DNS — gossip, EPMD, Kubernetes API — see

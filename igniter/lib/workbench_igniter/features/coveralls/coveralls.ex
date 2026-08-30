@@ -46,12 +46,15 @@ defmodule WorkbenchIgniter.Features.Coveralls do
   def task, do: "workbench.install.coveralls"
 
   @impl true
+  def console, do: [doors: [{"coverage", "/dev/docs/cover", when: {:cartridge, "exdoc"}}]]
+
+  @impl true
   def flag, do: :coveralls
 
   @impl true
   def argv(opts) do
     ["--interface", opts[:interface]] ++
-      theme_argv(opts) ++ flags(opts, [:exdoc]) ++ no_flags(opts, [:html])
+      theme_argv(opts) ++ flags(opts, [:exdoc])
   end
 
   # `--coverage-theme` in setup (config.conf `COVERAGE_THEME`) is this
@@ -63,6 +66,31 @@ defmodule WorkbenchIgniter.Features.Coveralls do
     end
   end
 
+  # The themes are the directories under assets/template — the same
+  # list the installer checks --theme against.
+  @impl true
+  def choices do
+    [
+      theme: [
+        {"exdoc-ish", "mimics the ExDoc pages (sidebar, light/dark theme, fonts), so the report blends into the docs"},
+        {"custom", "the original workbench report"}
+      ],
+      interface: [{"rest", "skips the open_api files in the report"}, {"graphql", "the GraphQL project: nothing skipped"}]
+    ]
+  end
+
+  # The installer's options, one line each: the task's "## Options"
+  # section and the help a form shows are rendered from here.
+  @impl true
+  def option_docs do
+    [
+      minimum_coverage: "Minimum coverage percentage. Default: `80`.",
+      interface: "`rest` skips `open_api` files in the coverage report. Default: `rest`.",
+      exdoc: "The project uses the ExDoc feature: the `mix cover` task (which generates the `TESTING.md` report for the docs) is installed.",
+      theme: "HTML report theme, one of #{Enum.map_join(themes(), ", ", &"`#{&1}`")}: `exdoc-ish` mimics the ExDoc pages (sidebar, light/dark theme, fonts) so the report blends into the documentation site, `custom` is the original workbench report. Default: `exdoc-ish`."
+    ]
+  end
+
   @doc "Task metadata, exposed unchanged through the mix task shell."
   def info(_argv, _composing_task) do
     %Igniter.Mix.Task.Info{
@@ -72,26 +100,32 @@ defmodule WorkbenchIgniter.Features.Coveralls do
       schema: [
         minimum_coverage: :string,
         interface: :string,
-        html: :boolean,
         exdoc: :boolean,
         theme: :string
       ],
       defaults: [
         minimum_coverage: "80",
         interface: "rest",
-        html: true,
         exdoc: false,
         theme: @default_theme
       ]
     }
   end
 
+  # The mark: the coveralls.json the installer writes.
+  @impl true
+  def installed?(igniter), do: file_installed?(igniter, "coveralls.json")
+
   @doc "Installer body, run by the mix task shell as its `igniter/1`."
   def install(igniter) do
-    opts = igniter.args.options
+    # Whether the project has html — the components folder to leave out
+    # of the report — is read off the project, not asked.
+    {facts, igniter} = WorkbenchIgniter.PhxDelta.facts(igniter)
+    opts = Keyword.put(igniter.args.options, :html, facts.html)
+    {installed?, igniter} = installed?(igniter)
 
     cond do
-      Igniter.exists?(igniter, "coveralls.json") ->
+      installed? ->
         Igniter.add_notice(
           igniter,
           "coveralls.json already exists: coveralls is already installed, skipping."

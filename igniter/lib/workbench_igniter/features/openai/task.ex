@@ -32,8 +32,7 @@ defmodule Mix.Tasks.Workbench.Install.Openai do
 
   ## Options
 
-  * `--project-name` - Display name (default: capitalized app name).
-  * `--interface` - `rest` | `graphql` | `none`. Default: `rest`.
+  #{WorkbenchIgniter.Feature.options_doc(Openai)}
   """
 
   @impl Igniter.Mix.Task

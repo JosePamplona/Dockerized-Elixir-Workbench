@@ -11,8 +11,9 @@ Workbench base enhancements: shared schema and helper, `mix db` and
   this feature generates.
 * **Argv from setup**: `--project-name` `--interface`
   `[--id-type --timestamps]`
-  `[--exdoc --auth0 --openai --stripe --health]`
-  `[--no-ecto --no-html --no-mailer --no-dashboard]`
+  `[--exdoc --auth0 --openai --stripe --health]` — what the project has
+  of Ecto, html, the mailer and the dashboard is read off the project,
+  not asked.
 
 ## Description
 
@@ -41,7 +42,7 @@ here.
 
 ## What it installs
 
-* **Ecto group** (unless `--no-ecto`): `ecto_enum` and `html_entities`
+* **Ecto group** (when the project has Ecto): `ecto_enum` and `html_entities`
   deps; `MyApp.Helper` and `MyApp.Schema` (+ tests); the `mix db` task;
   and the DbSchema diagrams under the project's `assets/db_schema/`,
   picking the combo for the enabled features (`none`, `auth0`,
@@ -54,7 +55,9 @@ here.
 * The `mix version` task + test.
 * **Base testing**: composes `workbench.install.mock`;
   application/telemetry tests and (conditional)
-  page/dashboard/mailbox/error view tests; `MyApp.Fixtures` and
+  page/dashboard/mailbox tests (each when the project has html, the
+  dashboard, the mailer — read off the project) and the error view test
+  (`rest`); `MyApp.Fixtures` and
   `MyApp.MockHelper`, imported into `ConnCase`.
 
 **Idempotency**: if `lib/mix/tasks/version.ex` already exists, notice and

@@ -65,14 +65,10 @@ defmodule WorkbenchIgniter.Features.CoverallsTest do
                ~s|"file_column_width": 128|
     end
 
-    test "--interface graphql and --no-html drop their skip_files entries" do
+    test "--interface graphql, and a project without html, drop their skip_files entries" do
       igniter =
-        phx_test_project()
-        |> Igniter.compose_task("workbench.install.coveralls", [
-          "--interface",
-          "graphql",
-          "--no-html"
-        ])
+        WorkbenchIgniter.TestProject.new(~w(--no-html))
+        |> Igniter.compose_task("workbench.install.coveralls", ["--interface", "graphql"])
         |> apply_igniter!()
 
       json = igniter.assigns[:test_files]["coveralls.json"]

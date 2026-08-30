@@ -26,6 +26,16 @@ defmodule WorkbenchIgniter.Features.Auth0 do
     ["--project-name", opts[:project_name], "--interface", opts[:interface]]
   end
 
+  # The installer's options, one line each: the task's "## Options"
+  # section and the help a form shows are rendered from here.
+  @impl true
+  def option_docs do
+    [
+      project_name: "Display name (default: capitalized app name).",
+      interface: "`rest` | `graphql` | `none`. Default: `rest`."
+    ]
+  end
+
   @doc "Task metadata, exposed unchanged through the mix task shell."
   def info(_argv, _composing_task) do
     %Igniter.Mix.Task.Info{
@@ -36,6 +46,17 @@ defmodule WorkbenchIgniter.Features.Auth0 do
     }
   end
 
+  @impl true
+  def choices, do: [interface: [{"rest", "a JSON controller and its OpenAPI schema"}, {"graphql", "an Absinthe schema and resolvers"}]]
+
+  # The mark: the Accounts context, the first module the installer creates.
+  @impl true
+  def installed?(igniter),
+    do: Igniter.Project.Module.module_exists(igniter, accounts_module(igniter))
+
+  defp accounts_module(igniter),
+    do: Module.concat(Igniter.Project.Module.module_name_prefix(igniter), Accounts)
+
   @doc "Installer body, run by the mix task shell as its `igniter/1`."
   def install(igniter) do
     opts =
@@ -44,9 +65,9 @@ defmodule WorkbenchIgniter.Features.Auth0 do
       end)
 
     app_module = Igniter.Project.Module.module_name_prefix(igniter)
-    accounts = Module.concat(app_module, Accounts)
+    accounts = accounts_module(igniter)
 
-    case Igniter.Project.Module.module_exists(igniter, accounts) do
+    case installed?(igniter) do
       {true, igniter} ->
         Igniter.add_notice(
           igniter,

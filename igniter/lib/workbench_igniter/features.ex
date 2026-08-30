@@ -10,6 +10,12 @@ defmodule WorkbenchIgniter.Features do
 
   The list order *is* the composition order; ordering constraints between
   features are documented in each feature's `@moduledoc`.
+
+  The standalone cartridges — installed by hand with `wb.sh add`, never
+  composed — are listed apart, so that `catalog/0` names every cartridge
+  there is while `all/0` stays the composition list. `entry/1` reads a
+  cartridge's manifest into a plain map (what `mix workbench.catalog`
+  prints) and `status/1` adds whether the target project carries it.
   """
 
   alias WorkbenchIgniter.Features
@@ -33,9 +39,158 @@ defmodule WorkbenchIgniter.Features do
     Features.Stripe
   ]
 
+  # Standalone cartridges: no setup flag, never composed. In the order
+  # they were written.
+  @standalone [
+    Features.Githooks,
+    Features.Exmachina,
+    Features.Clustering,
+    Features.Healthcheck2,
+    Features.Ash,
+    # The base cartridges: capabilities phx.new decides at generation
+    # time, added after the fact (WorkbenchIgniter.PhxDelta).
+    Features.Mailer,
+    Features.Gettext,
+    Features.Ecto,
+    Features.Esbuild,
+    Features.Tailwind,
+    Features.Html,
+    Features.Live,
+    Features.Dashboard
+  ]
+
   @doc "All registered features, in composition order."
   @spec all() :: [module()]
   def all, do: @features
+
+  @doc "The standalone cartridges: installed on demand, never composed."
+  @spec standalone() :: [module()]
+  def standalone, do: @standalone
+
+  @doc "Every cartridge: the composed ones in composition order, then the standalone."
+  @spec catalog() :: [module()]
+  def catalog, do: @features ++ @standalone
+
+  @doc "Whether the cartridge is a standalone one."
+  @spec standalone?(module()) :: boolean()
+  def standalone?(feature), do: feature in @standalone
+
+  @doc """
+  A cartridge's manifest as a plain map: what the catalog says about it
+  without looking at any project. `options` are the installer's switches
+  (its `info/2` schema with the defaults, and the values `choices/0`
+  declares: `choices` as a list, or as `[%{group, values}]` when
+  sectioned; `open` when other values are accepted too; `multiple` for
+  the `:csv` type); a pending cartridge has none.
+  """
+  @spec entry(module()) :: map()
+  def entry(feature) do
+    info = if feature.pending?(), do: nil, else: feature.info([], nil)
+
+    %{
+      name: feature.name(),
+      task: feature.task(),
+      summary: feature.summary(),
+      version: version(feature.version()),
+      flag: feature.flag(),
+      enabled_by: enabled_by(feature.enabled_by()),
+      rerun: feature.rerun(),
+      implies: feature.implies(),
+      requires: feature.requires(),
+      afterwards: feature.afterwards(),
+      console: console(feature.console()),
+      # A base cartridge: a phx.new capability, in a default project
+      # from birth and left out with its --no-* flag.
+      base: String.to_atom(feature.name()) in WorkbenchIgniter.PhxDelta.capabilities(),
+      standalone: standalone?(feature),
+      pending: feature.pending?(),
+      example: info && info.example,
+      options: options(info, feature)
+    }
+  end
+
+  @doc """
+  Every catalog entry with `installed`: whether the given project
+  carries the cartridge, asked of the cartridge itself (`installed?/1`)
+  — and, when it does, `state`: what it carries of the options
+  (`state/1`, meaningful for an `:adds` cartridge). Returns the igniter
+  too, as the checks include files in it.
+  """
+  @spec status(Igniter.t()) :: {[map()], Igniter.t()}
+  def status(igniter) do
+    Enum.map_reduce(catalog(), igniter, fn feature, igniter ->
+      {installed?, igniter} = feature.installed?(igniter)
+      {state, igniter} = if installed?, do: feature.state(igniter), else: {%{}, igniter}
+      {entry(feature) |> Map.put(:installed, installed?) |> Map.put(:state, state), igniter}
+    end)
+  end
+
+  defp enabled_by(nil), do: nil
+  defp enabled_by({option, value}), do: %{option => value}
+  defp enabled_by(flag), do: flag
+
+  defp version(nil), do: nil
+  defp version({version, date}), do: %{version: version, date: date}
+
+  # What the cartridge adds to the console, as plain maps: doors with
+  # their condition (or nil), probes, tabs.
+  defp console(spec) do
+    %{
+      doors: for(d <- Keyword.get(spec, :doors, []), do: door(d)),
+      probes: for({label, path} <- Keyword.get(spec, :probes, []), do: %{label: label, path: path}),
+      tabs: Keyword.get(spec, :tabs, [])
+    }
+  end
+
+  defp door({label, path}), do: %{label: label, path: path, when: nil}
+
+  defp door({label, path, opts}) do
+    when_ =
+      case Keyword.fetch!(opts, :when) do
+        {:with, value} -> %{with: value}
+        {:cartridge, name} -> %{cartridge: name}
+      end
+
+    %{label: label, path: path, when: when_}
+  end
+
+  defp options(nil, _feature), do: []
+
+  defp options(%Igniter.Mix.Task.Info{schema: schema, defaults: defaults}, feature) do
+    choices = feature.choices()
+    docs = feature.option_docs()
+
+    for {key, type} <- schema || [] do
+      {open, values} =
+        case Keyword.get(choices, key) do
+          nil -> {false, nil}
+          {:open, values} -> {true, values}
+          values -> {false, values}
+        end
+
+      %{
+        name: key,
+        type: type,
+        default: Keyword.get(defaults || [], key),
+        multiple: type == :csv,
+        choices: choice_list(values),
+        open: open,
+        doc: Keyword.get(docs, key)
+      }
+    end
+  end
+
+  # Every value as %{value, doc, requires}, doc nil when the cartridge
+  # gave none, requires the cartridges choosing it builds on (mostly
+  # none); sections as %{group, values}.
+  defp choice_list(nil), do: nil
+  defp choice_list([{g, v} | _] = groups) when is_atom(g) and is_list(v),
+    do: for({g, v} <- groups, do: %{group: g, values: choice_list(v)})
+  defp choice_list(values), do: Enum.map(values, &choice_value/1)
+
+  defp choice_value({value, doc, requires}), do: %{value: value, doc: doc, requires: requires}
+  defp choice_value({value, doc}), do: %{value: value, doc: doc, requires: []}
+  defp choice_value(value), do: %{value: value, doc: nil, requires: []}
 
   @doc "Installer task names of the features already ported (for `composes:`)."
   @spec tasks() :: [String.t()]

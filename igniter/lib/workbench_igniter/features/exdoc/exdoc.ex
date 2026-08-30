@@ -20,6 +20,9 @@ defmodule WorkbenchIgniter.Features.Exdoc do
   def task, do: "workbench.install.exdoc"
 
   @impl true
+  def console, do: [doors: [{"docs", "/dev/docs"}]]
+
+  @impl true
   def flag, do: :exdoc
 
   @impl true
@@ -30,8 +33,21 @@ defmodule WorkbenchIgniter.Features.Exdoc do
         do: ["--guidelines-url", opts[:guidelines_url]],
         else: []
       ) ++
-      flags(opts, [:coveralls, :auth0, :openai, :stripe]) ++
-      no_flags(opts, [:ecto])
+      flags(opts, [:coveralls, :auth0])
+  end
+
+  # The installer's options, one line each: the task's "## Options"
+  # section and the help a form shows are rendered from here.
+  @impl true
+  def option_docs do
+    [
+      project_name: "Display name (default: capitalized app name).",
+      repo_url: "Repository URL for `source_url`/`authors`.",
+      guidelines_url: "URL of a coding guidelines markdown to download as the \"Coding guidelines\" page. Optional.",
+      version: "The version the pages are stamped with (titles, the 404 page) until `mix version` sets the real one. Default: `0.0.0`.",
+      coveralls: "The coveralls feature is composed too: the coverage report is served beside the docs (`/cover`), with its page and the controller action.",
+      auth0: "The auth0 feature is composed too: the \"Get access tokens\" page and its scripts, to try the API from the docs."
+    ]
   end
 
   @doc "Task metadata, exposed unchanged through the mix task shell."
@@ -45,36 +61,44 @@ defmodule WorkbenchIgniter.Features.Exdoc do
         repo_url: :string,
         guidelines_url: :string,
         coveralls: :boolean,
-        auth0: :boolean,
-        openai: :boolean,
-        stripe: :boolean,
-        ecto: :boolean
+        auth0: :boolean
       ],
       defaults: [
         version: "0.0.0",
         repo_url: "https://github.com/user/repo",
         coveralls: false,
-        auth0: false,
-        openai: false,
-        stripe: false,
-        ecto: true
+        auth0: false
       ]
     }
   end
 
+  # The mark: the controller that serves the docs.
+  @impl true
+  def installed?(igniter),
+    do: Igniter.Project.Module.module_exists(igniter, controller_module(igniter))
+
+  defp controller_module(igniter),
+    do: Module.concat(Igniter.Libs.Phoenix.web_module(igniter), ExDocController)
+
   @doc "Installer body, run by the mix task shell as its `igniter/1`."
   def install(igniter) do
+    # Whether the project has Ecto — the database page and diagram — is
+    # read off the project, not asked.
+    {facts, igniter} = WorkbenchIgniter.PhxDelta.facts(igniter)
+
     opts =
-      Keyword.put_new_lazy(igniter.args.options, :project_name, fn ->
+      igniter.args.options
+      |> Keyword.put(:ecto, facts.ecto)
+      |> Keyword.put_new_lazy(:project_name, fn ->
         Mix.Project.config()[:app] |> to_string() |> String.capitalize()
       end)
 
     app_name = Igniter.Project.Application.app_name(igniter)
     app_module = Igniter.Project.Module.module_name_prefix(igniter)
     web_module = Igniter.Libs.Phoenix.web_module(igniter)
-    controller = Module.concat(web_module, ExDocController)
+    controller = controller_module(igniter)
 
-    case Igniter.Project.Module.module_exists(igniter, controller) do
+    case installed?(igniter) do
       {true, igniter} ->
         Igniter.add_notice(
           igniter,

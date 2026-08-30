@@ -5,7 +5,7 @@ Test coverage with ExCoveralls, the workbench HTML report and the
 
 * **Task**: `mix workbench.install.coveralls`
 * **Enabled by**: `--coveralls` (config.conf: `COVERALLS`)
-* **Argv from setup**: `--interface <i>` `[--theme <t>]` `[--exdoc]` `[--no-html]`
+* **Argv from setup**: `--interface <i>` `[--theme <t>]` `[--exdoc]` — whether the project has html (the components folder to leave out) is read off the project.
 
 ## Description
 
@@ -60,7 +60,6 @@ ran them sees and become part of what the project shows about itself.
 * `--minimum-coverage` - Minimum percentage. Default: `80`.
 * `--interface` - `rest` skips `open_api` files in the report. Default:
   `rest`.
-* `--no-html` - The project was created with `--no-html`.
 * `--exdoc` - Install the `mix cover` task (ExDoc integration).
 * `--theme` - Report theme: `exdoc-ish` | `custom`. Default: `exdoc-ish`
   (config.conf: `COVERAGE_THEME`).

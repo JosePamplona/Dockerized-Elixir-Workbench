@@ -28,19 +28,7 @@ defmodule Mix.Tasks.Workbench.Install.Coveralls do
 
   ## Options
 
-  * `--minimum-coverage` - Minimum coverage percentage. Default: `80`.
-  * `--interface` - `rest` skips `open_api` files in the coverage report.
-    Default: `rest`.
-  * `--no-html` - The project was created with `--no-html` (skips the
-    components folder exclusion).
-  * `--exdoc` - The project uses the ExDoc feature: the `mix cover` task
-    (which generates the `TESTING.md` report for the docs) is
-    installed.
-  * `--theme` - HTML report theme, one of
-    #{Coveralls.themes() |> Enum.map(&"`#{&1}`") |> Enum.join(", ")}:
-    `exdoc-ish` mimics the ExDoc pages (sidebar, light/dark theme, fonts)
-    so the report blends into the documentation site, `custom` is the
-    original workbench report. Default: `exdoc-ish`.
+  #{WorkbenchIgniter.Feature.options_doc(Coveralls)}
   """
 
   @impl Igniter.Mix.Task

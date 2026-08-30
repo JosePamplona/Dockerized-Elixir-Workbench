@@ -128,17 +128,21 @@ defmodule WorkbenchIgniter do
 
   The counterpart of `gitignore_entry/3` for the environment files: it
   lets a cartridge own its own variables instead of parking them,
-  commented out, in the `workbench.setup` template. Never use it for a
-  secret — `.env.sample` is meant to be committed, so both files receive
-  the very same text.
+  commented out, in the `workbench.setup` template. Both files receive
+  the very same text unless `sample_body` is given — `.env.sample` is
+  meant to be committed, so a secret goes in `body` for `.env` and its
+  blanked-out line (`KEY=""`) in `sample_body`, the same key first.
   """
-  @spec env_entry(Igniter.t(), String.t(), String.t()) :: Igniter.t()
-  def env_entry(igniter, comment, body) do
-    entry = "# #{comment}\n" <> String.trim_trailing(body, "\n") <> "\n"
+  @spec env_entry(Igniter.t(), String.t(), String.t(), String.t() | nil) :: Igniter.t()
+  def env_entry(igniter, comment, body, sample_body \\ nil) do
     # The first `KEY=` of the body marks the entry as already present.
     marker = body |> String.split("=", parts: 2) |> hd() |> String.trim()
 
-    Enum.reduce([".env", ".env.sample"], igniter, &append_env_entry(&2, &1, entry, marker))
+    [{".env", body}, {".env.sample", sample_body || body}]
+    |> Enum.reduce(igniter, fn {path, body}, igniter ->
+      entry = "# #{comment}\n" <> String.trim_trailing(body, "\n") <> "\n"
+      append_env_entry(igniter, path, entry, marker)
+    end)
   end
 
   defp append_env_entry(igniter, path, entry, marker) do

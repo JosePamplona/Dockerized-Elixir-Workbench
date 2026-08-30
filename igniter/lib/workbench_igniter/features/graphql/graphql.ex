@@ -17,7 +17,13 @@ defmodule WorkbenchIgniter.Features.Graphql do
   def task, do: "workbench.install.graphql"
 
   @impl true
+  def console, do: [doors: [{"graphiql", "/graphiql"}]]
+
+  @impl true
   def enabled?(opts), do: opts[:interface] == "graphql"
+
+  @impl true
+  def enabled_by, do: {:interface, "graphql"}
 
   @doc "Task metadata, exposed unchanged through the mix task shell."
   def info(_argv, _composing_task) do
@@ -27,17 +33,25 @@ defmodule WorkbenchIgniter.Features.Graphql do
     }
   end
 
+  # The mark: the GraphQL schema.
+  @impl true
+  def installed?(igniter),
+    do: Igniter.Project.Module.module_exists(igniter, schema_module(igniter))
+
+  defp schema_module(igniter),
+    do: Module.concat([Igniter.Libs.Phoenix.web_module(igniter), Graphql, Schema])
+
   @doc "Installer body, run by the mix task shell as its `igniter/1`."
   def install(igniter) do
     app_name = Igniter.Project.Application.app_name(igniter)
     web_module = Igniter.Libs.Phoenix.web_module(igniter)
-    schema = Module.concat([web_module, Graphql, Schema])
+    schema = schema_module(igniter)
     # phx.new derives its directories from the app name; deriving them from
     # the module (Macro.underscore/1) diverges on names carrying digits
     # (app :lorem_3 -> Lorem3Web -> "lorem3_web" instead of "lorem_3_web").
     web_dir = "#{app_name}_web"
 
-    case Igniter.Project.Module.module_exists(igniter, schema) do
+    case installed?(igniter) do
       {true, igniter} ->
         Igniter.add_notice(
           igniter,

@@ -21,4 +21,8 @@ defmodule WorkbenchIgniter.Features.Stripe do
 
   @impl true
   def pending?, do: true
+
+  # Nothing installs it yet, so no project carries it.
+  @impl true
+  def installed?(igniter), do: {false, igniter}
 end

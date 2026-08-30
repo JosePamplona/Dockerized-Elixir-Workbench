@@ -104,7 +104,11 @@ if [ $# -gt 0 ]; then echo "[$HOSTNAME]$0($#): $@"; fi
     if [ $# -ge 1 ]; then
       FEATURE=$1; shift
 
+      # The igniter package is a path dependency on the mounted
+      # workbench: compile it first, so an installer that changed since
+      # the last run is the one that runs (Mix does not always notice).
       mix deps.get && \
+      mix deps.compile workbench_igniter --force > /dev/null && \
       mix "workbench.install.$FEATURE" "$@" --yes && \
       mix deps.get
 

@@ -16,10 +16,13 @@ the legacy `app.sh` and the earlier package editions lives in the git log.
 │   ├── 📄 workbench_igniter.ex                      # priv/ template/asset helpers
 │   ├── 📁 workbench_igniter/
 │   │   ├── 📄 feature.ex                            # Feature behaviour + embed_templates/embed_assets
-│   │   ├── 📄 features.ex                           # registry (composition order)
+│   │   ├── 📄 phx_delta.ex                          # a phx.new capability added after the fact, as the difference between two generations
+│   │   ├── 📄 features.ex                           # registry: composition order, the standalone ones, the catalog
 │   │   └── 📁 features/                             # one directory per cartridge, each with its README:
 │   │       ├── 📦 healthcheck/                      #   the reference cartridge
 │   │       │   ├── 📄 README.md                     #   what it installs, options, contents
+│   │       │   ├── 📄 CHANGELOG.md                  #   the cartridge's own version history
+│   │       │   ├── 📄 DESIGN.md                     #   why it is shaped like this, with sources
 │   │       │   ├── 📄 healthcheck.ex                #   manifest + install logic
 │   │       │   ├── 📄 task.ex                       #   Mix.Tasks.Workbench.Install.Healthcheck shell
 │   │       │   └── 📄 templates/*.eex               #   compile-time embedded templates
@@ -36,10 +39,15 @@ the legacy `app.sh` and the earlier package editions lives in the git log.
 │   │       ├── 📦 credo/, mock/, osmon/, ...        # dep-only cartridges: README + <f>.ex + task.ex
 │   │       ├── 📦 githooks/, exmachina/             # standalone cartridges (setup never composes them)
 │   │       ├── 📦 clustering/                       #   standalone too: rel/*.eex + distributed exports
+│   │       ├── 📦 healthcheck2/                     #   standalone too: liveness/readiness plug, mounted first
+│   │       ├── 📦 mailer/                           #   a base cartridge: phx.new's --no-mailer, undone through phx_delta
+│   │       ├── 📦 ash/                              #   standalone too: queues the mix igniter.install of ash-hq.org
 │   │       └── 📦 stripe/                           # pending manifest (installer not ported)
 │   └── 📁 mix/tasks/
 │       ├── 📄 workbench.setup.ex                    # umbrella task: configure_files + Features.compose/2
 │       ├── 📄 workbench.setup2.ex                   # vanilla setup: only what the workspace needs to boot
+│       ├── 📄 workbench.catalog.ex                  # every cartridge's manifest, as a table or JSON
+│       ├── 📄 workbench.status.ex                   # the catalog plus what this project carries
 │       └── 📄 workbench.plant_asset.ex              # after-apply byte-for-byte copy of binary assets
 ├── 📁 priv/
 │   ├── 📁 setup/templates/                          # setup tasks templates (README, .env, …)
@@ -49,6 +57,7 @@ the legacy `app.sh` and the earlier package editions lives in the git log.
     └── 📁 workbench_igniter/
         ├── 📄 setup_test.exs
         ├── 📄 setup2_test.exs
+        ├── 📄 catalog_test.exs                      # the registry, the catalog, installed?/1 of every cartridge
         └── 📄 features/<feature>_test.exs           # one test per cartridge
 ```
 
@@ -74,11 +83,37 @@ and the role of each file; the general index is
   - `implies/0` — flags it forces (e.g. `openai` ⇒ `auth0`).
   - `argv/1` — arguments setup forwards when composing it.
   - `pending?/0` — documented but not ported yet (setup emits a notice).
+  - `installed?/1` — whether the target project already carries it,
+    read off the *same mark the installer's guard reads* (a module, a
+    file, a dependency), so `mix workbench.status` and a re-run of the
+    installer can never disagree. `use WorkbenchIgniter.Feature` brings
+    `dep_installed?/2`, `file_installed?/2` and `marker_installed?/3`
+    for the common marks.
+  - `choices/0` — the values an option takes, when the type (`:string`,
+    `:csv`) does not say: a closed list, the same one the installer
+    validates against; `{:open, list}` for suggestions; `{group,
+    values}` pairs for sections. The catalog carries them so a form can
+    draw radios and checkboxes instead of text fields (see ash).
+  - `option_docs/0` — one line per option, keyed as the schema. The
+    task shell's `@moduledoc` renders its "## Options" from it with
+    `WorkbenchIgniter.Feature.options_doc/1`, so the docs and the
+    catalog (and any form) read one text.
+  - `enabled_by/0` — what turns the feature on under setup, when it is
+    not its own flag: `:enhance` for the trivial group, `{:interface,
+    "rest"}` for the interfaces. Defaults to `flag/0`.
+  - `rerun/0` and `state/1` — what a second run does (`:noop`, or
+    `:adds` for a cartridge whose options are independent pieces, like
+    ash's packages) and, for the latter, what the project already
+    carries of them, read off the project.
+  - `name/0`, `version/0`, `summary/0` — derived, not declared: the
+    cartridge directory, the first entry of its `CHANGELOG.md`, and its
+    task's `@shortdoc`. They are what the catalog prints.
   - `install/1` — the installer's `igniter/1` body.
   - Ordering constraints are documented in the `@moduledoc`; the actual
     order is the `WorkbenchIgniter.Features` registry list.
 - **`task.ex`** — a `Mix.Tasks.Workbench.Install.<Feature>` shell (~15
-  lines) delegating `info/2` and `igniter/1` to the feature module. Elixir
+  lines) delegating `info/2` and `igniter/1` to the feature module, and
+  rendering its "## Options" from the module's `option_docs/0`. Elixir
   doesn't require Mix tasks to live in `lib/mix/tasks/`: only the module
   name matters, so the task lives inside the cartridge.
 - **`templates/*.eex`** — templates embedded at compile time by
@@ -99,12 +134,50 @@ and the role of each file; the general index is
   Both helpers derive the feature name from the cartridge directory.
 - **test** — at `test/workbench_igniter/features/<feature>_test.exs`,
   exercising the task by name with `Igniter.Test`.
+- **`CHANGELOG.md`** — the cartridge's own version history, in the Keep
+  a Changelog format, with semver applied to what it *installs*: a new
+  file or route is a minor, anything that breaks a project already
+  carrying the generated code (a renamed module, a moved route) is a
+  major. It is independent of the workbench release that ships the
+  cartridge. Cartridges older than this rule get theirs on their next
+  change.
+- **`DESIGN.md`** — the design rationale, paper-shaped: abstract,
+  problem, background (with the platform and library documentation it
+  rests on, quoted), each decision with the alternatives considered
+  and why they lost, evaluation (what was verified, how, and what was
+  *not* measured), limitations and open questions, numbered
+  references. Where sources disagree it says so and takes a side. The
+  README stays operational — what it installs, options, wiring — and
+  links here for the why. A dep-only cartridge's is a page. Same
+  backfill rule as the changelog; `healthcheck2/DESIGN.md` is the
+  reference, and the criteria for writing one are in the features
+  index, under *Writing a DESIGN.md*.
 
 Dep-only cartridges (credo, mock, …) keep the same shape minus
 `templates/` and `assets/`: README, `<feature>.ex` and `task.ex`.
 
 Every feature is in cartridge form; `lib/mix/tasks/` only keeps the two
-setup tasks and the `workbench.plant_asset` plumbing.
+setup tasks, the two query tasks (`workbench.catalog`, `workbench.status`)
+and the `workbench.plant_asset` plumbing.
+
+## The catalog
+
+The registry knows every cartridge: `WorkbenchIgniter.Features.all/0`
+is the composition list, `standalone/0` the ones no setup composes
+(githooks, exmachina, clustering, healthcheck2, ash), `catalog/0` both. Two
+tasks read it, for tools as much as for people — `wb.sh catalog` and
+`wb.sh status` are their front:
+
+```sh
+mix workbench.catalog [--json] [--covers DIR]  # every cartridge's manifest: name, version,
+                                               # summary, flag, implies, installer options
+mix workbench.status  [--json]                 # the same, plus 'installed' for this project
+```
+
+`status` asks each cartridge (`installed?/1`); nothing is compiled or
+written. With `--covers`, the catalog also says which sealed box covers
+exist under that directory, so whatever draws a shelf of cartridges
+reads one JSON and not two trees.
 
 ## The two setups
 
@@ -149,10 +222,12 @@ restructuring reaches the setup options, not a bug to chase now.
       in `<feature>.ex` and the `Mix.Tasks.Workbench.Install.<Feature>`
       shell in `task.ex`.
 - [ ] Register it in the `WorkbenchIgniter.Features` list at the right
-      composition position; declare `flag`/`enabled?`, `implies` and
+      composition position — or in its `@standalone` list when no setup
+      flag drives it; declare `flag`/`enabled?`, `implies` and
       `argv` as needed.
-- [ ] Idempotency guard if it touches the router or any other
-      non-idempotent edit (`module_exists` + `add_notice`; see
+- [ ] `installed?/1`, off one mark; and the idempotency guard reads
+      that same function if it touches the router or any other
+      non-idempotent edit (`installed?` + `add_notice`; see
       healthcheck).
 - [ ] Templates as EEx module *bodies* in `templates/`
       (`embed_templates()`); verbatim files in `assets/`

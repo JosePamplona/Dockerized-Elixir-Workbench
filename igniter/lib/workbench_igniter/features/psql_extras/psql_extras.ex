@@ -16,6 +16,9 @@ defmodule WorkbenchIgniter.Features.PsqlExtras do
   @impl true
   def enabled?(opts), do: opts[:enhance] == true
 
+  @impl true
+  def enabled_by, do: :enhance
+
   @doc "Task metadata, exposed unchanged through the mix task shell."
   def info(_argv, _composing_task) do
     %Igniter.Mix.Task.Info{
@@ -23,6 +26,10 @@ defmodule WorkbenchIgniter.Features.PsqlExtras do
       example: "mix " <> task()
     }
   end
+
+  # The mark: the dependency itself.
+  @impl true
+  def installed?(igniter), do: dep_installed?(igniter, elem(@dep, 0))
 
   @doc "Installer body, run by the mix task shell as its `igniter/1`."
   def install(igniter) do

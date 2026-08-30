@@ -31,9 +31,7 @@ defmodule Mix.Tasks.Workbench.Install.Healthcheck do
 
   ## Options
 
-  * `--endpoint` - Route for the healthcheck scope. Defaults to `/health`.
-  * `--open-api` - Generate the OpenApiSpex-documented variant even if the
-    REST feature is not detected (it must be installed for it to compile).
+  #{WorkbenchIgniter.Feature.options_doc(Healthcheck)}
   """
 
   @impl Igniter.Mix.Task

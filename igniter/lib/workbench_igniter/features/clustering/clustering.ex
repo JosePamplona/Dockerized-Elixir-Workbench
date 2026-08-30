@@ -3,8 +3,8 @@ defmodule WorkbenchIgniter.Features.Clustering do
   Distributed Erlang for the production release, so the replicas find
   each other.
 
-  Standalone cartridge: it is not in the `WorkbenchIgniter.Features`
-  registry, so no setup composes it — `mix workbench.install.clustering`
+  Standalone cartridge: listed among the standalone ones of the
+  `WorkbenchIgniter.Features` registry, so no setup composes it — `mix workbench.install.clustering`
   (`wb.sh add clustering`) installs it on demand.
 
   `phx.new` already ships nine tenths of this: `:dns_cluster` is a
@@ -51,6 +51,22 @@ defmodule WorkbenchIgniter.Features.Clustering do
 
   @impl true
   def task, do: "workbench.install.clustering"
+
+  @impl true
+  def console, do: [tabs: [:cluster]]
+
+  @impl true
+  def afterwards,
+    do: "See it work: ./wb.sh up --deploy scaled brings the replicas up behind the balancer (the release image is rebuilt on each deploy)."
+
+  # The installer's options, one line each: the task's "## Options"
+  # section and the help a form shows are rendered from here.
+  @impl true
+  def option_docs do
+    [
+      dns_query: "Value for `DNS_CLUSTER_QUERY`, the DNS name that resolves to the replica IPs. Defaults to `<app>.default.svc.cluster.local` (Kubernetes); on Fly.io it is usually `<app>.internal`."
+    ]
+  end
 
   @doc "Task metadata, exposed unchanged through the mix task shell."
   def info(_argv, _composing_task) do
@@ -165,4 +181,10 @@ defmodule WorkbenchIgniter.Features.Clustering do
       do: content,
       else: String.trim_trailing(content, "\n") <> "\n\n" <> @distributed
   end
+
+  # The mark: the block above, in a file the cartridge does not own
+  # (`new` may leave a rel/env.sh.eex behind before it is installed).
+  # It is what wb.sh reads too, before baking the scaled compose.
+  @impl true
+  def installed?(igniter), do: marker_installed?(igniter, @env_sh, @marker)
 end

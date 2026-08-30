@@ -20,8 +20,16 @@
   WORKBENCH_PATH="$( cd "$( dirname "$0" )" && pwd )"
   cd "$WORKBENCH_PATH"
 
-  # Environment overrides survive config.conf (e.g. WORKSPACE_PATH=./x ./wb.sh).
+  # Environment overrides survive config.conf (e.g. WORKSPACE_PATH=./x ./wb.sh),
+  # for a second workspace beside the configured one without editing it.
   WORKSPACE_PATH_OVERRIDE="$WORKSPACE_PATH"
+  PROJECT_NAME_OVERRIDE="$PROJECT_NAME"
+
+  # -y|--yes before the command answers every confirmation, for scripts
+  # and for whatever drives the workbench without a terminal. Exported,
+  # so 'demo' hands it to the commands it runs.
+  if [ "$1" == "-y" ] || [ "$1" == "--yes" ]; then WB_YES=true; shift; fi
+  export WB_YES="${WB_YES:-false}"
 
   SCRIPT_CONFIG_FILE="config.conf"
   source "./$SCRIPT_CONFIG_FILE"
@@ -33,6 +41,7 @@
     if [ "$OPENAI" == true ]; then AUTH0="true"; fi
 
     WORKBENCH_VERSION=$( sed '3!d' $0 | sed -n 's/^.*v\(.*\).*/\1/p' )
+    PROJECT_NAME="${PROJECT_NAME_OVERRIDE:-$PROJECT_NAME}"
 
     # Workspace: directory where the project is generated (volume mount
     # point). Relative paths are resolved from the workbench directory.
@@ -94,12 +103,51 @@
     # project's Dockerfile.local; with the workbench present, `new` seeds
     # it as an alias (docker tag) of the shared toolchain image.
     LOCAL_IMAGE="$APP_NAME:local"
+    # An existing workspace names itself: its compose carries the compose
+    # project name and the dev image baked at creation, so every command
+    # but the creating ones reads them from there — config.conf may since
+    # have moved on to name the next project, and several workspaces can
+    # be driven from one workbench.
+    if [ $EXISTING_PROJECT == true ] && [ -f "$WORKSPACE_PATH/$COMPOSE_FILE" ] && \
+       [ "$1" != "new" ] && [ "$1" != "new2" ]
+    then
+      ELIXIR_PROJECT_NAME=$(
+        sed -n 's/^name: //p' "$WORKSPACE_PATH/$COMPOSE_FILE" | head -n 1
+      )
+      LOCAL_IMAGE=$(
+        sed -n '/^  app:/,/^  [a-z]/{s/^    image: //p}' \
+          "$WORKSPACE_PATH/$COMPOSE_FILE" | head -n 1
+      )
+      APP_NAME="${LOCAL_IMAGE%:local}"
+    fi
     # Ports the services bind INSIDE the containers; the host ports are
     # chosen per workspace and mapped to these in its compose file.
     APP_INTERNAL_PORT="4000"
     PGADMIN_INTERNAL_PORT="5050"
     SOURCE_CODE_VOLUME="$WORKSPACE_PATH:/app/src"
     WORKBENCH_VOLUME="$WORKBENCH_PATH:/app/workbench:ro"
+
+  # Git ------------------------------------------------------------------------
+
+    # Who signs the commits the workbench makes in the workspace: the
+    # first one after 'new', one per 'add' — so 'eject' can revert that
+    # one alone — and the revert itself. GIT_IDENTITY=user (config.conf)
+    # takes the host's git identity when git is there and has one, and
+    # falls back to the workbench's own otherwise; =workbench always
+    # signs as the workbench. The commits run inside the toolchain
+    # container, where the project's git hooks can run mix.
+    WORKBENCH_GIT_NAME="Dockerized Elixir Workbench"
+    WORKBENCH_GIT_EMAIL="wb.sh@localhost"
+    GIT_NAME="$WORKBENCH_GIT_NAME"
+    GIT_EMAIL="$WORKBENCH_GIT_EMAIL"
+    if [ "${GIT_IDENTITY:-user}" == "user" ] && command -v git > /dev/null 2>&1; then
+      HOST_GIT_NAME=$(git -C "$HOME" config --get user.name 2>/dev/null)
+      HOST_GIT_EMAIL=$(git -C "$HOME" config --get user.email 2>/dev/null)
+      if [ -n "$HOST_GIT_NAME" ] && [ -n "$HOST_GIT_EMAIL" ]; then
+        GIT_NAME="$HOST_GIT_NAME"
+        GIT_EMAIL="$HOST_GIT_EMAIL"
+      fi
+    fi
 
   # Format codes -------------------------------------------------------------
 
@@ -121,6 +169,7 @@
     # Prints MESSAGE and spects input prompt for continue or exit the script
   confirm() {
     echo "⚠️  ${B}Warning${R} $@"
+    if [ "$WB_YES" == true ]; then echo "Continuing (--yes)."; echo; return; fi
     read -n 1 -p $'Should continue? [y/N] ' INPUT
     if [ "$INPUT" != "y" ]; then exit 0; fi
     echo
@@ -295,14 +344,22 @@
     sed -i "s/%{postgres_image_version}/$POSTGRES_IMAGE_VERSION/" $file_path
     sed -i "s/%{pgadmin_image_version}/$PGADMIN_IMAGE_VERSION/"  $file_path
 
-    # Remove the database & pgadmin services on projects without Ecto
-    # (the network holder and the pod structure remain).
-    if ! grep -q "ecto_repos" "$WORKSPACE_PATH/config/config.exs" 2>/dev/null
+    # Remove the database & pgadmin services on projects without a
+    # database server (the network holder and the pod structure remain).
+    if ! workspace_needs_database
     then
       sed -i '/^  database:/,$d'            $file_path
       sed -i '/^    depends_on:/,+2d'       $file_path
       sed -i "/# pgAdmin port/,/:$PGADMIN_INTERNAL_PORT\$/d" $file_path
     fi
+  }
+
+  # workspace_needs_database
+    # Whether the project runs on a database server: an Ecto repo in
+    # config.exs, and not the SQLite adapter (a file, no service).
+  workspace_needs_database() {
+    grep -q "ecto_repos" "$WORKSPACE_PATH/config/config.exs" 2>/dev/null && \
+    ! grep -q "ecto_sqlite3" "$WORKSPACE_PATH/$MIX_FILE" 2>/dev/null
   }
 
   # workspace_app_port
@@ -311,6 +368,240 @@
     sed -n "s/^ *- \([0-9]*\):$APP_INTERNAL_PORT\$/\1/p" \
       "$WORKSPACE_PATH/$COMPOSE_FILE" | \
     head -n 1
+  }
+
+  # workspace_pgadmin_port
+    # Reads the pgAdmin host port from the workspace's compose file
+    # (nothing on projects without Ecto, where the service is dropped).
+  workspace_pgadmin_port() {
+    sed -n "s/^ *- \([0-9]*\):$PGADMIN_INTERNAL_PORT\$/\1/p" \
+      "$WORKSPACE_PATH/$COMPOSE_FILE" | \
+    head -n 1
+  }
+
+  # workspace_igniter <TASK> [ARGS...]
+    # Runs a workbench.* mix task of the igniter package on the workspace,
+    # on a bare toolchain container: the source and the workbench mounted,
+    # no compose. The running app container has no workbench mounted (the
+    # package is not a dependency of the project once it leaves the
+    # workbench), and a compose one-off would bring the database up for
+    # a task that only reads the source. The package is compiled first,
+    # in the same Mix boot as the task (a boot costs seconds), so the
+    # task sees its current source; what mix prints on its way to the
+    # task (the package, a dependency, the project) lands before the
+    # answer — the --json readers keep from the first JSON line on
+    # (json_answer).
+  # json_answer
+    # Keeps a mix task's output from its first JSON line on: mix prints
+    # what it compiles on the way to the task (a new dependency, the
+    # project, the package itself) on stdout, before the task answers.
+  json_answer() { sed -n '/^[[{]/,$p'; }
+
+  workspace_igniter() {
+    docker run \
+      $DOCKER_TTY_FLAGS \
+      --rm \
+      --name "${APP_NAME}_workbench_$1" \
+      --volume $SOURCE_CODE_VOLUME \
+      --volume $WORKBENCH_VOLUME \
+      --workdir /app/src \
+      $LOCAL_IMAGE sh -c \
+        'exec mix do deps.compile workbench_igniter, "$@"' \
+        mix "$@"
+  }
+
+  # workspace_git [ARGS...]
+    # Runs git on the workspace from the toolchain container — where the
+    # project's git hooks can run mix, and as the workspace's own user —
+    # signing as GIT_NAME <GIT_EMAIL>.
+  # git_read <ARGS...>
+    # A read-only git query on the workspace: with a git on this side
+    # (the console container has one; a host may) it runs here — a
+    # container start costs seconds and 'status' asks three times —
+    # and in the toolchain container otherwise. What writes (init, add,
+    # commit, revert) stays workspace_git: the project's hooks run
+    # there, where mix is.
+  git_read() {
+    if command -v git > /dev/null 2>&1
+    then git -C "$WORKSPACE_PATH" "$@"
+    else workspace_git "$@"
+    fi
+  }
+
+  workspace_git() {
+    docker run \
+      --rm \
+      --env GIT_AUTHOR_NAME="$GIT_NAME" \
+      --env GIT_AUTHOR_EMAIL="$GIT_EMAIL" \
+      --env GIT_COMMITTER_NAME="$GIT_NAME" \
+      --env GIT_COMMITTER_EMAIL="$GIT_EMAIL" \
+      --volume $SOURCE_CODE_VOLUME \
+      --workdir /app/src \
+      $LOCAL_IMAGE git "$@"
+  }
+
+  # workspace_dirty
+    # Succeeds when the workspace has changes git does not have.
+  workspace_dirty() {
+    [ -n "$(git_read status --porcelain 2>/dev/null)" ]
+  }
+
+  # workspace_commit <MESSAGE>
+    # Commits everything in the workspace under MESSAGE, when there is
+    # anything to commit, and says who signed it.
+  workspace_commit() {
+    [ -d "$WORKSPACE_PATH/.git" ] || workspace_git init -q
+    if workspace_dirty; then
+      workspace_git add -A && \
+      workspace_git commit -q -m "$1" && \
+      echo "Committed ${B}$1${R} (as $GIT_NAME <$GIT_EMAIL>)."
+    else
+      echo "Nothing to commit."
+    fi
+  }
+
+  # require_clean_workspace <ACTION>
+    # Every cartridge is one commit, so 'eject' can revert it alone: the
+    # commands that write cartridges refuse a tree with changes git does
+    # not have, instead of folding them into the cartridge's commit.
+  require_clean_workspace() {
+    if [ ! -d "$WORKSPACE_PATH/.git" ] || workspace_dirty; then
+      terminate \
+        "The workspace has changes git does not have, and '$1' needs a" \
+        "clean tree: each cartridge is one commit, so 'eject' can revert" \
+        "it alone. Commit them first: ./$(basename $0) commit \"MESSAGE\""
+    fi
+  }
+
+  # active_inserts
+    # The cartridges inserted by commit and not ejected since, newest
+    # first, one per line: sha, subject and date separated by \x1f. One
+    # walk of the log: a revert of an insert cancels the next (older)
+    # insert with that subject.
+  active_inserts() {
+    git_read log --format='%H%x1f%s%x1f%ci' 2>/dev/null | \
+    awk -F'\x1f' '
+      $2 ~ /^Revert "Insert / { s = $2; sub(/^Revert "/, "", s); sub(/"$/, "", s); pending[s]++; next }
+      $2 ~ /^Insert /         { if (pending[$2] > 0) { pending[$2]--; next } print }
+    '
+  }
+
+  # compose_project_name
+    # The compose project every deployment of the workspace shares (the
+    # 'name:' its compose files carry).
+  compose_project_name() {
+    sed -n 's/^name: //p' "$WORKSPACE_PATH/$COMPOSE_FILE" | head -n 1
+  }
+
+  # workspace_containers [FORMAT]
+    # Every container of the workspace's compose project, whichever
+    # deployment created it — dev and prod share their service names, so
+    # the image is what tells them apart. FORMAT is compose's --format.
+  workspace_containers() {
+    docker compose --project-name "$(compose_project_name)" \
+      ps --all --format "${1:-json}" 2>/dev/null
+  }
+
+  # json_string <TEXT>
+    # TEXT as a JSON string literal.
+  json_string() {
+    printf '"%s"' "$(printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g')"
+  }
+
+  # json_array
+    # One JSON array from stdin: objects one per line (compose's ps
+    # --format json), or an array already, or nothing.
+  json_array() {
+    local input
+    input=$(cat)
+    case "$input" in
+      \[*) echo "$input" ;;
+      "")  echo "[]" ;;
+      *)   echo "[$(echo "$input" | paste -sd, -)]" ;;
+    esac
+  }
+
+  # status_json
+    # The workspace as one JSON object: where it is, its ports, which
+    # deployments were baked, the containers of its compose project, and
+    # — 'project' — what 'mix workbench.status --json' says of the
+    # cartridges it carries (null when that could not be asked).
+  status_json() {
+    local port pgadmin project
+    port=$(workspace_app_port)
+    pgadmin=$(workspace_pgadmin_port)
+    project=$(workspace_igniter workbench.status --json 2>/dev/null | json_answer)
+
+    echo "{"
+    echo "  \"workspace\": $(json_string "$WORKSPACE_PATH"),"
+    echo "  \"compose_project\": $(json_string "$(compose_project_name)"),"
+    echo "  \"ports\": {\"app\": ${port:-null}, \"pgadmin\": ${pgadmin:-null}},"
+    echo "  \"baked\": {"
+    echo "    \"dev\": true,"
+    echo "    \"prod\": $([ -f "$WORKSPACE_PATH/$PROD_COMPOSE_FILE" ] && echo true || echo false),"
+    echo "    \"scaled\": $([ -f "$WORKSPACE_PATH/$SCALED_COMPOSE_FILE" ] && echo true || echo false)"
+    echo "  },"
+    echo "  \"containers\": $(workspace_containers | json_array),"
+    echo "  \"git\": $(git_json),"
+    echo "  \"project\": ${project:-null}"
+    echo "}"
+  }
+
+  # git_json
+    # The workspace's git as JSON: whether it is a repository, whether
+    # the tree is clean, HEAD, who signs, and the cartridges inserted by
+    # commit — newest first — which 'eject' reverts.
+  git_json() {
+    local inserts
+    if [ ! -d "$WORKSPACE_PATH/.git" ]; then echo '{"repo": false}'; return; fi
+    inserts=$(
+      active_inserts | \
+      while IFS=$'\x1f' read -r sha subject date; do
+        printf '{"sha": "%s", "feature": "%s", "subject": %s, "date": "%s"},' \
+          "$sha" "$(echo "$subject" | awk '{print $2}')" "$(json_string "$subject")" "$date"
+      done
+    )
+    echo "{\"repo\": true, \"clean\": $(workspace_dirty && echo false || echo true)," \
+      "\"head\": $(json_string "$(git_read log --format='%h %s' -n 1 2>/dev/null)")," \
+      "\"identity\": $(json_string "$GIT_NAME <$GIT_EMAIL>")," \
+      "\"inserts\": [${inserts%,}]}"
+  }
+
+  # status_report
+    # The same, for a person.
+  status_report() {
+    local port pgadmin containers
+    port=$(workspace_app_port)
+    pgadmin=$(workspace_pgadmin_port)
+    containers=$(workspace_containers '{{.Service}} {{.State}}{{if .Health}}/{{.Health}}{{end}} ({{.Image}})')
+
+    echo "${B}Workspace${R}  $WORKSPACE_PATH"
+    echo "${B}Project${R}    $(compose_project_name)"
+    echo "  app      ${Li}http://localhost:$port${R}"
+    [ -n "$pgadmin" ] && echo "  pgAdmin  ${Li}http://localhost:$pgadmin${R}"
+    echo
+    echo "${B}Deployments${R}  (baked compose files; up with: ./$(basename $0) up --deploy TARGET)"
+    for target in dev prod scaled; do
+      if [ -f "$WORKSPACE_PATH/$(compose_file_for $target)" ]
+      then echo "  $(printf '%-7s' $target) baked"
+      else echo "  $(printf '%-7s' $target) -"; fi
+    done
+    echo
+    echo "${B}Containers${R}  (dev and prod share their names: the image tells them apart)"
+    if [ -n "$containers" ]
+    then echo "$containers" | sed 's/^/  /'
+    else echo "  none"; fi
+    echo
+    echo "${B}Git${R}  (commits the workbench makes, signed as $GIT_NAME <$GIT_EMAIL>)"
+    if [ -d "$WORKSPACE_PATH/.git" ]; then
+      if workspace_dirty; then echo "  tree: changes git does not have (./$(basename $0) commit)"
+      else echo "  tree: clean"; fi
+      echo "  head: $(git_read log --format='%h %s' -n 1 2>/dev/null || echo 'no commits yet')"
+      active_inserts | awk -F'\x1f' '{ printf "  insert: %s %s\n", substr($1, 1, 7), $2 }'
+    else echo "  not a repository"; fi
+    echo
+    echo "${B}Cartridges${R}  (mix workbench.status, read off the source)"
+    workspace_igniter workbench.status 2>/dev/null | sed 's/^/  /'
   }
 
   # bake_prod_compose
@@ -439,9 +730,9 @@
       sed -i '/^configs:/,$d'                  $file_path
     fi
 
-    # Projects without Ecto have nothing to migrate and no database: drop
-    # both services and the app anchor's references to them.
-    if ! grep -q "ecto_repos" "$WORKSPACE_PATH/config/config.exs" 2>/dev/null
+    # Projects without a database server have nothing to migrate and no
+    # database: drop both services and the app anchor's references to them.
+    if ! workspace_needs_database
     then
       sed -i '/^  # One-shot migration/,/^configs:/{/^configs:/!d}' $file_path
       sed -i '/^  depends_on:$/,+2d'                                $file_path
@@ -539,7 +830,10 @@
       "$WORKBENCH_VERSION"
 
     section "SYNTAXIS"
-    section_content "./$script_name [COMMAND]"
+    section_content \
+      "./$script_name [-y, --yes] [COMMAND]" \
+      "- --yes: Answer every confirmation ('new' over an existing project," \
+      "  'delete'), for scripts and tools driving the workbench."
 
     section "DESCRIPTION"
     section_content \
@@ -571,7 +865,8 @@
 
     print_command "new [OPTIONS]"
     section_content \
-      "Create a new project in the workspace, configured from config.conf." \
+      "Create a new project in the workspace, configured from config.conf," \
+      "and make its first commit." \
       "- OPTIONS: It can accept all option flags from the task 'mix phx.new'" \
       "  (${Li}https://hexdocs.pm/phoenix/Mix.Tasks.Phx.New.html${R})."
 
@@ -589,6 +884,8 @@
       "     but 'up --deploy prod' needs. Distributed releases are not set up:" \
       "     that is the 'clustering' feature." \
       "  5. The workspace gets its Dockerfile.local and docker-compose.yml." \
+      "  6. The first commit, 'New project: …', signed as GIT_IDENTITY says:" \
+      "     the baseline every inserted cartridge is a commit on top of." \
       "The Elixir project keeps its phx.new configuration untouched: install" \
       "the workbench features one by one with the 'add' command." \
       "- OPTIONS: It can accept all option flags from the task 'mix phx.new'" \
@@ -596,11 +893,63 @@
 
     print_command "add [FEATURE] [OPTIONS]"
     section_content \
-      "Install a workbench feature on the existing project." \
+      "Install a workbench feature on the existing project, and commit" \
+      "it as one commit ('Insert FEATURE …'), so 'eject' can revert it" \
+      "alone. Needs a clean tree: commit pending changes first." \
       "- FEATURE: One of: healthcheck, rest, graphql, coveralls, exdoc," \
       "  enhancements, auth0, openai, credo, githooks, exmachina, mock," \
-      "  exdebug, psql_extras, osmon, clustering." \
+      "  exdebug, psql_extras, osmon, clustering, healthcheck2, ash, mailer," \
+      "  gettext, ecto, esbuild, tailwind, html, live, dashboard." \
       "- OPTIONS: Flags for the 'mix workbench.install.FEATURE' task."
+
+    print_command "eject [FEATURE]"
+    section_content \
+      "Take a cartridge out: reverts its 'Insert FEATURE' commit (the" \
+      "latest one). Needs a clean tree, and refuses when the cartridge's" \
+      "files changed since — that is no longer the cartridge's alone."
+
+    print_command "console [up|down|logs|build]"
+    section_content \
+      "The workbench's console: a Phoenix LiveView page that shows the" \
+      "workspace and drives this script — as a container, with Docker's" \
+      "socket and the workbench mounted, on the first free port from 4100." \
+      "- up (default): build the image if missing and start it." \
+      "- down, logs: stop it, follow its output." \
+      "- build: build the image again (the Docker CLI in it follows the host)."
+
+    print_command "bake"
+    section_content \
+      "Bake the workspace's compose again from the seed, for the project" \
+      "as it is now — with the database and pgAdmin when it runs on a" \
+      "database server, without them when it does not (or on SQLite) —" \
+      "keeping its ports, as one commit. What 'add ecto' asks for next." \
+      "Needs a clean tree. The prod and scaled composes are baked at" \
+      "their own deployment."
+
+    print_command "commit [MESSAGE]"
+    section_content \
+      "Commit everything the workspace has, from the toolchain container" \
+      "(the project's git hooks can run mix there), signed as the" \
+      "GIT_IDENTITY of config.conf: 'user' takes the host's git identity" \
+      "when there is one, 'workbench' signs as the workbench." \
+      "- MESSAGE: Default: 'Workbench: commit pending changes'."
+
+    print_command "catalog [--json]"
+    section_content \
+      "List every cartridge the workbench has: name, version, how it is" \
+      "enabled and what it installs — with the options of its installer" \
+      "and which of its box covers exist, in the JSON form. Read by the" \
+      "igniter package ('mix workbench.catalog'), so it needs a project" \
+      "to run on." \
+      "- --json: One JSON array, for tools."
+
+    print_command "status [--json]"
+    section_content \
+      "Where the workspace stands: its ports, which deployments were" \
+      "baked, its containers, and which cartridges the project carries" \
+      "('mix workbench.status': each cartridge answers off the same mark" \
+      "its installer checks, so this and 'add' never disagree)." \
+      "- --json: One JSON object, for tools."
 
     print_command "setup [-e, --env ENV]"
     section_content \
@@ -851,7 +1200,8 @@ if [ $# -gt 0 ]; then
           $EXDOC \
           true \
           $COVERALLS
-    fi
+    fi && \
+    workspace_commit "New project: $ELIXIR_PROJECT_NAME (new)"
 
   elif [ "$1" == "new2" ]; then
     shift
@@ -865,21 +1215,165 @@ if [ $# -gt 0 ]; then
     # workspace and the stack versions still apply, since they shape the
     # project generation and the images, not the Elixir configuration.
     build_setup2_flags "$@" && \
-    create_project workbench_setup2 "$@"
+    create_project workbench_setup2 "$@" && \
+    workspace_commit "New project: $ELIXIR_PROJECT_NAME (new2)"
 
   elif [ "$1" == "add" ]; then
     ENTRYPOINT_COMMAND=$1; shift
 
     if [ $EXISTING_PROJECT == true ]; then
       if [ $# -gt 0 ]; then
+        require_clean_workspace add
         workspace_compose run \
           --rm \
           --name "${APP_NAME}_workbench_${ENTRYPOINT_COMMAND}" \
           --volume $WORKBENCH_VOLUME \
-          app $CONTAINER_ENTRYPOINT add $@
+          app $CONTAINER_ENTRYPOINT add $@ && \
+        workspace_commit "Insert $*" && \
+        if workspace_needs_database && \
+           ! grep -q "^  database:" "$WORKSPACE_PATH/$COMPOSE_FILE"; then
+          echo "The project now runs on a database and the compose has none:" \
+            "./$(basename $0) bake bakes it in, then ./$(basename $0) setup creates it."
+        fi
 
       else args_error "Missing feature name. Try: ./$(basename $0) add healthcheck"; fi
     else terminate "There is no project to add features to."; fi
+
+  elif [ "$1" == "eject" ]; then
+    shift
+    if [ $EXISTING_PROJECT == true ]; then
+      [ $# -gt 0 ] || args_error "Missing feature name. Try: ./$(basename $0) eject credo"
+      FEATURE=$1
+      require_clean_workspace eject
+      # The latest insert of this cartridge: its subject starts with the
+      # feature name, whole word (so 'healthcheck' never matches
+      # 'healthcheck2').
+      SHA=$(active_inserts | awk -F'\x1f' -v f="$FEATURE" '$2 == "Insert " f || index($2, "Insert " f " ") == 1 { print $1; exit }')
+      [ -n "$SHA" ] || terminate \
+        "No 'Insert $FEATURE' commit in the workspace: nothing to eject." \
+        "The workbench commits each cartridge it inserts; one installed by" \
+        "hand has no commit to revert."
+
+      echo "Reverting $(workspace_git log --format='%h %s' -n 1 $SHA)"
+      if workspace_git revert --no-edit "$SHA" > /dev/null; then
+        echo "Ejected ${B}$FEATURE${R}: $(workspace_git log --format='%h %s' -n 1)" \
+          "(as $GIT_NAME <$GIT_EMAIL>)."
+      else
+        workspace_git revert --abort 2>/dev/null
+        terminate \
+          "The revert does not apply: files the cartridge wrote changed since" \
+          "it was inserted, so they are no longer the cartridge's alone." \
+          "Revert it by hand in the workspace, or undo those changes first."
+      fi
+
+    else terminate "There is no project."; fi
+
+  elif [ "$1" == "console" ]; then
+    shift
+    # The console: a Phoenix LiveView app in console/, run as a container
+    # that drives this very workbench — Docker's socket mounted, and the
+    # workbench mounted at the same absolute path as on the host, so the
+    # relative paths in config.conf and the composes' bind mounts mean
+    # the same thing to the daemon whichever side asks. It runs as this
+    # user, in the socket's group, and shells out to wb.sh as jobs.
+    CONSOLE_IMAGE="workbench-console:${ELIXIR_VERSION}-${ERLANG_VERSION}"
+    CONSOLE_NAME="workbench_console"
+    CONSOLE_DIR="$WORKBENCH_PATH/console"
+
+    console_build() {
+      docker build \
+        --build-arg "TOOLCHAIN=$TOOLCHAIN_IMAGE" \
+        --build-arg "DOCKER_VERSION=$(docker version --format '{{.Server.Version}}')" \
+        --build-arg "COMPOSE_VERSION=$(docker compose version --short | sed 's/-.*//')" \
+        --tag "$CONSOLE_IMAGE" "$CONSOLE_DIR"
+    }
+
+    case "$1" in
+      ""|up)
+        # A toolchain built before the installer was part of the tag
+        # (workbench:ELIXIR-OTP) still serves the console.
+        docker image inspect "$TOOLCHAIN_IMAGE" > /dev/null 2>&1 || \
+          { LEGACY_TOOLCHAIN="workbench:${ELIXIR_VERSION}-${ERLANG_VERSION}" && \
+            docker image inspect "$LEGACY_TOOLCHAIN" > /dev/null 2>&1 && \
+            TOOLCHAIN_IMAGE="$LEGACY_TOOLCHAIN"; } || \
+          terminate "No toolchain image $TOOLCHAIN_IMAGE yet: create a project first (new2 builds it)."
+        docker image inspect "$CONSOLE_IMAGE" > /dev/null 2>&1 || console_build || terminate "The console image did not build."
+        docker rm -f "$CONSOLE_NAME" > /dev/null 2>&1
+        CONSOLE_PORT=$(first_free_port 4100)
+        # The socket's group as the container sees it — not the host's:
+        # under Docker Desktop the mounted socket is the VM's, root-owned.
+        SOCKET_GID=$(docker run --rm --volume /var/run/docker.sock:/var/run/docker.sock \
+          "$CONSOLE_IMAGE" stat -c %g /var/run/docker.sock)
+        docker run --detach \
+          --name "$CONSOLE_NAME" \
+          --user "$(id -u):$(id -g)" \
+          --group-add "$SOCKET_GID" \
+          --volume /var/run/docker.sock:/var/run/docker.sock \
+          --volume "$WORKBENCH_PATH:$WORKBENCH_PATH" \
+          --workdir "$CONSOLE_DIR" \
+          --env HOME=/home/elixir \
+          --env "WORKBENCH_DIR=$WORKBENCH_PATH" \
+          --env PORT=4000 \
+          --publish "$CONSOLE_PORT:4000" \
+          "$CONSOLE_IMAGE" > /dev/null && \
+        echo "The console is coming up on ${B}http://localhost:$CONSOLE_PORT${R}" \
+          "(first run compiles it: ./$(basename $0) console logs)." ;;
+      down)  docker rm -f "$CONSOLE_NAME" > /dev/null 2>&1 && echo "Console down." || echo "The console was not up." ;;
+      logs)  docker logs --follow "$CONSOLE_NAME" ;;
+      build) console_build ;;
+      *)     args_error invalid ;;
+    esac
+
+  elif [ "$1" == "bake" ]; then
+    if [ $EXISTING_PROJECT == true ]; then
+      require_clean_workspace bake
+      # The workspace keeps its ports; the compose is where they live.
+      APP_PORT=$(workspace_app_port)
+      PGADMIN_PORT=$(workspace_pgadmin_port)
+      [ -n "$APP_PORT" ]     || APP_PORT=$(first_free_port 4000)
+      [ -n "$PGADMIN_PORT" ] || PGADMIN_PORT=$(first_free_port 5050)
+
+      bake_compose "$LOCAL_IMAGE" "$LOCAL_DOCKERFILE" "$COMPOSE_FILE" && \
+      if workspace_dirty; then
+        workspace_commit "Bake $COMPOSE_FILE" && \
+        if workspace_needs_database; then
+          echo "The compose now has the database: ./$(basename $0) setup creates it."
+        fi
+      else
+        echo "$COMPOSE_FILE is already what the project asks for: nothing to bake."
+      fi
+    else terminate "There is no project."; fi
+
+  elif [ "$1" == "commit" ]; then
+    shift
+    if [ $EXISTING_PROJECT == true ]; then
+      workspace_commit "${*:-Workbench: commit pending changes}"
+    else terminate "There is no project to commit."; fi
+
+  elif [ "$1" == "catalog" ]; then
+    shift
+    if [ $EXISTING_PROJECT == true ]; then
+      case "$1" in
+        --json) workspace_igniter workbench.catalog --json \
+                  --covers /app/workbench/assets/covers 2>/dev/null | json_answer ;;
+        "")     workspace_igniter workbench.catalog ;;
+        *)      args_error invalid ;;
+      esac
+
+    else terminate \
+      "There is no project: the catalog is read by the igniter package" \
+      "on the workspace. Create one with: ./$(basename $0) new2"; fi
+
+  elif [ "$1" == "status" ]; then
+    shift
+    if [ $EXISTING_PROJECT == true ]; then
+      case "$1" in
+        --json) status_json ;;
+        "")     status_report ;;
+        *)      args_error invalid ;;
+      esac
+
+    else terminate "There is no project in $WORKSPACE_PATH."; fi
 
   elif [ "$1" == "setup" ]; then
     ENTRYPOINT_COMMAND=$1; shift

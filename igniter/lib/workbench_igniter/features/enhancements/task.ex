@@ -28,15 +28,7 @@ defmodule Mix.Tasks.Workbench.Install.Enhancements do
 
   ## Options
 
-  * `--project-name` - Display name (default: capitalized app name).
-  * `--id-type` - Primary key type (`uuid` maps to `Ecto.UUID`).
-    Default: `uuid`.
-  * `--timestamps` - Timestamps type. Default: `naive_datetime_usec`.
-  * `--interface` - `rest` | `graphql` | `none`. Default: `rest`.
-  * `--exdoc`, `--auth0`, `--openai`, `--stripe`, `--health` - Feature
-    flags (conditional content and diagram/postman selection).
-  * `--no-ecto`, `--no-html`, `--no-mailer`, `--no-dashboard` - Mirror
-    the `phx.new` options the project was created with.
+  #{WorkbenchIgniter.Feature.options_doc(Enhancements)}
   """
 
   @impl Igniter.Mix.Task

@@ -40,17 +40,6 @@ defmodule WorkbenchIgniter.Features.EnhancementsTest do
       refute schema =~ "EctoURI"
     end
 
-    test "--no-ecto skips the ecto group" do
-      files = installed(["--no-ecto"])
-
-      refute Map.has_key?(files, "lib/test/helper.ex")
-      refute Map.has_key?(files, "lib/mix/tasks/db.ex")
-      refute files["mix.exs"] =~ "ecto_enum"
-      # Version task and base tests are still planted.
-      assert files["lib/mix/tasks/version.ex"]
-      assert files["test/test/application_test.exs"]
-    end
-
     test "rest group: enhanced error view and postman collection" do
       files = installed(["--health", "--project-name", "Lorem Ipsum"])
 
@@ -71,13 +60,6 @@ defmodule WorkbenchIgniter.Features.EnhancementsTest do
       assert files["test/support/mock_helper.ex"] =~ "defmodule Test.MockHelper do"
       assert files["test/support/conn_case.ex"] =~ "import Test.MockHelper"
       assert files["mix.exs"] =~ "{:mock,"
-    end
-
-    test "--no-html, --no-mailer and --no-dashboard skip their tests" do
-      files = installed(["--no-html", "--no-mailer", "--no-dashboard"])
-
-      refute Map.has_key?(files, "test/test_web/controllers/dashboard_controller_test.exs")
-      refute Map.has_key?(files, "test/test_web/controllers/mailbox_controller_test.exs")
     end
 
     test "is a no-op with a notice when already installed" do

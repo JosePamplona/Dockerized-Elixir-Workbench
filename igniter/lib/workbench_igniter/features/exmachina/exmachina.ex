@@ -22,6 +22,10 @@ defmodule WorkbenchIgniter.Features.Exmachina do
     }
   end
 
+  # The mark: the dependency itself.
+  @impl true
+  def installed?(igniter), do: dep_installed?(igniter, elem(@dep, 0))
+
   @doc "Installer body, run by the mix task shell as its `igniter/1`."
   def install(igniter) do
     Igniter.Project.Deps.add_dep(igniter, @dep, on_exists: :skip)

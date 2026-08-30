@@ -12,6 +12,279 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - `Fixed` for any bug fixes.
 - `Security` to invite users to upgrade in case of vulnerabilities.
 
+## Unreleased
+
+### Added
+
+- The workbench reads its own catalog. Every cartridge declares
+  `installed?/1` — off the *same mark its installer's guard reads*, a
+  module, a file or a dependency, so a status query and a re-run of the
+  installer can never disagree — and the registry now lists the
+  standalone cartridges beside the composed ones, so `catalog/0` names
+  every one of them, stripe's pending manifest included. Two mix tasks
+  read it: `mix workbench.catalog` (name,
+  version off the cartridge's CHANGELOG.md, summary off its task's
+  `@shortdoc`, flag, implied flags, the installer's options; `--covers
+  DIR` adds which sealed box covers exist) and `mix workbench.status`
+  (the same, plus what this project carries). Both take `--json`.
+  Cartridges whose options take a known set of values say so with
+  `choices/0` — ash's `--data-layer` and `--api` closed, `--auth` and
+  `--with` open with what ash-hq.org offers, coveralls' `--theme` off
+  its template directories — and the catalog carries them, each value
+  with the one-line doc the cartridge gives it (the package a choice
+  stands for, what a theme looks like), for a form to show beside it. So do
+  `option_docs/0` (one line per option, from which the task shell's
+  "## Options" section is now rendered — the docs and the catalog read
+  one text) and `enabled_by/0` (what turns a cartridge on under setup
+  when it is not its own flag: `:enhance` for the trivial group, the
+  interface for rest and graphql).
+- `./wb.sh catalog [--json]` and `./wb.sh status [--json]`: the front of
+  those tasks, run on a bare toolchain container with the source and
+  the workbench mounted — no compose, no database. `status` adds what
+  the host knows: the workspace's ports, which deployments were baked,
+  and the containers of its compose project (dev and prod share their
+  service names, so the image is what tells them apart).
+- Base cartridges: a capability `phx.new` decides at generation time,
+  added after the fact. `WorkbenchIgniter.PhxDelta` generates the
+  project twice with `phx.new`'s own generator, on a scratch directory —
+  with the flags that describe it today, read off the project, and with
+  the capability on — and merges the difference three ways onto the
+  project's files (`git merge-file`), so the delta is what `phx.new`
+  writes at the installer's version and the project's edits survive; a
+  conflict leaves the file alone with `phx.new`'s version beside it.
+  Every capability `phx.new` can leave out: `mailer` (Swoosh; mark: the
+  `swoosh` dependency), `gettext` (mark: `gettext`), `ecto` with
+  `--database postgres|mysql|mssql|sqlite3` (the repo, its
+  configuration, the data case, plus `DATABASE_URL` — `DATABASE_PATH`
+  on SQLite — in `.env`; mark: `ecto_sql`), `esbuild`, `tailwind`,
+  `html`, `live` (mark: `config :phoenix_live_view`, the one thing only
+  `--live` brings) and `dashboard`. A default project shows them all
+  inserted.
+- A `DESIGN.md` for each of the eight base cartridges, written from
+  `phx.new`'s generator and templates, the libraries' own installation
+  guides and Phoenix's guides, with the engine's argument in mailer's
+  and each cartridge's own decisions in its own. The READMEs say what
+  each capability is, per those guides, and what the papers measured
+  on real projects. Two engine faults the probes found are fixed
+  (mailer v0.2.0): a file an earlier insert had written conflicted
+  when the next capability appended at its end — Igniter writes one
+  trailing newline, `phx.new`'s `AGENTS.md`, `errors.pot` and `app.js`
+  do not — so the merge now normalises the three ends and insert
+  order no longer matters; and a delta taken by a `phx_new` other than
+  the one that generated the project conflicted on `mix.exs` for six
+  capabilities out of seven, so the engine now refuses with an issue
+  when the archive's version is not the `{:phoenix, "~> x.y.z"}` of
+  `mix.exs`, or when `Phx.New` is not loadable at all. And the
+  toolchain pins the installer: `PHX_NEW_VERSION` in `config.conf`,
+  baked into the workspace's `Dockerfile.local` and into the toolchain
+  image's tag (`workbench:<elixir>-<otp>-phx<version>`), so a new
+  installer is a new image and a workspace keeps the one that made its
+  project. Three smaller things the papers had listed as open are
+  closed with them: `--no-agents-md` is read off the project, so a
+  project that opted out no longer receives `AGENTS.md` from an
+  insert; `phx.new`'s static placeholders under `priv/static/assets/`
+  are taken away by esbuild and tailwind when untouched; and on a
+  conflict `<path>.phx-new` is written beside the file rather than
+  into the patch set the issue withholds. tailwind (v0.1.1) says when
+  the build will lack html's LiveView compiler, live (v0.1.1) when the
+  browser will lack esbuild's `app.js`.
+- `requires/0` in the manifest: the cartridges one builds on, by name
+  (live on html — `phx.new` generates live only with html). The
+  installer refuses with an issue naming what to insert first; the
+  catalog carries the list as `requires`. A choice value can say the
+  same for itself (`{value, doc, requires}` in `choices/0`; ash's
+  `--auth password` on live and mailer, `--with ash_admin` on live):
+  the catalog carries it beside the value and the installer refuses
+  the same way.
+- `status --json` carries `phx`: the project's shape in `phx.new`'s
+  terms — each capability, the database, the adapter, and the flags that
+  would generate it today — read off the project as the base cartridges
+  read it. The table says the flags too.
+- The cartridges that adapt to what the project has of `phx.new`'s
+  capabilities read it off the project (`PhxDelta.facts`) instead of
+  asking: `enhancements` (the Ecto group; the page, dashboard and
+  mailbox tests), `exdoc` (the database page) and `coveralls` (the
+  components folder) lost their `--no-ecto`/`--no-html`/`--no-mailer`/
+  `--no-dashboard` options, and `setup` no longer passes them. `exdoc`
+  also lost `--openai` and `--stripe`, which nothing read. Every option
+  left is documented (the catalog and the task docs say what each does).
+- The console (`console/`, `./wb.sh console [up|down|logs|build]`): a
+  Phoenix LiveView app run as a container with Docker's socket and the
+  workbench mounted at its host path. It reads `status --json` and
+  `catalog --json`, runs every action as a `wb.sh` job with its output
+  streamed to a tray, and ports the mock's board, shelf, box and tray
+  with the mock's own styles. First slice: Deploy (up/down per target,
+  setup, bake), Cartridges (the shelf, a box's options, insert, eject).
+- ash v0.4.0: `--data-layer` takes several, as ash-hq.org's checkboxes
+  do; `mix workbench.ash.site` checks that the site still treats them
+  as independent.
+- `console/0` in the manifest — the cartridges light the console up:
+  the doors a cartridge opens on the app's port (exdoc `/dev/docs`,
+  coveralls `/dev/docs/cover` with exdoc, rest `/dev/swagger` and
+  `/dev/openapi`, graphql `/graphiql`, dashboard `/dev/dashboard`,
+  mailer `/dev/mailbox`, ash `/admin` with `ash_admin`), the probes it
+  answers (healthcheck2 `{path}/live` and `{path}/ready`, healthcheck
+  `{endpoint}`), the tabs it turns on (clustering → Cluster). The
+  catalog carries it as `console`; healthcheck2 reports the prefix it
+  was inserted with (`state`). The console's board has a *Doors*
+  section; the mock reads the same catalog instead of a table of its own.
+- `afterwards/0` in the manifest: what follows the insert, when
+  something does, as one sentence with the command (ecto's `bake`,
+  clustering's scaled deployment, ash's `bake` with a database data
+  layer). The catalog carries it, with `base` — whether the cartridge
+  is a `phx.new` capability, in from birth unless left out.
+- Console mock: the *New project* card offers the base cartridges as
+  what they are — eight boxes in from birth, uncheck one to leave it
+  out (`--no-x`; html takes live with it, as `phx.new` does) — with
+  ecto's own options (`--database`, `--binary-id`: `phx.new` flags only
+  Ecto reads, so the cartridge's) hanging from its box, and `--adapter`
+  as the one generation-only choice. The *Afterwards* row of the box
+  reads the manifest.
+- Console mock: a *Dependencies* section in the box — what the
+  cartridge builds on, what the options as chosen add to that, what it
+  comes with, and what follows the insert — each cartridge a chip that
+  opens its box; a value whose requirement is missing is disabled and
+  says so, and Insert reads "Insert html first".
+- `./wb.sh bake`: bakes the workspace's `docker-compose.yml` again from
+  the seed for the project as it is now, keeping its ports, as one
+  commit — what `add ecto` asks for next (`setup` then creates the
+  database). The compose drops the database and pgAdmin services on
+  SQLite projects too, not only on projects without Ecto.
+- Cartridges are commits. `new`/`new2` make the workspace's first commit
+  (`New project: …`), `add` refuses a tree with changes git does not
+  have and commits what it inserted as `Insert FEATURE …`, and the new
+  `./wb.sh eject FEATURE` reverts that commit — refusing when the
+  cartridge's files changed since, which is the honest answer. `./wb.sh
+  commit [MESSAGE]` commits pending changes. All of it runs git inside
+  the toolchain container, where the project's hooks can run mix, signed
+  as `GIT_IDENTITY` in `config.conf` says: `user` (the host's identity,
+  falling back to the workbench's own) or `workbench`. `status` reports
+  the tree, HEAD and the inserts.
+- The manifest says what a second run does — `rerun/0`: `:noop` (the
+  default) or `:adds` (ash: every option is a package, so running again
+  with more grows the install) — and `state/1`, what the project
+  carries of an adding cartridge's options, read off the project;
+  `status --json` carries both.
+- `./wb.sh -y|--yes COMMAND` answers every confirmation (`new` over an
+  existing project, `delete`), for scripts and for whatever drives the
+  workbench without a terminal; `demo` hands it down.
+
+- `assets/design/`: the house's design tokens, one source for every
+  visual thing that is not a cover — a palette of four named values
+  (the covers' violet and the seal's gold), roles with a light and a
+  dark value (ground, surface, line, ink, muted, accent, the semantic
+  three, the terminal, the service colours), and three type families by
+  role. `build.py` projects them to `generated/tokens.css`, which the
+  console mock now reads instead of a hand-written `:root{}`, and to the
+  diagram-design skill's style guide, installed as the `workbench`
+  profile the repository's `.diagram-design` marker names; `--check`
+  fails when a projection is stale.
+
+- `assets/diagrams/`: the cartridges' figures, one script for all of
+  them. The clustering README shows the scaled deployment and the edge
+  the cartridge opens inside it (Deployment); the ash README, what its
+  queued command wires into the project (Architecture); the ash DESIGN
+  §3.1, who writes what and when — why the cartridge's diff is empty
+  (Sequence). Drawn to the diagram-design skill's rules with the house's
+  skin, as SVGs that theme themselves with `prefers-color-scheme`; the
+  console mock puts them in the page inline.
+
+- The clustering cartridge's `DESIGN.md`: DNSCluster kept over
+  libcluster and static names, the release pair in `rel/env.sh.eex`
+  against `.env`, `vm.args` and the Dockerfile (the boot script sources
+  it before applying its own defaults, and only there is the container
+  address known), the four `release.init` templates from Mix's own
+  functions with `mix release.init` queued as the fallback, the scaled
+  compose's shared `app` alias against scaling the pod, why a workspace
+  cannot cluster with itself and why one image means one cookie, and
+  the mark `installed?/1` and `wb.sh` both read. Read against the
+  sources — `dns_cluster` 0.2.0, Mix 1.19.5's release script, the two
+  compose seeds, `wb.sh` — and the scaled deployment repeated on
+  `test_28` with the output kept. Two README sentences it found
+  imprecise are listed as open items. A second figure joins
+  `assets/diagrams/clustering/`: the boot as a sequence, and what the
+  same boot does without the block. The cartridge gets its
+  `CHANGELOG.md` with it — v0.1.0 for what it has installed since
+  2026-08-25, v0.2.0 for the manifest additions and the paper — so the
+  catalog shows it versioned like the rest.
+
+### Fixed
+
+- `status` starts one container instead of four: its git queries run
+  with the git at hand when there is one (the console's container has
+  it; a host may), the toolchain container's otherwise — writes (commit,
+  revert) stay there, where the project's hooks find mix — and the
+  igniter query tasks compile the package and run in one Mix boot.
+- `status --json` and `catalog --json` are valid JSON even when mix
+  has something to compile on the way to the task — a dependency the
+  last cartridge brought, the project, the package itself — which it
+  prints on stdout before the answer: the readers keep from the first
+  JSON line on.
+- `add` compiles the igniter package before running the installer: as
+  a path dependency on the mounted workbench, Mix did not always notice
+  it had changed, and an installer edited since the last run could run
+  in its previous form.
+
+### Updated
+
+- The README's *Architecture* section — a table of services and a
+  diagram of one topology — is replaced by *The workspace*: what holds
+  for every project (the workspace owns its orchestration, the pod
+  pattern, the ports) and the orchestration files. The shape of a
+  project is no longer described in one place, because there is no one
+  shape: each cartridge's README says what it installs and wires, each
+  deployment what it brings up, and `./wb.sh status` and `catalog` what
+  is there and what could be. `assets/arq.svg` goes with the section.
+- An existing workspace names itself: every command but `new` and
+  `new2` reads the compose project name and the dev image from the
+  workspace's own `docker-compose.yml`, not from `config.conf` —
+  which may since have been edited to name the next project, and used
+  to rename the one-off containers and the `:local` image `delete`
+  removes.
+
+- New `healthcheck2` cartridge (`./wb.sh add healthcheck2`): liveness
+  and readiness probes as the first plug of the endpoint — the vanilla
+  counterpart of `healthcheck`, in the sense `new2` is of `new`. A
+  `MyAppWeb.Plugs.Health` answers `GET /health/live` with 200 while the
+  VM answers, checking nothing else on purpose (an orchestrator
+  restarts the container on that failure, and a restart does not fix a
+  database that is down), and `GET /health/ready` with 200 or 503 from
+  a `SELECT 1` on the repo with a one-second timeout, so a saturated
+  pool fails inside the platform's probe window instead of hanging it.
+  Mounted before `Plug.Static`, a probe never reaches `Plug.SSL`, the
+  logger, the parsers, the session or the router. No dependency, no
+  config, no router change; a `--no-ecto` project gets a readiness that
+  answers like liveness. Its README carries the Kubernetes, Fly.io and
+  AWS ECS wiring; its `DESIGN.md`, the reasoning behind the split.
+- New `ash` cartridge (`./wb.sh add ash`): the Ash framework, with
+  the choices of ash-hq.org's *Get Your Installer* for an existing app
+  as options — `--data-layer postgres|sqlite|csv|none`, `--api
+  json_api,graphql,typescript`, `--auth <strategies>`, `--with
+  <packages>` for the site's *Advanced Options*, `--example` — turned
+  into the command the site generates and queued to run once the patch
+  set is applied: `mix igniter.install ash <data layer> ash_phoenix ...
+  <flags>`. Every Ash package carries its own Igniter installer, so
+  the cartridge writes no file itself and second-guesses nothing Ash
+  does; packages the project already declares are left out of the
+  command; with `--auth`, `TOKEN_SIGNING_SECRET` lands in `.env`
+  (generated) and `.env.sample` (blank), the variable
+  `ash_authentication` makes `runtime.exs` require in `:prod`.
+  Standalone, on the vanilla line: the opinionated setup's own users
+  table and Ecto scaffolding are what Ash replaces. Its `DESIGN.md`
+  says why a queued command and not composed installers, and what the
+  real run taught (the Phoenix auth installer's prompt).
+- `WorkbenchIgniter.env_entry/4`: an optional body for `.env.sample`,
+  so a cartridge can write a secret to `.env` and its blank line to
+  the committed sample.
+- Two files join the cartridge anatomy, `healthcheck2` being the
+  reference for both: a `CHANGELOG.md` per cartridge (Keep a Changelog,
+  semver over what the cartridge installs, independent of the workbench
+  release), and a `DESIGN.md` — the design rationale in the shape of a
+  short paper: problem, background quoting the primary sources, each
+  decision against its alternatives, what was verified and what was
+  not, open questions, numbered references. Older cartridges get both
+  on their next change.
+
 ## v0.8.0 - (2026-08-24)
 
 ### Added

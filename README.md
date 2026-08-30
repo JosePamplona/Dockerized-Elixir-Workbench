@@ -10,7 +10,7 @@ This is a script for creating [Elixir](https://elixir-lang.org/) projects with t
 
 The workbench stays permanently in this directory. Projects are generated into the **workspace** directory (`WORKSPACE_PATH` in `config.conf`), each one owning its `docker-compose.yml` with its name, ports and images baked in — several workspaces can run simultaneously without conflicts. The Elixir configuration is delegated to the **workbench_igniter** package (`igniter/`), whose tasks run inside the containers.
 
-- [Architecture](#architecture)
+- [The workspace](#the-workspace)
 - [Configuration](#configuration)
 - [Create a new project](#create-a-new-project)
 - [Add features](#add-features)
@@ -23,20 +23,11 @@ The workbench stays permanently in this directory. Projects are generated into t
   - [Help](#help)
 - [License](#license)
 
-## Architecture
+## The workspace
 
-<p align="center"><img alt="architecture diagram" src="assets/arq.svg"></p>
+The workbench stays in this directory and never changes shape. What it builds does — every cartridge and every deployment adds its own containers, routes and edges — so the shape of a project is not described here: each cartridge's README says what it installs and how it is wired, the [deployments](#deployment) say what they bring up, and the workbench itself tells what is there right now (`./wb.sh status`) and what could be (`./wb.sh catalog`). What follows is the part that holds for every project.
 
-| Service | URL | Description |
-| :-- | :-- | :-- |
-| Elixir App | <http://localhost:4000> | API-REST, GraphiQL and/or Web server |
-| pgAdmin | <http://localhost:5050> | Database management tool |
-| Postgres DB | _not published_ | Relational database server, only reachable from inside its workspace |
-| Auth0 | <https://dev-tenant.us.auth0.com:433> | Identity management platform |
-| Open AI | <https://api.openai.com/v1:433> | AI Assistant service |
-| Stripe | <https://api.stripe.com:433> | Payment service provider |
-
-Host ports are assigned **per workspace** when the project is created: the first free ones starting from `4000` (application) and `5050` (pgAdmin). The `up` command prints the actual application URL.
+A project is generated into its **workspace** (`WORKSPACE_PATH`), which owns its orchestration: a `docker-compose.yml` with the project's name, images and host ports baked in at creation — the first free ones from `4000` (application) and `5050` (pgAdmin), so several workspaces run side by side. Inside it the services follow the **pod pattern**: a `network` container owns the workspace's network namespace and its published ports, and every other service joins it, so they all reach each other on `localhost` and the project keeps Phoenix's default database configuration untouched. The database is never published: it is reachable only from inside its workspace.
 
 ### Orchestration files of a workspace
 
@@ -95,7 +86,28 @@ Workbench features can be installed on the existing project at any time:
 ./wb.sh add [FEATURE] [OPTIONS]
 ```
 
-`[FEATURE]` is one of: **healthcheck**, **rest**, **graphql**, **coveralls**, **exdoc**, **enhancements**, **auth0**, **openai**, **credo**, **githooks**, **exmachina**, **mock**, **exdebug**, **psql_extras**, **osmon**, **clustering**. `[OPTIONS]` are the flags of the corresponding `mix workbench.install.FEATURE` task.
+`[FEATURE]` is one of: **healthcheck**, **rest**, **graphql**, **coveralls**, **exdoc**, **enhancements**, **auth0**, **openai**, **credo**, **githooks**, **exmachina**, **mock**, **exdebug**, **psql_extras**, **osmon**, **clustering**, **healthcheck2**, **ash**, **mailer**, **gettext**, **ecto**, **esbuild**, **tailwind**, **html**, **live**, **dashboard**. `[OPTIONS]` are the flags of the corresponding `mix workbench.install.FEATURE` task.
+
+The workbench can say all of that itself, and which cartridges the project already carries:
+
+```sh
+./wb.sh catalog [--json] # Every cartridge: version, how it is enabled, what it installs
+./wb.sh status  [--json] # The workspace: ports, baked deployments, containers, installed cartridges
+```
+
+Every insert is **one commit** in the workspace (`Insert FEATURE …`, signed as `GIT_IDENTITY` in `config.conf` says), on top of the first commit `new`/`new2` makes. That is what makes a cartridge removable:
+
+```sh
+./wb.sh eject FEATURE       # Reverts the cartridge's commit; refuses if its files changed since
+./wb.sh commit [MESSAGE]    # Commits pending changes — `add` needs a clean tree
+./wb.sh bake                # Bakes docker-compose.yml again for the project as it is now (one commit)
+```
+
+**mailer**, **gettext**, **ecto**, **esbuild**, **tailwind**, **html**, **live** and **dashboard** are *base cartridges*: what `phx.new` decides at generation time (its `--no-*` flags), added afterwards as `phx.new` itself would have generated it — the difference between the project generated with and without the flag, at the toolchain's Phoenix. A project born with them shows them inserted; one left out at creation (`./wb.sh new2 --no-live`) is a box on the shelf, to insert later. `ecto` takes `--database postgres|mysql|mssql|sqlite3` and `--binary-id` (`phx.new`'s flags that only Ecto reads); after inserting it, `./wb.sh bake` puts the Postgres into the compose and `./wb.sh setup` creates the database. `live` builds on `html` and says so (`requires` in the catalog): it refuses until html is in.
+
+A cartridge whose options are independent pieces (ash: every option is a package) can be run again with more of them and adds only what is missing; the others are inserted once, with the options of that moment, and changing them means ejecting and inserting again. The catalog says which is which (`rerun`).
+
+Each cartridge answers `status` off the same mark its installer checks before touching anything, so the two never disagree. The `--json` forms (with the installer's options and which box covers exist) are meant for tools driving the workbench, as is the `-y`/`--yes` switch before any command, which answers its confirmations: `./wb.sh --yes delete`.
 
 ## Deployment
 
@@ -167,6 +179,17 @@ Two options shape how the deployment is baked, and only `up` and `build` take th
 | `--no-balancer` | balancer included; publishes only the per-replica ports |
 
 This deployment is meant for seeing the cluster work, not for developing: the source is not mounted and every replica runs the release image.
+
+## The console
+
+The workbench has a face: a Phoenix LiveView page that shows the workspace — containers, deployments, git, what is inserted — and drives this script from the browser, cartridges included. It runs as a container of its own, with Docker's socket and the workbench mounted:
+
+```sh
+./wb.sh console          # http://localhost:4100 — the first run compiles it (./wb.sh console logs)
+./wb.sh console down
+```
+
+Every command it runs is a job in its tray, with the output and exit code `wb.sh` gave. See [console/README.md](console/README.md).
 
 ## Daily development
 

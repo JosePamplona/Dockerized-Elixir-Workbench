@@ -136,6 +136,19 @@ rather than read back off a cover.
 | live | *proposals written, choice pending* — recommended 2, home computer | attentive — the mechanism moves the page as you act; added for this cartridge | — |
 | dashboard | *proposals written, choice pending* — recommended 1, early carton | candid — the mechanism shows what is happening while it happens, and leaves the judgement to you; added for this cartridge | — |
 
+When `NEED.md` joined the cartridge anatomy (2026-08-30) the five
+finished boxes were read against their cartridge's need before
+anything was archived: clustering's wired nodes against *several
+replicas should act as one*, healthcheck2's bell with its two routes
+against *the answer decides whether it restarts or diverts*, exdebug's
+sight glass against *look at a value without dressing it up*, exdoc's
+lit library against *readable, served by the project itself*, ash's
+craftsman against *set up the way its own site does it*. All five
+kept: each hero was already the need, because those cartridges'
+READMEs had been written from one. Nothing archived. The base
+cartridges' first proposals were the ones that had drawn the engine,
+and only those were redone.
+
 The whole shelf was archived on 2026-08-27, every box on its own
 counts under `_archived/`, and the flow is being finished before any
 of them is made again. The overlay was redrawn the same day, after

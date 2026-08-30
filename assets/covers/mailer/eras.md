@@ -1,133 +1,128 @@
 # mailer — six proposals
 
-Written from the cartridge's README and DESIGN.md and nothing else. The
-era block of the winner goes into `cover.prompt.txt` verbatim; what
-follows is the hero paragraph each era would put in it.
+Written from the cartridge's NEED.md first, then its README and
+DESIGN.md, and nothing else. The era block of the winner goes into
+`cover.prompt.txt` verbatim; what follows is the hero paragraph each
+era would put in it.
+
+## The need
+
+*You want to see the mail your app sends before anyone else does.*
+Before: a real account wired into dev, or a mail that leaves for a
+real address from a laptop. After: every mail delivered in dev lands
+in `/dev/mailbox`, open in the browser; tests assert on it; production
+sends for real through the adapter you name.
 
 ## The register
 
-**Clerical** — the mechanism keeps the ledger: every letter composed is
-accounted for, and in development none of them leaves the building.
-Three counters for three environments — the `Local` adapter that keeps
-the mail and shows it at `/dev/mailbox`, the `Test` adapter that files
-it for the assertions, the production adapter the project names — and
-one module, `Mailer`, behind all three. Subtitles file. Added for this
-cartridge: none of the landmarks has the mechanism *holding* what it is
-given.
+**Rehearsing** — the mechanism lets you run the real thing with
+nothing at stake. The app *sends*; nothing *leaves*; you read it
+first. Subtitles reassure. Added for this cartridge: none of the
+landmarks has the mechanism catching what you throw.
 
-Title `MAILER`. Subtitle `EVERY LETTER KEPT` — what the dev mailbox
-does, and the promise of the test adapter. Badge `DEV · TEST · PROD`:
-the three adapters, which is the fact the design states about where
-the cartridge lives. Accent **postal red** or the era's nearest: the
-one colour a post office owns, unused on the shelf. No furniture
-unless the era's own column has one.
+Title `MAILER`. Subtitle `SENT. NOWHERE.` — the two facts of the dev
+mailbox in the order they happen. Badge `/DEV/MAILBOX`: the one path
+the need names. Accent **postal red** or the era's nearest, unused on
+the shelf. No furniture unless the era's own column has one.
 
-The counts that are true: **one** module; **seven** files changed and
-**one** created; **two** dependencies; **three** adapters; **one**
-route, forwarded. The strings a hero may carry at foreground size, one
-per hero: `/dev/mailbox`, `Mailer`, `deliver`, `Swoosh`. Where three
-things appear they are the three counters; where one, it is the
-mailbox.
+The counts that are true: **one** mailbox; **three** adapters — dev,
+test, prod — of which only the third sends; **one** module, `Mailer`.
+The strings a hero may carry at foreground size, one per hero:
+`/dev/mailbox`, `SENT`, `deliver`, `Mailer`. Where a letter appears it
+is sent; where it lands, it is your own desk.
 
 ## The six heroes
 
 ### 1 · Early carton, ~1978-82
 
-A schematic of a sorting office in two spot colours on the paper's
-tooth: one envelope drawn as a line diagram at the centre, 0.55 of the
-width across, its flap open, and from it three dotted routes drawn
-with a ruler to three pigeonholes along a shelf at 0.30 of the height
-from the top edge, each pigeonhole labelled in hand-set grotesque
-caps `DEV`, `TEST`, `PROD` at foreground size, the first holding a
-stack of envelopes, the second a single envelope with a tick, the
-third empty with its route drawn through the shelf and off the right
-edge. Flat ground of the paper colour; the second spot colour is the
-envelope's border and the routes. The lockup takes the bottom fifth in
-the same grotesque, the badge sits at the top left corner as a
-stamped lot mark, and the top right quarter is bare paper.
+A two-colour schematic of a pneumatic mail tube drawn with a ruler:
+the tube leaves a desk at the lower left — a small drawn envelope
+entering it at 0.20 of the width and 0.75 of the height — rises to
+the top edge at 0.50 of the width, and comes back down the right side
+into a glass-fronted box on the *same* desk at 0.75 of the width,
+where the envelope is drawn again, arrived, its flap open. A small
+outbound branch of the tube at 0.50 of the width and 0.15 of the
+height is drawn capped with a bolted plate. Hand-set grotesque caps
+along the box's front at foreground size: `/dev/mailbox`. Flat paper
+ground; the second spot colour is the tube. Lockup along the bottom
+fifth, a lot stamp at the top left, top right bare paper.
 
 ### 2 · Home computer, ~1982-85
 
-A grid floor receding to a horizon at 0.40 of the height. Standing on
-it, a mailbox on a post — the flag up, painted flat red with a heavy
-black outline — 0.60 of the height tall, its centre at 0.55 of the
-width and 0.62 of the height. Three envelopes hover above it in a
-column, airbrushed white with hard black edges, each smaller than the
-one below, rising toward a flat cyan sky that is empty from 0.35 of
-the height to the top edge. Slab lettering `/dev/mailbox` across the
-mailbox's side at foreground size. The lockup along the bottom in
-slab caps, the badge at the top left as a compatibility strip, the
-top right an empty field of the sky's cyan.
+A grid floor to a horizon at 0.42 of the height. A flat red mailbox
+on a post with a heavy black outline stands at 0.30 of the width,
+0.60 of the height, flag up, and from its slot a dotted airbrushed
+arc carries one white envelope up and over to land, at 0.72 of the
+width, in a transparent cube drawn as outline only, sitting on the
+grid, already holding two envelopes stacked flat. Beyond the cube the
+grid runs to the horizon with nothing on it. Slab lettering `SENT`
+across the mailbox's side at foreground size. Empty flat sky above.
+Lockup in slab caps along the bottom, a compatibility strip at the top
+left, the top right the empty sky.
 
 ### 3 · Editorial cover, mid-1980s
 
-One object on an even ground of postal red: a single cream envelope,
-centred, photographed straight on and lit from the upper left, 0.50 of
-the width across at 0.50 of the height, its flap closed by a small
-round wax seal in the ground's own red — so the seal reads as a
-deboss, not a spot. Nothing else on the ground. The envelope carries
-one line of small serif type where an address would go: `Mailer` at
-foreground size and no more. The lockup is set small in serif at the
-bottom, the badge as a bookshop price sticker at the top left, the
-top right a clear field of red.
+An even ground of postal red and one object: a cream envelope,
+centred at 0.50 of the width and 0.50 of the height, 0.50 of the
+width across, lit from the upper left — already **stamped and
+postmarked**, addressed in a small serif hand to someone else, and
+**opened**, its flap raised and the folded letter drawn a finger's
+width out of it. The postmark is a debossed circle in the ground's own
+red. One line of small serif under the flap at foreground size:
+`deliver`. Small serif lockup at the bottom, a bookshop price sticker
+at the top left, the top right clear red.
 
 ### 4 · Console, late 1980s
 
-A heroic mail carrier in airbrushed profile striding out of a sorting
-hall, 0.75 of the height tall with the head at 0.20 of the height and
-the centre at 0.45 of the width, a leather satchel over the shoulder
-bursting with three envelopes that catch a hard specular highlight
-each. Behind, receding to the right, a wall of pigeonholes in airbrush
-gradients, three of them lit from within — top left, centre, bottom
-right. Lettering `DELIVER` painted along the satchel's strap at
-foreground size. The lockup fills the bottom fifth in extruded caps,
-the badge at the top right as a `2ND PRINT` band, and the top left
-quadrant is the hall's dark ceiling, calm.
+An airbrushed developer in three-quarter view, 0.75 of the height tall
+with the head at 0.18 of the height and the centre at 0.40 of the
+width, one hand raised palm-out toward the right edge, where a
+painted mail van, airbrushed with a chunky highlight on its windscreen,
+has stopped short with its wheels blurred; in the other hand, at 0.30
+of the width and 0.55 of the height, an opened envelope held up to
+the light, the letter half out. Behind, a flat dusk gradient. Painted
+lettering `SENT. NOWHERE.` across the van's flank at foreground size.
+Extruded lockup across the bottom fifth; a `2ND PRINT` band at the top
+right; the top left quadrant the dusk sky, calm.
 
 ### 5 · CD-ROM, early 1990s
 
-A chrome envelope the size of a starship, 0.70 of the width across,
-banking up and to the right with its centre at 0.50 of the width and
-0.48 of the height, its flap open and throwing a lens flare from the
-upper right edge. Below it a perspective grid rolls to a starfield
-horizon at 0.65 of the height; three chrome pipes rise from the grid
-at 0.20, 0.50 and 0.80 of the width and end at the envelope's
-underside. Extruded metallic lettering `SWOOSH` across the envelope's
-face at foreground size, bevelled, rainbow on the edges. The lockup
-in the same chrome across the bottom, the badge as a security
-hologram at the top left, the top right the starfield alone.
+A chrome envelope, 0.60 of the width across, sealed inside a glass
+sphere that floats at 0.50 of the width and 0.45 of the height over a
+perspective grid to a starfield horizon at 0.70 of the height; the
+sphere's surface throws one lens flare at the upper right, and a
+chrome launch rail runs from the bottom left corner up to the sphere
+and stops at its glass. Rainbow specular on the envelope's bevels.
+Extruded metallic lettering `MAILER` across the rail at foreground
+size. Chrome lockup along the bottom, a security hologram at the top
+left, the top right the starfield.
 
 ### 6 · Big box PC, ~1992-96
 
-A night sorting office painted in oil: one lamp, upper left, lighting
-a long oak counter that runs from the left edge to 0.85 of the width
-at 0.60 of the height. On it, three brass letter trays in a row at
-0.25, 0.50 and 0.75 of the width — the first heaped with sealed
-letters, the second holding one letter with a red wax seal, the third
-empty and gleaming — and behind them, dissolving into the shadow, a
-wall of pigeonholes carried down into the dark with every one
-detailed. A single letter, mid-air, falling toward the first tray at
-0.35 of the width and 0.35 of the height. Extruded fantasy lettering
-`MAILER` across the bottom fifth with a hard bevel, lit by the lamp;
-the badge as a requirements flash at the top right; the top left
-holds the lamp's glow and nothing else.
+A night study in oil, one lamp at the upper left: a writing desk
+fills the lower half, and on it, at 0.50 of the width and 0.62 of the
+height, a letter lies open under the lamp with a red wax seal broken
+beside it and its envelope, stamped and franked, behind it. On the
+wall above the desk at 0.70 of the width and 0.30 of the height, a
+small brass mail slot, its flap held shut by a painted hand from
+outside the frame. Every grain of the desk carried down into the
+shadow. Extruded fantasy lettering across the bottom fifth with a hard
+bevel, lit by the lamp; a `256 COLORS`-idiom flash at the top right;
+the top left the lamp's glow and the dark.
 
 ## The recommendation
 
-**3, the editorial cover.** This cartridge is one module and the
-promise that nothing leaves: one envelope, sealed, on a ground of one
-colour, is the mailer in the dev environment exactly — kept, whole,
-and shown to whoever opens the mailbox. Every other era has to
-*invent* motion (routes, a carrier, a starship) for a mechanism whose
-whole point in the workbench is that the letters stay put.
+**3, the editorial cover.** The need is one image: a letter that was
+sent and is in your hands, open. The editorial era draws one lit
+object and lets it say everything — stamped, postmarked, unsealed —
+and the register needs no van to stop and no tube to loop; it is the
+only era where "sent, nowhere" is a fact you can see rather than a
+scene you have to be told.
 
 The shelf as it stands: clustering manual from a home-computer start;
 healthcheck2 manual from an editorial start; exdebug console; exdoc
 big box; ash big box; coveralls, healthcheck and enhancements starting
-over. Editorial has one manual descendant and no printed cover; big
-box has two. Early carton and CD-ROM have none — 1 would be the
-carton's first, and its sorting schematic is honest to the three
-adapters, if the envelope alone is judged too still.
+over. Editorial has a manual descendant and no printed cover.
 
 ## The choice
 

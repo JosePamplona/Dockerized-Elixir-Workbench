@@ -298,6 +298,25 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   workspaces created months apart. A workspace made before the stamp
   names no installer and keeps the bare `workbench:<elixir>-<otp>` tag
   it was built with.
+- The installer and the stack are weighed against each other before
+  anything is built. Every `phx_new` release declares on hex the Elixir
+  it runs on (`~> 1.17` for 1.8.13, `~> 1.14` for the whole 1.7 line),
+  and `new` reads that requirement for the version it just resolved and
+  refuses a stack below it, naming both remedies — a newer stack
+  (`./wb.sh stacks`) or an older installer (`--phx-new`). Nothing was
+  unchecked before: `mix archive.install` stops on the same pair
+  ("You're trying to run :phx_new on Elixir v1.16.3 but it has declared
+  … it supports only Elixir ~> 1.17"), only three layers into the image
+  build, about a file nobody wrote, at the one moment the two versions
+  it is talking about can no longer be chosen. Same verdict, said where
+  the choice is. It stays a check and never becomes a derivation: the
+  requirement is a floor and has no ceiling, so a Phoenix version
+  answers *which Elixir is too old*, never *which Elixir*. Only hex's
+  `~> MAJOR.MINOR` shape is read; any other form, an unreachable hex or
+  a stack this cannot take apart is left to mix, since refusing a good
+  stack on a guess is worse than the late error. Erlang never enters
+  into it — Phoenix says nothing about OTP, and the Elixir/OTP pairing
+  is already settled by the `hexpm/elixir` tag existing on Docker Hub.
 - `status --json` carries `phx.generator`: which `phx.new` made the
   project, where that is recorded (`Dockerfile.local` for a workspace
   the workbench made, `mix.exs` for a project generated elsewhere), and

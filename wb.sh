@@ -240,6 +240,63 @@
       grep -o '"latest_stable_version":"[^"]*"' | cut -d'"' -f4
   }
 
+  # phx_new_elixir_requirement <VERSION>
+    # The Elixir requirement a phx_new release declares in its own
+    # mix.exs, as hex records it ('~> 1.17'). Empty when hex does not
+    # answer: the check that reads it then stands aside.
+  phx_new_elixir_requirement() {
+    curl -fs "https://hex.pm/api/packages/phx_new/releases/$1" | \
+      grep -o '"elixir":"[^"]*"' | cut -d'"' -f4
+  }
+
+  # stack_satisfies <REQUIREMENT>
+    # True when ELIXIR_VERSION meets the requirement. Only hex's
+    # '~> MAJOR.MINOR' is read — the form every phx_new release has
+    # published — and it reads as '>= MAJOR.MINOR and < (MAJOR+1).0':
+    # same major, minor no older. Any other shape (a three-part '~>', a
+    # '>=', a range, a version this cannot take apart) is left unjudged
+    # on purpose: mix checks the same thing again when the image
+    # installs the archive, and refusing a good stack on a guess is
+    # worse than the late error.
+  stack_satisfies() {
+    case "$1" in "~> "*) ;; *) return 0 ;; esac
+
+    local floor="${1#\~> }"
+    case "$floor" in *.*) ;; *) return 0 ;; esac
+
+    local want_major="${floor%%.*}"
+    local want_minor="${floor#*.}"
+    local have_major="${ELIXIR_VERSION%%.*}"
+    local have_minor="${ELIXIR_VERSION#*.}"; have_minor="${have_minor%%.*}"
+
+    # Every part has to be there and be a plain number, or there is
+    # nothing to compare — a three-part '~> 1.17.1' lands here, as its
+    # minor arrives carrying the rest.
+    local part
+    for part in "$want_major" "$want_minor" "$have_major" "$have_minor"; do
+      case "$part" in "" | *[!0-9]*) return 0 ;; esac
+    done
+
+    [ "$have_major" = "$want_major" ] && [ "$have_minor" -ge "$want_minor" ]
+  }
+
+  # check_stack_runs_phx_new <VERSION>
+    # Refuses, before anything is built, a stack the installer cannot run
+    # on. mix refuses it too — 'mix archive.install' stops when the
+    # archive declares a newer Elixir than the image carries — but three
+    # layers into a docker build and in its own words. hex knows the
+    # requirement beforehand, so it is asked here, where the remedy is
+    # the workbench's own: another stack, or another installer.
+  check_stack_runs_phx_new() {
+    local requirement=$(phx_new_elixir_requirement "$1")
+
+    [ -n "$requirement" ] || return 0
+    stack_satisfies "$requirement" || terminate \
+      "phx_new $1 needs Elixir $requirement, and this stack is $ELIXIR_VERSION." \
+      "Move the stack up ('./$(basename $0) stacks') or name an installer that" \
+      "runs on this one ('./$(basename $0) new --phx-new VERSION')."
+  }
+
   # workspace_compose [COMMAND...]
     # Runs docker compose against the workspace's own compose file.
   workspace_compose() {
@@ -912,7 +969,10 @@
       "  is no setting for it: hex's newest phx_new is taken otherwise," \
       "  and whichever it is gets stamped into the workspace's own" \
       "  Dockerfile.local — the generator the base cartridges take their" \
-      "  delta with is the project's, for good, not a default that moves."
+      "  delta with is the project's, for good, not a default that moves." \
+      "  Either way it is weighed against the stack before anything is" \
+      "  built: phx_new declares on hex the Elixir it runs on, and a stack" \
+      "  that does not meet it is refused here, not halfway into the image."
 
     print_command "add [FEATURE] [OPTIONS]"
     section_content \
@@ -1195,6 +1255,12 @@ if [ $# -gt 0 ]; then
         "hex.pm did not answer for phx_new. Name a version: ./$(basename $0) new --phx-new 1.8.13"
       echo "Phoenix installer: ${B}phx_new $PHX_NEW_VERSION${R} (the newest on hex; --phx-new names another)."
     fi
+
+    # An installer and a stack are two pins that have to hold each other:
+    # phx_new declares the Elixir it runs on, and this workspace's stack
+    # either meets it or the image cannot install the archive at all.
+    check_stack_runs_phx_new "$PHX_NEW_VERSION"
+
     TOOLCHAIN_IMAGE="workbench:${ELIXIR_VERSION}-${ERLANG_VERSION}-phx${PHX_NEW_VERSION}"
 
     # Host ports for this workspace: first available ones.

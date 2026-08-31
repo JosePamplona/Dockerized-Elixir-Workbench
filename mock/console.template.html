@@ -412,6 +412,40 @@
   .log .dim{color:var(--term-dim)}.log .add{color:#9BD99A}.log .upd{color:#E3B25C}.log .ok{color:#D4B27E;font-weight:500}
   .log:empty::before{content:"The install output will stream here — and into the jobs tray.";color:var(--term-dim);font-style:italic}
   .log-cap{display:flex;justify-content:space-between;align-items:baseline}
+  /* --- what the cartridge wrote ----------------------------------------------
+     The insert commit's diff, one file at a time: its counts always, its
+     patch when you ask for it. A file nobody reads stays shut (mix.lock's
+     lines run past a thousand characters), and every patch scrolls in its
+     own box, so one long line never pushes the sheet sideways. */
+  .impl{display:grid;gap:10px}
+  .impl .files{border:1px solid var(--line);border-radius:3px;overflow:hidden}
+  /* Thirteen picks touch fifty-seven files: bounded, the sheet stays
+     walkable and the pick-by-pick under it stays findable. */
+  .impl .files.many{overflow-y:auto;max-height:min(52vh,560px)}
+  .impl .f{border-top:1px solid var(--line)}
+  .impl .f:first-child{border-top:0}
+  .impl .fh{display:flex;gap:10px;align-items:baseline;width:100%;text-align:left;padding:8px 12px;background:var(--surface-2);border:0;font-family:var(--mono);font-size:12px;color:var(--ink);cursor:pointer}
+  .impl .fh:hover{background:var(--accent-soft)}
+  .impl .fh .caret{color:var(--soft);width:1em}
+  .impl .fh .p{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .impl .fh .by{flex:none;font-family:var(--cond);font-weight:600;text-transform:uppercase;letter-spacing:.08em;font-size:11px;color:var(--muted);white-space:nowrap}
+  .impl .fh .n{font-variant-numeric:tabular-nums;white-space:nowrap}
+  .impl .fh .n .a{color:var(--good)}
+  .impl .fh .n .r{color:var(--bad)}
+  .impl pre{margin:0;overflow-x:auto;font-family:var(--mono);font-size:11.5px;line-height:1.5;background:var(--surface);padding:8px 0;max-height:340px;overflow-y:auto}
+  .impl pre div{padding:0 12px;white-space:pre}
+  .impl pre .add{background:color-mix(in srgb,var(--good) 13%,transparent)}
+  .impl pre .del{background:color-mix(in srgb,var(--bad) 13%,transparent)}
+  .impl pre .hunk{color:var(--soft)}
+  .impl pre .meta{color:var(--muted)}
+  /* The picks under a collection's accumulated diff: one commit each. */
+  .impl .picks{display:grid;gap:0;font-family:var(--mono);font-size:12px}
+  .impl .picks .pick{display:flex;gap:10px;align-items:baseline;padding:6px 0;border-top:1px solid var(--line)}
+  .impl .picks .pick:first-child{border-top:0}
+  .impl .picks .pick .p{flex:1}
+  .impl .picks .pick .n{font-variant-numeric:tabular-nums;white-space:nowrap}
+  .impl .picks .pick .n .a{color:var(--good)}
+  .impl .picks .pick .n .r{color:var(--bad)}
 
   /* --- config.conf as a form ------------------------------------------- */
   .cfg{display:grid;gap:26px;padding:26px 32px 60px;max-width:860px}
@@ -665,6 +699,10 @@
         <div class="cmd" id="d-cmd"></div>
         <div class="acts"><button class="go" id="d-go" type="submit">Insert cartridge</button><button class="eject" id="d-eject" type="button" hidden>Eject</button><span class="note" id="d-note"></span></div>
       </form>
+      <div id="d-impl" hidden>
+        <div class="log-cap"><span class="label">Implementation</span><span class="note" id="d-impl-note"></span></div>
+        <div class="impl" id="d-impl-body"></div>
+      </div>
       <div>
         <div class="log-cap"><span class="label">Output</span><span class="note">staged in the mock</span></div>
         <div class="log" id="d-log" aria-live="polite"></div>
@@ -714,6 +752,17 @@ const WB = {{WB}};
 const STACKS = {{STACKS}};
 const PROJ = {{PROJ}};
 const ART = {{ART}};
+// DIFFS: what each cartridge wrote, captured off a workspace with
+// ./mock/build.py --diffs (like the logs, a real capture the page
+// replays; the console runs the git itself). The insert commit is the
+// cartridge's whole diff — 'add' refuses a dirty tree, so nothing else
+// rode in with it. A collection leaves no commit of its own, so its diff
+// is the range its members span, taken as one tree against another: a
+// file two picks touched reads as one story, not two halves whose line
+// numbers disagree. Only when their commits are contiguous — a second
+// pass, a pick born with phx.new, one ejected in between, and the
+// breakdown is all there is to show.
+const DIFFS = {{DIFFS}};
 // Two placeholder boxes under assets/covers/, a front and a back each,
 // for a cartridge with no sealed box of its own: the socket — the bare
 // board, and its reverse side — and, where there is no cartridge at all
@@ -1302,8 +1351,83 @@ function renderGo() {
   // A collection never has a commit of its own: its note already says so.
   if (e.installed && !insert && !dirty && !left) note.textContent = born ? "came with the project: phx.new generated it — nothing to eject" : "inserted by hand: no commit to eject";
   if (!e.installed && missing.length && !dirty) note.textContent = "builds on " + missing.map(n => n.name).join(" and ") + ", not in the project yet";
-  renderCmd();
+  renderCmd(); renderImpl();
 }
+
+// --- what the cartridge wrote ------------------------------------------------
+// Every file opens shut. The list is the summary — which files, how
+// much each — and it reads in a glance; ten patches unrolled at once are
+// several thousand pixels of sheet nobody scrolls. It also settles
+// mix.lock, whose lines run past a thousand characters, without making
+// it a special case.
+const counts = f => f.added === null ? [el("span", {}, "binary")] : [
+  el("span", { class: "a" }, "+" + f.added),
+  ...(f.removed ? [" ", el("span", { class: "r" }, "\u2212" + f.removed)] : []),
+];
+const filesBox = files => el("div", { class: "files" + (files.length > 12 ? " many" : "") }, ...files.map(fileRow));
+function fileRow(f) {
+  const pre = el("pre", { hidden: true });
+  for (const line of f.patch.split("\n")) {
+    const cls = /^(diff --git |index |new file|deleted file|similarity |rename |--- |\+\+\+ )/.test(line) ? "meta"
+      : line.startsWith("@@") ? "hunk" : line.startsWith("+") ? "add" : line.startsWith("-") ? "del" : "";
+    pre.append(el("div", { class: cls }, line || " "));
+  }
+  const caret = el("span", { class: "caret" }, "\u25b8");
+  const head = el("button", { class: "fh", type: "button", "aria-expanded": "false" }, caret,
+    el("span", { class: "p" }, f.path),
+    ...(f.born || f.gone ? [el("span", { class: "by" }, f.born ? "new" : "gone")] : []),
+    ...(f.by && f.by.length > 0 ? [el("span", { class: "by", title: "touched by " + f.by.join(", ") },
+      f.by.length > 3 ? f.by.slice(0, 3).join(" \u00b7 ") + " +" + (f.by.length - 3) : f.by.join(" \u00b7 "))] : []),
+    el("span", { class: "n" }, ...counts(f)));
+  head.addEventListener("click", () => {
+    pre.hidden = !pre.hidden;
+    caret.textContent = pre.hidden ? "\u25b8" : "\u25be";
+    head.setAttribute("aria-expanded", String(!pre.hidden));
+  });
+  return el("div", { class: "f" }, head, pre);
+}
+// A collection's picks that are in by commit, with what each one wrote:
+// the breakdown that stands whether or not the range above it does.
+function collectionPicks(e) {
+  return collectionMembers(e)
+    .filter(m => state.git.inserts.some(i => i.feature === m.name) && DIFFS.cartridges[m.name])
+    .map(m => ({ name: m.name, ...DIFFS.cartridges[m.name] }));
+}
+function renderImpl() {
+  const e = state.current, wrap = $("#d-impl"), body = $("#d-impl-body"), note = $("#d-impl-note");
+  body.replaceChildren(); note.textContent = "";
+  const insert = state.git.inserts.find(i => i.feature === e.name);
+  // Nothing to show for a box with no commit behind it: one that came
+  // with phx.new, one put in by hand, one still on the shelf. Their
+  // notes under the button already say which.
+  const picks = e.collection ? collectionPicks(e) : [];
+  wrap.hidden = e.collection ? !picks.length : !insert;
+  if (wrap.hidden) return;
+
+  if (!e.collection) {
+    const d = DIFFS.cartridges[e.name];
+    if (!d) { note.textContent = "not captured in the mock \u2014 the console reads it off the workspace"; return; }
+    note.textContent = `${d.sha.slice(0, 7)} \u00b7 ${d.date.slice(0, 10)} \u00b7 ${d.files.length} file${d.files.length === 1 ? "" : "s"}`;
+    body.append(filesBox(d.files));
+    return;
+  }
+
+  // The collection: the range its picks span when they are contiguous,
+  // and under it the picks themselves, one commit each.
+  const c = DIFFS.collections[e.name];
+  const whole = c && c.contiguous && c.files.length ? c : null;
+  note.textContent = whole
+    ? `${whole.range} \u00b7 ${picks.length} pick${picks.length === 1 ? "" : "s"}, one commit each \u00b7 ${whole.files.length} file${whole.files.length === 1 ? "" : "s"}`
+    : `${picks.length} pick${picks.length === 1 ? "" : "s"}, one commit each \u2014 ` +
+      (c && !c.contiguous ? "their commits are not contiguous, so there is no honest range to read as one"
+                          : "the box leaves no commit of its own");
+  if (whole) body.append(filesBox(whole.files));
+  body.append(el("span", { class: "label" }, whole ? "Pick by pick" : "The picks"));
+  body.append(el("div", { class: "picks" }, ...picks.map(p => el("div", { class: "pick" },
+    el("span", { class: "p" }, p.name),
+    el("span", { class: "n" }, ...counts(p), " \u00b7 ", p.files.length + " file" + (p.files.length === 1 ? "" : "s"))))));
+}
+
 function eject(ev) {
   ev.preventDefault();
   const e = state.current, insert = state.git.inserts.find(i => i.feature === e.name);

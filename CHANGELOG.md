@@ -16,6 +16,23 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- The console mock's box grows an *Implementation* sheet: what the
+  cartridge actually wrote, file by file, off its own insert commit.
+  Nothing new had to be recorded for it — `add` refuses a dirty tree,
+  so the commit holds that cartridge and nothing else, and its sha was
+  already in `status --json` and already named in the eject button's
+  tooltip. It makes eject legible: the diff of what pressing it undoes.
+  A collection leaves no commit of its own, so its sheet is the range
+  its members span, taken as one tree against another and never as a
+  concatenation of their patches, whose line numbers already count the
+  ones before — a file two picks touched reads as one story. The range
+  is only offered when their commits are contiguous: a second pass, a
+  member born with `phx.new`, one ejected in between, and the
+  pick-by-pick breakdown is all there is to show. Under the range each
+  file names the picks that touched it, which the range itself cannot
+  say and the members' own commits can. Every file opens shut: the list
+  is the summary, and thirteen picks over fifty-seven files unrolled at
+  once is several thousand pixels nobody scrolls.
 - One kind of cartridge. `workbench.setup` — the task that composed the
   opinionated project — is retired and reborn as **chiefs_setup**, a
   *collection*: a cartridge whose installer inserts other cartridges.
@@ -489,6 +506,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   into a recipe of thirteen. `add chiefs_setup` had never put in more
   than its first missing member. The plan is read on its own descriptor
   now, so there is nothing on stdin for the container to take.
+- The console mock keeps its JavaScript when a cartridge's diff or
+  document carries a literal `</script>`, as exdoc's `mix.exs` and
+  coveralls' `.html.eex` templates do. The HTML parser ends the block
+  wherever it sees those characters, whatever the JavaScript around
+  them says, so the page loaded with every function undefined and
+  eleven syntax errors. Every JSON payload the page carries escapes the
+  slash now — the documents as much as the diffs, since a README that
+  writes the tag would have done the same without warning.
 - `status --json` is valid JSON when a cartridge's NEED.md travels in
   it. The object was assembled around the task's answer with `echo`,
   which is free to read the `\n` a JSON string is made of, and a raw

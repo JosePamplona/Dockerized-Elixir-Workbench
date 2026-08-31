@@ -8,7 +8,10 @@ Inputs, in mock/: console.template.html (the page), catalog.json and
 status.json (`./wb.sh catalog --json` with the covers, `./wb.sh status
 --json` — refresh them with `./mock/build.py --refresh`, which needs
 Docker), logs.json (a `docker compose logs --timestamps --no-color`
-capture, parsed into [service, timestamp, text] rows) and marked.min.js.
+capture, parsed into [service, timestamp, text] rows), diffs.json (what
+each cartridge wrote, captured off a workspace's insert commits with
+`./mock/build.py --diffs [WORKSPACE]`, the status workspace by default)
+and marked.min.js.
 Read from the repository: the design tokens (assets/design/generated/tokens.css), the sealed covers, the four placeholders (cover_/back_ and empty_cover_/empty_back_), the
 cartridges' README/DESIGN/CHANGELOG, the workbench's README/CHANGELOG/
 config.conf and wb.sh version, the workspace's README/CHANGELOG/.env
@@ -72,6 +75,104 @@ version = re.search(r"v(\S+)", open("wb.sh").read().split("\n")[2]).group(1)
 wb = {"version": version, "readme": readme, "changelog": open("CHANGELOG.md").read(), "config": open("config.conf").read(),
       "workspaces": sorted("./_workspaces/" + d for d in os.listdir("_workspaces") if os.path.isdir("_workspaces/" + d))}
 ws = status["workspace"]
+
+# --- the diffs: what a cartridge wrote ---------------------------------------
+# One insert commit is one cartridge's whole diff: 'add' refuses a dirty
+# tree, so the commit holds that cartridge and nothing else. A collection
+# leaves no commit of its own, so its diff is the range its members span,
+# taken as a difference between two trees — never a concatenation of the
+# members' patches, whose line numbers already count the ones before. A
+# range is only honest when the members are contiguous: a second pass
+# (rerun: adds), a member born with phx.new, or one ejected in between
+# leaves a gap, and then the breakdown is all there is.
+def capture_diffs(ws, catalog):
+    def git(*a): return subprocess.run(["git", "-C", ws, *a], capture_output=True, text=True).stdout
+    log = [l.split("\x1f") for l in git("log", "--format=%H\x1f%s\x1f%ci").splitlines() if l]
+    # The walk wb.sh's active_inserts does: a revert cancels the next
+    # (older) insert with that subject.
+    pending, active = {}, []
+    for sha, subject, date in log:
+        if subject.startswith('Revert "Insert ') and subject.endswith('"'):
+            s = subject[8:-1]; pending[s] = pending.get(s, 0) + 1
+        elif subject.startswith("Insert "):
+            if pending.get(subject, 0): pending[subject] -= 1
+            else: active.append((sha, subject, date))
+
+    def path_of(chunk):
+        for pat in (r"^\+\+\+ b/(.+)$", r"^--- a/(.+)$", r"^diff --git a/(.+?) b/"):
+            m = re.search(pat, chunk, re.M)
+            if m and m.group(1) != "dev/null": return m.group(1)
+        return "?"
+    # A revision's diff, file by file: the path, its ± counts (None for a
+    # binary), and its own hunk of the patch. Per file, so the page can
+    # fold what nobody reads (mix.lock's lines run past a thousand
+    # characters) without hiding that it changed.
+    def files_of(*rev):
+        cmd = ["diff"] if len(rev) == 2 else ["show"]
+        counts = {}
+        for line in git(*cmd, "--format=", "--numstat", *rev).splitlines():
+            f = line.split("\t")
+            if len(f) == 3: counts[f[2]] = (None if f[0] == "-" else int(f[0]), None if f[1] == "-" else int(f[1]))
+        out = []
+        for chunk in re.split(r"(?m)^(?=diff --git )", git(*cmd, "--format=", *rev)):
+            if not chunk.startswith("diff --git "): continue
+            path = path_of(chunk)
+            add, rem = counts.get(path, (None, None))
+            # The four header lines (diff --git, index, --- , +++) say
+            # nothing the row above the patch does not already say, so
+            # the patch starts at its first hunk. What only the header
+            # knows — that the file is new, or gone — is kept as a fact.
+            born = bool(re.search(r"(?m)^new file mode ", chunk))
+            gone = bool(re.search(r"(?m)^deleted file mode ", chunk))
+            hunk = re.search(r"(?m)^@@ ", chunk)
+            out.append({"path": path, "added": add, "removed": rem, "born": born, "gone": gone,
+                        "patch": (chunk[hunk.start():] if hunk else chunk).rstrip("\n")})
+        return out
+
+    def totals(files):
+        return {"added": sum(f["added"] or 0 for f in files), "removed": sum(f["removed"] or 0 for f in files)}
+
+    index = {sha: i for i, (sha, _, _) in enumerate(log)}   # 0 is newest
+    seen, cartridges = {}, {}
+    for sha, subject, date in active:                       # newest first: the
+        name = subject.split()[1]                           # latest insert wins,
+        if name in seen: continue                           # as eject reads it
+        seen[name] = sha
+        files = files_of(sha)
+        cartridges[name] = {"sha": sha, "subject": subject, "date": date, "files": files, **totals(files)}
+
+    collections = {}
+    for e in catalog:
+        if not e.get("collection"): continue
+        members = [m["name"] for m in (e.get("members") or []) if m["name"] in seen]
+        if not members: continue
+        idx = sorted(index[seen[m]] for m in members)
+        contiguous = idx[-1] - idx[0] + 1 == len(idx)
+        newest, oldest = log[idx[0]][0], log[idx[-1]][0]
+        base = git("rev-parse", "--verify", "--quiet", oldest + "^").strip()
+        c = {"members": members, "contiguous": contiguous,
+             "between": idx[-1] - idx[0] + 1 - len(idx),   # commits in the span that are not the collection's
+             "files": [], "added": 0, "removed": 0}
+        if contiguous and base:
+            files = files_of(base, newest)
+            # Who wrote each file of the range: the range itself cannot
+            # say, and the members' own commits can.
+            touched = {m: {f["path"] for f in cartridges[m]["files"]} for m in members}
+            for f in files: f["by"] = [m for m in members if f["path"] in touched[m]]
+            c.update({"files": files, "range": base[:7] + ".." + newest[:7], **totals(files)})
+        collections[e["name"]] = c
+    return {"workspace": ws, "cartridges": cartridges, "collections": collections}
+
+# Captured with --diffs (the workspace it reads defaults to the status
+# one); like the logs, a real capture the page replays. The old capture
+# stays when the workspace is not there to be read.
+if "--diffs" in sys.argv:
+    i = sys.argv.index("--diffs")
+    src = sys.argv[i + 1] if len(sys.argv) > i + 1 and not sys.argv[i + 1].startswith("--") else ws
+    if os.path.isdir(os.path.join(src, ".git")):
+        json.dump(capture_diffs(src, catalog), open(f"{M}/diffs.json", "w"))
+    else: print(f"no repository at {src}: keeping the diffs already captured")
+diffs = json.load(open(f"{M}/diffs.json")) if os.path.isfile(f"{M}/diffs.json") else {"cartridges": {}, "collections": {}}
 def mask(text):
     out = []
     for line in text.split("\n"):
@@ -90,7 +191,8 @@ tokens_css = (open("assets/design/generated/tokens.css").read().strip() + "\n" +
 t = t.replace("{{TOKENS_CSS}}", "  " + tokens_css.replace("\n", "\n  "), 1)
 t = t.replace("<script>\n// Real data", "<script>\n" + open(f"{M}/marked.min.js").read() + "\n</script>\n<script>\n// Real data", 1)
 stacks = json.load(open(f"{M}/stacks.json")) if os.path.isfile(f"{M}/stacks.json") else []
-for k, v in [("{{CATALOG}}", json.dumps(catalog)), ("{{STACKS}}", json.dumps(stacks)), ("{{STATUS}}", json.dumps(status)), ("{{LOGS}}", json.dumps(logs)), ("{{DOCS}}", json.dumps(docs)), ("{{WB}}", json.dumps(wb)), ("{{PROJ}}", json.dumps(proj)), ("{{ART}}", json.dumps(art)), ("{{PH_COVER}}", jpg_uri("assets/covers/cover_placeholder.png")), ("{{PH_BACK}}", jpg_uri("assets/covers/back_placeholder.jpg")), ("{{PH_EMPTY_COVER}}", jpg_uri("assets/covers/empty_cover_placeholder.jpg")), ("{{PH_EMPTY_BACK}}", jpg_uri("assets/covers/empty_back_placeholder.jpg"))]:
+js = lambda o: json.dumps(o).replace("</", "<\\/")
+for k, v in [("{{CATALOG}}", js(catalog)), ("{{STACKS}}", js(stacks)), ("{{STATUS}}", js(status)), ("{{LOGS}}", js(logs)), ("{{DOCS}}", js(docs)), ("{{WB}}", js(wb)), ("{{PROJ}}", js(proj)), ("{{DIFFS}}", js(diffs)), ("{{ART}}", js(art)), ("{{PH_COVER}}", jpg_uri("assets/covers/cover_placeholder.png")), ("{{PH_BACK}}", jpg_uri("assets/covers/back_placeholder.jpg")), ("{{PH_EMPTY_COVER}}", jpg_uri("assets/covers/empty_cover_placeholder.jpg")), ("{{PH_EMPTY_BACK}}", jpg_uri("assets/covers/empty_back_placeholder.jpg"))]:
     assert t.count(k) == 1, k; t = t.replace(k, v)
 head, body = t.split('<header class="band">', 1); body = '<header class="band">' + body
 head = head.replace("<style>", "<style>\n  [hidden]{display:none!important}\n  img{max-width:100%}", 1)

@@ -905,6 +905,16 @@
       "latest one). Needs a clean tree, and refuses when the cartridge's" \
       "files changed since — that is no longer the cartridge's alone."
 
+    print_command "stacks [--json | -n N | use TAG]"
+    section_content \
+      "The usable technology stacks, asked of Docker Hub itself: the" \
+      "recent hexpm/elixir -debian-*-slim images. config.conf keeps no" \
+      "list — this is the list." \
+      "- (nothing): the recent ones, the configured one marked." \
+      "- --json: every usable tag, one array, for tools." \
+      "- use TAG: check the image exists and write the three versions" \
+      "  into config.conf."
+
     print_command "console [up|down|logs|build]"
     section_content \
       "The workbench's console: a Phoenix LiveView page that shows the" \
@@ -1219,6 +1229,70 @@ if [ $# -gt 0 ]; then
       fi
 
     else terminate "There is no project."; fi
+
+  elif [ "$1" == "stacks" ]; then
+    shift
+    # The usable hexpm/elixir images, asked of Docker Hub itself.
+    # The API prunes server-side (name=-slim: ~1M tags down to the slim
+    # ones, so every page arrives useful); the grep keeps what the API
+    # cannot say — the exact tag shape, debian only, no release
+    # candidates. config.conf keeps no copy of this list.
+    stacks_list() {
+      local page names
+      for page in 1 2 3 4 5; do
+        curl -fs "https://hub.docker.com/v2/repositories/hexpm/elixir/tags?page_size=100&page=$page&name=-slim" | \
+          grep -o '"name":"[^"]*"' | cut -d'"' -f4
+      done | grep -E '^[0-9]+\.[0-9]+\.[0-9]+-erlang-[0-9][0-9.]*-debian-.+-slim$' | \
+        grep -v -- -rc | sort -urV
+    }
+
+    case "$1" in
+      use)
+        TAG="$2"
+        [ -n "$TAG" ] || args_error "Missing tag. Try: ./$(basename $0) stacks use 1.19.2-erlang-28.1-debian-trixie-20251103-slim"
+        echo "$TAG" | grep -qE '^[0-9][0-9.]*-erlang-[0-9][0-9.]*-debian-.+$' || \
+          terminate "That does not look like a hexpm/elixir tag (ELIXIR-erlang-OTP-debian-DEBIAN)."
+        docker manifest inspect "hexpm/elixir:$TAG" > /dev/null || \
+          terminate "hexpm/elixir:$TAG is not on Docker Hub."
+        ELIXIR=$(echo "$TAG" | sed 's/-erlang-.*//')
+        ERLANG=$(echo "$TAG" | sed 's/.*-erlang-//; s/-debian-.*//')
+        DEBIAN=$(echo "$TAG" | sed 's/.*-debian-//')
+        sed -i "s|^export ELIXIR_VERSION=.*|export ELIXIR_VERSION=\"$ELIXIR\"|" "$WORKBENCH_PATH/config.conf"
+        sed -i "s|^export ERLANG_VERSION=.*|export ERLANG_VERSION=\"$ERLANG\"|" "$WORKBENCH_PATH/config.conf"
+        sed -i "s|^export DEBIAN_VERSION=.*|export DEBIAN_VERSION=\"$DEBIAN\"|" "$WORKBENCH_PATH/config.conf"
+        echo "config.conf now says ${B}elixir $ELIXIR · erlang $ERLANG · $DEBIAN${R}." ;;
+      --json)
+        # The whole filtered list: the consoles derive everything from it
+        # (the three version combos, the reverse lookup). -n trims only
+        # the human listing below. The configured tag can predate the
+        # recent window (hexpm rebuilds only the newest patches): when
+        # the Hub still has it, it belongs in the list.
+        LIST=$(stacks_list) || terminate "Docker Hub did not answer."
+        CURRENT="${ELIXIR_VERSION}-erlang-${ERLANG_VERSION}-debian-${DEBIAN_VERSION}"
+        if ! echo "$LIST" | grep -q "^$CURRENT\$"; then
+          curl -fs "https://hub.docker.com/v2/repositories/hexpm/elixir/tags?name=$CURRENT" | \
+            grep -q "\"name\":\"$CURRENT\"" && \
+            LIST=$(printf '%s\n%s' "$LIST" "$CURRENT" | sort -urV)
+        fi
+        printf '['; FIRST=true
+        echo "$LIST" | while read -r t; do
+          [ "$FIRST" == true ] && FIRST=false || printf ','
+          printf '\n  "%s"' "$t"
+        done; printf '\n]\n' ;;
+      ""|-n)
+        [ "$1" == "-n" ] && N="$2" || N=12
+        CURRENT="${ELIXIR_VERSION}-erlang-${ERLANG_VERSION}-debian-${DEBIAN_VERSION}"
+        LIST=$(stacks_list | head -n "$N") || terminate "Docker Hub did not answer."
+        echo "Usable hexpm/elixir images (highest first; pick one: ./$(basename $0) stacks use TAG):"
+        echo "$LIST" | while read -r t; do
+          if [ "$t" == "$CURRENT" ]
+          then echo "  ${B}* $t${R} (config.conf)"
+          else echo "    $t"; fi
+        done
+        echo "$LIST" | grep -q "^$CURRENT\$" || \
+          echo "  ${B}* $CURRENT${R} (config.conf — not among the recent $N)" ;;
+      *) args_error invalid ;;
+    esac
 
   elif [ "$1" == "console" ]; then
     shift

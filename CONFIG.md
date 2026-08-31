@@ -7,6 +7,8 @@ The configuration file `config.conf` configures the projects `./wb.sh new` creat
 
 Read by the creation command (`new`): the workspace, the name, the stack the images are built from, and the Phoenix installer. Updating them has no impact on an already created project.
 
+The three stack versions are the parts of one `hexpm/elixir` image tag (`ELIXIR-erlang-ERLANG-debian-DEBIAN`). The usable list lives on Docker Hub, not in the file: `./wb.sh stacks` shows the recent ones (`--json` for tools) and `./wb.sh stacks use TAG` checks the image exists and writes the three below.
+
 | Variable | Type | Example | Description |
 | --: | :-- | :-- | :-- |
 | `WORKSPACE_PATH` | string | `"./_workspace"` | (`wb.sh` only) Directory where the project is generated, used as the container volume mount point. Relative paths resolve from the workbench directory; any absolute path works. The workbench itself stays permanently in its own directory. |

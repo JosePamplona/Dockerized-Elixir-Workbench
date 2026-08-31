@@ -204,6 +204,31 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - ash v0.4.0: `--data-layer` takes several, as ash-hq.org's checkboxes
   do; `mix workbench.ash.site` checks that the site still treats them
   as independent.
+- `./wb.sh stacks [--json | -n N | use TAG]`: the usable technology
+  stacks, asked of Docker Hub itself (recent `hexpm/elixir`
+  `-debian-*-slim` tags, no RCs, version-sorted). `use TAG` checks the
+  image exists (`docker manifest inspect`) and writes the three
+  versions into `config.conf` — whose hand-kept tag list is gone: it
+  was a cache that only went stale. The console's Config form shows
+  four synced combos (stack ⇄ elixir · erlang · debian): the stack sets
+  the three, editing one looks the exact tag back up, and a combination
+  without a published image leaves the stack unpicked, the odd value
+  saying so.
+- `config.conf` is grouped by when a setting takes effect: what both
+  creation commands read (name, stack, installer), git, the service
+  images — and, at the end, what only the composed line (`new`) reads.
+  CONFIG.md mirrors the grouping (and documents `COVERAGE_THEME`); the
+  console's Config form tags each field honestly (`new · new2`,
+  `every commit`, `every bake`, `toolchain build`, `new only`) instead
+  of calling everything "new only". A comment block now belongs to
+  whatever follows it with no blank line between — an `export` takes it
+  as its help, a blank line leaves it to the section — so
+  `GIT_IDENTITY`'s paragraph is the field's again and not the Git
+  section's blurb, `POSTGRES_IMAGE_VERSION` keeps its link, and the
+  notes a section closes with (there is no ports configuration, and no
+  feature configuration either) are read at last, where they were
+  dropped. A `# -- Group --` line inside a section is a heading in the
+  form, not the help of whatever field came next.
 - `console/0` in the manifest — the cartridges light the console up:
   the doors a cartridge opens on the app's port (exdoc `/dev/docs`,
   coveralls `/dev/docs/cover` with exdoc, rest `/dev/swagger` and

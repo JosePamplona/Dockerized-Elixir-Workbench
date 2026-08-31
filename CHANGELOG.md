@@ -204,6 +204,88 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - ash v0.4.0: `--data-layer` takes several, as ash-hq.org's checkboxes
   do; `mix workbench.ash.site` checks that the site still treats them
   as independent.
+- The console read once more with the eyes, and the repetitions taken
+  out: the Jobs tab said what a job is three times over — the tray
+  below, its own meta line, and the empty screen — so the tray steps
+  aside while the tab is open and the empty screen says it alone, and
+  the meta line that teaches unfolding turns into the way back once a
+  job is open (they arrive unfolded, and a few commands are a wall);
+  what Tab could not finish comes as a list to read — the candidates
+  separated by bullets, standing three times as long as a notice, and a
+  toast now cancels the one before it instead of cutting it short; the
+  Terminal no longer prints a prompt under "No session. Open one"; the
+  Project's documents read README, CHANGELOG, then the masked `.env`,
+  not the secrets first; and a tick chip gives its right padding back
+  when punctuation follows, which used to read as a space
+  (`` `unavailable` ; ``). The board lost the *Probes* section — a poll
+  of what one cartridge answers, told again by that cartridge's box —
+  and reads its cartridges as a list, a line each, the same rows as the
+  sections above it, where a grid of slot cards cost four times the
+  height — each name wearing the house's reference (`.cart-ref`, the
+  same mention a cartridge gets anywhere), not a label of its own. The
+  board also reads in the order the work happens: deployments before
+  containers — what you asked for before what runs because of it — and
+  git last, after the cartridges whose inserts it records. And the jobs band only stands where a job could have come
+  from: the screens that start one (Deploy, Cartridges, Cluster), never
+  the Jobs tab itself, never with no job to show — and, running, it
+  follows you anywhere. On the shelf, whether a cartridge is in is
+  the box itself — the inserted keep their colour and take the accent
+  ring, the rest sit grey — instead of a golden stamp that covered the
+  cover's own band and part of its art; the caption carries the word,
+  with the dot the cartridge chips use.
+- Two placeholder boxes where there was one socket, a front and a back
+  each. The **socket** (`cover_placeholder`, `back_placeholder`) stands
+  in for a cartridge nobody has sealed a box for yet: the bare board,
+  and its reverse side with its own title block. The **empty**
+  (`empty_cover_placeholder`, `empty_back_placeholder`) is for a
+  cartridge that is not done — the drawing it would have been built
+  from, stamped DRAFT and pending review, with the ink showing through
+  the sheet when you turn it over. There is no cartridge to stand in
+  for, and the drawing says so better than a caption could. The mock
+  reads all four, on the shelf and in the hand. Two things the light
+  drawing asked for: the caption's scrim turns light and its ink dark
+  over it (the dark one written for the socket greyed the sheet and
+  buried its stamp block), and a not-done box is no longer dimmed to
+  nothing on the plank — the drawing already says what the dimming was
+  saying.
+- Console mock: the Config form's image row is named `DOCKER_IMAGE` and
+  carries the link to the tags it is picked from, like every other
+  version field. It is still the one row that is not a key of
+  `config.conf` — the three versions under it are — but it is what the
+  reader actually chooses, so it wears the same name shape.
+- Console mock: the band's right end reads caveat, clock, `wb.sh` — the
+  only button up there moved to the corner, where a control is looked
+  for, answering the workbench's name at the other end of the band.
+- Console mock: the deployment's buttons ask what `wb.sh` asks. All of
+  them are refused without a project ("There is no project to build"),
+  so all of them are off in an empty workspace, and the row says why —
+  Up was offering a command that would have refused. And Build no
+  longer waits for the target to be baked: `build --deploy prod|scaled`
+  bakes its own compose before building, so a target nobody has baked
+  yet is exactly when you would press it.
+- Console mock: the box's kicker reads state first — `on the shelf` /
+  `inserted` / `not done`, the two faces of it now both said — then the
+  version, then what sort of box it is (`collection`, `base`). It no
+  longer announces the design paper: the tab row above says DESIGN when
+  there is one. Nor how many a collection inserts: the Specs panel
+  below names every member.
+- Console mock: a *Specs* panel in the box — what the cartridge is, as
+  against what you are about to do with it. The mix task behind it
+  first — its name in the workbench's own terms; then Kind (cartridge,
+  base cartridge, collection) with what a second insert does; Needs,
+  the manifest's and what the chosen options add, grouped by the switch
+  that asked; Inserts, a collection's recipe with each member's argv;
+  Opens, Answers and Lights, the doors, probes and tabs of `console/0`,
+  their paths filled by the options; and After.
+  Those facts were scattered — a kicker chip, two rows inside the
+  insert form, and the console contributions nowhere at all — and the
+  ones inside the form read as conditions of the insert rather than
+  facts of the box. Empty rows never print, so most boxes show two or
+  three. The panel is live: the rows an option moves say which switch
+  moved them, rather than a fixed list contradicted below it. What is
+  this project's business stays out of it — a value whose requirement
+  is missing is disabled and says so, and Insert reads "Insert html
+  first".
 - **No Phoenix installer setting.** `PHX_NEW_VERSION` is gone from
   `config.conf`: `new` asks hex.pm for the newest `phx_new` — or takes
   `./wb.sh new --phx-new VERSION`, for when there is a reason to pin —

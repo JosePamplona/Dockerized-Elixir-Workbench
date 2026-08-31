@@ -12,11 +12,12 @@ mock/
 ├── catalog.json           ./wb.sh catalog --json (with the covers)   ─┐ refreshed by
 ├── status.json            ./wb.sh status --json                      ─┘ build.py --refresh
 ├── logs.json              a docker compose logs capture, as [service, timestamp, text] rows
+├── stacks.json            ./wb.sh stacks --json (the usable hexpm/elixir images)  ─ refreshed too
 └── marked.min.js          the Markdown renderer, inlined so the page stays self-contained
 ```
 
 Everything else the page shows is read from the repository at build
-time: the colours and type from `assets/design/` (`generated/tokens.css`), the sealed covers and the socket under `assets/covers/`, each
+time: the colours and type from `assets/design/` (`generated/tokens.css`), the sealed covers and the four placeholders (`cover_`/`back_` and `empty_cover_`/`empty_back_`) under `assets/covers/`, each
 cartridge's README/DESIGN/CHANGELOG, the workbench's README, CHANGELOG
 and `config.conf`, `wb.sh`'s version, and the workspace's README,
 CHANGELOG and `.env` (secrets masked in the build, never in the page).
@@ -24,3 +25,8 @@ CHANGELOG and `.env` (secrets masked in the build, never in the page).
 What is real and what is staged: the workspace, the catalog and the
 documents are real; the logs are a real capture replayed; the output of
 inserting, deploying, creating and saving is staged.
+
+Two things the page works out itself, which the console proper asks the
+workbench: a collection's recipe as its options fill it (the catalog
+carries the one its defaults give, and `mix workbench.expand` answers
+for the rest), and which of its members the project already carries.

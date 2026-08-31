@@ -9,7 +9,7 @@ status.json (`./wb.sh catalog --json` with the covers, `./wb.sh status
 --json` — refresh them with `./mock/build.py --refresh`, which needs
 Docker), logs.json (a `docker compose logs --timestamps --no-color`
 capture, parsed into [service, timestamp, text] rows) and marked.min.js.
-Read from the repository: the design tokens (assets/design/generated/tokens.css), the sealed covers, the placeholder socket, the
+Read from the repository: the design tokens (assets/design/generated/tokens.css), the sealed covers, the four placeholders (cover_/back_ and empty_cover_/empty_back_), the
 cartridges' README/DESIGN/CHANGELOG, the workbench's README/CHANGELOG/
 config.conf and wb.sh version, the workspace's README/CHANGELOG/.env
 (secrets masked here, so the page never carries them).
@@ -21,6 +21,9 @@ M = "mock"
 if "--refresh" in sys.argv:
     with open(f"{M}/catalog.json", "w") as f: subprocess.run(["./wb.sh", "catalog", "--json"], stdout=f, check=True)
     with open(f"{M}/status.json", "w") as f: subprocess.run(["./wb.sh", "status", "--json"], stdout=f, check=True)
+    # The usable stacks, from Docker Hub via wb.sh; the old snapshot stays if the Hub does not answer.
+    r = subprocess.run(["./wb.sh", "stacks", "--json"], capture_output=True, text=True)
+    if r.returncode == 0 and r.stdout.strip().startswith("["): open(f"{M}/stacks.json", "w").write(r.stdout)
 
 def jpg_uri(path, max_w=560, q=80):
     im = Image.open(path).convert("RGB")
@@ -35,6 +38,14 @@ for name in sorted(os.listdir(F)):
     d = os.path.join(F, name)
     if os.path.isdir(d):
         docs[name] = {k: open(os.path.join(d, f)).read() for k, f in [("readme", "README.md"), ("design", "DESIGN.md"), ("changelog", "CHANGELOG.md")] if os.path.isfile(os.path.join(d, f))}
+        # NEED.md — the developer's need the cartridge answers — parsed into
+        # its four parts, for the box's own sheet (not a document tab).
+        if os.path.isfile(os.path.join(d, "NEED.md")):
+            docs[name]["need_md"] = open(os.path.join(d, "NEED.md")).read()
+            nd = re.sub(r"^#[^\n]*\n+", "", docs[name]["need_md"].strip())
+            grab = lambda label: (lambda m: re.sub(r"\s+", " ", m.group(1)).strip() if m else None)(re.search(r"\*\*" + label + r":\*\*\s*(.+?)(?=\n\s*\n|\Z)", nd, re.S))
+            want = nd.split("\n\n")[0]
+            docs[name]["need"] = {"want": None if want.startswith("**") else re.sub(r"\s+", " ", want).strip(), "before": grab("Before"), "after": grab("After"), "not_for": grab("Not for")}
 # A diagram referenced from a cartridge's document is put in the page
 # inline (not as an <img>), so it takes the page's fonts and theme; the
 # xml prolog and the font @import go, the SVG's own colour variables stay.
@@ -48,7 +59,8 @@ def inline_svgs(md, base):
         return svg
     return re.sub(r"!\[([^\]]*)\]\(([^)]+\.svg)\)", sub, md)
 for name, d in docs.items():
-    for k in d: d[k] = inline_svgs(d[k], os.path.join(F, name))
+    for k in d:
+        if isinstance(d[k], str): d[k] = inline_svgs(d[k], os.path.join(F, name))
 for e in catalog: e["docs"] = {k: k in docs.get(e["name"], {}) for k in ("readme", "design", "changelog")}
 art = {e["name"]: {"front": jpg_uri("assets/covers/" + e["covers"]["front"]), "back": jpg_uri("assets/covers/" + e["covers"]["back"])} for e in catalog if e.get("covers", {}).get("front") and e.get("covers", {}).get("back")}
 readme = open("README.md").read()
@@ -73,10 +85,12 @@ if proj["env"]: proj["env"] = mask(proj["env"])
 
 t = open(f"{M}/console.template.html").read()
 # The house's colours and type: assets/design/tokens.json, projected to CSS.
-tokens_css = open("assets/design/generated/tokens.css").read().strip()
+tokens_css = (open("assets/design/generated/tokens.css").read().strip() + "\n" +
+              open("assets/design/generated/components.css").read().strip())
 t = t.replace("{{TOKENS_CSS}}", "  " + tokens_css.replace("\n", "\n  "), 1)
 t = t.replace("<script>\n// Real data", "<script>\n" + open(f"{M}/marked.min.js").read() + "\n</script>\n<script>\n// Real data", 1)
-for k, v in [("{{CATALOG}}", json.dumps(catalog)), ("{{STATUS}}", json.dumps(status)), ("{{LOGS}}", json.dumps(logs)), ("{{DOCS}}", json.dumps(docs)), ("{{WB}}", json.dumps(wb)), ("{{PROJ}}", json.dumps(proj)), ("{{ART}}", json.dumps(art)), ("{{SOCKET}}", jpg_uri("assets/covers/placeholder.png"))]:
+stacks = json.load(open(f"{M}/stacks.json")) if os.path.isfile(f"{M}/stacks.json") else []
+for k, v in [("{{CATALOG}}", json.dumps(catalog)), ("{{STACKS}}", json.dumps(stacks)), ("{{STATUS}}", json.dumps(status)), ("{{LOGS}}", json.dumps(logs)), ("{{DOCS}}", json.dumps(docs)), ("{{WB}}", json.dumps(wb)), ("{{PROJ}}", json.dumps(proj)), ("{{ART}}", json.dumps(art)), ("{{PH_COVER}}", jpg_uri("assets/covers/cover_placeholder.png")), ("{{PH_BACK}}", jpg_uri("assets/covers/back_placeholder.jpg")), ("{{PH_EMPTY_COVER}}", jpg_uri("assets/covers/empty_cover_placeholder.jpg")), ("{{PH_EMPTY_BACK}}", jpg_uri("assets/covers/empty_back_placeholder.jpg"))]:
     assert t.count(k) == 1, k; t = t.replace(k, v)
 head, body = t.split('<header class="band">', 1); body = '<header class="band">' + body
 head = head.replace("<style>", "<style>\n  [hidden]{display:none!important}\n  img{max-width:100%}", 1)

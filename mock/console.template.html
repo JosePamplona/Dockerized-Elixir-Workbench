@@ -5,7 +5,11 @@
 <style>
 {{TOKENS_CSS}}
   *{box-sizing:border-box}
-  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--serif);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  html,body{height:100%}
+  /* The page is a grid — the band, then the rest — so no height is ever
+     100vh minus a hardcoded pixel count: a fractional zoom rounded that
+     into a one-pixel slit under the jobs bar. */
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--serif);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;display:grid;grid-template-rows:auto minmax(0,1fr);overflow:hidden}
   a{color:inherit}
   button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
   button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -33,9 +37,10 @@
   header.band .mock{border:1px solid rgba(255,255,255,.35);padding:3px 8px;border-radius:2px;letter-spacing:.08em;text-transform:uppercase;font-family:var(--cond);font-weight:600;font-size:11px}
 
   /* --- layout ------------------------------------------------------------ */
-  .app{display:grid;grid-template-columns:minmax(340px,420px) minmax(0,1fr);min-height:calc(100vh - 56px)}
-  .console{border-right:1px solid var(--line);background:var(--surface);padding:22px 22px 40px;display:flex;flex-direction:column;gap:22px}
-  .screen{min-width:0;display:flex;flex-direction:column;min-height:calc(100vh - 56px)}
+  /* The board and the screen scroll on their own, under the band: the page never does. */
+  .app{display:grid;grid-template-columns:minmax(340px,420px) minmax(0,1fr);height:100%;min-height:0}
+  .console{border-right:1px solid var(--line);background:var(--surface);padding:22px 22px 40px;display:flex;flex-direction:column;gap:22px;overflow:auto;min-height:0;scrollbar-gutter:stable}
+  .screen{min-width:0;display:flex;flex-direction:column;height:100%;overflow:auto;min-height:0}
   @media (max-width:900px){.app{grid-template-columns:1fr}.console{border-right:0;border-bottom:1px solid var(--line)}}
 
   section h2{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:15px;margin:0 0 10px;display:flex;align-items:baseline;gap:10px}
@@ -65,18 +70,13 @@
   .chip.busy::before{animation:pulse 1s infinite}
   @keyframes pulse{50%{opacity:.2}}
 
-  .slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
-  .slot{
-    position:relative;border:1px solid var(--line);background:var(--surface-2);
-    border-radius:3px;padding:12px 12px 10px;min-height:76px;display:flex;flex-direction:column;justify-content:space-between;gap:8px;
-    background-image:repeating-linear-gradient(90deg,transparent 0 10px,rgba(212,178,126,.10) 10px 14px);
-    background-size:100% 6px;background-repeat:no-repeat;background-position:0 0;
-  }
-  .slot.empty{border-style:dashed;justify-content:center;align-items:center;color:var(--muted);font-family:var(--cond);letter-spacing:.12em;text-transform:uppercase;font-size:11px;background-image:none}
-  .slot .v{font-family:var(--mono);font-size:11px;color:var(--muted)}
-  .slot.new{animation:seat .5s ease-out}
-  @keyframes seat{from{transform:translateY(-10px);opacity:0}to{transform:none;opacity:1}}
-  .lozenge{display:inline-block;font-family:var(--cond);font-weight:600;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink);background:var(--surface);border:1px solid var(--ink);border-radius:999px;padding:3px 10px;line-height:1.3}
+  /* What is in the project, as a list: the board reads down, a line per
+     cartridge, the same rows as Containers and Deployments above. It was
+     a grid of slot cards — the metaphor cost four times the height. */
+  table.rows tr.new{animation:seat 1.2s ease-out}
+  @keyframes seat{from{background:var(--accent-soft)}to{background:transparent}}
+  #slots td:first-child{width:1%;white-space:nowrap}
+  #slots td:last-child{text-align:right}
 
   .urls a.off{opacity:.45;pointer-events:none}
   .urls a small{font-family:var(--cond);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--soft);margin-left:6px}
@@ -93,16 +93,15 @@
   .deployment .acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .deployment .acts .sep{width:1px;height:22px;background:var(--line);margin:0 4px}
   .deployment .cmd{font-family:var(--mono);font-size:12px;color:var(--muted)}
-  .term{display:grid;grid-template-rows:auto 1fr auto;gap:10px;height:calc(100vh - 56px - 52px - 44px);min-height:420px}
-  .term .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-  .term .toolbar select{font-family:var(--mono);font-size:12px;padding:4px 6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px}
-  .term .screen{background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;overflow:auto;padding:12px 14px;font-family:var(--mono);font-size:12.5px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+  .term .viewport{grid-template-rows:minmax(0,1fr) auto;min-height:0}
+  .term .screen{padding:10px 14px;min-height:0}
   .term .screen .p{color:var(--accent)}
   .term .screen .dim{color:var(--term-dim)}
   .term .screen .empty{color:var(--term-dim);font-style:italic}
-  .term .in{display:flex;gap:8px;align-items:center;font-family:var(--mono);font-size:12.5px}
-  .term .in .p{color:var(--accent)}
-  .term .in input{flex:1;font-family:var(--mono);font-size:12.5px;padding:6px 8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px}
+  .term .in{display:flex;gap:8px;align-items:center;font-family:var(--mono);font-size:12.5px;padding:8px 14px;border-top:1px solid var(--term-line);background:var(--term)}
+  .term .in .p{color:var(--accent);white-space:nowrap}
+  .term .in input{flex:1;font-family:var(--mono);font-size:12.5px;padding:4px 0;border:0;background:transparent;color:var(--term-ink);min-width:0;outline:none}
+  .term .in input::placeholder{color:var(--term-dim)}
   .cluster{display:grid;gap:14px;align-content:start}
   .cluster table{border-collapse:collapse;width:100%;font-family:var(--mono);font-size:12.5px}
   .cluster th{text-align:left;font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--line)}
@@ -110,10 +109,6 @@
   .cluster .probe{border:1px solid var(--line);background:var(--surface);border-radius:3px;padding:12px 14px;display:grid;gap:8px}
   .cluster .probe h3{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:13px}
   .cluster .probe .acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-  .probes{display:grid;gap:6px;font-family:var(--mono);font-size:12.5px}
-  .probes div{display:flex;justify-content:space-between;gap:10px;align-items:center}
-  .probes .code{color:var(--good)}
-  .probes .code.bad{color:var(--bad)}
   .note{font-size:13px;color:var(--muted);font-style:italic;margin:0}
 
   /* --- tabs ---------------------------------------------------------------- */
@@ -137,17 +132,34 @@
   .boxes{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:22px 18px;align-items:end;padding:0 14px 18px}
   .plank{height:10px;background:var(--shelf);border-bottom:6px solid var(--shelf-edge);border-radius:1px;box-shadow:0 8px 14px rgba(0,0,0,.22)}
   .box{position:relative;display:block;width:100%;text-align:left;border-radius:2px}
-  .box .face{aspect-ratio:5/7;width:100%;background:var(--board);border-radius:2px;overflow:hidden;box-shadow:var(--shadow);transition:transform .18s ease, box-shadow .18s ease;position:relative}
+  .box .face{aspect-ratio:5/7;width:100%;background:var(--board);border-radius:2px;overflow:hidden;box-shadow:var(--shadow);transition:transform .18s ease, box-shadow .18s ease, filter .18s ease, opacity .18s ease;position:relative}
   .box .face img{display:block;width:100%;height:100%;object-fit:cover}
   .box:hover .face,.box:focus-visible .face{transform:translateY(-6px) rotate(-.6deg)}
   .box .face.socket .name{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#F3ECF5;text-align:center;font-size:clamp(11px,1.6vw,15px);line-height:1.15;padding:6px 8px;background:rgba(20,10,28,.72);border:1px solid rgba(212,178,126,.6);border-radius:2px;max-width:88%}
   .box .cap{display:flex;justify-content:space-between;align-items:baseline;gap:6px;margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--muted)}
   .box .cap b{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);font-size:12px}
-  .box .stamp{position:absolute;right:-6px;top:10px;transform:rotate(8deg);font-family:var(--cond);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:10.5px;color:var(--accent-ink);background:var(--accent);padding:3px 8px;border-radius:2px;box-shadow:0 2px 4px rgba(0,0,0,.3)}
-  .box.pending .face{opacity:.55;filter:saturate(.5)}
+  /* Inserted or not is the box itself, not a sticker over it: the
+     inserted ones keep their colour and take the accent ring, the rest
+     sit quiet on the shelf. The stamp covered the cover's own band and
+     part of its art — it belongs on a printed back, not here. */
+  .box .face{filter:grayscale(.92) contrast(.92);opacity:.6}
+  .box.in .face{filter:none;opacity:1;box-shadow:var(--shadow),0 0 0 2px var(--accent)}
+  /* A not-done box is a drawing, and the drawing already says it: the
+     hard dimming written for dark art washed it off the plank. */
+  .box.pending .face{filter:grayscale(.5);opacity:.8}
+  .box:hover .face,.box:focus-visible .face{filter:none;opacity:1}
+  .box .cap .st{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+  .box .cap .st::before{content:"";width:6px;height:6px;border-radius:50%;border:1.5px solid var(--soft);box-sizing:border-box;flex:none}
+  .box.in .cap .st{color:var(--ink)}
+  .box.in .cap .st::before{background:var(--good);border-color:var(--good)}
 
   /* --- logs ---------------------------------------------------------------- */
-  .logs{display:grid;grid-template-rows:auto auto 1fr;gap:10px;height:calc(100vh - 56px - 52px - 44px);min-height:420px}
+  /* Logs, Terminal and Jobs fill the space between the tabs and the jobs
+     bar — the screen is a flex column, so the panel flexes and nothing is
+     computed from viewport heights (the bar's height counted twice once
+     turned the screen's scroll on). */
+  #panel-logs.on,#panel-terminal.on,#panel-jobs.on{display:flex;flex-direction:column;min-height:0;overflow:hidden;padding-bottom:22px}
+  .logs{display:grid;grid-template-rows:auto auto minmax(0,1fr);gap:10px;flex:1;min-height:0}
   .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
   .toolbar .sep{width:1px;height:22px;background:var(--line);margin:0 4px}
   .toolbar input[type=search]{font-family:var(--mono);font-size:12.5px;padding:5px 9px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;min-width:200px}
@@ -156,6 +168,8 @@
   .svc::before{content:"";width:8px;height:8px;border-radius:2px;background:var(--svc)}
   .svc[aria-pressed="false"]{opacity:.45}
   .logmeta{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+  .logmeta .lk{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--line)}
+  .logmeta .lk:hover,.logmeta .lk:focus-visible{color:var(--ink);text-decoration-color:currentColor;outline:none}
   .viewport{position:relative;background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;overflow:hidden;display:grid}
   .lines{overflow:auto;padding:10px 0;font-family:var(--mono);font-size:12px;line-height:1.5;scrollbar-gutter:stable}
   .ln{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:0 12px;padding:0 14px;white-space:pre-wrap;word-break:break-word;border-left:3px solid transparent}
@@ -168,6 +182,8 @@
   .ln.cont .s,.ln.cont .t{visibility:hidden}
   .ln.hit .m mark{background:var(--accent);color:var(--accent-ink);padding:0 2px}
   .lines.no-ts .ln{grid-template-columns:auto minmax(0,1fr)}.lines.no-ts .t{display:none}
+  .lines.no-svc .ln{grid-template-columns:auto minmax(0,1fr)}.lines.no-svc .s{display:none}
+  .lines.no-ts.no-svc .ln{grid-template-columns:minmax(0,1fr)}
   .newpill{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);background:var(--accent);color:var(--accent-ink);font-family:var(--cond);font-weight:700;letter-spacing:.12em;text-transform:uppercase;font-size:12px;padding:6px 14px;border-radius:999px;box-shadow:0 4px 12px rgba(0,0,0,.4);display:none}
   .newpill.on{display:block}
   .empty{color:var(--term-dim);font-style:italic;padding:14px}
@@ -182,15 +198,19 @@
   .target .acts{display:flex;flex-wrap:wrap;gap:6px}
   .target .cmd{font-family:var(--mono);font-size:11.5px;color:var(--muted);overflow-x:auto;white-space:nowrap}
   .target .cmd::before{content:"$ "}
-  .newcard{border:1px solid var(--line);background:var(--surface);border-radius:3px;padding:18px 20px;display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:18px 32px;margin-bottom:18px}
-  @media (max-width:900px){.newcard{grid-template-columns:1fr}}
+  /* One column: the card is the form. It was two while the second held
+     the collection to insert afterwards — that offer is gone, and an
+     empty column is not a layout. */
+  .newcard{border:1px solid var(--line);background:var(--surface);border-radius:3px;padding:18px 20px;display:grid;grid-template-columns:minmax(0,1fr);gap:18px;margin-bottom:18px}
   .newcard h3{grid-column:1/-1;margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:18px;display:flex;justify-content:space-between;align-items:center;gap:10px}
   .newcard .form{display:grid;gap:12px}
   .newcard .frow{display:grid;grid-template-columns:130px minmax(0,1fr);gap:10px;align-items:center}
   .newcard .frow label{font-family:var(--mono);font-size:12.5px}
-  .newcard .frow input[type=text]{font-family:var(--mono);font-size:13px;padding:6px 8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;width:100%}
+  .newcard .frow input[type=text]{font-family:var(--mono);font-size:13px;padding:6px 8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;width:100%;max-width:520px}
   .newcard .flags select{font-family:var(--mono);font-size:12px;margin-left:4px;padding:2px 4px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px}
-  .newcard .bases label.out{color:var(--muted);text-decoration:line-through}
+  .newcard .bases label.out{color:var(--muted)}
+  .newcard .bases label.out .cart-ref{text-decoration:line-through;color:var(--muted)}
+  .newcard .bases .subs{display:inline-flex;gap:6px 14px;align-items:center;flex-wrap:wrap}
   .newcard .bases label.sub{margin-left:-2px;padding-left:10px;border-left:1px solid var(--line);color:var(--muted)}
   .newcard .bases label.sub.out{text-decoration:none;opacity:.5}
   .newcard .frow .ro{font-family:var(--mono);font-size:12.5px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
@@ -198,16 +218,9 @@
   .newcard .flags{display:flex;flex-wrap:wrap;gap:6px 14px;font-family:var(--mono);font-size:12.5px}
   .newcard .flags label{display:inline-flex;gap:6px;align-items:center}
   .newcard .flags input{accent-color:var(--accent)}
-  .newcard .kind{display:grid;gap:10px;align-content:start}
-  .newcard .kind label.opt{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;align-items:start;border:1px solid var(--line);padding:10px 12px;border-radius:3px;cursor:pointer}
-  .newcard .kind label.opt:has(input:checked){border-color:var(--ink)}
-  .newcard .kind input{accent-color:var(--accent);margin-top:4px}
-  .newcard .kind b{font-family:var(--cond);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:13px}
-  .newcard .kind p{margin:0;grid-column:2;font-size:13px;color:var(--muted)}
-  .newcard .kind .composes{grid-column:2;display:flex;flex-wrap:wrap;gap:4px}
-  .newcard .kind .composes .chip{font-size:10px;padding:1px 5px;color:var(--ink)}
   .newcard .foot{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-  .newcard .foot .cmd{flex:1;min-width:240px}
+  .newcard .foot .cmds{flex:1;min-width:240px;display:grid;gap:3px}
+  .newcard .foot .cmd{min-width:0}
   .dangerzone{margin-top:22px;border:1px solid var(--line);border-left:3px solid var(--bad);padding:14px 16px;display:grid;gap:10px;background:var(--surface)}
   .dangerzone h3{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:15px}
   .dangerzone .acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
@@ -221,8 +234,17 @@
   .tray .bar h4{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.12em;font-size:13px}
   .tray .bar .last{font-family:var(--mono);font-size:12px;color:var(--muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .tray .bar .caret{font-family:var(--mono);color:var(--muted)}
-  .tray .list{display:none;max-height:42vh;overflow:auto;border-top:1px solid var(--line)}
-  .tray.open .list{display:block}
+  .tray.ping .bar{background:var(--accent-soft)}
+  .tray .bar{transition:background .5s}
+  /* The meta line hides when there are no jobs, and a hidden grid child
+     leaves its row empty: the viewport keeps its own row, not the gap. */
+  .jobsp .viewport{grid-row:3}
+  .toolbar.cli{font-family:var(--mono);font-size:12.5px}
+  .toolbar.cli .p{color:var(--accent);white-space:nowrap}
+  .toolbar.cli input{flex:1;min-width:200px;font-family:var(--mono);font-size:12.5px;padding:5px 9px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px}
+  .viewport.light{background:var(--surface);color:var(--ink);border-color:var(--line)}
+  .viewport.light .lines{padding:0}
+  .viewport.light .lines:empty::before{content:"No jobs yet. Every command the console runs is a job — its output, its exit code, how long it took. Insert a cartridge, deploy, or type one above.";display:block;padding:14px 28px;max-width:64ch;font-family:var(--serif);font-style:italic;color:var(--muted)}
   .job{display:grid;grid-template-columns:auto 1fr auto auto;gap:14px;align-items:center;padding:8px 28px;border-top:1px solid var(--line);font-family:var(--mono);font-size:12px;cursor:pointer}
   .job:first-child{border-top:0}
   .job .cmdline{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -246,13 +268,21 @@
   }
   .drawer.on{transform:none;opacity:1;pointer-events:auto}
   @media (max-width:700px){.drawer{width:100vw;height:100vh;border-radius:0;border:0}}
-  .drawer .top{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--surface);z-index:1}
+  /* Above the config tab's own sticky bar (z-index 1), which scrolled over these tabs. */
+  .drawer .top{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--surface);z-index:3}
   .drawer .top h3{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:16px}
   .drawer .top{flex-wrap:wrap;row-gap:8px}
   .dtabs{display:flex;gap:2px;width:100%;margin-bottom:-14px;margin-top:6px}
   .dtab{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.12em;font-size:12.5px;color:var(--muted);padding:6px 12px 8px;border-bottom:3px solid transparent;display:inline-flex;gap:6px;align-items:center}
   .dtab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
   .dtab small{font-family:var(--mono);font-size:10px;letter-spacing:0;color:var(--muted)}
+  .drawer .need{display:grid;gap:8px;margin:2px 0 0;padding:12px 14px;border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);border-radius:3px}
+  .drawer .need .want{margin:0;font-style:italic;font-size:14.5px}
+  .drawer .need .row{display:grid;grid-template-columns:58px minmax(0,1fr);gap:10px;font-size:13px;align-items:baseline}
+  .drawer .need .k{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);white-space:nowrap}
+  .drawer .need .v{color:var(--muted)}
+  .drawer .need code{font-family:var(--mono);font-size:12px;background:var(--surface-2);padding:0 4px;border-radius:2px}
+  .drawer .need code.tight{padding-right:1px}
   .drawer .body{display:grid;grid-template-columns:320px minmax(0,1fr);gap:32px;padding:26px 28px 32px;align-content:start}
   .drawer .body[hidden]{display:none}
   .booklet{display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:32px;padding:26px 32px 60px}
@@ -306,6 +336,11 @@
   .hand .typeset h4{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:17px;margin:0;line-height:1.05;text-wrap:balance}
   .hand .typeset p{margin:0;font-size:12px;line-height:1.35}
   .hand .typeset .nocover{font-family:var(--mono);font-size:10px;opacity:.75}
+  /* The empty placeholder is a white drawing: the dark scrim that carries
+     the caption over the socket turned it grey and buried its stamp
+     block. Over light art the scrim is light and the ink is dark. */
+  .hand .typeset.onlight{background:linear-gradient(180deg,rgba(247,245,249,0) 62%,rgba(247,245,249,.95) 86%);color:var(--ink)}
+  .hand .typeset.onlight .nocover{opacity:.6}
   .sheet{display:grid;gap:18px;align-content:start;min-width:0}
   .sheet .head{display:grid;gap:6px}
   .sheet .head .kicker{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -350,12 +385,19 @@
   form.insert .eject{font-family:var(--cond);font-weight:600;letter-spacing:.12em;text-transform:uppercase;font-size:12px;color:var(--bad);border:1px solid var(--bad);padding:8px 12px;border-radius:2px;background:var(--surface)}
   form.insert .eject[disabled]{opacity:.4;cursor:not-allowed}
   form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
-  .deps{display:grid;grid-template-columns:max-content 1fr;gap:8px 14px;align-items:baseline;margin:14px 0 4px;padding-top:12px;border-top:1px solid var(--line)}
-  .deps .k{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);white-space:nowrap}
-  .deps .v{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:13px}
-  .deps .why{display:inline-flex;gap:6px;align-items:center;font-family:var(--mono);font-size:12px;color:var(--muted)}
-  .deps button.chip{cursor:pointer;background:none}
-  .deps .after{font-size:13px;color:var(--muted);font-style:italic}
+  /* Specs — the box's own facts, a table where the need above is prose.
+     Same panel as .need, without its accent edge: that one is the voice
+     of the developer, this one the manifest's. */
+  #d-specs{display:grid;gap:8px}
+  .specs{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:9px 14px;align-items:baseline;padding:12px 14px;border:1px solid var(--line);background:var(--surface);border-radius:3px}
+  .specs .k{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);white-space:nowrap}
+  .specs .v{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:13px}
+  .specs .w{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:11.5px;color:var(--ink)}
+  .specs .why{display:inline-flex;gap:6px;align-items:center;font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .specs .by{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:9.5px;color:var(--soft);white-space:nowrap}
+  .specs .path{font-family:var(--mono);font-size:12px;color:var(--ink)}
+  .specs .path small{font-family:var(--cond);letter-spacing:.08em;text-transform:uppercase;font-size:9.5px;color:var(--soft);margin-left:5px}
+  .specs .note,.specs .after{font-size:12.5px;color:var(--muted);font-style:italic}
   .field .in.need{color:var(--warn);border-color:var(--warn)}
   .choices label.need>span:first-of-type{color:var(--muted)}
   .field .in{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:9.5px;color:var(--muted);border:1px solid var(--line);padding:0 4px;border-radius:2px;margin-left:6px}
@@ -373,15 +415,23 @@
 
   /* --- config.conf as a form ------------------------------------------- */
   .cfg{display:grid;gap:26px;padding:26px 32px 60px;max-width:860px}
-  .cfg .bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;position:sticky;top:64px;background:var(--surface);padding:10px 0;border-bottom:1px solid var(--line);z-index:1}
+  /* Sticks right under the modal's header, whose real height the modal measures
+     into --modal-top when it opens (64px was a guess the wrapped tabs outgrew). */
+  .cfg .bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;position:sticky;top:var(--modal-top,64px);background:var(--surface);padding:10px 0;border-bottom:1px solid var(--line);z-index:1}
   .cfg .bar .note{flex:1;min-width:200px}
   .cfg .sec{display:grid;gap:14px}
   .cfg .sec .intro{margin:-6px 0 0;font-size:13.5px;color:var(--muted);max-width:60ch}
+  /* A group inside a section ('# -- Application --'), and the note a
+     section closes with — what the file says between its fields. */
+  .cfg .sec h5.grp{margin:8px 0 -4px;font-family:var(--cond);font-weight:600;text-transform:uppercase;letter-spacing:.12em;font-size:11px;color:var(--muted)}
+  .cfg .sec .outro{margin:6px 0 0;font-style:italic}
+  .cfg .sec .outro a{color:var(--accent)}
   .cfg .sec h4{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:16px;display:flex;gap:10px;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:6px}
   .cfg .row{display:grid;grid-template-columns:220px minmax(0,1fr);gap:4px 16px;align-items:center}
   .cfg .row label{font-family:var(--mono);font-size:12.5px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .cfg .row .help{grid-column:2;font-size:12.5px;color:var(--muted);margin:0}
   .cfg .row .help a{color:var(--accent)}
+  .cfg .row select option.dim{color:var(--soft)}
   .cfg .row input[type=text],.cfg .row select{font-family:var(--mono);font-size:13px;padding:6px 8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;width:100%;max-width:520px}
   .cfg .row input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent)}
   .cfg .row.changed label::after{content:"●";color:var(--accent);font-size:10px}
@@ -437,10 +487,13 @@
 <body>
 <header class="band">
   <h1>Dockerized Elixir Workbench <small>Console</small></h1>
+  <!-- The caveat, the clock, and — at the corner, where a control is
+       looked for — the only button up here: the workbench's own drawer,
+       answering the title at the other end of the band. -->
   <div class="right">
-    <button class="ver" id="wb-open" title="The workbench: its manual, its changelog, its config">wb.sh <span id="wb-ver"></span> <small>manual · config</small></button>
-    <span id="clock"></span>
     <span class="mock" title="A mock to judge the interaction. The workspace and the catalog are real (./wb.sh status --json, ./wb.sh catalog --json); the logs are a real capture of this workspace replayed; the install and deploy output is staged.">mock · replayed logs · staged jobs</span>
+    <span id="clock"></span>
+    <button class="ver" id="wb-open" title="The workbench: its manual, its changelog, its config">wb.sh <span id="wb-ver"></span> <small>config · manual</small></button>
   </div>
 </header>
 
@@ -457,39 +510,49 @@
       <div class="urls" id="doors"></div>
     </section>
     <section>
+      <h2>Deployments <span class="label">baked · running</span></h2>
+      <table class="rows" id="deployments"></table>
+    </section>
+    <section>
       <h2>Containers <span class="label" id="containers-sum"></span></h2>
       <table class="rows" id="containers"></table>
     </section>
     <section>
-      <h2>Deployments <span class="label">baked · running</span></h2>
-      <table class="rows" id="deployments"></table>
+      <h2>Inserted <span class="label" id="slots-sum"></span></h2>
+      <table class="rows" id="slots"></table>
     </section>
     <section>
       <h2>Git <span class="label" id="git-sum"></span></h2>
       <div class="git" id="git"></div>
     </section>
-    <section>
-      <h2>Probes <span class="label">what cartridges answer</span></h2>
-      <div id="probes"></div>
-    </section>
-    <section>
-      <h2>Inserted <span class="label" id="slots-sum"></span></h2>
-      <div class="slots" id="slots"></div>
-    </section>
   </aside>
 
   <main class="screen">
     <div class="tabs" role="tablist" aria-label="Screens">
-      <button class="tab" role="tab" data-tab="deploy" aria-selected="true">Deploy</button>
-      <button class="tab" role="tab" data-tab="logs" aria-selected="false">Logs <span class="live" id="logs-live" title="following"></span><span class="badge" id="logs-badge" hidden></span></button>
       <button class="tab" role="tab" data-tab="project" aria-selected="false">Project</button>
-      <button class="tab" role="tab" data-tab="terminal" aria-selected="false">Terminal <span class="live" id="term-live" hidden title="a session is open"></span></button>
+      <button class="tab" role="tab" data-tab="deploy" aria-selected="true">Deploy</button>
+      <button class="tab" role="tab" data-tab="jobs" aria-selected="false">Jobs <span class="live" id="jobs-live" hidden title="a job is running"></span><span class="badge" id="jobs-badge" hidden></span></button>
       <button class="tab" role="tab" data-tab="cluster" aria-selected="false" id="tab-cluster" hidden>Cluster</button>
+      <button class="tab" role="tab" data-tab="terminal" aria-selected="false">Terminal <span class="live" id="term-live" hidden title="a session is open"></span></button>
+      <button class="tab" role="tab" data-tab="logs" aria-selected="false">Logs <span class="live" id="logs-live" title="following"></span><span class="badge" id="logs-badge" hidden></span></button>
       <button class="tab" role="tab" data-tab="shelf" aria-selected="false">Cartridges <span class="badge" id="shelf-badge"></span></button>
     </div>
 
     <section class="panel" id="panel-terminal" role="tabpanel">
-      <div class="term" id="term"></div>
+      <div class="logs term" id="term"></div>
+    </section>
+
+    <section class="panel" id="panel-jobs" role="tabpanel">
+      <div class="logs jobsp">
+        <div class="toolbar cli">
+          <span class="p">$ ./wb.sh</span>
+          <input type="text" id="wb-cli" placeholder="new, add, up, status, help… · ↑↓ history · Tab completes commands, cartridges and options from the catalog" aria-label="wb.sh command" spellcheck="false">
+          <span class="sep"></span>
+          <button class="btn" id="jobs-clear">Clear done</button>
+        </div>
+        <div class="logmeta" id="jobs-metabar" hidden><span id="jobs-meta"></span><span id="jobs-fold"></span></div>
+        <div class="viewport light"><div class="lines" id="jobs"></div></div>
+      </div>
     </section>
 
     <section class="panel" id="panel-cluster" role="tabpanel">
@@ -501,8 +564,8 @@
         <h2>Cartridges <span class="label" id="shelf-sum"></span></h2>
         <div class="filters" role="group" aria-label="Filter the shelf">
           <button class="btn" data-filter="all" aria-pressed="true">All</button>
-          <button class="btn" data-filter="standalone" aria-pressed="false">Standalone</button>
-          <button class="btn" data-filter="composed" aria-pressed="false">Composed by setup</button>
+          <button class="btn" data-filter="collection" aria-pressed="false">Collections</button>
+          <button class="btn" data-filter="base" aria-pressed="false">Base</button>
           <button class="btn" data-filter="covered" aria-pressed="false">With a box</button>
         </div>
       </div>
@@ -515,10 +578,10 @@
           <span id="svc-chips" style="display:inline-flex;gap:6px;flex-wrap:wrap"></span>
           <span class="sep"></span>
           <select id="level" aria-label="Level">
-            <option value="debug">All levels</option>
-            <option value="info">Info and up</option>
-            <option value="warn">Warnings and up</option>
-            <option value="error">Errors only</option>
+            <option value="debug">🔍 All levels</option>
+            <option value="info">ℹ️+ Info and up</option>
+            <option value="warn">⚠️+ Warnings and up</option>
+            <option value="error">⛔ Errors only</option>
           </select>
           <input type="search" id="q" placeholder="Search the lines…" aria-label="Search">
           <span class="sep"></span>
@@ -565,9 +628,8 @@
         <h4>Jobs</h4>
         <span class="chip off" id="tray-state">idle</span>
         <span class="last" id="tray-last">Every command the console runs is a job: its output, its exit code, how long it took.</span>
-        <span class="caret">▴</span>
+        <span class="caret">→ jobs</span>
       </div>
-      <div class="list" id="jobs"></div>
     </div>
   </main>
 </div>
@@ -593,12 +655,13 @@
         <div class="kicker" id="d-kicker"></div>
         <h4 id="d-name"></h4>
         <p id="d-summary"></p>
+        <div class="need" id="d-need" hidden></div>
         <div class="req" id="d-req"></div>
       </div>
+      <div id="d-specs" hidden><span class="label">Specs</span><div class="specs" id="d-specrows"></div></div>
       <form class="insert" id="d-form">
         <span class="label">Options</span>
         <div id="d-fields"></div>
-        <div class="deps" id="d-deps" hidden></div>
         <div class="cmd" id="d-cmd"></div>
         <div class="acts"><button class="go" id="d-go" type="submit">Insert cartridge</button><button class="eject" id="d-eject" type="button" hidden>Eject</button><span class="note" id="d-note"></span></div>
       </form>
@@ -648,9 +711,18 @@ const DOCS = {{DOCS}};
 // workspace generated for itself (README.md, CHANGELOG.md, .env with its
 // secrets masked at build time).
 const WB = {{WB}};
+const STACKS = {{STACKS}};
 const PROJ = {{PROJ}};
 const ART = {{ART}};
-const SOCKET = "{{SOCKET}}";
+// Two placeholder boxes under assets/covers/, a front and a back each,
+// for a cartridge with no sealed box of its own: the socket — the bare
+// board, and its reverse side — and, where there is no cartridge at all
+// but its papers, the drawing it would have been built from, with the
+// ink showing through the sheet on the other side.
+const PH = {
+  socket: { front: "{{PH_COVER}}", back: "{{PH_BACK}}" },
+  empty: { front: "{{PH_EMPTY_COVER}}", back: "{{PH_EMPTY_BACK}}" },
+};
 
 const APP = STATUS.project ? STATUS.project.app : "app";
 const WEB = APP + "_web";
@@ -664,6 +736,10 @@ const TOUCH = {
   exdebug:      [["upd","mix.exs"],["  ","  + {:ex_debug, \"~> 1.0\"}"]],
   githooks:     [["upd","mix.exs"],["  ","  + {:git_hooks, \"~> 0.7\", only: :dev, runtime: false}"]],
   exmachina:    [["upd","mix.exs"],["  ","  + {:ex_machina, \"~> 2.8\", only: :test}"]],
+  ansi:         [["upd","config/config.exs"],["  ","  config :elixir, ansi_enabled: true"]],
+  toolchain:    [["add",".tool-versions"],["  ","  erlang 27.3.4.2 · elixir 1.19.5 — off the toolchain running the insert"],["upd",".gitignore"]],
+  versioning:   [["upd","mix.exs"],["  ","  version: \"0.0.0\""],["add","CHANGELOG.md"]],
+  guidelines:   [["add","assets/exdoc/coding.md"],["upd","mix.exs"],["  ","  docs: extras + groups_for_extras[:Support]"]],
   rest:         [["add",`lib/${WEB}/open_api/spec.ex`],["add",`lib/${WEB}/open_api/schemas.ex`],["upd",`lib/${WEB}/router.ex`],["upd","mix.exs"]],
   graphql:      [["add",`lib/${WEB}/graphql/schema.ex`],["upd",`lib/${WEB}/router.ex`],["upd","mix.exs"]],
   coveralls:    [["add","coveralls.json"],["add","lib/mix/tasks/cover.ex"],["add","test/cover/template/exdoc-ish/coverage.html.eex"],["upd","mix.exs"]],
@@ -708,6 +784,16 @@ function stateNow(name) {
   return (c && c.state) || {};
 }
 const byName = name => state.entries.find(e => e.name === name);
+// A mention of a cartridge, in the house notation (assets/design,
+// components.css): the state as a dot, the name, and — when it exists —
+// the door to its detail.
+function cartRef(name) {
+  const e = byName(name);
+  if (!e) return el("span", { class: "cart-ref unknown", title: "no such cartridge" }, name);
+  return el("button", { type: "button", class: "cart-ref" + (e.installed ? " in" : ""),
+    title: (e.installed ? "inserted" + (e.version ? " · v" + e.version.version : "") : "on the shelf, not inserted") + " — open its box",
+    onclick: ev => { ev.preventDefault(); ev.stopPropagation(); open(name); } }, name);
+}
 const title = e => e.name.replace(/(\d+)$/, " $1").replace(/_/g, " ");
 
 // --- the console (left board): re-rendered whenever the state moves ---------
@@ -735,23 +821,23 @@ function renderConsole() {
     if (!up && baked) cell.append(el("span", { class: "hint" }, `./wb.sh up --deploy ${name}`));
     d.append(el("tr", {}, el("td", { class: "k" }, name), cell));
   }
-  renderProbes(); renderSlots(); renderGit(); renderTargets(); renderDoors(); renderCluster(); renderTerminal(); if ($("#newcard")) renderNewCard();
+  renderSlots(); renderGit(); renderTargets(); renderDoors(); renderCluster(); renderTerminal(); if ($("#newcard")) renderNewCard();
 }
 function renderGit() {
   const g = state.git, box = $("#git"); box.replaceChildren();
-  if (!g.repo) { $("#git-sum").textContent = "no repository"; box.append(el("p", { class: "note" }, "phx.new initialises the repository; new2 makes the first commit.")); return; }
+  if (!g.repo) { $("#git-sum").textContent = "no repository"; box.append(el("p", { class: "note" }, "phx.new initialises the repository; new makes the first commit.")); return; }
   $("#git-sum").textContent = g.clean ? "clean" : "changes git does not have";
   box.append(el("div", { class: "row" }, el("span", { class: "k" }, "tree"), el("span", { class: "chip " + (g.clean ? "good" : "warn") }, g.clean ? "clean" : "dirty")));
   box.append(el("div", { class: "row" }, el("span", { class: "k" }, "head"), el("span", {}, g.head || "no commits yet")));
   box.append(el("div", { class: "row" }, el("span", { class: "k" }, "signs as"), el("span", { title: g.identity }, (g.identity || "").replace(/ <.*/, ""))));
   const ins = el("div", { class: "ins" });
-  for (const i of g.inserts) ins.append(el("span", { class: "chip", title: i.sha.slice(0, 7) + " · " + i.date }, i.feature));
+  for (const i of g.inserts) { const c = cartRef(i.feature); c.title = i.sha.slice(0, 7) + " · " + i.date + " — open its box"; ins.append(c); }
   box.append(el("div", { class: "row" }, el("span", { class: "k" }, "inserts"), g.inserts.length ? ins : el("span", { class: "note" }, "none yet")));
   if (!g.clean) box.append(el("button", { class: "btn", onclick: commitPending }, "Commit pending changes"));
 }
 function commitPending() {
   runJob("./wb.sh commit", [["ok", `Committed Workbench: commit pending changes (as ${state.git.identity}).`]], { onDone: () => { state.git.clean = true; state.git.head = "a1b2c3d Workbench: commit pending changes"; renderConsole(); renderForm(); } });
-  $("#tray").classList.add("open");
+  jobsPing();
 }
 function deploymentUp(name) {
   const c = state.containers;
@@ -789,29 +875,18 @@ function renderDoors() {
   $("#tab-cluster").hidden = !tabs.has("cluster");
   if (!tabs.has("cluster") && state.tab === "cluster") showTab("deploy");
 }
-function renderProbes() {
-  const p = $("#probes"); p.replaceChildren();
-  const probes = contributions("probes"), up = appUp();
-  if (probes.length) {
-    const list = el("div", { class: "probes" });
-    for (const [e, pr] of probes) { const path = fillPath(e, pr.path); list.append(el("div", {}, el("span", { title: e.name }, `GET ${path}`), el("span", { class: "code" + (up ? "" : " bad") }, up ? "200 ok" : "no answer"))); }
-    p.append(list);
-    p.append(el("p", { class: "note" }, "Polled by the console. (Values staged in the mock.)"));
-  } else {
-    p.append(el("p", { class: "note" }, "Insert a cartridge with probes (healthcheck2) and they light up here."));
-  }
-}
 function renderSlots() {
   const s = $("#slots"); s.replaceChildren();
   const ins = state.entries.filter(e => e.installed);
-  $("#slots-sum").textContent = `${ins.length} cartridge${ins.length === 1 ? "" : "s"}`;
+  $("#slots-sum").textContent = ins.length ? `${ins.length} cartridge${ins.length === 1 ? "" : "s"}` : "none";
+  if (!ins.length) { s.append(el("tr", {}, el("td", { class: "muted" }, "Nothing inserted yet: the shelf is in Cartridges."))); return; }
   for (const e of ins) {
-    s.append(el("div", { class: "slot" + (e.justInserted ? " new" : "") },
-      el("span", { class: "lozenge" }, title(e)),
-      el("span", { class: "v" }, e.version ? `v${e.version.version} · ${e.version.date}` : "unversioned")));
+    // A cartridge named anywhere wears the house's reference (components.css).
+    s.append(el("tr", { class: e.justInserted ? "new" : "" },
+      el("td", {}, cartRef(e.name)),
+      el("td", { class: "muted" }, e.version ? `v${e.version.version} · ${e.version.date}` : "unversioned")));
     e.justInserted = false;
   }
-  s.append(el("div", { class: "slot empty" }, "free slot"));
 }
 
 // --- tabs --------------------------------------------------------------------
@@ -820,18 +895,51 @@ function showTab(name) {
   for (const t of $$(".tab")) t.setAttribute("aria-selected", String(t.dataset.tab === name));
   for (const p of $$(".panel")) p.classList.toggle("on", p.id === "panel-" + name);
   if (name === "logs") { logs.unseenErrors = 0; renderLogBadge(); if (logs.follow) scrollToEnd(); }
+  updateTray();
+}
+// The screens that start jobs — where the tray is the answer coming back.
+// Everywhere else it is a strip of unrelated news, so it stays away: on
+// the Jobs tab it would repeat the screen and point at where the reader
+// already is, with no job at all it has nothing to say, and on Project,
+// Logs or Terminal nothing the reader did put it there. A job still
+// running is the exception: that one follows you.
+const JOB_SCREENS = new Set(["deploy", "shelf", "cluster"]);
+function updateTray() {
+  const running = state.jobs.some(j => j.state === "running");
+  $("#tray").hidden = state.tab === "jobs" || !state.jobs.length || !(running || JOB_SCREENS.has(state.tab));
 }
 for (const t of $$(".tab")) t.addEventListener("click", () => showTab(t.dataset.tab));
 
 // --- the shelf ---------------------------------------------------------------
+// What is true of a box, not what kind of box it is: there is one kind
+// of cartridge. The facts are independent — a box can carry several,
+// and most carry none — so they are listed, never chosen between.
+// `installed` is not among them: the plank and its own chip say it.
+function facts(e) {
+  return [
+    e.pending && "not done",
+    e.collection && `inserts ${collectionRecipe(e).length}`,
+    e.base && "base",
+  ].filter(f => typeof f === "string");
+}
 function renderShelf() {
   const shelf = $("#shelf"); shelf.replaceChildren();
   const f = state.filter;
-  const visible = state.entries.filter(e => f === "all" ? true : f === "standalone" ? e.standalone : f === "composed" ? !e.standalone : !!ART[e.name]);
+  const visible = state.entries.filter(e => f === "all" ? true : f === "collection" ? e.collection : f === "base" ? e.base : !!ART[e.name]);
   const withBox = state.entries.filter(e => ART[e.name]).length;
   $("#shelf-sum").textContent = `${state.entries.length} cartridges · ${withBox} with a box`;
   $("#shelf-badge").textContent = `${state.entries.filter(e => e.installed).length} in`;
-  const groups = [["Standalone — inserted by hand, one at a time", visible.filter(e => e.standalone)], ["Composed by setup — in composition order", visible.filter(e => !e.standalone)]];
+  // The planks are a view, not a taxonomy: there is one kind of
+  // cartridge, so they group by the box's *state* — which is what you
+  // came to the shelf to know — and what a box does (it inserts
+  // others, phx.new decides it, it is not done yet) rides on the
+  // box as a fact. What the project carries reads first: the shelf
+  // answers what this project *is* before what it could be.
+  const groups = [
+    ["In the project", visible.filter(e => e.installed)],
+    ["On the shelf — pick one to insert", visible.filter(e => !e.installed && !e.pending)],
+    ["Not done yet", visible.filter(e => !e.installed && e.pending)],
+  ];
   for (const [label, list] of groups) {
     if (!list.length) continue;
     const row = el("div", { class: "row" }, el("span", { class: "label" }, label));
@@ -844,10 +952,17 @@ function renderShelf() {
 function boxEl(e) {
   const face = el("div", { class: "face" + (ART[e.name] ? "" : " socket") });
   if (ART[e.name]) face.append(el("img", { src: ART[e.name].front, alt: `${title(e)} — box cover`, draggable: "false" }));
-  else face.append(el("img", { src: SOCKET, alt: "", draggable: "false" }), el("span", { class: "name" }, title(e)));
-  const box = el("button", { class: "box" + (e.pending ? " pending" : ""), type: "button", "aria-label": `${title(e)}: pick up the box`, onclick: () => open(e.name) }, face);
-  if (e.installed) box.append(el("span", { class: "stamp" }, "inserted"));
-  box.append(el("div", { class: "cap" }, el("b", {}, e.name), el("span", {}, e.pending ? "pending" : e.version ? "v" + e.version.version : e.flag ? "--" + e.flag : e.standalone ? "add" : "setup")));
+  else face.append(el("img", { src: (e.pending ? PH.empty : PH.socket).front, alt: "", draggable: "false" }), el("span", { class: "name" }, title(e)));
+  const box = el("button", { class: "box" + (e.pending ? " pending" : "") + (e.installed ? " in" : ""), type: "button", "aria-label": `${title(e)}: pick up the box`, onclick: () => open(e.name) }, face);
+  // The caption carries what is true of this box — nothing, for most
+  // of them: the plank already says the state, and the version it used
+  // to print is a click away, inside the box.
+  const st = facts(e).join(" · ");
+  const cap = el("div", { class: "cap" }, el("b", {}, e.name));
+  // Nothing to say, nothing in the slot: the plank carries the state,
+  // and a lone dot beside a name is not a fact.
+  if (st) cap.append(el("span", { class: "st", title: e.installed && e.version ? "inserted · v" + e.version.version : "" }, st));
+  box.append(cap);
   return box;
 }
 for (const b of $$(".filters .btn")) b.addEventListener("click", () => {
@@ -856,7 +971,7 @@ for (const b of $$(".filters .btn")) b.addEventListener("click", () => {
 });
 
 // --- the box in hand ---------------------------------------------------------
-const DOC_TABS = [["box", "Box", null], ["readme", "Manual", "README.md"], ["design", "Design", "DESIGN.md"], ["changelog", "Changelog", "CHANGELOG.md"]];
+const DOC_TABS = [["box", "Box", null], ["need_md", "Need", "NEED.md"], ["readme", "Manual", "README.md"], ["design", "Design", "DESIGN.md"], ["changelog", "Changelog", "CHANGELOG.md"]];
 function renderDrawerTabs() {
   const e = state.current, docs = DOCS[e.name] || {}, box = $("#d-tabs"); box.replaceChildren();
   for (const [key, label, file] of DOC_TABS) {
@@ -907,8 +1022,8 @@ function renderDoc(key) {
   const e = state.current;
   renderMarkdown(DOCS[e.name][key], $("#d-md"), $("#d-toc"), $("#d-booklet"), "igniter/lib/workbench_igniter/features/" + e.name + "/", (a, href) => {
     let m;
-    if ((m = href.match(/^(README|DESIGN|CHANGELOG)\.md(#.*)?$/i))) { const k = m[1].toLowerCase(); a.href = "#" + k; a.dataset.tab = k; return true; }
-    if ((m = href.match(/^\.\.\/([a-z0-9_]+)\/?(README\.md)?$/))) { const other = byName(m[1]); if (other) { a.href = "#" + other.name; a.dataset.open = other.name; a.textContent = title(other) + " ▸"; return true; } }
+    if ((m = href.match(/^(NEED|README|DESIGN|CHANGELOG)\.md(#.*)?$/i))) { const k = m[1].toLowerCase() === "need" ? "need_md" : m[1].toLowerCase(); a.href = "#" + k; a.dataset.tab = k; return true; }
+    if ((m = href.match(/^\.\.\/([a-z0-9_]+)\/?(README\.md)?$/))) { const other = byName(m[1]); if (other) { a.href = "#" + other.name; a.dataset.open = other.name; a.textContent = other.name; a.classList.add("cart-ref"); if (other.installed) a.classList.add("in"); return true; } }
     return false;
   }, "h-", DOC_TABS.find(t => t[0] === key)[2]);
 }
@@ -924,15 +1039,33 @@ function open(name) {
   renderDrawerTabs(); showDrawerTab("box");
   $("#d-title").textContent = e.name;
   $("#d-name").textContent = title(e);
-  $("#d-summary").textContent = e.summary || "Documented in the generated project, but the installer is not ported yet.";
+  $("#d-summary").textContent = e.summary || "Documented in the generated project, but its installer is not done yet.";
+  // NEED.md: the developer's need this cartridge answers, in their words.
+  const need = (DOCS[e.name] || {}).need, nd = $("#d-need");
+  nd.replaceChildren(); nd.hidden = !need;
+  if (need) {
+    // A tick chip pads on both sides, and when punctuation follows it
+    // that padding reads as a space: "`unavailable` ; the JSON is
+    // `healthcheck` 's." Those chips give the right side back.
+    const ticked = text => { const p = text.split("`"); return p.map((part, i) => i % 2 ? el("code", { class: /^['’,.;:!?)]/.test(p[i + 1] || "") ? "tight" : "" }, part) : part); };
+    if (need.want) nd.append(el("p", { class: "want" }, ...ticked(need.want)));
+    for (const [label, key] of [["Before", "before"], ["After", "after"], ["Not for", "not_for"]])
+      if (need[key]) nd.append(el("div", { class: "row" }, el("span", { class: "k" }, label), el("span", { class: "v" }, ...ticked(need[key]))));
+  }
+  // The kicker reads state first — the one thing that changes what the
+  // rest means — then the edition of that state, then what sort of box
+  // it is. The design paper is no longer announced here: the tab row
+  // above already carries DESIGN when the box has one. How many a
+  // collection inserts, and which, is the Specs panel two lines below.
   const k = $("#d-kicker"); k.replaceChildren();
-  k.append(el("span", { class: "chip" }, e.standalone ? "standalone" : "composed by setup"));
-  if (e.flag) k.append(el("span", { class: "chip" }, "--" + e.flag));
-  if (e.version) k.append(el("span", { class: "chip" }, `v${e.version.version}`));
-  if (e.pending) k.append(el("span", { class: "chip warn" }, "pending"));
-  if (e.installed) k.append(el("span", { class: "chip good" }, "inserted"));
-  const docs = DOCS[e.name] || {};
-  if (docs.design) k.append(el("span", { class: "chip", title: "This box comes with its design paper" }, "with design paper"));
+  const chip = (cls, text, title) => el("span", { class: "chip" + (cls ? " " + cls : ""), title: title || "" }, text);
+  k.append(e.pending ? chip("warn", "not done", "the box is designed; its installer is not done yet")
+    : e.installed ? chip("good", "inserted") : chip("", "on the shelf"));
+  if (e.version) k.append(chip("", `v${e.version.version}`));
+  if (e.collection) k.append(chip("", "collection"));
+  if (e.base) k.append(chip("", "base", "a phx.new capability: in from birth unless left out"));
+  // A box with nothing to declare leaves no empty row behind.
+  k.hidden = !k.children.length;
   const req = $("#d-req"); req.replaceChildren();
   if (e.name === "rest" || e.name === "graphql") req.append(el("span", { class: "chip" }, "one interface: rest | graphql"));
   renderFace(); renderForm();
@@ -956,8 +1089,13 @@ function renderFace() {
   } else {
     const opts = e.options.length ? e.options.map(o => `--${o.name.replace(/_/g, "-")}` + (o.default !== null && o.default !== undefined ? ` (${o.default})` : "")).join(" · ") : "no options";
     // (choices are {value, doc} objects; the back lists the flags only)
-    front.append(el("img", { src: SOCKET, alt: "" }), el("div", { class: "typeset" }, el("h4", {}, title(e)), el("span", { class: "nocover" }, "no box yet — the socket stands in")));
-    back.append(el("img", { src: SOCKET, alt: "" }), el("div", { class: "typeset" }, el("h4", {}, e.summary || title(e)), el("p", {}, e.example ? "$ " + e.example : ""), el("p", {}, opts), el("span", { class: "nocover" }, "typeset back — the composed back would go here")));
+    // The drawing is the state: a marked-up sheet, stamped DRAFT and
+    // pending review, is what a cartridge nobody has built looks like.
+    const empty = !!e.pending, ph = empty ? PH.empty : PH.socket, ts = "typeset" + (empty ? " onlight" : "");
+    front.append(el("img", { src: ph.front, alt: "" }), el("div", { class: ts }, el("h4", {}, title(e)),
+      el("span", { class: "nocover" }, empty ? "not done yet — a drawing, not a cartridge" : "no box yet — the socket stands in")));
+    back.append(el("img", { src: ph.back, alt: "" }), el("div", { class: ts }, el("h4", {}, e.summary || title(e)), el("p", {}, e.example ? "$ " + e.example : ""), el("p", {}, opts),
+      el("span", { class: "nocover" }, empty ? "not done yet — the drawing, through the sheet" : "typeset back — the composed back would go here")));
   }
   const card = el("div", { class: "card" + (state.face === "back" ? " back" : ""), id: "d-card" }, front, back);
   if (reduced()) card.style.transition = "none";
@@ -1031,19 +1169,95 @@ function afterwards(e) {
   if (e.name === "ash") { const o = e.options.find(x => x.name === "data_layer"); if (!o || !$$("input[name='opt-data_layer']").length || !choiceValue(o).some(v => ["postgres", "sqlite"].includes(v)) || inProject("ecto")) return null; }
   return e.afterwards || null;
 }
-// The Dependencies section: what the cartridge builds on, what the
-// chosen options add to that, what it comes with, and what follows.
-function renderDeps() {
-  const e = state.current, box = $("#d-deps"); box.replaceChildren();
+// A collection's recipe — {name, argv} per member — as its own options
+// choose it. The catalog carries the recipe its *defaults* give; the
+// only choice that changes the list is the interface, so the mock swaps
+// that one member. (The console proper asks `mix workbench.expand`,
+// which answers for the options as filled and leaves out what the
+// project already carries.)
+const INTERFACES = ["rest", "graphql"];
+// The recipe as the catalog carries it: what the collection's defaults
+// insert. What every reader outside the open box sees.
+function collectionRecipe(e) { return (e && e.members) || []; }
+// The recipe as the box in hand has it filled.
+function collectionMembers(e) {
+  const recipe = collectionRecipe(e);
+  const o = recipe.length && e.options.find(x => x.name === "interface");
+  const pick = o ? (choiceValue(o)[0] || o.default) : null;
+  if (!pick) return recipe;
+  return recipe.map(m => {
+    // Swapping the interface member takes the recipe's argv for it with
+    // it: what the other one gets is the manifest's to say, and
+    // expand's to answer.
+    if (INTERFACES.includes(m.name)) return m.name === pick ? m : { name: pick, argv: [] };
+    // The choice flows on into the picks the recipe hands it to.
+    const argv = m.argv.map((a, i) => (m.argv[i - 1] === "--interface" ? pick : a));
+    return argv.every((a, i) => a === m.argv[i]) ? m : { ...m, argv };
+  });
+}
+// What a collection would insert here: its recipe minus what the
+// project carries — the plan `wb.sh add` runs, one commit each.
+function missingMembers(e) { return collectionMembers(e).filter(m => !inProject(m.name)); }
+
+// Specs: what the cartridge is, as opposed to what you are about to do
+// with it. Every row is the manifest's, and none of it is this project's
+// business — "insert html first" and "already inserted" belong to the
+// button. These facts used to be scattered: a kicker chip, two rows
+// inside the insert form, and the console's doors nowhere at all.
+//
+// Two rows move with the options (a collection swaps its interface
+// member; a chosen value can ask for another cartridge), so the panel is
+// live and says which switch moved it — better one list that is always
+// true than a fixed one contradicted below it.
+function renderSpecs() {
+  const e = state.current, box = $("#d-specrows"); box.replaceChildren();
   const row = (k, ...items) => box.append(el("span", { class: "k" }, k), el("span", { class: "v" }, ...items));
-  const dep = n => el("button", { type: "button", class: "chip " + (inProject(n) ? "good" : "warn"), title: (inProject(n) ? "inserted" : "not in the project yet") + " — open its box", onclick: () => open(n) }, n + (inProject(n) ? " ✓" : " ✗"));
-  if (e.requires && e.requires.length) row("Builds on", ...e.requires.map(dep));
-  const opt = optionRequires(e);
-  if (opt.length) row("With these options", ...opt.map(r => el("span", { class: "why" }, r.why + " →", dep(r.name))));
-  if (e.implies.length) row("Comes with", ...e.implies.map(n => el("button", { type: "button", class: "chip", title: "new composes it alongside — open its box", onclick: () => open(n) }, n)));
-  const after = e.installed && e.rerun !== "adds" ? null : afterwards(e);
-  if (after) row("Afterwards", el("span", { class: "after" }, after));
-  box.hidden = !box.children.length;
+  const by = why => el("span", { class: "by" }, "by " + why);
+  const path = (p, label) => el("span", { class: "path" }, p, label ? el("small", {}, label) : "");
+
+  // The mix task behind it: the box's name in the workbench's own terms,
+  // and the one line that is true of it whatever you do here.
+  if (e.task) row("Task", path("mix " + e.task));
+
+  // What sort of box it is, and what a second insert does — nothing to
+  // say about a second insert of a box that takes no first one.
+  const again = e.pending ? null
+    : e.collection ? "inserting it again inserts what is missing"
+    : e.rerun === "adds" ? "inserting it again adds to what is in"
+    : "inserting it again changes nothing";
+  const note = [e.base && "a phx.new capability, in from birth unless left out", again].filter(Boolean).join(" · ");
+  row("Kind", el("span", { class: "w" }, e.collection ? "collection" : e.base ? "base cartridge" : "cartridge"),
+    ...(note ? [el("span", { class: "note" }, note)] : []));
+
+  // What it builds on: the manifest's, and what the options as chosen
+  // add — those grouped by the switch that asked, or one value that
+  // needs two cartridges says its own name twice.
+  const asked = new Map();
+  for (const r of optionRequires(e)) asked.set(r.why, [...(asked.get(r.why) || []), r.name]);
+  const needs = [...(e.requires || []).map(n => cartRef(n)),
+    ...[...asked].map(([why, names]) => el("span", { class: "why" }, ...names.map(cartRef), by(why)))];
+  if (needs.length) row("Needs", ...needs);
+
+  // A collection's recipe, as its own options fill it.
+  const members = collectionMembers(e), io = e.options.find(x => x.name === "interface");
+  if (members.length) {
+    const moved = JSON.stringify(members) !== JSON.stringify(collectionRecipe(e));
+    row("Inserts", ...members.map(m => m.argv.length
+      ? el("span", { class: "why" }, cartRef(m.name), el("span", {}, m.argv.join(" ")))
+      : cartRef(m.name)), ...(moved && io ? [by("--interface " + (choiceValue(io)[0] || io.default))] : []));
+  }
+
+  // What it lights up in the console, off the manifest's `console/0`.
+  const c = e.console || {};
+  // The paths as the options fill them: `{path}/live` is the manifest's
+  // shape, `/health/live` is what it will answer.
+  if ((c.doors || []).length) row("Opens", ...c.doors.map(d => path(fillPath(e, d.path), d.label)));
+  if ((c.probes || []).length) row("Answers", ...c.probes.map(p => path(fillPath(e, p.path), p.label)));
+  if ((c.tabs || []).length) row("Lights", ...c.tabs.map(t => el("span", { class: "w" }, t)));
+
+  const after = afterwards(e);
+  if (after) row("After", el("span", { class: "after" }, after));
+  $("#d-specs").hidden = !box.children.length;
 }
 function renderForm() {
   const e = state.current, fields = $("#d-fields"); fields.replaceChildren();
@@ -1069,15 +1283,24 @@ function renderGo() {
   const dirty = state.git.repo && !state.git.clean;
   const adds = e.installed && e.rerun === "adds";
   const missing = missingAll(e);
-  go.disabled = e.pending || locked || dirty || missing.length > 0;
-  go.className = "go" + (locked ? " done" : "");
-  go.textContent = e.pending ? "Not ported yet" : locked ? "Already inserted" : missing.length ? "Insert " + missing[0].name + " first" : adds ? "Add to cartridge" : "Insert cartridge";
+  // A collection is its members: what is left to insert is the plan,
+  // and there is nothing of its own to eject.
+  const left = e.collection ? missingMembers(e) : null;
+  go.disabled = e.pending || locked || dirty || missing.length > 0 || (left && !left.length);
+  go.className = "go" + (locked || (left && !left.length) ? " done" : "");
+  go.textContent = e.pending ? "Not done yet" : locked ? "Already inserted" : missing.length ? "Insert " + missing[0].name + " first"
+    : left ? (left.length ? `Insert ${left.length} cartridge${left.length === 1 ? "" : "s"}` : "Every pick is in")
+    : adds ? "Add to cartridge" : "Insert cartridge";
   const insert = state.git.inserts.find(i => i.feature === e.name);
-  eject.hidden = !e.installed; eject.disabled = !insert || dirty;
+  eject.hidden = !e.installed || !!e.collection; eject.disabled = !insert || dirty;
   eject.title = insert ? `git revert ${insert.sha.slice(0, 7)} — ${insert.subject}` : "Inserted by hand: no commit to revert";
-  note.textContent = dirty ? "the tree has changes git does not have — commit first" : locked ? (inserted ? "inserted once, with these options (from its commit); eject to change them" : "inserted once; its options are not on record — eject to change them") : adds ? "every option is a package: what is in stays, what you add is queued" : !e.installed ? "" : "";
+  note.textContent = dirty ? "the tree has changes git does not have — commit first"
+    : left ? (left.length ? "one commit per cartridge — what is in already is skipped" : "the box leaves no commit of its own: eject the cartridges, not the collection")
+    : locked ? (inserted ? "inserted once, with these options (from its commit); eject to change them" : "inserted once; its options are not on record — eject to change them")
+    : adds ? "every option is a package: what is in stays, what you add is queued" : !e.installed ? "" : "";
   const born = STATUS.project && STATUS.project.phx && STATUS.project.phx[e.name] === true;
-  if (e.installed && !insert && !dirty) note.textContent = born ? "came with the project: phx.new generated it — nothing to eject" : "inserted by hand: no commit to eject";
+  // A collection never has a commit of its own: its note already says so.
+  if (e.installed && !insert && !dirty && !left) note.textContent = born ? "came with the project: phx.new generated it — nothing to eject" : "inserted by hand: no commit to eject";
   if (!e.installed && missing.length && !dirty) note.textContent = "builds on " + missing.map(n => n.name).join(" and ") + ", not in the project yet";
   renderCmd();
 }
@@ -1096,7 +1319,7 @@ function eject(ev) {
       toast(`${title(e)} ejected`);
     },
   });
-  $("#tray").classList.add("open");
+  jobsPing();
 }
 $("#d-eject").addEventListener("click", eject);
 function withDoc(row, o) {
@@ -1156,7 +1379,51 @@ function currentArgs() {
   }
   return args;
 }
-function renderCmd() { $("#d-cmd").textContent = ["./wb.sh", "add", state.current.name, ...currentArgs()].join(" "); renderDeps(); }
+function renderCmd() { $("#d-cmd").textContent = ["./wb.sh", "add", state.current.name, ...currentArgs()].join(" "); renderSpecs(); }
+
+// The lines one `add` writes: the entrypoint's echo, what it touches,
+// and the commit that closes it. One cartridge, one commit.
+function addLines(name, argv, cid) {
+  return [
+    ["dim", `[${cid}]workbench/scripts/entrypoint.sh(${1 + argv.length}): add ${name} ${argv.join(" ")}`.trim()],
+    ...(TOUCH[name] || [["upd", "mix.exs"]]).map(([k, t]) => [k === "add" ? "add" : k === "upd" ? "upd" : "", k === "add" ? "Create: " + t : k === "upd" ? "Update: " + t : t]),
+    ["ok", `Committed Insert ${[name, ...argv].join(" ")} (as ${state.git.identity}).`],
+  ];
+}
+function cid() { return Math.random().toString(16).slice(2, 14); }
+function newInsert(name, argv) {
+  return { sha: Math.random().toString(16).slice(2, 42), feature: name, subject: `Insert ${[name, ...argv].join(" ")}`, date: new Date().toISOString().slice(0, 19).replace("T", " ") };
+}
+// Inserting a collection: the workbench expands the recipe against the
+// project and runs one add — and one commit — per member it lacks. The
+// box leaves no commit of its own; the members' commits are what eject
+// reverts, one at a time.
+function insertCollection(e, args) {
+  const plan = missingMembers(e), skipped = collectionMembers(e).filter(m => inProject(m.name)).map(m => m.name);
+  const log = $("#d-log"); log.replaceChildren();
+  const lines = [
+    ["dim", `[${cid()}]workbench/scripts/entrypoint.sh(${1 + args.length}): expand ${e.name} ${args.join(" ")}`.trim()],
+    ...(skipped.length ? [["dim", `Already in the project, left out: ${skipped.join(", ")}`]] : []),
+    ["", `${plan.length} to insert: ${plan.map(m => m.name).join(", ")}`],
+    ...plan.flatMap(m => addLines(m.name, m.argv, cid())),
+    ["ok", `✓ ${e.name}: ${plan.length} cartridge${plan.length === 1 ? "" : "s"} inserted, ${plan.length} commit${plan.length === 1 ? "" : "s"}. The collection leaves none of its own.`],
+  ];
+  runJob(["./wb.sh", "add", e.name, ...args].join(" "), lines, {
+    onLine: (cls, text) => { log.append(el("div", { class: cls }, text)); log.scrollTop = log.scrollHeight; },
+    onDone: () => {
+      for (const m of plan) {
+        const cart = byName(m.name); if (cart) { cart.installed = true; cart.justInserted = true; }
+        state.git.inserts.unshift(newInsert(m.name, m.argv));
+      }
+      if (state.git.inserts.length) state.git.head = state.git.inserts[0].sha.slice(0, 7) + " " + state.git.inserts[0].subject;
+      e.installed = true;
+      e.state = { ...(e.state || {}), interface: collectionMembers(e).map(m => m.name).find(n => INTERFACES.includes(n)) };
+      renderConsole(); renderShelf(); renderForm();
+      $("#d-kicker").append(el("span", { class: "chip good" }, "inserted"));
+      toast(`${plan.length} cartridge${plan.length === 1 ? "" : "s"} inserted`);
+    },
+  });
+}
 
 function insert(ev) {
   ev.preventDefault();
@@ -1164,21 +1431,22 @@ function insert(ev) {
   if (e.pending || (e.installed && e.rerun !== "adds")) return;
   const go = $("#d-go"); go.disabled = true; go.textContent = "Inserting…";
   const args = currentArgs();
+  if (e.collection) { insertCollection(e, args); return; }
   const path = $("#opt-path") ? $("#opt-path").value : null;
   const log = $("#d-log"); log.replaceChildren();
-  const cid = Math.random().toString(16).slice(2, 14);
+  const [echo, ...rest] = addLines(e.name, args, cid());
   const lines = [
-    ["dim", `[${cid}]workbench/scripts/entrypoint.sh(${1 + args.length}): add ${e.name} ${args.join(" ")}`.trim()],
+    echo,
     ["", "Resolving Hex dependencies..."], ["", "All dependencies are up to date"], ["dim", "==> workbench_igniter"],
-    ...(TOUCH[e.name] || [["upd", "mix.exs"]]).map(([k, t]) => [k === "add" ? "add" : k === "upd" ? "upd" : "", k === "add" ? "Create: " + t : k === "upd" ? "Update: " + t : t]),
-    ["dim", "Resolving Hex dependencies..."], ["ok", `Committed Insert ${[e.name, ...args].join(" ")} (as ${state.git.identity}).`],
+    ...rest.slice(0, -1),
+    ["dim", "Resolving Hex dependencies..."], rest[rest.length - 1],
   ];
   runJob(["./wb.sh", "add", e.name, ...args].join(" "), lines, {
     onLine: (cls, text) => { log.append(el("div", { class: cls }, text)); log.scrollTop = log.scrollHeight; },
     onDone: () => {
-      const subject = `Insert ${[e.name, ...args].join(" ")}`;
-      state.git.inserts.unshift({ sha: Math.random().toString(16).slice(2, 42), feature: e.name, subject, date: new Date().toISOString().slice(0, 19).replace("T", " ") });
-      state.git.head = state.git.inserts[0].sha.slice(0, 7) + " " + subject;
+      const commit = newInsert(e.name, args);
+      state.git.inserts.unshift(commit);
+      state.git.head = commit.sha.slice(0, 7) + " " + commit.subject;
       if (e.rerun === "adds") { e.state = { ...(e.state || {}) }; for (const o of e.options) { const v = choiceValue(o); if (!v.length) continue; if (o.multiple) e.state[o.name] = [...(e.state[o.name] || []), ...v]; else e.state[o.name] = v[0]; } if (e.state.auth) e.state.auth = true; }
       e.installed = true; e.justInserted = true; e.opts = { path };
       renderConsole(); renderShelf(); renderForm();
@@ -1189,8 +1457,82 @@ function insert(ev) {
 }
 
 // --- jobs: every command the console runs -------------------------------------
+// --- history and completion, as the Assistant Terminal does them ------------
+// MessageHistory: newest first, a cursor that resets on push; Up walks
+// back, Down forward, and past the newest the line is empty again.
+class History {
+  constructor(limit = 100) { this.items = []; this.sel = -1; this.limit = limit; }
+  push(msg) { this.sel = -1; if (!msg.trim()) return; if (this.items[0] !== msg) this.items.unshift(msg); while (this.items.length > this.limit) this.items.pop(); }
+  next() { this.sel = Math.min(this.sel + 1, this.items.length - 1); return this.sel >= 0 ? this.items[this.sel] : ""; }
+  prev() { this.sel = Math.max(this.sel - 1, -1); return this.sel >= 0 ? this.items[this.sel] : ""; }
+}
+// TrieStringRegistry: Tab completes to the next divergence — the longest
+// prefix every candidate shares — not to the first match.
+class Trie {
+  constructor(words = []) { this.root = { children: {}, data: "", terminal: false }; for (const w of words) this.add(w); }
+  add(word) { let node = this.root; for (let i = 0; i < word.length; i++) { const c = word[i]; if (!node.children[c]) node.children[c] = { children: {}, data: word.slice(0, i + 1), terminal: false }; node = node.children[c]; } if (node !== this.root) node.terminal = true; }
+  nextDivergence(prefix) { let node = this.root; for (const c of prefix) { node = node.children[c]; if (!node) return null; } while (Object.keys(node.children).length === 1 && !node.terminal) node = Object.values(node.children)[0]; return node.data; }
+  matches(prefix) { let node = this.root; for (const c of prefix) { node = node.children[c]; if (!node) return []; } const out = []; const walk = n => { if (n.terminal) out.push(n.data); for (const ch of Object.values(n.children)) walk(ch); }; walk(node); return out.sort(); }
+}
+// Completes the last word of a line against a trie; lists the candidates when nothing more is shared.
+// The whole line first (multi-word commands: "mix t" → "mix test"), the last word otherwise.
+function completeLine(line, trie, say) {
+  const full = trie.nextDivergence(line);
+  if (full !== null && full !== line) return full;
+  const at = line.lastIndexOf(" ") + 1, word = line.slice(at), whole = trie.nextDivergence(word);
+  if (whole === null) { if (full === line) { const ms = trie.matches(line); if (ms.length > 1 && say) say(ms.join(" · ")); } return line; }
+  if (whole === word) { const ms = trie.matches(word); if (ms.length > 1 && say) say(ms.join(" · ")); return line; }
+  return line.slice(0, at) + whole;
+}
+// Up/Down, Tab, PageUp/PageDown and Ctrl+L on an input, for the terminal and the wb.sh line.
+function bindLineKeys(input, { history, words, screen, run, clear }) {
+  input.addEventListener("keydown", ev => {
+    if (ev.key === "Enter") { ev.preventDefault(); history.push(input.value); run(input.value); }
+    else if (ev.key === "ArrowUp") { ev.preventDefault(); input.value = history.next(); }
+    else if (ev.key === "ArrowDown") { ev.preventDefault(); input.value = history.prev(); }
+    else if (ev.key === "Tab") { ev.preventDefault(); input.value = completeLine(input.value, new Trie(words()), clear && (m => clear(m))); }
+    else if (ev.key === "PageUp" && screen) { ev.preventDefault(); screen().scrollTop -= screen().clientHeight * 0.8; }
+    else if (ev.key === "PageDown" && screen) { ev.preventDefault(); screen().scrollTop += screen().clientHeight * 0.8; }
+    else if (ev.key === "l" && ev.ctrlKey && clear) { ev.preventDefault(); clear(); }
+  });
+}
+
+// The wb.sh line: the commands wb.sh has, then the cartridges and their
+// options from the catalog. Staged output here; the console runs it as a job.
+const WB_COMMANDS = ["login", "new", "add", "eject", "console", "bake", "commit", "catalog", "status", "stacks", "setup", "up", "build", "logs", "stop", "down", "ps", "iex", "bash", "mix", "delete", "demo", "help"];
+state.cli = { history: new History() };
+function cliWords(line) {
+  const parts = line.split(/\s+/);
+  if (parts.length <= 1) return WB_COMMANDS;
+  const [cmd, name] = parts;
+  if (cmd === "add" || cmd === "eject") {
+    if (parts.length === 2) return state.entries.map(e => e.name);
+    const e = byName(name); return e ? e.options.map(o => "--" + o.name.replace(/_/g, "-")) : [];
+  }
+  if (cmd === "up" || cmd === "build" || cmd === "logs" || cmd === "stop" || cmd === "down" || cmd === "iex" || cmd === "bash") return parts.at(-2) === "--deploy" ? ["dev", "prod", "scaled"] : ["--deploy", "--replicas", "--no-balancer"];
+  if (cmd === "setup" || cmd === "demo") return ["--env"];
+  return [];
+}
+function cliRun(line) {
+  const c = line.trim(); if (!c) return;
+  const [cmd, ...rest] = c.split(/\s+/);
+  $("#wb-cli").value = "";
+  if (cmd === "add" && rest[0] && byName(rest[0])) { open(rest[0]); return; }
+  if (cmd === "eject" && rest[0] && byName(rest[0])) { open(rest[0]); return; }
+  if (cmd === "up") { deploy("up", rest[rest.indexOf("--deploy") + 1] || "dev", rest.includes("--no-balancer") ? " --no-balancer" : ""); return; }
+  if (cmd === "stop" || cmd === "down") { const r = runningDeployment(); if (r) deploy(cmd, r); else runJob("./wb.sh " + c, [["", "Nothing is up."]], {}); return; }
+  if (cmd === "status") { runJob("./wb.sh status", [["", `Workspace ${STATUS.workspace}`], ["", `  app port ${STATUS.ports.app} · pgAdmin ${STATUS.ports.pgadmin}`], ["", `  ${state.containers.filter(x => x.state === "running").length} containers running`], ["", `Cartridges of ${APP}: ${state.entries.filter(e => e.installed).length} installed, ${state.entries.filter(e => !e.installed).length} not.`]], {}); return; }
+  if (cmd === "catalog") { runJob("./wb.sh catalog", state.entries.map(e => ["", `  ${e.name.padEnd(14)} ${e.version ? "v" + e.version.version : "unversioned"}  ${e.summary}`]), {}); return; }
+  if (cmd === "help") { runJob("./wb.sh help", WB_COMMANDS.map(w => ["", "  " + w]), {}); return; }
+  runJob("./wb.sh " + c, [["dim", "staged in the mock: the console runs it as a job"]], {});
+}
+// What Tab could not finish is a list to read, not a notice to glance
+// at: it stands three times as long as a toast.
+const HINT_MS = 6600;
+bindLineKeys($("#wb-cli"), { history: state.cli.history, words: () => cliWords($("#wb-cli").value), run: line => cliRun(line), clear: msg => { if (msg) toast(msg, HINT_MS); } });
 function runJob(cmdline, lines, { onLine, onDone, exit = 0 } = {}) {
-  const job = { id: Date.now() + Math.random(), cmdline, lines: [], state: "running", started: Date.now(), exit: null };
+  // A job you just asked for is a job you are watching: it comes unfolded.
+  const job = { id: Date.now() + Math.random(), cmdline, lines: [], state: "running", started: Date.now(), exit: null, open: true };
   state.jobs.unshift(job); renderJobs();
   let t = 0;
   const all = [["dim", "$ " + cmdline], ...lines];
@@ -1210,6 +1552,18 @@ function renderJobs() {
   st.className = "chip " + (running ? "warn busy" : state.jobs[0]?.state === "failed" ? "bad" : state.jobs.length ? "good" : "off");
   st.textContent = running ? `${running} running` : state.jobs.length ? `${state.jobs.length} done` : "idle";
   if (state.jobs[0]) $("#tray-last").textContent = state.jobs[0].cmdline;
+  const failed = state.jobs.filter(j => j.state === "failed").length;
+  $("#jobs-live").hidden = !running;
+  updateTray();
+  const b = $("#jobs-badge"); b.hidden = !(running || failed); b.className = "badge" + (failed && !running ? " bad" : ""); b.textContent = running ? `${running} running` : `${failed} failed`;
+  // Nothing to count and nothing to unfold: the empty screen says it once, on its own.
+  $("#jobs-metabar").hidden = !state.jobs.length;
+  // Every job arrives unfolded, so a few commands make a wall of output:
+  // the line that teaches unfolding becomes the way back once any is open.
+  const unfolded = state.jobs.filter(j => j.open).length, fold = $("#jobs-fold"); fold.replaceChildren();
+  if (unfolded) fold.append(el("button", { class: "lk", onclick: () => { for (const j of state.jobs) j.open = false; renderJobs(); } }, unfolded === 1 ? "collapse it" : "collapse all"));
+  else fold.textContent = "click a job to unfold its output";
+  $("#jobs-meta").textContent = state.jobs.length ? `${state.jobs.length} job${state.jobs.length === 1 ? "" : "s"} · ${running ? running + " running" : "idle"}${failed ? " · " + failed + " failed" : ""}` : "";
   for (const j of state.jobs) {
     const dur = ((j.ended || Date.now()) - j.started) / 1000;
     const row = el("div", { class: "job" + (j.open ? " open" : ""), onclick: () => { j.open = !j.open; renderJobs(); } },
@@ -1222,7 +1576,10 @@ function renderJobs() {
     row.append(out); list.append(row);
   }
 }
-$("#tray-bar").addEventListener("click", () => $("#tray").classList.toggle("open"));
+$("#tray-bar").addEventListener("click", () => { if (state.jobs[0]) { state.jobs[0].open = true; renderJobs(); } showTab("jobs"); });
+$("#jobs-clear").addEventListener("click", () => { state.jobs = state.jobs.filter(j => j.state === "running"); renderJobs(); });
+// A job was asked for from another tab: the status line flashes, the tab's badge counts it; nothing steals the screen.
+function jobsPing() { const t = $("#tray"); t.classList.add("ping"); setTimeout(() => t.classList.remove("ping"), 700); }
 
 // --- deploy -------------------------------------------------------------------
 const TARGETS = {
@@ -1259,14 +1616,19 @@ function renderTargets() {
   }
   card.append(picks);
   function deployCmd() { return `./wb.sh up --deploy ${pick}${pick === "scaled" ? scaledExtra() : ""}`; }
+  // Nothing here works without a project — wb.sh refuses each of these
+  // with "There is no project". And Build asks for no more than that:
+  // 'build --deploy prod|scaled' bakes its own compose before building
+  // (bake_prod_compose && docker compose build), so a target that was
+  // never baked is not a reason to grey it out.
+  const noproject = state.project === false;
   card.append(el("div", { class: "acts" },
-    el("button", { class: "btn primary", disabled: busy || deploymentUp(pick), onclick: () => deploy("up", pick, extra) }, running && running !== pick ? `Replace ${running} with ${pick}` : `Up ${pick}`),
-    el("button", { class: "btn", disabled: busy || !state.baked[pick], onclick: () => deploy("build", pick, extra) }, `Build ${pick}`),
+    el("button", { class: "btn primary", disabled: busy || noproject || deploymentUp(pick), onclick: () => deploy("up", pick, extra) }, running && running !== pick ? `Replace ${running} with ${pick}` : `Up ${pick}`),
+    el("button", { class: "btn", disabled: busy || noproject, onclick: () => deploy("build", pick, extra) }, `Build ${pick}`),
     el("span", { class: "sep" }),
     el("button", { class: "btn", disabled: busy || !running, onclick: () => deploy("stop", running) }, "Stop"),
     el("button", { class: "btn", disabled: busy || !running, onclick: () => deploy("down", running) }, "Down"),
-    el("button", { class: "btn", disabled: !running, onclick: () => showTab("logs") }, "Logs"),
-    el("span", { class: "note" }, running ? `on ${running}` : "nothing is up")));
+    el("span", { class: "note" }, noproject ? "the workspace is empty: create a project first" : running ? `on ${running}` : "nothing is up")));
   card.append(el("div", { class: "cmd", id: "deploy-cmd" }, deployCmd()));
   box.append(card);
 }
@@ -1280,13 +1642,19 @@ function renderTargets() {
 // the dev image has Mix (bash, iex -S mix); the release has its remote
 // console (bin/<app> remote — a hidden node joining that replica's, so
 // Node.list() there is the cluster), and bash.
-state.term = { target: null, shell: "bash", open: false, lines: [], n: 1 };
+state.term = { target: null, shell: "bash", open: false, lines: [], n: 1, history: new History() };
+// What Tab can complete to, per shell: the staged commands of the mock; the real shell completes on its own.
+function termWords() {
+  const t = state.term;
+  if (t.shell === "bash") return ["ls", "pwd", "mix --version", "mix test", "mix", "iex -S mix", "iex", "exit", `bin/${APP} remote`, `bin/${APP}`];
+  return ["node()", "Node.list()", "self()", "System.version()", "1+1", "exit"];
+}
 function termTargets() {
   const apps = state.containers.filter(c => /^app\d*$/.test(c.service) && c.state === "running").map(c => ({ name: c.service, release: !/:local$/.test(c.image), ip: c.service === "app" ? null : `172.18.0.${2 + +c.service.replace("app", "")}` }));
   return apps.length ? apps : [{ name: "toolchain", release: false, ip: null, oneoff: true }];
 }
 function termTarget() { const ts = termTargets(); return ts.find(t => t.name === state.term.target) || ts[0]; }
-function termShells(t) { return t.release ? [["bash", "bash"], ["remote", `remote console — bin/${APP} remote`]] : [["bash", "bash"], ["iex", "iex -S mix"]]; }
+function termShells(t) { return t.release ? [["bash", "bash"], ["remote", `bin/${APP} remote`]] : [["bash", "bash"], ["iex", "iex -S mix"]]; }
 function termPrompt() {
   const t = termTarget(), sh = state.term.shell;
   if (sh === "iex" || sh === "remote") return `iex(${t.ip ? `${APP}@${t.ip}` : APP}${sh === "remote" ? "" : ""})${state.term.n}> `;
@@ -1294,27 +1662,35 @@ function termPrompt() {
 }
 function termOpen(target, shell) { state.term.target = target; if (shell) state.term.shell = shell; state.term.open = false; showTab("terminal"); renderTerminal(); $("#term .btn.primary").click(); }
 function renderTerminal() {
-  const box = $("#term"); if (!box) return; box.replaceChildren();
+  const box = $("#term"); if (!box) return;
+  const had = document.activeElement && document.activeElement.id === "term-input";
+  box.replaceChildren();
   const t = state.term, targets = termTargets(), target = termTarget();
   if (!termShells(target).some(([v]) => v === t.shell)) t.shell = "bash";
-  const where = el("select", { disabled: t.open, onchange: () => { t.target = where.value; renderTerminal(); } }, ...targets.map(x => el("option", { value: x.name, selected: x.name === target.name }, x.oneoff ? "toolchain (one-off, source mounted)" : `${x.name} — ${x.release ? "release" : "dev image"}${x.ip ? " · " + x.ip : ""}`)));
-  const shell = el("select", { disabled: t.open, onchange: () => { t.shell = shell.value; renderTerminal(); } }, ...termShells(target).map(([v, label]) => el("option", { value: v, selected: t.shell === v }, label)));
+  // The targets as the Logs tab shows its services: one chip per container, the same colour.
+  const where = el("span", { style: "display:inline-flex;gap:6px;flex-wrap:wrap" }, ...targets.map(x => el("button", { class: "btn svc", style: `--svc:${x.oneoff ? "var(--svc-network)" : svcColor(x.name)}`, "aria-pressed": String(x.name === target.name), disabled: t.open && x.name !== target.name, title: x.oneoff ? "a one-off toolchain container with the source mounted — nothing runs" : `${x.release ? "the release image" : "the dev image"}${x.ip ? " · " + x.ip : ""}`, onclick: () => { t.target = x.name; renderTerminal(); } }, x.oneoff ? "toolchain" : x.name)));
+  const shell = el("span", { style: "display:inline-flex;gap:6px;flex-wrap:wrap" }, ...termShells(target).map(([v, label]) => el("button", { class: "btn", "aria-pressed": String(t.shell === v), disabled: t.open && t.shell !== v, title: label, title: v === "remote" ? "the release's remote console — a hidden node joining this replica's" : label, onclick: () => { t.shell = v; renderTerminal(); } }, label)));
   const running = runningDeployment();
   const cmd = target.oneoff ? `./wb.sh ${t.shell === "iex" ? "iex" : "bash"}` : `./wb.sh ${t.shell === "bash" ? "bash" : "iex"}${running && running !== "dev" ? " --deploy " + running : ""}${target.name !== "app" ? " " + target.name : ""}`;
   box.append(el("div", { class: "toolbar" },
-    el("span", { class: "label" }, "Where"), where,
-    el("span", { class: "label" }, "Shell"), shell,
-    el("span", { class: "note mono" }, cmd),
+    where,
+    el("span", { class: "sep" }),
+    shell,
     el("span", { class: "sep" }),
     t.open ? el("button", { class: "btn", title: t.shell === "remote" ? "detaches with Ctrl+G q — never by cutting the socket: the remote shell stops the node on EOF" : "", onclick: () => { t.open = false; t.lines = []; $("#term-live").hidden = true; renderTerminal(); } }, t.shell === "remote" ? "Detach (Ctrl+G q)" : "Close session")
-           : el("button", { class: "btn primary", onclick: () => { t.open = true; t.n = 1; t.lines = [["dim", `${cmd}  → ${target.oneoff ? "a one-off toolchain container with the source mounted (nothing runs)" : "docker exec on " + target.name}`], ...(t.shell === "iex" ? [["dim", "Erlang/OTP 28 [erts-16.1] [source] [64-bit] [smp:8:8] [ds:8:8:10] [async-threads:1] [jit]"], ["", "Interactive Elixir (1.19.2) - press Ctrl+C to exit (type h() ENTER for help)"]] : t.shell === "remote" ? [["dim", `Erlang/OTP 28 [erts-16.1] [source] [64-bit] [smp:8:8] [ds:8:8:10] [async-threads:1] [jit]`], ["", `Interactive Elixir (1.19.2) - press Ctrl+C to exit (type h() ENTER for help)`], ["dim", `— a hidden node attached to ${APP}@${target.ip}; Ctrl+G q detaches, EOF would stop the node`]] : [])]; $("#term-live").hidden = false; renderTerminal(); $("#term-input").focus(); } }, "Open a session")));
-  const screen = el("div", { class: "screen" });
+           : el("button", { class: "btn primary", onclick: () => { t.open = true; t.n = 1; t.lines = [["dim", `${cmd}  → ${target.oneoff ? "a one-off toolchain container with the source mounted (nothing runs)" : "docker exec on " + target.name}`], ...(t.shell === "iex" ? [["dim", "Erlang/OTP 28 [erts-16.1] [source] [64-bit] [smp:8:8] [ds:8:8:10] [async-threads:1] [jit]"], ["", "Interactive Elixir (1.19.2) - press Ctrl+C to exit (type h() ENTER for help)"]] : t.shell === "remote" ? [["dim", `Erlang/OTP 28 [erts-16.1] [source] [64-bit] [smp:8:8] [ds:8:8:10] [async-threads:1] [jit]`], ["", `Interactive Elixir (1.19.2) - press Ctrl+C to exit (type h() ENTER for help)`], ["dim", `— a hidden node attached to ${APP}@${target.ip}; Ctrl+G q detaches, EOF would stop the node`]] : [])]; $("#term-live").hidden = false; state.term.focus = true; renderTerminal(); } }, "Open a session")));
+  box.append(el("div", { class: "logmeta" }, el("span", {}, cmd), el("span", {}, t.open ? `session on ${target.oneoff ? "a one-off toolchain container" : target.name} · ${t.shell === "remote" ? "remote console: Ctrl+G q detaches" : t.shell === "iex" ? "iex -S mix" : "bash"}` : "no session · docker exec with a tty, xterm.js in the page")));
+  const screen = el("div", { class: "lines screen" });
   if (!t.open) screen.append(el("span", { class: "empty" }, "No session. Open one: bash or iex, on the app when it runs. (Staged in the mock; the console runs a real one.)"));
   for (const [cls, text] of t.lines) screen.append(el("div", { class: cls }, text));
-  box.append(screen);
-  const input = el("input", { type: "text", id: "term-input", disabled: !t.open, placeholder: t.open ? "type a command and press Enter" : "", onkeydown: ev => { if (ev.key === "Enter") { termRun(input.value); input.value = ""; } } });
-  box.append(el("div", { class: "in" }, el("span", { class: "p" }, termPrompt()), input));
+  const input = el("input", { type: "text", id: "term-input", disabled: !t.open, placeholder: t.open ? "↑↓ history · Tab completes · PageUp/Down scrolls · Ctrl+L clears" : "" });
+  bindLineKeys(input, { history: t.history, words: termWords, screen: () => $("#term .screen"), run: line => { state.term.focus = true; termRun(line); }, clear: msg => { if (msg) t.lines.push(["dim", msg]); else t.lines = []; state.term.focus = true; renderTerminal(); } });
+  // No session, no prompt line: a `nobody@app1:/app$` under "No session.
+  // Open one" promises a shell that is not there.
+  box.append(el("div", { class: "viewport" }, screen, ...(t.open ? [el("div", { class: "in" }, el("span", { class: "p" }, termPrompt()), input)] : [])));
   screen.scrollTop = screen.scrollHeight;
+  // The session keeps the keyboard: a render (a command, a chip) never takes the focus away.
+  if (t.open && (had || state.term.focus)) { input.focus(); state.term.focus = false; }
 }
 function termRun(cmd) {
   const t = state.term, say = (...ls) => { for (const l of ls) t.lines.push(["", l]); };
@@ -1364,10 +1740,10 @@ function renderCluster() {
   box.append(table);
   box.append(el("div", { class: "probe" }, el("h3", {}, "Who answers?"),
     el("p", { class: "note" }, "Four requests to the balancer's port: the X-Served-By header names the replica each one landed on."),
-    el("div", { class: "acts" }, el("button", { class: "btn", disabled: !bal, onclick: () => { runJob(`for i in 1 2 3 4; do curl -sI http://localhost:${STATUS.ports.app} | grep -i x-served-by; done`, reps.slice(0, 4).map((r, i) => ["", `X-Served-By: 172.18.0.${3 + i}`]), {}); $("#tray").classList.add("open"); } }, "Ask four times"))));
+    el("div", { class: "acts" }, el("button", { class: "btn", disabled: !bal, onclick: () => { runJob(`for i in 1 2 3 4; do curl -sI http://localhost:${STATUS.ports.app} | grep -i x-served-by; done`, reps.slice(0, 4).map((r, i) => ["", `X-Served-By: 172.18.0.${3 + i}`]), {}); jobsPing(); } }, "Ask four times"))));
   box.append(el("div", { class: "probe" }, el("h3", {}, "Who is connected?"),
     el("p", { class: "note" }, "Node.list() on the first replica, through the release's rpc — the nodes DNSCluster found."),
-    el("div", { class: "acts" }, el("button", { class: "btn", onclick: () => { runJob(`docker compose --file docker-compose.scaled.yml exec ${reps[0]} bin/${APP} rpc "IO.inspect(Node.list())"`, [["", `[${reps.slice(1).map((r, i) => `:"${APP}@172.18.0.${4 + i}"`).join(", ")}]`]], {}); $("#tray").classList.add("open"); } }, "Node.list()"))));
+    el("div", { class: "acts" }, el("button", { class: "btn", onclick: () => { runJob(`docker compose --file docker-compose.scaled.yml exec ${reps[0]} bin/${APP} rpc "IO.inspect(Node.list())"`, [["", `[${reps.slice(1).map((r, i) => `:"${APP}@172.18.0.${4 + i}"`).join(", ")}]`]], {}); jobsPing(); } }, "Node.list()"))));
 }
 
 function composeLines(name, verb) {
@@ -1402,12 +1778,13 @@ function deploy(verb, name, extra = "") {
   }
   runJob(cmd, lines, { onDone });
   renderTargets();
-  $("#tray").classList.add("open");
+  jobsPing();
 }
 // --- a new project: the start of the lifecycle ----------------------------------
-// What `new` composes from config.conf's toggles, off each cartridge's
-// `enabled_by` (a flag → the toggle of that name; {interface: x} → the
-// INTERFACE value) and `implies`, resolved until stable, as setup does.
+// `new` is vanilla and takes no feature from config.conf: what the
+// project carries beyond phx.new arrives as cartridges, from the shelf.
+// The card offers the collection right after creation, as its own
+// command, because that is the gesture the retired composed `new` had.
 // What phx.new decides at generation time. The capabilities are the
 // base cartridges of the catalog — in from birth unless left out
 // (`--no-x`), insertable later from the shelf; the rest shapes the
@@ -1417,19 +1794,11 @@ const BASE = CATALOG.filter(e => e.base).map(e => e.name);
 // too, but only Ecto reads them: they are the ecto cartridge's options,
 // offered with its box (from its catalog entry).
 const GEN_FLAGS = [["adapter", ["bandit", "cowboy"]]];
-state.newp = { kind: "new2", name: null, out: {}, gen: {}, confirm: false };
+state.newp = { name: null, out: {}, gen: {}, confirm: false };
 // A base cartridge left out takes with it the ones that build on it (phx.new: live only with html).
 function baseOut(name) { const e = byName(name); return !!state.newp.out[name] || (e.requires || []).some(baseOut); }
 function configValues() {
   const f = {}; for (const sec of parseConfig(cfg.text).sections) for (const x of sec.fields) f[x.key] = x.key in cfg.edited ? cfg.edited[x.key] : x.value; return f;
-}
-function newComposes(conf) {
-  const on = new Set(Object.entries(conf).filter(([, v]) => v === "true").map(([k]) => k.toLowerCase()));
-  const enabled = e => typeof e.enabled_by === "string" ? on.has(e.enabled_by)
-    : e.enabled_by && typeof e.enabled_by === "object" ? Object.entries(e.enabled_by).every(([opt, v]) => (conf[opt.toUpperCase()] || "") === v) : false;
-  let grew = true;
-  while (grew) { grew = false; for (const e of state.entries) if (enabled(e)) for (const i of e.implies) if (!on.has(i)) { on.add(i); grew = true; } }
-  return state.entries.filter(e => !e.standalone && enabled(e)).map(e => e.name);
 }
 function newFlags() {
   const flags = [];
@@ -1438,12 +1807,11 @@ function newFlags() {
   if (!baseOut("ecto")) for (const o of byName("ecto").options) { const v = state.newp.gen[o.name]; if (o.type === "boolean" ? v : v && v !== o.default) flags.push("--" + o.name.replace(/_/g, "-"), ...(o.type === "boolean" ? [] : [v])); }
   return flags;
 }
-function newCommand() { return ["./wb.sh", state.newp.kind, ...newFlags()].join(" "); }
+function newCommand() { return ["./wb.sh", "new", ...newFlags()].join(" "); }
 function renderNewCard() {
   const box = $("#newcard"); box.replaceChildren();
   const conf = configValues(), busy = state.jobs.some(j => j.state === "running" && /wb\.sh new/.test(j.cmdline));
   const name = state.newp.name ?? conf.PROJECT_NAME;
-  const composes = newComposes(conf);
   box.append(el("h3", {}, "New project", el("span", { class: "chip " + (state.project === false ? "warn" : "off") }, state.project === false ? "the workspace is empty" : "a project exists here")));
   const form = el("div", { class: "form" });
   form.append(el("div", { class: "frow" }, el("label", { for: "np-name" }, "project name"), el("input", { type: "text", id: "np-name", value: name, oninput: ev => { state.newp.name = ev.target.value; $("#np-cmd").textContent = newCommand(); } })));
@@ -1458,72 +1826,72 @@ function renderNewCard() {
   const bases = el("div", { class: "flags bases" });
   for (const n of BASE) {
     const e = byName(n), forced = (e.requires || []).some(baseOut);
-    const cb = el("input", { type: "checkbox", checked: !baseOut(n), disabled: forced, title: forced ? "goes with " + e.requires.join(" and ") + ": phx.new generates it only with them" : e.summary, onchange: () => { state.newp.out[n] = !cb.checked; renderNewCard(); } });
-    bases.append(el("label", { class: baseOut(n) ? "out" : "" }, cb, n));
-    if (n === "ecto") for (const o of e.options) {
-      const flag = "--" + o.name.replace(/_/g, "-"), out = baseOut(n);
-      if (o.choices) { const sel = el("select", { disabled: out, title: o.doc, onchange: () => { state.newp.gen[o.name] = sel.value; $("#np-cmd").textContent = newCommand(); } }, ...o.choices.map(c => el("option", { value: c.value, selected: (state.newp.gen[o.name] || o.default) === c.value, title: c.doc }, c.value))); bases.append(el("label", { class: "sub" + (out ? " out" : "") }, flag, sel)); }
-      else { const cb2 = el("input", { type: "checkbox", disabled: out, checked: !!state.newp.gen[o.name], title: o.doc, onchange: () => { state.newp.gen[o.name] = cb2.checked; $("#np-cmd").textContent = newCommand(); } }); bases.append(el("label", { class: "sub" + (out ? " out" : "") }, cb2, flag)); }
+    const cb = el("input", { type: "checkbox", checked: !baseOut(n), disabled: forced, title: forced ? "goes with " + e.requires.join(" and ") + ": phx.new generates it only with them" : "in from birth; uncheck to leave it out", onchange: () => { state.newp.out[n] = !cb.checked; renderNewCard(); } });
+    bases.append(el("label", { class: baseOut(n) ? "out" : "" }, cb, cartRef(n)));
+    // Ecto's own flags hang from its box: one run that wraps whole, so
+    // the row never breaks between the option and the box it belongs to.
+    if (n === "ecto") {
+      const subs = el("span", { class: "subs" });
+      for (const o of e.options) {
+        const flag = "--" + o.name.replace(/_/g, "-"), out = baseOut(n);
+        if (o.choices) { const sel = el("select", { disabled: out, title: o.doc, onchange: () => { state.newp.gen[o.name] = sel.value; $("#np-cmd").textContent = newCommand(); } }, ...o.choices.map(c => el("option", { value: c.value, selected: (state.newp.gen[o.name] || o.default) === c.value, title: c.doc }, c.value))); subs.append(el("label", { class: "sub" + (out ? " out" : "") }, flag, sel)); }
+        else { const cb2 = el("input", { type: "checkbox", disabled: out, checked: !!state.newp.gen[o.name], title: o.doc, onchange: () => { state.newp.gen[o.name] = cb2.checked; $("#np-cmd").textContent = newCommand(); } }); subs.append(el("label", { class: "sub" + (out ? " out" : "") }, cb2, flag)); }
+      }
+      if (subs.children.length) bases.append(subs);
     }
   }
   form.append(el("div", { class: "frow" }, el("label", { title: "In from birth; leave one out and insert it later from the shelf" }, "base cartridges"), bases));
   box.append(form);
-  const kind = el("div", { class: "kind" });
-  for (const [k, label, blurb] of [["new2", "new2 — vanilla", "A stock phx.new project plus only what the workspace needs to boot. Then insert cartridges from the shelf, one at a time."], ["new", "new — composed", "The same, plus the base configuration and the cartridges config.conf switches on. What it would insert now:"]]) {
-    const r = el("input", { type: "radio", name: "np-kind", value: k, checked: state.newp.kind === k, onchange: () => { state.newp.kind = k; renderNewCard(); } });
-    const opt = el("label", { class: "opt" }, r, el("b", {}, label), el("p", {}, blurb));
-    if (k === "new") { const c = el("div", { class: "composes" }); for (const n of composes) c.append(el("span", { class: "chip" }, n)); if (!composes.length) c.append(el("span", { class: "note" }, "nothing: every toggle is off")); opt.append(c); }
-    kind.append(opt);
-  }
-  box.append(kind);
-  const foot = el("div", { class: "foot" }, el("div", { class: "cmd", id: "np-cmd" }, newCommand()));
+  // `new` is vanilla, always: the card creates the project and stops
+  // there. Every cartridge — the collection included — is inserted from
+  // the shelf, where its box says what it carries.
+  const foot = el("div", { class: "foot" }, el("div", { class: "cmds" },
+    el("div", { class: "cmd", id: "np-cmd" }, newCommand())));
   if (state.newp.confirm) foot.append(el("span", { class: "confirm on" }, "A project already exists in this workspace: every file in it goes.", el("button", { class: "btn danger", onclick: () => { state.newp.confirm = false; createProject(); } }, "Yes, overwrite"), el("button", { class: "btn", onclick: () => { state.newp.confirm = false; renderNewCard(); } }, "Keep it")));
   else foot.append(el("button", { class: "btn primary", disabled: busy, onclick: () => { if (state.project !== false) { state.newp.confirm = true; renderNewCard(); } else createProject(); } }, busy ? "Creating…" : "Create project"));
   box.append(foot);
 }
 function createProject() {
-  const conf = configValues(), kind = state.newp.kind;
+  const conf = configValues();
   const name = (state.newp.name ?? conf.PROJECT_NAME).trim() || "app";
   const app = name.toLowerCase().replace(/\s+/g, "_"), image = name.toLowerCase().replace(/\s+/g, "-");
   const flags = newFlags(), bases = BASE.filter(n => !baseOut(n));
-  const composes = kind === "new" ? newComposes(conf) : [];
   const lines = [
     ...(state.project !== false ? [["dim", `⚠️ Warning A project already exists in ${conf.WORKSPACE_PATH}. This action will overwrite all its files.`], ["dim", "Continuing (--yes)."]] : []),
     ["dim", `[+] Building workbench:${conf.ELIXIR_VERSION}-${conf.ERLANG_VERSION}`], ["", ` => [1/6] FROM hexpm/elixir:${conf.ELIXIR_VERSION}-erlang-${conf.ERLANG_VERSION}-debian-${conf.DEBIAN_VERSION}`], ["", " => exporting to image"],
     ["dim", `[a1b2c3d4e5f6]workbench/scripts/entrypoint.sh(${2 + flags.length}): new ${app} ${flags.join(" ")}`.trim()],
     ["add", "* creating mix.exs"], ["add", `* creating lib/${app}/application.ex`], ["add", `* creating lib/${app}_web/endpoint.ex`], ["add", `* creating lib/${app}_web/router.ex`], ["dim", "* running mix deps.get"],
     ["upd", "Update: mix.exs"], ["  ", "  + defp workbench_dep — the igniter tasks, while the workbench is mounted"],
-    ["dim", `[a1b2c3d4e5f6]workbench/scripts/entrypoint.sh(2): workbench_${kind === "new" ? "setup" : "setup2"} …`],
+    ["dim", "[a1b2c3d4e5f6]workbench/scripts/entrypoint.sh(2): workbench_setup …"],
     ["upd", "Update: config/dev.exs"], ["  ", "  http: [ip: {0, 0, 0, 0}, port: 4000]"], ["add", "Create: .env"], ["add", "Create: .env.sample"], ["upd", "Update: .gitignore"],
-    ...(kind === "new" ? [["add", "Create: README.md"], ["add", "Create: CHANGELOG.md"], ["add", "Create: .tool-versions"], ...composes.map(n => ["dim", `==> workbench.install.${n}`])] : []),
     ["", "* creating Dockerfile"], ["", "* creating .dockerignore"], ["", "* creating rel/overlays/bin/server"],
     ["add", "Create: Dockerfile.local"], ["add", "Create: docker-compose.yml"], ["  ", `  name: ${app} · app port ${STATUS.ports.app}` + (bases.includes("ecto") && (state.newp.gen.database || "postgres") !== "sqlite3" ? ` · pgAdmin ${STATUS.ports.pgadmin}` : " · no database service")],
-    ["ok", `Committed New project: ${app} (${kind}) (as ${conf.GIT_IDENTITY === "workbench" ? "Dockerized Elixir Workbench <wb.sh@localhost>" : state.git.identity || "Dockerized Elixir Workbench <wb.sh@localhost>"}).`],
+    ["ok", `Committed New project: ${app} (as ${conf.GIT_IDENTITY === "workbench" ? "Dockerized Elixir Workbench <wb.sh@localhost>" : state.git.identity || "Dockerized Elixir Workbench <wb.sh@localhost>"}).`],
     ["ok", `✓ ${name} created in ${conf.WORKSPACE_PATH}. Set up the database and bring it up: ./wb.sh setup && ./wb.sh up`],
   ];
   runJob(newCommand(), lines, { onDone: () => {
     state.project = true; STATUS.compose_project = app;
     STATUS.project = { app, cartridges: [], phx: Object.fromEntries(BASE.map(n => [n, bases.includes(n)])) };
-    state.git = { repo: true, clean: true, head: `0a1b2c3 New project: ${app} (${kind})`, identity: conf.GIT_IDENTITY === "workbench" ? "Dockerized Elixir Workbench <wb.sh@localhost>" : (state.git.identity || "Dockerized Elixir Workbench <wb.sh@localhost>"), inserts: [] };
+    state.git = { repo: true, clean: true, head: `0a1b2c3 New project: ${app}`, identity: conf.GIT_IDENTITY === "workbench" ? "Dockerized Elixir Workbench <wb.sh@localhost>" : (state.git.identity || "Dockerized Elixir Workbench <wb.sh@localhost>"), inserts: [] };
     state.containers = []; state.baked = { dev: true, prod: false, scaled: false };
-    for (const e of state.entries) e.installed = composes.includes(e.name) || bases.includes(e.name);
+    for (const e of state.entries) { e.installed = bases.includes(e.name); e.state = {}; }
     logs.all = []; rerenderLines();
     renderConsole(); renderShelf(); renderNewCard(); toast(`${name} created`);
   } });
-  renderNewCard(); $("#tray").classList.add("open");
+  renderNewCard(); jobsPing();
 }
 
 $("#setup").addEventListener("click", () => {
   const env = $("#setup-env").value;
   runJob(`./wb.sh setup --env ${env}`, [["dim", `[7c1e]workbench/scripts/entrypoint.sh(2): setup ${env}`], ["", `The database for ${MOD}.Repo has been dropped`], ["", `The database for ${MOD}.Repo has been created`], ["", "Running migrations: none pending"], ["", "Seeding: priv/repo/seeds.exs"], ["ok", "✓ database ready."]]);
-  $("#tray").classList.add("open");
+  jobsPing();
 });
 $("#delete").addEventListener("click", () => $("#delete-confirm").classList.add("on"));
 $("#delete-no").addEventListener("click", () => $("#delete-confirm").classList.remove("on"));
 $("#delete-yes").addEventListener("click", () => {
   $("#delete-confirm").classList.remove("on");
   runJob("./wb.sh --yes delete", [["dim", "⚠️ Warning This action will delete all project files from " + STATUS.workspace], ["dim", "Continuing (--yes)."], ...composeLines("dev", "down"), ["", ` Volume ${STATUS.compose_project}_pgdata  Removed`], ["", ` Image ${IMAGE}:local  Removed`], ["ok", "✓ workspace wiped. Deploy → New project starts the next one."]], { onDone: () => { state.project = false; state.containers = []; state.baked = { dev: false, prod: false, scaled: false }; for (const e of state.entries) e.installed = false; renderConsole(); renderShelf(); renderNewCard(); } });
-  $("#tray").classList.add("open");
+  jobsPing();
 });
 
 // --- logs: a real capture, replayed ---------------------------------------------
@@ -1580,6 +1948,8 @@ function appendLineEl(l) {
 }
 function rerenderLines() {
   const box = $("#lines"); box.replaceChildren();
+  // One service on its own needs no name on every line: the column goes.
+  box.classList.toggle("no-svc", Object.keys(logs.services).filter(s => logs.services[s] !== false).length === 1);
   const vis = logs.all.filter(passes);
   for (const l of vis) box.append(lineEl(l));
   if (!vis.length) box.append(el("div", { class: "empty" }, logs.all.length ? "Nothing matches." : "No lines yet."));
@@ -1639,10 +2009,12 @@ logs.appendBoot = name => {
 
 // --- the workbench: manual, changelog, config ----------------------------------
 $("#wb-ver").textContent = "v" + WB.version; $("#wb-ver2").textContent = "v" + WB.version;
-const WB_TABS = [["readme", "Manual", "README.md"], ["changelog", "Changelog", "CHANGELOG.md"], ["config", "Config", "config.conf"]];
-state.wbtab = "readme";
+const WB_TABS = [["config", "Config", "config.conf"], ["readme", "Manual", "README.md"], ["changelog", "Changelog", "CHANGELOG.md"]];
+state.wbtab = "config";
 function openWb(tab) {
   state.wbtab = tab || state.wbtab; renderWbTabs(); showWbTab(state.wbtab);
+  // The header's real height, for whatever sticks under it (the config bar).
+  requestAnimationFrame(() => $("#wb-modal").style.setProperty("--modal-top", $("#wb-modal .top").offsetHeight + "px"));
   $("#wb-modal").classList.add("on"); $("#wb-modal").setAttribute("aria-hidden", "false"); $("#scrim").classList.add("on");
   $("#wb-close").focus();
 }
@@ -1666,56 +2038,104 @@ $("#wb-close").addEventListener("click", closeWb);
 
 // config.conf, read as the form it already is: every `export KEY=value`
 // a field, the comments above it its help, the `# ---` lines its
-// sections, the commented-out exports and the stack tags its choices.
+// sections, `# --` a group inside one, the commented-out exports and the
+// stack tags its choices.
+//
+// A comment block belongs to whatever follows it with no blank line in
+// between: an export takes it as its help; a blank line leaves it
+// hanging — the section's intro when the block opened the section, its
+// closing note when it came after a field. Reading it any other way took
+// GIT_IDENTITY's paragraph for the Git section's blurb and left the
+// field mute, and made "# -- Application --" the help of ID_TYPE.
 function parseConfig(text) {
-  const sections = [{ title: "Workspace", intro: [], fields: [] }];
+  const sections = [{ title: "Workspace", intro: [], outro: [], fields: [] }];
   const alts = {}, stack = [];
-  let help = [], heading = true; // the file's own header, then each section's intro: not a field's help
+  let block = [], opening = true, group = "";
   for (const raw of text.split("\n")) {
     const line = raw.trim();
     const sec = sections[sections.length - 1];
     let m;
-    if (!line) { heading = false; }
-    else if ((m = line.match(/^# ---\s*(.*?)[\s.-]*$/))) { sections.push({ title: m[1].replace(/\.$/, ""), intro: [], fields: [] }); help = []; heading = true; }
+    if (!line) { if (block.length) { if (opening) sec.intro.push(...block); else sec.outro.push(block.join(" ")); } block = []; }
+    else if ((m = line.match(/^# ---\s*(.*?)[\s.-]*$/))) { sections.push({ title: m[1].replace(/\.$/, ""), intro: [], outro: [], fields: [] }); block = []; opening = true; group = ""; }
+    else if ((m = line.match(/^# --\s*(.*?)[\s.-]*$/))) { group = m[1]; block = []; }
     else if ((m = line.match(/^# (\d[\w.]*-erlang-[\w.]*-debian-[\w.-]*)$/))) stack.push(m[1]);
     else if ((m = line.match(/^# export (\w+)="?([^"]*)"?/))) (alts[m[1]] = alts[m[1]] || []).push(m[2]);
     else if ((m = line.match(/^export\s+(\w+)=("?)([^"#]*)\2\s*(?:#\s*(.*))?$/))) {
-      sec.fields.push({ key: m[1], value: m[3].trim(), quoted: m[2] === '"', help: help.join(" ").trim(), inline: m[4] || "" });
-      help = []; heading = false;
+      sec.fields.push({ key: m[1], value: m[3].trim(), quoted: m[2] === '"', help: block.join(" ").trim(), inline: m[4] || "", group });
+      block = []; opening = false;
     }
-    else if ((m = line.match(/^#\s?(.*)$/))) { if (m[1].trim()) (heading ? sec.intro : help).push(m[1].trim()); }
+    else if ((m = line.match(/^#\s?(.*)$/))) { if (m[1].trim()) block.push(m[1].trim()); }
   }
   sections[0].intro = []; // the file's header says what the file is, not what the workspace is
   return { sections, alts, stack };
 }
-const CHOICES = { GIT_IDENTITY: ["user", "workbench"], INTERFACE: ["rest", "graphql"], COVERAGE_THEME: ["exdoc-ish", "custom"], ID_TYPE: ["uuid", "id"], TIMESTAMPS: ["naive_datetime_usec", "utc_datetime_usec", "naive_datetime", "utc_datetime"] };
+// What a field takes, when the file's own commented-out alternatives do
+// not say it. The feature toggles that used to live here went with the
+// composing setup: a cartridge's options are set on its installer.
+const CHOICES = { GIT_IDENTITY: ["user", "workbench"] };
 const cfg = { text: WB.config, edited: {} };
 function renderConfig() {
+  // Rebuilding empties the modal for an instant and the browser clamps
+  // its scroll to 0: remember where the reader was, before emptying.
+  const scroller = $("#wb-modal"), keep = scroller ? scroller.scrollTop : 0;
   const box = $("#wb-cfg"); box.replaceChildren();
+  requestAnimationFrame(() => { if (scroller) scroller.scrollTop = keep; });
   const parsed = parseConfig(cfg.text);
   const changed = Object.keys(cfg.edited).length;
   box.append(el("div", { class: "bar" },
-    el("button", { class: "btn primary", disabled: !changed, onclick: saveConfig }, changed ? `Save ${changed} change${changed === 1 ? "" : "s"}` : "Saved"),
+    el("button", { class: "btn primary", disabled: !changed, onclick: saveConfig }, changed ? `Save ${changed} change${changed === 1 ? "" : "s"}` : "Save"),
     el("button", { class: "btn", disabled: !changed, onclick: () => { cfg.edited = {}; renderConfig(); } }, "Reload"),
     el("button", { class: "btn", "aria-pressed": String(!!cfg.raw), onclick: () => { cfg.raw = !cfg.raw; renderConfig(); } }, "Raw"),
-    el("span", { class: "note" }, "Values are written back in place; comments and order stay. Everything but the workspace only takes effect on new.")));
+    el("span", { class: "note" }, "Values are written back in place; comments and order stay. Each field's tag says when it takes effect.")));
   if (cfg.raw) { box.append(rawConfig()); return; }
   for (const sec of parsed.sections) {
     if (!sec.fields.length) continue;
     const s = el("div", { class: "sec" }, el("h4", {}, sec.title));
     if (sec.intro.length) s.append(el("p", { class: "intro" }, sec.intro.join(" ")));
+    let group = "";
     for (const f of sec.fields) {
-      if (f.key === "ELIXIR_VERSION") {
-        const cur = ["ELIXIR_VERSION", "ERLANG_VERSION", "DEBIAN_VERSION"].map(k => val(sec, k)).join("|");
-        const sel = el("select", { onchange: ev => { const [ex, er, de] = ev.target.value.split("|"); setField("ELIXIR_VERSION", ex); setField("ERLANG_VERSION", er); setField("DEBIAN_VERSION", de); renderConfig(); } });
-        for (const tag of parsed.stack) { const m = tag.match(/^(.*)-erlang-(.*)-debian-(.*)$/); const v = [m[1], m[2], m[3]].join("|"); sel.append(el("option", { value: v, selected: v === cur }, tag)); }
-        if (![...sel.options].some(o => o.selected)) sel.append(el("option", { value: cur, selected: true }, "custom: " + cur.replace(/\|/g, " / ")));
-        s.append(el("div", { class: "row" }, el("label", {}, "stack", el("span", { class: "chip new" }, "new only")), sel, el("p", { class: "help" }, "One hexpm/elixir tag on Docker Hub, of the ones the file lists; it sets the three versions below.")));
-      }
+      if (f.group !== group) { group = f.group; if (group) s.append(el("h5", { class: "grp" }, group)); }
+      if (f.key === "ELIXIR_VERSION") { for (const r of stackRows(sec)) s.append(r); continue; }
+      if (f.key === "ERLANG_VERSION" || f.key === "DEBIAN_VERSION") continue;
       s.append(fieldRow(f, parsed));
     }
+    for (const note of sec.outro) s.append(el("p", { class: "intro outro" }, ...linkify(note)));
     box.append(s);
   }
+}
+// The stack and its three versions are four views of one list: the
+// hexpm/elixir tags (./wb.sh stacks --json, snapshotted for the mock at
+// build). The stack sets the three; editing one of the three looks the
+// exact tag back up, and a combination without a published image among
+// the recent ones leaves the stack unpicked — it may still exist on the
+// Hub (the console proper can ask docker manifest inspect).
+const STACK_LIST = STACKS.map(t => { const m = t.match(/^(.+?)-erlang-(.+?)-debian-(.+)$/); return m && { tag: t, e: m[1], o: m[2], d: m[3] }; }).filter(Boolean);
+const STACK_PARTS = [["ELIXIR_VERSION", "e", "the Elixir of the image"], ["ERLANG_VERSION", "o", "the Erlang/OTP of the image"], ["DEBIAN_VERSION", "d", "the Debian base of the image"]];
+function stackRows(sec) {
+  const cur = { e: val(sec, "ELIXIR_VERSION"), o: val(sec, "ERLANG_VERSION"), d: val(sec, "DEBIAN_VERSION") };
+  const match = STACK_LIST.find(x => x.e === cur.e && x.o === cur.o && x.d === cur.d);
+  const stack = el("select", { id: "cfg-stack", onchange: ev => { const x = STACK_LIST.find(y => y.tag === ev.target.value); if (x) { setField("ELIXIR_VERSION", x.e); setField("ERLANG_VERSION", x.o); setField("DEBIAN_VERSION", x.d); } renderConfig(); } });
+  if (!match) stack.append(el("option", { value: "", selected: true }, `— no published image for this combination (of the ${STACK_LIST.length} usable)`));
+  // Grouped by Elixir, or the list is one long sausage.
+  let group = null, groupEl = null;
+  for (const x of STACK_LIST) {
+    const minor = x.e.split(".").slice(0, 2).join(".");
+    if (minor !== group) { group = minor; groupEl = el("optgroup", { label: "elixir " + minor }); stack.append(groupEl); }
+    groupEl.append(el("option", { value: x.tag, selected: !!match && match.tag === x.tag }, x.tag));
+  }
+  // The image is not a key of config.conf — the three versions below are —
+  // but it is what you actually pick, so it wears the same name shape.
+  const imageHelp = "One hexpm/elixir image, straight from Docker Hub (./wb.sh stacks). Picking it sets the three versions below; the three look it back up. Available versions: https://hub.docker.com/r/hexpm/elixir/tags";
+  const rows = [el("div", { class: "row" }, el("label", { for: "cfg-stack" }, "DOCKER_IMAGE", el("span", { class: "chip new" }, "new")),
+    stack, el("p", { class: "help" }, ...linkify(imageHelp)))];
+  for (const [key, part, help] of STACK_PARTS) {
+    const combines = v => STACK_LIST.some(x => x[part] === v && STACK_PARTS.every(([, p]) => p === part || x[p] === cur[p]));
+    const values = [...new Set(STACK_LIST.map(x => x[part]))]; if (!values.includes(cur[part])) values.push(cur[part]);
+    const sel = el("select", { id: "cfg-" + key, onchange: ev => { setField(key, ev.target.value); renderConfig(); } });
+    for (const v of values) sel.append(el("option", { value: v, selected: v === cur[part], class: combines(v) ? "" : "dim" }, v + (combines(v) ? "" : " — no image with the other two")));
+    rows.push(el("div", { class: "row" + (key in cfg.edited ? " changed" : "") }, el("label", { for: "cfg-" + key }, key, el("span", { class: "chip new" }, "new")), sel, el("p", { class: "help" }, help)));
+  }
+  return rows;
 }
 function val(sec, key) { const f = sec.fields.find(f => f.key === key); return f ? (key in cfg.edited ? cfg.edited[key] : f.value) : ""; }
 function setField(key, v) { const orig = parseConfig(cfg.text).sections.flatMap(s => s.fields).find(f => f.key === key); if (orig && orig.value === v) delete cfg.edited[key]; else cfg.edited[key] = v; }
@@ -1723,12 +2143,22 @@ function fieldRow(f, parsed) {
   const v = f.key in cfg.edited ? cfg.edited[f.key] : f.value;
   const id = "cfg-" + f.key;
   const label = el("label", { for: id }, f.key);
-  if (f.key !== "WORKSPACE_PATH") label.append(el("span", { class: "chip new" }, "new only"));
+  // When each setting takes effect — most of the file is not 'new only'.
+  const EFFECT = { WORKSPACE_PATH: null, PROJECT_NAME: "new", ELIXIR_VERSION: "new", ERLANG_VERSION: "new", DEBIAN_VERSION: "new", GIT_IDENTITY: "every commit", POSTGRES_IMAGE_VERSION: "every bake", PGADMIN_IMAGE_VERSION: "every bake", NGINX_IMAGE_VERSION: "scaled deploy" };
+  const effect = f.key in EFFECT ? EFFECT[f.key] : "new";
+  if (effect) label.append(el("span", { class: "chip new" }, effect));
   let input;
-  const choices = f.key === "WORKSPACE_PATH" ? WB.workspaces : CHOICES[f.key] || (parsed.alts[f.key] ? [f.value, ...parsed.alts[f.key]] : null);
+  const choices = f.key === "WORKSPACE_PATH" ? null : CHOICES[f.key] || (parsed.alts[f.key] ? [f.value, ...parsed.alts[f.key]] : null);
   if (v === "true" || v === "false") input = el("input", { type: "checkbox", id, checked: v === "true", onchange: ev => { setField(f.key, String(ev.target.checked)); renderConfig(); } });
   else if (choices) { input = el("select", { id, onchange: ev => { setField(f.key, ev.target.value); renderConfig(); } }); for (const c of [...new Set([...choices, v])]) input.append(el("option", { value: c, selected: c === v }, c)); }
-  else input = el("input", { type: "text", id, value: v, oninput: ev => { setField(f.key, ev.target.value); $("#wb-cfg .bar .btn").disabled = !Object.keys(cfg.edited).length; $("#wb-cfg .bar .btn").textContent = `Save ${Object.keys(cfg.edited).length} change${Object.keys(cfg.edited).length === 1 ? "" : "s"}`; ev.target.closest(".row").classList.add("changed"); } });
+  else input = el("input", { type: "text", id, value: v, oninput: ev => { setField(f.key, ev.target.value); $("#wb-cfg .bar .btn").disabled = !Object.keys(cfg.edited).length; $("#wb-cfg .bar .btn").textContent = Object.keys(cfg.edited).length ? `Save ${Object.keys(cfg.edited).length} change${Object.keys(cfg.edited).length === 1 ? "" : "s"}` : "Save"; ev.target.closest(".row").classList.add("changed"); } });
+  // WORKSPACE_PATH is a host path typed as-is: no browser API reveals
+  // host paths and the console's backend only sees its mounts, so a
+  // picker would lie. The real fix is an Electron shell — not for now.
+  if (f.key === "WORKSPACE_PATH") {
+    f.help = (f.help + " A path that does not exist yet is created on new.").trim();
+    input.setAttribute("spellcheck", "false"); input.setAttribute("placeholder", "./_workspaces/…");
+  }
   const row = el("div", { class: "row" + (f.key in cfg.edited ? " changed" : "") + (v === "false" ? " off" : "") }, label, input);
   const help = (f.help + (f.inline ? " — " + f.inline : "")).trim();
   if (help) row.append(el("p", { class: "help" }, ...linkify(help)));
@@ -1753,6 +2183,9 @@ function rawConfig() {
 }
 
 // --- the project's own documents ------------------------------------------------
+// The project reads in the order it was written: what it is, what it has
+// been, and last the .env — the masked secrets are a reference, not the
+// first thing to show.
 const P_TABS = [["readme", "README", "README.md"], ["changelog", "CHANGELOG", "CHANGELOG.md"], ["env", ".env", ".env"]];
 state.ptab = "readme";
 function renderProject() {
@@ -1760,7 +2193,7 @@ function renderProject() {
   for (const [key, label, file] of P_TABS) tabs.append(el("button", { class: "dtab", role: "tab", "aria-selected": String(state.ptab === key), onclick: () => { state.ptab = key; renderProject(); } }, label, el("small", {}, PROJ[key] ? file : "missing")));
   const key = state.ptab, has = !!PROJ[key];
   $("#p-booklet").hidden = !(has && key !== "env"); $("#p-env").hidden = !(has && key === "env"); $("#p-missing").hidden = has;
-  if (!has) { $("#p-missing").textContent = key === "changelog" ? "This workspace has no CHANGELOG.md: it was created with new2, which generates none (new does, from the workbench's own template). The cartridges keep their own." : `No ${P_TABS.find(t => t[0] === key)[2]} in this workspace.`; return; }
+  if (!has) { $("#p-missing").textContent = key === "changelog" ? "This workspace has no CHANGELOG.md: new generates none — the project is born stock, and what it carries is its own to write. The cartridges keep theirs." : `No ${P_TABS.find(t => t[0] === key)[2]} in this workspace.`; return; }
   if (key === "env") {
     const pre = $("#p-env"); pre.replaceChildren();
     for (const line of PROJ.env.split("\n")) {
@@ -1893,7 +2326,11 @@ document.addEventListener("keydown", ev => {
   if (ev.key === "Escape") { close(); closeWb(); }
 });
 $("#scrim").addEventListener("click", closeWb);
-function toast(text) { const t = $("#toast"); t.textContent = text; t.classList.add("on"); setTimeout(() => t.classList.remove("on"), 2200); }
+let toastTimer = null;
+function toast(text, ms = 2200) {
+  const t = $("#toast"); t.textContent = text; t.classList.add("on");
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("on"), ms);
+}
 const tick = () => { $("#clock").textContent = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); };
 tick(); setInterval(tick, 30000);
 

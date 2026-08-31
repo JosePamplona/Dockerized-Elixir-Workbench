@@ -1,1509 +1,2056 @@
 {
   "workspace": "/home/johan/Documentos/repos/Dockerized-Elixir-Workbench/_workspaces/test_28",
   "compose_project": "lorem_ipsum_8",
-  "ports": {"app": 4000, "pgadmin": 5050},
+  "ports": {
+    "app": 4000,
+    "pgadmin": 5050
+  },
   "baked": {
     "dev": true,
     "prod": true,
     "scaled": true
   },
-  "containers": [{"Command":"\"/app/bin/server\"","CreatedAt":"2026-08-30 01:54:33 -0600 CST","ExitCode":0,"Health":"","ID":"05ac6aba098f","Image":"lorem-ipsum-8:0.1.0-prod","Labels":"com.docker.compose.config-hash=f3301e2aa814bf77d6b9bad4c210fac8097780b921b604aaa69ce74ee36e77b4,com.docker.compose.image=sha256:0841029ca259e7dc8eb6dc6e35edea569df5976fcb64b71abfc49406b3224969,com.docker.compose.project.config_files=/home/johan/Documentos/repos/Dockerized-Elixir-Workbench/_workspaces/test_28/docker-compose.scaled.yml,com.docker.compose.service=app1,com.docker.compose.container-number=1,com.docker.compose.depends_on=migrate:service_completed_successfully:false,com.docker.compose.oneoff=False,com.docker.compose.project=lorem_ipsum_8,com.docker.compose.project.working_dir=/home/johan/Documentos/repos/Dockerized-Elixir-Workbench/_workspaces/test_28,com.docker.compose.version=2.35.1","LocalVolumes":"0","Mounts":"","Name":"lorem_ipsum_8-app1-1","Names":"lorem_ipsum_8-app1-1","Networks":"lorem_ipsum_8_default","Ports":"0.0.0.0:4001->4000/tcp","Project":"lorem_ipsum_8","Publishers":[{"URL":"0.0.0.0","TargetPort":4000,"PublishedPort":4001,"Protocol":"tcp"}],"RunningFor":"36 minutes ago","Service":"app1","Size":"0B","State":"running","Status":"Up 36 minutes"},{"Command":"\"/app/bin/server\"","CreatedAt":"2026-08-30 01:54:33 -0600 CST","ExitCode":0,"Health":"","ID":"8c26790aeece","Image":"lorem-ipsum-8:0.1.0-prod","Labels":"com.docker.compose.config-hash=8f499d93b64e24483944f728f67ea6fa444c8ca3131658ff6caa62d8569d6a64,com.docker.compose.container-number=1,com.docker.compose.depends_on=migrate:service_completed_successfully:false,com.docker.compose.image=sha256:0841029ca259e7dc8eb6dc6e35edea569df5976fcb64b71abfc49406b3224969,com.docker.compose.project.config_files=/home/johan/Documentos/repos/Dockerized-Elixir-Workbench/_workspaces/test_28/docker-compose.scaled.yml,com.docker.compose.project.working_dir=/home/johan/Documentos/repos/Dockerized-Elixir-Workbench/_workspaces/test_28,com.docker.compose.oneoff=False,com.docker.compose.project=lorem_ipsum_8,com.docker.compose.service=app2,com.docker.compose.version=2.35.1","LocalVolumes":"0","Mounts":"","Name":"lorem_ipsum_8-app2-1","Names":"lorem_ipsum_8-app2-1","Networks":"lorem_ipsum_8_default","Ports":"0.0.0.0:4002->4000/tcp","Project":"lorem_ipsum_8","Publishers":[{"URL":"0.0.0.0","TargetPort":4000,"PublishedPort":4002,"Protocol":"tcp"}],"RunningFor":"36 minutes ago","Service":"app2","Size":"0B","State":"running","Status":"Up 36 minutes"},{"Command":"\"/app/bin/server\"","CreatedAt":"2026-08-30 01:54:33 -0600 CST","ExitCode":0,"Health":"","ID":"15af69c27778","Image":"lorem-ipsum-8:0.1.0-prod","Labels":"com.docker.compose.project.config_files=/home/johan/Documentos/repos/Dockerized-Elixir-Workbench/_workspaces/test_28/docker-compose.scaled.yml,com.docker.compose.version=2.35.1,com.docker.compose.depends_on=migrate:service_completed_successfully:false,com.docker.compose.container-number=1,com.docker.compose.image=sha256:0841029ca259e7dc8eb6dc6e35edea569df5976fcb64b71abfc49406b3224969,com.docker.compose.oneoff=False,com.docker.compose.project=lorem_ipsum_8,com.docker.compose.project.working_dir=/home/johan/Documentos/repos/Dockerized-Elixir-Workbench/_workspaces/test_28,com.docker.compose.service=app3,com.docker.compose.config-hash=d6cf3ae3010bfba46f624a8d5dbe218f1c5ed3ffbb51fdc67482341bdb0b29a2","LocalVolumes":"0","Mounts":"","Name":"lorem_ipsum_8-app3-1","Names":"lorem_ipsum_8-app3-1","Networks":"lorem_ipsum_8_default","Ports":"0.0.0.0:4003->4000/tcp","Project":"lorem_ipsum_8","Publishers":[{"URL":"0.0.0.0","TargetPort":4000,"PublishedPort":4003,"Protocol":"tcp"}],"RunningFor":"36 minutes ago","Service":"app3","Size":"0B","State":"running","Status":"Up 36 minutes"},{"Command":"\"/app/bin/server\"","CreatedAt":"2026-08-30 01:54:33 -0600 CST","ExitCode":0,"Health":"","ID":"a21dacdc5bad","Image":"lorem-ipsum-8:0.1.0-prod","Labels":"com.docker.compose.container-number=1,com.docker.compose.depends_on=migrate:service_completed_successfully:false,com.docker.compose.image=sha256:0841029ca259e7dc8eb6dc6e35edea569df5976fcb64b71abfc49406b3224969,com.docker.compose.project.working_dir=/home/johan/Documentos/repos/Dockerized-Elixir-Workbench/_workspaces/test_28,com.docker.compose.service=app4,com.docker.compose.config-hash=b1f6982d728b470a0a1835b0b7e093ff0033ad8fdff63431a53a28841e5962dc,com.docker.compose.oneoff=False,com.docker.compose.project=lorem_ipsum_8,com.docker.compose.project.config_files=/home/johan/Documentos/repos/Dockerized-Elixir-Workbench/_workspaces/test_28/docker-compose.scaled.yml,com.docker.compose.version=2.35.1","LocalVolumes":"0","Mounts":"","Name":"lorem_ipsum_8-app4-1","Names":"lorem_ipsum_8-app4-1","Networks":"lorem_ipsum_8_default","Ports":"0.0.0.0:4004->4000/tcp","Project":"lorem_ipsum_8","Publishers":[{"URL":"0.0.0.0","TargetPort":4000,"PublishedPort":4004,"Protocol":"tcp"}],"RunningFor":"36 minutes ago","Service":"app4","Size":"0B","State":"running","Status":"Up 36 minutes"},{"Command":"\"/docker-entrypoint.…\"","CreatedAt":"2026-08-30 01:54:39 -0600 CST","ExitCode":0,"Health":"","ID":"65677649edcc","Image":"nginx:alpine","Labels":"com.docker.compose.image=sha256:db35bfc6b2951e7f8a72db5db120288c127ffaeeb4a6d4b95a26fead017d5913,com.docker.compose.project=lorem_ipsum_8,com.docker.compose.project.working_dir=/home/johan/Documentos/repos/Dockerized-Elixir-Workbench/_workspaces/test_28,com.docker.compose.version=2.35.1,maintainer=NGINX Docker Maintainers <docker-maint@nginx.com>,com.docker.compose.config-hash=7154d767875c7fa2083eea9404f418cbf33132890f94f8f862970fd8a6f713ab,com.docker.compose.container-number=1,com.docker.compose.project.config_files=/home/johan/Documentos/repos/Dockerized-Elixir-Workbench/_workspaces/test_28/docker-compose.scaled.yml,com.docker.compose.service=balancer,com.docker.compose.depends_on=app3:service_started:false,app4:service_started:false,app1:service_started:false,app2:service_started:false,com.docker.compose.oneoff=False","LocalVolumes":"0","Mounts":"","Name":"lorem_ipsum_8-balancer-1","Names":"lorem_ipsum_8-balancer-1","Networks":"lorem_ipsum_8_default","Ports":"0.0.0.0:4000->80/tcp","Project":"lorem_ipsum_8","Publishers":[{"URL":"0.0.0.0","TargetPort":80,"PublishedPort":4000,"Protocol":"tcp"}],"RunningFor":"36 minutes ago","Service":"balancer","Size":"0B","State":"running","Status":"Up 36 minutes"},{"Command":"\"docker-entrypoint.s…\"","CreatedAt":"2026-08-30 01:54:28 -0600 CST","ExitCode":0,"Health":"healthy","ID":"91d9681adf24","Image":"postgres:latest","Labels":"com.docker.compose.depends_on=,com.docker.compose.image=sha256:1957b2ff3137e4ef7f3bc813e74fff50b1e1ffddc85c8b9d6f14ade972be8687,com.docker.compose.oneoff=False,com.docker.compose.service=database,com.docker.compose.config-hash=c2d5359db975dcddf48890dd9a7039e6b8d7c25a097743906d4167e3f904d32b,com.docker.compose.container-number=1,com.docker.compose.project=lorem_ipsum_8,com.docker.compose.project.config_files=/home/johan/Documentos/repos/Dockerized-Elixir-Workbench/_workspaces/test_28/docker-compose.scaled.yml,com.docker.compose.project.working_dir=/home/johan/Documentos/repos/Dockerized-Elixir-Workbench/_workspaces/test_28,com.docker.compose.version=2.35.1","LocalVolumes":"1","Mounts":"f7469e4f348310…","Name":"lorem_ipsum_8-database-1","Names":"lorem_ipsum_8-database-1","Networks":"lorem_ipsum_8_default","Ports":"5432/tcp","Project":"lorem_ipsum_8","Publishers":[{"URL":"","TargetPort":5432,"PublishedPort":0,"Protocol":"tcp"}],"RunningFor":"36 minutes ago","Service":"database","Size":"0B","State":"running","Status":"Up 36 minutes (healthy)"},{"Command":"\"/app/bin/migrate\"","CreatedAt":"2026-08-30 01:54:31 -0600 CST","ExitCode":0,"Health":"","ID":"82f1430a448c","Image":"lorem-ipsum-8:0.1.0-prod","Labels":"com.docker.compose.container-number=1,com.docker.compose.depends_on=database:service_healthy:false,com.docker.compose.image=sha256:0841029ca259e7dc8eb6dc6e35edea569df5976fcb64b71abfc49406b3224969,com.docker.compose.oneoff=False,com.docker.compose.project.config_files=/home/johan/Documentos/repos/Dockerized-Elixir-Workbench/_workspaces/test_28/docker-compose.scaled.yml,com.docker.compose.project.working_dir=/home/johan/Documentos/repos/Dockerized-Elixir-Workbench/_workspaces/test_28,com.docker.compose.service=migrate,com.docker.compose.config-hash=6b5926f8f40f56be3e2de3bd42d37622cb2caecefad62636aa17aea2c2e588da,com.docker.compose.version=2.35.1,com.docker.compose.project=lorem_ipsum_8","LocalVolumes":"0","Mounts":"","Name":"lorem_ipsum_8-migrate-1","Names":"lorem_ipsum_8-migrate-1","Networks":"lorem_ipsum_8_default","Ports":"","Project":"lorem_ipsum_8","Publishers":[],"RunningFor":"36 minutes ago","Service":"migrate","Size":"0B","State":"exited","Status":"Exited (0) 36 minutes ago"}],
-  "git": {"repo": true, "clean": true, "head": "b52cf08 Revert \"Insert credo\"", "identity": "José L. Pamplona <pamplona.stoever@gmail.com>", "inserts": []},
-  "project": {
-  "app": "lorem_ipsum_8",
-  "cartridges": [
+  "containers": [
     {
-      "name": "osmon",
-      "pending": false,
-      "version": null,
-      "state": {},
-      "flag": null,
-      "options": [],
-      "base": false,
-      "requires": [],
-      "console": {
-        "tabs": [],
-        "doors": [],
-        "probes": []
-      },
-      "task": "workbench.install.osmon",
-      "installed": false,
-      "rerun": "noop",
-      "summary": "Enables the :os_mon OTP application for system monitoring",
-      "enabled_by": "enhance",
-      "implies": [],
-      "afterwards": null,
-      "example": "mix workbench.install.osmon",
-      "standalone": false
-    },
-    {
-      "name": "psql_extras",
-      "pending": false,
-      "version": null,
-      "state": {},
-      "flag": null,
-      "options": [],
-      "base": false,
-      "requires": [],
-      "console": {
-        "tabs": [],
-        "doors": [],
-        "probes": []
-      },
-      "task": "workbench.install.psql_extras",
-      "installed": false,
-      "rerun": "noop",
-      "summary": "Adds ecto_psql_extras database insights to the project",
-      "enabled_by": "enhance",
-      "implies": [],
-      "afterwards": null,
-      "example": "mix workbench.install.psql_extras",
-      "standalone": false
-    },
-    {
-      "name": "credo",
-      "pending": false,
-      "version": null,
-      "state": {},
-      "flag": null,
-      "options": [],
-      "base": false,
-      "requires": [],
-      "console": {
-        "tabs": [],
-        "doors": [],
-        "probes": []
-      },
-      "task": "workbench.install.credo",
-      "installed": false,
-      "rerun": "noop",
-      "summary": "Adds Credo static code analysis to the project",
-      "enabled_by": "enhance",
-      "implies": [],
-      "afterwards": null,
-      "example": "mix workbench.install.credo",
-      "standalone": false
-    },
-    {
-      "name": "mock",
-      "pending": false,
-      "version": null,
-      "state": {},
-      "flag": null,
-      "options": [],
-      "base": false,
-      "requires": [],
-      "console": {
-        "tabs": [],
-        "doors": [],
-        "probes": []
-      },
-      "task": "workbench.install.mock",
-      "installed": false,
-      "rerun": "noop",
-      "summary": "Adds the Mock testing library to the project",
-      "enabled_by": "enhance",
-      "implies": [],
-      "afterwards": null,
-      "example": "mix workbench.install.mock",
-      "standalone": false
-    },
-    {
-      "name": "exdebug",
-      "pending": false,
-      "version": null,
-      "state": {},
-      "flag": null,
-      "options": [],
-      "base": false,
-      "requires": [],
-      "console": {
-        "tabs": [],
-        "doors": [],
-        "probes": []
-      },
-      "task": "workbench.install.exdebug",
-      "installed": false,
-      "rerun": "noop",
-      "summary": "Adds the ExDebug utility to the project",
-      "enabled_by": "enhance",
-      "implies": [],
-      "afterwards": null,
-      "example": "mix workbench.install.exdebug",
-      "standalone": false
-    },
-    {
-      "name": "rest",
-      "pending": false,
-      "version": null,
-      "state": {},
-      "flag": null,
-      "options": [
+      "Command": "\"/app/bin/server\"",
+      "CreatedAt": "2026-08-30 01:54:33 -0600 CST",
+      "ExitCode": 0,
+      "Health": "",
+      "ID": "05ac6aba098f",
+      "Image": "lorem-ipsum-8:0.1.0-prod",
+      "Labels": "com.docker.compose.config-hash=f3301e2aa814bf77d6b9bad4c210fac8097780b921b604aaa69ce74ee36e77b4,com.docker.compose.image=sha256:0841029ca259e7dc8eb6dc6e35edea569df5976fcb64b71abfc49406b3224969,com.docker.compose.project.config_files=/home/johan/Documentos/repos/Dockerized-Elixir-Workbench/_workspaces/test_28/docker-compose.scaled.yml,com.docker.compose.service=app1,com.docker.compose.container-number=1,com.docker.compose.depends_on=migrate:service_completed_successfully:false,com.docker.compose.oneoff=False,com.docker.compose.project=lorem_ipsum_8,com.docker.compose.project.working_dir=/home/johan/Documentos/repos/Dockerized-Elixir-Workbench/_workspaces/test_28,com.docker.compose.version=2.35.1",
+      "LocalVolumes": "0",
+      "Mounts": "",
+      "Name": "lorem_ipsum_8-app1-1",
+      "Names": "lorem_ipsum_8-app1-1",
+      "Networks": "lorem_ipsum_8_default",
+      "Ports": "0.0.0.0:4001->4000/tcp",
+      "Project": "lorem_ipsum_8",
+      "Publishers": [
         {
-          "default": null,
-          "name": "project_name",
-          "open": false,
-          "type": "string",
-          "doc": "Display name for the OpenAPI Info title (default: capitalized app name).",
-          "choices": null,
-          "multiple": false
-        },
-        {
-          "default": false,
-          "name": "auth0",
-          "open": false,
-          "type": "boolean",
-          "doc": "Include the bearer security scheme and the users tag.",
-          "choices": null,
-          "multiple": false
-        },
-        {
-          "default": false,
-          "name": "openai",
-          "open": false,
-          "type": "boolean",
-          "doc": "Include the assistant request params and conversations tag.",
-          "choices": null,
-          "multiple": false
-        },
-        {
-          "default": false,
-          "name": "health",
-          "open": false,
-          "type": "boolean",
-          "doc": "Include the development operations tag.",
-          "choices": null,
-          "multiple": false
+          "URL": "0.0.0.0",
+          "TargetPort": 4000,
+          "PublishedPort": 4001,
+          "Protocol": "tcp"
         }
       ],
-      "base": false,
-      "requires": [],
-      "console": {
-        "tabs": [],
-        "doors": [
-          {
-            "label": "swagger",
-            "path": "/dev/swagger",
-            "when": null
-          },
-          {
-            "label": "openapi",
-            "path": "/dev/openapi",
-            "when": null
-          }
-        ],
-        "probes": []
-      },
-      "task": "workbench.install.rest",
-      "installed": false,
-      "rerun": "noop",
-      "summary": "Adds OpenAPI (open_api_spex) REST documentation to the project",
-      "enabled_by": {
-        "interface": "rest"
-      },
-      "implies": [],
-      "afterwards": null,
-      "example": "mix workbench.install.rest --project-name \"Lorem Ipsum\" --health",
-      "standalone": false
+      "RunningFor": "36 minutes ago",
+      "Service": "app1",
+      "Size": "0B",
+      "State": "running",
+      "Status": "Up 36 minutes"
     },
     {
-      "name": "graphql",
-      "pending": false,
-      "version": null,
-      "state": {},
-      "flag": null,
-      "options": [],
-      "base": false,
-      "requires": [],
-      "console": {
-        "tabs": [],
-        "doors": [
-          {
-            "label": "graphiql",
-            "path": "/graphiql",
-            "when": null
-          }
-        ],
-        "probes": []
-      },
-      "task": "workbench.install.graphql",
-      "installed": false,
-      "rerun": "noop",
-      "summary": "Adds an Absinthe GraphQL API served at /graphiql to the project",
-      "enabled_by": {
-        "interface": "graphql"
-      },
-      "implies": [],
-      "afterwards": null,
-      "example": "mix workbench.install.graphql",
-      "standalone": false
-    },
-    {
-      "name": "coveralls",
-      "pending": false,
-      "version": null,
-      "state": {},
-      "flag": "coveralls",
-      "options": [
+      "Command": "\"/app/bin/server\"",
+      "CreatedAt": "2026-08-30 01:54:33 -0600 CST",
+      "ExitCode": 0,
+      "Health": "",
+      "ID": "8c26790aeece",
+      "Image": "lorem-ipsum-8:0.1.0-prod",
+      "Labels": "com.docker.compose.config-hash=8f499d93b64e24483944f728f67ea6fa444c8ca3131658ff6caa62d8569d6a64,com.docker.compose.container-number=1,com.docker.compose.depends_on=migrate:service_completed_successfully:false,com.docker.compose.image=sha256:0841029ca259e7dc8eb6dc6e35edea569df5976fcb64b71abfc49406b3224969,com.docker.compose.project.config_files=/home/johan/Documentos/repos/Dockerized-Elixir-Workbench/_workspaces/test_28/docker-compose.scaled.yml,com.docker.compose.project.working_dir=/home/johan/Documentos/repos/Dockerized-Elixir-Workbench/_workspaces/test_28,com.docker.compose.oneoff=False,com.docker.compose.project=lorem_ipsum_8,com.docker.compose.service=app2,com.docker.compose.version=2.35.1",
+      "LocalVolumes": "0",
+      "Mounts": "",
+      "Name": "lorem_ipsum_8-app2-1",
+      "Names": "lorem_ipsum_8-app2-1",
+      "Networks": "lorem_ipsum_8_default",
+      "Ports": "0.0.0.0:4002->4000/tcp",
+      "Project": "lorem_ipsum_8",
+      "Publishers": [
         {
-          "default": "80",
-          "name": "minimum_coverage",
-          "open": false,
-          "type": "string",
-          "doc": "Minimum coverage percentage. Default: `80`.",
-          "choices": null,
-          "multiple": false
-        },
-        {
-          "default": "rest",
-          "name": "interface",
-          "open": false,
-          "type": "string",
-          "doc": "`rest` skips `open_api` files in the coverage report. Default: `rest`.",
-          "choices": [
-            {
-              "value": "rest",
-              "doc": "skips the open_api files in the report",
-              "requires": []
-            },
-            {
-              "value": "graphql",
-              "doc": "the GraphQL project: nothing skipped",
-              "requires": []
-            }
-          ],
-          "multiple": false
-        },
-        {
-          "default": false,
-          "name": "exdoc",
-          "open": false,
-          "type": "boolean",
-          "doc": "The project uses the ExDoc feature: the `mix cover` task (which generates the `TESTING.md` report for the docs) is installed.",
-          "choices": null,
-          "multiple": false
-        },
-        {
-          "default": "exdoc-ish",
-          "name": "theme",
-          "open": false,
-          "type": "string",
-          "doc": "HTML report theme, one of `custom`, `exdoc-ish`: `exdoc-ish` mimics the ExDoc pages (sidebar, light/dark theme, fonts) so the report blends into the documentation site, `custom` is the original workbench report. Default: `exdoc-ish`.",
-          "choices": [
-            {
-              "value": "exdoc-ish",
-              "doc": "mimics the ExDoc pages (sidebar, light/dark theme, fonts), so the report blends into the docs",
-              "requires": []
-            },
-            {
-              "value": "custom",
-              "doc": "the original workbench report",
-              "requires": []
-            }
-          ],
-          "multiple": false
+          "URL": "0.0.0.0",
+          "TargetPort": 4000,
+          "PublishedPort": 4002,
+          "Protocol": "tcp"
         }
       ],
-      "base": false,
-      "requires": [],
-      "console": {
-        "tabs": [],
-        "doors": [
-          {
-            "label": "coverage",
-            "path": "/dev/docs/cover",
-            "when": {
-              "cartridge": "exdoc"
-            }
-          }
-        ],
-        "probes": []
-      },
-      "task": "workbench.install.coveralls",
-      "installed": false,
-      "rerun": "noop",
-      "summary": "Adds ExCoveralls test coverage reports to the project",
-      "enabled_by": "coveralls",
-      "implies": [],
-      "afterwards": null,
-      "example": "mix workbench.install.coveralls --exdoc",
-      "standalone": false
+      "RunningFor": "36 minutes ago",
+      "Service": "app2",
+      "Size": "0B",
+      "State": "running",
+      "Status": "Up 36 minutes"
     },
     {
-      "name": "exdoc",
-      "pending": false,
-      "version": null,
-      "state": {},
-      "flag": "exdoc",
-      "options": [
+      "Command": "\"/app/bin/server\"",
+      "CreatedAt": "2026-08-30 01:54:33 -0600 CST",
+      "ExitCode": 0,
+      "Health": "",
+      "ID": "15af69c27778",
+      "Image": "lorem-ipsum-8:0.1.0-prod",
+      "Labels": "com.docker.compose.project.config_files=/home/johan/Documentos/repos/Dockerized-Elixir-Workbench/_workspaces/test_28/docker-compose.scaled.yml,com.docker.compose.version=2.35.1,com.docker.compose.depends_on=migrate:service_completed_successfully:false,com.docker.compose.container-number=1,com.docker.compose.image=sha256:0841029ca259e7dc8eb6dc6e35edea569df5976fcb64b71abfc49406b3224969,com.docker.compose.oneoff=False,com.docker.compose.project=lorem_ipsum_8,com.docker.compose.project.working_dir=/home/johan/Documentos/repos/Dockerized-Elixir-Workbench/_workspaces/test_28,com.docker.compose.service=app3,com.docker.compose.config-hash=d6cf3ae3010bfba46f624a8d5dbe218f1c5ed3ffbb51fdc67482341bdb0b29a2",
+      "LocalVolumes": "0",
+      "Mounts": "",
+      "Name": "lorem_ipsum_8-app3-1",
+      "Names": "lorem_ipsum_8-app3-1",
+      "Networks": "lorem_ipsum_8_default",
+      "Ports": "0.0.0.0:4003->4000/tcp",
+      "Project": "lorem_ipsum_8",
+      "Publishers": [
         {
-          "default": null,
-          "name": "project_name",
-          "open": false,
-          "type": "string",
-          "doc": "Display name (default: capitalized app name).",
-          "choices": null,
-          "multiple": false
-        },
-        {
-          "default": "0.0.0",
-          "name": "version",
-          "open": false,
-          "type": "string",
-          "doc": "The version the pages are stamped with (titles, the 404 page) until `mix version` sets the real one. Default: `0.0.0`.",
-          "choices": null,
-          "multiple": false
-        },
-        {
-          "default": "https://github.com/user/repo",
-          "name": "repo_url",
-          "open": false,
-          "type": "string",
-          "doc": "Repository URL for `source_url`/`authors`.",
-          "choices": null,
-          "multiple": false
-        },
-        {
-          "default": null,
-          "name": "guidelines_url",
-          "open": false,
-          "type": "string",
-          "doc": "URL of a coding guidelines markdown to download as the \"Coding guidelines\" page. Optional.",
-          "choices": null,
-          "multiple": false
-        },
-        {
-          "default": false,
-          "name": "coveralls",
-          "open": false,
-          "type": "boolean",
-          "doc": "The coveralls feature is composed too: the coverage report is served beside the docs (`/cover`), with its page and the controller action.",
-          "choices": null,
-          "multiple": false
-        },
-        {
-          "default": false,
-          "name": "auth0",
-          "open": false,
-          "type": "boolean",
-          "doc": "The auth0 feature is composed too: the \"Get access tokens\" page and its scripts, to try the API from the docs.",
-          "choices": null,
-          "multiple": false
+          "URL": "0.0.0.0",
+          "TargetPort": 4000,
+          "PublishedPort": 4003,
+          "Protocol": "tcp"
         }
       ],
-      "base": false,
-      "requires": [],
-      "console": {
-        "tabs": [],
-        "doors": [
-          {
-            "label": "docs",
-            "path": "/dev/docs",
-            "when": null
-          }
-        ],
-        "probes": []
-      },
-      "task": "workbench.install.exdoc",
-      "installed": false,
-      "rerun": "noop",
-      "summary": "Adds ExDoc documentation served at /dev/docs to the project",
-      "enabled_by": "exdoc",
-      "implies": [],
-      "afterwards": null,
-      "example": "mix workbench.install.exdoc --project-name \"Lorem Ipsum\" --coveralls",
-      "standalone": false
+      "RunningFor": "36 minutes ago",
+      "Service": "app3",
+      "Size": "0B",
+      "State": "running",
+      "Status": "Up 36 minutes"
     },
     {
-      "name": "enhancements",
-      "pending": false,
-      "version": null,
-      "state": {},
-      "flag": "enhance",
-      "options": [
+      "Command": "\"/app/bin/server\"",
+      "CreatedAt": "2026-08-30 01:54:33 -0600 CST",
+      "ExitCode": 0,
+      "Health": "",
+      "ID": "a21dacdc5bad",
+      "Image": "lorem-ipsum-8:0.1.0-prod",
+      "Labels": "com.docker.compose.container-number=1,com.docker.compose.depends_on=migrate:service_completed_successfully:false,com.docker.compose.image=sha256:0841029ca259e7dc8eb6dc6e35edea569df5976fcb64b71abfc49406b3224969,com.docker.compose.project.working_dir=/home/johan/Documentos/repos/Dockerized-Elixir-Workbench/_workspaces/test_28,com.docker.compose.service=app4,com.docker.compose.config-hash=b1f6982d728b470a0a1835b0b7e093ff0033ad8fdff63431a53a28841e5962dc,com.docker.compose.oneoff=False,com.docker.compose.project=lorem_ipsum_8,com.docker.compose.project.config_files=/home/johan/Documentos/repos/Dockerized-Elixir-Workbench/_workspaces/test_28/docker-compose.scaled.yml,com.docker.compose.version=2.35.1",
+      "LocalVolumes": "0",
+      "Mounts": "",
+      "Name": "lorem_ipsum_8-app4-1",
+      "Names": "lorem_ipsum_8-app4-1",
+      "Networks": "lorem_ipsum_8_default",
+      "Ports": "0.0.0.0:4004->4000/tcp",
+      "Project": "lorem_ipsum_8",
+      "Publishers": [
         {
-          "default": null,
-          "name": "project_name",
-          "open": false,
-          "type": "string",
-          "doc": "Display name (default: capitalized app name).",
-          "choices": null,
-          "multiple": false
-        },
-        {
-          "default": "uuid",
-          "name": "id_type",
-          "open": false,
-          "type": "string",
-          "doc": "Primary key type (`uuid` maps to `Ecto.UUID`). Default: `uuid`.",
-          "choices": null,
-          "multiple": false
-        },
-        {
-          "default": "naive_datetime_usec",
-          "name": "timestamps",
-          "open": false,
-          "type": "string",
-          "doc": "Timestamps type. Default: `naive_datetime_usec`.",
-          "choices": null,
-          "multiple": false
-        },
-        {
-          "default": "rest",
-          "name": "interface",
-          "open": false,
-          "type": "string",
-          "doc": "`rest` | `graphql` | `none`. Default: `rest`. `rest` adds the changeset-aware `error_json.ex`, the error view test and the Postman collection.",
-          "choices": null,
-          "multiple": false
-        },
-        {
-          "default": false,
-          "name": "exdoc",
-          "open": false,
-          "type": "boolean",
-          "doc": "The exdoc feature is composed too: `MyApp.Schema` carries the `@moduledoc` sections its pages read.",
-          "choices": null,
-          "multiple": false
-        },
-        {
-          "default": false,
-          "name": "auth0",
-          "open": false,
-          "type": "boolean",
-          "doc": "The auth0 feature is composed too: the DbSchema diagrams and Postman collection of that combo, the User fixtures, and the `MyApp.Schema` bits its User schema uses.",
-          "choices": null,
-          "multiple": false
-        },
-        {
-          "default": false,
-          "name": "openai",
-          "open": false,
-          "type": "boolean",
-          "doc": "The openai feature is composed too: the diagrams and Postman collection of that combo, and the assistant fixtures.",
-          "choices": null,
-          "multiple": false
-        },
-        {
-          "default": false,
-          "name": "stripe",
-          "open": false,
-          "type": "boolean",
-          "doc": "The stripe feature is composed too: the DbSchema diagrams of that combo.",
-          "choices": null,
-          "multiple": false
-        },
-        {
-          "default": false,
-          "name": "health",
-          "open": false,
-          "type": "boolean",
-          "doc": "The healthcheck feature is composed too: the Postman collection of that combo.",
-          "choices": null,
-          "multiple": false
+          "URL": "0.0.0.0",
+          "TargetPort": 4000,
+          "PublishedPort": 4004,
+          "Protocol": "tcp"
         }
       ],
-      "base": false,
-      "requires": [],
-      "console": {
-        "tabs": [],
-        "doors": [],
-        "probes": []
-      },
-      "task": "workbench.install.enhancements",
-      "installed": false,
-      "rerun": "noop",
-      "summary": "Adds the workbench base enhancements (helper, schema, tasks, tests)",
-      "enabled_by": "enhance",
-      "implies": [],
-      "afterwards": null,
-      "example": "mix workbench.install.enhancements --id-type uuid --timestamps naive_datetime_usec",
-      "standalone": false
+      "RunningFor": "36 minutes ago",
+      "Service": "app4",
+      "Size": "0B",
+      "State": "running",
+      "Status": "Up 36 minutes"
     },
     {
-      "name": "auth0",
-      "pending": false,
-      "version": null,
-      "state": {},
-      "flag": "auth0",
-      "options": [
+      "Command": "\"/docker-entrypoint.\u2026\"",
+      "CreatedAt": "2026-08-30 01:54:39 -0600 CST",
+      "ExitCode": 0,
+      "Health": "",
+      "ID": "65677649edcc",
+      "Image": "nginx:alpine",
+      "Labels": "com.docker.compose.image=sha256:db35bfc6b2951e7f8a72db5db120288c127ffaeeb4a6d4b95a26fead017d5913,com.docker.compose.project=lorem_ipsum_8,com.docker.compose.project.working_dir=/home/johan/Documentos/repos/Dockerized-Elixir-Workbench/_workspaces/test_28,com.docker.compose.version=2.35.1,maintainer=NGINX Docker Maintainers <docker-maint@nginx.com>,com.docker.compose.config-hash=7154d767875c7fa2083eea9404f418cbf33132890f94f8f862970fd8a6f713ab,com.docker.compose.container-number=1,com.docker.compose.project.config_files=/home/johan/Documentos/repos/Dockerized-Elixir-Workbench/_workspaces/test_28/docker-compose.scaled.yml,com.docker.compose.service=balancer,com.docker.compose.depends_on=app3:service_started:false,app4:service_started:false,app1:service_started:false,app2:service_started:false,com.docker.compose.oneoff=False",
+      "LocalVolumes": "0",
+      "Mounts": "",
+      "Name": "lorem_ipsum_8-balancer-1",
+      "Names": "lorem_ipsum_8-balancer-1",
+      "Networks": "lorem_ipsum_8_default",
+      "Ports": "0.0.0.0:4000->80/tcp",
+      "Project": "lorem_ipsum_8",
+      "Publishers": [
         {
-          "default": null,
-          "name": "project_name",
-          "open": false,
-          "type": "string",
-          "doc": "Display name (default: capitalized app name).",
-          "choices": null,
-          "multiple": false
-        },
-        {
-          "default": "rest",
-          "name": "interface",
-          "open": false,
-          "type": "string",
-          "doc": "`rest` | `graphql` | `none`. Default: `rest`.",
-          "choices": [
-            {
-              "value": "rest",
-              "doc": "a JSON controller and its OpenAPI schema",
-              "requires": []
-            },
-            {
-              "value": "graphql",
-              "doc": "an Absinthe schema and resolvers",
-              "requires": []
-            }
-          ],
-          "multiple": false
+          "URL": "0.0.0.0",
+          "TargetPort": 80,
+          "PublishedPort": 4000,
+          "Protocol": "tcp"
         }
       ],
-      "base": false,
-      "requires": [],
-      "console": {
-        "tabs": [],
-        "doors": [],
-        "probes": []
-      },
-      "task": "workbench.install.auth0",
-      "installed": true,
-      "rerun": "noop",
-      "summary": "Adds Auth0 JWT authentication with an Accounts context to the project",
-      "enabled_by": "auth0",
-      "implies": [],
-      "afterwards": null,
-      "example": "mix workbench.install.auth0 --project-name \"Lorem Ipsum\"",
-      "standalone": false
+      "RunningFor": "36 minutes ago",
+      "Service": "balancer",
+      "Size": "0B",
+      "State": "running",
+      "Status": "Up 36 minutes"
     },
     {
-      "name": "openai",
-      "pending": false,
-      "version": null,
-      "state": {},
-      "flag": "openai",
-      "options": [
+      "Command": "\"docker-entrypoint.s\u2026\"",
+      "CreatedAt": "2026-08-30 01:54:28 -0600 CST",
+      "ExitCode": 0,
+      "Health": "healthy",
+      "ID": "91d9681adf24",
+      "Image": "postgres:latest",
+      "Labels": "com.docker.compose.depends_on=,com.docker.compose.image=sha256:1957b2ff3137e4ef7f3bc813e74fff50b1e1ffddc85c8b9d6f14ade972be8687,com.docker.compose.oneoff=False,com.docker.compose.service=database,com.docker.compose.config-hash=c2d5359db975dcddf48890dd9a7039e6b8d7c25a097743906d4167e3f904d32b,com.docker.compose.container-number=1,com.docker.compose.project=lorem_ipsum_8,com.docker.compose.project.config_files=/home/johan/Documentos/repos/Dockerized-Elixir-Workbench/_workspaces/test_28/docker-compose.scaled.yml,com.docker.compose.project.working_dir=/home/johan/Documentos/repos/Dockerized-Elixir-Workbench/_workspaces/test_28,com.docker.compose.version=2.35.1",
+      "LocalVolumes": "1",
+      "Mounts": "f7469e4f348310\u2026",
+      "Name": "lorem_ipsum_8-database-1",
+      "Names": "lorem_ipsum_8-database-1",
+      "Networks": "lorem_ipsum_8_default",
+      "Ports": "5432/tcp",
+      "Project": "lorem_ipsum_8",
+      "Publishers": [
         {
-          "default": null,
-          "name": "project_name",
-          "open": false,
-          "type": "string",
-          "doc": "Display name (default: capitalized app name).",
-          "choices": null,
-          "multiple": false
-        },
-        {
-          "default": "rest",
-          "name": "interface",
-          "open": false,
-          "type": "string",
-          "doc": "`rest` | `graphql` | `none`. Default: `rest`.",
-          "choices": [
-            {
-              "value": "rest",
-              "doc": "a JSON controller and its OpenAPI schema",
-              "requires": []
-            },
-            {
-              "value": "graphql",
-              "doc": "an Absinthe schema and resolvers",
-              "requires": []
-            }
-          ],
-          "multiple": false
+          "URL": "",
+          "TargetPort": 5432,
+          "PublishedPort": 0,
+          "Protocol": "tcp"
         }
       ],
-      "base": false,
-      "requires": [],
-      "console": {
-        "tabs": [],
-        "doors": [],
-        "probes": []
-      },
-      "task": "workbench.install.openai",
-      "installed": false,
-      "rerun": "noop",
-      "summary": "Adds an OpenAI assistant with conversations to the project",
-      "enabled_by": "openai",
-      "implies": [
-        "auth0"
-      ],
-      "afterwards": null,
-      "example": "mix workbench.install.openai --project-name \"Lorem Ipsum\"",
-      "standalone": false
+      "RunningFor": "36 minutes ago",
+      "Service": "database",
+      "Size": "0B",
+      "State": "running",
+      "Status": "Up 36 minutes (healthy)"
     },
     {
-      "name": "healthcheck",
-      "pending": false,
-      "version": null,
-      "state": {},
-      "flag": "health",
-      "options": [
-        {
-          "default": "/health",
-          "name": "endpoint",
-          "open": false,
-          "type": "string",
-          "doc": "Route for the healthcheck scope. Defaults to `/health`.",
-          "choices": null,
-          "multiple": false
-        },
-        {
-          "default": false,
-          "name": "open_api",
-          "open": false,
-          "type": "boolean",
-          "doc": "Generate the OpenApiSpex-documented variant even if the REST feature is not detected (it must be installed for it to compile).",
-          "choices": null,
-          "multiple": false
-        }
-      ],
-      "base": false,
-      "requires": [],
-      "console": {
-        "tabs": [],
-        "doors": [],
-        "probes": [
-          {
-            "label": "health",
-            "path": "{endpoint}"
-          }
-        ]
-      },
-      "task": "workbench.install.healthcheck",
-      "installed": false,
-      "rerun": "noop",
-      "summary": "Adds a healthcheck endpoint with controller, tests and router scope",
-      "enabled_by": "health",
-      "implies": [],
-      "afterwards": null,
-      "example": "mix workbench.install.healthcheck",
-      "standalone": false
-    },
-    {
-      "name": "stripe",
-      "pending": true,
-      "version": null,
-      "state": {},
-      "flag": "stripe",
-      "options": [],
-      "base": false,
-      "requires": [],
-      "console": {
-        "tabs": [],
-        "doors": [],
-        "probes": []
-      },
-      "task": "workbench.install.stripe",
-      "installed": false,
-      "rerun": "noop",
-      "summary": null,
-      "enabled_by": "stripe",
-      "implies": [
-        "auth0"
-      ],
-      "afterwards": null,
-      "example": null,
-      "standalone": false
-    },
-    {
-      "name": "githooks",
-      "pending": false,
-      "version": null,
-      "state": {},
-      "flag": null,
-      "options": [],
-      "base": false,
-      "requires": [],
-      "console": {
-        "tabs": [],
-        "doors": [],
-        "probes": []
-      },
-      "task": "workbench.install.githooks",
-      "installed": false,
-      "rerun": "noop",
-      "summary": "Adds git_hooks management to the project",
-      "enabled_by": null,
-      "implies": [],
-      "afterwards": null,
-      "example": "mix workbench.install.githooks",
-      "standalone": true
-    },
-    {
-      "name": "exmachina",
-      "pending": false,
-      "version": null,
-      "state": {},
-      "flag": null,
-      "options": [],
-      "base": false,
-      "requires": [],
-      "console": {
-        "tabs": [],
-        "doors": [],
-        "probes": []
-      },
-      "task": "workbench.install.exmachina",
-      "installed": false,
-      "rerun": "noop",
-      "summary": "Adds ExMachina test factories to the project",
-      "enabled_by": null,
-      "implies": [],
-      "afterwards": null,
-      "example": "mix workbench.install.exmachina",
-      "standalone": true
-    },
-    {
-      "name": "clustering",
-      "pending": false,
-      "version": {
-        "version": "0.2.0",
-        "date": "2026-08-30"
-      },
-      "state": {},
-      "flag": null,
-      "options": [
-        {
-          "default": null,
-          "name": "dns_query",
-          "open": false,
-          "type": "string",
-          "doc": "Value for `DNS_CLUSTER_QUERY`, the DNS name that resolves to the replica IPs. Defaults to `<app>.default.svc.cluster.local` (Kubernetes); on Fly.io it is usually `<app>.internal`.",
-          "choices": null,
-          "multiple": false
-        }
-      ],
-      "base": false,
-      "requires": [],
-      "console": {
-        "tabs": [
-          "cluster"
-        ],
-        "doors": [],
-        "probes": []
-      },
-      "task": "workbench.install.clustering",
-      "installed": true,
-      "rerun": "noop",
-      "summary": "Boots the production release as a distributed node for DNSCluster",
-      "enabled_by": null,
-      "implies": [],
-      "afterwards": "See it work: ./wb.sh up --deploy scaled brings the replicas up behind the balancer (the release image is rebuilt on each deploy).",
-      "example": "mix workbench.install.clustering --dns-query my-app.internal",
-      "standalone": true
-    },
-    {
-      "name": "healthcheck2",
-      "pending": false,
-      "version": {
-        "version": "0.1.0",
-        "date": "2026-08-28"
-      },
-      "state": {},
-      "flag": null,
-      "options": [
-        {
-          "default": "/health",
-          "name": "path",
-          "open": false,
-          "type": "string",
-          "doc": "Prefix of the two probe routes. Defaults to `/health` (`/health/live` and `/health/ready`).",
-          "choices": null,
-          "multiple": false
-        }
-      ],
-      "base": false,
-      "requires": [],
-      "console": {
-        "tabs": [],
-        "doors": [],
-        "probes": [
-          {
-            "label": "live",
-            "path": "{path}/live"
-          },
-          {
-            "label": "ready",
-            "path": "{path}/ready"
-          }
-        ]
-      },
-      "task": "workbench.install.healthcheck2",
-      "installed": true,
-      "rerun": "noop",
-      "summary": "Adds liveness and readiness probes as the first plug of the endpoint",
-      "enabled_by": null,
-      "implies": [],
-      "afterwards": null,
-      "example": "mix workbench.install.healthcheck2 --path /health",
-      "standalone": true
-    },
-    {
-      "name": "ash",
-      "pending": false,
-      "version": {
-        "version": "0.4.0",
-        "date": "2026-08-30"
-      },
-      "state": {
-        "with": [
-          "ash_ai",
-          "ash_money",
-          "ash_oban",
-          "ash_paper_trail",
-          "ash_admin",
-          "cinder"
-        ],
-        "auth": true,
-        "data_layer": [
-          "postgres"
-        ],
-        "api": [
-          "json_api",
-          "graphql"
-        ]
-      },
-      "flag": null,
-      "options": [
-        {
-          "default": "postgres",
-          "name": "data_layer",
-          "open": false,
-          "type": "csv",
-          "doc": "Comma-separated, as the site's checkboxes — a resource picks its own: `postgres` (default), `sqlite`, `csv` (`ash_postgres`, `ash_sqlite`, `ash_csv`); `none`, alone, for no data layer.",
-          "choices": [
-            {
-              "value": "postgres",
-              "doc": "ash_postgres · The swiss army knife of databases. Versatile, powerful, and battle-tested.",
-              "requires": []
-            },
-            {
-              "value": "sqlite",
-              "doc": "ash_sqlite · Small, fast, and reliable. Perfect for lightweight apps or getting started quickly.",
-              "requires": []
-            },
-            {
-              "value": "csv",
-              "doc": "ash_csv · Back resources with CSV files.",
-              "requires": []
-            },
-            {
-              "value": "none",
-              "doc": "no data layer — alone",
-              "requires": []
-            }
-          ],
-          "multiple": true
-        },
-        {
-          "default": null,
-          "name": "api",
-          "open": false,
-          "type": "csv",
-          "doc": "Comma-separated: `json_api`, `graphql`, `typescript` (`ash_json_api`, `ash_graphql`, `ash_typescript`).",
-          "choices": [
-            {
-              "value": "json_api",
-              "doc": "ash_json_api · Easily create a spec-compliant JSON:API, directly from your resources.",
-              "requires": []
-            },
-            {
-              "value": "graphql",
-              "doc": "ash_graphql · Create a powerful and flexible GraphQL API directly from your resources.",
-              "requires": []
-            },
-            {
-              "value": "typescript",
-              "doc": "ash_typescript · Automatic TypeScript type generation for Ash resources and actions.",
-              "requires": []
-            }
-          ],
-          "multiple": true
-        },
-        {
-          "default": null,
-          "name": "auth",
-          "open": true,
-          "type": "csv",
-          "doc": "Comma-separated authentication strategies: `ash_authentication` and `ash_authentication_phoenix`, handed `--auth-strategy`. One of `password`, `magic_link`, `api_key`, `otp`, `totp`, `github`, `google`, `auth0`, `oauth2`, `oidc`, … (the list is the installer's).",
-          "choices": [
-            {
-              "value": "password",
-              "doc": "Allow users to log in with email & password.",
-              "requires": [
-                "live",
-                "mailer"
-              ]
-            },
-            {
-              "value": "magic_link",
-              "doc": "Send users a link in their email to sign in and register.",
-              "requires": [
-                "live",
-                "mailer"
-              ]
-            },
-            {
-              "value": "otp",
-              "doc": null,
-              "requires": [
-                "live",
-                "mailer"
-              ]
-            },
-            {
-              "value": "api_key",
-              "doc": "Generate and authenticate with API keys.",
-              "requires": []
-            },
-            {
-              "value": "totp",
-              "doc": null,
-              "requires": [
-                "live"
-              ]
-            },
-            {
-              "value": "recovery_code",
-              "doc": null,
-              "requires": [
-                "live"
-              ]
-            },
-            {
-              "value": "github",
-              "doc": "one of the site's premade OAuth2 configurations",
-              "requires": [
-                "live"
-              ]
-            },
-            {
-              "value": "google",
-              "doc": "one of the site's premade OAuth2 configurations",
-              "requires": [
-                "live"
-              ]
-            },
-            {
-              "value": "apple",
-              "doc": "one of the site's premade OAuth2 configurations",
-              "requires": [
-                "live"
-              ]
-            },
-            {
-              "value": "auth0",
-              "doc": "one of the site's premade OAuth2 configurations",
-              "requires": [
-                "live"
-              ]
-            },
-            {
-              "value": "microsoft",
-              "doc": null,
-              "requires": [
-                "live"
-              ]
-            },
-            {
-              "value": "okta",
-              "doc": null,
-              "requires": [
-                "live"
-              ]
-            },
-            {
-              "value": "slack",
-              "doc": "one of the site's premade OAuth2 configurations",
-              "requires": [
-                "live"
-              ]
-            },
-            {
-              "value": "oidc",
-              "doc": "one of the site's premade OAuth2 configurations",
-              "requires": [
-                "live"
-              ]
-            },
-            {
-              "value": "oauth2",
-              "doc": "Sign in using an external service.",
-              "requires": [
-                "live"
-              ]
-            },
-            {
-              "value": "dynamic_oidc",
-              "doc": null,
-              "requires": [
-                "live"
-              ]
-            },
-            {
-              "value": "webauthn",
-              "doc": null,
-              "requires": [
-                "live"
-              ]
-            }
-          ],
-          "multiple": true
-        },
-        {
-          "default": null,
-          "name": "with",
-          "open": true,
-          "type": "csv",
-          "doc": "Comma-separated further packages, as the site's *Advanced Options*: tidewave, ash_ai, usage_rules, ash_money, ash_double_entry, ash_oban, ash_state_machine, ash_events, ash_archival, ash_paper_trail, ash_cloak, live_debugger, ash_admin, mishka_chelekom, cinder. Any package with an Igniter installer works.",
-          "choices": [
-            {
-              "values": [
-                {
-                  "value": "tidewave",
-                  "doc": "Speed up development with AI assistants that understand your web application, how it runs, and what it delivers.",
-                  "requires": []
-                },
-                {
-                  "value": "ash_ai",
-                  "doc": "First class support for a wide array of LLM tools.",
-                  "requires": []
-                },
-                {
-                  "value": "usage_rules",
-                  "doc": "Supercharge your AGENTS.md!",
-                  "requires": []
-                }
-              ],
-              "group": "ai"
-            },
-            {
-              "values": [
-                {
-                  "value": "ash_money",
-                  "doc": "A data type for representing money $$$$.",
-                  "requires": []
-                },
-                {
-                  "value": "ash_double_entry",
-                  "doc": "Moving money around? Need to track financial data?",
-                  "requires": []
-                }
-              ],
-              "group": "finance"
-            },
-            {
-              "values": [
-                {
-                  "value": "ash_oban",
-                  "doc": "Oban is a background job system backed by your own SQL database packed with enterprise grade features, real-time monitoring with Oban Web, and complex workflow management with Oban Pro.",
-                  "requires": [
-                    "live"
-                  ]
-                },
-                {
-                  "value": "ash_state_machine",
-                  "doc": "Model complex workflows backed by your resource's persistence and actions.",
-                  "requires": []
-                },
-                {
-                  "value": "ash_events",
-                  "doc": "Tracks and persists events when actions are performed on your resources, providing a complete audit trail and event replay.",
-                  "requires": []
-                }
-              ],
-              "group": "automation"
-            },
-            {
-              "values": [
-                {
-                  "value": "ash_archival",
-                  "doc": "A lightweight extension to ensure that data is only ever soft deleted.",
-                  "requires": []
-                },
-                {
-                  "value": "ash_paper_trail",
-                  "doc": "Automatically track all changes to your resources. Track who did what and when.",
-                  "requires": []
-                },
-                {
-                  "value": "ash_cloak",
-                  "doc": "Easily encrypt and decrypt your attributes.",
-                  "requires": []
-                }
-              ],
-              "group": "safety_and_security"
-            },
-            {
-              "values": [
-                {
-                  "value": "live_debugger",
-                  "doc": "A tool for debugging LiveView applications in development.",
-                  "requires": [
-                    "live"
-                  ]
-                },
-                {
-                  "value": "ash_admin",
-                  "doc": "A zero-config-necessary super admin UI.",
-                  "requires": [
-                    "live"
-                  ]
-                }
-              ],
-              "group": "dev_tools"
-            },
-            {
-              "values": [
-                {
-                  "value": "mishka_chelekom",
-                  "doc": "Mishka Chelekom is a library offering various templates for components in Phoenix and Phoenix LiveView.",
-                  "requires": [
-                    "live"
-                  ]
-                },
-                {
-                  "value": "cinder",
-                  "doc": "A powerful data collection component for Ash resources in Phoenix LiveView.",
-                  "requires": [
-                    "live"
-                  ]
-                }
-              ],
-              "group": "ui_components"
-            }
-          ],
-          "multiple": true
-        },
-        {
-          "default": null,
-          "name": "example",
-          "open": false,
-          "type": "boolean",
-          "doc": "Passed to `ash.install`: generates the example resources of the Ash guide.",
-          "choices": null,
-          "multiple": false
-        }
-      ],
-      "base": false,
-      "requires": [],
-      "console": {
-        "tabs": [],
-        "doors": [
-          {
-            "label": "admin",
-            "path": "/admin",
-            "when": {
-              "with": "ash_admin"
-            }
-          }
-        ],
-        "probes": []
-      },
-      "task": "workbench.install.ash",
-      "installed": true,
-      "rerun": "adds",
-      "summary": "Installs the Ash framework, configured like ash-hq.org's installer for an existing app",
-      "enabled_by": null,
-      "implies": [],
-      "afterwards": "With a database data layer on a project born without Ecto, ./wb.sh bake puts the database into the workspace's compose, then ./wb.sh setup creates it.",
-      "example": "mix workbench.install.ash --data-layer postgres --api json_api --auth password,magic_link",
-      "standalone": true
-    },
-    {
-      "name": "mailer",
-      "pending": false,
-      "version": {
-        "version": "0.1.0",
-        "date": "2026-08-29"
-      },
-      "state": {},
-      "flag": null,
-      "options": [],
-      "base": true,
-      "requires": [],
-      "console": {
-        "tabs": [],
-        "doors": [
-          {
-            "label": "mailbox",
-            "path": "/dev/mailbox",
-            "when": null
-          }
-        ],
-        "probes": []
-      },
-      "task": "workbench.install.mailer",
-      "installed": true,
-      "rerun": "noop",
-      "summary": "Adds Phoenix's Swoosh mailer, as phx.new would have generated it",
-      "enabled_by": null,
-      "implies": [],
-      "afterwards": null,
-      "example": "mix workbench.install.mailer",
-      "standalone": true
-    },
-    {
-      "name": "gettext",
-      "pending": false,
-      "version": {
-        "version": "0.1.0",
-        "date": "2026-08-30"
-      },
-      "state": {},
-      "flag": null,
-      "options": [],
-      "base": true,
-      "requires": [],
-      "console": {
-        "tabs": [],
-        "doors": [],
-        "probes": []
-      },
-      "task": "workbench.install.gettext",
-      "installed": true,
-      "rerun": "noop",
-      "summary": "Adds Phoenix's gettext, as phx.new would have generated it",
-      "enabled_by": null,
-      "implies": [],
-      "afterwards": null,
-      "example": "mix workbench.install.gettext",
-      "standalone": true
-    },
-    {
-      "name": "ecto",
-      "pending": false,
-      "version": {
-        "version": "0.2.0",
-        "date": "2026-08-30"
-      },
-      "state": {},
-      "flag": null,
-      "options": [
-        {
-          "default": "postgres",
-          "name": "database",
-          "open": false,
-          "type": "string",
-          "doc": "The database adapter, as `phx.new --database` names them: `postgres` (default), `mysql`, `mssql`, `sqlite3`. The workspace's compose provides a Postgres; SQLite needs none.",
-          "choices": [
-            {
-              "value": "postgres",
-              "doc": "via postgrex — the one the workspace's compose provides",
-              "requires": []
-            },
-            {
-              "value": "mysql",
-              "doc": "via myxql — no service in the workspace's compose",
-              "requires": []
-            },
-            {
-              "value": "mssql",
-              "doc": "via tds — no service in the workspace's compose",
-              "requires": []
-            },
-            {
-              "value": "sqlite3",
-              "doc": "via ecto_sqlite3 — a file, no service needed",
-              "requires": []
-            }
-          ],
-          "multiple": false
-        },
-        {
-          "default": false,
-          "name": "binary_id",
-          "open": false,
-          "type": "boolean",
-          "doc": "`binary_id` as the primary key type of the Ecto schemas the generators make (`phx.new --binary-id`): the `generators` entry of `config.exs`.",
-          "choices": null,
-          "multiple": false
-        }
-      ],
-      "base": true,
-      "requires": [],
-      "console": {
-        "tabs": [],
-        "doors": [],
-        "probes": []
-      },
-      "task": "workbench.install.ecto",
-      "installed": true,
-      "rerun": "noop",
-      "summary": "Adds Phoenix's Ecto with a database adapter, as phx.new would have generated it",
-      "enabled_by": null,
-      "implies": [],
-      "afterwards": "./wb.sh bake puts the database into the workspace's compose, then ./wb.sh setup creates it.",
-      "example": "mix workbench.install.ecto --database postgres",
-      "standalone": true
-    },
-    {
-      "name": "esbuild",
-      "pending": false,
-      "version": {
-        "version": "0.1.0",
-        "date": "2026-08-30"
-      },
-      "state": {},
-      "flag": null,
-      "options": [],
-      "base": true,
-      "requires": [],
-      "console": {
-        "tabs": [],
-        "doors": [],
-        "probes": []
-      },
-      "task": "workbench.install.esbuild",
-      "installed": true,
-      "rerun": "noop",
-      "summary": "Adds Phoenix's esbuild JavaScript bundling, as phx.new would have generated it",
-      "enabled_by": null,
-      "implies": [],
-      "afterwards": null,
-      "example": "mix workbench.install.esbuild",
-      "standalone": true
-    },
-    {
-      "name": "tailwind",
-      "pending": false,
-      "version": {
-        "version": "0.1.0",
-        "date": "2026-08-30"
-      },
-      "state": {},
-      "flag": null,
-      "options": [],
-      "base": true,
-      "requires": [],
-      "console": {
-        "tabs": [],
-        "doors": [],
-        "probes": []
-      },
-      "task": "workbench.install.tailwind",
-      "installed": true,
-      "rerun": "noop",
-      "summary": "Adds Phoenix's Tailwind CSS pipeline, as phx.new would have generated it",
-      "enabled_by": null,
-      "implies": [],
-      "afterwards": null,
-      "example": "mix workbench.install.tailwind",
-      "standalone": true
-    },
-    {
-      "name": "html",
-      "pending": false,
-      "version": {
-        "version": "0.1.0",
-        "date": "2026-08-30"
-      },
-      "state": {},
-      "flag": null,
-      "options": [],
-      "base": true,
-      "requires": [],
-      "console": {
-        "tabs": [],
-        "doors": [],
-        "probes": []
-      },
-      "task": "workbench.install.html",
-      "installed": true,
-      "rerun": "noop",
-      "summary": "Adds Phoenix's HTML views, as phx.new would have generated them",
-      "enabled_by": null,
-      "implies": [],
-      "afterwards": null,
-      "example": "mix workbench.install.html",
-      "standalone": true
-    },
-    {
-      "name": "live",
-      "pending": false,
-      "version": {
-        "version": "0.1.0",
-        "date": "2026-08-30"
-      },
-      "state": {},
-      "flag": null,
-      "options": [],
-      "base": true,
-      "requires": [
-        "html"
-      ],
-      "console": {
-        "tabs": [],
-        "doors": [],
-        "probes": []
-      },
-      "task": "workbench.install.live",
-      "installed": true,
-      "rerun": "noop",
-      "summary": "Adds Phoenix LiveView, as phx.new would have generated it",
-      "enabled_by": null,
-      "implies": [],
-      "afterwards": null,
-      "example": "mix workbench.install.live",
-      "standalone": true
-    },
-    {
-      "name": "dashboard",
-      "pending": false,
-      "version": {
-        "version": "0.1.0",
-        "date": "2026-08-30"
-      },
-      "state": {},
-      "flag": null,
-      "options": [],
-      "base": true,
-      "requires": [],
-      "console": {
-        "tabs": [],
-        "doors": [
-          {
-            "label": "dashboard",
-            "path": "/dev/dashboard",
-            "when": null
-          }
-        ],
-        "probes": []
-      },
-      "task": "workbench.install.dashboard",
-      "installed": true,
-      "rerun": "noop",
-      "summary": "Adds Phoenix LiveDashboard, as phx.new would have generated it",
-      "enabled_by": null,
-      "implies": [],
-      "afterwards": null,
-      "example": "mix workbench.install.dashboard",
-      "standalone": true
+      "Command": "\"/app/bin/migrate\"",
+      "CreatedAt": "2026-08-30 01:54:31 -0600 CST",
+      "ExitCode": 0,
+      "Health": "",
+      "ID": "82f1430a448c",
+      "Image": "lorem-ipsum-8:0.1.0-prod",
+      "Labels": "com.docker.compose.container-number=1,com.docker.compose.depends_on=database:service_healthy:false,com.docker.compose.image=sha256:0841029ca259e7dc8eb6dc6e35edea569df5976fcb64b71abfc49406b3224969,com.docker.compose.oneoff=False,com.docker.compose.project.config_files=/home/johan/Documentos/repos/Dockerized-Elixir-Workbench/_workspaces/test_28/docker-compose.scaled.yml,com.docker.compose.project.working_dir=/home/johan/Documentos/repos/Dockerized-Elixir-Workbench/_workspaces/test_28,com.docker.compose.service=migrate,com.docker.compose.config-hash=6b5926f8f40f56be3e2de3bd42d37622cb2caecefad62636aa17aea2c2e588da,com.docker.compose.version=2.35.1,com.docker.compose.project=lorem_ipsum_8",
+      "LocalVolumes": "0",
+      "Mounts": "",
+      "Name": "lorem_ipsum_8-migrate-1",
+      "Names": "lorem_ipsum_8-migrate-1",
+      "Networks": "lorem_ipsum_8_default",
+      "Ports": "",
+      "Project": "lorem_ipsum_8",
+      "Publishers": [],
+      "RunningFor": "36 minutes ago",
+      "Service": "migrate",
+      "Size": "0B",
+      "State": "exited",
+      "Status": "Exited (0) 36 minutes ago"
     }
   ],
-  "phx": {
-    "flags": [
-      "--app",
-      "lorem_ipsum_8",
-      "--module",
-      "LoremIpsum8",
-      "--database",
-      "postgres",
-      "--adapter",
-      "bandit"
-    ],
-    "module": "LoremIpsum8",
-    "live": true,
+  "git": {
+    "repo": true,
+    "clean": true,
+    "head": "b52cf08 Revert \"Insert credo\"",
+    "identity": "Jos\u00e9 L. Pamplona <pamplona.stoever@gmail.com>",
+    "inserts": []
+  },
+  "project": {
     "app": "lorem_ipsum_8",
-    "esbuild": true,
-    "tailwind": true,
-    "gettext": true,
-    "adapter": "bandit",
-    "html": true,
-    "database": "postgres",
-    "ecto": true,
-    "dashboard": true,
-    "mailer": true,
-    "binary_id": false
+    "cartridges": [
+      {
+        "name": "chiefs_setup",
+        "pending": false,
+        "version": {
+          "version": "0.2.0",
+          "date": "2026-08-30"
+        },
+        "options": [
+          {
+            "default": "rest",
+            "name": "interface",
+            "open": false,
+            "type": "string",
+            "doc": "The API the picks build: `rest` | `graphql`. Default: `rest`.",
+            "choices": [
+              {
+                "value": "rest",
+                "doc": "a JSON API with OpenApiSpex documentation",
+                "requires": []
+              },
+              {
+                "value": "graphql",
+                "doc": "an Absinthe schema and resolvers",
+                "requires": []
+              }
+            ],
+            "multiple": false
+          }
+        ],
+        "base": false,
+        "requires": [],
+        "console": {
+          "tabs": [],
+          "doors": [],
+          "probes": []
+        },
+        "task": "workbench.install.chiefs_setup",
+        "need": {
+          "line": "Your project is vanilla and the shelf is full: you want the workbench's own picks in, without choosing box by box.",
+          "body": "Your project is vanilla and the shelf is full: you want the workbench's own picks in, without choosing box by box.\n\n**Before:** a stock `phx.new` project boots in the workbench, and every capability is a decision \u2014 which API, which docs, which coverage, which checks \u2014 made ten times, in the right order, every time you start something.\n\n**After:** one box inserts the chief's picks \u2014 the dep-only quintet, REST or GraphQL as you say, coveralls, the ExDoc site, the enhancements base and the healthcheck endpoint \u2014 each as its own commit, so `eject` still takes any one of them out alone.\n\n**Not for:** a project that wants its own combination \u2014 the picks are fixed on purpose: if you would uncheck one, skip the box and add cartridges \u00e0 la carte. A member's fine options (coverage theme, probe path) are set on the member, never here."
+        },
+        "rerun": "adds",
+        "example": "mix workbench.install.chiefs_setup --interface rest",
+        "members": [
+          {
+            "name": "ansi",
+            "argv": []
+          },
+          {
+            "name": "toolchain",
+            "argv": []
+          },
+          {
+            "name": "versioning",
+            "argv": []
+          },
+          {
+            "name": "osmon",
+            "argv": []
+          },
+          {
+            "name": "psql_extras",
+            "argv": []
+          },
+          {
+            "name": "credo",
+            "argv": []
+          },
+          {
+            "name": "mock",
+            "argv": []
+          },
+          {
+            "name": "exdebug",
+            "argv": []
+          },
+          {
+            "name": "rest",
+            "argv": [
+              "--health"
+            ]
+          },
+          {
+            "name": "coveralls",
+            "argv": [
+              "--exdoc"
+            ]
+          },
+          {
+            "name": "exdoc",
+            "argv": [
+              "--coveralls"
+            ]
+          },
+          {
+            "name": "enhancements",
+            "argv": [
+              "--interface",
+              "rest",
+              "--exdoc",
+              "--health"
+            ]
+          },
+          {
+            "name": "healthcheck",
+            "argv": []
+          }
+        ],
+        "afterwards": null,
+        "summary": "Outfits the project with the chief's picks",
+        "collection": true,
+        "installed": false,
+        "state": {}
+      },
+      {
+        "name": "ansi",
+        "pending": false,
+        "version": {
+          "version": "0.1.0",
+          "date": "2026-08-30"
+        },
+        "options": [],
+        "base": false,
+        "requires": [],
+        "console": {
+          "tabs": [],
+          "doors": [],
+          "probes": []
+        },
+        "task": "workbench.install.ansi",
+        "need": {
+          "line": "You read the application's logs through Docker, and everything comes out the same shade of grey.",
+          "body": "You read the application's logs through Docker, and everything comes out the same shade of grey.\n\n**Before:** Elixir sees no terminal on the other side of the container and turns colour off, so the `[info]` and the `[error]` look alike in a wall of output.\n\n**After:** one line in `config.exs`, and the levels, the SQL and the stack traces come out coloured wherever you read them \u2014 `./wb.sh logs`, `iex`, the console.\n\n**Not for:** colouring what the runtime does not colour already; it lifts Elixir's own decision, it does not add formatting."
+        },
+        "rerun": "noop",
+        "example": "mix workbench.install.ansi",
+        "members": [],
+        "afterwards": null,
+        "summary": "Turns ANSI colours back on for logs read outside a terminal",
+        "collection": false,
+        "installed": false,
+        "state": {}
+      },
+      {
+        "name": "toolchain",
+        "pending": false,
+        "version": {
+          "version": "0.1.0",
+          "date": "2026-08-30"
+        },
+        "options": [
+          {
+            "default": null,
+            "name": "elixir",
+            "open": false,
+            "type": "string",
+            "doc": "Elixir version. Default: the one running the installer.",
+            "choices": null,
+            "multiple": false
+          },
+          {
+            "default": null,
+            "name": "erlang",
+            "open": false,
+            "type": "string",
+            "doc": "Erlang/OTP version. Default: the one running the installer.",
+            "choices": null,
+            "multiple": false
+          }
+        ],
+        "base": false,
+        "requires": [],
+        "console": {
+          "tabs": [],
+          "doors": [],
+          "probes": []
+        },
+        "task": "workbench.install.toolchain",
+        "need": {
+          "line": "You open the project in your editor, on your own machine, and nothing there knows which Elixir this is.",
+          "body": "You open the project in your editor, on your own machine, and nothing there knows which Elixir this is.\n\n**Before:** the container has the right stack and your host has whatever it has; the language server picks the wrong version, `mix` in your shell disagrees with `./wb.sh mix`, and `.elixir_ls/` keeps showing up in `git status`.\n\n**After:** a `.tool-versions` naming the Elixir and Erlang the workspace actually runs \u2014 read straight off the toolchain that installs it, so it cannot drift \u2014 and the language server's cache ignored by git.\n\n**Not for:** the container, which takes its stack from the image and never reads this file; and not for `mix.exs`, whose `elixir:` line is a requirement range, not a pin."
+        },
+        "rerun": "noop",
+        "example": "mix workbench.install.toolchain",
+        "members": [],
+        "afterwards": null,
+        "summary": "Pins the Elixir and Erlang the project runs on, for the host",
+        "collection": false,
+        "installed": false,
+        "state": {}
+      },
+      {
+        "name": "versioning",
+        "pending": false,
+        "version": {
+          "version": "0.1.0",
+          "date": "2026-08-30"
+        },
+        "options": [
+          {
+            "default": "0.0.0",
+            "name": "version",
+            "open": false,
+            "type": "string",
+            "doc": "Version the project starts at, in `mix.exs` and the changelog. Default: `0.0.0`.",
+            "choices": null,
+            "multiple": false
+          }
+        ],
+        "base": false,
+        "requires": [],
+        "console": {
+          "tabs": [],
+          "doors": [],
+          "probes": []
+        },
+        "task": "workbench.install.versioning",
+        "need": {
+          "line": "You are about to change something, and there is nowhere to say what changed.",
+          "body": "You are about to change something, and there is nowhere to say what changed.\n\n**Before:** the version is `0.1.0` because the generator had to write something, and the history of the project is its git log \u2014 which records every commit and answers no question a reader has.\n\n**After:** a version the project chose, and a `CHANGELOG.md` opened at it: an `Unreleased` section to write into as you go, and a template line to uncomment when you cut the release.\n\n**Not for:** bumping the version for you \u2014 deciding when `0.1.0` becomes `0.2.0` is the one part of this that cannot be automated."
+        },
+        "rerun": "noop",
+        "example": "mix workbench.install.versioning --version 0.0.0",
+        "members": [],
+        "afterwards": null,
+        "summary": "Sets the project's initial version and opens its changelog",
+        "collection": false,
+        "installed": false,
+        "state": {}
+      },
+      {
+        "name": "osmon",
+        "pending": false,
+        "version": null,
+        "options": [],
+        "base": false,
+        "requires": [],
+        "console": {
+          "tabs": [],
+          "doors": [],
+          "probes": []
+        },
+        "task": "workbench.install.osmon",
+        "need": {
+          "line": "You want the machine's CPU, memory and disk where you already look.",
+          "body": "You want the machine's CPU, memory and disk where you already look.\n\n**Before:** `top` in another terminal.\n\n**After:** `:os_mon` feeding LiveDashboard's OS page.\n\n**Not for:** application metrics \u2014 those are telemetry's, and already on the dashboard."
+        },
+        "rerun": "noop",
+        "example": "mix workbench.install.osmon",
+        "members": [],
+        "afterwards": null,
+        "summary": "Enables the :os_mon OTP application for system monitoring",
+        "collection": false,
+        "installed": false,
+        "state": {}
+      },
+      {
+        "name": "psql_extras",
+        "pending": false,
+        "version": null,
+        "options": [],
+        "base": false,
+        "requires": [],
+        "console": {
+          "tabs": [],
+          "doors": [],
+          "probes": []
+        },
+        "task": "workbench.install.psql_extras",
+        "need": {
+          "line": "Your Postgres is slow, and you don't know which query.",
+          "body": "Your Postgres is slow, and you don't know which query.\n\n**Before:** guessing from the logs.\n\n**After:** ready-made diagnostics \u2014 unused indexes, locks, the slowest queries, cache hit rates \u2014 from `iex` or the dashboard.\n\n**Not for:** other databases \u2014 it reads Postgres's own statistics."
+        },
+        "rerun": "noop",
+        "example": "mix workbench.install.psql_extras",
+        "members": [],
+        "afterwards": null,
+        "summary": "Adds ecto_psql_extras database insights to the project",
+        "collection": false,
+        "installed": false,
+        "state": {}
+      },
+      {
+        "name": "credo",
+        "pending": false,
+        "version": null,
+        "options": [],
+        "base": false,
+        "requires": [],
+        "console": {
+          "tabs": [],
+          "doors": [],
+          "probes": []
+        },
+        "task": "workbench.install.credo",
+        "need": {
+          "line": "You want a reviewer that never gets tired of the same remarks.",
+          "body": "You want a reviewer that never gets tired of the same remarks.\n\n**Before:** style and smell debates in every review, by hand.\n\n**After:** `mix credo` flags them before they land, with the project's own configuration.\n\n**Not for:** bugs \u2014 it reads style and structure, not behaviour."
+        },
+        "rerun": "noop",
+        "example": "mix workbench.install.credo",
+        "members": [],
+        "afterwards": null,
+        "summary": "Adds Credo static code analysis to the project",
+        "collection": false,
+        "installed": false,
+        "state": {}
+      },
+      {
+        "name": "mock",
+        "pending": false,
+        "version": null,
+        "options": [],
+        "base": false,
+        "requires": [],
+        "console": {
+          "tabs": [],
+          "doors": [],
+          "probes": []
+        },
+        "task": "workbench.install.mock",
+        "need": {
+          "line": "Your tests must not call the real service.",
+          "body": "Your tests must not call the real service.\n\n**Before:** tests that reach an API, or code that is untestable because it does.\n\n**After:** `Mock` stubs a module for the duration of a test.\n\n**Not for:** OTP 29 and later \u2014 `meck` does not compile there; the migration to Mox is pending."
+        },
+        "rerun": "noop",
+        "example": "mix workbench.install.mock",
+        "members": [],
+        "afterwards": null,
+        "summary": "Adds the Mock testing library to the project",
+        "collection": false,
+        "installed": false,
+        "state": {}
+      },
+      {
+        "name": "exdebug",
+        "pending": false,
+        "version": null,
+        "options": [],
+        "base": false,
+        "requires": [],
+        "console": {
+          "tabs": [],
+          "doors": [],
+          "probes": []
+        },
+        "task": "workbench.install.exdebug",
+        "need": {
+          "line": "You want to look at a value while developing without dressing it up first.",
+          "body": "You want to look at a value while developing without dressing it up first.\n\n**Before:** `IO.inspect` with a label, again, and cleaning them up afterwards.\n\n**After:** ExDebug's helpers for inspecting values comfortably, from a terminal or a test.\n\n**Not for:** production \u2014 it is a development aid."
+        },
+        "rerun": "noop",
+        "example": "mix workbench.install.exdebug",
+        "members": [],
+        "afterwards": null,
+        "summary": "Adds the ExDebug utility to the project",
+        "collection": false,
+        "installed": false,
+        "state": {}
+      },
+      {
+        "name": "rest",
+        "pending": false,
+        "version": null,
+        "options": [
+          {
+            "default": null,
+            "name": "project_name",
+            "open": false,
+            "type": "string",
+            "doc": "Display name for the OpenAPI Info title (default: capitalized app name).",
+            "choices": null,
+            "multiple": false
+          },
+          {
+            "default": false,
+            "name": "auth0",
+            "open": false,
+            "type": "boolean",
+            "doc": "Include the bearer security scheme and the users tag.",
+            "choices": null,
+            "multiple": false
+          },
+          {
+            "default": false,
+            "name": "openai",
+            "open": false,
+            "type": "boolean",
+            "doc": "Include the assistant request params and conversations tag.",
+            "choices": null,
+            "multiple": false
+          },
+          {
+            "default": false,
+            "name": "health",
+            "open": false,
+            "type": "boolean",
+            "doc": "Include the development operations tag.",
+            "choices": null,
+            "multiple": false
+          }
+        ],
+        "base": false,
+        "requires": [],
+        "console": {
+          "tabs": [],
+          "doors": [
+            {
+              "label": "swagger",
+              "path": "/dev/swagger",
+              "when": null
+            },
+            {
+              "label": "openapi",
+              "path": "/dev/openapi",
+              "when": null
+            }
+          ],
+          "probes": []
+        },
+        "task": "workbench.install.rest",
+        "need": {
+          "line": "Other systems will talk to your app, and need a contract to do it.",
+          "body": "Other systems will talk to your app, and need a contract to do it.\n\n**Before:** routes without a spec, documented by reading the controllers.\n\n**After:** `/api/v1` as the home of every endpoint, an OpenAPI spec kept beside the code, SwaggerUI at `/dev/swagger`.\n\n**Not for:** alongside `graphql` \u2014 one interface per project."
+        },
+        "rerun": "noop",
+        "example": "mix workbench.install.rest --project-name \"Lorem Ipsum\" --health",
+        "members": [],
+        "afterwards": null,
+        "summary": "Adds OpenAPI (open_api_spex) REST documentation to the project",
+        "collection": false,
+        "installed": false,
+        "state": {}
+      },
+      {
+        "name": "graphql",
+        "pending": false,
+        "version": null,
+        "options": [],
+        "base": false,
+        "requires": [],
+        "console": {
+          "tabs": [],
+          "doors": [
+            {
+              "label": "graphiql",
+              "path": "/graphiql",
+              "when": null
+            }
+          ],
+          "probes": []
+        },
+        "task": "workbench.install.graphql",
+        "need": {
+          "line": "Your clients want to ask for exactly the data they need, and nothing more.",
+          "body": "Your clients want to ask for exactly the data they need, and nothing more.\n\n**Before:** many fixed endpoints, each deciding the shape of its answer.\n\n**After:** one endpoint backed by an Absinthe schema, `/graphiql` to explore it, and clients composing their own queries.\n\n**Not for:** alongside `rest` \u2014 one interface per project."
+        },
+        "rerun": "noop",
+        "example": "mix workbench.install.graphql",
+        "members": [],
+        "afterwards": null,
+        "summary": "Adds an Absinthe GraphQL API served at /graphiql to the project",
+        "collection": false,
+        "installed": false,
+        "state": {}
+      },
+      {
+        "name": "coveralls",
+        "pending": false,
+        "version": {
+          "version": "0.1.0",
+          "date": "2026-08-30"
+        },
+        "options": [
+          {
+            "default": "80",
+            "name": "minimum_coverage",
+            "open": false,
+            "type": "string",
+            "doc": "Minimum coverage percentage. Default: `80`.",
+            "choices": null,
+            "multiple": false
+          },
+          {
+            "default": "rest",
+            "name": "interface",
+            "open": false,
+            "type": "string",
+            "doc": "`rest` skips `open_api` files in the coverage report. Default: `rest`.",
+            "choices": [
+              {
+                "value": "rest",
+                "doc": "skips the open_api files in the report",
+                "requires": []
+              },
+              {
+                "value": "graphql",
+                "doc": "the GraphQL project: nothing skipped",
+                "requires": []
+              }
+            ],
+            "multiple": false
+          },
+          {
+            "default": false,
+            "name": "exdoc",
+            "open": false,
+            "type": "boolean",
+            "doc": "The project uses the ExDoc feature: the `mix cover` task (which generates the `TESTING.md` report for the docs) is installed.",
+            "choices": null,
+            "multiple": false
+          },
+          {
+            "default": "exdoc-ish",
+            "name": "theme",
+            "open": false,
+            "type": "string",
+            "doc": "HTML report theme, one of `custom`, `exdoc-ish`: `exdoc-ish` mimics the ExDoc pages (sidebar, light/dark theme, fonts) so the report blends into the documentation site, `custom` is the original workbench report. Default: `exdoc-ish`.",
+            "choices": [
+              {
+                "value": "exdoc-ish",
+                "doc": "mimics the ExDoc pages (sidebar, light/dark theme, fonts), so the report blends into the docs",
+                "requires": []
+              },
+              {
+                "value": "custom",
+                "doc": "the original workbench report",
+                "requires": []
+              }
+            ],
+            "multiple": false
+          },
+          {
+            "default": false,
+            "name": "build",
+            "open": false,
+            "type": "boolean",
+            "doc": "Run the suite once the insert is applied, so the report has numbers. Off by default: it needs the dependencies compiled and, with Ecto, a test database \u2014 which means the compose has one (`./wb.sh bake`).",
+            "choices": null,
+            "multiple": false
+          }
+        ],
+        "base": false,
+        "requires": [],
+        "console": {
+          "tabs": [],
+          "doors": [
+            {
+              "label": "coverage",
+              "path": "/dev/docs/cover",
+              "when": {
+                "cartridge": "exdoc"
+              }
+            }
+          ],
+          "probes": []
+        },
+        "task": "workbench.install.coveralls",
+        "need": {
+          "line": "You want to know where the tests aren't looking.",
+          "body": "You want to know where the tests aren't looking.\n\n**Before:** a green suite and no idea which lines it never touched.\n\n**After:** `mix cover`: a percentage, an HTML report \u2014 at `/dev/docs/cover` with exdoc \u2014 and a minimum the build can refuse to go under.\n\n**Not for:** proving the code is right \u2014 coverage says where the tests are, not whether they ask the right questions."
+        },
+        "rerun": "noop",
+        "example": "mix workbench.install.coveralls --exdoc",
+        "members": [],
+        "afterwards": "./wb.sh mix cover runs the suite and writes the report; --build does it on the insert.",
+        "summary": "Adds ExCoveralls test coverage reports to the project",
+        "collection": false,
+        "installed": false,
+        "state": {}
+      },
+      {
+        "name": "exdoc",
+        "pending": false,
+        "version": {
+          "version": "0.1.0",
+          "date": "2026-08-30"
+        },
+        "options": [
+          {
+            "default": null,
+            "name": "project_name",
+            "open": false,
+            "type": "string",
+            "doc": "Display name (default: capitalized app name).",
+            "choices": null,
+            "multiple": false
+          },
+          {
+            "default": "0.0.0",
+            "name": "version",
+            "open": false,
+            "type": "string",
+            "doc": "The version the pages are stamped with (titles, the 404 page) until `mix version` sets the real one. Default: `0.0.0`.",
+            "choices": null,
+            "multiple": false
+          },
+          {
+            "default": "https://github.com/user/repo",
+            "name": "repo_url",
+            "open": false,
+            "type": "string",
+            "doc": "Repository URL for `source_url`/`authors`.",
+            "choices": null,
+            "multiple": false
+          },
+          {
+            "default": false,
+            "name": "coveralls",
+            "open": false,
+            "type": "boolean",
+            "doc": "The coveralls feature is composed too: the coverage report is served beside the docs (`/cover`), with its page and the controller action.",
+            "choices": null,
+            "multiple": false
+          },
+          {
+            "default": false,
+            "name": "auth0",
+            "open": false,
+            "type": "boolean",
+            "doc": "The auth0 feature is composed too: the \"Get access tokens\" page and its scripts, to try the API from the docs.",
+            "choices": null,
+            "multiple": false
+          },
+          {
+            "default": false,
+            "name": "build",
+            "open": false,
+            "type": "boolean",
+            "doc": "Run `mix docs` once the insert is applied, so the site has pages on first boot. Off by default: it needs the dependencies fetched and compiled.",
+            "choices": null,
+            "multiple": false
+          }
+        ],
+        "base": false,
+        "requires": [],
+        "console": {
+          "tabs": [],
+          "doors": [
+            {
+              "label": "docs",
+              "path": "/dev/docs",
+              "when": null
+            }
+          ],
+          "probes": []
+        },
+        "task": "workbench.install.exdoc",
+        "need": {
+          "line": "You want the project's documentation readable, served by the project itself.",
+          "body": "You want the project's documentation readable, served by the project itself.\n\n**Before:** module and function docs nobody opens, and the curated pages nowhere.\n\n**After:** `/dev/docs`: ExDoc's site built from the code, plus the workbench's pages \u2014 coverage, the auth token, the database diagram \u2014 one URL away in dev.\n\n**Not for:** publishing \u2014 it is served in dev; HexDocs is another step."
+        },
+        "rerun": "noop",
+        "example": "mix workbench.install.exdoc --project-name \"Lorem Ipsum\" --coveralls",
+        "members": [],
+        "afterwards": "./wb.sh mix docs generates the site; --build does it on the insert.",
+        "summary": "Adds ExDoc documentation served at /dev/docs to the project",
+        "collection": false,
+        "installed": false,
+        "state": {}
+      },
+      {
+        "name": "guidelines",
+        "pending": false,
+        "version": {
+          "version": "0.1.0",
+          "date": "2026-08-30"
+        },
+        "options": [
+          {
+            "default": null,
+            "name": "url",
+            "open": false,
+            "type": "string",
+            "doc": "URL of the markdown to download as the project's coding guidelines page.",
+            "choices": null,
+            "multiple": false
+          }
+        ],
+        "base": false,
+        "requires": [
+          "exdoc"
+        ],
+        "console": {
+          "tabs": [],
+          "doors": [],
+          "probes": []
+        },
+        "task": "workbench.install.guidelines",
+        "need": {
+          "line": "Your team agreed how it writes Elixir, and the agreement lives somewhere nobody opens.",
+          "body": "Your team agreed how it writes Elixir, and the agreement lives somewhere nobody opens.\n\n**Before:** the conventions are a link in a wiki, or in another repository's README: the people who most need them \u2014 whoever joined last week \u2014 never find them, and reviews re-litigate the same commas.\n\n**After:** the guide is a page of the project's own documentation, beside the modules it talks about, at `/dev/docs` with everything else.\n\n**Not for:** enforcing anything \u2014 that is [credo](../credo/)'s job. This puts the text where it is read; nothing checks the code against it."
+        },
+        "rerun": "noop",
+        "example": "mix workbench.install.guidelines --url \"https://raw.githubusercontent.com/user/repo/main/GUIDE.md\"",
+        "members": [],
+        "afterwards": null,
+        "summary": "Adds the team's coding conventions to the project's docs",
+        "collection": false,
+        "installed": false,
+        "state": {}
+      },
+      {
+        "name": "enhancements",
+        "pending": false,
+        "version": {
+          "version": "0.1.0",
+          "date": "2026-08-30"
+        },
+        "options": [
+          {
+            "default": null,
+            "name": "project_name",
+            "open": false,
+            "type": "string",
+            "doc": "Display name (default: capitalized app name).",
+            "choices": null,
+            "multiple": false
+          },
+          {
+            "default": "uuid",
+            "name": "id_type",
+            "open": false,
+            "type": "string",
+            "doc": "Primary key type (`uuid` maps to `Ecto.UUID`). Default: `uuid`.",
+            "choices": null,
+            "multiple": false
+          },
+          {
+            "default": "naive_datetime_usec",
+            "name": "timestamps",
+            "open": false,
+            "type": "string",
+            "doc": "Timestamps type. Default: `naive_datetime_usec`.",
+            "choices": null,
+            "multiple": false
+          },
+          {
+            "default": "rest",
+            "name": "interface",
+            "open": false,
+            "type": "string",
+            "doc": "`rest` | `graphql` | `none`. Default: `rest`. `rest` adds the changeset-aware `error_json.ex`, the error view test and the Postman collection.",
+            "choices": null,
+            "multiple": false
+          },
+          {
+            "default": false,
+            "name": "exdoc",
+            "open": false,
+            "type": "boolean",
+            "doc": "The exdoc feature is composed too: `MyApp.Schema` carries the `@moduledoc` sections its pages read.",
+            "choices": null,
+            "multiple": false
+          },
+          {
+            "default": false,
+            "name": "auth0",
+            "open": false,
+            "type": "boolean",
+            "doc": "The auth0 feature is composed too: the DbSchema diagrams and Postman collection of that combo, the User fixtures, and the `MyApp.Schema` bits its User schema uses.",
+            "choices": null,
+            "multiple": false
+          },
+          {
+            "default": false,
+            "name": "openai",
+            "open": false,
+            "type": "boolean",
+            "doc": "The openai feature is composed too: the diagrams and Postman collection of that combo, and the assistant fixtures.",
+            "choices": null,
+            "multiple": false
+          },
+          {
+            "default": false,
+            "name": "stripe",
+            "open": false,
+            "type": "boolean",
+            "doc": "The stripe feature is composed too: the DbSchema diagrams of that combo.",
+            "choices": null,
+            "multiple": false
+          },
+          {
+            "default": false,
+            "name": "health",
+            "open": false,
+            "type": "boolean",
+            "doc": "The healthcheck feature is composed too: the Postman collection of that combo.",
+            "choices": null,
+            "multiple": false
+          }
+        ],
+        "base": false,
+        "requires": [],
+        "console": {
+          "tabs": [],
+          "doors": [],
+          "probes": []
+        },
+        "task": "workbench.install.enhancements",
+        "need": {
+          "line": "You want the workbench's house conventions in the project from day one.",
+          "body": "You want the workbench's house conventions in the project from day one.\n\n**Before:** every project deciding its schema base, its helper, its tasks and its first tests on its own.\n\n**After:** `MyApp.Schema`, the helper, `mix db` and `mix version`, and a base test suite that already covers what the setup wired.\n\n**Not for:** the vanilla line \u2014 this is the opinionated line's foundation, and `new2` leaves the project stock."
+        },
+        "rerun": "noop",
+        "example": "mix workbench.install.enhancements --id-type uuid --timestamps naive_datetime_usec",
+        "members": [],
+        "afterwards": null,
+        "summary": "Adds the workbench base enhancements (helper, schema, tasks, tests)",
+        "collection": false,
+        "installed": false,
+        "state": {}
+      },
+      {
+        "name": "auth0",
+        "pending": false,
+        "version": null,
+        "options": [
+          {
+            "default": null,
+            "name": "project_name",
+            "open": false,
+            "type": "string",
+            "doc": "Display name (default: capitalized app name).",
+            "choices": null,
+            "multiple": false
+          },
+          {
+            "default": "rest",
+            "name": "interface",
+            "open": false,
+            "type": "string",
+            "doc": "`rest` | `graphql` | `none`. Default: `rest`.",
+            "choices": [
+              {
+                "value": "rest",
+                "doc": "a JSON controller and its OpenAPI schema",
+                "requires": []
+              },
+              {
+                "value": "graphql",
+                "doc": "an Absinthe schema and resolvers",
+                "requires": []
+              }
+            ],
+            "multiple": false
+          }
+        ],
+        "base": false,
+        "requires": [
+          "enhancements"
+        ],
+        "console": {
+          "tabs": [],
+          "doors": [],
+          "probes": []
+        },
+        "task": "workbench.install.auth0",
+        "need": {
+          "line": "Your app needs users who sign in, and you never want to hold a password.",
+          "body": "Your app needs users who sign in, and you never want to hold a password.\n\n**Before:** rolling your own authentication, or storing password hashes and everything that follows from it.\n\n**After:** Auth0 does identity and issues JWTs; the project gets an Accounts context, a User and a token plug, and never sees a password.\n\n**Not for:** new projects on the vanilla line \u2014 the dependencies it rests on are abandoned upstream (config.conf says so); `ash` with `--auth` is the living alternative."
+        },
+        "rerun": "noop",
+        "example": "mix workbench.install.auth0 --project-name \"Lorem Ipsum\"",
+        "members": [],
+        "afterwards": null,
+        "summary": "Adds Auth0 JWT authentication with an Accounts context to the project",
+        "collection": false,
+        "installed": true,
+        "state": {}
+      },
+      {
+        "name": "openai",
+        "pending": false,
+        "version": null,
+        "options": [
+          {
+            "default": null,
+            "name": "project_name",
+            "open": false,
+            "type": "string",
+            "doc": "Display name (default: capitalized app name).",
+            "choices": null,
+            "multiple": false
+          },
+          {
+            "default": "rest",
+            "name": "interface",
+            "open": false,
+            "type": "string",
+            "doc": "`rest` | `graphql` | `none`. Default: `rest`.",
+            "choices": [
+              {
+                "value": "rest",
+                "doc": "a JSON controller and its OpenAPI schema",
+                "requires": []
+              },
+              {
+                "value": "graphql",
+                "doc": "an Absinthe schema and resolvers",
+                "requires": []
+              }
+            ],
+            "multiple": false
+          }
+        ],
+        "base": false,
+        "requires": [
+          "auth0"
+        ],
+        "console": {
+          "tabs": [],
+          "doors": [],
+          "probes": []
+        },
+        "task": "workbench.install.openai",
+        "need": {
+          "line": "You want an assistant inside the product, that remembers each user's conversations.",
+          "body": "You want an assistant inside the product, that remembers each user's conversations.\n\n**Before:** a chatbot bolted on the side, with no memory and no owner.\n\n**After:** conversations and messages persisted per user, replies from OpenAI's chat models, as a feature of the app.\n\n**Not for:** projects without users \u2014 it implies `auth0`."
+        },
+        "rerun": "noop",
+        "example": "mix workbench.install.openai --project-name \"Lorem Ipsum\"",
+        "members": [],
+        "afterwards": null,
+        "summary": "Adds an OpenAI assistant with conversations to the project",
+        "collection": false,
+        "installed": false,
+        "state": {}
+      },
+      {
+        "name": "healthcheck",
+        "pending": false,
+        "version": null,
+        "options": [
+          {
+            "default": "/health",
+            "name": "endpoint",
+            "open": false,
+            "type": "string",
+            "doc": "Route for the healthcheck scope. Defaults to `/health`.",
+            "choices": null,
+            "multiple": false
+          },
+          {
+            "default": false,
+            "name": "open_api",
+            "open": false,
+            "type": "boolean",
+            "doc": "Generate the OpenApiSpex-documented variant even if the REST feature is not detected (it must be installed for it to compile).",
+            "choices": null,
+            "multiple": false
+          }
+        ],
+        "base": false,
+        "requires": [],
+        "console": {
+          "tabs": [],
+          "doors": [],
+          "probes": [
+            {
+              "label": "health",
+              "path": "{endpoint}"
+            }
+          ]
+        },
+        "task": "workbench.install.healthcheck",
+        "need": {
+          "line": "Your teammates and your monitoring want to ask the app how it is.",
+          "body": "Your teammates and your monitoring want to ask the app how it is.\n\n**Before:** logging into the server to find out.\n\n**After:** a public JSON route that answers at once \u2014 versions, environment and database details in dev, and an entry in the Swagger page.\n\n**Not for:** an orchestrator's probes \u2014 for those, `healthcheck2`, which answers a probe and gets out of the way."
+        },
+        "rerun": "noop",
+        "example": "mix workbench.install.healthcheck",
+        "members": [],
+        "afterwards": null,
+        "summary": "Adds a healthcheck endpoint with controller, tests and router scope",
+        "collection": false,
+        "installed": false,
+        "state": {}
+      },
+      {
+        "name": "stripe",
+        "pending": true,
+        "version": null,
+        "options": [],
+        "base": false,
+        "requires": [
+          "auth0"
+        ],
+        "console": {
+          "tabs": [],
+          "doors": [],
+          "probes": []
+        },
+        "task": "workbench.install.stripe",
+        "need": {
+          "line": "Your users should be able to pay \u2014 not ported yet.",
+          "body": "Your users should be able to pay \u2014 not ported yet.\n\n**Before:** nothing: the flag exists, the installer does not.\n\n**After:** nothing yet; `workbench.setup` prints a notice instead of composing it.\n\n**Not for:** anything, until it is ported."
+        },
+        "rerun": "noop",
+        "example": null,
+        "members": [],
+        "afterwards": null,
+        "summary": null,
+        "collection": false,
+        "installed": false,
+        "state": {}
+      },
+      {
+        "name": "githooks",
+        "pending": false,
+        "version": null,
+        "options": [],
+        "base": false,
+        "requires": [],
+        "console": {
+          "tabs": [],
+          "doors": [],
+          "probes": []
+        },
+        "task": "workbench.install.githooks",
+        "need": {
+          "line": "You want the checks to run before the commit exists, not after the push.",
+          "body": "You want the checks to run before the commit exists, not after the push.\n\n**Before:** CI catching what a pre-commit hook would have, one push later.\n\n**After:** `git_hooks` running format, tests and credo on commit, configured in the project.\n\n**Not for:** enforcing anything on others \u2014 hooks are local to each clone."
+        },
+        "rerun": "noop",
+        "example": "mix workbench.install.githooks",
+        "members": [],
+        "afterwards": null,
+        "summary": "Adds git_hooks management to the project",
+        "collection": false,
+        "installed": false,
+        "state": {}
+      },
+      {
+        "name": "exmachina",
+        "pending": false,
+        "version": null,
+        "options": [],
+        "base": false,
+        "requires": [],
+        "console": {
+          "tabs": [],
+          "doors": [],
+          "probes": []
+        },
+        "task": "workbench.install.exmachina",
+        "need": {
+          "line": "Your tests need realistic records, in one line each.",
+          "body": "Your tests need realistic records, in one line each.\n\n**Before:** hand-built maps and inserts repeated in every test.\n\n**After:** ExMachina factories: `insert(:user)` with sensible defaults, overridable.\n\n**Not for:** production data \u2014 factories are for tests."
+        },
+        "rerun": "noop",
+        "example": "mix workbench.install.exmachina",
+        "members": [],
+        "afterwards": null,
+        "summary": "Adds ExMachina test factories to the project",
+        "collection": false,
+        "installed": false,
+        "state": {}
+      },
+      {
+        "name": "clustering",
+        "pending": false,
+        "version": {
+          "version": "0.2.0",
+          "date": "2026-08-30"
+        },
+        "options": [
+          {
+            "default": null,
+            "name": "dns_query",
+            "open": false,
+            "type": "string",
+            "doc": "Value for `DNS_CLUSTER_QUERY`, the DNS name that resolves to the replica IPs. Defaults to `<app>.default.svc.cluster.local` (Kubernetes); on Fly.io it is usually `<app>.internal`.",
+            "choices": null,
+            "multiple": false
+          }
+        ],
+        "base": false,
+        "requires": [],
+        "console": {
+          "tabs": [
+            "cluster"
+          ],
+          "doors": [],
+          "probes": []
+        },
+        "task": "workbench.install.clustering",
+        "need": {
+          "line": "Your deployment runs several replicas, and they should act as one.",
+          "body": "Your deployment runs several replicas, and they should act as one.\n\n**Before:** replicas that never see each other: a PubSub per node, a broadcast that reaches one browser in four.\n\n**After:** the release boots as a named node from its own address and `DNSCluster` finds the others through one DNS name; `./wb.sh up --deploy scaled` shows four of them join.\n\n**Not for:** a single workspace \u2014 one container has nothing to cluster with; and rolling deploys across images, since the cookie is baked."
+        },
+        "rerun": "noop",
+        "example": "mix workbench.install.clustering --dns-query my-app.internal",
+        "members": [],
+        "afterwards": "See it work: ./wb.sh up --deploy scaled brings the replicas up behind the balancer (the release image is rebuilt on each deploy).",
+        "summary": "Boots the production release as a distributed node for DNSCluster",
+        "collection": false,
+        "installed": true,
+        "state": {}
+      },
+      {
+        "name": "healthcheck2",
+        "pending": false,
+        "version": {
+          "version": "0.1.0",
+          "date": "2026-08-28"
+        },
+        "options": [
+          {
+            "default": "/health",
+            "name": "path",
+            "open": false,
+            "type": "string",
+            "doc": "Prefix of the two probe routes. Defaults to `/health` (`/health/live` and `/health/ready`).",
+            "choices": null,
+            "multiple": false
+          }
+        ],
+        "base": false,
+        "requires": [],
+        "console": {
+          "tabs": [],
+          "doors": [],
+          "probes": [
+            {
+              "label": "live",
+              "path": "{path}/live"
+            },
+            {
+              "label": "ready",
+              "path": "{path}/ready"
+            }
+          ]
+        },
+        "task": "workbench.install.healthcheck2",
+        "need": {
+          "line": "Your platform polls the app, and the answer decides whether it restarts it or diverts traffic.",
+          "body": "Your platform polls the app, and the answer decides whether it restarts it or diverts traffic.\n\n**Before:** one route answering both questions the same way \u2014 restarting on a database outage, or passing a probe through a redirect.\n\n**After:** `/health/live` and `/health/ready` as the first plug of the endpoint: alive if the VM answers, ready if the repo does, within a second.\n\n**Not for:** humans reading a body \u2014 it says `ok` or `unavailable`; the JSON is `healthcheck`'s."
+        },
+        "rerun": "noop",
+        "example": "mix workbench.install.healthcheck2 --path /health",
+        "members": [],
+        "afterwards": null,
+        "summary": "Adds liveness and readiness probes as the first plug of the endpoint",
+        "collection": false,
+        "installed": true,
+        "state": {}
+      },
+      {
+        "name": "ash",
+        "pending": false,
+        "version": {
+          "version": "0.4.0",
+          "date": "2026-08-30"
+        },
+        "options": [
+          {
+            "default": "postgres",
+            "name": "data_layer",
+            "open": false,
+            "type": "csv",
+            "doc": "Comma-separated, as the site's checkboxes \u2014 a resource picks its own: `postgres` (default), `sqlite`, `csv` (`ash_postgres`, `ash_sqlite`, `ash_csv`); `none`, alone, for no data layer.",
+            "choices": [
+              {
+                "value": "postgres",
+                "doc": "ash_postgres \u00b7 The swiss army knife of databases. Versatile, powerful, and battle-tested.",
+                "requires": []
+              },
+              {
+                "value": "sqlite",
+                "doc": "ash_sqlite \u00b7 Small, fast, and reliable. Perfect for lightweight apps or getting started quickly.",
+                "requires": []
+              },
+              {
+                "value": "csv",
+                "doc": "ash_csv \u00b7 Back resources with CSV files.",
+                "requires": []
+              },
+              {
+                "value": "none",
+                "doc": "no data layer \u2014 alone",
+                "requires": []
+              }
+            ],
+            "multiple": true
+          },
+          {
+            "default": null,
+            "name": "api",
+            "open": false,
+            "type": "csv",
+            "doc": "Comma-separated: `json_api`, `graphql`, `typescript` (`ash_json_api`, `ash_graphql`, `ash_typescript`).",
+            "choices": [
+              {
+                "value": "json_api",
+                "doc": "ash_json_api \u00b7 Easily create a spec-compliant JSON:API, directly from your resources.",
+                "requires": []
+              },
+              {
+                "value": "graphql",
+                "doc": "ash_graphql \u00b7 Create a powerful and flexible GraphQL API directly from your resources.",
+                "requires": []
+              },
+              {
+                "value": "typescript",
+                "doc": "ash_typescript \u00b7 Automatic TypeScript type generation for Ash resources and actions.",
+                "requires": []
+              }
+            ],
+            "multiple": true
+          },
+          {
+            "default": null,
+            "name": "auth",
+            "open": true,
+            "type": "csv",
+            "doc": "Comma-separated authentication strategies: `ash_authentication` and `ash_authentication_phoenix`, handed `--auth-strategy`. One of `password`, `magic_link`, `api_key`, `otp`, `totp`, `github`, `google`, `auth0`, `oauth2`, `oidc`, \u2026 (the list is the installer's).",
+            "choices": [
+              {
+                "value": "password",
+                "doc": "Allow users to log in with email & password.",
+                "requires": [
+                  "live",
+                  "mailer"
+                ]
+              },
+              {
+                "value": "magic_link",
+                "doc": "Send users a link in their email to sign in and register.",
+                "requires": [
+                  "live",
+                  "mailer"
+                ]
+              },
+              {
+                "value": "otp",
+                "doc": null,
+                "requires": [
+                  "live",
+                  "mailer"
+                ]
+              },
+              {
+                "value": "api_key",
+                "doc": "Generate and authenticate with API keys.",
+                "requires": []
+              },
+              {
+                "value": "totp",
+                "doc": null,
+                "requires": [
+                  "live"
+                ]
+              },
+              {
+                "value": "recovery_code",
+                "doc": null,
+                "requires": [
+                  "live"
+                ]
+              },
+              {
+                "value": "github",
+                "doc": "one of the site's premade OAuth2 configurations",
+                "requires": [
+                  "live"
+                ]
+              },
+              {
+                "value": "google",
+                "doc": "one of the site's premade OAuth2 configurations",
+                "requires": [
+                  "live"
+                ]
+              },
+              {
+                "value": "apple",
+                "doc": "one of the site's premade OAuth2 configurations",
+                "requires": [
+                  "live"
+                ]
+              },
+              {
+                "value": "auth0",
+                "doc": "one of the site's premade OAuth2 configurations",
+                "requires": [
+                  "live"
+                ]
+              },
+              {
+                "value": "microsoft",
+                "doc": null,
+                "requires": [
+                  "live"
+                ]
+              },
+              {
+                "value": "okta",
+                "doc": null,
+                "requires": [
+                  "live"
+                ]
+              },
+              {
+                "value": "slack",
+                "doc": "one of the site's premade OAuth2 configurations",
+                "requires": [
+                  "live"
+                ]
+              },
+              {
+                "value": "oidc",
+                "doc": "one of the site's premade OAuth2 configurations",
+                "requires": [
+                  "live"
+                ]
+              },
+              {
+                "value": "oauth2",
+                "doc": "Sign in using an external service.",
+                "requires": [
+                  "live"
+                ]
+              },
+              {
+                "value": "dynamic_oidc",
+                "doc": null,
+                "requires": [
+                  "live"
+                ]
+              },
+              {
+                "value": "webauthn",
+                "doc": null,
+                "requires": [
+                  "live"
+                ]
+              }
+            ],
+            "multiple": true
+          },
+          {
+            "default": null,
+            "name": "with",
+            "open": true,
+            "type": "csv",
+            "doc": "Comma-separated further packages, as the site's *Advanced Options*: tidewave, ash_ai, usage_rules, ash_money, ash_double_entry, ash_oban, ash_state_machine, ash_events, ash_archival, ash_paper_trail, ash_cloak, live_debugger, ash_admin, mishka_chelekom, cinder. Any package with an Igniter installer works.",
+            "choices": [
+              {
+                "values": [
+                  {
+                    "value": "tidewave",
+                    "doc": "Speed up development with AI assistants that understand your web application, how it runs, and what it delivers.",
+                    "requires": []
+                  },
+                  {
+                    "value": "ash_ai",
+                    "doc": "First class support for a wide array of LLM tools.",
+                    "requires": []
+                  },
+                  {
+                    "value": "usage_rules",
+                    "doc": "Supercharge your AGENTS.md!",
+                    "requires": []
+                  }
+                ],
+                "group": "ai"
+              },
+              {
+                "values": [
+                  {
+                    "value": "ash_money",
+                    "doc": "A data type for representing money $$$$.",
+                    "requires": []
+                  },
+                  {
+                    "value": "ash_double_entry",
+                    "doc": "Moving money around? Need to track financial data?",
+                    "requires": []
+                  }
+                ],
+                "group": "finance"
+              },
+              {
+                "values": [
+                  {
+                    "value": "ash_oban",
+                    "doc": "Oban is a background job system backed by your own SQL database packed with enterprise grade features, real-time monitoring with Oban Web, and complex workflow management with Oban Pro.",
+                    "requires": [
+                      "live"
+                    ]
+                  },
+                  {
+                    "value": "ash_state_machine",
+                    "doc": "Model complex workflows backed by your resource's persistence and actions.",
+                    "requires": []
+                  },
+                  {
+                    "value": "ash_events",
+                    "doc": "Tracks and persists events when actions are performed on your resources, providing a complete audit trail and event replay.",
+                    "requires": []
+                  }
+                ],
+                "group": "automation"
+              },
+              {
+                "values": [
+                  {
+                    "value": "ash_archival",
+                    "doc": "A lightweight extension to ensure that data is only ever soft deleted.",
+                    "requires": []
+                  },
+                  {
+                    "value": "ash_paper_trail",
+                    "doc": "Automatically track all changes to your resources. Track who did what and when.",
+                    "requires": []
+                  },
+                  {
+                    "value": "ash_cloak",
+                    "doc": "Easily encrypt and decrypt your attributes.",
+                    "requires": []
+                  }
+                ],
+                "group": "safety_and_security"
+              },
+              {
+                "values": [
+                  {
+                    "value": "live_debugger",
+                    "doc": "A tool for debugging LiveView applications in development.",
+                    "requires": [
+                      "live"
+                    ]
+                  },
+                  {
+                    "value": "ash_admin",
+                    "doc": "A zero-config-necessary super admin UI.",
+                    "requires": [
+                      "live"
+                    ]
+                  }
+                ],
+                "group": "dev_tools"
+              },
+              {
+                "values": [
+                  {
+                    "value": "mishka_chelekom",
+                    "doc": "Mishka Chelekom is a library offering various templates for components in Phoenix and Phoenix LiveView.",
+                    "requires": [
+                      "live"
+                    ]
+                  },
+                  {
+                    "value": "cinder",
+                    "doc": "A powerful data collection component for Ash resources in Phoenix LiveView.",
+                    "requires": [
+                      "live"
+                    ]
+                  }
+                ],
+                "group": "ui_components"
+              }
+            ],
+            "multiple": true
+          },
+          {
+            "default": null,
+            "name": "example",
+            "open": false,
+            "type": "boolean",
+            "doc": "Passed to `ash.install`: generates the example resources of the Ash guide.",
+            "choices": null,
+            "multiple": false
+          }
+        ],
+        "base": false,
+        "requires": [],
+        "console": {
+          "tabs": [],
+          "doors": [
+            {
+              "label": "admin",
+              "path": "/admin",
+              "when": {
+                "with": "ash_admin"
+              }
+            }
+          ],
+          "probes": []
+        },
+        "task": "workbench.install.ash",
+        "need": {
+          "line": "You want a whole framework for your domain, set up the way its own site does it.",
+          "body": "You want a whole framework for your domain, set up the way its own site does it.\n\n**Before:** reading Ash's guides and running a chain of installers by hand, in an order one of them hangs on when it is wrong.\n\n**After:** `--data-layer`, `--api`, `--auth`, `--with`: the command ash-hq.org's installer generates for an existing app, queued and run; `mix workbench.ash.site` tells you when the site's map moved.\n\n**Not for:** the opinionated line (`new`) \u2014 its `users` table and generators fight with Ash's domain; this is a `new2` cartridge."
+        },
+        "rerun": "adds",
+        "example": "mix workbench.install.ash --data-layer postgres --api json_api --auth password,magic_link",
+        "members": [],
+        "afterwards": "With a database data layer on a project born without Ecto, ./wb.sh bake puts the database into the workspace's compose, then ./wb.sh setup creates it.",
+        "summary": "Installs the Ash framework, configured like ash-hq.org's installer for an existing app",
+        "collection": false,
+        "installed": true,
+        "state": {
+          "with": [
+            "ash_ai",
+            "ash_money",
+            "ash_oban",
+            "ash_paper_trail",
+            "ash_admin",
+            "cinder"
+          ],
+          "auth": true,
+          "data_layer": [
+            "postgres"
+          ],
+          "api": [
+            "json_api",
+            "graphql"
+          ]
+        }
+      },
+      {
+        "name": "mailer",
+        "pending": false,
+        "version": {
+          "version": "0.2.0",
+          "date": "2026-08-30"
+        },
+        "options": [],
+        "base": true,
+        "requires": [],
+        "console": {
+          "tabs": [],
+          "doors": [
+            {
+              "label": "mailbox",
+              "path": "/dev/mailbox",
+              "when": null
+            }
+          ],
+          "probes": []
+        },
+        "task": "workbench.install.mailer",
+        "need": {
+          "line": "You want to see the mail your app sends before anyone else does.",
+          "body": "You want to see the mail your app sends before anyone else does.\n\n**Before:** a real SMTP account wired into dev, or `IO.inspect` on the email struct; a mail that leaves for a real address from a laptop.\n\n**After:** every mail delivered in dev lands in `/dev/mailbox`, open in the browser; tests assert on it through the `Test` adapter; production sends through the adapter you configure in `runtime.exs`.\n\n**Not for:** choosing a provider \u2014 that is your account and one config line, and `phx.new` leaves it as a comment."
+        },
+        "rerun": "noop",
+        "example": "mix workbench.install.mailer",
+        "members": [],
+        "afterwards": null,
+        "summary": "Adds Phoenix's Swoosh mailer, as phx.new would have generated it",
+        "collection": false,
+        "installed": true,
+        "state": {}
+      },
+      {
+        "name": "gettext",
+        "pending": false,
+        "version": {
+          "version": "0.1.0",
+          "date": "2026-08-30"
+        },
+        "options": [],
+        "base": true,
+        "requires": [],
+        "console": {
+          "tabs": [],
+          "doors": [],
+          "probes": []
+        },
+        "task": "workbench.install.gettext",
+        "need": {
+          "line": "Your users don't all read English, and the strings are already written.",
+          "body": "Your users don't all read English, and the strings are already written.\n\n**Before:** strings hard-coded in the components and layouts; a second language means touching every template, and a missing translation shows nothing.\n\n**After:** every string `phx.new` wrote is a `gettext` call with the English as its own fallback; a locale is a `.po` file under `priv/gettext`; `mix gettext.extract` finds the strings you add once you wrap them.\n\n**Not for:** translating for you \u2014 your own strings still have to be wrapped, and the locale files still have to be filled in."
+        },
+        "rerun": "noop",
+        "example": "mix workbench.install.gettext",
+        "members": [],
+        "afterwards": null,
+        "summary": "Adds Phoenix's gettext, as phx.new would have generated it",
+        "collection": false,
+        "installed": true,
+        "state": {}
+      },
+      {
+        "name": "ecto",
+        "pending": false,
+        "version": {
+          "version": "0.2.0",
+          "date": "2026-08-30"
+        },
+        "options": [
+          {
+            "default": "postgres",
+            "name": "database",
+            "open": false,
+            "type": "string",
+            "doc": "The database adapter, as `phx.new --database` names them: `postgres` (default), `mysql`, `mssql`, `sqlite3`. The workspace's compose provides a Postgres; SQLite needs none.",
+            "choices": [
+              {
+                "value": "postgres",
+                "doc": "via postgrex \u2014 the one the workspace's compose provides",
+                "requires": []
+              },
+              {
+                "value": "mysql",
+                "doc": "via myxql \u2014 no service in the workspace's compose",
+                "requires": []
+              },
+              {
+                "value": "mssql",
+                "doc": "via tds \u2014 no service in the workspace's compose",
+                "requires": []
+              },
+              {
+                "value": "sqlite3",
+                "doc": "via ecto_sqlite3 \u2014 a file, no service needed",
+                "requires": []
+              }
+            ],
+            "multiple": false
+          },
+          {
+            "default": false,
+            "name": "binary_id",
+            "open": false,
+            "type": "boolean",
+            "doc": "`binary_id` as the primary key type of the Ecto schemas the generators make (`phx.new --binary-id`): the `generators` entry of `config.exs`.",
+            "choices": null,
+            "multiple": false
+          }
+        ],
+        "base": true,
+        "requires": [],
+        "console": {
+          "tabs": [],
+          "doors": [],
+          "probes": []
+        },
+        "task": "workbench.install.ecto",
+        "need": {
+          "line": "Your app has data to keep, and it started without a database.",
+          "body": "Your app has data to keep, and it started without a database.\n\n**Before:** an API that computes and forgets, or a repo wired by hand across four config files and a supervision tree, with the tests sharing one database.\n\n**After:** a `Repo` on the adapter you name, migrations under `priv/repo`, the sandbox that isolates every test, `DATABASE_URL` in `.env`, and the workspace's Postgres after `./wb.sh bake`.\n\n**Not for:** changing your mind later \u2014 a project with data changes database by migration, not by flag; inserted once."
+        },
+        "rerun": "noop",
+        "example": "mix workbench.install.ecto --database postgres",
+        "members": [],
+        "afterwards": "./wb.sh bake puts the database into the workspace's compose, then ./wb.sh setup creates it.",
+        "summary": "Adds Phoenix's Ecto with a database adapter, as phx.new would have generated it",
+        "collection": false,
+        "installed": true,
+        "state": {}
+      },
+      {
+        "name": "esbuild",
+        "pending": false,
+        "version": {
+          "version": "0.1.1",
+          "date": "2026-08-30"
+        },
+        "options": [],
+        "base": true,
+        "requires": [],
+        "console": {
+          "tabs": [],
+          "doors": [],
+          "probes": []
+        },
+        "task": "workbench.install.esbuild",
+        "need": {
+          "line": "Your page needs JavaScript, and there is no bundler to write it in.",
+          "body": "Your page needs JavaScript, and there is no bundler to write it in.\n\n**Before:** a placeholder `app.js` that is a comment telling you which scripts to copy by hand; no `import`, no LiveView client, no watcher.\n\n**After:** `assets/js/app.js` bundled on every save, `phoenix_html` and `phoenix_live_view` a plain `import` away, one file to ship with `mix assets.deploy`.\n\n**Not for:** a Node toolchain \u2014 esbuild's binary comes alone; npm packages are a choice you make afterwards."
+        },
+        "rerun": "noop",
+        "example": "mix workbench.install.esbuild",
+        "members": [],
+        "afterwards": null,
+        "summary": "Adds Phoenix's esbuild JavaScript bundling, as phx.new would have generated it",
+        "collection": false,
+        "installed": true,
+        "state": {}
+      },
+      {
+        "name": "tailwind",
+        "pending": false,
+        "version": {
+          "version": "0.1.1",
+          "date": "2026-08-30"
+        },
+        "options": [],
+        "base": true,
+        "requires": [],
+        "console": {
+          "tabs": [],
+          "doors": [],
+          "probes": []
+        },
+        "task": "workbench.install.tailwind",
+        "need": {
+          "line": "Your markup was written for Tailwind, and a frozen stylesheet is styling it.",
+          "body": "Your markup was written for Tailwind, and a frozen stylesheet is styling it.\n\n**Before:** classes in every template that mean nothing, an 80 kB `default.css` snapshot that never changes, no theme, no icons.\n\n**After:** the classes come alive, rebuilt on save; heroicons as CSS classes, daisyUI's components, a light/dark/system toggle in the layout.\n\n**Not for:** a project without html \u2014 the build needs LiveView's compiler, which html brings; the insert says so."
+        },
+        "rerun": "noop",
+        "example": "mix workbench.install.tailwind",
+        "members": [],
+        "afterwards": null,
+        "summary": "Adds Phoenix's Tailwind CSS pipeline, as phx.new would have generated it",
+        "collection": false,
+        "installed": true,
+        "state": {}
+      },
+      {
+        "name": "html",
+        "pending": false,
+        "version": {
+          "version": "0.1.0",
+          "date": "2026-08-30"
+        },
+        "options": [],
+        "base": true,
+        "requires": [],
+        "console": {
+          "tabs": [],
+          "doors": [],
+          "probes": []
+        },
+        "task": "workbench.install.html",
+        "need": {
+          "line": "Your API needs a page.",
+          "body": "Your API needs a page.\n\n**Before:** JSON only: no layouts, no components, no browser pipeline, and `phx.gen.html` generating files that cannot compile.\n\n**After:** `/` with a home page, a root layout and `Layouts.app`, the core components, HTML error pages, the browser pipeline with session and CSRF, live reload \u2014 the page a `phx.new` project is born with.\n\n**Not for:** LiveView \u2014 that is `live`, on top of this; and styling, which is `tailwind`."
+        },
+        "rerun": "noop",
+        "example": "mix workbench.install.html",
+        "members": [],
+        "afterwards": null,
+        "summary": "Adds Phoenix's HTML views, as phx.new would have generated them",
+        "collection": false,
+        "installed": true,
+        "state": {}
+      },
+      {
+        "name": "live",
+        "pending": false,
+        "version": {
+          "version": "0.1.1",
+          "date": "2026-08-30"
+        },
+        "options": [],
+        "base": true,
+        "requires": [
+          "html"
+        ],
+        "console": {
+          "tabs": [],
+          "doors": [],
+          "probes": []
+        },
+        "task": "workbench.install.live",
+        "need": {
+          "line": "Your page should react without reloading.",
+          "body": "Your page should react without reloading.\n\n**Before:** html with its `LiveSocket` lines written but commented out; every click a full request; no `phx-click`, no JS commands.\n\n**After:** the `/live` socket connected on load, `phx-click` on the flash and the theme toggle, `show`/`hide` commands, a LiveView mountable from the router.\n\n**Not for:** a project without esbuild \u2014 the client lives in `app.js`, and without a bundler there is nothing in the browser to connect; the insert says so."
+        },
+        "rerun": "noop",
+        "example": "mix workbench.install.live",
+        "members": [],
+        "afterwards": null,
+        "summary": "Adds Phoenix LiveView, as phx.new would have generated it",
+        "collection": false,
+        "installed": true,
+        "state": {}
+      },
+      {
+        "name": "dashboard",
+        "pending": false,
+        "version": {
+          "version": "0.1.0",
+          "date": "2026-08-30"
+        },
+        "options": [],
+        "base": true,
+        "requires": [],
+        "console": {
+          "tabs": [],
+          "doors": [
+            {
+              "label": "dashboard",
+              "path": "/dev/dashboard",
+              "when": null
+            }
+          ],
+          "probes": []
+        },
+        "task": "workbench.install.dashboard",
+        "need": {
+          "line": "Something is slow in dev and you're guessing.",
+          "body": "Something is slow in dev and you're guessing.\n\n**Before:** logs, `:observer` if you remember how to start it, a hunch about which process it is.\n\n**After:** `/dev/dashboard` \u2014 processes, memory, ETS, every request timed, the repo's queries when there is one \u2014 live in the browser, on the `/live` socket, only in dev.\n\n**Not for:** production monitoring \u2014 it has no authentication and stays behind `dev_routes`."
+        },
+        "rerun": "noop",
+        "example": "mix workbench.install.dashboard",
+        "members": [],
+        "afterwards": null,
+        "summary": "Adds Phoenix LiveDashboard, as phx.new would have generated it",
+        "collection": false,
+        "installed": true,
+        "state": {}
+      }
+    ],
+    "phx": {
+      "flags": [
+        "--app",
+        "lorem_ipsum_8",
+        "--module",
+        "LoremIpsum8",
+        "--database",
+        "postgres",
+        "--adapter",
+        "bandit"
+      ],
+      "module": "LoremIpsum8",
+      "live": true,
+      "app": "lorem_ipsum_8",
+      "esbuild": true,
+      "tailwind": true,
+      "gettext": true,
+      "adapter": "bandit",
+      "html": true,
+      "database": "postgres",
+      "ecto": true,
+      "dashboard": true,
+      "mailer": true,
+      "binary_id": false
+    }
   }
-}
 }

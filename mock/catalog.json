@@ -1,9 +1,246 @@
 [
   {
+    "name": "chiefs_setup",
+    "pending": false,
+    "version": {
+      "version": "0.2.0",
+      "date": "2026-08-30"
+    },
+    "options": [
+      {
+        "default": "rest",
+        "name": "interface",
+        "open": false,
+        "type": "string",
+        "doc": "The API the picks build: `rest` | `graphql`. Default: `rest`.",
+        "choices": [
+          {
+            "value": "rest",
+            "doc": "a JSON API with OpenApiSpex documentation",
+            "requires": []
+          },
+          {
+            "value": "graphql",
+            "doc": "an Absinthe schema and resolvers",
+            "requires": []
+          }
+        ],
+        "multiple": false
+      }
+    ],
+    "base": false,
+    "requires": [],
+    "console": {
+      "tabs": [],
+      "doors": [],
+      "probes": []
+    },
+    "task": "workbench.install.chiefs_setup",
+    "need": {
+      "line": "Your project is vanilla and the shelf is full: you want the workbench's own picks in, without choosing box by box.",
+      "body": "Your project is vanilla and the shelf is full: you want the workbench's own picks in, without choosing box by box.\n\n**Before:** a stock `phx.new` project boots in the workbench, and every capability is a decision — which API, which docs, which coverage, which checks — made ten times, in the right order, every time you start something.\n\n**After:** one box inserts the chief's picks — the dep-only quintet, REST or GraphQL as you say, coveralls, the ExDoc site, the enhancements base and the healthcheck endpoint — each as its own commit, so `eject` still takes any one of them out alone.\n\n**Not for:** a project that wants its own combination — the picks are fixed on purpose: if you would uncheck one, skip the box and add cartridges à la carte. A member's fine options (coverage theme, probe path) are set on the member, never here."
+    },
+    "rerun": "adds",
+    "example": "mix workbench.install.chiefs_setup --interface rest",
+    "members": [
+      {
+        "name": "ansi",
+        "argv": []
+      },
+      {
+        "name": "toolchain",
+        "argv": []
+      },
+      {
+        "name": "versioning",
+        "argv": []
+      },
+      {
+        "name": "osmon",
+        "argv": []
+      },
+      {
+        "name": "psql_extras",
+        "argv": []
+      },
+      {
+        "name": "credo",
+        "argv": []
+      },
+      {
+        "name": "mock",
+        "argv": []
+      },
+      {
+        "name": "exdebug",
+        "argv": []
+      },
+      {
+        "name": "rest",
+        "argv": [
+          "--health"
+        ]
+      },
+      {
+        "name": "coveralls",
+        "argv": [
+          "--exdoc"
+        ]
+      },
+      {
+        "name": "exdoc",
+        "argv": [
+          "--coveralls"
+        ]
+      },
+      {
+        "name": "enhancements",
+        "argv": [
+          "--interface",
+          "rest",
+          "--exdoc",
+          "--health"
+        ]
+      },
+      {
+        "name": "healthcheck",
+        "argv": []
+      }
+    ],
+    "afterwards": null,
+    "summary": "Outfits the project with the chief's picks",
+    "collection": true,
+    "covers": {
+      "front": null,
+      "back": null
+    }
+  },
+  {
+    "name": "ansi",
+    "pending": false,
+    "version": {
+      "version": "0.1.0",
+      "date": "2026-08-30"
+    },
+    "options": [],
+    "base": false,
+    "requires": [],
+    "console": {
+      "tabs": [],
+      "doors": [],
+      "probes": []
+    },
+    "task": "workbench.install.ansi",
+    "need": {
+      "line": "You read the application's logs through Docker, and everything comes out the same shade of grey.",
+      "body": "You read the application's logs through Docker, and everything comes out the same shade of grey.\n\n**Before:** Elixir sees no terminal on the other side of the container and turns colour off, so the `[info]` and the `[error]` look alike in a wall of output.\n\n**After:** one line in `config.exs`, and the levels, the SQL and the stack traces come out coloured wherever you read them — `./wb.sh logs`, `iex`, the console.\n\n**Not for:** colouring what the runtime does not colour already; it lifts Elixir's own decision, it does not add formatting."
+    },
+    "rerun": "noop",
+    "example": "mix workbench.install.ansi",
+    "members": [],
+    "afterwards": null,
+    "summary": "Turns ANSI colours back on for logs read outside a terminal",
+    "collection": false,
+    "covers": {
+      "front": null,
+      "back": null
+    }
+  },
+  {
+    "name": "toolchain",
+    "pending": false,
+    "version": {
+      "version": "0.1.0",
+      "date": "2026-08-30"
+    },
+    "options": [
+      {
+        "default": null,
+        "name": "elixir",
+        "open": false,
+        "type": "string",
+        "doc": "Elixir version. Default: the one running the installer.",
+        "choices": null,
+        "multiple": false
+      },
+      {
+        "default": null,
+        "name": "erlang",
+        "open": false,
+        "type": "string",
+        "doc": "Erlang/OTP version. Default: the one running the installer.",
+        "choices": null,
+        "multiple": false
+      }
+    ],
+    "base": false,
+    "requires": [],
+    "console": {
+      "tabs": [],
+      "doors": [],
+      "probes": []
+    },
+    "task": "workbench.install.toolchain",
+    "need": {
+      "line": "You open the project in your editor, on your own machine, and nothing there knows which Elixir this is.",
+      "body": "You open the project in your editor, on your own machine, and nothing there knows which Elixir this is.\n\n**Before:** the container has the right stack and your host has whatever it has; the language server picks the wrong version, `mix` in your shell disagrees with `./wb.sh mix`, and `.elixir_ls/` keeps showing up in `git status`.\n\n**After:** a `.tool-versions` naming the Elixir and Erlang the workspace actually runs — read straight off the toolchain that installs it, so it cannot drift — and the language server's cache ignored by git.\n\n**Not for:** the container, which takes its stack from the image and never reads this file; and not for `mix.exs`, whose `elixir:` line is a requirement range, not a pin."
+    },
+    "rerun": "noop",
+    "example": "mix workbench.install.toolchain",
+    "members": [],
+    "afterwards": null,
+    "summary": "Pins the Elixir and Erlang the project runs on, for the host",
+    "collection": false,
+    "covers": {
+      "front": null,
+      "back": null
+    }
+  },
+  {
+    "name": "versioning",
+    "pending": false,
+    "version": {
+      "version": "0.1.0",
+      "date": "2026-08-30"
+    },
+    "options": [
+      {
+        "default": "0.0.0",
+        "name": "version",
+        "open": false,
+        "type": "string",
+        "doc": "Version the project starts at, in `mix.exs` and the changelog. Default: `0.0.0`.",
+        "choices": null,
+        "multiple": false
+      }
+    ],
+    "base": false,
+    "requires": [],
+    "console": {
+      "tabs": [],
+      "doors": [],
+      "probes": []
+    },
+    "task": "workbench.install.versioning",
+    "need": {
+      "line": "You are about to change something, and there is nowhere to say what changed.",
+      "body": "You are about to change something, and there is nowhere to say what changed.\n\n**Before:** the version is `0.1.0` because the generator had to write something, and the history of the project is its git log — which records every commit and answers no question a reader has.\n\n**After:** a version the project chose, and a `CHANGELOG.md` opened at it: an `Unreleased` section to write into as you go, and a template line to uncomment when you cut the release.\n\n**Not for:** bumping the version for you — deciding when `0.1.0` becomes `0.2.0` is the one part of this that cannot be automated."
+    },
+    "rerun": "noop",
+    "example": "mix workbench.install.versioning --version 0.0.0",
+    "members": [],
+    "afterwards": null,
+    "summary": "Sets the project's initial version and opens its changelog",
+    "collection": false,
+    "covers": {
+      "front": null,
+      "back": null
+    }
+  },
+  {
     "name": "osmon",
     "pending": false,
     "version": null,
-    "flag": null,
     "options": [],
     "base": false,
     "requires": [],
@@ -13,13 +250,16 @@
       "probes": []
     },
     "task": "workbench.install.osmon",
+    "need": {
+      "line": "You want the machine's CPU, memory and disk where you already look.",
+      "body": "You want the machine's CPU, memory and disk where you already look.\n\n**Before:** `top` in another terminal.\n\n**After:** `:os_mon` feeding LiveDashboard's OS page.\n\n**Not for:** application metrics — those are telemetry's, and already on the dashboard."
+    },
     "rerun": "noop",
-    "summary": "Enables the :os_mon OTP application for system monitoring",
-    "implies": [],
-    "enabled_by": "enhance",
-    "afterwards": null,
-    "standalone": false,
     "example": "mix workbench.install.osmon",
+    "members": [],
+    "afterwards": null,
+    "summary": "Enables the :os_mon OTP application for system monitoring",
+    "collection": false,
     "covers": {
       "front": null,
       "back": null
@@ -29,7 +269,6 @@
     "name": "psql_extras",
     "pending": false,
     "version": null,
-    "flag": null,
     "options": [],
     "base": false,
     "requires": [],
@@ -39,13 +278,16 @@
       "probes": []
     },
     "task": "workbench.install.psql_extras",
+    "need": {
+      "line": "Your Postgres is slow, and you don't know which query.",
+      "body": "Your Postgres is slow, and you don't know which query.\n\n**Before:** guessing from the logs.\n\n**After:** ready-made diagnostics — unused indexes, locks, the slowest queries, cache hit rates — from `iex` or the dashboard.\n\n**Not for:** other databases — it reads Postgres's own statistics."
+    },
     "rerun": "noop",
-    "summary": "Adds ecto_psql_extras database insights to the project",
-    "implies": [],
-    "enabled_by": "enhance",
-    "afterwards": null,
-    "standalone": false,
     "example": "mix workbench.install.psql_extras",
+    "members": [],
+    "afterwards": null,
+    "summary": "Adds ecto_psql_extras database insights to the project",
+    "collection": false,
     "covers": {
       "front": null,
       "back": null
@@ -55,7 +297,6 @@
     "name": "credo",
     "pending": false,
     "version": null,
-    "flag": null,
     "options": [],
     "base": false,
     "requires": [],
@@ -65,13 +306,16 @@
       "probes": []
     },
     "task": "workbench.install.credo",
+    "need": {
+      "line": "You want a reviewer that never gets tired of the same remarks.",
+      "body": "You want a reviewer that never gets tired of the same remarks.\n\n**Before:** style and smell debates in every review, by hand.\n\n**After:** `mix credo` flags them before they land, with the project's own configuration.\n\n**Not for:** bugs — it reads style and structure, not behaviour."
+    },
     "rerun": "noop",
-    "summary": "Adds Credo static code analysis to the project",
-    "implies": [],
-    "enabled_by": "enhance",
-    "afterwards": null,
-    "standalone": false,
     "example": "mix workbench.install.credo",
+    "members": [],
+    "afterwards": null,
+    "summary": "Adds Credo static code analysis to the project",
+    "collection": false,
     "covers": {
       "front": null,
       "back": null
@@ -81,7 +325,6 @@
     "name": "mock",
     "pending": false,
     "version": null,
-    "flag": null,
     "options": [],
     "base": false,
     "requires": [],
@@ -91,13 +334,16 @@
       "probes": []
     },
     "task": "workbench.install.mock",
+    "need": {
+      "line": "Your tests must not call the real service.",
+      "body": "Your tests must not call the real service.\n\n**Before:** tests that reach an API, or code that is untestable because it does.\n\n**After:** `Mock` stubs a module for the duration of a test.\n\n**Not for:** OTP 29 and later — `meck` does not compile there; the migration to Mox is pending."
+    },
     "rerun": "noop",
-    "summary": "Adds the Mock testing library to the project",
-    "implies": [],
-    "enabled_by": "enhance",
-    "afterwards": null,
-    "standalone": false,
     "example": "mix workbench.install.mock",
+    "members": [],
+    "afterwards": null,
+    "summary": "Adds the Mock testing library to the project",
+    "collection": false,
     "covers": {
       "front": null,
       "back": null
@@ -107,7 +353,6 @@
     "name": "exdebug",
     "pending": false,
     "version": null,
-    "flag": null,
     "options": [],
     "base": false,
     "requires": [],
@@ -117,13 +362,16 @@
       "probes": []
     },
     "task": "workbench.install.exdebug",
+    "need": {
+      "line": "You want to look at a value while developing without dressing it up first.",
+      "body": "You want to look at a value while developing without dressing it up first.\n\n**Before:** `IO.inspect` with a label, again, and cleaning them up afterwards.\n\n**After:** ExDebug's helpers for inspecting values comfortably, from a terminal or a test.\n\n**Not for:** production — it is a development aid."
+    },
     "rerun": "noop",
-    "summary": "Adds the ExDebug utility to the project",
-    "implies": [],
-    "enabled_by": "enhance",
-    "afterwards": null,
-    "standalone": false,
     "example": "mix workbench.install.exdebug",
+    "members": [],
+    "afterwards": null,
+    "summary": "Adds the ExDebug utility to the project",
+    "collection": false,
     "covers": {
       "front": "exdebug/sealed/cover.jpg",
       "back": "exdebug/sealed/back.jpg"
@@ -133,7 +381,6 @@
     "name": "rest",
     "pending": false,
     "version": null,
-    "flag": null,
     "options": [
       {
         "default": null,
@@ -191,15 +438,16 @@
       "probes": []
     },
     "task": "workbench.install.rest",
-    "rerun": "noop",
-    "summary": "Adds OpenAPI (open_api_spex) REST documentation to the project",
-    "implies": [],
-    "enabled_by": {
-      "interface": "rest"
+    "need": {
+      "line": "Other systems will talk to your app, and need a contract to do it.",
+      "body": "Other systems will talk to your app, and need a contract to do it.\n\n**Before:** routes without a spec, documented by reading the controllers.\n\n**After:** `/api/v1` as the home of every endpoint, an OpenAPI spec kept beside the code, SwaggerUI at `/dev/swagger`.\n\n**Not for:** alongside `graphql` — one interface per project."
     },
-    "afterwards": null,
-    "standalone": false,
+    "rerun": "noop",
     "example": "mix workbench.install.rest --project-name \"Lorem Ipsum\" --health",
+    "members": [],
+    "afterwards": null,
+    "summary": "Adds OpenAPI (open_api_spex) REST documentation to the project",
+    "collection": false,
     "covers": {
       "front": null,
       "back": null
@@ -209,7 +457,6 @@
     "name": "graphql",
     "pending": false,
     "version": null,
-    "flag": null,
     "options": [],
     "base": false,
     "requires": [],
@@ -225,15 +472,16 @@
       "probes": []
     },
     "task": "workbench.install.graphql",
-    "rerun": "noop",
-    "summary": "Adds an Absinthe GraphQL API served at /graphiql to the project",
-    "implies": [],
-    "enabled_by": {
-      "interface": "graphql"
+    "need": {
+      "line": "Your clients want to ask for exactly the data they need, and nothing more.",
+      "body": "Your clients want to ask for exactly the data they need, and nothing more.\n\n**Before:** many fixed endpoints, each deciding the shape of its answer.\n\n**After:** one endpoint backed by an Absinthe schema, `/graphiql` to explore it, and clients composing their own queries.\n\n**Not for:** alongside `rest` — one interface per project."
     },
-    "afterwards": null,
-    "standalone": false,
+    "rerun": "noop",
     "example": "mix workbench.install.graphql",
+    "members": [],
+    "afterwards": null,
+    "summary": "Adds an Absinthe GraphQL API served at /graphiql to the project",
+    "collection": false,
     "covers": {
       "front": null,
       "back": null
@@ -242,8 +490,10 @@
   {
     "name": "coveralls",
     "pending": false,
-    "version": null,
-    "flag": "coveralls",
+    "version": {
+      "version": "0.1.0",
+      "date": "2026-08-30"
+    },
     "options": [
       {
         "default": "80",
@@ -302,6 +552,15 @@
           }
         ],
         "multiple": false
+      },
+      {
+        "default": false,
+        "name": "build",
+        "open": false,
+        "type": "boolean",
+        "doc": "Run the suite once the insert is applied, so the report has numbers. Off by default: it needs the dependencies compiled and, with Ecto, a test database — which means the compose has one (`./wb.sh bake`).",
+        "choices": null,
+        "multiple": false
       }
     ],
     "base": false,
@@ -320,13 +579,16 @@
       "probes": []
     },
     "task": "workbench.install.coveralls",
+    "need": {
+      "line": "You want to know where the tests aren't looking.",
+      "body": "You want to know where the tests aren't looking.\n\n**Before:** a green suite and no idea which lines it never touched.\n\n**After:** `mix cover`: a percentage, an HTML report — at `/dev/docs/cover` with exdoc — and a minimum the build can refuse to go under.\n\n**Not for:** proving the code is right — coverage says where the tests are, not whether they ask the right questions."
+    },
     "rerun": "noop",
-    "summary": "Adds ExCoveralls test coverage reports to the project",
-    "implies": [],
-    "enabled_by": "coveralls",
-    "afterwards": null,
-    "standalone": false,
     "example": "mix workbench.install.coveralls --exdoc",
+    "members": [],
+    "afterwards": "./wb.sh mix cover runs the suite and writes the report; --build does it on the insert.",
+    "summary": "Adds ExCoveralls test coverage reports to the project",
+    "collection": false,
     "covers": {
       "front": null,
       "back": null
@@ -335,8 +597,10 @@
   {
     "name": "exdoc",
     "pending": false,
-    "version": null,
-    "flag": "exdoc",
+    "version": {
+      "version": "0.1.0",
+      "date": "2026-08-30"
+    },
     "options": [
       {
         "default": null,
@@ -366,15 +630,6 @@
         "multiple": false
       },
       {
-        "default": null,
-        "name": "guidelines_url",
-        "open": false,
-        "type": "string",
-        "doc": "URL of a coding guidelines markdown to download as the \"Coding guidelines\" page. Optional.",
-        "choices": null,
-        "multiple": false
-      },
-      {
         "default": false,
         "name": "coveralls",
         "open": false,
@@ -389,6 +644,15 @@
         "open": false,
         "type": "boolean",
         "doc": "The auth0 feature is composed too: the \"Get access tokens\" page and its scripts, to try the API from the docs.",
+        "choices": null,
+        "multiple": false
+      },
+      {
+        "default": false,
+        "name": "build",
+        "open": false,
+        "type": "boolean",
+        "doc": "Run `mix docs` once the insert is applied, so the site has pages on first boot. Off by default: it needs the dependencies fetched and compiled.",
         "choices": null,
         "multiple": false
       }
@@ -407,23 +671,71 @@
       "probes": []
     },
     "task": "workbench.install.exdoc",
+    "need": {
+      "line": "You want the project's documentation readable, served by the project itself.",
+      "body": "You want the project's documentation readable, served by the project itself.\n\n**Before:** module and function docs nobody opens, and the curated pages nowhere.\n\n**After:** `/dev/docs`: ExDoc's site built from the code, plus the workbench's pages — coverage, the auth token, the database diagram — one URL away in dev.\n\n**Not for:** publishing — it is served in dev; HexDocs is another step."
+    },
     "rerun": "noop",
-    "summary": "Adds ExDoc documentation served at /dev/docs to the project",
-    "implies": [],
-    "enabled_by": "exdoc",
-    "afterwards": null,
-    "standalone": false,
     "example": "mix workbench.install.exdoc --project-name \"Lorem Ipsum\" --coveralls",
+    "members": [],
+    "afterwards": "./wb.sh mix docs generates the site; --build does it on the insert.",
+    "summary": "Adds ExDoc documentation served at /dev/docs to the project",
+    "collection": false,
     "covers": {
       "front": "exdoc/sealed/cover.jpg",
       "back": "exdoc/sealed/back.jpg"
     }
   },
   {
+    "name": "guidelines",
+    "pending": false,
+    "version": {
+      "version": "0.1.0",
+      "date": "2026-08-30"
+    },
+    "options": [
+      {
+        "default": null,
+        "name": "url",
+        "open": false,
+        "type": "string",
+        "doc": "URL of the markdown to download as the project's coding guidelines page.",
+        "choices": null,
+        "multiple": false
+      }
+    ],
+    "base": false,
+    "requires": [
+      "exdoc"
+    ],
+    "console": {
+      "tabs": [],
+      "doors": [],
+      "probes": []
+    },
+    "task": "workbench.install.guidelines",
+    "need": {
+      "line": "Your team agreed how it writes Elixir, and the agreement lives somewhere nobody opens.",
+      "body": "Your team agreed how it writes Elixir, and the agreement lives somewhere nobody opens.\n\n**Before:** the conventions are a link in a wiki, or in another repository's README: the people who most need them — whoever joined last week — never find them, and reviews re-litigate the same commas.\n\n**After:** the guide is a page of the project's own documentation, beside the modules it talks about, at `/dev/docs` with everything else.\n\n**Not for:** enforcing anything — that is [credo](../credo/)'s job. This puts the text where it is read; nothing checks the code against it."
+    },
+    "rerun": "noop",
+    "example": "mix workbench.install.guidelines --url \"https://raw.githubusercontent.com/user/repo/main/GUIDE.md\"",
+    "members": [],
+    "afterwards": null,
+    "summary": "Adds the team's coding conventions to the project's docs",
+    "collection": false,
+    "covers": {
+      "front": null,
+      "back": null
+    }
+  },
+  {
     "name": "enhancements",
     "pending": false,
-    "version": null,
-    "flag": "enhance",
+    "version": {
+      "version": "0.1.0",
+      "date": "2026-08-30"
+    },
     "options": [
       {
         "default": null,
@@ -515,13 +827,16 @@
       "probes": []
     },
     "task": "workbench.install.enhancements",
+    "need": {
+      "line": "You want the workbench's house conventions in the project from day one.",
+      "body": "You want the workbench's house conventions in the project from day one.\n\n**Before:** every project deciding its schema base, its helper, its tasks and its first tests on its own.\n\n**After:** `MyApp.Schema`, the helper, `mix db` and `mix version`, and a base test suite that already covers what the setup wired.\n\n**Not for:** the vanilla line — this is the opinionated line's foundation, and `new2` leaves the project stock."
+    },
     "rerun": "noop",
-    "summary": "Adds the workbench base enhancements (helper, schema, tasks, tests)",
-    "implies": [],
-    "enabled_by": "enhance",
-    "afterwards": null,
-    "standalone": false,
     "example": "mix workbench.install.enhancements --id-type uuid --timestamps naive_datetime_usec",
+    "members": [],
+    "afterwards": null,
+    "summary": "Adds the workbench base enhancements (helper, schema, tasks, tests)",
+    "collection": false,
     "covers": {
       "front": null,
       "back": null
@@ -531,7 +846,6 @@
     "name": "auth0",
     "pending": false,
     "version": null,
-    "flag": "auth0",
     "options": [
       {
         "default": null,
@@ -564,20 +878,25 @@
       }
     ],
     "base": false,
-    "requires": [],
+    "requires": [
+      "enhancements"
+    ],
     "console": {
       "tabs": [],
       "doors": [],
       "probes": []
     },
     "task": "workbench.install.auth0",
+    "need": {
+      "line": "Your app needs users who sign in, and you never want to hold a password.",
+      "body": "Your app needs users who sign in, and you never want to hold a password.\n\n**Before:** rolling your own authentication, or storing password hashes and everything that follows from it.\n\n**After:** Auth0 does identity and issues JWTs; the project gets an Accounts context, a User and a token plug, and never sees a password.\n\n**Not for:** new projects on the vanilla line — the dependencies it rests on are abandoned upstream (config.conf says so); `ash` with `--auth` is the living alternative."
+    },
     "rerun": "noop",
-    "summary": "Adds Auth0 JWT authentication with an Accounts context to the project",
-    "implies": [],
-    "enabled_by": "auth0",
-    "afterwards": null,
-    "standalone": false,
     "example": "mix workbench.install.auth0 --project-name \"Lorem Ipsum\"",
+    "members": [],
+    "afterwards": null,
+    "summary": "Adds Auth0 JWT authentication with an Accounts context to the project",
+    "collection": false,
     "covers": {
       "front": null,
       "back": null
@@ -587,7 +906,6 @@
     "name": "openai",
     "pending": false,
     "version": null,
-    "flag": "openai",
     "options": [
       {
         "default": null,
@@ -620,22 +938,25 @@
       }
     ],
     "base": false,
-    "requires": [],
+    "requires": [
+      "auth0"
+    ],
     "console": {
       "tabs": [],
       "doors": [],
       "probes": []
     },
     "task": "workbench.install.openai",
+    "need": {
+      "line": "You want an assistant inside the product, that remembers each user's conversations.",
+      "body": "You want an assistant inside the product, that remembers each user's conversations.\n\n**Before:** a chatbot bolted on the side, with no memory and no owner.\n\n**After:** conversations and messages persisted per user, replies from OpenAI's chat models, as a feature of the app.\n\n**Not for:** projects without users — it implies `auth0`."
+    },
     "rerun": "noop",
-    "summary": "Adds an OpenAI assistant with conversations to the project",
-    "implies": [
-      "auth0"
-    ],
-    "enabled_by": "openai",
-    "afterwards": null,
-    "standalone": false,
     "example": "mix workbench.install.openai --project-name \"Lorem Ipsum\"",
+    "members": [],
+    "afterwards": null,
+    "summary": "Adds an OpenAI assistant with conversations to the project",
+    "collection": false,
     "covers": {
       "front": null,
       "back": null
@@ -645,7 +966,6 @@
     "name": "healthcheck",
     "pending": false,
     "version": null,
-    "flag": "health",
     "options": [
       {
         "default": "/health",
@@ -679,13 +999,16 @@
       ]
     },
     "task": "workbench.install.healthcheck",
+    "need": {
+      "line": "Your teammates and your monitoring want to ask the app how it is.",
+      "body": "Your teammates and your monitoring want to ask the app how it is.\n\n**Before:** logging into the server to find out.\n\n**After:** a public JSON route that answers at once — versions, environment and database details in dev, and an entry in the Swagger page.\n\n**Not for:** an orchestrator's probes — for those, `healthcheck2`, which answers a probe and gets out of the way."
+    },
     "rerun": "noop",
-    "summary": "Adds a healthcheck endpoint with controller, tests and router scope",
-    "implies": [],
-    "enabled_by": "health",
-    "afterwards": null,
-    "standalone": false,
     "example": "mix workbench.install.healthcheck",
+    "members": [],
+    "afterwards": null,
+    "summary": "Adds a healthcheck endpoint with controller, tests and router scope",
+    "collection": false,
     "covers": {
       "front": null,
       "back": null
@@ -695,25 +1018,27 @@
     "name": "stripe",
     "pending": true,
     "version": null,
-    "flag": "stripe",
     "options": [],
     "base": false,
-    "requires": [],
+    "requires": [
+      "auth0"
+    ],
     "console": {
       "tabs": [],
       "doors": [],
       "probes": []
     },
     "task": "workbench.install.stripe",
+    "need": {
+      "line": "Your users should be able to pay — not ported yet.",
+      "body": "Your users should be able to pay — not ported yet.\n\n**Before:** nothing: the flag exists, the installer does not.\n\n**After:** nothing yet; `workbench.setup` prints a notice instead of composing it.\n\n**Not for:** anything, until it is ported."
+    },
     "rerun": "noop",
-    "summary": null,
-    "implies": [
-      "auth0"
-    ],
-    "enabled_by": "stripe",
-    "afterwards": null,
-    "standalone": false,
     "example": null,
+    "members": [],
+    "afterwards": null,
+    "summary": null,
+    "collection": false,
     "covers": {
       "front": null,
       "back": null
@@ -723,7 +1048,6 @@
     "name": "githooks",
     "pending": false,
     "version": null,
-    "flag": null,
     "options": [],
     "base": false,
     "requires": [],
@@ -733,13 +1057,16 @@
       "probes": []
     },
     "task": "workbench.install.githooks",
+    "need": {
+      "line": "You want the checks to run before the commit exists, not after the push.",
+      "body": "You want the checks to run before the commit exists, not after the push.\n\n**Before:** CI catching what a pre-commit hook would have, one push later.\n\n**After:** `git_hooks` running format, tests and credo on commit, configured in the project.\n\n**Not for:** enforcing anything on others — hooks are local to each clone."
+    },
     "rerun": "noop",
-    "summary": "Adds git_hooks management to the project",
-    "implies": [],
-    "enabled_by": null,
-    "afterwards": null,
-    "standalone": true,
     "example": "mix workbench.install.githooks",
+    "members": [],
+    "afterwards": null,
+    "summary": "Adds git_hooks management to the project",
+    "collection": false,
     "covers": {
       "front": null,
       "back": null
@@ -749,7 +1076,6 @@
     "name": "exmachina",
     "pending": false,
     "version": null,
-    "flag": null,
     "options": [],
     "base": false,
     "requires": [],
@@ -759,13 +1085,16 @@
       "probes": []
     },
     "task": "workbench.install.exmachina",
+    "need": {
+      "line": "Your tests need realistic records, in one line each.",
+      "body": "Your tests need realistic records, in one line each.\n\n**Before:** hand-built maps and inserts repeated in every test.\n\n**After:** ExMachina factories: `insert(:user)` with sensible defaults, overridable.\n\n**Not for:** production data — factories are for tests."
+    },
     "rerun": "noop",
-    "summary": "Adds ExMachina test factories to the project",
-    "implies": [],
-    "enabled_by": null,
-    "afterwards": null,
-    "standalone": true,
     "example": "mix workbench.install.exmachina",
+    "members": [],
+    "afterwards": null,
+    "summary": "Adds ExMachina test factories to the project",
+    "collection": false,
     "covers": {
       "front": null,
       "back": null
@@ -778,7 +1107,6 @@
       "version": "0.2.0",
       "date": "2026-08-30"
     },
-    "flag": null,
     "options": [
       {
         "default": null,
@@ -800,13 +1128,16 @@
       "probes": []
     },
     "task": "workbench.install.clustering",
+    "need": {
+      "line": "Your deployment runs several replicas, and they should act as one.",
+      "body": "Your deployment runs several replicas, and they should act as one.\n\n**Before:** replicas that never see each other: a PubSub per node, a broadcast that reaches one browser in four.\n\n**After:** the release boots as a named node from its own address and `DNSCluster` finds the others through one DNS name; `./wb.sh up --deploy scaled` shows four of them join.\n\n**Not for:** a single workspace — one container has nothing to cluster with; and rolling deploys across images, since the cookie is baked."
+    },
     "rerun": "noop",
-    "summary": "Boots the production release as a distributed node for DNSCluster",
-    "implies": [],
-    "enabled_by": null,
-    "afterwards": "See it work: ./wb.sh up --deploy scaled brings the replicas up behind the balancer (the release image is rebuilt on each deploy).",
-    "standalone": true,
     "example": "mix workbench.install.clustering --dns-query my-app.internal",
+    "members": [],
+    "afterwards": "See it work: ./wb.sh up --deploy scaled brings the replicas up behind the balancer (the release image is rebuilt on each deploy).",
+    "summary": "Boots the production release as a distributed node for DNSCluster",
+    "collection": false,
     "covers": {
       "front": "clustering/sealed/cover.jpg",
       "back": "clustering/sealed/back.jpg"
@@ -819,7 +1150,6 @@
       "version": "0.1.0",
       "date": "2026-08-28"
     },
-    "flag": null,
     "options": [
       {
         "default": "/health",
@@ -848,13 +1178,16 @@
       ]
     },
     "task": "workbench.install.healthcheck2",
+    "need": {
+      "line": "Your platform polls the app, and the answer decides whether it restarts it or diverts traffic.",
+      "body": "Your platform polls the app, and the answer decides whether it restarts it or diverts traffic.\n\n**Before:** one route answering both questions the same way — restarting on a database outage, or passing a probe through a redirect.\n\n**After:** `/health/live` and `/health/ready` as the first plug of the endpoint: alive if the VM answers, ready if the repo does, within a second.\n\n**Not for:** humans reading a body — it says `ok` or `unavailable`; the JSON is `healthcheck`'s."
+    },
     "rerun": "noop",
-    "summary": "Adds liveness and readiness probes as the first plug of the endpoint",
-    "implies": [],
-    "enabled_by": null,
-    "afterwards": null,
-    "standalone": true,
     "example": "mix workbench.install.healthcheck2 --path /health",
+    "members": [],
+    "afterwards": null,
+    "summary": "Adds liveness and readiness probes as the first plug of the endpoint",
+    "collection": false,
     "covers": {
       "front": "healthcheck2/sealed/cover.jpg",
       "back": "healthcheck2/sealed/back.jpg"
@@ -867,7 +1200,6 @@
       "version": "0.4.0",
       "date": "2026-08-30"
     },
-    "flag": null,
     "options": [
       {
         "default": "postgres",
@@ -1205,13 +1537,16 @@
       "probes": []
     },
     "task": "workbench.install.ash",
+    "need": {
+      "line": "You want a whole framework for your domain, set up the way its own site does it.",
+      "body": "You want a whole framework for your domain, set up the way its own site does it.\n\n**Before:** reading Ash's guides and running a chain of installers by hand, in an order one of them hangs on when it is wrong.\n\n**After:** `--data-layer`, `--api`, `--auth`, `--with`: the command ash-hq.org's installer generates for an existing app, queued and run; `mix workbench.ash.site` tells you when the site's map moved.\n\n**Not for:** the opinionated line (`new`) — its `users` table and generators fight with Ash's domain; this is a `new2` cartridge."
+    },
     "rerun": "adds",
-    "summary": "Installs the Ash framework, configured like ash-hq.org's installer for an existing app",
-    "implies": [],
-    "enabled_by": null,
-    "afterwards": "With a database data layer on a project born without Ecto, ./wb.sh bake puts the database into the workspace's compose, then ./wb.sh setup creates it.",
-    "standalone": true,
     "example": "mix workbench.install.ash --data-layer postgres --api json_api --auth password,magic_link",
+    "members": [],
+    "afterwards": "With a database data layer on a project born without Ecto, ./wb.sh bake puts the database into the workspace's compose, then ./wb.sh setup creates it.",
+    "summary": "Installs the Ash framework, configured like ash-hq.org's installer for an existing app",
+    "collection": false,
     "covers": {
       "front": "ash/sealed/cover.jpg",
       "back": "ash/sealed/back.jpg"
@@ -1221,10 +1556,9 @@
     "name": "mailer",
     "pending": false,
     "version": {
-      "version": "0.1.0",
-      "date": "2026-08-29"
+      "version": "0.2.0",
+      "date": "2026-08-30"
     },
-    "flag": null,
     "options": [],
     "base": true,
     "requires": [],
@@ -1240,13 +1574,16 @@
       "probes": []
     },
     "task": "workbench.install.mailer",
+    "need": {
+      "line": "You want to see the mail your app sends before anyone else does.",
+      "body": "You want to see the mail your app sends before anyone else does.\n\n**Before:** a real SMTP account wired into dev, or `IO.inspect` on the email struct; a mail that leaves for a real address from a laptop.\n\n**After:** every mail delivered in dev lands in `/dev/mailbox`, open in the browser; tests assert on it through the `Test` adapter; production sends through the adapter you configure in `runtime.exs`.\n\n**Not for:** choosing a provider — that is your account and one config line, and `phx.new` leaves it as a comment."
+    },
     "rerun": "noop",
-    "summary": "Adds Phoenix's Swoosh mailer, as phx.new would have generated it",
-    "implies": [],
-    "enabled_by": null,
-    "afterwards": null,
-    "standalone": true,
     "example": "mix workbench.install.mailer",
+    "members": [],
+    "afterwards": null,
+    "summary": "Adds Phoenix's Swoosh mailer, as phx.new would have generated it",
+    "collection": false,
     "covers": {
       "front": null,
       "back": null
@@ -1259,7 +1596,6 @@
       "version": "0.1.0",
       "date": "2026-08-30"
     },
-    "flag": null,
     "options": [],
     "base": true,
     "requires": [],
@@ -1269,13 +1605,16 @@
       "probes": []
     },
     "task": "workbench.install.gettext",
+    "need": {
+      "line": "Your users don't all read English, and the strings are already written.",
+      "body": "Your users don't all read English, and the strings are already written.\n\n**Before:** strings hard-coded in the components and layouts; a second language means touching every template, and a missing translation shows nothing.\n\n**After:** every string `phx.new` wrote is a `gettext` call with the English as its own fallback; a locale is a `.po` file under `priv/gettext`; `mix gettext.extract` finds the strings you add once you wrap them.\n\n**Not for:** translating for you — your own strings still have to be wrapped, and the locale files still have to be filled in."
+    },
     "rerun": "noop",
-    "summary": "Adds Phoenix's gettext, as phx.new would have generated it",
-    "implies": [],
-    "enabled_by": null,
-    "afterwards": null,
-    "standalone": true,
     "example": "mix workbench.install.gettext",
+    "members": [],
+    "afterwards": null,
+    "summary": "Adds Phoenix's gettext, as phx.new would have generated it",
+    "collection": false,
     "covers": {
       "front": null,
       "back": null
@@ -1288,7 +1627,6 @@
       "version": "0.2.0",
       "date": "2026-08-30"
     },
-    "flag": null,
     "options": [
       {
         "default": "postgres",
@@ -1338,13 +1676,16 @@
       "probes": []
     },
     "task": "workbench.install.ecto",
+    "need": {
+      "line": "Your app has data to keep, and it started without a database.",
+      "body": "Your app has data to keep, and it started without a database.\n\n**Before:** an API that computes and forgets, or a repo wired by hand across four config files and a supervision tree, with the tests sharing one database.\n\n**After:** a `Repo` on the adapter you name, migrations under `priv/repo`, the sandbox that isolates every test, `DATABASE_URL` in `.env`, and the workspace's Postgres after `./wb.sh bake`.\n\n**Not for:** changing your mind later — a project with data changes database by migration, not by flag; inserted once."
+    },
     "rerun": "noop",
-    "summary": "Adds Phoenix's Ecto with a database adapter, as phx.new would have generated it",
-    "implies": [],
-    "enabled_by": null,
-    "afterwards": "./wb.sh bake puts the database into the workspace's compose, then ./wb.sh setup creates it.",
-    "standalone": true,
     "example": "mix workbench.install.ecto --database postgres",
+    "members": [],
+    "afterwards": "./wb.sh bake puts the database into the workspace's compose, then ./wb.sh setup creates it.",
+    "summary": "Adds Phoenix's Ecto with a database adapter, as phx.new would have generated it",
+    "collection": false,
     "covers": {
       "front": null,
       "back": null
@@ -1354,10 +1695,9 @@
     "name": "esbuild",
     "pending": false,
     "version": {
-      "version": "0.1.0",
+      "version": "0.1.1",
       "date": "2026-08-30"
     },
-    "flag": null,
     "options": [],
     "base": true,
     "requires": [],
@@ -1367,13 +1707,16 @@
       "probes": []
     },
     "task": "workbench.install.esbuild",
+    "need": {
+      "line": "Your page needs JavaScript, and there is no bundler to write it in.",
+      "body": "Your page needs JavaScript, and there is no bundler to write it in.\n\n**Before:** a placeholder `app.js` that is a comment telling you which scripts to copy by hand; no `import`, no LiveView client, no watcher.\n\n**After:** `assets/js/app.js` bundled on every save, `phoenix_html` and `phoenix_live_view` a plain `import` away, one file to ship with `mix assets.deploy`.\n\n**Not for:** a Node toolchain — esbuild's binary comes alone; npm packages are a choice you make afterwards."
+    },
     "rerun": "noop",
-    "summary": "Adds Phoenix's esbuild JavaScript bundling, as phx.new would have generated it",
-    "implies": [],
-    "enabled_by": null,
-    "afterwards": null,
-    "standalone": true,
     "example": "mix workbench.install.esbuild",
+    "members": [],
+    "afterwards": null,
+    "summary": "Adds Phoenix's esbuild JavaScript bundling, as phx.new would have generated it",
+    "collection": false,
     "covers": {
       "front": null,
       "back": null
@@ -1383,10 +1726,9 @@
     "name": "tailwind",
     "pending": false,
     "version": {
-      "version": "0.1.0",
+      "version": "0.1.1",
       "date": "2026-08-30"
     },
-    "flag": null,
     "options": [],
     "base": true,
     "requires": [],
@@ -1396,13 +1738,16 @@
       "probes": []
     },
     "task": "workbench.install.tailwind",
+    "need": {
+      "line": "Your markup was written for Tailwind, and a frozen stylesheet is styling it.",
+      "body": "Your markup was written for Tailwind, and a frozen stylesheet is styling it.\n\n**Before:** classes in every template that mean nothing, an 80 kB `default.css` snapshot that never changes, no theme, no icons.\n\n**After:** the classes come alive, rebuilt on save; heroicons as CSS classes, daisyUI's components, a light/dark/system toggle in the layout.\n\n**Not for:** a project without html — the build needs LiveView's compiler, which html brings; the insert says so."
+    },
     "rerun": "noop",
-    "summary": "Adds Phoenix's Tailwind CSS pipeline, as phx.new would have generated it",
-    "implies": [],
-    "enabled_by": null,
-    "afterwards": null,
-    "standalone": true,
     "example": "mix workbench.install.tailwind",
+    "members": [],
+    "afterwards": null,
+    "summary": "Adds Phoenix's Tailwind CSS pipeline, as phx.new would have generated it",
+    "collection": false,
     "covers": {
       "front": null,
       "back": null
@@ -1415,7 +1760,6 @@
       "version": "0.1.0",
       "date": "2026-08-30"
     },
-    "flag": null,
     "options": [],
     "base": true,
     "requires": [],
@@ -1425,13 +1769,16 @@
       "probes": []
     },
     "task": "workbench.install.html",
+    "need": {
+      "line": "Your API needs a page.",
+      "body": "Your API needs a page.\n\n**Before:** JSON only: no layouts, no components, no browser pipeline, and `phx.gen.html` generating files that cannot compile.\n\n**After:** `/` with a home page, a root layout and `Layouts.app`, the core components, HTML error pages, the browser pipeline with session and CSRF, live reload — the page a `phx.new` project is born with.\n\n**Not for:** LiveView — that is `live`, on top of this; and styling, which is `tailwind`."
+    },
     "rerun": "noop",
-    "summary": "Adds Phoenix's HTML views, as phx.new would have generated them",
-    "implies": [],
-    "enabled_by": null,
-    "afterwards": null,
-    "standalone": true,
     "example": "mix workbench.install.html",
+    "members": [],
+    "afterwards": null,
+    "summary": "Adds Phoenix's HTML views, as phx.new would have generated them",
+    "collection": false,
     "covers": {
       "front": null,
       "back": null
@@ -1441,10 +1788,9 @@
     "name": "live",
     "pending": false,
     "version": {
-      "version": "0.1.0",
+      "version": "0.1.1",
       "date": "2026-08-30"
     },
-    "flag": null,
     "options": [],
     "base": true,
     "requires": [
@@ -1456,13 +1802,16 @@
       "probes": []
     },
     "task": "workbench.install.live",
+    "need": {
+      "line": "Your page should react without reloading.",
+      "body": "Your page should react without reloading.\n\n**Before:** html with its `LiveSocket` lines written but commented out; every click a full request; no `phx-click`, no JS commands.\n\n**After:** the `/live` socket connected on load, `phx-click` on the flash and the theme toggle, `show`/`hide` commands, a LiveView mountable from the router.\n\n**Not for:** a project without esbuild — the client lives in `app.js`, and without a bundler there is nothing in the browser to connect; the insert says so."
+    },
     "rerun": "noop",
-    "summary": "Adds Phoenix LiveView, as phx.new would have generated it",
-    "implies": [],
-    "enabled_by": null,
-    "afterwards": null,
-    "standalone": true,
     "example": "mix workbench.install.live",
+    "members": [],
+    "afterwards": null,
+    "summary": "Adds Phoenix LiveView, as phx.new would have generated it",
+    "collection": false,
     "covers": {
       "front": null,
       "back": null
@@ -1475,7 +1824,6 @@
       "version": "0.1.0",
       "date": "2026-08-30"
     },
-    "flag": null,
     "options": [],
     "base": true,
     "requires": [],
@@ -1491,13 +1839,16 @@
       "probes": []
     },
     "task": "workbench.install.dashboard",
+    "need": {
+      "line": "Something is slow in dev and you're guessing.",
+      "body": "Something is slow in dev and you're guessing.\n\n**Before:** logs, `:observer` if you remember how to start it, a hunch about which process it is.\n\n**After:** `/dev/dashboard` — processes, memory, ETS, every request timed, the repo's queries when there is one — live in the browser, on the `/live` socket, only in dev.\n\n**Not for:** production monitoring — it has no authentication and stays behind `dev_routes`."
+    },
     "rerun": "noop",
-    "summary": "Adds Phoenix LiveDashboard, as phx.new would have generated it",
-    "implies": [],
-    "enabled_by": null,
-    "afterwards": null,
-    "standalone": true,
     "example": "mix workbench.install.dashboard",
+    "members": [],
+    "afterwards": null,
+    "summary": "Adds Phoenix LiveDashboard, as phx.new would have generated it",
+    "collection": false,
     "covers": {
       "front": null,
       "back": null

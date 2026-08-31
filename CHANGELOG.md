@@ -482,6 +482,21 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   a path dependency on the mounted workbench, Mix did not always notice
   it had changed, and an installer edited since the last run could run
   in its previous form.
+- `add COLLECTION` inserts every cartridge of the plan, not only the
+  first. The plan reached the loop on stdin, and the container each
+  insert runs in attaches to stdin and drank the rest of it: the loop
+  then ended on EOF — quietly, and with a zero exit — one cartridge
+  into a recipe of thirteen. `add chiefs_setup` had never put in more
+  than its first missing member. The plan is read on its own descriptor
+  now, so there is nothing on stdin for the container to take.
+- `status --json` is valid JSON when a cartridge's NEED.md travels in
+  it. The object was assembled around the task's answer with `echo`,
+  which is free to read the `\n` a JSON string is made of, and a raw
+  newline inside a string is what makes a reader call the whole answer
+  invalid — a `--json` that exits zero and cannot be parsed. Every
+  value goes in as a `printf` argument now, never as part of the
+  format, and `json_string` escapes the control characters too and not
+  only the backslash and the quote.
 
 ### Updated
 

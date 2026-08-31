@@ -584,9 +584,17 @@
   }
 
   # json_string <TEXT>
-    # TEXT as a JSON string literal.
+    # TEXT as a JSON string literal. The control characters are escaped
+    # too, not only the backslash and the quote: a cartridge's NEED.md
+    # travels through here, and a raw newline inside a string is what
+    # makes a reader call the whole answer invalid.
   json_string() {
-    printf '"%s"' "$(printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g')"
+    printf '"%s"' "$(
+      printf '%s' "$1" | \
+      sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' \
+          -e 's/\x08/\\b/g' -e 's/\x0c/\\f/g' -e 's/\r/\\r/g' -e 's/\t/\\t/g' | \
+      sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/\\n/g'
+    )"
   }
 
   # json_array
@@ -596,9 +604,9 @@
     local input
     input=$(cat)
     case "$input" in
-      \[*) echo "$input" ;;
-      "")  echo "[]" ;;
-      *)   echo "[$(echo "$input" | paste -sd, -)]" ;;
+      \[*) printf '%s\n' "$input" ;;
+      "")  printf '[]\n' ;;
+      *)   printf '[%s]\n' "$(printf '%s' "$input" | paste -sd, -)" ;;
     esac
   }
 
@@ -613,19 +621,23 @@
     pgadmin=$(workspace_pgadmin_port)
     project=$(workspace_igniter workbench.status --json 2>/dev/null | json_answer)
 
-    echo "{"
-    echo "  \"workspace\": $(json_string "$WORKSPACE_PATH"),"
-    echo "  \"compose_project\": $(json_string "$(compose_project_name)"),"
-    echo "  \"ports\": {\"app\": ${port:-null}, \"pgadmin\": ${pgadmin:-null}},"
-    echo "  \"baked\": {"
-    echo "    \"dev\": true,"
-    echo "    \"prod\": $([ -f "$WORKSPACE_PATH/$PROD_COMPOSE_FILE" ] && echo true || echo false),"
-    echo "    \"scaled\": $([ -f "$WORKSPACE_PATH/$SCALED_COMPOSE_FILE" ] && echo true || echo false)"
-    echo "  },"
-    echo "  \"containers\": $(workspace_containers | json_array),"
-    echo "  \"git\": $(git_json),"
-    echo "  \"project\": ${project:-null}"
-    echo "}"
+    # printf, never echo, and every value as an argument rather than
+    # part of the format: what goes in here is JSON already, full of the
+    # \n and \\ that a JSON string is made of, and none of it is this
+    # script's to read as an escape.
+    printf '{\n'
+    printf '  "workspace": %s,\n' "$(json_string "$WORKSPACE_PATH")"
+    printf '  "compose_project": %s,\n' "$(json_string "$(compose_project_name)")"
+    printf '  "ports": {"app": %s, "pgadmin": %s},\n' "${port:-null}" "${pgadmin:-null}"
+    printf '  "baked": {\n'
+    printf '    "dev": true,\n'
+    printf '    "prod": %s,\n' "$([ -f "$WORKSPACE_PATH/$PROD_COMPOSE_FILE" ] && echo true || echo false)"
+    printf '    "scaled": %s\n' "$([ -f "$WORKSPACE_PATH/$SCALED_COMPOSE_FILE" ] && echo true || echo false)"
+    printf '  },\n'
+    printf '  "containers": %s,\n' "$(workspace_containers | json_array)"
+    printf '  "git": %s,\n' "$(git_json)"
+    printf '  "project": %s\n' "${project:-null}"
+    printf '}\n'
   }
 
   # git_json
@@ -634,7 +646,7 @@
     # commit — newest first — which 'eject' reverts.
   git_json() {
     local inserts
-    if [ ! -d "$WORKSPACE_PATH/.git" ]; then echo '{"repo": false}'; return; fi
+    if [ ! -d "$WORKSPACE_PATH/.git" ]; then printf '{"repo": false}\n'; return; fi
     inserts=$(
       active_inserts | \
       while IFS=$'\x1f' read -r sha subject date; do
@@ -642,10 +654,11 @@
           "$sha" "$(echo "$subject" | awk '{print $2}')" "$(json_string "$subject")" "$date"
       done
     )
-    echo "{\"repo\": true, \"clean\": $(workspace_dirty && echo false || echo true)," \
-      "\"head\": $(json_string "$(git_read log --format='%h %s' -n 1 2>/dev/null)")," \
-      "\"identity\": $(json_string "$GIT_NAME <$GIT_EMAIL>")," \
-      "\"inserts\": [${inserts%,}]}"
+    printf '{"repo": true, "clean": %s, "head": %s, "identity": %s, "inserts": [%s]}\n' \
+      "$(workspace_dirty && echo false || echo true)" \
+      "$(json_string "$(git_read log --format='%h %s' -n 1 2>/dev/null)")" \
+      "$(json_string "$GIT_NAME <$GIT_EMAIL>")" \
+      "${inserts%,}"
   }
 
   # status_report
@@ -1300,14 +1313,20 @@ if [ $# -gt 0 ]; then
         if [ -z "$PLAN" ]; then
           echo "Nothing to insert: the project already carries every cartridge of '$1'."
         else
-          while IFS= read -r INSERT; do
+          # The plan is read on its own descriptor, not on stdin: the
+          # container each insert runs in attaches to stdin and drains
+          # whatever is there, and a plan left on stdin is eaten after
+          # the first line — the loop then ends on EOF, quietly and with
+          # a zero exit, having inserted one cartridge of the several
+          # the collection asked for.
+          while IFS= read -r INSERT <&3; do
             workspace_compose run \
               --rm \
               --name "${APP_NAME}_workbench_${ENTRYPOINT_COMMAND}" \
               --volume $WORKBENCH_VOLUME \
               app $CONTAINER_ENTRYPOINT add $INSERT && \
             workspace_commit "Insert $INSERT" || exit 1
-          done <<< "$PLAN"
+          done 3<<< "$PLAN"
 
           if workspace_needs_database && \
              ! grep -q "^  database:" "$WORKSPACE_PATH/$COMPOSE_FILE"; then

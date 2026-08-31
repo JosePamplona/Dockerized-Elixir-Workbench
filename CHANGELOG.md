@@ -204,6 +204,55 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - ash v0.4.0: `--data-layer` takes several, as ash-hq.org's checkboxes
   do; `mix workbench.ash.site` checks that the site still treats them
   as independent.
+- **No Phoenix installer setting.** `PHX_NEW_VERSION` is gone from
+  `config.conf`: `new` asks hex.pm for the newest `phx_new` — or takes
+  `./wb.sh new --phx-new VERSION`, for when there is a reason to pin —
+  and stamps whatever it resolved into the workspace's own
+  `Dockerfile.local` (`ARG PHX_NEW`), which every other command reads
+  back to name the toolchain image. Nobody chooses a version, and the
+  choice is still written: it is the generator the base cartridges take
+  their delta with, so it can be neither a moving target (the same repo
+  built twice would give two toolchains) nor one global default for
+  workspaces created months apart. A workspace made before the stamp
+  names no installer and keeps the bare `workbench:<elixir>-<otp>` tag
+  it was built with.
+- `status --json` carries `phx.generator`: which `phx.new` made the
+  project, where that is recorded (`Dockerfile.local` for a workspace
+  the workbench made, `mix.exs` for a project generated elsewhere), and
+  which installer is at hand. The plain report says it in a line, and
+  says what to do when the two differ. The base cartridges refuse on
+  that difference, and until now nothing showed it until one of them
+  did: a console can put it on the screen before anyone presses Insert.
+- `PhxDelta.generator_check/1` reads that stamp instead of inferring the
+  generator from `{:phoenix, "~> x.y.z"}`. The requirement was only ever
+  a proxy — `phx.new` happens to write its own version there — and it
+  said the wrong thing twice: bumping Phoenix, an ordinary thing, made
+  every base cartridge refuse on a project it had not touched; and any
+  other form of the requirement (`"~> 1.8"`, a pinned version, a moved
+  dep) turned the check off silently. The stamp is written, is the
+  project's, and survives both. `mix.exs` stays as the fallback for a
+  project generated outside the workbench, and the refusal now names the
+  remedy that works here — `./wb.sh build`, which rebuilds the toolchain
+  from the workspace's own Dockerfile — instead of an `archive.install`
+  thrown away with the container.
+- One name for the state of a box that does not work yet: **not done**.
+  It was `pending` on the chip, "Not ported yet" on the button, "Not
+  written yet" on the shelf's plank and "not ported yet" in the box's
+  summary — and the last two contradicted each other. Both of those
+  words claimed something about where the work comes from, and neither
+  is true: a box like stripe is designed from an implementation in
+  another project, so it is no port and no blank page. "Not done" says
+  only what the reader can act on; where the work comes from belongs in
+  the box's own paper, which has room for it. The manifest keeps
+  `pending?/0` — the wire name stays, the copy changes. Every surface
+  says it now: the mock's chip, button, plank and caption, the
+  LiveView console (which printed the state twice, once from `facts/1`
+  and once from its own chip — the duplicate is gone), `workbench
+  .expand`'s refusal, and the docs of `pending?/0` wherever they
+  explained it, stripe's three papers included — whose NEED.md also
+  stopped describing a world that ended with `workbench.setup`: what
+  there is of the box is a manifest and its papers, and what happens if
+  you ask for it is that `./wb.sh add stripe` refuses, naming it.
 - `./wb.sh stacks [--json | -n N | use TAG]`: the usable technology
   stacks, asked of Docker Hub itself (recent `hexpm/elixir`
   `-debian-*-slim` tags, no RCs, version-sorted). `use TAG` checks the

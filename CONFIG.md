@@ -5,9 +5,11 @@ The configuration file `config.conf` configures the projects `./wb.sh new` creat
 
 ## Project creation configuration
 
-Read by the creation command (`new`): the workspace, the name, the stack the images are built from, and the Phoenix installer. Updating them has no impact on an already created project.
+Read by the creation command (`new`): the workspace, the name and the stack the images are built from. Updating them has no impact on an already created project.
 
 The three stack versions are the parts of one `hexpm/elixir` image tag (`ELIXIR-erlang-ERLANG-debian-DEBIAN`). The usable list lives on Docker Hub, not in the file: `./wb.sh stacks` shows the recent ones (`--json` for tools) and `./wb.sh stacks use TAG` checks the image exists and writes the three below.
+
+There is no Phoenix installer setting either. `new` takes the newest `phx_new` on hex — or the one `./wb.sh new --phx-new VERSION` names, when there is a reason to pin — and stamps it into the workspace's own `Dockerfile.local` (`ARG PHX_NEW`). It is the generator the base cartridges take their delta with, so it belongs to the project that was generated with it: every other command reads it back from there, and the toolchain image is tagged `workbench:<elixir>-<otp>-phx<version>` accordingly. Two workspaces created months apart keep their own, and neither moves under the other's feet.
 
 | Variable | Type | Example | Description |
 | --: | :-- | :-- | :-- |
@@ -16,7 +18,6 @@ The three stack versions are the parts of one `hexpm/elixir` image tag (`ELIXIR-
 | `ELIXIR_VERSION` | string | `"1.17.3"` | Elixir version component from app Docker image to use.<br/>Available Versions: <https://hub.docker.com/r/hexpm/elixir/tags> |
 | `ERLANG_VERSION` | string | `"27.1.1"` | Erlang version component from app Docker image to use.<br/>Available Versions: <https://hub.docker.com/r/hexpm/elixir/tags> |
 | `DEBIAN_VERSION` | string | `"buster-20240612-slim"` | Debian version component from app Docker image to use.<br/>Available Versions: <https://hub.docker.com/r/hexpm/elixir/tags> |
-| `PHX_NEW_VERSION` | string | `"1.8.12"` | Phoenix installer (`phx_new` archive) baked into the toolchain image. It generates the project, and the base cartridges (mailer, gettext, ecto, esbuild, tailwind, html, live, dashboard) take their delta with it — and refuse another version than the one that generated the project, read off `{:phoenix, "~> x.y.z"}` in `mix.exs`. Changing it takes a `./wb.sh build` and applies to projects created from then on; projects already created keep asking for theirs.<br/>Available Versions: <https://hex.pm/packages/phx_new> |
 
 ## Git
 

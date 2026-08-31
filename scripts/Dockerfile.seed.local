@@ -48,9 +48,13 @@ RUN chown elixir:elixir /app
 USER elixir
 
 # install hex + rebar and Phoenix (into the user's own home). The
-# installer is pinned: it generates the project and, later, the delta
-# every base cartridge takes — which refuses a phx.new other than the
-# one that made the project. Same version, same generator, same delta.
+# installer is stamped here at creation — hex's newest, or the one
+# 'new --phx-new' named — and never moves after: it generates the
+# project and, later, the delta every base cartridge takes, which
+# refuses a phx.new other than the one that made the project. Same
+# version, same generator, same delta. The value is the workspace's
+# record of its own generator, and it is what makes this file enough
+# on its own: a clone with no workbench builds the same image from it.
 ARG PHX_NEW="%{phx_new_version}"
 RUN mix local.hex --force && \
     mix local.rebar --force && \

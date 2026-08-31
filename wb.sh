@@ -93,11 +93,6 @@
   # Docker ---------------------------------------------------------------------
 
     APP_NAME=$( echo "$LOWER_CASE" | tr ' ' '-' )
-    # Bare toolchain image, shared by every workspace of the same stack —
-    # the Phoenix installer included: it is the generator the base
-    # cartridges take their delta with, so another installer is another
-    # image, and a workspace keeps the one that made its project.
-    TOOLCHAIN_IMAGE="workbench:${ELIXIR_VERSION}-${ERLANG_VERSION}-phx${PHX_NEW_VERSION}"
     # The workspace's own dev image name. Standalone it is built from the
     # project's Dockerfile.local; with the workbench present, `new` seeds
     # it as an alias (docker tag) of the shared toolchain image.
@@ -118,6 +113,25 @@
           "$WORKSPACE_PATH/$COMPOSE_FILE" | head -n 1
       )
       APP_NAME="${LOCAL_IMAGE%:local}"
+      # …and for the Phoenix installer that generated it. There is no
+      # setting for it: 'new' asks hex for the newest phx_new (or takes
+      # --phx-new) and stamps it into the workspace's own
+      # Dockerfile.local, which is read back here. It is the generator
+      # the base cartridges take their delta with, so it can be neither
+      # a moving target nor one global default shared by workspaces
+      # created months apart.
+      PHX_NEW_VERSION=$(
+        sed -n 's/^ARG PHX_NEW="\(.*\)"$/\1/p' \
+          "$WORKSPACE_PATH/$LOCAL_DOCKERFILE" 2> /dev/null | head -n 1
+      )
+    fi
+    # Bare toolchain image, shared by every workspace of the same stack
+    # and installer: another installer is another image, and a workspace
+    # keeps the one that made its project. A workspace made before the
+    # stamp names no installer, and keeps the bare tag it was built with.
+    if [ -n "$PHX_NEW_VERSION" ]
+    then TOOLCHAIN_IMAGE="workbench:${ELIXIR_VERSION}-${ERLANG_VERSION}-phx${PHX_NEW_VERSION}"
+    else TOOLCHAIN_IMAGE="workbench:${ELIXIR_VERSION}-${ERLANG_VERSION}"
     fi
     # Ports the services bind INSIDE the containers; the host ports are
     # chosen per workspace and mapped to these in its compose file.
@@ -214,6 +228,16 @@
       port=$((port + 1))
     done
     echo $port
+  }
+
+  # latest_phx_new
+    # The newest stable phx_new on hex — what 'new' stamps into the
+    # workspace when the command line does not name one. The workbench
+    # keeps no version of its own: the installer is Phoenix's to release
+    # and the workspace's to remember.
+  latest_phx_new() {
+    curl -fs "https://hex.pm/api/packages/phx_new" | \
+      grep -o '"latest_stable_version":"[^"]*"' | cut -d'"' -f4
   }
 
   # workspace_compose [COMMAND...]
@@ -883,7 +907,12 @@
       "the workbench features with the 'add' command — 'add chiefs_setup'" \
       "inserts the workbench's own picks, one commit each." \
       "- OPTIONS: It can accept all option flags from the task 'mix phx.new'" \
-      "  (${Li}https://hexdocs.pm/phoenix/Mix.Tasks.Phx.New.html${R})."
+      "  (${Li}https://hexdocs.pm/phoenix/Mix.Tasks.Phx.New.html${R})." \
+      "- --phx-new VERSION: the Phoenix installer to generate with. There" \
+      "  is no setting for it: hex's newest phx_new is taken otherwise," \
+      "  and whichever it is gets stamped into the workspace's own" \
+      "  Dockerfile.local — the generator the base cartridges take their" \
+      "  delta with is the project's, for good, not a default that moves."
 
     print_command "add [FEATURE] [OPTIONS]"
     section_content \
@@ -1144,6 +1173,29 @@ if [ $# -gt 0 ]; then
 
   elif [ "$1" == "new" ]; then
     shift
+
+    # The Phoenix installer for this creation. Nobody configures it:
+    # --phx-new pins it when there is a reason to (a release to avoid, a
+    # team standard), hex decides otherwise — once, here — and whatever
+    # it resolves to is stamped into the workspace's Dockerfile.local, so
+    # this project keeps that generator for good.
+    PHX_NEW_VERSION=""
+    PHX_NEW_ARGS=()
+    while [ $# -gt 0 ]; do
+      case "$1" in
+        --phx-new) PHX_NEW_VERSION="$2"; shift 2 ;;
+        --phx-new=*) PHX_NEW_VERSION="${1#*=}"; shift ;;
+        *) PHX_NEW_ARGS+=("$1"); shift ;;
+      esac
+    done
+    set -- "${PHX_NEW_ARGS[@]}"
+    if [ -z "$PHX_NEW_VERSION" ]; then
+      PHX_NEW_VERSION=$(latest_phx_new)
+      [ -n "$PHX_NEW_VERSION" ] || terminate \
+        "hex.pm did not answer for phx_new. Name a version: ./$(basename $0) new --phx-new 1.8.13"
+      echo "Phoenix installer: ${B}phx_new $PHX_NEW_VERSION${R} (the newest on hex; --phx-new names another)."
+    fi
+    TOOLCHAIN_IMAGE="workbench:${ELIXIR_VERSION}-${ERLANG_VERSION}-phx${PHX_NEW_VERSION}"
 
     # Host ports for this workspace: first available ones.
     APP_PORT=$(first_free_port 4000)

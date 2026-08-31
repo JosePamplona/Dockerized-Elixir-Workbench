@@ -44,6 +44,22 @@ Three layers, the same three the covers have:
 | The cartridges' diagrams (`assets/diagrams/`) | the SVGs they export | drawn through the skill, so the house comes in with the profile |
 | The covers | nothing, for now | `covers.py` keeps its constants; reading violet and gold from here is a four-line change for the next cover |
 
+## The components
+
+Beyond colour and type, the house has two pieces of notation, projected
+to `generated/components.css` and consumed everywhere a cartridge shows
+its face — the console mock, the LiveView console, the box-back plates:
+
+* **`.cart-ref`** — every mention of a cartridge, always a link to its
+  detail. Three states: bare (on the shelf: hollow dot), `.in`
+  (inserted: good dot), `.unknown` (no such cartridge: dashed, struck,
+  no link). It never wears the gold. A printed back plate uses the bare
+  form — a plate knows no project.
+* **`.stamp`** — the golden state seal (`INSERTED`): the accent plate
+  in condensed uppercase, tilted by whoever places it. This is one of
+  the accent's three canonical uses (a button, a stamp, a focal node),
+  and why nothing else is gold.
+
 ## The rules
 
 * **Edit the tokens, run the build.** A generated file edited by hand is

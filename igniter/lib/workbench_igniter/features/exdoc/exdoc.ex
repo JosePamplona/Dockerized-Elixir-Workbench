@@ -23,18 +23,8 @@ defmodule WorkbenchIgniter.Features.Exdoc do
   def console, do: [doors: [{"docs", "/dev/docs"}]]
 
   @impl true
-  def flag, do: :exdoc
-
-  @impl true
-  def argv(opts) do
-    ["--project-name", opts[:project_name], "--repo-url", opts[:repo_url]] ++
-      if(opts[:version], do: ["--version", opts[:version]], else: []) ++
-      if(opts[:guidelines_url],
-        do: ["--guidelines-url", opts[:guidelines_url]],
-        else: []
-      ) ++
-      flags(opts, [:coveralls, :auth0])
-  end
+  def afterwards,
+    do: "./wb.sh mix docs generates the site; --build does it on the insert."
 
   # The installer's options, one line each: the task's "## Options"
   # section and the help a form shows are rendered from here.
@@ -43,10 +33,10 @@ defmodule WorkbenchIgniter.Features.Exdoc do
     [
       project_name: "Display name (default: capitalized app name).",
       repo_url: "Repository URL for `source_url`/`authors`.",
-      guidelines_url: "URL of a coding guidelines markdown to download as the \"Coding guidelines\" page. Optional.",
       version: "The version the pages are stamped with (titles, the 404 page) until `mix version` sets the real one. Default: `0.0.0`.",
       coveralls: "The coveralls feature is composed too: the coverage report is served beside the docs (`/cover`), with its page and the controller action.",
-      auth0: "The auth0 feature is composed too: the \"Get access tokens\" page and its scripts, to try the API from the docs."
+      auth0: "The auth0 feature is composed too: the \"Get access tokens\" page and its scripts, to try the API from the docs.",
+      build: "Run `mix docs` once the insert is applied, so the site has pages on first boot. Off by default: it needs the dependencies fetched and compiled."
     ]
   end
 
@@ -59,15 +49,16 @@ defmodule WorkbenchIgniter.Features.Exdoc do
         project_name: :string,
         version: :string,
         repo_url: :string,
-        guidelines_url: :string,
         coveralls: :boolean,
-        auth0: :boolean
+        auth0: :boolean,
+        build: :boolean
       ],
       defaults: [
         version: "0.0.0",
         repo_url: "https://github.com/user/repo",
         coveralls: false,
-        auth0: false
+        auth0: false,
+        build: false
       ]
     }
   end
@@ -127,6 +118,15 @@ defmodule WorkbenchIgniter.Features.Exdoc do
     |> adjust_router(router, app_name, web_module, opts)
     |> plant_assets(app_name, opts)
     |> plant_test_dummies(opts)
+    |> build_docs(opts)
+  end
+
+  # `--build`: generate the site once the patch set is applied, so the
+  # docs door has pages the first time it is opened. Queued, never run
+  # inline — `mix docs` needs the dependencies fetched and compiled,
+  # which only happens after the files land.
+  defp build_docs(igniter, opts) do
+    if opts[:build], do: Igniter.add_task(igniter, "docs", []), else: igniter
   end
 
   # --- Controller and tests ---------------------------------------------------
@@ -192,11 +192,7 @@ defmodule WorkbenchIgniter.Features.Exdoc do
           ~s|{"CHANGELOG.md", [title: "Changelog"]}|,
           only(opts[:auth0], ~s|{"assets/exdoc/token.md", [title: "Get access tokens"]}|),
           only(opts[:ecto], ~s|{"assets/exdoc/database.md", [title: "Database"]}|),
-          only(opts[:coveralls], ~s|{"TESTING.md", [title: "Test Suite Report"]}|),
-          only(
-            opts[:guidelines_url],
-            ~s|{"assets/exdoc/coding.md", [title: "Coding guidelines"]}|
-          )
+          only(opts[:coveralls], ~s|{"TESTING.md", [title: "Test Suite Report"]}|)
         ],
         ",\n    "
       )
@@ -206,8 +202,7 @@ defmodule WorkbenchIgniter.Features.Exdoc do
         [
           only(opts[:auth0], ~s|"assets/exdoc/token.md"|),
           only(opts[:coveralls], ~s|"TESTING.md"|),
-          only(opts[:ecto], ~s|"assets/exdoc/database.md"|),
-          only(opts[:guidelines_url], ~s|"assets/exdoc/coding.md"|)
+          only(opts[:ecto], ~s|"assets/exdoc/database.md"|)
         ],
         ",\n      "
       )
@@ -322,7 +317,6 @@ defmodule WorkbenchIgniter.Features.Exdoc do
     |> plant_if(opts[:auth0], "token.md", "assets/exdoc/token.md")
     |> plant_testing_placeholder(opts)
     |> plant_database_placeholder(opts)
-    |> download_guidelines(opts)
   end
 
   defp plant_asset(igniter, asset, path) do
@@ -372,38 +366,6 @@ defmodule WorkbenchIgniter.Features.Exdoc do
     end
   end
 
-  defp download_guidelines(igniter, opts) do
-    case opts[:guidelines_url] do
-      nil ->
-        igniter
-
-      url ->
-        # Mix tasks don't start dependency applications, and Req needs its
-        # Finch pool running before it can make requests.
-        {:ok, _} = Application.ensure_all_started(:req)
-
-        try do
-          Igniter.create_new_file(igniter, "assets/exdoc/coding.md", Req.get!(url).body,
-            on_exists: :overwrite
-          )
-        rescue
-          error ->
-            # The page is referenced from the mix.exs docs extras: a
-            # placeholder keeps `mix docs` working when the download fails.
-            igniter
-            |> Igniter.create_new_file(
-              "assets/exdoc/coding.md",
-              "# Coding guidelines\n\n> Download failed during setup; " <>
-                "fetch the page from <#{url}> and replace this file.\n",
-              on_exists: :skip
-            )
-            |> Igniter.add_warning(
-              "Could not download the coding guidelines from #{url} " <>
-                "(#{Exception.message(error)}); a placeholder page was created."
-            )
-        end
-    end
-  end
 
   # --- Dummy documentation pages ----------------------------------------------
 

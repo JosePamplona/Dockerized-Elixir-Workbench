@@ -1,8 +1,8 @@
 defmodule WorkbenchIgniter.Features.Mock do
   @moduledoc """
-  Mock library for tests — part of the trivial dep-only group toggled by
-  `--enhance`. Also composed directly by features whose generated tests
-  use it (healthcheck, coveralls).
+  Mock library for tests — part of the trivial dep-only group (a
+  chiefs_setup pick). Also composed directly by features whose generated
+  tests use it (healthcheck, coveralls).
   """
   use WorkbenchIgniter.Feature
 
@@ -19,12 +19,6 @@ defmodule WorkbenchIgniter.Features.Mock do
 
   @impl true
   def task, do: "workbench.install.mock"
-
-  @impl true
-  def enabled?(opts), do: opts[:enhance] == true
-
-  @impl true
-  def enabled_by, do: :enhance
 
   @doc "Task metadata, exposed unchanged through the mix task shell."
   def info(_argv, _composing_task) do

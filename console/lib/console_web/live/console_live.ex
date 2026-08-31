@@ -200,7 +200,7 @@ defmodule ConsoleWeb.ConsoleLive do
           </div>
           <button :if={not @status["git"]["clean"]} class="btn" phx-click="run" phx-value-args="commit">Commit pending changes</button>
         <% else %>
-          <p class="note">phx.new initialises the repository; new2 makes the first commit.</p>
+          <p class="note">phx.new initialises the repository; new makes the first commit.</p>
         <% end %>
       </div>
     </section>
@@ -243,8 +243,8 @@ defmodule ConsoleWeb.ConsoleLive do
     entries =
       Enum.filter(assigns.catalog, fn e ->
         case assigns.filter do
-          "standalone" -> e["standalone"]
-          "composed" -> not e["standalone"]
+          "collection" -> e["collection"]
+          "base" -> e["base"]
           "covered" -> e["covers"]["front"] != nil
           _ -> true
         end
@@ -256,7 +256,7 @@ defmodule ConsoleWeb.ConsoleLive do
     <div class="shelf-head">
       <h2>Cartridges <span class="label">{length(@catalog)} on the shelf</span></h2>
       <div class="filters" role="group">
-        <button :for={{f, label} <- [{"all", "All"}, {"standalone", "Standalone"}, {"composed", "Composed by setup"}, {"covered", "With a box"}]}
+        <button :for={{f, label} <- [{"all", "All"}, {"collection", "Collections"}, {"base", "Base"}, {"covered", "With a box"}]}
           class="btn" phx-click="filter" phx-value-filter={f} aria-pressed={to_string(@filter == f)}>{label}</button>
       </div>
     </div>
@@ -300,9 +300,9 @@ defmodule ConsoleWeb.ConsoleLive do
         <div class="sheet">
           <div class="head">
             <div class="kicker">
-              <span class="chip">{if @box["standalone"], do: "standalone", else: "composed"}</span>
+              <span :for={fact <- facts(@box)} class="chip">{fact}</span>
               <span :if={@box["version"]} class="chip">v{@box["version"]["version"]}</span>
-              <span :if={@box["pending"]} class="chip warn">pending</span>
+              <span :if={@box["pending"]} class="chip warn">not done</span>
               <span :if={@installed} class="chip good">inserted</span>
             </div>
             <h4>{@box["name"]}</h4>
@@ -334,18 +334,18 @@ defmodule ConsoleWeb.ConsoleLive do
                 </div>
               </div>
             </div>
-            <div :if={@box["requires"] != [] or @box["implies"] != [] or @box["afterwards"]} class="deps">
+            <div :if={@box["requires"] != [] or @box["members"] != [] or @box["afterwards"]} class="deps">
               <span :if={@box["requires"] != []} class="k">Builds on</span>
               <span :if={@box["requires"] != []} class="v"><span :for={r <- @box["requires"]} class={"chip #{if r in @missing, do: "warn", else: "good"}"}>{r} {if r in @missing, do: "✗", else: "✓"}</span></span>
-              <span :if={@box["implies"] != []} class="k">Comes with</span>
-              <span :if={@box["implies"] != []} class="v"><span :for={i <- @box["implies"]} class="chip">{i}</span></span>
+              <span :if={@box["members"] != []} class="k">Inserts</span>
+              <span :if={@box["members"] != []} class="v"><span :for={m <- @box["members"]} class="chip" title={Enum.join(m["argv"], " ")}>{m["name"]}</span></span>
               <span :if={@box["afterwards"] && not @locked} class="k">Afterwards</span>
               <span :if={@box["afterwards"] && not @locked} class="v after">{@box["afterwards"]}</span>
             </div>
             <div class="acts">
               <button class={"go #{if @locked, do: "done"}"} type="submit" disabled={@box["pending"] or @locked or @missing != [] or (@status && not @status["git"]["clean"])}>
                 {cond do
-                  @box["pending"] -> "Not ported yet"
+                  @box["pending"] -> "Not done yet"
                   @locked -> "Already inserted"
                   @missing != [] -> "Insert #{hd(@missing)} first"
                   @installed -> "Add to cartridge"
@@ -395,6 +395,17 @@ defmodule ConsoleWeb.ConsoleLive do
   end
 
   # --- helpers -----------------------------------------------------------------
+
+  # What is true of a box, not what kind of box it is: there is one
+  # kind. The facts are independent, so a box can carry several — and
+  # most carry none.
+  defp facts(box) do
+    [
+      box["collection"] && "inserts #{length(box["members"] || [])}",
+      box["base"] && "base"
+    ]
+    |> Enum.filter(&is_binary/1)
+  end
 
   defp installed(status), do: Enum.filter(get_in(status, ["project", "cartridges"]) || [], & &1["installed"])
   defp app_up?(status), do: Enum.any?(status["containers"] || [], &(&1["State"] == "running" and &1["Service"] =~ ~r/^app\d*$/))

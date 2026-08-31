@@ -4,7 +4,7 @@ Liveness and readiness probes, as **the first plug of the endpoint**.
 What a container orchestrator or a load balancer consumes, and nothing
 else.
 
-Standalone cartridge: no setup composes it. Install it on demand with
+Install it on demand with
 
 ```sh
 ./wb.sh add healthcheck2

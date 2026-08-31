@@ -3,12 +3,12 @@
 OS process monitoring (`:os_mon`).
 
 * **Task**: `mix workbench.install.osmon`
-* **Enabled by**: `--enhance` on `workbench.setup` (config.conf: `ENHANCE`)
+* **Inserted by**: `wb.sh add osmon`; a chiefs_setup pick (the trivial dep-only group).
 
 ## Description
 
 Machine resource monitoring (CPU, memory, disk) visible from the
-dashboard. Part of the trivial group toggled by `--enhance`; dep-less —
+dashboard. Part of the trivial group (a chiefs_setup pick); dep-less —
 it enables an OTP application instead of adding a dependency.
 
 ## What it installs

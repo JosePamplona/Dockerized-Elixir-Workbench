@@ -7,9 +7,8 @@ ExMachina test factories.
 
 ## Description
 
-Test data factories: realistic sample records in one line. Standalone:
-not in the `WorkbenchIgniter.Features` registry — `workbench.setup` never
-composes it.
+Test data factories: realistic sample records in one line. Installed on
+demand with `wb.sh add exmachina`; no collection picks it.
 
 ## What it installs
 

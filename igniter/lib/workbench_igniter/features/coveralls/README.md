@@ -4,8 +4,10 @@ Test coverage with ExCoveralls, the workbench HTML report and the
 `mix cover` task.
 
 * **Task**: `mix workbench.install.coveralls`
-* **Enabled by**: `--coveralls` (config.conf: `COVERALLS`)
-* **Argv from setup**: `--interface <i>` `[--theme <t>]` `[--exdoc]` — whether the project has html (the components folder to leave out) is read off the project.
+* **Inserted by**: `wb.sh add coveralls`; a chiefs_setup pick.
+* **Options**: `--interface <i>` `[--theme <t>]` `[--exdoc]` `[--build]` — whether
+  the project has html (the components folder to leave out) is read off
+  the project. As a chiefs_setup pick it receives `--exdoc`.
 
 ## Description
 
@@ -61,8 +63,13 @@ ran them sees and become part of what the project shows about itself.
 * `--interface` - `rest` skips `open_api` files in the report. Default:
   `rest`.
 * `--exdoc` - Install the `mix cover` task (ExDoc integration).
-* `--theme` - Report theme: `exdoc-ish` | `custom`. Default: `exdoc-ish`
-  (config.conf: `COVERAGE_THEME`).
+* `--theme` - Report theme: `exdoc-ish` | `custom`. Default:
+  `exdoc-ish`.
+* `--build` - Run the suite once the insert is applied, so the report
+  has numbers. Off by default: it needs the dependencies compiled and,
+  on a project with Ecto, a test database — the installer queues
+  `ecto.create` and `ecto.migrate` before `mix cover`, but the compose
+  must actually carry a database service (`./wb.sh bake`).
 
 ## Contents
 

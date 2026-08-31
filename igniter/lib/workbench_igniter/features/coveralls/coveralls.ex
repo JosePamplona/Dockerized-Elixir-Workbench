@@ -48,24 +48,6 @@ defmodule WorkbenchIgniter.Features.Coveralls do
   @impl true
   def console, do: [doors: [{"coverage", "/dev/docs/cover", when: {:cartridge, "exdoc"}}]]
 
-  @impl true
-  def flag, do: :coveralls
-
-  @impl true
-  def argv(opts) do
-    ["--interface", opts[:interface]] ++
-      theme_argv(opts) ++ flags(opts, [:exdoc])
-  end
-
-  # `--coverage-theme` in setup (config.conf `COVERAGE_THEME`) is this
-  # task's `--theme`; unset, the task default applies.
-  defp theme_argv(opts) do
-    case opts[:coverage_theme] do
-      nil -> []
-      theme -> ["--theme", theme]
-    end
-  end
-
   # The themes are the directories under assets/template — the same
   # list the installer checks --theme against.
   @impl true
@@ -87,9 +69,14 @@ defmodule WorkbenchIgniter.Features.Coveralls do
       minimum_coverage: "Minimum coverage percentage. Default: `80`.",
       interface: "`rest` skips `open_api` files in the coverage report. Default: `rest`.",
       exdoc: "The project uses the ExDoc feature: the `mix cover` task (which generates the `TESTING.md` report for the docs) is installed.",
-      theme: "HTML report theme, one of #{Enum.map_join(themes(), ", ", &"`#{&1}`")}: `exdoc-ish` mimics the ExDoc pages (sidebar, light/dark theme, fonts) so the report blends into the documentation site, `custom` is the original workbench report. Default: `exdoc-ish`."
+      theme: "HTML report theme, one of #{Enum.map_join(themes(), ", ", &"`#{&1}`")}: `exdoc-ish` mimics the ExDoc pages (sidebar, light/dark theme, fonts) so the report blends into the documentation site, `custom` is the original workbench report. Default: `exdoc-ish`.",
+      build: "Run the suite once the insert is applied, so the report has numbers. Off by default: it needs the dependencies compiled and, with Ecto, a test database — which means the compose has one (`./wb.sh bake`)."
     ]
   end
+
+  @impl true
+  def afterwards,
+    do: "./wb.sh mix cover runs the suite and writes the report; --build does it on the insert."
 
   @doc "Task metadata, exposed unchanged through the mix task shell."
   def info(_argv, _composing_task) do
@@ -101,13 +88,15 @@ defmodule WorkbenchIgniter.Features.Coveralls do
         minimum_coverage: :string,
         interface: :string,
         exdoc: :boolean,
-        theme: :string
+        theme: :string,
+        build: :boolean
       ],
       defaults: [
         minimum_coverage: "80",
         interface: "rest",
         exdoc: false,
-        theme: @default_theme
+        theme: @default_theme,
+        build: false
       ]
     }
   end
@@ -121,7 +110,13 @@ defmodule WorkbenchIgniter.Features.Coveralls do
     # Whether the project has html — the components folder to leave out
     # of the report — is read off the project, not asked.
     {facts, igniter} = WorkbenchIgniter.PhxDelta.facts(igniter)
-    opts = Keyword.put(igniter.args.options, :html, facts.html)
+
+    opts =
+      igniter.args.options
+      |> Keyword.put(:html, facts.html)
+      # --build's suite needs a test database when the project has one.
+      |> Keyword.put(:ecto, facts.ecto)
+
     {installed?, igniter} = installed?(igniter)
 
     cond do
@@ -152,6 +147,29 @@ defmodule WorkbenchIgniter.Features.Coveralls do
     |> create_coveralls_json(app_name, opts)
     |> plant_report_template(opts[:theme])
     |> plant_cover_task(opts)
+    |> build_report(opts)
+  end
+
+  # `--build`: run the suite once the patch set is applied, so the
+  # report has numbers before anyone opens it. Queued, never inline:
+  # `mix cover` needs the dependencies compiled, and — on a project with
+  # Ecto — a test database, which the tasks below create. It is off by
+  # default because that database has to exist first: on a project born
+  # without Ecto, `./wb.sh bake` puts the service in the compose.
+  defp build_report(igniter, opts) do
+    cond do
+      !opts[:build] ->
+        igniter
+
+      opts[:ecto] ->
+        igniter
+        |> Igniter.add_task("ecto.create", ["--quiet"])
+        |> Igniter.add_task("ecto.migrate", ["--quiet"])
+        |> Igniter.add_task("cover", [])
+
+      true ->
+        Igniter.add_task(igniter, "cover", [])
+    end
   end
 
   # --- mix.exs ----------------------------------------------------------------

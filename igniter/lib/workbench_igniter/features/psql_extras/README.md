@@ -3,13 +3,12 @@
 Postgres observability queries (`ecto_psql_extras`).
 
 * **Task**: `mix workbench.install.psql_extras`
-* **Enabled by**: `--enhance` on `workbench.setup` (config.conf: `ENHANCE`)
+* **Inserted by**: `wb.sh add psql_extras`; a chiefs_setup pick (the trivial dep-only group).
 
 ## Description
 
 Ready-made queries to diagnose database health (unused indexes, slow
-queries, locks). Part of the trivial dep-only group toggled by
-`--enhance`.
+queries, locks). Part of the trivial dep-only group (a chiefs_setup pick).
 
 ## What it installs
 

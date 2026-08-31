@@ -4,10 +4,11 @@ OpenAI assistant with the Conversations context (per-user persisted
 conversations and messages).
 
 * **Task**: `mix workbench.install.openai`
-* **Enabled by**: `--openai` (config.conf: `OPENAI`). **Implies
-  `--auth0`** (conversations belong to users).
-* **Ordering**: after `auth0`.
-* **Argv from setup**: `--project-name` `--interface`
+* **Inserted by**: `wb.sh add openai` — not a chiefs_setup pick: it
+  needs an OpenAI account.
+* **Requires**: `auth0` (conversations belong to users); the installer
+  refuses until it is in.
+* **Options**: `--project-name` `--interface`
 
 ## Description
 

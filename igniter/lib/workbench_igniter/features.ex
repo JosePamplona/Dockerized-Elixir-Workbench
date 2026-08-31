@@ -1,47 +1,49 @@
 defmodule WorkbenchIgniter.Features do
   @moduledoc """
-  Registry of workbench feature cartridges, in composition order.
+  Registry of workbench feature cartridges.
 
-  `workbench.setup` does not know individual features: it normalizes its
-  options through `normalize/1` (applying each feature's implied flags) and
-  then `compose/2` walks this list, composing the installer task of every
-  enabled feature with the argv its manifest builds. Adding a feature means
-  adding a `WorkbenchIgniter.Feature` module here — not editing setup.
+  There is one kind of cartridge: every one is installed on demand
+  (`wb.sh add <name>`), and a *collection* is just a cartridge whose
+  installer inserts other cartridges (`members/1` in its manifest —
+  chiefs_setup is one). Adding a feature means adding a
+  `WorkbenchIgniter.Feature` module here.
 
-  The list order *is* the composition order; ordering constraints between
-  features are documented in each feature's `@moduledoc`.
+  The list order is the shelf's: the collections first, then the
+  cartridges in the order they were written, then the base ones.
+  Ordering constraints between cartridges live in each one's
+  `requires/0`, and inside a collection, in its `members/1` order.
 
-  The standalone cartridges — installed by hand with `wb.sh add`, never
-  composed — are listed apart, so that `catalog/0` names every cartridge
-  there is while `all/0` stays the composition list. `entry/1` reads a
-  cartridge's manifest into a plain map (what `mix workbench.catalog`
-  prints) and `status/1` adds whether the target project carries it.
+  `entry/1` reads a cartridge's manifest into a plain map (what
+  `mix workbench.catalog` prints) and `status/1` adds whether the
+  target project carries it.
   """
 
   alias WorkbenchIgniter.Features
 
-  @features [
-    # Trivial dep-only group, toggled together by --enhance.
+  @cartridges [
+    # The collection: the chief's picks, inserted one commit each.
+    Features.ChiefsSetup,
+    # The house's settings on a stock project: one decision each.
+    Features.Ansi,
+    Features.Toolchain,
+    Features.Versioning,
+    # Trivial dep-only group.
     Features.Osmon,
     Features.PsqlExtras,
     Features.Credo,
     Features.Mock,
     Features.Exdebug,
-    # API interface (mutually exclusive, keyed on --interface).
+    # API interface (mutually exclusive: chiefs_setup inserts one).
     Features.Rest,
     Features.Graphql,
     Features.Coveralls,
     Features.Exdoc,
+    Features.Guidelines,
     Features.Enhancements,
     Features.Auth0,
     Features.Openai,
     Features.Healthcheck,
-    Features.Stripe
-  ]
-
-  # Standalone cartridges: no setup flag, never composed. In the order
-  # they were written.
-  @standalone [
+    Features.Stripe,
     Features.Githooks,
     Features.Exmachina,
     Features.Clustering,
@@ -59,21 +61,9 @@ defmodule WorkbenchIgniter.Features do
     Features.Dashboard
   ]
 
-  @doc "All registered features, in composition order."
-  @spec all() :: [module()]
-  def all, do: @features
-
-  @doc "The standalone cartridges: installed on demand, never composed."
-  @spec standalone() :: [module()]
-  def standalone, do: @standalone
-
-  @doc "Every cartridge: the composed ones in composition order, then the standalone."
+  @doc "Every cartridge, in shelf order."
   @spec catalog() :: [module()]
-  def catalog, do: @features ++ @standalone
-
-  @doc "Whether the cartridge is a standalone one."
-  @spec standalone?(module()) :: boolean()
-  def standalone?(feature), do: feature in @standalone
+  def catalog, do: @cartridges
 
   @doc """
   A cartridge's manifest as a plain map: what the catalog says about it
@@ -86,6 +76,7 @@ defmodule WorkbenchIgniter.Features do
   @spec entry(module()) :: map()
   def entry(feature) do
     info = if feature.pending?(), do: nil, else: feature.info([], nil)
+    members = members(feature, info)
 
     %{
       name: feature.name(),
@@ -95,21 +86,31 @@ defmodule WorkbenchIgniter.Features do
       # and the whole note the box carries.
       need: need(feature.need()),
       version: version(feature.version()),
-      flag: feature.flag(),
-      enabled_by: enabled_by(feature.enabled_by()),
       rerun: feature.rerun(),
-      implies: feature.implies(),
       requires: feature.requires(),
       afterwards: feature.afterwards(),
       console: console(feature.console()),
       # A base cartridge: a phx.new capability, in a default project
       # from birth and left out with its --no-* flag.
       base: String.to_atom(feature.name()) in WorkbenchIgniter.PhxDelta.capabilities(),
-      standalone: standalone?(feature),
+      # A collection: a cartridge whose installer inserts other
+      # cartridges. `members` is the recipe its default choices give —
+      # each one with the argv its installer gets.
+      collection: members != [],
+      members: members,
       pending: feature.pending?(),
       example: info && info.example,
       options: options(info, feature)
     }
+  end
+
+  # The recipe a collection's default choices give, for the catalog:
+  # each member with the argv its installer gets. [] for a plain
+  # cartridge.
+  defp members(_feature, nil), do: []
+
+  defp members(feature, %Igniter.Mix.Task.Info{defaults: defaults}) do
+    for {name, argv} <- feature.members(defaults || []), do: %{name: name, argv: argv}
   end
 
   @doc """
@@ -127,10 +128,6 @@ defmodule WorkbenchIgniter.Features do
       {entry(feature) |> Map.put(:installed, installed?) |> Map.put(:state, state), igniter}
     end)
   end
-
-  defp enabled_by(nil), do: nil
-  defp enabled_by({option, value}), do: %{option => value}
-  defp enabled_by(flag), do: flag
 
   defp version(nil), do: nil
   defp version({version, date}), do: %{version: version, date: date}
@@ -198,55 +195,11 @@ defmodule WorkbenchIgniter.Features do
   defp choice_value({value, doc}), do: %{value: value, doc: doc, requires: []}
   defp choice_value(value), do: %{value: value, doc: nil, requires: []}
 
-  @doc "Installer task names of the features already ported (for `composes:`)."
-  @spec tasks() :: [String.t()]
-  def tasks do
-    for feature <- @features, not feature.pending?(), do: feature.task()
-  end
-
   @doc """
-  Turns on the flags implied by the enabled features (e.g. `--stripe` or
-  `--openai` imply `--auth0`), iterating until the option set is stable so
-  chained implications also resolve.
+  The registered cartridge named `name`, or `nil`. The name is the one
+  everything outside the package knows the cartridge by (`wb.sh add
+  <name>`): its directory under `features/`.
   """
-  @spec normalize(keyword()) :: keyword()
-  def normalize(opts) do
-    implied =
-      for feature <- @features, feature.enabled?(opts), flag <- feature.implies() do
-        flag
-      end
-
-    normalized = Enum.reduce(implied, opts, &Keyword.put(&2, &1, true))
-
-    if normalized == opts, do: opts, else: normalize(normalized)
-  end
-
-  @doc """
-  Composes the installer of every enabled feature, in registry order, and
-  adds a notice for the enabled features whose installer is not ported yet.
-  """
-  @spec compose(Igniter.t(), keyword()) :: Igniter.t()
-  def compose(igniter, opts) do
-    {pending, ready} =
-      @features
-      |> Enum.filter(& &1.enabled?(opts))
-      |> Enum.split_with(& &1.pending?())
-
-    ready
-    |> Enum.reduce(igniter, fn feature, igniter ->
-      Igniter.compose_task(igniter, feature.task(), feature.argv(opts))
-    end)
-    |> notice_pending(pending)
-  end
-
-  defp notice_pending(igniter, []), do: igniter
-
-  defp notice_pending(igniter, pending) do
-    tasks = Enum.map_join(pending, ", ", & &1.task())
-
-    Igniter.add_notice(igniter, """
-    The following features were documented in README.md and .env, but \
-    their installers are not ported yet: #{tasks}.\
-    """)
-  end
+  @spec named(String.t()) :: module() | nil
+  def named(name), do: Enum.find(@cartridges, &(&1.name() == name))
 end

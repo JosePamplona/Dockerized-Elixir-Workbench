@@ -1,13 +1,13 @@
 defmodule WorkbenchIgniter.Features.Openai do
   @moduledoc """
   OpenAI assistant with the Conversations context. Requires auth0
-  (conversations belong to users), so enabling it forces `--auth0` on.
+  (conversations belong to users): the installer refuses until it is in.
 
   Full feature cartridge: manifest, install logic and the EEx templates it
   renders live in this directory; the `Mix.Tasks.Workbench.Install.Openai`
   shell in `task.ex` delegates here.
 
-  Ordering: composed after auth0.
+  Ordering: inserted after auth0.
   """
   use WorkbenchIgniter.Feature
 
@@ -18,16 +18,10 @@ defmodule WorkbenchIgniter.Features.Openai do
   @impl true
   def task, do: "workbench.install.openai"
 
+  # Assistants belong to users: what it installs builds on the Accounts
+  # context auth0 creates. The installer refuses while auth0 is not in.
   @impl true
-  def flag, do: :openai
-
-  @impl true
-  def implies, do: [:auth0]
-
-  @impl true
-  def argv(opts) do
-    ["--project-name", opts[:project_name], "--interface", opts[:interface]]
-  end
+  def requires, do: ["auth0"]
 
   # The installer's options, one line each: the task's "## Options"
   # section and the help a form shows are rendered from here.
@@ -70,15 +64,25 @@ defmodule WorkbenchIgniter.Features.Openai do
     app_module = Igniter.Project.Module.module_name_prefix(igniter)
     assistant = assistant_module(igniter)
 
-    case installed?(igniter) do
-      {true, igniter} ->
-        Igniter.add_notice(
-          igniter,
-          "#{inspect(assistant)} already exists: OpenAI is already installed, skipping."
-        )
+    case WorkbenchIgniter.Feature.missing_requirements(igniter, __MODULE__) do
+      {[], igniter} ->
+        case installed?(igniter) do
+          {true, igniter} ->
+            Igniter.add_notice(
+              igniter,
+              "#{inspect(assistant)} already exists: OpenAI is already installed, skipping."
+            )
 
-      {false, igniter} ->
-        install(igniter, app_module, opts)
+          {false, igniter} ->
+            install(igniter, app_module, opts)
+        end
+
+      {missing, igniter} ->
+        Igniter.add_issue(
+          igniter,
+          "#{name()} builds on #{Enum.join(missing, " and ")}, not in the project yet. " <>
+            "Insert that first: ./wb.sh add #{hd(missing)}"
+        )
     end
   end
 

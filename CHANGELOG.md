@@ -16,6 +16,82 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- One kind of cartridge. `workbench.setup` — the task that composed the
+  opinionated project — is retired and reborn as **chiefs_setup**, a
+  *collection*: a cartridge whose installer inserts other cartridges.
+  Its recipe (`members/1` in the manifest) is the old composition,
+  trimmed to the picks that need no external account — the dep-only
+  quintet, rest **or** graphql (`--interface`, the one choice the
+  collection owns), coveralls, exdoc, enhancements and healthcheck —
+  in the old composition order. auth0, openai and stripe stay à la
+  carte, their old `implies` turned into `requires`: the installer now
+  refuses, naming the missing box, instead of silently pulling it in.
+  With setup gone the composed/standalone split dies with it: the
+  behaviour loses `flag/enabled?/implies/argv/enabled_by`, the registry
+  is one list in shelf order, and the catalog marks `collection` (with
+  its members) instead of `standalone`/flag.
+- `mix workbench.expand`: the planning half of `wb.sh add` — one
+  `plan> NAME [ARGS]` line per install to run. A plain cartridge
+  expands to itself; a collection to its missing members, read off each
+  member's own mark. `wb.sh add` now expands first and inserts each
+  line as its own container run and its own `Insert NAME` commit, so
+  `eject` keeps reverting one cartridge alone — a collection leaves no
+  commit of its own, and re-adding it only inserts what is missing.
+- The design rule for collections, in the features README: a
+  collection's option must be a decision the collection itself owns,
+  explainable on the box without naming a member's switch; whoever
+  needs a member's option inserts the member. The rationale is
+  chiefs_setup's DESIGN.md.
+- Four cartridges for what the retired setup configured, each the one
+  decision it is, the first three joined to the chief's recipe:
+  **ansi** (`config :elixir, ansi_enabled: true`, so logs read through
+  Docker come out coloured), **toolchain** (`.tool-versions` written
+  from the versions actually running the installer — `mix.exs` only
+  carries a range — plus `/.elixir_ls/` in `.gitignore`: the two halves
+  of working on the project outside the container), **versioning** (the
+  initial version in `mix.exs` and the `CHANGELOG.md` opened at it) and
+  **guidelines** (the team's coding conventions downloaded from `--url`
+  into the docs site). guidelines builds on exdoc and *appends* its page
+  to the two lists exdoc's `docs:` block keeps, which takes the only
+  network call out of the exdoc installer.
+- `--build` on exdoc and coveralls: generate the site, and run the
+  suite, once the insert is applied — the `documentation` step the
+  retired creation ran, as an option of the cartridges that own it.
+  Queued (`Igniter.add_task/3`), off by default, and not in the chief's
+  recipe: it needs the dependencies compiled and, for coveralls on a
+  project with Ecto, a test database. `afterwards/0` on both names the
+  command for whoever leaves it off.
+- The generators and migration types (`migration_primary_key`,
+  `migration_timestamps`, `generators: [timestamp_type: …]`) are back,
+  inside **enhancements** rather than as a box of their own: they are
+  the configuration half of its `--id-type` and `--timestamps`, and two
+  cartridges writing one policy could contradict each other. Without
+  them `mix phx.gen.*` kept emitting `phx.new`'s defaults, so the
+  tables drifted from the schemas `MyApp.Schema` defines.
+- Changelogs backfilled for exdoc, coveralls and enhancements, as the
+  anatomy asks of a cartridge that predates the rule and gets changed.
+
+### Removed
+
+- `./wb.sh new` (opinionated) and `mix workbench.setup` (27 options,
+  `config.conf`-driven): `new2`/`setup2` take their names — the vanilla
+  creation is the only one. `config.conf` loses the whole "composed
+  project configuration" section (`INIT_VERSION`, `ID_TYPE`,
+  `TIMESTAMPS`, `INTERFACE`, `ENHANCE`, `EXDOC`, `COVERALLS`,
+  `COVERAGE_THEME`, `HEALTH`, `AUTH0`, `OPENAI`, `STRIPE`,
+  `CODING_GUIDELINES_URL`): features are cartridges now, and a
+  cartridge's options are set on its own installer. What those
+  variables configured has owners again — `versioning`, `toolchain`,
+  `enhancements`, `coveralls` and `guidelines` — reached by inserting
+  the box, not by editing this file.
+- The retired setup's `README.md` template, with no owner: a generated
+  README has to know every cartridge to list what the project carries,
+  which is the coupling this structure exists to remove. `phx.new`
+  writes one; the project writes its own from there.
+- The entrypoint's `documentation` branch, which ran `mix docs` and
+  `mix cover` after the opinionated creation: it is `--build` on exdoc
+  and coveralls now.
+
 - The workbench reads its own catalog. Every cartridge declares
   `installed?/1` — off the *same mark its installer's guard reads*, a
   module, a file or a dependency, so a status query and a re-run of the
@@ -149,12 +225,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   ecto's own options (`--database`, `--binary-id`: `phx.new` flags only
   Ecto reads, so the cartridge's) hanging from its box, and `--adapter`
   as the one generation-only choice. The *Afterwards* row of the box
-  reads the manifest.
-- Console mock: a *Dependencies* section in the box — what the
-  cartridge builds on, what the options as chosen add to that, what it
-  comes with, and what follows the insert — each cartridge a chip that
-  opens its box; a value whose requirement is missing is disabled and
-  says so, and Insert reads "Insert html first".
+  reads the manifest. It offers nothing else: `new` is vanilla and the
+  card stops at creation — the collection is picked up from the shelf,
+  like every other box.
 - `./wb.sh bake`: bakes the workspace's `docker-compose.yml` again from
   the seed for the project as it is now, keeping its ports, as one
   commit — what `add ecto` asks for next (`setup` then creates the

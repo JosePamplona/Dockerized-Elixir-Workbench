@@ -1,12 +1,11 @@
 defmodule WorkbenchIgniter.Features.Stripe do
   @moduledoc """
-  Stripe subscriptions. Requires auth0 (subscriptions belong to users), so
-  enabling it forces `--auth0` on.
+  Stripe subscriptions. Requires auth0: subscriptions belong to users.
 
-  Pending: documented in the generated README.md and .env, but the
-  installer is not ported yet — setup surfaces a notice instead of
-  composing it. When ported, it should be created directly as a cartridge
-  (see the checklist in the package README).
+  Pending: a manifest only — the installer is not done yet, so the
+  catalog shows the box as pending and nothing can insert it. When it
+  is done, it should be created directly as a cartridge (see the
+  checklist in the package README).
   """
   use WorkbenchIgniter.Feature
 
@@ -14,10 +13,7 @@ defmodule WorkbenchIgniter.Features.Stripe do
   def task, do: "workbench.install.stripe"
 
   @impl true
-  def flag, do: :stripe
-
-  @impl true
-  def implies, do: [:auth0]
+  def requires, do: ["auth0"]
 
   @impl true
   def pending?, do: true

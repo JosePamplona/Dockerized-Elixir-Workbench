@@ -1,8 +1,7 @@
 defmodule WorkbenchIgniter.Features.Githooks do
   @moduledoc """
-  git_hooks management. Standalone: not in the `WorkbenchIgniter.Features`
-  registry — `workbench.setup` never composes it, it is installed by hand
-  with `mix workbench.install.githooks`.
+  git_hooks management. Installed on demand with
+  `mix workbench.install.githooks` (`wb.sh add githooks`).
   """
   use WorkbenchIgniter.Feature
 

@@ -3,12 +3,13 @@
 REST API documented with OpenAPI (open_api_spex) and SwaggerUI.
 
 * **Task**: `mix workbench.install.rest`
-* **Enabled by**: `--interface rest` (the default; config.conf:
-  `INTERFACE`). Mutually exclusive with `graphql`.
+* **Inserted by**: `wb.sh add rest`; the chiefs_setup pick when its
+  `--interface` says `rest` (the default). Mutually exclusive with
+  `graphql`.
 * **Ordering**: before `healthcheck`, which autodetects the
-  `OpenApi.Spec` module in the patch set. Receives from setup the flags of
-  the enabled features that shape its spec: `--auth0`, `--openai`,
-  `--health`.
+  `OpenApi.Spec` module in the patch set. `--auth0`, `--openai` and
+  `--health` name the fellow cartridges that shape its spec
+  (chiefs_setup passes `--health`).
 
 ## Description
 

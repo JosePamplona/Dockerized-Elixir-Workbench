@@ -13,7 +13,7 @@ compiler stay, because html brings them. LiveView's docs carry no
 recipe for adding it to an existing project any more; this cartridge
 is that recipe, at the project's Phoenix.
 
-Standalone, base cartridge. Install it on demand with
+Base cartridge. Install it on demand with
 
 ```sh
 ./wb.sh add live

@@ -4,16 +4,17 @@ Workbench base enhancements: shared schema and helper, `mix db` and
 `mix version` tasks, and the base test suite.
 
 * **Task**: `mix workbench.install.enhancements`
-* **Enabled by**: `--enhance` (config.conf: `ENHANCE`), which also turns
-  on the trivial dep group (osmon, psql_extras, credo, mock, exdebug —
-  composed separately, see `../README.md`).
+* **Inserted by**: `wb.sh add enhancements`; a chiefs_setup pick,
+  inserted after the trivial dep group (osmon, psql_extras, credo, mock,
+  exdebug — see `../README.md`).
 * **Ordering**: before `auth0`, whose User schema uses the `MyApp.Schema`
-  this feature generates.
-* **Argv from setup**: `--project-name` `--interface`
+  this feature generates (`auth0` refuses until this is in).
+* **Options**: `--project-name` `--interface`
   `[--id-type --timestamps]`
-  `[--exdoc --auth0 --openai --stripe --health]` — what the project has
-  of Ecto, html, the mailer and the dashboard is read off the project,
-  not asked.
+  `[--exdoc --auth0 --openai --stripe --health]` name the fellow
+  cartridges that shape what it plants — what the project has of Ecto,
+  html, the mailer and the dashboard is read off the project, not asked.
+  As a chiefs_setup pick it receives `--interface --exdoc --health`.
 
 ## Description
 
@@ -43,7 +44,12 @@ here.
 ## What it installs
 
 * **Ecto group** (when the project has Ecto): `ecto_enum` and `html_entities`
-  deps; `MyApp.Helper` and `MyApp.Schema` (+ tests); the `mix db` task;
+  deps; the generators and migration configuration `--id-type` and
+  `--timestamps` decide (`migration_primary_key`, `migration_timestamps`
+  and `generators: [timestamp_type: :utc_datetime_usec]` in
+  `config.exs`) — the same policy `MyApp.Schema` carries, written where
+  `mix phx.gen.*` reads it, so the tables cannot drift from the schemas;
+  `MyApp.Helper` and `MyApp.Schema` (+ tests); the `mix db` task;
   and the DbSchema diagrams under the project's `assets/db_schema/`,
   picking the combo for the enabled features (`none`, `auth0`,
   `auth0_openai`, …). It also plants the files `mix db` would generate

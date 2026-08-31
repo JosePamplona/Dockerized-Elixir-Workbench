@@ -1,8 +1,7 @@
 defmodule WorkbenchIgniter.Features.Exmachina do
   @moduledoc """
-  ExMachina test factories. Standalone: not in the
-  `WorkbenchIgniter.Features` registry — `workbench.setup` never composes
-  it, it is installed by hand with `mix workbench.install.exmachina`.
+  ExMachina test factories. Installed on demand with
+  `mix workbench.install.exmachina` (`wb.sh add exmachina`).
   """
   use WorkbenchIgniter.Feature
 

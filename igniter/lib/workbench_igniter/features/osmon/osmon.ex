@@ -1,18 +1,13 @@
 defmodule WorkbenchIgniter.Features.Osmon do
   @moduledoc """
-  OS process monitoring (`:os_mon`) — part of the trivial group toggled by
-  `--enhance`. Dep-less: it patches `extra_applications` in `mix.exs`.
+  OS process monitoring (`:os_mon`) — part of the trivial dep-only group
+  (a chiefs_setup pick). Dep-less: it patches `extra_applications` in
+  `mix.exs`.
   """
   use WorkbenchIgniter.Feature
 
   @impl true
   def task, do: "workbench.install.osmon"
-
-  @impl true
-  def enabled?(opts), do: opts[:enhance] == true
-
-  @impl true
-  def enabled_by, do: :enhance
 
   @doc "Task metadata, exposed unchanged through the mix task shell."
   def info(_argv, _composing_task) do

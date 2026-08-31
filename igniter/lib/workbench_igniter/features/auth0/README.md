@@ -3,11 +3,11 @@
 Auth0 JWT authentication: Accounts context, User schema and token plug.
 
 * **Task**: `mix workbench.install.auth0`
-* **Enabled by**: `--auth0` (config.conf: `AUTH0`); also forced on by
-  `--openai` and `--stripe` (those cartridges' `implies/0`).
-* **Ordering**: after `enhancements` (the User uses `MyApp.Schema`) and
-  before `openai` (conversations belong to users).
-* **Argv from setup**: `--project-name` `--interface`
+* **Inserted by**: `wb.sh add auth0` — not a chiefs_setup pick: it needs
+  an Auth0 account. `openai` and `stripe` build on it (`requires`).
+* **Requires**: `enhancements` (the User uses `MyApp.Schema`); the
+  installer refuses until it is in.
+* **Options**: `--project-name` `--interface`
 
 ## Description
 

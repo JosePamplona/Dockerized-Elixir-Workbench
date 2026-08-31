@@ -3,10 +3,8 @@ defmodule WorkbenchIgniter.Features.Ash do
   The Ash framework, installed into the project the way the installer
   on ash-hq.org does it for an *existing app*.
 
-  Standalone cartridge: listed among the standalone ones of the
-  `WorkbenchIgniter.Features` registry, so no setup composes it —
-  `mix workbench.install.ash` (`wb.sh add ash`) installs it on demand,
-  on the vanilla (`new2`) line.
+  Installed on demand with `mix workbench.install.ash` (`wb.sh add
+  ash`), on the vanilla line.
 
   ## What it does, and what it leaves to Ash
 

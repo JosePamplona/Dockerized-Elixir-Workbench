@@ -17,30 +17,48 @@ defmodule WorkbenchIgniter.CatalogTest do
 
   alias WorkbenchIgniter.Features
 
-  # Every cartridge there is, by directory name: the composed ones in
-  # composition order, then the standalone ones.
-  @composed ~w(osmon psql_extras credo mock exdebug rest graphql coveralls exdoc
-               enhancements auth0 openai healthcheck stripe)
-  @standalone ~w(githooks exmachina clustering healthcheck2 ash mailer gettext ecto esbuild tailwind html live dashboard)
+  # Every cartridge there is, by directory name, in shelf order: the
+  # collection first, then the cartridges, then the base ones.
+  @cartridges ~w(chiefs_setup ansi toolchain versioning
+                 osmon psql_extras credo mock exdebug rest graphql
+                 coveralls exdoc guidelines enhancements auth0 openai healthcheck stripe
+                 githooks exmachina clustering healthcheck2 ash
+                 mailer gettext ecto esbuild tailwind html live dashboard)
+  # The chiefs_setup recipe with its default choices, in insertion order.
+  @picks ~w(ansi toolchain versioning osmon psql_extras credo mock exdebug rest
+            coveralls exdoc enhancements healthcheck)
   # Base cartridges a default phx.new project already carries.
   @in_by_default ~w(mailer gettext ecto esbuild tailwind html live dashboard)
 
   describe "the catalog" do
-    test "names every cartridge, composed first" do
-      assert Enum.map(Features.catalog(), & &1.name()) == @composed ++ @standalone
-      assert Enum.map(Features.all(), & &1.name()) == @composed
+    test "names every cartridge, in shelf order" do
+      assert Enum.map(Features.catalog(), & &1.name()) == @cartridges
       assert for(e <- Enum.map(Features.catalog(), &Features.entry/1), e.base, do: e.name) == @in_by_default
       assert Features.entry(Features.Ecto).afterwards =~ "./wb.sh bake"
       assert Features.entry(Features.Mailer).afterwards == nil
-      assert Enum.map(Features.standalone(), & &1.name()) == @standalone
+      assert Features.named("credo") == Features.Credo
+      assert Features.named("nope") == nil
+    end
+
+    test "marks the collection and carries its default recipe" do
+      assert %{collection: true, members: members} = Features.entry(Features.ChiefsSetup)
+      assert Enum.map(members, & &1.name) == @picks
+      # Each member with the argv its installer gets — the recipe.
+      assert %{name: "rest", argv: ["--health"]} = Enum.find(members, &(&1.name == "rest"))
+      assert %{name: "ansi", argv: []} = hd(members)
+      assert %{collection: false, members: []} = Features.entry(Features.Clustering)
+
+      # The recipe follows the collection's choice.
+      members = for {name, _argv} <- Features.ChiefsSetup.members(interface: "graphql"), do: name
+      assert "graphql" in members and "rest" not in members
     end
 
     test "each entry carries the manifest" do
       for feature <- Features.catalog(), entry = Features.entry(feature) do
         assert entry.name == feature.name()
         assert entry.task == "workbench.install." <> entry.name
-        assert entry.standalone == entry.name in @standalone
-        assert is_list(entry.implies)
+        assert is_boolean(entry.collection)
+        assert is_list(entry.requires)
         assert is_list(entry.options)
 
         unless entry.pending do
@@ -67,7 +85,7 @@ defmodule WorkbenchIgniter.CatalogTest do
       assert %{options: [%{name: :path, type: :string, default: "/health", choices: nil}]} =
                Features.entry(Features.Healthcheck2)
 
-      assert %{pending: true, options: [], example: nil, implies: [:auth0]} =
+      assert %{pending: true, options: [], example: nil, requires: ["auth0"]} =
                Features.entry(Features.Stripe)
     end
 
@@ -115,17 +133,6 @@ defmodule WorkbenchIgniter.CatalogTest do
                Features.entry(Features.Healthcheck2)
     end
 
-    test "says what turns each cartridge on when setup composes it" do
-      assert Features.Credo.enabled_by() == :enhance
-      assert Features.Rest.enabled_by() == {:interface, "rest"}
-      assert Features.Exdoc.enabled_by() == :exdoc
-      assert Features.Healthcheck2.enabled_by() == nil
-
-      assert %{enabled_by: :enhance} = Features.entry(Features.Osmon)
-      assert %{enabled_by: %{interface: "graphql"}} = Features.entry(Features.Graphql)
-      assert %{enabled_by: nil, standalone: true} = Features.entry(Features.Clustering)
-    end
-
     test "says whether a second run adds or is a no-op, and what an adding one carries" do
       assert Features.Ash.rerun() == :adds
       assert Features.Healthcheck2.rerun() == :noop
@@ -162,7 +169,7 @@ defmodule WorkbenchIgniter.CatalogTest do
 
       entries = Jason.decode!(output)
 
-      assert Enum.map(entries, & &1["name"]) == @composed ++ @standalone
+      assert Enum.map(entries, & &1["name"]) == @cartridges
 
       assert %{"covers" => %{"front" => "credo/sealed/cover.jpg", "back" => nil}} =
                Enum.find(entries, &(&1["name"] == "credo"))
@@ -176,10 +183,13 @@ defmodule WorkbenchIgniter.CatalogTest do
     test "mix workbench.catalog prints a table" do
       output = capture_io(fn -> Mix.Tasks.Workbench.Catalog.run([]) end)
 
-      assert output =~ ~r/^healthcheck2 +v0\.1\.0 +standalone +Your platform polls/m
-      assert output =~ ~r/^stripe +- +pending/m
-      assert output =~ ~r/^credo +- +composed/m
-      assert output =~ ~r/^exdoc +- +--exdoc/m
+      # The facts column says what is true of the box, and nothing when
+      # nothing is — there is no kind to print.
+      assert output =~ ~r/^chiefs_setup +v\d+\.\d+\.\d+ +inserts 13 +Your project is vanilla/m
+      assert output =~ ~r/^mailer +\S+ +base +You want to see the mail/m
+      assert output =~ ~r/^stripe +- +pending +Your users should be able to pay/m
+      assert output =~ ~r/^healthcheck2 +v0\.1\.0 +Your platform polls/m
+      assert output =~ ~r/^osmon +- +You want the machine's/m
     end
   end
 
@@ -187,7 +197,7 @@ defmodule WorkbenchIgniter.CatalogTest do
     test "is false on a fresh project, for every cartridge phx.new does not bring" do
       {status, _igniter} = Features.status(phx_test_project())
 
-      assert Enum.map(status, & &1.name) == @composed ++ @standalone
+      assert Enum.map(status, & &1.name) == @cartridges
       assert Enum.filter(status, & &1.installed) |> Enum.map(& &1.name) == @in_by_default
     end
 
@@ -200,9 +210,15 @@ defmodule WorkbenchIgniter.CatalogTest do
     for feature <- Features.catalog(), not feature.pending?(), feature != Features.Ash do
       @feature feature
       test "flips for #{feature.name()} once it is installed, and for it alone" do
+        igniter =
+          Enum.reduce(
+            prereqs(@feature.name()) ++ [@feature.task()],
+            phx_test_project(),
+            fn task, igniter -> Igniter.compose_task(igniter, task, args(task)) end
+          )
+
         installed =
-          phx_test_project()
-          |> Igniter.compose_task(@feature.task(), [])
+          igniter
           |> apply_igniter!()
           |> Features.status()
           |> elem(0)
@@ -210,13 +226,34 @@ defmodule WorkbenchIgniter.CatalogTest do
           |> Enum.map(& &1.name)
 
         assert @feature.name() in installed
-        assert (installed -- [@feature.name()]) -- @in_by_default == others_composed(@feature.name())
+        assert (installed -- [@feature.name()]) -- @in_by_default == others_installed(@feature.name())
       end
     end
 
-    # The installers that compose another cartridge (mock rides along
-    # with healthcheck and enhancements) light it up too.
-    defp others_composed(name) when name in ~w(healthcheck enhancements), do: ["mock"]
-    defp others_composed(_name), do: []
+    # What a cartridge builds on must be in first (the installer
+    # refuses otherwise): auth0 on enhancements, openai on both,
+    # guidelines on the docs site it appends its page to.
+    defp prereqs("auth0"), do: ["workbench.install.enhancements"]
+    defp prereqs("openai"), do: ["workbench.install.enhancements", "workbench.install.auth0"]
+    defp prereqs("guidelines"), do: ["workbench.install.exdoc"]
+    defp prereqs(_name), do: []
+
+    # The arguments an installer cannot do without. guidelines takes the
+    # URL of the page it installs, and gets an unreachable one: the
+    # download fails fast, offline, and its placeholder is planted —
+    # which is the file the mark reads either way.
+    defp args("workbench.install.guidelines"), do: ["--url", "http://localhost:1/guide.md"]
+    defp args(_task), do: []
+
+    # What else lights up beside the cartridge, in catalog order: the
+    # prerequisites composed above, the cartridges an installer composes
+    # itself (mock rides along with healthcheck and enhancements), and
+    # — for the collection — every member of its recipe.
+    defp others_installed(name) when name in ~w(healthcheck enhancements), do: ["mock"]
+    defp others_installed("auth0"), do: ["mock", "enhancements"]
+    defp others_installed("openai"), do: ["mock", "enhancements", "auth0"]
+    defp others_installed("guidelines"), do: ["exdoc"]
+    defp others_installed("chiefs_setup"), do: @picks
+    defp others_installed(_name), do: []
   end
 end

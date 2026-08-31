@@ -1,8 +1,8 @@
 defmodule WorkbenchIgniter.Features.Enhancements do
   @moduledoc """
   Workbench project enhancements: base schema, helpers, db/version mix
-  tasks and the extended test suite. Toggled by `--enhance` (which also
-  turns on the trivial dep-only group).
+  tasks and the extended test suite. A chiefs_setup pick, inserted after
+  the trivial dep-only group.
 
   Full feature cartridge: manifest, install logic and the EEx templates it
   renders live in this directory; the
@@ -24,17 +24,6 @@ defmodule WorkbenchIgniter.Features.Enhancements do
 
   @impl true
   def task, do: "workbench.install.enhancements"
-
-  @impl true
-  def flag, do: :enhance
-
-  @impl true
-  def argv(opts) do
-    ["--project-name", opts[:project_name], "--interface", opts[:interface]] ++
-      if(opts[:id_type], do: ["--id-type", opts[:id_type]], else: []) ++
-      if(opts[:timestamps], do: ["--timestamps", opts[:timestamps]], else: []) ++
-      flags(opts, [:exdoc, :auth0, :openai, :stripe, :health])
-  end
 
   # The installer's options, one line each: the task's "## Options"
   # section and the help a form shows are rendered from here.
@@ -157,6 +146,7 @@ defmodule WorkbenchIgniter.Features.Enhancements do
       igniter
       |> Igniter.Project.Deps.add_dep({:ecto_enum, "~> 1.4"}, on_exists: :skip)
       |> Igniter.Project.Deps.add_dep({:html_entities, "~> 0.5"}, on_exists: :skip)
+      |> generators_config(assigns[:app_name], opts)
       |> plant("helper.eex", "lib/#{dirs.app}/helper.ex", assigns)
       |> plant("helper_test.eex", "test/#{dirs.app}/helper_test.exs", assigns)
       |> plant("schema.eex", "lib/#{dirs.app}/schema.ex", assigns)
@@ -166,6 +156,32 @@ defmodule WorkbenchIgniter.Features.Enhancements do
     else
       igniter
     end
+  end
+
+  # The same policy `MyApp.Schema` carries, written where the generators
+  # and the migrations read it: one decision (`--id-type`,
+  # `--timestamps`), both halves. Without this, `mix phx.gen.*` keeps
+  # emitting phx.new's defaults and the tables drift from the schemas.
+  defp generators_config(igniter, app_name, opts) do
+    repo = Module.concat(Igniter.Project.Module.module_name_prefix(igniter), Repo)
+
+    igniter
+    |> Igniter.Project.Config.configure(
+      "config.exs",
+      app_name,
+      [:generators, :timestamp_type],
+      :utc_datetime_usec
+    )
+    |> config_type(app_name, repo, :migration_primary_key, opts[:id_type])
+    |> config_type(app_name, repo, :migration_timestamps, opts[:timestamps])
+  end
+
+  defp config_type(igniter, _app_name, _repo, _key, nil), do: igniter
+
+  defp config_type(igniter, app_name, repo, key, type) do
+    Igniter.Project.Config.configure(igniter, "config.exs", app_name, [repo, key],
+      type: String.to_atom(type)
+    )
   end
 
   @db_schema_files ~w(

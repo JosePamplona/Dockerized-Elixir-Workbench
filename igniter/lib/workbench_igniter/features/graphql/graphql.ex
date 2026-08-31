@@ -1,7 +1,7 @@
 defmodule WorkbenchIgniter.Features.Graphql do
   @moduledoc """
-  GraphQL API with Absinthe. Enabled when `--interface` is `graphql`,
-  mutually exclusive with REST.
+  GraphQL API with Absinthe. Mutually exclusive with REST: chiefs_setup
+  inserts one of the two, as its `--interface` choice says.
 
   Full feature cartridge: manifest, install logic and the EEx templates it
   renders live in this directory, and the
@@ -18,12 +18,6 @@ defmodule WorkbenchIgniter.Features.Graphql do
 
   @impl true
   def console, do: [doors: [{"graphiql", "/graphiql"}]]
-
-  @impl true
-  def enabled?(opts), do: opts[:interface] == "graphql"
-
-  @impl true
-  def enabled_by, do: {:interface, "graphql"}
 
   @doc "Task metadata, exposed unchanged through the mix task shell."
   def info(_argv, _composing_task) do

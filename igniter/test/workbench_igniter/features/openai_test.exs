@@ -8,6 +8,7 @@ defmodule WorkbenchIgniter.Features.OpenaiTest do
   defp installed(argv \\ []) do
     phx_test_project()
     |> Igniter.compose_task("workbench.install.rest", [])
+    |> Igniter.compose_task("workbench.install.enhancements", [])
     |> Igniter.compose_task("workbench.install.auth0", [])
     |> Igniter.compose_task("workbench.install.openai", argv)
     |> apply_igniter!()
@@ -81,6 +82,8 @@ defmodule WorkbenchIgniter.Features.OpenaiTest do
 
     test "is a no-op with a notice when already installed" do
       phx_test_project()
+      |> Igniter.compose_task("workbench.install.enhancements", [])
+      |> Igniter.compose_task("workbench.install.auth0", [])
       |> Igniter.compose_task("workbench.install.openai", [])
       |> apply_igniter!()
       |> Igniter.compose_task("workbench.install.openai", [])
@@ -89,26 +92,15 @@ defmodule WorkbenchIgniter.Features.OpenaiTest do
     end
   end
 
-  describe "composition through workbench.setup" do
-    test "--openai implies auth0 and composes in order" do
-      files =
+  describe "requires auth0" do
+    test "refuses, naming it, while auth0 is not in" do
+      igniter =
         phx_test_project()
-        |> Igniter.compose_task("workbench.setup", [
-          "--enhance",
-          "--openai",
-          "--interface",
-          "rest",
-          "--project-name",
-          "Demo"
-        ])
-        |> apply_igniter!()
-        |> Map.get(:assigns)
-        |> Map.get(:test_files)
+        |> Igniter.compose_task("workbench.install.openai", [])
 
-      assert files["lib/test/accounts.ex"]
-      assert files["lib/test/assistant.ex"]
-      # setup's fixtures include the openai imports.
-      assert files["test/support/fixtures.ex"] =~ "AssistantFixtures"
+      assert [issue] = igniter.issues
+      assert issue =~ "openai builds on auth0"
+      assert issue =~ "./wb.sh add auth0"
     end
   end
 end

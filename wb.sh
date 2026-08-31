@@ -36,10 +36,6 @@
 
   # Workbench configuration --------------------------------------------------
 
-    # Feature dependencies
-    if [ "$STRIPE" == true ]; then AUTH0="true"; fi
-    if [ "$OPENAI" == true ]; then AUTH0="true"; fi
-
     WORKBENCH_VERSION=$( sed '3!d' $0 | sed -n 's/^.*v\(.*\).*/\1/p' )
     PROJECT_NAME="${PROJECT_NAME_OVERRIDE:-$PROJECT_NAME}"
 
@@ -112,7 +108,7 @@
     # have moved on to name the next project, and several workspaces can
     # be driven from one workbench.
     if [ $EXISTING_PROJECT == true ] && [ -f "$WORKSPACE_PATH/$COMPOSE_FILE" ] && \
-       [ "$1" != "new" ] && [ "$1" != "new2" ]
+       [ "$1" != "new" ]
     then
       ELIXIR_PROJECT_NAME=$(
         sed -n 's/^name: //p' "$WORKSPACE_PATH/$COMPOSE_FILE" | head -n 1
@@ -854,9 +850,9 @@
       "in — several workspaces can run simultaneously without conflicts." \
       "The Elixir configuration is delegated to the ${B}workbench_igniter${R}" \
       "package (igniter/): 'new' runs 'mix workbench.setup' inside the" \
-      "container — 'new2' runs 'mix workbench.setup2' instead, which only" \
-      "makes a stock phx.new project bootable here — and features can be" \
-      "added later with the 'add' command." \
+      "container, which only makes a stock phx.new project bootable here." \
+      "Features are cartridges, added one commit each with the 'add'" \
+      "command — 'add chiefs_setup' inserts the workbench's own picks." \
       "" \
       "Current workspace: $WORKSPACE_PATH"
 
@@ -869,18 +865,11 @@
 
     print_command "new [OPTIONS]"
     section_content \
-      "Create a new project in the workspace, configured from config.conf," \
-      "and make its first commit." \
-      "- OPTIONS: It can accept all option flags from the task 'mix phx.new'" \
-      "  (${Li}https://hexdocs.pm/phoenix/Mix.Tasks.Phx.New.html${R})."
-
-    print_command "new2 [OPTIONS]"
-    section_content \
       "Create a new ${B}vanilla${R} project in the workspace: 'mix phx.new'" \
       "plus only what this workbench needs to run it. Step by step:" \
       "  1. 'mix phx.new' generates the stock project." \
       "  2. The workbench_igniter package is registered in its mix.exs." \
-      "  3. 'mix workbench.setup2' binds the dev endpoint to 0.0.0.0 (the" \
+      "  3. 'mix workbench.setup' binds the dev endpoint to 0.0.0.0 (the" \
       "     published port never reaches loopback), writes .env and" \
       "     .env.sample (the compose env_file) and lists .env in .gitignore." \
       "  4. 'mix phx.gen.release --docker' adds the production Dockerfile," \
@@ -891,19 +880,23 @@
       "  6. The first commit, 'New project: …', signed as GIT_IDENTITY says:" \
       "     the baseline every inserted cartridge is a commit on top of." \
       "The Elixir project keeps its phx.new configuration untouched: install" \
-      "the workbench features one by one with the 'add' command." \
+      "the workbench features with the 'add' command — 'add chiefs_setup'" \
+      "inserts the workbench's own picks, one commit each." \
       "- OPTIONS: It can accept all option flags from the task 'mix phx.new'" \
       "  (${Li}https://hexdocs.pm/phoenix/Mix.Tasks.Phx.New.html${R})."
 
     print_command "add [FEATURE] [OPTIONS]"
     section_content \
-      "Install a workbench feature on the existing project, and commit" \
-      "it as one commit ('Insert FEATURE …'), so 'eject' can revert it" \
-      "alone. Needs a clean tree: commit pending changes first." \
-      "- FEATURE: One of: healthcheck, rest, graphql, coveralls, exdoc," \
+      "Install a workbench feature on the existing project, one commit" \
+      "per inserted cartridge ('Insert FEATURE …'), so 'eject' can revert" \
+      "each alone. Needs a clean tree: commit pending changes first." \
+      "A collection (chiefs_setup) is expanded first and each missing" \
+      "member is inserted as its own commit." \
+      "- FEATURE: One of: chiefs_setup, ansi, toolchain, versioning," \
+      "  healthcheck, rest, graphql, coveralls, exdoc, guidelines," \
       "  enhancements, auth0, openai, credo, githooks, exmachina, mock," \
-      "  exdebug, psql_extras, osmon, clustering, healthcheck2, ash, mailer," \
-      "  gettext, ecto, esbuild, tailwind, html, live, dashboard." \
+      "  exdebug, psql_extras, osmon, clustering, healthcheck2, ash," \
+      "  mailer, gettext, ecto, esbuild, tailwind, html, live, dashboard." \
       "- OPTIONS: Flags for the 'mix workbench.install.FEATURE' task."
 
     print_command "eject [FEATURE]"
@@ -1048,57 +1041,11 @@
   }
 
   # build_setup_flags PHOENIX_NEW_OPTIONS...
-    # Translates config.conf and the phx.new options into flags for the
-    # 'mix workbench.setup' task. Result in the SETUP_FLAGS array.
-  build_setup_flags() {
-    local NO_HTML=false ASSETS=true MAILER=true DASHBOARD=true ECTO=true
-    for arg in "$@"; do
-      case "$arg" in
-        --no-html)      NO_HTML=true ;;
-        --no-assets)    ASSETS=false ;;
-        --no-ecto)      ECTO=false ;;
-        --no-mailer)    MAILER=false ;;
-        --no-dashboard) DASHBOARD=false ;;
-      esac
-    done
-
-    SETUP_FLAGS=(
-      --project-name "$PROJECT_NAME"
-      --version "$INIT_VERSION"
-      --elixir-version "$ELIXIR_VERSION"
-      --erlang-version "$ERLANG_VERSION"
-      --debian-version "$DEBIAN_VERSION"
-      --interface "$INTERFACE"
-      --app-port "$APP_PORT"
-      --internal-port "$APP_INTERNAL_PORT"
-      --repo-url "$REPO_URL"
-    )
-    [ -n "$ID_TYPE" ]    && SETUP_FLAGS+=( --id-type "$ID_TYPE" )
-    [ -n "$TIMESTAMPS" ] && SETUP_FLAGS+=( --timestamps "$TIMESTAMPS" )
-    [ -n "$CODING_GUIDELINES_URL" ] && \
-      SETUP_FLAGS+=( --guidelines-url "$CODING_GUIDELINES_URL" )
-    [ "$ENHANCE" == true ]   && SETUP_FLAGS+=( --enhance )
-    [ "$EXDOC" == true ]     && SETUP_FLAGS+=( --exdoc )
-    [ "$COVERALLS" == true ] && SETUP_FLAGS+=( --coveralls )
-    [ -n "$COVERAGE_THEME" ] && SETUP_FLAGS+=( --coverage-theme "$COVERAGE_THEME" )
-    [ "$HEALTH" == true ]    && SETUP_FLAGS+=( --health )
-    [ "$AUTH0" == true ]     && SETUP_FLAGS+=( --auth0 )
-    [ "$OPENAI" == true ]    && SETUP_FLAGS+=( --openai )
-    [ "$STRIPE" == true ]    && SETUP_FLAGS+=( --stripe )
-    [ "$NO_HTML" == true ]   && SETUP_FLAGS+=( --no-html )
-    [ "$ASSETS" == false ]    && SETUP_FLAGS+=( --no-assets )
-    [ "$MAILER" == false ]    && SETUP_FLAGS+=( --no-mailer )
-    [ "$DASHBOARD" == false ] && SETUP_FLAGS+=( --no-dashboard )
-    [ "$ECTO" == false ]      && SETUP_FLAGS+=( --no-ecto )
-    true
-  }
-
-  # build_setup2_flags PHOENIX_NEW_OPTIONS...
     # Translates the phx.new options into flags for the 'mix
-    # workbench.setup2' task, which takes no configuration from
+    # workbench.setup' task, which takes no configuration from
     # config.conf: the vanilla project has nothing to configure beyond
     # what the workspace needs to boot. Result in the SETUP_FLAGS array.
-  build_setup2_flags() {
+  build_setup_flags() {
     local ECTO=true
     for arg in "$@"; do
       case "$arg" in
@@ -1112,12 +1059,11 @@
   }
 
   # create_project <SETUP_COMMAND> [PHOENIX_NEW_OPTIONS...]
-    # Shared body of the 'new' and 'new2' commands: prepares the
-    # workspace, builds the toolchain image, generates the Phoenix
-    # project, registers the igniter package and runs SETUP_COMMAND (the
-    # entrypoint branch, 'workbench_setup' or 'workbench_setup2') with
-    # the SETUP_FLAGS its builder left. Finally bakes the workspace's own
-    # dockerfile and compose file.
+    # Body of the 'new' command: prepares the workspace, builds the
+    # toolchain image, generates the Phoenix project, registers the
+    # igniter package and runs SETUP_COMMAND (the 'workbench_setup'
+    # entrypoint branch) with the SETUP_FLAGS its builder left. Finally
+    # bakes the workspace's own dockerfile and compose file.
   create_project() {
     local setup_command="$1"; shift
 
@@ -1193,34 +1139,13 @@ if [ $# -gt 0 ]; then
     APP_PORT=$(first_free_port 4000)
     PGADMIN_PORT=$(first_free_port 5050)
 
+    # The vanilla creation: config.conf only names the project, the
+    # workspace and the stack versions, since they shape the project
+    # generation and the images, not the Elixir configuration — that
+    # arrives afterwards, as cartridges ('./wb.sh add').
     build_setup_flags "$@" && \
     create_project workbench_setup "$@" && \
-    if [ $EXDOC == true ]; then
-      workspace_compose run \
-        --rm \
-        --name "${APP_NAME}_workbench_documentation" \
-        --volume $WORKBENCH_VOLUME \
-        app $CONTAINER_ENTRYPOINT documentation \
-          $EXDOC \
-          true \
-          $COVERALLS
-    fi && \
-    workspace_commit "New project: $ELIXIR_PROJECT_NAME (new)"
-
-  elif [ "$1" == "new2" ]; then
-    shift
-
-    # Host ports for this workspace: first available ones.
-    APP_PORT=$(first_free_port 4000)
-    PGADMIN_PORT=$(first_free_port 5050)
-
-    # The vanilla creation: config.conf's feature and application
-    # settings are ignored on purpose — only the project name, the
-    # workspace and the stack versions still apply, since they shape the
-    # project generation and the images, not the Elixir configuration.
-    build_setup2_flags "$@" && \
-    create_project workbench_setup2 "$@" && \
-    workspace_commit "New project: $ELIXIR_PROJECT_NAME (new2)"
+    workspace_commit "New project: $ELIXIR_PROJECT_NAME"
 
   elif [ "$1" == "add" ]; then
     ENTRYPOINT_COMMAND=$1; shift
@@ -1228,16 +1153,39 @@ if [ $# -gt 0 ]; then
     if [ $EXISTING_PROJECT == true ]; then
       if [ $# -gt 0 ]; then
         require_clean_workspace add
-        workspace_compose run \
-          --rm \
-          --name "${APP_NAME}_workbench_${ENTRYPOINT_COMMAND}" \
-          --volume $WORKBENCH_VOLUME \
-          app $CONTAINER_ENTRYPOINT add $@ && \
-        workspace_commit "Insert $*" && \
-        if workspace_needs_database && \
-           ! grep -q "^  database:" "$WORKSPACE_PATH/$COMPOSE_FILE"; then
-          echo "The project now runs on a database and the compose has none:" \
-            "./$(basename $0) bake bakes it in, then ./$(basename $0) setup creates it."
+
+        # The cartridge expands to the inserts to run: itself for a
+        # plain one, its missing members for a collection
+        # (chiefs_setup). Only the 'plan> ' lines are the plan; the
+        # rest is mix noise. Each insert then runs as its own container
+        # and its own commit, so 'eject' reverts one cartridge alone —
+        # a collection leaves no commit of its own.
+        RAW_PLAN=$(
+          workspace_compose run \
+            --rm -T \
+            --name "${APP_NAME}_workbench_expand" \
+            --volume $WORKBENCH_VOLUME \
+            app $CONTAINER_ENTRYPOINT expand $@
+        ) || terminate "Could not expand '$1'."
+        PLAN=$(echo "$RAW_PLAN" | tr -d '\r' | sed -n 's/^plan> //p')
+
+        if [ -z "$PLAN" ]; then
+          echo "Nothing to insert: the project already carries every cartridge of '$1'."
+        else
+          while IFS= read -r INSERT; do
+            workspace_compose run \
+              --rm \
+              --name "${APP_NAME}_workbench_${ENTRYPOINT_COMMAND}" \
+              --volume $WORKBENCH_VOLUME \
+              app $CONTAINER_ENTRYPOINT add $INSERT && \
+            workspace_commit "Insert $INSERT" || exit 1
+          done <<< "$PLAN"
+
+          if workspace_needs_database && \
+             ! grep -q "^  database:" "$WORKSPACE_PATH/$COMPOSE_FILE"; then
+            echo "The project now runs on a database and the compose has none:" \
+              "./$(basename $0) bake bakes it in, then ./$(basename $0) setup creates it."
+          fi
         fi
 
       else args_error "Missing feature name. Try: ./$(basename $0) add healthcheck"; fi
@@ -1300,7 +1248,7 @@ if [ $# -gt 0 ]; then
           { LEGACY_TOOLCHAIN="workbench:${ELIXIR_VERSION}-${ERLANG_VERSION}" && \
             docker image inspect "$LEGACY_TOOLCHAIN" > /dev/null 2>&1 && \
             TOOLCHAIN_IMAGE="$LEGACY_TOOLCHAIN"; } || \
-          terminate "No toolchain image $TOOLCHAIN_IMAGE yet: create a project first (new2 builds it)."
+          terminate "No toolchain image $TOOLCHAIN_IMAGE yet: create a project first (new builds it)."
         docker image inspect "$CONSOLE_IMAGE" > /dev/null 2>&1 || console_build || terminate "The console image did not build."
         docker rm -f "$CONSOLE_NAME" > /dev/null 2>&1
         CONSOLE_PORT=$(first_free_port 4100)
@@ -1366,7 +1314,7 @@ if [ $# -gt 0 ]; then
 
     else terminate \
       "There is no project: the catalog is read by the igniter package" \
-      "on the workspace. Create one with: ./$(basename $0) new2"; fi
+      "on the workspace. Create one with: ./$(basename $0) new"; fi
 
   elif [ "$1" == "status" ]; then
     shift

@@ -1,7 +1,7 @@
 defmodule WorkbenchIgniter.Features.PsqlExtras do
   @moduledoc """
-  Postgres observability queries (`ecto_psql_extras`) — part of the trivial
-  dep-only group toggled by `--enhance`.
+  Postgres observability queries (`ecto_psql_extras`) — part of the
+  trivial dep-only group (a chiefs_setup pick).
   """
   use WorkbenchIgniter.Feature
 
@@ -12,12 +12,6 @@ defmodule WorkbenchIgniter.Features.PsqlExtras do
 
   @impl true
   def task, do: "workbench.install.psql_extras"
-
-  @impl true
-  def enabled?(opts), do: opts[:enhance] == true
-
-  @impl true
-  def enabled_by, do: :enhance
 
   @doc "Task metadata, exposed unchanged through the mix task shell."
   def info(_argv, _composing_task) do

@@ -3,17 +3,17 @@
 The [Ash framework](https://ash-hq.org), installed into the project
 **the way ash-hq.org's installer does it for an existing app**.
 
-Standalone cartridge: no setup composes it. Install it on demand with
+Install it on demand with
 
 ```sh
 ./wb.sh add ash [OPTIONS]
 mix workbench.install.ash --data-layer postgres --api json_api --auth password,magic_link
 ```
 
-It belongs to the vanilla line (`new2`): a stock `phx.new` project plus
-Ash. The opinionated line (`new`, `workbench.setup`) brings its own
-`users` table (auth0), Ecto schemas and generators (enhancements) that
-Ash would fight with — see [DESIGN.md](DESIGN.md), §3.5.
+It wants a vanilla project: a stock `phx.new` project plus Ash. The
+chiefs_setup picks bring their own Ecto schemas and generators
+(enhancements) — and auth0 its `users` table — that Ash would fight
+with: see [DESIGN.md](DESIGN.md), §3.5.
 
 ## What it installs
 

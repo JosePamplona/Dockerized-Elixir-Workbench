@@ -12,7 +12,7 @@ dependency, the `/live` socket in the endpoint and a `live_dashboard`
 route in a dev-only scope; that is what `phx.new` writes unless told
 `--no-dashboard`.
 
-Standalone, base cartridge. Install it on demand with
+Base cartridge. Install it on demand with
 
 ```sh
 ./wb.sh add dashboard

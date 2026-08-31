@@ -12,7 +12,7 @@ the code. `phx.new` writes the backend, the `en` locale with the
 in `gettext/1` — unless told `--no-gettext`, in which case it writes
 the same strings bare.
 
-Standalone, base cartridge. Install it on demand with
+Base cartridge. Install it on demand with
 
 ```sh
 ./wb.sh add gettext

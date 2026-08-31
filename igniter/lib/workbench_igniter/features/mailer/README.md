@@ -9,9 +9,8 @@ A mailer is how a Phoenix project sends mail: [Swoosh](https://hexdocs.pm/swoosh
 adapter the project configures for production. `phx.new` writes all of
 that unless told `--no-mailer`, and has no way to add it later.
 
-Standalone cartridge, the first **base** one: a capability `phx.new`
-decides at generation time, added after the fact. Install it on demand
-with
+The first **base** cartridge: a capability `phx.new` decides at
+generation time, added after the fact. Install it on demand with
 
 ```sh
 ./wb.sh add mailer

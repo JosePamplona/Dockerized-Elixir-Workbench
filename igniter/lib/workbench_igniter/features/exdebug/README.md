@@ -3,12 +3,12 @@
 ExDebug inspection helpers.
 
 * **Task**: `mix workbench.install.exdebug`
-* **Enabled by**: `--enhance` on `workbench.setup` (config.conf: `ENHANCE`)
+* **Inserted by**: `wb.sh add exdebug`; a chiefs_setup pick (the trivial dep-only group).
 
 ## Description
 
 Utilities to inspect values comfortably while developing. Part of the
-trivial dep-only group toggled by `--enhance`.
+trivial dep-only group (a chiefs_setup pick).
 
 ## What it installs
 

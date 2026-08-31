@@ -3,7 +3,7 @@
 Boots the production release as a **named distributed node**, so the
 replicas of a deployment find each other.
 
-Standalone cartridge: no setup composes it. Install it on demand with
+Install it on demand with
 
 ```sh
 ./wb.sh add clustering
@@ -88,7 +88,7 @@ logs nothing and simply finds no peers.
 ## Variable ownership
 
 `DNS_CLUSTER_QUERY`, `RELEASE_DISTRIBUTION` and `RELEASE_NODE` used to
-sit commented out in the `workbench.setup` `.env` template. They live in
+sit commented out in the retired setup's `.env` template. They live in
 this cartridge now, each where it belongs: the query in the environment
 files, the release pair in the boot script that can resolve the node name.
 

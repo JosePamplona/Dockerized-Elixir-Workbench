@@ -13,7 +13,7 @@ adapter and `--no-ecto` leaves all of it out — after which
 `phx.gen.html`, `phx.gen.live` and `phx.gen.context` "may no longer
 work as expected", as `mix help phx.new` warns.
 
-Standalone, base cartridge. Install it on demand with
+Base cartridge. Install it on demand with
 
 ```sh
 ./wb.sh add ecto [--database postgres|mysql|mssql|sqlite3] [--binary-id]
@@ -37,7 +37,7 @@ with `phx.new`'s version of the file beside it.
 On top of the delta, the one thing `phx.new` leaves to the environment:
 `DATABASE_URL` (or `DATABASE_PATH` for SQLite) in `.env` and
 `.env.sample`, with the workspace's own Postgres — `localhost:5432`
-inside the pod, `postgres:postgres` — as `workbench.setup2` writes it
+inside the pod, `postgres:postgres` — as `workbench.setup` writes it
 for a project born with Ecto.
 
 ## Options

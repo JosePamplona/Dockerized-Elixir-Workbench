@@ -20,9 +20,8 @@ defmodule Mix.Tasks.Workbench.Install.Exdoc do
     output dir, already gitignored by phx.new) and dev routes under
     `/dev/docs`
   * plants the documentation assets under `assets/exdoc/`: logo, theme
-    JS, and the conditional pages (token, coding guidelines, database
-    placeholder), plus the root `COVERAGE.md` and `TESTING.md`
-    placeholders for `mix cover`
+    JS, and the conditional pages (token, database placeholder), plus
+    the root `COVERAGE.md` and `TESTING.md` placeholders for `mix cover`
   * seeds dummy pages in `doc/` so the test suite passes before the first
     `mix docs` run
 

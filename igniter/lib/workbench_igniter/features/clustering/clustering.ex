@@ -3,9 +3,8 @@ defmodule WorkbenchIgniter.Features.Clustering do
   Distributed Erlang for the production release, so the replicas find
   each other.
 
-  Standalone cartridge: listed among the standalone ones of the
-  `WorkbenchIgniter.Features` registry, so no setup composes it — `mix workbench.install.clustering`
-  (`wb.sh add clustering`) installs it on demand.
+  Installed on demand with `mix workbench.install.clustering`
+  (`wb.sh add clustering`).
 
   `phx.new` already ships nine tenths of this: `:dns_cluster` is a
   dependency, `{DNSCluster, query: ... || :ignore}` is in the supervision

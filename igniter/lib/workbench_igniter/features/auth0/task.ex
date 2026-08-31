@@ -26,8 +26,8 @@ defmodule Mix.Tasks.Workbench.Install.Auth0 do
     controller, JSON view and OpenAPI schema
   * plants the unit tests and `AccountsFixtures`
 
-  Requires the enhancements feature (`MyApp.Schema`) — `workbench.setup`
-  orders the composition accordingly.
+  Requires the enhancements feature (`MyApp.Schema`): the installer
+  refuses, naming it, until it is in the project.
 
   ## Example
 

@@ -182,22 +182,17 @@ defmodule WorkbenchIgniter.Features.ExdocTest do
     end
   end
 
-  describe "composition through workbench.setup" do
-    test "--exdoc composes the installer with the setup flags" do
+  describe "composition through chiefs_setup" do
+    test "the collection composes the installer with its recipe argv" do
       igniter =
         phx_test_project()
-        |> Igniter.compose_task("workbench.setup", [
-          "--exdoc",
-          "--coveralls",
-          "--project-name",
-          "Demo"
-        ])
+        |> Igniter.compose_task("workbench.install.chiefs_setup", [])
         |> apply_igniter!()
 
       files = igniter.assigns[:test_files]
 
+      # The recipe's --coveralls: the docs controller serves the report.
       assert files["lib/test_web/controllers/exdoc_controller.ex"] =~ "def cover"
-      assert files["mix.exs"] =~ ~s|name: "Demo"|
     end
   end
 end

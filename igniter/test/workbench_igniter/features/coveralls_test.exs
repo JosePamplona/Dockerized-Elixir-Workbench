@@ -127,11 +127,11 @@ defmodule WorkbenchIgniter.Features.CoverallsTest do
     end
   end
 
-  describe "composition through workbench.setup" do
-    test "--coveralls composes the installer with the setup flags" do
+  describe "composition through chiefs_setup" do
+    test "the collection composes the installer with its recipe argv" do
       igniter =
         phx_test_project()
-        |> Igniter.compose_task("workbench.setup", ["--coveralls", "--exdoc"])
+        |> Igniter.compose_task("workbench.install.chiefs_setup", [])
         |> apply_igniter!()
 
       assert igniter.assigns[:test_files]["coveralls.json"] =~

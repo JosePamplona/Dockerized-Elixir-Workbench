@@ -23,8 +23,8 @@ defmodule Mix.Tasks.Workbench.Install.Openai do
     OpenAPI schemas, plus the five `/conversation` routes in `/api/v1`
   * plants the unit tests and `AssistantFixtures`
 
-  Requires the auth0 feature (conversations belong to users) —
-  `workbench.setup` orders the composition accordingly.
+  Requires the auth0 feature (conversations belong to users): the
+  installer refuses, naming it, until it is in the project.
 
   ## Example
 

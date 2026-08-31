@@ -1,5 +1,12 @@
 # Inventario completo
 
+> **Resuelto (2026-08-30).** Este inventario guió la disección de
+> `workbench.setup`, hoy retirado: `setup2` tomó su nombre, y el lado
+> compuesto (A) vive como la colección `chiefs_setup`
+> (`lib/workbench_igniter/features/chiefs_setup/`, ver su DESIGN.md).
+> Lo no-feature (C) y el schema (D) murieron como estaba previsto. Se
+> conserva como registro de la decisión.
+
 Lo agrupo por qué lo dispara, porque eso es lo que decide si sobrevive o no en setup2.
 
 - [Inventario completo](#inventario-completo)

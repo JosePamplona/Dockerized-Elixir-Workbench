@@ -8,8 +8,8 @@ git_hooks management.
 ## Description
 
 Automates checks before each commit, so problematic code doesn't even
-reach the repository. Standalone: not in the `WorkbenchIgniter.Features`
-registry — `workbench.setup` never composes it.
+reach the repository. Installed on demand with `wb.sh add githooks`; no
+collection picks it.
 
 ## What it installs
 

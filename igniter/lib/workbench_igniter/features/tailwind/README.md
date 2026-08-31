@@ -15,7 +15,7 @@ include Tailwind CSS classes, those are left-in as reference" — so a
 `--no-tailwind` project has a layout written for Tailwind, styled by a
 static `default.css` snapshot.
 
-Standalone, base cartridge. Install it on demand with
+Base cartridge. Install it on demand with
 
 ```sh
 ./wb.sh add tailwind

@@ -1,19 +1,17 @@
 # Cartridge: stripe
 
-Stripe payments and subscriptions — **pending**, not ported yet.
+Stripe payments and subscriptions — **pending**, not done yet.
 
 * **Task**: `mix workbench.install.stripe` (does not exist yet)
-* **Enabled by**: `--stripe` on `workbench.setup` (config.conf: `STRIPE`)
-* **Implies**: `--auth0` (subscriptions belong to users)
+* **Requires**: `auth0` (subscriptions belong to users)
 
 ## Description
 
 Payments and subscriptions with Stripe. The manifest is registered so
-`workbench.setup` knows the flag, applies the implied `--auth0` and
-documents the feature in the generated README.md and .env, but the
-installer is not ported: setup emits a notice instead of composing it.
+the catalog shows the box as pending, but the installer is not done:
+nothing can insert it yet.
 
-When ported, fill this directory in like any other cartridge (see the
+When it is done, fill this directory in like any other cartridge (see the
 checklist in the package README): `task.ex`, `templates/`, its test and
 this README.
 

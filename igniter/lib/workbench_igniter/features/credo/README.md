@@ -3,13 +3,12 @@
 Credo static code analysis.
 
 * **Task**: `mix workbench.install.credo`
-* **Enabled by**: `--enhance` on `workbench.setup` (config.conf: `ENHANCE`)
+* **Inserted by**: `wb.sh add credo`; a chiefs_setup pick (the trivial dep-only group).
 
 ## Description
 
 An automated reviewer that flags style and code-quality issues before
-they reach production. Part of the trivial dep-only group toggled by
-`--enhance`.
+they reach production. Part of the trivial dep-only group (a chiefs_setup pick).
 
 ## What it installs
 

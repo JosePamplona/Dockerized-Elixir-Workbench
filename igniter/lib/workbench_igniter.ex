@@ -7,7 +7,7 @@ defmodule WorkbenchIgniter do
   """
 
   @doc """
-  Renders a `workbench.setup` EEx template from `priv/setup/templates`.
+  Renders a `mix workbench.setup` EEx template from `priv/setup/templates`.
 
   Templates receive `assigns`, accessible as `@key` inside the template.
   Rendered with `trim: true` so block tags (`<%= if ... do %>`) that sit
@@ -128,7 +128,7 @@ defmodule WorkbenchIgniter do
 
   The counterpart of `gitignore_entry/3` for the environment files: it
   lets a cartridge own its own variables instead of parking them,
-  commented out, in the `workbench.setup` template. Both files receive
+  commented out, in the setup template. Both files receive
   the very same text unless `sample_body` is given — `.env.sample` is
   meant to be committed, so a secret goes in `body` for `.env` and its
   blanked-out line (`KEY=""`) in `sample_body`, the same key first.

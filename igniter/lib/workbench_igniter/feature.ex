@@ -2,22 +2,21 @@ defmodule WorkbenchIgniter.Feature do
   @moduledoc """
   Behaviour and conveniences for workbench feature cartridges.
 
-  A *feature* is everything `workbench.setup` needs to know to orchestrate
-  one workbench capability, declared in a single module instead of being
-  spread across the setup task:
+  A *feature* is everything the workbench needs to know about one
+  capability, declared in a single module — its manifest plus its
+  install logic:
 
   * `task/0` - the `mix workbench.install.*` task that installs it.
-  * `flag/0` / `enabled?/1` - when the setup options turn it on.
-  * `implies/0` - flags this feature forces on (e.g. `openai` implies
-    `auth0`).
-  * `argv/1` - the arguments setup forwards when composing the task.
-  * `pending?/0` - declared in setup's docs/templates but not ported yet.
+  * `pending?/0` - documented, but its installer is not done yet.
   * `installed?/1` - whether the target project already carries it, read
     off the same mark the installer's guard reads.
+  * `members/1` - for a *collection* cartridge: the cartridges it
+    inserts, in order, with the argv each one gets.
 
-  Features are registered, in composition order, in
-  `WorkbenchIgniter.Features`; the standalone ones (never composed by
-  setup) beside them, so the registry's catalog names every cartridge.
+  There is one kind of cartridge: every one is installed on demand
+  (`wb.sh add <name>`), and a collection is just a cartridge whose
+  installer inserts other cartridges. Features are registered in
+  `WorkbenchIgniter.Features`, whose catalog names every cartridge.
   `use WorkbenchIgniter.Feature` also derives `name/0`, `version/0` and
   `summary/0` from the cartridge itself — its directory, its
   CHANGELOG.md and its task's `@shortdoc` — for the catalog.
@@ -38,20 +37,19 @@ defmodule WorkbenchIgniter.Feature do
   @doc "Name of the mix task that installs the feature."
   @callback task() :: String.t()
 
-  @doc "Setup flag that toggles the feature, or `nil` when not flag-driven."
-  @callback flag() :: atom() | nil
-
-  @doc "Whether the normalized setup options enable the feature."
-  @callback enabled?(opts :: keyword()) :: boolean()
-
-  @doc "Flags this feature forces on when it is enabled."
-  @callback implies() :: [atom()]
-
-  @doc "Arguments setup forwards to `task/0` when composing it."
-  @callback argv(opts :: keyword()) :: [String.t()]
-
-  @doc "Feature is documented in the generated project but not ported yet."
+  @doc "Documented in the generated project, but its installer is not done yet."
   @callback pending?() :: boolean()
+
+  @doc """
+  The cartridges a *collection* cartridge inserts, in order — by name,
+  as the catalog names them, each with the argv its installer gets. The
+  argv is the collection's recipe: how its choices (`opts`, parsed with
+  the collection's own schema) shape each member's install. Membership
+  may depend on the choices too (chiefs_setup inserts `rest` or
+  `graphql` as `--interface` says). Empty by default: a plain cartridge
+  inserts nothing but itself.
+  """
+  @callback members(opts :: keyword()) :: [{String.t(), [String.t()]}]
 
   @doc """
   Whether the feature is already installed in the target project.
@@ -93,15 +91,6 @@ defmodule WorkbenchIgniter.Feature do
   `@moduledoc` — and of the help a form shows beside each field.
   """
   @callback option_docs() :: [{atom(), String.t()}]
-
-  @doc """
-  What turns the feature on when `workbench.setup` composes it: a setup
-  flag (`:exdoc`), a flag it shares with others (`:enhance`, for the
-  trivial group), a valued option (`{:interface, "rest"}`), or `nil` for
-  a standalone cartridge. Defaults to `flag/0`; the cartridges whose
-  `enabled?/1` reads something else say so.
-  """
-  @callback enabled_by() :: atom() | {atom(), String.t()} | nil
 
   @doc """
   What a second run does on a project that already carries the
@@ -171,36 +160,22 @@ defmodule WorkbenchIgniter.Feature do
           embed_templates: 1,
           embed_assets: 0,
           embed_assets: 1,
-          flags: 2,
-          no_flags: 2,
           dep_installed?: 2,
           file_installed?: 2,
           marker_installed?: 3
         ]
 
       @impl WorkbenchIgniter.Feature
-      def flag, do: nil
-
-      @impl WorkbenchIgniter.Feature
-      def enabled?(opts), do: WorkbenchIgniter.Feature.default_enabled?(__MODULE__, opts)
-
-      @impl WorkbenchIgniter.Feature
-      def implies, do: []
-
-      @impl WorkbenchIgniter.Feature
-      def argv(_opts), do: []
-
-      @impl WorkbenchIgniter.Feature
       def pending?, do: false
+
+      @impl WorkbenchIgniter.Feature
+      def members(_opts), do: []
 
       @impl WorkbenchIgniter.Feature
       def choices, do: []
 
       @impl WorkbenchIgniter.Feature
       def option_docs, do: []
-
-      @impl WorkbenchIgniter.Feature
-      def enabled_by, do: flag()
 
       @impl WorkbenchIgniter.Feature
       def rerun, do: :noop
@@ -220,14 +195,10 @@ defmodule WorkbenchIgniter.Feature do
       defoverridable requires: 0,
                      afterwards: 0,
                      console: 0,
-                     flag: 0,
-                     enabled?: 1,
-                     implies: 0,
-                     argv: 1,
                      pending?: 0,
+                     members: 1,
                      choices: 0,
                      option_docs: 0,
-                     enabled_by: 0,
                      rerun: 0,
                      state: 1
 
@@ -512,30 +483,4 @@ defmodule WorkbenchIgniter.Feature do
     end
   end
 
-  @doc false
-  # Default enabled?/1: on when the feature's flag is set in the options.
-  def default_enabled?(module, opts) do
-    case module.flag() do
-      nil -> false
-      flag -> opts[flag] == true
-    end
-  end
-
-  @doc """
-  Maps the option keys that are set to `--key` switches, for forwarding
-  feature toggles: `flags(opts, [:auth0, :health])` -> `["--auth0"]`.
-  """
-  @spec flags(keyword(), [atom()]) :: [String.t()]
-  def flags(opts, keys) do
-    for key <- keys, opts[key], do: "--#{key}"
-  end
-
-  @doc """
-  Maps the option keys that are unset to `--no-key` switches, for options
-  that default to true: `no_flags(opts, [:html])` -> `["--no-html"]`.
-  """
-  @spec no_flags(keyword(), [atom()]) :: [String.t()]
-  def no_flags(opts, keys) do
-    for key <- keys, !opts[key], do: "--no-#{key}"
-  end
 end

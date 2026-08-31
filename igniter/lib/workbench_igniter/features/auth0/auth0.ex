@@ -6,7 +6,7 @@ defmodule WorkbenchIgniter.Features.Auth0 do
   renders live in this directory; the `Mix.Tasks.Workbench.Install.Auth0`
   shell in `task.ex` delegates here.
 
-  Ordering: composed after enhancements (the User schema uses
+  Ordering: inserted after enhancements (the User schema uses
   `MyApp.Schema`) and before openai (conversations belong to users).
   """
   use WorkbenchIgniter.Feature
@@ -18,13 +18,10 @@ defmodule WorkbenchIgniter.Features.Auth0 do
   @impl true
   def task, do: "workbench.install.auth0"
 
+  # The User schema builds on the MyApp.Schema base that enhancements
+  # creates. The installer refuses while it is not in.
   @impl true
-  def flag, do: :auth0
-
-  @impl true
-  def argv(opts) do
-    ["--project-name", opts[:project_name], "--interface", opts[:interface]]
-  end
+  def requires, do: ["enhancements"]
 
   # The installer's options, one line each: the task's "## Options"
   # section and the help a form shows are rendered from here.
@@ -67,15 +64,25 @@ defmodule WorkbenchIgniter.Features.Auth0 do
     app_module = Igniter.Project.Module.module_name_prefix(igniter)
     accounts = accounts_module(igniter)
 
-    case installed?(igniter) do
-      {true, igniter} ->
-        Igniter.add_notice(
-          igniter,
-          "#{inspect(accounts)} already exists: Auth0 is already installed, skipping."
-        )
+    case WorkbenchIgniter.Feature.missing_requirements(igniter, __MODULE__) do
+      {[], igniter} ->
+        case installed?(igniter) do
+          {true, igniter} ->
+            Igniter.add_notice(
+              igniter,
+              "#{inspect(accounts)} already exists: Auth0 is already installed, skipping."
+            )
 
-      {false, igniter} ->
-        install(igniter, app_module, opts)
+          {false, igniter} ->
+            install(igniter, app_module, opts)
+        end
+
+      {missing, igniter} ->
+        Igniter.add_issue(
+          igniter,
+          "#{name()} builds on #{Enum.join(missing, " and ")}, not in the project yet. " <>
+            "Insert that first: ./wb.sh add #{hd(missing)}"
+        )
     end
   end
 

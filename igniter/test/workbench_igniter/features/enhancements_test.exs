@@ -72,16 +72,10 @@ defmodule WorkbenchIgniter.Features.EnhancementsTest do
     end
   end
 
-  describe "composition through workbench.setup" do
-    test "--enhance composes the module enhancements with the setup flags" do
+  describe "composition through chiefs_setup" do
+    test "the collection composes the module enhancements with its recipe argv" do
       phx_test_project()
-      |> Igniter.compose_task("workbench.setup", [
-        "--enhance",
-        "--id-type",
-        "uuid",
-        "--project-name",
-        "Demo"
-      ])
+      |> Igniter.compose_task("workbench.install.chiefs_setup", [])
       |> assert_creates("lib/test/schema.ex", fn content ->
         assert content =~ "Ecto.UUID"
       end)

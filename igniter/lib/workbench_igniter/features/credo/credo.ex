@@ -1,7 +1,7 @@
 defmodule WorkbenchIgniter.Features.Credo do
   @moduledoc """
-  Credo static code analysis — part of the trivial dep-only group toggled
-  by `--enhance`.
+  Credo static code analysis — part of the trivial dep-only group (a
+  chiefs_setup pick).
   """
   use WorkbenchIgniter.Feature
 
@@ -12,12 +12,6 @@ defmodule WorkbenchIgniter.Features.Credo do
 
   @impl true
   def task, do: "workbench.install.credo"
-
-  @impl true
-  def enabled?(opts), do: opts[:enhance] == true
-
-  @impl true
-  def enabled_by, do: :enhance
 
   @doc "Task metadata, exposed unchanged through the mix task shell."
   def info(_argv, _composing_task) do

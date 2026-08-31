@@ -118,18 +118,12 @@ defmodule WorkbenchIgniter.Features.RestTest do
     end
   end
 
-  describe "composition through workbench.setup" do
-    test "--interface rest composes the installer with the feature flags" do
+  describe "composition through chiefs_setup" do
+    test "the default interface composes the installer with the recipe argv" do
       phx_test_project()
-      |> Igniter.compose_task("workbench.setup", [
-        "--interface",
-        "rest",
-        "--health",
-        "--project-name",
-        "Demo"
-      ])
+      |> Igniter.compose_task("workbench.install.chiefs_setup", [])
       |> assert_creates("lib/test_web/open_api/spec.ex", fn content ->
-        assert content =~ ~s|title: "Demo"|
+        # The recipe's --health: the spec carries the operations tag.
         assert content =~ ~s|name: "Development Operations"|
       end)
     end

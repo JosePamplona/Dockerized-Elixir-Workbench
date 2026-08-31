@@ -1,9 +1,10 @@
 # stripe
 
-Your users should be able to pay — not ported yet.
+Your users should be able to pay — not done yet.
 
-**Before:** nothing: the flag exists, the installer does not.
+**Before:** nothing: a manifest and these papers, with no installer
+behind them.
 
-**After:** nothing yet; `workbench.setup` prints a notice instead of composing it.
+**After:** nothing yet: `./wb.sh add stripe` refuses, naming the box.
 
-**Not for:** anything, until it is ported.
+**Not for:** anything, until it is done.

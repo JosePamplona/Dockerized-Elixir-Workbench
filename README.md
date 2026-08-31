@@ -64,19 +64,11 @@ The unsuffixed file is the *development* one for compose and the *production* on
     ./wb.sh new
     ```
 
-    This command generates the project into the workspace, applies the configuration from `config.conf`, and bakes the workspace's own `docker-compose.yml` and `Dockerfile.local`.
+    This command generates a **vanilla** project into the workspace: a stock `phx.new` project plus only what the workspace needs to boot it — the endpoint bound to `0.0.0.0`, the `.env`/`.env.sample` files the compose `env_file` requires, and the `.env` entry in `.gitignore`. It also runs `mix phx.gen.release --docker`, which `phx.new` does not: the production `Dockerfile` it generates is what `up --env prod` builds from. Finally it bakes the workspace's own `docker-compose.yml` and `Dockerfile.local`.
 
     It can accept all option flags from the task `mix phx.new` like `--no-html` or `--no-ecto` (Full task [phx.new](https://hexdocs.pm/phoenix/Mix.Tasks.Phx.New.html) documentation).
 
-### Vanilla project
-
-```sh
-./wb.sh new2
-```
-
-Same command with none of the workbench's opinions: a stock `phx.new` project plus only what the workspace needs to boot it — the endpoint bound to `0.0.0.0`, the `.env`/`.env.sample` files the compose `env_file` requires, and the `.env` entry in `.gitignore`. It also runs `mix phx.gen.release --docker`, which `phx.new` does not: the production `Dockerfile` it generates is what `up --env prod` builds from.
-
-The application and feature settings in `config.conf` are ignored (the project name, the workspace and the stack versions still apply: they shape the project generation and the images, not the Elixir configuration), so no `README.md`, `CHANGELOG.md`, `.tool-versions` or feature is generated. Add them one by one afterwards with the `add` command.
+    `config.conf` only names the project, the workspace and the stack versions: they shape the project generation and the images, not the Elixir configuration. Everything else — docs, coverage, API, checks — arrives afterwards as cartridges with the `add` command; `./wb.sh add chiefs_setup` inserts the workbench's own picks in one go.
 
 ## Add features
 
@@ -86,16 +78,20 @@ Workbench features can be installed on the existing project at any time:
 ./wb.sh add [FEATURE] [OPTIONS]
 ```
 
-`[FEATURE]` is one of: **healthcheck**, **rest**, **graphql**, **coveralls**, **exdoc**, **enhancements**, **auth0**, **openai**, **credo**, **githooks**, **exmachina**, **mock**, **exdebug**, **psql_extras**, **osmon**, **clustering**, **healthcheck2**, **ash**, **mailer**, **gettext**, **ecto**, **esbuild**, **tailwind**, **html**, **live**, **dashboard**. `[OPTIONS]` are the flags of the corresponding `mix workbench.install.FEATURE` task.
+`[FEATURE]` is one of: **chiefs_setup**, **ansi**, **toolchain**, **versioning**, **healthcheck**, **rest**, **graphql**, **coveralls**, **exdoc**, **guidelines**, **enhancements**, **auth0**, **openai**, **credo**, **githooks**, **exmachina**, **mock**, **exdebug**, **psql_extras**, **osmon**, **clustering**, **healthcheck2**, **ash**, **mailer**, **gettext**, **ecto**, **esbuild**, **tailwind**, **html**, **live**, **dashboard**. `[OPTIONS]` are the flags of the corresponding `mix workbench.install.FEATURE` task.
+
+**chiefs_setup** is a *collection*: a cartridge whose installer inserts other cartridges — the workbench's picks (the house's settings, the dep-only quintet, REST or GraphQL as its `--interface` says, coveralls, exdoc, enhancements and healthcheck). Adding it inserts each missing member as its own commit, so `eject` still reverts one cartridge alone; the collection leaves no commit of its own.
+
+**ansi**, **toolchain** and **versioning** are what the retired opinionated `new` used to write into every project, one decision each: coloured logs through Docker, a `.tool-versions` so your editor knows which Elixir this is (plus `/.elixir_ls/` ignored), and the project's initial version with its `CHANGELOG.md`.
 
 The workbench can say all of that itself, and which cartridges the project already carries:
 
 ```sh
-./wb.sh catalog [--json] # Every cartridge: version, how it is enabled, what it installs
+./wb.sh catalog [--json] # Every cartridge: version, kind, what it installs
 ./wb.sh status  [--json] # The workspace: ports, baked deployments, containers, installed cartridges
 ```
 
-Every insert is **one commit** in the workspace (`Insert FEATURE …`, signed as `GIT_IDENTITY` in `config.conf` says), on top of the first commit `new`/`new2` makes. That is what makes a cartridge removable:
+Every insert is **one commit** in the workspace (`Insert FEATURE …`, signed as `GIT_IDENTITY` in `config.conf` says), on top of the first commit `new` makes. That is what makes a cartridge removable:
 
 ```sh
 ./wb.sh eject FEATURE       # Reverts the cartridge's commit; refuses if its files changed since
@@ -103,7 +99,7 @@ Every insert is **one commit** in the workspace (`Insert FEATURE …`, signed as
 ./wb.sh bake                # Bakes docker-compose.yml again for the project as it is now (one commit)
 ```
 
-**mailer**, **gettext**, **ecto**, **esbuild**, **tailwind**, **html**, **live** and **dashboard** are *base cartridges*: what `phx.new` decides at generation time (its `--no-*` flags), added afterwards as `phx.new` itself would have generated it — the difference between the project generated with and without the flag, at the toolchain's Phoenix. A project born with them shows them inserted; one left out at creation (`./wb.sh new2 --no-live`) is a box on the shelf, to insert later. `ecto` takes `--database postgres|mysql|mssql|sqlite3` and `--binary-id` (`phx.new`'s flags that only Ecto reads); after inserting it, `./wb.sh bake` puts the Postgres into the compose and `./wb.sh setup` creates the database. `live` builds on `html` and says so (`requires` in the catalog): it refuses until html is in.
+**mailer**, **gettext**, **ecto**, **esbuild**, **tailwind**, **html**, **live** and **dashboard** are *base cartridges*: what `phx.new` decides at generation time (its `--no-*` flags), added afterwards as `phx.new` itself would have generated it — the difference between the project generated with and without the flag, at the toolchain's Phoenix. A project born with them shows them inserted; one left out at creation (`./wb.sh new --no-live`) is a box on the shelf, to insert later. `ecto` takes `--database postgres|mysql|mssql|sqlite3` and `--binary-id` (`phx.new`'s flags that only Ecto reads); after inserting it, `./wb.sh bake` puts the Postgres into the compose and `./wb.sh setup` creates the database. `live` builds on `html` and says so (`requires` in the catalog): it refuses until html is in.
 
 A cartridge whose options are independent pieces (ash: every option is a package) can be run again with more of them and adds only what is missing; the others are inserted once, with the options of that moment, and changing them means ejecting and inserting again. The catalog says which is which (`rerun`).
 

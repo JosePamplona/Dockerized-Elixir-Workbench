@@ -56,10 +56,10 @@ defmodule WorkbenchIgniter.Features.GraphqlTest do
     end
   end
 
-  describe "composition through workbench.setup" do
+  describe "composition through chiefs_setup" do
     test "--interface graphql composes the installer" do
       phx_test_project()
-      |> Igniter.compose_task("workbench.setup", ["--interface", "graphql"])
+      |> Igniter.compose_task("workbench.install.chiefs_setup", ["--interface", "graphql"])
       |> assert_creates("lib/test_web/graphql/schema.ex")
       |> assert_has_patch("mix.exs", """
       + | {:absinthe, "~> 1.7"},

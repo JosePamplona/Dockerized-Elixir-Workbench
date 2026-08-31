@@ -11,7 +11,7 @@ defmodule WorkbenchIgniter.Features.Ecto do
   the project's files. On top of the delta the cartridge writes the one
   thing `phx.new` leaves to the environment: the variable the release
   reads to find the database (`DATABASE_URL`, or `DATABASE_PATH` for
-  SQLite), in `.env` and `.env.sample`, as `workbench.setup2` does for
+  SQLite), in `.env` and `.env.sample`, as `workbench.setup` does for
   a project born with Ecto.
 
   The workspace's compose is the workbench's: it provides a Postgres.
@@ -94,7 +94,7 @@ defmodule WorkbenchIgniter.Features.Ecto do
   # What the release reads to find the database (config/runtime.exs, from
   # phx.new): a URL for the servers, a path for SQLite. The values are
   # the workspace's — the Postgres of its compose, on localhost inside
-  # the pod — as workbench.setup2 writes them for a project born with Ecto.
+  # the pod — as workbench.setup writes them for a project born with Ecto.
   defp env_entry(igniter, app, "sqlite3") do
     WorkbenchIgniter.env_entry(
       igniter,

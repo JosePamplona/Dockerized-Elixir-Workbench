@@ -9,12 +9,15 @@ defmodule Mix.Tasks.Workbench.Catalog do
       mix workbench.catalog [--json] [--covers DIR]
 
   Reads the registry (`WorkbenchIgniter.Features.catalog/0`): every
-  cartridge, the composed ones in composition order and then the
-  standalone, each with its name, task, one-line summary, version (off
-  its CHANGELOG.md), setup flag, the flags it implies, whether it is
-  pending, and the switches of its installer. Nothing here looks at a
-  project: for what the current project carries, see
-  `mix workbench.status`.
+  cartridge in shelf order, each with its name, task, one-line summary,
+  version (off its CHANGELOG.md), the switches of its installer, and
+  the facts that are true of it — it inserts other cartridges
+  (`collection`, with its `members`), `phx.new` decides it at
+  generation time (`base`), it is not done yet (`pending`). The
+  facts are independent, and most cartridges carry none: there is one
+  kind of cartridge, and these say what a box does, not what it is.
+  Nothing here looks at a project: for what the current project
+  carries, see `mix workbench.status`.
 
   ## Options
 
@@ -57,12 +60,13 @@ defmodule Mix.Tasks.Workbench.Catalog do
   @doc false
   def table(entries) do
     width = entries |> Enum.map(&String.length(&1.name)) |> Enum.max(fn -> 0 end)
+    facts = entries |> Enum.map(&String.length(facts_column(&1))) |> Enum.max(fn -> 0 end)
 
     Enum.map_join(entries, "\n", fn entry ->
       [
         String.pad_trailing(entry.name, width),
         String.pad_trailing(version_column(entry), 8),
-        String.pad_trailing(kind_column(entry), 12),
+        String.pad_trailing(facts_column(entry), facts),
         # The shelf's line is the developer's need (NEED.md); a
         # cartridge without one still shows what it installs.
         (entry.need && entry.need.line) || entry.summary || ""
@@ -75,8 +79,17 @@ defmodule Mix.Tasks.Workbench.Catalog do
   defp version_column(%{version: %{version: v}}), do: "v" <> v
   defp version_column(_), do: "-"
 
-  defp kind_column(%{pending: true}), do: "pending"
-  defp kind_column(%{standalone: true}), do: "standalone"
-  defp kind_column(%{flag: nil}), do: "composed"
-  defp kind_column(%{flag: flag}), do: "--#{flag}"
+  # What is true of the box, not what kind of box it is: there is one
+  # kind. The facts are independent and a cartridge can carry several,
+  # so they are joined and not chosen between; one that carries none —
+  # most of them — says nothing here.
+  defp facts_column(entry) do
+    [
+      if(entry.pending, do: "pending"),
+      if(entry.collection, do: "inserts #{length(entry.members)}"),
+      if(entry.base, do: "base")
+    ]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join(" · ")
+  end
 end

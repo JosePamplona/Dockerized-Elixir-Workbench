@@ -4,11 +4,11 @@ ExDoc documentation site served by the app itself at `/dev/docs`, with
 per-feature extra pages (coverage, auth token, database diagram).
 
 * **Task**: `mix workbench.install.exdoc`
-* **Enabled by**: `--exdoc` (config.conf: `EXDOC`)
-* **Argv from setup**: `--project-name` `--repo-url`
-  `[--guidelines-url]` `[--coveralls --auth0]` — whether the project has
-  Ecto (the database page and diagram) is read off the project, not
-  asked.
+* **Inserted by**: `wb.sh add exdoc`; a chiefs_setup pick.
+* **Options**: `--project-name` `--repo-url` `[--coveralls --auth0]`
+  `[--build]` — whether the project has Ecto (the database page and
+  diagram) is read off the project, not asked. As a chiefs_setup pick
+  it receives `--coveralls`.
 
 ## Description
 
@@ -48,8 +48,14 @@ documents.
 * Placeholders: `TESTING.md` (overwritten by `mix cover`),
   `database.md` (overwritten by enhancements' `mix db`), and dummy pages
   in `doc/` so the test suite passes before the first `mix docs` run.
-* With `--guidelines-url`: downloads the style guide as
-  `assets/exdoc/coding.md` (placeholder + warning if the download fails).
+* With `--build`: queues `mix docs`, so the site has pages the first
+  time the door is opened. Off by default — it needs the dependencies
+  fetched and compiled, which happens after the patch set is applied,
+  so it is queued and never run inline.
+
+The team's coding guidelines used to be an option here
+(`--guidelines-url`) and are the [guidelines](../guidelines/) cartridge
+now: this installer no longer touches the network.
 
 **Idempotency**: if `ExDocController` already exists, notice and no-op.
 

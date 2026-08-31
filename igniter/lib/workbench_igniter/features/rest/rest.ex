@@ -1,15 +1,16 @@
 defmodule WorkbenchIgniter.Features.Rest do
   @moduledoc """
-  REST API with OpenApiSpex documentation. Enabled when `--interface` is
-  `rest` (the default), mutually exclusive with GraphQL.
+  REST API with OpenApiSpex documentation. Mutually exclusive with
+  GraphQL: chiefs_setup inserts one of the two, as its `--interface`
+  choice says (rest is the default).
 
   Full feature cartridge: manifest, install logic and the EEx templates it
   renders live in this directory, and the `Mix.Tasks.Workbench.Install.Rest`
   shell in `task.ex` delegates here.
 
-  Ordering: composed before healthcheck, so healthcheck autodetects the
+  Ordering: inserted before healthcheck, so healthcheck autodetects the
   `OpenApi.Spec` module in the patch set and generates its
-  OpenApiSpex-documented variant.
+  OpenApiSpex-documented variant (chiefs_setup keeps that order).
   """
   use WorkbenchIgniter.Feature
 
@@ -50,17 +51,6 @@ defmodule WorkbenchIgniter.Features.Rest do
 
   @impl true
   def console, do: [doors: [{"swagger", "/dev/swagger"}, {"openapi", "/dev/openapi"}]]
-
-  @impl true
-  def enabled?(opts), do: opts[:interface] == "rest"
-
-  @impl true
-  def enabled_by, do: {:interface, "rest"}
-
-  @impl true
-  def argv(opts) do
-    ["--project-name", opts[:project_name]] ++ flags(opts, [:auth0, :openai, :health])
-  end
 
   # The installer's options, one line each: the task's "## Options"
   # section and the help a form shows are rendered from here.

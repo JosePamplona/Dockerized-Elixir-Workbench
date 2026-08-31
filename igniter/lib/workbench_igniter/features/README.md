@@ -1,18 +1,62 @@
 # Feature cartridges
 
-Each workbench feature is a *cartridge*: everything that defines it lives
-in this folder. `workbench.setup` doesn't know features by name — it walks
-the registry (`../features.ex`), which fixes the **composition order**:
+Each workbench feature is a *cartridge*: everything that defines it
+lives in this folder, registered in `../features.ex`. There is **one
+kind of cartridge** — every one is installed on demand (`wb.sh add
+<name>`, one insert commit each) — and a *collection* is just a
+cartridge whose installer inserts other cartridges.
 
-1. Trivial dep group (`--enhance`): [osmon](osmon/) → [psql_extras](psql_extras/) → [credo](credo/) → [mock](mock/) → [exdebug](exdebug/)
-2. Interface (`--interface`): [rest](rest/) | [graphql](graphql/)
-3. [coveralls](coveralls/) (`--coveralls`)
-4. [exdoc](exdoc/) (`--exdoc`)
-5. [enhancements](enhancements/) (`--enhance`)
-6. [auth0](auth0/) (`--auth0`, implied by openai/stripe)
-7. [openai](openai/) (`--openai`)
-8. [healthcheck](healthcheck/) (`--health`)
-9. [stripe](stripe/) (`--stripe`) — *pending*: manifest only, setup emits a notice
+## Collections
+
+A collection declares its recipe in `members/1`: the cartridges it
+inserts, in order, with the argv each installer gets. `wb.sh add`
+expands the recipe (`mix workbench.expand`) and inserts each missing
+member as its own commit, so `eject` keeps reverting one cartridge
+alone; run directly, the collection's installer composes the members
+into one patch set.
+
+**The design rule for a collection's options**: an option must be a
+decision the collection itself owns — explainable on the box in one
+line without naming a member's switch (chiefs_setup's `--interface`
+qualifies; a `--coverage-theme` would not, it is coveralls' `--theme`).
+Re-exposing a member's option is how the one-type-of-cartridge
+simplification would rot back into a second type: whoever needs the
+member's option inserts the member directly. The argv a recipe hands a
+member only names the *fellow members* that ride along (exdoc's
+`--coveralls`).
+
+[chiefs_setup](chiefs_setup/) is the collection: the picks of the
+retired opinionated line — the house's settings ([ansi](ansi/) →
+[toolchain](toolchain/) → [versioning](versioning/)), the trivial dep
+group ([osmon](osmon/) → [psql_extras](psql_extras/) →
+[credo](credo/) → [mock](mock/) → [exdebug](exdebug/)),
+[rest](rest/) | [graphql](graphql/) (its `--interface` choice),
+[coveralls](coveralls/), [exdoc](exdoc/), [enhancements](enhancements/)
+and [healthcheck](healthcheck/) — in the order their marks build on
+each other. [auth0](auth0/), [openai](openai/) and [stripe](stripe/)
+(*pending*: manifest only) stay à la carte: they need external
+accounts, as does [guidelines](guidelines/), which needs the team's URL.
+
+## The house's settings
+
+What the retired setup wrote into every project it created, each as the
+one decision it is, so a stock `phx.new` project can take them one at a
+time or not at all:
+
+| Cartridge | The decision | What it writes |
+| --- | --- | --- |
+| [ansi](ansi/) | logs come out coloured through Docker | `config :elixir, ansi_enabled: true` |
+| [toolchain](toolchain/) | the host knows which Elixir this is | `.tool-versions` (off the running toolchain) + `/.elixir_ls/` in `.gitignore` |
+| [versioning](versioning/) | the project's version is a decision | `version:` in `mix.exs` + `CHANGELOG.md` |
+
+The rest of what setup configured did not become boxes, because it
+already had owners: the generators and migration types are the config
+half of [enhancements](enhancements/)' `--id-type` and `--timestamps`
+(one decision, both halves, one cartridge), and `dev_routes` in test is
+written by [healthcheck](healthcheck/), which needs it. Its `README.md`
+template found no owner and is deliberately gone: a generated README
+would have to know every cartridge, which is the coupling this
+structure exists to remove.
 
 ## Anatomy
 
@@ -57,29 +101,37 @@ one per cartridge, mirroring the directory.
 
 Dep-only cartridges have no `priv/features/<feature>/` directory:
 
-| Cartridge | Installs | Enabled by |
+| Cartridge | Installs | Picked by |
 | --- | --- | --- |
-| [credo](credo/) | `{:credo, "~> 1.7", only: [:dev, :test], runtime: false}` | `--enhance` |
-| [mock](mock/) | `{:mock, "~> 0.3", only: :test}` | `--enhance` (also composed by healthcheck, coveralls and enhancements) |
-| [exdebug](exdebug/) | `{:ex_debug, "~> 1.0"}` | `--enhance` |
-| [psql_extras](psql_extras/) | `{:ecto_psql_extras, "~> 0.8", only: :dev}` | `--enhance` |
-| [osmon](osmon/) | `:os_mon` in `extra_applications` (no dep) | `--enhance` |
-| [githooks](githooks/) | `{:git_hooks, "~> 0.7", only: :dev, runtime: false}` | manual (`wb.sh add githooks`) |
-| [exmachina](exmachina/) | `{:ex_machina, "~> 2.8", only: :test}` | manual (`wb.sh add exmachina`) |
-| [stripe](stripe/) | — (pending; implies `--auth0`) | `--stripe` |
+| [credo](credo/) | `{:credo, "~> 1.7", only: [:dev, :test], runtime: false}` | chiefs_setup |
+| [mock](mock/) | `{:mock, "~> 0.3", only: :test}` | chiefs_setup (also composed by healthcheck, coveralls and enhancements) |
+| [exdebug](exdebug/) | `{:ex_debug, "~> 1.0"}` | chiefs_setup |
+| [psql_extras](psql_extras/) | `{:ecto_psql_extras, "~> 0.8", only: :dev}` | chiefs_setup |
+| [osmon](osmon/) | `:os_mon` in `extra_applications` (no dep) | chiefs_setup |
+| [githooks](githooks/) | `{:git_hooks, "~> 0.7", only: :dev, runtime: false}` | no one (`wb.sh add githooks`) |
+| [exmachina](exmachina/) | `{:ex_machina, "~> 2.8", only: :test}` | no one (`wb.sh add exmachina`) |
+| [stripe](stripe/) | — (pending; requires auth0) | no one |
 
 Each cartridge README explains what it brings (mock's carries the pending
 migration to Mox).
 
-[clustering](clustering/) is standalone too, and adds no dependency: it
-writes the `rel/*.eex` release templates with the distributed-node
-exports DNSCluster needs, plus `DNS_CLUSTER_QUERY` in the environment
-files. Installed by hand with `wb.sh add clustering`.
+[clustering](clustering/) adds no dependency: it writes the `rel/*.eex`
+release templates with the distributed-node exports DNSCluster needs,
+plus `DNS_CLUSTER_QUERY` in the environment files. Installed by hand
+with `wb.sh add clustering`.
 
-[healthcheck2](healthcheck2/) is the third standalone one, and the
-vanilla counterpart of `healthcheck`: liveness and readiness probes as
-the first plug of the endpoint, no dependency, no router change.
-Installed by hand with `wb.sh add healthcheck2`.
+[healthcheck2](healthcheck2/) is the vanilla counterpart of
+`healthcheck`: liveness and readiness probes as the first plug of the
+endpoint, no dependency, no router change. Installed by hand with
+`wb.sh add healthcheck2`.
+
+[guidelines](guidelines/) puts the team's coding conventions in the
+project's own documentation, downloaded from `--url`. It builds on
+exdoc (`requires`) and **appends** its page to the two lists exdoc's
+`docs:` block keeps, the way clustering appends to a release script it
+does not own. It is the only installer that reaches the network, which
+is why it is a box and not an option of exdoc: inserting the
+documentation site should not depend on someone's URL being up.
 
 ## Base cartridges
 
@@ -149,10 +201,10 @@ which cartridges have one and why.
 ## The manifest (`WorkbenchIgniter.Feature` behaviour)
 
 * `task/0` - installer mix task name (public interface).
-* `flag/0` / `enabled?/1` - when the setup options turn it on.
-* `implies/0` - flags it forces on when enabled.
-* `argv/1` - arguments setup forwards when composing the task.
-* `pending?/0` - documented but not ported yet.
+* `pending?/0` - documented, but its installer is not done yet.
+* `members/1` - a collection's recipe: the cartridges it inserts, in
+  order, with the argv each installer gets; may depend on the
+  collection's own options. `[]` (the default) means a plain cartridge.
 * `installed?/1` - whether the target project carries it, off the same
   mark the installer's guard reads. `mix workbench.status` asks it.
 * `choices/0` - the values some options take, for the catalog: a closed
@@ -167,17 +219,14 @@ which cartridges have one and why.
   `:adds` (every option a piece the installer adds when missing).
 * `state/1` - what the project carries of an `:adds` cartridge's
   options, read off the project. `mix workbench.status` carries it.
-* `enabled_by/0` - what turns it on when setup composes it: its flag
-  (the default), a shared one (`:enhance`), a valued option
-  (`{:interface, "rest"}`), `nil` when standalone.
 
 Derived by `use WorkbenchIgniter.Feature`, not declared: `name/0` (the
 directory), `version/0` (the first CHANGELOG.md entry) and `summary/0`
 (the task's `@shortdoc`) — what `mix workbench.catalog` prints.
 
 Adding a feature = creating its cartridge here and adding it to the
-`WorkbenchIgniter.Features` list at the right position in the order, or
-to its standalone list when no setup flag drives it.
+`WorkbenchIgniter.Features` list, in shelf order. A collection that
+should pick it also names it in its `members/1`.
 
 ## Writing a DESIGN.md
 

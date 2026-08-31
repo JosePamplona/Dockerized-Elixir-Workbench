@@ -7,7 +7,7 @@ defmodule WorkbenchIgniter.Features.Healthcheck do
   `Mix.Tasks.Workbench.Install.Healthcheck` shell in `task.ex` delegates
   here. See `WorkbenchIgniter.Feature` for the conventions.
 
-  Ordering: composed last, after rest, so `install/1` autodetects the
+  Ordering: inserted last, after rest, so `install/1` autodetects the
   `OpenApi.Spec` module in the patch set and generates the
   OpenApiSpex-documented variant.
   """
@@ -22,9 +22,6 @@ defmodule WorkbenchIgniter.Features.Healthcheck do
 
   @impl true
   def console, do: [probes: [{"health", "{endpoint}"}]]
-
-  @impl true
-  def flag, do: :health
 
   # The installer's options, one line each: the task's "## Options"
   # section and the help a form shows are rendered from here.

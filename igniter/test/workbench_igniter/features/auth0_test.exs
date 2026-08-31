@@ -8,6 +8,7 @@ defmodule WorkbenchIgniter.Features.Auth0Test do
   defp installed(argv \\ []) do
     phx_test_project()
     |> Igniter.compose_task("workbench.install.rest", [])
+    |> Igniter.compose_task("workbench.install.enhancements", [])
     |> Igniter.compose_task("workbench.install.auth0", argv)
     |> apply_igniter!()
     |> Map.get(:assigns)
@@ -92,6 +93,7 @@ defmodule WorkbenchIgniter.Features.Auth0Test do
     test "--interface graphql skips the rest artifacts" do
       files =
         phx_test_project()
+        |> Igniter.compose_task("workbench.install.enhancements", [])
         |> Igniter.compose_task("workbench.install.auth0", ["--interface", "graphql"])
         |> apply_igniter!()
         |> Map.get(:assigns)
@@ -105,6 +107,7 @@ defmodule WorkbenchIgniter.Features.Auth0Test do
 
     test "is a no-op with a notice when already installed" do
       phx_test_project()
+      |> Igniter.compose_task("workbench.install.enhancements", [])
       |> Igniter.compose_task("workbench.install.auth0", [])
       |> apply_igniter!()
       |> Igniter.compose_task("workbench.install.auth0", [])
@@ -113,26 +116,22 @@ defmodule WorkbenchIgniter.Features.Auth0Test do
     end
   end
 
-  describe "composition through workbench.setup" do
-    test "--auth0 composes after enhancements with the setup flags" do
-      files =
+  describe "requires enhancements" do
+    test "refuses, naming it, while enhancements is not in" do
+      igniter =
         phx_test_project()
-        |> Igniter.compose_task("workbench.setup", [
-          "--enhance",
-          "--auth0",
-          "--interface",
-          "rest",
-          "--project-name",
-          "Demo"
-        ])
-        |> apply_igniter!()
-        |> Map.get(:assigns)
-        |> Map.get(:test_files)
+        |> Igniter.compose_task("workbench.install.auth0", [])
+
+      assert [issue] = igniter.issues
+      assert issue =~ "auth0 builds on enhancements"
+      assert issue =~ "./wb.sh add enhancements"
+    end
+
+    test "installs on top of it, the User on its Schema" do
+      files = installed()
 
       assert files["lib/test/accounts.ex"]
       assert files["lib/test/accounts/user.ex"] =~ "use Test.Schema"
-      # setup's fixtures include the auth0 imports.
-      assert files["test/support/fixtures.ex"] =~ "AccountsFixtures"
     end
   end
 end

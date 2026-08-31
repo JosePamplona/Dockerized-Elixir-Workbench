@@ -3,14 +3,14 @@
 Mock library for tests.
 
 * **Task**: `mix workbench.install.mock`
-* **Enabled by**: `--enhance` on `workbench.setup` — also composed directly by
-  `healthcheck`, `coveralls` and `enhancements`, whose generated tests use it (config.conf: `ENHANCE`)
+* **Inserted by**: `wb.sh add mock`; a chiefs_setup pick (the trivial
+  dep-only group) — also composed directly by `healthcheck`, `coveralls`
+  and `enhancements`, whose generated tests use it.
 
 ## Description
 
 Lets tests simulate external pieces (APIs, services) without depending
-on the real thing. Part of the trivial dep-only group toggled by
-`--enhance`.
+on the real thing. Part of the trivial dep-only group (a chiefs_setup pick).
 
 ## Pending: migration to Mox
 

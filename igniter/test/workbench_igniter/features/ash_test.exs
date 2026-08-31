@@ -216,10 +216,11 @@ defmodule WorkbenchIgniter.Features.AshTest do
   end
 
   describe "the manifest" do
-    test "is standalone: no flag, never composed" do
-      assert Ash.flag() == nil
-      assert Ash in WorkbenchIgniter.Features.standalone()
-      refute Ash in WorkbenchIgniter.Features.all()
+    test "is a plain cartridge in the catalog, picked by no collection" do
+      assert Ash in WorkbenchIgniter.Features.catalog()
+      assert Ash.members([]) == []
+      picks = WorkbenchIgniter.Features.entry(WorkbenchIgniter.Features.ChiefsSetup).members
+      refute "ash" in Enum.map(picks, & &1.name)
     end
   end
 end

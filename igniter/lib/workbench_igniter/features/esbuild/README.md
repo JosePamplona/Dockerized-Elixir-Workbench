@@ -12,7 +12,7 @@ flag: "We do not recommend setting this option, unless for API only
 applications, as doing so requires you to manually add and track
 JavaScript dependencies".
 
-Standalone, base cartridge. Install it on demand with
+Base cartridge. Install it on demand with
 
 ```sh
 ./wb.sh add esbuild

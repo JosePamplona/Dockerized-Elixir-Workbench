@@ -28,6 +28,15 @@ if "--refresh" in sys.argv:
     r = subprocess.run(["./wb.sh", "stacks", "--json"], capture_output=True, text=True)
     if r.returncode == 0 and r.stdout.strip().startswith("["): open(f"{M}/stacks.json", "w").write(r.stdout)
 
+# The mark keeps its transparency, so it goes in as a PNG and not
+# through jpg_uri: it is white line art meant to sit on the band's
+# violet, and flattened onto a ground it would arrive in a box.
+def png_uri(path, max_h=88):
+    im = Image.open(path).convert("RGBA")
+    if im.height > max_h: im = im.resize((round(im.width * max_h / im.height), max_h), Image.LANCZOS)
+    b = io.BytesIO(); im.save(b, "PNG", optimize=True)
+    return "data:image/png;base64," + base64.b64encode(b.getvalue()).decode()
+
 def jpg_uri(path, max_w=560, q=80):
     im = Image.open(path).convert("RGB")
     if im.width > max_w: im = im.resize((max_w, round(im.height * max_w / im.width)), Image.LANCZOS)
@@ -326,7 +335,7 @@ t = t.replace("{{TOKENS_CSS}}", "  " + tokens_css.replace("\n", "\n  "), 1)
 t = t.replace("<script>\n// Real data", "<script>\n" + open(f"{M}/marked.min.js").read() + "\n</script>\n<script>\n// Real data", 1)
 stacks = json.load(open(f"{M}/stacks.json")) if os.path.isfile(f"{M}/stacks.json") else []
 js = lambda o: json.dumps(o).replace("</", "<\\/")
-for k, v in [("{{CATALOG}}", js(catalog)), ("{{STACKS}}", js(stacks)), ("{{STATUS}}", js(status)), ("{{LOGS}}", js(logs)), ("{{DOCS}}", js(docs)), ("{{WB}}", js(wb)), ("{{PROJ}}", js(proj)), ("{{DIFFS}}", js(diffs)), ("{{ART}}", js(art)), ("{{PH_COVER}}", jpg_uri("assets/covers/cover_placeholder.png")), ("{{PH_BACK}}", jpg_uri("assets/covers/back_placeholder.jpg")), ("{{PH_EMPTY_COVER}}", jpg_uri("assets/covers/empty_cover_placeholder.jpg")), ("{{PH_EMPTY_BACK}}", jpg_uri("assets/covers/empty_back_placeholder.jpg"))]:
+for k, v in [("{{CATALOG}}", js(catalog)), ("{{STACKS}}", js(stacks)), ("{{STATUS}}", js(status)), ("{{LOGS}}", js(logs)), ("{{DOCS}}", js(docs)), ("{{WB}}", js(wb)), ("{{PROJ}}", js(proj)), ("{{DIFFS}}", js(diffs)), ("{{ART}}", js(art)), ("{{LOGO}}", png_uri("console/assets/images/logo.png")), ("{{PH_COVER}}", jpg_uri("assets/covers/cover_placeholder.png")), ("{{PH_BACK}}", jpg_uri("assets/covers/back_placeholder.jpg")), ("{{PH_EMPTY_COVER}}", jpg_uri("assets/covers/empty_cover_placeholder.jpg")), ("{{PH_EMPTY_BACK}}", jpg_uri("assets/covers/empty_back_placeholder.jpg"))]:
     assert t.count(k) == 1, k; t = t.replace(k, v)
 head, body = t.split('<header class="band">', 1); body = '<header class="band">' + body
 head = head.replace("<style>", "<style>\n  [hidden]{display:none!important}\n  img{max-width:100%}", 1)

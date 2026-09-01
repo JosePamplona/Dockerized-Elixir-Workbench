@@ -18,7 +18,9 @@ mock/
 ```
 
 Everything else the page shows is read from the repository at build
-time: the colours and type from `assets/design/` (`generated/tokens.css`), the sealed covers and the four placeholders (`cover_`/`back_` and `empty_cover_`/`empty_back_`) under `assets/covers/`, each
+time: the mark on the band (`console/assets/images/logo.png`, inlined as
+a PNG so its transparency survives — flattened it would arrive in a
+box), the colours and type from `assets/design/` (`generated/tokens.css`), the sealed covers and the four placeholders (`cover_`/`back_` and `empty_cover_`/`empty_back_`) under `assets/covers/`, each
 cartridge's README/DESIGN/CHANGELOG, the workbench's README, CHANGELOG
 and `config.conf`, `wb.sh`'s version, and the workspace's README,
 CHANGELOG and `.env` (secrets masked in the build, never in the page).

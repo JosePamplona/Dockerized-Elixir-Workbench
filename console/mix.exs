@@ -49,6 +49,18 @@ defmodule Console.MixProject do
       {:telemetry_metrics, "~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
       {:jason, "~> 1.2"},
+      # Colouring the code a cartridge writes. One lexer per language, and
+      # the same token vocabulary out of all of them, so the palette is
+      # written once and a new language costs no CSS. When a file turns
+      # up that no makeup_* covers, makeup_syntect (the Sublime grammars
+      # through a precompiled Rust NIF) is the escape hatch — until then
+      # an unknown extension is shown plain, never guessed at.
+      {:makeup, "~> 1.2"},
+      {:makeup_elixir, "~> 1.0"},
+      {:makeup_eex, "~> 2.0"},
+      {:makeup_html, "~> 0.2"},
+      {:makeup_js, "~> 0.1"},
+      {:makeup_json, "~> 1.0"},
       {:dns_cluster, "~> 0.2.0"},
       {:bandit, "~> 1.5"}
     ]

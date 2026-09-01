@@ -332,7 +332,7 @@ head, body = t.split('<header class="band">', 1); body = '<header class="band">'
 head = head.replace("<style>", "<style>\n  [hidden]{display:none!important}\n  img{max-width:100%}", 1)
 doc = ('<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n'
        '<meta name="description" content="Mock of the Dockerized Elixir Workbench console: the workspace board, the cartridge shelf with each box\'s manual and design paper, live logs, deployments, the project\'s own documents, and the workbench\'s manual, changelog and editable config. Data read off ./wb.sh catalog --json and status --json; logs are a replayed capture; install, deploy and save output is staged.">\n'
-       '<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'%3E%3Ctext y=\'.9em\' font-size=\'90\'%3E%F0%9F%95%B9%3C/text%3E%3C/svg%3E">\n'
+       '<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'%3E%3Ctext y=\'.9em\' font-size=\'90\'%3E%F0%9F%A7%B0%3C/text%3E%3C/svg%3E">\n'
        + head.strip() + "\n</head>\n<body>\n" + body.strip() + "\n</body>\n</html>\n")
 out = f"{M}/workbench-console.html"
 open(out, "w").write(doc)

@@ -17,7 +17,7 @@ cartridges' README/DESIGN/CHANGELOG, the workbench's README/CHANGELOG/
 config.conf and wb.sh version, the workspace's README/CHANGELOG/.env
 (secrets masked here, so the page never carries them).
 """
-import sys, json, base64, io, os, re, subprocess
+import sys, json, base64, io, os, re, subprocess, hashlib
 from PIL import Image
 
 M = "mock"
@@ -159,9 +159,141 @@ def capture_diffs(ws, catalog):
             # say, and the members' own commits can.
             touched = {m: {f["path"] for f in cartridges[m]["files"]} for m in members}
             for f in files: f["by"] = [m for m in members if f["path"] in touched[m]]
-            c.update({"files": files, "range": base[:7] + ".." + newest[:7], **totals(files)})
+            c.update({"files": files, "range": base[:7] + ".." + newest[:7],
+                      "base": base, "tip": newest, **totals(files)})
         collections[e["name"]] = c
     return {"workspace": ws, "cartridges": cartridges, "collections": collections}
+
+# --- the colour: the console's own registry, asked the same way -------------
+# A whole new file is read as code, not as change, so it is the one worth
+# colouring. The console decides how (Console.Highlight: a lexer, a
+# drawing, plain text, or nothing at all) and the mock asks it rather
+# than growing a second opinion. Keyed by content, because a file a pick
+# adds shows up twice — in its cartridge and in the collection's range.
+def capture_highlight(ws, diffs):
+    # Bytes, not text: a cartridge ships images too, and a PNG is not
+    # something to decode on the way to a lexer.
+    def show(rev, path):
+        r = subprocess.run(["git", "-C", ws, "show", "%s:%s" % (rev, path)], capture_output=True)
+        if r.returncode: return None
+        try: return r.stdout.decode()
+        except UnicodeDecodeError: return None
+    want, index_rev = {}, {}
+
+    # A patch cannot be handed to a lexer: with the +, - and @@ in front
+    # of every line it is not code. So both faces of the file go instead
+    # — the one the commit left and the one it found — and the page puts
+    # the hunks back together out of them, added and context lines off
+    # the new face, removed lines off the old. Keyed by path *and*
+    # content: the same file rides in its cartridge and in the
+    # collection's range, and the treatment is read off the name, so two
+    # files with the same bytes under different names are not one job.
+    def ask(path, rev, binary):
+        if not rev: return None
+        src = "" if binary else show(rev, path)
+        if src is None: return None
+        h = hashlib.sha1((path + "\\0" + src).encode()).hexdigest()[:16]
+        want.setdefault(h, {"path": path, "source": src})
+        index_rev.setdefault(h, rev)
+        return h
+
+    for scope in ("cartridges", "collections"):
+        for entry in diffs.get(scope, {}).values():
+            tip = entry.get("sha") or entry.get("tip")
+            base = entry.get("base") or (tip and tip + "^")
+            for f in entry.get("files", []):
+                binary = f.get("added") is None
+                if not f.get("gone"): f["new"] = ask(f["path"], tip, binary)
+                if not f.get("born"): f["old"] = ask(f["path"], base, binary)
+    if not want: return {}
+    image = "workbench-console:%s-%s" % (os.environ.get("ELIXIR_VERSION", ""), os.environ.get("ERLANG_VERSION", ""))
+    if "--" in image or image.endswith("-"):
+        image = next((l.split()[0] for l in subprocess.run(["docker", "images", "--format", "{{.Repository}}:{{.Tag}}"],
+                     capture_output=True, text=True).stdout.split("\n") if l.startswith("workbench-console:")), "")
+    if not image:
+        print("no workbench-console image: the colour stays as it was"); return {}
+    batch = [{"path": v["path"], "source": v["source"]} for v in want.values()]
+    r = subprocess.run(["docker", "run", "--rm", "-i", "--user", "%d:%d" % (os.getuid(), os.getgid()),
+                        "--volume", os.path.abspath("console") + ":/app/src", "--workdir", "/app/src",
+                        "--env", "HOME=/tmp", image,
+                        "sh", "-c", "mix local.hex --force >/dev/null 2>&1; mix console.highlight 2>/dev/null"],
+                       input=json.dumps(batch), capture_output=True, text=True)
+    try: answer = json.loads(r.stdout[r.stdout.index("["):])
+    except Exception:
+        print("the console could not colour this batch: it stays as it was"); return {}
+    # Which lines of each face a patch actually asks for. A whole new file
+    # asks for all of them; an edit of mix.lock asks for eight out of two
+    # hundred, and storing the other hundred and ninety-two is how the
+    # page grew by two megabytes to show three lines of dependency tree.
+    # The lexer still reads the whole file — it has to, for the context —
+    # but only what gets rendered is kept.
+    needed = {}
+    for scope in ("cartridges", "collections"):
+        for entry in diffs.get(scope, {}).values():
+            for f in entry.get("files", []):
+                o = n = 0
+                for line in (f.get("patch") or "").split("\n"):
+                    m = re.match(r"^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@", line)
+                    if m: o, n = int(m.group(1)), int(m.group(2)); continue
+                    if not line or re.match(r"^(diff --git |index |new file|deleted file|similarity |rename |--- |\+\+\+ |\\)", line): continue
+                    if line[0] == "+": needed.setdefault(f.get("new"), set()).add(n); n += 1
+                    elif line[0] == "-": needed.setdefault(f.get("old"), set()).add(o); o += 1
+                    else:
+                        needed.setdefault(f.get("new"), set()).add(n)
+                        needed.setdefault(f.get("old"), set()).add(o)
+                        o += 1; n += 1
+
+    # One line of highlighted HTML per source line. Makeup's newlines sit
+    # inside the tokens, so each break closes the open spans and the next
+    # line opens them again — cut naively, the tags come out unbalanced.
+    def split_lines(html):
+        stack, rows, cur = [], [], ""
+        for m in re.finditer(r"<(/?)span([^>]*)>|([^<]+)", html):
+            close, attrs, text = m.group(1), m.group(2), m.group(3)
+            if text is None:
+                if close:
+                    if stack: stack.pop()
+                    cur += "</span>"
+                else:
+                    stack.append(attrs); cur += "<span%s>" % attrs
+                continue
+            for i, piece in enumerate(text.split("\n")):
+                if i:
+                    rows.append(cur + "</span>" * len(stack))
+                    cur = "".join("<span%s>" % a for a in stack)
+                cur += piece
+        rows.append(cur)
+        return rows
+
+    # What each treatment needs to be shown: the lexer gives HTML, plain
+    # needs the text itself, and a drawing needs its bytes.
+    out = {}
+    for (h, asked), done in zip(want.items(), answer):
+        entry = {"treatment": done["treatment"], "error": done.get("error")}
+        keep = needed.get(h)
+        if done["treatment"] in ("lexer", "plain"):
+            rows = split_lines(done["html"]) if done["treatment"] == "lexer" else \
+                   [l.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") for l in asked["source"].split("\n")]
+            entry["lines"] = {str(i): rows[i - 1] for i in sorted(keep or ()) if 0 < i <= len(rows)}
+        elif done["treatment"] == "image":
+            ext = os.path.splitext(asked["path"])[1].lower()
+            if ext == ".svg":
+                # The markup, not a data URI: smaller than base64, and the
+                # page can put it inline so it takes the page's own theme,
+                # as it already does with the cartridges' diagrams.
+                entry["svg"] = re.sub(r"^<\\?xml[^>]*>\\s*", "", asked["source"])
+            else:
+                # A raster goes in scaled down. app-logo.png is 1.9 MB on
+                # disk, and a logo shown beside a diff needs none of it.
+                raw = subprocess.run(["git", "-C", ws, "show", "%s:%s" % (index_rev[h], asked["path"])], capture_output=True).stdout
+                im = Image.open(io.BytesIO(raw))
+                if im.width > 320: im = im.resize((320, round(im.height * 320 / im.width)), Image.LANCZOS)
+                # WEBP, which keeps the transparency a logo needs and is a
+                # fraction of the PNG at the size a thumbnail is read at.
+                buf = io.BytesIO(); im.save(buf, "WEBP", quality=80, method=6)
+                entry["uri"] = "data:image/webp;base64," + base64.b64encode(buf.getvalue()).decode()
+        out[h] = entry
+    return out
 
 # Captured with --diffs (the workspace it reads defaults to the status
 # one); like the logs, a real capture the page replays. The old capture
@@ -170,7 +302,9 @@ if "--diffs" in sys.argv:
     i = sys.argv.index("--diffs")
     src = sys.argv[i + 1] if len(sys.argv) > i + 1 and not sys.argv[i + 1].startswith("--") else ws
     if os.path.isdir(os.path.join(src, ".git")):
-        json.dump(capture_diffs(src, catalog), open(f"{M}/diffs.json", "w"))
+        captured = capture_diffs(src, catalog)
+        captured["highlight"] = capture_highlight(src, captured)
+        json.dump(captured, open(f"{M}/diffs.json", "w"))
     else: print(f"no repository at {src}: keeping the diffs already captured")
 diffs = json.load(open(f"{M}/diffs.json")) if os.path.isfile(f"{M}/diffs.json") else {"cartridges": {}, "collections": {}}
 def mask(text):

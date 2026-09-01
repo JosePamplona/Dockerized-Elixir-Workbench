@@ -16,23 +16,39 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
-- The console mock's box grows an *Implementation* sheet: what the
-  cartridge actually wrote, file by file, off its own insert commit.
-  Nothing new had to be recorded for it — `add` refuses a dirty tree,
-  so the commit holds that cartridge and nothing else, and its sha was
-  already in `status --json` and already named in the eject button's
-  tooltip. It makes eject legible: the diff of what pressing it undoes.
-  A collection leaves no commit of its own, so its sheet is the range
-  its members span, taken as one tree against another and never as a
-  concatenation of their patches, whose line numbers already count the
-  ones before — a file two picks touched reads as one story. The range
-  is only offered when their commits are contiguous: a second pass, a
-  member born with `phx.new`, one ejected in between, and the
-  pick-by-pick breakdown is all there is to show. Under the range each
-  file names the picks that touched it, which the range itself cannot
-  say and the members' own commits can. Every file opens shut: the list
-  is the summary, and thirteen picks over fifty-seven files unrolled at
-  once is several thousand pixels nobody scrolls.
+- The console colours the code a cartridge writes, and the box grows an
+  **Installation** screen that shows it. `Console.Highlight` in
+  `console/` keeps the registry, as data: a treatment per filename and
+  then per extension — a Makeup lexer, a drawing, plain text, or left
+  out. Adding a language is a line there and its `makeup_*` dependency,
+  since every Makeup lexer emits the same token classes and the palette
+  (`console/elixir_color_theme.jsonc`, One Dark, on the dark ground the
+  Logs screen uses) is written once. What the registry does not name is
+  shown plain and never guessed at: the Elixir lexer on an `.eex`
+  template does not leave it grey, it colours `in` and `with` as
+  keywords inside a CSS comment. `mix console.highlight` answers the
+  same for the mock's generator, so there is one opinion and not two.
+- The box's **Installation** screen: what the cartridge did to this
+  project, off its own insert commit. Nothing new had to be recorded —
+  `add` refuses a dirty tree, so one commit is one cartridge's whole
+  diff, and its sha already travelled in `status --json` and was already
+  named in the eject button's tooltip. It makes eject legible: the diff
+  of what pressing it undoes. A patch cannot be handed to a lexer, so
+  both faces of each file are coloured whole and the hunks are put back
+  together out of them — context and additions off the new face,
+  removals off the old — and only the lines a patch renders are kept.
+  *Summary* first, one row per cartridge with its commit, its subject
+  and its counts, and the collection's own row last with its commit
+  cells empty, because it leaves none. Its figures are read off the
+  range its picks span, never off the column added up: a file several
+  picks touch is one file, and a line one pick wrote and a later one
+  took out was never there at the start nor at the end. The range is
+  only taken when their commits are contiguous — a second pass, a member
+  born with `phx.new`, one ejected in between — and otherwise the screen
+  says so. *Files* under it, each naming the picks that touched it.
+  `mix.lock` is in: its lines run past a thousand characters, but the
+  package and the version are at the front of each one, and the lock is
+  the only place a cartridge shows what it drags in.
 - One kind of cartridge. `workbench.setup` — the task that composed the
   opinionated project — is retired and reborn as **chiefs_setup**, a
   *collection*: a cartridge whose installer inserts other cartridges.

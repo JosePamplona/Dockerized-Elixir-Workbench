@@ -412,38 +412,91 @@
   .log .dim{color:var(--term-dim)}.log .add{color:#9BD99A}.log .upd{color:#E3B25C}.log .ok{color:#D4B27E;font-weight:500}
   .log:empty::before{content:"The install output will stream here — and into the jobs tray.";color:var(--term-dim);font-style:italic}
   .log-cap{display:flex;justify-content:space-between;align-items:baseline}
-  /* --- what the cartridge wrote ----------------------------------------------
-     The insert commit's diff, one file at a time: its counts always, its
-     patch when you ask for it. A file nobody reads stays shut (mix.lock's
-     lines run past a thousand characters), and every patch scrolls in its
-     own box, so one long line never pushes the sheet sideways. */
+  /* --- Installation: what the cartridge wrote --------------------------------
+     Its own screen, the drawer's full width, one scroll. */
+  .install{padding:22px 32px 60px;display:grid;gap:12px;align-content:start}
+  .install[hidden]{display:none}
+  .install .label small{margin-left:10px;font-family:var(--mono);font-size:11px;letter-spacing:0;text-transform:none;color:var(--soft)}
+  .install .cap{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
   .impl{display:grid;gap:10px}
   .impl .files{border:1px solid var(--line);border-radius:3px;overflow:hidden}
-  /* Thirteen picks touch fifty-seven files: bounded, the sheet stays
-     walkable and the pick-by-pick under it stays findable. */
-  .impl .files.many{overflow-y:auto;max-height:min(52vh,560px)}
   .impl .f{border-top:1px solid var(--line)}
   .impl .f:first-child{border-top:0}
-  .impl .fh{display:flex;gap:10px;align-items:baseline;width:100%;text-align:left;padding:8px 12px;background:var(--surface-2);border:0;font-family:var(--mono);font-size:12px;color:var(--ink);cursor:pointer}
+  .impl .fh{display:flex;gap:10px;align-items:center;padding:6px 12px;background:var(--surface-2);font-family:var(--mono);font-size:12px;color:var(--ink)}
   .impl .fh:hover{background:var(--accent-soft)}
-  .impl .fh .caret{color:var(--soft);width:1em}
-  .impl .fh .p{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .impl .fh .by{flex:none;font-family:var(--cond);font-weight:600;text-transform:uppercase;letter-spacing:.08em;font-size:11px;color:var(--muted);white-space:nowrap}
-  .impl .fh .n{font-variant-numeric:tabular-nums;white-space:nowrap}
+  /* The row's trigger is its own button, so the cart-refs beside it stay
+     the links the house says a cartridge mention always is. */
+  .impl .ft{flex:1;min-width:0;display:flex;gap:10px;align-items:baseline;text-align:left;padding:2px 0;border:0;background:none;font:inherit;color:inherit;cursor:pointer}
+  .impl .ft .caret{color:var(--soft);width:1em;flex:none}
+  .impl .ft .p{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .impl .fh .mark{flex:none;font-family:var(--cond);font-weight:600;text-transform:uppercase;letter-spacing:.08em;font-size:11px;color:var(--muted)}
+  .impl .fh .refs{flex:none;display:flex;gap:5px;align-items:center}
+  .impl .fh .refs .more{font-family:var(--cond);font-weight:600;letter-spacing:.08em;font-size:11px;color:var(--muted)}
+  .impl .fh .n{flex:none;font-variant-numeric:tabular-nums;white-space:nowrap}
   .impl .fh .n .a{color:var(--good)}
   .impl .fh .n .r{color:var(--bad)}
-  .impl pre{margin:0;overflow-x:auto;font-family:var(--mono);font-size:11.5px;line-height:1.5;background:var(--surface);padding:8px 0;max-height:340px;overflow-y:auto}
-  .impl pre div{padding:0 12px;white-space:pre}
-  .impl pre .add{background:color-mix(in srgb,var(--good) 13%,transparent)}
-  .impl pre .del{background:color-mix(in srgb,var(--bad) 13%,transparent)}
-  .impl pre .hunk{color:var(--soft)}
-  .impl pre .meta{color:var(--muted)}
+
+  /* --- the diff, on the ground the palette was written for -------------------
+     console/elixir_color_theme.jsonc is One Dark: twelve rules meant for a
+     dark editor. They go in here as they were written, on the house's own
+     dark ground — the one the Logs screen already uses — instead of being
+     re-derived for paper, which is what made them read muddy.
+     Every Makeup lexer emits these same classes, so a language added later
+     costs this block nothing. */
+  .impl .src{--t-base:#abb2bf;--t-punct:#828997;--t-comment:#5c6370;--t-atom:#56b6c2;
+             --t-const:#61afef;--t-func:#60acea;--t-kw:#c678dd;--t-op:#d19a66;
+             --t-mod:#e5c07b;--t-str:#98c379;--t-interp:#e06c75;--t-regex:#be5046;
+             margin:0;overflow:auto;max-height:min(62vh,700px);background:var(--term);color:var(--t-base);
+             border-top:1px solid var(--term-line);font-family:var(--mono);font-size:12.5px;line-height:1.6;padding:8px 0}
+  .impl .src .n, .impl .src .nv, .impl .src .nb, .impl .src .nx{color:var(--t-base)}
+  .impl .src .p{color:var(--t-punct)}
+  .impl .src .c, .impl .src .c1, .impl .src .cm, .impl .src .cs, .impl .src .cp, .impl .src .gp{color:var(--t-comment)}
+  .impl .src .ss, .impl .src .se, .impl .src .sc{color:var(--t-atom)}
+  .impl .src .no, .impl .src .kc, .impl .src .bp, .impl .src .nn{color:var(--t-const)}
+  .impl .src .nf, .impl .src .ne{color:var(--t-func)}
+  .impl .src .k, .impl .src .kd, .impl .src .kn, .impl .src .kp, .impl .src .kr, .impl .src .kt{color:var(--t-kw)}
+  .impl .src .o, .impl .src .ow, .impl .src .mi, .impl .src .mf, .impl .src .mo, .impl .src .mh, .impl .src .mb{color:var(--t-op)}
+  .impl .src .nc, .impl .src .ni, .impl .src .nl, .impl .src .nt{color:var(--t-mod)}
+  .impl .src .s, .impl .src .s1, .impl .src .s2, .impl .src .sb, .impl .src .sd, .impl .src .sh, .impl .src .sx{color:var(--t-str)}
+  .impl .src .si, .impl .src .na, .impl .src .nd{color:var(--t-interp)}
+  .impl .src .sr{color:var(--t-regex)}
+  .impl .src .c, .impl .src .c1, .impl .src .cm{font-style:italic}
+  .impl .src .err{color:var(--t-interp);text-decoration:underline wavy}
+  /* A row carries both line numbers — a removal has no new one, an
+     addition no old one — so a hunk can be followed on either side. */
+  /* As wide as the longest line, never narrower than the window: a row's
+     background is painted to its own width, so without this the red and
+     green bands stop at the visible edge and the rest of a long line
+     scrolls out over bare ground. */
+  .impl .src .rows{min-width:max-content}
+  .impl .dl{display:flex;white-space:pre}
+  /* `gut`, no `ln`: that one is the Logs screen's line, a grid, from long
+     before this — and it was quietly winning. */
+  .impl .dl .gut{flex:none;width:3.4em;padding-right:.8em;text-align:right;color:var(--term-dim);user-select:none;font-variant-numeric:tabular-nums}
+  .impl .dl .sg{flex:none;width:1.6em;text-align:center;color:var(--term-dim);user-select:none}
+  .impl .dl .cd{flex:none;padding-right:16px}
+  .impl .dl.add{background:rgba(46,139,87,.20)}
+  .impl .dl.add .sg{color:var(--good)}
+  .impl .dl.del{background:rgba(192,57,43,.20)}
+  .impl .dl.del .sg{color:var(--bad)}
+  .impl .dl.hunk{color:var(--soft);background:rgba(255,255,255,.04)}
+  .impl .dl.meta{color:var(--term-dim)}
+  .impl .shot{margin:0;padding:16px;background:var(--term);display:flex;justify-content:center}
+  .impl .shot svg, .impl .shot img{max-width:100%;max-height:420px;height:auto}
+  .impl .none{margin:0;padding:10px 12px;background:var(--surface);color:var(--muted);font-size:12.5px}
   /* The picks under a collection's accumulated diff: one commit each. */
   .impl .picks{display:grid;gap:0;font-family:var(--mono);font-size:12px}
   .impl .picks .pick{display:flex;gap:10px;align-items:baseline;padding:6px 0;border-top:1px solid var(--line)}
   .impl .picks .pick:first-child{border-top:0}
-  .impl .picks .pick .p{flex:1}
-  .impl .picks .pick .n{font-variant-numeric:tabular-nums;white-space:nowrap}
+  .impl .picks .pick .p{flex:none;display:flex;min-width:170px}
+  .impl .picks .pick .sh{flex:none;width:5.4em;color:var(--muted);font-size:11.5px;white-space:nowrap}
+  .impl .picks .pick .dt{flex:none;width:7.4em;color:var(--muted);font-size:11.5px;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .impl .picks .pick .sj{flex:1;min-width:0;color:var(--soft);font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .impl .picks .pick .fc{flex:none;width:6.2em;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+  .impl .picks .pick.total{border-top:1px solid var(--ink);font-weight:600}
+  .impl .picks .pick.total .p{align-items:center}
+  .impl .caveat{margin:0;color:var(--muted);font-size:13px;max-width:76ch}
+  .impl .picks .pick .n{flex:none;width:8.4em;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
   .impl .picks .pick .n .a{color:var(--good)}
   .impl .picks .pick .n .r{color:var(--bad)}
 
@@ -552,12 +605,12 @@
       <table class="rows" id="containers"></table>
     </section>
     <section>
-      <h2>Inserted <span class="label" id="slots-sum"></span></h2>
-      <table class="rows" id="slots"></table>
-    </section>
-    <section>
       <h2>Git <span class="label" id="git-sum"></span></h2>
       <div class="git" id="git"></div>
+    </section>
+    <section>
+      <h2>Inserted <span class="label" id="slots-sum"></span></h2>
+      <table class="rows" id="slots"></table>
     </section>
   </aside>
 
@@ -675,6 +728,9 @@
     <button class="btn" id="d-close">Put back</button>
     <div class="dtabs" role="tablist" aria-label="The box and what comes inside it" id="d-tabs"></div>
   </div>
+  <div class="install" id="d-install" hidden>
+    <div class="impl" id="d-ibody"></div>
+  </div>
   <div class="booklet" id="d-booklet" hidden>
     <article class="md" id="d-md"></article>
     <nav class="toc" id="d-toc" aria-label="In this document"></nav>
@@ -699,10 +755,6 @@
         <div class="cmd" id="d-cmd"></div>
         <div class="acts"><button class="go" id="d-go" type="submit">Insert cartridge</button><button class="eject" id="d-eject" type="button" hidden>Eject</button><span class="note" id="d-note"></span></div>
       </form>
-      <div id="d-impl" hidden>
-        <div class="log-cap"><span class="label">Implementation</span><span class="note" id="d-impl-note"></span></div>
-        <div class="impl" id="d-impl-body"></div>
-      </div>
       <div>
         <div class="log-cap"><span class="label">Output</span><span class="note">staged in the mock</span></div>
         <div class="log" id="d-log" aria-live="polite"></div>
@@ -1020,11 +1072,14 @@ for (const b of $$(".filters .btn")) b.addEventListener("click", () => {
 });
 
 // --- the box in hand ---------------------------------------------------------
-const DOC_TABS = [["box", "Box", null], ["need_md", "Need", "NEED.md"], ["readme", "Manual", "README.md"], ["design", "Design", "DESIGN.md"], ["changelog", "Changelog", "CHANGELOG.md"]];
+const DOC_TABS = [["box", "Box", null], ["install", "Installation", null], ["need_md", "Need", "NEED.md"], ["readme", "Manual", "README.md"], ["design", "Design", "DESIGN.md"], ["changelog", "Changelog", "CHANGELOG.md"]];
 function renderDrawerTabs() {
   const e = state.current, docs = DOCS[e.name] || {}, box = $("#d-tabs"); box.replaceChildren();
   for (const [key, label, file] of DOC_TABS) {
-    if (key !== "box" && !docs[key]) continue;
+    // Installation is not a paper in the box: it is what this cartridge
+    // did to this project, and it is there only when a commit says so.
+    if (key === "install") { if (!hasInstall(e)) continue; }
+    else if (key !== "box" && !docs[key]) continue;
     const t = el("button", { class: "dtab", role: "tab", "aria-selected": String(state.dtab === key), onclick: () => showDrawerTab(key) }, label);
     if (file) t.append(el("small", {}, file));
     box.append(t);
@@ -1033,8 +1088,10 @@ function renderDrawerTabs() {
 function showDrawerTab(key) {
   state.dtab = key; renderDrawerTabs();
   $("#d-body").hidden = key !== "box";
-  $("#d-booklet").hidden = key === "box";
-  if (key !== "box") renderDoc(key);
+  $("#d-install").hidden = key !== "install";
+  $("#d-booklet").hidden = key === "box" || key === "install";
+  if (key === "install") renderInstall();
+  else if (key !== "box") renderDoc(key);
   $("#drawer").scrollTop = 0;
 }
 const GH = "https://github.com/JosePamplona/Dockerized-Elixir-Workbench/blob/main/";
@@ -1351,41 +1408,111 @@ function renderGo() {
   // A collection never has a commit of its own: its note already says so.
   if (e.installed && !insert && !dirty && !left) note.textContent = born ? "came with the project: phx.new generated it — nothing to eject" : "inserted by hand: no commit to eject";
   if (!e.installed && missing.length && !dirty) note.textContent = "builds on " + missing.map(n => n.name).join(" and ") + ", not in the project yet";
-  renderCmd(); renderImpl();
+  renderCmd();
 }
 
 // --- what the cartridge wrote ------------------------------------------------
-// Every file opens shut. The list is the summary — which files, how
-// much each — and it reads in a glance; ten patches unrolled at once are
-// several thousand pixels of sheet nobody scrolls. It also settles
-// mix.lock, whose lines run past a thousand characters, without making
-// it a special case.
+// Its own screen, not a panel on the box's sheet: the code was sharing a
+// 621px column with the art, the specs, the form and the output log, and
+// living in a 340px window with a scrollbar inside a list with a
+// scrollbar inside a drawer with a scrollbar. Here it has the drawer's
+// full width and one scroll.
+//
+// A patch cannot be handed to a lexer — with the +, - and @@ in front of
+// every line it is not code — so the capture carries both faces of each
+// file, coloured whole, and the hunks are put back together out of them:
+// context and additions off the new face, removals off the old. The @@
+// headers stay plain; they are the only lines that belong to the diff
+// itself and not to either file.
 const counts = f => f.added === null ? [el("span", {}, "binary")] : [
   el("span", { class: "a" }, "+" + f.added),
-  ...(f.removed ? [" ", el("span", { class: "r" }, "\u2212" + f.removed)] : []),
+  ...(f.removed ? [" ", el("span", { class: "r" }, "−" + f.removed)] : []),
 ];
+
+// A highlighted blob as one HTML string per line. Makeup's newlines sit
+// inside the tokens — a heredoc is a single span twenty lines tall — so
+// each break closes the open spans and the next line opens them again,
+// or the tags come out unbalanced. Done once per blob and kept.
+// The capture already cut each face into lines and kept only the ones a
+// patch asks for, so this is a lookup: line number in, its HTML out.
+const blobLine = (id, n) => {
+  const h = id && (DIFFS.highlight || {})[id];
+  return h && h.lines ? h.lines[n] : undefined;
+};
+
+// One row of the diff: the two line numbers it has (a removal has no new
+// one, an addition no old one), the sign, and the line itself — coloured
+// when the face it came from was coloured, plain when it was not.
+function diffRow(cls, oldNo, newNo, sign, html, text) {
+  const row = el("div", { class: "dl " + cls },
+    el("span", { class: "gut" }, oldNo || ""), el("span", { class: "gut" }, newNo || ""),
+    el("span", { class: "sg" }, sign));
+  const code = el("span", { class: "cd" });
+  if (html !== null && html !== undefined) code.insertAdjacentHTML("beforeend", html);
+  else code.textContent = text;
+  row.append(code);
+  return row;
+}
+
+function diffBody(f) {
+  const h = (DIFFS.highlight || {})[f.new] || (DIFFS.highlight || {})[f.old];
+  if (h && h.treatment === "omit")
+    return el("p", { class: "none", hidden: true }, "left out on purpose: its lines run past a thousand characters and nobody reads them");
+  if (h && h.treatment === "image") {
+    const box = el("div", { class: "shot", hidden: true });
+    if (h.svg) box.insertAdjacentHTML("beforeend", h.svg);
+    else if (h.uri) box.append(el("img", { src: h.uri, alt: f.path }));
+    return box;
+  }
+  const pre = el("pre", { class: "src", hidden: true });
+  // The rows go in a box as wide as the longest line, not as wide as the
+  // window: a background painted only to the visible edge stops there,
+  // and the red and green bands were being cut off the moment you
+  // scrolled sideways.
+  const rows = el("div", { class: "rows" });
+  pre.append(rows);
+  let o = 0, n = 0;
+  for (const line of (f.patch || "").split("\n")) {
+    let m;
+    if ((m = line.match(/^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/))) {
+      o = +m[1]; n = +m[2];
+      rows.append(el("div", { class: "dl hunk" }, el("span", { class: "gut" }), el("span", { class: "gut" }),
+                    el("span", { class: "sg" }), el("span", { class: "cd" }, line)));
+      continue;
+    }
+    if (/^(diff --git |index |new file|deleted file|similarity |rename |--- |\+\+\+ )/.test(line) || !line) continue;
+    const body = line.slice(1);
+    if (line[0] === "+") { rows.append(diffRow("add", null, n, "+", blobLine(f.new, n), body)); n++; }
+    else if (line[0] === "-") { rows.append(diffRow("del", o, null, "−", blobLine(f.old, o), body)); o++; }
+    else if (line[0] === "\\") rows.append(diffRow("meta", null, null, "", null, line));
+    else { rows.append(diffRow("", o, n, " ", blobLine(f.new, n), body)); o++; n++; }
+  }
+  return pre;
+}
+
 const filesBox = files => el("div", { class: "files" + (files.length > 12 ? " many" : "") }, ...files.map(fileRow));
 function fileRow(f) {
-  const pre = el("pre", { hidden: true });
-  for (const line of f.patch.split("\n")) {
-    const cls = /^(diff --git |index |new file|deleted file|similarity |rename |--- |\+\+\+ )/.test(line) ? "meta"
-      : line.startsWith("@@") ? "hunk" : line.startsWith("+") ? "add" : line.startsWith("-") ? "del" : "";
-    pre.append(el("div", { class: cls }, line || " "));
-  }
-  const caret = el("span", { class: "caret" }, "\u25b8");
-  const head = el("button", { class: "fh", type: "button", "aria-expanded": "false" }, caret,
-    el("span", { class: "p" }, f.path),
-    ...(f.born || f.gone ? [el("span", { class: "by" }, f.born ? "new" : "gone")] : []),
-    ...(f.by && f.by.length > 0 ? [el("span", { class: "by", title: "touched by " + f.by.join(", ") },
-      f.by.length > 3 ? f.by.slice(0, 3).join(" \u00b7 ") + " +" + (f.by.length - 3) : f.by.join(" \u00b7 "))] : []),
-    el("span", { class: "n" }, ...counts(f)));
-  head.addEventListener("click", () => {
-    pre.hidden = !pre.hidden;
-    caret.textContent = pre.hidden ? "\u25b8" : "\u25be";
-    head.setAttribute("aria-expanded", String(!pre.hidden));
+  const body = diffBody(f);
+  const caret = el("span", { class: "caret" }, "▸");
+  // The picks that touched the file are cart-refs, which the house says
+  // are always a door to the box — so they cannot live inside the row's
+  // own button. The trigger is its own button and they sit beside it.
+  const shown = (f.by || []).slice(0, 3);
+  const rest = (f.by || []).length - shown.length;
+  const trigger = el("button", { class: "ft", type: "button", "aria-expanded": "false" }, caret, el("span", { class: "p" }, f.path));
+  trigger.addEventListener("click", () => {
+    body.hidden = !body.hidden;
+    caret.textContent = body.hidden ? "▸" : "▾";
+    trigger.setAttribute("aria-expanded", String(!body.hidden));
   });
-  return el("div", { class: "f" }, head, pre);
+  const head = el("div", { class: "fh" }, trigger,
+    ...(f.born || f.gone ? [el("span", { class: "mark" }, f.born ? "new" : "gone")] : []),
+    ...(shown.length ? [el("span", { class: "refs" }, ...shown.map(cartRef),
+      ...(rest > 0 ? [el("span", { class: "more", title: "and " + f.by.slice(3).join(", ") }, "+" + rest)] : []))] : []),
+    el("span", { class: "n" }, ...counts(f)));
+  return el("div", { class: "f" }, head, body);
 }
+
 // A collection's picks that are in by commit, with what each one wrote:
 // the breakdown that stands whether or not the range above it does.
 function collectionPicks(e) {
@@ -1393,39 +1520,83 @@ function collectionPicks(e) {
     .filter(m => state.git.inserts.some(i => i.feature === m.name) && DIFFS.cartridges[m.name])
     .map(m => ({ name: m.name, ...DIFFS.cartridges[m.name] }));
 }
-function renderImpl() {
-  const e = state.current, wrap = $("#d-impl"), body = $("#d-impl-body"), note = $("#d-impl-note");
-  body.replaceChildren(); note.textContent = "";
-  const insert = state.git.inserts.find(i => i.feature === e.name);
-  // Nothing to show for a box with no commit behind it: one that came
-  // with phx.new, one put in by hand, one still on the shelf. Their
-  // notes under the button already say which.
-  const picks = e.collection ? collectionPicks(e) : [];
-  wrap.hidden = e.collection ? !picks.length : !insert;
-  if (wrap.hidden) return;
+// Whether the box has an Installation to show at all: a commit of its
+// own, or — for a collection, which leaves none — picks that have one.
+function hasInstall(e) {
+  if (!DIFFS.cartridges) return false;
+  if (e.collection) return collectionPicks(e).length > 0;
+  return !!state.git.inserts.find(i => i.feature === e.name) && !!DIFFS.cartridges[e.name];
+}
+
+function renderInstall() {
+  const e = state.current, body = $("#d-ibody");
+  body.replaceChildren();
+  if (!hasInstall(e)) return;
+
+  // Who wrote what, before what was written. Each row carries its own
+  // commit, which is the whole architecture made visible: one cartridge,
+  // one commit, and that sha is the one `eject` reverts. A collection's
+  // thirteen used to hide behind a single range.
+  // Six columns: who, its commit, when, what that commit is called, how
+  // many lines, how many files. The lines and the files are counted apart because
+  // they are two different things and one of them adds up while the
+  // other does not. The subject earns its place on the argv it carries —
+  // `Insert rest --health` — which is what the box reads back to say
+  // which options a cartridge went in with.
+  const row = (cls, name, sha, date, subject, added, removed, files, titles) =>
+    el("div", { class: "pick" + (cls ? " " + cls : "") },
+      el("span", { class: "p" }, name),
+      el("span", { class: "sh" }, sha),
+      el("span", { class: "dt" }, date),
+      el("span", { class: "sj", title: subject || "" }, subject || ""),
+      el("span", { class: "n", title: titles || "" }, ...counts({ added, removed })),
+      el("span", { class: "fc", title: titles || "" }, files + " file" + (files === 1 ? "" : "s")));
+
+  const table = rows => el("div", { class: "picks" }, ...rows);
+  const pickRow = r => row("", cartRef(r.name), r.sha.slice(0, 7), r.date.slice(0, 10),
+                           r.subject, r.added, r.removed, r.files.length);
 
   if (!e.collection) {
     const d = DIFFS.cartridges[e.name];
-    if (!d) { note.textContent = "not captured in the mock \u2014 the console reads it off the workspace"; return; }
-    note.textContent = `${d.sha.slice(0, 7)} \u00b7 ${d.date.slice(0, 10)} \u00b7 ${d.files.length} file${d.files.length === 1 ? "" : "s"}`;
-    body.append(filesBox(d.files));
+    body.append(el("span", { class: "label" }, "Summary"), table([pickRow({ name: e.name, ...d })]),
+                el("span", { class: "label" }, "Files"), filesBox(d.files));
     return;
   }
-
-  // The collection: the range its picks span when they are contiguous,
-  // and under it the picks themselves, one commit each.
-  const c = DIFFS.collections[e.name];
+  const picks = collectionPicks(e), c = DIFFS.collections[e.name];
   const whole = c && c.contiguous && c.files.length ? c : null;
-  note.textContent = whole
-    ? `${whole.range} \u00b7 ${picks.length} pick${picks.length === 1 ? "" : "s"}, one commit each \u00b7 ${whole.files.length} file${whole.files.length === 1 ? "" : "s"}`
-    : `${picks.length} pick${picks.length === 1 ? "" : "s"}, one commit each \u2014 ` +
-      (c && !c.contiguous ? "their commits are not contiguous, so there is no honest range to read as one"
-                          : "the box leaves no commit of its own");
-  if (whole) body.append(filesBox(whole.files));
-  body.append(el("span", { class: "label" }, whole ? "Pick by pick" : "The picks"));
-  body.append(el("div", { class: "picks" }, ...picks.map(p => el("div", { class: "pick" },
-    el("span", { class: "p" }, p.name),
-    el("span", { class: "n" }, ...counts(p), " \u00b7 ", p.files.length + " file" + (p.files.length === 1 ? "" : "s"))))));
+  const rows = picks.map(pickRow);
+  // The total is not the column added up, and it should not be: the
+  // column is what each pick did, the total is what the project was left
+  // with. Seventy-eight rows of files are fifty-seven files, because
+  // several picks touch the same one; and three of the lines counted in
+  // the column were written by one pick and taken out by a later one —
+  // exdoc creates assets/exdoc/database.md and enhancements rewrites it
+  // — so they were never there at the start nor at the end. If the two
+  // ever agreed exactly it would mean no cartridge built on another.
+  // A total only where there is a range to read it off. Without one the
+  // union is not knowable — the column cannot be added up, since a file
+  // several picks touch is one file — and a made-up figure is worse than
+  // none; the note below says why there is none.
+  // No commit on the total row: a range is not a sum of commits, and put
+  // in that column it would read as one. It belongs to what it produced
+  // — the file list below — and it labels that instead.
+  // The last row is the collection's own, named like the rest of them —
+  // and its commit cells are empty because it has none: a collection
+  // leaves no commit, and thirteen filled cells above one blank one is
+  // that rule where it can be seen rather than read. The range lives in
+  // the row's title now: its tip is healthcheck's commit, already in the
+  // table, and its base is the project's own birth, which belongs to the
+  // project and not to this box.
+  if (rows.length > 1 && whole)
+    rows.push(row("total", cartRef(e.name), "", "", "", whole.added, whole.removed, whole.files.length,
+      whole.range + " — read off the range, not the column added up. The column is what each pick did; "
+      + "this is what the project was left with. A file several picks touch is one file, and a "
+      + "line one pick wrote and a later one took out was never there at the start nor at the end."));
+  body.append(el("span", { class: "label" }, "Summary"), table(rows));
+  if (whole) body.append(el("span", { class: "label" }, "Files"), filesBox(whole.files));
+  else body.append(el("p", { class: "caveat" },
+    c && !c.contiguous ? "Their commits are not contiguous — a second pass, a pick born with phx.new or one ejected in between — so there is no honest range to read as one."
+                       : "The box leaves no commit of its own: what it did is what its picks did."));
 }
 
 function eject(ev) {

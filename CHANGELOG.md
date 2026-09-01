@@ -269,7 +269,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Two placeholder boxes where there was one socket, a front and a back
   each. The **socket** (`cover_placeholder`, `back_placeholder`) stands
   in for a cartridge nobody has sealed a box for yet: the bare board,
-  and its reverse side with its own title block. The **empty**
+  and its reverse side, which carries no lettering at all — a stand-in
+  asserts nothing, and the workbench's name on a plate is typeset in
+  the strip, never drawn into the art. The **empty**
   (`empty_cover_placeholder`, `empty_back_placeholder`) is for a
   cartridge that is not done — the drawing it would have been built
   from, stamped DRAFT and pending review, with the ink showing through

@@ -97,6 +97,14 @@
     # project's Dockerfile.local; with the workbench present, `new` seeds
     # it as an alias (docker tag) of the shared toolchain image.
     LOCAL_IMAGE="$APP_NAME:local"
+    # The installer setting (config.conf), kept apart from the version
+    # resolved below: the setting says what the NEXT project is generated
+    # with, PHX_NEW_VERSION says what THIS workspace was. Only 'new'
+    # reads the setting and nothing ever writes it back — the record of a
+    # creation belongs to the workspace it created, not to a file that
+    # names the next one. Empty is the ordinary case: hex decides.
+    PHX_NEW_SETTING="$PHX_NEW_VERSION"
+    PHX_NEW_VERSION=""
     # An existing workspace names itself: its compose carries the compose
     # project name and the dev image baked at creation, so every command
     # but the creating ones reads them from there — config.conf may since
@@ -230,14 +238,65 @@
     echo $port
   }
 
-  # latest_phx_new
-    # The newest stable phx_new on hex — what 'new' stamps into the
-    # workspace when the command line does not name one. The workbench
-    # keeps no version of its own: the installer is Phoenix's to release
-    # and the workspace's to remember.
-  latest_phx_new() {
+  # phx_new_versions
+    # Every stable phx_new hex knows, newest first — the order hex
+    # publishes them in. Pre-releases are dropped, as 'mix
+    # archive.install hex phx_new' drops them: an rc is something a
+    # person asks for by name, and --phx-new is where names go.
+  phx_new_versions() {
     curl -fs "https://hex.pm/api/packages/phx_new" | \
-      grep -o '"latest_stable_version":"[^"]*"' | cut -d'"' -f4
+      grep -o '"version":"[^"]*"' | cut -d'"' -f4 | grep -v -- '-'
+  }
+
+  # How far back 'resolve_phx_new' walks before giving up. It walks
+  # release by release, not one probe per minor line, because the
+  # requirement moves inside a line: phx_new 1.8.0 to 1.8.5 ask for
+  # Elixir ~> 1.15 and 1.8.13 asks for ~> 1.17, so the newest of a line
+  # answers only for itself, and rejecting a whole line on it would
+  # refuse installers the stack can run. The number clears the current
+  # 1.8 line (12 stable releases) with room to reach the one below it;
+  # each candidate costs one hex call, and only the candidates before
+  # the first that fits are ever paid for.
+  PHX_NEW_CANDIDATES=25
+
+  # resolve_phx_new
+    # The newest stable phx_new this stack can run, into
+    # PHX_NEW_VERSION. PHX_NEW_NEWEST and PHX_NEW_NEWEST_REQUIREMENT
+    # keep hex's newest and what it asks of Elixir, so the caller can
+    # say why it did not get that one. Returns 1 when hex does not
+    # answer, or when nothing within reach runs here.
+    #
+    # Every release declares the Elixir it needs, so the first one this
+    # stack satisfies is the answer — almost always hex's newest, for
+    # the one call the pairing check would have made anyway. It walks
+    # only when the stack is behind, which is exactly the case that had
+    # no answer before: mix installs the newest and fails loading it,
+    # and the workbench refused with the same verdict said earlier.
+    # This is where the workbench parts from mix on purpose. Whatever it
+    # resolves is stamped into the workspace; config.conf is not
+    # written.
+  resolve_phx_new() {
+    local version requirement tried=0
+    PHX_NEW_VERSION=""; PHX_NEW_NEWEST=""; PHX_NEW_NEWEST_REQUIREMENT=""
+
+    for version in $(phx_new_versions); do
+      [ $tried -lt $PHX_NEW_CANDIDATES ] || break
+      tried=$((tried + 1))
+      requirement=$(phx_new_elixir_requirement "$version")
+
+      if [ -z "$PHX_NEW_NEWEST" ]
+      then PHX_NEW_NEWEST="$version"; PHX_NEW_NEWEST_REQUIREMENT="$requirement"
+      fi
+
+      # A requirement hex did not answer is left unjudged, as
+      # stack_satisfies leaves the shapes it cannot read: mix weighs the
+      # same pair again when the image installs the archive.
+      if [ -z "$requirement" ] || stack_satisfies "$requirement"
+      then PHX_NEW_VERSION="$version"; return 0
+      fi
+    done
+
+    return 1
   }
 
   # phx_new_elixir_requirement <VERSION>
@@ -247,6 +306,16 @@
   phx_new_elixir_requirement() {
     curl -fs "https://hex.pm/api/packages/phx_new/releases/$1" | \
       grep -o '"elixir":"[^"]*"' | cut -d'"' -f4
+  }
+
+  # phx_new_release_status <VERSION>
+    # What hex says about a release, as an HTTP code: 200 for one that
+    # exists, 404 for one that does not, '000' when hex cannot be
+    # reached at all. A HEAD asks the only question here — whether the
+    # release is there — and carries no body back for it.
+  phx_new_release_status() {
+    curl -s -I -o /dev/null -w '%{http_code}' \
+      "https://hex.pm/api/packages/phx_new/releases/$1"
   }
 
   # stack_satisfies <REQUIREMENT>
@@ -278,6 +347,24 @@
     done
 
     [ "$have_major" = "$want_major" ] && [ "$have_minor" -ge "$want_minor" ]
+  }
+
+  # check_phx_new_exists <VERSION>
+    # Refuses a named installer hex does not have. Only a version
+    # somebody typed reaches here — a resolved one came out of hex's own
+    # list — and a typo has nothing to weigh against the stack: the
+    # requirement comes back empty, the pairing check stands aside on
+    # it, and the mistake travels three layers into the image build to
+    # be reported by 'mix archive.install' about a file nobody wrote.
+    # Only a 404 refuses: hex unreachable judges nothing, as everywhere
+    # else here.
+  check_phx_new_exists() {
+    [ "$(phx_new_release_status "$1")" == "404" ] || return 0
+
+    terminate \
+      "There is no phx_new $1 on hex (${Li}https://hex.pm/packages/phx_new/versions${R})." \
+      "Name one that exists ('./$(basename $0) new --phx-new VERSION') or leave" \
+      "PHX_NEW_VERSION empty in $SCRIPT_CONFIG_FILE for the newest that runs on this stack."
   }
 
   # check_stack_runs_phx_new <VERSION>
@@ -539,6 +626,27 @@
     else
       echo "Nothing to commit."
     fi
+  }
+
+  # undo_failed_insert <INSERT>
+    # An insert that fails leaves behind whatever it had written before
+    # it failed, uncommitted — and that alone stops every command after
+    # it, since 'add' and 'eject' both need a clean tree. Undoing it
+    # asks nothing because nothing of the reader's is at stake: 'add'
+    # begins on a clean tree (require_clean_workspace, which counts
+    # untracked files too) and commits each insert as it lands, so what
+    # is uncommitted at this point was written moments ago by the insert
+    # that just failed, and HEAD is where the workspace stood a minute
+    # before. Ignored paths are left where they are: deps/ and _build/
+    # are the container's work, not the cartridge's, and throwing them
+    # away would cost a recompile to undo nothing.
+  undo_failed_insert() {
+    workspace_dirty || return 0
+
+    workspace_git checkout -- . > /dev/null 2>&1 && \
+    workspace_git clean -fdq && \
+    echo "Undid what ${B}$1${R} had written before it failed:" \
+      "the workspace is back at $(git_read log --format='%h %s' -n 1)."
   }
 
   # require_clean_workspace <ACTION>
@@ -978,14 +1086,18 @@
       "inserts the workbench's own picks, one commit each." \
       "- OPTIONS: It can accept all option flags from the task 'mix phx.new'" \
       "  (${Li}https://hexdocs.pm/phoenix/Mix.Tasks.Phx.New.html${R})." \
-      "- --phx-new VERSION: the Phoenix installer to generate with. There" \
-      "  is no setting for it: hex's newest phx_new is taken otherwise," \
-      "  and whichever it is gets stamped into the workspace's own" \
-      "  Dockerfile.local — the generator the base cartridges take their" \
-      "  delta with is the project's, for good, not a default that moves." \
-      "  Either way it is weighed against the stack before anything is" \
-      "  built: phx_new declares on hex the Elixir it runs on, and a stack" \
-      "  that does not meet it is refused here, not halfway into the image."
+      "- --phx-new VERSION: the Phoenix installer to generate with, for" \
+      "  this run. PHX_NEW_VERSION (config.conf) holds a standing choice;" \
+      "  empty — the ordinary case — hex decides, and what it decides is" \
+      "  the newest release that runs on this stack, said out loud when" \
+      "  that is not hex's newest. A named version is refused if hex does" \
+      "  not have it — a typo has no requirement to weigh — and otherwise" \
+      "  weighed against the stack: phx_new declares on hex the Elixir it" \
+      "  runs on, and a stack that does not meet it is refused here, not" \
+      "  halfway into the image. Whichever way it is decided, the version" \
+      "  is stamped into the workspace's own Dockerfile.local and config" \
+      "  is never written: the generator the base cartridges take their" \
+      "  delta with is the project's, for good, not a default that moves."
 
     print_command "add [FEATURE] [OPTIONS]"
     section_content \
@@ -1005,7 +1117,11 @@
     section_content \
       "Take a cartridge out: reverts its 'Insert FEATURE' commit (the" \
       "latest one). Needs a clean tree, and refuses when the cartridge's" \
-      "files changed since — that is no longer the cartridge's alone."
+      "files changed since — that is no longer the cartridge's alone." \
+      "It also refuses while something the project carries builds on it" \
+      "('mix workbench.dependents FEATURE'), naming them in the order to" \
+      "take them out: inserting names what to put in first, and this is" \
+      "the same rule read backwards."
 
     print_command "stacks [--json | -n N | use TAG]"
     section_content \
@@ -1247,11 +1363,13 @@ if [ $# -gt 0 ]; then
   elif [ "$1" == "new" ]; then
     shift
 
-    # The Phoenix installer for this creation. Nobody configures it:
-    # --phx-new pins it when there is a reason to (a release to avoid, a
-    # team standard), hex decides otherwise — once, here — and whatever
-    # it resolves to is stamped into the workspace's Dockerfile.local, so
-    # this project keeps that generator for good.
+    # The Phoenix installer for this creation, in order of authority:
+    # --phx-new for this one run, PHX_NEW_VERSION (config.conf) for a
+    # standing choice, hex for everyone else. Whatever it comes to is
+    # stamped into the workspace's Dockerfile.local — so this project
+    # keeps that generator for good — and nothing is written back to
+    # config: the file names the project to come, the workspace
+    # remembers the one it got.
     PHX_NEW_VERSION=""
     PHX_NEW_ARGS=()
     while [ $# -gt 0 ]; do
@@ -1262,17 +1380,45 @@ if [ $# -gt 0 ]; then
       esac
     done
     set -- "${PHX_NEW_ARGS[@]}"
-    if [ -z "$PHX_NEW_VERSION" ]; then
-      PHX_NEW_VERSION=$(latest_phx_new)
-      [ -n "$PHX_NEW_VERSION" ] || terminate \
-        "hex.pm did not answer for phx_new. Name a version: ./$(basename $0) new --phx-new 1.8.13"
-      echo "Phoenix installer: ${B}phx_new $PHX_NEW_VERSION${R} (the newest on hex; --phx-new names another)."
+    PHX_NEW_NAMED=""
+    if [ -n "$PHX_NEW_VERSION" ]
+    then PHX_NEW_NAMED="flag"
+    elif [ -n "$PHX_NEW_SETTING" ]
+    then PHX_NEW_VERSION="$PHX_NEW_SETTING"; PHX_NEW_NAMED="setting"
     fi
 
-    # An installer and a stack are two pins that have to hold each other:
-    # phx_new declares the Elixir it runs on, and this workspace's stack
-    # either meets it or the image cannot install the archive at all.
-    check_stack_runs_phx_new "$PHX_NEW_VERSION"
+    if [ -n "$PHX_NEW_NAMED" ]; then
+      # A named installer is taken as named — not moving is the whole
+      # point of naming one — and weighed against the stack, the pair
+      # that has to hold: phx_new declares the Elixir it runs on, and
+      # this stack either meets it or the image cannot install the
+      # archive at all.
+      check_phx_new_exists "$PHX_NEW_VERSION"
+      check_stack_runs_phx_new "$PHX_NEW_VERSION"
+      if [ "$PHX_NEW_NAMED" == "setting" ]; then
+        echo "Phoenix installer: ${B}phx_new $PHX_NEW_VERSION${R}" \
+          "(PHX_NEW_VERSION in $SCRIPT_CONFIG_FILE; --phx-new names another)."
+      fi
+    else
+      if ! resolve_phx_new; then
+        if [ -n "$PHX_NEW_NEWEST" ]
+        then terminate \
+          "No phx_new of the $PHX_NEW_CANDIDATES releases below $PHX_NEW_NEWEST runs on Elixir $ELIXIR_VERSION." \
+          "Move the stack up ('./$(basename $0) stacks') or name an older installer" \
+          "('./$(basename $0) new --phx-new VERSION')."
+        else terminate \
+          "hex.pm did not answer for phx_new. Name a version: ./$(basename $0) new --phx-new 1.8.13"
+        fi
+      fi
+
+      if [ "$PHX_NEW_VERSION" == "$PHX_NEW_NEWEST" ]
+      then echo "Phoenix installer: ${B}phx_new $PHX_NEW_VERSION${R} (the newest on hex; --phx-new names another)."
+      # Not the newest, and never silently: nobody named a version and
+      # the answer is not the obvious one, so the reason travels with it.
+      else echo "Phoenix installer: ${B}phx_new $PHX_NEW_VERSION${R} (the newest that runs on Elixir" \
+        "$ELIXIR_VERSION; hex's newest is $PHX_NEW_NEWEST, which needs Elixir $PHX_NEW_NEWEST_REQUIREMENT)."
+      fi
+    fi
 
     TOOLCHAIN_IMAGE="workbench:${ELIXIR_VERSION}-${ERLANG_VERSION}-phx${PHX_NEW_VERSION}"
 
@@ -1319,13 +1465,20 @@ if [ $# -gt 0 ]; then
           # the first line — the loop then ends on EOF, quietly and with
           # a zero exit, having inserted one cartridge of the several
           # the collection asked for.
+          # The insert failing and the commit failing are two different
+          # accidents and want two different endings: a failed insert
+          # wrote a half of something nobody asked for, and goes; a
+          # failed commit leaves a cartridge that did land, and stays
+          # for the reader to commit by hand.
           while IFS= read -r INSERT <&3; do
-            workspace_compose run \
-              --rm \
-              --name "${APP_NAME}_workbench_${ENTRYPOINT_COMMAND}" \
-              --volume $WORKBENCH_VOLUME \
-              app $CONTAINER_ENTRYPOINT add $INSERT && \
-            workspace_commit "Insert $INSERT" || exit 1
+            if workspace_compose run \
+                 --rm \
+                 --name "${APP_NAME}_workbench_${ENTRYPOINT_COMMAND}" \
+                 --volume $WORKBENCH_VOLUME \
+                 app $CONTAINER_ENTRYPOINT add $INSERT
+            then workspace_commit "Insert $INSERT" || exit 1
+            else undo_failed_insert "$INSERT"; exit 1
+            fi
           done 3<<< "$PLAN"
 
           if workspace_needs_database && \
@@ -1352,6 +1505,39 @@ if [ $# -gt 0 ]; then
         "No 'Insert $FEATURE' commit in the workspace: nothing to eject." \
         "The workbench commits each cartridge it inserts; one installed by" \
         "hand has no commit to revert."
+
+      # What stands on this cartridge, asked of the project: `requires`
+      # off each manifest, installed off each cartridge's own mark. The
+      # insert side has kept the mirror of this rule from the start — a
+      # cartridge whose requires are missing refuses, naming what to put
+      # in first — while eject reverted the commit and left whoever was
+      # standing on it standing on nothing. Asked after the commit is
+      # found, so an eject with nothing to revert costs no container.
+      DEPENDENTS=$(workspace_igniter workbench.dependents "$FEATURE" --json 2>/dev/null)
+      if [ -z "$DEPENDENTS" ]; then
+        # The project could not be asked (no image yet, dependencies not
+        # compiled). Unjudged rather than refused, as everywhere else
+        # here: a check that cannot run is not a verdict.
+        echo "${B}Note${R} could not ask the project what builds on $FEATURE; ejecting anyway."
+      else
+        DEPENDENTS=$(echo "$DEPENDENTS" | json_answer | tr -d '[]"' | tr ',' ' ')
+        if [ -n "$DEPENDENTS" ]; then
+          CHAIN=$(
+            for d in $DEPENDENTS; do printf './%s eject %s && ' "$(basename $0)" "$d"; done | \
+            sed 's/ && $//'
+          )
+          # terminate says its pieces on one line, so this reads as
+          # sentences and not as a block: one dependent takes the
+          # singular and no talk of order, since there is none to give.
+          if [ "$(echo $DEPENDENTS | wc -w)" -eq 1 ]
+          then VERB="builds"; THEM="it";   ORDER=""
+          else VERB="build";  THEM="them"; ORDER=", in this order"
+          fi
+          terminate \
+            "$(echo $DEPENDENTS | sed 's/ /, /g') $VERB on $FEATURE: ejecting $FEATURE would" \
+            "leave $THEM standing on nothing. Take $THEM out first$ORDER: $CHAIN"
+        fi
+      fi
 
       echo "Reverting $(workspace_git log --format='%h %s' -n 1 $SHA)"
       if workspace_git revert --no-edit "$SHA" > /dev/null; then

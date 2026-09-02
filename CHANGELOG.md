@@ -14,7 +14,115 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+### Fixed
+
+- **An insert that fails no longer leaves the workspace half-written.**
+  `add` runs each cartridge in its own container and commits it when it
+  lands; an installer that wrote its files and *then* failed — Hex
+  refusing to solve a version, most plainly — left those files behind
+  uncommitted, and that alone stopped everything after it, since `add`
+  and `eject` both need a clean tree. The workbench was stuck until
+  somebody cleaned up by hand. It now undoes exactly that insert's work
+  and says where the workspace stands. It asks nothing because nothing
+  of the reader's is at stake: `add` begins on a clean tree
+  (`require_clean_workspace`, which counts untracked files too) and
+  commits each insert as it lands, so whatever is uncommitted at that
+  point was written moments earlier by the insert that just failed.
+  Ignored paths are left alone — `deps/` and `_build/` are the
+  container's work, not the cartridge's. The insert failing and the
+  commit failing are now told apart, and end differently: a failed
+  insert wrote half of something nobody asked for and goes; a failed
+  commit leaves a cartridge that did land, for the reader to commit by
+  hand.
+
 ### Added
+
+- **psql_extras says what it builds on, and where it does not belong.** It
+  declared nothing and would install on any project: `ecto_psql_extras` is
+  an Ecto extension whose queries are Postgres's own, and it would have
+  gone into a project with no repo to run through, or a repo talking to
+  MySQL. Two rules, kept apart because they are different in kind. Ecto is
+  a cartridge, so it is `requires: ["ecto"]` — the machinery was already
+  there, and the console now greys the box with *Insert ecto first* before
+  anyone presses. The driver is not a cartridge — it is the value of
+  ecto's own `--database` — so it is a refusal in the installer, and the
+  question is put to the project (`PhxDelta.facts/1`, the same source
+  `installed?/1` reads) rather than to the options this cartridge was
+  inserted with: what a project's driver *is* now beats what it was told
+  once, and for most cartridges the options are not on record at all —
+  they survive only in the insert commit's subject, and only for what the
+  workbench itself put in.
+
+- **`eject` refuses while something still stands on the cartridge.** The
+  insert side has kept this rule from the start — a cartridge whose
+  `requires` are missing refuses, naming what to put in first — and the
+  eject side had no mirror of it: it reverted the commit and left
+  whoever built on that cartridge standing on nothing. `mix
+  workbench.dependents NAME` answers the question, and `wb.sh eject`
+  asks it: the installed cartridges that declare NAME in their
+  `requires`, everything that builds on *those* in turn, in the order
+  they have to come out. Both halves come from the project — `requires`
+  off each manifest, installed off each cartridge's own `installed?/1`
+  — so one inserted by hand or generated at birth counts exactly like
+  one the workbench committed. The refusal names the chain to run
+  (`./wb.sh eject openai && ./wb.sh eject stripe && ./wb.sh eject
+  auth0`). It is asked after the insert commit is found, so an eject
+  with nothing to revert costs no container, and a project that cannot
+  be asked at all leaves the question unjudged rather than refusing —
+  a check that cannot run is not a verdict.
+- The console's **Eject** carries the same guard, and a collection grows
+  an **Eject N** of its own. A collection leaves no commit under its own
+  name, so its button walks its members' commits *newest first* — the
+  only order git can revert them in, since a member inserted later may
+  have written over an earlier one — running one `wb.sh eject` per
+  cartridge, chained, so the run stops at the first cartridge whose
+  files changed since. Members with no insert commit are named and left
+  in place. Ejecting a single cartridge in the console refuses on the
+  same dependents rule, one level deep: the shelf is in front of the
+  reader and the next refusal is one click away, while the command line
+  gets the whole chain because there it is the difference between one
+  answer and five attempts.
+
+- **`PHX_NEW_VERSION` is back in `config.conf`, as a choice and never as
+  a record.** Empty — the ordinary case — and `new` resolves it; set, it
+  is the standing installer for the projects to come; `--phx-new` still
+  overrides it for one run. Nothing writes back to the file: what a
+  creation resolved is stamped into the workspace's own
+  `Dockerfile.local` (`ARG PHX_NEW`), which stays the source of truth
+  for *which generator made this project* — the one the base cartridges
+  take their delta with. The setting is captured into `PHX_NEW_SETTING`
+  at startup and `PHX_NEW_VERSION` is cleared, so the two never stand in
+  for each other: `new` reads the setting, every other command reads the
+  stamp, and a workspace's toolchain tag is unaffected by a file that
+  has since moved on to name the next project.
+- **A named installer hex does not have is refused before anything is
+  built.** `--phx-new 1.8.31` or a typo in `PHX_NEW_VERSION` used to have
+  no requirement to weigh — `phx_new_elixir_requirement` comes back empty
+  for a release that does not exist, and the pairing check stands aside
+  on an empty requirement — so the mistake travelled three layers into
+  the image build to be reported by `mix archive.install`, about a file
+  nobody wrote. `new` now asks hex whether the release is there (a HEAD,
+  so nothing comes back but the code) and refuses on a 404, naming both
+  ways out. Only a 404 refuses: an unreachable hex judges nothing, as
+  everywhere else here. A resolved version never needs this — it came
+  out of hex's own list.
+- **An unset installer now resolves to the newest `phx_new` the stack
+  can run**, not to hex's newest full stop. `new` walks hex's releases
+  newest first and takes the first whose declared Elixir this stack
+  satisfies — normally the very newest, for the one call the pairing
+  check would have made anyway, so the ordinary path costs nothing new.
+  It walks only when the stack is behind, which was the case with no
+  good answer before: the newest was resolved, then refused. This is a
+  deliberate parting from `mix archive.install hex phx_new`, which takes
+  the newest and fails loading it. The walk is release by release rather
+  than one probe per minor line because the requirement moves *inside* a
+  line — `phx_new` 1.8.0 to 1.8.5 ask for Elixir `~> 1.15` and 1.8.13
+  asks for `~> 1.17` — so an Elixir 1.15 stack gets 1.8.8 rather than
+  being dropped to the 1.7 line. When the answer is not hex's newest,
+  `new` says which it took, for which Elixir, and what the newest would
+  have needed; a named version is still taken as named and weighed
+  against the stack. Twenty-five releases back it gives up and names the
+  two remedies.
 
 - The console colours the code a cartridge writes, and the box grows an
   **Installation** screen that shows it. `Console.Highlight` in

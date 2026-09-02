@@ -60,8 +60,9 @@ How each file is *shown* is not the mock's opinion: `--diffs` asks the
 console (`mix console.highlight`, in `console/`) and stores the answer
 beside the diff. `Console.Highlight` keeps the registry — a treatment
 per filename, then per extension: a Makeup lexer, a drawing, plain text,
-or left out. The SVGs are drawn rather than
-printed, and `mix.lock` is read by the Elixir lexer its contents ask for
+or left out. An SVG is read rather than drawn — it is text, and the
+sheet's question is what the cartridge wrote, not what it looks like —
+and `mix.lock` is read by the Elixir lexer its contents ask for
 rather than by its extension: its lines run past a thousand characters,
 but the package and the version are at the front of each one, and the
 lock is the only place a cartridge shows what it *drags in* — `credo`

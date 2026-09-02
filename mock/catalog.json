@@ -271,7 +271,9 @@
     "version": null,
     "options": [],
     "base": false,
-    "requires": [],
+    "requires": [
+      "ecto"
+    ],
     "console": {
       "tabs": [],
       "doors": [],

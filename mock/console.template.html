@@ -13,12 +13,21 @@
   a{color:inherit}
   button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
   button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  /* A placeholder with no colour of its own gets the browser's, and that
+     one is a fixed grey — #757575 in Chromium, measured, the same on both
+     grounds — which `color-scheme` does not move, though tokens.css sets
+     it. So it did not follow the theme, and read as ash on the dark
+     surface of the jobs command line. It takes the house's muted ink
+     instead; the ones on the terminal ground override this below, with the
+     terminal's own dim, that ground being dark under either theme.
+     `opacity` because Firefox dims placeholders by default and would take
+     the colour down a second time. */
+  ::placeholder{color:var(--muted);opacity:1}
   .mono{font-family:var(--mono);font-size:12.5px}
   .label{font-family:var(--cond);font-weight:600;text-transform:uppercase;letter-spacing:.12em;font-size:12px;color:var(--muted)}
   .btn{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:12px;color:var(--ink);border:1px solid var(--line);padding:5px 10px;border-radius:2px;background:var(--surface);white-space:nowrap}
   .btn:hover{border-color:var(--ink)}
   .btn[aria-pressed="true"]{border-color:var(--ink);background:var(--surface-2)}
-  .btn[disabled]{opacity:.4;cursor:not-allowed}
   .btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent;box-shadow:0 2px 0 rgba(0,0,0,.25)}
   .btn.danger{color:var(--bad);border-color:var(--bad)}
 
@@ -28,22 +37,101 @@
     display:flex;align-items:center;justify-content:space-between;gap:24px;
     padding:0 28px;height:56px;border-bottom:3px solid var(--accent);
   }
-  header.band .mark{display:flex;align-items:center;gap:14px;min-width:0}
-  header.band .mark img{height:36px;width:auto;display:block;flex:none}
+  /* One cell, three uses. 56px wide, the band's full height, closed by a
+     hairline: the mark in the left corner, and in the right one the two
+     controls that are not about this row but about the whole thing — the
+     ground it is read on, and the workbench itself. Between the ends they
+     are what the band is made of; at the ends they bleed into its padding
+     so they finish where the window does, which is what stops them from
+     reading as three more items in a row. */
+  header.band .cell{flex:none;width:56px;align-self:stretch;display:flex;align-items:center;justify-content:center;
+    background:none;border:0;color:var(--board-ink);padding:0}
+  header.band button.cell{cursor:pointer}
+  header.band button.cell:hover{background:rgba(255,255,255,.1)}
+  header.band .cell svg{width:19px;height:19px;display:block}
+  header.band .mark{margin-left:-28px;align-self:stretch;display:flex;align-items:center;gap:14px;min-width:0}
+  header.band .mark .cell{border-right:1px solid rgba(255,255,255,.2)}
+  /* The mark goes in inline, never as an <img>: an SVG loaded as an image
+     is its own document, where `fill="currentColor"` falls back to black
+     instead of taking the band's ink. Inline it is the one colour the band
+     already sets, and it follows wherever the mark is put next. */
+  header.band .mark svg{height:34px;width:34px;display:block;flex:none}
   header.band h1{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.14em;font-size:22px;margin:0;line-height:1}
   header.band h1 small{display:block;font-weight:500;letter-spacing:.2em;font-size:10.5px;opacity:.8;margin-top:3px}
-  header.band .right{display:flex;align-items:center;gap:18px;font-family:var(--mono);font-size:12px}
-  header.band .ver{font-family:var(--cond);font-weight:700;letter-spacing:.12em;text-transform:uppercase;font-size:12px;color:var(--board-ink);border:1px solid rgba(255,255,255,.45);padding:4px 10px;border-radius:2px;display:inline-flex;gap:8px;align-items:center}
-  header.band .ver:hover{background:rgba(255,255,255,.1)}
-  header.band .ver small{font-weight:500;letter-spacing:.14em;opacity:.75}
+  /* The version reads off the machine, so it takes the machine's face — the
+     mono, unspaced — beside a name that is set in the house's condensed.
+     It sits under the title with what it is the version of, which is where
+     it was going all along: in the row on the right it had to carry the
+     word `wb.sh` to say so, and that word was already overhead. */
+  header.band h1 small .v{font-family:var(--mono);letter-spacing:.02em;font-size:10px;opacity:.75;margin-left:8px}
+  /* The row stretches so the corner control can reach the band's full
+     height; its own align-items keeps everything else centred in it. */
+  header.band .right{display:flex;align-items:center;align-self:stretch;gap:18px;font-family:var(--mono);font-size:12px}
+  header.band .right .cell{border-left:1px solid rgba(255,255,255,.2)}
+  /* Two cells at the same end share an edge: the row's gap between them
+     would show a stripe of band and split the pair into two tabs. Cancelled
+     between cells only — the gap before the first one is what keeps them
+     off the clock. */
+  header.band .right .cell + .cell{margin-left:-18px}
+  header.band .right .cell:last-child{margin-right:-28px}
   header.band .mock{border:1px solid rgba(255,255,255,.35);padding:3px 8px;border-radius:2px;letter-spacing:.08em;text-transform:uppercase;font-family:var(--cond);font-weight:600;font-size:11px}
+  /* Each of these draws the frame it makes — a band, a rail, a screen — so
+     the control is a small map of the page rather than an arrow to decode.
+     Unscoped: what the parts describe is the icon, not where it hangs, and
+     these hang in the workbench's User Interface screen now. They take the
+     ink of whatever holds them. */
+  .frame{flex:none;padding:0;background:none;border:0;color:inherit;cursor:pointer;display:flex;align-items:center}
+  .frame svg{width:26px;height:19px;display:block}
+  .frame .r{fill:currentColor;opacity:.9}
+  .frame .o{fill:none;stroke:currentColor;stroke-width:1.4;opacity:.55}
+  .frame .f{fill:currentColor;opacity:.3}
+  .frame .g{fill:currentColor;opacity:.22}
+  .frame .d{fill:none;stroke:currentColor;stroke-width:1.2;stroke-dasharray:2.2 2;opacity:.8}
 
   /* --- layout ------------------------------------------------------------ */
   /* The board and the screen scroll on their own, under the band: the page never does. */
-  .app{display:grid;grid-template-columns:minmax(340px,420px) minmax(0,1fr);height:100%;min-height:0}
+  /* The rail's width is the reader's, not the stylesheet's: --rail is what
+     the grip drags, and it is remembered per browser. The bounds live in
+     the script, which also keeps the screen from being squeezed under what
+     a panel needs — a rule here could only clamp against the rail. */
+  .app{--rail:380px;position:relative;display:grid;grid-template-columns:var(--rail) minmax(0,1fr);height:100%;min-height:0}
+  /* The frame has three axes, and each is one class on <body>. The band is
+     a grid row, so moving it is the row order; the rail is a grid column,
+     so hiding it is one template and swapping sides is another plus the
+     border, which always faces the screen. */
+  body.band-bottom{grid-template-rows:minmax(0,1fr) auto}
+  body.band-bottom>header.band{grid-row:2;border-bottom:0;border-top:3px solid var(--accent)}
+  body.band-bottom>.app{grid-row:1}
+  body.rail-right .app{grid-template-columns:minmax(0,1fr) var(--rail)}
+  body.rail-right .console{order:2;border-right:0;border-left:1px solid var(--line)}
+  body.rail-off .app{grid-template-columns:minmax(0,1fr)}
+  body.rail-off .console{display:none}
   .console{border-right:1px solid var(--line);background:var(--surface);padding:22px 22px 40px;display:flex;flex-direction:column;gap:22px;overflow:auto;min-height:0;scrollbar-gutter:stable}
-  .screen{min-width:0;display:flex;flex-direction:column;height:100%;overflow:auto;min-height:0}
-  @media (max-width:900px){.app{grid-template-columns:1fr}.console{border-right:0;border-bottom:1px solid var(--line)}}
+  /* The screen holds two things that do not scroll together: everything
+     the reader reads, and the jobs bar under it. The bar used to ride the
+     scroller as a sticky footer, which put its bottom edge exactly on the
+     scroller's clip — and on a viewport whose height times the device
+     ratio is not whole, the two rounded apart and left a one-pixel line
+     of the content passing beneath (visible on Cartridges alone, the only
+     screen dark enough to show it). Sticky is gone: the bar is the
+     screen's own last row now, outside anything that clips, so there is
+     no edge for the two to disagree on. */
+  .screen{min-width:0;display:flex;flex-direction:column;height:100%;overflow:hidden;min-height:0}
+  .scroller{flex:1;min-height:0;min-width:0;overflow:auto;display:flex;flex-direction:column}
+  /* Sits on the seam, wider than it looks: a 9px target over a 1px line,
+     so it can be caught without aiming. It shows only under the pointer or
+     the keyboard — a handle that is always drawn would be a third border
+     competing with the two real ones. */
+  .grip{position:absolute;top:0;bottom:0;left:var(--rail);width:9px;margin-left:-5px;z-index:3;
+    cursor:col-resize;touch-action:none;background:none;border:0;padding:0}
+  body.rail-right .grip{left:auto;right:var(--rail);margin:0 -5px 0 0}
+  .grip::after{content:"";position:absolute;top:0;bottom:0;left:4px;width:1px;background:var(--accent);opacity:0;transition:opacity .12s}
+  .grip:hover::after,.grip:focus-visible::after{opacity:.7}
+  .grip.dragging::after{opacity:1;left:3px;width:3px}
+  .grip:focus-visible{outline:none}
+  /* Nothing to drag when the rail is not there, or when the two stack. */
+  body.rail-off .grip{display:none}
+  @media (max-width:900px){.app{grid-template-columns:1fr}.console{border-right:0;border-bottom:1px solid var(--line)}.grip{display:none}}
 
   section h2{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:15px;margin:0 0 10px;display:flex;align-items:baseline;gap:10px}
   section h2 .label{font-weight:500;letter-spacing:.1em}
@@ -60,16 +148,34 @@
   table.rows td{padding:7px 0;border-top:1px solid var(--line);vertical-align:middle;overflow-wrap:anywhere}
   table.rows tr:first-child td{border-top:0}
   table.rows td.k{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px;width:27%}
+  /* The state gets a column of its own, wide enough for the widest thing
+     docker can put in it — `restarting` while it pulses, 86px, measured —
+     so the images below start where the images above did. Sized to the
+     vocabulary and not to the data of the day: a column that shifts when
+     a container falls over is a column the eye has to find again at the
+     moment it least wants to.
+     The gap after the chip is that width minus the widest chip, and it
+     belongs to the column: the chip carried a padding-right of its own on
+     top of it, which bought nothing — the cell is already wider than
+     anything that can go in it — and said the wrong thing, that a badge
+     keeps its distance, when it is the column that does. */
+  table.rows td.st{width:var(--st);white-space:nowrap}
+  #containers{--st:103px}
+  #deployments{--st:73px;--act:56px}
   table.rows td.muted{color:var(--muted)}
   table.rows td .hint{display:block;font-size:11.5px;color:var(--muted);margin-top:4px}
-  .chip{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:11px;padding:2px 7px;border-radius:2px;border:1px solid var(--line);color:var(--muted)}
-  .chip::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
-  .chip.good{color:var(--good);border-color:var(--good)}
-  .chip.warn{color:var(--warn);border-color:var(--warn)}
-  .chip.bad{color:var(--bad);border-color:var(--bad)}
-  .chip.off{opacity:.6}
-  .chip.off::before{background:transparent;border:1px solid currentColor}
-  .chip.busy::before{animation:pulse 1s infinite}
+  /* The action gets a column like the state has one, and for the same
+     reason: a button that hangs off the end of the status cell sits at a
+     different x in every row, and there is nothing to read down. It ends
+     where the table ends — the leftover of its width is the gutter before
+     it, which is the column's to give, not the button's to carry — and an
+     empty cell holds the place for the rows that have no action. */
+  table.rows td.act{width:var(--act);white-space:nowrap;text-align:right}
+  table.rows td .btn.mini{padding:2px 8px;font-size:11px;vertical-align:middle}
+  /* .chip and .cart-ref are the house's notation: both come in generated,
+     from assets/design/generated/components.css. The chip used to be
+     written here by hand, which is how it drifted into being the mention's
+     declaration exactly — nobody was watching two files that were one. */
   @keyframes pulse{50%{opacity:.2}}
 
   /* What is in the project, as a list: the board reads down, a line per
@@ -78,16 +184,38 @@
   table.rows tr.new{animation:seat 1.2s ease-out}
   @keyframes seat{from{background:var(--accent-soft)}to{background:transparent}}
   #slots td:first-child{width:1%;white-space:nowrap}
-  #slots td:last-child{text-align:right}
+  /* The name column is as wide as the longest name in it, so the longest
+     one is the only row with nothing between it and the version — every
+     other row borrows the slack. The gutter goes on the column that
+     follows, as it does before the origin: a name does not carry space
+     after itself, a column keeps its distance from the one before. */
+  #slots td.ver{white-space:nowrap;padding-left:10px}
+  #slots td.og{width:1%;white-space:nowrap;text-align:right;padding-left:10px}
 
-  .urls a.off{opacity:.45;pointer-events:none}
   .urls a small{font-family:var(--cond);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--soft);margin-left:6px}
   .deployment{border:1px solid var(--line);background:var(--surface);border-radius:3px;padding:16px 18px;display:grid;gap:12px}
   .deployment .now{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:14px}
-  .deployment .pick{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
-  .deployment .pick label{display:grid;gap:6px;border:1px solid var(--line);border-radius:3px;padding:10px 12px;cursor:pointer;align-content:start}
-  .deployment .pick label.on{border-color:var(--accent);background:var(--accent-soft)}
-  .deployment .pick label b{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:13px}
+  .deployment .pick,.zone .pick{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+  .deployment .pick label,.zone .pick label{display:grid;gap:6px;border:1px solid var(--line);border-radius:3px;padding:10px 12px;cursor:pointer;align-content:start}
+  /* The card the deployment picker paints while rendering, and the one a
+     static block paints on its own: same look, and neither has to know
+     about the other's way of holding the answer. */
+  .deployment .pick label.on,.zone .pick label:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+  .deployment .pick label b,.zone .pick label b{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:13px}
+  /* A card goes down to 220px and everything in it has to live there. Grid
+     items are min-content wide by default, and the caveat is a chip — a
+     chip never wraps — so its 268px of unbreakable line was setting the
+     width of all four children and pushing them out through the card's own
+     edge. Here it wraps: it keeps its plate, its colour and its padding,
+     and only stops being one line. The min-width:0 is for whatever is put
+     in one of these cards next. */
+  .deployment .pick label > *{min-width:0}
+  .deployment .pick label > .chip{white-space:normal}
+  /* Two words and no blurb: the cards shrink to the words rather than
+     stretching to thirds of the block, which is what the deployment's
+     three descriptions need and this does not. */
+  .zone .pick{display:flex;flex-wrap:wrap}
+  .zone .pick label{min-width:96px}
   .deployment .pick label p{margin:0;font-size:12.5px;color:var(--muted)}
   .deployment .pick .opts{display:flex;gap:8px 12px;align-items:center;flex-wrap:wrap;font-family:var(--mono);font-size:12px;min-width:0}
   .deployment .pick .opts label{display:inline-flex;gap:6px;align-items:center;border:0;padding:0;background:none;border-radius:0;cursor:pointer}
@@ -108,15 +236,23 @@
   .cluster table{border-collapse:collapse;width:100%;font-family:var(--mono);font-size:12.5px}
   .cluster th{text-align:left;font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--line)}
   .cluster td{padding:6px 8px;border-bottom:1px solid var(--line)}
+  /* The state of the cluster in one line: two chips and the caveat. It had
+     no rule of its own, so the three ran together — a grid cell's children
+     do not space themselves. */
+  .cluster .now{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
   .cluster .probe{border:1px solid var(--line);background:var(--surface);border-radius:3px;padding:12px 14px;display:grid;gap:8px}
   .cluster .probe h3{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:13px}
-  .cluster .probe .acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  /* Every row of buttons on this screen, not only the probes': the one that
+     offers to bring the scaled deployment up is outside them, and it was
+     the one touching its own caption. */
+  .cluster .acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .note{font-size:13px;color:var(--muted);font-style:italic;margin:0}
 
   /* --- tabs ---------------------------------------------------------------- */
   .tabs{display:flex;gap:2px;padding:14px 28px 0;border-bottom:1px solid var(--line);background:var(--ground);position:sticky;top:0;z-index:2;flex-wrap:wrap;row-gap:0}
   .tab{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.12em;font-size:14px;color:var(--muted);padding:8px 14px 10px;border-bottom:3px solid transparent;margin-bottom:-1px;display:inline-flex;gap:8px;align-items:center}
   .tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+  .tab[aria-disabled="true"],.dtab[aria-disabled="true"]{border-bottom-color:transparent}
   .tab .badge{font-family:var(--mono);font-size:10.5px;padding:1px 6px;border-radius:999px;background:var(--surface-2);color:var(--muted);letter-spacing:0}
   .tab .badge.bad{background:var(--bad);color:#fff}
   .tab .live{width:7px;height:7px;border-radius:50%;background:var(--good);animation:pulse 1.4s infinite}
@@ -129,6 +265,32 @@
   .filters{display:flex;gap:6px;flex-wrap:wrap}
   .filters .btn{color:var(--muted)}
   .filters .btn[aria-pressed="true"]{color:var(--ink)}
+  .views{display:flex;gap:6px;flex-wrap:wrap}
+  .views .btn{color:var(--muted)}
+  .views .btn[aria-pressed="true"]{color:var(--ink)}
+
+  /* The shelf as rows. The same three groups, the same filters, the same
+     click — a cartridge is still a box you pick up. What changes is how
+     many fit on a screen and how much each one says: the cover cannot
+     print a summary, a version or where the cartridge came from, and the
+     row cannot be recognised across a room. The cover comes along as a
+     thumbnail, in colour or grey by the same rule as the plank: a list
+     that dropped it would be a table about cartridges rather than this
+     shelf, listed. */
+  .list{display:grid}
+  .lrow{display:grid;grid-template-columns:24px minmax(110px,170px) minmax(0,200px) 68px minmax(0,1fr);
+    gap:14px;align-items:center;width:100%;text-align:left;padding:7px 6px;
+    border-top:1px solid var(--line);color:var(--ink)}
+  .list .lrow:first-child{border-top:0}
+  .lrow:hover,.lrow:focus-visible{background:var(--surface-2)}
+  .lrow .th{width:24px;height:34px;border-radius:2px;overflow:hidden;display:block;background:var(--board)}
+  .lrow .th img{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(.92) contrast(.92);opacity:.6}
+  .lrow.in .th img{filter:none;opacity:1}
+  .lrow.pending .th img{filter:grayscale(.5);opacity:.8}
+  .lrow .fx{display:flex;gap:6px;flex-wrap:wrap}
+  .lrow .vr{font-family:var(--mono);font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .lrow .sm{color:var(--muted);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  @media (max-width:900px){.lrow{grid-template-columns:24px minmax(110px,1fr) auto}.lrow .vr,.lrow .sm{display:none}}
   .row{margin-top:18px}
   .row .label{margin-bottom:10px;display:block}
   .boxes{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:22px 18px;align-items:end;padding:0 14px 18px}
@@ -141,11 +303,13 @@
   .box .cap{display:flex;justify-content:space-between;align-items:baseline;gap:6px;margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--muted)}
   .box .cap b{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);font-size:12px}
   /* Inserted or not is the box itself, not a sticker over it: the
-     inserted ones keep their colour and take the accent ring, the rest
-     sit quiet on the shelf. The stamp covered the cover's own band and
-     part of its art — it belongs on a printed back, not here. */
+     inserted ones keep their colour, the rest sit quiet on the shelf. The
+     stamp covered the cover's own band and part of its art — it belongs on
+     a printed back, not here. The accent ring went the same way: colour
+     against grey is already the loudest thing on the plank, and a second
+     mark for one fact is a mark that has to be read to say nothing new. */
   .box .face{filter:grayscale(.92) contrast(.92);opacity:.6}
-  .box.in .face{filter:none;opacity:1;box-shadow:var(--shadow),0 0 0 2px var(--accent)}
+  .box.in .face{filter:none;opacity:1}
   /* A not-done box is a drawing, and the drawing already says it: the
      hard dimming written for dark art washed it off the plank. */
   .box.pending .face{filter:grayscale(.5);opacity:.8}
@@ -204,7 +368,10 @@
      the collection to insert afterwards — that offer is gone, and an
      empty column is not a layout. */
   .newcard{border:1px solid var(--line);background:var(--surface);border-radius:3px;padding:18px 20px;display:grid;grid-template-columns:minmax(0,1fr);gap:18px;margin-bottom:18px}
-  .newcard h3{grid-column:1/-1;margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:18px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+  /* The two cards of this screen carry the same heading; only the new
+     project's also has to hold a chip out at its right edge. */
+  .newcard h3,.deployment h3{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:18px}
+  .newcard h3{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:10px}
   .newcard .form{display:grid;gap:12px}
   .newcard .frow{display:grid;grid-template-columns:130px minmax(0,1fr);gap:10px;align-items:center}
   .newcard .frow label{font-family:var(--mono);font-size:12.5px}
@@ -219,19 +386,25 @@
   .newcard .frow .ro a{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:11px;color:var(--accent)}
   .newcard .flags{display:flex;flex-wrap:wrap;gap:6px 14px;font-family:var(--mono);font-size:12.5px}
   .newcard .flags label{display:inline-flex;gap:6px;align-items:center}
-  .newcard .flags input{accent-color:var(--accent)}
   .newcard .foot{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
   .newcard .foot .cmds{flex:1;min-width:240px;display:grid;gap:3px}
   .newcard .foot .cmd{min-width:0}
-  .dangerzone{margin-top:22px;border:1px solid var(--line);border-left:3px solid var(--bad);padding:14px 16px;display:grid;gap:10px;background:var(--surface)}
-  .dangerzone h3{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:15px}
-  .dangerzone .acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-  .dangerzone select{font-family:var(--mono);font-size:12px;padding:4px 6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px}
+  /* Same box twice, and the red edge on one of them. They were one block
+     under one heading — "Database and workspace" — which is the shape of a
+     box holding two things: setting up the database is an errand you run
+     whenever the schema moves, and wiping the workspace is the only action
+     on this screen that cannot be undone. The edge marks what it is about,
+     so it had to stop covering both. */
+  .zone,.dangerzone{margin-top:22px;border:1px solid var(--line);padding:14px 16px;display:grid;gap:10px;background:var(--surface)}
+  .dangerzone{border-left:3px solid var(--bad)}
+  .zone h3,.dangerzone h3{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:15px}
+  .zone .acts,.dangerzone .acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .zone select,.dangerzone select{font-family:var(--mono);font-size:12px;padding:4px 6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px}
   .confirm{font-family:var(--serif);font-size:13.5px;color:var(--bad);display:none;gap:8px;align-items:center}
   .confirm.on{display:inline-flex}
 
   /* --- the jobs tray -------------------------------------------------------- */
-  .tray{position:sticky;bottom:0;border-top:1px solid var(--line);background:var(--surface);z-index:2}
+  .tray{flex:none;border-top:1px solid var(--line);background:var(--surface)}
   .tray .bar{display:flex;align-items:center;gap:14px;padding:8px 28px;cursor:pointer}
   .tray .bar h4{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.12em;font-size:13px}
   .tray .bar .last{font-family:var(--mono);font-size:12px;color:var(--muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -247,7 +420,10 @@
   .viewport.light{background:var(--surface);color:var(--ink);border-color:var(--line)}
   .viewport.light .lines{padding:0}
   .viewport.light .lines:empty::before{content:"No jobs yet. Every command the console runs is a job — its output, its exit code, how long it took. Insert a cartridge, deploy, or type one above.";display:block;padding:14px 28px;max-width:64ch;font-family:var(--serif);font-style:italic;color:var(--muted)}
-  .job{display:grid;grid-template-columns:auto 1fr auto auto;gap:14px;align-items:center;padding:8px 28px;border-top:1px solid var(--line);font-family:var(--mono);font-size:12px;cursor:pointer}
+  /* The columns keep their air; the row below does not need as much. The
+     output belongs to the line above it — half the gap says so, and 14px
+     read as a gap between two things rather than one unfolding. */
+  .job{display:grid;grid-template-columns:auto 1fr auto auto;column-gap:14px;row-gap:7px;align-items:center;padding:8px 28px;border-top:1px solid var(--line);font-family:var(--mono);font-size:12px;cursor:pointer}
   .job:first-child{border-top:0}
   .job .cmdline{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .job .dur{color:var(--muted);font-variant-numeric:tabular-nums}
@@ -273,6 +449,20 @@
   /* Above the config tab's own sticky bar (z-index 1), which scrolled over these tabs. */
   .drawer .top{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--surface);z-index:3}
   .drawer .top h3{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:16px}
+  /* The step back and the name of the box in hand travel together on the
+     left; Put back stays at the other end. */
+  .drawer .top .who{display:flex;align-items:center;gap:12px;min-width:0}
+  /* A square with an arrow in it: the name of the box it goes back to is in
+     the title and in the label a screen reader reads, not on the face of a
+     control that sits beside the name of the box in hand — two names, one
+     of them stale, at the same size and a hand's width apart. Its padding
+     is the house button's, so the two in this header are the same height. */
+  .drawer .top .back{padding:5px;line-height:0;flex:none}
+  /* 18px is the line box of the 12px condensed text in the button beside
+     it: same padding, same border, so the square comes out 30 by 30 —
+     exactly the height of Put back at the other end of the header. */
+  .drawer .top .back svg{width:18px;height:18px;display:block}
+  .drawer .top .back[hidden]{display:none}
   .drawer .top{flex-wrap:wrap;row-gap:8px}
   .dtabs{display:flex;gap:2px;width:100%;margin-bottom:-14px;margin-top:6px}
   .dtab{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.12em;font-size:12.5px;color:var(--muted);padding:6px 12px 8px;border-bottom:3px solid transparent;display:inline-flex;gap:6px;align-items:center}
@@ -287,6 +477,26 @@
   .drawer .need code.tight{padding-right:1px}
   .drawer .body{display:grid;grid-template-columns:320px minmax(0,1fr);gap:32px;padding:26px 28px 32px;align-content:start}
   .drawer .body[hidden]{display:none}
+  /* The papers the box carries: a row of them inside the Manual screen,
+     under the drawer's own row. It is not of the same rank as that row, so
+     it does not stick to the top and it carries a rule under it. */
+  /* The air above the row is the row's own, so it is docked from the first
+     pixel and never travels: same as the config bar under the workbench
+     modal, and as the project's row on its screen. */
+  /* align-content, like every other grid the drawer holds: the drawer's
+     second row is 1fr, so a screen shorter than the drawer has free space
+     under it, and auto rows share that space out — which grew the row of
+     papers itself, by as much as a hundred pixels, whenever the sheet was
+     a short one. */
+  .papers{display:grid;padding:0 32px;align-content:start}
+  .papers[hidden]{display:none}
+  .papers .dtabs{margin:0;padding:10px 0 0;border-bottom:1px solid var(--line);
+    position:sticky;top:var(--modal-top,64px);background:var(--surface);z-index:1}
+  .papers .booklet{padding:22px 0 60px}
+  /* What is fixed above a heading is now the header and the row together,
+     so both the index's jumps and the index itself clear the two. */
+  .papers .booklet{--fixed-above:var(--papers-top,161px)}
+  .papers .booklet .toc{top:calc(var(--papers-top,161px) + 14px)}
   .booklet{display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:32px;padding:26px 32px 60px}
   .booklet[hidden]{display:none}
   .booklet.notoc{grid-template-columns:minmax(0,1fr)}
@@ -299,7 +509,7 @@
      top of its container, with air — the modal's top bar and tabs, or the
      screen's tab bar — so the heading itself is what comes into view. */
   .booklet{--fixed-above:112px}
-  .pdocs .booklet{--fixed-above:72px}
+  .pdocs .booklet{--fixed-above:var(--pdocs-top,120px)}
   .md{scroll-margin-top:var(--fixed-above)}
   .md h1,.md h2,.md h3{scroll-margin-top:calc(var(--fixed-above) + 6px)}
   @media (max-width:640px){.booklet{grid-template-columns:1fr}.booklet .toc{display:none}}
@@ -338,11 +548,14 @@
   .hand .typeset h4{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:17px;margin:0;line-height:1.05;text-wrap:balance}
   .hand .typeset p{margin:0;font-size:12px;line-height:1.35}
   .hand .typeset .nocover{font-family:var(--mono);font-size:10px;opacity:.75}
-  /* The empty placeholder is a white drawing: the dark scrim that carries
-     the caption over the socket turned it grey and buried its stamp
-     block. Over light art the scrim is light and the ink is dark. */
-  .hand .typeset.onlight{background:linear-gradient(180deg,rgba(247,245,249,0) 62%,rgba(247,245,249,.95) 86%);color:var(--ink)}
-  .hand .typeset.onlight .nocover{opacity:.6}
+  /* There was a light variant of this scrim, for the one placeholder that
+     is a white drawing: it kept the drawing's bottom from going grey. It
+     had a flaw the dark one cannot have — its wash was a fixed light
+     colour while its ink was var(--ink), so on the dark ground the ink
+     turned pale and the caption disappeared into the wash. A scrim sits
+     on art, and art does not follow the page's theme, so both of its
+     colours have to be fixed or neither. The dark one is fixed on both
+     counts, and it is the one every other cover already wears. */
   .sheet{display:grid;gap:18px;align-content:start;min-width:0}
   .sheet .head{display:grid;gap:6px}
   .sheet .head .kicker{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -361,7 +574,7 @@
   .field input[type=text]{font-family:var(--mono);font-size:13px;padding:6px 8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;width:100%}
   .field .doc{grid-column:2;font-size:12.5px;color:var(--muted);margin:2px 0 0;max-width:60ch;line-height:1.45}
   .field .doc code{font-family:var(--mono);font-size:.9em;background:var(--surface-2);padding:0 .3em;border-radius:2px}
-  .field input[type=checkbox],.field input[type=radio]{width:15px;height:15px;accent-color:var(--accent);margin:0}
+  .field input[type=checkbox],.field input[type=radio]{width:15px;height:15px;margin:0}
   .field.stack{align-items:start}
   .field.stack>label{padding-top:2px}
   /* One choice per line, its comment beside it; a plain list of names
@@ -382,10 +595,9 @@
   .cmd{font-family:var(--mono);font-size:12.5px;background:var(--surface);border:1px solid var(--line);padding:8px 10px;border-radius:2px;overflow-x:auto;white-space:nowrap}
   .cmd::before{content:"$ ";color:var(--muted)}
   .go{justify-self:start;font-family:var(--cond);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:13px;background:var(--accent);color:var(--accent-ink);padding:9px 16px;border-radius:2px;box-shadow:0 2px 0 rgba(0,0,0,.25)}
-  .go[disabled]{opacity:.45;cursor:not-allowed;box-shadow:none}
+  .go[disabled]{box-shadow:none}
   form.insert .acts{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
   form.insert .eject{font-family:var(--cond);font-weight:600;letter-spacing:.12em;text-transform:uppercase;font-size:12px;color:var(--bad);border:1px solid var(--bad);padding:8px 12px;border-radius:2px;background:var(--surface)}
-  form.insert .eject[disabled]{opacity:.4;cursor:not-allowed}
   form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
   /* Specs — the box's own facts, a table where the need above is prose.
      Same panel as .need, without its accent edge: that one is the voice
@@ -404,19 +616,26 @@
   .choices label.need>span:first-of-type{color:var(--muted)}
   .field .in{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:9.5px;color:var(--muted);border:1px solid var(--line);padding:0 4px;border-radius:2px;margin-left:6px}
   .choices label.has{color:var(--muted)}
+  /* Set, but not by the reader: this one the project already carries, so
+     it steps out of the accent the house gives every other control. */
   .choices label.has input{accent-color:var(--muted)}
   .git{display:grid;gap:6px;font-family:var(--mono);font-size:12px}
   .git .row{display:flex;justify-content:space-between;gap:10px;align-items:center}
   .git .row .k{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px;color:var(--muted)}
-  .git .ins{display:flex;gap:6px;flex-wrap:wrap}
   .go.done{background:var(--surface);color:var(--ink);border:1px solid var(--ink);box-shadow:none}
   .log{font-family:var(--mono);font-size:12px;line-height:1.55;background:var(--term);color:var(--term-ink);border-radius:3px;padding:12px 14px;min-height:120px;max-height:260px;overflow:auto;white-space:pre-wrap;border:1px solid var(--term-line)}
   .log .dim{color:var(--term-dim)}.log .add{color:#9BD99A}.log .upd{color:#E3B25C}.log .ok{color:#D4B27E;font-weight:500}
-  .log:empty::before{content:"The install output will stream here — and into the jobs tray.";color:var(--term-dim);font-style:italic}
+  /* What an empty window says is the window's, not the stylesheet's: the
+     install screen and the cluster's probes each say what will land here. */
+  .log:empty::before{content:attr(data-empty);color:var(--term-dim);font-style:italic}
   .log-cap{display:flex;justify-content:space-between;align-items:baseline}
   /* --- Installation: what the cartridge wrote --------------------------------
      Its own screen, the drawer's full width, one scroll. */
   .install{padding:22px 32px 60px;display:grid;gap:12px;align-content:start}
+  /* The form wants a measure; the diff wants the window. They share the
+     container and part company here: a route like /health in an input
+     780px wide reads as a mistake, and a patch cut at 820 reads as one too. */
+  #d-install{max-width:820px}
   .install[hidden]{display:none}
   .install .label small{margin-left:10px;font-family:var(--mono);font-size:11px;letter-spacing:0;text-transform:none;color:var(--soft)}
   .install .cap{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
@@ -471,10 +690,26 @@
      green bands stop at the visible edge and the rest of a long line
      scrolls out over bare ground. */
   .impl .src .rows{min-width:max-content}
+  /* The switch sits on the terminal ground the source is read on, and stays
+     put while the patch scrolls sideways under it. */
+  .impl .src .switch{position:sticky;left:0;z-index:1;display:inline-flex;gap:2px;margin:0 0 6px 14px;
+    font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10.5px}
+  .impl .src .switch button{background:none;border:1px solid var(--term-line);color:var(--term-dim);
+    padding:3px 9px;border-radius:2px;cursor:pointer;font:inherit}
+  .impl .src .switch button.on{color:var(--term-ink);border-color:var(--term-dim)}
+  .impl .src.drawn .rows{display:none}
+  .impl .src .shot{background:none;padding:6px 14px 10px}
+  .impl .src img.drawn{max-width:100%;max-height:520px;height:auto;display:block;margin:0 auto}
   .impl .dl{display:flex;white-space:pre}
   /* `gut`, no `ln`: that one is the Logs screen's line, a grid, from long
      before this — and it was quietly winning. */
-  .impl .dl .gut{flex:none;width:3.4em;padding-right:.8em;text-align:right;color:var(--term-dim);user-select:none;font-variant-numeric:tabular-nums}
+  /* The numbers get a ground of their own — a plate over the terminal, in
+     the idiom the rows beside them already use — so they read as the ruler
+     and not as part of the file. The gain is not only the tone: an added
+     line's green used to run all the way to the left edge, tinting numbers
+     that are no part of the change. Now the change begins where its sign
+     is, which is where it begins in the patch too. */
+  .impl .dl .gut{flex:none;width:3.4em;padding-right:.8em;text-align:right;color:var(--term-dim);user-select:none;font-variant-numeric:tabular-nums;background:rgba(255,255,255,.05)}
   .impl .dl .sg{flex:none;width:1.6em;text-align:center;color:var(--term-dim);user-select:none}
   .impl .dl .cd{flex:none;padding-right:16px}
   .impl .dl.add{background:rgba(46,139,87,.20)}
@@ -495,7 +730,8 @@
   .impl .picks .pick .dt{flex:none;width:7.4em;color:var(--muted);font-size:11.5px;white-space:nowrap;font-variant-numeric:tabular-nums}
   .impl .picks .pick .sj{flex:1;min-width:0;color:var(--soft);font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .impl .picks .pick .fc{flex:none;width:6.2em;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
-  .impl .picks .pick.total{border-top:1px solid var(--ink);font-weight:600}
+  .impl .picks .pick.total{border-top:0;border-bottom:1px solid var(--ink);padding-bottom:8px;font-weight:600}
+  .impl .picks .pick.total+.pick{border-top:0;padding-top:8px}
   .impl .picks .pick.total .p{align-items:center}
   .impl .caveat{margin:0;color:var(--muted);font-size:13px;max-width:76ch}
   .impl .picks .pick .n{flex:none;width:8.4em;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -503,9 +739,17 @@
   .impl .picks .pick .n .r{color:var(--bad)}
 
   /* --- config.conf as a form ------------------------------------------- */
-  .cfg{display:grid;gap:26px;padding:26px 32px 60px;max-width:860px}
+  /* No top padding: the bar's own is the air above it, so it is already at
+     its docked place at rest and does not travel there. See the note on the
+     bar itself. */
+  .cfg{display:grid;gap:26px;padding:0 32px 60px;max-width:860px}
   /* Sticks right under the modal's header, whose real height the modal measures
-     into --modal-top when it opens (64px was a guess the wrapped tabs outgrew). */
+     into --modal-top when it opens (64px was a guess the wrapped tabs outgrew).
+     Docked from the first pixel: what it holds is the way around the file, and
+     a row that is in one place at rest and another after a nudge is a row the
+     eye has to find twice. The three rows of this console that stay put — this
+     one, the cartridge's papers, the project's — are set the same way, and the
+     air above each is the row's own, never the container's. */
   .cfg .bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;position:sticky;top:var(--modal-top,64px);background:var(--surface);padding:10px 0;border-bottom:1px solid var(--line);z-index:1}
   .cfg .bar .note{flex:1;min-width:200px}
   .cfg .sec{display:grid;gap:14px}
@@ -520,11 +764,24 @@
   .cfg .row label{font-family:var(--mono);font-size:12.5px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .cfg .row .help{grid-column:2;font-size:12.5px;color:var(--muted);margin:0}
   .cfg .row .help a{color:var(--accent)}
+  /* The frame and the ground, on a screen of their own. Same shape as a
+     config row — the control, then what it is and what it is doing — but
+     the reading is the other way round: config says what the next project
+     gets, this says what this browser is showing right now. Each control
+     is its own state, so the sentence beside it is written by the same
+     hand that draws the icon. */
+  .ui{display:grid;gap:22px;padding:26px 32px 60px;max-width:860px;align-content:start}
+  .ui .lede{margin:0;font-size:13.5px;color:var(--muted);max-width:60ch}
+  .ui .row{display:grid;grid-template-columns:34px minmax(0,1fr);gap:4px 16px;align-items:center}
+  .ui .row button{grid-row:1/3;justify-self:center;color:var(--ink)}
+  .ui .row b{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:13px}
+  .ui .row .help{margin:0;font-size:12.5px;color:var(--muted)}
+  .ui .ground{padding:0;background:none;border:0;cursor:pointer;display:flex;align-items:center}
+  .ui .ground svg{width:19px;height:19px;display:block}
   .cfg .row select option.dim{color:var(--soft)}
   .cfg .row input[type=text],.cfg .row select{font-family:var(--mono);font-size:13px;padding:6px 8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;width:100%;max-width:520px}
-  .cfg .row input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent)}
+  .cfg .row input[type=checkbox]{width:16px;height:16px}
   .cfg .row.changed label::after{content:"●";color:var(--accent);font-size:10px}
-  .cfg .row.off label,.cfg .row.off input{opacity:.55}
   .cfg .chip.new{font-size:10px;padding:1px 5px}
   .cfg .stack{display:grid;gap:8px}
   .cfg pre.raw{font-family:var(--mono);font-size:12px;line-height:1.5;background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:14px;overflow:auto;margin:0;white-space:pre}
@@ -533,8 +790,17 @@
 
   /* --- the project's own documents --------------------------------------- */
   .pdocs{display:grid;gap:14px}
-  .pdocs .dtabs{margin:0;border-bottom:1px solid var(--line)}
+  /* The one screen whose panel gives its top air away: the row takes it, so
+     that here too the row is docked from the first pixel, like the config
+     bar and the cartridge's papers. On a screen the fixed thing above is
+     the row of screens, not a modal's header, so it sticks to --screen-top
+     — its measured height, which grows when that row wraps. Its ground is
+     the panel's, not a modal's surface. */
+  #panel-project{padding-top:0}
+  .pdocs .dtabs{margin:0;padding:10px 0 0;border-bottom:1px solid var(--line);
+    position:sticky;top:var(--screen-top,72px);background:var(--ground);z-index:1}
   .pdocs .booklet{padding:10px 0 40px}
+  .pdocs .booklet .toc{top:calc(var(--pdocs-top,120px) + 14px)}
   .pdocs pre.env{font-family:var(--mono);font-size:12.5px;line-height:1.6;background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:14px 16px;overflow:auto;margin:0}
   .pdocs pre.env .c{color:var(--term-dim)}.pdocs pre.env .k{color:#D4B27E}.pdocs pre.env .m{color:#F3A196}
   .pdocs .missing{border:1px dashed var(--line);padding:18px;color:var(--muted);font-style:italic;max-width:60ch}
@@ -570,6 +836,16 @@
   .toast{position:fixed;left:50%;bottom:64px;transform:translate(-50%,20px);opacity:0;transition:.25s;background:var(--ink);color:var(--ground);font-family:var(--cond);font-weight:600;letter-spacing:.12em;text-transform:uppercase;font-size:12px;padding:9px 14px;border-radius:2px;pointer-events:none;z-index:7}
   .toast.on{transform:translate(-50%,0);opacity:1}
 
+  /* The panes on the terminal ground are dark whichever theme is on, so the
+     house's thumb (light on the light theme) would be wrong in half of them.
+     scrollbar-color inherits, so saying it once here is enough — and it is
+     said here, in one grouped rule, rather than in each of their five
+     declarations, where the sixth pane added would forget it. */
+  .job .out,.log,.impl .src,.cfg pre.raw,.viewport{scrollbar-color:var(--term-scroll) transparent}
+  /* …except the one viewport that is not a terminal: the jobs list is
+     .viewport.light, on the house's own surface, so it takes the house's. */
+  .viewport.light{scrollbar-color:var(--scroll) transparent}
+
   @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -578,20 +854,44 @@
   <!-- The mark and the name are one lockup, so the band keeps two
        children and its space-between still means what it says. -->
   <div class="mark">
-    <img src="{{LOGO}}" alt="" width="31" height="36">
-    <h1>Dockerized Elixir Workbench <small>Console</small></h1>
+    <button class="cell" id="home" aria-label="Deploy — the console’s first screen" title="Deploy — the console's first screen">{{LOGO}}</button>
+    <h1>Dockerized Elixir Workbench <small>Console <span class="v" id="wb-ver"></span></small></h1>
   </div>
-  <!-- The caveat, the clock, and — at the corner, where a control is
-       looked for — the only button up here: the workbench's own drawer,
-       answering the title at the other end of the band. -->
+  <!-- The caveat, the clock, the ground the page is read on, and in the
+       corner itself the workbench's own drawer, answering the title at the
+       other end of the band. The last one runs to the edge: a control that
+       opens the whole thing belongs to the page, not to the row.
+       The ground is the one setting of the four in Console that is not set
+       once and left — it is flipped by the hour and by the light in the
+       room — so it keeps a hand out here, where it can be reached without
+       opening anything. Its row in Console stays: that is where it is
+       explained, this is where it is used. -->
   <div class="right">
     <span class="mock" title="A mock to judge the interaction. The workspace and the catalog are real (./wb.sh status --json, ./wb.sh catalog --json); the logs are a real capture of this workspace replayed; the install and deploy output is staged.">mock · replayed logs · staged jobs</span>
     <span id="clock"></span>
-    <button class="ver" id="wb-open" title="The workbench: its manual, its changelog, its config">wb.sh <span id="wb-ver"></span> <small>config · manual</small></button>
+    <button class="cell" id="ground-toggle" aria-label="The ground: light or dark">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/>
+        <path d="M12 3a9 9 0 010 18z" fill="currentColor"/>
+      </svg>
+    </button>
+    <button class="cell" id="wb-open" aria-label="The workbench: its config, its manual, its changelog"
+            title="The workbench: its config, its manual, its changelog">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <!-- Solid: the same outline, filled, with the axle punched out of
+             it (evenodd) instead of drawn as a ring. The stroke stays so
+             the silhouette keeps the size and the rounded teeth it had. -->
+        <path d="M 10.21 6.06 L 10.26 2.86 L 13.74 2.86 L 13.79 6.06 A 6.20 6.20 0 0 1 16.24 7.48 L 16.24 7.48 L 19.04 5.92 L 20.78 8.94 L 18.04 10.58 A 6.20 6.20 0 0 1 18.04 13.42 L 18.04 13.42 L 20.78 15.06 L 19.04 18.08 L 16.24 16.52 A 6.20 6.20 0 0 1 13.79 17.94 L 13.79 17.94 L 13.74 21.14 L 10.26 21.14 L 10.21 17.94 A 6.20 6.20 0 0 1 7.76 16.52 L 7.76 16.52 L 4.96 18.08 L 3.22 15.06 L 5.96 13.42 A 6.20 6.20 0 0 1 5.96 10.58 L 5.96 10.58 L 3.22 8.94 L 4.96 5.92 L 7.76 7.48 A 6.20 6.20 0 0 1 10.21 6.06 Z M 16 12 A 4 4 0 1 1 8 12 A 4 4 0 1 1 16 12 Z" fill="currentColor" fill-rule="evenodd" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+      </svg>
+    </button>
   </div>
 </header>
 
 <div class="app">
+  <!-- The rail's edge, draggable. A separator rather than a button: it
+       sets a value, and arrow keys are expected to move it. -->
+  <div class="grip" id="rail-grip" role="separator" aria-orientation="vertical"
+       tabindex="0" aria-label="The rail's width — drag, or arrow keys"></div>
   <aside class="console" aria-label="The console: the configured workspace">
     <section class="ws">
       <span class="label">Workspace</span>
@@ -622,100 +922,124 @@
   </aside>
 
   <main class="screen">
-    <div class="tabs" role="tablist" aria-label="Screens">
-      <button class="tab" role="tab" data-tab="project" aria-selected="false">Project</button>
-      <button class="tab" role="tab" data-tab="deploy" aria-selected="true">Deploy</button>
-      <button class="tab" role="tab" data-tab="jobs" aria-selected="false">Jobs <span class="live" id="jobs-live" hidden title="a job is running"></span><span class="badge" id="jobs-badge" hidden></span></button>
-      <button class="tab" role="tab" data-tab="cluster" aria-selected="false" id="tab-cluster" hidden>Cluster</button>
-      <button class="tab" role="tab" data-tab="terminal" aria-selected="false">Terminal <span class="live" id="term-live" hidden title="a session is open"></span></button>
-      <button class="tab" role="tab" data-tab="logs" aria-selected="false">Logs <span class="live" id="logs-live" title="following"></span><span class="badge" id="logs-badge" hidden></span></button>
-      <button class="tab" role="tab" data-tab="shelf" aria-selected="false">Cartridges <span class="badge" id="shelf-badge"></span></button>
+    <div class="scroller">
+      <div class="tabs" role="tablist" aria-label="Screens">
+        <button class="tab" role="tab" data-tab="deploy" aria-selected="true">Deploy</button>
+        <button class="tab" role="tab" data-tab="jobs" aria-selected="false">Jobs <span class="live" id="jobs-live" hidden title="a job is running"></span><span class="badge" id="jobs-badge" hidden></span></button>
+        <button class="tab" role="tab" data-tab="terminal" aria-selected="false">Terminal <span class="live" id="term-live" hidden title="a session is open"></span></button>
+        <button class="tab" role="tab" data-tab="logs" aria-selected="false">Logs <span class="live" id="logs-live" title="following"></span><span class="badge" id="logs-badge" hidden></span></button>
+        <button class="tab" role="tab" data-tab="shelf" aria-selected="false">Cartridges <span class="badge" id="shelf-badge"></span></button>
+        <button class="tab unlit" role="tab" data-tab="project" aria-selected="false" id="tab-project" aria-disabled="true">Project</button>
+        <button class="tab unlit" role="tab" data-tab="cluster" aria-selected="false" id="tab-cluster" aria-disabled="true">Cluster</button>
+      </div>
+
+      <section class="panel" id="panel-terminal" role="tabpanel">
+        <div class="logs term" id="term"></div>
+      </section>
+
+      <section class="panel" id="panel-jobs" role="tabpanel">
+        <div class="logs jobsp">
+          <div class="toolbar cli">
+            <span class="p">$ ./wb.sh</span>
+            <input type="text" id="wb-cli" placeholder="new, add, up, status, help… · ↑↓ history · Tab completes commands, cartridges and options from the catalog" aria-label="wb.sh command" spellcheck="false">
+            <span class="sep"></span>
+            <button class="btn" id="jobs-clear">Clear done</button>
+          </div>
+          <div class="logmeta" id="jobs-metabar" hidden><span id="jobs-meta"></span><span id="jobs-fold"></span></div>
+          <div class="viewport light"><div class="lines" id="jobs"></div></div>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-cluster" role="tabpanel">
+        <div class="cluster" id="cluster"></div>
+      </section>
+
+      <section class="panel" id="panel-shelf" role="tabpanel">
+        <div class="shelf-head">
+          <h2>Cartridges <span class="label" id="shelf-sum"></span></h2>
+          <!-- Built like the Terminal screen's row of controls, which is the
+               console's one settled way of putting groups of buttons in a
+               line: a .toolbar, and a hairline where one group ends and the
+               next begins. The filters say which cartridges; the pair after
+               the rule says what a cartridge looks like. -->
+          <div class="toolbar">
+            <div class="filters" role="group" aria-label="Filter the shelf">
+              <button class="btn" data-filter="all" aria-pressed="true">All</button>
+              <button class="btn" data-filter="collection" aria-pressed="false">Collections</button>
+              <button class="btn" data-filter="base" aria-pressed="false">Base</button>
+              <button class="btn" data-filter="covered" aria-pressed="false">With a box</button>
+            </div>
+            <span class="sep"></span>
+            <div class="views" role="group" aria-label="How the shelf is laid out">
+              <button class="btn" data-view="covers" aria-pressed="true" title="The boxes, on the plank">Covers</button>
+              <button class="btn" data-view="list" aria-pressed="false" title="A row for each cartridge, with what it is">List</button>
+            </div>
+          </div>
+        </div>
+        <div id="shelf"></div>
+      </section>
+
+      <section class="panel" id="panel-logs" role="tabpanel">
+        <div class="logs">
+          <div class="toolbar">
+            <span id="svc-chips" style="display:inline-flex;gap:6px;flex-wrap:wrap"></span>
+            <span class="sep"></span>
+            <select id="level" aria-label="Level">
+              <option value="error">Errors only</option>
+              <option value="warn">Warnings and up</option>
+              <option value="info">Info and up</option>
+              <option value="debug" selected>All levels</option>
+            </select>
+            <input type="search" id="q" placeholder="Search the lines…" aria-label="Search">
+            <span class="sep"></span>
+            <button class="btn" id="follow" aria-pressed="true">Following</button>
+            <button class="btn" id="ts" aria-pressed="true">Timestamps</button>
+            <button class="btn" id="clear">Clear</button>
+          </div>
+          <div class="logmeta"><span id="log-count"></span><span>docker compose logs --follow · since the deployment came up · capped at 2 000 lines in the page</span></div>
+          <div class="viewport">
+            <div class="lines" id="lines" aria-live="off"></div>
+            <button class="newpill" id="newpill">↓ new lines</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel on" id="panel-deploy" role="tabpanel">
+        <div class="newcard" id="newcard"></div>
+        <div class="targets" id="targets"></div>
+        <div class="zone">
+          <h3>Database</h3>
+          <!-- The same question the Deployment card asks, so the same
+               control asks it: which environment this is for. It was a
+               <select>, which hid one of the two answers behind a click
+               and looked like nothing else on the screen. -->
+          <div class="pick" role="radiogroup" aria-label="The environment to set the database up for">
+            <label><div><input type="radio" name="setup-env" value="dev" checked> <b>dev</b></div></label>
+            <label><div><input type="radio" name="setup-env" value="prod"> <b>prod</b></div></label>
+          </div>
+          <div class="acts">
+            <button class="btn" id="setup">Setup the database</button>
+            <span class="note">drops it, creates it, seeds it</span>
+          </div>
+        </div>
+        <div class="dangerzone">
+          <h3>Workspace</h3>
+          <div class="acts">
+            <button class="btn danger" id="delete">Delete the project</button>
+            <span class="confirm" id="delete-confirm">Files, containers, images and volumes go. <button class="btn danger" id="delete-yes">Yes, delete</button><button class="btn" id="delete-no">Keep it</button></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-project" role="tabpanel">
+        <div class="pdocs">
+          <div class="dtabs" role="tablist" aria-label="The project's own documents" id="p-tabs"></div>
+          <div class="booklet" id="p-booklet" hidden><article class="md" id="p-md"></article><nav class="toc" id="p-toc"></nav></div>
+          <pre class="env" id="p-env" hidden></pre>
+          <div class="missing" id="p-missing" hidden></div>
+        </div>
+      </section>
     </div>
-
-    <section class="panel" id="panel-terminal" role="tabpanel">
-      <div class="logs term" id="term"></div>
-    </section>
-
-    <section class="panel" id="panel-jobs" role="tabpanel">
-      <div class="logs jobsp">
-        <div class="toolbar cli">
-          <span class="p">$ ./wb.sh</span>
-          <input type="text" id="wb-cli" placeholder="new, add, up, status, help… · ↑↓ history · Tab completes commands, cartridges and options from the catalog" aria-label="wb.sh command" spellcheck="false">
-          <span class="sep"></span>
-          <button class="btn" id="jobs-clear">Clear done</button>
-        </div>
-        <div class="logmeta" id="jobs-metabar" hidden><span id="jobs-meta"></span><span id="jobs-fold"></span></div>
-        <div class="viewport light"><div class="lines" id="jobs"></div></div>
-      </div>
-    </section>
-
-    <section class="panel" id="panel-cluster" role="tabpanel">
-      <div class="cluster" id="cluster"></div>
-    </section>
-
-    <section class="panel" id="panel-shelf" role="tabpanel">
-      <div class="shelf-head">
-        <h2>Cartridges <span class="label" id="shelf-sum"></span></h2>
-        <div class="filters" role="group" aria-label="Filter the shelf">
-          <button class="btn" data-filter="all" aria-pressed="true">All</button>
-          <button class="btn" data-filter="collection" aria-pressed="false">Collections</button>
-          <button class="btn" data-filter="base" aria-pressed="false">Base</button>
-          <button class="btn" data-filter="covered" aria-pressed="false">With a box</button>
-        </div>
-      </div>
-      <div id="shelf"></div>
-    </section>
-
-    <section class="panel" id="panel-logs" role="tabpanel">
-      <div class="logs">
-        <div class="toolbar">
-          <span id="svc-chips" style="display:inline-flex;gap:6px;flex-wrap:wrap"></span>
-          <span class="sep"></span>
-          <select id="level" aria-label="Level">
-            <option value="debug">🔍 All levels</option>
-            <option value="info">ℹ️+ Info and up</option>
-            <option value="warn">⚠️+ Warnings and up</option>
-            <option value="error">⛔ Errors only</option>
-          </select>
-          <input type="search" id="q" placeholder="Search the lines…" aria-label="Search">
-          <span class="sep"></span>
-          <button class="btn" id="follow" aria-pressed="true">Following</button>
-          <button class="btn" id="ts" aria-pressed="true">Timestamps</button>
-          <button class="btn" id="clear">Clear</button>
-        </div>
-        <div class="logmeta"><span id="log-count"></span><span>docker compose logs --follow · since the deployment came up · capped at 2 000 lines in the page</span></div>
-        <div class="viewport">
-          <div class="lines" id="lines" aria-live="off"></div>
-          <button class="newpill" id="newpill">↓ new lines</button>
-        </div>
-      </div>
-    </section>
-
-    <section class="panel on" id="panel-deploy" role="tabpanel">
-      <div class="newcard" id="newcard"></div>
-      <div class="targets" id="targets"></div>
-      <div class="dangerzone">
-        <h3>Database and workspace</h3>
-        <div class="acts">
-          <select id="setup-env" aria-label="MIX_ENV"><option value="dev">dev</option><option value="prod">prod</option></select>
-          <button class="btn" id="setup">Setup the database</button>
-          <span class="note">drops it, creates it, seeds it</span>
-        </div>
-        <div class="acts">
-          <button class="btn danger" id="delete">Delete the project</button>
-          <span class="confirm" id="delete-confirm">Files, containers, images and volumes go. <button class="btn danger" id="delete-yes">Yes, delete</button><button class="btn" id="delete-no">Keep it</button></span>
-        </div>
-      </div>
-    </section>
-
-    <section class="panel" id="panel-project" role="tabpanel">
-      <div class="pdocs">
-        <div class="dtabs" role="tablist" aria-label="The project's own documents" id="p-tabs"></div>
-        <div class="booklet" id="p-booklet" hidden><article class="md" id="p-md"></article><nav class="toc" id="p-toc"></nav></div>
-        <pre class="env" id="p-env" hidden></pre>
-        <div class="missing" id="p-missing" hidden></div>
-      </div>
-    </section>
 
     <div class="tray" id="tray">
       <div class="bar" id="tray-bar">
@@ -731,16 +1055,52 @@
 <div class="scrim" id="scrim"></div>
 <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-hidden="true" aria-label="The box in hand">
   <div class="top">
-    <h3 id="d-title">Cartridge</h3>
+    <!-- Two ways out, and they must not read alike: Put back sets the box
+         down on the shelf; the arrow gives back the box you were holding
+         when you followed a link out of this one. -->
+    <div class="who">
+      <button class="btn back" id="d-back" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M19 12H5M11 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <h3 id="d-title">Cartridge</h3>
+    </div>
     <button class="btn" id="d-close">Put back</button>
     <div class="dtabs" role="tablist" aria-label="The box and what comes inside it" id="d-tabs"></div>
   </div>
+  <!-- Installation is the act: what you choose, the command it becomes, the
+       button, and what comes back. It used to live at the bottom of Box,
+       below the art and the specs, where the tab called Box held both the
+       object and the act and measured half again the height of the drawer. -->
   <div class="install" id="d-install" hidden>
+    <form class="insert" id="d-form">
+      <span class="label">Options</span>
+      <div id="d-fields"></div>
+      <div class="cmd" id="d-cmd"></div>
+      <div class="acts"><button class="go" id="d-go" type="submit">Insert cartridge</button><button class="eject" id="d-eject" type="button" hidden>Eject</button><span class="note" id="d-note"></span></div>
+    </form>
+    <div>
+      <div class="log-cap"><span class="label">Output</span><span class="note">staged in the mock</span></div>
+      <div class="log" id="d-log" aria-live="polite" data-empty="The install output will stream here — and into the jobs tray."></div>
+    </div>
+  </div>
+  <!-- And what it wrote is a third question, with a third answer: the only
+       one of the three that needs a commit before it can be asked. -->
+  <div class="install" id="d-files" hidden>
     <div class="impl" id="d-ibody"></div>
   </div>
-  <div class="booklet" id="d-booklet" hidden>
-    <article class="md" id="d-md"></article>
-    <nav class="toc" id="d-toc" aria-label="In this document"></nav>
+  <!-- The manual is what the box carries in paper, and the sheets are
+       inside it. They were three tabs in the row above — Manual, Design,
+       Changelog — where Manual meant README.md and the three stood at the
+       same rank as Box and Installation, which they are not: opening the
+       manual is one act, choosing a sheet is another. -->
+  <div class="papers" id="d-papers" hidden>
+    <div class="dtabs" role="tablist" aria-label="The papers the box carries" id="d-ptabs"></div>
+    <div class="booklet" id="d-booklet" hidden>
+      <article class="md" id="d-md"></article>
+      <nav class="toc" id="d-toc" aria-label="In this document"></nav>
+    </div>
   </div>
   <div class="body" id="d-body">
     <div class="hand">
@@ -756,16 +1116,6 @@
         <div class="req" id="d-req"></div>
       </div>
       <div id="d-specs" hidden><span class="label">Specs</span><div class="specs" id="d-specrows"></div></div>
-      <form class="insert" id="d-form">
-        <span class="label">Options</span>
-        <div id="d-fields"></div>
-        <div class="cmd" id="d-cmd"></div>
-        <div class="acts"><button class="go" id="d-go" type="submit">Insert cartridge</button><button class="eject" id="d-eject" type="button" hidden>Eject</button><span class="note" id="d-note"></span></div>
-      </form>
-      <div>
-        <div class="log-cap"><span class="label">Output</span><span class="note">staged in the mock</span></div>
-        <div class="log" id="d-log" aria-live="polite"></div>
-      </div>
     </div>
   </div>
 </aside>
@@ -777,6 +1127,37 @@
   </div>
   <div class="booklet" id="wb-booklet" hidden><article class="md" id="wb-md"></article><nav class="toc" id="wb-toc"></nav></div>
   <div class="cfg" id="wb-cfg" hidden></div>
+  <!-- The frame and the ground. They were four controls in the band, which
+       is the one row on the page that belongs to the project rather than to
+       the reader's arrangement of it — and three of them are set once and
+       left. The fourth is not: the ground keeps its hand in the band too,
+       and the two are the same switch, so both are repainted together.
+       Their icons come along unchanged: each still draws the frame it
+       makes. -->
+  <div class="ui" id="wb-ui" hidden>
+    <p class="lede">How this console is arranged, and the ground it is read on. Kept in this browser, not in <code>config.conf</code>: it is what you are looking at, not what the workbench builds.</p>
+    <div class="row">
+      <button class="frame" id="band-pos" aria-label="The band: top or bottom"></button>
+      <b>The band</b><p class="help" id="help-band-pos"></p>
+    </div>
+    <div class="row">
+      <button class="frame" id="rail-side" aria-label="The rail: left or right"></button>
+      <b>The rail's side</b><p class="help" id="help-rail-side"></p>
+    </div>
+    <div class="row">
+      <button class="frame" id="rail-off" aria-label="The rail: shown or hidden"></button>
+      <b>The rail</b><p class="help" id="help-rail-off"></p>
+    </div>
+    <div class="row">
+      <button class="ground" id="theme" aria-label="The ground: light or dark">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/>
+          <path d="M12 3a9 9 0 010 18z" fill="currentColor"/>
+        </svg>
+      </button>
+      <b>The ground</b><p class="help" id="help-theme"></p>
+    </div>
+  </div>
 </aside>
 <div class="viewer" id="viewer" role="dialog" aria-modal="true" aria-label="Figure viewer">
   <div class="bar">
@@ -876,11 +1257,12 @@ const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const state = {
   entries: CATALOG.map(e => ({ ...e, installed: installedNow(e.name), state: stateNow(e.name) })),
-  filter: "all", current: null, face: "front",
+  filter: "all", view: "covers", current: null, face: "front",
   containers: STATUS.containers.map(c => ({ service: c.Service, state: c.State, health: c.Health, image: c.Image })),
   git: STATUS.git ? { ...STATUS.git, inserts: [...(STATUS.git.inserts || [])] } : { repo: false },
   baked: { ...STATUS.baked },
   jobs: [],
+  project: STATUS.project !== null,
   tab: "deploy",
 };
 function installedNow(name) {
@@ -919,17 +1301,52 @@ function renderConsole() {
   for (const c of state.containers) {
     const label = c.health || c.state;
     const cls = c.health === "healthy" || (!c.health && c.state === "running") ? "good" : c.state === "running" || c.health === "starting" ? "warn busy" : "bad";
-    t.append(el("tr", {}, el("td", { class: "k" }, c.service), el("td", {}, el("span", { class: "chip " + cls }, label)), el("td", { class: "muted" }, c.image)));
+    t.append(el("tr", {}, el("td", { class: "k" }, c.service), el("td", { class: "st" }, el("span", { class: "chip " + cls }, label)), el("td", { class: "muted" }, c.image)));
   }
 
   const d = $("#deployments"); d.replaceChildren();
+  const upNow = runningDeployment();
+  const deployBusy = state.jobs.some(j => j.state === "running" && /wb\.sh (up|stop|down|build)\b/.test(j.cmdline));
   for (const name of ["dev", "prod", "scaled"]) {
     const up = deploymentUp(name), baked = state.baked[name];
-    const cell = el("td", {}, el("span", { class: "chip " + (up ? "good" : "off") }, up ? "running" : baked ? "baked · down" : "not baked"));
-    if (!up && baked) cell.append(el("span", { class: "hint" }, `./wb.sh up --deploy ${name}`));
-    d.append(el("tr", {}, el("td", { class: "k" }, name), cell));
+    // The heading's legend already says it — baked · running — and those
+    // are two facts, which the chip used to mash into one word with a
+    // middot inside it. A column each: whether the image exists is not
+    // whether it is up, and either can change without the other.
+    const status = el("td", {}, el("span", { class: "chip " + (up ? "good" : "off") }, up ? "running" : "down"));
+    const act = el("td", { class: "act" });
+    // The row already knows which deployment it is about, so the reader
+    // should not have to be the one who retypes it. What the command was
+    // saying — this one can come up — a button says by existing, and the
+    // row that is up gets the other half of the same errand. Nothing to
+    // offer on a target that was never baked: `up` would have to build it
+    // first, and that is a longer errand than a rail button should start.
+    if (up) act.append(deployButton("down", name, upNow, deployBusy));
+    else if (baked) act.append(deployButton("up", name, upNow, deployBusy));
+    d.append(el("tr", {}, el("td", { class: "k" }, name),
+      el("td", { class: "st" }, el("span", { class: "chip" + (baked ? "" : " off") }, baked ? "baked" : "not baked")),
+      status, act));
   }
-  renderSlots(); renderGit(); renderTargets(); renderDoors(); renderCluster(); renderTerminal(); if ($("#newcard")) renderNewCard();
+  renderSlots(); renderGit(); renderTargets(); renderDoors(); renderCluster(); renderTerminal(); renderProjectTab(); if ($("#newcard")) renderNewCard();
+}
+// The row's one action, in the row's own words: Up while this deployment is
+// down, Down while it is up. The whole point is the move that does not go
+// through the Deploy screen, so only two things stop either — nothing to
+// deploy into, and a job already in flight. Another deployment being *up*
+// is not one of them: it is the ordinary case, and Up replaces it exactly
+// as the Deploy card's own button does. What that takes down is in the
+// title rather than the label, because the column is one word wide and the
+// word is the same word — the reader is bringing this one up either way.
+function deployButton(verb, name, running, busy) {
+  const extra = verb === "up" && name === "scaled" ? scaledExtra() : "";
+  const why = state.project === false ? "the workspace is empty: Deploy → New project starts one"
+    : busy ? "a job is running" : null;
+  const b = unlit(el("button", { class: "btn mini", onclick: () => { if (!isUnlit(b)) deploy(verb, name, extra); } },
+    verb === "up" ? "Up" : "Down"), why);
+  // After unlit, never before: it clears the title when there is no reason.
+  if (!why) b.title = deployCmdline(verb, name, extra) + (verb === "up" && running && running !== name
+    ? ` — ${running} is running and goes down: one deployment at a time` : "");
+  return b;
 }
 function renderGit() {
   const g = state.git, box = $("#git"); box.replaceChildren();
@@ -938,9 +1355,10 @@ function renderGit() {
   box.append(el("div", { class: "row" }, el("span", { class: "k" }, "tree"), el("span", { class: "chip " + (g.clean ? "good" : "warn") }, g.clean ? "clean" : "dirty")));
   box.append(el("div", { class: "row" }, el("span", { class: "k" }, "head"), el("span", {}, g.head || "no commits yet")));
   box.append(el("div", { class: "row" }, el("span", { class: "k" }, "signs as"), el("span", { title: g.identity }, (g.identity || "").replace(/ <.*/, ""))));
-  const ins = el("div", { class: "ins" });
-  for (const i of g.inserts) { const c = cartRef(i.feature); c.title = i.sha.slice(0, 7) + " · " + i.date + " — open its box"; ins.append(c); }
-  box.append(el("div", { class: "row" }, el("span", { class: "k" }, "inserts"), g.inserts.length ? ins : el("span", { class: "note" }, "none yet")));
+  // The insert commits are not a row here any more: they were the same
+  // cartridges the Inserted table below already lists, and which of them
+  // the workbench can revert is a fact about a cartridge, not about git.
+  // It is a column there now.
   if (!g.clean) box.append(el("button", { class: "btn", onclick: commitPending }, "Commit pending changes"));
 }
 function commitPending() {
@@ -977,34 +1395,111 @@ function renderDoors() {
   const up = appUp(), doors = contributions("doors").filter(([e, d]) => holds(e, d.when));
   $("#doors-sum").textContent = doors.length ? `${doors.length} open by cartridges` : "none yet";
   if (!doors.length) box.append(el("p", { class: "note" }, "Cartridges open doors here: docs, dashboard, mailbox, swagger, graphiql, admin…"));
-  for (const [e, d] of doors) { const path = fillPath(e, d.path); box.append(el("a", { href: `http://localhost:${STATUS.ports.app}${path}`, target: "_blank", class: up ? "" : "off", title: up ? `${e.name}: ${path}` : `${e.name}: ${path} — the app is down` }, el("b", {}, d.label), path, el("small", {}, e.name))); }
-  // Tabs a cartridge lights up.
+  for (const [e, d] of doors) { const path = fillPath(e, d.path); box.append(el("a", { href: `http://localhost:${STATUS.ports.app}${path}`, target: "_blank", class: up ? "" : "unlit", title: up ? `${e.name}: ${path}` : `${e.name}: ${path} — the app is down` }, el("b", {}, d.label), path, el("small", {}, e.name))); }
+  // Tabs a cartridge lights up — and, when none has, the tab says so and
+  // names the box that would. A screen the workbench knows how to show is
+  // part of its map on the first day, not from the day you earn it.
   const tabs = new Set(contributions("tabs").map(([, t]) => t));
-  $("#tab-cluster").hidden = !tabs.has("cluster");
+  const lights = CATALOG.filter(c => ((c.console || {}).tabs || []).includes("cluster")).map(c => c.name);
+  unlit($("#tab-cluster"), tabs.has("cluster") ? null
+    : `no cartridge lights this screen yet — ${lights.join(" or ")} does: insert it from Cartridges`);
   if (!tabs.has("cluster") && state.tab === "cluster") showTab("deploy");
+}
+// How a cartridge got here, which is also whether the workbench can take it
+// back. The four answers are the drawer's own — the Insert screen says them
+// in full beside the Eject button — said here in two words, in the column
+// where the reader is already counting what the project carries.
+//
+// This used to be a second list, the `inserts` row under Git, and the two
+// looked like the same list twice. They never were: 22 cartridges are in
+// this project and 13 of them have an insert commit. The eight base ones
+// came with phx.new and a collection leaves no commit of its own, so a list
+// of commits can never be the list of what is installed — it is the list of
+// what the workbench put there and can still revert. One column, one place
+// the reader looks, and the difference said where it is noticed.
+function origin(e) {
+  const insert = state.git.inserts.find(i => i.feature === e.name);
+  if (insert) return ["by commit", "", `git revert ${insert.sha.slice(0, 7)} — ${insert.subject} · ${insert.date}`];
+  if (e.collection) return ["collection", "off", "the box leaves no commit of its own: eject its cartridges, not the collection"];
+  if (STATUS.project && STATUS.project.phx && STATUS.project.phx[e.name] === true)
+    return ["from birth", "off", "came with the project: phx.new generated it — nothing to eject"];
+  return ["by hand", "off", "inserted by hand: no commit to eject"];
 }
 function renderSlots() {
   const s = $("#slots"); s.replaceChildren();
   const ins = state.entries.filter(e => e.installed);
-  $("#slots-sum").textContent = ins.length ? `${ins.length} cartridge${ins.length === 1 ? "" : "s"}` : "none";
+  const revertible = ins.filter(e => state.git.inserts.some(i => i.feature === e.name)).length;
+  $("#slots-sum").textContent = ins.length
+    ? `${ins.length} cartridge${ins.length === 1 ? "" : "s"} · ${revertible} the workbench can eject`
+    : "none";
   if (!ins.length) { s.append(el("tr", {}, el("td", { class: "muted" }, "Nothing inserted yet: the shelf is in Cartridges."))); return; }
   for (const e of ins) {
+    const [word, cls, why] = origin(e);
     // A cartridge named anywhere wears the house's reference (components.css).
     s.append(el("tr", { class: e.justInserted ? "new" : "" },
       el("td", {}, cartRef(e.name)),
-      el("td", { class: "muted" }, e.version ? `v${e.version.version} · ${e.version.date}` : "unversioned")));
+      // The date moves into the title. Three columns do not fit the rail at
+      // its default width — 106 for the widest name, 152 for version and
+      // date, 86 for the origin, in 320 — and it was the version that lost,
+      // wrapping onto two lines. Measured, not guessed. The number is what
+      // this column is for; the date is one hover away and the box prints
+      // the whole changelog.
+      el("td", { class: "muted ver", title: e.version ? `${e.version.date} in its CHANGELOG` : "no CHANGELOG to read a version from" },
+        e.version ? `v${e.version.version}` : "unversioned"),
+      el("td", { class: "og" }, el("span", { class: "chip" + (cls ? " " + cls : ""), title: why }, word))));
     e.justInserted = false;
   }
 }
 
 // --- tabs --------------------------------------------------------------------
+// The house's rule, in one function (assets/design/generated/components.css,
+// `.unlit`): never hide what the reader could have. A control that could be
+// lit stays where it is, marked, carrying the reason — and the reason is the
+// title, which is why nothing here reaches for pointer-events:none. Tabs mark
+// with aria-disabled rather than the disabled attribute: a disabled <button>
+// takes no focus, and a tab a screen reader cannot reach is a tab that was
+// hidden after all, which is the one thing the rule forbids.
+function unlit(node, reason) {
+  node.classList.toggle("unlit", !!reason);
+  if (reason) { node.setAttribute("aria-disabled", "true"); node.title = reason; }
+  else { node.removeAttribute("aria-disabled"); node.removeAttribute("title"); }
+  return node;
+}
+const isUnlit = node => node.getAttribute("aria-disabled") === "true";
+
+// What a modal's header is to a modal, the row of screens is to a screen:
+// the fixed thing whatever sticks has to sit under. Its height is measured
+// rather than assumed — it wraps to two rows on a narrow window — and the
+// two together are where a heading lands when the index jumps to it. The
+// project's row is only measurable once its screen is up.
+function measureScreen() {
+  requestAnimationFrame(() => {
+    const sc = $(".scroller"), tabs = $(".tabs").offsetHeight, row = $("#p-tabs").offsetHeight;
+    sc.style.setProperty("--screen-top", tabs + "px");
+    if (row) sc.style.setProperty("--pdocs-top", (tabs + row) + "px");
+  });
+}
 function showTab(name) {
+  const t = $(`.tab[data-tab="${name}"]`);
+  if (t && isUnlit(t)) return;
   state.tab = name;
   for (const t of $$(".tab")) t.setAttribute("aria-selected", String(t.dataset.tab === name));
   for (const p of $$(".panel")) p.classList.toggle("on", p.id === "panel-" + name);
   if (name === "logs") { logs.unseenErrors = 0; renderLogBadge(); if (logs.follow) scrollToEnd(); }
+  if (name === "project") measureScreen();
   updateTray();
 }
+// Project is lit by the project itself — its three papers are the
+// workspace's README, CHANGELOG and .env, and `delete` wipes the directory.
+// It goes dark, never away: an empty workspace is a workspace that can have
+// a project, and a reader who has just arrived should be able to count the
+// screens this console has before earning any of them.
+function renderProjectTab() {
+  unlit($("#tab-project"), state.project ? null
+    : "this workspace has no project — Deploy → New project starts one");
+  if (!state.project && state.tab === "project") showTab("deploy");
+}
+
 // The screens that start jobs — where the tray is the answer coming back.
 // Everywhere else it is a strip of unrelated news, so it stays away: on
 // the Jobs tab it would repeat the screen and point at where the reader
@@ -1017,6 +1512,11 @@ function updateTray() {
   $("#tray").hidden = state.tab === "jobs" || !state.jobs.length || !(running || JOB_SCREENS.has(state.tab));
 }
 for (const t of $$(".tab")) t.addEventListener("click", () => showTab(t.dataset.tab));
+// The mark goes home. Deploy is the first screen, and it is never unlit —
+// a mark that greys out on the screen it points to reads as broken rather
+// than as arrived, and clicking home from home is a no-op everywhere else
+// on the web too.
+$("#home").addEventListener("click", () => showTab("deploy"));
 
 // --- the shelf ---------------------------------------------------------------
 // What is true of a box, not what kind of box it is: there is one kind
@@ -1051,11 +1551,37 @@ function renderShelf() {
   for (const [label, list] of groups) {
     if (!list.length) continue;
     const row = el("div", { class: "row" }, el("span", { class: "label" }, label));
-    const boxes = el("div", { class: "boxes" });
-    for (const e of list) boxes.append(boxEl(e));
-    row.append(boxes, el("div", { class: "plank" }));
+    // The plank belongs to the boxes: it is the shelf they stand on, and
+    // under a list it would be a rule with nothing resting on it.
+    if (state.view === "list") row.append(el("div", { class: "list" }, ...list.map(e => listRow(e))));
+    else {
+      const boxes = el("div", { class: "boxes" });
+      for (const e of list) boxes.append(boxEl(e));
+      row.append(boxes, el("div", { class: "plank" }));
+    }
     shelf.append(row);
   }
+}
+// A cartridge as a row: the cover small, the name in the house's notation
+// (its dot says inserted, as everywhere else), what the box is — a
+// collection, a base, not done yet — and, for the ones in the project, how
+// they got there. Then the version and the summary, which are the two
+// things a cover cannot print.
+function listRow(e) {
+  const chips = el("span", { class: "fx" });
+  for (const f of facts(e)) chips.append(el("span", { class: "chip" }, f));
+  // Where a cartridge came from is only a fact once it is in: for a box on
+  // the shelf the same function would answer "by hand", which is not true
+  // of it yet.
+  if (e.installed) { const [word, cls, why] = origin(e); chips.append(el("span", { class: "chip" + (cls ? " " + cls : ""), title: why }, word)); }
+  return el("button", { class: "lrow" + (e.installed ? " in" : "") + (e.pending ? " pending" : ""), type: "button",
+      "aria-label": `${title(e)}: pick up the box`, onclick: () => open(e.name) },
+    el("span", { class: "th" }, el("img", { src: (ART[e.name] || (e.pending ? PH.empty : PH.socket)).front, alt: "", draggable: "false" })),
+    el("span", { class: "nm" }, el("span", { class: "cart-ref" + (e.installed ? " in" : "") }, e.name)),
+    chips,
+    el("span", { class: "vr", title: e.version ? `${e.version.date} in its CHANGELOG` : "no CHANGELOG to read a version from" },
+       e.version ? "v" + e.version.version : "—"),
+    el("span", { class: "sm" }, e.summary || "Documented in the generated project, but its installer is not done yet."));
 }
 function boxEl(e) {
   const face = el("div", { class: "face" + (ART[e.name] ? "" : " socket") });
@@ -1073,39 +1599,95 @@ function boxEl(e) {
   box.append(cap);
   return box;
 }
+// Which shape the shelf takes is the reader's arrangement of the console,
+// like the band's side and the ground: it is kept in this browser, not in
+// config.conf, and it is remembered.
+const VIEW_KEY = "wb-console-shelf";
+try { const saved = localStorage.getItem(VIEW_KEY); if (saved === "list" || saved === "covers") state.view = saved; } catch (e) { /* file://, or storage off */ }
+for (const b of $$(".views .btn")) {
+  b.setAttribute("aria-pressed", String(b.dataset.view === state.view));
+  b.addEventListener("click", () => {
+    state.view = b.dataset.view;
+    for (const o of $$(".views .btn")) o.setAttribute("aria-pressed", String(o.dataset.view === state.view));
+    try { localStorage.setItem(VIEW_KEY, state.view); } catch (e) {}
+    renderShelf();
+  });
+}
 for (const b of $$(".filters .btn")) b.addEventListener("click", () => {
   for (const o of $$(".filters .btn")) o.setAttribute("aria-pressed", "false");
   b.setAttribute("aria-pressed", "true"); state.filter = b.dataset.filter; renderShelf();
 });
 
 // --- the box in hand ---------------------------------------------------------
-const DOC_TABS = [["box", "Box", null], ["install", "Installation", null], ["need_md", "Need", "NEED.md"], ["readme", "Manual", "README.md"], ["design", "Design", "DESIGN.md"], ["changelog", "Changelog", "CHANGELOG.md"]];
+// Three verbs and then the manual: what the box is, how it goes in, what it
+// wrote — and the papers that came in it, which are one screen and not
+// three, with each sheet under its own name. README is not "the manual":
+// the manual is the whole of what the box carries in paper, and README is
+// the first sheet of it.
+// NEED.md has no sheet. It is not a paper you go and read, it is what the
+// box is for — so it is printed on the Box screen itself, above the specs,
+// and every one of them says the same four things in the same order: the
+// want, Before, After, Not for. A tab would have been the same words a
+// click away, with a heading repeating the name already at the top of the
+// drawer.
+const DOC_TABS = [["box", "Box"], ["install", "Installation"], ["files", "Files"], ["manual", "Manual"]];
+const PAPERS = [["readme", "README", "README.md"], ["design", "Design", "DESIGN.md"], ["changelog", "Changelog", "CHANGELOG.md"]];
+const PANELS = { box: "#d-body", install: "#d-install", files: "#d-files", manual: "#d-papers" };
+state.paper = "readme";
+const papersOf = e => PAPERS.filter(([k]) => (DOCS[e.name] || {})[k]);
 function renderDrawerTabs() {
-  const e = state.current, docs = DOCS[e.name] || {}, box = $("#d-tabs"); box.replaceChildren();
-  for (const [key, label, file] of DOC_TABS) {
-    // Installation is not a paper in the box: it is what this cartridge
-    // did to this project, and it is there only when a commit says so.
-    if (key === "install") { if (!hasInstall(e)) continue; }
-    else if (key !== "box" && !docs[key]) continue;
-    const t = el("button", { class: "dtab", role: "tab", "aria-selected": String(state.dtab === key), onclick: () => showDrawerTab(key) }, label);
-    if (file) t.append(el("small", {}, file));
-    box.append(t);
+  const e = state.current, carried = papersOf(e), box = $("#d-tabs"); box.replaceChildren();
+  for (const [key, label] of DOC_TABS) {
+    // Installation is not a paper: it is what this cartridge did to this
+    // project, and it arrives with the commit that says so.
+    const why = key === "files" ? (hasInstall(e) ? null
+          : e.pending ? "the box is designed; its installer is not done yet"
+          : e.collection ? "nothing to show until its picks are in the project"
+          : "not inserted yet: what it wrote is read off its commit")
+      : key === "manual" ? (carried.length ? null : "this box carries no papers")
+      : null;
+    // No subtitle on any of the four: these are the box's screens, and the
+    // files are named on the row inside the manual, where they are chosen.
+    // Listing them out here said the same words twice, a click apart.
+    const t = el("button", { class: "dtab", role: "tab", "aria-selected": String(!why && state.dtab === key),
+      onclick: () => { if (!why) showDrawerTab(key); } }, label);
+    box.append(unlit(t, why));
   }
 }
 function showDrawerTab(key) {
   state.dtab = key; renderDrawerTabs();
-  $("#d-body").hidden = key !== "box";
-  $("#d-install").hidden = key !== "install";
-  $("#d-booklet").hidden = key === "box" || key === "install";
-  if (key === "install") renderInstall();
-  else if (key !== "box") renderDoc(key);
+  for (const [k, sel] of Object.entries(PANELS)) $(sel).hidden = k !== key;
+  if (key === "files") renderInstall();
+  else if (key === "manual") { renderPapers(); measureDrawer(); }
   $("#drawer").scrollTop = 0;
+}
+// The sheets, in the order a box is read: what it does, how it was decided,
+// what has changed. An unlit sheet cannot be reached by a click, so the one
+// the screen opens on is a lit one — a box with no README opens on whatever
+// paper it does carry.
+function renderPapers() {
+  const e = state.current, docs = DOCS[e.name] || {}, carried = papersOf(e);
+  if (!docs[state.paper]) state.paper = (carried[0] || PAPERS[0])[0];
+  const row = $("#d-ptabs"); row.replaceChildren();
+  for (const [key, label, file] of PAPERS) {
+    const why = docs[key] ? null : `this box carries no ${file}`;
+    const t = el("button", { class: "dtab", role: "tab", "aria-selected": String(!why && state.paper === key),
+      onclick: () => { if (!why) { state.paper = key; renderPapers(); } } }, label, el("small", {}, why ? "—" : file));
+    row.append(unlit(t, why));
+  }
+  $("#d-booklet").hidden = !docs[state.paper];
+  if (docs[state.paper]) renderDoc(state.paper);
 }
 const GH = "https://github.com/JosePamplona/Dockerized-Elixir-Workbench/blob/main/";
 // Markdown into a booklet: the article, a table of contents from the h2s
 // when there are enough, and every relative link rewritten by `rewrite`
 // (what the console can open) or sent to the repository on GitHub.
 function renderMarkdown(md, art, toc, booklet, base, rewrite, idp, fallbackTitle) {
+  // NOTE for the port: marked dropped its sanitiser years ago and passes raw
+  // HTML through, and what is rendered here is a cartridge's own papers. In
+  // the mock the cartridges are this repository's, so nobody; the console
+  // proper is meant to serve catalogues the user adds, and then it is
+  // somebody. See console/README.md — pick a renderer that escapes.
   art.innerHTML = marked.parse(md, { gfm: true });
   for (const a of $$("a[href]", art)) {
     const href = a.getAttribute("href");
@@ -1135,21 +1717,85 @@ function renderDoc(key) {
   const e = state.current;
   renderMarkdown(DOCS[e.name][key], $("#d-md"), $("#d-toc"), $("#d-booklet"), "igniter/lib/workbench_igniter/features/" + e.name + "/", (a, href) => {
     let m;
-    if ((m = href.match(/^(NEED|README|DESIGN|CHANGELOG)\.md(#.*)?$/i))) { const k = m[1].toLowerCase() === "need" ? "need_md" : m[1].toLowerCase(); a.href = "#" + k; a.dataset.tab = k; return true; }
-    if ((m = href.match(/^\.\.\/([a-z0-9_]+)\/?(README\.md)?$/))) { const other = byName(m[1]); if (other) { a.href = "#" + other.name; a.dataset.open = other.name; a.textContent = other.name; a.classList.add("cart-ref"); if (other.installed) a.classList.add("in"); return true; } }
+    // A link to NEED.md goes to the Box screen, which is where its words are.
+    if ((m = href.match(/^(NEED|README|DESIGN|CHANGELOG)\.md(#.*)?$/i))) {
+      const k = m[1].toLowerCase();
+      a.href = "#" + k;
+      if (k === "need") a.dataset.tab = "box"; else a.dataset.paper = k;
+      return true;
+    }
+    if ((m = href.match(/^\.\.\/([a-z0-9_]+)\/?(README\.md)?$/))) {
+      const other = byName(m[1]);
+      if (other) {
+        a.href = "#" + other.name; a.textContent = other.name; a.classList.add("cart-ref");
+        if (other.installed) a.classList.add("in");
+        // A mention of the box you are holding is a mention, not a door.
+        if (other.name === e.name) unlit(a, "the box you have in hand"); else a.dataset.open = other.name;
+        return true;
+      }
+    }
     return false;
-  }, "h-", DOC_TABS.find(t => t[0] === key)[2]);
+  }, "h-", PAPERS.find(t => t[0] === key)[2]);
 }
 $("#d-md").addEventListener("click", ev => {
   const a = ev.target.closest("a"); if (!a) return;
   if (a.dataset.tab) { ev.preventDefault(); showDrawerTab(a.dataset.tab); }
+  else if (a.dataset.paper) { ev.preventDefault(); state.paper = a.dataset.paper; renderPapers(); $("#drawer").scrollTop = 0; }
   else if (a.dataset.open) { ev.preventDefault(); open(a.dataset.open); }
 });
 
-function open(name) {
+// The drawer's own header height, for the papers row that sticks under it,
+// and the two together for where a heading lands when the index jumps to
+// it. The row is only measurable once its screen is up, so this is called
+// again from there.
+function measureDrawer() {
+  requestAnimationFrame(() => {
+    const d = $("#drawer"), top = $("#drawer .top").offsetHeight, row = $("#d-ptabs").offsetHeight;
+    d.style.setProperty("--modal-top", top + "px");
+    if (row) d.style.setProperty("--papers-top", (top + row) + "px");
+  });
+}
+// A box names other boxes — in its papers, in what it requires, in the
+// members of a collection, in the picks its installer wrote — and every one
+// of those opens that box in this same drawer, over the one in hand. The
+// trail is what you were holding: one step, and the control says where it
+// goes. History, not hierarchy — two boxes can name each other, so a path
+// would close a loop and read as nonsense, and it would grow without a
+// ceiling in a header that already wraps. One step is a fixed size and
+// answers the only question actually asked: back to what?
+state.trail = [];
+function open(name, step) {
+  // A box can name itself — the Summary row of its own Files screen does,
+  // and a paper may link its own folder. Opening it again would rebuild the
+  // same box and leave a step back to where you already are.
+  if (!step && state.current && state.current.name === name && $("#drawer").classList.contains("on")) return;
   const e = byName(name);
-  state.current = e; state.face = "front"; state.dtab = "box";
-  renderDrawerTabs(); showDrawerTab("box");
+  // Opened from inside the drawer: what is in hand becomes the step back.
+  // From the shelf or the rail the drawer is down (the scrim is over both),
+  // so nothing is being set aside and the trail starts over. This is the
+  // one place that decides it.
+  if (!step) {
+    if ($("#drawer").classList.contains("on") && state.current)
+      state.trail.push({ name: state.current.name, dtab: state.dtab, paper: state.paper, scroll: $("#drawer").scrollTop });
+    else state.trail = [];
+  }
+  state.current = e; state.face = "front";
+  // Coming back, the box opens on the screen it was left on — and, below,
+  // at the line it was left at. Returning to the top of a long sheet is
+  // losing the place the step back was meant to keep.
+  state.dtab = step ? step.dtab : "box";
+  if (step) state.paper = step.paper;
+  renderDrawerTabs(); showDrawerTab(state.dtab); measureDrawer();
+  if (step && step.scroll) requestAnimationFrame(() => { $("#drawer").scrollTop = step.scroll; });
+  const bb = $("#d-back"), prev = state.trail[state.trail.length - 1];
+  bb.hidden = !prev;
+  if (prev) {
+    // The face of the control is an arrow, so the destination is said here,
+    // where the pointer and the screen reader both find it.
+    const say = `Back to ${prev.name}, the box you had before`
+      + (state.trail.length > 1 ? ` — ${state.trail.length} boxes deep` : "");
+    bb.title = say; bb.setAttribute("aria-label", say);
+  }
   $("#d-title").textContent = e.name;
   $("#d-name").textContent = title(e);
   $("#d-summary").textContent = e.summary || "Documented in the generated project, but its installer is not done yet.";
@@ -1204,7 +1850,7 @@ function renderFace() {
     // (choices are {value, doc} objects; the back lists the flags only)
     // The drawing is the state: a marked-up sheet, stamped DRAFT and
     // pending review, is what a cartridge nobody has built looks like.
-    const empty = !!e.pending, ph = empty ? PH.empty : PH.socket, ts = "typeset" + (empty ? " onlight" : "");
+    const empty = !!e.pending, ph = empty ? PH.empty : PH.socket, ts = "typeset";
     front.append(el("img", { src: ph.front, alt: "" }), el("div", { class: ts }, el("h4", {}, title(e)),
       el("span", { class: "nocover" }, empty ? "not done yet — a drawing, not a cartridge" : "no box yet — the socket stands in")));
     back.append(el("img", { src: ph.back, alt: "" }), el("div", { class: ts }, el("h4", {}, e.summary || title(e)), el("p", {}, e.example ? "$ " + e.example : ""), el("p", {}, opts),
@@ -1405,15 +2051,34 @@ function renderGo() {
     : left ? (left.length ? `Insert ${left.length} cartridge${left.length === 1 ? "" : "s"}` : "Every pick is in")
     : adds ? "Add to cartridge" : "Insert cartridge";
   const insert = state.git.inserts.find(i => i.feature === e.name);
-  eject.hidden = !e.installed || !!e.collection; eject.disabled = !insert || dirty;
-  eject.title = insert ? `git revert ${insert.sha.slice(0, 7)} — ${insert.subject}` : "Inserted by hand: no commit to revert";
+  // A collection's Eject is its members'. It was hidden here, which said the
+  // gesture did not exist when what did not exist was the commit: the box
+  // put those cartridges in one press, and taking them out was a walk from
+  // box to box.
+  const going = e.collection ? ejectableMembers(e) : [];
+  // A single cartridge asks the same question: what would be left standing
+  // on nothing. `wb.sh eject` refuses on it now (mix workbench.dependents),
+  // so the button that fires it has to know before the job does.
+  const blockers = ejectBlockers(e, e.collection ? going : (insert ? [insert] : []));
+  eject.hidden = !e.installed;
+  eject.textContent = e.collection ? `Eject ${going.length}` : "Eject";
+  eject.disabled = dirty || blockers.length > 0 || (e.collection ? !going.length : !insert);
+  eject.title = blockers.length ? blockers.join("; ") + " — eject those first"
+    : e.collection
+    ? (!going.length ? "none of its cartridges has an insert commit: nothing to revert"
+      : going.map(i => `./wb.sh eject ${i.feature}`).join(" && "))
+    : insert ? `git revert ${insert.sha.slice(0, 7)} — ${insert.subject}` : "Inserted by hand: no commit to revert";
   note.textContent = dirty ? "the tree has changes git does not have — commit first"
-    : left ? (left.length ? "one commit per cartridge — what is in already is skipped" : "the box leaves no commit of its own: eject the cartridges, not the collection")
+    : blockers.length ? blockers.join("; ") + ": eject those first"
+    : left ? (left.length ? "one commit per cartridge — what is in already is skipped"
+      : going.length ? `Eject takes its ${going.length} cartridge${going.length === 1 ? "" : "s"} out, newest first — one revert each`
+      : "the box leaves no commit of its own, and none of its cartridges has one either")
     : locked ? (inserted ? "inserted once, with these options (from its commit); eject to change them" : "inserted once; its options are not on record — eject to change them")
     : adds ? "every option is a package: what is in stays, what you add is queued" : !e.installed ? "" : "";
   const born = STATUS.project && STATUS.project.phx && STATUS.project.phx[e.name] === true;
-  // A collection never has a commit of its own: its note already says so.
-  if (e.installed && !insert && !dirty && !left) note.textContent = born ? "came with the project: phx.new generated it — nothing to eject" : "inserted by hand: no commit to eject";
+  // A collection never has a commit of its own: its note above says what
+  // Eject does instead.
+  if (e.installed && !insert && !dirty && !left && !e.collection) note.textContent = born ? "came with the project: phx.new generated it — nothing to eject" : "inserted by hand: no commit to eject";
   if (!e.installed && missing.length && !dirty) note.textContent = "builds on " + missing.map(n => n.name).join(" and ") + ", not in the project yet";
   renderCmd();
 }
@@ -1461,16 +2126,39 @@ function diffRow(cls, oldNo, newNo, sign, html, text) {
   return row;
 }
 
+// The whole file, reassembled from its patch: every added line with its `+`
+// taken off. Only honest for a file the cartridge created — an edit's patch is
+// the parts that changed, and half a drawing draws nothing.
+function wholeFile(f) {
+  if (!f.born) return null;
+  const lines = [];
+  for (const line of (f.patch || "").split("\n")) {
+    if (line[0] === "+") lines.push(line.slice(1));
+    else if (line[0] === "\\" || line.startsWith("@@") || line === "") continue;
+    else return null;
+  }
+  return lines.length ? lines.join("\n") : null;
+}
+// A drawing goes in an <img>, never inline. An SVG inside an <img> is its own
+// document: its stylesheet cannot reach the page — and these carry bare `text`,
+// `path` and `circle` selectors, which inline were restyling every diagram on
+// the screen and the mark in the band — its ids cannot collide with anything,
+// and its scripts do not run, which matters because an exported one carries a
+// <script> block. The cost is nothing: the file is already text on the page.
+const svgImage = src => el("img", { class: "drawn",
+  src: "data:image/svg+xml;charset=utf-8," + encodeURIComponent(src) });
+
 function diffBody(f) {
   const h = (DIFFS.highlight || {})[f.new] || (DIFFS.highlight || {})[f.old];
   if (h && h.treatment === "omit")
     return el("p", { class: "none", hidden: true }, "left out on purpose: its lines run past a thousand characters and nobody reads them");
-  if (h && h.treatment === "image") {
-    const box = el("div", { class: "shot", hidden: true });
-    if (h.svg) box.insertAdjacentHTML("beforeend", h.svg);
-    else if (h.uri) box.append(el("img", { src: h.uri, alt: f.path }));
-    return box;
-  }
+  // A raster has nothing to read, so it is shown. An SVG has: the registry
+  // now calls it plain (Console.Highlight), so it falls through to the same
+  // patch every other text file gets. The capture still says `image` for
+  // the ones taken before that — it carries their patch either way, so
+  // reading it is a matter of ignoring the older verdict.
+  if (h && h.treatment === "image" && h.uri && !h.svg)
+    return el("div", { class: "shot", hidden: true }, el("img", { src: h.uri, alt: f.path }));
   const pre = el("pre", { class: "src", hidden: true });
   // The rows go in a box as wide as the longest line, not as wide as the
   // window: a background painted only to the visible edge stops there,
@@ -1478,6 +2166,30 @@ function diffBody(f) {
   // scrolled sideways.
   const rows = el("div", { class: "rows" });
   pre.append(rows);
+  // A drawing is a text file that also happens to be a picture, and the sheet
+  // can answer either question. The switch lives in the body and not in the
+  // file header, which is one button already and would have to start telling
+  // two clicks apart.
+  if (/\.svg$/i.test(f.path)) {
+    const src = wholeFile(f);
+    const shot = src ? el("div", { class: "shot", hidden: true }, svgImage(src)) : null;
+    const sw = el("div", { class: "switch" },
+      el("button", { type: "button", class: "on", "aria-pressed": "true" }, "code"),
+      unlit(el("button", { type: "button", "aria-pressed": "false" }, "drawing"),
+        src ? null : "only a whole file can be drawn, and this one is an edit: its patch is the parts that changed"));
+    const [bcode, bdraw] = sw.children;
+    const show = drawn => {
+      pre.classList.toggle("drawn", drawn);
+      if (shot) shot.hidden = !drawn;
+      for (const [b, on] of [[bcode, !drawn], [bdraw, drawn]]) {
+        b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on));
+      }
+    };
+    bcode.addEventListener("click", () => show(false));
+    if (src) bdraw.addEventListener("click", () => show(true));
+    pre.prepend(sw);
+    if (shot) pre.append(shot);
+  }
   let o = 0, n = 0;
   for (const line of (f.patch || "").split("\n")) {
     let m;
@@ -1560,18 +2272,24 @@ function renderInstall() {
       el("span", { class: "fc", title: titles || "" }, files + " file" + (files === 1 ? "" : "s")));
 
   const table = rows => el("div", { class: "picks" }, ...rows);
-  const pickRow = r => row("", cartRef(r.name), r.sha.slice(0, 7), r.date.slice(0, 10),
+  // The Summary row names the box whose screen this is: a door to where you
+  // already stand, so it is marked and does not open.
+  const pickRow = (r, here) => row("", here ? unlit(cartRef(r.name), "the box you have in hand") : cartRef(r.name),
+                           r.sha.slice(0, 7), r.date.slice(0, 10),
                            r.subject, r.added, r.removed, r.files.length);
 
   if (!e.collection) {
     const d = DIFFS.cartridges[e.name];
-    body.append(el("span", { class: "label" }, "Summary"), table([pickRow({ name: e.name, ...d })]),
+    body.append(el("span", { class: "label" }, "Summary"), table([pickRow({ name: e.name, ...d }, true)]),
                 el("span", { class: "label" }, "Files"), filesBox(d.files));
     return;
   }
   const picks = collectionPicks(e), c = DIFFS.collections[e.name];
   const whole = c && c.contiguous && c.files.length ? c : null;
-  const rows = picks.map(pickRow);
+  // Called through, not handed to map: map passes the index as the second
+  // argument, and pickRow's second argument is "this is the box in hand" —
+  // which made every pick but the first one unlit.
+  const rows = picks.map(p => pickRow(p));
   // The total is not the column added up, and it should not be: the
   // column is what each pick did, the total is what the project was left
   // with. Seventy-eight rows of files are fifty-seven files, because
@@ -1587,15 +2305,18 @@ function renderInstall() {
   // No commit on the total row: a range is not a sum of commits, and put
   // in that column it would read as one. It belongs to what it produced
   // — the file list below — and it labels that instead.
-  // The last row is the collection's own, named like the rest of them —
+  // The first row is the collection's own, named like the rest of them —
   // and its commit cells are empty because it has none: a collection
-  // leaves no commit, and thirteen filled cells above one blank one is
-  // that rule where it can be seen rather than read. The range lives in
-  // the row's title now: its tip is healthcheck's commit, already in the
-  // table, and its base is the project's own birth, which belongs to the
-  // project and not to this box.
+  // leaves no commit, and one blank row above thirteen filled ones is
+  // that rule where it can be seen rather than read. It reads first
+  // because it is what the reader came for — what the box did to the
+  // project — and the thirteen below it are the breakdown of that one
+  // figure, which is the order the sheet's prose already follows. The
+  // range lives in the row's title: its tip is healthcheck's commit,
+  // already in the table, and its base is the project's own birth, which
+  // belongs to the project and not to this box.
   if (rows.length > 1 && whole)
-    rows.push(row("total", cartRef(e.name), "", "", "", whole.added, whole.removed, whole.files.length,
+    rows.unshift(row("total", unlit(cartRef(e.name), "the box you have in hand"), "", "", "", whole.added, whole.removed, whole.files.length,
       whole.range + " — read off the range, not the column added up. The column is what each pick did; "
       + "this is what the project was left with. A file several picks touch is one file, and a "
       + "line one pick wrote and a later one took out was never there at the start nor at the end."));
@@ -1606,9 +2327,71 @@ function renderInstall() {
                        : "The box leaves no commit of its own: what it did is what its picks did."));
 }
 
+// A collection leaves no commit of its own, so under its own name there is
+// nothing to revert — but every cartridge it put in has one. Eject all walks
+// them **newest first**, which is the only order git can take them in: a
+// member inserted after another may have written on top of it, and reverting
+// the older one first is the conflict the workbench refuses to resolve for
+// anybody. `state.git.inserts` is already in that order, so the filter is
+// the plan.
+function ejectableMembers(e) {
+  const names = new Set(collectionMembers(e).map(m => m.name));
+  return state.git.inserts.filter(i => names.has(i.feature));
+}
+// What would be left standing on nothing: an installed cartridge outside the
+// set that builds on one going out. The insert side refuses the mirror of
+// this ("Insert html first"), and a revert that orphans a dependent is the
+// same mistake taken the other way. Reported, never worked around: which
+// cartridge to eject first is the reader's call, not a batch's.
+function ejectBlockers(e, going) {
+  // One level, not the transitive walk `mix workbench.dependents` does:
+  // here the reader has the shelf in front of them and the next refusal is
+  // one click away, while the command line gets the whole chain because
+  // there it is the difference between one answer and five attempts.
+  const out = new Set(going.map(i => i.feature));
+  return state.entries
+    .filter(x => x.installed && x.name !== e.name && !out.has(x.name) && (x.requires || []).some(r => out.has(r)))
+    .map(x => `${x.name} builds on ${(x.requires || []).filter(r => out.has(r)).join(" and ")}`);
+}
+function ejectCollection(e) {
+  const going = ejectableMembers(e);
+  if (!going.length) return;
+  const kept = collectionMembers(e).map(m => m.name).filter(n => !going.some(i => i.feature === n));
+  const reverts = going.map(i => ({ ...i, rev: Math.random().toString(16).slice(2, 42) }));
+  const log = $("#d-log"); log.replaceChildren();
+  const lines = [
+    ...(kept.length ? [["dim", `No insert commit, left in place: ${kept.join(", ")}`]] : []),
+    ["", `${going.length} to eject, newest first: ${going.map(i => i.feature).join(", ")}`],
+    ...reverts.flatMap(i => [["dim", `Reverting ${i.sha.slice(0, 7)} ${i.subject}`],
+      ["ok", `Ejected ${i.feature}: ${i.rev.slice(0, 7)} Revert "${i.subject}" (as ${state.git.identity}).`]]),
+    ["ok", `✓ ${e.name}: ${going.length} cartridge${going.length === 1 ? "" : "s"} out, ${going.length} revert${going.length === 1 ? "" : "s"}.`],
+  ];
+  // One eject per cartridge, chained: there is no batch command, and the
+  // chain is what stops at the first cartridge whose files changed since —
+  // which is exactly where a reader would want it to stop.
+  runJob(going.map(i => `./wb.sh eject ${i.feature}`).join(" && "), lines, {
+    onLine: (cls, text) => { log.append(el("div", { class: cls }, text)); log.scrollTop = log.scrollHeight; },
+    onDone: () => {
+      for (const i of reverts) { const c = byName(i.feature); if (c) { c.installed = false; c.state = {}; } }
+      const out = new Set(going.map(i => i.feature));
+      state.git.inserts = state.git.inserts.filter(i => !out.has(i.feature));
+      state.git.head = `${reverts[0].rev.slice(0, 7)} Revert "${reverts[0].subject}"`;
+      // The collection is installed while its picks are: with them out, it
+      // is back on the shelf.
+      e.installed = collectionMembers(e).every(m => inProject(m.name));
+      e.state = {};
+      renderConsole(); renderShelf(); renderForm(); renderDrawerTabs();
+      if (!e.installed) for (const c of $$("#d-kicker .chip.good")) c.remove();
+      toast(`${going.length} cartridge${going.length === 1 ? "" : "s"} ejected`);
+    },
+  });
+  jobsPing();
+}
 function eject(ev) {
   ev.preventDefault();
-  const e = state.current, insert = state.git.inserts.find(i => i.feature === e.name);
+  const e = state.current;
+  if (e.collection) { ejectCollection(e); return; }
+  const insert = state.git.inserts.find(i => i.feature === e.name);
   if (!insert) return;
   const log = $("#d-log"); log.replaceChildren();
   runJob(`./wb.sh eject ${e.name}`, [["dim", `Reverting ${insert.sha.slice(0, 7)} ${insert.subject}`], ["ok", `Ejected ${e.name}: 9f3e1c2 Revert "${insert.subject}" (as ${state.git.identity}).`]], {
@@ -1616,7 +2399,7 @@ function eject(ev) {
     onDone: () => {
       e.installed = false; e.state = {};
       state.git.inserts = state.git.inserts.filter(i => i !== insert); state.git.head = `9f3e1c2 Revert "${insert.subject}"`;
-      renderConsole(); renderShelf(); renderForm();
+      renderConsole(); renderShelf(); renderForm(); renderDrawerTabs();
       for (const c of $$("#d-kicker .chip.good")) c.remove();
       toast(`${title(e)} ejected`);
     },
@@ -1625,6 +2408,9 @@ function eject(ev) {
 }
 $("#d-eject").addEventListener("click", eject);
 function withDoc(row, o) {
+  // NOTE for the port: same hole as the papers, one field nobody reads with
+  // these eyes — an option's doc comes from the cartridge's manifest and goes
+  // in as HTML. See console/README.md.
   if (o.doc) { const d = el("p", { class: "doc" }); d.innerHTML = marked.parseInline(o.doc); row.append(d); }
   return row;
 }
@@ -1720,7 +2506,7 @@ function insertCollection(e, args) {
       if (state.git.inserts.length) state.git.head = state.git.inserts[0].sha.slice(0, 7) + " " + state.git.inserts[0].subject;
       e.installed = true;
       e.state = { ...(e.state || {}), interface: collectionMembers(e).map(m => m.name).find(n => INTERFACES.includes(n)) };
-      renderConsole(); renderShelf(); renderForm();
+      renderConsole(); renderShelf(); renderForm(); renderDrawerTabs();
       $("#d-kicker").append(el("span", { class: "chip good" }, "inserted"));
       toast(`${plan.length} cartridge${plan.length === 1 ? "" : "s"} inserted`);
     },
@@ -1751,7 +2537,7 @@ function insert(ev) {
       state.git.head = commit.sha.slice(0, 7) + " " + commit.subject;
       if (e.rerun === "adds") { e.state = { ...(e.state || {}) }; for (const o of e.options) { const v = choiceValue(o); if (!v.length) continue; if (o.multiple) e.state[o.name] = [...(e.state[o.name] || []), ...v]; else e.state[o.name] = v[0]; } if (e.state.auth) e.state.auth = true; }
       e.installed = true; e.justInserted = true; e.opts = { path };
-      renderConsole(); renderShelf(); renderForm();
+      renderConsole(); renderShelf(); renderForm(); renderDrawerTabs();
       $("#d-kicker").append(el("span", { class: "chip good" }, "inserted"));
       toast(`${title(e)} inserted`);
     },
@@ -1901,18 +2687,33 @@ function renderTargets() {
   const busy = state.jobs.some(j => j.state === "running" && /wb\.sh (up|stop|down|build)\b/.test(j.cmdline));
   const extra = pick === "scaled" ? scaledExtra() : "";
   const card = el("div", { class: "deployment" });
+  // The card had no name while the two around it — New project, Database
+  // and workspace — had one. Singular on purpose: the note beside the chip
+  // says one deployment at a time, and the heading says it first.
+  card.append(el("h3", {}, "Deployment"));
   card.append(el("div", { class: "now" },
     el("span", { class: "chip " + (busy ? "warn busy" : running ? "good" : "off") }, busy ? "working" : running ? `${running} is running` : "nothing is up"),
     el("span", { class: "note" }, running ? "one deployment at a time: the composes share the project name, so Up replaces it" : "pick a target and bring it up")));
   const picks = el("div", { class: "pick" });
   for (const name of ["dev", "prod", "scaled"]) {
     const on = name === pick, r = el("input", { type: "radio", name: "target", value: name, checked: on, onchange: () => { state.target = name; renderTargets(); } });
-    const lab = el("label", { class: on ? "on" : "" }, el("div", {}, r, " ", el("b", {}, name), " ", el("span", { class: "chip " + (deploymentUp(name) ? "good" : state.baked[name] ? "off" : "off") }, deploymentUp(name) ? "running" : state.baked[name] ? "baked" : "not baked")), el("p", {}, TARGETS[name].blurb));
+    // No chip per target: the board's Deployments table already says
+    // running / baked · down / not baked for all three, in those words,
+    // and it says it whichever screen you are on. Here it repeated that
+    // a step away from itself — and said it worse: baked and not baked
+    // were both `off`, so the two wore the same face.
+    const lab = el("label", { class: on ? "on" : "" }, el("div", {}, r, " ", el("b", {}, name)));
+    // The caveat goes right under the name, above the description and the
+    // inputs: it is not a footnote to the options, it is a condition on
+    // picking this at all. Last, it was reached by a reader who had already
+    // set the replicas — past the moment it could have changed their mind.
+    if (name === "scaled" && !byName("clustering").installed)
+      lab.append(el("span", { class: "chip warn" }, "no clustering: replicas run isolated"));
+    lab.append(el("p", {}, TARGETS[name].blurb));
     if (name === "scaled") {
       const replicas = el("input", { type: "number", min: "1", value: state.replicas || 4, oninput: () => { state.replicas = +replicas.value; $("#deploy-cmd").textContent = deployCmd(); } });
       const bal = el("input", { type: "checkbox", checked: state.balancer !== false, onchange: () => { state.balancer = bal.checked; renderTargets(); } });
       lab.append(el("div", { class: "opts" }, "--replicas ", replicas, el("label", {}, bal, " balancer")));
-      if (!byName("clustering").installed) lab.append(el("span", { class: "chip warn" }, "no clustering: replicas run isolated"));
     }
     picks.append(lab);
   }
@@ -2040,12 +2841,33 @@ function renderCluster() {
     table.append(el("tr", {}, el("td", {}, r), el("td", {}, ip), el("td", {}, el("a", { href: `http://localhost:${STATUS.ports.app + 1 + i}`, target: "_blank" }, `:${STATUS.ports.app + 1 + i}`)), el("td", {}, `${APP}@${ip}`), el("td", {}, el("span", { class: "chip " + (peers === reps.length - 1 ? "good" : "warn") }, `${peers} of ${reps.length - 1}`)), el("td", {}, el("button", { class: "btn", title: `./wb.sh iex --deploy scaled ${r} — bin/${APP} remote on this node`, onclick: () => termOpen(r, "remote") }, "remote console"))));
   });
   box.append(table);
-  box.append(el("div", { class: "probe" }, el("h3", {}, "Who answers?"),
-    el("p", { class: "note" }, "Four requests to the balancer's port: the X-Served-By header names the replica each one landed on."),
-    el("div", { class: "acts" }, el("button", { class: "btn", disabled: !bal, onclick: () => { runJob(`for i in 1 2 3 4; do curl -sI http://localhost:${STATUS.ports.app} | grep -i x-served-by; done`, reps.slice(0, 4).map((r, i) => ["", `X-Served-By: 172.18.0.${3 + i}`]), {}); jobsPing(); } }, "Ask four times"))));
-  box.append(el("div", { class: "probe" }, el("h3", {}, "Who is connected?"),
-    el("p", { class: "note" }, "Node.list() on the first replica, through the release's rpc — the nodes DNSCluster found."),
-    el("div", { class: "acts" }, el("button", { class: "btn", onclick: () => { runJob(`docker compose --file docker-compose.scaled.yml exec ${reps[0]} bin/${APP} rpc "IO.inspect(Node.list())"`, [["", `[${reps.slice(1).map((r, i) => `:"${APP}@172.18.0.${4 + i}"`).join(", ")}]`]], {}); jobsPing(); } }, "Node.list()"))));
+  box.append(probe("Who answers?",
+    "Four requests to the balancer's port: the X-Served-By header names the replica each one landed on.",
+    "The four answers will land here.", "Ask four times", !bal,
+    `for i in 1 2 3 4; do curl -sI http://localhost:${STATUS.ports.app} | grep -i x-served-by; done`,
+    () => reps.slice(0, 4).map((r, i) => ["", `X-Served-By: 172.18.0.${3 + i}`])));
+  box.append(probe("Who is connected?",
+    "Node.list() on the first replica, through the release's rpc — the nodes DNSCluster found.",
+    "The list of peers will land here.", "Node.list()", false,
+    `docker compose --file docker-compose.scaled.yml exec ${reps[0]} bin/${APP} rpc "IO.inspect(Node.list())"`,
+    () => [["", `[${reps.slice(1).map((r, i) => `:"${APP}@172.18.0.${4 + i}"`).join(", ")}]`]]));
+}
+// A probe is a question with a window under it. The command is a job like
+// any other — it goes to the tray with the rest — and the answer also comes
+// back where it was asked, so reading it does not cost a trip to another
+// screen. Same arrangement as the cartridge's install screen: the caption,
+// then the terminal ground.
+function probe(title, note, empty, label, off, cmd, lines) {
+  const log = el("div", { class: "log", "aria-live": "polite", "data-empty": empty });
+  const go = el("button", { class: "btn", disabled: off, onclick: () => {
+    log.replaceChildren();
+    runJob(cmd, lines(), { onLine: (cls, text) => { log.append(el("div", { class: cls }, text)); log.scrollTop = log.scrollHeight; } });
+    jobsPing();
+  } }, label);
+  return el("div", { class: "probe" }, el("h3", {}, title), el("p", { class: "note" }, note),
+    el("div", { class: "acts" }, go),
+    el("div", { class: "log-cap" }, el("span", { class: "label" }, "Output"), el("span", { class: "note" }, "staged in the mock")),
+    log);
 }
 
 function composeLines(name, verb) {
@@ -2057,8 +2879,15 @@ function composeLines(name, verb) {
   for (const s of svcs) { out.push(["dim", ` Container ${STATUS.compose_project}-${s}-1  ${word[0]}`]); out.push(["", ` Container ${STATUS.compose_project}-${s}-1  ${word[1]}`]); }
   return out;
 }
+// `dev` is the default deployment, so only the others name themselves; and
+// only the verbs that bring something up carry its options. Written once:
+// the rail's buttons put this in their title, and a title that drifts from
+// the command it claims to run is worse than no title.
+function deployCmdline(verb, name, extra = "") {
+  return `./wb.sh ${verb}${name === "dev" && verb !== "up" && verb !== "build" ? "" : " --deploy " + name}${verb === "up" || verb === "build" ? extra : ""}`;
+}
 function deploy(verb, name, extra = "") {
-  const cmd = `./wb.sh ${verb}${name === "dev" && verb !== "up" && verb !== "build" ? "" : " --deploy " + name}${verb === "up" || verb === "build" ? extra : ""}`;
+  const cmd = deployCmdline(verb, name, extra);
   let lines = [], onDone = () => {};
   const image = name === "dev" ? `${IMAGE}:local` : `${IMAGE}:0.1.0-prod`;
   if (verb === "up") {
@@ -2078,8 +2907,13 @@ function deploy(verb, name, extra = "") {
     lines = composeLines(name, verb);
     onDone = () => { state.containers = verb === "stop" ? state.containers.map(c => ({ ...c, state: "exited", health: null })) : []; renderConsole(); };
   }
-  runJob(cmd, lines, { onDone });
-  renderTargets();
+  // The whole board, not just the card: the rail's Deployments rows carry
+  // an Up of their own now, and it has to hear both ends of the job — the
+  // start, or the button that fired it stays lit and can fire twice, and
+  // the end, or it never lights again. `build` had no onDone at all, which
+  // is how a Build left every Up dark until something else repainted.
+  runJob(cmd, lines, { onDone: () => { onDone(); renderConsole(); } });
+  renderConsole();
   jobsPing();
 }
 // --- a new project: the start of the lifecycle ----------------------------------
@@ -2096,7 +2930,7 @@ const BASE = CATALOG.filter(e => e.base).map(e => e.name);
 // too, but only Ecto reads them: they are the ecto cartridge's options,
 // offered with its box (from its catalog entry).
 const GEN_FLAGS = [["adapter", ["bandit", "cowboy"]]];
-state.newp = { name: null, out: {}, gen: {}, confirm: false };
+state.newp = { out: {}, gen: {}, confirm: false };
 // A base cartridge left out takes with it the ones that build on it (phx.new: live only with html).
 function baseOut(name) { const e = byName(name); return !!state.newp.out[name] || (e.requires || []).some(baseOut); }
 function configValues() {
@@ -2110,15 +2944,33 @@ function newFlags() {
   return flags;
 }
 function newCommand() { return ["./wb.sh", "new", ...newFlags()].join(" "); }
+const given = (label, value) => el("div", { class: "frow" }, el("label", {}, label),
+  el("span", { class: "ro" }, value, el("a", { href: "#config", onclick: ev => { ev.preventDefault(); openWb("config"); } }, "change in config")));
 function renderNewCard() {
   const box = $("#newcard"); box.replaceChildren();
   const conf = configValues(), busy = state.jobs.some(j => j.state === "running" && /wb\.sh new/.test(j.cmdline));
-  const name = state.newp.name ?? conf.PROJECT_NAME;
-  box.append(el("h3", {}, "New project", el("span", { class: "chip " + (state.project === false ? "warn" : "off") }, state.project === false ? "the workspace is empty" : "a project exists here")));
+  // The two states were wearing each other's colour. On this card — whose
+  // button overwrites the workspace — a project already there is the whole
+  // danger, and it was the quietest thing on the screen; an empty workspace
+  // is the safe case, and it was the amber one. The red says now what the
+  // confirmation only said after the click, which is a step too late.
+  box.append(el("h3", {}, "New project", state.project === false
+    ? el("span", { class: "chip" }, "the workspace is empty")
+    : el("span", { class: "chip bad", title: "creating overwrites every file in it" }, "a project exists here")));
   const form = el("div", { class: "form" });
-  form.append(el("div", { class: "frow" }, el("label", { for: "np-name" }, "project name"), el("input", { type: "text", id: "np-name", value: name, oninput: ev => { state.newp.name = ev.target.value; $("#np-cmd").textContent = newCommand(); } })));
-  form.append(el("div", { class: "frow" }, el("label", {}, "workspace"), el("span", { class: "ro" }, conf.WORKSPACE_PATH, el("a", { href: "#config", onclick: ev => { ev.preventDefault(); openWb("config"); } }, "change in config"))));
-  form.append(el("div", { class: "frow" }, el("label", {}, "stack"), el("span", { class: "ro" }, `elixir ${conf.ELIXIR_VERSION} · erlang ${conf.ERLANG_VERSION} · ${conf.DEBIAN_VERSION}`, el("a", { href: "#config", onclick: ev => { ev.preventDefault(); openWb("config"); } }, "change in config"))));
+  // The three givens the card reads and never sets: what the project is
+  // called, where it goes, what it is built on. `new` can take a name on
+  // the command line, but a field here would be a second place the name
+  // comes from, and the reader would have no way to tell which one won.
+  // One origin, config.conf, and the same one gesture to reach it.
+  form.append(given("project name", conf.PROJECT_NAME));
+  form.append(given("workspace", conf.WORKSPACE_PATH));
+  form.append(given("stack", `elixir ${conf.ELIXIR_VERSION} · erlang ${conf.ERLANG_VERSION} · ${conf.DEBIAN_VERSION}`));
+  // Empty is the ordinary setting, and an empty row would read as a
+  // missing value: what the field means when unset is a decision `new`
+  // makes, so the row says the decision instead of the blank.
+  form.append(given("installer", conf.PHX_NEW_VERSION ? `phx_new ${conf.PHX_NEW_VERSION}`
+    : el("span", { class: "muted" }, "the newest phx_new that runs on this stack")));
   const gen = el("div", { class: "flags" });
   for (const [k, values] of GEN_FLAGS) {
     if (values) { const sel = el("select", { onchange: () => { state.newp.gen[k] = sel.value; $("#np-cmd").textContent = newCommand(); } }, ...values.map(v => el("option", { value: v, selected: (state.newp.gen[k] || values[0]) === v }, v))); gen.append(el("label", {}, "--" + k, sel)); }
@@ -2155,7 +3007,7 @@ function renderNewCard() {
 }
 function createProject() {
   const conf = configValues();
-  const name = (state.newp.name ?? conf.PROJECT_NAME).trim() || "app";
+  const name = conf.PROJECT_NAME.trim() || "app";
   const app = name.toLowerCase().replace(/\s+/g, "_"), image = name.toLowerCase().replace(/\s+/g, "-");
   const flags = newFlags(), bases = BASE.filter(n => !baseOut(n));
   const lines = [
@@ -2184,7 +3036,7 @@ function createProject() {
 }
 
 $("#setup").addEventListener("click", () => {
-  const env = $("#setup-env").value;
+  const env = $('input[name="setup-env"]:checked').value;
   runJob(`./wb.sh setup --env ${env}`, [["dim", `[7c1e]workbench/scripts/entrypoint.sh(2): setup ${env}`], ["", `The database for ${MOD}.Repo has been dropped`], ["", `The database for ${MOD}.Repo has been created`], ["", "Running migrations: none pending"], ["", "Seeding: priv/repo/seeds.exs"], ["ok", "✓ database ready."]]);
   jobsPing();
 });
@@ -2311,12 +3163,21 @@ logs.appendBoot = name => {
 
 // --- the workbench: manual, changelog, config ----------------------------------
 $("#wb-ver").textContent = "v" + WB.version; $("#wb-ver2").textContent = "v" + WB.version;
-const WB_TABS = [["config", "Config", "config.conf"], ["readme", "Manual", "README.md"], ["changelog", "Changelog", "CHANGELOG.md"]];
+// Three papers of the workbench and one screen that is not a paper — and
+// that is not the workbench's either: what it carries under `ui` belongs to
+// the console you are looking at, which is why it is named after it in a
+// modal named after the workbench. Its subtitle says where it is kept,
+// where the others name a file: the row's rule is the provenance, not a
+// second name for the tab.
+const WB_TABS = [["config", "Config", "config.conf"], ["readme", "Manual", "README.md"], ["changelog", "Changelog", "CHANGELOG.md"], ["ui", "Console", "this browser"]];
 state.wbtab = "config";
+// The header's real height, for whatever sticks under it (the config bar).
+function measureWb() {
+  requestAnimationFrame(() => $("#wb-modal").style.setProperty("--modal-top", $("#wb-modal .top").offsetHeight + "px"));
+}
 function openWb(tab) {
   state.wbtab = tab || state.wbtab; renderWbTabs(); showWbTab(state.wbtab);
-  // The header's real height, for whatever sticks under it (the config bar).
-  requestAnimationFrame(() => $("#wb-modal").style.setProperty("--modal-top", $("#wb-modal .top").offsetHeight + "px"));
+  measureWb();
   $("#wb-modal").classList.add("on"); $("#wb-modal").setAttribute("aria-hidden", "false"); $("#scrim").classList.add("on");
   $("#wb-close").focus();
 }
@@ -2325,10 +3186,13 @@ function renderWbTabs() {
   const box = $("#wb-tabs"); box.replaceChildren();
   for (const [key, label, file] of WB_TABS) box.append(el("button", { class: "dtab", role: "tab", "aria-selected": String(state.wbtab === key), onclick: () => showWbTab(key) }, label, el("small", {}, file)));
 }
+const WB_PANELS = { config: "#wb-cfg", ui: "#wb-ui" };
 function showWbTab(key) {
   state.wbtab = key; renderWbTabs();
-  $("#wb-booklet").hidden = key === "config"; $("#wb-cfg").hidden = key !== "config";
+  for (const [k, sel] of Object.entries(WB_PANELS)) $(sel).hidden = k !== key;
+  $("#wb-booklet").hidden = key in WB_PANELS;
   if (key === "config") renderConfig();
+  else if (key === "ui") { paintFrame(); paintGround(); }
   else renderMarkdown(WB[key], $("#wb-md"), $("#wb-toc"), $("#wb-booklet"), "", (a, href) => {
     if (/^CHANGELOG\.md/i.test(href)) { a.href = "#changelog"; a.onclick = ev => { ev.preventDefault(); showWbTab("changelog"); }; return true; }
     return false;
@@ -2337,6 +3201,14 @@ function showWbTab(key) {
 }
 $("#wb-open").addEventListener("click", () => openWb());
 $("#wb-close").addEventListener("click", closeWb);
+// Both modals measure their header when they open. A window narrowed under
+// an open one wraps its row of tabs, and the measure is then a row short —
+// so whatever sticks under it sticks a row too high, over the tabs.
+addEventListener("resize", () => {
+  if ($("#drawer").classList.contains("on")) measureDrawer();
+  if ($("#wb-modal").classList.contains("on")) measureWb();
+  measureScreen();
+});
 
 // config.conf, read as the form it already is: every `export KEY=value`
 // a field, the comments above it its help, the `# ---` lines its
@@ -2446,7 +3318,7 @@ function fieldRow(f, parsed) {
   const id = "cfg-" + f.key;
   const label = el("label", { for: id }, f.key);
   // When each setting takes effect — most of the file is not 'new only'.
-  const EFFECT = { WORKSPACE_PATH: null, PROJECT_NAME: "new", ELIXIR_VERSION: "new", ERLANG_VERSION: "new", DEBIAN_VERSION: "new", GIT_IDENTITY: "every commit", POSTGRES_IMAGE_VERSION: "every bake", PGADMIN_IMAGE_VERSION: "every bake", NGINX_IMAGE_VERSION: "scaled deploy" };
+  const EFFECT = { WORKSPACE_PATH: null, PROJECT_NAME: "new", PHX_NEW_VERSION: "new", ELIXIR_VERSION: "new", ERLANG_VERSION: "new", DEBIAN_VERSION: "new", GIT_IDENTITY: "every commit", POSTGRES_IMAGE_VERSION: "every bake", PGADMIN_IMAGE_VERSION: "every bake", NGINX_IMAGE_VERSION: "scaled deploy" };
   const effect = f.key in EFFECT ? EFFECT[f.key] : "new";
   if (effect) label.append(el("span", { class: "chip new" }, effect));
   let input;
@@ -2471,7 +3343,7 @@ function saveConfig() {
   let text = cfg.text;
   for (const [key, v] of Object.entries(cfg.edited)) text = text.replace(new RegExp("^(export\\s+" + key + "=)(\"?)[^\"#\\n]*\\2", "m"), (_, a, q) => a + q + v + q);
   cfg.text = text; WB.config = text; cfg.edited = {};
-  renderConfig(); toast("config.conf saved · staged in the mock");
+  renderConfig(); if ($("#newcard")) renderNewCard(); toast("config.conf saved · staged in the mock");
 }
 function rawConfig() {
   const pre = el("pre", { class: "raw" });
@@ -2491,11 +3363,28 @@ function rawConfig() {
 const P_TABS = [["readme", "README", "README.md"], ["changelog", "CHANGELOG", "CHANGELOG.md"], ["env", ".env", ".env"]];
 state.ptab = "readme";
 function renderProject() {
+  // An unlit tab cannot be reached by a click, so the one the panel opens on
+  // must be a lit one: README is the default, and a workspace without one
+  // falls to whichever paper it does have rather than opening on a notice.
+  if (!PROJ[state.ptab]) state.ptab = (P_TABS.find(([k]) => PROJ[k]) || P_TABS[0])[0];
   const tabs = $("#p-tabs"); tabs.replaceChildren();
-  for (const [key, label, file] of P_TABS) tabs.append(el("button", { class: "dtab", role: "tab", "aria-selected": String(state.ptab === key), onclick: () => { state.ptab = key; renderProject(); } }, label, el("small", {}, PROJ[key] ? file : "missing")));
+  // This row was already the house rule before the house had one: it never
+  // hid a paper the workspace lacks, it said so. Now it says so in the one
+  // way everything else does, and the sentence that used to wait behind a
+  // click is the reason on the tab itself.
+  for (const [key, label, file] of P_TABS) {
+    const why = PROJ[key] ? null : key === "changelog"
+      ? "this workspace has no CHANGELOG.md: new generates none — the project is born stock, and what it carries is its own to write. The cartridges keep theirs."
+      : `no ${file} in this workspace`;
+    const t = el("button", { class: "dtab", role: "tab", "aria-selected": String(!why && state.ptab === key),
+      onclick: () => { if (!why) { state.ptab = key; renderProject(); } } }, label, el("small", {}, why ? "—" : file));
+    tabs.append(unlit(t, why));
+  }
   const key = state.ptab, has = !!PROJ[key];
   $("#p-booklet").hidden = !(has && key !== "env"); $("#p-env").hidden = !(has && key === "env"); $("#p-missing").hidden = has;
-  if (!has) { $("#p-missing").textContent = key === "changelog" ? "This workspace has no CHANGELOG.md: new generates none — the project is born stock, and what it carries is its own to write. The cartridges keep theirs." : `No ${P_TABS.find(t => t[0] === key)[2]} in this workspace.`; return; }
+  // Only reachable when the workspace has none of the three, which `new`
+  // does not produce: every reason that used to live here is on its tab now.
+  if (!has) { $("#p-missing").textContent = "This workspace carries none of the project's papers."; return; }
   if (key === "env") {
     const pre = $("#p-env"); pre.replaceChildren();
     for (const line of PROJ.env.split("\n")) {
@@ -2612,6 +3501,7 @@ $("#d-face").addEventListener("click", ev => { const img = $(state.face === "bac
 
 // --- wiring ------------------------------------------------------------------
 $("#d-close").addEventListener("click", close);
+$("#d-back").addEventListener("click", () => { const step = state.trail.pop(); if (step) open(step.name, step); });
 $("#scrim").addEventListener("click", close);
 $("#d-flip").addEventListener("click", flip);
 $("#d-form").addEventListener("submit", insert);
@@ -2633,8 +3523,162 @@ function toast(text, ms = 2200) {
   const t = $("#toast"); t.textContent = text; t.classList.add("on");
   clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("on"), ms);
 }
+// The ground the page is read on. tokens.css is built for three states,
+// and no attribute at all is the third: follow the reader's system. So
+// nothing is written on the first load — the page arrives in whatever the
+// machine already said — and the attribute appears only once the reader
+// has an opinion, which is then remembered.
+// The frame: where the band sits, which side the rail is on, whether it is
+// there at all. Three independent switches, each one class on <body>, each
+// drawn by the button that flips it — the icon is a map of the page, so the
+// control needs no arrow to decode and doubles as the state.
+const FRAME = [
+  { id: "band-pos",  cls: "band-bottom", axis: "band", on: "The band is at the bottom — click to put it back on top",
+                     off: "The band is on top — click to move it to the bottom" },
+  { id: "rail-side", cls: "rail-right",  axis: "rail", on: "The rail is on the right — click to move it to the left",
+                     off: "The rail is on the left — click to move it to the right" },
+  { id: "rail-off",  cls: "rail-off",    axis: "off",  on: "The rail is hidden — click to bring it back",
+                     off: "The rail is shown — click to hide it" },
+];
+const FRAME_KEY = "wb-console-frame";
+// A 26×19 page: the band as a bar, the rail as a column, the screen as the
+// outline that is left — drawn from the state, so it is never out of date.
+// Each button draws the whole page but says only its own part out loud; the
+// first take had all three drawing the same map, and three identical buttons
+// are a row you have to hover to read.
+function frameIcon(btn, axis) {
+  const b = document.body, bottom = b.classList.contains("band-bottom");
+  const right = b.classList.contains("rail-right"), off = b.classList.contains("rail-off");
+  const top = bottom ? 5 : 5.5, hgt = 9.5, rx = right ? 17 : 1.5;
+  const bar = (y, c) => `<rect class="${c}" x="1" y="${y}" width="24" height="3" rx="1"/>`;
+  const col = (x, c) => `<rect class="${c}" x="${x}" y="${top}" width="7.5" height="${hgt}" rx="1"/>`;
+  // A toggle of position shows the ghost of the other position — that is what
+  // makes it read as "this moves" rather than "this is". A toggle of presence
+  // shows the thing itself, solid when it is there and dashed when it is not.
+  let band = bar(bottom ? 15 : 1, axis === "band" ? "r" : "f");
+  if (axis === "band") band += bar(bottom ? 1 : 15, "g");
+  let rail = "";
+  if (axis === "rail") rail = (off ? "" : col(rx, "r")) + col(right ? 1.5 : 17, "g");
+  else if (axis === "off") rail = off ? col(rx, "d") : col(rx, "r");
+  else if (!off) rail = col(rx, "f");
+  const scr = `<rect class="o" x="${off ? 1.5 : (right ? 1.5 : 10)}" y="${top}" width="${off ? 23 : 14.5}" height="${hgt}" rx="1"/>`;
+  btn.innerHTML = `<svg viewBox="0 0 26 19" aria-hidden="true">${band}${rail}${scr}</svg>`;
+}
+function paintFrame() {
+  for (const f of FRAME) {
+    const btn = $("#" + f.id), on = document.body.classList.contains(f.cls);
+    btn.setAttribute("aria-pressed", String(on));
+    // The same sentence twice: the title for the icon on its own, and the
+    // line beside it now that it has room. Written in one place so the two
+    // can never disagree.
+    btn.title = $("#help-" + f.id).textContent = on ? f.on : f.off;
+    frameIcon(btn, f.axis);
+  }
+}
+try {
+  const saved = JSON.parse(localStorage.getItem(FRAME_KEY) || "[]");
+  for (const f of FRAME) if (saved.includes(f.cls)) document.body.classList.add(f.cls);
+} catch (e) { /* file://, or storage off */ }
+for (const f of FRAME) $("#" + f.id).addEventListener("click", () => {
+  document.body.classList.toggle(f.cls);
+  try { localStorage.setItem(FRAME_KEY, JSON.stringify(FRAME.filter(x => document.body.classList.contains(x.cls)).map(x => x.cls))); } catch (e) {}
+  paintFrame();
+});
+paintFrame();
+
+// --- the rail's width --------------------------------------------------------
+// Dragged, nudged with the arrows, reset with a double click, and kept.
+// The floor is what the rail's own rows need to stay readable; the ceiling
+// is half the window, which is the point where the rail would stop being
+// a rail — past it the reader is looking at a board with a screen beside
+// it. A ceiling that moves with the window is why this lives here and not
+// in the stylesheet.
+const RAIL_KEY = "wb-console-rail", RAIL_MIN = 300, RAIL_MAX_SHARE = 0.5, RAIL_DEFAULT = 380;
+const grip = $("#rail-grip"), app = $(".app");
+function setRail(px) {
+  const max = Math.max(RAIL_MIN, Math.round(innerWidth * RAIL_MAX_SHARE));
+  const w = Math.round(Math.min(max, Math.max(RAIL_MIN, px)));
+  app.style.setProperty("--rail", w + "px");
+  grip.setAttribute("aria-valuenow", String(w));
+  grip.setAttribute("aria-valuemin", String(RAIL_MIN));
+  grip.setAttribute("aria-valuemax", String(max));
+  grip.title = `${w}px — drag, or arrow keys; double-click for ${RAIL_DEFAULT}`;
+  return w;
+}
+const railWidth = () => parseInt(getComputedStyle(app).getPropertyValue("--rail"), 10) || RAIL_DEFAULT;
+// Which way the pointer means depends on which side the rail is on: on the
+// right, the width grows as the pointer moves left.
+const railFromPointer = ev => document.body.classList.contains("rail-right")
+  ? innerWidth - ev.clientX : ev.clientX;
+grip.addEventListener("pointerdown", ev => {
+  ev.preventDefault();
+  grip.setPointerCapture(ev.pointerId);
+  grip.classList.add("dragging");
+  // The pointer keeps its distance from the edge it grabbed, so the rail
+  // does not jump to the cursor on the first move.
+  const offset = railWidth() - railFromPointer(ev);
+  const move = e => setRail(railFromPointer(e) + offset);
+  const up = () => {
+    grip.classList.remove("dragging");
+    grip.removeEventListener("pointermove", move);
+    grip.removeEventListener("pointerup", up);
+    grip.removeEventListener("pointercancel", up);
+    try { localStorage.setItem(RAIL_KEY, String(railWidth())); } catch (e) { /* file://, or storage off */ }
+  };
+  grip.addEventListener("pointermove", move);
+  grip.addEventListener("pointerup", up);
+  grip.addEventListener("pointercancel", up);
+});
+grip.addEventListener("dblclick", () => { setRail(RAIL_DEFAULT); try { localStorage.setItem(RAIL_KEY, String(RAIL_DEFAULT)); } catch (e) {} });
+grip.addEventListener("keydown", ev => {
+  const step = ev.shiftKey ? 48 : 16, right = document.body.classList.contains("rail-right");
+  let w = null;
+  if (ev.key === "ArrowLeft")  w = railWidth() + (right ? step : -step);
+  if (ev.key === "ArrowRight") w = railWidth() + (right ? -step : step);
+  if (ev.key === "Home")       w = RAIL_DEFAULT;
+  if (w === null) return;
+  ev.preventDefault();
+  setRail(w);
+  try { localStorage.setItem(RAIL_KEY, String(railWidth())); } catch (e) {}
+});
+// A window narrow enough to break the clamp moves the rail with it; a
+// wider one never widens it behind the reader's back.
+addEventListener("resize", () => setRail(railWidth()));
+{
+  let saved = null;
+  try { saved = localStorage.getItem(RAIL_KEY); } catch (e) {}
+  setRail(saved ? +saved : RAIL_DEFAULT);
+}
+
+const THEME_KEY = "wb-console-ground";
+const ground = () => document.documentElement.getAttribute("data-theme")
+  || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+function setGround(t) {
+  document.documentElement.setAttribute("data-theme", t);
+  try { localStorage.setItem(THEME_KEY, t); } catch (e) { /* file://, or storage off */ }
+  paintGround();
+}
+// One switch with two hands on it — the band's and Console's — so what it
+// says is written once and set on both.
+function paintGround() {
+  const t = ground(), say = t === "dark" ? "Dark ground — click for light" : "Light ground — click for dark";
+  for (const b of [$("#theme"), $("#ground-toggle")]) {
+    b.setAttribute("aria-pressed", String(t === "dark"));
+    b.title = say;
+  }
+  $("#help-theme").textContent = say;
+}
+try { const saved = localStorage.getItem(THEME_KEY); if (saved) document.documentElement.setAttribute("data-theme", saved); } catch (e) {}
+paintGround();
+const flipGround = () => setGround(ground() === "dark" ? "light" : "dark");
+$("#theme").addEventListener("click", flipGround);
+$("#ground-toggle").addEventListener("click", flipGround);
+// Until the reader has an opinion the page follows the machine, so it has
+// to follow it while open too.
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", paintGround);
+
 const tick = () => { $("#clock").textContent = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); };
 tick(); setInterval(tick, 30000);
 
-renderConsole(); renderShelf(); renderJobs(); renderProject(); replay();
+renderConsole(); renderShelf(); renderJobs(); renderProject(); measureScreen(); replay();
 </script>

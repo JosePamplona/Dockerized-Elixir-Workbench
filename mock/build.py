@@ -53,8 +53,9 @@ for name in sorted(os.listdir(F)):
         # NEED.md — the developer's need the cartridge answers — parsed into
         # its four parts, for the box's own sheet (not a document tab).
         if os.path.isfile(os.path.join(d, "NEED.md")):
-            docs[name]["need_md"] = open(os.path.join(d, "NEED.md")).read()
-            nd = re.sub(r"^#[^\n]*\n+", "", docs[name]["need_md"].strip())
+            # The raw file does not travel: the box's sheet is built from
+            # these four parts, and nothing else ever asked for the text.
+            nd = re.sub(r"^#[^\n]*\n+", "", open(os.path.join(d, "NEED.md")).read().strip())
             grab = lambda label: (lambda m: re.sub(r"\s+", " ", m.group(1)).strip() if m else None)(re.search(r"\*\*" + label + r":\*\*\s*(.+?)(?=\n\s*\n|\Z)", nd, re.S))
             want = nd.split("\n\n")[0]
             docs[name]["need"] = {"want": None if want.startswith("**") else re.sub(r"\s+", " ", want).strip(), "before": grab("Before"), "after": grab("After"), "not_for": grab("Not for")}
@@ -335,7 +336,7 @@ t = t.replace("{{TOKENS_CSS}}", "  " + tokens_css.replace("\n", "\n  "), 1)
 t = t.replace("<script>\n// Real data", "<script>\n" + open(f"{M}/marked.min.js").read() + "\n</script>\n<script>\n// Real data", 1)
 stacks = json.load(open(f"{M}/stacks.json")) if os.path.isfile(f"{M}/stacks.json") else []
 js = lambda o: json.dumps(o).replace("</", "<\\/")
-for k, v in [("{{CATALOG}}", js(catalog)), ("{{STACKS}}", js(stacks)), ("{{STATUS}}", js(status)), ("{{LOGS}}", js(logs)), ("{{DOCS}}", js(docs)), ("{{WB}}", js(wb)), ("{{PROJ}}", js(proj)), ("{{DIFFS}}", js(diffs)), ("{{ART}}", js(art)), ("{{LOGO}}", png_uri("console/priv/static/images/logo.png")), ("{{PH_COVER}}", jpg_uri("assets/covers/cover_placeholder.png")), ("{{PH_BACK}}", jpg_uri("assets/covers/back_placeholder.jpg")), ("{{PH_EMPTY_COVER}}", jpg_uri("assets/covers/empty_cover_placeholder.jpg")), ("{{PH_EMPTY_BACK}}", jpg_uri("assets/covers/empty_back_placeholder.jpg"))]:
+for k, v in [("{{CATALOG}}", js(catalog)), ("{{STACKS}}", js(stacks)), ("{{STATUS}}", js(status)), ("{{LOGS}}", js(logs)), ("{{DOCS}}", js(docs)), ("{{WB}}", js(wb)), ("{{PROJ}}", js(proj)), ("{{DIFFS}}", js(diffs)), ("{{ART}}", js(art)), ("{{LOGO}}", open("console/priv/static/images/logo.svg").read().strip()), ("{{PH_COVER}}", jpg_uri("assets/covers/cover_placeholder.png")), ("{{PH_BACK}}", jpg_uri("assets/covers/back_placeholder.jpg")), ("{{PH_EMPTY_COVER}}", jpg_uri("assets/covers/empty_cover_placeholder.jpg")), ("{{PH_EMPTY_BACK}}", jpg_uri("assets/covers/empty_back_placeholder.jpg"))]:
     assert t.count(k) == 1, k; t = t.replace(k, v)
 head, body = t.split('<header class="band">', 1); body = '<header class="band">' + body
 head = head.replace("<style>", "<style>\n  [hidden]{display:none!important}\n  img{max-width:100%}", 1)

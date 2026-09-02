@@ -9,12 +9,79 @@
      .unknown no such cartridge (dashed, struck, no link)
      Never gold: the accent belongs to the stamp. On a printed back
      plate use the state-free bare form — a plate knows no project.
+   .chip — a reading the console reports: a container's health, a job's
+     exit code, the edition of a box. It is deliberately nothing like the
+     mention, which it once was to the declaration: the two say different
+     kinds of thing and had grown the same face. Two things separate them
+     now. Shape — a bordered box with a dot is a door you press; a chip is
+     never pressable, so it has neither. Voice — mono in lower case, which
+     in the console already means read off the machine, where the house's
+     condensed uppercase means a name. The dot survives on one thing only,
+     .busy, where it means something is moving.
+     bare    a fact with no state: v0.2.0, base, collection
+     .good/.warn/.bad  a state, on a plate tinted from its colour
+     .off    an absence — not baked, idle, nothing is up: no plate at all.
+             It keeps the plated chips' padding even so. The plate is what
+             it drops, not the space: these read in columns beside their
+             plated siblings — baked over not baked, running over down —
+             and a narrower padding gave the same column two left edges
+             depending on the state of the row. What the reader should see
+             changing between two rows is the plate and the word, never
+             where the word starts.
+     .busy   with one of the above: the dot comes back, and pulses
+   .unlit — the house's one way of saying not available. The rule it
+     carries: never hide what the reader could have. A control they could
+     make appear stays where it is, wearing this, with the reason in its
+     title and, where there is one, the action that would light it; a tab
+     the console can show is part of its map whether or not it can be
+     opened today. Hiding is only for what is not applicable and never
+     will be here. The console lights up when a cartridge is inserted —
+     this is that verb, negated, and it is why the name is not `off`,
+     which a chip already uses for something else: a chip reports an
+     absence out in the world (not baked, idle), .unlit marks a control
+     you cannot use yet. Applies equally to [disabled] and to
+     aria-disabled, which is what a tab must use: a disabled <button>
+     takes no focus, so a screen reader would lose exactly what the rule
+     set out to keep.
+   Controls the reader sets — a checkbox, a radio — wear the accent. It is
+   the colour of where the reader acts, which is the same reason the primary
+   button wears it, so this is not a fourth use of the gold but the first one
+   read properly. Set here once because it was four scoped rules in the
+   console and four controls that had missed all of them, left wearing the
+   browser's blue, which is nobody's colour in a violet and gold room. A
+   control set by something other than the reader overrides it deliberately.
+   Scrollbars follow the theme in two moves. `color-scheme` in tokens.css is
+   the first and it does most of the work for free: the browser paints its
+   own bars, form controls and default grounds in the matching variant.
+   `scrollbar-color` here is the second, quieting the thumb to the house's
+   own. It inherits, which is what this console needs — a pane on the
+   terminal ground is dark in both themes, so it overrides with --term-scroll
+   and the rule above it never has to know which panes those are. Deliberately
+   not ::-webkit-scrollbar: Firefox ignores it, so the standard would have to
+   be written anyway, and the day you use it Chrome stops drawing overlay
+   scrollbars on macOS — the look changes and the layout changes with it.
    .stamp — the golden state seal (INSERTED): accent plate, condensed
-     uppercase; whoever places it tilts and positions it. */
+     uppercase; whoever places it tilts and positions it. This is why a
+     chip's plate is a 16% tint and never a saturated fill: nothing may
+     compete with the seal. */
 .cart-ref{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:11px;padding:2px 7px;border-radius:2px;border:1px solid var(--line);color:var(--muted);background:none;cursor:pointer;text-decoration:none}
 .cart-ref::before{content:"";width:7px;height:7px;border-radius:50%;border:1.5px solid var(--soft);box-sizing:border-box;flex:none}
 .cart-ref.in{color:var(--ink)}
 .cart-ref.in::before{background:var(--good);border-color:var(--good)}
 .cart-ref:hover:not(.unknown),.cart-ref:focus-visible:not(.unknown){border-color:var(--ink);outline:none}
 .cart-ref.unknown{border-style:dashed;text-decoration:line-through;cursor:default;opacity:.7}
+.chip{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;font-family:var(--mono);font-weight:500;font-size:11px;padding:2px 8px;border-radius:3px;border:0;background:var(--surface-2);color:var(--muted)}
+.chip.good{background:color-mix(in srgb,var(--good) 16%,transparent);color:var(--good)}
+.chip.warn{background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--warn)}
+.chip.bad{background:color-mix(in srgb,var(--bad) 16%,transparent);color:var(--bad)}
+.chip.off{background:none;color:var(--soft)}
+.chip.busy::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex:none;animation:chip-pulse 1s infinite}
+@keyframes chip-pulse{50%{opacity:.25}}
+@media (prefers-reduced-motion: reduce){.chip.busy::before{animation:none}}
+.unlit,[disabled],[aria-disabled="true"]{opacity:.45;cursor:not-allowed}
+/* Never pointer-events:none here: it takes the title with it, and the title
+   is the reason. What must not fire is prevented where it is bound. */
+.unlit,[aria-disabled="true"]{pointer-events:auto}
+input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
+:root{scrollbar-color:var(--scroll) transparent}
 .stamp{display:inline-block;font-family:var(--cond);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:10.5px;color:var(--accent-ink);background:var(--accent);padding:3px 8px;border-radius:2px;transform:rotate(8deg);box-shadow:0 2px 4px rgba(0,0,0,.3)}

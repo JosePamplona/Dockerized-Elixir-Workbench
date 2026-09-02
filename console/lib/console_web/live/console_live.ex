@@ -9,6 +9,16 @@ defmodule ConsoleWeb.ConsoleLive do
 
   alias Console.{Jobs, Workbench}
 
+  # The mark, read from the file it lives in rather than pasted here: one
+  # source, and @external_resource recompiles this module when that file
+  # changes. It goes in inline and never as an <img>, because the mark is
+  # `fill="currentColor"` — an SVG loaded as an image is its own document,
+  # where currentColor falls back to black instead of taking the band's ink.
+  @mark_path Path.join(__DIR__, "../../../priv/static/images/logo.svg")
+  @external_resource @mark_path
+  @mark File.read!(@mark_path) |> String.trim()
+  defp mark, do: Phoenix.HTML.raw(@mark)
+
   @impl true
   def mount(_params, _session, socket) do
     if connected?(socket), do: Jobs.subscribe()
@@ -88,7 +98,10 @@ defmodule ConsoleWeb.ConsoleLive do
   def render(assigns) do
     ~H"""
     <header class="band">
-      <h1>Dockerized Elixir Workbench <small>Console</small></h1>
+      <div class="mark">
+        {mark()}
+        <h1>Dockerized Elixir Workbench <small>Console</small></h1>
+      </div>
       <div class="right">
         <span class="mono">{Workbench.dir()}</span>
         <button class="ver" phx-click="refresh" disabled={@reading} title="./wb.sh status --json">{if @reading, do: "reading…", else: "refresh"}</button>

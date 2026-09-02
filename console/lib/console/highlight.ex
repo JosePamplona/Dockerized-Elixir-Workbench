@@ -47,10 +47,13 @@ defmodule Console.Highlight do
     ".html" => {:lexer, Makeup.Lexers.HTMLLexer},
     ".js" => {:lexer, Makeup.Lexers.JsLexer},
     ".json" => {:lexer, Makeup.Lexers.JsonLexer},
-    # Drawings, not documents: a cartridge's diagrams are a thousand
-    # lines of XML that say nothing to a reader and everything to a
-    # browser.
-    ".svg" => :image,
+    # An SVG is text, and on this sheet the question is what the cartridge
+    # wrote — so it is read like any other text file it wrote, with its
+    # patch and its line numbers. Drawing it instead answered a question
+    # nobody asked here, and asked the page to host a foreign stylesheet,
+    # forty ids and, in an exported one, a <script> block. Plain and not a
+    # lexer: XML is not HTML, and the registry never guesses.
+    ".svg" => :plain,
     ".png" => :image,
     ".jpg" => :image,
     ".jpeg" => :image,

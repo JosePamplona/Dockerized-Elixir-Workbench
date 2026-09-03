@@ -101,6 +101,55 @@ defmodule Console.Highlight do
     end
   end
 
+  @doc """
+  The file one line at a time, for a sheet that shows a patch: the
+  treatment, and — for a lexer or plain — one HTML string per line,
+  every span closed on its own line. Makeup's newlines sit inside the
+  tokens (a heredoc is one span twenty lines tall), so the lines are
+  cut from the tokens, never from the HTML.
+  """
+  @spec lines(binary(), binary()) :: {:lexer | :plain, [binary()]} | :image | :omit
+  def lines(path, source) do
+    case treatment(path) do
+      {:lexer, lexer} ->
+        try do
+          {:lexer, source |> lexer.lex() |> token_lines()}
+        rescue
+          _ -> {:plain, plain_lines(source)}
+        catch
+          _, _ -> {:plain, plain_lines(source)}
+        end
+
+      :plain -> {:plain, plain_lines(source)}
+      other -> other
+    end
+  end
+
+  defp plain_lines(source), do: source |> String.split("\n") |> Enum.map(&escape/1)
+
+  defp token_lines(tokens) do
+    {lines, current} =
+      Enum.reduce(tokens, {[], []}, fn {type, _meta, value}, {lines, current} ->
+        class = Makeup.Token.Utils.css_class_for_token_type(type)
+
+        case value |> IO.chardata_to_string() |> String.split("\n") do
+          [only] -> {lines, [span(class, only) | current]}
+          [first | rest] ->
+            {last, middle} = List.pop_at(rest, -1)
+            done = [[span(class, first) | current] | Enum.map(middle, &[span(class, &1)])]
+            {Enum.reverse(done) ++ lines, [span(class, last)]}
+        end
+      end)
+
+    [current | lines] |> Enum.reverse() |> Enum.map(&(&1 |> Enum.reverse() |> IO.iodata_to_binary()))
+  end
+
+  defp span(_class, ""), do: ""
+  defp span(nil, text), do: escape(text)
+  defp span(class, text), do: [~s(<span class="), class, ~s(">), escape(text), "</span>"]
+
+  defp escape(text), do: text |> Phoenix.HTML.html_escape() |> Phoenix.HTML.safe_to_string()
+
   defp highlight(lexer, source) do
     %{treatment: :lexer, html: Makeup.highlight_inner_html(source, lexer: lexer), error: nil}
   rescue

@@ -25,8 +25,12 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 console-*.tar
 
-# Ignore assets that are produced by build tools.
-/priv/static/assets/
+# Ignore assets that are produced by build tools — but not the stylesheets:
+# console.css is written by hand (the one file the mock and the console share)
+# and tokens.css and components.css are projected there by assets/design/build.py,
+# which --check keeps honest. Nothing builds them at the console's side.
+/priv/static/assets/*
+!/priv/static/assets/css/
 
 # Ignore digested assets cache.
 /priv/static/cache_manifest.json

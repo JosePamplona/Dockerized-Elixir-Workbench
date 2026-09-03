@@ -12,6 +12,9 @@ defmodule Console.Application do
       {DNSCluster, query: Application.get_env(:console, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Console.PubSub},
       Console.Jobs,
+      Console.Logs,
+      Console.Resident,
+      Console.Bench,
       # Start a worker by calling: Console.Worker.start_link(arg)
       # {Console.Worker, arg},
       # Start to serve requests, typically the last entry

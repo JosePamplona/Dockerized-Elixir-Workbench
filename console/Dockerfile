@@ -20,6 +20,14 @@ RUN apt-get update -y && \
     curl -fsSL -o /usr/local/lib/docker/cli-plugins/docker-compose \
       "https://github.com/docker/compose/releases/download/v${COMPOSE_VERSION}/docker-compose-linux-x86_64" && \
     chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+# The console compiles into its own two volumes, apart from the
+# toolchain's /app/build and /app/deps: those two are the *workspace's*
+# volumes here, mounted at the same paths the app service sees them,
+# so the resident — the project's BEAM beside the console — finds what
+# the app compiled and never recompiles it for a path that moved.
+RUN mkdir -p /app/console/build /app/console/deps && chown -R elixir:elixir /app/console
+ENV MIX_BUILD_ROOT=/app/console/build \
+    MIX_DEPS_PATH=/app/console/deps
 USER elixir
 
 # Development mode: the source is mounted, the server reloads on change.

@@ -1,19 +1,27 @@
 defmodule ConsoleWeb.ConsoleLive do
   @moduledoc """
   The console: the workspace on the left, the screens on the right —
-  Deploy, Logs, Project, Cartridges — and the jobs tray at the bottom.
-  Everything it shows comes from `wb.sh status --json` and `catalog
-  --json`; everything it does is `wb.sh` as a job.
+  Deploy, Jobs, Terminal, Logs, Cartridges, Project, Cluster — and the
+  jobs tray at the bottom. Everything it shows comes from the status,
+  the catalog and `config.conf`; everything it does is `wb.sh` as a
+  job. Where the reader is — the screen — lives in the URL.
   """
   use ConsoleWeb, :live_view
 
-  alias Console.{Jobs, Workbench}
+  alias Console.{Bench, Jobs, Logs, Verbs, Workbench}
+  alias Console.{Diffs, Papers, Project}
+  alias ConsoleWeb.{Box, Cartridges, Deploy, Terminal}
+  import ConsoleWeb.{Board, Shelf, ProjectScreen, WorkbenchDrawer, Cluster}
+  import ConsoleWeb.Terminal, only: [terminal: 1]
+  import ConsoleWeb.JobsScreen, only: [jobs_screen: 1, tray: 1]
 
-  # The mark, read from the file it lives in rather than pasted here: one
-  # source, and @external_resource recompiles this module when that file
-  # changes. It goes in inline and never as an <img>, because the mark is
-  # `fill="currentColor"` — an SVG loaded as an image is its own document,
-  # where currentColor falls back to black instead of taking the band's ink.
+  @tabs [{"deploy", "Deploy"}, {"jobs", "Jobs"}, {"terminal", "Terminal"}, {"logs", "Logs"}, {"shelf", "Cartridges"}, {"project", "Project"}, {"cluster", "Cluster"}]
+  @tab_names Enum.map(@tabs, &elem(&1, 0))
+
+  # The mark, read from the file it lives in: one source, and
+  # @external_resource recompiles this module when that file changes.
+  # Inline and never an <img>: it is `fill="currentColor"`, and an SVG
+  # loaded as an image is its own document, where that falls to black.
   @mark_path Path.join(__DIR__, "../../../priv/static/images/logo.svg")
   @external_resource @mark_path
   @mark File.read!(@mark_path) |> String.trim()
@@ -21,464 +29,638 @@ defmodule ConsoleWeb.ConsoleLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    if connected?(socket), do: Jobs.subscribe()
+    if connected?(socket) do
+      Jobs.subscribe()
+      Logs.subscribe()
+      Bench.subscribe()
+    end
+
+    # What the bench holds is what the page opens with: nothing is read
+    # on a mount, and a reading in flight is the one this page waits for.
+    status = Bench.status()
+    catalog = Bench.catalog() || []
+    # Nothing known and nothing on its way — the bench's first reading
+    # failed before this page came — asks again.
+    if connected?(socket) and is_nil(status) and not Bench.reading?(:status), do: Bench.refresh(:status, :full)
 
     socket =
       socket
-      |> assign(tab: "deploy", status: nil, catalog: [], box: nil, jobs: Jobs.list(), tray: false, error: nil, filter: "all", reading: true)
-      |> start_async(:status, &Workbench.status/0)
-      |> start_async(:catalog, &Workbench.catalog/0)
+      |> assign(
+        tab: "deploy",
+        status: status,
+        catalog: catalog,
+        config: Workbench.config(),
+        version: Workbench.version(),
+        box: nil,
+        screen: "box",
+        paper: "readme",
+        papers: [],
+        page: nil,
+        args: %{},
+        recipe: nil,
+        diff: nil,
+        face: "front",
+        ppaper: "readme",
+        ppage: nil,
+        wb: nil,
+        wbpage: nil,
+        cfg_edits: %{},
+        cfg_raw: false,
+        stacks: nil,
+        probes: %{},
+        term: %{target: nil, shell: "bash", open: false, port: nil},
+        view: "covers",
+        jobs: Jobs.list(),
+        open_jobs: MapSet.new(),
+        now: DateTime.utc_now(),
+        error: Bench.error(:status) || Bench.error(:catalog),
+        filter: "all",
+        reading: is_nil(status) or Bench.reading?(:status),
+        pick: %{target: nil, replicas: 4, balancer: true},
+        newp: %{out: MapSet.new(), gen: %{}},
+        setup_env: "dev",
+        restart_logs: false
+      )
 
+    socket = if connected?(socket) and status, do: Logs.follow(status["compose_project"]) && socket, else: socket
     {:ok, socket, layout: false}
   end
 
+  # The screen is the URL: /deploy, /jobs… An unlit one falls back to
+  # Deploy, the console's first screen, which is never unlit — judged
+  # once the status is here, since before it every screen that needs a
+  # project would read as unlit.
   @impl true
-  def handle_async(:status, {:ok, {:ok, status}}, socket), do: {:noreply, assign(socket, status: status, reading: false, error: nil)}
-  def handle_async(:catalog, {:ok, {:ok, catalog}}, socket), do: {:noreply, assign(socket, catalog: catalog)}
-  def handle_async(_, {:ok, {:error, why}}, socket), do: {:noreply, assign(socket, error: why, reading: false)}
-  def handle_async(_, {:exit, why}, socket), do: {:noreply, assign(socket, error: inspect(why), reading: false)}
+  def handle_params(params, _uri, socket) do
+    tab = params["tab"] || "deploy"
 
-  @impl true
-  def handle_event("tab", %{"tab" => tab}, socket), do: {:noreply, assign(socket, tab: tab)}
-  def handle_event("refresh", _, socket), do: {:noreply, read_status(socket)}
-  def handle_event("filter", %{"filter" => f}, socket), do: {:noreply, assign(socket, filter: f)}
-  def handle_event("tray", _, socket), do: {:noreply, assign(socket, tray: not socket.assigns.tray)}
-  def handle_event("open", %{"name" => name}, socket), do: {:noreply, assign(socket, box: Enum.find(socket.assigns.catalog, &(&1["name"] == name)))}
-  def handle_event("close", _, socket), do: {:noreply, assign(socket, box: nil)}
-
-  def handle_event("run", %{"args" => args}, socket) do
-    Jobs.run(String.split(args))
-    {:noreply, assign(socket, tray: true)}
+    cond do
+      tab not in @tab_names -> {:noreply, push_patch(socket, to: ~p"/deploy")}
+      socket.assigns.status && unlit(tab, socket.assigns) -> {:noreply, push_patch(socket, to: ~p"/deploy")}
+      true -> {:noreply, socket |> assign(tab: tab) |> take_box(params) |> take_paper(params) |> take_wb(params)}
+    end
   end
 
-  def handle_event("insert", params, socket) do
-    box = socket.assigns.box
-    Jobs.run(["add", box["name"] | insert_args(box, params)])
-    {:noreply, assign(socket, tray: true, box: nil)}
+  # The project's paper, from the query on /project.
+  defp take_paper(%{assigns: %{tab: "project"}} = socket, params) do
+    ws = socket.assigns.status && socket.assigns.status["workspace"]
+    carried = Project.carried(ws)
+    paper = if params["paper"] in carried, do: params["paper"], else: List.first(carried) || "readme"
+    assign(socket, ppaper: paper, ppage: Project.render(ws, paper))
   end
 
-  def handle_event("eject", %{"name" => name}, socket) do
-    Jobs.run(["eject", name])
-    {:noreply, assign(socket, tray: true, box: nil)}
+  defp take_paper(socket, _params), do: socket
+
+  # The workbench's drawer, over whatever screen: ?wb=config|readme|changelog|ui.
+  defp take_wb(socket, %{"wb" => key}) when key in ~w(config readme changelog ui) do
+    socket = assign(socket, wb: key, wbpage: if(key in ~w(readme changelog), do: Papers.render_workbench(key)))
+    if key == "config" and is_nil(socket.assigns.stacks),
+      do: socket |> assign(stacks: :asking) |> start_async(:stacks, &Workbench.stacks/0),
+      else: socket
   end
+
+  defp take_wb(socket, _params), do: assign(socket, wb: nil, wbpage: nil)
+
+  # The box in hand, and which of its screens, from the query: a box
+  # named anywhere opens over whatever screen the reader is on, and the
+  # browser's back is the trail back. A collection asks the project
+  # what its recipe leaves to insert (expand: seconds) when it is picked
+  # up, never again per keystroke.
+  defp take_box(socket, %{"box" => name} = params) do
+    box = Enum.find(socket.assigns.catalog, &(&1["name"] == name))
+    same = socket.assigns.box && socket.assigns.box["name"] == name
+
+    cond do
+      is_nil(box) and socket.assigns.catalog == [] -> assign(socket, pending_box: params)
+      is_nil(box) -> socket |> assign(box: nil) |> push_patch(to: "/#{socket.assigns.tab}")
+      true ->
+        screen = if params["screen"] in ~w(box install files manual), do: params["screen"], else: "box"
+        papers = Papers.carried(name)
+        paper = if params["paper"] in papers, do: params["paper"], else: List.first(papers) || "readme"
+        page = if screen == "manual", do: Papers.render(name, paper)
+
+        socket =
+          if same,
+            do: socket,
+            else: socket |> assign(args: %{}, face: "front", recipe: nil) |> ask_recipe(box, %{})
+
+        socket = assign(socket, box: box, screen: screen, papers: papers, paper: paper, page: page, pending_box: nil)
+        if screen == "files", do: ask_diff(socket, box), else: socket
+    end
+  end
+
+  defp take_box(socket, _params), do: assign(socket, box: nil, page: nil, pending_box: nil)
+
+  # What the cartridge wrote, read off the workspace's git in the
+  # background: a collection reads every pick's commit and the range.
+  defp ask_diff(socket, box) do
+    status = socket.assigns.status
+    ws = status && status["workspace"]
+
+    cond do
+      is_nil(ws) or Box.files_unlit(box, status) -> assign(socket, diff: nil)
+      box["collection"] ->
+        inserts = Box.member_inserts(box, status)
+        socket |> assign(diff: :loading) |> start_async({:diff, box["name"]}, fn -> Diffs.collection(ws, inserts) end)
+      true ->
+        insert = Cartridges.insert(status, box["name"])
+        socket |> assign(diff: :loading) |> start_async({:diff, box["name"]}, fn -> Diffs.cartridge(ws, insert) end)
+    end
+  end
+
+  defp ask_recipe(socket, %{"collection" => true} = box, args) do
+    case Bench.expand(box["name"], Box.argv(box, args)) do
+      {:ok, plan} -> assign(socket, recipe: plan)
+      :asking -> assign(socket, recipe: :asking)
+    end
+  end
+
+  defp ask_recipe(socket, _box, _args), do: socket
+
+  defp leave_unlit(socket) do
+    if unlit(socket.assigns.tab, socket.assigns), do: push_patch(socket, to: ~p"/deploy"), else: socket
+  end
+
+  # --- what arrives ---------------------------------------------------------
 
   @impl true
-  def handle_info({:job, job}, socket) do
-    jobs = if Enum.any?(socket.assigns.jobs, &(&1.id == job.id)), do: Enum.map(socket.assigns.jobs, &if(&1.id == job.id, do: job, else: &1)), else: [job | socket.assigns.jobs]
-    socket = assign(socket, jobs: jobs)
-    # The workspace changed when a job ended: read it again.
-    socket = if job.state in [:done, :failed], do: read_status(socket), else: socket
+  def handle_info({:bench, :status, status}, socket) do
+    # A container still starting will be healthy without any job saying
+    # so: ask again in a moment, the fast way.
+    if Enum.any?(status["containers"] || [], &(&1["Health"] == "starting")),
+      do: Process.send_after(self(), :poll, 3000)
+
+    # The logs follow the compose project, whichever deployment is up;
+    # after a job that could have changed the containers the stream is
+    # started again, since --follow only attaches to what is there.
+    if connected?(socket), do: Logs.follow(status["compose_project"], restart: socket.assigns.restart_logs)
+
+    socket = socket |> assign(status: status, reading: false, error: nil, restart_logs: false) |> leave_unlit()
+    socket = if socket.assigns.tab == "project" and is_nil(socket.assigns.ppage), do: take_paper(socket, %{"paper" => socket.assigns.ppaper}), else: socket
+    # A Files screen opened before the status was here asks now.
+    socket = if socket.assigns.screen == "files" && socket.assigns.box && is_nil(socket.assigns.diff), do: ask_diff(socket, socket.assigns.box), else: socket
     {:noreply, socket}
   end
 
-  # The board is read again in the background; what is on it stays
-  # until the new one arrives (wb.sh status starts a container: seconds).
-  defp read_status(%{assigns: %{reading: true}} = socket), do: socket
-  defp read_status(socket), do: socket |> assign(reading: true) |> start_async(:status, &Workbench.status/0)
+  def handle_info({:bench, :catalog, catalog}, socket) do
+    socket = assign(socket, catalog: catalog)
+    # A box named in the URL before the catalog was here opens now.
+    {:noreply, if(socket.assigns[:pending_box], do: take_box(socket, socket.assigns.pending_box), else: socket)}
+  end
 
-  # The installer's argv from the form: `--flag` for a checked boolean,
-  # `--name value` for a filled text, `--name a,b` for chosen values.
-  defp insert_args(box, params) do
-    Enum.flat_map(box["options"], fn o ->
-      flag = "--" <> String.replace(o["name"], "_", "-")
-      value = params[o["name"]]
+  # The recipe expand answered, if it is still the box in hand with these options.
+  def handle_info({:bench, :expand, name, argv, plan}, socket) do
+    box = socket.assigns.box
 
-      cond do
-        o["type"] == "boolean" -> if value == "on", do: [flag], else: []
-        is_list(value) -> if value == [], do: [], else: [flag, Enum.join(value, ",")]
-        is_binary(value) and String.trim(value) != "" and value != to_string(o["default"]) -> [flag, String.trim(value)]
-        true -> []
+    if box && box["name"] == name && Box.argv(box, socket.assigns.args) == argv,
+      do: {:noreply, assign(socket, recipe: plan)},
+      else: {:noreply, socket}
+  end
+
+  def handle_info({:bench, :error, {:expand, _, _}, _why}, socket), do: {:noreply, assign(socket, recipe: nil)}
+  def handle_info({:bench, :error, _key, why}, socket), do: {:noreply, assign(socket, error: why, reading: false)}
+
+  @impl true
+  def handle_info({:job, job}, socket) do
+    jobs =
+      if Enum.any?(socket.assigns.jobs, &(&1.id == job.id)),
+        do: Enum.map(socket.assigns.jobs, &if(&1.id == job.id, do: job, else: &1)),
+        else: [job | socket.assigns.jobs]
+
+    # A job you just asked for is a job you are watching: it comes unfolded.
+    open = if job.state in [:queued, :pending] and not MapSet.member?(socket.assigns.open_jobs, job.id), do: MapSet.put(socket.assigns.open_jobs, job.id), else: socket.assigns.open_jobs
+    socket = assign(socket, jobs: jobs, open_jobs: open, now: DateTime.utc_now())
+    if job.state == :running, do: Process.send_after(self(), :tick, 1000)
+    # The workspace changed when a job ended: read again what the verb
+    # could have changed — the fast status after an up or a down, the
+    # cartridges too after an insert, everything after new or delete.
+    socket = if job.state in [:done, :failed], do: reread(socket, Verbs.reread(job.kind)), else: socket
+    {:noreply, socket}
+  end
+
+  # The durations of the running jobs move while they run.
+  def handle_info(:tick, socket) do
+    if Enum.any?(socket.assigns.jobs, &(&1.state == :running)), do: Process.send_after(self(), :tick, 1000)
+    {:noreply, assign(socket, now: DateTime.utc_now())}
+  end
+
+  def handle_info(:poll, socket), do: {:noreply, read_status(socket, :fast)}
+
+  # A line of the session's output goes to the screen; the session ends
+  # when the process in the container does.
+  def handle_info({port, {:data, {_, line}}}, %{assigns: %{term: %{port: port}}} = socket),
+    do: {:noreply, push_event(socket, "term_out", %{line: Console.ANSI.to_html(line)})}
+
+  def handle_info({port, {:exit_status, code}}, %{assigns: %{term: %{port: port}} = a} = socket),
+    do: {:noreply, socket |> assign(term: %{a.term | open: false, port: nil}) |> push_event("term_out", %{line: "— session ended (exit #{code})", dim: true})}
+
+  # A line of the logs goes to the client, which keeps and filters them;
+  # a stream started over tells the client to fetch the buffer again.
+  def handle_info({:log, line}, socket), do: {:noreply, push_event(socket, "log", line)}
+  def handle_info({:logs, :restarted}, socket), do: {:noreply, push_event(socket, "logs_restarted", %{})}
+
+  @impl true
+  def handle_async(:stacks, {:ok, {:ok, stacks}}, socket), do: {:noreply, assign(socket, stacks: stacks)}
+  def handle_async(:stacks, _, socket), do: {:noreply, assign(socket, stacks: [])}
+
+  def handle_async({:probe, key}, {:ok, lines}, socket), do: {:noreply, assign(socket, probes: Map.put(socket.assigns.probes, key, lines))}
+  def handle_async({:probe, key}, {:exit, why}, socket), do: {:noreply, assign(socket, probes: Map.put(socket.assigns.probes, key, ["failed: " <> inspect(why)]))}
+  def handle_async({:diff, name}, {:ok, diff}, socket) do
+    if socket.assigns.box && socket.assigns.box["name"] == name,
+      do: {:noreply, assign(socket, diff: diff)},
+      else: {:noreply, socket}
+  end
+
+  def handle_async({:diff, _}, {:exit, why}, socket), do: {:noreply, assign(socket, diff: nil, error: "the diff could not be read: " <> inspect(why))}
+
+
+  defp reread(socket, :none), do: socket
+  defp reread(socket, :config), do: assign(socket, config: Workbench.config(), cfg_edits: %{})
+  defp reread(socket, :fast), do: socket |> assign(restart_logs: true) |> read_status(:fast)
+  defp reread(socket, :full), do: read_status(socket, :full)
+
+  defp reread(socket, :all) do
+    Bench.refresh(:catalog)
+    Bench.refresh(:status, :all)
+    socket |> assign(config: Workbench.config(), restart_logs: true, reading: true)
+  end
+
+
+  # The board is read again by the bench, once for every page; what is
+  # on it stays until the new one arrives.
+  defp read_status(socket, mode) do
+    Bench.refresh(:status, mode)
+    assign(socket, reading: true)
+  end
+
+  defp project?(nil), do: false
+  defp project?(status), do: status["exists"] == true
+
+  # --- what the reader does ---------------------------------------------------
+
+  @impl true
+  def handle_event("refresh", _, socket), do: {:noreply, read_status(socket, :full)}
+  # The hook, once mounted, asks for what the stream already holds.
+  def handle_event("logs_backlog", _, socket), do: {:reply, %{lines: Logs.backlog()}, socket}
+  def handle_event("filter", %{"filter" => f}, socket), do: {:noreply, assign(socket, filter: f)}
+  def handle_event("open", %{"name" => name}, socket), do: {:noreply, push_patch(socket, to: "/#{socket.assigns.tab}?box=#{name}")}
+  def handle_event("close", _, socket), do: {:noreply, push_patch(socket, to: "/#{socket.assigns.tab}" <> if(socket.assigns.wb && socket.assigns.box, do: "?box=#{socket.assigns.box["name"]}", else: ""))}
+  def handle_event("goto", %{"href" => href}, socket), do: {:noreply, push_patch(socket, to: "/#{socket.assigns.tab}#{href}")}
+  def handle_event("flip", _, socket), do: {:noreply, assign(socket, face: if(socket.assigns.face == "front", do: "back", else: "front"))}
+  def handle_event("view", %{"view" => v}, socket) when v in ~w(covers list), do: {:noreply, assign(socket, view: v)}
+
+  # --- the workbench's config, as a form ---
+  def handle_event("cfg_change", params, socket) do
+    values = Console.Config.values(socket.assigns.config)
+    edits = params["cfg"] || %{}
+
+    # The stack sets the three versions at once.
+    edits =
+      case params["stack"] do
+        tag when is_binary(tag) and tag != "" ->
+          case ConsoleWeb.WorkbenchDrawer.parse_tag(tag) do
+            [%{e: e, o: o, d: d}] -> edits |> Map.put("ELIXIR_VERSION", e) |> Map.put("ERLANG_VERSION", o) |> Map.put("DEBIAN_VERSION", d)
+            _ -> edits
+          end
+
+        _ -> edits
       end
-    end)
+
+    edits = for {k, v} <- edits, Map.has_key?(values, k), v != values[k], into: %{}, do: {k, v}
+    {:noreply, assign(socket, cfg_edits: edits)}
+  end
+
+  def handle_event("cfg_reload", _, socket), do: {:noreply, assign(socket, cfg_edits: %{})}
+  def handle_event("cfg_raw", _, socket), do: {:noreply, assign(socket, cfg_raw: not socket.assigns.cfg_raw)}
+
+  def handle_event("cfg_save", _, socket) do
+    if socket.assigns.cfg_edits != %{} do
+      Jobs.run({:config, nil}, ["config", "set" | Enum.map(socket.assigns.cfg_edits, fn {k, v} -> "#{k}=#{v}" end)])
+    end
+
+    {:noreply, socket}
+  end
+
+  # --- the cluster's probes, run by the console ---
+  def handle_event("probe", %{"key" => key}, socket) when key in ~w(answers peers) do
+    status = socket.assigns.status
+    key = String.to_existing_atom(key)
+    fun =
+      case key do
+        :answers -> fn -> Console.Cluster.answers(status["ports"]["app"]) end
+        :peers ->
+          first = status["containers"] |> Enum.filter(&Regex.match?(~r/^app\d+$/, &1["Service"])) |> Enum.map(& &1["Service"]) |> Enum.sort() |> List.first()
+          fn -> Console.Cluster.peers(status["compose_project"], first, get_in(status, ["project", "app"]) || "app") end
+      end
+
+    {:noreply, socket |> assign(probes: Map.put(socket.assigns.probes, key, :asking)) |> start_async({:probe, key}, fun)}
+  end
+
+  # --- the terminal ---
+  def handle_event("term_pick", params, socket) do
+    t = socket.assigns.term
+    t = %{t | target: params["target"] || t.target, shell: params["shell"] || t.shell}
+    {:noreply, assign(socket, term: t)}
+  end
+
+  def handle_event("term_open", %{"target" => target, "shell" => shell}, socket) do
+    socket = assign(socket, term: %{socket.assigns.term | target: target, shell: shell})
+    {:noreply, socket |> push_patch(to: ~p"/terminal") |> start_term()}
+  end
+
+  def handle_event("term_start", _, socket), do: {:noreply, start_term(socket)}
+
+  def handle_event("term_close", _, socket), do: {:noreply, close_term(socket)}
+
+  def handle_event("term_line", %{"line" => line}, socket) do
+    t = socket.assigns.term
+
+    if t.port do
+      target = Enum.find(Terminal.targets(socket.assigns.status), &(&1.name == t.target))
+      app = get_in(socket.assigns.status, ["project", "app"]) || "app"
+      # rpc: each line is one expression handed to the release, through the bash that is open.
+      text = if t.shell == "rpc" and target && target.release, do: "/app/bin/#{app} rpc \"$(cat <<'EOF_WB'\n#{line}\nEOF_WB\n)\"\n", else: line <> "\n"
+      Port.command(t.port, text)
+    end
+
+    targets = Terminal.targets(socket.assigns.status)
+    prompt = Terminal.prompt(Enum.find(targets, &(&1.name == t.target)) || hd(targets), t.shell, socket.assigns.status)
+    escaped = line |> Phoenix.HTML.html_escape() |> Phoenix.HTML.safe_to_string()
+    {:noreply, push_event(socket, "term_out", %{line: prompt <> escaped, prompt: true})}
+  end
+
+  # The form as filled, kept as option name to value; a collection's
+  # recipe is asked again when a choice moved, since that is what
+  # chooses its members.
+  def handle_event("options", params, socket) do
+    args = Map.merge(params["opt"] || %{}, Map.new(params["other"] || %{}, fn {k, v} -> {"other:" <> k, v} end))
+    box = socket.assigns.box
+    moved = box["collection"] and Box.argv(box, args) != Box.argv(box, socket.assigns.args)
+    socket = assign(socket, args: args)
+    {:noreply, if(moved, do: ask_recipe(socket, box, args), else: socket)}
+  end
+
+  # A line to run — from a button or from the command line: a verb the
+  # console knows (Console.Verbs), never a free-form argv. The two verbs
+  # that cannot be taken back wait as pending until confirmed.
+  def handle_event("run", %{"args" => line}, socket), do: {:noreply, run(socket, line)}
+  def handle_event("cli", %{"line" => line}, socket), do: {:noreply, run(socket, line)}
+
+  def handle_event("confirm", %{"id" => id}, socket) do
+    Jobs.confirm(id)
+    {:noreply, socket}
+  end
+
+  def handle_event("cancel", %{"id" => id}, socket) do
+    Jobs.cancel(id)
+    {:noreply, socket}
+  end
+
+  def handle_event("fold", %{"id" => id}, socket) do
+    open = socket.assigns.open_jobs
+    open = if MapSet.member?(open, id), do: MapSet.delete(open, id), else: MapSet.put(open, id)
+    {:noreply, assign(socket, open_jobs: open)}
+  end
+
+  def handle_event("fold_all", _, socket), do: {:noreply, assign(socket, open_jobs: MapSet.new())}
+
+  # Clear done: what is running or waiting stays in view; the rest is
+  # only this reader's view of the list, the queue keeps its history.
+  def handle_event("jobs_clear", _, socket),
+    do: {:noreply, assign(socket, jobs: Enum.filter(socket.assigns.jobs, &(&1.state in [:running, :queued, :pending])))}
+
+  def handle_event("pick", params, socket) do
+    pick = %{
+      target: params["target"] || socket.assigns.pick.target,
+      replicas: (params["replicas"] || "4") |> Integer.parse() |> then(fn {n, _} -> max(n, 1); :error -> 4 end),
+      balancer: params["balancer"] == "on"
+    }
+
+    {:noreply, assign(socket, pick: pick)}
+  end
+
+  def handle_event("setup_env", %{"env" => env}, socket) when env in ~w(dev prod), do: {:noreply, assign(socket, setup_env: env)}
+
+  def handle_event("new_form", params, socket) do
+    ins = params["in"] || %{}
+    out = for e <- Cartridges.base(socket.assigns.catalog), ins[e["name"]] != "on", into: MapSet.new(), do: e["name"]
+    {:noreply, assign(socket, newp: %{out: out, gen: params["gen"] || %{}})}
+  end
+
+  def handle_event("insert", _params, socket) do
+    box = socket.assigns.box
+    Jobs.run({:insert, box["name"]}, ["add", box["name"] | Box.argv(box, socket.assigns.args)])
+    {:noreply, socket}
+  end
+
+  # A collection leaves no commit of its own: its Eject is its members',
+  # newest first — one job each, in the queue's order. One that refuses
+  # (files changed since, a dependent) leaves the tree clean, and the
+  # next either goes or refuses on its own.
+  def handle_event("eject", %{"name" => name}, socket) do
+    box = socket.assigns.box
+
+    if box && box["collection"] do
+      names = (if is_list(socket.assigns.recipe), do: socket.assigns.recipe, else: []) ++ (box["members"] || [])
+      names = names |> Enum.map(& &1["name"]) |> MapSet.new()
+
+      for i <- get_in(socket.assigns.status, ["git", "inserts"]) || [], MapSet.member?(names, i["feature"]),
+          do: Jobs.run({:eject, i["feature"]}, ["eject", i["feature"]])
+    else
+      Jobs.run({:eject, name}, ["eject", name])
+    end
+
+    {:noreply, socket}
+  end
+
+  defp start_term(socket) do
+    status = socket.assigns.status
+    t = close_term(socket).assigns.term
+    targets = Terminal.targets(status)
+    target = Enum.find(targets, &(&1.name == t.target)) || hd(targets)
+    shell = if Enum.any?(Terminal.shells(target), &(elem(&1, 0) == t.shell)), do: t.shell, else: "bash"
+    {_app, argv} = Terminal.argv(status, target, if(shell == "rpc", do: "bash", else: shell))
+
+    port =
+      Port.open({:spawn_executable, System.find_executable("docker")}, [
+        :binary, :exit_status, :stderr_to_stdout, {:line, 8192}, args: argv
+      ])
+
+    socket
+    |> assign(term: %{t | target: target.name, shell: shell, open: true, port: port})
+    |> push_event("term_out", %{line: Terminal.command(status, target, shell) <> "  → " <> if(target.oneoff, do: "a one-off toolchain container with the source mounted (nothing runs)", else: "docker exec on " <> target.name), dim: true, clear: true})
+  end
+
+  defp close_term(%{assigns: %{term: %{port: nil}}} = socket), do: assign(socket, term: %{socket.assigns.term | open: false})
+
+  defp close_term(socket) do
+    try do
+      Port.close(socket.assigns.term.port)
+    rescue
+      _ -> :ok
+    end
+
+    assign(socket, term: %{socket.assigns.term | open: false, port: nil})
+  end
+
+  defp run(socket, line) do
+    case Verbs.parse(line) do
+      {:ok, kind, args} ->
+        Jobs.run(kind, args, confirm: Verbs.confirm?(kind, project?(socket.assigns.status)))
+        assign(socket, error: nil)
+
+      {:error, why} ->
+        assign(socket, error: why)
+    end
   end
 
   # --- the page -------------------------------------------------------------
 
+  # Why a screen is dark: never hidden, marked, with the reason. Deploy,
+  # Jobs and Cartridges are always lit.
+  defp unlit("project", %{status: status}), do: if(project?(status), do: nil, else: "this workspace has no project — Deploy → New project starts one")
+
+  defp unlit("cluster", %{status: status, catalog: catalog}) do
+    lit = Cartridges.contributions(status, catalog, "tabs") |> Enum.any?(fn {_, t} -> t == "cluster" end)
+    lights = catalog |> Enum.filter(&("cluster" in (get_in(&1, ["console", "tabs"]) || []))) |> Enum.map(& &1["name"])
+    if lit, do: nil, else: "no cartridge lights this screen yet — #{Enum.join(lights, " or ")} does: insert it from Cartridges"
+  end
+
+  defp unlit("terminal", %{status: status}), do: if(project?(status), do: nil, else: "this workspace has no project — a shell needs one, or its source")
+  defp unlit("logs", %{status: status}), do: if(project?(status), do: nil, else: "this workspace has no project — its containers' logs come with one")
+  defp unlit(_, _), do: nil
+
+  # The last insert or eject of the box in hand: its output lands in the drawer.
+  defp box_job(jobs, box), do: Enum.find(jobs, &(elem(&1.kind, 0) in [:insert, :eject] and elem(&1.kind, 1) == box["name"]))
+
+  # What Tab completes on the wb.sh line: the verbs, the cartridges,
+  # each one's options — from the catalog, as JSON for the hook.
+  defp words(catalog) do
+    Jason.encode!(%{
+      commands: Verbs.verbs(),
+      cartridges: Enum.map(catalog, & &1["name"]),
+      options: Map.new(catalog, fn e -> {e["name"], Enum.map(e["options"] || [], &("--" <> String.replace(&1["name"], "_", "-")))} end),
+      deploy: ~w(--deploy --replicas --no-balancer),
+      targets: ~w(dev prod scaled)
+    })
+  end
+
+  # The Logs screen is the hook's: the lines never pass through the
+  # server's render — two thousand of them and a search box would
+  # re-render across the socket on every keystroke — so the whole
+  # screen is built once and left alone (phx-update="ignore").
+  defp logs_screen(assigns) do
+    ~H"""
+    <div class="logs" id="logs" phx-hook="Logs" phx-update="ignore">
+      <div class="toolbar">
+        <span id="svc-chips" style="display:inline-flex;gap:6px;flex-wrap:wrap"></span>
+        <span class="sep"></span>
+        <select id="level" aria-label="Level">
+          <option value="error">Errors only</option>
+          <option value="warn">Warnings and up</option>
+          <option value="info">Info and up</option>
+          <option value="debug" selected>All levels</option>
+        </select>
+        <input type="search" id="q" placeholder="Search the lines…" aria-label="Search" />
+        <span class="sep"></span>
+        <button class="btn" id="follow" type="button" aria-pressed="true">Following</button>
+        <button class="btn" id="ts" type="button" aria-pressed="true">Timestamps</button>
+        <button class="btn" id="clear" type="button">Clear</button>
+      </div>
+      <div class="logmeta"><span id="log-count"></span><span>docker compose logs --follow · the last 500 lines when the stream starts, then live · capped at 2 000 lines in the page</span></div>
+      <div class="viewport">
+        <div class="lines" id="lines" aria-live="off"></div>
+        <button class="newpill" id="newpill" type="button">↓ new lines</button>
+      </div>
+    </div>
+    """
+  end
+
   @impl true
   def render(assigns) do
+    assigns = assign(assigns, tabs: @tabs, busy: Deploy.busy?(assigns.jobs, [:up, :stop, :down, :build]))
+
     ~H"""
     <header class="band">
       <div class="mark">
-        {mark()}
-        <h1>Dockerized Elixir Workbench <small>Console</small></h1>
+        <.link class="cell" patch={~p"/deploy"} aria-label="Deploy — the console’s first screen" title="Deploy — the console's first screen">{mark()}</.link>
+        <h1>Dockerized Elixir Workbench <small>Console <span :if={@version} class="v">v{@version}</span></small></h1>
       </div>
       <div class="right">
-        <span class="mono">{Workbench.dir()}</span>
-        <button class="ver" phx-click="refresh" disabled={@reading} title="./wb.sh status --json">{if @reading, do: "reading…", else: "refresh"}</button>
+        <span id="clock" phx-hook="Clock" phx-update="ignore"></span>
+        <button class="cell" id="ground-toggle" phx-hook="Ground" phx-update="ignore" aria-label="The ground: light or dark">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2" />
+            <path d="M12 3a9 9 0 010 18z" fill="currentColor" />
+          </svg>
+        </button>
+        <.link class="cell" patch={"/#{@tab}?wb=config"} aria-label="The workbench: its config, its manual, its changelog" title="The workbench: its config, its manual, its changelog">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M 10.21 6.06 L 10.26 2.86 L 13.74 2.86 L 13.79 6.06 A 6.20 6.20 0 0 1 16.24 7.48 L 16.24 7.48 L 19.04 5.92 L 20.78 8.94 L 18.04 10.58 A 6.20 6.20 0 0 1 18.04 13.42 L 18.04 13.42 L 20.78 15.06 L 19.04 18.08 L 16.24 16.52 A 6.20 6.20 0 0 1 13.79 17.94 L 13.79 17.94 L 13.74 21.14 L 10.26 21.14 L 10.21 17.94 A 6.20 6.20 0 0 1 7.76 16.52 L 7.76 16.52 L 4.96 18.08 L 3.22 15.06 L 5.96 13.42 A 6.20 6.20 0 0 1 5.96 10.58 L 5.96 10.58 L 3.22 8.94 L 4.96 5.92 L 7.76 7.48 A 6.20 6.20 0 0 1 10.21 6.06 Z M 16 12 A 4 4 0 1 1 8 12 A 4 4 0 1 1 16 12 Z" fill="currentColor" fill-rule="evenodd" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+          </svg>
+        </.link>
       </div>
     </header>
 
-    <div class="app">
+    <div class="app" id="app" phx-hook="Rail">
+      <div class="grip" id="rail-grip" role="separator" aria-orientation="vertical" tabindex="0" aria-label="The rail's width — drag, or arrow keys"></div>
       <aside class="console" aria-label="The console: the configured workspace">
-        <%= if @status do %>
-          <.board status={@status} doors={doors(@status, @catalog)} up={app_up?(@status)} />
-        <% else %>
-          <section class="ws"><span class="label">Workspace</span><p class="name">{if @reading, do: "reading…", else: "unread"}</p>
-            <p class="note">./wb.sh status --json — a container start and a Mix boot: seconds, more on a busy host.</p></section>
-        <% end %>
-        <p :if={@error} class="note">{@error}</p>
+        <.board status={@status} catalog={@catalog} reading={@reading} busy={@busy} error={@error} />
       </aside>
 
       <main class="screen">
-        <div class="tabs" role="tablist">
-          <button :for={{t, label} <- [{"deploy", "Deploy"}, {"logs", "Logs"}, {"project", "Project"}, {"shelf", "Cartridges"}]}
-            class="tab" role="tab" phx-click="tab" phx-value-tab={t} aria-selected={to_string(@tab == t)}>
-            {label}<span :if={t == "shelf" and @status} class="badge">{length(installed(@status))}</span>
-          </button>
+        <div class="scroller">
+          <div class="tabs" role="tablist" aria-label="Screens">
+            <%= for {t, label} <- @tabs do %>
+              <% why = unlit(t, assigns) %>
+              <.link :if={!why} class="tab" role="tab" patch={"/#{t}"} aria-selected={to_string(@tab == t)}>
+                {label}
+                <span :if={t == "jobs" and Enum.any?(@jobs, &(&1.state == :running))} class="live" title="a job is running"></span>
+                <span :if={t == "jobs" and Enum.any?(@jobs, &(&1.state == :failed))} class="badge bad">{Enum.count(@jobs, &(&1.state == :failed))} failed</span>
+                <span :if={t == "logs"} id="logs-live" class="live" title="following" phx-update="ignore"></span>
+                <span :if={t == "logs"} id="logs-badge" class="badge bad" hidden phx-update="ignore"></span>
+                <span :if={t == "shelf" and @status} class="badge">{length(Cartridges.installed(@status))} in</span>
+              </.link>
+              <button :if={why} class="tab unlit" role="tab" aria-disabled="true" aria-selected="false" title={why}>{label}</button>
+            <% end %>
+          </div>
+
+          <section class={["panel", @tab == "deploy" && "on"]} role="tabpanel">
+            <Deploy.deploy status={@status} catalog={@catalog} config={@config} jobs={@jobs} pick={@pick} newp={@newp} setup_env={@setup_env} />
+          </section>
+
+          <section class={["panel", @tab == "jobs" && "on"]} role="tabpanel">
+            <.jobs_screen jobs={@jobs} open={@open_jobs} now={@now} words={words(@catalog)} />
+          </section>
+
+          <section class={["panel", @tab == "logs" && "on"]} role="tabpanel">
+            <.logs_screen />
+          </section>
+
+          <section :if={@tab == "project"} class="panel on" role="tabpanel">
+            <.project_screen carried={Project.carried(@status && @status["workspace"])} paper={@ppaper} page={@ppage} />
+          </section>
+
+          <section :if={@tab == "cluster"} class="panel on" role="tabpanel">
+            <.cluster status={@status} probes={@probes} pick={@pick} />
+          </section>
+
+          <section class={["panel", @tab == "terminal" && "on"]} role="tabpanel">
+            <.terminal status={@status} term={@term} />
+          </section>
+
+          <section class={["panel", @tab == "shelf" && "on"]} role="tabpanel">
+            <.shelf catalog={@catalog} status={@status} filter={@filter} view={@view} tab={@tab} />
+          </section>
         </div>
 
-        <section class={"panel #{if @tab == "deploy", do: "on"}"} role="tabpanel">
-          <.deploy status={@status} />
-        </section>
-
-        <section class={"panel #{if @tab == "logs", do: "on"}"} role="tabpanel">
-          <p class="note">Live logs come next: <code>docker compose logs --follow</code> through the socket.</p>
-        </section>
-
-        <section class={"panel #{if @tab == "project", do: "on"}"} role="tabpanel">
-          <p class="note">The project's own README, CHANGELOG and .env come next.</p>
-        </section>
-
-        <section class={"panel #{if @tab == "shelf", do: "on"}"} role="tabpanel">
-          <.shelf catalog={@catalog} status={@status} filter={@filter} />
-        </section>
-
-        <.tray jobs={@jobs} open={@tray} />
+        <.tray jobs={@jobs} tab={@tab} />
       </main>
     </div>
 
-    <div class={"scrim #{if @box, do: "on"}"} phx-click="close"></div>
-    <.box :if={@box} box={@box} status={@status} catalog={@catalog} />
+    <div class={["scrim", (@box || @wb) && "on"]} phx-click="close"></div>
+    <.workbench_drawer :if={@wb} tab={@tab} wb={@wb} version={@version} config={@config} edits={@cfg_edits} raw={@cfg_raw} stacks={@stacks} page={@wbpage} jobs={@jobs} />
+    <Box.box :if={@box && !@wb} box={@box} status={@status} catalog={@catalog} screen={@screen} paper={@paper} papers={@papers} page={@page} args={@args} recipe={@recipe} face={@face} tab={@tab} job={box_job(@jobs, @box)} diff={@diff} />
     """
   end
-
-  # --- the board -------------------------------------------------------------
-
-  defp board(assigns) do
-    ~H"""
-    <section class="ws">
-      <span class="label">Workspace</span>
-      <p class="name">{@status["compose_project"] || "no project"}</p>
-      <div class="path mono">{@status["workspace"]}</div>
-      <div class="urls">
-        <a :if={@status["ports"]["app"]} href={"http://localhost:#{@status["ports"]["app"]}"} target="_blank"><b>app</b>localhost:{@status["ports"]["app"]}</a>
-        <a :if={@status["ports"]["pgadmin"]} href={"http://localhost:#{@status["ports"]["pgadmin"]}"} target="_blank"><b>pgAdmin</b>localhost:{@status["ports"]["pgadmin"]}</a>
-      </div>
-    </section>
-    <section>
-      <h2>Doors <span class="label">{if @doors == [], do: "none yet", else: "#{length(@doors)} open by cartridges"}</span></h2>
-      <div class="urls">
-        <p :if={@doors == []} class="note">Cartridges open doors here: docs, dashboard, mailbox, swagger, graphiql, admin…</p>
-        <a :for={{name, label, path} <- @doors} href={"http://localhost:#{@status["ports"]["app"]}#{path}"} target="_blank" class={if @up, do: "", else: "off"} title={"#{name}: #{path}#{if @up, do: "", else: " — the app is down"}"}><b>{label}</b>{path}<small>{name}</small></a>
-      </div>
-    </section>
-    <section>
-      <h2>Containers <span class="label">{containers_sum(@status["containers"])}</span></h2>
-      <table class="rows">
-        <tr :if={@status["containers"] == []}><td class="muted">No containers: the project is down. Deploy → Up.</td></tr>
-        <tr :for={c <- @status["containers"]}>
-          <td class="k">{c["Service"]}</td>
-          <td><span class={"chip #{container_class(c)}"}>{if c["Health"] != "", do: c["Health"], else: c["State"]}</span></td>
-          <td class="muted">{c["Image"]}</td>
-        </tr>
-      </table>
-    </section>
-    <section>
-      <h2>Deployments <span class="label">baked · running</span></h2>
-      <table class="rows">
-        <tr :for={name <- ~w(dev prod scaled)}>
-          <td class="k">{name}</td>
-          <td>
-            <span class={"chip #{if deployment_up?(@status, name), do: "good", else: "off"}"}>
-              {cond do
-                deployment_up?(@status, name) -> "running"
-                @status["baked"][name] -> "baked · down"
-                true -> "not baked"
-              end}
-            </span>
-          </td>
-        </tr>
-      </table>
-    </section>
-    <section>
-      <h2>Git <span class="label">{git_sum(@status["git"])}</span></h2>
-      <div class="git">
-        <%= if @status["git"]["repo"] do %>
-          <div class="row"><span class="k">tree</span><span class={"chip #{if @status["git"]["clean"], do: "good", else: "warn"}"}>{if @status["git"]["clean"], do: "clean", else: "dirty"}</span></div>
-          <div class="row"><span class="k">head</span><span>{@status["git"]["head"] || "no commits yet"}</span></div>
-          <div class="row"><span class="k">signs as</span><span title={@status["git"]["identity"]}>{String.replace(@status["git"]["identity"] || "", ~r/ <.*/, "")}</span></div>
-          <div class="row"><span class="k">inserts</span>
-            <span :if={@status["git"]["inserts"] == []} class="note">none yet</span>
-            <div :if={@status["git"]["inserts"] != []} class="ins"><span :for={i <- @status["git"]["inserts"]} class="chip" title={"#{String.slice(i["sha"], 0, 7)} · #{i["date"]}"}>{i["feature"]}</span></div>
-          </div>
-          <button :if={not @status["git"]["clean"]} class="btn" phx-click="run" phx-value-args="commit">Commit pending changes</button>
-        <% else %>
-          <p class="note">phx.new initialises the repository; new makes the first commit.</p>
-        <% end %>
-      </div>
-    </section>
-    <section>
-      <h2>Inserted <span class="label">{length(installed(@status))} cartridges</span></h2>
-      <div class="slots"><span :for={c <- installed(@status)} class="chip" phx-click="open" phx-value-name={c["name"]}>{c["name"]}</span></div>
-    </section>
-    """
-  end
-
-  defp deploy(assigns) do
-    ~H"""
-    <div class="targets">
-      <div :for={{name, cmd} <- [{"dev", "up"}, {"prod", "up --deploy prod"}, {"scaled", "up --deploy scaled"}]} class="target">
-        <h3>{name} <span class={"chip #{if @status && deployment_up?(@status, name), do: "good", else: "off"}"}>{if @status && deployment_up?(@status, name), do: "running", else: "down"}</span></h3>
-        <div class="acts">
-          <button class="btn primary" phx-click="run" phx-value-args={cmd}>Up</button>
-          <button class="btn" phx-click="run" phx-value-args={"down #{if name != "dev", do: "--deploy #{name}"}"}>Down</button>
-          <span class="mono">./wb.sh {cmd}</span>
-        </div>
-      </div>
-    </div>
-    <div class="dangerzone">
-      <h3>Database and workspace</h3>
-      <div class="acts">
-        <button class="btn" phx-click="run" phx-value-args="setup">Setup the database</button>
-        <span class="note">drops it, creates it, seeds it</span>
-      </div>
-      <div class="acts">
-        <button class="btn" phx-click="run" phx-value-args="bake">Bake the compose again</button>
-        <span class="note">for the project as it is now — after inserting ecto</span>
-      </div>
-    </div>
-    """
-  end
-
-  # --- the shelf ---------------------------------------------------------------
-
-  defp shelf(assigns) do
-    entries =
-      Enum.filter(assigns.catalog, fn e ->
-        case assigns.filter do
-          "collection" -> e["collection"]
-          "base" -> e["base"]
-          "covered" -> e["covers"]["front"] != nil
-          _ -> true
-        end
-      end)
-
-    assigns = assign(assigns, entries: entries)
-
-    ~H"""
-    <div class="shelf-head">
-      <h2>Cartridges <span class="label">{length(@catalog)} on the shelf</span></h2>
-      <div class="filters" role="group">
-        <button :for={{f, label} <- [{"all", "All"}, {"collection", "Collections"}, {"base", "Base"}, {"covered", "With a box"}]}
-          class="btn" phx-click="filter" phx-value-filter={f} aria-pressed={to_string(@filter == f)}>{label}</button>
-      </div>
-    </div>
-    <div class="shelf">
-      <button :for={e <- @entries} class={"box #{if e["pending"], do: "pending"}"} type="button" phx-click="open" phx-value-name={e["name"]} aria-label={e["name"]}>
-        <%= if e["covers"]["front"] do %>
-          <img src={"/covers/#{e["covers"]["front"]}"} alt={e["name"]} draggable="false" />
-        <% else %>
-          <div class="face plain"><b>{e["name"]}</b><small>{(e["need"] && e["need"]["line"]) || e["summary"]}</small></div>
-        <% end %>
-        <span :if={@status && installed?(@status, e["name"])} class="chip good">inserted</span>
-      </button>
-    </div>
-    """
-  end
-
-  defp box(assigns) do
-    installed = assigns.status && installed?(assigns.status, assigns.box["name"])
-    insert = assigns.status && Enum.find(assigns.status["git"]["inserts"] || [], &(&1["feature"] == assigns.box["name"]))
-    locked = installed && assigns.box["rerun"] != "adds"
-    missing = Enum.reject(assigns.box["requires"] || [], &(assigns.status && installed?(assigns.status, &1)))
-    assigns = assign(assigns, installed: installed, insert: insert, locked: locked, missing: missing)
-
-    ~H"""
-    <aside class="drawer on" role="dialog" aria-modal="true">
-      <div class="top">
-        <h3>{@box["name"]}</h3>
-        <button class="btn" phx-click="close">Put back</button>
-      </div>
-      <div class="body">
-        <div class="hand">
-          <div class="face">
-            <div class="card">
-              <div class="side front">
-                <img :if={@box["covers"]["front"]} src={"/covers/#{@box["covers"]["front"]}"} alt={@box["name"]} draggable="false" />
-                <div :if={is_nil(@box["covers"]["front"])} class="typeset"><h4>{@box["name"]}</h4><p>{(@box["need"] && @box["need"]["line"]) || @box["summary"]}</p><span class="nocover">no cover yet</span></div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="sheet">
-          <div class="head">
-            <div class="kicker">
-              <span :for={fact <- facts(@box)} class="chip">{fact}</span>
-              <span :if={@box["version"]} class="chip">v{@box["version"]["version"]}</span>
-              <span :if={@box["pending"]} class="chip warn">not done</span>
-              <span :if={@installed} class="chip good">inserted</span>
-            </div>
-            <h4>{@box["name"]}</h4>
-            <p>{(@box["need"] && @box["need"]["line"]) || @box["summary"]}</p>
-          </div>
-
-          <form class={"insert #{if @locked, do: "locked"}"} phx-submit="insert">
-            <span class="label">Options</span>
-            <div class="fields">
-              <p :if={@box["options"] == []} class="note">This cartridge takes no options.</p>
-              <div :for={o <- @box["options"]} class={"field #{if o["choices"], do: "stack"}"}>
-                <label>--{String.replace(o["name"], "_", "-")}<span :if={o["multiple"]}> (several)</span></label>
-                <div>
-                  <%= cond do %>
-                    <% o["choices"] -> %>
-                      <div class="choices">
-                        <label :for={c <- choice_values(o)}>
-                          <input type={if o["multiple"], do: "checkbox", else: "radio"} name={if o["multiple"], do: o["name"] <> "[]", else: o["name"]} value={c["value"]}
-                            checked={not o["multiple"] and c["value"] == o["default"]} disabled={@locked or (c["requires"] || []) |> Enum.any?(&(not (@status && installed?(@status, &1))))} />
-                          <span>{c["value"]}</span><span class="doc">{c["doc"]}</span>
-                        </label>
-                      </div>
-                    <% o["type"] == "boolean" -> %>
-                      <input type="checkbox" name={o["name"]} checked={o["default"] == true} disabled={@locked} />
-                    <% true -> %>
-                      <input type="text" name={o["name"]} value={o["default"]} placeholder={o["type"]} disabled={@locked} />
-                  <% end %>
-                  <p :if={o["doc"]} class="help">{o["doc"]}</p>
-                </div>
-              </div>
-            </div>
-            <div :if={@box["requires"] != [] or @box["members"] != [] or @box["afterwards"]} class="deps">
-              <span :if={@box["requires"] != []} class="k">Builds on</span>
-              <span :if={@box["requires"] != []} class="v"><span :for={r <- @box["requires"]} class={"chip #{if r in @missing, do: "warn", else: "good"}"}>{r} {if r in @missing, do: "✗", else: "✓"}</span></span>
-              <span :if={@box["members"] != []} class="k">Inserts</span>
-              <span :if={@box["members"] != []} class="v"><span :for={m <- @box["members"]} class="chip" title={Enum.join(m["argv"], " ")}>{m["name"]}</span></span>
-              <span :if={@box["afterwards"] && not @locked} class="k">Afterwards</span>
-              <span :if={@box["afterwards"] && not @locked} class="v after">{@box["afterwards"]}</span>
-            </div>
-            <div class="acts">
-              <button class={"go #{if @locked, do: "done"}"} type="submit" disabled={@box["pending"] or @locked or @missing != [] or (@status && not @status["git"]["clean"])}>
-                {cond do
-                  @box["pending"] -> "Not done yet"
-                  @locked -> "Already inserted"
-                  @missing != [] -> "Insert #{hd(@missing)} first"
-                  @installed -> "Add to cartridge"
-                  true -> "Insert cartridge"
-                end}
-              </button>
-              <button :if={@installed} class="eject" type="button" phx-click="eject" phx-value-name={@box["name"]} disabled={is_nil(@insert)}
-                title={if @insert, do: "git revert #{String.slice(@insert["sha"], 0, 7)} — #{@insert["subject"]}", else: "no commit to revert"}>Eject</button>
-              <span class="note">{cond do
-                @status && not @status["git"]["clean"] -> "the tree has changes git does not have — commit first"
-                @installed && is_nil(@insert) -> "came with the project or by hand: no commit to eject"
-                @locked -> "inserted once; eject to change its options"
-                true -> ""
-              end}</span>
-            </div>
-          </form>
-        </div>
-      </div>
-    </aside>
-    """
-  end
-
-  defp tray(assigns) do
-    running = Enum.count(assigns.jobs, &(&1.state == :running))
-    assigns = assign(assigns, running: running, last: List.first(assigns.jobs))
-
-    ~H"""
-    <div class={"tray #{if @open, do: "open"}"}>
-      <div class="bar" phx-click="tray">
-        <h4>Jobs</h4>
-        <span class={"chip #{if @running > 0, do: "warn busy", else: "off"}"}>{if @running > 0, do: "running", else: "idle"}</span>
-        <span class="last">{if @last, do: @last.cmdline, else: "Every command the console runs is a job: its output, its exit code, how long it took."}</span>
-        <span class="caret">{if @open, do: "▾", else: "▴"}</span>
-      </div>
-      <div class="list">
-        <div :for={j <- @jobs} class={"job #{j.state}"}>
-          <div class="head">
-            <span class="mono">{j.cmdline}</span>
-            <span class={"chip #{job_class(j)}"}>{j.state}{if j.exit, do: " · exit #{j.exit}"}</span>
-            <span :if={j.started_at && j.finished_at} class="muted">{DateTime.diff(j.finished_at, j.started_at, :millisecond) / 1000}s</span>
-          </div>
-          <pre class="out">{j.lines |> Enum.reverse() |> Enum.join("\n")}</pre>
-        </div>
-      </div>
-    </div>
-    """
-  end
-
-  # --- helpers -----------------------------------------------------------------
-
-  # What is true of a box, not what kind of box it is: there is one
-  # kind. The facts are independent, so a box can carry several — and
-  # most carry none.
-  defp facts(box) do
-    [
-      box["collection"] && "inserts #{length(box["members"] || [])}",
-      box["base"] && "base"
-    ]
-    |> Enum.filter(&is_binary/1)
-  end
-
-  defp installed(status), do: Enum.filter(get_in(status, ["project", "cartridges"]) || [], & &1["installed"])
-  defp app_up?(status), do: Enum.any?(status["containers"] || [], &(&1["State"] == "running" and &1["Service"] =~ ~r/^app\d*$/))
-
-  # The doors the inserted cartridges open, as the catalog says
-  # (`console.doors`), when their condition holds; `{option}` in a path
-  # is the option's value as the project reports it, or its default.
-  defp doors(status, catalog) do
-    ins = installed(status)
-
-    for entry <- catalog,
-        c = Enum.find(ins, &(&1["name"] == entry["name"])),
-        door <- entry["console"]["doors"] || [],
-        holds?(door["when"], c, ins) do
-      {entry["name"], door["label"], fill_path(door["path"], c, entry)}
-    end
-  end
-
-  defp holds?(nil, _c, _ins), do: true
-  defp holds?(%{"with" => value}, c, _ins), do: value in (get_in(c, ["state", "with"]) || [])
-  defp holds?(%{"cartridge" => name}, _c, ins), do: Enum.any?(ins, &(&1["name"] == name))
-
-  defp fill_path(path, c, entry) do
-    Regex.replace(~r/\{(\w+)\}/, path, fn _, o ->
-      to_string(get_in(c, ["state", o]) || (Enum.find(entry["options"] || [], &(&1["name"] == o)) || %{})["default"] || "")
-    end)
-  end
-  defp installed?(status, name), do: Enum.any?(installed(status), &(&1["name"] == name))
-
-  defp choice_values(%{"choices" => [%{"group" => _} | _] = groups}), do: Enum.flat_map(groups, & &1["values"])
-  defp choice_values(%{"choices" => values}), do: values
-
-  defp containers_sum([]), do: "none"
-  defp containers_sum(cs), do: "#{Enum.count(cs, &(&1["State"] == "running"))} of #{length(cs)} running"
-
-  defp container_class(c) do
-    cond do
-      c["Health"] == "healthy" or (c["Health"] == "" and c["State"] == "running") -> "good"
-      c["State"] == "running" or c["Health"] == "starting" -> "warn busy"
-      true -> "bad"
-    end
-  end
-
-  # dev and prod share their service names: the image tells them apart.
-  defp deployment_up?(status, name) do
-    Enum.any?(status["containers"] || [], fn c ->
-      c["State"] == "running" and c["Service"] == "app" and
-        case name do
-          "dev" -> String.ends_with?(c["Image"], ":local")
-          "prod" -> String.contains?(c["Image"], "-prod")
-          "scaled" -> c["Labels"] =~ ~r/replica|scaled/
-        end
-    end)
-  end
-
-  defp git_sum(%{"repo" => false}), do: "no repository"
-  defp git_sum(g), do: if(g["clean"], do: "clean", else: "changes git does not have")
-
-  defp job_class(%{state: :done}), do: "good"
-  defp job_class(%{state: :failed}), do: "bad"
-  defp job_class(%{state: :running}), do: "warn busy"
-  defp job_class(_), do: "off"
 end

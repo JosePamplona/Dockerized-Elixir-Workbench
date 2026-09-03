@@ -55,6 +55,11 @@ defmodule Console.MixProject do
       # up that no makeup_* covers, makeup_syntect (the Sublime grammars
       # through a precompiled Rust NIF) is the escape hatch — until then
       # an unknown extension is shown plain, never guessed at.
+      # The papers a box carries, rendered escaping the HTML in them (console/README.md).
+      {:mdex, "~> 0.13"},
+      # The workbench's own package: the catalog is read in this BEAM, off the
+      # cartridges' manifests, never off a project (console/PLAN.md).
+      {:workbench_igniter, path: "../igniter"},
       {:makeup, "~> 1.2"},
       {:makeup_elixir, "~> 1.0"},
       {:makeup_eex, "~> 2.0"},

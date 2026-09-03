@@ -8,6 +8,7 @@ defmodule ConsoleWeb.Router do
     plug :put_root_layout, html: {ConsoleWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug ConsoleWeb.Plugs.CSP
   end
 
   pipeline :api do
@@ -18,7 +19,10 @@ defmodule ConsoleWeb.Router do
     pipe_through :browser
 
     live "/", ConsoleLive
+    live "/:tab", ConsoleLive
     get "/covers/*path", CoversController, :show
+    get "/figures/*path", FiguresController, :show
+    get "/blob/:rev/*path", BlobController, :show
   end
 
   # Other scopes may use custom stacks.

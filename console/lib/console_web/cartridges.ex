@@ -1,0 +1,85 @@
+defmodule ConsoleWeb.Cartridges do
+  @moduledoc """
+  What the page works out of the status and the catalog about a
+  cartridge: whether the project carries it, what it opened in the
+  console, how it got here. All read off the two contracts; nothing
+  here is a second opinion about what is installed.
+  """
+
+  @doc "The catalog entries the project carries (status's, with `installed` and `state`)."
+  def installed(nil), do: []
+  def installed(status), do: Enum.filter(get_in(status, ["project", "cartridges"]) || [], & &1["installed"])
+
+  def installed?(status, name), do: Enum.any?(installed(status), &(&1["name"] == name))
+
+  @doc "The status's entry for a cartridge, installed or not."
+  def carried(status, name), do: Enum.find(get_in(status, ["project", "cartridges"]) || [], &(&1["name"] == name))
+
+  @doc "The insert commit of a cartridge, when it went in by commit."
+  def insert(nil, _name), do: nil
+  def insert(status, name), do: Enum.find(get_in(status, ["git", "inserts"]) || [], &(&1["feature"] == name))
+
+  @doc "Whether the app is up: an app container running, whichever deployment."
+  def app_up?(nil), do: false
+  def app_up?(status), do: status["deployment"] != nil
+
+  @doc """
+  What each inserted cartridge adds to the console, off the manifest's
+  `console/0` as the catalog carries it: `[{entry, item}]` for `kind`
+  in doors, probes, tabs — only the items whose condition holds.
+  """
+  def contributions(status, catalog, kind) do
+    for c <- installed(status),
+        entry = Enum.find(catalog, &(&1["name"] == c["name"])) || c,
+        item <- get_in(entry, ["console", kind]) || [],
+        holds?(status, c, item),
+        do: {c, item}
+  end
+
+  # A door's `when`: with an option value, or with another cartridge in.
+  def holds?(status, c, item) when is_map(item), do: holds?(status, c, item["when"])
+  def holds?(_status, _c, nil), do: true
+  def holds?(_status, c, %{"with" => value}), do: value in (get_in(c, ["state", "with"]) || [])
+  def holds?(status, _c, %{"cartridge" => name}), do: installed?(status, name)
+  def holds?(_, _, _), do: true
+
+  @doc "`{option}` in a path: the option's value as the project reports it, or its default."
+  def fill_path(path, c) do
+    Regex.replace(~r/\{(\w+)\}/, path, fn _, o ->
+      to_string(get_in(c, ["state", o]) || (Enum.find(c["options"] || [], &(&1["name"] == o)) || %{})["default"] || "")
+    end)
+  end
+
+  @doc """
+  How a cartridge got here, which is also whether the workbench can
+  take it back: `{word, chip class, why}`.
+  """
+  def origin(status, c) do
+    cond do
+      i = insert(status, c["name"]) ->
+        {"by commit", "", "git revert #{String.slice(i["sha"], 0, 7)} — #{i["subject"]} · #{i["date"]}"}
+
+      c["collection"] ->
+        {"collection", "off", "the box leaves no commit of its own: eject its cartridges, not the collection"}
+
+      get_in(status, ["project", "phx", c["name"]]) == true ->
+        {"from birth", "off", "came with the project: phx.new generated it — nothing to eject"}
+
+      true ->
+        {"by hand", "off", "inserted by hand: no commit to eject"}
+    end
+  end
+
+  @doc "What is true of a box: not done, a collection of N, base."
+  def facts(e) do
+    [
+      e["pending"] && "not done",
+      e["collection"] && "inserts #{length(e["members"] || [])}",
+      e["base"] && "base"
+    ]
+    |> Enum.filter(&is_binary/1)
+  end
+
+  @doc "The catalog entries phx.new decides: the base cartridges."
+  def base(catalog), do: Enum.filter(catalog, & &1["base"])
+end

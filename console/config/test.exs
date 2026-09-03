@@ -1,5 +1,8 @@
 import Config
 
+# The bench reads nothing at boot in tests: a reading starts a container.
+config :console, bench_reads_at_boot: false
+
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
 config :console, ConsoleWeb.Endpoint,

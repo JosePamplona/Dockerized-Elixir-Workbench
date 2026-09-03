@@ -7,11 +7,13 @@ import Config
 # watchers to your application. For example, we can use it
 # to bundle .js and .css sources.
 config :console, ConsoleWeb.Endpoint,
-  # Bind to 0.0.0.0 to expose the server to the docker host machine.
-  # This makes make the service accessible from any network interface.
-  # Change to `ip: {127, 0, 0, 1}` to allow access only from the server machine.
+  # 0.0.0.0 inside the container, where the port has to be reachable
+  # from the host; `./wb.sh console` publishes it on 127.0.0.1 only. The
+  # console runs wb.sh with --yes over Docker's socket, and `delete`
+  # wipes a workspace: the origin check stays on even in dev, so no
+  # page the reader visits while the console is up can open its socket.
   http: [ip: {0, 0, 0, 0}, port: String.to_integer(System.get_env("PORT") || "4000")],
-  check_origin: false,
+  check_origin: ["//localhost", "//127.0.0.1"],
   code_reloader: true,
   debug_errors: true,
   secret_key_base: "wxTY0splQ/Tx263CaVPTwythqPGkzx4CNjpsMrqwml5cth8XFB8xOTNHSmbuWVRz",

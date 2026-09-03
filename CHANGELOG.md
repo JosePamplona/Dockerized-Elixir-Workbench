@@ -16,6 +16,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- Two readers of the igniter at once fought over one container name
+  and the second answered nothing; the name carries the pid now.
 - **An insert that fails no longer leaves the workspace half-written.**
   `add` runs each cartridge in its own container and commits it when it
   lands; an installer that wrote its files and *then* failed — Hex
@@ -35,7 +37,60 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   commit leaves a cartridge that did land, for the reader to commit by
   hand.
 
+### Updated
+
+- **Nothing compiles through the bind mount any more.** The toolchain
+  image points Mix at `/app/build` and `/app/deps`, two named volumes
+  the workspace's compose declares and every one-off run shares —
+  compiling through a bind mount is the load Docker Desktop's file
+  sharing bears worst, and its VM fell under it. `bake` bakes
+  `Dockerfile.local` again when the seed moved, keeping the project's
+  own Phoenix installer, and rebuilds the image, so an existing
+  workspace moves over with `bake && up`. On Linux the native Docker
+  Engine is the one to use; `./wb.sh engine native` picks it.
+- One stylesheet for the mock and the console
+  (`console/priv/static/assets/css/console.css`), inlined into the
+  one and served by the other, and the house's tokens projected into
+  both by `assets/design/build.py`.
+
 ### Added
+
+- **The console, out of the mock and into Phoenix.** The LiveView
+  console (`console/`) now holds what the mock drew: the board, Deploy
+  with the New project card and the Deployment card, Jobs with the
+  `wb.sh` line and its history, live Logs, the shelf with its planks
+  and its list, the box in hand with its four screens — Box,
+  Installation with `expand`, Files off the workspace's git, Manual
+  rendered with the HTML in it left out — the Project papers, the
+  workbench's drawer with `config.conf` as a form, a line-oriented
+  terminal, the cluster and the figure viewer. The screen and the box
+  live in the URL. What the console knows is held once for every page
+  (`Console.Bench`): a page mounting starts no container. The plan and
+  the architecture are in `console/PLAN.md`.
+- **What `wb.sh` owes the console.** `status --json` answers on an
+  empty workspace, says which deployment is up, carries each
+  container's address and each insert's argv, and `--fast` leaves out
+  the one part that boots Mix; `catalog --json` answers without a
+  project, off the package; `expand [--json]` is the planning half of
+  `add` on its own; `config set KEY=VALUE` is the one writer of
+  `config.conf` besides `stacks use`; `engine` picks which Docker the
+  script talks to. The catalog's `need` carries its four parts.
+- **`mix workbench.serve`**, the resident: one BEAM with the project
+  loaded, answering `status` and `expand` on stdin for as long as the
+  console runs, instead of a Mix boot in a fresh container per question.
+- **A `specdd` cartridge, designed and pending.** SpecDD — spec-driven
+  development with `.sdd` files beside the code — on a stock `phx.new`
+  project: what `specdd init` writes (the bootstrap chain, the pointer
+  on top of phx.new's `AGENTS.md`, `CLAUDE.md`), off release 1.5's
+  files embedded in the cartridge, plus a `bootstrap.project.md` for an
+  Elixir/Phoenix project and three starting specs (the project, `lib/`,
+  `test/`). The manifest is registered so the shelf shows the box as
+  pending; the templates and assets are in `priv/features/specdd/`; the
+  installer is not written. The design (`DESIGN.md`) records what the
+  CLI writes and touches on update, why the files are embedded rather
+  than downloaded, and one thing its `resolve` proved: the root spec is
+  found only under the directory's own name, so `--root` exists and the
+  README's docker commands mount the project under it.
 
 - **psql_extras says what it builds on, and where it does not belong.** It
   declared nothing and would install on any project: `ecto_psql_extras` is

@@ -6,10 +6,13 @@
 # same image without the workbench.
 #
 # The source is bind-mounted at /app/src by the workspace's
-# docker-compose.yml, and everything derived from it (deps, _build,
-# assets) lives inside the mount — host edits hot-reload through
-# Phoenix's code reloader, and code or dependency changes never require
-# rebuilding this image.
+# docker-compose.yml — host edits hot-reload through Phoenix's code
+# reloader, and code or dependency changes never require rebuilding
+# this image. What is derived from the source (deps, _build) does NOT
+# live in the mount: Mix is pointed at /app/deps and /app/build, two
+# named volumes the compose declares, because compiling through a bind
+# mount is the one load Docker Desktop's file sharing bears worst, and
+# the host never needed the compiled code.
 #
 # We use Ubuntu/Debian instead of Alpine to avoid DNS resolution issues.
 #
@@ -41,9 +44,13 @@ ARG GID=1000
 RUN groupadd --gid ${GID} elixir && \
     useradd --uid ${UID} --gid ${GID} --create-home elixir
 
-# Parent of the source mount point.
+# Parent of the source mount point, and the two directories Mix writes
+# into instead of the mount: born owned by the user, so a named volume
+# first mounted there takes that ownership with it.
 WORKDIR /app
-RUN chown elixir:elixir /app
+RUN mkdir -p /app/build /app/deps && chown -R elixir:elixir /app
+ENV MIX_BUILD_ROOT=/app/build \
+    MIX_DEPS_PATH=/app/deps
 
 USER elixir
 

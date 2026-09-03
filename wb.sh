@@ -146,6 +146,11 @@
     APP_INTERNAL_PORT="4000"
     PGADMIN_INTERNAL_PORT="5050"
     SOURCE_CODE_VOLUME="$WORKSPACE_PATH:/app/src"
+    # Where Mix compiles: two named volumes the workspace's compose
+    # declares (build, deps — under the compose project's name), so a
+    # one-off run shares them with the app service and nothing compiles
+    # through the bind mount. The image points Mix at the mount points.
+    BUILD_VOLUMES="--volume ${ELIXIR_PROJECT_NAME}_build:/app/build --volume ${ELIXIR_PROJECT_NAME}_deps:/app/deps"
     WORKBENCH_VOLUME="$WORKBENCH_PATH:/app/workbench:ro"
 
   # Git ------------------------------------------------------------------------
@@ -548,7 +553,16 @@
   }
 
   # workspace_igniter <TASK> [ARGS...]
-    # Runs a workbench.* mix task of the igniter package on the workspace,
+    # Runs a workbench.* mix task of the igniter package on the workspace.
+    # 'deps.get' first: the package is a dependency the project only sees
+    # with the workbench mounted, so the app service never fetches what
+    # it needs, and a fresh deps volume has none of it. Then every
+    # dependency compiled — the package's own (igniter and its tree) are
+    # not compiled by the app service either — which is incremental and
+    # costs nothing once done. Up to date, the two cost a second.
+    # in a container named after this process: two readers at once — the
+    # console reads the status on every page it serves — must not fight
+    # over one name, or the second finds it taken and answers nothing.
     # on a bare toolchain container: the source and the workbench mounted,
     # no compose. The running app container has no workbench mounted (the
     # package is not a dependency of the project once it leaves the
@@ -569,13 +583,77 @@
     docker run \
       $DOCKER_TTY_FLAGS \
       --rm \
-      --name "${APP_NAME}_workbench_$1" \
+      --name "${APP_NAME}_workbench_$1_$$" \
       --volume $SOURCE_CODE_VOLUME \
       --volume $WORKBENCH_VOLUME \
+      $BUILD_VOLUMES \
       --workdir /app/src \
       $LOCAL_IMAGE sh -c \
-        'exec mix do deps.compile workbench_igniter, "$@"' \
+        'exec mix do deps.get, deps.compile, "$@"' \
         mix "$@"
+  }
+
+  # package_igniter <TASK> [ARGS...]
+    # A mix task of the igniter package run on the package itself, in the
+    # toolchain image, with no project under it. The catalog belongs to
+    # the workbench and not to the workspace: it has to answer when the
+    # workspace is empty, which is when the New project card needs it.
+    # Its build goes under its own root so it never collides with a
+    # host's build of the same package.
+  package_igniter() {
+    docker image inspect "$TOOLCHAIN_IMAGE" > /dev/null 2>&1 || terminate \
+      "No toolchain image $TOOLCHAIN_IMAGE yet, and the catalog is read" \
+      "with it. Create a project first: ./$(basename $0) new"
+    docker run \
+      --rm \
+      --name "workbench_package_$1_$$" \
+      --volume "$WORKBENCH_PATH/igniter:/app/igniter" \
+      --volume $WORKBENCH_VOLUME \
+      --volume workbench_package_build:/app/build \
+      --volume workbench_package_deps:/app/deps \
+      --workdir /app/igniter \
+      $TOOLCHAIN_IMAGE sh -c \
+        'mix deps.get > /dev/null 2>&1; exec mix "$@"' \
+        mix "$@"
+  }
+
+  # expand_plan <CARTRIDGE> [OPTIONS...]
+    # The plan 'add' runs, one 'NAME [ARGV]' per line: the cartridge
+    # itself for a plain one, the missing members for a collection —
+    # asked of 'mix workbench.expand' on the project. Only the 'plan> '
+    # lines are the plan; the rest is mix noise.
+  expand_plan() {
+    local raw
+    raw=$(
+      workspace_compose run \
+        --rm -T \
+        --name "${APP_NAME}_workbench_expand_$$" \
+        --volume $WORKBENCH_VOLUME \
+        app $CONTAINER_ENTRYPOINT expand "$@"
+    ) || return 1
+    echo "$raw" | tr -d '\r' | sed -n 's/^plan> //p'
+  }
+
+  # plan_json
+    # The plan on stdin as JSON: [{"name": …, "argv": […]}, …].
+  plan_json() {
+    local line name argv first=true
+    printf '['
+    while IFS= read -r line; do
+      [ -n "$line" ] || continue
+      name=${line%% *}; [ "$name" == "$line" ] && argv="" || argv=${line#* }
+      $first || printf ','; first=false
+      printf '{"name": %s, "argv": [%s]}' "$(json_string "$name")" "$(words_json $argv)"
+    done
+    printf ']\n'
+  }
+
+  # words_json [WORD...]
+    # Its arguments as JSON strings, comma-separated.
+  words_json() {
+    local w out=""
+    for w in "$@"; do out="$out,$(json_string "$w")"; done
+    printf '%s' "${out#,}"
   }
 
   # workspace_git [ARGS...]
@@ -718,22 +796,77 @@
     esac
   }
 
-  # status_json
-    # The workspace as one JSON object: where it is, its ports, which
-    # deployments were baked, the containers of its compose project, and
-    # — 'project' — what 'mix workbench.status --json' says of the
-    # cartridges it carries (null when that could not be asked).
+  # workspace_deployment
+    # Which deployment is up, read off the running containers: the
+    # scaled one has replicas app1..appN; dev and prod both run 'app',
+    # and only the image tells them apart. Empty when nothing runs.
+  workspace_deployment() {
+    local running
+    running=$(docker compose --project-name "$(compose_project_name)" \
+      ps --status running --format '{{.Service}} {{.Image}}' 2>/dev/null)
+    if   echo "$running" | grep -q '^app[0-9]'; then echo scaled
+    elif echo "$running" | grep -q '^app .*-prod$'; then echo prod
+    elif echo "$running" | grep -q '^app '; then echo dev
+    fi
+  }
+
+  # workspace_addresses
+    # The address of every container of the compose project on its
+    # network, as one JSON object keyed by service — what the cluster
+    # screen names its nodes by. A container on several networks lists
+    # them joined, which none of the workbench's composes does.
+  workspace_addresses() {
+    local ids
+    ids=$(docker compose --project-name "$(compose_project_name)" ps --quiet 2>/dev/null)
+    [ -n "$ids" ] || { printf '{}'; return; }
+    printf '{%s}' "$(
+      docker inspect --format \
+        '"{{index .Config.Labels "com.docker.compose.service"}}": "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}"' \
+        $ids 2>/dev/null | paste -sd, -
+    )"
+  }
+
+  # status_json [--fast]
+    # The workspace as one JSON object: whether it holds a project, where
+    # it is, its ports, which deployments were baked, which one is up,
+    # the containers of its compose project with their addresses, its
+    # git, and — 'project' — what 'mix workbench.status --json' says of
+    # the cartridges it carries. That last one boots Mix in a container
+    # and costs seconds, where the rest costs tenths: '--fast' leaves it
+    # out ('project' is then null, as it is when there is no project),
+    # for the readings that follow an up or a down, where nothing about
+    # the cartridges could have changed.
+    # Without a project it still answers, with 'exists' false, so the
+    # console can draw the empty workspace instead of an error.
   status_json() {
     local port pgadmin project
+    if [ $EXISTING_PROJECT != true ]; then
+      printf '{\n'
+      printf '  "exists": false,\n'
+      printf '  "workspace": %s,\n' "$(json_string "$WORKSPACE_PATH")"
+      printf '  "compose_project": null,\n'
+      printf '  "ports": {"app": null, "pgadmin": null},\n'
+      printf '  "baked": {"dev": false, "prod": false, "scaled": false},\n'
+      printf '  "deployment": null,\n'
+      printf '  "containers": [],\n'
+      printf '  "addresses": {},\n'
+      printf '  "git": %s,\n' "$(git_json)"
+      printf '  "project": null\n'
+      printf '}\n'
+      return
+    fi
     port=$(workspace_app_port)
     pgadmin=$(workspace_pgadmin_port)
-    project=$(workspace_igniter workbench.status --json 2>/dev/null | json_answer)
+    if [ "$1" == "--fast" ]
+    then project=""
+    else project=$(workspace_igniter workbench.status --json 2>/dev/null | json_answer); fi
 
     # printf, never echo, and every value as an argument rather than
     # part of the format: what goes in here is JSON already, full of the
     # \n and \\ that a JSON string is made of, and none of it is this
     # script's to read as an escape.
     printf '{\n'
+    printf '  "exists": true,\n'
     printf '  "workspace": %s,\n' "$(json_string "$WORKSPACE_PATH")"
     printf '  "compose_project": %s,\n' "$(json_string "$(compose_project_name)")"
     printf '  "ports": {"app": %s, "pgadmin": %s},\n' "${port:-null}" "${pgadmin:-null}"
@@ -742,7 +875,9 @@
     printf '    "prod": %s,\n' "$([ -f "$WORKSPACE_PATH/$PROD_COMPOSE_FILE" ] && echo true || echo false)"
     printf '    "scaled": %s\n' "$([ -f "$WORKSPACE_PATH/$SCALED_COMPOSE_FILE" ] && echo true || echo false)"
     printf '  },\n'
+    printf '  "deployment": %s,\n' "$(d=$(workspace_deployment); [ -n "$d" ] && json_string "$d" || echo null)"
     printf '  "containers": %s,\n' "$(workspace_containers | json_array)"
+    printf '  "addresses": %s,\n' "$(workspace_addresses)"
     printf '  "git": %s,\n' "$(git_json)"
     printf '  "project": %s\n' "${project:-null}"
     printf '}\n'
@@ -758,8 +893,11 @@
     inserts=$(
       active_inserts | \
       while IFS=$'\x1f' read -r sha subject date; do
-        printf '{"sha": "%s", "feature": "%s", "subject": %s, "date": "%s"},' \
-          "$sha" "$(echo "$subject" | awk '{print $2}')" "$(json_string "$subject")" "$date"
+        # The subject is 'Insert NAME [ARGV]': the options the cartridge
+        # went in with, as an array, so no reader has to parse a subject.
+        set -- $subject; shift 2
+        printf '{"sha": "%s", "feature": "%s", "subject": %s, "date": "%s", "argv": [%s]},' \
+          "$sha" "$(echo "$subject" | awk '{print $2}')" "$(json_string "$subject")" "$date" "$(words_json "$@")"
       done
     )
     printf '{"repo": true, "clean": %s, "head": %s, "identity": %s, "inserts": [%s]}\n' \
@@ -1133,11 +1271,24 @@
       "- use TAG: check the image exists and write the three versions" \
       "  into config.conf."
 
+    print_command "engine [native | desktop | toggle | NAME]"
+    section_content \
+      "Which Docker the script talks to — the CLI's context, kept per" \
+      "user across terminals. On Linux there are two: the native engine" \
+      "('native', context 'default') and Docker Desktop's VM ('desktop')," \
+      "and the VM falls under a compile through its file sharing, so the" \
+      "workbench wants the native one there. Nothing is shared between" \
+      "them: images, volumes and containers built on one are not on the" \
+      "other." \
+      "- (nothing): the current one, and the list." \
+      "- toggle: the other one."
+
     print_command "console [up|down|logs|build]"
     section_content \
       "The workbench's console: a Phoenix LiveView page that shows the" \
       "workspace and drives this script — as a container, with Docker's" \
-      "socket and the workbench mounted, on the first free port from 4100." \
+      "socket and the workbench mounted, on the first free port from 4100," \
+      "published on 127.0.0.1 only: it runs this script with --yes." \
       "- up (default): build the image if missing and start it." \
       "- down, logs: stop it, follow its output." \
       "- build: build the image again (the Docker CLI in it follows the host)."
@@ -1148,6 +1299,8 @@
       "as it is now — with the database and pgAdmin when it runs on a" \
       "database server, without them when it does not (or on SQLite) —" \
       "keeping its ports, as one commit. What 'add ecto' asks for next." \
+      "The toolchain Dockerfile is baked again too when the seed moved," \
+      "keeping the project's own Phoenix installer, and its image rebuilt." \
       "Needs a clean tree. The prod and scaled composes are baked at" \
       "their own deployment."
 
@@ -1164,17 +1317,37 @@
       "List every cartridge the workbench has: name, version, how it is" \
       "enabled and what it installs — with the options of its installer" \
       "and which of its box covers exist, in the JSON form. Read by the" \
-      "igniter package ('mix workbench.catalog'), so it needs a project" \
-      "to run on." \
+      "igniter package ('mix workbench.catalog'): through the project" \
+      "when there is one, off the package itself when the workspace is" \
+      "empty — the catalog is the workbench's, not the workspace's." \
       "- --json: One JSON array, for tools."
 
-    print_command "status [--json]"
+    print_command "config set KEY=VALUE [KEY=VALUE …]"
+    section_content \
+      "Write values into config.conf in place — comments and order stay." \
+      "A key the file does not export is refused. The one writer of the" \
+      "file besides 'stacks use': the console saves its form through it."
+
+    print_command "expand [--json] CARTRIDGE [OPTIONS]"
+    section_content \
+      "What 'add CARTRIDGE OPTIONS' would insert, without inserting it:" \
+      "the cartridge itself, or — for a collection — the members its" \
+      "options choose, minus what the project already carries. One" \
+      "'NAME [ARGV]' per line, in the order 'add' runs them." \
+      "- --json: One JSON array of {name, argv}, for tools."
+
+    print_command "status [--json [--fast]]"
     section_content \
       "Where the workspace stands: its ports, which deployments were" \
-      "baked, its containers, and which cartridges the project carries" \
-      "('mix workbench.status': each cartridge answers off the same mark" \
-      "its installer checks, so this and 'add' never disagree)." \
-      "- --json: One JSON object, for tools."
+      "baked and which is up, its containers with their addresses, its" \
+      "git, and which cartridges the project carries ('mix" \
+      "workbench.status': each cartridge answers off the same mark its" \
+      "installer checks, so this and 'add' never disagree)." \
+      "- --json: One JSON object, for tools. Answers on an empty" \
+      "  workspace too, with 'exists' false." \
+      "- --fast: the same without asking the cartridges, which boots" \
+      "  Mix in a container: tenths of a second instead of seconds," \
+      "  'project' null."
 
     print_command "setup [-e, --env ENV]"
     section_content \
@@ -1309,6 +1482,7 @@
       --rm \
       --volume $SOURCE_CODE_VOLUME \
       --volume $WORKBENCH_VOLUME \
+      $BUILD_VOLUMES \
       $TOOLCHAIN_IMAGE $CONTAINER_ENTRYPOINT new \
       $ELIXIR_PROJECT_NAME "$@" && \
     register_igniter_package && \
@@ -1318,6 +1492,7 @@
       --rm \
       --volume $SOURCE_CODE_VOLUME \
       --volume $WORKBENCH_VOLUME \
+      $BUILD_VOLUMES \
       $TOOLCHAIN_IMAGE $CONTAINER_ENTRYPOINT $setup_command "${SETUP_FLAGS[@]}" && \
     # The project keeps its own baked copy of the toolchain dockerfile,
     # so a standalone clone (no workbench) can rebuild the same dev
@@ -1447,14 +1622,7 @@ if [ $# -gt 0 ]; then
         # rest is mix noise. Each insert then runs as its own container
         # and its own commit, so 'eject' reverts one cartridge alone —
         # a collection leaves no commit of its own.
-        RAW_PLAN=$(
-          workspace_compose run \
-            --rm -T \
-            --name "${APP_NAME}_workbench_expand" \
-            --volume $WORKBENCH_VOLUME \
-            app $CONTAINER_ENTRYPOINT expand $@
-        ) || terminate "Could not expand '$1'."
-        PLAN=$(echo "$RAW_PLAN" | tr -d '\r' | sed -n 's/^plan> //p')
+        PLAN=$(expand_plan "$@") || terminate "Could not expand '$1'."
 
         if [ -z "$PLAN" ]; then
           echo "Nothing to insert: the project already carries every cartridge of '$1'."
@@ -1617,6 +1785,35 @@ if [ $# -gt 0 ]; then
       *) args_error invalid ;;
     esac
 
+  elif [ "$1" == "engine" ]; then
+    shift
+    # Which Docker the script talks to: the CLI's context, per user and
+    # kept across terminals. On Linux there are two — the native engine
+    # ('default') and Docker Desktop's VM ('desktop-linux') — and the VM
+    # falls under a compile through its file sharing, so the workbench
+    # wants the native one there. Images, volumes and containers are
+    # not shared between them: what one built the other has not.
+    engine_say() {
+      local name; name=$(docker context show)
+      echo "The workbench talks to ${B}$name${R}" \
+        "($(docker context inspect --format '{{.Endpoints.docker.Host}}' "$name"))."
+    }
+    case "$1" in
+      "")
+        engine_say
+        echo
+        docker context ls --format '  {{if .Current}}*{{else}} {{end}} {{.Name}}\t{{.DockerEndpoint}}' ;;
+      toggle)
+        # Between the two Linux engines; elsewhere there is one to use.
+        if [ "$(docker context show)" == "default" ] && docker context inspect desktop-linux > /dev/null 2>&1
+        then docker context use desktop-linux > /dev/null 2>&1
+        else docker context use default > /dev/null 2>&1; fi
+        engine_say ;;
+      native)  docker context use default > /dev/null 2>&1 && engine_say ;;
+      desktop) docker context use desktop-linux > /dev/null 2>&1 && engine_say ;;
+      *)       docker context use "$1" > /dev/null 2>&1 && engine_say ;;
+    esac
+
   elif [ "$1" == "console" ]; then
     shift
     # The console: a Phoenix LiveView app in console/, run as a container
@@ -1624,7 +1821,18 @@ if [ $# -gt 0 ]; then
     # workbench mounted at the same absolute path as on the host, so the
     # relative paths in config.conf and the composes' bind mounts mean
     # the same thing to the daemon whichever side asks. It runs as this
-    # user, in the socket's group, and shells out to wb.sh as jobs.
+    # user, in the socket's group, and shells out to wb.sh as jobs. The
+    # The workspace's build and deps volumes ride along too, at the
+    # same /app/build and /app/deps the app service sees them at — Mix
+    # keys its manifests on those paths — so the resident (the project's
+    # own BEAM, beside the console) finds what the app compiled and adds
+    # to it; the console's own build lives apart, under /app/console.
+    # The container is thereby bound to the workspace config.conf named
+    # when it started. The
+    # host's loopback is reachable as host.docker.internal (APP_HOST):
+    # that is where the app's port answers from inside this container,
+    # for the probes the console calls itself; the doors the browser
+    # opens stay on localhost.
     CONSOLE_IMAGE="workbench-console:${ELIXIR_VERSION}-${ERLANG_VERSION}"
     CONSOLE_NAME="workbench_console"
     CONSOLE_DIR="$WORKBENCH_PATH/console"
@@ -1659,11 +1867,21 @@ if [ $# -gt 0 ]; then
           --group-add "$SOCKET_GID" \
           --volume /var/run/docker.sock:/var/run/docker.sock \
           --volume "$WORKBENCH_PATH:$WORKBENCH_PATH" \
+          --volume workbench_console_build:/app/console/build \
+          --volume workbench_console_deps:/app/console/deps \
+          --volume "${ELIXIR_PROJECT_NAME}_build:/app/build" \
+          --volume "${ELIXIR_PROJECT_NAME}_deps:/app/deps" \
+          --env WORKSPACE_BUILD=/app/build \
+          --env WORKSPACE_DEPS=/app/deps \
+          --env "WORKBENCH_PATH=$WORKBENCH_PATH" \
+          --add-host host.docker.internal:host-gateway \
+          --env APP_HOST=host.docker.internal \
           --workdir "$CONSOLE_DIR" \
           --env HOME=/home/elixir \
           --env "WORKBENCH_DIR=$WORKBENCH_PATH" \
+          --env "WORKBENCH_PATH=$WORKBENCH_PATH" \
           --env PORT=4000 \
-          --publish "$CONSOLE_PORT:4000" \
+          --publish "127.0.0.1:$CONSOLE_PORT:4000" \
           "$CONSOLE_IMAGE" > /dev/null && \
         echo "The console is coming up on ${B}http://localhost:$CONSOLE_PORT${R}" \
           "(first run compiles it: ./$(basename $0) console logs)." ;;
@@ -1681,6 +1899,25 @@ if [ $# -gt 0 ]; then
       PGADMIN_PORT=$(workspace_pgadmin_port)
       [ -n "$APP_PORT" ]     || APP_PORT=$(first_free_port 4000)
       [ -n "$PGADMIN_PORT" ] || PGADMIN_PORT=$(first_free_port 5050)
+
+      # The toolchain Dockerfile too: the seed may have moved since this
+      # project was born — where Mix compiles, what the image carries —
+      # and the workspace keeps the copy its image is built from. The
+      # Phoenix installer stays the one stamped in it: that is the
+      # project's generator, not config.conf's next choice.
+      PHX_STAMPED=$(sed -n 's/^ARG PHX_NEW="\(.*\)"/\1/p' "$WORKSPACE_PATH/$LOCAL_DOCKERFILE" 2>/dev/null)
+      PHX_NEW_KEPT="$PHX_NEW_VERSION"; PHX_NEW_VERSION="${PHX_STAMPED:-$PHX_NEW_VERSION}"
+      create_local_dockerfile
+      PHX_NEW_VERSION="$PHX_NEW_KEPT"
+      if ! cmp -s "$SCRIPTS_DIR/$LOCAL_DOCKERFILE" "$WORKSPACE_PATH/$LOCAL_DOCKERFILE"; then
+        cp "$SCRIPTS_DIR/$LOCAL_DOCKERFILE" "$WORKSPACE_PATH/$LOCAL_DOCKERFILE" && \
+        docker build \
+          --build-arg UID="$(id -u)" \
+          --build-arg GID="$(id -g)" \
+          --file "$WORKSPACE_PATH/$LOCAL_DOCKERFILE" --tag "$TOOLCHAIN_IMAGE" "$SCRIPTS_DIR" && \
+        docker tag "$TOOLCHAIN_IMAGE" "$LOCAL_IMAGE" && \
+        echo "$LOCAL_DOCKERFILE baked again, and the image with it."
+      fi
 
       bake_compose "$LOCAL_IMAGE" "$LOCAL_DOCKERFILE" "$COMPOSE_FILE" && \
       if workspace_dirty; then
@@ -1701,28 +1938,65 @@ if [ $# -gt 0 ]; then
 
   elif [ "$1" == "catalog" ]; then
     shift
-    if [ $EXISTING_PROJECT == true ]; then
-      case "$1" in
-        --json) workspace_igniter workbench.catalog --json \
-                  --covers /app/workbench/assets/covers 2>/dev/null | json_answer ;;
-        "")     workspace_igniter workbench.catalog ;;
-        *)      args_error invalid ;;
-      esac
-
-    else terminate \
-      "There is no project: the catalog is read by the igniter package" \
-      "on the workspace. Create one with: ./$(basename $0) new"; fi
+    # The catalog is the workbench's, not the workspace's: with a project
+    # it is read through the project (the package is a dependency there
+    # already, compiled); without one, off the package itself.
+    if [ $EXISTING_PROJECT == true ]
+    then CATALOG_READER=workspace_igniter
+    else CATALOG_READER=package_igniter; fi
+    case "$1" in
+      --json) $CATALOG_READER workbench.catalog --json \
+                --covers /app/workbench/assets/covers 2>/dev/null | json_answer ;;
+      "")     $CATALOG_READER workbench.catalog ;;
+      *)      args_error invalid ;;
+    esac
 
   elif [ "$1" == "status" ]; then
     shift
-    if [ $EXISTING_PROJECT == true ]; then
-      case "$1" in
-        --json) status_json ;;
-        "")     status_report ;;
-        *)      args_error invalid ;;
-      esac
+    case "$1" in
+      --json) status_json "$2" ;;
+      "")     if [ $EXISTING_PROJECT == true ]
+              then status_report
+              else terminate "There is no project in $WORKSPACE_PATH."; fi ;;
+      *)      args_error invalid ;;
+    esac
 
-    else terminate "There is no project in $WORKSPACE_PATH."; fi
+  elif [ "$1" == "config" ]; then
+    shift
+    # The one writer of config.conf: 'set KEY=VALUE …' writes each value
+    # in place — comments and order stay — on the same sed 'stacks use'
+    # writes the three versions with. A key the file does not export is
+    # refused, so a typo never grows a new line. The console saves its
+    # form through here, as a job.
+    case "$1" in
+      set)
+        shift
+        [ $# -gt 0 ] || args_error "Missing assignments. Try: ./$(basename $0) config set PROJECT_NAME=\"My App\""
+        for ASSIGNMENT in "$@"; do
+          KEY="${ASSIGNMENT%%=*}"; VALUE="${ASSIGNMENT#*=}"
+          echo "$KEY" | grep -qE '^[A-Z][A-Z0-9_]*$' || terminate "Not a key: '$KEY' (KEY=VALUE, keys are UPPER_CASE)."
+          grep -qE "^export $KEY=" "$WORKBENCH_PATH/config.conf" || terminate "config.conf does not export $KEY."
+          ESCAPED=$(printf '%s' "$VALUE" | sed 's/[&|\\]/\\&/g')
+          sed -i "s|^export $KEY=.*|export $KEY=\"$ESCAPED\"|" "$WORKBENCH_PATH/config.conf"
+          echo "config.conf now says ${B}$KEY=\"$VALUE\"${R}."
+        done ;;
+      *) args_error "Try: ./$(basename $0) config set KEY=VALUE [KEY=VALUE …]" ;;
+    esac
+
+  elif [ "$1" == "expand" ]; then
+    shift
+    # The planning half of 'add', on its own: what inserting CARTRIDGE
+    # with these options would run, one per line — or as JSON — minus
+    # what the project already carries. Nothing is written.
+    if [ $EXISTING_PROJECT == true ]; then
+      [ "$1" == "--json" ] && { EXPAND_JSON=true; shift; } || EXPAND_JSON=false
+      if [ $# -gt 0 ]; then
+        PLAN=$(expand_plan "$@") || terminate "Could not expand '$1'."
+        if $EXPAND_JSON
+        then echo "$PLAN" | plan_json
+        else echo "$PLAN"; fi
+      else args_error "Missing cartridge name. Try: ./$(basename $0) expand chiefs_setup"; fi
+    else terminate "There is no project to expand a cartridge against."; fi
 
   elif [ "$1" == "setup" ]; then
     ENTRYPOINT_COMMAND=$1; shift

@@ -45,7 +45,8 @@ the legacy `app.sh` and the earlier package editions lives in the git log.
 │   │       ├── 📦 healthcheck2/                     #   liveness/readiness plug, mounted first
 │   │       ├── 📦 mailer/                           #   a base cartridge: phx.new's --no-mailer, undone through phx_delta
 │   │       ├── 📦 ash/                              #   queues the mix igniter.install of ash-hq.org
-│   │       └── 📦 stripe/                           # pending manifest (installer not done)
+│   │       ├── 📦 stripe/                           # pending manifest (installer not done)
+│   │       └── 📦 specdd/                           # pending: designed (DESIGN.md, priv/ files), installer not done
 │   └── 📁 mix/tasks/
 │       ├── 📄 workbench.setup.ex                    # vanilla setup: only what the workspace needs to boot
 │       ├── 📄 workbench.expand.ex                   # a cartridge → the inserts wb.sh add runs (one commit each)

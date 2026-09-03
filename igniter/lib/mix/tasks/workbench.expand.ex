@@ -40,7 +40,8 @@ defmodule Mix.Tasks.Workbench.Expand do
     :ok
   end
 
-  defp plan(feature, argv) do
+  @doc "The plan: `[{name, argv}]`, what `wb.sh add` runs for this cartridge with these options."
+  def plan(feature, argv) do
     # Probed with no options: a plain cartridge has no members whatever
     # the options say, and expands to itself, argv untouched.
     case feature.members([]) do

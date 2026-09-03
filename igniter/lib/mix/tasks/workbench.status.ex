@@ -40,14 +40,33 @@ defmodule Mix.Tasks.Workbench.Status do
     # that reads the source.
     Application.ensure_all_started(:rewrite)
 
+    %{app: app, phx: phx, cartridges: cartridges} = answer = read()
+
+    if opts[:json] do
+      IO.puts(Jason.encode!(answer, pretty: true))
+    else
+      {installed, missing} = Enum.split_with(cartridges, & &1.installed)
+
+      IO.puts("Cartridges of #{app}: #{length(installed)} installed, #{length(missing)} not.")
+      IO.puts("As phx.new would generate it today: mix phx.new . #{Enum.join(phx.flags, " ")}")
+      IO.puts(generator_line(phx.generator) <> "\n")
+
+      for {title, list} <- [{"Installed", installed}, {"Not installed", missing}],
+          list != [] do
+        IO.puts(title <> "\n" <> indent(Mix.Tasks.Workbench.Catalog.table(list)) <> "\n")
+      end
+    end
+  end
+
+  @doc """
+  The status as one map — `app`, `phx`, `cartridges` — read off the
+  project's source through Igniter. What `--json` prints, and what the
+  resident (`mix workbench.serve`) answers.
+  """
+  def read do
     app = Mix.Project.config()[:app]
     {cartridges, igniter} = Features.status(Igniter.new())
-    # The project's shape in phx.new's terms — the flags that would
-    # generate it today, read off it (what the base cartridges read).
     {facts, igniter} = WorkbenchIgniter.PhxDelta.facts(igniter)
-    # And which phx.new made it — the fact the base cartridges check
-    # against the installer at hand, published so it can be seen before
-    # an insert refuses.
     {generator, _igniter} = WorkbenchIgniter.PhxDelta.generator(igniter)
 
     phx =
@@ -55,20 +74,7 @@ defmodule Mix.Tasks.Workbench.Status do
       |> Map.put(:flags, WorkbenchIgniter.PhxDelta.flags(facts))
       |> Map.put(:generator, generator)
 
-    if opts[:json] do
-      IO.puts(Jason.encode!(%{app: app, phx: phx, cartridges: cartridges}, pretty: true))
-    else
-      {installed, missing} = Enum.split_with(cartridges, & &1.installed)
-
-      IO.puts("Cartridges of #{app}: #{length(installed)} installed, #{length(missing)} not.")
-      IO.puts("As phx.new would generate it today: mix phx.new . #{Enum.join(phx.flags, " ")}")
-      IO.puts(generator_line(generator) <> "\n")
-
-      for {title, list} <- [{"Installed", installed}, {"Not installed", missing}],
-          list != [] do
-        IO.puts(title <> "\n" <> indent(Mix.Tasks.Workbench.Catalog.table(list)) <> "\n")
-      end
-    end
+    %{app: app, phx: phx, cartridges: cartridges}
   end
 
   defp indent(text), do: text |> String.split("\n") |> Enum.map_join("\n", &("  " <> &1))

@@ -57,6 +57,11 @@ services:
       - ./.env
     volumes:
       - .:/app/src
+      # Compiled code and dependencies stay inside Docker, never in the
+      # bind mount: the image points Mix at these two (MIX_BUILD_ROOT,
+      # MIX_DEPS_PATH). 'delete' drops them with the project.
+      - build:/app/build
+      - deps:/app/deps
     depends_on:
       database:
         condition: service_healthy
@@ -105,6 +110,10 @@ services:
     configs:
       - source: pgadmin_servers
         target: /pgadmin4/servers.json
+
+volumes:
+  build:
+  deps:
 
 configs:
   pgadmin_servers:

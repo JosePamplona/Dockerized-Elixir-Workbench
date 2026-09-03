@@ -190,6 +190,16 @@ to run once the patch set is applied — every Ash package carries its
 own installer, and the cartridge writes no file itself. Installed by
 hand with `wb.sh add ash`.
 
+[specdd](specdd/) — *pending*: designed, not installable yet — puts
+[SpecDD](https://specdd.ai) on a stock project: what `specdd init`
+writes (the bootstrap chain, the `AGENTS.md` pointer, `CLAUDE.md`),
+off release files embedded in the cartridge, plus a
+`bootstrap.project.md` written for an Elixir/Phoenix project and three
+starting `.sdd` specs (the project, `lib/`, `test/`). No dependency,
+no network; the framework updates itself through its own CLI, which
+rewrites one file. Its `DESIGN.md` records what the CLI does and what
+its `resolve` verified.
+
 Box cover art for the cartridges — the fixed elements, the per-cartridge
 slots and the prompt template — lives with the art it produces, in
 [`assets/covers/`](../../../../assets/covers/). A cartridge that adds a

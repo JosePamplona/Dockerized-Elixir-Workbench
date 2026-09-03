@@ -49,6 +49,7 @@ defmodule WorkbenchIgniter.Features do
     Features.Clustering,
     Features.Healthcheck2,
     Features.Ash,
+    Features.Specdd,
     # The base cartridges: capabilities phx.new decides at generation
     # time, added after the fact (WorkbenchIgniter.PhxDelta).
     Features.Mailer,
@@ -133,7 +134,21 @@ defmodule WorkbenchIgniter.Features do
   defp version({version, date}), do: %{version: version, date: date}
 
   defp need(nil), do: nil
-  defp need({line, body}), do: %{line: line, body: body}
+
+  # The four parts every NEED.md says in the same order (features/
+  # README.md): the want — the line — then Before, After and Not for,
+  # each as one line. Parsed here, once, so no reader of the catalog
+  # has to find them in the body with regular expressions.
+  defp need({line, body}) do
+    part = fn label ->
+      case Regex.run(~r/\*\*#{label}:\*\*\s*(.+?)(?=\n\s*\n|\z)/s, body) do
+        [_, text] -> text |> String.split("\n") |> Enum.map_join(" ", &String.trim/1)
+        nil -> nil
+      end
+    end
+
+    %{line: line, body: body, before: part.("Before"), after: part.("After"), not_for: part.("Not for")}
+  end
 
   # What the cartridge adds to the console, as plain maps: doors with
   # their condition (or nil), probes, tabs.

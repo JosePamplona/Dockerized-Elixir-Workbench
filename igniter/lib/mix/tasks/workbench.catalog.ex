@@ -35,14 +35,18 @@ defmodule Mix.Tasks.Workbench.Catalog do
   def run(argv) do
     {opts, _, _} = OptionParser.parse(argv, strict: @switches)
 
-    entries =
-      Features.catalog()
-      |> Enum.map(&Features.entry/1)
-      |> Enum.map(&with_covers(&1, opts[:covers]))
+    entries = read(opts[:covers])
 
     if opts[:json],
       do: IO.puts(Jason.encode!(entries, pretty: true)),
       else: IO.puts(table(entries))
+  end
+
+  @doc "Every entry of the catalog, with its covers when a directory is given."
+  def read(covers_dir) do
+    Features.catalog()
+    |> Enum.map(&Features.entry/1)
+    |> Enum.map(&with_covers(&1, covers_dir))
   end
 
   defp with_covers(entry, nil), do: entry

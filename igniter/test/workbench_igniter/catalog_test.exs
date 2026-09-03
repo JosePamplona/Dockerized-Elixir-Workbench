@@ -22,7 +22,7 @@ defmodule WorkbenchIgniter.CatalogTest do
   @cartridges ~w(chiefs_setup ansi toolchain versioning
                  osmon psql_extras credo mock exdebug rest graphql
                  coveralls exdoc guidelines enhancements auth0 openai healthcheck stripe
-                 githooks exmachina clustering healthcheck2 ash
+                 githooks exmachina clustering healthcheck2 ash specdd
                  mailer gettext ecto esbuild tailwind html live dashboard)
   # The chiefs_setup recipe with its default choices, in insertion order.
   @picks ~w(ansi toolchain versioning osmon psql_extras credo mock exdebug rest
@@ -68,7 +68,15 @@ defmodule WorkbenchIgniter.CatalogTest do
 
         # The developer's need is part of the anatomy: one line the shelf
         # shows, off the cartridge's NEED.md, pending cartridges included.
-        assert %{line: line, body: body} = entry.need, "#{entry.name} has no NEED.md"
+        assert %{line: line, body: body, before: before, after: after_, not_for: not_for} = entry.need,
+               "#{entry.name} has no NEED.md"
+
+        # The three paragraphs, each found and each one line.
+        for {label, text} <- [{"Before", before}, {"After", after_}, {"Not for", not_for}] do
+          assert is_binary(text) and text != "", "#{entry.name}'s NEED.md has no #{label}"
+          refute text =~ "\n"
+        end
+
         assert line =~ ~r/\S/ and not String.starts_with?(line, "**")
         assert body =~ "**Before:**" and body =~ "**After:**" and body =~ "**Not for:**"
       end

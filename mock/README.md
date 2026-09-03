@@ -18,9 +18,16 @@ mock/
 ```
 
 Everything else the page shows is read from the repository at build
-time: the mark on the band (`console/priv/static/images/logo.png`, inlined as
-a PNG so its transparency survives — flattened it would arrive in a
-box), the colours and type from `assets/design/` (`generated/tokens.css`), the sealed covers and the four placeholders (`cover_`/`back_` and `empty_cover_`/`empty_back_`) under `assets/covers/`, each
+time: its stylesheet (`console/priv/static/assets/css/console.css` — the
+one file the LiveView console serves and this page inlines, so the two
+cannot drift), the mark on the band (`console/priv/static/images/logo.svg`, inlined
+as text and not as an `<img>`, because it is drawn in `currentColor` and
+an SVG loaded as an image is its own document, where that falls back to
+black instead of taking the band's ink), the mark again on the tab
+(`console/priv/static/favicon.svg`, the same file the LiveView console
+serves, in base64 — a tab strip has no band to take ink from, so that
+one comes with the board's plate under it), the colours and type from
+`assets/design/` (`generated/tokens.css`), the sealed covers and the four placeholders (`cover_`/`back_` and `empty_cover_`/`empty_back_`) under `assets/covers/`, each
 cartridge's README/DESIGN/CHANGELOG, the workbench's README, CHANGELOG
 and `config.conf`, `wb.sh`'s version, and the workspace's README,
 CHANGELOG and `.env` (secrets masked in the build, never in the page).

@@ -12,7 +12,10 @@ capture, parsed into [service, timestamp, text] rows), diffs.json (what
 each cartridge wrote, captured off a workspace's insert commits with
 `./mock/build.py --diffs [WORKSPACE]`, the status workspace by default)
 and marked.min.js.
-Read from the repository: the design tokens (assets/design/generated/tokens.css), the sealed covers, the four placeholders (cover_/back_ and empty_cover_/empty_back_), the
+Read from the repository: the design tokens (assets/design/generated/tokens.css
+and components.css), the console's stylesheet (console/priv/static/assets/css/console.css:
+one file, served by the LiveView console as it is and inlined here), the mark (console/priv/static/images/logo.svg) and the
+tab's mark (console/priv/static/favicon.svg), the sealed covers, the four placeholders (cover_/back_ and empty_cover_/empty_back_), the
 cartridges' README/DESIGN/CHANGELOG, the workbench's README/CHANGELOG/
 config.conf and wb.sh version, the workspace's README/CHANGELOG/.env
 (secrets masked here, so the page never carries them).
@@ -52,7 +55,12 @@ for name in sorted(os.listdir(F)):
         docs[name] = {k: open(os.path.join(d, f)).read() for k, f in [("readme", "README.md"), ("design", "DESIGN.md"), ("changelog", "CHANGELOG.md")] if os.path.isfile(os.path.join(d, f))}
         # NEED.md — the developer's need the cartridge answers — parsed into
         # its four parts, for the box's own sheet (not a document tab).
-        if os.path.isfile(os.path.join(d, "NEED.md")):
+        # The catalog carries the four parts now (need.line/before/after/
+        # not_for); a snapshot taken before it did is parsed off the file.
+        entry = next((e for e in catalog if e["name"] == name), None)
+        if entry and entry.get("need") and "before" in entry["need"]:
+            n = entry["need"]; docs[name]["need"] = {"want": n["line"], "before": n["before"], "after": n["after"], "not_for": n["not_for"]}
+        elif os.path.isfile(os.path.join(d, "NEED.md")):
             # The raw file does not travel: the box's sheet is built from
             # these four parts, and nothing else ever asked for the text.
             nd = re.sub(r"^#[^\n]*\n+", "", open(os.path.join(d, "NEED.md")).read().strip())
@@ -328,21 +336,34 @@ def mask(text):
 proj = {k: (open(os.path.join(ws, f)).read() if os.path.isfile(os.path.join(ws, f)) else None) for k, f in [("readme", "README.md"), ("changelog", "CHANGELOG.md"), ("env", ".env")]}
 if proj["env"]: proj["env"] = mask(proj["env"])
 
+# The tab's mark, as the console serves it: assets/design/build.py projects
+# console/priv/static/favicon.svg from logo.svg and the board's two colours,
+# and this page carries a copy inside itself because it is one file.
+def favicon_b64():
+    return base64.b64encode(open("console/priv/static/favicon.svg", "rb").read()).decode()
+
 t = open(f"{M}/console.template.html").read()
 # The house's colours and type: assets/design/tokens.json, projected to CSS.
 tokens_css = (open("assets/design/generated/tokens.css").read().strip() + "\n" +
               open("assets/design/generated/components.css").read().strip())
 t = t.replace("{{TOKENS_CSS}}", "  " + tokens_css.replace("\n", "\n  "), 1)
+# The page's own stylesheet is the console's: one file, served by the
+# LiveView console as it is and inlined here.
+console_css = open("console/priv/static/assets/css/console.css").read().strip()
+t = t.replace("{{CONSOLE_CSS}}", "  " + console_css.replace("\n", "\n  "), 1)
 t = t.replace("<script>\n// Real data", "<script>\n" + open(f"{M}/marked.min.js").read() + "\n</script>\n<script>\n// Real data", 1)
 stacks = json.load(open(f"{M}/stacks.json")) if os.path.isfile(f"{M}/stacks.json") else []
 js = lambda o: json.dumps(o).replace("</", "<\\/")
 for k, v in [("{{CATALOG}}", js(catalog)), ("{{STACKS}}", js(stacks)), ("{{STATUS}}", js(status)), ("{{LOGS}}", js(logs)), ("{{DOCS}}", js(docs)), ("{{WB}}", js(wb)), ("{{PROJ}}", js(proj)), ("{{DIFFS}}", js(diffs)), ("{{ART}}", js(art)), ("{{LOGO}}", open("console/priv/static/images/logo.svg").read().strip()), ("{{PH_COVER}}", jpg_uri("assets/covers/cover_placeholder.png")), ("{{PH_BACK}}", jpg_uri("assets/covers/back_placeholder.jpg")), ("{{PH_EMPTY_COVER}}", jpg_uri("assets/covers/empty_cover_placeholder.jpg")), ("{{PH_EMPTY_BACK}}", jpg_uri("assets/covers/empty_back_placeholder.jpg"))]:
     assert t.count(k) == 1, k; t = t.replace(k, v)
 head, body = t.split('<header class="band">', 1); body = '<header class="band">' + body
-head = head.replace("<style>", "<style>\n  [hidden]{display:none!important}\n  img{max-width:100%}", 1)
 doc = ('<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n'
        '<meta name="description" content="Mock of the Dockerized Elixir Workbench console: the workspace board, the cartridge shelf with each box\'s manual and design paper, live logs, deployments, the project\'s own documents, and the workbench\'s manual, changelog and editable config. Data read off ./wb.sh catalog --json and status --json; logs are a replayed capture; install, deploy and save output is staged.">\n'
-       '<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'%3E%3Ctext y=\'.9em\' font-size=\'90\'%3E%F0%9F%A7%B0%3C/text%3E%3C/svg%3E">\n'
+       # The tab wears the workbench's own mark now, not an emoji standing in for
+       # it: the same favicon.svg the LiveView console serves (generated by
+       # assets/design/build.py from logo.svg and the board's two colours), in
+       # base64 because this page is one file and carries everything it shows.
+       f'<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,{favicon_b64()}">\n'
        + head.strip() + "\n</head>\n<body>\n" + body.strip() + "\n</body>\n</html>\n")
 out = f"{M}/workbench-console.html"
 open(out, "w").write(doc)

@@ -12,10 +12,17 @@ Reads tokens.json — the one source — and writes, marked as generated:
                                 under :root[data-theme="dark"])
   generated/components.css      the house's components — the cartridge ref
                                 (a mention of a cartridge: state dot, name,
-                                always the door to its detail) and the stamp
-                                (the golden state seal) — consumed by the
-                                console mock, the LiveView console and the
-                                box-back plates
+                                always the door to its detail), the door and
+                                the probe (an address on the app's port: one
+                                you press, one the console calls) and the
+                                stamp (the golden state seal) — consumed by
+                                the console mock, the LiveView console and
+                                the box-back plates
+  ../../console/priv/static/favicon.svg
+                                the tab's mark: the workbench's own logo.svg
+                                in board-ink on a board plate, because a mark
+                                drawn in currentColor has no band to take ink
+                                from in a tab strip
   generated/diagram-design.md   the diagram-design skill's style guide, with
                                 the house's roles and type mapped onto its
                                 semantic roles; also installed as the profile
@@ -24,7 +31,7 @@ Reads tokens.json — the one source — and writes, marked as generated:
 
 Run from the repository root.
 """
-import json, os, re, sys, datetime, shutil
+import json, os, re, sys, datetime, shutil, textwrap
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
@@ -243,6 +250,31 @@ def components_css():
      .unknown no such cartridge (dashed, struck, no link)
      Never gold: the accent belongs to the stamp. On a printed back
      plate use the state-free bare form — a plate knows no project.
+   .door-ref — an address on the app's port that a cartridge opened:
+     exdoc's /dev/docs, mailer's /dev/mailbox, ash's /admin. One order
+     wherever it is read — the label first, in the house's lettering
+     because it is a name, then the address in mono because it is read
+     off the machine. Who opened it is not part of it: that is a mention
+     of a cartridge, so it goes beside as a .cart-ref and opens that box
+     with the same click. The console had this twice with the two halves
+     swapped — <small> was the cartridge in the rail and the door's own
+     name on the box, so learning one taught the reader the other wrong.
+     The addresses the workbench opens itself (app, pgAdmin) wear it too,
+     with nothing beside them: having nobody to name is the fact.
+     The states are the house's own, not its: pressable while something
+     answers, .unlit with the reason in the title when nothing does — the
+     app is down, the cartridge is not inserted. An unlit door drops its
+     href as well. .unlit cannot stop a link, and by its own rule what
+     must not fire is prevented where it is bound.
+   .probe-ref — the same address when the console is the one calling it:
+     healthcheck2's {path}/live, polled every few seconds. It is the door
+     minus the box — no border, no ground, no cursor — which is the line
+     already drawn between the chip and the mention, one floor down: a
+     bordered box is a door you press, and nobody presses a probe. What
+     it answered goes beside it in a .chip (200, no answer), the house's
+     word for a reading. The two are declared together here so they can
+     never drift into one face again, which is how the mention and the
+     chip became the same declaration.
    .chip — a reading the console reports: a container's health, a job's
      exit code, the edition of a box. It is deliberately nothing like the
      mention, which it once was to the declaration: the two say different
@@ -304,6 +336,13 @@ def components_css():
 .cart-ref.in::before{background:var(--good);border-color:var(--good)}
 .cart-ref:hover:not(.unknown),.cart-ref:focus-visible:not(.unknown){border-color:var(--ink);outline:none}
 .cart-ref.unknown{border-style:dashed;text-decoration:line-through;cursor:default;opacity:.7}
+.door-ref,.probe-ref{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;color:var(--ink);text-decoration:none}
+.door-ref b,.probe-ref b{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:11px;color:var(--muted)}
+.door-ref span,.probe-ref span{font-family:var(--mono);font-size:12px}
+/* The box, and everything it implies: this is the whole difference between
+   the two, and the reason a probe may never grow one. */
+.door-ref{padding:3px 9px;border:1px solid var(--line);border-radius:2px;background:none;cursor:pointer}
+.door-ref:hover:not(.unlit),.door-ref:focus-visible:not(.unlit){border-color:var(--ink);outline:none}
 .chip{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;font-family:var(--mono);font-weight:500;font-size:11px;padding:2px 8px;border-radius:3px;border:0;background:var(--surface-2);color:var(--muted)}
 .chip.good{background:color-mix(in srgb,var(--good) 16%,transparent);color:var(--good)}
 .chip.warn{background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--warn)}
@@ -321,10 +360,56 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
 .stamp{display:inline-block;font-family:var(--cond);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:10.5px;color:var(--accent-ink);background:var(--accent);padding:3px 8px;border-radius:2px;transform:rotate(8deg);box-shadow:0 2px 4px rgba(0,0,0,.3)}
 """
 
+# --- favicon.svg ---------------------------------------------------------------
+# The tab's mark: the band's own lockup at 16 pixels — the workbench in
+# board-ink on a full-bleed board plate. The plate is not decoration. The
+# mark is fill="currentColor" (see console_live.ex, which inlines it so it
+# takes the band's ink), and a favicon has no band to take ink from: left on
+# transparent it renders black on a light tab strip and disappears on a dark
+# one. The plate is what gives it its own ink, and the colour is the one
+# thing that survives at 16 pixels, where DEW and the drawers are already
+# noise and only the silhouette and the violet still say whose tab this is.
+# Not gold: the accent has three uses and a tab is none of them.
+#
+# The mark comes in from the file it lives in rather than being pasted here,
+# for the same reason the console reads it instead of holding a copy. The
+# padding is 1/16 of the tile — measured at 16 px against 0, 2, 6 and 8:
+# tighter and the bench's legs sit on the tile's edge as if cropped, wider
+# and the drawing shrinks into a blur.
+#
+# favicon.ico beside it is the fallback for what does not take an SVG icon,
+# rendered from this file once and committed, since it only changes when the
+# mark does:
+#     inkscape --export-type=png --export-filename=<n>.png --export-width=<n> \
+#              --export-height=<n> console/priv/static/favicon.svg   # 16, 32, 48
+#     magick 16.png 32.png 48.png console/priv/static/favicon.ico
+MARK = os.path.join(ROOT, "console", "priv", "static", "images", "logo.svg")
+
+def favicon_svg(tile=64, pad=4):
+    mark = open(MARK).read()
+    box = re.search(r'viewBox="0 0 (\d+) (\d+)"', mark)
+    side = max(int(box.group(1)), int(box.group(2)))
+    inner = textwrap.dedent(re.search(r"<svg[^>]*>(.*)</svg>", mark, re.S).group(1)).strip("\n")
+    scale = (tile - 2 * pad) / side
+    return (f'<!-- generated by assets/design/build.py from assets/design/tokens.json and\n'
+            f'     console/priv/static/images/logo.svg — edit those, not this -->\n'
+            f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {tile} {tile}" '
+            f'fill="{role("board-ink", "light")}">\n'
+            f'  <rect width="{tile}" height="{tile}" fill="{role("board", "light")}"/>\n'
+            f'  <g transform="translate({pad},{pad}) scale({scale:.8f})">\n'
+            + "\n".join("    " + line for line in inner.splitlines()) + "\n  </g>\n</svg>\n")
+
+# The console links tokens.css and components.css from its own static
+# directory: the same two projections, written twice, and --check keeps
+# the copies honest.
+CONSOLE_CSS = os.path.join(ROOT, "console", "priv", "static", "assets", "css")
 outputs = {
     os.path.join(GEN, "tokens.css"): tokens_css(),
     os.path.join(GEN, "components.css"): components_css(),
+    os.path.join(CONSOLE_CSS, "tokens.css"): tokens_css(),
+    os.path.join(CONSOLE_CSS, "components.css"): components_css(),
     os.path.join(GEN, "diagram-design.md"): "<!-- generated by assets/design/build.py from assets/design/tokens.json — edit the tokens, not this -->\n" + guide(),
+    os.path.join(ROOT, "console", "priv", "static", "favicon.svg"): favicon_svg(),
 }
 profiles = os.path.expanduser("~/.diagram-design/profiles")
 installed = os.path.join(profiles, "workbench.md")

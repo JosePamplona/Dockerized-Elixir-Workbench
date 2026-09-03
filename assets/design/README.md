@@ -12,6 +12,7 @@ assets/design/
 ├── build.py                ./assets/design/build.py [--check], from the repository root
 └── generated/              projections; every one says it is generated
     ├── tokens.css          custom properties for the console (light, dark by media query, dark by data-theme)
+    ├── components.css      the house's notation: the mention, the door, the probe, the chip, the seal
     └── diagram-design.md   the diagram-design skill's style guide; also installed as the
                             profile ~/.diagram-design/profiles/workbench.md that the
                             repository's .diagram-design marker names
@@ -39,22 +40,47 @@ Three layers, the same three the covers have:
 
 | Consumer | Projection | How |
 | --- | --- | --- |
-| The console (its mock today, the LiveView app later) | `generated/tokens.css` | `mock/build.py` puts it in the page in place of a hand-written `:root{}`; the app will copy it into its assets |
+| The console, both of them | `generated/tokens.css`, `generated/components.css` | `mock/build.py` puts them in the page in place of a hand-written `:root{}`; `build.py` writes the same two into `console/priv/static/assets/css/`, where the LiveView console links them beside `console.css`, and `--check` keeps the copies honest |
 | The diagram-design skill | `generated/diagram-design.md` → `~/.diagram-design/profiles/workbench.md` | `build.py` installs the profile and writes `.diagram-design` (`profile: workbench`) at the repository root; the skill resolves it before every diagram. The mapping from the house's roles to the skill's (`paper ← ground`, `rule ← line`, `link`, the type roles) lives in `build.py` with its reasons |
 | The cartridges' diagrams (`assets/diagrams/`) | the SVGs they export | drawn through the skill, so the house comes in with the profile |
+| The tab, in both consoles | `console/priv/static/favicon.svg` | `build.py` writes it from `logo.svg` and the board's two colours; the LiveView console links it and `mock/build.py` carries a base64 copy inside the single-file page. `favicon.ico` beside it is the fallback for what does not take an SVG icon, rendered from the SVG once and committed — it changes only when the mark does, and the command that made it is in `build.py` |
 | The covers | nothing, for now | `covers.py` keeps its constants; reading violet and gold from here is a four-line change for the next cover |
 
 ## The components
 
-Beyond colour and type, the house has two pieces of notation, projected
-to `generated/components.css` and consumed everywhere a cartridge shows
-its face — the console mock, the LiveView console, the box-back plates:
+Beyond colour and type, the house has its notation, projected to
+`generated/components.css` and consumed everywhere a cartridge shows its
+face or the console reports a reading — the console mock, the LiveView
+console, the box-back plates. Two of them name a cartridge, two name an
+address on the app's port, and the split inside each pair is the same
+one: a bordered box is a door you press.
 
 * **`.cart-ref`** — every mention of a cartridge, always a link to its
   detail. Three states: bare (on the shelf: hollow dot), `.in`
   (inserted: good dot), `.unknown` (no such cartridge: dashed, struck,
   no link). It never wears the gold. A printed back plate uses the bare
   form — a plate knows no project.
+* **`.door-ref`** — an address on the app's port that a cartridge opened
+  (`/dev/docs`, `/dev/mailbox`, `/admin`). One order wherever it is read:
+  the label first, in the house's lettering because it is a name, then
+  the address in mono because it is read off the machine. Who opened it
+  is never inside it — that is a mention, so it goes beside as a
+  `.cart-ref` and opens that box with the same click. It has no states of
+  its own: pressable while something answers, `.unlit` with the reason in
+  the title when nothing does, and an unlit door drops its `href` too,
+  since `.unlit` dims a link but cannot stop one. The addresses the
+  workbench opens itself (`app`, `pgAdmin`) wear it with nothing beside
+  them: having nobody to name is the fact.
+* **`.probe-ref`** — the same address when the console is the one calling
+  it (healthcheck2's `{path}/live`). It is the door minus the box — no
+  border, no ground, no cursor — because the line already drawn between
+  the chip and the mention holds one floor down: a bordered box is a door
+  you press, and nobody presses a probe. What it answered goes beside it
+  in a `.chip`. `assets/design/puertas-y-sondas.html` is the page the two
+  were decided on, with the five candidates and the finding that started
+  it: the same door was drawn one way in the rail and another on the box,
+  and the `<small>` meant the cartridge in one and the door's own name in
+  the other.
 * **`.chip`** — a reading the console reports: a container's health, a
   job's exit code, the edition of a box. Roles: bare (a fact with no
   state — `v0.2.0`, `base`, `collection`), `.good`/`.warn`/`.bad` (a

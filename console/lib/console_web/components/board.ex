@@ -2,11 +2,12 @@ defmodule ConsoleWeb.Board do
   @moduledoc "The rail: the configured workspace, as the status says it."
   use Phoenix.Component
   import ConsoleWeb.Refs
-  alias ConsoleWeb.Cartridges
+  alias ConsoleWeb.{Cartridges, Terminal}
 
   attr :status, :map, default: nil
   attr :catalog, :list, default: []
-  attr :reading, :boolean, default: false
+  attr :folded, :any, default: nil, doc: "the section keys folded away, a MapSet"
+  attr :reading, :any, default: false, doc: "a reading in flight: :fast, :full, or false — the empty board's own word"
   attr :busy, :boolean, default: false, doc: "a deploy job is in flight"
   attr :error, :string, default: nil
 
@@ -20,16 +21,50 @@ defmodule ConsoleWeb.Board do
     </section>
     <%= if @status do %>
       <.workspace status={@status} />
-      <.doors status={@status} catalog={@catalog} />
-      <.deployments status={@status} busy={@busy} />
-      <.containers status={@status} />
-      <.git status={@status} />
-      <.inserted status={@status} catalog={@catalog} />
+      <.doors status={@status} catalog={@catalog} folded={@folded} />
+      <.deployments status={@status} busy={@busy} folded={@folded} />
+      <.containers status={@status} folded={@folded} />
+      <.git status={@status} folded={@folded} />
+      <.inserted status={@status} catalog={@catalog} folded={@folded} />
       <p :if={@error} class="note">{@error}</p>
     <% end %>
     """
   end
 
+  # Every section below the workspace has the same head — its name, and a
+  # summary of what it holds — and that summary is what makes folding
+  # cheap: a folded section still says `4 of 4 running`, `2 open by
+  # cartridges`, `6 cartridges · 2 the workbench can eject`. The rail
+  # keeps its table of contents whether or not the tables are open.
+  #
+  # The fold lives on the server. A class put on the section by the
+  # client is wiped by the next status: these sections re-render often,
+  # and LiveView restores what its own template says. What the browser
+  # keeps is only the memory of it, in localStorage, the way it keeps the
+  # ground and the rail's width — the Folds hook hands it back on mount.
+  attr :key, :string, required: true
+  attr :name, :string, required: true
+  attr :label, :string, default: nil
+  attr :folded, :any, default: nil
+
+  defp head(assigns) do
+    ~H"""
+    <h2>
+      <button class="fold" type="button" aria-expanded={to_string(not folded?(@folded, @key))} phx-click="fold_section" phx-value-key={@key}>
+        {@name}<span :if={@label} class="label">{@label}</span>
+      </button>
+    </h2>
+    """
+  end
+
+  defp folded?(nil, _key), do: false
+  defp folded?(folded, key), do: MapSet.member?(folded, key)
+
+  # A reading in flight used to be said here too, with a busy chip beside
+  # the label. It is said in the band now — one place, always in front —
+  # and two places saying the same thing is the thing the house keeps
+  # learning not to do. The empty board keeps its own word, which is not
+  # the same sentence: with nothing on it, "reading…" IS the board.
   defp workspace(assigns) do
     ~H"""
     <section class="ws">
@@ -49,10 +84,10 @@ defmodule ConsoleWeb.Board do
     assigns = assign(assigns, doors: doors, up: Cartridges.app_up?(assigns.status))
 
     ~H"""
-    <section>
-      <h2>Doors <span class="label">{if @doors == [], do: "none yet", else: "#{length(@doors)} open by cartridges"}</span></h2>
+    <section class={folded?(@folded, "doors") && "folded"}>
+      <.head key="doors" name="Doors" folded={@folded} label={if @doors == [], do: "none yet", else: "#{length(@doors)} open by cartridges"} />
       <div class="urls">
-        <p :if={@doors == []} class="note">Cartridges open doors here: docs, dashboard, mailbox, swagger, graphiql, admin…</p>
+        <p :if={@doors == []} class="nothing">Cartridges open doors here: docs, dashboard, mailbox, swagger, graphiql, admin…</p>
         <.door_ref
           :for={{c, d} <- @doors}
           label={d["label"]}
@@ -68,9 +103,9 @@ defmodule ConsoleWeb.Board do
 
   defp deployments(assigns) do
     ~H"""
-    <section>
-      <h2>Deployments <span class="label">baked · running</span></h2>
-      <table class="rows">
+    <section class={folded?(@folded, "deployments") && "folded"}>
+      <.head key="deployments" name="Deployments" label="docker compose" folded={@folded} />
+      <table class="rows" id="deployments">
         <tr :for={name <- ~w(dev prod scaled)}>
           <td class="k">{name}</td>
           <td class="st"><.chip class={!@status["baked"][name] && "off"}>{if @status["baked"][name], do: "baked", else: "not baked"}</.chip></td>
@@ -110,25 +145,80 @@ defmodule ConsoleWeb.Board do
     """
   end
 
+  # Each container's two ways in. Neither is a new power: the Logs screen
+  # and the Terminal already do both, and this is the row saying which of
+  # them is about *this* container — which is what was missing the day
+  # Docker Desktop stopped being the place to look. Nothing here starts,
+  # stops or builds anything: a deployment goes up and down whole, and a
+  # button that left half of one up would make the status say `dev` for
+  # something that is not dev.
   defp containers(assigns) do
     cs = assigns.status["containers"] || []
     running = Enum.count(cs, &(&1["State"] == "running"))
-    assigns = assign(assigns, cs: cs, sum: if(cs == [], do: "none", else: "#{running} of #{length(cs)} running"))
+    targets = Map.new(Terminal.targets(assigns.status), &{&1.name, &1})
+    # Containers with no deployment above them: the app is gone and the
+    # rest of the project is still standing. The board says so rather
+    # than leaving three rows of `down` over a table of things that are
+    # not — and it says where the way out is.
+    left = cs != [] and is_nil(assigns.status["deployment"])
+    assigns = assign(assigns, cs: cs, targets: targets, left: left, sum: if(cs == [], do: "none", else: "#{running} of #{length(cs)} running"))
 
     ~H"""
-    <section>
-      <h2>Containers <span class="label">{@sum}</span></h2>
-      <table class="rows">
-        <tr :if={@cs == []}><td class="muted">{if @status["exists"], do: "No containers: the project is down. Deploy → Up.", else: "The workspace is empty: Deploy → New project."}</td></tr>
+    <section class={folded?(@folded, "containers") && "folded"}>
+      <.head key="containers" name="Containers" label={@sum} folded={@folded} />
+      <table class="rows acts" id="containers">
+        <tr :if={@cs == []}><td class="nothing">{if @status["exists"], do: "No containers: the project is down. Deploy → Up.", else: "The workspace is empty: Deploy → New project."}</td></tr>
         <tr :for={c <- @cs}>
-          <td class="k">{c["Service"]}</td>
+          <td class="k" title={c["Image"]}>{c["Service"]}<span class="hint">{short_image(c["Image"])}</span></td>
           <td class="st"><.chip class={container_class(c)}>{if c["Health"] not in [nil, ""], do: c["Health"], else: c["State"]}</.chip></td>
-          <td class="muted">{c["Image"]}</td>
+          <td class="act">
+            <button class="btn mini" type="button" title={"the log lines this container writes, alone — #{c["Service"]}"} phx-click="logs_of" phx-value-service={c["Service"]}>Logs</button>
+            <.shell_button c={c} target={@targets[c["Service"]]} />
+          </td>
         </tr>
       </table>
+      <p :if={@left} class="note">No deployment is up and these are still here: Deploy → Down removes them.</p>
     </section>
     """
   end
+
+  # A shell, on the containers that can hold one. Which is the house's
+  # rule read carefully in both directions: a container that is down
+  # stays here, unlit, because bringing it up is something the reader can
+  # do — but `network` is the pause image and carries no shell at all, so
+  # it is not marked, it is absent. Hiding is for what is not applicable
+  # and never will be, and that is this and nothing else on the board.
+  defp shell_button(assigns) do
+    down = assigns.c["State"] != "running"
+    shell = if assigns.target, do: Terminal.default_shell(assigns.target)
+    assigns = assign(assigns, down: down, shell: shell)
+
+    ~H"""
+    <button
+      :if={shellable?(@c)}
+      class={["btn mini", @down && "unlit"]}
+      type="button"
+      aria-disabled={@down && "true"}
+      title={if @down, do: "#{@c["Service"]} is not running: a session needs a container", else: "a #{@shell} session on #{@c["Service"]}, in the Terminal"}
+      phx-click={!@down && "term_open"}
+      phx-value-target={@c["Service"]}
+      phx-value-shell={@shell}
+    >
+      {@shell || "shell"}
+    </button>
+    """
+  end
+
+  # The pause container owns the workspace's network namespace and its
+  # ports, and sleeps: ~700 KB with no shell in them.
+  defp shellable?(c), do: c["Service"] != "network"
+
+  # The image without its registry and namespace: `registry.k8s.io/pause`
+  # and `dpage/pgadmin4` are where it was fetched from, and the column is
+  # 121px wide. What is left is the name and the tag — which is the half
+  # that says something — and the whole reference is in the cell's title.
+  defp short_image(nil), do: ""
+  defp short_image(image), do: image |> String.split("/") |> List.last()
 
   defp container_class(c) do
     cond do
@@ -140,8 +230,8 @@ defmodule ConsoleWeb.Board do
 
   defp git(assigns) do
     ~H"""
-    <section>
-      <h2>Git <span class="label">{git_sum(@status["git"])}</span></h2>
+    <section class={folded?(@folded, "git") && "folded"}>
+      <.head key="git" name="Git" label={git_sum(@status["git"])} folded={@folded} />
       <div class="git">
         <%= if @status["git"]["repo"] do %>
           <div class="row"><span class="k">tree</span><.chip class={if @status["git"]["clean"], do: "good", else: "warn"}>{if @status["git"]["clean"], do: "clean", else: "dirty"}</.chip></div>
@@ -149,7 +239,7 @@ defmodule ConsoleWeb.Board do
           <div class="row"><span class="k">signs as</span><span title={@status["git"]["identity"]}>{String.replace(@status["git"]["identity"] || "", ~r/ <.*/, "")}</span></div>
           <button :if={not @status["git"]["clean"]} class="btn" phx-click="run" phx-value-args="commit">Commit pending changes</button>
         <% else %>
-          <p class="note">phx.new initialises the repository; new makes the first commit.</p>
+          <p class="nothing">phx.new initialises the repository; new makes the first commit.</p>
         <% end %>
       </div>
     </section>
@@ -171,10 +261,10 @@ defmodule ConsoleWeb.Board do
     assigns = assign(assigns, ins: ins, sum: sum)
 
     ~H"""
-    <section>
-      <h2>Inserted <span class="label">{@sum}</span></h2>
-      <table class="rows">
-        <tr :if={@ins == []}><td class="muted">Nothing inserted yet: the shelf is in Cartridges.</td></tr>
+    <section class={folded?(@folded, "inserted") && "folded"}>
+      <.head key="inserted" name="Inserted" label={@sum} folded={@folded} />
+      <table class="rows" id="slots">
+        <tr :if={@ins == []}><td class="nothing">Nothing inserted yet: the shelf is in Cartridges.</td></tr>
         <tr :for={c <- @ins}>
           <td><.cart_ref name={c["name"]} installed={true} version={c["version"] && c["version"]["version"]} /></td>
           <td class="muted ver" title={if c["version"], do: "#{c["version"]["date"]} in its CHANGELOG", else: "no CHANGELOG to read a version from"}>{if c["version"], do: "v#{c["version"]["version"]}", else: "unversioned"}</td>

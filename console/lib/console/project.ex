@@ -12,6 +12,28 @@ defmodule Console.Project do
 
   def papers, do: @papers
 
+  @doc """
+  What the project was made with, off the `Dockerfile.local` the
+  workspace keeps: the stack and the Phoenix installer, as `wb.sh`
+  stamped them the day it was created. `bake` rewrites that file when the
+  seed moves but keeps the installer it was born with — that is the
+  project's generator, not config.conf's next choice — so this is the
+  project's own record and not a second opinion about what is configured.
+  """
+  def born(nil), do: nil
+
+  def born(workspace) do
+    case File.read(Path.join(workspace, "Dockerfile.local")) do
+      {:ok, text} ->
+        ~r/^ARG\s+(ELIXIR|OTP|DEBIAN|PHX_NEW)="([^"]*)"/m
+        |> Regex.scan(text)
+        |> Map.new(fn [_, key, value] -> {key, value} end)
+
+      _ ->
+        nil
+    end
+  end
+
   @doc "Which of the three the workspace has."
   def carried(nil), do: []
   def carried(workspace), do: for({key, _, file} <- @papers, File.regular?(Path.join(workspace, file)), do: key)
@@ -31,7 +53,7 @@ defmodule Console.Project do
          {:ok, md} <- File.read(Path.join(workspace, file)) do
       html = md |> Papers.to_html() |> String.replace(~r/<img src="(?!https?:|data:)/, ~s(<img src="#" data-missing=")) |> Papers.head_ids("p-")
       {html, heads} = html
-      title = Regex.run(~r/<h1[^>]*>(.*?)<\/h1>/s, html) |> then(&(&1 && Enum.at(&1, 1))) || file
+      title = Papers.doc_title(html, file)
       %{html: html, toc: if(length(heads) >= 3, do: heads, else: []), title: title}
     else
       _ -> nil

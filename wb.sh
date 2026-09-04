@@ -72,6 +72,23 @@
     then DOCKER_TTY_FLAGS="--tty --interactive"
     else DOCKER_TTY_FLAGS=""
     fi
+    # Colour without a terminal. The console runs this script on a pipe,
+    # and there mix, hex, git and compose turn their colours off on their
+    # own — while the console's page turns ANSI into spans and would
+    # show them. WB_ANSI=always asks each of them for colour anyway:
+    # Elixir by the option the VM reads before anything else, git by the
+    # config it takes from the environment, compose by its own variable.
+    # From a terminal, or unset, nothing changes. Docker's build output
+    # stays plain: BuildKit colours only a real terminal.
+    if [ "${WB_ANSI:-}" == "always" ]
+    then
+      COLOR_ENV=(--env "ELIXIR_ERL_OPTIONS=-elixir ansi_enabled true")
+      GIT_COLOR_ENV=(--env GIT_CONFIG_COUNT=1 --env GIT_CONFIG_KEY_0=color.ui --env GIT_CONFIG_VALUE_0=always)
+      export COMPOSE_ANSI=always
+    else
+      COLOR_ENV=()
+      GIT_COLOR_ENV=()
+    fi
 
     # Elixir project files - - - - - - - - - - - - - - - - - - - - - - - - - -
     LOWER_CASE=$( echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' )
@@ -149,8 +166,11 @@
     # Where Mix compiles: two named volumes the workspace's compose
     # declares (build, deps — under the compose project's name), so a
     # one-off run shares them with the app service and nothing compiles
-    # through the bind mount. The image points Mix at the mount points.
-    BUILD_VOLUMES="--volume ${ELIXIR_PROJECT_NAME}_build:/app/build --volume ${ELIXIR_PROJECT_NAME}_deps:/app/deps"
+    # through the bind mount. They cover the two directories Mix looks
+    # for on its own, inside the source mount — Mix is told nothing, and
+    # neither is anything else that assumes where deps/ is (see the
+    # toolchain dockerfile).
+    BUILD_VOLUMES="--volume ${ELIXIR_PROJECT_NAME}_build:/app/src/_build --volume ${ELIXIR_PROJECT_NAME}_deps:/app/src/deps"
     WORKBENCH_VOLUME="$WORKBENCH_PATH:/app/workbench:ro"
 
   # Git ------------------------------------------------------------------------
@@ -521,10 +541,36 @@
     # database server (the network holder and the pod structure remain).
     if ! workspace_needs_database
     then
-      sed -i '/^  database:/,$d'            $file_path
+      sed -i '/^  database:/,/^volumes:/{/^volumes:/!d}' $file_path
       sed -i '/^    depends_on:/,+2d'       $file_path
       sed -i "/# pgAdmin port/,/:$PGADMIN_INTERNAL_PORT\$/d" $file_path
     fi
+  }
+
+  # ensure_build_volumes
+    # Creates the workspace's two build volumes wearing the labels
+    # Compose puts on the volumes it creates itself. The one-off runs
+    # (new, add, the reads) reach them before the first 'up' does, and a
+    # volume born from 'docker run' carries no labels: Compose then finds
+    # a volume it cannot recognise as its own and warns about it on every
+    # command. Idempotent — on an existing volume 'docker volume create'
+    # is a no-op — so it is called wherever a one-off mounts them.
+    #
+    # And the two directories they cover, when the workspace is there:
+    # a mount point Docker has to create itself, inside a bind mount,
+    # lands on the host owned by root. Made here they belong to this
+    # user — and the toolchain image carries the same two, which is
+    # where a fresh volume takes its ownership from.
+  ensure_build_volumes() {
+    local volume
+    [ -d "$WORKSPACE_PATH" ] && mkdir -p "$WORKSPACE_PATH/_build" "$WORKSPACE_PATH/deps"
+    for volume in build deps
+    do
+      docker volume create \
+        --label com.docker.compose.project="$ELIXIR_PROJECT_NAME" \
+        --label com.docker.compose.volume="$volume" \
+        "${ELIXIR_PROJECT_NAME}_${volume}" > /dev/null
+    done
   }
 
   # workspace_needs_database
@@ -580,8 +626,10 @@
   json_answer() { sed -n '/^[[{]/,$p'; }
 
   workspace_igniter() {
+    ensure_build_volumes
     docker run \
       $DOCKER_TTY_FLAGS \
+      "${COLOR_ENV[@]}" \
       --rm \
       --name "${APP_NAME}_workbench_$1_$$" \
       --volume $SOURCE_CODE_VOLUME \
@@ -606,11 +654,12 @@
       "with it. Create a project first: ./$(basename $0) new"
     docker run \
       --rm \
+      "${COLOR_ENV[@]}" \
       --name "workbench_package_$1_$$" \
       --volume "$WORKBENCH_PATH/igniter:/app/igniter" \
       --volume $WORKBENCH_VOLUME \
-      --volume workbench_package_build:/app/build \
-      --volume workbench_package_deps:/app/deps \
+      --volume workbench_package_build:/app/igniter/_build \
+      --volume workbench_package_deps:/app/igniter/deps \
       --workdir /app/igniter \
       $TOOLCHAIN_IMAGE sh -c \
         'mix deps.get > /dev/null 2>&1; exec mix "$@"' \
@@ -677,6 +726,7 @@
   workspace_git() {
     docker run \
       --rm \
+      "${GIT_COLOR_ENV[@]}" \
       --env GIT_AUTHOR_NAME="$GIT_NAME" \
       --env GIT_AUTHOR_EMAIL="$GIT_EMAIL" \
       --env GIT_COMMITTER_NAME="$GIT_NAME" \
@@ -962,7 +1012,15 @@
       "$APP_NAME:$APP_VERSION-prod" \
       "$PROD_DOCKERFILE" \
       "$PROD_COMPOSE_FILE" && \
-    sed -i '/^    volumes:/,+1d' "$WORKSPACE_PATH/$PROD_COMPOSE_FILE" && \
+    # The app's volumes go whole — the source mount and the two build
+    # volumes with their comment, everything up to depends_on. This
+    # took two lines once, the key and the mount, and when the build
+    # volumes joined the block the rest was left standing under
+    # env_file, where compose read 'build:/app/src/_build' as a file.
+    # The top-level declaration goes with them: a release has no
+    # _build and no deps to keep.
+    sed -i '/^    volumes:/,/^    depends_on:/{/^    depends_on:/!d}' "$WORKSPACE_PATH/$PROD_COMPOSE_FILE" && \
+    sed -i '/^volumes:/,/^$/d' "$WORKSPACE_PATH/$PROD_COMPOSE_FILE" && \
     sed -i '/^      # These arguments/,/GID:/d' \
       "$WORKSPACE_PATH/$PROD_COMPOSE_FILE"
   }
@@ -1469,6 +1527,7 @@
     local setup_command="$1"; shift
 
     prepare_workspace && \
+    ensure_build_volumes && \
     cd "$SCRIPTS_DIR" && \
     docker build \
       --build-arg UID="$(id -u)" \
@@ -1478,6 +1537,7 @@
     cd "$WORKBENCH_PATH" && \
     docker run \
       $DOCKER_TTY_FLAGS \
+      "${COLOR_ENV[@]}" \
       --name "${APP_NAME}_workbench_new" \
       --rm \
       --volume $SOURCE_CODE_VOLUME \
@@ -1488,6 +1548,7 @@
     register_igniter_package && \
     docker run \
       $DOCKER_TTY_FLAGS \
+      "${COLOR_ENV[@]}" \
       --name "${APP_NAME}_workbench_${setup_command}" \
       --rm \
       --volume $SOURCE_CODE_VOLUME \
@@ -1728,13 +1789,25 @@ if [ $# -gt 0 ]; then
     # ones, so every page arrives useful); the grep keeps what the API
     # cannot say — the exact tag shape, debian only, no release
     # candidates. config.conf keeps no copy of this list.
+    # The five pages are asked for at once and not one after another.
+    # They do not depend on each other, and the wait was the whole cost:
+    # 10.3 s in a row, 0.27 s in parallel, byte for byte the same 482
+    # tags (measured 2026-09-03). curl takes the whole errand in one
+    # process through --config, so there are no background jobs to reap.
+    # Each page lands in its own file rather than on a shared stdout,
+    # where parallel bodies could interleave inside a line.
     stacks_list() {
-      local page names
-      for page in 1 2 3 4 5; do
-        curl -fs "https://hub.docker.com/v2/repositories/hexpm/elixir/tags?page_size=100&page=$page&name=-slim" | \
-          grep -o '"name":"[^"]*"' | cut -d'"' -f4
-      done | grep -E '^[0-9]+\.[0-9]+\.[0-9]+-erlang-[0-9][0-9.]*-debian-.+-slim$' | \
+      local dir page
+      dir=$(mktemp -d)
+      { for page in 1 2 3 4 5; do
+          printf 'url = "https://hub.docker.com/v2/repositories/hexpm/elixir/tags?page_size=100&page=%s&name=-slim"\noutput = "%s/%s.json"\n' \
+            "$page" "$dir" "$page"
+        done
+      } | curl -fs --parallel --config -
+      cat "$dir"/*.json 2>/dev/null | grep -o '"name":"[^"]*"' | cut -d'"' -f4 | \
+        grep -E '^[0-9]+\.[0-9]+\.[0-9]+-erlang-[0-9][0-9.]*-debian-.+-slim$' | \
         grep -v -- -rc | sort -urV
+      rm -rf "$dir"
     }
 
     case "$1" in
@@ -1822,11 +1895,14 @@ if [ $# -gt 0 ]; then
     # relative paths in config.conf and the composes' bind mounts mean
     # the same thing to the daemon whichever side asks. It runs as this
     # user, in the socket's group, and shells out to wb.sh as jobs. The
-    # The workspace's build and deps volumes ride along too, at the
-    # same /app/build and /app/deps the app service sees them at — Mix
-    # keys its manifests on those paths — so the resident (the project's
-    # own BEAM, beside the console) finds what the app compiled and adds
-    # to it; the console's own build lives apart, under /app/console.
+    # The workspace's build and deps volumes ride along too, over the
+    # workspace's own _build and deps — the workbench is mounted at its
+    # host path here, so that is where they are — and the resident (the
+    # project's own BEAM, beside the console) finds what the app
+    # compiled and adds to it. The console's own build lives apart,
+    # under /app/console, and keeps MIX_BUILD_ROOT / MIX_DEPS_PATH: its
+    # source has no fixed mount point, so there is no path in the image
+    # for a volume to take its ownership from. The workspace's has one.
     # The container is thereby bound to the workspace config.conf named
     # when it started. The
     # host's loopback is reachable as host.docker.internal (APP_HOST):
@@ -1869,10 +1945,8 @@ if [ $# -gt 0 ]; then
           --volume "$WORKBENCH_PATH:$WORKBENCH_PATH" \
           --volume workbench_console_build:/app/console/build \
           --volume workbench_console_deps:/app/console/deps \
-          --volume "${ELIXIR_PROJECT_NAME}_build:/app/build" \
-          --volume "${ELIXIR_PROJECT_NAME}_deps:/app/deps" \
-          --env WORKSPACE_BUILD=/app/build \
-          --env WORKSPACE_DEPS=/app/deps \
+          --volume "${ELIXIR_PROJECT_NAME}_build:$WORKSPACE_PATH/_build" \
+          --volume "${ELIXIR_PROJECT_NAME}_deps:$WORKSPACE_PATH/deps" \
           --env "WORKBENCH_PATH=$WORKBENCH_PATH" \
           --add-host host.docker.internal:host-gateway \
           --env APP_HOST=host.docker.internal \
@@ -1894,6 +1968,9 @@ if [ $# -gt 0 ]; then
   elif [ "$1" == "bake" ]; then
     if [ $EXISTING_PROJECT == true ]; then
       require_clean_workspace bake
+      # A workspace baked before the volumes moved over _build and deps
+      # has neither directory yet.
+      ensure_build_volumes
       # The workspace keeps its ports; the compose is where they live.
       APP_PORT=$(workspace_app_port)
       PGADMIN_PORT=$(workspace_pgadmin_port)
@@ -2164,11 +2241,13 @@ if [ $# -gt 0 ]; then
     if [ $EXISTING_PROJECT == true ]; then
       # Warm path: exec on the running app container (fast, no startup).
       # Cold path: one-off container (starts the database dependency too).
+      # compose exec and run take --env as docker run does.
       if app_is_running; then
-        workspace_compose exec --workdir /app/src app mix $@
+        workspace_compose exec "${COLOR_ENV[@]}" --workdir /app/src app mix $@
       else
         workspace_compose run \
           --rm \
+          "${COLOR_ENV[@]}" \
           --name "${APP_NAME}_workbench_mix" \
           --workdir /app/src \
           app mix $@

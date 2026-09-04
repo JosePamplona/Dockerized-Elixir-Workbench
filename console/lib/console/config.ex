@@ -16,6 +16,47 @@ defmodule Console.Config do
 
   @type field :: %{key: String.t(), value: String.t(), quoted: boolean(), help: String.t(), inline: String.t(), group: String.t()}
 
+  @doc """
+  A comment block's text, split into what is prose and what is an
+  address: `["Available versions: ", {"https://…", "https://…"}, ""]`.
+
+  `config.conf` is written to be read in a terminal, so it names its
+  sources in full — five of its blocks carry a Docker Hub URL. In a page
+  those are addresses somebody may want to open, and the console has had
+  the style for them all along (`.cfg .row .help a`); what it had not
+  got was anything that produced one.
+
+  Only `http://` and `https://` are taken, and the trailing punctuation
+  of a sentence is left out of the address — a URL at the end of a line
+  is usually followed by a full stop that is not part of it.
+  """
+  def linkify(text) when is_binary(text) do
+    ~r{https?://[^\s<>"]+}
+    |> Regex.split(text, include_captures: true, trim: false)
+    |> Enum.flat_map(fn part ->
+      if String.starts_with?(part, ["http://", "https://"]) do
+        {url, tail} = without_tail(part)
+        [{url, url}] ++ if tail == "", do: [], else: [tail]
+      else
+        [part]
+      end
+    end)
+  end
+
+  def linkify(_), do: []
+
+  # What a sentence leaves behind an address is the sentence's, not the
+  # address's: it goes back to the prose so the link is only the link.
+  # A URL that really ends in one of these — a parenthesis, the way some
+  # wikis write them — loses it, which is the trade this makes: the file
+  # is written by the workbench and none of its addresses do.
+  defp without_tail(url) do
+    case Regex.run(~r/^(.*?)([.,;:!?\)\]]+)$/, url) do
+      [_, kept, tail] -> {kept, tail}
+      _ -> {url, ""}
+    end
+  end
+
   @doc "The file parsed: sections of fields, the alternatives, the stack tags."
   def parse(text) do
     first = %{title: "Workspace", intro: [], outro: [], fields: []}

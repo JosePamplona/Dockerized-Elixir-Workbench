@@ -8,7 +8,20 @@ defmodule ConsoleWeb.WorkbenchDrawer do
   use Phoenix.Component
   import ConsoleWeb.Refs
 
-  @tabs [{"config", "Config", "config.conf"}, {"readme", "Manual", "README.md"}, {"changelog", "Changelog", "CHANGELOG.md"}, {"ui", "Console", "this browser"}]
+  # The drawer's top row is categories, the way the cartridge's is: what
+  # the workbench is set by, what this browser is set by, and what the
+  # workbench has written about itself. The papers are a group under
+  # Manual — README and CHANGELOG — exactly as a box's three are, so the
+  # two drawers are read the same way and the file names live where they
+  # are all files.
+  #
+  # In that order: the two you set, then the one you read — which also
+  # puts Manual last, where the box's drawer already has it. And the
+  # third is Interface and no longer Console: it lost the `this browser`
+  # under it when the row became categories, and a tab called Console
+  # inside the console named everything. Its key stays `ui`, which is
+  # short and which nothing but the URL ever says.
+  @tabs [{"config", "Config"}, {"ui", "Interface"}, {"manual", "Manual"}]
   @choices %{"GIT_IDENTITY" => ["user", "workbench"]}
   # When each setting takes effect — most of the file is not 'new only'.
   @effect %{"WORKSPACE_PATH" => nil, "PROJECT_NAME" => "new", "PHX_NEW_VERSION" => "new", "ELIXIR_VERSION" => "new", "ERLANG_VERSION" => "new", "DEBIAN_VERSION" => "new", "GIT_IDENTITY" => "every commit", "POSTGRES_IMAGE_VERSION" => "every bake", "PGADMIN_IMAGE_VERSION" => "every bake", "NGINX_IMAGE_VERSION" => "scaled deploy"}
@@ -18,11 +31,17 @@ defmodule ConsoleWeb.WorkbenchDrawer do
 
   attr :tab, :string, required: true, doc: "the screen under the drawer"
   attr :wb, :string, required: true
+  attr :paper, :string, default: "readme", doc: "which of the workbench's papers, under Manual"
   attr :version, :string, default: nil
   attr :config, :map, required: true
   attr :edits, :map, required: true
   attr :raw, :boolean, default: false
   attr :stacks, :any, default: nil
+  attr :asking, :boolean, default: false
+  attr :stacks_error, :string, default: nil
+  attr :installers, :any, default: nil
+  attr :installers_asking, :boolean, default: false
+  attr :installers_error, :string, default: nil
   attr :page, :map, default: nil
   attr :jobs, :list, default: []
 
@@ -32,14 +51,19 @@ defmodule ConsoleWeb.WorkbenchDrawer do
       <div class="top">
         <h3>Dockerized Elixir Workbench <.chip :if={@version}>v{@version}</.chip></h3>
         <.link class="btn" patch={"/#{@tab}"}>Close</.link>
-        <div class="dtabs" role="tablist" aria-label="The workbench's documents">
-          <.link :for={{key, label, file} <- tabs()} class="dtab" role="tab" patch={"/#{@tab}?wb=#{key}"} aria-selected={to_string(@wb == key)}>{label}<small>{file}</small></.link>
+        <div class="dtabs" role="tablist" aria-label="The workbench: what sets it, what draws it, what it says">
+          <.link :for={{key, label} <- tabs()} class="dtab" role="tab" patch={"/#{@tab}?wb=#{key}#{if key == "manual", do: "&paper=#{@paper}"}"} aria-selected={to_string(@wb == key)}>{label}</.link>
         </div>
       </div>
-      <.config :if={@wb == "config"} config={@config} edits={@edits} raw={@raw} stacks={@stacks} jobs={@jobs} />
-      <div :if={@wb in ["readme", "changelog"] and @page} class={["booklet", @page.toc == [] && "notoc"]} id="wb-booklet" phx-hook="Booklet">
-        <article class="md">{Phoenix.HTML.raw(@page.html)}</article>
-        <nav :if={@page.toc != []} class="toc"><a class="doctitle" href="#top">{@page.title}</a><a :for={{id, text} <- @page.toc} href={"##{id}"}>{text}</a></nav>
+      <.config :if={@wb == "config"} config={@config} edits={@edits} raw={@raw} stacks={@stacks} asking={@asking} stacks_error={@stacks_error} installers={@installers} installers_asking={@installers_asking} installers_error={@installers_error} jobs={@jobs} />
+      <div :if={@wb == "manual"} class="papers">
+        <div class="dtabs docked" role="tablist" aria-label="The workbench's own papers">
+          <.link :for={{key, label, file} <- Console.Papers.workbench_papers()} class="dtab" role="tab" patch={"/#{@tab}?wb=manual&paper=#{key}"} aria-selected={to_string(@paper == key)}>{label}<small>{file}</small></.link>
+        </div>
+        <div :if={@page} class={["booklet", @page.toc == [] && "notoc"]} id="wb-booklet" phx-hook="Booklet">
+          <article class="md">{Phoenix.HTML.raw(@page.html)}</article>
+          <nav :if={@page.toc != []} class="toc" aria-label="In this document"><a class="doctitle" href="#top">{@page.title}</a><a :for={{id, text} <- @page.toc} href={"##{id}"}>{text}</a></nav>
+        </div>
       </div>
       <.ui :if={@wb == "ui"} />
     </aside>
@@ -55,41 +79,70 @@ defmodule ConsoleWeb.WorkbenchDrawer do
 
     ~H"""
     <div class="cfg">
-      <div class="bar">
+      <div class="bar docked">
         <button class="btn primary" type="button" disabled={@changed == 0 or @busy} phx-click="cfg_save">{cond do @busy -> "Saving…"; @changed > 0 -> "Save #{@changed} change#{if @changed == 1, do: "", else: "s"}"; true -> "Save" end}</button>
         <button class="btn" type="button" disabled={@changed == 0} phx-click="cfg_reload">Reload</button>
         <button class="btn" type="button" aria-pressed={to_string(@raw)} phx-click="cfg_raw">Raw</button>
         <span class="note">Values are written back in place by ./wb.sh config set; comments and order stay. Each field's tag says when it takes effect.</span>
       </div>
+      <div class="cfgbody">
       <pre :if={@raw} class="raw"><%= for line <- String.split(raw_text(@config, @edits), "\n") do %><.raw_line line={line} /><% end %></pre>
-      <form :if={!@raw} phx-change="cfg_change">
+      <%!-- The id is what lets LiveView put the form back after a
+            reconnect: without it the edits staged in the drawer would be
+            gone the first time the socket blinked. --%>
+      <form :if={!@raw} id="cfg-form" phx-change="cfg_change">
         <%= for sec <- @config.sections, sec.fields != [] do %>
           <div class="sec">
             <h4>{sec.title}</h4>
-            <p :if={sec.intro != []} class="intro">{Enum.join(sec.intro, " ")}</p>
+            <p :if={sec.intro != []} class="intro"><.prose text={Enum.join(sec.intro, " ")} /></p>
             <%= for {f, i} <- Enum.with_index(sec.fields) do %>
               <h5 :if={f.group != "" and (i == 0 or Enum.at(sec.fields, i - 1).group != f.group)} class="grp">{f.group}</h5>
-              <.stack_rows :if={f.key == "ELIXIR_VERSION"} sec={sec} edits={@edits} stacks={@stacks} />
-              <.field :if={f.key not in ["ELIXIR_VERSION", "ERLANG_VERSION", "DEBIAN_VERSION"]} f={f} config={@config} edits={@edits} />
+              <.stack_rows :if={f.key == "ELIXIR_VERSION"} sec={sec} edits={@edits} stacks={@stacks} asking={@asking} stacks_error={@stacks_error} />
+              <.installer_row :if={f.key == "PHX_NEW_VERSION"} f={f} edits={@edits} installers={@installers} asking={@installers_asking} error={@installers_error} elixir={Console.Config.values(@config)["ELIXIR_VERSION"]} />
+              <.field :if={f.key not in ["ELIXIR_VERSION", "ERLANG_VERSION", "DEBIAN_VERSION", "PHX_NEW_VERSION"]} f={f} config={@config} edits={@edits} />
             <% end %>
-            <p :for={note <- sec.outro} class="intro outro">{note}</p>
+            <p :for={note <- sec.outro} class="intro outro"><.prose text={note} /></p>
           </div>
         <% end %>
       </form>
+      </div>
     </div>
     """
   end
 
   attr :line, :string, required: true
 
+  # One element per line, and the line's own text inside it — never a
+  # "\n" of its own. A `cond` in the template puts its indentation
+  # between the branches, and in a <pre> that indentation is text: every
+  # line came out followed by a blank one and two spaces. The parts are
+  # worked out in Elixir and the markup is one element repeated, which
+  # has no whitespace to leave behind.
   defp raw_line(assigns) do
+    assigns = assign(assigns, parts: raw_parts(assigns.line))
+
     ~H"""
-    <%= cond do %>
-      <% String.starts_with?(String.trim(@line), "#") or String.trim(@line) == "" -> %><span class="c">{@line <> "\n"}</span>
-      <% m = Regex.run(~r/^(export\s+\w+=)(.*?)(\s*#.*)?$/, @line) -> %><span class="k">{Enum.at(m, 1)}</span><span class="v">{Enum.at(m, 2)}</span><span class="c">{(Enum.at(m, 3) || "") <> "\n"}</span>
-      <% true -> %>{@line <> "\n"}
-    <% end %>
+    <div class="ln"><span :for={{cls, text} <- @parts} class={cls}>{text}</span></div>
     """
+  end
+
+  defp raw_parts(line) do
+    trimmed = String.trim(line)
+
+    cond do
+      String.starts_with?(trimmed, "#") or trimmed == "" ->
+        [{"c", line}]
+
+      m = Regex.run(~r/^(export\s+\w+=)(.*?)(\s*#.*)?$/, line) ->
+        [{"k", Enum.at(m, 1)}, {"v", Enum.at(m, 2)}] ++
+          case Enum.at(m, 3) do
+            comment when comment in [nil, ""] -> []
+            comment -> [{"c", comment}]
+          end
+
+      true ->
+        [{nil, line}]
+    end
   end
 
   @doc "config.conf's text with the edits written in, as `config set` will write them."
@@ -123,7 +176,7 @@ defmodule ConsoleWeb.WorkbenchDrawer do
         <% true -> %>
           <input type="text" id={"cfg-#{@f.key}"} name={"cfg[#{@f.key}]"} value={@v} spellcheck="false" placeholder={@f.key == "WORKSPACE_PATH" && "./_workspaces/…"} />
       <% end %>
-      <p :if={@help != ""} class="help">{@help}</p>
+      <p :if={@help != ""} class="help"><.prose text={@help} /></p>
     </div>
     """
   end
@@ -135,33 +188,58 @@ defmodule ConsoleWeb.WorkbenchDrawer do
   attr :sec, :map, required: true
   attr :edits, :map, required: true
   attr :stacks, :any, default: nil
+  attr :asking, :boolean, default: false
+  attr :stacks_error, :string, default: nil
 
   defp stack_rows(assigns) do
     val = fn key -> Map.get(assigns.edits, key, (Enum.find(assigns.sec.fields, &(&1.key == key)) || %{value: ""}).value) end
     cur = %{e: val.("ELIXIR_VERSION"), o: val.("ERLANG_VERSION"), d: val.("DEBIAN_VERSION")}
     list = if is_list(assigns.stacks), do: Enum.flat_map(assigns.stacks, &parse_tag/1), else: []
     match = Enum.find(list, &(&1.e == cur.e and &1.o == cur.o and &1.d == cur.d))
-    groups = Enum.group_by(list, &(&1.e |> String.split(".") |> Enum.take(2) |> Enum.join("."))) |> Enum.sort_by(fn {k, _} -> k end, :desc)
-    assigns = assign(assigns, cur: cur, list: list, match: match, groups: groups, parts: @stack_parts, val: val)
+    groups = Enum.group_by(list, &(&1.e |> String.split(".") |> Enum.take(2) |> Enum.join("."))) |> Enum.sort_by(fn {k, _} -> version_key(k) end, :desc)
+    # One state for the four, because that is what it is a state of: the
+    # combination is published, or it is not, or nobody has asked yet.
+    # It used to be said inside every option of every field — the same
+    # sentence fifty times over, about the row and not about the option
+    # it was written on.
+    # `not asked` is a claim, and it was being made about a reading that
+    # had been asked for and failed: the chip only saw an empty list. A
+    # failure is its own state and says so.
+    state = cond do assigns.stacks_error -> :failed; list == [] -> :unknown; match -> :ok; true -> :none end
+    assigns = assign(assigns, cur: cur, list: list, match: match, groups: groups, parts: @stack_parts, val: val, state: state)
 
     ~H"""
     <div class="row">
       <label for="cfg-stack">DOCKER_IMAGE<.chip class="new">new</.chip></label>
-      <select id="cfg-stack" name="stack" disabled={@list == []}>
-        <option :if={@stacks == :asking} value="">— asking Docker Hub for the usable images…</option>
-        <option :if={@stacks != :asking and is_nil(@match)} value="" selected>— no published image for this combination (of the {length(@list)} usable)</option>
-        <optgroup :for={{minor, tags} <- @groups} label={"elixir " <> minor}><option :for={x <- tags} value={x.tag} selected={@match && @match.tag == x.tag}>{x.tag}</option></optgroup>
-      </select>
-      <p class="help">One hexpm/elixir image, straight from Docker Hub (./wb.sh stacks). Picking it sets the three versions below; the three look it back up.</p>
+      <div class="stackline">
+      <div class="fetch">
+        <select id="cfg-stack" name="stack" disabled={@list == []}>
+          <option :if={@asking} value="">— asking Docker Hub for the usable images…</option>
+          <option :if={!@asking and @list == []} value="" selected>{@cur.e}-erlang-{@cur.o}-debian-{@cur.d}</option>
+          <option :if={!@asking and @list != [] and is_nil(@match)} value="" selected>—</option>
+          <optgroup :for={{minor, tags} <- @groups} label={"elixir " <> minor}><option :for={x <- tags} value={x.tag} selected={@match && @match.tag == x.tag}>{x.tag}</option></optgroup>
+        </select>
+        <button class="go" type="button" phx-click="stacks_ask" disabled={@asking} aria-busy={to_string(@asking)} aria-controls="cfg-stack" title={if @asking, do: "asking Docker Hub…", else: "ask Docker Hub for the usable images — five pages of its API, seconds, over your own connection"}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4h-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          <span class="sr">Ask Docker Hub for the usable images</span>
+        </button>
+      </div>
+      <.chip class={state_class(@state)} title={state_why(@state, @cur)}>{state_word(@state)}</.chip>
+      </div>
+      <p class="help">
+        <.prose text="One hexpm/elixir image, straight from Docker Hub (./wb.sh stacks), whose every published tag is at https://hub.docker.com/r/hexpm/elixir/tags — picking one here sets the three versions below, and the three look it back up." />
+        <span :if={@stacks_error} class="bad">Docker Hub did not answer: {@stacks_error}</span>
+        <span :if={!@stacks_error and @list == [] and !@asking}>The list is not here yet — it costs five calls to Docker Hub, so the console goes only when you press the button.</span>
+      </p>
     </div>
     <%= for {key, part, help} <- @parts do %>
-      <% values = Enum.uniq(Enum.map(@list, & &1[part]) ++ [@cur[part]]) %>
+      <% values = @list |> Enum.map(& &1[part]) |> Kernel.++([@cur[part]]) |> Enum.uniq() |> in_order(part) %>
       <div class={["row", Map.has_key?(@edits, key) && "changed"]}>
         <label for={"cfg-#{key}"}>{key}<.chip class="new">new</.chip></label>
         <select id={"cfg-#{key}"} name={"cfg[#{key}]"}>
-          <option :for={v <- values} value={v} selected={v == @cur[part]} class={!combines?(@list, part, v, @cur) && "dim"}>{v}{if combines?(@list, part, v, @cur), do: "", else: " — no image with the other two"}</option>
+          <option :for={v <- values} value={v} selected={v == @cur[part]} class={!combines?(@list, part, v, @cur) && "dim"} title={!combines?(@list, part, v, @cur) && "no image with #{others(part, @cur)}"}>{v}</option>
         </select>
-        <p class="help">{help}</p>
+        <p class="help"><.prose text={help} /></p>
       </div>
     <% end %>
     """
@@ -172,6 +250,158 @@ defmodule ConsoleWeb.WorkbenchDrawer do
       [_, e, o, d] -> [%{tag: tag, e: e, o: o, d: d}]
       _ -> []
     end
+  end
+
+  # What an option that cannot be picked is being judged against: the
+  # other two, named and set to what they are set to. "no image with the
+  # other two" made the reader work out which two and then go and read
+  # them; this says what is in the way, so the option is worth reading on
+  # its own. Written the way the house writes a stack everywhere else —
+  # elixir and erlang named, the Debian codename standing for itself.
+  defp others(part, cur) do
+    ([:e, :o, :d] -- [part]) |> Enum.map_join(" · ", &"#{stack_word(&1)}#{cur[&1]}")
+  end
+
+  defp stack_word(:e), do: "elixir "
+  defp stack_word(:o), do: "erlang "
+  defp stack_word(:d), do: ""
+
+  # Green, red, or nothing yet — the house's chip, which is the dot with
+  # the word that saves the reader guessing what the colour meant. The
+  # third state is not a failure: with no list nobody can say whether the
+  # combination is published, and saying `no image` there would be a
+  # claim the console has not earned.
+  defp state_class(:ok), do: "good"
+  defp state_class(:none), do: "bad"
+  defp state_class(:failed), do: "bad"
+  defp state_class(:unknown), do: "off"
+
+  defp state_word(:ok), do: "published image"
+  defp state_word(:none), do: "no image"
+  defp state_word(:failed), do: "not answered"
+  defp state_word(:unknown), do: "not asked"
+
+  defp state_why(:ok, cur), do: "hexpm/elixir:#{cur.e}-erlang-#{cur.o}-debian-#{cur.d} is on Docker Hub"
+  defp state_why(:none, cur), do: "no hexpm/elixir image with elixir #{cur.e} · erlang #{cur.o} · #{cur.d}"
+  defp state_why(:failed, _cur), do: "the list could not be read; the reason is under the field"
+  defp state_why(:unknown, _cur), do: "press the button to ask Docker Hub which combinations are published"
+
+  # The Phoenix installer: which phx_new generates the project, and the
+  # empty value that is the ordinary one — not a version but a policy,
+  # `the newest that runs on this stack`, which is why the field keeps an
+  # option for it rather than a blank.
+  #
+  # The releases are grouped by the Elixir each one declares, and the
+  # group says it. That is the whole design: there are twenty-five
+  # releases and three requirements between them, so the reader compares
+  # three groups against one version instead of reading twenty-five
+  # rows — and the console never has to hold an opinion about whether a
+  # stack runs a release. That opinion is `stack_satisfies` in `wb.sh`,
+  # `new` refuses on it, and one rule in one place cannot come apart
+  # from itself.
+  attr :f, :map, required: true
+  attr :edits, :map, required: true
+  attr :installers, :any, default: nil
+  attr :asking, :boolean, default: false
+  attr :error, :string, default: nil
+  attr :elixir, :string, default: nil
+
+  defp installer_row(assigns) do
+    cur = Map.get(assigns.edits, "PHX_NEW_VERSION", assigns.f.value)
+    list = if is_list(assigns.installers), do: assigns.installers, else: []
+    # Newest requirement first; the releases inside a group are already
+    # newest first, which is the order hex answered in.
+    groups =
+      list
+      |> Enum.group_by(&(&1["elixir"] || "no elixir declared"))
+      |> Enum.sort_by(fn {requirement, _} -> version_key(requirement) end, :desc)
+
+    # A version config.conf names that hex has not got. This is not the
+    # console holding a second opinion — it is set membership in the very
+    # list hex just handed over, the same question `check_phx_new_exists`
+    # asks before `new` builds anything. Until the button is pressed
+    # there is no list and nothing is claimed.
+    known = Enum.any?(list, &(&1["version"] == cur))
+    stray = cur not in [nil, ""] and list != [] and not known
+    assigns = assign(assigns, cur: cur, list: list, groups: groups, known: known, stray: stray)
+
+    ~H"""
+    <div class={["row", Map.has_key?(@edits, "PHX_NEW_VERSION") && "changed"]}>
+      <label for="cfg-PHX_NEW_VERSION">PHX_NEW_VERSION<.chip class="new">new</.chip></label>
+      <div class="stackline">
+        <div class="fetch">
+          <select id="cfg-PHX_NEW_VERSION" name="cfg[PHX_NEW_VERSION]">
+            <option value="" selected={@cur in [nil, ""]}>— the newest that runs on this stack</option>
+            <option :if={@cur not in [nil, ""] and !@known} value={@cur} selected>{@cur}</option>
+            <optgroup :for={{requirement, releases} <- @groups} label={"needs elixir #{requirement}"}>
+              <option :for={r <- releases} value={r["version"]} selected={r["version"] == @cur}>{r["version"]}</option>
+            </optgroup>
+          </select>
+          <button class="go" type="button" phx-click="installers_ask" disabled={@asking} aria-busy={to_string(@asking)} aria-controls="cfg-PHX_NEW_VERSION" title={if @asking, do: "asking hex…", else: "ask hex for the phx_new releases — one call for the list and one per release, under a second"}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4h-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            <span class="sr">Ask hex for the phx_new releases</span>
+          </button>
+        </div>
+        <.chip :if={@stray} class="bad" title={"hex has no phx_new #{@cur}: 'new' refuses before it builds anything (check_phx_new_exists)"}>not on hex</.chip>
+        <.chip :if={@elixir} class="off" title="the Elixir config.conf names, which is what every group above is asking for">this stack: elixir {@elixir}</.chip>
+      </div>
+      <p class="help">
+        <.prose text={@f.help} />
+        <.prose text=" Every release is at https://hex.pm/packages/phx_new/versions." />
+        <span :if={@error} class="bad">hex did not answer: {@error}</span>
+        <span :if={!@error and @list == [] and !@asking}>The releases are not here yet — the console asks hex only when you press the button.</span>
+      </p>
+    </div>
+    """
+  end
+
+  # A line of config.conf as a page reads it: its addresses are links and
+  # the rest is what it says. The file is the workbench's own, but the
+  # text still travels escaped — every part of it is interpolated, never
+  # raw — so a URL that is not one cannot become markup.
+  attr :text, :string, required: true
+
+  defp prose(assigns) do
+    assigns = assign(assigns, parts: Console.Config.linkify(assigns.text))
+
+    ~H"""
+    <%= for part <- @parts do %><a :if={is_tuple(part)} href={elem(part, 0)} target="_blank" rel="noopener noreferrer">{elem(part, 1)}</a>{if is_binary(part), do: part}<% end %>
+    """
+  end
+
+  @doc """
+  A field's values, newest first. Each field carries its own order: the
+  tag list arrives sorted by the whole tag — `sort -urV` on
+  `ELIXIR-erlang-OTP-debian-DEBIAN` — so Elixir comes out descending by
+  the luck of being first in the string, and the other two came out in
+  order of first appearance. Erlang read `27.0.1, 29.0.4, 26.2.5.21`,
+  and Debian was not sorted at all.
+  """
+  def in_order(values, :d), do: Enum.sort_by(values, &debian_key/1, :desc)
+  def in_order(values, _), do: Enum.sort_by(values, &version_key/1, :desc)
+
+  # A dotted version of any length, compared number by number: 28.5.0.6
+  # over 28.4.3, and 28.1 under 28.1.1, which is what a list that is a
+  # prefix of another already means to Elixir. A part that is not a
+  # number keeps its place rather than raising — config.conf can name
+  # anything, and the field must still draw.
+  defp version_key(v) do
+    for part <- String.split(v, ".") do
+      case Integer.parse(part) do
+        {n, ""} -> n
+        _ -> part
+      end
+    end
+  end
+
+  # Debian's own name says nothing about how new it is — bookworm came
+  # after bullseye, and the alphabet disagrees — but the snapshot date
+  # in the tag does, and it is the same date across the codenames of one
+  # day. So: the date, and then the name, in one key. The name's order is
+  # the alphabet's and claims nothing; the date is what means something.
+  defp debian_key(v) do
+    date = Regex.run(~r/-(\d{6,8})(?:-|$)/, v)
+    {(date && Enum.at(date, 1)) || "", v}
   end
 
   defp combines?([], _, _, _), do: true

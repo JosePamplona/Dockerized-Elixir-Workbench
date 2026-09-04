@@ -5,11 +5,18 @@ defmodule Console.DiffsTest do
 
   @ws Console.Workbench.workspace()
 
-  setup do
-    if @ws && File.dir?(Path.join(@ws, ".git")), do: :ok, else: :skip
+  # These read the real workspace's git — the only honest source for a
+  # diff. With no workspace, or one without a repository, there are no
+  # inserts to read and every test below falls through.
+  defp inserts do
+    if is_nil(@ws) or not File.dir?(Path.join(@ws, ".git")) do
+      []
+    else
+      read_inserts()
+    end
   end
 
-  defp inserts do
+  defp read_inserts do
     Console.Workbench.dir()
     |> then(&System.cmd("git", ["-C", @ws, "log", "--format=%H%x1f%s%x1f%ci"], cd: &1))
     |> elem(0)

@@ -12,10 +12,16 @@ defmodule Console.ANSI do
   palette, since a page has no use for more than a name per colour.
   """
 
+  @escape ~r/\e\[([0-9;]*)m|\e\[[0-9;?]*[A-Za-z]|\e\][^\a]*\a/
+
+  @doc "The line with every escape taken out: what it says, for whatever reads it as text."
+  @spec strip(String.t()) :: String.t()
+  def strip(line), do: Regex.replace(@escape, line, "")
+
   @doc "The line as an HTML-safe iodata string, with spans for its styles."
   @spec to_html(String.t()) :: String.t()
   def to_html(line) do
-    ~r/\e\[([0-9;]*)m|\e\[[0-9;?]*[A-Za-z]|\e\][^\a]*\a/
+    @escape
     |> Regex.split(line, include_captures: true)
     |> Enum.reduce({[], %{}}, fn piece, {out, style} ->
       case Regex.run(~r/^\e\[([0-9;]*)m$/, piece) do

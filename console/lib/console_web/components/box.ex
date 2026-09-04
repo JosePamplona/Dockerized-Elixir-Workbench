@@ -147,8 +147,8 @@ defmodule ConsoleWeb.Box do
     ~H"""
     <div class="f" id={@id}>
       <div class="fh">
-        <button class="ft" type="button" aria-expanded="false" phx-click={Phoenix.LiveView.JS.toggle_attribute({"hidden", "hidden"}, to: "##{@id}-b") |> Phoenix.LiveView.JS.toggle_class("open", to: "##{@id}") |> Phoenix.LiveView.JS.toggle_attribute({"aria-expanded", "true", "false"})}>
-          <span class="caret"></span><span class="p">{@f.path}</span>
+        <button class="ft fold" type="button" aria-expanded="false" phx-click={Phoenix.LiveView.JS.toggle_attribute({"hidden", "hidden"}, to: "##{@id}-b") |> Phoenix.LiveView.JS.toggle_class("open", to: "##{@id}") |> Phoenix.LiveView.JS.toggle_attribute({"aria-expanded", "true", "false"})}>
+          <span class="p">{@f.path}</span>
         </button>
         <span :if={@f.born || @f.gone} class="mark">{if @f.born, do: "new", else: "gone"}</span>
         <span :if={@shown != []} class="refs">
@@ -344,10 +344,10 @@ defmodule ConsoleWeb.Box do
 
     ~H"""
     <div class="install">
-      <form class={["insert", @locked && "locked"]} phx-change="options" phx-submit="insert">
+      <form class={["insert", @locked && "locked"]} id="insert-form" phx-change="options" phx-submit="insert">
         <span class="label">Options</span>
         <div>
-          <p :if={@box["options"] == []} class="note">This cartridge takes no options.</p>
+          <p :if={@box["options"] == []} class="nothing">This cartridge takes no options.</p>
           <%= for o <- @box["options"] do %>
             <% flag = "--" <> String.replace(o["name"], "_", "-") %>
             <%= if o["choices"] do %>
@@ -398,11 +398,8 @@ defmodule ConsoleWeb.Box do
       </form>
       <div>
         <div class="log-cap"><span class="label">Output</span><span :if={@job} class="note">{@job.cmdline} · {@job.state}</span></div>
-        <div class="log" data-empty="The install output will stream here — && into the jobs tray.">
-          <%= if @job do %>
-            <div :for={line <- Enum.reverse(@job.lines)}>{Phoenix.HTML.raw(Console.ANSI.to_html(line))}</div>
-          <% end %>
-        </div>
+        <ConsoleWeb.JobsScreen.job_lines :if={@job} id={"jbox-" <> @job.id} job={@job.id} class="log" data-empty="The install output will stream here — && into the jobs tray." />
+        <div :if={!@job} class="log" data-empty="The install output will stream here — && into the jobs tray."></div>
       </div>
     </div>
     """
@@ -535,7 +532,7 @@ defmodule ConsoleWeb.Box do
   defp manual(assigns) do
     ~H"""
     <div class="papers">
-      <div class="dtabs" role="tablist" aria-label="The papers the box carries">
+      <div class="dtabs docked" role="tablist" aria-label="The papers the box carries">
         <%= for {key, label, file} <- Console.Papers.papers() do %>
           <.link :if={key in @papers} class="dtab" role="tab" patch={"/#{@tab}?box=#{@box["name"]}&screen=manual&paper=#{key}"} aria-selected={to_string(@paper == key)}>{label}<small>{file}</small></.link>
           <button :if={key not in @papers} class="dtab unlit" role="tab" type="button" aria-disabled="true" title={"this box carries no #{file}"}>{label}<small>—</small></button>

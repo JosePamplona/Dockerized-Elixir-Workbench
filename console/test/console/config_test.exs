@@ -46,4 +46,32 @@ defmodule Console.ConfigTest do
     assert Map.has_key?(values, "WORKSPACE_PATH")
     assert Map.has_key?(values, "ELIXIR_VERSION")
   end
+
+  describe "linkify/1" do
+    test "an address in a comment comes out as one, and the prose around it as prose" do
+      assert Console.Config.linkify("Available versions: https://hub.docker.com/_/postgres/tags") ==
+               [
+                 "Available versions: ",
+                 {"https://hub.docker.com/_/postgres/tags", "https://hub.docker.com/_/postgres/tags"},
+                 ""
+               ]
+    end
+
+    test "the full stop a sentence ends with is the sentence's, not the address's" do
+      assert [_, {url, text}, ".", " And more."] =
+               Console.Config.linkify("See https://hub.docker.com/r/hexpm/elixir/tags. And more.")
+
+      assert url == "https://hub.docker.com/r/hexpm/elixir/tags"
+      assert text == url
+    end
+
+    test "a line with no address is one piece of prose" do
+      assert Console.Config.linkify("no address here") == ["no address here"]
+    end
+
+    test "only http and https: a word with a colon in it is not an address" do
+      assert Console.Config.linkify("see docker:latest or ftp://x.example") ==
+               ["see docker:latest or ftp://x.example"]
+    end
+  end
 end

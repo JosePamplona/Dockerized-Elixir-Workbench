@@ -9,7 +9,7 @@ defmodule ConsoleWeb.ProjectScreen do
   def project_screen(assigns) do
     ~H"""
     <div class="pdocs">
-      <div class="dtabs" role="tablist" aria-label="The project's own documents">
+      <div class="dtabs docked" role="tablist" aria-label="The project's own documents">
         <%= for {key, label, file} <- Console.Project.papers() do %>
           <.link :if={key in @carried} class="dtab" role="tab" patch={"/project?paper=#{key}"} aria-selected={to_string(@paper == key)}>{label}<small>{file}</small></.link>
           <button :if={key not in @carried} class="dtab unlit" role="tab" type="button" aria-disabled="true" title={paper_why(key, file)}>{label}<small>—</small></button>
@@ -20,7 +20,7 @@ defmodule ConsoleWeb.ProjectScreen do
         <nav :if={@page.toc != []} class="toc"><a class="doctitle" href="#top">{@page.title}</a><a :for={{id, text} <- @page.toc} href={"##{id}"}>{text}</a></nav>
       </div>
       <pre :if={@page && @page[:env]} class="env"><%= for line <- @page.env do %><.env_line line={line} /><% end %></pre>
-      <div :if={is_nil(@page)} class="missing">This workspace carries none of the project's papers.</div>
+      <div :if={is_nil(@page)} class="nothing">This workspace carries none of the project's papers.</div>
     </div>
     """
   end
@@ -30,13 +30,30 @@ defmodule ConsoleWeb.ProjectScreen do
 
   attr :line, :string, required: true
 
+  # One element per line, with no "\n" of its own: see the same note on
+  # the drawer's raw view. A `cond` in a template leaves its indentation
+  # between the branches, and inside a <pre> that indentation is text.
   defp env_line(assigns) do
+    assigns = assign(assigns, parts: env_parts(assigns.line))
+
     ~H"""
-    <%= cond do %>
-      <% String.starts_with?(String.trim(@line), "#") or String.trim(@line) == "" -> %><span class="c">{@line <> "\n"}</span>
-      <% m = Regex.run(~r/^(\w+=)(.*)$/, @line) -> %><span class="k">{Enum.at(m, 1)}</span><span class={String.contains?(Enum.at(m, 2), "•") && "m"}>{Enum.at(m, 2) <> "\n"}</span>
-      <% true -> %>{@line <> "\n"}
-    <% end %>
+    <div class="ln"><span :for={{cls, text} <- @parts} class={cls}>{text}</span></div>
     """
+  end
+
+  defp env_parts(line) do
+    trimmed = String.trim(line)
+
+    cond do
+      String.starts_with?(trimmed, "#") or trimmed == "" ->
+        [{"c", line}]
+
+      m = Regex.run(~r/^(\w+=)(.*)$/, line) ->
+        value = Enum.at(m, 2)
+        [{"k", Enum.at(m, 1)}, {if(String.contains?(value, "•"), do: "m"), value}]
+
+      true ->
+        [{nil, line}]
+    end
   end
 end

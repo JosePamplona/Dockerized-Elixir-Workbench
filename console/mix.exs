@@ -21,7 +21,9 @@ defmodule Console.MixProject do
   def application do
     [
       mod: {Console.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      # :inets and :ssl are what Console.Installers asks hex with — OTP's
+      # own client, so the console carries no HTTP dependency for it.
+      extra_applications: [:logger, :runtime_tools, :inets, :ssl]
     ]
   end
 

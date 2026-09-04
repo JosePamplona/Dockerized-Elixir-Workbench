@@ -1408,16 +1408,16 @@ function diffBody(f) {
 const filesBox = files => el("div", { class: "files" + (files.length > 12 ? " many" : "") }, ...files.map(fileRow));
 function fileRow(f) {
   const body = diffBody(f);
-  const caret = el("span", { class: "caret" }, "▸");
   // The picks that touched the file are cart-refs, which the house says
   // are always a door to the box — so they cannot live inside the row's
   // own button. The trigger is its own button and they sit beside it.
   const shown = (f.by || []).slice(0, 3);
   const rest = (f.by || []).length - shown.length;
-  const trigger = el("button", { class: "ft", type: "button", "aria-expanded": "false" }, caret, el("span", { class: "p" }, f.path));
+  // .fold is the house's: the caret leads, and it is drawn from
+  // aria-expanded rather than typed, so the two cannot disagree.
+  const trigger = el("button", { class: "ft fold", type: "button", "aria-expanded": "false" }, el("span", { class: "p" }, f.path));
   trigger.addEventListener("click", () => {
     body.hidden = !body.hidden;
-    caret.textContent = body.hidden ? "▸" : "▾";
     trigger.setAttribute("aria-expanded", String(!body.hidden));
   });
   const head = el("div", { class: "fh" }, trigger,
@@ -1850,11 +1850,11 @@ function renderJobs() {
   $("#jobs-meta").textContent = state.jobs.length ? `${state.jobs.length} job${state.jobs.length === 1 ? "" : "s"} · ${running ? running + " running" : "idle"}${failed ? " · " + failed + " failed" : ""}` : "";
   for (const j of state.jobs) {
     const dur = ((j.ended || Date.now()) - j.started) / 1000;
-    const row = el("div", { class: "job" + (j.open ? " open" : ""), onclick: () => { j.open = !j.open; renderJobs(); } },
+    const trigger = el("button", { class: "fold jt", type: "button", "aria-expanded": String(!!j.open), onclick: () => { j.open = !j.open; renderJobs(); } },
       el("span", { class: "chip " + (j.state === "running" ? "warn busy" : j.state === "done" ? "good" : "bad") }, j.state === "running" ? "running" : `exit ${j.exit}`),
       el("span", { class: "cmdline" }, j.cmdline),
-      el("span", { class: "dur" }, dur.toFixed(1) + "s"),
-      el("span", { class: "caret" }, j.open ? "▾" : "▸"));
+      el("span", { class: "dur" }, dur.toFixed(1) + "s"));
+    const row = el("div", { class: "job" + (j.open ? " open" : "") }, trigger);
     const out = el("div", { class: "out" });
     for (const [cls, text] of j.lines) out.append(el("div", { class: cls }, text));
     row.append(out); list.append(row);

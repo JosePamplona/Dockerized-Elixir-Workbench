@@ -20,11 +20,17 @@ RUN apt-get update -y && \
     curl -fsSL -o /usr/local/lib/docker/cli-plugins/docker-compose \
       "https://github.com/docker/compose/releases/download/v${COMPOSE_VERSION}/docker-compose-linux-x86_64" && \
     chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
-# The console compiles into its own two volumes, apart from the
-# toolchain's /app/build and /app/deps: those two are the *workspace's*
-# volumes here, mounted at the same paths the app service sees them,
-# so the resident — the project's BEAM beside the console — finds what
-# the app compiled and never recompiles it for a path that moved.
+# The console compiles into its own two volumes. It is the one project
+# here that still needs Mix pointed at them: its source is mounted at
+# the workbench's own host path, which no image can know, so there is
+# no directory in this image for a fresh volume to take its ownership
+# from. A workspace has one (/app/src) and needs none of this — its
+# volumes simply cover its _build and deps, and Mix is told nothing.
+# The workspace's volumes ride in this container too, over the
+# workspace's own two directories, so the resident — the project's BEAM
+# beside the console — finds what the app service compiled. Which is
+# why `Console.Resident` clears these two for that run: inherited, they
+# would send the workspace's compilation into the console's build.
 RUN mkdir -p /app/console/build /app/console/deps && chown -R elixir:elixir /app/console
 ENV MIX_BUILD_ROOT=/app/console/build \
     MIX_DEPS_PATH=/app/console/deps

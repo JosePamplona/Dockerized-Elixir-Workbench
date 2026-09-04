@@ -84,6 +84,159 @@ export const Ground = {
   },
 }
 
+// --- how tall a job's output is allowed to be. A grip under each pane,
+// made like the rail's: it moves a variable, one per job, kept in this
+// browser under the job's id; config.conf never hears about it. The
+// variable and not a height, because `.out` reads it with the default
+// in the fallback — a job that was never dragged has nothing written
+// on it, and a double-click takes it back to that.
+// The browser's own `resize` did this first: its grip sits in the
+// corner where the scrollbar ends, and that corner is the browser's to
+// paint — a white square on a terminal ground, and only ever when the
+// output was long enough to scroll.
+const JOB_OUT_KEY = "wb-console-job-out", JOB_OUT_MIN = 80, JOB_OUT_DEFAULT = 220
+export const JobOut = {
+  mounted() {
+    // What each job's own grip was left at, by job id. A job that was
+    // never dragged is not in here at all and takes the default from
+    // the stylesheet — which is also what a double-click gives back.
+    let tall = {}
+    try { tall = JSON.parse(store.get(JOB_OUT_KEY) || "{}") || {} } catch (_) { tall = {} }
+
+    const cap = () => Math.max(JOB_OUT_MIN, Math.round(innerHeight * 0.8))
+    const height = job => parseInt(getComputedStyle(job.querySelector(".out")).maxHeight, 10) || JOB_OUT_DEFAULT
+    const label = (job, h) => {
+      const g = job.querySelector(".ograb")
+      if (!g) return
+      g.setAttribute("aria-valuenow", String(h))
+      g.setAttribute("aria-valuemin", String(JOB_OUT_MIN))
+      g.setAttribute("aria-valuemax", String(cap()))
+      g.title = `${h}px — drag, or arrow keys; double-click for ${JOB_OUT_DEFAULT}`
+    }
+    const set = (job, px) => {
+      const h = Math.round(Math.min(cap(), Math.max(JOB_OUT_MIN, px)))
+      tall[job.dataset.id] = h
+      job.style.setProperty("--job-out", h + "px")
+      label(job, h)
+      return h
+    }
+    const forget = job => {
+      delete tall[job.dataset.id]
+      job.style.removeProperty("--job-out")
+      label(job, height(job))
+    }
+    const keep = () => store.set(JOB_OUT_KEY, JSON.stringify(tall))
+
+    // A patch wipes the inline variable, so it is written again — and
+    // this is also where a job that has left the list is forgotten.
+    this.paint = () => {
+      const live = {}
+      for (const job of this.el.querySelectorAll(".job[data-id]")) {
+        const id = job.dataset.id
+        if (id in tall) {
+          live[id] = tall[id]
+          job.style.setProperty("--job-out", tall[id] + "px")
+        }
+        label(job, height(job))
+      }
+      tall = live
+    }
+    this.paint()
+
+    // Delegated: every open job carries a grip, and each moves its own.
+    this.el.addEventListener("pointerdown", ev => {
+      const grip = ev.target.closest(".ograb")
+      if (!grip) return
+      const job = grip.closest(".job")
+      ev.preventDefault()
+      grip.setPointerCapture(ev.pointerId)
+      grip.classList.add("dragging")
+      const from = height(job) - ev.clientY
+      const move = e => set(job, e.clientY + from)
+      const up = () => {
+        grip.classList.remove("dragging")
+        grip.removeEventListener("pointermove", move)
+        grip.removeEventListener("pointerup", up)
+        grip.removeEventListener("pointercancel", up)
+        keep()
+      }
+      grip.addEventListener("pointermove", move)
+      grip.addEventListener("pointerup", up)
+      grip.addEventListener("pointercancel", up)
+    })
+
+    this.el.addEventListener("dblclick", ev => {
+      const grip = ev.target.closest(".ograb")
+      if (!grip) return
+      forget(grip.closest(".job")); keep()
+    })
+
+    this.el.addEventListener("keydown", ev => {
+      const grip = ev.target.closest(".ograb")
+      if (!grip) return
+      const job = grip.closest(".job"), step = ev.shiftKey ? 48 : 16
+      if (ev.key === "ArrowUp") set(job, height(job) - step)
+      else if (ev.key === "ArrowDown") set(job, height(job) + step)
+      else if (ev.key === "Home") forget(job)
+      else return
+      ev.preventDefault(); keep()
+    })
+
+    // A narrower window lowers the ceiling; what was over it comes down.
+    this.resize = () => {
+      for (const job of this.el.querySelectorAll(".job[data-id]")) {
+        if (job.dataset.id in tall) set(job, tall[job.dataset.id])
+      }
+    }
+    addEventListener("resize", this.resize)
+  },
+  updated() { this.paint && this.paint() },
+  destroyed() { removeEventListener("resize", this.resize) },
+}
+
+// --- a job's output, straight from Console.Jobs: the backlog once, on
+// mount, then each batch as it is broadcast. Every batch says where it
+// starts, so what arrived before the backlog answered is not written
+// twice, and a batch that starts past what is here means a gap — the
+// backlog is asked again. The element is phx-update="ignore": the
+// server's patches never touch what is written here.
+const JOB_LINES_CAP = 2000
+export const JobLines = {
+  mounted() {
+    const el = this.el, id = el.dataset.job
+    this.have = 0
+    const add = (from, lines) => {
+      if (from > this.have) return backlog()
+      const rest = lines.slice(this.have - from)
+      if (!rest.length) return
+      const box = el.closest(".out") || el
+      const atEnd = box.scrollHeight - box.scrollTop - box.clientHeight < 24
+      const frag = document.createDocumentFragment()
+      for (const html of rest) { const d = document.createElement("div"); d.innerHTML = html; frag.appendChild(d) }
+      el.appendChild(frag)
+      this.have = from + lines.length
+      while (el.childElementCount > JOB_LINES_CAP) el.firstElementChild.remove()
+      if (atEnd) box.scrollTop = box.scrollHeight
+    }
+    const backlog = () => this.pushEvent("job_backlog", { id }, ({ from, lines }) => { el.replaceChildren(); this.have = from; add(from, lines) })
+    this.handleEvent("job_lines", ({ id: of, from, lines }) => { if (of === id) add(from, lines) })
+    backlog()
+  },
+}
+
+// --- which sections of the rail are folded. The fold itself is the
+// server's — a class put on a section here is wiped by the next status —
+// so this is only its memory: what came back, saved; what was saved,
+// handed over on mount.
+const FOLDS_KEY = "wb-console-folds"
+export const Folds = {
+  mounted() {
+    const saved = store.get(FOLDS_KEY)
+    if (saved) { try { const keys = JSON.parse(saved); if (Array.isArray(keys) && keys.length) this.pushEvent("folds_restore", { keys }) } catch (e) {} }
+    this.handleEvent("folds", ({ keys }) => store.set(FOLDS_KEY, JSON.stringify(keys)))
+  },
+}
+
 // --- the rail's width: dragged, nudged with the arrows, reset with a double click, kept
 const RAIL_KEY = "wb-console-rail", RAIL_MIN = 300, RAIL_MAX_SHARE = 0.5, RAIL_DEFAULT = 380
 export const Rail = {
@@ -92,12 +245,21 @@ export const Rail = {
     const setRail = px => {
       const max = Math.max(RAIL_MIN, Math.round(innerWidth * RAIL_MAX_SHARE))
       const w = Math.round(Math.min(max, Math.max(RAIL_MIN, px)))
-      app.style.setProperty("--rail", w + "px")
+      // On :root and not on the element this hook rides. #app is the
+      // LiveView's, and a patch anywhere inside it walks its attributes
+      // and drops what the server did not render — the width went back
+      // to the stylesheet's 380px the first time a section of the rail
+      // was folded. The same lesson the fold itself taught: what the
+      // client decides must not be written where the server renders.
+      document.documentElement.style.setProperty("--rail-set", w + "px")
       grip.setAttribute("aria-valuenow", String(w)); grip.setAttribute("aria-valuemin", String(RAIL_MIN)); grip.setAttribute("aria-valuemax", String(max))
       grip.title = `${w}px — drag, or arrow keys; double-click for ${RAIL_DEFAULT}`
       return w
     }
     const width = () => parseInt(getComputedStyle(app).getPropertyValue("--rail"), 10) || RAIL_DEFAULT
+    // The grip's own attributes are inside the patched tree too, so they
+    // are written again after one; the width itself no longer needs to be.
+    this.again = () => setRail(width())
     const fromPointer = ev => document.body.classList.contains("rail-right") ? innerWidth - ev.clientX : ev.clientX
     grip.addEventListener("pointerdown", ev => {
       ev.preventDefault(); grip.setPointerCapture(ev.pointerId); grip.classList.add("dragging")
@@ -116,13 +278,14 @@ export const Rail = {
       if (w === null) return
       ev.preventDefault(); setRail(w); store.set(RAIL_KEY, String(width()))
     })
-    this.resize = () => setRail(width())
+    this.resize = this.again
     addEventListener("resize", this.resize)
     const saved = store.get(RAIL_KEY)
     setRail(saved ? +saved : RAIL_DEFAULT)
     // The frame the reader chose — the band's side, the rail's — as classes on <body>.
     try { for (const cls of JSON.parse(store.get("wb-console-frame") || "[]")) document.body.classList.add(cls) } catch (e) {}
   },
+  updated() { this.again && this.again() },
   destroyed() { removeEventListener("resize", this.resize) },
 }
 
@@ -154,20 +317,26 @@ export const Logs = {
     const el = this.el, $ = s => el.querySelector(s)
     const logs = { all: [], follow: true, ts: true, level: "debug", q: "", services: {}, unseenErrors: 0, pending: 0, cap: 2000 }
     const box = $("#lines"), rank = { debug: 0, info: 1, warn: 2, error: 3 }
-    const badge = document.getElementById("logs-badge"), live = document.getElementById("logs-live")
+    const badge = document.getElementById("logs-badge")
     const onScreen = () => location.pathname.replace(/\/$/, "").endsWith("/logs")
     const passes = l => !(logs.services[l.service] === false) && rank[l.level] >= rank[logs.level] && (!logs.q || l.text.toLowerCase().includes(logs.q.toLowerCase()))
+    // The line's own colours (the ansi cartridge's) are spans in `html`,
+    // from the server; a search writes the plain text with its mark
+    // instead, since the match is found on the text.
     const lineEl = l => {
       const m = h("span", "m")
       if (logs.q) { const i = l.text.toLowerCase().indexOf(logs.q.toLowerCase()); if (i >= 0) { m.append(l.text.slice(0, i), Object.assign(h("mark"), { textContent: l.text.slice(i, i + logs.q.length) }), l.text.slice(i + logs.q.length)) } else m.textContent = l.text }
-      else m.textContent = l.text
+      else m.innerHTML = l.html
       const n = h("div", "ln " + l.level + (l.cont ? " cont" : "") + (logs.q ? " hit" : ""))
       n.style.setProperty("--svc", svcColor(l.service))
       n.append(h("span", "t", fmtTs(l.ts)), h("span", "s", l.service), m)
       return n
     }
     const renderCount = () => { const vis = logs.all.filter(passes).length; $("#log-count").textContent = `${vis} of ${logs.all.length} lines` + (logs.q ? ` matching “${logs.q}”` : "") }
-    const renderBadge = () => { if (badge) { badge.hidden = !logs.unseenErrors; badge.textContent = logs.unseenErrors + " err" } if (live) live.style.display = logs.follow ? "" : "none" }
+    // The unseen errors are the client's to count; the pulse beside them
+    // is not the client's to decide — it says a container is running,
+    // which only the status knows.
+    const renderBadge = () => { if (badge) { badge.hidden = !logs.unseenErrors; badge.textContent = logs.unseenErrors + " err" } }
     const scrollToEnd = () => { box.scrollTop = box.scrollHeight; logs.pending = 0; $("#newpill").classList.remove("on") }
     const setFollow = on => { logs.follow = on; $("#follow").setAttribute("aria-pressed", String(on)); $("#follow").textContent = on ? "Following" : "Paused"; if (on) scrollToEnd(); renderBadge() }
     const renderChips = () => {
@@ -183,7 +352,7 @@ export const Logs = {
       box.classList.toggle("no-svc", Object.keys(logs.services).filter(s => logs.services[s] !== false).length === 1)
       const vis = logs.all.filter(passes)
       for (const l of vis) box.append(lineEl(l))
-      if (!vis.length) box.append(h("div", "empty", logs.all.length ? "Nothing matches." : "No lines yet."))
+      if (!vis.length) box.append(h("div", "nothing", logs.all.length ? "Nothing matches: every line is filtered out." : "No lines yet: the stream is attached and waiting for the containers to write one."))
       if (logs.follow) scrollToEnd()
       renderCount()
     }
@@ -212,6 +381,15 @@ export const Logs = {
     box.addEventListener("scroll", () => { if (box.scrollHeight - box.scrollTop - box.clientHeight < 24 && logs.pending) { logs.pending = 0; $("#newpill").classList.remove("on") } })
     // Arriving on the screen: what was unseen is seen.
     window.addEventListener("phx:page-loading-stop", () => { if (onScreen()) { logs.unseenErrors = 0; renderBadge(); if (logs.follow) scrollToEnd() } })
+    // One container's lines, asked for from its row in the rail: that
+    // service is the only one lit, and every other chip goes off. A
+    // service with no lines yet has no chip, so it is written into the
+    // set first — otherwise asking for the quiet one would show them all.
+    this.handleEvent("logs_only", ({ service }) => {
+      if (!(service in logs.services)) logs.services[service] = true
+      for (const s of Object.keys(logs.services)) logs.services[s] = s === service
+      renderChips(); rerender()
+    })
     this.handleEvent("log", l => push(l))
     // The lines the stream already holds; a stream started again starts the page over too.
     this.pushEvent("logs_backlog", {}, ({ lines }) => { logs.all = []; for (const l of lines) push(l, true); rerender() })

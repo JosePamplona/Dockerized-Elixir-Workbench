@@ -10,7 +10,26 @@ html,body{height:100%}
    100vh minus a hardcoded pixel count: a fractional zoom rounded that
    into a one-pixel slit under the jobs bar. */
 body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--serif);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;display:grid;grid-template-rows:auto minmax(0,1fr);overflow:hidden}
-a{color:inherit}
+/* The console is a LiveView, and a LiveView comes wrapped in a div of
+   its own. That div was the body's only grid row: it took its height
+   from its content, the two rows below it never applied, and the whole
+   frame grew past the window with the jobs bar left under the fold.
+   `display:contents` takes the wrapper's box away and gives the band
+   and the app back to the body's grid. The mock has no wrapper, and
+   reads the same rules unchanged. */
+body>[data-phx-main]{display:contents}
+/* In this console a link is almost never a word in a sentence: it is a tab, a
+   box on the shelf, a door, a row, the whole jobs bar. All of those are
+   surfaces you press, and the house already says what a surface you press
+   looks like — a border, a ground, a cursor — so the browser's underline on
+   top of one is noise, and it was being taken off one element at a time, at
+   the bottom of this file, once per element that became an <a>. The tray's bar
+   was the one that got away: its class was renamed and the rule that undressed
+   it (`a.tray-bar`) went on matching nothing. So the underline is a mark here,
+   not a default: nothing wears it unless it asks. The two that ask are the two
+   that are really links in prose — a link inside rendered Markdown, and .lk,
+   the button that reads as one. */
+a{color:inherit;text-decoration:none}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
 button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 /* A placeholder with no colour of its own gets the browser's, and that
@@ -33,10 +52,23 @@ button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-v
 
 /* --- the band --------------------------------------------------------- */
 header.band{
+  position:relative;
   background:var(--board);color:var(--board-ink);
   display:flex;align-items:center;justify-content:space-between;gap:24px;
-  padding:0 28px;height:56px;border-bottom:3px solid var(--accent);
+  padding:0 28px;height:56px;border-bottom:3px solid transparent;
 }
+/* The band's gold rule IS the loading bar, and the two were never two
+   things: a full rule is a page with nothing on its way, and that is
+   what it has always looked like. So it is drawn rather than bordered,
+   and its width is `--load` — 1 at rest, which is the rule as it always
+   was, and rewound to a sliver while something is coming. It is only
+   ever seen incomplete. Phoenix's own topbar is gone with this: it drew
+   a second 3px line, in a blue that was not the house's, pinned to the
+   top of the window — which is not where the band is once the reader
+   has moved it. The transform is what animates, not the variable, so
+   this needs no @property to be smooth. */
+header.band::after{content:"";position:absolute;left:0;right:0;bottom:-3px;height:3px;background:var(--accent);
+  transform:scaleX(var(--load,1));transform-origin:left;transition:transform var(--load-in,.18s) ease-out}
 /* One cell, three uses. 56px wide, the band's full height, closed by a
    hairline: the mark in the left corner, and in the right one the two
    controls that are not about this row but about the whole thing — the
@@ -66,6 +98,38 @@ header.band h1 small{display:block;font-weight:500;letter-spacing:.2em;font-size
 header.band h1 small .v{font-family:var(--mono);letter-spacing:.02em;font-size:10px;opacity:.75;margin-left:8px}
 /* The row stretches so the corner control can reach the band's full
    height; its own align-items keeps everything else centred in it. */
+/* What the console is doing, in the band's middle. It is the chip's
+   grammar with the plate taken off — a dot and a word, mono in lower
+   case — which is the move the probe already made on the door: nobody
+   presses this, so it has no box. The dot is the only thing that moves
+   in the whole band, and it moves for the same reason .chip.busy's does.
+   Centred in what the mark and the controls leave, and the first thing
+   to give up its room when the window narrows: it ellipsises, then the
+   title's subtitle goes, and the word survives to the end. */
+/* Nothing here is a value to copy: it is the console saying what it is
+   doing, and a drag across the band should not leave it highlighted. */
+header.band .state{flex:1;min-width:0;display:flex;justify-content:center;font-family:var(--mono);font-size:12px;user-select:none;-webkit-user-select:none}
+header.band .state .w{display:inline-flex;align-items:center;gap:8px;min-width:0}
+header.band .state .word{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+header.band .state .dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+header.band .state.busy .dot{animation:chip-pulse 1s infinite}
+/* An absence keeps the word and drops everything else: the hollow dot is
+   the shelf's «not inserted», read here as «nothing is happening». */
+header.band .state.idle{opacity:.5}
+header.band .state.idle .dot{background:none;border:1.5px solid currentColor;box-sizing:border-box}
+/* The band is the same violet on both grounds, so a colour on it is always
+   the dark value — which is what --board-warn and --board-bad are, read
+   from the tokens and not written here. */
+header.band .state.warn{color:var(--board-warn)}
+header.band .state.bad{color:var(--board-bad)}
+/* The one state the server cannot report is the one where there is no
+   server: LiveView marks the page .phx-error when the socket goes, and the
+   band answers from CSS alone. The word underneath is whatever was true
+   when the line went dead, so it is replaced, not merely tinted. */
+.phx-error header.band .state{color:var(--board-bad);opacity:1}
+.phx-error header.band .state .dot{background:currentColor;border:0;animation:none}
+.phx-error header.band .state .word{display:none}
+.phx-error header.band .state .w::after{content:"no connection"}
 header.band .right{display:flex;align-items:center;align-self:stretch;gap:18px;font-family:var(--mono);font-size:12px}
 header.band .right .cell{border-left:1px solid rgba(255,255,255,.2)}
 /* Two cells at the same end share an edge: the row's gap between them
@@ -94,14 +158,18 @@ header.band .mock{border:1px solid rgba(255,255,255,.35);padding:3px 8px;border-
    the grip drags, and it is remembered per browser. The bounds live in
    the script, which also keeps the screen from being squeezed under what
    a panel needs — a rule here could only clamp against the rail. */
-.app{--rail:380px;position:relative;display:grid;grid-template-columns:var(--rail) minmax(0,1fr);height:100%;min-height:0}
+/* The rail's width: the stylesheet's default, and whatever the reader
+   dragged it to — which the Rail hook writes on :root, outside anything
+   LiveView patches, so a fold or a status does not take it back. */
+.app{--rail:var(--rail-set,380px);position:relative;display:grid;grid-template-columns:var(--rail) minmax(0,1fr);height:100%;min-height:0}
 /* The frame has three axes, and each is one class on <body>. The band is
    a grid row, so moving it is the row order; the rail is a grid column,
    so hiding it is one template and swapping sides is another plus the
    border, which always faces the screen. */
 body.band-bottom{grid-template-rows:minmax(0,1fr) auto}
-body.band-bottom>header.band{grid-row:2;border-bottom:0;border-top:3px solid var(--accent)}
-body.band-bottom>.app{grid-row:1}
+body.band-bottom header.band{grid-row:2;border-bottom:0;border-top:3px solid transparent}
+body.band-bottom header.band::after{bottom:auto;top:-3px}
+body.band-bottom .app{grid-row:1}
 body.rail-right .app{grid-template-columns:minmax(0,1fr) var(--rail)}
 body.rail-right .console{order:2;border-right:0;border-left:1px solid var(--line)}
 body.rail-off .app{grid-template-columns:minmax(0,1fr)}
@@ -116,6 +184,13 @@ body.rail-off .console{display:none}
    screen dark enough to show it). Sticky is gone: the bar is the
    screen's own last row now, outside anything that clips, so there is
    no edge for the two to disagree on. */
+/* The frame of a screen, top to bottom: the row of screens, what the
+   reader reads, the jobs bar. Only the middle one scrolls. The row used
+   to ride inside the scroller as a sticky passenger, which is the same
+   arrangement the jobs bar was in before it was moved out — and it has
+   the same fault: two edges rounded by different arithmetic, and a slit
+   of the content between them. A row that must not move is a row of the
+   frame, not an element of the document. */
 .screen{min-width:0;display:flex;flex-direction:column;height:100%;overflow:hidden;min-height:0}
 .scroller{flex:1;min-height:0;min-width:0;overflow:auto;display:flex;flex-direction:column}
 /* Sits on the seam, wider than it looks: a 9px target over a 1px line,
@@ -133,8 +208,41 @@ body.rail-right .grip{left:auto;right:var(--rail);margin:0 -5px 0 0}
 body.rail-off .grip{display:none}
 @media (max-width:900px){.app{grid-template-columns:1fr}.console{border-right:0;border-bottom:1px solid var(--line)}.grip{display:none}}
 
+/* --- a docked row ------------------------------------------------------- */
+/* Three rows of this console do not move while what they govern scrolls:
+   the config bar in the drawer, the papers of a cartridge, the papers of
+   the project. They are one thing and are written once — what each still
+   says for itself is only the ground it is on, because a drawer sits on
+   the surface and a screen on the ground.
+   They do not move because there is nothing under them that could move
+   them: each is the first row of a pane whose *second* row is what
+   scrolls. They were sticky passengers of the scroller before, docked at
+   the measured height of whatever was fixed above — and two edges
+   rounded by different arithmetic left a slit of the document between
+   them, which is the same fault the jobs bar had when it was a sticky
+   footer. A row that must not move is a row of the frame, not an element
+   of the document; then there is no edge for the two to disagree on, and
+   nothing to measure. */
+.docked{flex:none;border-bottom:1px solid var(--line)}
+
 section h2{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:15px;margin:0 0 10px;display:flex;align-items:baseline;gap:10px}
 section h2 .label{font-weight:500;letter-spacing:.1em}
+/* The head of a section in the rail is the control that folds it: the
+   heading stays a heading and the button inside it takes the whole line,
+   which is the accordion a screen reader expects (aria-expanded on the
+   button, not on the section). The caret is the one the jobs list and
+   the file rows already use, and it is drawn, not typed — the fold is a
+   state, and a state is not a character somebody has to remember to
+   change on both sides. */
+.console section h2 button.fold{display:flex;align-items:baseline;gap:10px}
+/* Folded: the head is all that is left, and the head is the summary —
+   `4 of 4 running`, `2 open by cartridges`. The rail keeps its table of
+   contents when it puts the tables away. */
+.console section.folded > :not(h2){display:none}
+/* Folded, the head is the section: the space it kept for what came after
+   it goes with it. Said on .folded and not on the head itself, so the
+   mock — which reads this stylesheet and has no fold — keeps its own. */
+.console section.folded h2{margin-bottom:0}
 
 /* --- console blocks ---------------------------------------------------- */
 .ws{display:grid;gap:8px}
@@ -164,7 +272,30 @@ table.rows td.k{font-family:var(--cond);font-weight:600;letter-spacing:.08em;tex
    anything that can go in it — and said the wrong thing, that a badge
    keeps its distance, when it is the column that does. */
 table.rows td.st{width:var(--st);white-space:nowrap}
+/* Containers carry an action column now — the row's two ways into that
+   container, Logs and a shell — and the rail is 380px wide by default:
+   four columns left the image at 34px, wrapped into a stack of letters.
+   So the image goes under the name, on the line .hint already draws for
+   a second fact, and the name column takes whatever the state and the
+   actions leave. The widest action pair is Logs + a shell's name. */
 #containers{--st:103px}
+/* The console's Containers table carries an action column that the mock's
+   does not, so what the fourth column costs is scoped to `.acts` and the
+   mock, which reads this same stylesheet, keeps the three it has. */
+#containers.acts{--act:96px;table-layout:fixed}
+/* Two actions, not one, so the column reads down from its left edge and
+   not from its right: `Logs` is on every row and always at the same x,
+   the shell follows it at the same x too — and the row that has no shell
+   (the pause container) leaves the tail empty instead of sliding its one
+   button across to where nothing else is. */
+#containers.acts td.act{text-align:left;padding-left:8px}
+#containers.acts td.k{width:auto}
+/* The image on one line, cut where the column ends and whole in the
+   cell's title: `overflow-wrap:anywhere`, which the table wants for the
+   long values it carries elsewhere, broke `registry.k8s.io/pause:3.10`
+   into `registry.k8s.io/p` and `ause:3.10` — a name read as letters. */
+#containers.acts td.k .hint{font-family:var(--mono);font-weight:400;letter-spacing:0;text-transform:none;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #deployments{--st:73px;--act:56px}
 table.rows td.muted{color:var(--muted)}
 table.rows td .hint{display:block;font-size:11.5px;color:var(--muted);margin-top:4px}
@@ -233,7 +364,7 @@ table.rows tr.new{animation:seat 1.2s ease-out}
 .term .screen{padding:10px 14px;min-height:0}
 .term .screen .p{color:var(--accent)}
 .term .screen .dim{color:var(--term-dim)}
-.term .screen .empty{color:var(--term-dim);font-style:italic}
+
 .term .in{display:flex;gap:8px;align-items:center;font-family:var(--mono);font-size:12.5px;padding:8px 14px;border-top:1px solid var(--term-line);background:var(--term)}
 .term .in .p{color:var(--accent);white-space:nowrap}
 .term .in input{flex:1;font-family:var(--mono);font-size:12.5px;padding:4px 0;border:0;background:transparent;color:var(--term-ink);min-width:0;outline:none}
@@ -255,7 +386,7 @@ table.rows tr.new{animation:seat 1.2s ease-out}
 .note{font-size:13px;color:var(--muted);font-style:italic;margin:0}
 
 /* --- tabs ---------------------------------------------------------------- */
-.tabs{display:flex;gap:2px;padding:14px 28px 0;border-bottom:1px solid var(--line);background:var(--ground);position:sticky;top:0;z-index:2;flex-wrap:wrap;row-gap:0}
+.tabs{flex:none;display:flex;gap:2px;padding:14px 28px 0;border-bottom:1px solid var(--line);background:var(--ground);flex-wrap:wrap;row-gap:0}
 .tab{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.12em;font-size:14px;color:var(--muted);padding:8px 14px 10px;border-bottom:3px solid transparent;margin-bottom:-1px;display:inline-flex;gap:8px;align-items:center}
 .tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
 .tab[aria-disabled="true"],.dtab[aria-disabled="true"]{border-bottom-color:transparent}
@@ -264,6 +395,16 @@ table.rows tr.new{animation:seat 1.2s ease-out}
 .tab .live{width:7px;height:7px;border-radius:50%;background:var(--good);animation:pulse 1.4s infinite}
 .panel{display:none;padding:22px 28px 60px;flex:1;min-width:0}
 .panel.on{display:block}
+/* Three screens are not documents: the logs, the terminal and the jobs are a
+   toolbar, a line about it, and a pane that holds as much as the window gives
+   it and scrolls inside itself. They said so already — `.logs` is a grid whose
+   last row is minmax(0,1fr) and asks for flex:1 — but they were asking a block
+   for it, and a block has no free height to give: the pane grew with its
+   content, the scroller took the overflow, and the toolbar scrolled away with
+   everything else. The screen fills, and the pane is what scrolls. The 60px
+   under a document is for the last paragraph not to sit on the edge; a pane
+   that ends where the window ends does not want it. */
+.panel.fill.on{display:flex;flex-direction:column;min-height:0;padding-bottom:22px}
 
 /* --- the shelf --------------------------------------------------------- */
 .shelf-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:4px;flex-wrap:wrap}
@@ -358,7 +499,7 @@ table.rows tr.new{animation:seat 1.2s ease-out}
 .lines.no-ts.no-svc .ln{grid-template-columns:minmax(0,1fr)}
 .newpill{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);background:var(--accent);color:var(--accent-ink);font-family:var(--cond);font-weight:700;letter-spacing:.12em;text-transform:uppercase;font-size:12px;padding:6px 14px;border-radius:999px;box-shadow:0 4px 12px rgba(0,0,0,.4);display:none}
 .newpill.on{display:block}
-.empty{color:var(--term-dim);font-style:italic;padding:14px}
+
 
 /* --- deploy -------------------------------------------------------------- */
 .targets{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
@@ -383,11 +524,16 @@ table.rows tr.new{animation:seat 1.2s ease-out}
 .newcard .frow label{font-family:var(--mono);font-size:12.5px}
 .newcard .frow input[type=text]{font-family:var(--mono);font-size:13px;padding:6px 8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;width:100%;max-width:520px}
 .newcard .flags select{font-family:var(--mono);font-size:12px;margin-left:4px;padding:2px 4px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px}
+/* A base cartridge left out is left out, not unknown. The strike this
+   used to draw belongs to `.cart-ref.unknown`, which the house keeps for
+   one thing — a name with no cartridge behind it — and a mention that
+   exists must not wear it because the reader unticked a box. The box is
+   the state; the label goes quiet with it, and the reference keeps the
+   face the house gives every mention of a cartridge. */
 .newcard .bases label.out{color:var(--muted)}
-.newcard .bases label.out .cart-ref{text-decoration:line-through;color:var(--muted)}
 .newcard .bases .subs{display:inline-flex;gap:6px 14px;align-items:center;flex-wrap:wrap}
 .newcard .bases label.sub{margin-left:-2px;padding-left:10px;border-left:1px solid var(--line);color:var(--muted)}
-.newcard .bases label.sub.out{text-decoration:none;opacity:.5}
+.newcard .bases label.sub.out{color:var(--muted)}
 .newcard .frow .ro{font-family:var(--mono);font-size:12.5px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .newcard .frow .ro a{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:11px;color:var(--accent)}
 .newcard .flags{display:flex;flex-wrap:wrap;gap:6px 14px;font-family:var(--mono);font-size:12.5px}
@@ -425,16 +571,44 @@ table.rows tr.new{animation:seat 1.2s ease-out}
 .toolbar.cli input{flex:1;min-width:200px;font-family:var(--mono);font-size:12.5px;padding:5px 9px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px}
 .viewport.light{background:var(--surface);color:var(--ink);border-color:var(--line)}
 .viewport.light .lines{padding:0}
-.viewport.light .lines:empty::before{content:"No jobs yet. Every command the console runs is a job — its output, its exit code, how long it took. Insert a cartridge, deploy, or type one above.";display:block;padding:14px 28px;max-width:64ch;font-family:var(--serif);font-style:italic;color:var(--muted)}
+.viewport.light .lines:empty::before{content:"No jobs yet. Every command the console runs is a job — its output, its exit code, how long it took. Insert a cartridge, deploy, or type one above.";display:block;padding:14px 28px;max-width:64ch}
 /* The columns keep their air; the row below does not need as much. The
    output belongs to the line above it — half the gap says so, and 14px
    read as a gap between two things rather than one unfolding. */
 .job{display:grid;grid-template-columns:auto 1fr auto auto;column-gap:14px;row-gap:7px;align-items:center;padding:8px 28px;border-top:1px solid var(--line);font-family:var(--mono);font-size:12px;cursor:pointer}
 .job:first-child{border-top:0}
+/* The job's trigger is a control of its own, so the caret can be drawn
+   from its aria-expanded like every other fold — and so the output below
+   is no longer a click target: reading a job's lines used to close it.
+   It spans the row and carries the row's own columns, which leaves the
+   grid above it for the mock, whose jobs are built by its own script. */
+.job .jt{grid-column:1/-1;display:grid;grid-template-columns:auto 1fr auto auto;column-gap:14px;align-items:center}
+.job .jt ~ .out{cursor:auto}
 .job .cmdline{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .job .dur{color:var(--muted);font-variant-numeric:tabular-nums}
-.job .out{grid-column:1/-1;display:none;background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:10px 14px;white-space:pre-wrap;line-height:1.55;max-height:220px;overflow:auto}
+.job .out{grid-column:1/-1;display:none;background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:10px 14px;white-space:pre-wrap;line-height:1.55;max-height:var(--job-out,220px);overflow:auto}
 .job.open .out{display:block}
+/* A job's output is capped so a long one does not push the list out of
+   reach, and the cap is the reader's: the row under the pane is a grip,
+   and what it is dragged to becomes the cap for every job, kept in this
+   browser.
+   The browser's own `resize` did this first and was wrong twice. Its
+   grip lives in the corner where the scrollbar ends, and that corner is
+   drawn by the browser: a white square on a terminal ground, which
+   appeared exactly when the output was long enough to scroll. Painting
+   it would mean ::-webkit-scrollbar and the whole legacy model this
+   house refused on purpose (see components.css). And it wrote an inline
+   height, which is one pane's and would hold a short output open on
+   blank ground.
+   So the grip is ours, made like the rail's: a 9px target over a line
+   that is only drawn under the pointer or the keyboard, and it moves a
+   variable rather than a height — which also gives it the arrows and a
+   double-click, neither of which a native resizer has. */
+.job .ograb{grid-column:1/-1;height:9px;margin:-11px 0 0;position:relative;cursor:ns-resize;touch-action:none;background:none;border:0;padding:0}
+.job .ograb::after{content:"";position:absolute;left:0;right:0;top:2px;height:1px;background:var(--accent);opacity:0;transition:opacity .12s}
+.job .ograb:hover::after,.job .ograb:focus-visible::after{opacity:.7}
+.job .ograb.dragging::after{opacity:1;top:1px;height:3px}
+.job .ograb:focus-visible{outline:none}
 .out .dim{color:var(--term-dim)}.out .add{color:#9BD99A}.out .upd{color:#E3B25C}.out .ok{color:#D4B27E;font-weight:500}.out .err{color:#F3A196}
 
 /* --- the box in hand (drawer) ----------------------------------------- */
@@ -448,12 +622,16 @@ table.rows tr.new{animation:seat 1.2s ease-out}
   background:var(--surface);border:1px solid var(--line);border-radius:4px;
   transform:translateY(14px) scale(.985);opacity:0;pointer-events:none;
   transition:transform .22s cubic-bezier(.2,.7,.2,1),opacity .18s;
-  overflow-y:auto;box-shadow:0 30px 70px rgba(0,0,0,.45);display:grid;grid-template-rows:auto 1fr;z-index:6
+  overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,.45);display:grid;grid-template-rows:auto minmax(0,1fr);z-index:6
 }
 .drawer.on{transform:none;opacity:1;pointer-events:auto}
 @media (max-width:700px){.drawer{width:100vw;height:100vh;border-radius:0;border:0}}
 /* Above the config tab's own sticky bar (z-index 1), which scrolled over these tabs. */
-.drawer .top{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--surface);z-index:3}
+/* The drawer is its header and its pane, and the pane is what scrolls —
+   so the header does not have to be told to stay: it is a row of the
+   frame. Which is also why nothing under it needs to know how tall it
+   is. */
+.drawer .top{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--line);background:var(--surface)}
 .drawer .top h3{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:16px}
 /* The step back and the name of the box in hand travel together on the
    left; Put back stays at the other end. */
@@ -494,28 +672,28 @@ table.rows tr.new{animation:seat 1.2s ease-out}
    under it, and auto rows share that space out — which grew the row of
    papers itself, by as much as a hundred pixels, whenever the sheet was
    a short one. */
-.papers{display:grid;padding:0 32px;align-content:start}
+.papers{display:flex;flex-direction:column;min-height:0;padding:0 32px}
 .papers[hidden]{display:none}
-.papers .dtabs{margin:0;padding:10px 0 0;border-bottom:1px solid var(--line);
-  position:sticky;top:var(--modal-top,64px);background:var(--surface);z-index:1}
-.papers .booklet{padding:22px 0 60px}
+.papers .dtabs{flex:none;margin:0;padding:10px 0 0;background:var(--surface)}
+.papers .booklet{flex:1;min-height:0;overflow:auto;padding:22px 0 60px}
 /* What is fixed above a heading is now the header and the row together,
    so both the index's jumps and the index itself clear the two. */
-.papers .booklet{--fixed-above:var(--papers-top,161px)}
-.papers .booklet .toc{top:calc(var(--papers-top,161px) + 14px)}
+.papers .booklet{--fixed-above:0px}
+.papers .booklet .toc{top:0}
 .booklet{display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:32px;padding:26px 32px 60px}
+.drawer > .booklet,.drawer > .ui{min-height:0;overflow:auto}
 .booklet[hidden]{display:none}
 .booklet.notoc{grid-template-columns:minmax(0,1fr)}
-.booklet .toc{position:sticky;top:104px;align-self:start;display:grid;gap:6px;font-family:var(--cond);font-weight:600;letter-spacing:.06em;font-size:12.5px;text-transform:uppercase;border-left:1px solid var(--line);padding-left:12px}
-.booklet .toc a{color:var(--muted);text-decoration:none}
+.booklet .toc{position:sticky;top:0;align-self:start;display:grid;gap:6px;font-family:var(--cond);font-weight:600;letter-spacing:.06em;font-size:12.5px;text-transform:uppercase;border-left:1px solid var(--line);padding-left:12px}
+.booklet .toc a{color:var(--muted)}
 .booklet .toc a:hover{color:var(--ink)}
 .booklet .toc .doctitle{color:var(--ink);font-size:13.5px;letter-spacing:.08em;margin-bottom:6px;text-wrap:balance}
 .booklet .toc .doctitle:hover{color:var(--accent)}
 /* Where a heading lands when the index scrolls to it: below the fixed
    top of its container, with air — the modal's top bar and tabs, or the
    screen's tab bar — so the heading itself is what comes into view. */
-.booklet{--fixed-above:112px}
-.pdocs .booklet{--fixed-above:var(--pdocs-top,120px)}
+.booklet{--fixed-above:0px}
+.pdocs .booklet{--fixed-above:0px}
 .md{scroll-margin-top:var(--fixed-above)}
 .md h1,.md h2,.md h3{scroll-margin-top:calc(var(--fixed-above) + 6px)}
 @media (max-width:640px){.booklet{grid-template-columns:1fr}.booklet .toc{display:none}}
@@ -525,7 +703,7 @@ table.rows tr.new{animation:seat 1.2s ease-out}
 .md h1{font-size:28px;margin-top:0}.md h2{font-size:21px;padding-top:.6em;border-top:1px solid var(--line)}.md h3{font-size:16px}.md h4{font-size:14px;color:var(--muted)}
 .md p,.md ul,.md ol{margin:0 0 1em}
 .md li{margin:.2em 0}
-.md a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:3px}
+.md a{color:var(--accent);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
 .md a[data-open]{font-family:var(--cond);font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-size:.85em;text-decoration:none;border:1px solid var(--accent);padding:1px 6px;border-radius:2px}
 .md code{font-family:var(--mono);font-size:.86em;background:var(--surface-2);padding:.1em .35em;border-radius:2px}
 .md pre{background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:12px 14px;overflow-x:auto;font-size:12.5px;line-height:1.5;margin:0 0 1.2em}
@@ -632,7 +810,7 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
 .log .dim{color:var(--term-dim)}.log .add{color:#9BD99A}.log .upd{color:#E3B25C}.log .ok{color:#D4B27E;font-weight:500}
 /* What an empty window says is the window's, not the stylesheet's: the
    install screen and the cluster's probes each say what will land here. */
-.log:empty::before{content:attr(data-empty);color:var(--term-dim);font-style:italic}
+.log:empty::before{content:attr(data-empty)}
 .log-cap{display:flex;justify-content:space-between;align-items:baseline}
 /* --- Installation: what the cartridge wrote --------------------------------
    Its own screen, the drawer's full width, one scroll. */
@@ -652,8 +830,7 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
 .impl .fh:hover{background:var(--accent-soft)}
 /* The row's trigger is its own button, so the cart-refs beside it stay
    the links the house says a cartridge mention always is. */
-.impl .ft{flex:1;min-width:0;display:flex;gap:10px;align-items:baseline;text-align:left;padding:2px 0;border:0;background:none;font:inherit;color:inherit;cursor:pointer}
-.impl .ft .caret{color:var(--soft);width:1em;flex:none}
+.impl .ft{flex:1;min-width:0;width:auto;display:flex;gap:10px;align-items:baseline;padding:2px 0}
 .impl .ft .p{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .impl .fh .mark{flex:none;font-family:var(--cond);font-weight:600;text-transform:uppercase;letter-spacing:.08em;font-size:11px;color:var(--muted)}
 .impl .fh .refs{flex:none;display:flex;gap:5px;align-items:center}
@@ -747,15 +924,11 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
 /* No top padding: the bar's own is the air above it, so it is already at
    its docked place at rest and does not travel there. See the note on the
    bar itself. */
-.cfg{display:grid;gap:26px;padding:0 32px 60px;max-width:860px}
-/* Sticks right under the modal's header, whose real height the modal measures
-   into --modal-top when it opens (64px was a guess the wrapped tabs outgrew).
-   Docked from the first pixel: what it holds is the way around the file, and
-   a row that is in one place at rest and another after a nudge is a row the
-   eye has to find twice. The three rows of this console that stay put — this
-   one, the cartridge's papers, the project's — are set the same way, and the
-   air above each is the row's own, never the container's. */
-.cfg .bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;position:sticky;top:var(--modal-top,64px);background:var(--surface);padding:10px 0;border-bottom:1px solid var(--line);z-index:1}
+.cfg{display:flex;flex-direction:column;min-height:0;padding:0 32px;max-width:860px}
+.cfg .cfgbody{flex:1;min-height:0;overflow:auto;display:grid;gap:26px;padding:26px 0 60px}
+/* The pane's first row; the form under it is what scrolls. See .docked
+   for what the three rows share. */
+.cfg .bar{flex:none;display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--surface);padding:10px 0}
 .cfg .bar .note{flex:1;min-width:200px}
 .cfg .sec{display:grid;gap:14px}
 .cfg .sec .intro{margin:-6px 0 0;font-size:13.5px;color:var(--muted);max-width:60ch}
@@ -768,7 +941,9 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
 .cfg .row{display:grid;grid-template-columns:220px minmax(0,1fr);gap:4px 16px;align-items:center}
 .cfg .row label{font-family:var(--mono);font-size:12.5px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .cfg .row .help{grid-column:2;font-size:12.5px;color:var(--muted);margin:0}
-.cfg .row .help a{color:var(--accent)}
+/* An address in what config.conf says: it is a link in prose, so it is
+   one of the two places in the console that wear the underline. */
+.cfg .row .help a,.cfg .intro a{color:var(--accent);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;overflow-wrap:anywhere}
 /* The frame and the ground, on a screen of their own. Same shape as a
    config row — the control, then what it is and what it is doing — but
    the reading is the other way round: config says what the next project
@@ -785,30 +960,51 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
 .ui .ground svg{width:19px;height:19px;display:block}
 .cfg .row select option.dim{color:var(--soft)}
 .cfg .row input[type=text],.cfg .row select{font-family:var(--mono);font-size:13px;padding:6px 8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;width:100%;max-width:520px}
+/* The stack field is a .fetch: the house's pair keeps the field's width,
+   so the 520px the column is built on belongs to the pair now and the
+   select gives the button its side. */
+/* The stack row holds two things now: the field with its errand button,
+   and the state of the four fields together. The state goes under the
+   field and aligned with it — the drawer's column is 560px and the field
+   takes 520 of them, so there is no room beside, and taking the room
+   from the field would have shortened the one input whose value is a
+   46-character tag. Under is also where a form's verdict on a field
+   belongs. It wraps rather than being told to, so it would sit beside
+   the day the column is wide enough for both. */
+.cfg .row .stackline{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap}
+.cfg .row .fetch{flex:0 1 520px;font-size:13px}
+.cfg .row .help .bad{display:block;color:var(--bad);margin-top:4px}
 .cfg .row input[type=checkbox]{width:16px;height:16px}
 .cfg .row.changed label::after{content:"●";color:var(--accent);font-size:10px}
 .cfg .chip.new{font-size:10px;padding:1px 5px}
 .cfg .stack{display:grid;gap:8px}
 .cfg pre.raw{font-family:var(--mono);font-size:12px;line-height:1.5;background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:14px;overflow:auto;margin:0;white-space:pre}
+/* The pre no longer breaks its own lines: each is an element, so the
+   container wraps normally and the line keeps its own spaces. An empty
+   line is an empty element, and an empty element is no lines tall — so
+   it is given one, in the unit that is exactly one: 1lh. */
+.cfg pre.raw{white-space:normal}
+.cfg pre.raw .ln,.pdocs pre.env .ln{white-space:pre-wrap;min-height:1.5em;min-height:1lh}
 .cfg pre.raw .c{color:var(--term-dim)}.cfg pre.raw .k{color:#D4B27E}.cfg pre.raw .v{color:#9BD99A}
 @media (max-width:700px){.cfg .row{grid-template-columns:1fr}.cfg .row .help{grid-column:1}}
 
 /* --- the project's own documents --------------------------------------- */
-.pdocs{display:grid;gap:14px}
+/* The project's documents: the row that says which one, and the one
+   being read. The row is the pane's own first line — it does not move
+   because there is nothing under it to move it — and only the document
+   scrolls. */
+.pdocs{display:flex;flex-direction:column;min-height:0;gap:0}
 /* The one screen whose panel gives its top air away: the row takes it, so
    that here too the row is docked from the first pixel, like the config
-   bar and the cartridge's papers. On a screen the fixed thing above is
-   the row of screens, not a modal's header, so it sticks to --screen-top
-   — its measured height, which grows when that row wraps. Its ground is
-   the panel's, not a modal's surface. */
+   bar and the cartridge's papers. Its ground is the panel's, not a
+   modal's surface. */
 #panel-project{padding-top:0}
-.pdocs .dtabs{margin:0;padding:10px 0 0;border-bottom:1px solid var(--line);
-  position:sticky;top:var(--screen-top,72px);background:var(--ground);z-index:1}
-.pdocs .booklet{padding:10px 0 40px}
-.pdocs .booklet .toc{top:calc(var(--pdocs-top,120px) + 14px)}
-.pdocs pre.env{font-family:var(--mono);font-size:12.5px;line-height:1.6;background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:14px 16px;overflow:auto;margin:0}
+.pdocs .dtabs{flex:none;margin:0;padding:0 0 0;background:var(--ground)}
+.pdocs .booklet{flex:1;min-height:0;overflow:auto;padding:14px 0 40px}
+.pdocs .booklet .toc{top:0}
+.pdocs pre.env{flex:1;min-height:0;margin-top:14px;font-family:var(--mono);font-size:12.5px;line-height:1.6;background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:14px 16px;overflow:auto;margin:0;white-space:normal}
 .pdocs pre.env .c{color:var(--term-dim)}.pdocs pre.env .k{color:#D4B27E}.pdocs pre.env .m{color:#F3A196}
-.pdocs .missing{border:1px dashed var(--line);padding:18px;color:var(--muted);font-style:italic;max-width:60ch}
+.pdocs .nothing{padding:18px 0;max-width:60ch}
 
 /* --- figures: a hint on hover, a viewer on click --------------------------- */
 .fig{position:relative;margin:0 0 1.2em}
@@ -846,7 +1042,22 @@ img{-webkit-user-drag:none;user-drag:none}
    scrollbar-color inherits, so saying it once here is enough — and it is
    said here, in one grouped rule, rather than in each of their five
    declarations, where the sixth pane added would forget it. */
+/* The same panes once more, and the band with them: a ground that does
+   not follow the theme does not follow the selection either. `--selection`
+   is the veil for the theme's own ground; these are dark under both, so
+   each washes with its own ink at the same strength — no token of their
+   own, and nothing that can come apart from the ground it sits on. */
+.job .out ::selection,.log ::selection,.impl .src ::selection,.cfg pre.raw ::selection,
+.viewport ::selection,.term ::selection{background:color-mix(in srgb,var(--term-ink) 15%,transparent)}
+header.band ::selection{background:color-mix(in srgb,var(--board-ink) 15%,transparent)}
 .job .out,.log,.impl .src,.cfg pre.raw,.viewport{scrollbar-color:var(--term-scroll) transparent}
+/* And the same panes, for the same reason, give an empty place the ink
+   that is quiet on THEIR ground: --muted is the house's, and the house's
+   ground is not what these are on. The two ::before are here because a
+   pseudo cannot carry a class; what they say is the class's. */
+.viewport .nothing,.term .screen .nothing,.log:empty::before{color:var(--term-dim);font-style:italic;font-family:var(--serif)}
+.viewport.light .nothing,.viewport.light .lines:empty::before{color:var(--muted);font-style:italic;font-family:var(--serif)}
+.viewport .nothing{display:block;padding:14px}
 /* …except the one viewport that is not a terminal: the jobs list is
    .viewport.light, on the house's own surface, so it takes the house's. */
 .viewport.light{scrollbar-color:var(--scroll) transparent}
@@ -854,10 +1065,6 @@ img{-webkit-user-drag:none;user-drag:none}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 
 /* --- the console proper: what the mock did not need --------------------------- */
-/* A tab is a link now (the screen is in the URL), so it keeps the button's face. */
-a.tab,a.tab:hover{text-decoration:none}
-a.tray-bar{text-decoration:none}
-.tray a.bar{color:inherit}
 /* The workbench's own colours, as it prints them: bold for a name, dark red
    for an error, blue underline for a link. Console.ANSI turns the escapes
    into these; the palette is the terminal ground's. */
@@ -869,11 +1076,7 @@ a.tray-bar{text-decoration:none}
    pre-wrap container would print each as a blank line: the container
    breaks normally, each line keeps its own spaces. */
 .job .out,.log{white-space:normal}.job .out>div,.log>div{white-space:pre-wrap}
-/* The drawer's tabs and the boxes on the shelf are links now (the box is in the URL). */
-a.dtab,a.dtab:hover,a.box,a.box:hover,a.lrow,a.lrow:hover{text-decoration:none;color:inherit}
-a.btn,a.btn:hover{text-decoration:none}
 /* The caret of a file row is drawn, not typed: the fold is a class the button toggles. */
-.impl .ft .caret::before{content:"▸"}.impl .f.open .ft .caret::before{content:"▾"}
 .impl .src .shot.drawing{display:none}.impl .src.drawn .shot.drawing{display:block}
 /* The template puts newlines between a pre's children; the rows keep their own spaces. */
 .impl pre.src{white-space:normal}

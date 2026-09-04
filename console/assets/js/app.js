@@ -23,20 +23,47 @@ import "phoenix_html"
 import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/console"
-import topbar from "../vendor/topbar"
-import {Booklet, Cli, Clock, Frame, Ground, Logs, Rail, ShelfView, Term} from "./hooks"
+import {Booklet, Cli, Clock, Folds, Frame, Ground, JobLines, JobOut, Logs, Rail, ShelfView, Term} from "./hooks"
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {...colocatedHooks, Booklet, Cli, Clock, Frame, Ground, Logs, Rail, ShelfView, Term},
+  hooks: {...colocatedHooks, Booklet, Cli, Clock, Folds, Frame, Ground, JobLines, JobOut, Logs, Rail, ShelfView, Term},
 })
 
-// Show progress bar on live navigation and form submits
-topbar.config({barColors: {0: "#29d"}, shadowColor: "rgba(0, 0, 0, .3)"})
-window.addEventListener("phx:page-loading-start", _info => topbar.show(300))
-window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
+// The band's gold rule is the loading bar. It is always there — a full
+// rule is a page with nothing on its way — and a load rewinds it to a
+// sliver and lets it creep back, so the only thing ever seen is an
+// incomplete one. On :root, which is outside anything LiveView patches.
+//
+// Nothing that finishes inside 300ms is worth showing, which is the
+// delay topbar took too; and the rule completes when the last load
+// stops, not the first, so an overlapping pair cannot fill it early.
+const rule = (to, speed) => {
+  document.documentElement.style.setProperty("--load", String(to))
+  document.documentElement.style.setProperty("--load-in", speed)
+}
+let loading = 0, creep = null
+window.addEventListener("phx:page-loading-start", () => {
+  if (loading++ > 0) return
+  creep = setTimeout(() => {
+    // Rewound, then let go. The read in between is what makes it two
+    // moves and not one: without a style recalculation forced between
+    // the writes the browser only ever sees the last value, and the rule
+    // slid from full to nine tenths over eight seconds instead of
+    // starting over.
+    rule(0.08, "0s")
+    getComputedStyle(document.querySelector("header.band")).transform
+    rule(0.9, "8s")
+  }, 300)
+})
+window.addEventListener("phx:page-loading-stop", () => {
+  if (--loading > 0) return
+  loading = 0
+  clearTimeout(creep)
+  rule(1, ".18s")
+})
 
 // connect if there are any LiveViews on the page
 liveSocket.connect()

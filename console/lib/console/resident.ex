@@ -135,14 +135,18 @@ defmodule Console.Resident do
     mix = ["do", "deps.get,", "deps.compile,", "workbench.serve"]
 
     if System.get_env("WORKBENCH_DIR") do
-      # The project compiles into the workspace's own volumes, mounted
-      # beside the console's (WORKSPACE_BUILD, WORKSPACE_DEPS): what the
-      # app service compiled is what the resident finds.
-      env =
-        [{~c"WORKBENCH_PATH", String.to_charlist(dir)}, {~c"MIX_ENV", ~c"dev"}] ++
-          for {var, key} <- [{"WORKSPACE_BUILD", ~c"MIX_BUILD_ROOT"}, {"WORKSPACE_DEPS", ~c"MIX_DEPS_PATH"}],
-              value = System.get_env(var),
-              do: {key, String.to_charlist(value)}
+      # The workspace compiles into its own _build and deps, which is
+      # where the volumes the app service writes to are mounted here
+      # too: what the app compiled is what the resident finds. The two
+      # variables are UNSET for this run — they are the console's own,
+      # set in its image so its build lives under /app/console, and
+      # inherited they would send the workspace's compilation there.
+      env = [
+        {~c"WORKBENCH_PATH", String.to_charlist(dir)},
+        {~c"MIX_ENV", ~c"dev"},
+        {~c"MIX_BUILD_ROOT", false},
+        {~c"MIX_DEPS_PATH", false}
+      ]
 
       {System.find_executable("mix"), mix, [cd: ws, env: env]}
     else

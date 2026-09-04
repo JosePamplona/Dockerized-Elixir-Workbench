@@ -299,6 +299,16 @@ instead: the workbench already colours its own output on purpose, the
 conversion exists for the box-backs' screenshots, and stripping it is
 throwing away the only classification there is.
 
+And the lines never ride on the job. They did: every line the port
+wrote put the whole job on the topic and every page rendered every
+line of every job again — quadratic, and a `new` of two thousand lines
+left the page deaf to the reader's clicks, queued behind the renders.
+`Console.Jobs` holds the output and broadcasts it as `{:job_lines, id,
+from, html}`, a batch every 50 ms; the `JobLines` hook writes it into a
+`phx-update="ignore"` element, on the Jobs screen and in the box's
+drawer alike, and asks for the backlog when it mounts. The same rule
+the Logs screen already followed.
+
 ## The covers weigh 58 MB
 
 The mock scales every cover to 560 px JPEG at build time. The console's
@@ -369,6 +379,37 @@ on the app's node, as Livebook's attached runtime. *Network*: the
 console joins the workspace's compose network by name — distribution
 asks for it, and the probes get their host with it.
 
+**The console connects `-hidden`, and this is not optional.** Erlang
+distribution is transitive: a visible node that dials one replica ends
+up in the mesh of all of them. Measured with three nodes, 2026-09-03 —
+a visible `probe` connected only to `app1`, and `app2`, which nobody
+dialled, answered `Node.list() == [app1, probe]`. With `-hidden` the
+same connection gives `Node.list() == [app2]` on `app1` (the console
+only under `Node.list(:hidden)`), `app2` never hears of it, and
+`:erpc.call/4` works exactly the same. It is what `iex --remsh`,
+`observer` and Livebook's attached runtime do, and for this reason:
+everything that iterates `Node.list()` — `pg` and Phoenix.PubSub with
+it, `:global`, a quorum count, LiveDashboard's node picker, the
+console's own Cluster screen — must not see a node that is not a
+replica.
+
+The clustering cartridge does not collide with this, and it is worth
+writing down why, because the two look like they should. It is
+DNSCluster, and it is `:prod` only: the block goes inside the `:prod`
+of `runtime.exs`, `DNS_CLUSTER_QUERY` is written only into the scaled
+compose, and `rel/env.sh.eex` is read only by the release. The
+questions go to the **dev** node, and only one deployment is up at a
+time — so where there is a cluster there is no dev node to ask, and
+where there is a dev node there is no cluster. Discovery cannot cross
+either: DNSCluster only calls `Node.connect/1` on the IPs its query
+resolves to, and the console is in no DNS record. Two things this
+leaves standing, both about the console and not about the cluster:
+distribution means sharing the app's cookie, so the console asks the
+dev node and no other — pointing it at `prod` or `scaled` would be
+handing it the cluster's key; and once the console is a release with
+an image of its own, the OTP on both ends stops being guaranteed by
+the shared toolchain and has to be pinned.
+
 When the app is down the console says so: the board, git, diffs and
 papers as always; what depends on the project marked `.unlit` with the
 reason — the app is down, bring it up to ask it. `Up` is the first act.
@@ -399,7 +440,16 @@ the toolchain image points Mix at `/app/build` and `/app/deps`
 named volume takes the ownership; the compose declares `build` and
 `deps`; every one-off run (`new`, the reads, the package's catalog)
 mounts the same volume names; the console's container gets its own
-two. `bake` now bakes `Dockerfile.local` again when the seed moved —
+two. **Revised 2026-09-03:** the two variables are gone from the
+toolchain. The volumes now cover `_build` and `deps` where Mix looks
+for them, inside the source mount, and Mix is told nothing — because
+Mix was never the only reader of that path. `phx.new` writes the
+conventional `deps/` into `config.exs` (NODE_PATH) and into
+`assets/vendor/heroicons.js` and asks Mix nothing, and since phx_new
+1.8 daisyUI is a git dependency resolved through that NODE_PATH: a new
+project could not build its assets, and the workbench had to patch the
+generated lines back. Only the console keeps the variables, for its
+own build, because its source has no fixed mount point. `bake` now bakes `Dockerfile.local` again when the seed moved —
 keeping the project's stamped installer — and rebuilds the image, so
 an existing workspace moves over with `./wb.sh bake && ./wb.sh up`.
 Verified on 2026-09-02, late: on Docker Desktop, `test_50` compiled
@@ -420,9 +470,38 @@ package without the workbench mounted), so every igniter run and the
 resident do `deps.get, deps.compile` first — a second once done; Mix
 keys its manifests on the deps path, so the resident must see the
 workspace's volumes at the *same* paths the app does (`/app/build`,
-`/app/deps`) and the console's own build lives under `/app/console`;
+`/app/deps`) and the console's own build lives under `/app/console`
+— **measured on 2026-09-03 and false in its first half**: moving
+`_build` and `deps` to another absolute path costs nothing, moving the
+*source* recompiles the project. The source path already differs
+between the app service (`/app/src`) and the console (the host path),
+so that recompile is there either way; the volumes are free to sit
+where Mix looks for them;
 and the bench remembers a failed first reading so a page mounting
 after it asks again instead of waiting forever.
+
+## Open — one word, two things: *installer*
+
+`wb.sh installers` is the verb for the Phoenix generators: the stable
+`phx_new` releases, each with the Elixir it declares and whether this
+stack can run it. The name is the workbench's own word for that thing
+already — the New project card's row is labelled `installer`, `wb.sh`
+prints *Phoenix installer: phx_new 1.8.13*, and `Console.Project`
+documents *the installer it was born with*. It is also the twin of
+`stacks`, down to the second verb it wants: `installers use VERSION`
+would write `PHX_NEW_VERSION` the way `stacks use TAG` writes the three.
+
+But the console says *installer* about something else too. A cartridge
+that is designed and whose igniter task is not written yet reads *the
+box is designed; its installer is not done yet* (`box.ex:66` and the
+`not done` chip beside it). Two meanings, and the verb takes the first.
+
+**To settle: what a cartridge's installation is called.** The vocabulary
+may already have it — a cartridge's `task.ex` is its *task* everywhere
+else in `features/README.md`, so *its task is not written yet* might be
+the whole fix. Whatever it comes to, it is two strings in `box.ex` and
+whatever the cartridge documents call it, and it should be decided
+before the word `installer` is spent on the verb in the help text.
 
 ## The order
 

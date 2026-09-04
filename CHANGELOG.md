@@ -16,6 +16,61 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **The console went deaf during a `new`.** Every line a job wrote put
+  the whole job — all of its lines — on the PubSub topic, and every
+  page rendered every line of every job again: quadratic, and two
+  thousand lines of `new` left the reader's clicks queued behind the
+  renders. `Console.Jobs` holds the output now and broadcasts it in
+  batches of at most 50 ms as `{:job_lines, id, from, html}`; a
+  `JobLines` hook writes them into a `phx-update="ignore"` element,
+  on the Jobs screen and in the box's drawer alike, and asks for the
+  backlog when it mounts. The assigns never carry a line again — the
+  rule the Logs screen already followed.
+- **The Logs screen mistook the `ansi` cartridge's colours for text.**
+  With the cartridge in, the app's lines arrive with escapes, and
+  `--no-color` only undresses compose's prefixes: the screen showed
+  `[22m` and `[36m` as characters, and its level regexes — anchored at
+  the start of the line, where the escape now stood — read every
+  `[error]` and `[warning]` as info. `Console.Logs.parse` gives each
+  line a `text` without escapes, for the level, the filter and the
+  search, and an `html` with them as spans; a line that was nothing
+  but a closing reset is no line.
+- **A terminal session opened before the status arrived went to
+  docker with an empty mount.** The tab is judged unlit only once the
+  status is here, so before it the button was live, the targets were a
+  guess and the source's path was nil: `-v :/app/src`, exit 125. The
+  button stays dark with the reason until the status is read, and the
+  server ignores the event meanwhile.
+- **`up --deploy prod` died on `env file …/build:/app/src/_build not
+  found`.** The bake stripped the app's `volumes:` block by deleting
+  two lines, the key and the source mount, from a block that now has
+  four: the two build volumes were left standing under `env_file:`,
+  where compose read them as files. The block goes whole, up to
+  `depends_on:`, and the top-level `volumes:` with it — a release has
+  no `_build` and no `deps` to keep.
+- **A new project would not build its assets.** The first `up` of a
+  freshly created workspace ended in `Error: Can't resolve
+  'daisyui/packages/bundle/daisyui'`, and heroicons right behind it.
+  Since phx_new 1.8 daisyUI is a git dependency of the generated
+  project, resolved through the `NODE_PATH` that `phx.new` writes into
+  `config.exs` — the conventional `deps/` path, written without asking
+  Mix, as `assets/vendor/heroicons.js` writes it too. The workspace
+  kept its dependencies in a volume *outside* the project
+  (`MIX_DEPS_PATH=/app/deps`), so that path pointed at nothing.
+  **The volumes moved instead of the paths.** They now cover `_build`
+  and `deps` where Mix looks for them, inside the source mount, and
+  nothing is told anything: `MIX_BUILD_ROOT` and `MIX_DEPS_PATH` are
+  gone from the toolchain image. Compiled code still never touches the
+  bind mount — a volume covers the path, nothing is written through —
+  and whatever the generator writes next, if it is where Mix looks, it
+  is where the volume is. The reason the paths had been put outside the
+  source was that "Mix keys its manifests on those paths"; measured, it
+  keys them on the *source* path, and moving `_build` or `deps`
+  elsewhere costs nothing. An existing workspace moves over with
+  `./wb.sh bake && ./wb.sh up`. Only the console keeps the two
+  variables, for its own build: its source is mounted at the
+  workbench's host path, which no image can know, so there is no
+  directory in its image for a fresh volume to take ownership from.
 - Two readers of the igniter at once fought over one container name
   and the second answered nothing; the name carries the pid now.
 - **An insert that fails no longer leaves the workspace half-written.**
@@ -39,6 +94,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **Colour without a terminal, in jobs and in sessions.** A `Port` is a
+  pipe, and on a pipe mix, hex, git and compose turn their colours off
+  on their own while the console's page turns ANSI into spans. `wb.sh`
+  takes `WB_ANSI=always` — Elixir by `ELIXIR_ERL_OPTIONS`, git by the
+  config it reads from the environment, compose by `COMPOSE_ANSI` —
+  and the console sets it on every job; the Terminal tab passes the
+  same variables to its `docker exec` and `docker run`, so iex, mix
+  and git colour their output there too. From a terminal, or unset,
+  nothing changes. BuildKit stays plain: it colours only a real tty,
+  and that road — a pseudo-terminal for jobs — is left for later.
 - **Nothing compiles through the bind mount any more.** The toolchain
   image points Mix at `/app/build` and `/app/deps`, two named volumes
   the workspace's compose declares and every one-off run shares —

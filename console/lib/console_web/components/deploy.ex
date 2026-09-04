@@ -34,7 +34,7 @@ defmodule ConsoleWeb.Deploy do
     <.deployment status={@status} catalog={@catalog} jobs={@jobs} pick={@pick} />
     <div class="zone">
       <h3>Database</h3>
-      <form class="pick" role="radiogroup" aria-label="The environment to set the database up for" phx-change="setup_env">
+      <form class="pick" id="setup-env" role="radiogroup" aria-label="The environment to set the database up for" phx-change="setup_env">
         <label :for={env <- ~w(dev prod)}><div><input type="radio" name="env" value={env} checked={@setup_env == env} /> <b>{env}</b></div></label>
       </form>
       <div class="acts">
@@ -65,7 +65,15 @@ defmodule ConsoleWeb.Deploy do
     conf = Console.Config.values(assigns.config)
     pending = pending(assigns.jobs, :new)
     project? = assigns.status && assigns.status["exists"] == true
-    assigns = assign(assigns, conf: conf, pending: pending, project?: project?, busy: busy?(assigns.jobs, [:new]), cmd: new_command(assigns.catalog, assigns.newp), bases: Cartridges.base(assigns.catalog))
+    # What the project in this workspace was actually made with, off its
+    # own Dockerfile.local. The card's rows say what the *next* creation
+    # would use, which is config.conf and nothing else; this is the other
+    # half of the sentence, and it only appears when it says something —
+    # the installer always does, because config.conf usually leaves it
+    # open, and the stack only when the two have come apart, which is
+    # exactly when creating again would move the project off it.
+    born = project? && Console.Project.born(assigns.status["workspace"])
+    assigns = assign(assigns, conf: conf, pending: pending, project?: project?, born: born, busy: busy?(assigns.jobs, [:new]), cmd: new_command(assigns.catalog, assigns.newp), bases: Cartridges.base(assigns.catalog))
 
     ~H"""
     <div class="newcard">
@@ -73,11 +81,11 @@ defmodule ConsoleWeb.Deploy do
         <.chip :if={!@project?}>the workspace is empty</.chip>
         <.chip :if={@project?} class="bad" title="creating overwrites every file in it">a project exists here</.chip>
       </h3>
-      <form class="form" phx-change="new_form">
+      <form class="form" id="new-project" phx-change="new_form">
         <.given label="project name" value={@conf["PROJECT_NAME"]} />
         <.given label="workspace" value={@conf["WORKSPACE_PATH"]} />
-        <.given label="stack" value={"elixir #{@conf["ELIXIR_VERSION"]} · erlang #{@conf["ERLANG_VERSION"]} · #{@conf["DEBIAN_VERSION"]}"} />
-        <.given label="installer" value={if @conf["PHX_NEW_VERSION"] in [nil, ""], do: nil, else: "phx_new #{@conf["PHX_NEW_VERSION"]}"} muted="the newest phx_new that runs on this stack" />
+        <.given label="stack" value={"elixir #{@conf["ELIXIR_VERSION"]} · erlang #{@conf["ERLANG_VERSION"]} · #{@conf["DEBIAN_VERSION"]}"} warn={born_stack(@born, @conf)} />
+        <.given label="installer" value={installer(@conf, @born)} muted="the newest phx_new that runs on this stack" title={installer_title(@conf, @born)} />
         <div class="frow">
           <label>phx.new</label>
           <div class="flags">
@@ -94,7 +102,11 @@ defmodule ConsoleWeb.Deploy do
             <%= for e <- @bases do %>
               <% out = base_out?(@catalog, @newp, e["name"]) %>
               <% forced = Enum.any?(e["requires"] || [], &base_out?(@catalog, @newp, &1)) %>
-              <label class={out && "out"}>
+              <%!-- A cartridge that phx.new only generates with another is
+                    not the reader's to leave in: it is disabled with the
+                    reason in its title, which is `.unlit` and not a
+                    fourth opacity written here. --%>
+              <label class={[out && "out", forced && "unlit"]}>
                 <input type="checkbox" name={"in[#{e["name"]}]"} checked={!out} disabled={forced} title={if forced, do: "goes with #{Enum.join(e["requires"], " and ")}: phx.new generates it only with them", else: "in from birth; uncheck to leave it out"} />
                 <.cart_ref name={e["name"]} />
               </label>
@@ -126,22 +138,60 @@ defmodule ConsoleWeb.Deploy do
     """
   end
 
-  # The givens the card reads and never sets: one origin, config.conf.
+  # The givens the card reads and never sets: one origin, config.conf —
+  # and the drawer that edits it, which is where the link goes. It was an
+  # unlit span saying the drawer "comes later"; the drawer came, and the
+  # style the link wants was already sitting in the stylesheet, unused.
   attr :label, :string, required: true
   attr :value, :string, default: nil
   attr :muted, :string, default: nil
+  attr :title, :string, default: nil, doc: "where the value comes from, when it is not config.conf's own"
+  attr :warn, :list, default: nil, doc: "[word, title]: the project here was made with something else"
 
   defp given(assigns) do
     ~H"""
     <div class="frow">
       <label>{@label}</label>
       <span class="ro">
-        <span :if={@value}>{@value}</span><span :if={!@value} class="muted">{@muted}</span>
-        <span class="unlit" title="the workbench drawer, where config.conf is edited, comes later" aria-disabled="true">change in config</span>
+        <span :if={@value} title={@title}>{@value}</span><span :if={!@value} class="nothing">{@muted}</span>
+        <.chip :if={@warn} class="warn" title={List.last(@warn)}>{List.first(@warn)}</.chip>
+        <.link patch="/deploy?wb=config" title="config.conf, in the workbench drawer">change in config</.link>
       </span>
     </div>
     """
   end
+
+  # The installer, as one version whenever there is one to name: config
+  # names it, or the project in this workspace was born with it and its
+  # own Dockerfile still says so. Only when neither knows does the row
+  # fall back to the sentence, which is what a sentence is for.
+  defp installer(%{"PHX_NEW_VERSION" => v}, _born) when v not in [nil, ""], do: "phx_new #{v}"
+  defp installer(_conf, %{"PHX_NEW" => v}) when v not in [nil, ""], do: "phx_new #{v}"
+  defp installer(_conf, _born), do: nil
+
+  # Which of the two it is goes in the title, since the version alone
+  # cannot say: it is this project's, and creating another would go and
+  # ask hex again.
+  defp installer_title(%{"PHX_NEW_VERSION" => v}, _born) when v not in [nil, ""], do: nil
+
+  defp installer_title(_conf, %{"PHX_NEW" => v}) when v not in [nil, ""],
+    do: "the installer this project was born with, stamped in its own Dockerfile.local — config.conf names none, so creating again takes the newest phx_new that runs on this stack"
+
+  defp installer_title(_conf, _born), do: nil
+
+  # The stack, only when the two have come apart — the one thing on this
+  # card the reader has to be told rather than left to notice, because
+  # creating again would move the project off the stack it was built on.
+  # A chip and not a sentence: two versions in one row is a state, and
+  # the house has a face for a state.
+  defp born_stack(%{"ELIXIR" => e, "OTP" => o, "DEBIAN" => d}, conf)
+       when is_binary(e) and is_binary(o) and is_binary(d) do
+    if {e, o, d} == {conf["ELIXIR_VERSION"], conf["ERLANG_VERSION"], conf["DEBIAN_VERSION"]},
+      do: nil,
+      else: ["born on elixir #{e}", "this project was built on elixir #{e} · erlang #{o} · #{d}; config.conf now names another stack, and creating again would move it"]
+  end
+
+  defp born_stack(_, _), do: nil
 
   def gen_flags, do: @gen_flags
 
@@ -196,17 +246,29 @@ defmodule ConsoleWeb.Deploy do
     noproject = is_nil(assigns.status) or assigns.status["exists"] != true
     extra = if pick == "scaled", do: scaled_extra(assigns.pick), else: ""
     clustering = assigns.status && Cartridges.installed?(assigns.status, "clustering")
-    assigns = assign(assigns, running: running, pickname: pick, busy: busy, noproject: noproject, extra: extra, clustering: clustering, targets: @targets)
+    # Stop and Down used to be gated on `deployment`, which is only ever
+    # a name while an *app* container runs. So the moment the app was not
+    # running — it crashed, it failed to compile, or you had just pressed
+    # Stop — the workspace's other containers were still there and both
+    # buttons were dead: Stop was a one-way door. They ask the containers
+    # now, which is the thing they act on. Down takes what exists away
+    # (`compose down --remove-orphans`, and the three composes share the
+    # project name, so it reaches whatever deployment left them); Stop
+    # only has work while something still runs.
+    cs = (assigns.status && assigns.status["containers"]) || []
+    left = Enum.count(cs)
+    alive = Enum.count(cs, &(&1["State"] == "running"))
+    assigns = assign(assigns, running: running, pickname: pick, busy: busy, noproject: noproject, extra: extra, clustering: clustering, targets: @targets, left: left, alive: alive)
 
     ~H"""
     <div class="targets">
       <div class="deployment">
         <h3>Deployment</h3>
         <div class="now">
-          <.chip class={cond do @busy -> "warn busy"; @running -> "good"; true -> "off" end}>{cond do @busy -> "working"; @running -> "#{@running} is running"; true -> "nothing is up" end}</.chip>
-          <span class="note">{if @running, do: "one deployment at a time: the composes share the project name, so Up replaces it", else: "pick a target and bring it up"}</span>
+          <.chip class={cond do @busy -> "warn busy"; @running -> "good"; @left > 0 -> "warn"; true -> "off" end}>{cond do @busy -> "working"; @running -> "#{@running} is running"; @left > 0 -> "#{@left} container#{if @left == 1, do: "", else: "s"} left"; true -> "nothing is up" end}</.chip>
+          <span class="note">{cond do @running -> "one deployment at a time: the composes share the project name, so Up replaces it"; @left > 0 -> "no deployment is up, but the project's containers are still there: Down removes them"; true -> "pick a target and bring it up" end}</span>
         </div>
-        <form class="pick" phx-change="pick">
+        <form class="pick" id="deploy-pick" phx-change="pick">
           <label :for={name <- ~w(dev prod scaled)} class={name == @pickname && "on"}>
             <div><input type="radio" name="target" value={name} checked={name == @pickname} /> <b>{name}</b></div>
             <.chip :if={name == "scaled" and !@clustering} class="warn">no clustering: replicas run isolated</.chip>
@@ -221,9 +283,9 @@ defmodule ConsoleWeb.Deploy do
           <button class="btn primary" disabled={@busy or @noproject or @running == @pickname} phx-click="run" phx-value-args={"up --deploy #{@pickname}#{@extra}"}>{if @running && @running != @pickname, do: "Replace #{@running} with #{@pickname}", else: "Up #{@pickname}"}</button>
           <button class="btn" disabled={@busy or @noproject} phx-click="run" phx-value-args={"build --deploy #{@pickname}#{@extra}"}>Build {@pickname}</button>
           <span class="sep"></span>
-          <button class="btn" disabled={@busy or !@running} phx-click="run" phx-value-args={String.replace_prefix(cmdline("stop", @running || "dev", ""), "./wb.sh ", "")}>Stop</button>
-          <button class="btn" disabled={@busy or !@running} phx-click="run" phx-value-args={String.replace_prefix(cmdline("down", @running || "dev", ""), "./wb.sh ", "")}>Down</button>
-          <span class="note">{cond do @noproject -> "the workspace is empty: create a project first"; @running -> "on #{@running}"; true -> "nothing is up" end}</span>
+          <button class="btn" disabled={@busy or @alive == 0} title={if @alive == 0, do: "nothing is running", else: "stops the #{@alive} running container#{if @alive == 1, do: "", else: "s"}, keeping them"} phx-click="run" phx-value-args={String.replace_prefix(cmdline("stop", @running || "dev", ""), "./wb.sh ", "")}>Stop</button>
+          <button class="btn" disabled={@busy or @left == 0} title={if @left == 0, do: "there are no containers to remove", else: "removes the #{@left} container#{if @left == 1, do: "", else: "s"} of the project, running or not"} phx-click="run" phx-value-args={String.replace_prefix(cmdline("down", @running || "dev", ""), "./wb.sh ", "")}>Down</button>
+          <span class="note">{cond do @noproject -> "the workspace is empty: create a project first"; @running -> "on #{@running}"; @left > 0 -> "on what is left of the project"; true -> "nothing is up" end}</span>
         </div>
         <div class="cmd">./wb.sh up --deploy {@pickname}{@extra}</div>
       </div>

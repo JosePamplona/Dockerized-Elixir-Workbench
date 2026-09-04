@@ -9,7 +9,18 @@ defmodule Console.Bench do
 
   Every arrival is broadcast on the `"bench"` topic:
   `{:bench, :status, status}`, `{:bench, :catalog, catalog}`,
+  `{:bench, :stacks, tags}`, `{:bench, :installers, releases}`,
   `{:bench, :expand, name, argv, plan}`, `{:bench, :error, key, why}`.
+
+  The stacks and the installers are the two readings that are not about
+  this machine at all: the usable `hexpm/elixir` images, five pages of
+  Docker Hub's API, and the `phx_new` releases hex publishes. They are
+  never read on their own — not at boot, not when the drawer that
+  shows them opens — only when the reader presses the button beside the
+  field, and then they are held here for every page until pressed again.
+  No clock refreshes them: a reading that costs the internet happens
+  when somebody asks for it, and that way there is never a call the
+  reader did not cause.
 
   The catalog is the workbench's, not the workspace's: it is read once
   and kept until a `new` or `delete`, or until the features directory of
@@ -21,7 +32,7 @@ defmodule Console.Bench do
 
   @topic "bench"
 
-  defstruct status: nil, catalog: nil, features_stamp: nil, expands: %{}, in_flight: %{}, wanted: %{}, errors: %{}
+  defstruct status: nil, catalog: nil, stacks: nil, installers: nil, features_stamp: nil, expands: %{}, in_flight: %{}, wanted: %{}, errors: %{}
 
   def start_link(opts), do: GenServer.start_link(__MODULE__, opts, name: __MODULE__)
 
@@ -32,6 +43,12 @@ defmodule Console.Bench do
 
   @doc "The catalog as last read, or nil; a changed features directory reads it again in the background."
   def catalog, do: GenServer.call(__MODULE__, :catalog)
+
+  @doc "The usable stacks as last read, or nil while nobody has asked."
+  def stacks, do: GenServer.call(__MODULE__, :stacks)
+
+  @doc "The Phoenix installers as last read, or nil while nobody has asked."
+  def installers, do: GenServer.call(__MODULE__, :installers)
 
   @doc "Whether a reading of `key` (:status or :catalog) is in flight."
   def reading?(key), do: GenServer.call(__MODULE__, {:reading?, key})
@@ -74,6 +91,8 @@ defmodule Console.Bench do
     {:reply, state.catalog, state}
   end
 
+  def handle_call(:stacks, _from, state), do: {:reply, state.stacks, state}
+  def handle_call(:installers, _from, state), do: {:reply, state.installers, state}
   def handle_call({:reading?, key}, _from, state), do: {:reply, Map.has_key?(state.in_flight, key), state}
   def handle_call({:error, key}, _from, state), do: {:reply, state.errors[key], state}
 
@@ -118,8 +137,14 @@ defmodule Console.Bench do
     state =
       case {key, result} do
         {:status, {:ok, status}} ->
-          # A fast reading leaves the cartridges out: what was known stays.
-          status = if is_nil(status["project"]) and state.status, do: Map.put(status, "project", state.status["project"]), else: status
+          # A fast reading leaves the cartridges out: what was known
+          # stays — but only while the project is still there. A delete
+          # answers `exists: false`, and then there is nothing to carry:
+          # the doors and the inserted cartridges go with it.
+          status =
+            if is_nil(status["project"]) and status["exists"] and state.status,
+              do: Map.put(status, "project", state.status["project"]),
+              else: status
           # What the project carries may have changed: the recipes with it.
           expands = if state.status && status["project"] != state.status["project"], do: %{}, else: state.expands
           broadcast({:bench, :status, status})
@@ -128,6 +153,14 @@ defmodule Console.Bench do
         {:catalog, {:ok, catalog}} ->
           broadcast({:bench, :catalog, catalog})
           %{state | catalog: catalog, errors: Map.delete(state.errors, :catalog)}
+
+        {:stacks, {:ok, tags}} ->
+          broadcast({:bench, :stacks, tags})
+          %{state | stacks: tags, errors: Map.delete(state.errors, :stacks)}
+
+        {:installers, {:ok, releases}} ->
+          broadcast({:bench, :installers, releases})
+          %{state | installers: releases, errors: Map.delete(state.errors, :installers)}
 
         {{:expand, name, argv}, {:ok, plan}} ->
           broadcast({:bench, :expand, name, argv, plan})
@@ -145,10 +178,34 @@ defmodule Console.Bench do
     end
   end
 
-  def handle_info({:DOWN, _ref, :process, _pid, reason}, state) do
-    {key, _} = Enum.find(state.in_flight, {nil, nil}, fn {_, task} -> task.ref == nil end) || {nil, nil}
-    if key, do: broadcast({:bench, :error, key, inspect(reason)})
-    {:noreply, state}
+  # A reading that died rather than answered. This looked for the key by
+  # `task.ref == nil`, which is never true — so it found nothing, told
+  # nobody, and left the key in `in_flight` for good: every later refresh
+  # of it queued into `wanted` behind a reading that was never coming
+  # back, and the page went on saying nobody had asked. The ref is what
+  # names the task; the key is cleared with it, the failure is kept like
+  # any other so a page mounting later still sees it, and whatever was
+  # asked for meanwhile runs now.
+  def handle_info({:DOWN, ref, :process, _pid, reason}, state) do
+    case Enum.find(state.in_flight, fn {_, task} -> task.ref == ref end) do
+      {key, _} ->
+        why = "the reading did not finish: " <> inspect(reason)
+        broadcast({:bench, :error, key, why})
+
+        state = %{
+          state
+          | in_flight: Map.delete(state.in_flight, key),
+            errors: Map.put(state.errors, key, why)
+        }
+
+        case Map.pop(state.wanted, key) do
+          {nil, wanted} -> {:noreply, %{state | wanted: wanted}}
+          {mode, wanted} -> {:noreply, %{state | wanted: wanted} |> start(key, mode)}
+        end
+
+      nil ->
+        {:noreply, state}
+    end
   end
 
   def handle_info(_, state), do: {:noreply, state}
@@ -163,6 +220,12 @@ defmodule Console.Bench do
 
   # The catalog is read in this BEAM: the package is a dependency.
   defp start(state, :catalog, _), do: put_in(state.in_flight[:catalog], Task.async(fn -> {:catalog, {:ok, Console.Catalog.read()}} end))
+
+  # Docker Hub, five pages of it, over the reader's own connection.
+  defp start(state, :stacks, _), do: put_in(state.in_flight[:stacks], Task.async(fn -> {:stacks, Workbench.stacks()} end))
+
+  # hex, one call for the list and one per release, in this BEAM.
+  defp start(state, :installers, _), do: put_in(state.in_flight[:installers], Task.async(fn -> {:installers, Console.Installers.list()} end))
 
   defp read_status(:fast), do: Workbench.status(:fast)
 

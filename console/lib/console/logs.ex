@@ -99,14 +99,26 @@ defmodule Console.Logs do
   end
 
   @doc """
-  A line of `compose logs --timestamps` into `%{service, ts, text}`:
-  the container's name (`database-1`, `app2-1`) minus its ordinal is
-  the service. Compose's own notices (no `|`) are dropped.
+  A line of `compose logs --timestamps` into `%{service, ts, text,
+  html}`: the container's name (`database-1`, `app2-1`) minus its
+  ordinal is the service. Compose's own notices (no `|`) are dropped.
+
+  The app colours its lines when the `ansi` cartridge is in, and the
+  stream carries the escapes — `--no-color` only undresses compose's
+  own prefixes. `text` is the line without them, for the level, the
+  filter and the search; `html` is the line with them as spans
+  (`Console.ANSI`), for the screen. A line that was nothing but an
+  escape — the `\\e[0m` that closes a multi-line entry on a line of its
+  own — is no line at all.
   """
   def parse(raw) do
     case Regex.run(~r/^(\S+?)\s+\| (\S+) ?(.*)$/, raw) do
       [_, container, ts, text] ->
-        %{service: String.replace(container, ~r/-\d+$/, ""), ts: ts, text: text}
+        plain = Console.ANSI.strip(text)
+
+        if plain == "" and text != "",
+          do: nil,
+          else: %{service: String.replace(container, ~r/-\d+$/, ""), ts: ts, text: plain, html: Console.ANSI.to_html(text)}
 
       _ ->
         nil

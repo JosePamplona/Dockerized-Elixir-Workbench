@@ -40,8 +40,19 @@ CHECK = "--check" in sys.argv
 T = json.load(open(os.path.join(HERE, "tokens.json")))
 PALETTE = {k: v["value"] for k, v in T["palette"].items()}
 
+# `{violet}` is a palette entry; `{warn:dark}` is another role's value in one
+# theme. The second form exists for the roles that ARE another role read on a
+# ground that does not follow the theme — the band's three — so the value is
+# never copied by hand into a second place, where it would drift.
 def resolve(v):
-    return re.sub(r"\{([\w-]+)\}", lambda m: PALETTE[m.group(1)], v)
+    def one(m):
+        key = m.group(1)
+        if ":" in key:
+            name, mode = key.split(":", 1)
+            return role(name, mode)
+        return PALETTE[key]
+
+    return re.sub(r"\{([\w:-]+)\}", one, v)
 
 def role(name, mode):
     r = T["roles"][name]
@@ -326,6 +337,121 @@ def components_css():
    not ::-webkit-scrollbar: Firefox ignores it, so the standard would have to
    be written anyway, and the day you use it Chrome stops drawing overlay
    scrollbars on macOS — the look changes and the layout changes with it.
+   Selected text is the board, turned to face the ground it lands on.
+     The browser's blue was the last place it was still leaking in — the
+     same blue the checkboxes wore before accent-color, and the one
+     Phoenix's progress bar wore before the band's rule took its job. It
+     needs no colour of its own: a selection is text on a solid ground,
+     and the house has had exactly one pair for that from the start,
+     `violet` and `violet-ink`. Which is also why it is not gold: a
+     selection can cover half a page, and nothing may compete with the
+     seal.
+     And it is a VEIL, not a block. Turning the pair over — a solid
+     violet band with pale words — was legible at 11.4:1 and far louder
+     than what it is, and it flattened everything it covered: a log line
+     loses its service colour under it, a config file its keys. Selected
+     text keeps its own ink and takes a wash of the board behind it, so
+     what was coloured stays coloured. That is why there is one role
+     here and not two.
+     What the wash is made of follows the theme, and the two alphas are
+     tuned rather than shared, so that the grounds *feel* the same
+     instead of sharing a number: violet at .22 over a light ground
+     reads 1.50:1 against it, the pale ink at .15 over a dark one reads
+     1.48:1. `accent-soft` already plays that trick, for the same
+     reason.
+     And the fold this file always makes: a ground that does not follow
+     the theme does not follow this either. The band and the terminal
+     panes are dark under both, so each washes with its OWN ink —
+     color-mix with `board-ink`, with `term-ink` — which needs no token
+     of its own and cannot come apart from the ground it sits on.
+   Controls the reader sets, again: a <select>'s own list. A native one
+     hands its popup to the operating system, and for years the only
+     thing a page could say about it was `color-scheme` — light or dark,
+     and no more: the hover stayed the system's blue and the scrollbar
+     the system's grey, in a room that is neither. Chrome's customizable
+     select (`appearance: base-select`) puts the popup back inside the
+     page, where the house can dress it: the accent's own tint for the
+     row under the pointer, the surface it sits on, the house's thumb on
+     its scrollbar, and the group labels in the condensed uppercase every
+     other heading uses. It is written behind @supports, so a browser
+     that has not got it keeps exactly the control it has today —
+     `color-scheme` in tokens.css still gets that one the right half of
+     the theme, which is all it ever could.
+   .nothing — a place with nothing in it. The prose form of what
+     .chip.off says in a word: an absence out in the world, not a
+     failure and not a control you cannot use yet.
+     One rule, and it is about the sentence rather than the face:
+     **an empty place says what is missing and what would fill it.**
+     Not "no data" — *No containers: the project is down. Deploy → Up.*
+     *Nothing inserted yet: the shelf is in Cartridges.* *Cartridges open
+     doors here: docs, dashboard, mailbox…* The console wrote half of
+     them that way already and the other half as bare statements; the
+     class is what makes the good half the rule.
+     It is never a box. An absence with a border drawn round it is a
+     thing, and there is no thing. That is one dashed rectangle gone.
+     And it says its own type as well as its own ink: it is a sentence,
+     not a reading, so it is the house's serif wherever it lands — in a
+     table of mono rows too, where being the one line that is not mono
+     is what says it is not a row.
+     It takes the quiet ink of whatever ground it is on — the house's
+     `--muted`, or `--term-dim` on the panes that are dark in both
+     themes, which is the same split the scrollbars already make. Six
+     declarations said this before: .note doing double duty, td.muted,
+     two .empty, a .missing with its border, and two ::before contents.
+   .fetch — a field whose values are not the workbench's. They come from
+     outside it, over the network, and somebody has to go and get them:
+     the square button flush against the field is who goes. It takes its
+     width out of the field, so the pair is exactly as wide as the field
+     was and the form keeps its column; it wears a reload, because that
+     is what it does; and it turns while it is away. Give the pair the
+     field's own font-size: the button is 2.5em wide, which is what a
+     field of that type is tall — padding, border and a line of it — so
+     the square follows the type scale instead of a measured pixel.
+     It stands one field-padding away and not welded to it. A select
+     carries its own chevron at that very edge, and a button soldered
+     there put two glyphs side by side with nothing to say which one
+     belonged to the field. The gap is what says they are two things:
+     the field is a value you pick, the button is an errand that costs
+     seconds and leaves the machine.
+     The rule it carries is the reason it exists: **a field like this
+     never goes on its own.** Opening the drawer that holds one costs
+     nothing, and there is no clock behind it — the trip happens when the
+     button is pressed, so every call the console makes to the internet
+     is one the reader can point at. What it brings back is held for the
+     whole console until somebody presses again; being a day old is not
+     a reason to go, and a list that never arrived says so where the
+     field's help is, rather than reading as a list with nothing in it.
+     Until then the field shows what is configured and is not pretending
+     to be a choice: one option, its own.
+   .fold — the control that opens and closes something: a section of the
+     rail, a file in a diff, a job in the tray. Two rules, and they are
+     the whole component. The caret CLOSES the line: it is the last thing
+     on it, pushed to the end, so what the row is about keeps the left
+     edge every other line in the column has — a head that led with its
+     caret sat 19px in from the rail's own margin, and the names stopped
+     lining up with everything above them. It ends where the actions end,
+     which is where the eye already goes for a control. And it is DRAWN
+     FROM aria-expanded, never typed into the template — the attribute a
+     screen reader reads is the one that draws the arrow, so the two
+     cannot come to say different things, which is what happens the day
+     a template toggles a class and forgets the character beside it.
+     Everything else belongs to where it is used: a section head is
+     condensed uppercase, a job row is mono, a file row is a path. This
+     sets the control and the caret and nothing else — and it inherits
+     the type of what it sits in whole, which takes three declarations
+     and not one: the browser restyles a form control, and `font:
+     inherit` does not reach `letter-spacing` or `text-transform`. A
+     fold made of the rail's heads lost their versals and their tracking
+     the day it became a button, and the house's own rule went with
+     them: condensed uppercase is how a NAME is written here.
+     The caret is the one thing that does NOT inherit the size. A rail
+     head is 11px and a job row is small mono, and an arrow set in the
+     row's own type came out around nine pixels — a dot, not an arrow,
+     in every one of the three places it is used. So it is given its
+     own size, above the line it closes and with a floor under it, so
+     the arrow is the same arrow in a 15px head and in a 12px job row —
+     it is a control and not type. `line-height: 1` keeps the taller
+     glyph from growing the row it sits in.
    .stamp — the golden state seal (INSERTED): accent plate, condensed
      uppercase; whoever places it tilts and positions it. This is why a
      chip's plate is a 16% tint and never a saturated fill: nothing may
@@ -355,7 +481,45 @@ def components_css():
 /* Never pointer-events:none here: it takes the title with it, and the title
    is the reason. What must not fire is prevented where it is bound. */
 .unlit,[aria-disabled="true"]{pointer-events:auto}
+.nothing{font-family:var(--serif);font-style:italic;color:var(--muted)}
+.fetch{display:flex;align-items:stretch;gap:8px}
+.fetch>:first-child{flex:1;min-width:0;max-width:none}
+.fetch>.go{flex:none;width:2.5em;font-size:inherit;display:flex;align-items:center;justify-content:center;padding:0;
+  border:1px solid var(--line);border-radius:2px;background:var(--surface-2);color:var(--muted);cursor:pointer}
+.fetch>.go:hover,.fetch>.go:focus-visible{color:var(--ink);background:var(--surface)}
+.fetch>.go svg{width:15px;height:15px;display:block}
+.fetch>.go[aria-busy="true"]{color:var(--accent);cursor:progress}
+.fetch>.go[aria-busy="true"] svg{animation:fetch-turn 1s linear infinite}
+@keyframes fetch-turn{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){.fetch>.go[aria-busy="true"] svg{animation:none}}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+.fold{font:inherit;letter-spacing:inherit;text-transform:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;text-align:left;width:100%}
+.fold::after{content:"▸";flex:none;width:.8em;margin-left:auto;color:var(--soft);font-family:var(--mono);font-size:max(1.25em,17px);line-height:1;letter-spacing:0;text-align:right}
+.fold[aria-expanded="true"]::after{content:"▾"}
+.fold:hover::after,.fold:focus-visible::after{color:var(--ink)}
 input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
+::selection{background:var(--selection)}
+@supports (appearance: base-select){
+  select,select::picker(select){appearance:base-select}
+  select::picker-icon{color:var(--muted);transition:transform .15s}
+  select:open::picker-icon{transform:rotate(180deg)}
+  select::picker(select){background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:3px;
+    box-shadow:var(--shadow);padding:4px;margin-top:3px;max-height:min(52vh,420px);overflow:auto;
+    scrollbar-color:var(--scroll) transparent}
+  select option{padding:5px 8px;border-radius:2px;background:none;color:var(--ink);font:inherit;display:flex;align-items:center;gap:8px}
+  select option:hover{background:var(--accent-soft)}
+  select option:focus{background:var(--accent-soft);outline:none}
+  select option:checked{background:var(--surface-2)}
+  select option::checkmark{content:"";width:0}
+  /* The group's label is drawn by the browser off the optgroup itself —
+     the customizable select puts a <legend> in the reach of CSS, but a
+     <legend> inside an <optgroup> is markup no other browser parses, and
+     the house does not write markup for one engine. So the label takes
+     what the element can give it: the muted ink of every other label,
+     and its options say their own font and colour rather than inherit
+     these. */
+  select optgroup{padding:2px 0 0;color:var(--muted)}
+}
 :root{scrollbar-color:var(--scroll) transparent}
 .stamp{display:inline-block;font-family:var(--cond);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:10.5px;color:var(--accent-ink);background:var(--accent);padding:3px 8px;border-radius:2px;transform:rotate(8deg);box-shadow:0 2px 4px rgba(0,0,0,.3)}
 """

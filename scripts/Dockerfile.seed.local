@@ -9,10 +9,22 @@
 # docker-compose.yml — host edits hot-reload through Phoenix's code
 # reloader, and code or dependency changes never require rebuilding
 # this image. What is derived from the source (deps, _build) does NOT
-# live in the mount: Mix is pointed at /app/deps and /app/build, two
-# named volumes the compose declares, because compiling through a bind
-# mount is the one load Docker Desktop's file sharing bears worst, and
-# the host never needed the compiled code.
+# live in the mount: the compose declares a named volume over each of
+# them, because compiling through a bind mount is the one load Docker
+# Desktop's file sharing bears worst, and the host never needed the
+# compiled code. The volume covers the path; nothing is written through.
+#
+# They are mounted where Mix looks for them on its own — /app/src/deps
+# and /app/src/_build — and Mix is told nothing. It used to be told:
+# two volumes outside the source and MIX_DEPS_PATH / MIX_BUILD_ROOT
+# pointing at them. That worked for Mix and for nothing else. `phx.new`
+# writes the conventional deps/ path into config.exs (NODE_PATH, for
+# esbuild and tailwind) and into assets/vendor/heroicons.js, and asks
+# Mix nothing; since phx_new 1.8 daisyUI is a git dependency resolved
+# through that NODE_PATH, so a fresh project could not build its assets
+# at all. The workbench patched those lines back. It no longer has to:
+# whatever the generator writes next, if it is where Mix looks, it is
+# where the volume is.
 #
 # We use Ubuntu/Debian instead of Alpine to avoid DNS resolution issues.
 #
@@ -44,13 +56,17 @@ ARG GID=1000
 RUN groupadd --gid ${GID} elixir && \
     useradd --uid ${UID} --gid ${GID} --create-home elixir
 
-# Parent of the source mount point, and the two directories Mix writes
-# into instead of the mount: born owned by the user, so a named volume
-# first mounted there takes that ownership with it.
+# The source mount point and the two directories under it that a volume
+# covers: born owned by the user, so a named volume first mounted there
+# takes that ownership with it. This is the whole reason they exist in
+# the image — the bind mount hides them the moment it lands, and Docker
+# still reads the image layer to seed an empty volume. A volume mounted
+# on a path the image does not have comes up root-owned, and this
+# container is not root. /app/igniter is the same arrangement for the
+# workbench's own package, which runs here too ('wb.sh catalog').
 WORKDIR /app
-RUN mkdir -p /app/build /app/deps && chown -R elixir:elixir /app
-ENV MIX_BUILD_ROOT=/app/build \
-    MIX_DEPS_PATH=/app/deps
+RUN mkdir -p /app/src/_build /app/src/deps /app/igniter/_build /app/igniter/deps && \
+    chown -R elixir:elixir /app
 
 USER elixir
 

@@ -39,7 +39,7 @@ defmodule Console.Papers do
         |> mark_revisions()
 
       {html, heads} = head_ids(html, "h-")
-      title = Regex.run(~r/<h1[^>]*>(.*?)<\/h1>/s, html) |> then(&(&1 && Enum.at(&1, 1))) || file
+      title = doc_title(html, file)
       %{html: html, toc: if(length(heads) >= 3, do: heads, else: []), title: title}
     else
       _ -> nil
@@ -47,9 +47,41 @@ defmodule Console.Papers do
   end
 
   @doc """
-  The workbench's own papers — its README and CHANGELOG at the root —
-  rendered like a box's: the figures they reference under `assets/`
-  through the figures route, a link to the changelog to its tab.
+  A document's title: the words of its `h1`, and the file's name when it
+  has none. The words and not the markup — a heading carries whatever
+  the writer put in it, and `# Dockerized Elixir Workbench <!-- omit in
+  toc -->` reached the index reading *DOCKERIZED ELIXIR WORKBENCH
+  &lt;!-- RAW HTML OMITTED --&gt;*, which is the renderer talking to
+  itself out loud.
+  """
+  def doc_title(html, file) do
+    case Regex.run(~r/<h1[^>]*>(.*?)<\/h1>/s, html) do
+      [_, inner] ->
+        inner
+        |> String.replace(~r/<!--.*?-->/s, "")
+        |> String.replace(~r/<[^>]*>/, "")
+        |> String.trim()
+        |> case do
+          "" -> file
+          words -> words
+        end
+
+      _ ->
+        file
+    end
+  end
+
+  @doc """
+  The workbench's own papers, the way a cartridge's `papers/0` names its
+  own: the drawer's Manual is a group over these two, as the box's is
+  over its three.
+  """
+  def workbench_papers, do: [{"readme", "README", "README.md"}, {"changelog", "CHANGELOG", "CHANGELOG.md"}]
+
+  @doc """
+  One of them rendered like a box's: the figures it references under
+  `assets/` through the figures route, and a link to the changelog to
+  the paper it is now.
   """
   def render_workbench(key) when key in ["readme", "changelog"] do
     file = if key == "readme", do: "README.md", else: "CHANGELOG.md"
@@ -60,11 +92,11 @@ defmodule Console.Papers do
           md
           |> to_html()
           |> then(&Regex.replace(~r/<img src="(assets\/[^"]+)"/, &1, ~s(<img src="/figures/\\1" loading="lazy")))
-          |> then(&Regex.replace(~r/<a href="CHANGELOG\.md[^"]*"/, &1, ~s(<a href="?wb=changelog" data-patch)))
+          |> then(&Regex.replace(~r/<a href="CHANGELOG\.md[^"]*"/, &1, ~s(<a href="?wb=manual&amp;paper=changelog" data-patch)))
           |> then(&Regex.replace(~r/<a href="(https?:[^"]*)"/, &1, ~s(<a href="\\1" target="_blank" rel="noopener")))
 
         {html, heads} = head_ids(html, "w-")
-        title = Regex.run(~r/<h1[^>]*>(.*?)<\/h1>/s, html) |> then(&(&1 && Enum.at(&1, 1))) || file
+        title = doc_title(html, file)
         %{html: html, toc: if(length(heads) >= 3, do: heads, else: []), title: title}
 
       _ ->

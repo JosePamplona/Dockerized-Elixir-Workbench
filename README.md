@@ -6,25 +6,9 @@ This is a script for creating [Elixir](https://elixir-lang.org/) projects with t
 
 The workbench stays permanently in this directory. Projects are generated into the **workspace** directory (`WORKSPACE_PATH` in `config.conf`), each one owning its `docker-compose.yml` with its name, ports and images baked in — several workspaces can run simultaneously without conflicts. The Elixir configuration is delegated to the **workbench_igniter** package (`igniter/`), whose tasks run inside the containers.
 
-- [The Workspace](#the-workspace)
-  - [Orchestration files of a workspace](#orchestration-files-of-a-workspace)
-- [The Console](#the-console)
-- [Configuration](#configuration)
-- [Create a new project](#create-a-new-project)
-- [Deployment](#deployment)
-  - [Cluster deployment](#cluster-deployment)
-- [Development](#development)
-  - [Add features](#add-features)
-- [Delete project](#delete-project)
-- [Maintenance](#maintenance)
-  - [Private Github Registry Images](#private-github-registry-images)
-  - [Demo](#demo)
-  - [Help](#help)
-- [License](#license)
-
 ## The Workspace
 
-The workbench stays in this directory and never changes shape. What it builds does — every cartridge and every deployment adds its own containers, routes and edges — so the shape of a project is not described here: each cartridge's README says what it installs and how it is wired, the [deployments](#deployment) say what they bring up, and the workbench itself tells what is there right now (`./wb.sh status`) and what could be (`./wb.sh catalog`). What follows is the part that holds for every project.
+The workbench stays in his directory and never changes shape. What it builds does — every cartridge and every deployment adds its own containers, routes and edges — so the shape of a project is not described here: each cartridge's README says what it installs and how it is wired, the [deployments](#deployment) say what they bring up, and the workbench itself tells what is there right now (`./wb.sh status`) and what could be (`./wb.sh catalog`). What follows is the part that holds for every project.
 
 A project is generated into its **workspace** (`WORKSPACE_PATH`), which owns its orchestration: a `docker-compose.yml` with the project's name, images and host ports baked in at creation — the first free ones from `4000` (application) and `5050` (pgAdmin), so several workspaces run side by side. Inside it the services follow the **pod pattern**: a `network` container owns the workspace's network namespace and its published ports, and every other service joins it, so they all reach each other on `localhost` and the project keeps Phoenix's default database configuration untouched. The database is never published: it is reachable only from inside its workspace.
 

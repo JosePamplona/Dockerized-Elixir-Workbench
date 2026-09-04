@@ -35,7 +35,7 @@ The workbench has a face: a Phoenix LiveView page that shows the workspace — c
 ./wb.sh console down
 ```
 
-Every command it runs is a job in its tray, with the output and exit code `wb.sh` gave. See [console/README.md](console/README.md).
+Every command it runs is a job in its tray, with the output and exit code `wb.sh` gave, in colour: the console runs this script on a pipe, where mix, hex, git and compose would go plain, so it sets `WB_ANSI=always` and the script asks them for colour anyway. From a terminal, or unset, nothing changes. See [console/README.md](console/README.md).
 
 ## Configuration
 

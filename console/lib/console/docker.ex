@@ -32,7 +32,10 @@ defmodule Console.Docker do
 
     all_containers()
     |> Enum.filter(&(scope == "daemon" or mine?(&1, mine)))
-    |> Enum.sort_by(&{if(mine?(&1, mine), do: 0, else: 1), if(&1.console?, do: 1, else: 0), order(&1.service), &1.project || "", &1.name})
+    |> Enum.sort_by(
+      &{if(mine?(&1, mine), do: 0, else: 1), if(&1.console?, do: 1, else: 0), order(&1.service),
+       &1.project || "", &1.name}
+    )
   end
 
   @doc """
@@ -44,7 +47,12 @@ defmodule Console.Docker do
   """
   def all_containers do
     with {out, 0} <- docker(["ps", "--all", "--no-trunc", "--format", "{{.ID}}\t{{.Status}}"]),
-         rows <- for(line <- String.split(out, "\n", trim: true), [id | status] = String.split(line, "\t", parts: 2), do: {id, List.first(status) || ""}),
+         rows <-
+           for(
+             line <- String.split(out, "\n", trim: true),
+             [id | status] = String.split(line, "\t", parts: 2),
+             do: {id, List.first(status) || ""}
+           ),
          details <- inspect_all(Enum.map(rows, &elem(&1, 0))) do
       for {id, status} <- rows, d = details[id], do: container(d, status)
     else
@@ -55,7 +63,6 @@ defmodule Console.Docker do
   defp container(d, status) do
     cfg = d["Config"] || %{}
     labels = cfg["Labels"] || %{}
-    state = d["State"] || %{}
     name = String.trim_leading(d["Name"] || "", "/")
 
     %{
@@ -64,20 +71,32 @@ defmodule Console.Docker do
       image: cfg["Image"],
       project: labels[@project],
       service: labels[@service] || name,
-      state: state["Status"],
-      health: health(get_in(state, ["Health", "Status"])),
       status: status,
       ports: ports_of(get_in(d, ["NetworkSettings", "Ports"]) || %{}),
       restarts: d["RestartCount"] || 0,
-      exit: state["ExitCode"],
-      oom: state["OOMKilled"] == true,
       policy: policy(get_in(d, ["HostConfig", "RestartPolicy", "Name"])),
-      started: moment(state["StartedAt"]),
-      finished: moment(state["FinishedAt"]),
-      mounts: for(m <- d["Mounts"] || [], m["Type"] == "volume", do: m["Name"]),
+      mounts: volume_names(d),
       console?: name == @console
     }
+    |> Map.merge(state_of(d))
   end
+
+  # What the container's State says: where it is, how it ended, and when.
+  defp state_of(d) do
+    state = d["State"] || %{}
+
+    %{
+      state: state["Status"],
+      health: health(get_in(state, ["Health", "Status"])),
+      started: moment(state["StartedAt"]),
+      finished: moment(state["FinishedAt"]),
+      exit: state["ExitCode"],
+      oom: state["OOMKilled"] == true
+    }
+  end
+
+  # The volumes it mounts, by name.
+  defp volume_names(d), do: for(m <- d["Mounts"] || [], m["Type"] == "volume", do: m["Name"])
 
   defp inspect_all([]), do: %{}
 
@@ -113,57 +132,101 @@ defmodule Console.Docker do
 
   def card(name) do
     with {out, 0} <- docker(["inspect", name]), [d] <- Jason.decode!(out) do
-      cfg = d["Config"] || %{}
-      hc = cfg["Healthcheck"]
-      state = d["State"] || %{}
-      host = d["HostConfig"] || %{}
-      net = d["NetworkSettings"] || %{}
-
-      %{
-        name: String.trim_leading(d["Name"] || "", "/"),
-        image: cfg["Image"],
-        command: shell_words((cfg["Entrypoint"] || []) ++ (cfg["Cmd"] || [])),
-        user: blank(cfg["User"]),
-        workdir: blank(cfg["WorkingDir"]),
-        policy: policy(get_in(host, ["RestartPolicy", "Name"])),
-        network: host["NetworkMode"],
-        memory: host["Memory"],
-        cpus: host["NanoCpus"],
-        state: state["Status"],
-        health: health(get_in(state, ["Health", "Status"])),
-        started: moment(state["StartedAt"]),
-        finished: moment(state["FinishedAt"]),
-        exit: state["ExitCode"],
-        oom: state["OOMKilled"] == true,
-        restarts: d["RestartCount"] || 0,
-        pid: state["Pid"],
-        healthcheck:
-          hc &&
-            %{
-              test: shell_words(hc["Test"] || []),
-              interval: seconds(hc["Interval"]),
-              timeout: seconds(hc["Timeout"]),
-              start: seconds(hc["StartPeriod"]),
-              retries: hc["Retries"]
-            },
-        probes: for(p <- get_in(state, ["Health", "Log"]) || [], do: %{at: p["Start"], exit: p["ExitCode"], ms: millis(p["Start"], p["End"]), out: String.trim(p["Output"] || "")}),
-        mounts: for(m <- d["Mounts"] || [], do: %{type: m["Type"], from: m["Name"] || m["Source"], to: m["Destination"], mode: if(m["RW"], do: "rw", else: "ro")}),
-        env: (cfg["Env"] || []) |> Enum.join("\n") |> Project.mask() |> String.split("\n", trim: true),
-        ports: ports_of(net["Ports"] || %{}),
-        addresses: for({n, v} <- net["Networks"] || %{}, v["IPAddress"] not in [nil, ""], do: {n, v["IPAddress"]})
-      }
+      card_of(d)
     else
       _ -> nil
     end
   end
 
+  # The card off one inspect: what it runs, its state, its healthcheck,
+  # its mounts, its env, its network.
+  defp card_of(d) do
+    cfg = d["Config"] || %{}
+    state = d["State"] || %{}
+    host = d["HostConfig"] || %{}
+    net = d["NetworkSettings"] || %{}
+
+    %{
+      name: String.trim_leading(d["Name"] || "", "/"),
+      image: cfg["Image"],
+      command: command(cfg),
+      user: blank(cfg["User"]),
+      workdir: blank(cfg["WorkingDir"]),
+      policy: policy(get_in(host, ["RestartPolicy", "Name"])),
+      network: host["NetworkMode"],
+      memory: host["Memory"],
+      cpus: host["NanoCpus"],
+      restarts: d["RestartCount"] || 0,
+      pid: state["Pid"],
+      healthcheck: healthcheck(cfg["Healthcheck"]),
+      probes: probes(state),
+      mounts: mounts(d),
+      env: env(cfg),
+      ports: ports_of(net["Ports"] || %{}),
+      addresses: addresses(net)
+    }
+    |> Map.merge(state_of(d))
+  end
+
+  # What it runs: the entrypoint, then the command.
+  defp command(cfg), do: shell_words((cfg["Entrypoint"] || []) ++ (cfg["Cmd"] || []))
+
+  # The healthcheck as configured; nil without one.
+  defp healthcheck(nil), do: nil
+
+  defp healthcheck(hc) do
+    %{
+      test: shell_words(hc["Test"] || []),
+      interval: seconds(hc["Interval"]),
+      timeout: seconds(hc["Timeout"]),
+      start: seconds(hc["StartPeriod"]),
+      retries: hc["Retries"]
+    }
+  end
+
+  # The last probes the daemon kept.
+  defp probes(state) do
+    for p <- get_in(state, ["Health", "Log"]) || [] do
+      %{
+        at: p["Start"],
+        exit: p["ExitCode"],
+        ms: millis(p["Start"], p["End"]),
+        out: String.trim(p["Output"] || "")
+      }
+    end
+  end
+
+  # Every mount: volume or bind, from where to where, and how.
+  defp mounts(d) do
+    for m <- d["Mounts"] || [] do
+      %{
+        type: m["Type"],
+        from: m["Name"] || m["Source"],
+        to: m["Destination"],
+        mode: if(m["RW"], do: "rw", else: "ro")
+      }
+    end
+  end
+
+  # The env with the secrets masked, one line each.
+  defp env(cfg),
+    do: (cfg["Env"] || []) |> Enum.join("\n") |> Project.mask() |> String.split("\n", trim: true)
+
+  # The address on each network it is on.
+  defp addresses(net),
+    do:
+      for(
+        {n, v} <- net["Networks"] || %{},
+        v["IPAddress"] not in [nil, ""],
+        do: {n, v["IPAddress"]}
+      )
+
   # --- images -----------------------------------------------------------------
 
   @doc "The images in scope, grouped by ID, and the untagged ones counted."
   def images(status, scope) do
-    with {out, 0} <- docker(["image", "ls", "--format", "{{json .}}"]) do
-      group_images(decode_lines(out), app_repo(status), scope)
-    else
+    case docker(["image", "ls", "--format", "{{json .}}"]) do
+      {out, 0} -> group_images(decode_lines(out), app_repo(status), scope)
       _ -> %{images: [], dangling: 0, dangling_size: nil}
     end
   end
@@ -198,9 +261,15 @@ defmodule Console.Docker do
       grouped
       |> Enum.reject(& &1.dangling)
       |> Enum.filter(&(scope == "daemon" or &1.mine?))
-      |> Enum.sort_by(&{if(&1.mine?, do: 0, else: 1), &1.created}, fn {a, ca}, {b, cb} -> a < b or (a == b and ca >= cb) end)
+      |> Enum.sort_by(&{if(&1.mine?, do: 0, else: 1), &1.created}, fn {a, ca}, {b, cb} ->
+        a < b or (a == b and ca >= cb)
+      end)
 
-    %{images: images, dangling: length(dangling), dangling_size: dangling |> Enum.map(& &1.bytes) |> Enum.sum() |> human()}
+    %{
+      images: images,
+      dangling: length(dangling),
+      dangling_size: dangling |> Enum.map(& &1.bytes) |> Enum.sum() |> human()
+    }
   end
 
   # The app's image repository, from the compose: `some-test` of `some-test:local`.
@@ -208,7 +277,7 @@ defmodule Console.Docker do
 
   defp app_repo(status) do
     case Console.Workbench.project(status["workspace"]) do
-      %{image: image} -> image |> String.split(":") |> hd()
+      %{image: image} when is_binary(image) -> image |> String.split(":") |> hd()
       _ -> nil
     end
   end
@@ -230,26 +299,33 @@ defmodule Console.Docker do
         acc -> Map.update(acc, v, [c], &[c | &1])
       end
 
-    with {out, 0} <- docker(["volume", "ls", "--format", "{{json .}}"]) do
-      out
-      |> decode_lines()
-      |> Enum.map(fn v ->
-        labels = labels(v["Labels"])
-        used = users[v["Name"]] || []
+    case docker(["volume", "ls", "--format", "{{json .}}"]) do
+      {out, 0} ->
+        out
+        |> decode_lines()
+        |> Enum.map(&volume(&1, users, mine))
+        |> Enum.filter(&(scope == "daemon" or &1.mine?))
+        |> Enum.sort_by(&{if(&1.mine?, do: 0, else: 1), &1.anonymous, &1.project || "", &1.name})
 
-        %{
-          name: v["Name"],
-          project: labels[@project],
-          anonymous: Map.has_key?(labels, "com.docker.volume.anonymous"),
-          used_by: used |> Enum.map(& &1.name) |> Enum.sort(),
-          mine?: labels[@project] == mine or String.starts_with?(v["Name"], @console) or Enum.any?(used, &mine?(&1, mine))
-        }
-      end)
-      |> Enum.filter(&(scope == "daemon" or &1.mine?))
-      |> Enum.sort_by(&{if(&1.mine?, do: 0, else: 1), &1.anonymous, &1.project || "", &1.name})
-    else
-      _ -> []
+      _ ->
+        []
     end
+  end
+
+  # One volume: whose it is, who mounts it, and whether it is this workspace's.
+  defp volume(v, users, mine) do
+    labels = labels(v["Labels"])
+    used = users[v["Name"]] || []
+
+    %{
+      name: v["Name"],
+      project: labels[@project],
+      anonymous: Map.has_key?(labels, "com.docker.volume.anonymous"),
+      used_by: used |> Enum.map(& &1.name) |> Enum.sort(),
+      mine?:
+        labels[@project] == mine or String.starts_with?(v["Name"], @console) or
+          Enum.any?(used, &mine?(&1, mine))
+    }
   end
 
   @doc "Every volume's size, by name, off `system df -v` — slow: the daemon measures each one."
@@ -282,7 +358,8 @@ defmodule Console.Docker do
           name: r["Name"],
           driver: r["Driver"],
           project: labels[@project],
-          subnet: get_in(d, ["IPAM", "Config"]) |> List.wrap() |> Enum.map_join(", ", & &1["Subnet"]),
+          subnet:
+            get_in(d, ["IPAM", "Config"]) |> List.wrap() |> Enum.map_join(", ", & &1["Subnet"]),
           on: on,
           mine?: labels[@project] == mine or @console in on
         }
@@ -296,18 +373,41 @@ defmodule Console.Docker do
 
   @doc "`system df`: four rows — images, containers, volumes, build cache. Slow: seconds."
   def df do
-    with {out, 0} <- docker(["system", "df", "--format", "{{json .}}"]) do
-      for r <- decode_lines(out), do: %{type: r["Type"], total: r["TotalCount"], active: r["Active"], size: r["Size"], reclaimable: r["Reclaimable"]}
-    else
-      _ -> []
+    case docker(["system", "df", "--format", "{{json .}}"]) do
+      {out, 0} ->
+        for r <- decode_lines(out),
+            do: %{
+              type: r["Type"],
+              total: r["TotalCount"],
+              active: r["Active"],
+              size: r["Size"],
+              reclaimable: r["Reclaimable"]
+            }
+
+      _ ->
+        []
     end
   end
 
   @doc "The daemon in one line: version, platform, CPUs, memory, storage driver, host."
   def daemon do
-    with {v, 0} <- docker(["version", "--format", "{{.Server.Version}} · {{.Server.Os}}/{{.Server.Arch}}"]),
-         {i, 0} <- docker(["info", "--format", "{{.NCPU}} CPU · {{.MemTotal}} · {{.Driver}} in {{.DockerRootDir}} · {{.OperatingSystem}}, kernel {{.KernelVersion}}"]) do
-      mem = Regex.replace(~r/ · (\d+) · /, i, fn _, b -> " · " <> human(String.to_integer(b)) <> " · " end)
+    with {v, 0} <-
+           docker([
+             "version",
+             "--format",
+             "{{.Server.Version}} · {{.Server.Os}}/{{.Server.Arch}}"
+           ]),
+         {i, 0} <-
+           docker([
+             "info",
+             "--format",
+             "{{.NCPU}} CPU · {{.MemTotal}} · {{.Driver}} in {{.DockerRootDir}} · {{.OperatingSystem}}, kernel {{.KernelVersion}}"
+           ]) do
+      mem =
+        Regex.replace(~r/ · (\d+) · /, i, fn _, b ->
+          " · " <> human(String.to_integer(b)) <> " · "
+        end)
+
       "Docker " <> String.trim(v) <> " · " <> String.trim(mem)
     else
       _ -> nil
@@ -316,7 +416,11 @@ defmodule Console.Docker do
 
   # --- the composes -----------------------------------------------------------
 
-  @deploys [{"dev", "docker-compose.yml"}, {"prod", "docker-compose.prod.yml"}, {"scaled", "docker-compose.scaled.yml"}]
+  @deploys [
+    {"dev", "docker-compose.yml"},
+    {"prod", "docker-compose.prod.yml"},
+    {"scaled", "docker-compose.scaled.yml"}
+  ]
 
   @doc "The three deployments' compose files off the workspace, masked; `lines: nil` for one not baked."
   def composes(nil), do: for({key, file} <- @deploys, do: %{key: key, file: file, lines: nil})
@@ -351,21 +455,23 @@ defmodule Console.Docker do
   refresh (`assets/design/README.md`, *a measure in a column*).
   """
   def stat(line) do
-    with {:ok, %{"Name" => name} = s} <- line |> String.replace(~r/\e\[[0-9;]*[A-Za-z]/, "") |> Jason.decode() do
-      [used | limit] = String.split(s["MemUsage"] || "", " / ")
+    case line |> String.replace(~r/\e\[[0-9;]*[A-Za-z]/, "") |> Jason.decode() do
+      {:ok, %{"Name" => name} = s} ->
+        [used | limit] = String.split(s["MemUsage"] || "", " / ")
 
-      %{
-        name: name,
-        cpu: percent(s["CPUPerc"]),
-        mem: mib(used),
-        limit: gib(List.first(limit)),
-        memp: s["MemPerc"],
-        net: s["NetIO"],
-        block: s["BlockIO"],
-        pids: s["PIDs"]
-      }
-    else
-      _ -> nil
+        %{
+          name: name,
+          cpu: percent(s["CPUPerc"]),
+          mem: mib(used),
+          limit: gib(List.first(limit)),
+          memp: s["MemPerc"],
+          net: s["NetIO"],
+          block: s["BlockIO"],
+          pids: s["PIDs"]
+        }
+
+      _ ->
+        nil
     end
   end
 
@@ -387,7 +493,13 @@ defmodule Console.Docker do
 
   # What was not a number stays as it came.
   defp fixed(nil, _, _, fallback), do: fallback
-  defp fixed(bytes, per, unit, _), do: (bytes / per) |> Float.round(1) |> :erlang.float_to_binary(decimals: 1) |> Kernel.<>(" " <> unit)
+
+  defp fixed(bytes, per, unit, _),
+    do:
+      (bytes / per)
+      |> Float.round(1)
+      |> :erlang.float_to_binary(decimals: 1)
+      |> Kernel.<>(" " <> unit)
 
   # Docker's stats units are the binary ones (KiB, MiB, GiB), its sizes
   # the decimal ones (kB, MB, GB): both read here, each at its worth.
@@ -396,7 +508,12 @@ defmodule Console.Docker do
       [_, n, unit, i] ->
         {f, _} = Float.parse(n)
         base = if i == "i", do: 1024, else: 1000
-        f * :math.pow(base, Enum.find_index(["", "k", "m", "g", "t"], &(&1 == String.downcase(unit))))
+
+        f *
+          :math.pow(
+            base,
+            Enum.find_index(["", "k", "m", "g", "t"], &(&1 == String.downcase(unit)))
+          )
 
       _ ->
         nil
@@ -423,7 +540,12 @@ defmodule Console.Docker do
   # The same, off inspect's map: `%{"4000/tcp" => [%{"HostPort" => "4001"}]}`
   # — once per port, though the daemon binds it on 0.0.0.0 and on ::.
   defp ports_of(map) do
-    for({inside, binds} <- map, is_list(binds), b <- binds, do: b["HostPort"] <> "→" <> hd(String.split(inside, "/")))
+    for(
+      {inside, binds} <- map,
+      is_list(binds),
+      b <- binds,
+      do: b["HostPort"] <> "→" <> hd(String.split(inside, "/"))
+    )
     |> Enum.uniq()
     |> Enum.sort()
   end
@@ -487,7 +609,8 @@ defmodule Console.Docker do
   defp seconds(ns), do: "#{div(ns, 1_000_000_000)} s"
 
   defp millis(a, b) do
-    with {:ok, ta, _} <- DateTime.from_iso8601(a || ""), {:ok, tb, _} <- DateTime.from_iso8601(b || "") do
+    with {:ok, ta, _} <- DateTime.from_iso8601(a || ""),
+         {:ok, tb, _} <- DateTime.from_iso8601(b || "") do
       DateTime.diff(tb, ta, :millisecond)
     else
       _ -> nil
@@ -498,11 +621,15 @@ defmodule Console.Docker do
   defp shell_words(words) do
     words
     |> Enum.reject(&(&1 in ["CMD", "CMD-SHELL"]))
-    |> Enum.map_join(" ", fn w -> if String.contains?(w, [" ", "<", ">", "&", "|"]), do: ~s("#{w}"), else: w end)
+    |> Enum.map_join(" ", fn w ->
+      if String.contains?(w, [" ", "<", ">", "&", "|"]), do: ~s("#{w}"), else: w
+    end)
   end
 
   defp decode_lines(out) do
-    for line <- String.split(out, "\n", trim: true), match?({:ok, %{}}, Jason.decode(line)), do: Jason.decode!(line)
+    for line <- String.split(out, "\n", trim: true),
+        match?({:ok, %{}}, Jason.decode(line)),
+        do: Jason.decode!(line)
   end
 
   defp docker(args) do

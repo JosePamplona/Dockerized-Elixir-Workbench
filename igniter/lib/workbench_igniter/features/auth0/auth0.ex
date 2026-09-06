@@ -44,7 +44,13 @@ defmodule WorkbenchIgniter.Features.Auth0 do
   end
 
   @impl true
-  def choices, do: [interface: [{"rest", "a JSON controller and its OpenAPI schema"}, {"graphql", "an Absinthe schema and resolvers"}]]
+  def choices,
+    do: [
+      interface: [
+        {"rest", "a JSON controller and its OpenAPI schema"},
+        {"graphql", "an Absinthe schema and resolvers"}
+      ]
+    ]
 
   # The mark: the Accounts context, the first module the installer creates.
   @impl true

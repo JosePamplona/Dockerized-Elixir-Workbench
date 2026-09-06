@@ -29,7 +29,8 @@ defmodule WorkbenchIgniter.Features.Healthcheck do
   def option_docs do
     [
       endpoint: "Route for the healthcheck scope. Defaults to `/health`.",
-      open_api: "Generate the OpenApiSpex-documented variant even if the REST feature is not detected (it must be installed for it to compile)."
+      open_api:
+        "Generate the OpenApiSpex-documented variant even if the REST feature is not detected (it must be installed for it to compile)."
     ]
   end
 

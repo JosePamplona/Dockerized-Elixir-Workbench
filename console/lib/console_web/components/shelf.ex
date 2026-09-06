@@ -10,7 +10,12 @@ defmodule ConsoleWeb.Shelf do
   import ConsoleWeb.Ribbon, only: [ribbon: 1]
   alias ConsoleWeb.Cartridges
 
-  @docs [{"all", "All"}, {"collection", "Collections"}, {"base", "Base"}, {"covered", "With a box"}]
+  @docs [
+    {"all", "All"},
+    {"collection", "Collections"},
+    {"base", "Base"},
+    {"covered", "With a box"}
+  ]
   def docs, do: @docs
   def doc_names, do: Enum.map(@docs, &elem(&1, 0))
 
@@ -41,12 +46,19 @@ defmodule ConsoleWeb.Shelf do
 
     groups = [
       {"In the project", Enum.filter(visible, installed?)},
-      {"On the shelf — pick one to insert", Enum.filter(visible, &(!installed?.(&1) and !&1["pending"]))},
+      {"On the shelf — pick one to insert",
+       Enum.filter(visible, &(!installed?.(&1) and !&1["pending"]))},
       {"Not done yet", Enum.filter(visible, &(!installed?.(&1) and &1["pending"]))}
     ]
 
     with_box = Enum.count(assigns.catalog, & &1["covers"]["front"])
-    assigns = assign(assigns, groups: groups, with_box: with_box, in_count: Enum.count(assigns.catalog, installed?))
+
+    assigns =
+      assign(assigns,
+        groups: groups,
+        with_box: with_box,
+        in_count: Enum.count(assigns.catalog, installed?)
+      )
 
     ~H"""
     <div class="pdocs shelfp">
@@ -54,33 +66,69 @@ defmodule ConsoleWeb.Shelf do
         label="The shelf: all of it, or one kind"
         selected={@filter}
         docked
-        items={for {key, label} <- docs(), do: %{key: key, label: label, small: "#{count(@catalog, key)}", href: "/#{@tab}?doc=#{key}"}}
+        items={
+          for {key, label} <- docs(),
+              do: %{
+                key: key,
+                label: label,
+                small: "#{count(@catalog, key)}",
+                href: "/#{@tab}?doc=#{key}"
+              }
+        }
       />
       <div class="dkdoc">
         <div class="toolbar">
           <span class="label">{@in_count} in the project · {@with_box} with a box</span>
           <span class="sep"></span>
-          <div class="views" role="group" aria-label="How the shelf is laid out" id="shelf-views" phx-hook="ShelfView">
-            <button class="btn" type="button" phx-click="view" phx-value-view="covers" aria-pressed={to_string(@view == "covers")} title="The boxes, on the plank">Covers</button>
-            <button class="btn" type="button" phx-click="view" phx-value-view="list" aria-pressed={to_string(@view == "list")} title="A row for each cartridge, with what it is">List</button>
+          <div
+            class="views"
+            role="group"
+            aria-label="How the shelf is laid out"
+            id="shelf-views"
+            phx-hook="ShelfView"
+          >
+            <button
+              class="btn"
+              type="button"
+              phx-click="view"
+              phx-value-view="covers"
+              aria-pressed={to_string(@view == "covers")}
+              title="The boxes, on the plank"
+            >Covers</button>
+            <button
+              class="btn"
+              type="button"
+              phx-click="view"
+              phx-value-view="list"
+              aria-pressed={to_string(@view == "list")}
+              title="A row for each cartridge, with what it is"
+            >List</button>
           </div>
         </div>
-    <div id="shelf">
-      <%= for {label, list} <- @groups, list != [] do %>
-        <div class="row">
-          <span class="label">{label}</span>
-          <div :if={@view == "list"} class="list"><.list_row :for={e <- list} e={e} status={@status} tab={@tab} /></div>
-          <div :if={@view != "list"} class="boxes"><.box_el :for={e <- list} e={e} status={@status} tab={@tab} /></div>
-          <div :if={@view != "list"} class="plank"></div>
+        <div id="shelf">
+          <%= for {label, list} <- @groups, list != [] do %>
+            <div class="row">
+              <span class="label">{label}</span>
+              <div :if={@view == "list"} class="list">
+                <.list_row :for={e <- list} e={e} status={@status} tab={@tab} />
+              </div>
+              <div :if={@view != "list"} class="boxes">
+                <.box_el :for={e <- list} e={e} status={@status} tab={@tab} />
+              </div>
+              <div :if={@view != "list"} class="plank"></div>
+            </div>
+          <% end %>
         </div>
-      <% end %>
-    </div>
       </div>
     </div>
     """
   end
 
-  defp front(e), do: e["covers"]["front"] || if(e["pending"], do: "empty_cover_placeholder.jpg", else: "cover_placeholder.png")
+  defp front(e),
+    do:
+      e["covers"]["front"] ||
+        if(e["pending"], do: "empty_cover_placeholder.jpg", else: "cover_placeholder.png")
+
   defp title(e), do: e["name"] |> String.replace(~r/(\d+)$/, " \\1") |> String.replace("_", " ")
 
   attr :e, :map, required: true
@@ -89,15 +137,31 @@ defmodule ConsoleWeb.Shelf do
 
   defp box_el(assigns) do
     installed = Cartridges.installed?(assigns.status, assigns.e["name"])
-    assigns = assign(assigns, installed: installed, facts: Cartridges.facts(assigns.e), covered: assigns.e["covers"]["front"] != nil)
+
+    assigns =
+      assign(assigns,
+        installed: installed,
+        facts: Cartridges.facts(assigns.e),
+        covered: assigns.e["covers"]["front"] != nil
+      )
 
     ~H"""
-    <.link class={["box", @e["pending"] && "pending", @installed && "in"]} patch={"/#{@tab}?box=#{@e["name"]}"} aria-label={"#{title(@e)}: pick up the box"}>
+    <.link
+      class={["box", @e["pending"] && "pending", @installed && "in"]}
+      patch={"/#{@tab}?box=#{@e["name"]}"}
+      aria-label={"#{title(@e)}: pick up the box"}
+    >
       <div class={["face", !@covered && "socket"]}>
-        <img src={"/covers/#{front(@e)}"} alt={if @covered, do: "#{title(@e)} — box cover", else: ""} draggable="false" />
+        <img
+          src={"/covers/#{front(@e)}"}
+          alt={if @covered, do: "#{title(@e)} — box cover", else: ""}
+          draggable="false"
+        />
         <span :if={!@covered} class="name">{title(@e)}</span>
       </div>
-      <div class="cap"><b>{@e["name"]}</b><span :if={@facts != []} class="st">{Enum.join(@facts, " · ")}</span></div>
+      <div class="cap">
+        <b>{@e["name"]}</b><span :if={@facts != []} class="st">{Enum.join(@facts, " · ")}</span>
+      </div>
     </.link>
     """
   end
@@ -106,18 +170,34 @@ defmodule ConsoleWeb.Shelf do
     installed = Cartridges.installed?(assigns.status, assigns.e["name"])
     c = Cartridges.carried(assigns.status, assigns.e["name"])
     origin = if installed and c, do: Cartridges.origin(assigns.status, c)
-    assigns = assign(assigns, installed: installed, origin: origin, facts: Cartridges.facts(assigns.e))
+
+    assigns =
+      assign(assigns, installed: installed, origin: origin, facts: Cartridges.facts(assigns.e))
 
     ~H"""
-    <.link class={["lrow", @installed && "in", @e["pending"] && "pending"]} patch={"/#{@tab}?box=#{@e["name"]}"} aria-label={"#{title(@e)}: pick up the box"}>
+    <.link
+      class={["lrow", @installed && "in", @e["pending"] && "pending"]}
+      patch={"/#{@tab}?box=#{@e["name"]}"}
+      aria-label={"#{title(@e)}: pick up the box"}
+    >
       <span class="th"><img src={"/covers/#{front(@e)}"} alt="" draggable="false" /></span>
       <span class="nm"><span class={["cart-ref", @installed && "in"]}>{@e["name"]}</span></span>
       <span class="fx">
         <.chip :for={f <- @facts}>{f}</.chip>
-        <.chip :if={@origin} class={elem(@origin, 1)} title={elem(@origin, 2)}>{elem(@origin, 0)}</.chip>
+        <.chip :if={@origin} class={elem(@origin, 1)} title={elem(@origin, 2)}>
+          {elem(@origin, 0)}
+        </.chip>
       </span>
-      <span class="vr" title={if @e["version"], do: "#{@e["version"]["date"]} in its CHANGELOG", else: "no CHANGELOG to read a version from"}>{if @e["version"], do: "v#{@e["version"]["version"]}", else: "—"}</span>
-      <span class="sm">{@e["summary"] || "Documented in the generated project, but its installer is not done yet."}</span>
+      <span
+        class="vr"
+        title={
+          if @e["version"],
+            do: "#{@e["version"]["date"]} in its CHANGELOG",
+            else: "no CHANGELOG to read a version from"
+        }
+      >{if @e["version"], do: "v#{@e["version"]["version"]}", else: "—"}</span>
+      <span class="sm">{@e["summary"] ||
+        "Documented in the generated project, but its installer is not done yet."}</span>
     </.link>
     """
   end

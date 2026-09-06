@@ -5,7 +5,8 @@ defmodule WorkbenchIgniter.Features.EctoTest do
 
   import Igniter.Test
 
-  defp no_ecto_project, do: WorkbenchIgniter.TestProject.new(~w(--no-ecto), %{".env" => "PORT=\"4000\"\n"})
+  defp no_ecto_project,
+    do: WorkbenchIgniter.TestProject.new(~w(--no-ecto), %{".env" => "PORT=\"4000\"\n"})
 
   test "a --no-ecto project has no Ecto, a default one has" do
     assert {false, _} = WorkbenchIgniter.Features.Ecto.installed?(no_ecto_project())
@@ -16,7 +17,9 @@ defmodule WorkbenchIgniter.Features.EctoTest do
     igniter = no_ecto_project() |> Igniter.compose_task("workbench.install.ecto", [])
 
     igniter
-    |> assert_creates("lib/test/repo.ex", fn content -> assert content =~ "adapter: Ecto.Adapters.Postgres" end)
+    |> assert_creates("lib/test/repo.ex", fn content ->
+      assert content =~ "adapter: Ecto.Adapters.Postgres"
+    end)
     |> assert_creates("test/support/data_case.ex")
     |> assert_creates("priv/repo/seeds.exs")
     |> assert_has_patch("mix.exs", """
@@ -40,7 +43,12 @@ defmodule WorkbenchIgniter.Features.EctoTest do
   end
 
   test "--database sqlite3 brings the SQLite adapter and a path instead of a URL" do
-    files = no_ecto_project() |> Igniter.compose_task("workbench.install.ecto", ~w(--database sqlite3)) |> apply_igniter!() |> Map.fetch!(:assigns) |> Map.fetch!(:test_files)
+    files =
+      no_ecto_project()
+      |> Igniter.compose_task("workbench.install.ecto", ~w(--database sqlite3))
+      |> apply_igniter!()
+      |> Map.fetch!(:assigns)
+      |> Map.fetch!(:test_files)
 
     assert files["lib/test/repo.ex"] =~ "Ecto.Adapters.SQLite3"
     assert files["mix.exs"] =~ ":ecto_sqlite3"
@@ -50,14 +58,29 @@ defmodule WorkbenchIgniter.Features.EctoTest do
   end
 
   test "--binary-id: the generators entry, as phx.new --binary-id writes it" do
-    files = no_ecto_project() |> Igniter.compose_task("workbench.install.ecto", ~w(--binary-id)) |> apply_igniter!() |> Map.fetch!(:assigns) |> Map.fetch!(:test_files)
+    files =
+      no_ecto_project()
+      |> Igniter.compose_task("workbench.install.ecto", ~w(--binary-id))
+      |> apply_igniter!()
+      |> Map.fetch!(:assigns)
+      |> Map.fetch!(:test_files)
+
     assert files["config/config.exs"] =~ "binary_id: true"
-    plain = no_ecto_project() |> Igniter.compose_task("workbench.install.ecto", []) |> apply_igniter!() |> Map.fetch!(:assigns) |> Map.fetch!(:test_files)
+
+    plain =
+      no_ecto_project()
+      |> Igniter.compose_task("workbench.install.ecto", [])
+      |> apply_igniter!()
+      |> Map.fetch!(:assigns)
+      |> Map.fetch!(:test_files)
+
     refute plain["config/config.exs"] =~ "binary_id: true"
   end
 
   test "rejects a database phx.new does not know" do
-    igniter = no_ecto_project() |> Igniter.compose_task("workbench.install.ecto", ~w(--database oracle))
+    igniter =
+      no_ecto_project() |> Igniter.compose_task("workbench.install.ecto", ~w(--database oracle))
+
     assert Enum.any?(igniter.issues, &(&1 =~ "Unknown --database"))
   end
 

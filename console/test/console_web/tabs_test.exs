@@ -51,7 +51,9 @@ defmodule ConsoleWeb.TabsTest do
     assert logs_tab(html) =~ ~s(class="live")
   end
 
-  test "the Docker screen is lit before any project is, and opens on its containers", %{conn: conn} do
+  test "the Docker screen is lit before any project is, and opens on its containers", %{
+    conn: conn
+  } do
     {:ok, _view, html} = live(conn, "/docker")
     [tab] = Regex.run(~r{<a[^>]*>\s*Docker.*?</a>}s, html)
     assert tab =~ ~s(aria-selected="true")

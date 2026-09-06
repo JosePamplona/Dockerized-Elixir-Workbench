@@ -54,7 +54,9 @@ defmodule WorkbenchIgniter.Features.Toolchain do
   def state(igniter) do
     if Igniter.exists?(igniter, ".tool-versions") do
       igniter = Igniter.include_existing_file(igniter, ".tool-versions")
-      content = igniter.rewrite |> Rewrite.source!(".tool-versions") |> Rewrite.Source.get(:content)
+
+      content =
+        igniter.rewrite |> Rewrite.source!(".tool-versions") |> Rewrite.Source.get(:content)
 
       state =
         for [_, tool, version] <- Regex.scan(~r/^(elixir|erlang)\s+(\S+)/m, content),

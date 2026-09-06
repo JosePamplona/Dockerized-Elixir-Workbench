@@ -22,7 +22,11 @@ defmodule Console.Diffs do
   """
   def cartridge(workspace, %{"sha" => sha} = insert) do
     files = files_of(workspace, sha)
-    Map.merge(%{sha: sha, subject: insert["subject"], date: insert["date"], files: files}, totals(files))
+
+    Map.merge(
+      %{sha: sha, subject: insert["subject"], date: insert["date"], files: files},
+      totals(files)
+    )
   end
 
   @doc """
@@ -49,19 +53,43 @@ defmodule Console.Diffs do
       touched = Map.new(picks, fn p -> {p.name, MapSet.new(p.files, & &1.path)} end)
 
       files =
-        for f <- files_of(workspace, {base, newest}),
-            do: Map.put(f, :by, for({name, paths} <- touched, MapSet.member?(paths, f.path), do: name))
+        for f <- files_of(workspace, {base, newest}), do: Map.put(f, :by, by(touched, f.path))
 
       Map.merge(
-        %{contiguous: true, between: 0, picks: picks, files: files, range: String.slice(base, 0, 7) <> ".." <> String.slice(newest, 0, 7), base: base, tip: newest},
+        %{
+          contiguous: true,
+          between: 0,
+          picks: picks,
+          files: files,
+          range: String.slice(base, 0, 7) <> ".." <> String.slice(newest, 0, 7),
+          base: base,
+          tip: newest
+        },
         totals(files)
       )
     else
-      %{contiguous: false, between: max(last - first + 1 - length(idx), 0), picks: picks, files: [], added: 0, removed: 0, range: nil, base: nil, tip: newest}
+      %{
+        contiguous: false,
+        between: max(last - first + 1 - length(idx), 0),
+        picks: picks,
+        files: [],
+        added: 0,
+        removed: 0,
+        range: nil,
+        base: nil,
+        tip: newest
+      }
     end
   end
 
-  defp totals(files), do: %{added: Enum.sum(Enum.map(files, &(&1.added || 0))), removed: Enum.sum(Enum.map(files, &(&1.removed || 0)))}
+  # The picks that wrote a path.
+  defp by(touched, path), do: for({name, paths} <- touched, MapSet.member?(paths, path), do: name)
+
+  defp totals(files),
+    do: %{
+      added: Enum.sum(Enum.map(files, &(&1.added || 0))),
+      removed: Enum.sum(Enum.map(files, &(&1.removed || 0)))
+    }
 
   @doc """
   The working tree against HEAD, for the Git screen: what a commit would
@@ -73,33 +101,60 @@ defmodule Console.Diffs do
     tracked = files_of(workspace, :worktree)
 
     untracked =
-      for path <- git(workspace, ["ls-files", "--others", "--exclude-standard"]) |> String.split("\n", trim: true) do
-        treatment = Console.Highlight.treatment(path)
-        text = File.read(Path.join(workspace, path))
-        readable = match?({:ok, t} when is_binary(t), text) and String.valid?(elem(text, 1)) and treatment not in [:image, :omit]
-
-        rows =
-          if readable do
-            # A file ending in a newline is cut into one line more than it
-            # has, an empty one: not a line anyone added.
-            case Console.Highlight.lines(path, elem(text, 1)) do
-              {_, lines} ->
-                lines = if String.ends_with?(elem(text, 1), "\n") and List.last(lines) == "", do: Enum.drop(lines, -1), else: lines
-                lines |> Enum.with_index(1) |> Enum.map(fn {html, n} -> {:add, nil, n, "+", html} end)
-
-              _ ->
-                []
-            end
-          else
-            []
-          end
-
-        %{path: path, added: if(readable, do: length(rows)), removed: if(readable, do: 0), born: true, gone: false, binary: not readable, treatment: treatment, tip: "HEAD", base: "HEAD", rows: rows}
-      end
+      git(workspace, ["ls-files", "--others", "--exclude-standard"])
+      |> String.split("\n", trim: true)
+      |> Enum.map(&untracked(workspace, &1))
 
     files = Enum.sort_by(tracked ++ untracked, & &1.path)
     Map.merge(%{files: files}, totals(files))
   end
+
+  # An untracked file as born: every line of it added, when it is text.
+  defp untracked(workspace, path) do
+    treatment = Console.Highlight.treatment(path)
+    text = File.read(Path.join(workspace, path))
+
+    readable =
+      match?({:ok, t} when is_binary(t), text) and String.valid?(elem(text, 1)) and
+        treatment not in [:image, :omit]
+
+    rows = if readable, do: born_rows(path, elem(text, 1)), else: []
+
+    %{
+      path: path,
+      added: if(readable, do: length(rows)),
+      removed: if(readable, do: 0),
+      born: true,
+      gone: false,
+      binary: not readable,
+      treatment: treatment,
+      tip: "HEAD",
+      base: "HEAD",
+      rows: rows
+    }
+  end
+
+  # The file's lines as added rows, coloured.
+  defp born_rows(path, text) do
+    # A file ending in a newline is cut into one line more than it
+    # has, an empty one: not a line anyone added.
+    case Console.Highlight.lines(path, text) do
+      {_, lines} ->
+        lines
+        |> drop_final_blank(String.ends_with?(text, "\n"))
+        |> Enum.with_index(1)
+        |> Enum.map(fn {html, n} -> {:add, nil, n, "+", html} end)
+
+      _ ->
+        []
+    end
+  end
+
+  defp drop_final_blank(lines, true) when lines != [] do
+    if List.last(lines) == "", do: Enum.drop(lines, -1), else: lines
+  end
+
+  defp drop_final_blank(lines, _), do: lines
 
   # A revision's diff — a commit, a range as {base, tip}, or the working
   # tree against HEAD as :worktree — file by file: the path, its ±
@@ -123,68 +178,84 @@ defmodule Console.Diffs do
     git(workspace, [cmd, "--format=" | args])
     |> String.split(~r/^(?=diff --git )/m)
     |> Enum.filter(&String.starts_with?(&1, "diff --git "))
-    |> Enum.map(fn chunk ->
-      path = path_of(chunk)
-      {added, removed} = Map.get(counts, path, {nil, nil})
-      born = Regex.match?(~r/^new file mode /m, chunk)
-      gone = Regex.match?(~r/^deleted file mode /m, chunk)
-      patch = case Regex.run(~r/^@@ .*/ms, chunk) do [hunk] -> String.trim_trailing(hunk, "\n"); _ -> "" end
-      treatment = Console.Highlight.treatment(path)
-      # An image of the working tree has no revision the blob route could
-      # serve: it is shown as what it is, binary, until it is committed.
-      binary = is_nil(added) or (tip == :worktree and treatment == :image)
+    |> Enum.map(&file_of(workspace, &1, counts, tip, base))
+  end
 
-      new_face = if gone or binary, do: nil, else: face(workspace, tip, path)
-      old_face = if born or binary, do: nil, else: face(workspace, base, path)
+  # One file of the diff, off its chunk.
+  defp file_of(workspace, chunk, counts, tip, base) do
+    path = path_of(chunk)
+    {added, removed} = Map.get(counts, path, {nil, nil})
+    born = Regex.match?(~r/^new file mode /m, chunk)
+    gone = Regex.match?(~r/^deleted file mode /m, chunk)
+    treatment = Console.Highlight.treatment(path)
+    # An image of the working tree has no revision the blob route could
+    # serve: it is shown as what it is, binary, until it is committed.
+    binary = is_nil(added) or (tip == :worktree and treatment == :image)
 
-      %{
-        path: path, added: added, removed: removed, born: born, gone: gone, binary: binary,
-        treatment: treatment,
-        tip: if(tip == :worktree, do: "HEAD", else: tip), base: base,
-        rows: rows(patch, new_face, old_face)
-      }
-    end)
+    new_face = if gone or binary, do: nil, else: face(workspace, tip, path)
+    old_face = if born or binary, do: nil, else: face(workspace, base, path)
+
+    %{
+      path: path,
+      added: added,
+      removed: removed,
+      born: born,
+      gone: gone,
+      binary: binary,
+      treatment: treatment,
+      tip: if(tip == :worktree, do: "HEAD", else: tip),
+      base: base,
+      rows: rows(patch(chunk), new_face, old_face)
+    }
+  end
+
+  # The hunks of the chunk, without the header.
+  defp patch(chunk) do
+    case Regex.run(~r/^@@ .*/ms, chunk) do
+      [hunk] -> String.trim_trailing(hunk, "\n")
+      _ -> ""
+    end
   end
 
   defp num("-"), do: nil
   defp num(s), do: String.to_integer(s)
 
   defp path_of(chunk) do
-    Enum.find_value([~r/^\+\+\+ b\/(.+)$/m, ~r/^--- a\/(.+)$/m, ~r/^diff --git a\/(.+?) b\//], "?", fn re ->
-      case Regex.run(re, chunk) do
-        [_, p] when p != "dev/null" -> p
-        _ -> nil
+    Enum.find_value(
+      [~r/^\+\+\+ b\/(.+)$/m, ~r/^--- a\/(.+)$/m, ~r/^diff --git a\/(.+?) b\//],
+      "?",
+      fn re ->
+        case Regex.run(re, chunk) do
+          [_, p] when p != "dev/null" -> p
+          _ -> nil
+        end
       end
-    end)
+    )
   end
 
   # A face of the file, cut into lines: nil when it cannot be read or is
   # not text. The working tree's face is the file on disk.
   defp face(workspace, :worktree, path) do
     case File.read(Path.join(workspace, path)) do
-      {:ok, out} ->
-        if String.valid?(out) do
-          case Console.Highlight.lines(path, out) do
-            {_, lines} -> List.to_tuple(lines)
-            _ -> nil
-          end
-        end
-
+      {:ok, out} -> lines_of(path, out)
       _ -> nil
     end
   end
 
   defp face(workspace, rev, path) do
     case System.cmd("git", ["-C", workspace, "show", rev <> ":" <> path], stderr_to_stdout: true) do
-      {out, 0} ->
-        if String.valid?(out) do
-          case Console.Highlight.lines(path, out) do
-            {_, lines} -> List.to_tuple(lines)
-            _ -> nil
-          end
-        end
-
+      {out, 0} -> lines_of(path, out)
       _ -> nil
+    end
+  end
+
+  # The text cut into coloured lines; nil for what is not text.
+  defp lines_of(path, out) do
+    if String.valid?(out) do
+      case Console.Highlight.lines(path, out) do
+        {_, lines} -> List.to_tuple(lines)
+        _ -> nil
+      end
     end
   end
 
@@ -198,15 +269,28 @@ defmodule Console.Diffs do
       cond do
         m = Regex.run(~r/^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/, line) ->
           [_, o, n] = m
-          {[{:hunk, nil, nil, "", escape(line)} | rows], String.to_integer(o), String.to_integer(n)}
 
-        line == "" or Regex.match?(~r/^(diff --git |index |new file|deleted file|similarity |rename |--- |\+\+\+ |Binary files)/, line) ->
+          {[{:hunk, nil, nil, "", escape(line)} | rows], String.to_integer(o),
+           String.to_integer(n)}
+
+        line == "" or
+            Regex.match?(
+              ~r/^(diff --git |index |new file|deleted file|similarity |rename |--- |\+\+\+ |Binary files)/,
+              line
+            ) ->
           {rows, o, n}
 
-        String.starts_with?(line, "+") -> {[{:add, nil, n, "+", at(new_face, n, line)} | rows], o, n + 1}
-        String.starts_with?(line, "-") -> {[{:del, o, nil, "−", at(old_face, o, line)} | rows], o + 1, n}
-        String.starts_with?(line, "\\") -> {[{:meta, nil, nil, "", escape(line)} | rows], o, n}
-        true -> {[{:ctx, o, n, " ", at(new_face, n, line)} | rows], o + 1, n + 1}
+        String.starts_with?(line, "+") ->
+          {[{:add, nil, n, "+", at(new_face, n, line)} | rows], o, n + 1}
+
+        String.starts_with?(line, "-") ->
+          {[{:del, o, nil, "−", at(old_face, o, line)} | rows], o + 1, n}
+
+        String.starts_with?(line, "\\") ->
+          {[{:meta, nil, nil, "", escape(line)} | rows], o, n}
+
+        true ->
+          {[{:ctx, o, n, " ", at(new_face, n, line)} | rows], o + 1, n + 1}
       end
     end)
     |> elem(0)
@@ -214,7 +298,13 @@ defmodule Console.Diffs do
   end
 
   defp at(nil, _n, line), do: escape(String.slice(line, 1..-1//1))
-  defp at(face, n, line), do: if(n >= 1 and n <= tuple_size(face), do: elem(face, n - 1), else: escape(String.slice(line, 1..-1//1)))
+
+  defp at(face, n, line),
+    do:
+      if(n >= 1 and n <= tuple_size(face),
+        do: elem(face, n - 1),
+        else: escape(String.slice(line, 1..-1//1))
+      )
 
   defp escape(text), do: text |> Phoenix.HTML.html_escape() |> Phoenix.HTML.safe_to_string()
 

@@ -23,7 +23,10 @@ defmodule ConsoleWeb.FiguresController do
       |> put_resp_header("cache-control", "public, max-age=3600")
       # An SVG opened as a document could run script; this policy holds
       # even where it is opened on its own, outside an <img>.
-      |> put_resp_header("content-security-policy", "default-src 'none'; style-src 'unsafe-inline'; img-src data:")
+      |> put_resp_header(
+        "content-security-policy",
+        "default-src 'none'; style-src 'unsafe-inline'; img-src data:"
+      )
       |> send_file(200, path)
     else
       send_resp(conn, 404, "no such figure")

@@ -19,8 +19,11 @@ defmodule WorkbenchIgniter.Features.BaseCartridgesTest do
           {Features.Live, "--no-live"},
           {Features.Dashboard, "--no-dashboard"}
         ] do
-      assert {false, _} = feature.installed?(project([flag])), "#{flag} should leave #{feature.name()} out"
-      assert {true, _} = feature.installed?(project([])), "#{feature.name()} should be in by default"
+      assert {false, _} = feature.installed?(project([flag])),
+             "#{flag} should leave #{feature.name()} out"
+
+      assert {true, _} = feature.installed?(project([])),
+             "#{feature.name()} should be in by default"
     end
   end
 
@@ -72,7 +75,10 @@ defmodule WorkbenchIgniter.Features.BaseCartridgesTest do
   end
 
   test "dashboard: the dependency, the route, and the socket it rides on" do
-    igniter = project(~w(--no-dashboard --no-live)) |> Igniter.compose_task("workbench.install.dashboard", [])
+    igniter =
+      project(~w(--no-dashboard --no-live))
+      |> Igniter.compose_task("workbench.install.dashboard", [])
+
     assert igniter.issues == []
     files = files(igniter)
     assert files["mix.exs"] =~ ":phoenix_live_dashboard"
@@ -115,7 +121,9 @@ defmodule WorkbenchIgniter.Features.BaseCartridgesTest do
 
   test "a project generated with --no-agents-md does not get an AGENTS.md" do
     igniter =
-      WorkbenchIgniter.TestProject.new(~w(--no-ecto --no-agents-md), %{".env" => "PORT=\"4000\"\n"})
+      WorkbenchIgniter.TestProject.new(~w(--no-ecto --no-agents-md), %{
+        ".env" => "PORT=\"4000\"\n"
+      })
       |> Igniter.compose_task("workbench.install.ecto", [])
 
     assert igniter.issues == []
@@ -125,7 +133,11 @@ defmodule WorkbenchIgniter.Features.BaseCartridgesTest do
   test "esbuild and tailwind take phx.new's static placeholders away, untouched ones only" do
     # html on an API-only project brings the placeholders; esbuild
     # replaces app.js's, tailwind app.css's and default.css.
-    with_html = project(~w(--no-html --no-esbuild --no-tailwind)) |> Igniter.compose_task("workbench.install.html", []) |> apply_igniter!()
+    with_html =
+      project(~w(--no-html --no-esbuild --no-tailwind))
+      |> Igniter.compose_task("workbench.install.html", [])
+      |> apply_igniter!()
+
     assert files(with_html)["priv/static/assets/js/app.js"] =~ "copy the following scripts"
 
     after_esbuild = with_html |> Igniter.compose_task("workbench.install.esbuild", [])
@@ -139,7 +151,10 @@ defmodule WorkbenchIgniter.Features.BaseCartridgesTest do
     # A placeholder the project rewrote is the project's, and stays.
     edited =
       with_html
-      |> Igniter.update_file("priv/static/assets/js/app.js", &Rewrite.Source.update(&1, :content, fn _ -> "console.log('mine')\n" end))
+      |> Igniter.update_file(
+        "priv/static/assets/js/app.js",
+        &Rewrite.Source.update(&1, :content, fn _ -> "console.log('mine')\n" end)
+      )
       |> apply_igniter!()
       |> Igniter.compose_task("workbench.install.esbuild", [])
 
@@ -147,11 +162,16 @@ defmodule WorkbenchIgniter.Features.BaseCartridgesTest do
   end
 
   test "tailwind without html and live without esbuild say what the build lacks" do
-    tailwind = project(~w(--no-html --no-esbuild --no-tailwind)) |> Igniter.compose_task("workbench.install.tailwind", [])
+    tailwind =
+      project(~w(--no-html --no-esbuild --no-tailwind))
+      |> Igniter.compose_task("workbench.install.tailwind", [])
+
     assert tailwind.issues == []
     assert Enum.any?(tailwind.notices, &(&1 =~ "phoenix-colocated"))
 
-    live = project(~w(--no-live --no-esbuild)) |> Igniter.compose_task("workbench.install.live", [])
+    live =
+      project(~w(--no-live --no-esbuild)) |> Igniter.compose_task("workbench.install.live", [])
+
     assert live.issues == []
     assert Enum.any?(live.notices, &(&1 =~ "assets/js/app.js"))
 
@@ -163,7 +183,11 @@ defmodule WorkbenchIgniter.Features.BaseCartridgesTest do
     igniter =
       project(~w(--no-dashboard))
       |> Igniter.update_file("mix.exs", fn source ->
-        Rewrite.Source.update(source, :content, &Regex.replace(~r/\{:phoenix, "~> [\d.]+"\}/, &1, ~s|{:phoenix, "~> 9.9.9"}|))
+        Rewrite.Source.update(
+          source,
+          :content,
+          &Regex.replace(~r/\{:phoenix, "~> [\d.]+"\}/, &1, ~s|{:phoenix, "~> 9.9.9"}|)
+        )
       end)
       |> apply_igniter!()
       |> Igniter.compose_task("workbench.install.dashboard", [])
@@ -175,7 +199,9 @@ defmodule WorkbenchIgniter.Features.BaseCartridgesTest do
 
   test "each is a no-op with a notice when in" do
     for task <- ~w(esbuild tailwind html live dashboard) do
-      phx_test_project() |> Igniter.compose_task("workbench.install.#{task}", []) |> assert_unchanged()
+      phx_test_project()
+      |> Igniter.compose_task("workbench.install.#{task}", [])
+      |> assert_unchanged()
     end
   end
 end

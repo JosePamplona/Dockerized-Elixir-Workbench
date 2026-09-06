@@ -11,9 +11,12 @@ defmodule ConsoleWeb.Deploy do
   alias ConsoleWeb.Cartridges
 
   @targets %{
-    "dev" => "The dev toolchain image with the source mounted. Recompiles on boot; iex -S mix on the container.",
-    "prod" => "The release image, built from the project's Dockerfile on each up. No source, no Mix. A one-shot migrate runs first, and the app waits for it.",
-    "scaled" => "N production replicas behind an nginx balancer, on a bridge network. A BEAM cluster if clustering is inserted."
+    "dev" =>
+      "The dev toolchain image with the source mounted. Recompiles on boot; iex -S mix on the container.",
+    "prod" =>
+      "The release image, built from the project's Dockerfile on each up. No source, no Mix. A one-shot migrate runs first, and the app waits for it.",
+    "scaled" =>
+      "N production replicas behind an nginx balancer, on a bridge network. A BEAM cluster if clustering is inserted."
   }
 
   # Generation-only flags of phx.new. --database and --binary-id are
@@ -36,10 +39,12 @@ defmodule ConsoleWeb.Deploy do
   end
 
   @doc "The pending job of a verb, if one waits."
-  def pending(jobs, verb), do: Enum.find(jobs, &(&1.state == :pending and elem(&1.kind, 0) == verb))
+  def pending(jobs, verb),
+    do: Enum.find(jobs, &(&1.state == :pending and elem(&1.kind, 0) == verb))
 
   @doc "Whether a job of these verbs is running or queued."
-  def busy?(jobs, verbs), do: Enum.any?(jobs, &(&1.state in [:running, :queued] and elem(&1.kind, 0) in verbs))
+  def busy?(jobs, verbs),
+    do: Enum.any?(jobs, &(&1.state in [:running, :queued] and elem(&1.kind, 0) in verbs))
 
   # --- the project card ------------------------------------------------------
 
@@ -56,25 +61,51 @@ defmodule ConsoleWeb.Deploy do
     # open, and the stack only when the two have come apart, which is
     # exactly when creating again would move the project off it.
     born = project? && Console.Project.born(assigns.status["workspace"])
-    assigns = assign(assigns, conf: conf, pending: pending, deleting: deleting, project?: project?, born: born, busy: busy?(assigns.jobs, [:new]), cmd: new_command(assigns.catalog, assigns.newp), bases: Cartridges.base(assigns.catalog))
+
+    assigns =
+      assign(assigns,
+        conf: conf,
+        pending: pending,
+        deleting: deleting,
+        project?: project?,
+        born: born,
+        busy: busy?(assigns.jobs, [:new]),
+        cmd: new_command(assigns.catalog, assigns.newp),
+        bases: Cartridges.base(assigns.catalog)
+      )
 
     ~H"""
     <div class="newcard">
-      <h3>Project
+      <h3>
+        Project
         <.chip :if={!@project?}>the workspace is empty</.chip>
-        <.chip :if={@project?} class="bad" title="creating overwrites every file in it">a project exists here</.chip>
+        <.chip :if={@project?} class="bad" title="creating overwrites every file in it">
+          a project exists here
+        </.chip>
       </h3>
       <form class="form" id="new-project" phx-change="new_form">
         <.given label="project name" value={@conf["PROJECT_NAME"]} />
         <.given label="workspace" value={@conf["WORKSPACE_PATH"]} />
-        <.given label="stack" value={"elixir #{@conf["ELIXIR_VERSION"]} · erlang #{@conf["ERLANG_VERSION"]} · #{@conf["DEBIAN_VERSION"]}"} warn={born_stack(@born, @conf)} />
-        <.given label="installer" value={installer(@conf, @born)} muted="the newest phx_new that runs on this stack" title={installer_title(@conf, @born)} />
+        <.given
+          label="stack"
+          value={"elixir #{@conf["ELIXIR_VERSION"]} · erlang #{@conf["ERLANG_VERSION"]} · #{@conf["DEBIAN_VERSION"]}"}
+          warn={born_stack(@born, @conf)}
+        />
+        <.given
+          label="installer"
+          value={installer(@conf, @born)}
+          muted="the newest phx_new that runs on this stack"
+          title={installer_title(@conf, @born)}
+        />
         <div class="frow">
           <label>phx.new</label>
           <div class="flags">
-            <label :for={{k, values} <- gen_flags()}>--{k}
+            <label :for={{k, values} <- gen_flags()}>
+              --{k}
               <select name={"gen[#{k}]"}>
-                <option :for={v <- values} value={v} selected={(@newp.gen[k] || hd(values)) == v}>{v}</option>
+                <option :for={v <- values} value={v} selected={(@newp.gen[k] || hd(values)) == v}>
+                  {v}
+                </option>
               </select>
             </label>
           </div>
@@ -90,7 +121,18 @@ defmodule ConsoleWeb.Deploy do
                     reason in its title, which is `.unlit` and not a
                     fourth opacity written here. --%>
               <label class={[out && "out", forced && "unlit"]}>
-                <input type="checkbox" name={"in[#{e["name"]}]"} checked={!out} disabled={forced} title={if forced, do: "goes with #{Enum.join(e["requires"], " and ")}: phx.new generates it only with them", else: "in from birth; uncheck to leave it out"} />
+                <input
+                  type="checkbox"
+                  name={"in[#{e["name"]}]"}
+                  checked={!out}
+                  disabled={forced}
+                  title={
+                    if forced,
+                      do:
+                        "goes with #{Enum.join(e["requires"], " and ")}: phx.new generates it only with them",
+                      else: "in from birth; uncheck to leave it out"
+                  }
+                />
                 <.cart_ref name={e["name"]} />
               </label>
               <span :if={e["name"] == "ecto" and e["options"] != []} class="subs">
@@ -100,10 +142,23 @@ defmodule ConsoleWeb.Deploy do
                     <%= if o["choices"] do %>
                       {flag}
                       <select name={"gen[#{o["name"]}]"} disabled={out} title={o["doc"]}>
-                        <option :for={c <- choices(o)} value={c["value"]} selected={(@newp.gen[o["name"]] || o["default"]) == c["value"]} title={c["doc"]}>{c["value"]}</option>
+                        <option
+                          :for={c <- choices(o)}
+                          value={c["value"]}
+                          selected={(@newp.gen[o["name"]] || o["default"]) == c["value"]}
+                          title={c["doc"]}
+                        >
+                          {c["value"]}
+                        </option>
                       </select>
                     <% else %>
-                      <input type="checkbox" name={"gen[#{o["name"]}]"} disabled={out} checked={@newp.gen[o["name"]] == "on"} title={o["doc"]} /> {flag}
+                      <input
+                        type="checkbox"
+                        name={"gen[#{o["name"]}]"}
+                        disabled={out}
+                        checked={@newp.gen[o["name"]] == "on"}
+                        title={o["doc"]}
+                      /> {flag}
                     <% end %>
                   </label>
                 <% end %>
@@ -113,17 +168,42 @@ defmodule ConsoleWeb.Deploy do
         </div>
       </form>
       <div class="foot">
-        <div class="cmds"><div class="cmd">{@cmd}</div></div>
-        <span :if={@pending} class="confirm on">A project already exists in this workspace: every file in it goes. <button class="btn danger" phx-click="confirm" phx-value-id={@pending.id}>Yes, overwrite</button><button class="btn" phx-click="cancel" phx-value-id={@pending.id}>Keep it</button></span>
-        <button :if={!@pending} class="btn primary" disabled={@busy} phx-click="run" phx-value-args={String.replace_prefix(@cmd, "./wb.sh ", "")}>{if @busy, do: "Creating…", else: "Create project"}</button>
+        <div class="cmds">
+          <div class="cmd">{@cmd}</div>
+        </div>
+        <span :if={@pending} class="confirm on">A project already exists in this workspace: every file in it goes.
+        <button class="btn danger" phx-click="confirm" phx-value-id={@pending.id}>Yes, overwrite</button><button
+          class="btn"
+          phx-click="cancel"
+          phx-value-id={@pending.id}
+        >Keep it</button></span>
+        <button
+          :if={!@pending}
+          class="btn primary"
+          disabled={@busy}
+          phx-click="run"
+          phx-value-args={String.replace_prefix(@cmd, "./wb.sh ", "")}
+        >{if @busy, do: "Creating…", else: "Create project"}</button>
         <%!-- The reverse of Create, on the same card: what the one makes,
               the other takes away — files, containers, images and volumes.
               It had a box of its own under "Workspace", beside the database
               errand; the errand went, and a heading over one button named
               only what the confirmation already says. Unlit on an empty
               workspace, never hidden. --%>
-        <button :if={!@deleting} class={["btn danger", !@project? && "unlit"]} aria-disabled={!@project? && "true"} title={!@project? && "the workspace is empty: nothing to delete"} phx-click={@project? && "run"} phx-value-args="delete">Delete the project</button>
-        <span :if={@deleting} class="confirm on">Files, containers, images and volumes go. <button class="btn danger" phx-click="confirm" phx-value-id={@deleting.id}>Yes, delete</button><button class="btn" phx-click="cancel" phx-value-id={@deleting.id}>Keep it</button></span>
+        <button
+          :if={!@deleting}
+          class={["btn danger", !@project? && "unlit"]}
+          aria-disabled={!@project? && "true"}
+          title={!@project? && "the workspace is empty: nothing to delete"}
+          phx-click={@project? && "run"}
+          phx-value-args="delete"
+        >Delete the project</button>
+        <span :if={@deleting} class="confirm on">Files, containers, images and volumes go.
+        <button class="btn danger" phx-click="confirm" phx-value-id={@deleting.id}>Yes, delete</button><button
+          class="btn"
+          phx-click="cancel"
+          phx-value-id={@deleting.id}
+        >Keep it</button></span>
       </div>
     </div>
     """
@@ -136,8 +216,14 @@ defmodule ConsoleWeb.Deploy do
   attr :label, :string, required: true
   attr :value, :string, default: nil
   attr :muted, :string, default: nil
-  attr :title, :string, default: nil, doc: "where the value comes from, when it is not config.conf's own"
-  attr :warn, :list, default: nil, doc: "[word, title]: the project here was made with something else"
+
+  attr :title, :string,
+    default: nil,
+    doc: "where the value comes from, when it is not config.conf's own"
+
+  attr :warn, :list,
+    default: nil,
+    doc: "[word, title]: the project here was made with something else"
 
   defp given(assigns) do
     ~H"""
@@ -166,7 +252,8 @@ defmodule ConsoleWeb.Deploy do
   defp installer_title(%{"PHX_NEW_VERSION" => v}, _born) when v not in [nil, ""], do: nil
 
   defp installer_title(_conf, %{"PHX_NEW" => v}) when v not in [nil, ""],
-    do: "the installer this project was born with, stamped in its own Dockerfile.local — config.conf names none, so creating again takes the newest phx_new that runs on this stack"
+    do:
+      "the installer this project was born with, stamped in its own Dockerfile.local — config.conf names none, so creating again takes the newest phx_new that runs on this stack"
 
   defp installer_title(_conf, _born), do: nil
 
@@ -179,14 +266,19 @@ defmodule ConsoleWeb.Deploy do
        when is_binary(e) and is_binary(o) and is_binary(d) do
     if {e, o, d} == {conf["ELIXIR_VERSION"], conf["ERLANG_VERSION"], conf["DEBIAN_VERSION"]},
       do: nil,
-      else: ["born on elixir #{e}", "this project was built on elixir #{e} · erlang #{o} · #{d}; config.conf now names another stack, and creating again would move it"]
+      else: [
+        "born on elixir #{e}",
+        "this project was built on elixir #{e} · erlang #{o} · #{d}; config.conf now names another stack, and creating again would move it"
+      ]
   end
 
   defp born_stack(_, _), do: nil
 
   def gen_flags, do: @gen_flags
 
-  defp choices(%{"choices" => [%{"group" => _} | _] = groups}), do: Enum.flat_map(groups, & &1["values"])
+  defp choices(%{"choices" => [%{"group" => _} | _] = groups}),
+    do: Enum.flat_map(groups, & &1["values"])
+
   defp choices(%{"choices" => values}), do: values
 
   # A base cartridge left out takes with it the ones that build on it.
@@ -203,29 +295,34 @@ defmodule ConsoleWeb.Deploy do
         if v && v != hd(values), do: ["--#{k}", v], else: []
       end)
 
-    outs = for e <- Cartridges.base(catalog), base_out?(catalog, newp, e["name"]), do: "--no-#{e["name"]}"
+    outs =
+      for e <- Cartridges.base(catalog),
+          base_out?(catalog, newp, e["name"]),
+          do: "--no-#{e["name"]}"
 
-    ecto =
-      case Enum.find(catalog, &(&1["name"] == "ecto")) do
-        nil -> []
-        e ->
-          if base_out?(catalog, newp, "ecto") do
-            []
-          else
-            Enum.flat_map(e["options"] || [], fn o ->
-              v = newp.gen[o["name"]]
-              flag = "--" <> String.replace(o["name"], "_", "-")
+    Enum.join(["./wb.sh", "new"] ++ gen ++ outs ++ ecto_flags(catalog, newp), " ")
+  end
 
-              cond do
-                o["type"] == "boolean" -> if v == "on", do: [flag], else: []
-                v && v != o["default"] -> [flag, v]
-                true -> []
-              end
-            end)
-          end
-      end
+  # Ecto's own flags — the database, binary ids — while Ecto is in.
+  defp ecto_flags(catalog, newp) do
+    case Enum.find(catalog, &(&1["name"] == "ecto")) do
+      nil -> []
+      e -> if base_out?(catalog, newp, "ecto"), do: [], else: option_flags(e, newp)
+    end
+  end
 
-    Enum.join(["./wb.sh", "new"] ++ gen ++ outs ++ ecto, " ")
+  defp option_flags(e, newp),
+    do: Enum.flat_map(e["options"] || [], &option_flag(&1, newp.gen[&1["name"]]))
+
+  # One option as set on the card, against its default.
+  defp option_flag(o, v) do
+    flag = "--" <> String.replace(o["name"], "_", "-")
+
+    cond do
+      o["type"] == "boolean" -> if v == "on", do: [flag], else: []
+      v && v != o["default"] -> [flag, v]
+      true -> []
+    end
   end
 
   # --- the deployment card ---------------------------------------------------
@@ -249,20 +346,60 @@ defmodule ConsoleWeb.Deploy do
     cs = (assigns.status && assigns.status["containers"]) || []
     left = Enum.count(cs)
     alive = Enum.count(cs, &(&1["State"] == "running"))
-    assigns = assign(assigns, running: running, pickname: pick, busy: busy, noproject: noproject, extra: extra, clustering: clustering, targets: @targets, left: left, alive: alive)
+
+    assigns =
+      assign(assigns,
+        running: running,
+        pickname: pick,
+        busy: busy,
+        noproject: noproject,
+        extra: extra,
+        clustering: clustering,
+        targets: @targets,
+        left: left,
+        alive: alive
+      )
 
     ~H"""
     <div class="targets">
       <div class="deployment">
         <h3>Deployment</h3>
         <div class="now">
-          <.chip class={cond do @busy -> "warn busy"; @running -> "good"; @left > 0 -> "warn"; true -> "off" end}>{cond do @busy -> "working"; @running -> "#{@running} is running"; @left > 0 -> "#{@left} container#{if @left == 1, do: "", else: "s"} left"; true -> "nothing is up" end}</.chip>
-          <span class="note">{cond do @running -> "one deployment at a time: the composes share the project name, so Up replaces it"; @left > 0 -> "no deployment is up, but the project's containers are still there: Down removes them"; true -> "pick a target and bring it up" end}</span>
+          <.chip class={
+            cond do
+              @busy -> "warn busy"
+              @running -> "good"
+              @left > 0 -> "warn"
+              true -> "off"
+            end
+          }>
+            {cond do
+              @busy -> "working"
+              @running -> "#{@running} is running"
+              @left > 0 -> "#{@left} container#{if @left == 1, do: "", else: "s"} left"
+              true -> "nothing is up"
+            end}
+          </.chip>
+          <span class="note">{cond do
+            @running ->
+              "one deployment at a time: the composes share the project name, so Up replaces it"
+
+            @left > 0 ->
+              "no deployment is up, but the project's containers are still there: Down removes them"
+
+            true ->
+              "pick a target and bring it up"
+          end}</span>
         </div>
         <form class="pick" id="deploy-pick" phx-change="pick">
           <label :for={name <- ~w(dev prod scaled)} class={name == @pickname && "on"}>
-            <div><input type="radio" name="target" value={name} checked={name == @pickname} /> <b>{name}</b></div>
-            <.chip :if={name == "scaled" and !@clustering} class="warn">no clustering: replicas run isolated</.chip>
+            <div>
+              <input type="radio" name="target" value={name} checked={name == @pickname} />
+              <b>{name}</b>
+            </div>
+            <.chip :if={name == "scaled" and !@clustering} class="warn">
+              no clustering: replicas run isolated
+            </.chip>
             <p>{@targets[name]}</p>
             <div :if={name == "scaled"} class="opts">
               --replicas <input type="number" name="replicas" min="1" value={@pick.replicas} />
@@ -271,12 +408,55 @@ defmodule ConsoleWeb.Deploy do
           </label>
         </form>
         <div class="acts">
-          <button class="btn primary" disabled={@busy or @noproject or @running == @pickname} phx-click="run" phx-value-args={"up --deploy #{@pickname}#{@extra}"}>{if @running && @running != @pickname, do: "Replace #{@running} with #{@pickname}", else: "Up #{@pickname}"}</button>
-          <button class="btn" disabled={@busy or @noproject} phx-click="run" phx-value-args={"build --deploy #{@pickname}#{@extra}"}>Build {@pickname}</button>
+          <button
+            class="btn primary"
+            disabled={@busy or @noproject or @running == @pickname}
+            phx-click="run"
+            phx-value-args={"up --deploy #{@pickname}#{@extra}"}
+          >{if @running && @running != @pickname,
+            do: "Replace #{@running} with #{@pickname}",
+            else: "Up #{@pickname}"}</button>
+          <button
+            class="btn"
+            disabled={@busy or @noproject}
+            phx-click="run"
+            phx-value-args={"build --deploy #{@pickname}#{@extra}"}
+          >Build {@pickname}</button>
           <span class="sep"></span>
-          <button class="btn" disabled={@busy or @alive == 0} title={if @alive == 0, do: "nothing is running", else: "stops the #{@alive} running container#{if @alive == 1, do: "", else: "s"}, keeping them"} phx-click="run" phx-value-args={String.replace_prefix(cmdline("stop", @running || "dev", ""), "./wb.sh ", "")}>Stop</button>
-          <button class="btn" disabled={@busy or @left == 0} title={if @left == 0, do: "there are no containers to remove", else: "removes the #{@left} container#{if @left == 1, do: "", else: "s"} of the project, running or not"} phx-click="run" phx-value-args={String.replace_prefix(cmdline("down", @running || "dev", ""), "./wb.sh ", "")}>Down</button>
-          <span class="note">{cond do @noproject -> "the workspace is empty: create a project first"; @running -> "on #{@running}"; @left > 0 -> "on what is left of the project"; true -> "nothing is up" end}</span>
+          <button
+            class="btn"
+            disabled={@busy or @alive == 0}
+            title={
+              if @alive == 0,
+                do: "nothing is running",
+                else:
+                  "stops the #{@alive} running container#{if @alive == 1, do: "", else: "s"}, keeping them"
+            }
+            phx-click="run"
+            phx-value-args={
+              String.replace_prefix(cmdline("stop", @running || "dev", ""), "./wb.sh ", "")
+            }
+          >Stop</button>
+          <button
+            class="btn"
+            disabled={@busy or @left == 0}
+            title={
+              if @left == 0,
+                do: "there are no containers to remove",
+                else:
+                  "removes the #{@left} container#{if @left == 1, do: "", else: "s"} of the project, running or not"
+            }
+            phx-click="run"
+            phx-value-args={
+              String.replace_prefix(cmdline("down", @running || "dev", ""), "./wb.sh ", "")
+            }
+          >Down</button>
+          <span class="note">{cond do
+            @noproject -> "the workspace is empty: create a project first"
+            @running -> "on #{@running}"
+            @left > 0 -> "on what is left of the project"
+            true -> "nothing is up"
+          end}</span>
         </div>
         <div class="cmd">./wb.sh up --deploy {@pickname}{@extra}</div>
       </div>
@@ -286,7 +466,7 @@ defmodule ConsoleWeb.Deploy do
 
   @doc "`--replicas N --no-balancer`, only when they differ from what `up` assumes."
   def scaled_extra(pick) do
-    (if pick.replicas && pick.replicas != 4, do: " --replicas #{pick.replicas}", else: "") <>
+    if(pick.replicas && pick.replicas != 4, do: " --replicas #{pick.replicas}", else: "") <>
       if(pick.balancer == false, do: " --no-balancer", else: "")
   end
 

@@ -7,9 +7,11 @@ defmodule Console.Catalog do
   the way they read the JSON.
   """
 
+  alias Mix.Tasks.Workbench.Catalog, as: CatalogTask
+
   def read do
     Console.Workbench.covers_dir()
-    |> Mix.Tasks.Workbench.Catalog.read()
+    |> CatalogTask.read()
     |> Jason.encode!()
     |> Jason.decode!()
   end

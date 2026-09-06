@@ -49,7 +49,8 @@ defmodule WorkbenchIgniter.Features.Ecto do
 
   @impl true
   def afterwards,
-    do: "./wb.sh bake puts the database into the workspace's compose, then ./wb.sh setup creates it."
+    do:
+      "./wb.sh bake puts the database into the workspace's compose, then ./wb.sh setup creates it."
 
   @impl true
   def option_docs do
@@ -69,25 +70,26 @@ defmodule WorkbenchIgniter.Features.Ecto do
   def install(igniter) do
     database = igniter.args.options[:database] || "postgres"
 
-    cond do
-      not List.keymember?(@databases, database, 0) ->
-        Igniter.add_issue(
-          igniter,
-          "Unknown --database #{inspect(database)}. One of: #{Enum.map_join(@databases, ", ", &elem(&1, 0))}."
-        )
+    if List.keymember?(@databases, database, 0) do
+      case installed?(igniter) do
+        {true, igniter} ->
+          Igniter.add_notice(igniter, "ecto_sql is already a dependency: Ecto is in, skipping.")
 
-      true ->
-        case installed?(igniter) do
-          {true, igniter} ->
-            Igniter.add_notice(igniter, "ecto_sql is already a dependency: Ecto is in, skipping.")
+        {false, igniter} ->
+          app = Igniter.Project.Application.app_name(igniter)
 
-          {false, igniter} ->
-            app = Igniter.Project.Application.app_name(igniter)
-
-            igniter
-            |> WorkbenchIgniter.PhxDelta.apply(:ecto, %{database: database, binary_id: igniter.args.options[:binary_id] == true})
-            |> env_entry(app, database)
-        end
+          igniter
+          |> WorkbenchIgniter.PhxDelta.apply(:ecto, %{
+            database: database,
+            binary_id: igniter.args.options[:binary_id] == true
+          })
+          |> env_entry(app, database)
+      end
+    else
+      Igniter.add_issue(
+        igniter,
+        "Unknown --database #{inspect(database)}. One of: #{Enum.map_join(@databases, ", ", &elem(&1, 0))}."
+      )
     end
   end
 

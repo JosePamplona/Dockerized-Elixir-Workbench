@@ -81,7 +81,10 @@ defmodule WorkbenchIgniter.Feature do
        with: {:open, [ai: ~w(tidewave ash_ai)]}]
   """
   @callback choices() :: [{atom(), choice()}]
-  @type value :: String.t() | {String.t(), String.t() | nil} | {String.t(), String.t() | nil, [String.t()]}
+  @type value ::
+          String.t()
+          | {String.t(), String.t() | nil}
+          | {String.t(), String.t() | nil, [String.t()]}
   @type choice :: [value()] | [{atom(), [value()]}] | {:open, [value()] | [{atom(), [value()]}]}
 
   @doc """
@@ -265,7 +268,16 @@ defmodule WorkbenchIgniter.Feature do
       for path <- paths do
         @external_resource path
         def template(unquote(Path.relative_to(path, base)), assigns) do
-          EEx.eval_string(unquote(File.read!(path)), [assigns: assigns], trim: true)
+          # Compiled here and evaluated apart, not `EEx.eval_string/3`: that
+          # one hands its options on to `Code.eval_quoted/3`, whose success
+          # typing has no `:trim`, and dialyzer then reads every installer
+          # rendering a template as code that never returns.
+          {rendered, _binding} =
+            unquote(File.read!(path))
+            |> EEx.compile_string(trim: true)
+            |> Code.eval_quoted(assigns: assigns)
+
+          rendered
         end
       end
     end
@@ -325,7 +337,8 @@ defmodule WorkbenchIgniter.Feature do
   Returns the igniter too, as the checks include files in it.
   """
   @spec missing_requirements(Igniter.t(), module()) :: {[String.t()], Igniter.t()}
-  def missing_requirements(igniter, feature), do: missing_names(igniter, feature, feature.requires())
+  def missing_requirements(igniter, feature),
+    do: missing_names(igniter, feature, feature.requires())
 
   @doc """
   What the chosen option values build on and is not in the project:
@@ -356,7 +369,8 @@ defmodule WorkbenchIgniter.Feature do
   defp value_requirements([{g, v} | _] = groups) when is_atom(g) and is_list(v),
     do: Enum.flat_map(groups, fn {_, v} -> value_requirements(v) end)
 
-  defp value_requirements(values), do: for({value, _doc, requires} <- values, do: {value, requires})
+  defp value_requirements(values),
+    do: for({value, _doc, requires} <- values, do: {value, requires})
 
   defp missing_names(igniter, feature, names) do
     Enum.reduce(names, {[], igniter}, fn name, {missing, igniter} ->
@@ -414,7 +428,9 @@ defmodule WorkbenchIgniter.Feature do
     %{schema: schema, defaults: defaults} = feature.info([], nil)
 
     for {key, type} <- schema || [], doc = docs[key] do
-      flag = if type == :boolean and Keyword.get(defaults || [], key) == true, do: "--no-", else: "--"
+      flag =
+        if type == :boolean and Keyword.get(defaults || [], key) == true, do: "--no-", else: "--"
+
       "* `#{flag}#{String.replace(to_string(key), "_", "-")}` - #{doc}"
     end
     |> Enum.map_join("\n", &wrap_bullet/1)
@@ -482,5 +498,4 @@ defmodule WorkbenchIgniter.Feature do
       module -> Mix.Task.shortdoc(module)
     end
   end
-
 end

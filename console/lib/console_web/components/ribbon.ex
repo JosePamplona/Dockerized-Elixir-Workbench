@@ -26,14 +26,33 @@ defmodule ConsoleWeb.Ribbon do
 
   attr :items, :list,
     required: true,
-    doc: "maps with :key, :label and :href; :small for a sublabel; :why when unlit, with the reason; :badge with :badge_class and :badge_title"
+    doc:
+      "maps with :key, :label and :href; :small for a sublabel; :why when unlit, with the reason; :badge with :badge_class and :badge_title"
 
   def ribbon(assigns) do
     ~H"""
     <div class={["dtabs", @docked && "docked"]} role="tablist" aria-label={@label}>
       <%= for i <- @items do %>
-        <.link :if={!i[:why]} class="dtab" role="tab" patch={i.href} aria-selected={to_string(@selected == i.key)}>{i.label}<small :if={i[:small]}>{i.small}</small><span :if={i[:badge]} class={["badge", i[:badge_class]]} title={i[:badge_title]}>{i.badge}</span></.link>
-        <button :if={i[:why]} class="dtab unlit" role="tab" type="button" aria-disabled="true" aria-selected="false" title={i.why}>{i.label}<small :if={i[:small]}>{i.small}</small></button>
+        <.link
+          :if={!i[:why]}
+          class="dtab"
+          role="tab"
+          patch={i.href}
+          aria-selected={to_string(@selected == i.key)}
+        >{i.label}<small :if={i[:small]}>{i.small}</small><span
+          :if={i[:badge]}
+          class={["badge", i[:badge_class]]}
+          title={i[:badge_title]}
+        >{i.badge}</span></.link>
+        <button
+          :if={i[:why]}
+          class="dtab unlit"
+          role="tab"
+          type="button"
+          aria-disabled="true"
+          aria-selected="false"
+          title={i.why}
+        >{i.label}<small :if={i[:small]}>{i.small}</small></button>
       <% end %>
     </div>
     """

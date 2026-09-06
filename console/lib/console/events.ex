@@ -64,7 +64,19 @@ defmodule Console.Events do
             :exit_status,
             :stderr_to_stdout,
             {:line, 65_536},
-            args: ["events", "--format", "{{json .}}", "--filter", "type=container", "--filter", "type=network", "--filter", "type=volume", "--filter", "type=image"]
+            args: [
+              "events",
+              "--format",
+              "{{json .}}",
+              "--filter",
+              "type=container",
+              "--filter",
+              "type=network",
+              "--filter",
+              "type=volume",
+              "--filter",
+              "type=image"
+            ]
           ])
 
         {:noreply, %{state | port: port}}
@@ -79,7 +91,12 @@ defmodule Console.Events do
       event ->
         Phoenix.PubSub.broadcast(Console.PubSub, @topic, {:event, event})
         events = [event | state.events]
-        {events, count} = if state.count >= @cap, do: {Enum.take(events, @cap), @cap}, else: {events, state.count + 1}
+
+        {events, count} =
+          if state.count >= @cap,
+            do: {Enum.take(events, @cap), @cap},
+            else: {events, state.count + 1}
+
         {:noreply, wake(%{state | events: events, count: count}, event)}
     end
   end

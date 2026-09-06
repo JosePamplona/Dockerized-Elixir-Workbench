@@ -147,7 +147,13 @@ defmodule WorkbenchIgniter.Features do
       end
     end
 
-    %{line: line, body: body, before: part.("Before"), after: part.("After"), not_for: part.("Not for")}
+    %{
+      line: line,
+      body: body,
+      before: part.("Before"),
+      after: part.("After"),
+      not_for: part.("Not for")
+    }
   end
 
   # What the cartridge adds to the console, as plain maps: doors with
@@ -155,7 +161,8 @@ defmodule WorkbenchIgniter.Features do
   defp console(spec) do
     %{
       doors: for(d <- Keyword.get(spec, :doors, []), do: door(d)),
-      probes: for({label, path} <- Keyword.get(spec, :probes, []), do: %{label: label, path: path}),
+      probes:
+        for({label, path} <- Keyword.get(spec, :probes, []), do: %{label: label, path: path}),
       tabs: Keyword.get(spec, :tabs, [])
     }
   end
@@ -202,8 +209,10 @@ defmodule WorkbenchIgniter.Features do
   # gave none, requires the cartridges choosing it builds on (mostly
   # none); sections as %{group, values}.
   defp choice_list(nil), do: nil
+
   defp choice_list([{g, v} | _] = groups) when is_atom(g) and is_list(v),
     do: for({g, v} <- groups, do: %{group: g, values: choice_list(v)})
+
   defp choice_list(values), do: Enum.map(values, &choice_value/1)
 
   defp choice_value({value, doc, requires}), do: %{value: value, doc: doc, requires: requires}

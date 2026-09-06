@@ -2,6 +2,8 @@
 
 # Dockerized Elixir Workbench <!-- omit in toc -->
 
+[![CI](https://github.com/JosePamplona/Dockerized-Elixir-Workbench/actions/workflows/ci.yml/badge.svg)](https://github.com/JosePamplona/Dockerized-Elixir-Workbench/actions/workflows/ci.yml)
+
 This is a script for creating [Elixir](https://elixir-lang.org/) projects with the [Phoenix](https://www.phoenixframework.org/) framework and deploying them on `localhost` using a specific service architecture with Docker containers. It eliminates the need to install anything other than [Docker Desktop](https://www.docker.com/products/docker-desktop/) to create, develop, and serve the project in either a development, production, or a scalated deployment.
 
 The workbench stays permanently in this directory. Projects are generated into the **workspace** directory (`WORKSPACE_PATH` in `config.conf`), each one owning its `docker-compose.yml` with its name, ports and images baked in — several workspaces can run simultaneously without conflicts. The Elixir configuration is delegated to the **workbench_igniter** package (`igniter/`), whose tasks run inside the containers.
@@ -211,6 +213,18 @@ This command runs the **new**, **up**, **logs** and **delete** commands consecut
 `TARGET` is **dev** (the default), **prod** or **scaled**: the deployment to run end to end.
 
 > ⚠️ **Warning**: This action is destructive. Once executed, the current project files (if any) will be deleted, new ones will be created and finally deleted again and cannot be recovered. Before proceeding, make sure is safe to remove them if there is any.
+
+### Checks
+
+Every push runs the same checks CI does (`.github/workflows/ci.yml`): the two scripts through [ShellCheck](https://www.shellcheck.net/), and each Elixir package — `igniter/`, `console/` — through the formatter, [Credo](https://hexdocs.pm/credo) in strict mode, [Dialyzer](https://hexdocs.pm/dialyxir) and its tests, on the Elixir and OTP its `.tool-versions` names. To run them before pushing:
+
+```sh
+shellcheck -x wb.sh scripts/entrypoint.sh
+cd igniter && mix format --check-formatted && mix credo --strict && mix dialyzer && mix test
+cd console && mix format --check-formatted && mix credo --strict && mix dialyzer && mix test
+```
+
+The first `mix dialyzer` builds the PLT into `priv/plts/` (ignored; CI caches it), which takes a few minutes; the runs after it take seconds.
 
 ### Help
 

@@ -14,6 +14,71 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+### Added
+
+- **Every push runs the checks.** A GitHub Actions workflow
+  (`.github/workflows/ci.yml`) puts the two scripts through ShellCheck
+  and each Elixir package — `igniter/`, `console/` — through
+  `mix format --check-formatted`, `mix credo --strict`, `mix dialyzer`
+  and `mix test`, on the Elixir and OTP the package's own
+  `.tool-versions` names. Credo and dialyxir are dev/test dependencies
+  of both; each package has its `.credo.exs`, the igniter gains the
+  `.formatter.exs` it never had, and the PLT lives in `priv/plts/`
+  (ignored, cached by CI). One check is off, in the igniter only:
+  `AliasUsage`, because Igniter's API is spelled by its full path by
+  convention and a cartridge calls a dozen of its modules. The README
+  says how to run the same checks before pushing.
+
+### Updated
+
+- **The console's LiveView is split by screen.** `ConsoleWeb.ConsoleLive`
+  held every screen's state handling in one module of 1 500 lines. Each
+  screen's state now lives under its name — `ConsoleWeb.ConsoleLive.Docker`,
+  `.Git`, `.Term`, `.Drawer` (the workbench's) and `.Hand` (the box in
+  hand) — with `take/2` off the URL, `event/3`, `info/2` and `async/3`,
+  and the LiveView delegates by event prefix. The band's state pill and
+  the Logs screen are components of their own (`ConsoleWeb.Band`,
+  `ConsoleWeb.LogsScreen`). Nothing changes on the page.
+- **The scripts are ShellCheck-clean**, style findings included:
+  variables quoted where a value is one word, arrays where a string was
+  split on purpose (`CONTAINER_ENTRYPOINT`, `DOCKER_TTY_FLAGS`,
+  `BUILD_VOLUMES`, `SESSION_COMMAND`), `read -r`, `cd … || exit`, `$*`
+  where `$@` sat inside a string, and the unused `REPO_URL` and
+  `ENTRYPOINT_COMMAND` gone. The few lines that split on purpose carry a
+  directive saying so.
+- **Both packages are formatted**, the console's heex included — the
+  first time the HTML formatter ran over its components. Three
+  interpolations it broke into a stair are helpers now (`probe_word/1`,
+  `files_word/1`, the drawer's prose parts), and the igniter's
+  `template/2` compiles its EEx and evaluates it apart, since
+  `EEx.eval_string/3` hands its options to `Code.eval_quoted/3` and
+  dialyzer read every installer that renders a template as code that
+  never returns.
+- **Credo's refactoring findings addressed.** In the igniter: the
+  member's question in `workbench.expand` is a function of its own,
+  `.gitignore` and the env files share one `append_entry/4`, the ash
+  site comparison judges one feature per function, `PhxDelta` reads a
+  file's secrets and merges one changed file in functions of their own,
+  and two `cond`s with one condition are `if`s. In the console: the
+  long readers — `Docker.card/1`, `Diffs.worktree/1`, `Config.line/2`,
+  `Box.argv/2`, the LiveView's mount and status handler — are split
+  along the seams they had, `with`s of one clause are `case`s, and
+  `Jobs.signal/2` calls `System.cmd/3` instead of `:os.cmd/1`. No check
+  was relaxed and no line carries a disable directive.
+
+### Fixed
+
+- **A box's doors never read their `when`.** `Cartridges.holds?/3`
+  matched any map with its first clause, so a door's `when` was
+  unwrapped twice and always held: a door meant only for `--with x` or
+  only with another cartridge in stood open regardless. Dialyzer found
+  the dead clauses.
+- **`app_repo/1` would have split a `nil` image.** The project's image
+  can be unset; the repository is read only off a binary now.
+- **`psql_extras`'s tests ran on a project without Ecto** and had
+  refused since the cartridge learned to require it; they run on a
+  Phoenix project now.
+
 ## v0.11.0 - (2026-09-06)
 
 ### Added

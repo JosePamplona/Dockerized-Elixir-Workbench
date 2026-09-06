@@ -66,7 +66,8 @@ defmodule WorkbenchIgniter.Features.Versioning do
         _ -> nil
       end
 
-    {if(version, do: %{version: version}, else: %{}), Igniter.include_existing_file(igniter, "mix.exs")}
+    {if(version, do: %{version: version}, else: %{}),
+     Igniter.include_existing_file(igniter, "mix.exs")}
   end
 
   @doc "Installer body, run by the mix task shell as its `igniter/1`."

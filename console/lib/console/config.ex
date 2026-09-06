@@ -14,7 +14,14 @@ defmodule Console.Config do
 
   defstruct sections: [], alts: %{}, stacks: [], text: ""
 
-  @type field :: %{key: String.t(), value: String.t(), quoted: boolean(), help: String.t(), inline: String.t(), group: String.t()}
+  @type field :: %{
+          key: String.t(),
+          value: String.t(),
+          quoted: boolean(),
+          help: String.t(),
+          inline: String.t(),
+          group: String.t()
+        }
 
   @doc """
   A comment block's text, split into what is prose and what is an
@@ -33,17 +40,20 @@ defmodule Console.Config do
   def linkify(text) when is_binary(text) do
     ~r{https?://[^\s<>"]+}
     |> Regex.split(text, include_captures: true, trim: false)
-    |> Enum.flat_map(fn part ->
-      if String.starts_with?(part, ["http://", "https://"]) do
-        {url, tail} = without_tail(part)
-        [{url, url}] ++ if tail == "", do: [], else: [tail]
-      else
-        [part]
-      end
-    end)
+    |> Enum.flat_map(&link_parts/1)
   end
 
   def linkify(_), do: []
+
+  # An address becomes a link, and what the sentence left on it goes back to the prose.
+  defp link_parts(part) do
+    if String.starts_with?(part, ["http://", "https://"]) do
+      {url, tail} = without_tail(part)
+      [{url, url}] ++ if tail == "", do: [], else: [tail]
+    else
+      [part]
+    end
+  end
 
   # What a sentence leaves behind an address is the sentence's, not the
   # address's: it goes back to the prose so the link is only the link.
@@ -64,12 +74,19 @@ defmodule Console.Config do
     acc =
       text
       |> String.split("\n")
-      |> Enum.reduce(%{sections: [first], alts: %{}, stacks: [], block: [], opening: true, group: ""}, &line/2)
+      |> Enum.reduce(
+        %{sections: [first], alts: %{}, stacks: [], block: [], opening: true, group: ""},
+        &line/2
+      )
 
     %__MODULE__{
       text: text,
       # The file's header says what the file is, not what the workspace is.
-      sections: acc.sections |> Enum.reverse() |> List.update_at(0, &%{&1 | intro: []}) |> Enum.map(&finish/1),
+      sections:
+        acc.sections
+        |> Enum.reverse()
+        |> List.update_at(0, &%{&1 | intro: []})
+        |> Enum.map(&finish/1),
       alts: Map.new(acc.alts, fn {k, v} -> {k, Enum.reverse(v)} end),
       stacks: Enum.reverse(acc.stacks)
     }
@@ -83,18 +100,18 @@ defmodule Console.Config do
 
     cond do
       line == "" ->
-        sec =
-          cond do
-            acc.block == [] -> sec
-            acc.opening -> %{sec | intro: sec.intro ++ Enum.reverse(acc.block)}
-            true -> %{sec | outro: [acc.block |> Enum.reverse() |> Enum.join(" ") | sec.outro]}
-          end
-
-        %{acc | sections: [sec | rest], block: []}
+        close_block(acc, sec, rest)
 
       m = Regex.run(~r/^# ---\s*(.*?)[\s.-]*$/, line) ->
         title = m |> Enum.at(1) |> String.replace(~r/\.$/, "")
-        %{acc | sections: [%{title: title, intro: [], outro: [], fields: []} | acc.sections], block: [], opening: true, group: ""}
+
+        %{
+          acc
+          | sections: [%{title: title, intro: [], outro: [], fields: []} | acc.sections],
+            block: [],
+            opening: true,
+            group: ""
+        }
 
       m = Regex.run(~r/^# --\s*(.*?)[\s.-]*$/, line) ->
         %{acc | group: Enum.at(m, 1), block: []}
@@ -107,26 +124,52 @@ defmodule Console.Config do
         %{acc | alts: Map.update(acc.alts, key, [value], &[value | &1])}
 
       m = Regex.run(~r/^export\s+(\w+)=("?)([^"#]*)\2\s*(?:#\s*(.*))?$/, line) ->
-        [_, key, quote, value | inline] = m
-
-        field = %{
-          key: key,
-          value: String.trim(value),
-          quoted: quote == "\"",
-          help: acc.block |> Enum.reverse() |> Enum.join(" ") |> String.trim(),
-          inline: List.first(inline) || "",
-          group: acc.group
-        }
-
-        %{acc | sections: [%{sec | fields: [field | sec.fields]} | rest], block: [], opening: false}
+        add_field(acc, m, sec, rest)
 
       m = Regex.run(~r/^#\s?(.*)$/, line) ->
-        text = m |> Enum.at(1) |> String.trim()
-        if text == "", do: acc, else: %{acc | block: [text | acc.block]}
+        note(acc, m |> Enum.at(1) |> String.trim())
 
       true ->
         acc
     end
+  end
+
+  # A comment line joins the block; an empty one says nothing.
+  defp note(acc, ""), do: acc
+  defp note(acc, text), do: %{acc | block: [text | acc.block]}
+
+  # A blank line closes the comment block: onto the intro while the
+  # section is opening, a paragraph of the outro after its fields.
+  defp close_block(acc, sec, rest) do
+    sec =
+      cond do
+        acc.block == [] -> sec
+        acc.opening -> %{sec | intro: sec.intro ++ Enum.reverse(acc.block)}
+        true -> %{sec | outro: [acc.block |> Enum.reverse() |> Enum.join(" ") | sec.outro]}
+      end
+
+    %{acc | sections: [sec | rest], block: []}
+  end
+
+  # An export line: a field of the section, with the block above as its help.
+  defp add_field(acc, m, sec, rest) do
+    [_, key, quote, value | inline] = m
+
+    field = %{
+      key: key,
+      value: String.trim(value),
+      quoted: quote == "\"",
+      help: acc.block |> Enum.reverse() |> Enum.join(" ") |> String.trim(),
+      inline: List.first(inline) || "",
+      group: acc.group
+    }
+
+    %{
+      acc
+      | sections: [%{sec | fields: [field | sec.fields]} | rest],
+        block: [],
+        opening: false
+    }
   end
 
   @doc "Every field's value by key."

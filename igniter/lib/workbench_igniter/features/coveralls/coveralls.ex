@@ -54,10 +54,14 @@ defmodule WorkbenchIgniter.Features.Coveralls do
   def choices do
     [
       theme: [
-        {"exdoc-ish", "mimics the ExDoc pages (sidebar, light/dark theme, fonts), so the report blends into the docs"},
+        {"exdoc-ish",
+         "mimics the ExDoc pages (sidebar, light/dark theme, fonts), so the report blends into the docs"},
         {"custom", "the original workbench report"}
       ],
-      interface: [{"rest", "skips the open_api files in the report"}, {"graphql", "the GraphQL project: nothing skipped"}]
+      interface: [
+        {"rest", "skips the open_api files in the report"},
+        {"graphql", "the GraphQL project: nothing skipped"}
+      ]
     ]
   end
 
@@ -68,9 +72,12 @@ defmodule WorkbenchIgniter.Features.Coveralls do
     [
       minimum_coverage: "Minimum coverage percentage. Default: `80`.",
       interface: "`rest` skips `open_api` files in the coverage report. Default: `rest`.",
-      exdoc: "The project uses the ExDoc feature: the `mix cover` task (which generates the `TESTING.md` report for the docs) is installed.",
-      theme: "HTML report theme, one of #{Enum.map_join(themes(), ", ", &"`#{&1}`")}: `exdoc-ish` mimics the ExDoc pages (sidebar, light/dark theme, fonts) so the report blends into the documentation site, `custom` is the original workbench report. Default: `exdoc-ish`.",
-      build: "Run the suite once the insert is applied, so the report has numbers. Off by default: it needs the dependencies compiled and, with Ecto, a test database — which means the compose has one (`./wb.sh bake`)."
+      exdoc:
+        "The project uses the ExDoc feature: the `mix cover` task (which generates the `TESTING.md` report for the docs) is installed.",
+      theme:
+        "HTML report theme, one of #{Enum.map_join(themes(), ", ", &"`#{&1}`")}: `exdoc-ish` mimics the ExDoc pages (sidebar, light/dark theme, fonts) so the report blends into the documentation site, `custom` is the original workbench report. Default: `exdoc-ish`.",
+      build:
+        "Run the suite once the insert is applied, so the report has numbers. Off by default: it needs the dependencies compiled and, with Ecto, a test database — which means the compose has one (`./wb.sh bake`)."
     ]
   end
 

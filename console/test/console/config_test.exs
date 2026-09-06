@@ -31,8 +31,19 @@ defmodule Console.ConfigTest do
     conf = Config.parse(@text)
     assert [ws, creation, git] = conf.sections
     assert ws.title == "Workspace" and ws.intro == []
-    assert [%{key: "WORKSPACE_PATH", value: "./_workspaces/test", help: "Where the project goes.", quoted: true}] = ws.fields
-    assert creation.title == "Project creation" and creation.intro == ["Read by 'new'.", "Two lines of intro."]
+
+    assert [
+             %{
+               key: "WORKSPACE_PATH",
+               value: "./_workspaces/test",
+               help: "Where the project goes.",
+               quoted: true
+             }
+           ] = ws.fields
+
+    assert creation.title == "Project creation" and
+             creation.intro == ["Read by 'new'.", "Two lines of intro."]
+
     assert Enum.map(creation.fields, & &1.key) == ["PROJECT_NAME", "ELIXIR_VERSION"]
     assert git.fields |> hd() |> Map.get(:help) == "Who signs."
     assert git.outro == ["A closing note."]
@@ -52,7 +63,8 @@ defmodule Console.ConfigTest do
       assert Console.Config.linkify("Available versions: https://hub.docker.com/_/postgres/tags") ==
                [
                  "Available versions: ",
-                 {"https://hub.docker.com/_/postgres/tags", "https://hub.docker.com/_/postgres/tags"},
+                 {"https://hub.docker.com/_/postgres/tags",
+                  "https://hub.docker.com/_/postgres/tags"},
                  ""
                ]
     end

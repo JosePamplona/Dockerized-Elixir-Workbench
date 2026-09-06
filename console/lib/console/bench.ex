@@ -32,7 +32,15 @@ defmodule Console.Bench do
 
   @topic "bench"
 
-  defstruct status: nil, catalog: nil, stacks: nil, installers: nil, features_stamp: nil, expands: %{}, in_flight: %{}, wanted: %{}, errors: %{}
+  defstruct status: nil,
+            catalog: nil,
+            stacks: nil,
+            installers: nil,
+            features_stamp: nil,
+            expands: %{},
+            in_flight: %{},
+            wanted: %{},
+            errors: %{}
 
   def start_link(opts), do: GenServer.start_link(__MODULE__, opts, name: __MODULE__)
 
@@ -93,7 +101,10 @@ defmodule Console.Bench do
 
   def handle_call(:stacks, _from, state), do: {:reply, state.stacks, state}
   def handle_call(:installers, _from, state), do: {:reply, state.installers, state}
-  def handle_call({:reading?, key}, _from, state), do: {:reply, Map.has_key?(state.in_flight, key), state}
+
+  def handle_call({:reading?, key}, _from, state),
+    do: {:reply, Map.has_key?(state.in_flight, key), state}
+
   def handle_call({:error, key}, _from, state), do: {:reply, state.errors[key], state}
 
   def handle_call({:expand, name, argv}, _from, state) do
@@ -102,15 +113,23 @@ defmodule Console.Bench do
         {:reply, {:ok, plan}, state}
 
       _ ->
-        key = {:expand, name, argv}
-
-        state =
-          if Map.has_key?(state.in_flight, key),
-            do: state,
-            else: put_in(state.in_flight[key], Task.async(fn -> {key, Console.Resident.ask(%{"ask" => "expand", "name" => name, "argv" => argv})} end))
-
-        {:reply, :asking, state}
+        {:reply, :asking, ask_expand(state, name, argv)}
     end
+  end
+
+  # The recipe asked of the resident, once: a question already out is not asked again.
+  defp ask_expand(state, name, argv) do
+    key = {:expand, name, argv}
+
+    if Map.has_key?(state.in_flight, key),
+      do: state,
+      else:
+        put_in(
+          state.in_flight[key],
+          Task.async(fn ->
+            {key, Console.Resident.ask(%{"ask" => "expand", "name" => name, "argv" => argv})}
+          end)
+        )
   end
 
   @impl true
@@ -137,18 +156,7 @@ defmodule Console.Bench do
     state =
       case {key, result} do
         {:status, {:ok, status}} ->
-          # A fast reading leaves the cartridges out: what was known
-          # stays — but only while the project is still there. A delete
-          # answers `exists: false`, and then there is nothing to carry:
-          # the doors and the inserted cartridges go with it.
-          status =
-            if is_nil(status["project"]) and status["exists"] and state.status,
-              do: Map.put(status, "project", state.status["project"]),
-              else: status
-          # What the project carries may have changed: the recipes with it.
-          expands = if state.status && status["project"] != state.status["project"], do: %{}, else: state.expands
-          broadcast({:bench, :status, status})
-          %{state | status: status, expands: expands, errors: Map.delete(state.errors, :status)}
+          take_status(state, status)
 
         {:catalog, {:ok, catalog}} ->
           broadcast({:bench, :catalog, catalog})
@@ -171,11 +179,7 @@ defmodule Console.Bench do
           %{state | errors: Map.put(state.errors, key, why)}
       end
 
-    # A request that arrived meanwhile runs now.
-    case Map.pop(state.wanted, key) do
-      {nil, wanted} -> {:noreply, %{state | wanted: wanted}}
-      {mode, wanted} -> {:noreply, %{state | wanted: wanted} |> start(key, mode)}
-    end
+    run_wanted(state, key)
   end
 
   # A reading that died rather than answered. This looked for the key by
@@ -198,10 +202,7 @@ defmodule Console.Bench do
             errors: Map.put(state.errors, key, why)
         }
 
-        case Map.pop(state.wanted, key) do
-          {nil, wanted} -> {:noreply, %{state | wanted: wanted}}
-          {mode, wanted} -> {:noreply, %{state | wanted: wanted} |> start(key, mode)}
-        end
+        run_wanted(state, key)
 
       nil ->
         {:noreply, state}
@@ -209,6 +210,35 @@ defmodule Console.Bench do
   end
 
   def handle_info(_, state), do: {:noreply, state}
+
+  # The status that arrived, onto the state.
+  defp take_status(state, status) do
+    # A fast reading leaves the cartridges out: what was known
+    # stays — but only while the project is still there. A delete
+    # answers `exists: false`, and then there is nothing to carry:
+    # the doors and the inserted cartridges go with it.
+    status =
+      if is_nil(status["project"]) and status["exists"] and state.status,
+        do: Map.put(status, "project", state.status["project"]),
+        else: status
+
+    # What the project carries may have changed: the recipes with it.
+    expands =
+      if state.status && status["project"] != state.status["project"],
+        do: %{},
+        else: state.expands
+
+    broadcast({:bench, :status, status})
+    %{state | status: status, expands: expands, errors: Map.delete(state.errors, :status)}
+  end
+
+  # A request that arrived meanwhile runs now.
+  defp run_wanted(state, key) do
+    case Map.pop(state.wanted, key) do
+      {nil, wanted} -> {:noreply, %{state | wanted: wanted}}
+      {mode, wanted} -> {:noreply, %{state | wanted: wanted} |> start(key, mode)}
+    end
+  end
 
   # The status: what wb.sh reads in tenths of a second — containers,
   # ports, git — and, for the full one, what the project carries, asked
@@ -219,26 +249,39 @@ defmodule Console.Bench do
   end
 
   # The catalog is read in this BEAM: the package is a dependency.
-  defp start(state, :catalog, _), do: put_in(state.in_flight[:catalog], Task.async(fn -> {:catalog, {:ok, Console.Catalog.read()}} end))
+  defp start(state, :catalog, _),
+    do:
+      put_in(
+        state.in_flight[:catalog],
+        Task.async(fn -> {:catalog, {:ok, Console.Catalog.read()}} end)
+      )
 
   # Docker Hub, five pages of it, over the reader's own connection.
-  defp start(state, :stacks, _), do: put_in(state.in_flight[:stacks], Task.async(fn -> {:stacks, Workbench.stacks()} end))
+  defp start(state, :stacks, _),
+    do: put_in(state.in_flight[:stacks], Task.async(fn -> {:stacks, Workbench.stacks()} end))
 
   # hex, one call for the list and one per release, in this BEAM.
-  defp start(state, :installers, _), do: put_in(state.in_flight[:installers], Task.async(fn -> {:installers, Console.Installers.list()} end))
+  defp start(state, :installers, _),
+    do:
+      put_in(
+        state.in_flight[:installers],
+        Task.async(fn -> {:installers, Console.Installers.list()} end)
+      )
 
   defp read_status(:fast), do: Workbench.status(:fast)
 
   defp read_status(:full) do
-    with {:ok, fast} <- Workbench.status(:fast) do
-      if fast["exists"] do
-        case Console.Resident.ask(%{"ask" => "status"}) do
-          {:ok, project} -> {:ok, Map.put(fast, "project", project)}
-          {:error, why} -> {:error, "the project could not be read: " <> why}
-        end
-      else
-        {:ok, fast}
-      end
+    case Workbench.status(:fast) do
+      {:ok, fast} -> if fast["exists"], do: with_project(fast), else: {:ok, fast}
+      error -> error
+    end
+  end
+
+  # What the project carries, asked of the resident, onto the fast reading.
+  defp with_project(fast) do
+    case Console.Resident.ask(%{"ask" => "status"}) do
+      {:ok, project} -> {:ok, Map.put(fast, "project", project)}
+      {:error, why} -> {:error, "the project could not be read: " <> why}
     end
   end
 
@@ -251,11 +294,17 @@ defmodule Console.Bench do
 
     case File.ls(dir) do
       {:ok, entries} ->
-        [dir | Enum.map(entries, &Path.join(dir, &1))]
-        |> Enum.map(fn p -> case File.stat(p) do {:ok, s} -> s.mtime; _ -> nil end end)
+        [dir | Enum.map(entries, &Path.join(dir, &1))] |> Enum.map(&mtime/1)
 
       _ ->
         nil
+    end
+  end
+
+  defp mtime(path) do
+    case File.stat(path) do
+      {:ok, s} -> s.mtime
+      _ -> nil
     end
   end
 end

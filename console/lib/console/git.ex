@@ -18,25 +18,38 @@ defmodule Console.Git do
   def log(workspace, inserts \\ []) do
     features = Map.new(inserts, &{&1["sha"], &1["feature"]})
 
-    case System.cmd("git", ["-C", workspace, "log", "--format=%H%x1f%s%x1f%b%x1f%an%x1f%aI%x1e"], stderr_to_stdout: true) do
+    case System.cmd("git", ["-C", workspace, "log", "--format=%H%x1f%s%x1f%b%x1f%an%x1f%aI%x1e"],
+           stderr_to_stdout: true
+         ) do
       {out, 0} ->
         out
         |> String.split("\x1e", trim: true)
         |> Enum.map(&String.trim/1)
         |> Enum.reject(&(&1 == ""))
-        |> Enum.map(fn entry ->
-          case String.split(entry, "\x1f") do
-            [sha, subject, body, author, date] ->
-              %{sha: sha, short: String.slice(sha, 0, 7), subject: subject, body: String.trim(body), author: author, date: date, insert: features[sha]}
-
-            _ ->
-              nil
-          end
-        end)
+        |> Enum.map(&entry(&1, features))
         |> Enum.reject(&is_nil/1)
 
       _ ->
         []
+    end
+  end
+
+  # One commit of the log, its five fields apart; nil for a line that is not one.
+  defp entry(entry, features) do
+    case String.split(entry, "\x1f") do
+      [sha, subject, body, author, date] ->
+        %{
+          sha: sha,
+          short: String.slice(sha, 0, 7),
+          subject: subject,
+          body: String.trim(body),
+          author: author,
+          date: date,
+          insert: features[sha]
+        }
+
+      _ ->
+        nil
     end
   end
 
@@ -48,7 +61,12 @@ defmodule Console.Git do
   def message_file(title, body) do
     path = Path.join(System.tmp_dir!(), "wb-commit-#{System.unique_integer([:positive])}.txt")
     body = String.trim(body || "")
-    File.write!(path, String.trim(title) <> if(body == "", do: "\n", else: "\n\n" <> body <> "\n"))
+
+    File.write!(
+      path,
+      String.trim(title) <> if(body == "", do: "\n", else: "\n\n" <> body <> "\n")
+    )
+
     path
   end
 end

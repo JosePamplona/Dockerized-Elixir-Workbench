@@ -33,10 +33,14 @@ defmodule WorkbenchIgniter.Features.Exdoc do
     [
       project_name: "Display name (default: capitalized app name).",
       repo_url: "Repository URL for `source_url`/`authors`.",
-      version: "The version the pages are stamped with (titles, the 404 page) until `mix version` sets the real one. Default: `0.0.0`.",
-      coveralls: "The coveralls feature is composed too: the coverage report is served beside the docs (`/cover`), with its page and the controller action.",
-      auth0: "The auth0 feature is composed too: the \"Get access tokens\" page and its scripts, to try the API from the docs.",
-      build: "Run `mix docs` once the insert is applied, so the site has pages on first boot. Off by default: it needs the dependencies fetched and compiled."
+      version:
+        "The version the pages are stamped with (titles, the 404 page) until `mix version` sets the real one. Default: `0.0.0`.",
+      coveralls:
+        "The coveralls feature is composed too: the coverage report is served beside the docs (`/cover`), with its page and the controller action.",
+      auth0:
+        "The auth0 feature is composed too: the \"Get access tokens\" page and its scripts, to try the API from the docs.",
+      build:
+        "Run `mix docs` once the insert is applied, so the site has pages on first boot. Off by default: it needs the dependencies fetched and compiled."
     ]
   end
 
@@ -365,7 +369,6 @@ defmodule WorkbenchIgniter.Features.Exdoc do
       igniter
     end
   end
-
 
   # --- Dummy documentation pages ----------------------------------------------
 

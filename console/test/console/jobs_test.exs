@@ -9,6 +9,7 @@ defmodule Console.JobsTest do
   setup do
     dir = Path.join(System.tmp_dir!(), "console-jobs-#{System.unique_integer([:positive])}")
     File.mkdir_p!(dir)
+
     File.write!(Path.join(dir, "wb.sh"), """
     #!/bin/sh
     shift # --yes
@@ -17,13 +18,16 @@ defmodule Console.JobsTest do
 
     exit ${EXIT:-0}
     """)
+
     File.chmod!(Path.join(dir, "wb.sh"), 0o755)
     was = System.get_env("WORKBENCH_DIR")
     System.put_env("WORKBENCH_DIR", dir)
+
     on_exit(fn ->
       if was, do: System.put_env("WORKBENCH_DIR", was), else: System.delete_env("WORKBENCH_DIR")
       File.rm_rf!(dir)
     end)
+
     :ok
   end
 

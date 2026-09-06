@@ -24,7 +24,8 @@ defmodule Console.Logs do
   def start_link(opts), do: GenServer.start_link(__MODULE__, opts, name: __MODULE__)
 
   @doc "Follows the project's logs; starts the stream again when asked, or when it is not running."
-  def follow(project, opts \\ []), do: GenServer.cast(__MODULE__, {:follow, project, opts[:restart] == true})
+  def follow(project, opts \\ []),
+    do: GenServer.cast(__MODULE__, {:follow, project, opts[:restart] == true})
 
   @doc "The lines kept, oldest first."
   def backlog, do: GenServer.call(__MODULE__, :backlog)
@@ -52,7 +53,17 @@ defmodule Console.Logs do
           :exit_status,
           :stderr_to_stdout,
           {:line, 8192},
-          args: ["compose", "--project-name", project, "logs", "--follow", "--timestamps", "--no-color", "--tail", to_string(@tail)]
+          args: [
+            "compose",
+            "--project-name",
+            project,
+            "logs",
+            "--follow",
+            "--timestamps",
+            "--no-color",
+            "--tail",
+            to_string(@tail)
+          ]
         ])
 
       # A stream started again reads the tail again: the buffer starts over
@@ -70,11 +81,18 @@ defmodule Console.Logs do
   @impl true
   def handle_info({port, {:data, {:eol, raw}}}, %{port: port} = state) do
     case parse(raw) do
-      nil -> {:noreply, state}
+      nil ->
+        {:noreply, state}
+
       line ->
         Phoenix.PubSub.broadcast(Console.PubSub, @topic, {:log, line})
         lines = [line | state.lines]
-        {lines, count} = if state.count >= @cap, do: {Enum.take(lines, @cap), @cap}, else: {lines, state.count + 1}
+
+        {lines, count} =
+          if state.count >= @cap,
+            do: {Enum.take(lines, @cap), @cap},
+            else: {lines, state.count + 1}
+
         {:noreply, %{state | lines: lines, count: count}}
     end
   end
@@ -83,7 +101,9 @@ defmodule Console.Logs do
 
   # The stream ends on its own when there is nothing to follow (no
   # containers): the next status with some starts it again.
-  def handle_info({port, {:exit_status, _}}, %{port: port} = state), do: {:noreply, %{state | port: nil}}
+  def handle_info({port, {:exit_status, _}}, %{port: port} = state),
+    do: {:noreply, %{state | port: nil}}
+
   def handle_info(_, state), do: {:noreply, state}
 
   defp close(%{port: nil} = state), do: state
@@ -118,7 +138,12 @@ defmodule Console.Logs do
 
         if plain == "" and text != "",
           do: nil,
-          else: %{service: String.replace(container, ~r/-\d+$/, ""), ts: ts, text: plain, html: Console.ANSI.to_html(text)}
+          else: %{
+            service: String.replace(container, ~r/-\d+$/, ""),
+            ts: ts,
+            text: plain,
+            html: Console.ANSI.to_html(text)
+          }
 
       _ ->
         nil

@@ -22,7 +22,10 @@ defmodule ConsoleWeb.Refs do
       type="button"
       class={["cart-ref", @installed && "in", @unlit && "unlit"]}
       aria-disabled={@unlit && "true"}
-      title={@unlit || "#{if @installed, do: "inserted#{@version && " · v#{@version}"}", else: "on the shelf, not inserted"} — open its box"}
+      title={
+        @unlit ||
+          "#{if @installed, do: "inserted#{@version && " · v#{@version}"}", else: "on the shelf, not inserted"} — open its box"
+      }
       phx-click={!@unlit && "open"}
       phx-value-name={@name}
     >{@name}</button>
@@ -46,14 +49,21 @@ defmodule ConsoleWeb.Refs do
 
     ~H"""
     <span class="pair">
-      <a :if={@open} class="door-ref" href={@href} target="_blank" title={door_title(@who, @path, @why)}><b>{@label}</b><span>{@path}</span></a>
+      <a
+        :if={@open}
+        class="door-ref"
+        href={@href}
+        target="_blank"
+        title={door_title(@who, @path, @why)}
+      ><b>{@label}</b><span>{@path}</span></a>
       <span :if={!@open} class={["door-ref", @why && "unlit"]} title={door_title(@who, @path, @why)}><b>{@label}</b><span>{@path}</span></span>
       <.cart_ref :if={@who} name={@who} installed={@who_installed} />
     </span>
     """
   end
 
-  defp door_title(who, path, why), do: Enum.join(Enum.reject([who && "#{who}:", path, why && "— #{why}"], &(!&1)), " ")
+  defp door_title(who, path, why),
+    do: Enum.join(Enum.reject([who && "#{who}:", path, why && "— #{why}"], &(!&1)), " ")
 
   @doc "The same address when the console is the one calling it, with what it answered."
   attr :label, :string, required: true

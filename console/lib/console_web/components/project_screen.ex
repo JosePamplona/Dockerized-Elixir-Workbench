@@ -14,19 +14,43 @@ defmodule ConsoleWeb.ProjectScreen do
         label="The project's own documents"
         selected={@paper}
         docked
-        items={for {key, label, file} <- Console.Project.papers(), do: %{key: key, label: label, small: if(key in @carried, do: file, else: "—"), why: key not in @carried && paper_why(key, file), href: "/project?paper=#{key}"}}
+        items={
+          for {key, label, file} <- Console.Project.papers(),
+              do: %{
+                key: key,
+                label: label,
+                small: if(key in @carried, do: file, else: "—"),
+                why: key not in @carried && paper_why(key, file),
+                href: "/project?paper=#{key}"
+              }
+        }
       />
-      <div :if={@page && @page[:html]} class={["booklet", @page.toc == [] && "notoc"]} id="p-booklet" phx-hook="Booklet">
+      <div
+        :if={@page && @page[:html]}
+        class={["booklet", @page.toc == [] && "notoc"]}
+        id="p-booklet"
+        phx-hook="Booklet"
+      >
         <article class="md">{Phoenix.HTML.raw(@page.html)}</article>
-        <nav :if={@page.toc != []} class="toc"><a class="doctitle" href="#top">{@page.title}</a><a :for={{id, text} <- @page.toc} href={"##{id}"}>{text}</a></nav>
+        <nav :if={@page.toc != []} class="toc">
+          <a class="doctitle" href="#top">{@page.title}</a><a
+            :for={{id, text} <- @page.toc}
+            href={"##{id}"}
+          >{text}</a>
+        </nav>
       </div>
       <pre :if={@page && @page[:env]} class="env"><%= for line <- @page.env do %><.env_line line={line} /><% end %></pre>
-      <div :if={is_nil(@page)} class="nothing">This workspace carries none of the project's papers.</div>
+      <div :if={is_nil(@page)} class="nothing">
+        This workspace carries none of the project's papers.
+      </div>
     </div>
     """
   end
 
-  defp paper_why("changelog", _), do: "this workspace has no CHANGELOG.md: new generates none — the project is born stock, and what it carries is its own to write. The cartridges keep theirs."
+  defp paper_why("changelog", _),
+    do:
+      "this workspace has no CHANGELOG.md: new generates none — the project is born stock, and what it carries is its own to write. The cartridges keep theirs."
+
   defp paper_why(_, file), do: "no #{file} in this workspace"
 
   attr :line, :string, required: true

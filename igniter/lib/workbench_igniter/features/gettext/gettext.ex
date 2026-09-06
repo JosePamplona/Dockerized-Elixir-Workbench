@@ -28,5 +28,4 @@ defmodule WorkbenchIgniter.Features.Gettext do
 
   @doc "Installer body, run by the mix task shell as its `igniter/1`."
   def install(igniter), do: WorkbenchIgniter.PhxDelta.insert(igniter, __MODULE__, :gettext)
-
 end

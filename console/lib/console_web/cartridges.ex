@@ -8,16 +8,21 @@ defmodule ConsoleWeb.Cartridges do
 
   @doc "The catalog entries the project carries (status's, with `installed` and `state`)."
   def installed(nil), do: []
-  def installed(status), do: Enum.filter(get_in(status, ["project", "cartridges"]) || [], & &1["installed"])
+
+  def installed(status),
+    do: Enum.filter(get_in(status, ["project", "cartridges"]) || [], & &1["installed"])
 
   def installed?(status, name), do: Enum.any?(installed(status), &(&1["name"] == name))
 
   @doc "The status's entry for a cartridge, installed or not."
-  def carried(status, name), do: Enum.find(get_in(status, ["project", "cartridges"]) || [], &(&1["name"] == name))
+  def carried(status, name),
+    do: Enum.find(get_in(status, ["project", "cartridges"]) || [], &(&1["name"] == name))
 
   @doc "The insert commit of a cartridge, when it went in by commit."
   def insert(nil, _name), do: nil
-  def insert(status, name), do: Enum.find(get_in(status, ["git", "inserts"]) || [], &(&1["feature"] == name))
+
+  def insert(status, name),
+    do: Enum.find(get_in(status, ["git", "inserts"]) || [], &(&1["feature"] == name))
 
   @doc "Whether the app is up: an app container running, whichever deployment."
   def app_up?(nil), do: false
@@ -37,8 +42,9 @@ defmodule ConsoleWeb.Cartridges do
   end
 
   # A door's `when`: with an option value, or with another cartridge in.
-  def holds?(status, c, item) when is_map(item), do: holds?(status, c, item["when"])
-  def holds?(_status, _c, nil), do: true
+  # The item is unwrapped once — only a map that carries a `when` — and
+  # the condition itself is read by its key; an item without one holds.
+  def holds?(status, c, %{"when" => condition}), do: holds?(status, c, condition)
   def holds?(_status, c, %{"with" => value}), do: value in (get_in(c, ["state", "with"]) || [])
   def holds?(status, _c, %{"cartridge" => name}), do: installed?(status, name)
   def holds?(_, _, _), do: true
@@ -46,7 +52,10 @@ defmodule ConsoleWeb.Cartridges do
   @doc "`{option}` in a path: the option's value as the project reports it, or its default."
   def fill_path(path, c) do
     Regex.replace(~r/\{(\w+)\}/, path, fn _, o ->
-      to_string(get_in(c, ["state", o]) || (Enum.find(c["options"] || [], &(&1["name"] == o)) || %{})["default"] || "")
+      to_string(
+        get_in(c, ["state", o]) ||
+          (Enum.find(c["options"] || [], &(&1["name"] == o)) || %{})["default"] || ""
+      )
     end)
   end
 
@@ -57,10 +66,12 @@ defmodule ConsoleWeb.Cartridges do
   def origin(status, c) do
     cond do
       i = insert(status, c["name"]) ->
-        {"by commit", "", "git revert #{String.slice(i["sha"], 0, 7)} — #{i["subject"]} · #{i["date"]}"}
+        {"by commit", "",
+         "git revert #{String.slice(i["sha"], 0, 7)} — #{i["subject"]} · #{i["date"]}"}
 
       c["collection"] ->
-        {"collection", "off", "the box leaves no commit of its own: eject its cartridges, not the collection"}
+        {"collection", "off",
+         "the box leaves no commit of its own: eject its cartridges, not the collection"}
 
       get_in(status, ["project", "phx", c["name"]]) == true ->
         {"from birth", "off", "came with the project: phx.new generated it — nothing to eject"}

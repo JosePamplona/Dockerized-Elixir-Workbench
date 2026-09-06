@@ -30,9 +30,14 @@ defmodule Console.Verbs do
   @spec parse(String.t()) :: {:ok, kind(), [String.t()]} | {:error, String.t()}
   def parse(line) when is_binary(line) do
     case String.split(String.trim(line)) do
-      [] -> {:error, "nothing to run"}
-      [verb | rest] = args when verb in @verbs -> {:ok, kind(verb, rest), args}
-      [verb | _] -> {:error, "#{verb} is not a verb the console runs (#{Enum.join(@verbs, ", ")})"}
+      [] ->
+        {:error, "nothing to run"}
+
+      [verb | rest] = args when verb in @verbs ->
+        {:ok, kind(verb, rest), args}
+
+      [verb | _] ->
+        {:error, "#{verb} is not a verb the console runs (#{Enum.join(@verbs, ", ")})"}
     end
   end
 
@@ -42,9 +47,18 @@ defmodule Console.Verbs do
   def kind("add", [name | _]), do: {:insert, name}
   def kind("eject", [name | _]), do: {:eject, name}
   def kind("expand", args), do: {:expand, args |> Enum.reject(&(&1 == "--json")) |> List.first()}
-  def kind(verb, args) when verb in ~w(up build stop down), do: {String.to_atom(verb), deployment(args)}
+
+  def kind(verb, args) when verb in ~w(up build stop down),
+    do: {String.to_atom(verb), deployment(args)}
+
   # `restart app`, `restart --deploy scaled app2`: about the service.
-  def kind("restart", args), do: {:restart, args |> Enum.reject(&(String.starts_with?(&1, "--") or &1 in ~w(dev prod scaled))) |> List.first()}
+  def kind("restart", args),
+    do:
+      {:restart,
+       args
+       |> Enum.reject(&(String.starts_with?(&1, "--") or &1 in ~w(dev prod scaled)))
+       |> List.first()}
+
   def kind(verb, _), do: {String.to_atom(verb), nil}
 
   # `--deploy TARGET`, or dev — the default every one of those verbs takes.
@@ -77,7 +91,10 @@ defmodule Console.Verbs do
   """
   @spec reread(kind()) :: :fast | :full | :all | :config | :none
   def reread({:config, _}), do: :config
-  def reread({verb, _}) when verb in [:up, :build, :stop, :down, :restart, :prune, :demo, :mix], do: :fast
+
+  def reread({verb, _}) when verb in [:up, :build, :stop, :down, :restart, :prune, :demo, :mix],
+    do: :fast
+
   def reread({verb, _}) when verb in [:insert, :eject, :commit, :bake], do: :full
   def reread({verb, _}) when verb in [:new, :delete], do: :all
   def reread(_), do: :none

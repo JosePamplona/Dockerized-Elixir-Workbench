@@ -22,7 +22,10 @@ defmodule WorkbenchIgniter.Features.ToolchainTest do
     end
 
     test "--elixir and --erlang pin something else" do
-      file = installed(["--elixir", "1.18.4", "--erlang", "27.3"]).assigns[:test_files][".tool-versions"]
+      file =
+        installed(["--elixir", "1.18.4", "--erlang", "27.3"]).assigns[:test_files][
+          ".tool-versions"
+        ]
 
       assert file == "erlang 27.3\nelixir 1.18.4\n"
     end

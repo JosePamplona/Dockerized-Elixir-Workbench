@@ -23,12 +23,16 @@ defmodule Console.DiffsTest do
     |> String.split("\n", trim: true)
     |> Enum.map(&String.split(&1, "\x1f"))
     |> Enum.filter(fn [_, s, _] -> String.starts_with?(s, "Insert ") end)
-    |> Enum.map(fn [sha, s, d] -> %{"sha" => sha, "subject" => s, "date" => d, "feature" => s |> String.split() |> Enum.at(1)} end)
+    |> Enum.map(fn [sha, s, d] ->
+      %{"sha" => sha, "subject" => s, "date" => d, "feature" => s |> String.split() |> Enum.at(1)}
+    end)
   end
 
   test "one cartridge's commit: files with counts, faces and rows" do
     case inserts() do
-      [] -> :ok
+      [] ->
+        :ok
+
       [insert | _] ->
         d = Diffs.cartridge(@ws, insert)
         assert d.sha == insert["sha"] and d.files != []
@@ -36,8 +40,14 @@ defmodule Console.DiffsTest do
         assert is_binary(f.path) and is_list(f.rows)
         assert Enum.any?(f.rows, fn {cls, _, _, _, _} -> cls == :hunk end)
         # An added line of an Elixir file comes coloured off the new face.
-        if ex = Enum.find(d.files, &(Path.extname(&1.path) in [".ex", ".exs"] and &1.added > 0)) do
-          assert Enum.any?(ex.rows, fn {cls, _, _, _, html} -> cls == :add and html =~ "<span class=" end)
+        case Enum.find(d.files, &(Path.extname(&1.path) in [".ex", ".exs"] and &1.added > 0)) do
+          nil ->
+            :ok
+
+          ex ->
+            assert Enum.any?(ex.rows, fn {cls, _, _, _, html} ->
+                     cls == :add and html =~ "<span class="
+                   end)
         end
     end
   end

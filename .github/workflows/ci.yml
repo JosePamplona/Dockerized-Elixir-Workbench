@@ -1,0 +1,74 @@
+# The checks every push and pull request runs: the script through
+# ShellCheck, and each Elixir package through the formatter, credo,
+# dialyzer and its tests. The Elixir versions are the packages' own
+# .tool-versions, so CI builds what the toolchain builds.
+name: CI
+
+on:
+  push:
+    branches: [main, igniter-edition]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  shellcheck:
+    name: ShellCheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ludeeus/action-shellcheck@2.0.0
+        with:
+          # Style findings fail the run too: the script is kept clean at
+          # ShellCheck's default severity, directives and all.
+          severity: style
+          scandir: .
+        env:
+          SHELLCHECK_OPTS: -x
+
+  elixir:
+    name: ${{ matrix.package }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [igniter, console]
+    defaults:
+      run:
+        working-directory: ${{ matrix.package }}
+    env:
+      MIX_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: erlef/setup-beam@v1
+        id: beam
+        with:
+          version-file: ${{ matrix.package }}/.tool-versions
+          version-type: strict
+
+      # deps and _build, keyed on the lock; the PLT on the OTP/Elixir pair,
+      # since it holds the standard library's types and nothing of ours.
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ${{ matrix.package }}/deps
+            ${{ matrix.package }}/_build
+          key: ${{ matrix.package }}-mix-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ hashFiles(format('{0}/mix.lock', matrix.package)) }}
+          restore-keys: |
+            ${{ matrix.package }}-mix-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-
+
+      - uses: actions/cache@v4
+        with:
+          path: ${{ matrix.package }}/priv/plts
+          key: ${{ matrix.package }}-plt-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ hashFiles(format('{0}/mix.lock', matrix.package)) }}
+          restore-keys: |
+            ${{ matrix.package }}-plt-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-
+
+      - run: mix deps.get
+      - run: mix compile --warnings-as-errors
+      - run: mix format --check-formatted
+      - run: mix credo --strict
+      - run: mix dialyzer --format github
+      - run: mix test

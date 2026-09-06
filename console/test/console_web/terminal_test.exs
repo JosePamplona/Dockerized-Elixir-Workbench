@@ -14,25 +14,32 @@ defmodule ConsoleWeb.TerminalTest do
     }
   end
 
-  defp c(service, image, state \\ "running"), do: %{"Service" => service, "Image" => image, "State" => state}
+  defp c(service, image, state \\ "running"),
+    do: %{"Service" => service, "Image" => image, "State" => state}
 
   # The session is a pipe, and Elixir and git are asked for colour on it anyway.
   defp colour,
     do: [
-      "-e", "ELIXIR_ERL_OPTIONS=-elixir ansi_enabled true",
-      "-e", "TERM=xterm-256color",
-      "-e", "GIT_CONFIG_COUNT=1",
-      "-e", "GIT_CONFIG_KEY_0=color.ui",
-      "-e", "GIT_CONFIG_VALUE_0=always"
+      "-e",
+      "ELIXIR_ERL_OPTIONS=-elixir ansi_enabled true",
+      "-e",
+      "TERM=xterm-256color",
+      "-e",
+      "GIT_CONFIG_COUNT=1",
+      "-e",
+      "GIT_CONFIG_KEY_0=color.ui",
+      "-e",
+      "GIT_CONFIG_VALUE_0=always"
     ]
 
   test "the services beside the app take a session, and the pause container never does" do
-    s = status([
-          c("app", "lorem-ipsum:local"),
-          c("database", "postgres:latest"),
-          c("pgadmin", "dpage/pgadmin4:latest"),
-          c("network", "registry.k8s.io/pause:3.10")
-        ])
+    s =
+      status([
+        c("app", "lorem-ipsum:local"),
+        c("database", "postgres:latest"),
+        c("pgadmin", "dpage/pgadmin4:latest"),
+        c("network", "registry.k8s.io/pause:3.10")
+      ])
 
     assert Enum.map(Terminal.targets(s), & &1.name) == ~w(app database pgadmin)
   end
@@ -43,7 +50,13 @@ defmodule ConsoleWeb.TerminalTest do
   end
 
   test "each target's shells, and the first is the one a row's button opens" do
-    s = status([c("app", "lorem-ipsum:local"), c("database", "postgres:latest"), c("pgadmin", "dpage/pgadmin4:latest")])
+    s =
+      status([
+        c("app", "lorem-ipsum:local"),
+        c("database", "postgres:latest"),
+        c("pgadmin", "dpage/pgadmin4:latest")
+      ])
+
     [app, db, pga] = Terminal.targets(s)
 
     assert Terminal.shells(app) == [{"bash", "bash"}, {"iex", "iex -S mix"}]
@@ -55,14 +68,27 @@ defmodule ConsoleWeb.TerminalTest do
   end
 
   test "the argv: only the dev app is entered where its source is mounted" do
-    s = status([c("app", "lorem-ipsum:local"), c("database", "postgres:latest"), c("pgadmin", "dpage/pgadmin4:latest")])
+    s =
+      status([
+        c("app", "lorem-ipsum:local"),
+        c("database", "postgres:latest"),
+        c("pgadmin", "dpage/pgadmin4:latest")
+      ])
+
     [app, db, pga] = Terminal.targets(s)
 
     assert {_, argv} = Terminal.argv(s, app, "bash")
-    assert argv == ~w(compose --project-name lorem_ipsum exec -T) ++ colour() ++ ~w(-w /app/src app bash)
+
+    assert argv ==
+             ~w(compose --project-name lorem_ipsum exec -T) ++
+               colour() ++ ~w(-w /app/src app bash)
 
     assert {_, argv} = Terminal.argv(s, db, "psql")
-    assert argv == ~w(compose --project-name lorem_ipsum exec -T) ++ colour() ++ ~w(database psql -U postgres)
+
+    assert argv ==
+             ~w(compose --project-name lorem_ipsum exec -T) ++
+               colour() ++ ~w(database psql -U postgres)
+
     assert {_, argv} = Terminal.argv(s, pga, "sh")
     assert argv == ~w(compose --project-name lorem_ipsum exec -T) ++ colour() ++ ~w(pgadmin sh)
   end
@@ -75,7 +101,10 @@ defmodule ConsoleWeb.TerminalTest do
     html = render_component(&Terminal.terminal/1, status: nil, term: term)
     assert html =~ ~r/<button[^>]*phx-click="term_start"[^>]*disabled/
     assert html =~ "reading the workspace"
-    html = render_component(&Terminal.terminal/1, status: status([c("app", "x:local")]), term: term)
+
+    html =
+      render_component(&Terminal.terminal/1, status: status([c("app", "x:local")]), term: term)
+
     refute html =~ ~r/<button[^>]*phx-click="term_start"[^>]*disabled/
   end
 

@@ -16,27 +16,87 @@ defmodule ConsoleWeb.Terminal do
     targets = targets(assigns.status)
     target = Enum.find(targets, &(&1.name == assigns.term.target)) || List.first(targets)
     shells = shells(target)
-    shell = if Enum.any?(shells, &(elem(&1, 0) == assigns.term.shell)), do: assigns.term.shell, else: default_shell(target)
-    assigns = assign(assigns, targets: targets, target: target, shells: shells, shell: shell, cmd: command(assigns.status, target, shell))
+
+    shell =
+      if Enum.any?(shells, &(elem(&1, 0) == assigns.term.shell)),
+        do: assigns.term.shell,
+        else: default_shell(target)
+
+    assigns =
+      assign(assigns,
+        targets: targets,
+        target: target,
+        shells: shells,
+        shell: shell,
+        cmd: command(assigns.status, target, shell)
+      )
 
     ~H"""
     <div class="logs term" id="term" phx-hook="Term" data-open={to_string(@term.open)}>
       <div class="toolbar">
         <span style="display:inline-flex;gap:6px;flex-wrap:wrap">
-          <button :for={t <- @targets} class="btn svc" type="button" style={"--svc:#{svc_color(t)}"} aria-pressed={to_string(t.name == @target.name)} disabled={@term.open and t.name != @target.name} title={t.title} phx-click="term_pick" phx-value-target={t.name}>{t.name}</button>
+          <button
+            :for={t <- @targets}
+            class="btn svc"
+            type="button"
+            style={"--svc:#{svc_color(t)}"}
+            aria-pressed={to_string(t.name == @target.name)}
+            disabled={@term.open and t.name != @target.name}
+            title={t.title}
+            phx-click="term_pick"
+            phx-value-target={t.name}
+          >{t.name}</button>
         </span>
         <span class="sep"></span>
         <span style="display:inline-flex;gap:6px;flex-wrap:wrap">
-          <button :for={{v, label} <- @shells} class="btn" type="button" aria-pressed={to_string(@shell == v)} disabled={@term.open and @shell != v} title={label} phx-click="term_pick" phx-value-shell={v}>{label}</button>
+          <button
+            :for={{v, label} <- @shells}
+            class="btn"
+            type="button"
+            aria-pressed={to_string(@shell == v)}
+            disabled={@term.open and @shell != v}
+            title={label}
+            phx-click="term_pick"
+            phx-value-shell={v}
+          >{label}</button>
         </span>
         <span class="sep"></span>
         <button :if={@term.open} class="btn" type="button" phx-click="term_close">Close session</button>
-        <button :if={!@term.open} class="btn primary" type="button" phx-click="term_start" disabled={is_nil(@status)} title={if is_nil(@status), do: "reading the workspace — a session needs to know what runs, and where the source is", else: nil}>Open a session</button>
+        <button
+          :if={!@term.open}
+          class="btn primary"
+          type="button"
+          phx-click="term_start"
+          disabled={is_nil(@status)}
+          title={
+            if is_nil(@status),
+              do:
+                "reading the workspace — a session needs to know what runs, and where the source is",
+              else: nil
+          }
+        >Open a session</button>
       </div>
-      <div class="logmeta"><span>{@cmd}</span><span>{cond do @term.open -> "session on #{@target.name} · #{@shell}"; is_nil(@status) -> "reading the workspace…"; true -> "no session · docker exec -i, line by line, no tty" end}</span></div>
+      <div class="logmeta">
+        <span>{@cmd}</span><span>{cond do
+          @term.open -> "session on #{@target.name} · #{@shell}"
+          is_nil(@status) -> "reading the workspace…"
+          true -> "no session · docker exec -i, line by line, no tty"
+        end}</span>
+      </div>
       <div class="viewport">
-        <div class="lines screen" id="term-screen" phx-update="ignore"><span class="nothing">No session. Open one: bash or iex on the app when it runs, or on a one-off toolchain container with the source.</span></div>
-        <form :if={@term.open} class="in" phx-submit="term_line"><span class="p">{prompt(@target, @shell, @status)}</span><input type="text" name="line" id="term-input" autocomplete="off" spellcheck="false" placeholder="↑↓ history · Ctrl+L clears" /></form>
+        <div class="lines screen" id="term-screen" phx-update="ignore">
+          <span class="nothing">No session. Open one: bash or iex on the app when it runs, or on a one-off toolchain container with the source.</span>
+        </div>
+        <form :if={@term.open} class="in" phx-submit="term_line">
+          <span class="p">{prompt(@target, @shell, @status)}</span><input
+            type="text"
+            name="line"
+            id="term-input"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="↑↓ history · Ctrl+L clears"
+          />
+        </form>
       </div>
     </div>
     """
@@ -55,18 +115,47 @@ defmodule ConsoleWeb.Terminal do
   def targets(status) do
     cs = (status && status["containers"]) || []
 
-    apps = for c <- cs, Regex.match?(~r/^app\d*$/, c["Service"]), c["State"] == "running" do
-      release = not String.ends_with?(c["Image"], ":local")
-      %{name: c["Service"], kind: :app, release: release, oneoff: false, title: if(release, do: "the release image", else: "the dev image")}
-    end
+    apps =
+      for c <- cs, Regex.match?(~r/^app\d*$/, c["Service"]), c["State"] == "running" do
+        release = not String.ends_with?(c["Image"], ":local")
 
-    apps = if apps == [], do: [%{name: "toolchain", kind: :toolchain, release: false, oneoff: true, title: "a one-off toolchain container with the source mounted — nothing runs"}], else: apps
+        %{
+          name: c["Service"],
+          kind: :app,
+          release: release,
+          oneoff: false,
+          title: if(release, do: "the release image", else: "the dev image")
+        }
+      end
+
+    apps =
+      if apps == [],
+        do: [
+          %{
+            name: "toolchain",
+            kind: :toolchain,
+            release: false,
+            oneoff: true,
+            title: "a one-off toolchain container with the source mounted — nothing runs"
+          }
+        ],
+        else: apps
 
     # The services beside the app, in the order the compose declares them.
-    beside = for c <- cs, c["Service"] in ~w(database pgadmin), c["State"] == "running" do
-      %{name: c["Service"], kind: String.to_existing_atom(c["Service"]), release: false, oneoff: false,
-        title: if(c["Service"] == "database", do: "the workspace's postgres", else: "the pgAdmin container")}
-    end
+    beside =
+      for c <- cs, c["Service"] in ~w(database pgadmin), c["State"] == "running" do
+        %{
+          name: c["Service"],
+          kind: String.to_existing_atom(c["Service"]),
+          release: false,
+          oneoff: false,
+          title:
+            if(c["Service"] == "database",
+              do: "the workspace's postgres",
+              else: "the pgAdmin container"
+            )
+        }
+      end
 
     apps ++ beside
   end
@@ -90,6 +179,7 @@ defmodule ConsoleWeb.Terminal do
 
   def prompt(target, shell, status) do
     app = get_in(status, ["project", "app"]) || "app"
+
     cond do
       shell == "iex" -> "iex> "
       shell == "rpc" -> "#{app} rpc> "
@@ -104,10 +194,17 @@ defmodule ConsoleWeb.Terminal do
   @doc "The docker command the session runs, in words."
   def command(status, target, shell) do
     cond do
-      is_nil(status) -> ""
-      target.oneoff -> "docker run -i --rm -v #{status["workspace"]}:/app/src -w /app/src #{image(status)} #{if shell == "iex", do: "iex -S mix", else: "bash"}"
-      shell == "rpc" -> "docker compose -p #{status["compose_project"]} exec -T #{target.name} /app/bin/#{get_in(status, ["project", "app"]) || "app"} rpc …"
-      true -> "docker compose -p #{status["compose_project"]} exec -T #{workdir(target)}#{target.name} #{Enum.join(run(shell), " ")}"
+      is_nil(status) ->
+        ""
+
+      target.oneoff ->
+        "docker run -i --rm -v #{status["workspace"]}:/app/src -w /app/src #{image(status)} #{if shell == "iex", do: "iex -S mix", else: "bash"}"
+
+      shell == "rpc" ->
+        "docker compose -p #{status["compose_project"]} exec -T #{target.name} /app/bin/#{get_in(status, ["project", "app"]) || "app"} rpc …"
+
+      true ->
+        "docker compose -p #{status["compose_project"]} exec -T #{workdir(target)}#{target.name} #{Enum.join(run(shell), " ")}"
     end
   end
 
@@ -118,20 +215,35 @@ defmodule ConsoleWeb.Terminal do
   # same way the jobs get theirs through wb.sh's WB_ANSI. ls and grep
   # have no such switch; they take --color=always on the line.
   @colour [
-    "-e", "ELIXIR_ERL_OPTIONS=-elixir ansi_enabled true",
-    "-e", "TERM=xterm-256color",
-    "-e", "GIT_CONFIG_COUNT=1",
-    "-e", "GIT_CONFIG_KEY_0=color.ui",
-    "-e", "GIT_CONFIG_VALUE_0=always"
+    "-e",
+    "ELIXIR_ERL_OPTIONS=-elixir ansi_enabled true",
+    "-e",
+    "TERM=xterm-256color",
+    "-e",
+    "GIT_CONFIG_COUNT=1",
+    "-e",
+    "GIT_CONFIG_KEY_0=color.ui",
+    "-e",
+    "GIT_CONFIG_VALUE_0=always"
   ]
 
   @doc "The argv for the Port: docker, and what to run in the container."
   def argv(status, target, shell) do
     app = get_in(status, ["project", "app"]) || "app"
 
-    cond do
-      target.oneoff -> ["run", "-i", "--rm" | @colour] ++ ["-v", "#{status["workspace"]}:/app/src", "-w", "/app/src", image(status), if(shell == "iex", do: "iex", else: "bash")] ++ if(shell == "iex", do: ["-S", "mix"], else: [])
-      true -> ["compose", "--project-name", status["compose_project"], "exec", "-T" | @colour] ++ workdir_args(target) ++ [target.name] ++ run(shell)
+    if target.oneoff do
+      ["run", "-i", "--rm" | @colour] ++
+        [
+          "-v",
+          "#{status["workspace"]}:/app/src",
+          "-w",
+          "/app/src",
+          image(status),
+          if(shell == "iex", do: "iex", else: "bash")
+        ] ++ if(shell == "iex", do: ["-S", "mix"], else: [])
+    else
+      ["compose", "--project-name", status["compose_project"], "exec", "-T" | @colour] ++
+        workdir_args(target) ++ [target.name] ++ run(shell)
     end
     |> then(&{app, &1})
   end

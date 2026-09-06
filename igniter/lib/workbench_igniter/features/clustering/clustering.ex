@@ -56,14 +56,16 @@ defmodule WorkbenchIgniter.Features.Clustering do
 
   @impl true
   def afterwards,
-    do: "See it work: ./wb.sh up --deploy scaled brings the replicas up behind the balancer (the release image is rebuilt on each deploy)."
+    do:
+      "See it work: ./wb.sh up --deploy scaled brings the replicas up behind the balancer (the release image is rebuilt on each deploy)."
 
   # The installer's options, one line each: the task's "## Options"
   # section and the help a form shows are rendered from here.
   @impl true
   def option_docs do
     [
-      dns_query: "Value for `DNS_CLUSTER_QUERY`, the DNS name that resolves to the replica IPs. Defaults to `<app>.default.svc.cluster.local` (Kubernetes); on Fly.io it is usually `<app>.internal`."
+      dns_query:
+        "Value for `DNS_CLUSTER_QUERY`, the DNS name that resolves to the replica IPs. Defaults to `<app>.default.svc.cluster.local` (Kubernetes); on Fly.io it is usually `<app>.internal`."
     ]
   end
 
@@ -126,9 +128,9 @@ defmodule WorkbenchIgniter.Features.Clustering do
     if exports? do
       {:ok,
        %{
-         "rel/vm.args.eex" => apply(module, :vm_args_text, [false]),
-         "rel/remote.vm.args.eex" => apply(module, :vm_args_text, [true]),
-         "rel/env.bat.eex" => apply(module, :env_bat_text, [])
+         "rel/vm.args.eex" => module.vm_args_text(false),
+         "rel/remote.vm.args.eex" => module.vm_args_text(true),
+         "rel/env.bat.eex" => module.env_bat_text()
        }}
     else
       :error
@@ -139,7 +141,7 @@ defmodule WorkbenchIgniter.Features.Clustering do
     module = @release_init
 
     if Code.ensure_loaded?(module) and function_exported?(module, :env_text, 0),
-      do: apply(module, :env_text, []),
+      do: module.env_text(),
       else: "#!/bin/sh\n"
   end
 

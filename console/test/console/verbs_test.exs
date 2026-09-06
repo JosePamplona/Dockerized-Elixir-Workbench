@@ -8,12 +8,19 @@ defmodule Console.VerbsTest do
       assert {:ok, {:up, "scaled"}, ["up", "--deploy", "scaled", "--replicas", "3"]} =
                Verbs.parse("up --deploy scaled --replicas 3")
 
-      assert {:ok, {:insert, "rest"}, ["add", "rest", "--health"]} = Verbs.parse("add rest --health")
+      assert {:ok, {:insert, "rest"}, ["add", "rest", "--health"]} =
+               Verbs.parse("add rest --health")
+
       assert {:ok, {:eject, "rest"}, ["eject", "rest"]} = Verbs.parse("eject rest")
       assert {:ok, {:down, "dev"}, ["down"]} = Verbs.parse("  down  ")
       assert {:ok, {:status, nil}, ["status", "--json"]} = Verbs.parse("status --json")
-      assert {:ok, {:expand, "chiefs_setup"}, _} = Verbs.parse("expand --json chiefs_setup --interface graphql")
-      assert {:ok, {:restart, "app2"}, ["restart", "--deploy", "scaled", "app2"]} = Verbs.parse("restart --deploy scaled app2")
+
+      assert {:ok, {:expand, "chiefs_setup"}, _} =
+               Verbs.parse("expand --json chiefs_setup --interface graphql")
+
+      assert {:ok, {:restart, "app2"}, ["restart", "--deploy", "scaled", "app2"]} =
+               Verbs.parse("restart --deploy scaled app2")
+
       assert {:ok, {:prune, nil}, ["prune", "--images"]} = Verbs.parse("prune --images")
     end
 

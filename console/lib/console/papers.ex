@@ -14,7 +14,11 @@ defmodule Console.Papers do
 
   alias Console.Workbench
 
-  @papers [{"readme", "README", "README.md"}, {"design", "Design", "DESIGN.md"}, {"changelog", "Changelog", "CHANGELOG.md"}]
+  @papers [
+    {"readme", "README", "README.md"},
+    {"design", "Design", "DESIGN.md"},
+    {"changelog", "Changelog", "CHANGELOG.md"}
+  ]
   @github "https://github.com/JosePamplona/Dockerized-Elixir-Workbench/blob/main/"
 
   def papers, do: @papers
@@ -92,7 +96,8 @@ defmodule Console.Papers do
   own: the drawer's Manual is a group over these two, as the box's is
   over its three.
   """
-  def workbench_papers, do: [{"readme", "README", "README.md"}, {"changelog", "CHANGELOG", "CHANGELOG.md"}]
+  def workbench_papers,
+    do: [{"readme", "README", "README.md"}, {"changelog", "CHANGELOG", "CHANGELOG.md"}]
 
   @doc """
   One of them rendered like a box's: the figures it references under
@@ -107,9 +112,27 @@ defmodule Console.Papers do
         html =
           md
           |> to_html()
-          |> then(&Regex.replace(~r/<img src="(assets\/[^"]+)"/, &1, ~s(<img src="/figures/\\1" loading="lazy")))
-          |> then(&Regex.replace(~r/<a href="CHANGELOG\.md[^"]*"/, &1, ~s(<a href="?wb=manual&amp;paper=changelog" data-patch)))
-          |> then(&Regex.replace(~r/<a href="(https?:[^"]*)"/, &1, ~s(<a href="\\1" target="_blank" rel="noopener")))
+          |> then(
+            &Regex.replace(
+              ~r/<img src="(assets\/[^"]+)"/,
+              &1,
+              ~s(<img src="/figures/\\1" loading="lazy")
+            )
+          )
+          |> then(
+            &Regex.replace(
+              ~r/<a href="CHANGELOG\.md[^"]*"/,
+              &1,
+              ~s(<a href="?wb=manual&amp;paper=changelog" data-patch)
+            )
+          )
+          |> then(
+            &Regex.replace(
+              ~r/<a href="(https?:[^"]*)"/,
+              &1,
+              ~s(<a href="\\1" target="_blank" rel="noopener")
+            )
+          )
 
         booklet(html, "w-", file)
 
@@ -120,31 +143,45 @@ defmodule Console.Papers do
 
   @doc "Markdown to HTML with GFM tables and the HTML in it left out."
   def to_html(md) do
-    MDEx.to_html!(md, extension: [table: true, strikethrough: true, autolink: true, tasklist: true], render: [unsafe: false])
+    MDEx.to_html!(md,
+      extension: [table: true, strikethrough: true, autolink: true, tasklist: true],
+      render: [unsafe: false]
+    )
   end
 
   # A relative link goes to what the console can open — another box's
   # paper, a paper of this box — and the rest to the repository.
-  defp rewrite_links(html, name) do
-    Regex.replace(~r/<a href="([^"]*)"/, html, fn whole, href ->
-      cond do
-        Regex.match?(~r/^(https?:|mailto:|#)/, href) ->
-          if String.starts_with?(href, "#"), do: whole, else: ~s(<a href="#{href}" target="_blank" rel="noopener")
+  defp rewrite_links(html, name),
+    do: Regex.replace(~r/<a href="([^"]*)"/, html, &link_tag(&1, &2, name))
 
-        m = Regex.run(~r/^(README|DESIGN|CHANGELOG|NEED)\.md(#.*)?$/i, href) ->
-          key = m |> Enum.at(1) |> String.downcase()
-          if key == "need", do: ~s(<a href="?box=#{name}&screen=box" data-patch), else: ~s(<a href="?box=#{name}&screen=manual&paper=#{key}" data-patch)
+  # The opening tag a link gets, by where its href points.
+  defp link_tag(whole, href, name) do
+    cond do
+      Regex.match?(~r/^(https?:|mailto:|#)/, href) ->
+        if String.starts_with?(href, "#"),
+          do: whole,
+          else: ~s(<a href="#{href}" target="_blank" rel="noopener")
 
-        m = Regex.run(~r/^\.\.\/([a-z0-9_]+)\/?(README|DESIGN|CHANGELOG)?(\.md)?(#.*)?$/, href) ->
-          other = Enum.at(m, 1)
-          paper = (Enum.at(m, 2) || "README") |> String.downcase()
-          ~s(<a href="?box=#{other}&screen=manual&paper=#{paper}" data-patch data-box="#{other}" class="cart-ref")
+      m = Regex.run(~r/^(README|DESIGN|CHANGELOG|NEED)\.md(#.*)?$/i, href) ->
+        key = m |> Enum.at(1) |> String.downcase()
 
-        true ->
-          rel = Path.expand(Path.join("igniter/lib/workbench_igniter/features/#{name}", href), "/") |> String.trim_leading("/")
-          ~s(<a href="#{@github}#{rel}" target="_blank" rel="noopener")
-      end
-    end)
+        if key == "need",
+          do: ~s(<a href="?box=#{name}&screen=box" data-patch),
+          else: ~s(<a href="?box=#{name}&screen=manual&paper=#{key}" data-patch)
+
+      m = Regex.run(~r/^\.\.\/([a-z0-9_]+)\/?(README|DESIGN|CHANGELOG)?(\.md)?(#.*)?$/, href) ->
+        other = Enum.at(m, 1)
+        paper = (Enum.at(m, 2) || "README") |> String.downcase()
+
+        ~s(<a href="?box=#{other}&screen=manual&paper=#{paper}" data-patch data-box="#{other}" class="cart-ref")
+
+      true ->
+        rel =
+          Path.expand(Path.join("igniter/lib/workbench_igniter/features/#{name}", href), "/")
+          |> String.trim_leading("/")
+
+        ~s(<a href="#{@github}#{rel}" target="_blank" rel="noopener")
+    end
   end
 
   # A figure's path, resolved from the paper's directory to the
@@ -154,13 +191,17 @@ defmodule Console.Papers do
       if Regex.match?(~r/^(https?:|data:)/, src) do
         whole
       else
-        rel = Path.expand(Path.join("igniter/lib/workbench_igniter/features/#{name}", src), "/") |> String.trim_leading("/")
+        rel =
+          Path.expand(Path.join("igniter/lib/workbench_igniter/features/#{name}", src), "/")
+          |> String.trim_leading("/")
+
         ~s(<img src="/figures/#{rel}" loading="lazy")
       end
     end)
   end
 
-  defp mark_revisions(html), do: String.replace(html, ~r/<p>(Revision:)/, ~s(<p class="revision">\\1))
+  defp mark_revisions(html),
+    do: String.replace(html, ~r/<p>(Revision:)/, ~s(<p class="revision">\\1))
 
   @doc "An id on every h2, and the list of them for the index."
   def head_ids(html, prefix) do
@@ -170,7 +211,9 @@ defmodule Console.Papers do
       |> Enum.reduce({html, []}, fn {[whole, inner], i}, {html, heads} ->
         id = "#{prefix}#{i}"
         text = inner |> String.replace(~r/<[^>]+>/, "") |> String.replace(~r/^\d+\.\s*/, "")
-        {String.replace(html, whole, ~s(<h2 id="#{id}">#{inner}</h2>), global: false), [{id, text} | heads]}
+
+        {String.replace(html, whole, ~s(<h2 id="#{id}">#{inner}</h2>), global: false),
+         [{id, text} | heads]}
       end)
 
     {html, Enum.reverse(heads)}

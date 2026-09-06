@@ -303,7 +303,7 @@ defmodule Console.Jobs do
     with {:os_pid, pid} <- Port.info(state.port, :os_pid),
          {:ok, raw} <- File.read("/proc/#{pid}/task/#{pid}/children"),
          [leader | _] <- String.split(raw, ~r/\s+/, trim: true) do
-      :os.cmd(~c"kill -#{sig} -#{leader}")
+      System.cmd("sh", ["-c", "kill -#{sig} -#{leader}"], stderr_to_stdout: true)
       :ok
     else
       _ -> :error

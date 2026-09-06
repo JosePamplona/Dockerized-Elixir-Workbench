@@ -32,11 +32,16 @@ defmodule Console.Resident do
   @boot_timeout 240_000
   @ask_timeout 120_000
 
-  defstruct port: nil, buffer: "", waiting: :queue.new(), current: nil, ready: false, workspace: nil
+  defstruct port: nil,
+            buffer: "",
+            waiting: :queue.new(),
+            current: nil,
+            ready: false,
+            workspace: nil
 
   def start_link(opts), do: GenServer.start_link(__MODULE__, opts, name: __MODULE__)
 
-  @doc "Asks the project: `%{\"ask\" => \"status\"}`, `%{\"ask\" => \"expand\", \"name\" => …, \"argv\" => […]}`."
+  @doc ~S|Asks the project: `%{"ask" => "status"}`, `%{"ask" => "expand", "name" => …, "argv" => […]}`.|
   def ask(request), do: GenServer.call(__MODULE__, {:ask, request}, @boot_timeout + @ask_timeout)
 
   @doc "Drops the resident: the next question starts one on the workspace as it is now."
@@ -53,7 +58,8 @@ defmodule Console.Resident do
       state = %{state | waiting: :queue.in({request, from}, state.waiting)}
       {:noreply, next(state)}
     else
-      {:reply, {:error, "no workspace to ask: config.conf names none, or it holds no project"}, state}
+      {:reply, {:error, "no workspace to ask: config.conf names none, or it holds no project"},
+       state}
     end
   end
 
@@ -61,7 +67,8 @@ defmodule Console.Resident do
   def handle_cast(:reset, state), do: {:noreply, close(state)}
 
   @impl true
-  def handle_info({port, {:data, {:noeol, chunk}}}, %{port: port} = state), do: {:noreply, %{state | buffer: state.buffer <> chunk}}
+  def handle_info({port, {:data, {:noeol, chunk}}}, %{port: port} = state),
+    do: {:noreply, %{state | buffer: state.buffer <> chunk}}
 
   def handle_info({port, {:data, {:eol, chunk}}}, %{port: port} = state) do
     line = state.buffer <> chunk
@@ -122,7 +129,13 @@ defmodule Console.Resident do
 
     if ws && File.regular?(Path.join(ws, "mix.exs")) do
       {exe, args, opts} = command(ws)
-      port = Port.open({:spawn_executable, exe}, [:binary, :exit_status, :stderr_to_stdout, {:line, 65536}, args: args] ++ opts)
+
+      port =
+        Port.open(
+          {:spawn_executable, exe},
+          [:binary, :exit_status, :stderr_to_stdout, {:line, 65_536}, args: args] ++ opts
+        )
+
       %{state | port: port, workspace: ws, ready: false}
     else
       state
@@ -171,10 +184,25 @@ defmodule Console.Resident do
       {System.find_executable("mix"), mix, [cd: System.fetch_env!("WORKSPACE_MOUNT"), env: env]}
     else
       {System.find_executable("docker"),
-       ["run", "-i", "--rm", "--name", "#{project.name}_workbench_serve_#{:os.getpid()}",
-        "-v", "#{ws}:/app/src", "-v", "#{dir}:/app/workbench:ro",
-        "-v", "#{project.name}_build:/app/src/_build", "-v", "#{project.name}_deps:/app/src/deps",
-        "-w", "/app/src", project.image, "mix" | mix], []}
+       [
+         "run",
+         "-i",
+         "--rm",
+         "--name",
+         "#{project.name}_workbench_serve_#{:os.getpid()}",
+         "-v",
+         "#{ws}:/app/src",
+         "-v",
+         "#{dir}:/app/workbench:ro",
+         "-v",
+         "#{project.name}_build:/app/src/_build",
+         "-v",
+         "#{project.name}_deps:/app/src/deps",
+         "-w",
+         "/app/src",
+         project.image,
+         "mix" | mix
+       ], []}
     end
   end
 
@@ -195,8 +223,12 @@ defmodule Console.Resident do
       _ -> :ok
     end
 
-    for {_, from} <- :queue.to_list(state.waiting), do: GenServer.reply(from, {:error, "the resident was dropped"})
-    if state.current, do: GenServer.reply(elem(state.current, 1), {:error, "the resident was dropped"})
+    for {_, from} <- :queue.to_list(state.waiting),
+        do: GenServer.reply(from, {:error, "the resident was dropped"})
+
+    if state.current,
+      do: GenServer.reply(elem(state.current, 1), {:error, "the resident was dropped"})
+
     %__MODULE__{}
   end
 end

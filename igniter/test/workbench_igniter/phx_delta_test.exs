@@ -11,20 +11,48 @@ defmodule WorkbenchIgniter.PhxDeltaTest do
     test "reads a default phx.new project's shape off the project" do
       {facts, _} = PhxDelta.facts(phx_test_project())
 
-      assert %{app: :test, module: Test, ecto: true, database: "postgres", adapter: "bandit"} = facts
-      assert %{mailer: true, gettext: true, esbuild: true, tailwind: true, html: true, live: true, dashboard: true} = facts
+      assert %{app: :test, module: Test, ecto: true, database: "postgres", adapter: "bandit"} =
+               facts
+
+      assert %{
+               mailer: true,
+               gettext: true,
+               esbuild: true,
+               tailwind: true,
+               html: true,
+               live: true,
+               dashboard: true
+             } = facts
+
       # Igniter's in-memory phx.new writes no AGENTS.md; the flags say so.
       assert %{agents_md: false} = facts
-      assert PhxDelta.flags(facts) == ~w(--app test --module Test --database postgres --adapter bandit --no-agents-md)
+
+      assert PhxDelta.flags(facts) ==
+               ~w(--app test --module Test --database postgres --adapter bandit --no-agents-md)
 
       {facts, _} = PhxDelta.facts(WorkbenchIgniter.TestProject.new())
       assert %{agents_md: true} = facts
-      assert PhxDelta.flags(facts) == ~w(--app test --module Test --database postgres --adapter bandit)
+
+      assert PhxDelta.flags(facts) ==
+               ~w(--app test --module Test --database postgres --adapter bandit)
     end
 
     test "turns absent capabilities into --no- flags" do
-      facts = %{app: :test, module: Test, ecto: false, database: "sqlite3", adapter: "cowboy", mailer: false,
-                gettext: true, esbuild: true, tailwind: false, html: true, live: false, dashboard: false, binary_id: true}
+      facts = %{
+        app: :test,
+        module: Test,
+        ecto: false,
+        database: "sqlite3",
+        adapter: "cowboy",
+        mailer: false,
+        gettext: true,
+        esbuild: true,
+        tailwind: false,
+        html: true,
+        live: false,
+        dashboard: false,
+        binary_id: true
+      }
 
       assert PhxDelta.flags(facts) ==
                ~w(--app test --module Test --database sqlite3 --adapter cowboy --no-ecto --no-mailer --no-tailwind --no-live --no-dashboard --binary-id)
@@ -33,7 +61,11 @@ defmodule WorkbenchIgniter.PhxDeltaTest do
 
   describe "generate/1" do
     test "names the directories after the app, as phx.new does, digits included" do
-      files = PhxDelta.generate(~w(--app lorem_ipsum_9 --module LoremIpsum9 --database postgres --adapter bandit))
+      files =
+        PhxDelta.generate(
+          ~w(--app lorem_ipsum_9 --module LoremIpsum9 --database postgres --adapter bandit)
+        )
+
       paths = Map.keys(files)
 
       assert "lib/lorem_ipsum_9_web/router.ex" in paths
@@ -62,7 +94,9 @@ defmodule WorkbenchIgniter.PhxDeltaTest do
       # phx.new's random secrets are not part of the delta.
       refute "lib/test_web/endpoint.ex" in Map.keys(changed)
       {base, theirs} = changed["config/config.exs"]
-      assert Regex.run(~r/signing_salt: "[^"]*"/, base) == Regex.run(~r/signing_salt: "[^"]*"/, theirs)
+
+      assert Regex.run(~r/signing_salt: "[^"]*"/, base) ==
+               Regex.run(~r/signing_salt: "[^"]*"/, theirs)
     end
   end
 
@@ -115,7 +149,11 @@ defmodule WorkbenchIgniter.PhxDeltaTest do
       igniter =
         phx_test_project()
         |> Igniter.update_file("mix.exs", fn source ->
-          Rewrite.Source.update(source, :content, &Regex.replace(~r/\{:phoenix, "~> [\d.]+"\}/, &1, ~s|{:phoenix, "~> 9.9.9"}|))
+          Rewrite.Source.update(
+            source,
+            :content,
+            &Regex.replace(~r/\{:phoenix, "~> [\d.]+"\}/, &1, ~s|{:phoenix, "~> 9.9.9"}|)
+          )
         end)
         |> apply_igniter!()
 
@@ -138,9 +176,16 @@ defmodule WorkbenchIgniter.PhxDeltaTest do
     test "the stamp outranks mix.exs: bumping Phoenix does not make it another project" do
       igniter =
         phx_test_project()
-        |> Igniter.create_new_file("Dockerfile.local", ~s|ARG PHX_NEW="#{Application.spec(:phx_new, :vsn)}"\n|)
+        |> Igniter.create_new_file(
+          "Dockerfile.local",
+          ~s|ARG PHX_NEW="#{Application.spec(:phx_new, :vsn)}"\n|
+        )
         |> Igniter.update_file("mix.exs", fn source ->
-          Rewrite.Source.update(source, :content, &Regex.replace(~r/\{:phoenix, "~> [\d.]+"\}/, &1, ~s|{:phoenix, "~> 9.9.9"}|))
+          Rewrite.Source.update(
+            source,
+            :content,
+            &Regex.replace(~r/\{:phoenix, "~> [\d.]+"\}/, &1, ~s|{:phoenix, "~> 9.9.9"}|)
+          )
         end)
         |> apply_igniter!()
 
@@ -151,7 +196,11 @@ defmodule WorkbenchIgniter.PhxDeltaTest do
       igniter =
         phx_test_project()
         |> Igniter.update_file("mix.exs", fn source ->
-          Rewrite.Source.update(source, :content, &Regex.replace(~r/\{:phoenix, "~> [\d.]+"\}/, &1, ~s|{:phoenix, "~> 1.8"}|))
+          Rewrite.Source.update(
+            source,
+            :content,
+            &Regex.replace(~r/\{:phoenix, "~> [\d.]+"\}/, &1, ~s|{:phoenix, "~> 1.8"}|)
+          )
         end)
         |> apply_igniter!()
 

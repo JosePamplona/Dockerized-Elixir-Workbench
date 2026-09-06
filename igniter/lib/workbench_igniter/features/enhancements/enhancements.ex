@@ -33,10 +33,14 @@ defmodule WorkbenchIgniter.Features.Enhancements do
       project_name: "Display name (default: capitalized app name).",
       id_type: "Primary key type (`uuid` maps to `Ecto.UUID`). Default: `uuid`.",
       timestamps: "Timestamps type. Default: `naive_datetime_usec`.",
-      interface: "`rest` | `graphql` | `none`. Default: `rest`. `rest` adds the changeset-aware `error_json.ex`, the error view test and the Postman collection.",
-      exdoc: "The exdoc feature is composed too: `MyApp.Schema` carries the `@moduledoc` sections its pages read.",
-      auth0: "The auth0 feature is composed too: the DbSchema diagrams and Postman collection of that combo, the User fixtures, and the `MyApp.Schema` bits its User schema uses.",
-      openai: "The openai feature is composed too: the diagrams and Postman collection of that combo, and the assistant fixtures.",
+      interface:
+        "`rest` | `graphql` | `none`. Default: `rest`. `rest` adds the changeset-aware `error_json.ex`, the error view test and the Postman collection.",
+      exdoc:
+        "The exdoc feature is composed too: `MyApp.Schema` carries the `@moduledoc` sections its pages read.",
+      auth0:
+        "The auth0 feature is composed too: the DbSchema diagrams and Postman collection of that combo, the User fixtures, and the `MyApp.Schema` bits its User schema uses.",
+      openai:
+        "The openai feature is composed too: the diagrams and Postman collection of that combo, and the assistant fixtures.",
       stripe: "The stripe feature is composed too: the DbSchema diagrams of that combo.",
       health: "The healthcheck feature is composed too: the Postman collection of that combo."
     ]
@@ -95,7 +99,11 @@ defmodule WorkbenchIgniter.Features.Enhancements do
         # not asked: the Ecto group, and the page, dashboard and mailbox
         # tests, follow the project as it is.
         {facts, igniter} = WorkbenchIgniter.PhxDelta.facts(igniter)
-        install(igniter, Keyword.merge(opts, Map.to_list(Map.take(facts, [:ecto, :html, :mailer, :dashboard]))))
+
+        install(
+          igniter,
+          Keyword.merge(opts, Map.to_list(Map.take(facts, [:ecto, :html, :mailer, :dashboard])))
+        )
     end
   end
 

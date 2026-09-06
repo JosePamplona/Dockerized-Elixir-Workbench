@@ -17,7 +17,8 @@ defmodule ConsoleWeb.WorkbenchDrawerTest do
   end
 
   test "debian by the snapshot date, which is the only part that says how new it is" do
-    was = ~w(trixie-20260824-slim bookworm-20260803-slim trixie-20260713-slim bookworm-20260824-slim trixie-20251103-slim)
+    was =
+      ~w(trixie-20260824-slim bookworm-20260803-slim trixie-20260713-slim bookworm-20260824-slim trixie-20251103-slim)
 
     assert Drawer.in_order(was, :d) ==
              ~w(trixie-20260824-slim bookworm-20260824-slim bookworm-20260803-slim trixie-20260713-slim trixie-20251103-slim)
@@ -25,6 +26,8 @@ defmodule ConsoleWeb.WorkbenchDrawerTest do
 
   test "a value config.conf names that is no version at all still draws" do
     assert Drawer.in_order(~w(28.1 nightly 27.0), :o) == ~w(nightly 28.1 27.0)
-    assert Drawer.in_order(~w(trixie-slim trixie-20260824-slim), :d) == ~w(trixie-20260824-slim trixie-slim)
+
+    assert Drawer.in_order(~w(trixie-slim trixie-20260824-slim), :d) ==
+             ~w(trixie-20260824-slim trixie-slim)
   end
 end

@@ -7,7 +7,10 @@ defmodule WorkbenchIgniter.CatalogTest do
   # rendering rule no cartridge exercises any more.
   defmodule Toggle do
     def name, do: "toggle"
-    def info(_argv, _composing), do: %Igniter.Mix.Task.Info{schema: [thing: :boolean], defaults: [thing: true]}
+
+    def info(_argv, _composing),
+      do: %Igniter.Mix.Task.Info{schema: [thing: :boolean], defaults: [thing: true]}
+
     def option_docs, do: [thing: "Something on by default."]
     def choices, do: []
   end
@@ -33,7 +36,10 @@ defmodule WorkbenchIgniter.CatalogTest do
   describe "the catalog" do
     test "names every cartridge, in shelf order" do
       assert Enum.map(Features.catalog(), & &1.name()) == @cartridges
-      assert for(e <- Enum.map(Features.catalog(), &Features.entry/1), e.base, do: e.name) == @in_by_default
+
+      assert for(e <- Enum.map(Features.catalog(), &Features.entry/1), e.base, do: e.name) ==
+               @in_by_default
+
       assert Features.entry(Features.Ecto).afterwards =~ "./wb.sh bake"
       assert Features.entry(Features.Mailer).afterwards == nil
       assert Features.named("credo") == Features.Credo
@@ -68,7 +74,8 @@ defmodule WorkbenchIgniter.CatalogTest do
 
         # The developer's need is part of the anatomy: one line the shelf
         # shows, off the cartridge's NEED.md, pending cartridges included.
-        assert %{line: line, body: body, before: before, after: after_, not_for: not_for} = entry.need,
+        assert %{line: line, body: body, before: before, after: after_, not_for: not_for} =
+                 entry.need,
                "#{entry.name} has no NEED.md"
 
         # The three paragraphs, each found and each one line.
@@ -105,18 +112,43 @@ defmodule WorkbenchIgniter.CatalogTest do
 
       assert %{open: false, multiple: true} = by.(:data_layer)
       assert values.(by.(:data_layer)) == ~w(postgres sqlite csv none)
-      assert %{value: "postgres", doc: "ash_postgres · The swiss army knife" <> _} = hd(by.(:data_layer).choices)
+
+      assert %{value: "postgres", doc: "ash_postgres · The swiss army knife" <> _} =
+               hd(by.(:data_layer).choices)
+
       assert %{value: "none", doc: "no data layer — alone"} = List.last(by.(:data_layer).choices)
       assert %{open: false, multiple: true} = by.(:api)
       assert values.(by.(:api)) == ~w(json_api graphql typescript)
-      assert %{choices: [%{value: "password", doc: "Allow users to log in" <> _} | _], open: true, multiple: true} = by.(:auth)
+
+      assert %{
+               choices: [%{value: "password", doc: "Allow users to log in" <> _} | _],
+               open: true,
+               multiple: true
+             } = by.(:auth)
+
       assert %{doc: nil} = Enum.find(by.(:auth).choices, &(&1.value == "webauthn"))
-      assert %{choices: [%{group: :ai, values: [%{value: "tidewave", doc: "Speed up development" <> _}, %{value: "ash_ai", doc: "First class support" <> _} | _]} | _], open: true} = by.(:with)
+
+      assert %{
+               choices: [
+                 %{
+                   group: :ai,
+                   values: [
+                     %{value: "tidewave", doc: "Speed up development" <> _},
+                     %{value: "ash_ai", doc: "First class support" <> _} | _
+                   ]
+                 }
+                 | _
+               ],
+               open: true
+             } = by.(:with)
+
       assert %{choices: nil, multiple: false} = by.(:example)
 
       theme = Enum.find(Features.entry(Features.Coveralls).options, &(&1.name == :theme))
       assert %{open: false} = theme
-      assert [%{value: "exdoc-ish", doc: "mimics" <> _}, %{value: "custom", doc: _}] = theme.choices
+
+      assert [%{value: "exdoc-ish", doc: "mimics" <> _}, %{value: "custom", doc: _}] =
+               theme.choices
     end
 
     test "documents its options from the cartridge, into the task's moduledoc" do
@@ -131,10 +163,14 @@ defmodule WorkbenchIgniter.CatalogTest do
 
       # Rendered: --no- for a boolean that defaults to true, wrapped bullets.
       assert WorkbenchIgniter.Feature.options_doc(Toggle) =~ ~r/^\* `--no-thing` - Something on/m
-      assert WorkbenchIgniter.Feature.options_doc(Features.Healthcheck2) =~ ~r/^\* `--path` - Prefix/
+
+      assert WorkbenchIgniter.Feature.options_doc(Features.Healthcheck2) =~
+               ~r/^\* `--path` - Prefix/
 
       # And in the task's own docs, interpolations resolved.
-      {:docs_v1, _, _, _, %{"en" => doc}, _, _} = Code.fetch_docs(Mix.Tasks.Workbench.Install.Coveralls)
+      {:docs_v1, _, _, _, %{"en" => doc}, _, _} =
+        Code.fetch_docs(Mix.Tasks.Workbench.Install.Coveralls)
+
       assert doc =~ "* `--theme` - HTML report theme, one of `custom`, `exdoc-ish`:"
 
       assert %{options: [%{name: :path, doc: "Prefix of the two probe routes" <> _}]} =
@@ -163,7 +199,10 @@ defmodule WorkbenchIgniter.CatalogTest do
       assert state == %{}
 
       {status, _} = Features.status(project)
-      assert %{installed: true, state: %{data_layer: ["postgres"]}} = Enum.find(status, &(&1.name == "ash"))
+
+      assert %{installed: true, state: %{data_layer: ["postgres"]}} =
+               Enum.find(status, &(&1.name == "ash"))
+
       assert %{installed: false, state: %{}} = Enum.find(status, &(&1.name == "credo"))
     end
 
@@ -234,7 +273,9 @@ defmodule WorkbenchIgniter.CatalogTest do
           |> Enum.map(& &1.name)
 
         assert @feature.name() in installed
-        assert (installed -- [@feature.name()]) -- @in_by_default == others_installed(@feature.name())
+
+        assert (installed -- [@feature.name()]) -- @in_by_default ==
+                 others_installed(@feature.name())
       end
     end
 

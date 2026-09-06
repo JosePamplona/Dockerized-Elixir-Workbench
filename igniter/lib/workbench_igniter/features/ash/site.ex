@@ -39,7 +39,8 @@ defmodule WorkbenchIgniter.Features.Ash.Site do
   bundle's command builder (`K.postgres.checked||(K.sqlite.checked?…`,
   2026-08-30); the map says nothing about cardinality.
   """
-  def data_layers_independent?(js), do: Regex.match?(~r/\w+\.postgres\.checked\|\|\(\w+\.sqlite\.checked\?/, js)
+  def data_layers_independent?(js),
+    do: Regex.match?(~r/\w+\.postgres\.checked\|\|\(\w+\.sqlite\.checked\?/, js)
 
   @doc """
   The feature map out of the bundle's text: `%{key => %{adds, requires,
@@ -100,35 +101,52 @@ defmodule WorkbenchIgniter.Features.Ash.Site do
     tooltips = Ash.tooltips()
 
     Enum.sort_by(site, fn {key, f} -> {f.adds == [], key} end)
-    |> Enum.reduce({[], []}, fn {key, f}, {oks, diffs} ->
-      case ours(key, f) do
-        :skip ->
-          {oks, diffs}
+    |> Enum.reduce({[], []}, fn {key, f}, acc -> judge(key, f, acc, site, tooltips) end)
+  end
 
-        {:not_offered, _} ->
-          soon = if(Enum.any?(f.tooltip, &(&1 =~ "Installer coming soon")), do: " — its installer: coming soon, the site says", else: "")
-          {oks, diffs ++ ["#{key}: the site offers it (adds #{Enum.join(f.adds, ", ")}), the cartridge does not#{soon}"]}
+  # One site feature against the cartridge, onto the two lists.
+  defp judge(key, f, {oks, diffs}, site, tooltips) do
+    case ours(key, f) do
+      :skip ->
+        {oks, diffs}
 
-        {value, adds, args, tipkey} ->
-          line = line(f.tooltip)
-          # What the site's command gets for the option: what the options it
-          # requires add (phoenix is always in), then its own packages.
-          site_adds =
-            Enum.flat_map(f.requires -- ["phoenix"], &(site[&1][:adds] || [])) ++ f.adds
+      {:not_offered, _} ->
+        soon =
+          if(Enum.any?(f.tooltip, &(&1 =~ "Installer coming soon")),
+            do: " — its installer: coming soon, the site says",
+            else: ""
+          )
 
-          problems =
-            [
-              if(adds != site_adds, do: "adds #{inspect(site_adds)}, the cartridge #{inspect(adds)}"),
-              if(args != f.args, do: "args #{inspect(f.args)}, the cartridge #{inspect(args)}"),
-              if(line && tooltips[tipkey] != line, do: "says #{inspect(line)}, the cartridge #{inspect(tooltips[tipkey])}")
-            ]
-            |> Enum.reject(&is_nil/1)
+        {oks,
+         diffs ++
+           [
+             "#{key}: the site offers it (adds #{Enum.join(f.adds, ", ")}), the cartridge does not#{soon}"
+           ]}
 
-          if problems == [],
-            do: {oks ++ ["#{key} (#{value}): as the site"], diffs},
-            else: {oks, diffs ++ Enum.map(problems, &"#{key} (#{value}): the site #{&1}")}
-      end
-    end)
+      {value, adds, args, tipkey} ->
+        case problems(f, adds, args, tipkey, site, tooltips) do
+          [] -> {oks ++ ["#{key} (#{value}): as the site"], diffs}
+          problems -> {oks, diffs ++ Enum.map(problems, &"#{key} (#{value}): the site #{&1}")}
+        end
+    end
+  end
+
+  # Where the cartridge and the site part on one feature: the packages
+  # the command gets, its args, the tooltip.
+  defp problems(f, adds, args, tipkey, site, tooltips) do
+    line = line(f.tooltip)
+    # What the site's command gets for the option: what the options it
+    # requires add (phoenix is always in), then its own packages.
+    site_adds = Enum.flat_map(f.requires -- ["phoenix"], &(site[&1][:adds] || [])) ++ f.adds
+
+    [
+      if(adds != site_adds, do: "adds #{inspect(site_adds)}, the cartridge #{inspect(adds)}"),
+      if(args != f.args, do: "args #{inspect(f.args)}, the cartridge #{inspect(args)}"),
+      if(line && tooltips[tipkey] != line,
+        do: "says #{inspect(line)}, the cartridge #{inspect(tooltips[tipkey])}"
+      )
+    ]
+    |> Enum.reject(&is_nil/1)
   end
 
   # What the cartridge would do for a site feature: {our value, the
@@ -148,16 +166,10 @@ defmodule WorkbenchIgniter.Features.Ash.Site do
         {elem(layer, 0), [elem(layer, 1)], [], elem(layer, 1)}
 
       api = List.keyfind(apis, hd(f.adds), 1) ->
-        {elem(api, 0), [elem(api, 1)],
-         if(elem(api, 0) == "typescript", do: ["--framework react"], else: []), elem(api, 1)}
+        {elem(api, 0), [elem(api, 1)], api_args(elem(api, 0)), elem(api, 1)}
 
       String.starts_with?(hd(f.adds), "ash_authentication") ->
-        strategy =
-          case f.args do
-            ["--auth-strategy " <> s] -> s
-            _ -> "oauth2"
-          end
-
+        strategy = strategy(f.args)
         {strategy, Ash.auth_packages([strategy]), f.args, strategy}
 
       main = Enum.find(f.adds, &(&1 in advanced)) ->
@@ -167,6 +179,14 @@ defmodule WorkbenchIgniter.Features.Ash.Site do
         {:not_offered, f.adds}
     end
   end
+
+  # typescript is the one API the command takes a framework for.
+  defp api_args("typescript"), do: ["--framework react"]
+  defp api_args(_api), do: []
+
+  # The site's --auth-strategy; oauth2 when it names none.
+  defp strategy(["--auth-strategy " <> s]), do: s
+  defp strategy(_args), do: "oauth2"
 end
 
 defmodule Mix.Tasks.Workbench.Ash.Site do
@@ -200,8 +220,17 @@ defmodule Mix.Tasks.Workbench.Ash.Site do
         # The map says nothing about cardinality; the command builder does.
         {oks, diffs} =
           if Site.data_layers_independent?(js),
-            do: {oks ++ ["data layers: independent checkboxes on the site, as the cartridge's --data-layer (several)"], diffs},
-            else: {oks, diffs ++ ["data layers: the site's command builder changed — are the layers still independent checkboxes? The cartridge's --data-layer takes several"]}
+            do:
+              {oks ++
+                 [
+                   "data layers: independent checkboxes on the site, as the cartridge's --data-layer (several)"
+                 ], diffs},
+            else:
+              {oks,
+               diffs ++
+                 [
+                   "data layers: the site's command builder changed — are the layers still independent checkboxes? The cartridge's --data-layer takes several"
+                 ]}
 
         Enum.each(oks, &Mix.shell().info("  ok  " <> &1))
         Enum.each(diffs, &Mix.shell().info("  !!  " <> &1))

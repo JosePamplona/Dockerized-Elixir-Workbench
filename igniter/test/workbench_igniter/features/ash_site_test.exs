@@ -14,13 +14,26 @@ defmodule WorkbenchIgniter.Features.Ash.SiteTest do
   test "parses the feature map: packages, args, tooltip paragraphs" do
     site = Site.parse(@bundle)
 
-    assert %{adds: ["ash_oban", "oban_web"], args: [], tooltip: ["Oban is a background job system" <> _]} = site["oban"]
-    assert %{adds: ["ash_authentication"], args: ["--auth-strategy api_key"], requires: ["phoenix"]} = site["api_key_auth"]
+    assert %{
+             adds: ["ash_oban", "oban_web"],
+             args: [],
+             tooltip: ["Oban is a background job system" <> _]
+           } = site["oban"]
+
+    assert %{
+             adds: ["ash_authentication"],
+             args: ["--auth-strategy api_key"],
+             requires: ["phoenix"]
+           } = site["api_key_auth"]
+
     assert %{tooltip: ["Encrypt & decrypt, changed on the site."]} = site["cloak"]
   end
 
   test "reads whether the data layers are still independent checkboxes off the command builder" do
-    assert Site.data_layers_independent?(~S<v;K.phoenix.checked&&(v="?install=phoenix",K.postgres.checked||(K.sqlite.checked?v+="&with_args=--database%20sqlite3":v+="&with_args=--no-ecto"))>)
+    assert Site.data_layers_independent?(
+             ~S<v;K.phoenix.checked&&(v="?install=phoenix",K.postgres.checked||(K.sqlite.checked?v+="&with_args=--database%20sqlite3":v+="&with_args=--no-ecto"))>
+           )
+
     refute Site.data_layers_independent?(~S<K.data_layer.value==="postgres">)
   end
 
@@ -30,8 +43,19 @@ defmodule WorkbenchIgniter.Features.Ash.SiteTest do
     assert "postgres (postgres): as the site" in oks
     assert "oban (ash_oban): as the site" in oks
     assert "api_key_auth (api_key): as the site" in oks
-    assert Enum.any?(diffs, &(&1 =~ ~r/^cloak \(ash_cloak\): the site says "Encrypt & decrypt, changed on the site\."/))
-    assert Enum.any?(diffs, &(&1 =~ ~r/^appsignal: the site offers it \(adds appsignal, ash_appsignal\), the cartridge does not/))
+
+    assert Enum.any?(
+             diffs,
+             &(&1 =~
+                 ~r/^cloak \(ash_cloak\): the site says "Encrypt & decrypt, changed on the site\."/)
+           )
+
+    assert Enum.any?(
+             diffs,
+             &(&1 =~
+                 ~r/^appsignal: the site offers it \(adds appsignal, ash_appsignal\), the cartridge does not/)
+           )
+
     refute Enum.any?(oks ++ diffs, &String.starts_with?(&1, "phoenix"))
     refute Enum.any?(oks ++ diffs, &String.starts_with?(&1, "live_view"))
   end

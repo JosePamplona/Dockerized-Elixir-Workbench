@@ -61,7 +61,14 @@ defmodule ConsoleWeb.JobsScreen do
       </div>
       <div class="viewport light">
         <div class="lines" id="jobs" phx-hook="JobOut">
-          <.job_row :for={j <- @jobs} j={j} open={MapSet.member?(@open, j.id)} now={@now} asking={@asking} stoppable={@stoppable} />
+          <.job_row
+            :for={j <- @jobs}
+            j={j}
+            open={MapSet.member?(@open, j.id)}
+            now={@now}
+            asking={@asking}
+            stoppable={@stoppable}
+          />
         </div>
       </div>
     </div>

@@ -5,10 +5,18 @@ defmodule ConsoleWeb.Board do
   alias ConsoleWeb.{Cartridges, Terminal}
 
   attr :status, :map, default: nil
-  attr :rebind, :map, default: nil, doc: "the mount this console was started for, when config.conf names another workspace"
+
+  attr :rebind, :map,
+    default: nil,
+    doc: "the mount this console was started for, when config.conf names another workspace"
+
   attr :catalog, :list, default: []
   attr :folded, :any, default: nil, doc: "the section keys folded away, a MapSet"
-  attr :reading, :any, default: false, doc: "a reading in flight: :fast, :full, or false — the empty board's own word"
+
+  attr :reading, :any,
+    default: false,
+    doc: "a reading in flight: :fast, :full, or false — the empty board's own word"
+
   attr :busy, :boolean, default: false, doc: "a deploy job is in flight"
   attr :error, :string, default: nil
 
@@ -18,7 +26,9 @@ defmodule ConsoleWeb.Board do
       <span class="label">Workspace</span>
       <p class="name">{if @reading, do: "reading…", else: "unread"}</p>
       <p :if={@error} class="note">{@error}</p>
-      <p :if={!@error} class="note">./wb.sh status --json — a container start and a Mix boot: seconds, more on a busy host.</p>
+      <p :if={!@error} class="note">
+        ./wb.sh status --json — a container start and a Mix boot: seconds, more on a busy host.
+      </p>
     </section>
     <%= if @status do %>
       <.workspace status={@status} rebind={@rebind} />
@@ -51,7 +61,13 @@ defmodule ConsoleWeb.Board do
   defp head(assigns) do
     ~H"""
     <h2>
-      <button class="fold" type="button" aria-expanded={to_string(not folded?(@folded, @key))} phx-click="fold_section" phx-value-key={@key}>
+      <button
+        class="fold"
+        type="button"
+        aria-expanded={to_string(not folded?(@folded, @key))}
+        phx-click="fold_section"
+        phx-value-key={@key}
+      >
         {@name}<span :if={@label} class="label">{@label}</span>
       </button>
     </h2>
@@ -83,7 +99,8 @@ defmodule ConsoleWeb.Board do
       <p class="name">{@status["compose_project"] || "no project"}</p>
       <div class="path mono">{@status["workspace"]}</div>
       <p :if={@rebind} class="note">
-        This console was started for <span class="mono">{@rebind.project}</span> at <span class="mono">{@rebind.workspace}</span>.
+        This console was started for <span class="mono">{@rebind.project}</span>
+        at <span class="mono">{@rebind.workspace}</span>.
         Until it starts again for this workspace, every mix and git of a job runs in a container of its own.
         <button
           class="btn mini"
@@ -95,8 +112,18 @@ defmodule ConsoleWeb.Board do
         </button>
       </p>
       <div class="urls">
-        <.door_ref :if={@status["ports"]["app"]} label="app" path={"localhost:#{@status["ports"]["app"]}"} href={"http://localhost:#{@status["ports"]["app"]}"} />
-        <.door_ref :if={@status["ports"]["pgadmin"]} label="pgAdmin" path={"localhost:#{@status["ports"]["pgadmin"]}"} href={"http://localhost:#{@status["ports"]["pgadmin"]}"} />
+        <.door_ref
+          :if={@status["ports"]["app"]}
+          label="app"
+          path={"localhost:#{@status["ports"]["app"]}"}
+          href={"http://localhost:#{@status["ports"]["app"]}"}
+        />
+        <.door_ref
+          :if={@status["ports"]["pgadmin"]}
+          label="pgAdmin"
+          path={"localhost:#{@status["ports"]["pgadmin"]}"}
+          href={"http://localhost:#{@status["ports"]["pgadmin"]}"}
+        />
       </div>
     </section>
     """
@@ -108,9 +135,16 @@ defmodule ConsoleWeb.Board do
 
     ~H"""
     <section class={folded?(@folded, "doors") && "folded"}>
-      <.head key="doors" name="Doors" folded={@folded} label={if @doors == [], do: "none yet", else: "#{length(@doors)} open by cartridges"} />
+      <.head
+        key="doors"
+        name="Doors"
+        folded={@folded}
+        label={if @doors == [], do: "none yet", else: "#{length(@doors)} open by cartridges"}
+      />
       <div class="urls">
-        <p :if={@doors == []} class="nothing">Cartridges open doors here: docs, dashboard, mailbox, swagger, graphiql, admin…</p>
+        <p :if={@doors == []} class="nothing">
+          Cartridges open doors here: docs, dashboard, mailbox, swagger, graphiql, admin…
+        </p>
         <.door_ref
           :for={{c, d} <- @doors}
           label={d["label"]}
@@ -131,11 +165,31 @@ defmodule ConsoleWeb.Board do
       <table class="rows" id="deployments">
         <tr :for={name <- ~w(dev prod scaled)}>
           <td class="k">{name}</td>
-          <td class="st"><.chip class={!@status["baked"][name] && "off"}>{if @status["baked"][name], do: "baked", else: "not baked"}</.chip></td>
-          <td><.chip class={if @status["deployment"] == name, do: "good", else: "off"}>{if @status["deployment"] == name, do: "running", else: "down"}</.chip></td>
+          <td class="st">
+            <.chip class={!@status["baked"][name] && "off"}>
+              {if @status["baked"][name], do: "baked", else: "not baked"}
+            </.chip>
+          </td>
+          <td>
+            <.chip class={if @status["deployment"] == name, do: "good", else: "off"}>
+              {if @status["deployment"] == name, do: "running", else: "down"}
+            </.chip>
+          </td>
           <td class="act">
-            <.deploy_button :if={@status["deployment"] == name} verb="down" name={name} status={@status} busy={@busy} />
-            <.deploy_button :if={@status["deployment"] != name and @status["baked"][name]} verb="up" name={name} status={@status} busy={@busy} />
+            <.deploy_button
+              :if={@status["deployment"] == name}
+              verb="down"
+              name={name}
+              status={@status}
+              busy={@busy}
+            />
+            <.deploy_button
+              :if={@status["deployment"] != name and @status["baked"][name]}
+              verb="up"
+              name={name}
+              status={@status}
+              busy={@busy}
+            />
           </td>
         </tr>
       </table>
@@ -158,11 +212,25 @@ defmodule ConsoleWeb.Board do
       end
 
     replaces = assigns.verb == "up" && running && running != assigns.name
-    title = why || cmd <> if(replaces, do: " — #{running} is running and goes down: one deployment at a time", else: "")
+
+    title =
+      why ||
+        cmd <>
+          if(replaces,
+            do: " — #{running} is running and goes down: one deployment at a time",
+            else: ""
+          )
+
     assigns = assign(assigns, why: why, title: title, cmd: cmd)
 
     ~H"""
-    <button class={["btn mini", @why && "unlit"]} aria-disabled={@why && "true"} title={@title} phx-click={!@why && "run"} phx-value-args={String.replace_prefix(@cmd, "./wb.sh ", "")}>
+    <button
+      class={["btn mini", @why && "unlit"]}
+      aria-disabled={@why && "true"}
+      title={@title}
+      phx-click={!@why && "run"}
+      phx-value-args={String.replace_prefix(@cmd, "./wb.sh ", "")}
+    >
       {if @verb == "up", do: "Up", else: "Down"}
     </button>
     """
@@ -184,23 +252,50 @@ defmodule ConsoleWeb.Board do
     # than leaving three rows of `down` over a table of things that are
     # not — and it says where the way out is.
     left = cs != [] and is_nil(assigns.status["deployment"])
-    assigns = assign(assigns, cs: cs, targets: targets, left: left, sum: if(cs == [], do: "none", else: "#{running} of #{length(cs)} running"))
+
+    assigns =
+      assign(assigns,
+        cs: cs,
+        targets: targets,
+        left: left,
+        sum: if(cs == [], do: "none", else: "#{running} of #{length(cs)} running")
+      )
 
     ~H"""
     <section class={folded?(@folded, "containers") && "folded"}>
       <.head key="containers" name="Containers" label={@sum} folded={@folded} />
       <table class="rows acts" id="containers">
-        <tr :if={@cs == []}><td class="nothing">{if @status["exists"], do: "No containers: the project is down. Deploy → Up.", else: "The workspace is empty: Deploy → Project."}</td></tr>
+        <tr :if={@cs == []}>
+          <td class="nothing">
+            {if @status["exists"],
+              do: "No containers: the project is down. Deploy → Up.",
+              else: "The workspace is empty: Deploy → Project."}
+          </td>
+        </tr>
         <tr :for={c <- @cs}>
-          <td class="k" title={c["Image"]}>{c["Service"]}<span class="hint">{short_image(c["Image"])}</span></td>
-          <td class="st"><.chip class={container_class(c)}>{if c["Health"] not in [nil, ""], do: c["Health"], else: c["State"]}</.chip></td>
+          <td class="k" title={c["Image"]}>
+            {c["Service"]}<span class="hint">{short_image(c["Image"])}</span>
+          </td>
+          <td class="st">
+            <.chip class={container_class(c)}>
+              {if c["Health"] not in [nil, ""], do: c["Health"], else: c["State"]}
+            </.chip>
+          </td>
           <td class="act">
-            <button class="btn mini" type="button" title={"the log lines this container writes, alone — #{c["Service"]}"} phx-click="logs_of" phx-value-service={c["Service"]}>Logs</button>
+            <button
+              class="btn mini"
+              type="button"
+              title={"the log lines this container writes, alone — #{c["Service"]}"}
+              phx-click="logs_of"
+              phx-value-service={c["Service"]}
+            >Logs</button>
             <.shell_button c={c} target={@targets[c["Service"]]} />
           </td>
         </tr>
       </table>
-      <p :if={@left} class="note">No deployment is up and these are still here: Deploy → Down removes them.</p>
+      <p :if={@left} class="note">
+        No deployment is up and these are still here: Deploy → Down removes them.
+      </p>
     </section>
     """
   end
@@ -222,7 +317,11 @@ defmodule ConsoleWeb.Board do
       class={["btn mini", @down && "unlit"]}
       type="button"
       aria-disabled={@down && "true"}
-      title={if @down, do: "#{@c["Service"]} is not running: a session needs a container", else: "a #{@shell} session on #{@c["Service"]}, in the Terminal"}
+      title={
+        if @down,
+          do: "#{@c["Service"]} is not running: a session needs a container",
+          else: "a #{@shell} session on #{@c["Service"]}, in the Terminal"
+      }
       phx-click={!@down && "term_open"}
       phx-value-target={@c["Service"]}
       phx-value-shell={@shell}
@@ -257,10 +356,29 @@ defmodule ConsoleWeb.Board do
       <.head key="git" name="Git" label={git_sum(@status["git"])} folded={@folded} />
       <div class="git">
         <%= if @status["git"]["repo"] do %>
-          <div class="row"><span class="k">tree</span><.chip class={if @status["git"]["clean"], do: "good", else: "warn"}>{if @status["git"]["clean"], do: "clean", else: "dirty"}</.chip></div>
-          <div class="row"><span class="k">head</span><span>{@status["git"]["head"] || "no commits yet"}</span></div>
-          <div class="row"><span class="k">signs as</span><span title={@status["git"]["identity"]}>{String.replace(@status["git"]["identity"] || "", ~r/ <.*/, "")}</span></div>
-          <.link :if={not @status["git"]["clean"]} class="btn" patch="/git" title="the Git screen: what is pending, and the commit with a title">Commit pending changes</.link>
+          <div class="row">
+            <span class="k">tree</span><.chip class={
+              if @status["git"]["clean"], do: "good", else: "warn"
+            }>
+              {if @status["git"]["clean"], do: "clean", else: "dirty"}
+            </.chip>
+          </div>
+          <div class="row">
+            <span class="k">head</span><span>{@status["git"]["head"] || "no commits yet"}</span>
+          </div>
+          <div class="row">
+            <span class="k">signs as</span><span title={@status["git"]["identity"]}>{String.replace(
+              @status["git"]["identity"] || "",
+              ~r/ <.*/,
+              ""
+            )}</span>
+          </div>
+          <.link
+            :if={not @status["git"]["clean"]}
+            class="btn"
+            patch="/git"
+            title="the Git screen: what is pending, and the commit with a title"
+          >Commit pending changes</.link>
         <% else %>
           <p class="nothing">phx.new initialises the repository; new makes the first commit.</p>
         <% end %>
@@ -279,7 +397,8 @@ defmodule ConsoleWeb.Board do
     sum =
       if ins == [],
         do: "none",
-        else: "#{length(ins)} cartridge#{if length(ins) == 1, do: "", else: "s"} · #{revertible} the workbench can eject"
+        else:
+          "#{length(ins)} cartridge#{if length(ins) == 1, do: "", else: "s"} · #{revertible} the workbench can eject"
 
     assigns = assign(assigns, ins: ins, sum: sum)
 
@@ -287,10 +406,27 @@ defmodule ConsoleWeb.Board do
     <section class={folded?(@folded, "inserted") && "folded"}>
       <.head key="inserted" name="Inserted" label={@sum} folded={@folded} />
       <table class="rows" id="slots">
-        <tr :if={@ins == []}><td class="nothing">Nothing inserted yet: the shelf is in Cartridges.</td></tr>
+        <tr :if={@ins == []}>
+          <td class="nothing">Nothing inserted yet: the shelf is in Cartridges.</td>
+        </tr>
         <tr :for={c <- @ins}>
-          <td><.cart_ref name={c["name"]} installed={true} version={c["version"] && c["version"]["version"]} /></td>
-          <td class="muted ver" title={if c["version"], do: "#{c["version"]["date"]} in its CHANGELOG", else: "no CHANGELOG to read a version from"}>{if c["version"], do: "v#{c["version"]["version"]}", else: "unversioned"}</td>
+          <td>
+            <.cart_ref
+              name={c["name"]}
+              installed={true}
+              version={c["version"] && c["version"]["version"]}
+            />
+          </td>
+          <td
+            class="muted ver"
+            title={
+              if c["version"],
+                do: "#{c["version"]["date"]} in its CHANGELOG",
+                else: "no CHANGELOG to read a version from"
+            }
+          >
+            {if c["version"], do: "v#{c["version"]["version"]}", else: "unversioned"}
+          </td>
           <td class="og"><.origin status={@status} c={c} /></td>
         </tr>
       </table>

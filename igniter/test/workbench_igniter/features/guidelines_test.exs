@@ -21,7 +21,11 @@ defmodule WorkbenchIgniter.Features.GuidelinesTest do
 
   describe "mix workbench.install.guidelines" do
     test "plants the page and lists it in the docs site" do
-      files = with_exdoc(["--url", @url]) |> apply_igniter!() |> Map.get(:assigns) |> Map.get(:test_files)
+      files =
+        with_exdoc(["--url", @url])
+        |> apply_igniter!()
+        |> Map.get(:assigns)
+        |> Map.get(:test_files)
 
       assert files["assets/exdoc/coding.md"] =~ "# Coding guidelines"
       # The two lists exdoc keeps, each with the page appended and its
@@ -40,7 +44,10 @@ defmodule WorkbenchIgniter.Features.GuidelinesTest do
 
       assert Enum.any?(igniter.warnings, &(&1 =~ "Could not download the coding guidelines"))
 
-      assert igniter |> apply_igniter!() |> Map.get(:assigns) |> Map.get(:test_files)
+      assert igniter
+             |> apply_igniter!()
+             |> Map.get(:assigns)
+             |> Map.get(:test_files)
              |> Map.get("assets/exdoc/coding.md") =~ @url
     end
 

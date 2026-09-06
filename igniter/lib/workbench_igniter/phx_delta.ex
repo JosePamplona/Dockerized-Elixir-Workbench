@@ -65,7 +65,8 @@ defmodule WorkbenchIgniter.PhxDelta do
       # --no-live keeps the phoenix_live_view dependency, and the
       # endpoint's /live socket is on with the dashboard too; what only
       # live brings is its own configuration.
-      live: dep.(:phoenix_live_view) and Regex.match?(~r/^config :phoenix_live_view\b/m, config || ""),
+      live:
+        dep.(:phoenix_live_view) and Regex.match?(~r/^config :phoenix_live_view\b/m, config || ""),
       dashboard: dep.(:phoenix_live_dashboard),
       binary_id: Regex.match?(~r/binary_id:\s*true/, config || ""),
       # --no-agents-md leaves no mark but the file's absence; without
@@ -159,9 +160,12 @@ defmodule WorkbenchIgniter.PhxDelta do
   """
   def delta(facts, capability, overrides \\ %{}) when capability in @capabilities do
     base = generate(flags(facts))
-    theirs = equalize_secrets(generate(flags(Map.merge(%{facts | capability => true}, overrides))), base)
 
-    created = for {path, content} <- theirs, not Map.has_key?(base, path), into: %{}, do: {path, content}
+    theirs =
+      equalize_secrets(generate(flags(Map.merge(%{facts | capability => true}, overrides))), base)
+
+    created =
+      for {path, content} <- theirs, not Map.has_key?(base, path), into: %{}, do: {path, content}
 
     changed =
       for {path, content} <- theirs, Map.has_key?(base, path), base[path] != content, into: %{} do
@@ -172,7 +176,8 @@ defmodule WorkbenchIgniter.PhxDelta do
     # has not — phx.new's static placeholders for a project without a
     # bundler (priv/static/assets/*). Kept with base's content, so that
     # apply/3 removes a file only while it is still that placeholder.
-    removed = for {path, content} <- base, not Map.has_key?(theirs, path), into: %{}, do: {path, content}
+    removed =
+      for {path, content} <- base, not Map.has_key?(theirs, path), into: %{}, do: {path, content}
 
     %{created: created, changed: changed, removed: removed}
   end
@@ -184,22 +189,18 @@ defmodule WorkbenchIgniter.PhxDelta do
   # are never in a hunk.
   @secret ~r/((?:signing_salt|secret_key_base):\s*)"[^"]*"/
 
-  defp equalize_secrets(theirs, base) do
-    Map.new(theirs, fn {path, content} ->
-      case base[path] do
-        nil ->
-          {path, content}
+  defp equalize_secrets(theirs, base),
+    do: Map.new(theirs, fn {path, content} -> {path, with_secrets_of(content, base[path])} end)
 
-        base_content ->
-          values = Regex.scan(@secret, base_content) |> Enum.map(fn [whole, _] -> whole end)
-          {path, splice(content, values)}
-      end
-    end)
-  end
+  # Theirs takes base's secrets, when base has the file at all.
+  defp with_secrets_of(content, nil), do: content
+  defp with_secrets_of(content, base_content), do: splice(content, secrets(base_content))
+
+  defp secrets(content), do: Regex.scan(@secret, content) |> Enum.map(fn [whole, _] -> whole end)
 
   # The n-th secret of content becomes the n-th of values, when counts match.
   defp splice(content, values) do
-    own = Regex.scan(@secret, content) |> Enum.map(fn [whole, _] -> whole end)
+    own = secrets(content)
 
     if length(own) == length(values) do
       Enum.zip(own, values)
@@ -293,7 +294,9 @@ defmodule WorkbenchIgniter.PhxDelta do
   is `nil` when neither did. `installer` is the `phx_new` archive loaded
   here, `nil` where there is none.
   """
-  @spec generator(Igniter.t()) :: {%{project: String.t() | nil, source: String.t() | nil, installer: String.t() | nil}, Igniter.t()}
+  @spec generator(Igniter.t()) ::
+          {%{project: String.t() | nil, source: String.t() | nil, installer: String.t() | nil},
+           Igniter.t()}
   def generator(igniter) do
     {stamped, igniter} = stamped_generator(igniter)
     {requirement, igniter} = if stamped, do: {nil, igniter}, else: phoenix_requirement(igniter)
@@ -373,7 +376,12 @@ defmodule WorkbenchIgniter.PhxDelta do
       Enum.reduce(changed, {%{}, igniter}, fn {path, _}, {ours, igniter} ->
         if Igniter.exists?(igniter, path) do
           igniter = Igniter.include_existing_file(igniter, path)
-          {Map.put(ours, path, igniter.rewrite |> Rewrite.source!(path) |> Rewrite.Source.get(:content)), igniter}
+
+          {Map.put(
+             ours,
+             path,
+             igniter.rewrite |> Rewrite.source!(path) |> Rewrite.Source.get(:content)
+           ), igniter}
         else
           {ours, igniter}
         end
@@ -395,45 +403,56 @@ defmodule WorkbenchIgniter.PhxDelta do
     # the project edited or replaced is the project's, and stays.
     igniter =
       Enum.reduce(removed, igniter, fn {path, placeholder}, igniter ->
-        if Igniter.exists?(igniter, path) do
-          igniter = Igniter.include_existing_file(igniter, path)
-          content = igniter.rewrite |> Rewrite.source!(path) |> Rewrite.Source.get(:content)
-          if content == placeholder, do: Igniter.rm(igniter, path), else: igniter
-        else
-          igniter
-        end
+        drop_placeholder(igniter, path, placeholder)
       end)
 
     Enum.reduce(changed, igniter, fn {path, {base, theirs}}, igniter ->
-      if Map.has_key?(ours, path) do
-        ours = ours[path]
-        # The project's secrets are its own generation's; base and theirs
-        # take them, so a salt line never reads as an edit of ours.
-        secrets = Regex.scan(@secret, ours) |> Enum.map(fn [whole, _] -> whole end)
-
-        case merge3(ours, splice(base, secrets), splice(theirs, secrets)) do
-          {:ok, merged} ->
-            Igniter.update_file(igniter, path, &Rewrite.Source.update(&1, :content, fn _ -> merged end))
-
-          {:conflict, _merged} ->
-            # Not resolved, and not written with markers either — Igniter
-            # parses an .ex file it writes. The file stays as it is; what
-            # phx.new would have it be lands beside it, to merge by hand.
-            # Written to disk here, not in the patch set: an issue withholds
-            # the whole patch set, and this file is the one thing the user
-            # needs *because* of the issue. In test mode it stays a patch.
-            igniter
-            |> aside(path <> ".phx-new", theirs)
-            |> Igniter.add_issue(
-              "#{path}: the #{capability} lines conflict with the project's own edits. " <>
-                "The file is untouched; #{path}.phx-new is the file as phx.new generates " <>
-                "it with the #{capability} — merge the difference by hand and delete it."
-            )
-        end
-      else
-        Igniter.create_new_file(igniter, path, theirs)
+      case ours do
+        %{^path => own} -> merge_into(igniter, path, own, base, theirs, capability)
+        _ -> Igniter.create_new_file(igniter, path, theirs)
       end
     end)
+  end
+
+  # One changed file the project has: three ways, ours with the
+  # capability's change. The project's secrets are its own generation's;
+  # base and theirs take them, so a salt line never reads as an edit of ours.
+  defp merge_into(igniter, path, ours, base, theirs, capability) do
+    secrets = secrets(ours)
+
+    case merge3(ours, splice(base, secrets), splice(theirs, secrets)) do
+      {:ok, merged} ->
+        Igniter.update_file(
+          igniter,
+          path,
+          &Rewrite.Source.update(&1, :content, fn _ -> merged end)
+        )
+
+      {:conflict, _merged} ->
+        # Not resolved, and not written with markers either — Igniter
+        # parses an .ex file it writes. The file stays as it is; what
+        # phx.new would have it be lands beside it, to merge by hand.
+        # Written to disk here, not in the patch set: an issue withholds
+        # the whole patch set, and this file is the one thing the user
+        # needs *because* of the issue. In test mode it stays a patch.
+        igniter
+        |> aside(path <> ".phx-new", theirs)
+        |> Igniter.add_issue(
+          "#{path}: the #{capability} lines conflict with the project's own edits. " <>
+            "The file is untouched; #{path}.phx-new is the file as phx.new generates " <>
+            "it with the #{capability} — merge the difference by hand and delete it."
+        )
+    end
+  end
+
+  defp drop_placeholder(igniter, path, placeholder) do
+    if Igniter.exists?(igniter, path) do
+      igniter = Igniter.include_existing_file(igniter, path)
+      content = igniter.rewrite |> Rewrite.source!(path) |> Rewrite.Source.get(:content)
+      if content == placeholder, do: Igniter.rm(igniter, path), else: igniter
+    else
+      igniter
+    end
   end
 
   defp aside(igniter, path, content) do
@@ -471,7 +490,8 @@ defmodule WorkbenchIgniter.PhxDelta do
       {out, status} =
         System.cmd(
           "git",
-          ["merge-file", "-p", "-L", "project", "-L", "phx.new", "-L", "with the capability"] ++ files,
+          ["merge-file", "-p", "-L", "project", "-L", "phx.new", "-L", "with the capability"] ++
+            files,
           stderr_to_stdout: false
         )
 

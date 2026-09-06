@@ -23,19 +23,26 @@ defmodule Console.ANSI do
   def to_html(line) do
     @escape
     |> Regex.split(line, include_captures: true)
-    |> Enum.reduce({[], %{}}, fn piece, {out, style} ->
-      case Regex.run(~r/^\e\[([0-9;]*)m$/, piece) do
-        [_, codes] -> {out, apply_codes(style, codes)}
-        nil when piece == "" -> {out, style}
-        nil ->
-          if String.starts_with?(piece, "\e"),
-            do: {out, style},
-            else: {[span(style, piece) | out], style}
-      end
-    end)
+    |> Enum.reduce({[], %{}}, &piece/2)
     |> elem(0)
     |> Enum.reverse()
     |> IO.iodata_to_binary()
+  end
+
+  # One piece of the line: a style code moves the style, text takes it.
+  defp piece(piece, {out, style}) do
+    case Regex.run(~r/^\e\[([0-9;]*)m$/, piece) do
+      [_, codes] ->
+        {out, apply_codes(style, codes)}
+
+      nil when piece == "" ->
+        {out, style}
+
+      nil ->
+        if String.starts_with?(piece, "\e"),
+          do: {out, style},
+          else: {[span(style, piece) | out], style}
+    end
   end
 
   defp span(style, text) when map_size(style) == 0, do: escape(text)
@@ -62,7 +69,7 @@ defmodule Console.ANSI do
   defp apply_codes(style, codes) do
     codes
     |> String.split(";")
-    |> Enum.map(&String.to_integer(&1 == "" && "0" || &1))
+    |> Enum.map(&String.to_integer((&1 == "" && "0") || &1))
     |> walk(style)
   end
 

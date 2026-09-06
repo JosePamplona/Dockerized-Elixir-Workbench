@@ -55,15 +55,17 @@ defmodule Mix.Tasks.Workbench.Expand do
         # compile: same plain-task read as `mix workbench.status`.
         Application.ensure_all_started(:rewrite)
 
-        {plan, _igniter} =
-          Enum.flat_map_reduce(members, Igniter.new(), fn {name, member_argv}, igniter ->
-            case Features.named(name).installed?(igniter) do
-              {true, igniter} -> {[], igniter}
-              {false, igniter} -> {[{name, member_argv}], igniter}
-            end
-          end)
+        {plan, _igniter} = Enum.flat_map_reduce(members, Igniter.new(), &missing_member/2)
 
         plan
+    end
+  end
+
+  # A member already in the project leaves the plan; one missing joins it.
+  defp missing_member({name, member_argv}, igniter) do
+    case Features.named(name).installed?(igniter) do
+      {true, igniter} -> {[], igniter}
+      {false, igniter} -> {[{name, member_argv}], igniter}
     end
   end
 
@@ -80,9 +82,7 @@ defmodule Mix.Tasks.Workbench.Expand do
         is_list(values),
         chosen = opts[key],
         chosen not in values(values) do
-      Mix.raise(
-        "--#{key} must be one of #{Enum.join(values(values), ", ")}, got: #{chosen}"
-      )
+      Mix.raise("--#{key} must be one of #{Enum.join(values(values), ", ")}, got: #{chosen}")
     end
 
     opts

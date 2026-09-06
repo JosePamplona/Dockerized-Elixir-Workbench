@@ -64,7 +64,11 @@ defmodule Console.Installers do
   # version from the reader.
   defp requirements(versions) do
     versions
-    |> Task.async_stream(&requirement/1, max_concurrency: 10, timeout: @timeout, on_timeout: :kill_task)
+    |> Task.async_stream(&requirement/1,
+      max_concurrency: 10,
+      timeout: @timeout,
+      on_timeout: :kill_task
+    )
     |> Enum.zip(versions)
     |> Enum.map(fn
       {{:ok, requirement}, version} -> %{"version" => version, "elixir" => requirement}
@@ -84,7 +88,9 @@ defmodule Console.Installers do
   # :httpc, which OTP already carries — the console has no HTTP client
   # and does not need one for two endpoints. Its charlists stay in here.
   defp get(url) do
-    case :httpc.request(:get, {url, [{~c"user-agent", ~c"dockerized-elixir-workbench"}]}, [timeout: @timeout], body_format: :binary) do
+    headers = [{~c"user-agent", ~c"dockerized-elixir-workbench"}]
+
+    case :httpc.request(:get, {url, headers}, [timeout: @timeout], body_format: :binary) do
       {:ok, {{_, 200, _}, _headers, body}} -> {:ok, body}
       {:ok, {{_, code, _}, _, _}} -> {:error, "hex.pm answered #{code}"}
       {:error, reason} -> {:error, "hex.pm could not be reached: #{inspect(reason)}"}

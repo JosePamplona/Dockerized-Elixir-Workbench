@@ -16,7 +16,9 @@ defmodule WorkbenchIgniter.Features.GettextTest do
     igniter = no_gettext_project() |> Igniter.compose_task("workbench.install.gettext", [])
 
     igniter
-    |> assert_creates("lib/test_web/gettext.ex", fn content -> assert content =~ "use Gettext.Backend, otp_app: :test" end)
+    |> assert_creates("lib/test_web/gettext.ex", fn content ->
+      assert content =~ "use Gettext.Backend, otp_app: :test"
+    end)
     |> assert_creates("priv/gettext/errors.pot")
     |> assert_has_patch("mix.exs", """
     + | {:gettext, "~> 
@@ -28,6 +30,8 @@ defmodule WorkbenchIgniter.Features.GettextTest do
   end
 
   test "is a no-op with a notice when gettext is in" do
-    phx_test_project() |> Igniter.compose_task("workbench.install.gettext", []) |> assert_unchanged()
+    phx_test_project()
+    |> Igniter.compose_task("workbench.install.gettext", [])
+    |> assert_unchanged()
   end
 end

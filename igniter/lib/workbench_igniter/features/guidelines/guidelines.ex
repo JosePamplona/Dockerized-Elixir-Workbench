@@ -57,15 +57,13 @@ defmodule WorkbenchIgniter.Features.Guidelines do
   def install(igniter) do
     url = igniter.args.options[:url]
 
-    cond do
-      is_nil(url) ->
-        Igniter.add_issue(igniter, "--url is required: it is the page this cartridge installs.")
-
-      true ->
-        case WorkbenchIgniter.Feature.missing_requirements(igniter, __MODULE__) do
-          {[], igniter} -> insert(igniter, url)
-          {missing, igniter} -> refuse(igniter, missing)
-        end
+    if is_nil(url) do
+      Igniter.add_issue(igniter, "--url is required: it is the page this cartridge installs.")
+    else
+      case WorkbenchIgniter.Feature.missing_requirements(igniter, __MODULE__) do
+        {[], igniter} -> insert(igniter, url)
+        {missing, igniter} -> refuse(igniter, missing)
+      end
     end
   end
 

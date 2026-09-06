@@ -6,3 +6,4 @@ erl_crash.dump
 
 # Disposable workspaces used for workbench validation runs.
 /_tests_workspace/
+/priv/plts/

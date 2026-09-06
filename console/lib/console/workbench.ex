@@ -19,7 +19,11 @@ defmodule Console.Workbench do
   def version do
     case dir() |> Path.join("wb.sh") |> File.read() do
       {:ok, text} ->
-        text |> String.split("\n") |> Enum.at(2, "") |> then(&Regex.run(~r/v(\S+)/, &1)) |> then(&(&1 && Enum.at(&1, 1)))
+        text
+        |> String.split("\n")
+        |> Enum.at(2, "")
+        |> then(&Regex.run(~r/v(\S+)/, &1))
+        |> then(&(&1 && Enum.at(&1, 1)))
 
       _ ->
         nil
@@ -47,7 +51,13 @@ defmodule Console.Workbench do
   """
   def project(ws \\ workspace()) do
     compose = if ws, do: File.read(Path.join(ws, "docker-compose.yml")), else: :none
-    text = with {:ok, text} <- compose, do: text, else: (_ -> "")
+
+    text =
+      case compose do
+        {:ok, text} -> text
+        _ -> ""
+      end
+
     lower = (Console.Config.values(config())["PROJECT_NAME"] || "app") |> String.downcase()
     # The app service's image, not the first image in the file (the pod's).
     app = text |> String.split("\n  app:\n", parts: 2) |> Enum.at(1, "")
@@ -58,7 +68,8 @@ defmodule Console.Workbench do
     }
   end
 
-  defp capture(text, regex), do: regex |> Regex.run(text, capture: :all_but_first) |> then(&(&1 && hd(&1)))
+  defp capture(text, regex),
+    do: regex |> Regex.run(text, capture: :all_but_first) |> then(&(&1 && hd(&1)))
 
   @doc """
   What `./wb.sh console` mounted this container for, against what
@@ -70,7 +81,11 @@ defmodule Console.Workbench do
   the console has to be started again to run them here.
   """
   def rebind do
-    mount = %{workspace: System.get_env("WORKSPACE_MOUNT_PATH"), project: System.get_env("WORKSPACE_MOUNT_PROJECT")}
+    mount = %{
+      workspace: System.get_env("WORKSPACE_MOUNT_PATH"),
+      project: System.get_env("WORKSPACE_MOUNT_PROJECT")
+    }
+
     ws = workspace()
 
     cond do

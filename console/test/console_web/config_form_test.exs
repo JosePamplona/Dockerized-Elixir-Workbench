@@ -27,17 +27,26 @@ defmodule ConsoleWeb.ConfigFormTest do
   end
 
   defp change(view, target, values) do
-    render_change(view, "cfg_change", %{"_target" => target, "cfg" => values, "stack" => stack_of(view)})
+    render_change(view, "cfg_change", %{
+      "_target" => target,
+      "cfg" => values,
+      "stack" => stack_of(view)
+    })
   end
 
   defp stack_of(view) do
-    case Regex.run(~r/<option[^>]*value="([^"]+)"[^>]*selected[^>]*>/, render(view) |> String.replace("\n", "")) do
+    case Regex.run(
+           ~r/<option[^>]*value="([^"]+)"[^>]*selected[^>]*>/,
+           render(view) |> String.replace("\n", "")
+         ) do
       [_, tag] -> tag
       _ -> ""
     end
   end
 
-  test "moving one of the three does not get overwritten by the stack that is still showing", %{view: view} do
+  test "moving one of the three does not get overwritten by the stack that is still showing", %{
+    view: view
+  } do
     html =
       change(view, ["cfg", "ERLANG_VERSION"], %{
         "ELIXIR_VERSION" => "1.19.2",
@@ -65,8 +74,14 @@ defmodule ConsoleWeb.ConfigFormTest do
     assert html =~ "no hexpm/elixir image with elixir 1.19.2 · erlang 28.1 · trixie-20260824-slim"
   end
 
-  test "a list that could not be read says so, and does not read as nobody having asked", %{view: view} do
-    send(Process.whereis(Console.Bench), {make_ref(), {:stacks, {:error, "Docker Hub did not answer."}}})
+  test "a list that could not be read says so, and does not read as nobody having asked", %{
+    view: view
+  } do
+    send(
+      Process.whereis(Console.Bench),
+      {make_ref(), {:stacks, {:error, "Docker Hub did not answer."}}}
+    )
+
     assert_receive {:bench, :error, :stacks, _}
 
     html = render(view)
@@ -90,12 +105,15 @@ defmodule ConsoleWeb.ConfigFormTest do
     render(view)
   end
 
-  test "the releases are grouped by the Elixir each one declares, newest requirement first", %{view: view} do
+  test "the releases are grouped by the Elixir each one declares, newest requirement first", %{
+    view: view
+  } do
     html = installers_arrive(view)
 
     # `~>` travels escaped, as everything the templates print does.
     assert ["needs elixir ~&gt; 1.17", "needs elixir ~&gt; 1.15", "needs elixir ~&gt; 1.14"] ==
-             Regex.scan(~r/<optgroup label="(needs elixir [^"]+)"/, html) |> Enum.map(&List.last/1)
+             Regex.scan(~r/<optgroup label="(needs elixir [^"]+)"/, html)
+             |> Enum.map(&List.last/1)
   end
 
   test "the empty value keeps an option of its own: it is a policy, not a blank", %{view: view} do
@@ -121,7 +139,12 @@ defmodule ConsoleWeb.ConfigFormTest do
   end
 
   test "picking a stack still sets the three at once", %{view: view} do
-    html = render_change(view, "cfg_change", %{"_target" => ["stack"], "cfg" => %{}, "stack" => "1.18.5-erlang-27.3.4.17-debian-trixie-20260824-slim"})
+    html =
+      render_change(view, "cfg_change", %{
+        "_target" => ["stack"],
+        "cfg" => %{},
+        "stack" => "1.18.5-erlang-27.3.4.17-debian-trixie-20260824-slim"
+      })
 
     assert html =~ ~s(value="1.18.5" selected)
     assert html =~ ~s(value="27.3.4.17" selected)

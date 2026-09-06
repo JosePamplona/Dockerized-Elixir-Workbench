@@ -42,3 +42,6 @@ console-*.tar
 npm-debug.log
 /assets/node_modules/
 
+
+# Dialyzer's PLT, built by mix dialyzer and cached by CI.
+/priv/plts/

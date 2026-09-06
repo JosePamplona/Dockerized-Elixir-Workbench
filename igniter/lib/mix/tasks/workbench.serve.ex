@@ -34,8 +34,12 @@ defmodule Mix.Tasks.Workbench.Serve do
 
   defp loop do
     case IO.gets("") do
-      :eof -> :ok
-      {:error, _} -> :ok
+      :eof ->
+        :ok
+
+      {:error, _} ->
+        :ok
+
       line ->
         line |> String.trim() |> answer()
         loop()
@@ -71,8 +75,12 @@ defmodule Mix.Tasks.Workbench.Serve do
 
   defp ask(%{"ask" => "expand", "name" => name} = req) do
     feature = Features.named(name) || raise("Unknown cartridge: #{name}")
-    if feature.pending?(), do: raise("The #{name} cartridge is pending: its installer is not done yet.")
-    for {member, argv} <- Mix.Tasks.Workbench.Expand.plan(feature, req["argv"] || []), do: %{name: member, argv: argv}
+
+    if feature.pending?(),
+      do: raise("The #{name} cartridge is pending: its installer is not done yet.")
+
+    for {member, argv} <- Mix.Tasks.Workbench.Expand.plan(feature, req["argv"] || []),
+        do: %{name: member, argv: argv}
   end
 
   defp ask(req), do: raise("not a question: #{inspect(req)}")

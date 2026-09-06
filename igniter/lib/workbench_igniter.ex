@@ -103,23 +103,8 @@ defmodule WorkbenchIgniter do
   already listed.
   """
   @spec gitignore_entry(Igniter.t(), String.t(), String.t()) :: Igniter.t()
-  def gitignore_entry(igniter, comment, pattern) do
-    entry = "# #{comment}\n#{pattern}\n"
-
-    if Igniter.exists?(igniter, ".gitignore") do
-      igniter
-      |> Igniter.include_existing_file(".gitignore")
-      |> Igniter.update_file(".gitignore", fn source ->
-        Rewrite.Source.update(source, :content, fn content ->
-          if String.contains?(content, pattern),
-            do: content,
-            else: String.trim_trailing(content, "\n") <> "\n\n" <> entry
-        end)
-      end)
-    else
-      Igniter.create_new_file(igniter, ".gitignore", entry)
-    end
-  end
+  def gitignore_entry(igniter, comment, pattern),
+    do: append_entry(igniter, ".gitignore", "# #{comment}\n#{pattern}\n", pattern)
 
   @doc """
   Appends an entry (comment + lines) to the project `.env` and
@@ -141,24 +126,30 @@ defmodule WorkbenchIgniter do
     [{".env", body}, {".env.sample", sample_body || body}]
     |> Enum.reduce(igniter, fn {path, body}, igniter ->
       entry = "# #{comment}\n" <> String.trim_trailing(body, "\n") <> "\n"
-      append_env_entry(igniter, path, entry, marker)
+      append_entry(igniter, path, entry, marker)
     end)
   end
 
-  defp append_env_entry(igniter, path, entry, marker) do
+  # The entry goes at the end of the file, once: a file that already
+  # carries the marker is left as it is, and a project without the file
+  # gets it with the entry alone.
+  defp append_entry(igniter, path, entry, marker) do
     if Igniter.exists?(igniter, path) do
       igniter
       |> Igniter.include_existing_file(path)
-      |> Igniter.update_file(path, fn source ->
-        Rewrite.Source.update(source, :content, fn content ->
-          if String.contains?(content, marker),
-            do: content,
-            else: String.trim_trailing(content, "\n") <> "\n\n" <> entry
-        end)
-      end)
+      |> Igniter.update_file(
+        path,
+        &Rewrite.Source.update(&1, :content, fn content -> appended(content, marker, entry) end)
+      )
     else
       Igniter.create_new_file(igniter, path, entry)
     end
+  end
+
+  defp appended(content, marker, entry) do
+    if String.contains?(content, marker),
+      do: content,
+      else: String.trim_trailing(content, "\n") <> "\n\n" <> entry
   end
 
   @doc """

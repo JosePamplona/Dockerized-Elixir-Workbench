@@ -7,7 +7,11 @@ defmodule WorkbenchIgniter.MixProject do
       version: "0.1.0",
       elixir: "~> 1.17",
       start_permanent: false,
-      deps: deps()
+      deps: deps(),
+      dialyzer: [
+        plt_file: {:no_warn, "priv/plts/dialyzer.plt"},
+        plt_add_apps: [:mix, :ex_unit]
+      ]
     ]
   end
 
@@ -24,7 +28,10 @@ defmodule WorkbenchIgniter.MixProject do
       {:req, "~> 0.5"},
       # Required by Igniter.Test.phx_test_project/1 to simulate
       # a Phoenix project in memory.
-      {:phx_new, "~> 1.8", only: :test}
+      {:phx_new, "~> 1.8", only: :test},
+      # Static checks, run by CI: style and consistency, then success typing.
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
     ]
   end
 end

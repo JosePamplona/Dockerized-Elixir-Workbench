@@ -8,7 +8,11 @@ defmodule Console.Project do
 
   alias Console.Papers
 
-  @papers [{"readme", "README", "README.md"}, {"changelog", "CHANGELOG", "CHANGELOG.md"}, {"env", ".env", ".env"}]
+  @papers [
+    {"readme", "README", "README.md"},
+    {"changelog", "CHANGELOG", "CHANGELOG.md"},
+    {"env", ".env", ".env"}
+  ]
 
   def papers, do: @papers
 
@@ -36,7 +40,9 @@ defmodule Console.Project do
 
   @doc "Which of the three the workspace has."
   def carried(nil), do: []
-  def carried(workspace), do: for({key, _, file} <- @papers, File.regular?(Path.join(workspace, file)), do: key)
+
+  def carried(workspace),
+    do: for({key, _, file} <- @papers, File.regular?(Path.join(workspace, file)), do: key)
 
   @doc "A paper rendered: the booklet for the two in Markdown, the masked lines for .env."
   def render(nil, _key), do: nil
@@ -69,17 +75,27 @@ defmodule Console.Project do
   def mask(text) do
     text
     |> String.split("\n")
-    |> Enum.map_join("\n", fn line ->
-      case Regex.run(~r/^(\s*)([A-Za-z][A-Za-z0-9_]*)(=|: )(.*)$/, line) do
-        [_, indent, key, sep, value] ->
-          cond do
-            Regex.match?(~r/SECRET|TOKEN|PASSWORD|KEY/i, key) -> indent <> key <> sep <> "••••••••"
-            String.contains?(value, "://") -> indent <> key <> sep <> Regex.replace(~r/:\/\/([^:@\/]+):[^@\/]+@/, value, "://\\1:••••@")
-            true -> line
-          end
+    |> Enum.map_join("\n", &mask_line/1)
+  end
 
-        _ -> line
-      end
-    end)
+  # One line: the value of a secret key goes, a password inside a URL goes.
+  defp mask_line(line) do
+    case Regex.run(~r/^(\s*)([A-Za-z][A-Za-z0-9_]*)(=|: )(.*)$/, line) do
+      [_, indent, key, sep, value] ->
+        cond do
+          Regex.match?(~r/SECRET|TOKEN|PASSWORD|KEY/i, key) ->
+            indent <> key <> sep <> "••••••••"
+
+          String.contains?(value, "://") ->
+            indent <>
+              key <> sep <> Regex.replace(~r/:\/\/([^:@\/]+):[^@\/]+@/, value, "://\\1:••••@")
+
+          true ->
+            line
+        end
+
+      _ ->
+        line
+    end
   end
 end

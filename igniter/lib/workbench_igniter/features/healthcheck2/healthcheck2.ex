@@ -47,7 +47,8 @@ defmodule WorkbenchIgniter.Features.Healthcheck2 do
   @impl true
   def option_docs do
     [
-      path: "Prefix of the two probe routes. Defaults to `/health` (`/health/live` and `/health/ready`)."
+      path:
+        "Prefix of the two probe routes. Defaults to `/health` (`/health/live` and `/health/ready`)."
     ]
   end
 

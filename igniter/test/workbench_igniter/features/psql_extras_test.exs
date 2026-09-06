@@ -7,7 +7,7 @@ defmodule WorkbenchIgniter.Features.PsqlExtrasTest do
 
   describe "mix workbench.install.psql_extras" do
     test "adds the dependency to mix.exs" do
-      test_project()
+      phx_test_project()
       |> Igniter.compose_task("workbench.install.psql_extras", [])
       |> assert_has_patch("mix.exs", """
       + | {:ecto_psql_extras, "~> 0.8", only: :dev}
@@ -15,7 +15,7 @@ defmodule WorkbenchIgniter.Features.PsqlExtrasTest do
     end
 
     test "is a no-op when the dependency is already present" do
-      test_project()
+      phx_test_project()
       |> Igniter.compose_task("workbench.install.psql_extras", [])
       |> apply_igniter!()
       |> Igniter.compose_task("workbench.install.psql_extras", [])

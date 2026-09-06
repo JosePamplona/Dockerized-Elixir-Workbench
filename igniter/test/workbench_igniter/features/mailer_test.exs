@@ -19,7 +19,9 @@ defmodule WorkbenchIgniter.Features.MailerTest do
     igniter = no_mailer_project() |> Igniter.compose_task("workbench.install.mailer", [])
 
     igniter
-    |> assert_creates("lib/test/mailer.ex", fn content -> assert content =~ "defmodule Test.Mailer do" end)
+    |> assert_creates("lib/test/mailer.ex", fn content ->
+      assert content =~ "defmodule Test.Mailer do"
+    end)
     |> assert_has_patch("mix.exs", """
     + | {:swoosh, "~> 1
     """)
@@ -33,7 +35,9 @@ defmodule WorkbenchIgniter.Features.MailerTest do
   test "keeps the project's own edits to a file it changes" do
     igniter =
       no_mailer_project()
-      |> Igniter.Project.MixProject.update(:project, [:version], fn _ -> {:ok, {:code, ~s("0.2.0")}} end)
+      |> Igniter.Project.MixProject.update(:project, [:version], fn _ ->
+        {:ok, {:code, ~s("0.2.0")}}
+      end)
       |> apply_igniter!()
       |> Igniter.compose_task("workbench.install.mailer", [])
       |> apply_igniter!()
@@ -50,7 +54,15 @@ defmodule WorkbenchIgniter.Features.MailerTest do
     igniter =
       no_mailer_project()
       |> Igniter.update_file("mix.exs", fn source ->
-        Rewrite.Source.update(source, :content, &String.replace(&1, ~r/defp deps do.*?\n  end/s, "defp deps do\n    [{:jason, \"~> 1.2\"}]\n  end"))
+        Rewrite.Source.update(
+          source,
+          :content,
+          &String.replace(
+            &1,
+            ~r/defp deps do.*?\n  end/s,
+            "defp deps do\n    [{:jason, \"~> 1.2\"}]\n  end"
+          )
+        )
       end)
       |> apply_igniter!()
       |> Igniter.compose_task("workbench.install.mailer", [])
@@ -63,7 +75,9 @@ defmodule WorkbenchIgniter.Features.MailerTest do
     # phx.new names lib/ and test/ after the app (lorem_ipsum_9), not
     # the module (lorem_ipsum9); Igniter would move the new module.
     igniter =
-      WorkbenchIgniter.TestProject.new(~w(--app lorem_ipsum_9 --module LoremIpsum9 --database postgres --adapter bandit --no-mailer))
+      WorkbenchIgniter.TestProject.new(
+        ~w(--app lorem_ipsum_9 --module LoremIpsum9 --database postgres --adapter bandit --no-mailer)
+      )
       |> Igniter.compose_task("workbench.install.mailer", [])
       |> apply_igniter!()
 

@@ -123,8 +123,10 @@ defmodule WorkbenchIgniter.Features.Ash do
   # quoted verbatim, keyed by the package or strategy the site's
   # feature stands for. What the site does not describe has no line.
   @tooltips %{
-    "ash_postgres" => "The swiss army knife of databases. Versatile, powerful, and battle-tested.",
-    "ash_sqlite" => "Small, fast, and reliable. Perfect for lightweight apps or getting started quickly.",
+    "ash_postgres" =>
+      "The swiss army knife of databases. Versatile, powerful, and battle-tested.",
+    "ash_sqlite" =>
+      "Small, fast, and reliable. Perfect for lightweight apps or getting started quickly.",
     "ash_csv" => "Back resources with CSV files.",
     "ash_json_api" => "Easily create a spec-compliant JSON:API, directly from your resources.",
     "ash_graphql" => "Create a powerful and flexible GraphQL API directly from your resources.",
@@ -141,11 +143,13 @@ defmodule WorkbenchIgniter.Features.Ash do
     "ash_double_entry" => "Moving money around? Need to track financial data?",
     "ash_oban" =>
       "Oban is a background job system backed by your own SQL database packed with enterprise grade features, real-time monitoring with Oban Web, and complex workflow management with Oban Pro.",
-    "ash_state_machine" => "Model complex workflows backed by your resource's persistence and actions.",
+    "ash_state_machine" =>
+      "Model complex workflows backed by your resource's persistence and actions.",
     "ash_events" =>
       "Tracks and persists events when actions are performed on your resources, providing a complete audit trail and event replay.",
     "ash_archival" => "A lightweight extension to ensure that data is only ever soft deleted.",
-    "ash_paper_trail" => "Automatically track all changes to your resources. Track who did what and when.",
+    "ash_paper_trail" =>
+      "Automatically track all changes to your resources. Track who did what and when.",
     "ash_cloak" => "Easily encrypt and decrypt your attributes.",
     "live_debugger" => "A tool for debugging LiveView applications in development.",
     "ash_admin" => "A zero-config-necessary super admin UI.",
@@ -213,10 +217,14 @@ defmodule WorkbenchIgniter.Features.Ash do
   @impl true
   def option_docs do
     [
-      data_layer: "Comma-separated, as the site's checkboxes — a resource picks its own: `postgres` (default), `sqlite`, `csv` (`ash_postgres`, `ash_sqlite`, `ash_csv`); `none`, alone, for no data layer.",
-      api: "Comma-separated: `json_api`, `graphql`, `typescript` (`ash_json_api`, `ash_graphql`, `ash_typescript`).",
-      auth: "Comma-separated authentication strategies: `ash_authentication` and `ash_authentication_phoenix`, handed `--auth-strategy`. One of `password`, `magic_link`, `api_key`, `otp`, `totp`, `github`, `google`, `auth0`, `oauth2`, `oidc`, … (the list is the installer's).",
-      with: "Comma-separated further packages, as the site's *Advanced Options*: #{advanced() |> Keyword.values() |> List.flatten() |> Enum.join(", ")}. Any package with an Igniter installer works.",
+      data_layer:
+        "Comma-separated, as the site's checkboxes — a resource picks its own: `postgres` (default), `sqlite`, `csv` (`ash_postgres`, `ash_sqlite`, `ash_csv`); `none`, alone, for no data layer.",
+      api:
+        "Comma-separated: `json_api`, `graphql`, `typescript` (`ash_json_api`, `ash_graphql`, `ash_typescript`).",
+      auth:
+        "Comma-separated authentication strategies: `ash_authentication` and `ash_authentication_phoenix`, handed `--auth-strategy`. One of `password`, `magic_link`, `api_key`, `otp`, `totp`, `github`, `google`, `auth0`, `oauth2`, `oidc`, … (the list is the installer's).",
+      with:
+        "Comma-separated further packages, as the site's *Advanced Options*: #{advanced() |> Keyword.values() |> List.flatten() |> Enum.join(", ")}. Any package with an Igniter installer works.",
       example: "Passed to `ash.install`: generates the example resources of the Ash guide."
     ]
   end
@@ -257,13 +265,7 @@ defmodule WorkbenchIgniter.Features.Ash do
     has = &Igniter.Project.Deps.has_dep?(igniter, String.to_atom(&1))
     ash? = has.("ash")
 
-    data_layer =
-      if ash? do
-        case for({name, pkg} <- @data_layers, pkg, has.(pkg), do: name) do
-          [] -> ["none"]
-          layers -> layers
-        end
-      end
+    data_layer = if ash?, do: layers_in(has)
 
     state =
       %{
@@ -276,6 +278,14 @@ defmodule WorkbenchIgniter.Features.Ash do
       |> Map.new()
 
     {state, igniter}
+  end
+
+  # The layers whose package is in; Ash in without any of them is "none".
+  defp layers_in(has) do
+    case for({name, pkg} <- @data_layers, pkg, has.(pkg), do: name) do
+      [] -> ["none"]
+      layers -> layers
+    end
   end
 
   @doc "Installer body, run by the mix task shell as its `igniter/1`."
@@ -315,7 +325,8 @@ defmodule WorkbenchIgniter.Features.Ash do
   @spec packages(keyword()) :: {:ok, [String.t()]} | {:error, String.t()}
   def packages(opts) do
     # A :csv switch not given parses as [], not nil: the default is ours.
-    chosen = if(opts[:data_layer] in [nil, []], do: ["postgres"], else: List.wrap(opts[:data_layer]))
+    chosen =
+      if(opts[:data_layer] in [nil, []], do: ["postgres"], else: List.wrap(opts[:data_layer]))
 
     with {:ok, data_layers} <- data_layers(chosen),
          {:ok, apis} <- apis(opts[:api] || []) do

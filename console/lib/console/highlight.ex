@@ -26,6 +26,8 @@ defmodule Console.Highlight do
   then, and nothing above has to change to let it in.
   """
 
+  alias Makeup.Token.Utils
+
   # Whole names win over extensions: `.lock` says nothing anywhere else,
   # and mix.lock is an Elixir map literal, so it is read by the lexer its
   # contents ask for rather than by its extension. Its lines run past a
@@ -120,8 +122,11 @@ defmodule Console.Highlight do
           _, _ -> {:plain, plain_lines(source)}
         end
 
-      :plain -> {:plain, plain_lines(source)}
-      other -> other
+      :plain ->
+        {:plain, plain_lines(source)}
+
+      other ->
+        other
     end
   end
 
@@ -130,10 +135,12 @@ defmodule Console.Highlight do
   defp token_lines(tokens) do
     {lines, current} =
       Enum.reduce(tokens, {[], []}, fn {type, _meta, value}, {lines, current} ->
-        class = Makeup.Token.Utils.css_class_for_token_type(type)
+        class = Utils.css_class_for_token_type(type)
 
         case value |> IO.chardata_to_string() |> String.split("\n") do
-          [only] -> {lines, [span(class, only) | current]}
+          [only] ->
+            {lines, [span(class, only) | current]}
+
           [first | rest] ->
             {last, middle} = List.pop_at(rest, -1)
             done = [[span(class, first) | current] | Enum.map(middle, &[span(class, &1)])]
@@ -141,7 +148,9 @@ defmodule Console.Highlight do
         end
       end)
 
-    [current | lines] |> Enum.reverse() |> Enum.map(&(&1 |> Enum.reverse() |> IO.iodata_to_binary()))
+    [current | lines]
+    |> Enum.reverse()
+    |> Enum.map(&(&1 |> Enum.reverse() |> IO.iodata_to_binary()))
   end
 
   defp span(_class, ""), do: ""

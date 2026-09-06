@@ -105,7 +105,9 @@ defmodule WorkbenchIgniter.Features.AshTest do
     end
 
     test "--data-layer takes several, in the site's order; none stands alone" do
-      assert queued(install(~w(--data-layer csv,postgres))) == ~w(ash ash_postgres ash_csv ash_phoenix)
+      assert queued(install(~w(--data-layer csv,postgres))) ==
+               ~w(ash ash_postgres ash_csv ash_phoenix)
+
       assert Enum.any?(install(~w(--data-layer postgres,none)).issues, &(&1 =~ "stands alone"))
     end
 

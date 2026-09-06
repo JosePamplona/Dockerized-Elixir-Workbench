@@ -38,6 +38,8 @@ defmodule Console.GitTest do
 
   test "the message file: a title alone, or a title and a body" do
     assert File.read!(Git.message_file(" Add health ", nil)) == "Add health\n"
-    assert File.read!(Git.message_file("Add health", " Because probes.\nTwo lines. ")) == "Add health\n\nBecause probes.\nTwo lines.\n"
+
+    assert File.read!(Git.message_file("Add health", " Because probes.\nTwo lines. ")) ==
+             "Add health\n\nBecause probes.\nTwo lines.\n"
   end
 end

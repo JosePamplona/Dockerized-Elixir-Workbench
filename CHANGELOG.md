@@ -14,6 +14,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+## v0.11.0 - (2026-09-06)
+
 ### Added
 
 - **The production deployment migrates before it boots.** `up --deploy
@@ -27,6 +29,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   app's `depends_on` over to it. It is the release phase every
   platform has under its own name, and now both release deployments
   say so the same way. `logs`, `stop` and the help know the service.
+
 - The postgres service of the dev/prod seed declares `POSTGRES_DB:
   APP_prod`: the image creates it when it initialises the data
   directory, which is the only moment it honours the variable. A
@@ -48,6 +51,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   workspace and the house's undo is `eject`. What it says that nobody
   did: a dirty tree stops `add` and `eject`, so the commit is what lets
   the next cartridge in. The rail's button now leads here.
+
 - **The console listens to Docker.** `Console.Events` keeps one
   `docker events` open for as long as the console is, parses what
   arrives, drops the healthchecks' `exec_*` at the source, keeps the
@@ -60,6 +64,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   a reading: the daemon holds only its last 256 events, and two
   healthchecks every 10 s fill that in seven minutes — measured on
   2026-09-05, `--since 2h` answered exactly 256 lines, all probes.
+
 - **A Docker screen.** What Docker Desktop showed and the rail could
   not: six documents under the Project screen's row of tabs, settled
   in `console/docker-en-la-consola.html` (2026-09-05). *Containers*,
@@ -83,6 +88,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   columns do not dance: `.num` joined the design system with its rule
   (one unit per column, fixed decimals, a reserved width), the stream
   is normalised as it is read, and the README says why.
+
 - **`wb.sh restart` and `wb.sh prune`.** The console's one act on a
   single container is Restart — `docker compose restart SERVICE`, the
   deployment left whole; Stop and Start of one are absent, not unlit,
@@ -129,6 +135,124 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   shared, because it is the same job. The pane `.log` stays for the
   cluster's probes, which are not jobs.
 
+### Updated
+
+- **One Project card on the Deploy tab.** "New project" is "Project",
+  and "Delete the project" sits in its foot beside "Create project":
+  what the one makes, the other takes away, and the card's chip — *the
+  workspace is empty*, or the red *a project exists here* — already
+  said which of the two applies. The button had a box of its own under
+  "Workspace", the red-edged half of what was once "Database and
+  workspace"; with the database errand gone (Removed, above), a heading
+  over one button named only what its confirmation already says. The
+  board's and the shelf's pointers say "Deploy → Project creates one".
+
+- **The row of documents is one component, and the second row looks
+  second.** Six rows of the console said which document of a screen or
+  a drawer was being read, each written again with a small difference
+  and each setting its own air, ground and margin. `ConsoleWeb.Ribbon`
+  draws all six now, with the unlit tab `aria-disabled` in one place.
+  And the docked ones — under a screen's tabs, under a drawer's — were
+  the first row's grammar ten per cent smaller, which told the reader
+  nothing about rank: they are a band of the house's second surface
+  now, lower, with the document being read cut into the ground of the
+  pane it opens, and the gold rule stays on the row that leads. Settled
+  in `console/la-segunda-fila.html`.
+
+- **No container of a deployment comes back on its own after a
+  reboot.** The pod and the database carried `restart: unless-stopped`
+  (the dev and the scaled compose) and the app and pgadmin did not, so
+  a reboot of the host brought half a deployment back and the status
+  could only say "no deployment is up and these are still here". The
+  rule is that a deployment goes up and down whole, across a reboot
+  too: no `restart:` anywhere, a reboot leaves everything exited, the
+  status says down, Up raises it whole. What it gives up — a database
+  that crashes is not restarted alone — the events feed says, and
+  Restart is a click.
+
+- **The scrollbar sits on the edge of the box that scrolls.** The
+  console drew it in four places at once: on the panel's edge for the
+  document tabs and the drawer's Files and faces, 28px in on Project,
+  Git, Docker and the shelf, 32px in on the papers of a box and of the
+  workbench, and halfway across the modal on Config and Interface,
+  whose panes were also clamped to 860px. All the same cause — when a
+  row was docked above a scroller the scroller went down a level, and
+  the padding stayed on the wrapper around it. The bottom had the same
+  fault: the filled panel kept 22px of ground under the scroller, so
+  the last row of boxes was cut a strip above the band and the bar
+  stopped short of it while the rail's ran to the edge. The air is now
+  on the scroller (or on the row and the content beside it), the
+  measure on the form's blocks, and every pane that can scroll says
+  `scrollbar-gutter:stable`. Written as a rule of the house, in the
+  scrollbar note of components.css and in assets/design/README.md.
+
+- **The box is turned by hand.** A click on the box in the drawer's
+  Box screen turns it over, and Enter or Space with it focused; the
+  button that stood under it is gone. The cursor had promised a viewer
+  since the mock, and the console never wired one: the lozenge a figure
+  shows on hover now sits in the box's corner and opens the viewer on
+  the side that shows, without turning the box.
+
+- **Every paper with a section has its index.** The column of h2s
+  beside a paper wanted three of them; with fewer the paper was read
+  full-width, and a changelog — whose h2s are its versions — has one or
+  two for most of its life, so it took a different shape from the
+  README beside it. The index is there whenever there is an h2, and the
+  rule lives once, in `Console.Papers.booklet/3`, where the three
+  renderers (a cartridge's papers, the workbench's, the project's) had
+  each carried a copy of the number.
+
+- **`wb.sh` inside the console stops starting containers it is already
+  in.** The console runs on the toolchain image, and `wb.sh` run in it
+  went on starting a sibling container on that same image for every
+  `mix` and `git` — about 4N container starts for an `add` of N
+  cartridges. `./wb.sh console` now mounts the workspace at `/app/src`
+  with the app's build volumes over it, as the app service has them,
+  and says so (`WORKSPACE_MOUNT`); the four runners that need nothing
+  but the toolchain (`workspace_igniter`, `workspace_git`, and
+  `entrypoint_run` for `new`, `add` and `expand`) then run in this
+  process, and in a container as before from a host. One command, one
+  place that decides where; the verbs know nothing of it. The resident
+  works from `/app/src` too, so it adds to the app's build instead of
+  compiling the project a second time from the host path (Mix keys its
+  manifests on the source path). What stays in a container: `setup`
+  and the cold `mix` (the database is in the pod), builds and compose
+  (the daemon), and the package's own tasks (they would compile
+  through the workbench's bind mount). The mapping is in
+  console/PLAN.md, *The console is the toolchain*. The resident makes
+  the same check as `wb.sh` — the mount is the workspace config.conf
+  names now, and the project's — and, failing it, runs as one container
+  on the workspace's dev image with its volumes, as on a host; and a
+  resident of a workspace config.conf no longer names is dropped for
+  one on the workspace named. Before, a console started for one
+  workspace and pointed at another reported the first workspace's
+  cartridges on the second, and went on reporting them.
+
+- **The console says which workspace it was started for, and starts
+  again for another.** Its container mounts one workspace and that
+  project's volumes, and cannot mount another: config.conf named
+  another since, the board's workspace section says so and offers
+  *Start again* — `console` run as a job. From inside, `wb.sh console`
+  starts a helper container on the console's image that runs it from
+  outside a moment later, since the console cannot remove the container
+  it runs in without ending the job that asked. `wb.sh console` keeps
+  the port of the console it replaces, so the address survives and the
+  page reconnects on its own. And `wb.sh console` asks for the
+  toolchain image only when it has to build the console's: built once,
+  the console comes up on an empty workspace too, where `new` is the
+  first act and the toolchain of a project not yet born has no tag.
+
+- **Colour without a terminal, in jobs and in sessions.** A `Port` is a
+  pipe, and on a pipe mix, hex, git and compose turn their colours off
+  on their own while the console's page turns ANSI into spans. `wb.sh`
+  takes `WB_ANSI=always` — Elixir by `ELIXIR_ERL_OPTIONS`, git by the
+  config it reads from the environment, compose by `COMPOSE_ANSI` —
+  and the console sets it on every job; the Terminal tab passes the
+  same variables to its `docker exec` and `docker run`, so iex, mix
+  and git colour their output there too. From a terminal, or unset,
+  nothing changes. BuildKit stays plain: it colours only a real tty,
+  and that road — a pseudo-terminal for jobs — is left for later.
+
 ### Removed
 
 - **The `setup` command, and the Database zone of the console's Deploy
@@ -166,6 +290,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   never honoured, `APP_prod` did not exist and `migrate` exited 1. With
   the dev seed now declaring the same `POSTGRES_DB`, the database is
   created by whichever deployment initialises the volume first.
+
 - Both seeds' postgres healthcheck asks over TCP (`pg_isready -h
   localhost`). Without `-h` it asked the unix socket, which the image's
   init answers on its temporary server: a fresh volume said healthy
@@ -181,6 +306,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `new` into `resolve_installer` and `build_toolchain`, shared by both,
   so the toolchain the console builds is the one the project to come
   would have built, and `new` then finds it and builds nothing twice.
+
 - **The dev app died by SIGKILL on every `down`.** The image's CMD was
   `sh -c "cd /app/src && mix setup && mix phx.server"`: the shell stayed
   PID 1 and forwarded nothing, so every stop waited compose's 10 s of
@@ -199,71 +325,6 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   restart from the Docker screen: `kill 15`, ten seconds, `kill 9`,
   `die exit 137`. The same word there.
 
-### Updated
-
-- **One Project card on the Deploy tab.** "New project" is "Project",
-  and "Delete the project" sits in its foot beside "Create project":
-  what the one makes, the other takes away, and the card's chip — *the
-  workspace is empty*, or the red *a project exists here* — already
-  said which of the two applies. The button had a box of its own under
-  "Workspace", the red-edged half of what was once "Database and
-  workspace"; with the database errand gone (Removed, above), a heading
-  over one button named only what its confirmation already says. The
-  board's and the shelf's pointers say "Deploy → Project creates one".
-
-- **The row of documents is one component, and the second row looks
-  second.** Six rows of the console said which document of a screen or
-  a drawer was being read, each written again with a small difference
-  and each setting its own air, ground and margin. `ConsoleWeb.Ribbon`
-  draws all six now, with the unlit tab `aria-disabled` in one place.
-  And the docked ones — under a screen's tabs, under a drawer's — were
-  the first row's grammar ten per cent smaller, which told the reader
-  nothing about rank: they are a band of the house's second surface
-  now, lower, with the document being read cut into the ground of the
-  pane it opens, and the gold rule stays on the row that leads. Settled
-  in `console/la-segunda-fila.html`.
-- **No container of a deployment comes back on its own after a
-  reboot.** The pod and the database carried `restart: unless-stopped`
-  (the dev and the scaled compose) and the app and pgadmin did not, so
-  a reboot of the host brought half a deployment back and the status
-  could only say "no deployment is up and these are still here". The
-  rule is that a deployment goes up and down whole, across a reboot
-  too: no `restart:` anywhere, a reboot leaves everything exited, the
-  status says down, Up raises it whole. What it gives up — a database
-  that crashes is not restarted alone — the events feed says, and
-  Restart is a click.
-- **The scrollbar sits on the edge of the box that scrolls.** The
-  console drew it in four places at once: on the panel's edge for the
-  document tabs and the drawer's Files and faces, 28px in on Project,
-  Git, Docker and the shelf, 32px in on the papers of a box and of the
-  workbench, and halfway across the modal on Config and Interface,
-  whose panes were also clamped to 860px. All the same cause — when a
-  row was docked above a scroller the scroller went down a level, and
-  the padding stayed on the wrapper around it. The bottom had the same
-  fault: the filled panel kept 22px of ground under the scroller, so
-  the last row of boxes was cut a strip above the band and the bar
-  stopped short of it while the rail's ran to the edge. The air is now
-  on the scroller (or on the row and the content beside it), the
-  measure on the form's blocks, and every pane that can scroll says
-  `scrollbar-gutter:stable`. Written as a rule of the house, in the
-  scrollbar note of components.css and in assets/design/README.md.
-- **The box is turned by hand.** A click on the box in the drawer's
-  Box screen turns it over, and Enter or Space with it focused; the
-  button that stood under it is gone. The cursor had promised a viewer
-  since the mock, and the console never wired one: the lozenge a figure
-  shows on hover now sits in the box's corner and opens the viewer on
-  the side that shows, without turning the box.
-- **Every paper with a section has its index.** The column of h2s
-  beside a paper wanted three of them; with fewer the paper was read
-  full-width, and a changelog — whose h2s are its versions — has one or
-  two for most of its life, so it took a different shape from the
-  README beside it. The index is there whenever there is an h2, and the
-  rule lives once, in `Console.Papers.booklet/3`, where the three
-  renderers (a cartridge's papers, the workbench's, the project's) had
-  each carried a copy of the number.
-
-### Fixed
-
 - **The Cluster screen's "Who answers?" said "no answer" to a balancer
   that did.** The console reaches the app's port by the name it has for
   the host, `host.docker.internal`, and a prod endpoint's `force_ssl`
@@ -272,6 +333,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   The probe now asks as the browser asks — the same port, the request
   naming `localhost` — and gets what the reader gets: `HTTP 200 ·
   X-Served-By: 172.26.0.5:4000`, a replica per request.
+
 - **The console went deaf during a `new`.** Every line a job wrote put
   the whole job — all of its lines — on the PubSub topic, and every
   page rendered every line of every job again: quadratic, and two
@@ -282,6 +344,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   on the Jobs screen and in the box's drawer alike, and asks for the
   backlog when it mounts. The assigns never carry a line again — the
   rule the Logs screen already followed.
+
 - **The Logs screen mistook the `ansi` cartridge's colours for text.**
   With the cartridge in, the app's lines arrive with escapes, and
   `--no-color` only undresses compose's prefixes: the screen showed
@@ -291,12 +354,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   line a `text` without escapes, for the level, the filter and the
   search, and an `html` with them as spans; a line that was nothing
   but a closing reset is no line.
+
 - **A terminal session opened before the status arrived went to
   docker with an empty mount.** The tab is judged unlit only once the
   status is here, so before it the button was live, the targets were a
   guess and the source's path was nil: `-v :/app/src`, exit 125. The
   button stays dark with the reason until the status is read, and the
   server ignores the event meanwhile.
+
 - **`up --deploy prod` died on `env file …/build:/app/src/_build not
   found`.** The bake stripped the app's `volumes:` block by deleting
   two lines, the key and the source mount, from a block that now has
@@ -304,6 +369,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   where compose read them as files. The block goes whole, up to
   `depends_on:`, and the top-level `volumes:` with it — a release has
   no `_build` and no `deps` to keep.
+
 - **A new project would not build its assets.** The first `up` of a
   freshly created workspace ended in `Error: Can't resolve
   'daisyui/packages/bundle/daisyui'`, and heroicons right behind it.
@@ -327,90 +393,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   variables, for its own build: its source is mounted at the
   workbench's host path, which no image can know, so there is no
   directory in its image for a fresh volume to take ownership from.
-- Two readers of the igniter at once fought over one container name
-  and the second answered nothing; the name carries the pid now.
-- **An insert that fails no longer leaves the workspace half-written.**
-  `add` runs each cartridge in its own container and commits it when it
-  lands; an installer that wrote its files and *then* failed — Hex
-  refusing to solve a version, most plainly — left those files behind
-  uncommitted, and that alone stopped everything after it, since `add`
-  and `eject` both need a clean tree. The workbench was stuck until
-  somebody cleaned up by hand. It now undoes exactly that insert's work
-  and says where the workspace stands. It asks nothing because nothing
-  of the reader's is at stake: `add` begins on a clean tree
-  (`require_clean_workspace`, which counts untracked files too) and
-  commits each insert as it lands, so whatever is uncommitted at that
-  point was written moments earlier by the insert that just failed.
-  Ignored paths are left alone — `deps/` and `_build/` are the
-  container's work, not the cartridge's. The insert failing and the
-  commit failing are now told apart, and end differently: a failed
-  insert wrote half of something nobody asked for and goes; a failed
-  commit leaves a cartridge that did land, for the reader to commit by
-  hand.
 
-### Updated
-
-- **`wb.sh` inside the console stops starting containers it is already
-  in.** The console runs on the toolchain image, and `wb.sh` run in it
-  went on starting a sibling container on that same image for every
-  `mix` and `git` — about 4N container starts for an `add` of N
-  cartridges. `./wb.sh console` now mounts the workspace at `/app/src`
-  with the app's build volumes over it, as the app service has them,
-  and says so (`WORKSPACE_MOUNT`); the four runners that need nothing
-  but the toolchain (`workspace_igniter`, `workspace_git`, and
-  `entrypoint_run` for `new`, `add` and `expand`) then run in this
-  process, and in a container as before from a host. One command, one
-  place that decides where; the verbs know nothing of it. The resident
-  works from `/app/src` too, so it adds to the app's build instead of
-  compiling the project a second time from the host path (Mix keys its
-  manifests on the source path). What stays in a container: `setup`
-  and the cold `mix` (the database is in the pod), builds and compose
-  (the daemon), and the package's own tasks (they would compile
-  through the workbench's bind mount). The mapping is in
-  console/PLAN.md, *The console is the toolchain*. The resident makes
-  the same check as `wb.sh` — the mount is the workspace config.conf
-  names now, and the project's — and, failing it, runs as one container
-  on the workspace's dev image with its volumes, as on a host; and a
-  resident of a workspace config.conf no longer names is dropped for
-  one on the workspace named. Before, a console started for one
-  workspace and pointed at another reported the first workspace's
-  cartridges on the second, and went on reporting them.
-- **The console says which workspace it was started for, and starts
-  again for another.** Its container mounts one workspace and that
-  project's volumes, and cannot mount another: config.conf named
-  another since, the board's workspace section says so and offers
-  *Start again* — `console` run as a job. From inside, `wb.sh console`
-  starts a helper container on the console's image that runs it from
-  outside a moment later, since the console cannot remove the container
-  it runs in without ending the job that asked. `wb.sh console` keeps
-  the port of the console it replaces, so the address survives and the
-  page reconnects on its own. And `wb.sh console` asks for the
-  toolchain image only when it has to build the console's: built once,
-  the console comes up on an empty workspace too, where `new` is the
-  first act and the toolchain of a project not yet born has no tag.
-- **Colour without a terminal, in jobs and in sessions.** A `Port` is a
-  pipe, and on a pipe mix, hex, git and compose turn their colours off
-  on their own while the console's page turns ANSI into spans. `wb.sh`
-  takes `WB_ANSI=always` — Elixir by `ELIXIR_ERL_OPTIONS`, git by the
-  config it reads from the environment, compose by `COMPOSE_ANSI` —
-  and the console sets it on every job; the Terminal tab passes the
-  same variables to its `docker exec` and `docker run`, so iex, mix
-  and git colour their output there too. From a terminal, or unset,
-  nothing changes. BuildKit stays plain: it colours only a real tty,
-  and that road — a pseudo-terminal for jobs — is left for later.
-- **Nothing compiles through the bind mount any more.** The toolchain
-  image points Mix at `/app/build` and `/app/deps`, two named volumes
-  the workspace's compose declares and every one-off run shares —
-  compiling through a bind mount is the load Docker Desktop's file
-  sharing bears worst, and its VM fell under it. `bake` bakes
-  `Dockerfile.local` again when the seed moved, keeping the project's
-  own Phoenix installer, and rebuilds the image, so an existing
-  workspace moves over with `bake && up`. On Linux the native Docker
-  Engine is the one to use; `./wb.sh engine native` picks it.
-- One stylesheet for the mock and the console
-  (`console/priv/static/assets/css/console.css`), inlined into the
-  one and served by the other, and the house's tokens projected into
-  both by `assets/design/build.py`.
+## v0.10.0 - (2026-09-02)
 
 ### Added
 
@@ -426,6 +410,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   live in the URL. What the console knows is held once for every page
   (`Console.Bench`): a page mounting starts no container. The plan and
   the architecture are in `console/PLAN.md`.
+
 - **What `wb.sh` owes the console.** `status --json` answers on an
   empty workspace, says which deployment is up, carries each
   container's address and each insert's argv, and `--fast` leaves out
@@ -434,9 +419,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `add` on its own; `config set KEY=VALUE` is the one writer of
   `config.conf` besides `stacks use`; `engine` picks which Docker the
   script talks to. The catalog's `need` carries its four parts.
+
 - **`mix workbench.serve`**, the resident: one BEAM with the project
   loaded, answering `status` and `expand` on stdin for as long as the
   console runs, instead of a Mix boot in a fresh container per question.
+
 - **A `specdd` cartridge, designed and pending.** SpecDD — spec-driven
   development with `.sdd` files beside the code — on a stock `phx.new`
   project: what `specdd init` writes (the bootstrap chain, the pointer
@@ -484,6 +471,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   with nothing to revert costs no container, and a project that cannot
   be asked at all leaves the question unjudged rather than refusing —
   a check that cannot run is not a verdict.
+
 - The console's **Eject** carries the same guard, and a collection grows
   an **Eject N** of its own. A collection leaves no commit under its own
   name, so its button walks its members' commits *newest first* — the
@@ -509,6 +497,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   for each other: `new` reads the setting, every other command reads the
   stamp, and a workspace's toolchain tag is unaffected by a file that
   has since moved on to name the next project.
+
 - **A named installer hex does not have is refused before anything is
   built.** `--phx-new 1.8.31` or a typo in `PHX_NEW_VERSION` used to have
   no requirement to weigh — `phx_new_elixir_requirement` comes back empty
@@ -520,6 +509,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   ways out. Only a 404 refuses: an unreachable hex judges nothing, as
   everywhere else here. A resolved version never needs this — it came
   out of hex's own list.
+
 - **An unset installer now resolves to the newest `phx_new` the stack
   can run**, not to hex's newest full stop. `new` walks hex's releases
   newest first and takes the first whose declared Elixir this stack
@@ -538,6 +528,51 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   against the stack. Twenty-five releases back it gives up and names the
   two remedies.
 
+### Updated
+
+- **Nothing compiles through the bind mount any more.** The toolchain
+  image points Mix at `/app/build` and `/app/deps`, two named volumes
+  the workspace's compose declares and every one-off run shares —
+  compiling through a bind mount is the load Docker Desktop's file
+  sharing bears worst, and its VM fell under it. `bake` bakes
+  `Dockerfile.local` again when the seed moved, keeping the project's
+  own Phoenix installer, and rebuilds the image, so an existing
+  workspace moves over with `bake && up`. On Linux the native Docker
+  Engine is the one to use; `./wb.sh engine native` picks it.
+
+- One stylesheet for the mock and the console
+  (`console/priv/static/assets/css/console.css`), inlined into the
+  one and served by the other, and the house's tokens projected into
+  both by `assets/design/build.py`.
+
+### Fixed
+
+- Two readers of the igniter at once fought over one container name
+  and the second answered nothing; the name carries the pid now.
+
+- **An insert that fails no longer leaves the workspace half-written.**
+  `add` runs each cartridge in its own container and commits it when it
+  lands; an installer that wrote its files and *then* failed — Hex
+  refusing to solve a version, most plainly — left those files behind
+  uncommitted, and that alone stopped everything after it, since `add`
+  and `eject` both need a clean tree. The workbench was stuck until
+  somebody cleaned up by hand. It now undoes exactly that insert's work
+  and says where the workspace stands. It asks nothing because nothing
+  of the reader's is at stake: `add` begins on a clean tree
+  (`require_clean_workspace`, which counts untracked files too) and
+  commits each insert as it lands, so whatever is uncommitted at that
+  point was written moments earlier by the insert that just failed.
+  Ignored paths are left alone — `deps/` and `_build/` are the
+  container's work, not the cartridge's. The insert failing and the
+  commit failing are now told apart, and end differently: a failed
+  insert wrote half of something nobody asked for and goes; a failed
+  commit leaves a cartridge that did land, for the reader to commit by
+  hand.
+
+## v0.9.0 - (2026-08-31)
+
+### Added
+
 - The console colours the code a cartridge writes, and the box grows an
   **Installation** screen that shows it. `Console.Highlight` in
   `console/` keeps the registry, as data: a treatment per filename and
@@ -550,6 +585,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   template does not leave it grey, it colours `in` and `with` as
   keywords inside a CSS comment. `mix console.highlight` answers the
   same for the mock's generator, so there is one opinion and not two.
+
 - The box's **Installation** screen: what the cartridge did to this
   project, off its own insert commit. Nothing new had to be recorded —
   `add` refuses a dirty tree, so one commit is one cartridge's whole
@@ -571,6 +607,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `mix.lock` is in: its lines run past a thousand characters, but the
   package and the version are at the front of each one, and the lock is
   the only place a cartridge shows what it drags in.
+
 - One kind of cartridge. `workbench.setup` — the task that composed the
   opinionated project — is retired and reborn as **chiefs_setup**, a
   *collection*: a cartridge whose installer inserts other cartridges.
@@ -585,6 +622,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   behaviour loses `flag/enabled?/implies/argv/enabled_by`, the registry
   is one list in shelf order, and the catalog marks `collection` (with
   its members) instead of `standalone`/flag.
+
 - `mix workbench.expand`: the planning half of `wb.sh add` — one
   `plan> NAME [ARGS]` line per install to run. A plain cartridge
   expands to itself; a collection to its missing members, read off each
@@ -592,11 +630,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   line as its own container run and its own `Insert NAME` commit, so
   `eject` keeps reverting one cartridge alone — a collection leaves no
   commit of its own, and re-adding it only inserts what is missing.
+
 - The design rule for collections, in the features README: a
   collection's option must be a decision the collection itself owns,
   explainable on the box without naming a member's switch; whoever
   needs a member's option inserts the member. The rationale is
   chiefs_setup's DESIGN.md.
+
 - Four cartridges for what the retired setup configured, each the one
   decision it is, the first three joined to the chief's recipe:
   **ansi** (`config :elixir, ansi_enabled: true`, so logs read through
@@ -609,6 +649,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   into the docs site). guidelines builds on exdoc and *appends* its page
   to the two lists exdoc's `docs:` block keeps, which takes the only
   network call out of the exdoc installer.
+
 - `--build` on exdoc and coveralls: generate the site, and run the
   suite, once the insert is applied — the `documentation` step the
   retired creation ran, as an option of the cartridges that own it.
@@ -616,6 +657,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   recipe: it needs the dependencies compiled and, for coveralls on a
   project with Ecto, a test database. `afterwards/0` on both names the
   command for whoever leaves it off.
+
 - The generators and migration types (`migration_primary_key`,
   `migration_timestamps`, `generators: [timestamp_type: …]`) are back,
   inside **enhancements** rather than as a box of their own: they are
@@ -623,29 +665,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   cartridges writing one policy could contradict each other. Without
   them `mix phx.gen.*` kept emitting `phx.new`'s defaults, so the
   tables drifted from the schemas `MyApp.Schema` defines.
+
 - Changelogs backfilled for exdoc, coveralls and enhancements, as the
   anatomy asks of a cartridge that predates the rule and gets changed.
-
-### Removed
-
-- `./wb.sh new` (opinionated) and `mix workbench.setup` (27 options,
-  `config.conf`-driven): `new2`/`setup2` take their names — the vanilla
-  creation is the only one. `config.conf` loses the whole "composed
-  project configuration" section (`INIT_VERSION`, `ID_TYPE`,
-  `TIMESTAMPS`, `INTERFACE`, `ENHANCE`, `EXDOC`, `COVERALLS`,
-  `COVERAGE_THEME`, `HEALTH`, `AUTH0`, `OPENAI`, `STRIPE`,
-  `CODING_GUIDELINES_URL`): features are cartridges now, and a
-  cartridge's options are set on its own installer. What those
-  variables configured has owners again — `versioning`, `toolchain`,
-  `enhancements`, `coveralls` and `guidelines` — reached by inserting
-  the box, not by editing this file.
-- The retired setup's `README.md` template, with no owner: a generated
-  README has to know every cartridge to list what the project carries,
-  which is the coupling this structure exists to remove. `phx.new`
-  writes one; the project writes its own from there.
-- The entrypoint's `documentation` branch, which ran `mix docs` and
-  `mix cover` after the opinionated creation: it is `--build` on exdoc
-  and coveralls now.
 
 - The workbench reads its own catalog. Every cartridge declares
   `installed?/1` — off the *same mark its installer's guard reads*, a
@@ -669,12 +691,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   one text) and `enabled_by/0` (what turns a cartridge on under setup
   when it is not its own flag: `:enhance` for the trivial group, the
   interface for rest and graphql).
+
 - `./wb.sh catalog [--json]` and `./wb.sh status [--json]`: the front of
   those tasks, run on a bare toolchain container with the source and
   the workbench mounted — no compose, no database. `status` adds what
   the host knows: the workspace's ports, which deployments were baked,
   and the containers of its compose project (dev and prod share their
   service names, so the image is what tells them apart).
+
 - Base cartridges: a capability `phx.new` decides at generation time,
   added after the fact. `WorkbenchIgniter.PhxDelta` generates the
   project twice with `phx.new`'s own generator, on a scratch directory —
@@ -691,6 +715,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `html`, `live` (mark: `config :phoenix_live_view`, the one thing only
   `--live` brings) and `dashboard`. A default project shows them all
   inserted.
+
 - `NEED.md` in the cartridge anatomy: the developer's need the
   cartridge answers, in their situation and not the mechanism's — one
   sentence, then *Before*, *After* and *Not for*. `need/0` reads it off
@@ -701,6 +726,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   test refuses one without. Written because the first eight base
   cartridge covers were proposed from the papers and came out as
   pictures of the engine with nobody's problem in them.
+
 - A `DESIGN.md` for each of the eight base cartridges, written from
   `phx.new`'s generator and templates, the libraries' own installation
   guides and Phoenix's guides, with the engine's argument in mailer's
@@ -729,6 +755,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   into the patch set the issue withholds. tailwind (v0.1.1) says when
   the build will lack html's LiveView compiler, live (v0.1.1) when the
   browser will lack esbuild's `app.js`.
+
 - `requires/0` in the manifest: the cartridges one builds on, by name
   (live on html — `phx.new` generates live only with html). The
   installer refuses with an issue naming what to insert first; the
@@ -737,10 +764,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `--auth password` on live and mailer, `--with ash_admin` on live):
   the catalog carries it beside the value and the installer refuses
   the same way.
+
 - `status --json` carries `phx`: the project's shape in `phx.new`'s
   terms — each capability, the database, the adapter, and the flags that
   would generate it today — read off the project as the base cartridges
   read it. The table says the flags too.
+
 - The cartridges that adapt to what the project has of `phx.new`'s
   capabilities read it off the project (`PhxDelta.facts`) instead of
   asking: `enhancements` (the Ecto group; the page, dashboard and
@@ -749,6 +778,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `--no-dashboard` options, and `setup` no longer passes them. `exdoc`
   also lost `--openai` and `--stripe`, which nothing read. Every option
   left is documented (the catalog and the task docs say what each does).
+
 - The console (`console/`, `./wb.sh console [up|down|logs|build]`): a
   Phoenix LiveView app run as a container with Docker's socket and the
   workbench mounted at its host path. It reads `status --json` and
@@ -756,9 +786,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   streamed to a tray, and ports the mock's board, shelf, box and tray
   with the mock's own styles. First slice: Deploy (up/down per target,
   setup, bake), Cartridges (the shelf, a box's options, insert, eject).
+
 - ash v0.4.0: `--data-layer` takes several, as ash-hq.org's checkboxes
   do; `mix workbench.ash.site` checks that the site still treats them
   as independent.
+
 - The console read once more with the eyes, and the repetitions taken
   out: the Jobs tab said what a job is three times over — the tray
   below, its own meta line, and the empty screen — so the tray steps
@@ -788,6 +820,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   ring, the rest sit grey — instead of a golden stamp that covered the
   cover's own band and part of its art; the caption carries the word,
   with the dot the cartridge chips use.
+
 - Two placeholder boxes where there was one socket, a front and a back
   each. The **socket** (`cover_placeholder`, `back_placeholder`) stands
   in for a cartridge nobody has sealed a box for yet: the bare board,
@@ -805,14 +838,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   buried its stamp block), and a not-done box is no longer dimmed to
   nothing on the plank — the drawing already says what the dimming was
   saying.
+
 - Console mock: the Config form's image row is named `DOCKER_IMAGE` and
   carries the link to the tags it is picked from, like every other
   version field. It is still the one row that is not a key of
   `config.conf` — the three versions under it are — but it is what the
   reader actually chooses, so it wears the same name shape.
+
 - Console mock: the band's right end reads caveat, clock, `wb.sh` — the
   only button up there moved to the corner, where a control is looked
   for, answering the workbench's name at the other end of the band.
+
 - Console mock: the deployment's buttons ask what `wb.sh` asks. All of
   them are refused without a project ("There is no project to build"),
   so all of them are off in an empty workspace, and the row says why —
@@ -820,12 +856,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   longer waits for the target to be baked: `build --deploy prod|scaled`
   bakes its own compose before building, so a target nobody has baked
   yet is exactly when you would press it.
+
 - Console mock: the box's kicker reads state first — `on the shelf` /
   `inserted` / `not done`, the two faces of it now both said — then the
   version, then what sort of box it is (`collection`, `base`). It no
   longer announces the design paper: the tab row above says DESIGN when
   there is one. Nor how many a collection inserts: the Specs panel
   below names every member.
+
 - Console mock: a *Specs* panel in the box — what the cartridge is, as
   against what you are about to do with it. The mix task behind it
   first — its name in the workbench's own terms; then Kind (cartridge,
@@ -843,18 +881,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   this project's business stays out of it — a value whose requirement
   is missing is disabled and says so, and Insert reads "Insert html
   first".
-- **No Phoenix installer setting.** `PHX_NEW_VERSION` is gone from
-  `config.conf`: `new` asks hex.pm for the newest `phx_new` — or takes
-  `./wb.sh new --phx-new VERSION`, for when there is a reason to pin —
-  and stamps whatever it resolved into the workspace's own
-  `Dockerfile.local` (`ARG PHX_NEW`), which every other command reads
-  back to name the toolchain image. Nobody chooses a version, and the
-  choice is still written: it is the generator the base cartridges take
-  their delta with, so it can be neither a moving target (the same repo
-  built twice would give two toolchains) nor one global default for
-  workspaces created months apart. A workspace made before the stamp
-  names no installer and keeps the bare `workbench:<elixir>-<otp>` tag
-  it was built with.
+
 - The installer and the stack are weighed against each other before
   anything is built. Every `phx_new` release declares on hex the Elixir
   it runs on (`~> 1.17` for 1.8.13, `~> 1.14` for the whole 1.7 line),
@@ -874,6 +901,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   stack on a guess is worse than the late error. Erlang never enters
   into it — Phoenix says nothing about OTP, and the Elixir/OTP pairing
   is already settled by the `hexpm/elixir` tag existing on Docker Hub.
+
 - `status --json` carries `phx.generator`: which `phx.new` made the
   project, where that is recorded (`Dockerfile.local` for a workspace
   the workbench made, `mix.exs` for a project generated elsewhere), and
@@ -881,6 +909,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   says what to do when the two differ. The base cartridges refuse on
   that difference, and until now nothing showed it until one of them
   did: a console can put it on the screen before anyone presses Insert.
+
 - `PhxDelta.generator_check/1` reads that stamp instead of inferring the
   generator from `{:phoenix, "~> x.y.z"}`. The requirement was only ever
   a proxy — `phx.new` happens to write its own version there — and it
@@ -893,6 +922,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   remedy that works here — `./wb.sh build`, which rebuilds the toolchain
   from the workspace's own Dockerfile — instead of an `archive.install`
   thrown away with the container.
+
 - One name for the state of a box that does not work yet: **not done**.
   It was `pending` on the chip, "Not ported yet" on the button, "Not
   written yet" on the shelf's plank and "not ported yet" in the box's
@@ -911,6 +941,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   stopped describing a world that ended with `workbench.setup`: what
   there is of the box is a manifest and its papers, and what happens if
   you ask for it is that `./wb.sh add stripe` refuses, naming it.
+
 - `./wb.sh stacks [--json | -n N | use TAG]`: the usable technology
   stacks, asked of Docker Hub itself (recent `hexpm/elixir`
   `-debian-*-slim` tags, no RCs, version-sorted). `use TAG` checks the
@@ -921,6 +952,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   the three, editing one looks the exact tag back up, and a combination
   without a published image leaves the stack unpicked, the odd value
   saying so.
+
 - `config.conf` is grouped by when a setting takes effect: what both
   creation commands read (name, stack, installer), git, the service
   images — and, at the end, what only the composed line (`new`) reads.
@@ -936,6 +968,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   feature configuration either) are read at last, where they were
   dropped. A `# -- Group --` line inside a section is a heading in the
   form, not the help of whatever field came next.
+
 - `console/0` in the manifest — the cartridges light the console up:
   the doors a cartridge opens on the app's port (exdoc `/dev/docs`,
   coveralls `/dev/docs/cover` with exdoc, rest `/dev/swagger` and
@@ -946,11 +979,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   catalog carries it as `console`; healthcheck2 reports the prefix it
   was inserted with (`state`). The console's board has a *Doors*
   section; the mock reads the same catalog instead of a table of its own.
+
 - `afterwards/0` in the manifest: what follows the insert, when
   something does, as one sentence with the command (ecto's `bake`,
   clustering's scaled deployment, ash's `bake` with a database data
   layer). The catalog carries it, with `base` — whether the cartridge
   is a `phx.new` capability, in from birth unless left out.
+
 - Console mock: the *New project* card offers the base cartridges as
   what they are — eight boxes in from birth, uncheck one to leave it
   out (`--no-x`; html takes live with it, as `phx.new` does) — with
@@ -960,11 +995,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   reads the manifest. It offers nothing else: `new` is vanilla and the
   card stops at creation — the collection is picked up from the shelf,
   like every other box.
+
 - `./wb.sh bake`: bakes the workspace's `docker-compose.yml` again from
   the seed for the project as it is now, keeping its ports, as one
   commit — what `add ecto` asks for next (`setup` then creates the
   database). The compose drops the database and pgAdmin services on
   SQLite projects too, not only on projects without Ecto.
+
 - Cartridges are commits. `new`/`new2` make the workspace's first commit
   (`New project: …`), `add` refuses a tree with changes git does not
   have and commits what it inserted as `Insert FEATURE …`, and the new
@@ -975,11 +1012,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   as `GIT_IDENTITY` in `config.conf` says: `user` (the host's identity,
   falling back to the workbench's own) or `workbench`. `status` reports
   the tree, HEAD and the inserts.
+
 - The manifest says what a second run does — `rerun/0`: `:noop` (the
   default) or `:adds` (ash: every option is a package, so running again
   with more grows the install) — and `state/1`, what the project
   carries of an adding cartridge's options, read off the project;
   `status --json` carries both.
+
 - `./wb.sh -y|--yes COMMAND` answers every confirmation (`new` over an
   existing project, `delete`), for scripts and for whatever drives the
   workbench without a terminal; `demo` hands it down.
@@ -1023,46 +1062,6 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   2026-08-25, v0.2.0 for the manifest additions and the paper — so the
   catalog shows it versioned like the rest.
 
-### Fixed
-
-- `status` starts one container instead of four: its git queries run
-  with the git at hand when there is one (the console's container has
-  it; a host may), the toolchain container's otherwise — writes (commit,
-  revert) stay there, where the project's hooks find mix — and the
-  igniter query tasks compile the package and run in one Mix boot.
-- `status --json` and `catalog --json` are valid JSON even when mix
-  has something to compile on the way to the task — a dependency the
-  last cartridge brought, the project, the package itself — which it
-  prints on stdout before the answer: the readers keep from the first
-  JSON line on.
-- `add` compiles the igniter package before running the installer: as
-  a path dependency on the mounted workbench, Mix did not always notice
-  it had changed, and an installer edited since the last run could run
-  in its previous form.
-- `add COLLECTION` inserts every cartridge of the plan, not only the
-  first. The plan reached the loop on stdin, and the container each
-  insert runs in attaches to stdin and drank the rest of it: the loop
-  then ended on EOF — quietly, and with a zero exit — one cartridge
-  into a recipe of thirteen. `add chiefs_setup` had never put in more
-  than its first missing member. The plan is read on its own descriptor
-  now, so there is nothing on stdin for the container to take.
-- The console mock keeps its JavaScript when a cartridge's diff or
-  document carries a literal `</script>`, as exdoc's `mix.exs` and
-  coveralls' `.html.eex` templates do. The HTML parser ends the block
-  wherever it sees those characters, whatever the JavaScript around
-  them says, so the page loaded with every function undefined and
-  eleven syntax errors. Every JSON payload the page carries escapes the
-  slash now — the documents as much as the diffs, since a README that
-  writes the tag would have done the same without warning.
-- `status --json` is valid JSON when a cartridge's NEED.md travels in
-  it. The object was assembled around the task's answer with `echo`,
-  which is free to read the `\n` a JSON string is made of, and a raw
-  newline inside a string is what makes a reader call the whole answer
-  invalid — a `--json` that exits zero and cannot be parsed. Every
-  value goes in as a `printf` argument now, never as part of the
-  format, and `json_string` escapes the control characters too and not
-  only the backslash and the quote.
-
 ### Updated
 
 - The README's *Architecture* section — a table of services and a
@@ -1073,6 +1072,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   shape: each cartridge's README says what it installs and wires, each
   deployment what it brings up, and `./wb.sh status` and `catalog` what
   is there and what could be. `assets/arq.svg` goes with the section.
+
 - An existing workspace names itself: every command but `new` and
   `new2` reads the compose project name and the dev image from the
   workspace's own `docker-compose.yml`, not from `config.conf` —
@@ -1094,6 +1094,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   config, no router change; a `--no-ecto` project gets a readiness that
   answers like liveness. Its README carries the Kubernetes, Fly.io and
   AWS ECS wiring; its `DESIGN.md`, the reasoning behind the split.
+
 - New `ash` cartridge (`./wb.sh add ash`): the Ash framework, with
   the choices of ash-hq.org's *Get Your Installer* for an existing app
   as options — `--data-layer postgres|sqlite|csv|none`, `--api
@@ -1111,9 +1112,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   table and Ecto scaffolding are what Ash replaces. Its `DESIGN.md`
   says why a queued command and not composed installers, and what the
   real run taught (the Phoenix auth installer's prompt).
+
 - `WorkbenchIgniter.env_entry/4`: an optional body for `.env.sample`,
   so a cartridge can write a secret to `.env` and its blank line to
   the committed sample.
+
 - Two files join the cartridge anatomy, `healthcheck2` being the
   reference for both: a `CHANGELOG.md` per cartridge (Keep a Changelog,
   semver over what the cartridge installs, independent of the workbench
@@ -1122,6 +1125,87 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   decision against its alternatives, what was verified and what was
   not, open questions, numbered references. Older cartridges get both
   on their next change.
+
+### Removed
+
+- `./wb.sh new` (opinionated) and `mix workbench.setup` (27 options,
+  `config.conf`-driven): `new2`/`setup2` take their names — the vanilla
+  creation is the only one. `config.conf` loses the whole "composed
+  project configuration" section (`INIT_VERSION`, `ID_TYPE`,
+  `TIMESTAMPS`, `INTERFACE`, `ENHANCE`, `EXDOC`, `COVERALLS`,
+  `COVERAGE_THEME`, `HEALTH`, `AUTH0`, `OPENAI`, `STRIPE`,
+  `CODING_GUIDELINES_URL`): features are cartridges now, and a
+  cartridge's options are set on its own installer. What those
+  variables configured has owners again — `versioning`, `toolchain`,
+  `enhancements`, `coveralls` and `guidelines` — reached by inserting
+  the box, not by editing this file.
+
+- The retired setup's `README.md` template, with no owner: a generated
+  README has to know every cartridge to list what the project carries,
+  which is the coupling this structure exists to remove. `phx.new`
+  writes one; the project writes its own from there.
+
+- The entrypoint's `documentation` branch, which ran `mix docs` and
+  `mix cover` after the opinionated creation: it is `--build` on exdoc
+  and coveralls now.
+
+- **No Phoenix installer setting.** `PHX_NEW_VERSION` is gone from
+  `config.conf`: `new` asks hex.pm for the newest `phx_new` — or takes
+  `./wb.sh new --phx-new VERSION`, for when there is a reason to pin —
+  and stamps whatever it resolved into the workspace's own
+  `Dockerfile.local` (`ARG PHX_NEW`), which every other command reads
+  back to name the toolchain image. Nobody chooses a version, and the
+  choice is still written: it is the generator the base cartridges take
+  their delta with, so it can be neither a moving target (the same repo
+  built twice would give two toolchains) nor one global default for
+  workspaces created months apart. A workspace made before the stamp
+  names no installer and keeps the bare `workbench:<elixir>-<otp>` tag
+  it was built with.
+
+### Fixed
+
+- `status` starts one container instead of four: its git queries run
+  with the git at hand when there is one (the console's container has
+  it; a host may), the toolchain container's otherwise — writes (commit,
+  revert) stay there, where the project's hooks find mix — and the
+  igniter query tasks compile the package and run in one Mix boot.
+
+- `status --json` and `catalog --json` are valid JSON even when mix
+  has something to compile on the way to the task — a dependency the
+  last cartridge brought, the project, the package itself — which it
+  prints on stdout before the answer: the readers keep from the first
+  JSON line on.
+
+- `add` compiles the igniter package before running the installer: as
+  a path dependency on the mounted workbench, Mix did not always notice
+  it had changed, and an installer edited since the last run could run
+  in its previous form.
+
+- `add COLLECTION` inserts every cartridge of the plan, not only the
+  first. The plan reached the loop on stdin, and the container each
+  insert runs in attaches to stdin and drank the rest of it: the loop
+  then ended on EOF — quietly, and with a zero exit — one cartridge
+  into a recipe of thirteen. `add chiefs_setup` had never put in more
+  than its first missing member. The plan is read on its own descriptor
+  now, so there is nothing on stdin for the container to take.
+
+- The console mock keeps its JavaScript when a cartridge's diff or
+  document carries a literal `</script>`, as exdoc's `mix.exs` and
+  coveralls' `.html.eex` templates do. The HTML parser ends the block
+  wherever it sees those characters, whatever the JavaScript around
+  them says, so the page loaded with every function undefined and
+  eleven syntax errors. Every JSON payload the page carries escapes the
+  slash now — the documents as much as the diffs, since a README that
+  writes the tag would have done the same without warning.
+
+- `status --json` is valid JSON when a cartridge's NEED.md travels in
+  it. The object was assembled around the task's answer with `echo`,
+  which is free to read the `\n` a JSON string is made of, and a raw
+  newline inside a string is what makes a reader call the whole answer
+  invalid — a `--json` that exits zero and cannot be parsed. Every
+  value goes in as a `printf` argument now, never as part of the
+  format, and `json_string` escapes the control characters too and not
+  only the backslash and the quote.
 
 ## v0.8.0 - (2026-08-24)
 

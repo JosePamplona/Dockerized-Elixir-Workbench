@@ -5,15 +5,22 @@ defmodule ConsoleWeb.ConsoleLive do
   and the jobs tray at the bottom. Everything it shows comes from the status,
   the catalog and `config.conf`; everything it does is `wb.sh` as a
   job. Where the reader is — the screen — lives in the URL.
+
+  What each screen keeps off the page — which document the URL names,
+  what it reads, what it answers — lives with the screen, under
+  `ConsoleWeb.ConsoleLive.*`; this module mounts, routes, and hands
+  each event, message and answer to the screen it belongs to.
   """
   use ConsoleWeb, :live_view
 
-  alias Console.{Bench, Jobs, Logs, Verbs, Workbench}
-  alias Console.{Diffs, Docker, Events, Git, Papers, Project}
-  alias ConsoleWeb.{Box, Cartridges, Deploy, DockerScreen, GitScreen, Terminal}
+  alias Console.{Bench, Events, Jobs, Logs, Project, Verbs, Workbench}
+  alias ConsoleWeb.{Box, Cartridges, Deploy, DockerScreen, GitScreen}
+  alias ConsoleWeb.ConsoleLive.{Docker, Drawer, Git, Hand, Term}
   import ConsoleWeb.{Board, Shelf, ProjectScreen, WorkbenchDrawer, Cluster}
+  import ConsoleWeb.Band, only: [state: 1, errands: 1]
   import ConsoleWeb.DockerScreen, only: [docker_screen: 1]
   import ConsoleWeb.GitScreen, only: [git_screen: 1]
+  import ConsoleWeb.LogsScreen, only: [logs_screen: 1]
   import ConsoleWeb.Terminal, only: [terminal: 1]
   import ConsoleWeb.JobsScreen, only: [jobs_screen: 1, tray: 1]
 
@@ -45,21 +52,13 @@ defmodule ConsoleWeb.ConsoleLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    if connected?(socket) do
-      Jobs.subscribe()
-      Logs.subscribe()
-      Bench.subscribe()
-      Events.subscribe()
-    end
+    listen(connected?(socket))
 
     # What the bench holds is what the page opens with: nothing is read
     # on a mount, and a reading in flight is the one this page waits for.
     status = Bench.status()
     catalog = Bench.catalog() || []
-    # Nothing known and nothing on its way — the bench's first reading
-    # failed before this page came — asks again.
-    if connected?(socket) and is_nil(status) and not Bench.reading?(:status),
-      do: Bench.refresh(:status, :full)
+    ask_first(socket, status)
 
     socket =
       socket
@@ -107,16 +106,40 @@ defmodule ConsoleWeb.ConsoleLive do
         newp: %{out: MapSet.new(), gen: %{}},
         restart_logs: false,
         folded: MapSet.new(),
-        dk: DockerScreen.initial(if(connected?(socket), do: Enum.reverse(Events.recent()), else: [])),
+        dk: DockerScreen.initial(recent_events(socket)),
         gt: GitScreen.initial()
       )
 
-    socket =
-      if connected?(socket) and status,
-        do: Logs.follow(status["compose_project"]) && socket,
-        else: socket
+    socket = follow_logs(socket, status)
 
     {:ok, socket, layout: false}
+  end
+
+  # A connected page listens to the jobs, the logs, the bench and the daemon's events.
+  defp listen(true) do
+    Jobs.subscribe()
+    Logs.subscribe()
+    Bench.subscribe()
+    Events.subscribe()
+  end
+
+  defp listen(false), do: :ok
+
+  # Nothing known and nothing on its way — the bench's first reading
+  # failed before this page came — asks again.
+  defp ask_first(socket, status) do
+    if connected?(socket) and is_nil(status) and not Bench.reading?(:status),
+      do: Bench.refresh(:status, :full)
+  end
+
+  # What the daemon said lately, for the Events feed; nothing before the socket is up.
+  defp recent_events(socket),
+    do: if(connected?(socket), do: Enum.reverse(Events.recent()), else: [])
+
+  # The logs follow the compose project, once there is one to follow.
+  defp follow_logs(socket, status) do
+    if connected?(socket) and status, do: Logs.follow(status["compose_project"])
+    socket
   end
 
   # The screen is the URL: /deploy, /jobs… An unlit one falls back to
@@ -138,11 +161,11 @@ defmodule ConsoleWeb.ConsoleLive do
         {:noreply,
          socket
          |> assign(tab: tab)
-         |> take_box(params)
+         |> Hand.take(params)
          |> take_paper(params)
-         |> take_wb(params)
-         |> take_docker(params)
-         |> take_git(params)
+         |> Drawer.take(params)
+         |> Docker.take(params)
+         |> Git.take(params)
          |> take_shelf(params)}
     end
   end
@@ -160,110 +183,15 @@ defmodule ConsoleWeb.ConsoleLive do
 
   defp take_paper(socket, _params), do: socket
 
-  # The workbench's drawer, over whatever screen: ?wb=config|manual|ui,
-  # and under Manual which paper — the same shape as a box's
-  # ?screen=manual&paper=readme, because it is the same thing.
-  # The papers used to be flat tabs of their own. A link that still names
-  # one — a bookmark, or the README's own "see the CHANGELOG" — is the
-  # paper it asks for, under Manual.
-  defp take_wb(socket, %{"wb" => key} = params) when key in ~w(readme changelog),
-    do: take_wb(socket, %{params | "wb" => "manual"} |> Map.put("paper", key))
-
-  defp take_wb(socket, %{"wb" => key} = params) when key in ~w(config manual ui) do
-    papers = Papers.workbench_papers() |> Enum.map(&elem(&1, 0))
-    paper = if params["paper"] in papers, do: params["paper"], else: hd(papers)
-
-    assign(socket,
-      wb: key,
-      wbpaper: paper,
-      wbpage: if(key == "manual", do: Papers.render_workbench(paper))
-    )
+  # Which reading of the shelf: /shelf?doc=base. Named in the URL by the
+  # row; kept as it was when a link does not name it — a box opening
+  # over the shelf, its screens — so the shelf behind the drawer stays
+  # where the reader left it.
+  defp take_shelf(%{assigns: %{tab: "shelf"}} = socket, %{"doc" => doc}) when is_binary(doc) do
+    if doc in ConsoleWeb.Shelf.doc_names(), do: assign(socket, filter: doc), else: socket
   end
 
-  defp take_wb(socket, _params), do: assign(socket, wb: nil, wbpage: nil)
-
-  # The box in hand, and which of its screens, from the query: a box
-  # named anywhere opens over whatever screen the reader is on, and the
-  # browser's back is the trail back. A collection asks the project
-  # what its recipe leaves to insert (expand: seconds) when it is picked
-  # up, never again per keystroke.
-  defp take_box(socket, %{"box" => name} = params) do
-    box = Enum.find(socket.assigns.catalog, &(&1["name"] == name))
-    same = socket.assigns.box && socket.assigns.box["name"] == name
-
-    cond do
-      is_nil(box) and socket.assigns.catalog == [] ->
-        assign(socket, pending_box: params)
-
-      is_nil(box) ->
-        socket |> assign(box: nil) |> push_patch(to: "/#{socket.assigns.tab}")
-
-      true ->
-        screen =
-          if params["screen"] in ~w(box install files manual), do: params["screen"], else: "box"
-
-        papers = Papers.carried(name)
-
-        paper =
-          if params["paper"] in papers, do: params["paper"], else: List.first(papers) || "readme"
-
-        page = if screen == "manual", do: Papers.render(name, paper)
-
-        socket =
-          if same,
-            do: socket,
-            else: socket |> assign(args: %{}, face: "front", recipe: nil) |> ask_recipe(box, %{})
-
-        socket =
-          assign(socket,
-            box: box,
-            screen: screen,
-            papers: papers,
-            paper: paper,
-            page: page,
-            pending_box: nil
-          )
-
-        if screen == "files", do: ask_diff(socket, box), else: socket
-    end
-  end
-
-  defp take_box(socket, _params), do: assign(socket, box: nil, page: nil, pending_box: nil)
-
-  # What the cartridge wrote, read off the workspace's git in the
-  # background: a collection reads every pick's commit and the range.
-  defp ask_diff(socket, box) do
-    status = socket.assigns.status
-    ws = status && status["workspace"]
-
-    cond do
-      is_nil(ws) or Box.files_unlit(box, status) ->
-        assign(socket, diff: nil)
-
-      box["collection"] ->
-        inserts = Box.member_inserts(box, status)
-
-        socket
-        |> assign(diff: :loading)
-        |> start_async({:diff, box["name"]}, fn -> Diffs.collection(ws, inserts) end)
-
-      true ->
-        insert = Cartridges.insert(status, box["name"])
-
-        socket
-        |> assign(diff: :loading)
-        |> start_async({:diff, box["name"]}, fn -> Diffs.cartridge(ws, insert) end)
-    end
-  end
-
-  defp ask_recipe(socket, %{"collection" => true} = box, args) do
-    case Bench.expand(box["name"], Box.argv(box, args)) do
-      {:ok, plan} -> assign(socket, recipe: plan)
-      :asking -> assign(socket, recipe: :asking)
-    end
-  end
-
-  defp ask_recipe(socket, _box, _args), do: socket
+  defp take_shelf(socket, _params), do: socket
 
   defp leave_unlit(socket) do
     if unlit(socket.assigns.tab, socket.assigns),
@@ -275,16 +203,8 @@ defmodule ConsoleWeb.ConsoleLive do
 
   @impl true
   def handle_info({:bench, :status, status}, socket) do
-    # A container still starting will be healthy without any job saying
-    # so: ask again in a moment, the fast way.
-    if Enum.any?(status["containers"] || [], &(&1["Health"] == "starting")),
-      do: Process.send_after(self(), :poll, 3000)
-
-    # The logs follow the compose project, whichever deployment is up;
-    # after a job that could have changed the containers the stream is
-    # started again, since --follow only attaches to what is there.
-    if connected?(socket),
-      do: Logs.follow(status["compose_project"], restart: socket.assigns.restart_logs)
+    poll_if_starting(status)
+    refollow_logs(socket, status)
 
     # Another workspace — the config moved it — is another project's
     # papers and another git: what was read off the old one is read again.
@@ -292,65 +212,42 @@ defmodule ConsoleWeb.ConsoleLive do
 
     socket =
       socket
-      |> assign(status: status, reading: false, error: nil, restart_logs: false, rebind: Workbench.rebind())
+      |> assign(
+        status: status,
+        reading: false,
+        error: nil,
+        restart_logs: false,
+        rebind: Workbench.rebind()
+      )
       |> leave_unlit()
       # The containers may have changed: the Docker screen reads again.
-      |> dk_read()
+      |> Docker.read()
       # And the tree, after a commit or an insert: the Git screen too.
-      |> gt_read(true)
-
-    socket =
-      if socket.assigns.tab == "project" and (is_nil(socket.assigns.ppage) or moved?),
-        do: take_paper(socket, %{"paper" => socket.assigns.ppaper}),
-        else: socket
-
-    # A Files screen opened before the status was here asks now.
-    socket =
-      if socket.assigns.screen == "files" && socket.assigns.box &&
-           (is_nil(socket.assigns.diff) or moved?),
-         do: ask_diff(socket, socket.assigns.box),
-         else: socket
+      |> Git.read(true)
+      |> reread_paper(moved?)
+      |> reask_diff(moved?)
 
     {:noreply, socket}
   end
 
-  # The stacks and the installers, asked for by pressing the button
-  # beside their field.
-  def handle_info({:bench, :stacks, tags}, socket),
-    do: {:noreply, assign(socket, stacks: tags, stacks_asking: false, stacks_error: nil)}
+  def handle_info({:bench, key, _} = msg, socket) when key in [:stacks, :installers],
+    do: Drawer.info(msg, socket)
 
-  def handle_info({:bench, :error, :stacks, why}, socket),
-    do: {:noreply, assign(socket, stacks_asking: false, stacks_error: why)}
-
-  def handle_info({:bench, :installers, releases}, socket),
-    do:
-      {:noreply,
-       assign(socket, installers: releases, installers_asking: false, installers_error: nil)}
-
-  def handle_info({:bench, :error, :installers, why}, socket),
-    do: {:noreply, assign(socket, installers_asking: false, installers_error: why)}
+  def handle_info({:bench, :error, key, _} = msg, socket) when key in [:stacks, :installers],
+    do: Drawer.info(msg, socket)
 
   def handle_info({:bench, :catalog, catalog}, socket) do
     socket = assign(socket, catalog: catalog)
     # A box named in the URL before the catalog was here opens now.
     {:noreply,
      if(socket.assigns[:pending_box],
-       do: take_box(socket, socket.assigns.pending_box),
+       do: Hand.take(socket, socket.assigns.pending_box),
        else: socket
      )}
   end
 
-  # The recipe expand answered, if it is still the box in hand with these options.
-  def handle_info({:bench, :expand, name, argv, plan}, socket) do
-    box = socket.assigns.box
-
-    if box && box["name"] == name && Box.argv(box, socket.assigns.args) == argv,
-      do: {:noreply, assign(socket, recipe: plan)},
-      else: {:noreply, socket}
-  end
-
-  def handle_info({:bench, :error, {:expand, _, _}, _why}, socket),
-    do: {:noreply, assign(socket, recipe: nil)}
+  def handle_info({:bench, :expand, _, _, _} = msg, socket), do: Hand.info(msg, socket)
+  def handle_info({:bench, :error, {:expand, _, _}, _} = msg, socket), do: Hand.info(msg, socket)
 
   def handle_info({:bench, :error, _key, why}, socket),
     do: {:noreply, assign(socket, error: why, reading: false)}
@@ -402,39 +299,17 @@ defmodule ConsoleWeb.ConsoleLive do
 
   def handle_info(:poll, socket), do: {:noreply, read_status(socket, :fast)}
 
-  # What Docker did on its own: onto the feed, and onto the badge when
-  # it is something that died badly — unless the reader is looking at
-  # the feed right now.
-  def handle_info({:event, event}, socket) do
-    dk = socket.assigns.dk
-    looking = socket.assigns.tab == "docker" and dk.doc == "events"
-    alarm = DockerScreen.alarm?(event, Docker.project(socket.assigns.status)) and not looking
-    events = Enum.take([event | dk.events], 500)
-    {:noreply, assign(socket, dk: %{dk | events: events, alarms: if(alarm, do: dk.alarms + 1, else: dk.alarms)})}
-  end
+  # What the daemon says on its own, and the two streams open as Ports —
+  # the stats and the terminal's session — each told apart by the port
+  # its screen holds.
+  def handle_info({:event, _} = msg, socket), do: Docker.info(msg, socket)
 
-  # A reading of the stats stream, by container name.
-  def handle_info({port, {:data, {_, line}}}, %{assigns: %{dk: %{port: port} = dk}} = socket) do
-    case Docker.stat(line) do
-      nil -> {:noreply, socket}
-      s -> {:noreply, assign(socket, dk: %{dk | live: Map.put(dk.live, s.name, s)})}
-    end
-  end
+  def handle_info({port, _} = msg, %{assigns: %{dk: %{port: port}}} = socket) when is_port(port),
+    do: Docker.info(msg, socket)
 
-  def handle_info({port, {:exit_status, _}}, %{assigns: %{dk: %{port: port} = dk}} = socket),
-    do: {:noreply, assign(socket, dk: %{dk | port: nil})}
-
-  # A line of the session's output goes to the screen; the session ends
-  # when the process in the container does.
-  def handle_info({port, {:data, {_, line}}}, %{assigns: %{term: %{port: port}}} = socket),
-    do: {:noreply, push_event(socket, "term_out", %{line: Console.ANSI.to_html(line)})}
-
-  def handle_info({port, {:exit_status, code}}, %{assigns: %{term: %{port: port}} = a} = socket),
-    do:
-      {:noreply,
-       socket
-       |> assign(term: %{a.term | open: false, port: nil})
-       |> push_event("term_out", %{line: "— session ended (exit #{code})", dim: true})}
+  def handle_info({port, _} = msg, %{assigns: %{term: %{port: port}}} = socket)
+      when is_port(port),
+      do: Term.info(msg, socket)
 
   # A line of the logs goes to the client, which keeps and filters them;
   # a stream started over tells the client to fetch the buffer again.
@@ -442,6 +317,36 @@ defmodule ConsoleWeb.ConsoleLive do
 
   def handle_info({:logs, :restarted}, socket),
     do: {:noreply, push_event(socket, "logs_restarted", %{})}
+
+  # A container still starting will be healthy without any job saying
+  # so: ask again in a moment, the fast way.
+  defp poll_if_starting(status) do
+    if Enum.any?(status["containers"] || [], &(&1["Health"] == "starting")),
+      do: Process.send_after(self(), :poll, 3000)
+  end
+
+  # The logs follow the compose project, whichever deployment is up;
+  # after a job that could have changed the containers the stream is
+  # started again, since --follow only attaches to what is there.
+  defp refollow_logs(socket, status) do
+    if connected?(socket),
+      do: Logs.follow(status["compose_project"], restart: socket.assigns.restart_logs)
+  end
+
+  # The project's paper, read again when it was never read or the workspace moved.
+  defp reread_paper(socket, moved?) do
+    if socket.assigns.tab == "project" and (is_nil(socket.assigns.ppage) or moved?),
+      do: take_paper(socket, %{"paper" => socket.assigns.ppaper}),
+      else: socket
+  end
+
+  # A Files screen opened before the status was here asks now.
+  defp reask_diff(socket, moved?) do
+    if socket.assigns.screen == "files" && socket.assigns.box &&
+         (is_nil(socket.assigns.diff) or moved?),
+       do: Hand.ask_diff(socket, socket.assigns.box),
+       else: socket
+  end
 
   @impl true
   def handle_async({:probe, key}, {:ok, lines}, socket),
@@ -452,29 +357,9 @@ defmodule ConsoleWeb.ConsoleLive do
       {:noreply,
        assign(socket, probes: Map.put(socket.assigns.probes, key, ["failed: " <> inspect(why)]))}
 
-  def handle_async({:diff, name}, {:ok, diff}, socket) do
-    if socket.assigns.box && socket.assigns.box["name"] == name,
-      do: {:noreply, assign(socket, diff: diff)},
-      else: {:noreply, socket}
-  end
-
-  def handle_async({:diff, _}, {:exit, why}, socket),
-    do:
-      {:noreply, assign(socket, diff: nil, error: "the diff could not be read: " <> inspect(why))}
-
-  # What the Docker screen asked the daemon for; a reading that failed
-  # leaves the document empty rather than the page dark.
-  def handle_async({:dk, key}, {:ok, value}, socket),
-    do: {:noreply, assign(socket, dk: Map.put(socket.assigns.dk, key, value))}
-
-  def handle_async({:gt, key}, {:ok, value}, socket),
-    do: {:noreply, assign(socket, gt: Map.put(socket.assigns.gt, key, value))}
-
-  def handle_async({:gt, _key}, {:exit, why}, socket),
-    do: {:noreply, assign(socket, error: "git could not be read: " <> inspect(why))}
-
-  def handle_async({:dk, key}, {:exit, why}, socket),
-    do: {:noreply, socket |> assign(dk: Map.put(socket.assigns.dk, key, if(key == :rows, do: [], else: nil))) |> assign(error: "docker could not be read: " <> inspect(why))}
+  def handle_async({:diff, _} = key, result, socket), do: Hand.async(key, result, socket)
+  def handle_async({:dk, _} = key, result, socket), do: Docker.async(key, result, socket)
+  def handle_async({:gt, _} = key, result, socket), do: Git.async(key, result, socket)
 
   defp reread(socket, :none), do: socket
 
@@ -554,11 +439,6 @@ defmodule ConsoleWeb.ConsoleLive do
   def handle_event("goto", %{"href" => href}, socket),
     do: {:noreply, push_patch(socket, to: "/#{socket.assigns.tab}#{href}")}
 
-  def handle_event("flip", _, socket),
-    do:
-      {:noreply,
-       assign(socket, face: if(socket.assigns.face == "front", do: "back", else: "front"))}
-
   def handle_event("view", %{"view" => v}, socket) when v in ~w(covers list),
     do: {:noreply, assign(socket, view: v)}
 
@@ -582,61 +462,12 @@ defmodule ConsoleWeb.ConsoleLive do
   def handle_event("folds_restore", %{"keys" => keys}, socket) when is_list(keys),
     do: {:noreply, assign(socket, folded: MapSet.new(Enum.filter(keys, &is_binary/1)))}
 
-  # --- the workbench's config, as a form ---
-  def handle_event("cfg_change", params, socket) do
-    values = Console.Config.values(socket.assigns.config)
-    edits = params["cfg"] || %{}
+  # The workbench's drawer: the config form and its two errands.
+  def handle_event("cfg_" <> _ = event, params, socket), do: Drawer.event(event, params, socket)
+  def handle_event("stacks_ask", params, socket), do: Drawer.event("stacks_ask", params, socket)
 
-    # The stack sets the three versions at once — but only when the stack
-    # is what was touched. The whole form travels on every change, so the
-    # stack's own value came along when the reader moved one of the three
-    # and overwrote it with the tag the stack still showed: picking an
-    # Erlang put the old Erlang straight back, and nothing on the row
-    # ever moved. `_target` is which field fired, and it is the answer.
-    edits =
-      with ["stack"] <- params["_target"],
-           tag when is_binary(tag) and tag != "" <- params["stack"],
-           [%{e: e, o: o, d: d}] <- ConsoleWeb.WorkbenchDrawer.parse_tag(tag) do
-        edits
-        |> Map.put("ELIXIR_VERSION", e)
-        |> Map.put("ERLANG_VERSION", o)
-        |> Map.put("DEBIAN_VERSION", d)
-      else
-        _ -> edits
-      end
-
-    edits = for {k, v} <- edits, Map.has_key?(values, k), v != values[k], into: %{}, do: {k, v}
-    {:noreply, assign(socket, cfg_edits: edits)}
-  end
-
-  # The one place in the console where a page reaches the internet, and
-  # it only does it here: five pages of Docker Hub's API, because the
-  # reader pressed the button that says so.
-  def handle_event("stacks_ask", _, socket) do
-    Bench.refresh(:stacks)
-    {:noreply, assign(socket, stacks_asking: true, stacks_error: nil)}
-  end
-
-  def handle_event("installers_ask", _, socket) do
-    Bench.refresh(:installers)
-    {:noreply, assign(socket, installers_asking: true, installers_error: nil)}
-  end
-
-  def handle_event("cfg_reload", _, socket), do: {:noreply, assign(socket, cfg_edits: %{})}
-
-  def handle_event("cfg_raw", _, socket),
-    do: {:noreply, assign(socket, cfg_raw: not socket.assigns.cfg_raw)}
-
-  def handle_event("cfg_save", _, socket) do
-    if socket.assigns.cfg_edits != %{} do
-      Jobs.run({:config, nil}, [
-        "config",
-        "set" | Enum.map(socket.assigns.cfg_edits, fn {k, v} -> "#{k}=#{v}" end)
-      ])
-    end
-
-    {:noreply, socket}
-  end
+  def handle_event("installers_ask", params, socket),
+    do: Drawer.event("installers_ask", params, socket)
 
   # --- the cluster's probes, run by the console ---
   def handle_event("probe", %{"key" => key}, socket) when key in ~w(answers peers) do
@@ -671,58 +502,11 @@ defmodule ConsoleWeb.ConsoleLive do
      |> start_async({:probe, key}, fun)}
   end
 
-  # --- the Git screen ---
-  # The message goes to wb.sh through a file: a body has lines, and a
-  # job's argv cannot carry one.
-  def handle_event("git_commit", params, socket) do
-    # A title left blank is the default one, as on the command line.
-    title = if String.trim(params["title"] || "") == "", do: GitScreen.default_title(), else: params["title"]
-    path = Git.message_file(title, params["body"])
-    Jobs.run({:commit, nil}, ["commit", "--message-file", path])
-    {:noreply, socket}
-  end
-
-  def handle_event("git_pick", %{"sha" => sha}, socket) do
-    q = if socket.assigns.gt.pick == sha, do: "", else: "&c=#{sha}"
-    {:noreply, push_patch(socket, to: "/git?doc=history#{q}")}
-  end
-
-  # --- the Docker screen ---
-  def handle_event("dk_scope", %{"scope" => scope}, socket) when scope in ~w(workspace daemon) do
-    dk = %{socket.assigns.dk | scope: scope, rows: nil, images: nil, volumes: nil, networks: nil}
-    {:noreply, socket |> assign(dk: dk) |> dk_read()}
-  end
-
-  def handle_event("dk_stats", _, socket) do
-    dk = socket.assigns.dk
-    {:noreply, socket |> assign(dk: %{dk | stats: not dk.stats, live: %{}}) |> dk_stream()}
-  end
-
-  def handle_event("dk_pick", %{"name" => name}, socket) do
-    # Picked again is put down.
-    q = if socket.assigns.dk.pick == name, do: "", else: "&c=#{name}"
-    {:noreply, push_patch(socket, to: "/docker?doc=containers#{q}")}
-  end
-
-  # The one act on a single container: the deployment stays whole.
-  def handle_event("dk_restart", %{"service" => service}, socket) do
-    deployment = (socket.assigns.status && socket.assigns.status["deployment"]) || "dev"
-    Jobs.run({:restart, service}, ["restart", "--deploy", deployment, service])
-    {:noreply, socket}
-  end
-
-  # Always confirmed: the console runs wb.sh under --yes and asks itself.
-  def handle_event("dk_prune", %{"what" => what}, socket) when what in ["", "images", "build"] do
-    Jobs.run({:prune, nil}, ["prune" | if(what == "", do: [], else: ["--" <> what])], confirm: true)
-    {:noreply, socket}
-  end
-
-  # --- the terminal ---
-  def handle_event("term_pick", params, socket) do
-    t = socket.assigns.term
-    t = %{t | target: params["target"] || t.target, shell: params["shell"] || t.shell}
-    {:noreply, assign(socket, term: t)}
-  end
+  # The Git screen, the Docker screen, the terminal: each one's events
+  # go to the module that keeps its state.
+  def handle_event("git_" <> _ = event, params, socket), do: Git.event(event, params, socket)
+  def handle_event("dk_" <> _ = event, params, socket), do: Docker.event(event, params, socket)
+  def handle_event("term_" <> _ = event, params, socket), do: Term.event(event, params, socket)
 
   # A container's own lines: the Logs screen, with that service alone
   # lit. The filter lives in the client — the hook holds the buffer — so
@@ -732,62 +516,9 @@ defmodule ConsoleWeb.ConsoleLive do
       {:noreply,
        socket |> push_patch(to: ~p"/logs") |> push_event("logs_only", %{service: service})}
 
-  def handle_event("term_open", %{"target" => target, "shell" => shell}, socket) do
-    socket = assign(socket, term: %{socket.assigns.term | target: target, shell: shell})
-    {:noreply, socket |> push_patch(to: ~p"/terminal") |> start_term()}
-  end
-
-  # Before the status a session has nothing to open on: the targets
-  # would be guessed and the source's path unknown, and docker would
-  # refuse an empty mount. The button says so and stays dark until then.
-  def handle_event("term_start", _, %{assigns: %{status: nil}} = socket), do: {:noreply, socket}
-  def handle_event("term_start", _, socket), do: {:noreply, start_term(socket)}
-
-  def handle_event("term_close", _, socket), do: {:noreply, close_term(socket)}
-
-  def handle_event("term_line", %{"line" => line}, socket) do
-    t = socket.assigns.term
-
-    if t.port do
-      target = Enum.find(Terminal.targets(socket.assigns.status), &(&1.name == t.target))
-      app = get_in(socket.assigns.status, ["project", "app"]) || "app"
-      # rpc: each line is one expression handed to the release, through the bash that is open.
-      text =
-        if (t.shell == "rpc" and target) && target.release,
-          do: "/app/bin/#{app} rpc \"$(cat <<'EOF_WB'\n#{line}\nEOF_WB\n)\"\n",
-          else: line <> "\n"
-
-      Port.command(t.port, text)
-    end
-
-    targets = Terminal.targets(socket.assigns.status)
-
-    prompt =
-      Terminal.prompt(
-        Enum.find(targets, &(&1.name == t.target)) || hd(targets),
-        t.shell,
-        socket.assigns.status
-      )
-
-    escaped = line |> Phoenix.HTML.html_escape() |> Phoenix.HTML.safe_to_string()
-    {:noreply, push_event(socket, "term_out", %{line: prompt <> escaped, prompt: true})}
-  end
-
-  # The form as filled, kept as option name to value; a collection's
-  # recipe is asked again when a choice moved, since that is what
-  # chooses its members.
-  def handle_event("options", params, socket) do
-    args =
-      Map.merge(
-        params["opt"] || %{},
-        Map.new(params["other"] || %{}, fn {k, v} -> {"other:" <> k, v} end)
-      )
-
-    box = socket.assigns.box
-    moved = box["collection"] and Box.argv(box, args) != Box.argv(box, socket.assigns.args)
-    socket = assign(socket, args: args)
-    {:noreply, if(moved, do: ask_recipe(socket, box, args), else: socket)}
-  end
+  # The box in hand: its face, its options, and what it asks of wb.sh.
+  def handle_event(event, params, socket) when event in ~w(flip options insert eject),
+    do: Hand.event(event, params, socket)
 
   # A line to run — from a button or from the command line: a verb the
   # console knows (Console.Verbs), never a free-form argv. The two verbs
@@ -879,84 +610,6 @@ defmodule ConsoleWeb.ConsoleLive do
     {:noreply, assign(socket, newp: %{out: out, gen: params["gen"] || %{}})}
   end
 
-  def handle_event("insert", _params, socket) do
-    box = socket.assigns.box
-    Jobs.run({:insert, box["name"]}, ["add", box["name"] | Box.argv(box, socket.assigns.args)])
-    {:noreply, socket}
-  end
-
-  # A collection leaves no commit of its own: its Eject is its members',
-  # newest first — one job each, in the queue's order. One that refuses
-  # (files changed since, a dependent) leaves the tree clean, and the
-  # next either goes or refuses on its own.
-  def handle_event("eject", %{"name" => name}, socket) do
-    box = socket.assigns.box
-
-    if box && box["collection"] do
-      names =
-        if(is_list(socket.assigns.recipe), do: socket.assigns.recipe, else: []) ++
-          (box["members"] || [])
-
-      names = names |> Enum.map(& &1["name"]) |> MapSet.new()
-
-      for i <- get_in(socket.assigns.status, ["git", "inserts"]) || [],
-          MapSet.member?(names, i["feature"]),
-          do: Jobs.run({:eject, i["feature"]}, ["eject", i["feature"]])
-    else
-      Jobs.run({:eject, name}, ["eject", name])
-    end
-
-    {:noreply, socket}
-  end
-
-  defp start_term(socket) do
-    status = socket.assigns.status
-    t = close_term(socket).assigns.term
-    targets = Terminal.targets(status)
-    target = Enum.find(targets, &(&1.name == t.target)) || hd(targets)
-
-    shell =
-      if Enum.any?(Terminal.shells(target), &(elem(&1, 0) == t.shell)), do: t.shell, else: "bash"
-
-    {_app, argv} = Terminal.argv(status, target, if(shell == "rpc", do: "bash", else: shell))
-
-    port =
-      Port.open({:spawn_executable, System.find_executable("docker")}, [
-        :binary,
-        :exit_status,
-        :stderr_to_stdout,
-        {:line, 8192},
-        args: argv
-      ])
-
-    socket
-    |> assign(term: %{t | target: target.name, shell: shell, open: true, port: port})
-    |> push_event("term_out", %{
-      line:
-        Terminal.command(status, target, shell) <>
-          "  → " <>
-          if(target.oneoff,
-            do: "a one-off toolchain container with the source mounted (nothing runs)",
-            else: "docker exec on " <> target.name
-          ),
-      dim: true,
-      clear: true
-    })
-  end
-
-  defp close_term(%{assigns: %{term: %{port: nil}}} = socket),
-    do: assign(socket, term: %{socket.assigns.term | open: false})
-
-  defp close_term(socket) do
-    try do
-      Port.close(socket.assigns.term.port)
-    rescue
-      _ -> :ok
-    end
-
-    assign(socket, term: %{socket.assigns.term | open: false, port: nil})
-  end
-
   defp run(socket, line) do
     case Verbs.parse(line) do
       {:ok, kind, args} ->
@@ -968,173 +621,20 @@ defmodule ConsoleWeb.ConsoleLive do
     end
   end
 
-  # --- the shelf's reading -----------------------------------------------------
-
-  # Which reading of the shelf: /shelf?doc=base. Named in the URL by the
-  # row; kept as it was when a link does not name it — a box opening
-  # over the shelf, its screens — so the shelf behind the drawer stays
-  # where the reader left it.
-  defp take_shelf(%{assigns: %{tab: "shelf"}} = socket, %{"doc" => doc}) when is_binary(doc) do
-    if doc in ConsoleWeb.Shelf.doc_names(), do: assign(socket, filter: doc), else: socket
-  end
-
-  defp take_shelf(socket, _params), do: socket
-
-  # --- the Git screen's state ----------------------------------------------------
-
-  # Which document and which commit: /git?doc=history&c=SHA.
-  defp take_git(%{assigns: %{tab: "git"}} = socket, params) do
-    gt = socket.assigns.gt
-    doc = if params["doc"] in GitScreen.doc_names(), do: params["doc"], else: "pending"
-    pick = params["c"]
-    gt = %{gt | doc: doc, pick: pick, files: if(pick == gt.pick, do: gt.files, else: nil)}
-    socket |> assign(gt: gt) |> gt_read(false)
-  end
-
-  defp take_git(socket, _params), do: socket
-
-  # The tree and the log, read off the page. `again` is a status having
-  # arrived: what was read is read again, since a job may have moved it.
-  defp gt_read(%{assigns: %{tab: "git", gt: gt, status: status}} = socket, again) do
-    ws = status && status["workspace"]
-
-    if connected?(socket) and is_binary(ws) and get_in(status, ["git", "repo"]) == true and Application.get_env(:console, :docker_reads, true) do
-      inserts = get_in(status, ["git", "inserts"]) || []
-
-      socket =
-        if gt.doc == "pending" and (again or is_nil(gt.pending)),
-          do: start_async(socket, {:gt, :pending}, fn -> Git.pending(ws) end),
-          else: socket
-
-      socket =
-        if gt.doc == "history" and (again or is_nil(gt.log)),
-          do: start_async(socket, {:gt, :log}, fn -> Git.log(ws, inserts) end),
-          else: socket
-
-      pick = gt.pick
-
-      if gt.doc == "history" and is_binary(pick) and is_nil(gt.files),
-        do: start_async(socket, {:gt, :files}, fn -> Diffs.files_of(ws, pick) end),
-        else: socket
-    else
-      socket
-    end
-  end
-
-  defp gt_read(socket, _again), do: socket
-
-  # --- the Docker screen's state -----------------------------------------------
-
-  # Which document and which container, from the query: /docker?doc=volumes,
-  # ?doc=containers&c=some_test-app-1, ?doc=deploys&deploy=scaled. Opening
-  # Events is looking at what the badge counted: it starts over.
-  defp take_docker(%{assigns: %{tab: "docker"}} = socket, params) do
-    dk = socket.assigns.dk
-    doc = if params["doc"] in DockerScreen.doc_names(), do: params["doc"], else: "containers"
-    deploy = if params["deploy"] in ~w(dev prod scaled), do: params["deploy"], else: dk.deploy
-    pick = params["c"]
-
-    dk = %{
-      dk
-      | doc: doc,
-        deploy: deploy,
-        pick: pick,
-        card: if(pick == dk.pick, do: dk.card, else: nil),
-        alarms: if(doc == "events", do: 0, else: dk.alarms)
-    }
-
-    socket |> assign(dk: dk) |> dk_read() |> dk_stream()
-  end
-
-  # Leaving the screen closes the stream; the readings stay for the way back.
-  defp take_docker(socket, _params), do: dk_stream(socket)
-
-  # The document's readings, asked of the daemon off the page: short
-  # docker commands, one task each, the answer put where the document
-  # looks for it. Not in tests, which have no daemon.
-  defp dk_read(%{assigns: %{tab: "docker", dk: dk, status: status}} = socket) do
-    if connected?(socket) and Application.get_env(:console, :docker_reads, true) do
-      scope = dk.scope
-
-      socket =
-        if is_nil(dk.daemon),
-          do: start_async(socket, {:dk, :daemon}, fn -> Docker.daemon() end),
-          else: socket
-
-      case dk.doc do
-        "containers" ->
-          socket = start_async(socket, {:dk, :rows}, fn -> Docker.containers(status, scope) end)
-          pick = dk.pick
-          if pick, do: start_async(socket, {:dk, :card}, fn -> Docker.card(pick) end), else: socket
-
-        "images" ->
-          start_async(socket, {:dk, :images}, fn -> Docker.images(status, scope) end)
-
-        # The list is milliseconds; the two measurements are seconds, and
-        # land on their own when they land.
-        "volumes" ->
-          socket
-          |> start_async({:dk, :volumes}, fn -> Docker.volumes(status, scope) end)
-          |> start_async({:dk, :sizes}, fn -> Docker.volume_sizes() end)
-          |> start_async({:dk, :df}, fn -> Docker.df() end)
-
-        "networks" ->
-          start_async(socket, {:dk, :networks}, fn -> Docker.networks(status, scope) end)
-
-        "deploys" ->
-          assign(socket, dk: %{dk | composes: Docker.composes(status)})
-
-        _ ->
-          socket
-      end
-    else
-      socket
-    end
-  end
-
-  defp dk_read(socket), do: socket
-
-  # The stats stream lives with the Containers document: open while it
-  # is in front and Stats is on, closed the moment it is not. The daemon
-  # is asked nothing that nobody is looking at.
-  defp dk_stream(socket) do
-    dk = socket.assigns.dk
-    want = connected?(socket) and socket.assigns.tab == "docker" and dk.doc == "containers" and dk.stats
-
-    cond do
-      want and is_nil(dk.port) ->
-        case System.find_executable("docker") do
-          nil ->
-            socket
-
-          docker ->
-            port = Port.open({:spawn_executable, docker}, [:binary, :exit_status, :stderr_to_stdout, {:line, 65_536}, args: Docker.stats_args()])
-            assign(socket, dk: %{dk | port: port})
-        end
-
-      not want and dk.port ->
-        try do
-          Port.close(dk.port)
-        rescue
-          _ -> :ok
-        end
-
-        assign(socket, dk: %{dk | port: nil, live: %{}})
-
-      true ->
-        socket
-    end
-  end
-
   # --- the page -------------------------------------------------------------
 
   # Why a screen is dark: never hidden, marked, with the reason. Deploy,
   # Jobs and Cartridges are always lit.
   defp unlit("git", %{status: status}) do
     cond do
-      not project?(status) -> "this workspace has no project — new makes the first commit"
-      get_in(status, ["git", "repo"]) != true -> "this workspace has no repository — phx.new initialises one"
-      true -> nil
+      not project?(status) ->
+        "this workspace has no project — new makes the first commit"
+
+      get_in(status, ["git", "repo"]) != true ->
+        "this workspace has no repository — phx.new initialises one"
+
+      true ->
+        nil
     end
   end
 
@@ -1200,107 +700,6 @@ defmodule ConsoleWeb.ConsoleLive do
       deploy: ~w(--deploy --replicas --no-balancer),
       targets: ~w(dev prod scaled)
     })
-  end
-
-  # The Logs screen is the hook's: the lines never pass through the
-  # server's render — two thousand of them and a search box would
-  # re-render across the socket on every keystroke — so the whole
-  # screen is built once and left alone (phx-update="ignore").
-  @doc """
-  What the console is doing, in the band's middle: a dot and a word.
-
-  One place, always in front — the tray is per screen and the rail can be
-  hidden. It is the chip's grammar minus the plate, the same move the
-  probe made on the door: nobody presses this, so it has no box. Mono in
-  lower case, because everything here is read off the machine.
-
-  The order is the order of what matters: your word first, since it is the
-  only one the console cannot resolve alone; then what is running; then
-  what is being read; then nothing, which still says so. The lost socket
-  is not here at all — it is written in CSS, on the class LiveView puts on
-  the page when the socket goes, because a server that cannot be reached
-  cannot be the one to tell you.
-  """
-  attr :jobs, :list, required: true
-  attr :reading, :any, required: true
-  attr :errands, :list, default: [], doc: "what the console is fetching from outside, by name"
-
-  def state(assigns) do
-    assigns = assign(assigns, state: state_of(assigns.jobs, assigns.reading, assigns.errands))
-
-    ~H"""
-    <div class={["state", elem(@state, 0)]} aria-live="polite">
-      <span class="w"><i class="dot"></i><span class="word">{elem(@state, 1)}</span></span>
-    </div>
-    """
-  end
-
-  defp state_of(jobs, reading, errands) do
-    running = Enum.filter(jobs, &(&1.state == :running))
-
-    cond do
-      Enum.any?(jobs, &(&1.state == :pending)) -> {"warn", "waiting for your word"}
-      running != [] -> running_word(running)
-      # An errand out of the machine is said before the readings of it:
-      # it is the one the reader pressed a button for, and the only thing
-      # the console does that leaves the host at all. Saying it here is
-      # what the band is for — the button spinning is what the hand sees,
-      # this is what the room sees.
-      errands != [] -> {"busy", "asking " <> Enum.join(errands, " and ") <> "…"}
-      reading == :full -> {"busy", "reading the cartridges…"}
-      reading -> {"busy", "reading…"}
-      true -> {"idle", "idle"}
-    end
-  end
-
-  # The two fields that go out to the internet, by the name of who they
-  # are asking — the same word their button's title uses.
-  defp errands(assigns) do
-    for {asking, who} <- [
-          {assigns.stacks_asking, "docker hub"},
-          {assigns.installers_asking, "hex"}
-        ],
-        asking,
-        do: who
-  end
-
-  defp running_word([job]), do: {"busy", said(job.kind)}
-  defp running_word(jobs), do: {"busy", "#{length(jobs)} jobs"}
-
-  # A job in the band's words: the verb, and what it is about. `up dev`,
-  # `add rest`, `delete` — the cmdline's own first two words, which is
-  # what the reader typed or pressed, and never the whole line: the band
-  # is not the tray.
-  defp said({verb, nil}), do: to_string(verb)
-  defp said({verb, what}), do: "#{verb} #{what}"
-
-  defp logs_screen(assigns) do
-    ~H"""
-    <div class="logs" id="logs" phx-hook="Logs" phx-update="ignore">
-      <div class="toolbar">
-        <span id="svc-chips" style="display:inline-flex;gap:6px;flex-wrap:wrap"></span>
-        <span class="sep"></span>
-        <select id="level" aria-label="Level">
-          <option value="error">Errors only</option>
-          <option value="warn">Warnings and up</option>
-          <option value="info">Info and up</option>
-          <option value="debug" selected>All levels</option>
-        </select>
-        <input type="search" id="q" placeholder="Search the lines…" aria-label="Search" />
-        <span class="sep"></span>
-        <button class="btn" id="follow" type="button" aria-pressed="true">Following</button>
-        <button class="btn" id="ts" type="button" aria-pressed="true">Timestamps</button>
-        <button class="btn" id="clear" type="button">Clear</button>
-      </div>
-      <div class="logmeta">
-        <span id="log-count"></span><span>docker compose logs --follow · the last 500 lines when the stream starts, then live · capped at 2 000 lines in the page</span>
-      </div>
-      <div class="viewport">
-        <div class="lines" id="lines" aria-live="off"></div>
-        <button class="newpill" id="newpill" type="button">↓ new lines</button>
-      </div>
-    </div>
-    """
   end
 
   @impl true
@@ -1414,7 +813,11 @@ defmodule ConsoleWeb.ConsoleLive do
               <span :if={t == "shelf" and @status} class="badge">{length(
                 Cartridges.installed(@status)
               )} in</span>
-              <span :if={t == "docker" and @dk.alarms > 0} class="badge bad" title="a container of this workspace died with a code, was killed for memory, or turned unhealthy — since you last looked at Events">{@dk.alarms} died</span>
+              <span
+                :if={t == "docker" and @dk.alarms > 0}
+                class="badge bad"
+                title="a container of this workspace died with a code, was killed for memory, or turned unhealthy — since you last looked at Events"
+              >{@dk.alarms} died</span>
             </.link>
             <button
               :if={why}

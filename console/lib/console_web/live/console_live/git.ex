@@ -1,0 +1,96 @@
+defmodule ConsoleWeb.ConsoleLive.Git do
+  @moduledoc """
+  The Git screen's state, off the page: which document and which commit
+  the URL names, the tree and the log read off the workspace, and the
+  commit the reader writes.
+  """
+  import Phoenix.Component, only: [assign: 2]
+  import Phoenix.LiveView, only: [connected?: 1, push_patch: 2, start_async: 3]
+
+  alias Console.{Diffs, Git, Jobs}
+  alias ConsoleWeb.GitScreen
+
+  # Which document and which commit: /git?doc=history&c=SHA.
+  def take(%{assigns: %{tab: "git"}} = socket, params) do
+    gt = socket.assigns.gt
+    doc = if params["doc"] in GitScreen.doc_names(), do: params["doc"], else: "pending"
+    pick = params["c"]
+    gt = %{gt | doc: doc, pick: pick, files: if(pick == gt.pick, do: gt.files, else: nil)}
+    socket |> assign(gt: gt) |> read(false)
+  end
+
+  def take(socket, _params), do: socket
+
+  # The tree and the log, read off the page. `again` is a status having
+  # arrived: what was read is read again, since a job may have moved it.
+  def read(%{assigns: %{tab: "git", gt: gt, status: status}} = socket, again) do
+    ws = status && status["workspace"]
+
+    if connected?(socket) and is_binary(ws) and get_in(status, ["git", "repo"]) == true and
+         Application.get_env(:console, :docker_reads, true) do
+      socket
+      |> ask_pending(gt, ws, again)
+      |> ask_log(gt, ws, status, again)
+      |> ask_files(gt, ws)
+    else
+      socket
+    end
+  end
+
+  def read(socket, _again), do: socket
+
+  # The working tree, for the Pending document.
+  defp ask_pending(socket, %{doc: "pending"} = gt, ws, again) do
+    if again or is_nil(gt.pending),
+      do: start_async(socket, {:gt, :pending}, fn -> Git.pending(ws) end),
+      else: socket
+  end
+
+  defp ask_pending(socket, _gt, _ws, _again), do: socket
+
+  # The log, for the History document.
+  defp ask_log(socket, %{doc: "history"} = gt, ws, status, again) do
+    inserts = get_in(status, ["git", "inserts"]) || []
+
+    if again or is_nil(gt.log),
+      do: start_async(socket, {:gt, :log}, fn -> Git.log(ws, inserts) end),
+      else: socket
+  end
+
+  defp ask_log(socket, _gt, _ws, _status, _again), do: socket
+
+  # The picked commit's files, once.
+  defp ask_files(socket, %{doc: "history", pick: pick, files: nil}, ws) when is_binary(pick),
+    do: start_async(socket, {:gt, :files}, fn -> Diffs.files_of(ws, pick) end)
+
+  defp ask_files(socket, _gt, _ws), do: socket
+
+  # --- what the reader does ---------------------------------------------------
+
+  # The message goes to wb.sh through a file: a body has lines, and a
+  # job's argv cannot carry one.
+  def event("git_commit", params, socket) do
+    # A title left blank is the default one, as on the command line.
+    title =
+      if String.trim(params["title"] || "") == "",
+        do: GitScreen.default_title(),
+        else: params["title"]
+
+    path = Git.message_file(title, params["body"])
+    Jobs.run({:commit, nil}, ["commit", "--message-file", path])
+    {:noreply, socket}
+  end
+
+  def event("git_pick", %{"sha" => sha}, socket) do
+    q = if socket.assigns.gt.pick == sha, do: "", else: "&c=#{sha}"
+    {:noreply, push_patch(socket, to: "/git?doc=history#{q}")}
+  end
+
+  # --- what arrives ---------------------------------------------------------
+
+  def async({:gt, key}, {:ok, value}, socket),
+    do: {:noreply, assign(socket, gt: Map.put(socket.assigns.gt, key, value))}
+
+  def async({:gt, _key}, {:exit, why}, socket),
+    do: {:noreply, assign(socket, error: "git could not be read: " <> inspect(why))}
+end

@@ -1,6 +1,7 @@
 defmodule ConsoleWeb.ProjectScreen do
   @moduledoc "The project's own papers: README, CHANGELOG, and the .env with its secrets masked."
   use Phoenix.Component
+  import ConsoleWeb.Ribbon, only: [ribbon: 1]
 
   attr :carried, :list, required: true
   attr :paper, :string, required: true
@@ -9,12 +10,12 @@ defmodule ConsoleWeb.ProjectScreen do
   def project_screen(assigns) do
     ~H"""
     <div class="pdocs">
-      <div class="dtabs docked" role="tablist" aria-label="The project's own documents">
-        <%= for {key, label, file} <- Console.Project.papers() do %>
-          <.link :if={key in @carried} class="dtab" role="tab" patch={"/project?paper=#{key}"} aria-selected={to_string(@paper == key)}>{label}<small>{file}</small></.link>
-          <button :if={key not in @carried} class="dtab unlit" role="tab" type="button" aria-disabled="true" title={paper_why(key, file)}>{label}<small>—</small></button>
-        <% end %>
-      </div>
+      <.ribbon
+        label="The project's own documents"
+        selected={@paper}
+        docked
+        items={for {key, label, file} <- Console.Project.papers(), do: %{key: key, label: label, small: if(key in @carried, do: file, else: "—"), why: key not in @carried && paper_why(key, file), href: "/project?paper=#{key}"}}
+      />
       <div :if={@page && @page[:html]} class={["booklet", @page.toc == [] && "notoc"]} id="p-booklet" phx-hook="Booklet">
         <article class="md">{Phoenix.HTML.raw(@page.html)}</article>
         <nav :if={@page.toc != []} class="toc"><a class="doctitle" href="#top">{@page.title}</a><a :for={{id, text} <- @page.toc} href={"##{id}"}>{text}</a></nav>

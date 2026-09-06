@@ -269,4 +269,14 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
   select optgroup{padding:2px 0 0;color:var(--muted)}
 }
 :root{scrollbar-color:var(--scroll) transparent}
+/* .num — a measure in a column: cpu, memory, a size, a duration. Mono,
+   because it is read off the machine; flush right, so that with the
+   decimals fixed the points line up on their own; tabular digits and no
+   wrapping. The two things this cannot do are the writer's: one unit
+   per column and a fixed number of decimals, so that a value's *length*
+   never changes between two readings — Docker's own three significant
+   figures (`1.9MB`, `1.84MB`, `282.4MiB`) made every refresh of the
+   stats redraw the columns — and, where a value is redrawn live, a
+   reserved width in `ch` for the widest one the column can hold. */
+.num{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .stamp{display:inline-block;font-family:var(--cond);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:10.5px;color:var(--accent-ink);background:var(--accent);padding:3px 8px;border-radius:2px;transform:rotate(8deg);box-shadow:0 2px 4px rgba(0,0,0,.3)}

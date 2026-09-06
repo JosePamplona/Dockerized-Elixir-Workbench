@@ -63,12 +63,52 @@ defmodule Console.Diffs do
 
   defp totals(files), do: %{added: Enum.sum(Enum.map(files, &(&1.added || 0))), removed: Enum.sum(Enum.map(files, &(&1.removed || 0)))}
 
-  # A revision's diff — a commit, or a range as {base, tip} — file by
-  # file: the path, its ± counts (nil for a binary), whether it was born
-  # or is gone, and its rows ready for the sheet.
+  @doc """
+  The working tree against HEAD, for the Git screen: what a commit would
+  take. The tracked changes as a diff, and every untracked file as born,
+  read whole off the disk — git has no patch for what it does not know.
+  `files: []` is a clean tree.
+  """
+  def worktree(workspace) do
+    tracked = files_of(workspace, :worktree)
+
+    untracked =
+      for path <- git(workspace, ["ls-files", "--others", "--exclude-standard"]) |> String.split("\n", trim: true) do
+        treatment = Console.Highlight.treatment(path)
+        text = File.read(Path.join(workspace, path))
+        readable = match?({:ok, t} when is_binary(t), text) and String.valid?(elem(text, 1)) and treatment not in [:image, :omit]
+
+        rows =
+          if readable do
+            # A file ending in a newline is cut into one line more than it
+            # has, an empty one: not a line anyone added.
+            case Console.Highlight.lines(path, elem(text, 1)) do
+              {_, lines} ->
+                lines = if String.ends_with?(elem(text, 1), "\n") and List.last(lines) == "", do: Enum.drop(lines, -1), else: lines
+                lines |> Enum.with_index(1) |> Enum.map(fn {html, n} -> {:add, nil, n, "+", html} end)
+
+              _ ->
+                []
+            end
+          else
+            []
+          end
+
+        %{path: path, added: if(readable, do: length(rows)), removed: if(readable, do: 0), born: true, gone: false, binary: not readable, treatment: treatment, tip: "HEAD", base: "HEAD", rows: rows}
+      end
+
+    files = Enum.sort_by(tracked ++ untracked, & &1.path)
+    Map.merge(%{files: files}, totals(files))
+  end
+
+  # A revision's diff — a commit, a range as {base, tip}, or the working
+  # tree against HEAD as :worktree — file by file: the path, its ±
+  # counts (nil for a binary), whether it was born or is gone, and its
+  # rows ready for the sheet.
   def files_of(workspace, rev) do
     {cmd, args, tip, base} =
       case rev do
+        :worktree -> {"diff", ["HEAD"], :worktree, "HEAD"}
         {base, tip} -> {"diff", [base, tip], tip, base}
         sha -> {"show", [sha], sha, sha <> "^"}
       end
@@ -89,15 +129,18 @@ defmodule Console.Diffs do
       born = Regex.match?(~r/^new file mode /m, chunk)
       gone = Regex.match?(~r/^deleted file mode /m, chunk)
       patch = case Regex.run(~r/^@@ .*/ms, chunk) do [hunk] -> String.trim_trailing(hunk, "\n"); _ -> "" end
-      binary = is_nil(added)
+      treatment = Console.Highlight.treatment(path)
+      # An image of the working tree has no revision the blob route could
+      # serve: it is shown as what it is, binary, until it is committed.
+      binary = is_nil(added) or (tip == :worktree and treatment == :image)
 
       new_face = if gone or binary, do: nil, else: face(workspace, tip, path)
       old_face = if born or binary, do: nil, else: face(workspace, base, path)
 
       %{
         path: path, added: added, removed: removed, born: born, gone: gone, binary: binary,
-        treatment: Console.Highlight.treatment(path),
-        tip: tip, base: base,
+        treatment: treatment,
+        tip: if(tip == :worktree, do: "HEAD", else: tip), base: base,
         rows: rows(patch, new_face, old_face)
       }
     end)
@@ -116,7 +159,21 @@ defmodule Console.Diffs do
   end
 
   # A face of the file, cut into lines: nil when it cannot be read or is
-  # not text.
+  # not text. The working tree's face is the file on disk.
+  defp face(workspace, :worktree, path) do
+    case File.read(Path.join(workspace, path)) do
+      {:ok, out} ->
+        if String.valid?(out) do
+          case Console.Highlight.lines(path, out) do
+            {_, lines} -> List.to_tuple(lines)
+            _ -> nil
+          end
+        end
+
+      _ -> nil
+    end
+  end
+
   defp face(workspace, rev, path) do
     case System.cmd("git", ["-C", workspace, "show", rev <> ":" <> path], stderr_to_stdout: true) do
       {out, 0} ->

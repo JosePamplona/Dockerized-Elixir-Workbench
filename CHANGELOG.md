@@ -14,8 +14,222 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+### Added
+
+- **The production deployment migrates before it boots.** `up --deploy
+  prod` used to start the release against whatever the database had:
+  `bin/server` runs no migrations, and the dev image's `mix setup` is
+  not there. The dev/prod seed now carries the one-shot `migrate`
+  service the scaled seed already had — `bin/migrate` from
+  `phx.gen.release`, the same image, run to completion inside the pod
+  — and `bake_compose` sorts it by Dockerfile: the dev file drops it
+  (the dev image migrates itself on boot), the prod file hands the
+  app's `depends_on` over to it. It is the release phase every
+  platform has under its own name, and now both release deployments
+  say so the same way. `logs`, `stop` and the help know the service.
+- The postgres service of the dev/prod seed declares `POSTGRES_DB:
+  APP_prod`: the image creates it when it initialises the data
+  directory, which is the only moment it honours the variable. A
+  release deployment migrates into a database `bin/migrate` does not
+  create, and prod and scaled share this volume with dev — so it has
+  to be there from the first init, whichever deployment does it.
+  Verified on `test_83` from a fresh volume: `migrate` exited 0 and
+  the release answered 200 on the first `up --deploy prod`.
+
+- **A Git screen.** The rail said `dirty` and offered a commit it could
+  not name. Two documents under the row: *Pending*, what a commit would
+  take, file by file on the sheet the box's Files screen draws (the
+  tracked changes as a diff, every untracked file whole), with the
+  commit's title and body above it — the message travels to `wb.sh
+  commit --message-file`, since a job's argv cannot carry a line; and
+  *History*, the log with the cartridge inserts marked, each commit
+  opening its diff on the same sheet. Narrow on purpose: no branches,
+  no remotes, no discarding by file — `wb.sh` alone writes the
+  workspace and the house's undo is `eject`. What it says that nobody
+  did: a dirty tree stops `add` and `eject`, so the commit is what lets
+  the next cartridge in. The rail's button now leads here.
+- **The console listens to Docker.** `Console.Events` keeps one
+  `docker events` open for as long as the console is, parses what
+  arrives, drops the healthchecks' `exec_*` at the source, keeps the
+  last 500 and broadcasts each one — and, the reason it comes first:
+  a life event on a container of the workspace's project (`die`,
+  `oom`, `health_status`, `start`, `destroy`…) asks the Bench for a
+  fast status, settled over 800 ms. Until now the status was read
+  after a job and never on a clock, so a container that died on its
+  own went unnoticed until the next job. It has to be a stream and not
+  a reading: the daemon holds only its last 256 events, and two
+  healthchecks every 10 s fill that in seven minutes — measured on
+  2026-09-05, `--since 2h` answered exactly 256 lines, all probes.
+- **A Docker screen.** What Docker Desktop showed and the rail could
+  not: six documents under the Project screen's row of tabs, settled
+  in `console/docker-en-la-consola.html` (2026-09-05). *Containers*,
+  the rail's table across the screen with since when, restarts, ports
+  and — streamed only while the document is in front — cpu and
+  memory, and each published port a door — the rail's notation for an
+  address — one per line, opening on the host; the console itself a
+  row, marked; the card of the container
+  picked under the table: command, user, restart policy, network,
+  healthcheck with its last probes, mounts, env with the secrets
+  masked. *Images*, one per ID with every name it wears (the app's
+  `:local` is the toolchain's, tagged per workspace). *Volumes*, with
+  size and who mounts them, and the disk. *Networks*. *Events*, the
+  feed, with the badge Jobs has: red, counting what died with a code,
+  was killed for memory or turned unhealthy since the reader last
+  looked. *Deploys*, each deployment's compose file read like the
+  `.env`, the one not baked unlit. Two scopes on every document: this
+  workspace, or the whole daemon — where the leftovers of the
+  workspaces before this one are. `Console.Docker` reads it all with
+  short `docker` commands; nothing starts a container. The two live
+  columns do not dance: `.num` joined the design system with its rule
+  (one unit per column, fixed decimals, a reserved width), the stream
+  is normalised as it is read, and the README says why.
+- **`wb.sh restart` and `wb.sh prune`.** The console's one act on a
+  single container is Restart — `docker compose restart SERVICE`, the
+  deployment left whole; Stop and Start of one are absent, not unlit,
+  because the deployment is the unit. `prune` removes what no live
+  workspace uses and never this workspace's deployment nor the
+  console — nor anything on the daemon that is not a workspace of this
+  workbench, which it tells by the seed's first line in the compose its
+  containers name, or by the directory being under `_workspaces`: the
+  stopped containers of the other workspaces with their anonymous
+  volumes, and those workspaces' networks and named volumes, the build
+  volumes made before `wb.sh` labelled them included (`prune`); the untagged images a prod bake leaves (`--images`); this
+  workspace's two build volumes, refused while the app mounts them
+  (`--build`). Always confirmed. `.env` masking learned YAML for the
+  composes: `POSTGRES_PASSWORD: postgres` is a secret whatever the
+  punctuation.
+
+- **The code's and the files' faces, from the drawer.** Two rows beside
+  the ground in the console's UI pane, each with a face, a size and a
+  leading, kept in this browser like the frame and the ground: *The
+  code* is what runs — the terminals, the jobs' output, the logs,
+  Docker's events — and *The files* is what is read — the Files sheet,
+  the diffs, `.env` and `config.conf`, the papers' code blocks. Each is
+  three custom properties on the root (`--code-face`, `--code-size`,
+  `--code-leading`; `--file-…` likewise) that every surface of the
+  group reads with its own default in the fallback: the house's IBM
+  Plex Mono at each surface's own size and leading is the properties
+  absent. A sample under each row's selects — a log line and a line of
+  code; a diff hunk — is set in the same properties, so it shows the
+  choice before any screen does. The faces travel with the repository, the first that do
+  (`console/priv/static/assets/fonts/`, with a README of sources and
+  licences): Fira Code (OFL), Flexi IBM VGA (CC BY-SA 4.0) and Tamzen,
+  a bitmap face whose seven drawings are the seven sizes it offers —
+  the size select takes its options from the face. Chromium was made
+  to draw every one at its pixel height before any of this was built.
+
+- **A box's runs read as jobs.** The install screen of a cartridge's
+  box showed the last insert or eject as a black pane under an "Output"
+  label, always open, with its own stylesheet and its own empty words —
+  a second way to meet a job. Now it lists the box's inserts and
+  ejects, newest first, as the rows the Jobs screen draws: the same
+  chip, command line and duration, the same fold and grip, the same
+  words at the foot — confirm it, stop it, run it again. The row is one
+  component, `job_row`, that both screens use; the unfold state is
+  shared, because it is the same job. The pane `.log` stays for the
+  cluster's probes, which are not jobs.
+
+### Removed
+
+- **The `setup` command, and the Database zone of the console's Deploy
+  tab.** It dropped, created, migrated and seeded the database of one
+  `MIX_ENV`, and it was the step the README asked for before the first
+  `up`. Both of its jobs have owners now: the dev image creates and
+  migrates on boot (`mix setup`), the release deployments migrate into
+  the database postgres created (`POSTGRES_DB`, the `migrate` service),
+  and a reset with the seeds is `./wb.sh mix ecto.reset`, which the
+  `mix` help now says. Its prod variant never fitted — `ecto.setup`
+  under `MIX_ENV=prod` from the mounted source, with an entrypoint note
+  excusing the "Could not warm up static assets" error — and it was one
+  of the two commands keeping `--env` as `MIX_ENV`. The other, `demo`,
+  now takes `--deploy TARGET` like every deploy command and runs new,
+  up, logs and delete.
+
 ### Fixed
 
+- **The scaled deployment over a dev database.** The clustering paper
+  left it open (§5): `up --deploy scaled` recreated the dev `database`
+  container carrying its anonymous volume over, so `POSTGRES_DB` was
+  never honoured, `APP_prod` did not exist and `migrate` exited 1. With
+  the dev seed now declaring the same `POSTGRES_DB`, the database is
+  created by whichever deployment initialises the volume first.
+- Both seeds' postgres healthcheck asks over TCP (`pg_isready -h
+  localhost`). Without `-h` it asked the unix socket, which the image's
+  init answers on its temporary server: a fresh volume said healthy
+  before the real server listened, and the migrator's first connections
+  were refused (Ecto's pool retried, so it only showed in the logs).
+
+- **The console would not start on a clean daemon.** Its image is
+  built on the toolchain's, and when that was missing `console` sent
+  the reader to `new` — which builds the toolchain — so the first act
+  sat behind the very screen that offers it, and `console build` said
+  the same. Now `console` and `console build` build what they stand
+  on: the installer's resolution and the toolchain's build came out of
+  `new` into `resolve_installer` and `build_toolchain`, shared by both,
+  so the toolchain the console builds is the one the project to come
+  would have built, and `new` then finds it and builds nothing twice.
+- **The dev app died by SIGKILL on every `down`.** The image's CMD was
+  `sh -c "cd /app/src && mix setup && mix phx.server"`: the shell stayed
+  PID 1 and forwarded nothing, so every stop waited compose's 10 s of
+  grace and killed the app — `kill SIGTERM`, ten seconds, `kill
+  SIGKILL`, `die exit 137`, read off the daemon's events on
+  2026-09-05. One word, `exec`, on the last step (the seed Dockerfile
+  and the entrypoint's default): the BEAM takes PID 1, gets the
+  SIGTERM, stops the application in order and exits 0 — measured at
+  3 s with `docker stop`. Prod was never affected: `bin/server` already
+  `exec`s the release. Existing workspaces get it with their next
+  `new`, or by putting the same line in their compose's `command:`.
+  `init: true` on the app service besides, so docker's init reaps what
+  the dev server's esbuild and tailwind watchers leave behind. And
+  pgadmin had the same disease — its entrypoint is a shell that runs
+  `/entrypoint.sh` — which the new events feed showed on its first
+  restart from the Docker screen: `kill 15`, ten seconds, `kill 9`,
+  `die exit 137`. The same word there.
+
+### Updated
+
+- **One Project card on the Deploy tab.** "New project" is "Project",
+  and "Delete the project" sits in its foot beside "Create project":
+  what the one makes, the other takes away, and the card's chip — *the
+  workspace is empty*, or the red *a project exists here* — already
+  said which of the two applies. The button had a box of its own under
+  "Workspace", the red-edged half of what was once "Database and
+  workspace"; with the database errand gone (Removed, above), a heading
+  over one button named only what its confirmation already says. The
+  board's and the shelf's pointers say "Deploy → Project creates one".
+
+- **The row of documents is one component, and the second row looks
+  second.** Six rows of the console said which document of a screen or
+  a drawer was being read, each written again with a small difference
+  and each setting its own air, ground and margin. `ConsoleWeb.Ribbon`
+  draws all six now, with the unlit tab `aria-disabled` in one place.
+  And the docked ones — under a screen's tabs, under a drawer's — were
+  the first row's grammar ten per cent smaller, which told the reader
+  nothing about rank: they are a band of the house's second surface
+  now, lower, with the document being read cut into the ground of the
+  pane it opens, and the gold rule stays on the row that leads. Settled
+  in `console/la-segunda-fila.html`.
+- **No container of a deployment comes back on its own after a
+  reboot.** The pod and the database carried `restart: unless-stopped`
+  (the dev and the scaled compose) and the app and pgadmin did not, so
+  a reboot of the host brought half a deployment back and the status
+  could only say "no deployment is up and these are still here". The
+  rule is that a deployment goes up and down whole, across a reboot
+  too: no `restart:` anywhere, a reboot leaves everything exited, the
+  status says down, Up raises it whole. What it gives up — a database
+  that crashes is not restarted alone — the events feed says, and
+  Restart is a click.
+
+### Fixed
+
+- **The Cluster screen's "Who answers?" said "no answer" to a balancer
+  that did.** The console reaches the app's port by the name it has for
+  the host, `host.docker.internal`, and a prod endpoint's `force_ssl`
+  leaves only `localhost` alone: under any other name it answers 301 to
+  https, which the probe followed to port 443, where nothing listens.
+  The probe now asks as the browser asks — the same port, the request
+  naming `localhost` — and gets what the reader gets: `HTTP 200 ·
+  X-Served-By: 172.26.0.5:4000`, a replica per request.
 - **The console went deaf during a `new`.** Every line a job wrote put
   the whole job — all of its lines — on the PubSub topic, and every
   page rendered every line of every job again: quadratic, and two
@@ -94,6 +308,44 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **`wb.sh` inside the console stops starting containers it is already
+  in.** The console runs on the toolchain image, and `wb.sh` run in it
+  went on starting a sibling container on that same image for every
+  `mix` and `git` — about 4N container starts for an `add` of N
+  cartridges. `./wb.sh console` now mounts the workspace at `/app/src`
+  with the app's build volumes over it, as the app service has them,
+  and says so (`WORKSPACE_MOUNT`); the four runners that need nothing
+  but the toolchain (`workspace_igniter`, `workspace_git`, and
+  `entrypoint_run` for `new`, `add` and `expand`) then run in this
+  process, and in a container as before from a host. One command, one
+  place that decides where; the verbs know nothing of it. The resident
+  works from `/app/src` too, so it adds to the app's build instead of
+  compiling the project a second time from the host path (Mix keys its
+  manifests on the source path). What stays in a container: `setup`
+  and the cold `mix` (the database is in the pod), builds and compose
+  (the daemon), and the package's own tasks (they would compile
+  through the workbench's bind mount). The mapping is in
+  console/PLAN.md, *The console is the toolchain*. The resident makes
+  the same check as `wb.sh` — the mount is the workspace config.conf
+  names now, and the project's — and, failing it, runs as one container
+  on the workspace's dev image with its volumes, as on a host; and a
+  resident of a workspace config.conf no longer names is dropped for
+  one on the workspace named. Before, a console started for one
+  workspace and pointed at another reported the first workspace's
+  cartridges on the second, and went on reporting them.
+- **The console says which workspace it was started for, and starts
+  again for another.** Its container mounts one workspace and that
+  project's volumes, and cannot mount another: config.conf named
+  another since, the board's workspace section says so and offers
+  *Start again* — `console` run as a job. From inside, `wb.sh console`
+  starts a helper container on the console's image that runs it from
+  outside a moment later, since the console cannot remove the container
+  it runs in without ending the job that asked. `wb.sh console` keeps
+  the port of the console it replaces, so the address survives and the
+  page reconnects on its own. And `wb.sh console` asks for the
+  toolchain image only when it has to build the console's: built once,
+  the console comes up on an empty workspace too, where `new` is the
+  first act and the toolchain of a project not yet born has no tag.
 - **Colour without a terminal, in jobs and in sessions.** A `Port` is a
   pipe, and on a pipe mix, hex, git and compose turn their colours off
   on their own while the console's page turns ANSI into spans. `wb.sh`

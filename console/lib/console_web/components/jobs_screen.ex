@@ -61,59 +61,80 @@ defmodule ConsoleWeb.JobsScreen do
       </div>
       <div class="viewport light">
         <div class="lines" id="jobs" phx-hook="JobOut">
-          <div :for={j <- @jobs} class={["job", MapSet.member?(@open, j.id) && "open"]} data-id={j.id}>
-            <button
-              class="fold jt"
-              type="button"
-              aria-expanded={to_string(MapSet.member?(@open, j.id))}
-              phx-click="fold"
-              phx-value-id={j.id}
-            >
-              <.chip class={job_class(j)}>{job_word(j)}</.chip>
-              <span class="cmdline">{j.cmdline}</span>
-              <span class="dur">{duration(j, @now)}</span>
-            </button>
-            <div class="out">
-              <div class="dim">$ {j.cmdline}</div>
-              <.job_lines id={"jl-" <> j.id} job={j.id} />
-              <div :if={j.state == :pending} class="dim">
-                waiting for your word: confirm it where it was asked, or here —
-                <button class="lk" phx-click="confirm" phx-value-id={j.id}>run it</button>
-                · <button class="lk" phx-click="cancel" phx-value-id={j.id}>drop it</button>
-              </div>
-              <div :if={j.state == :queued} class="dim">
-                waiting its turn behind what is running — <button
-                  class="lk"
-                  phx-click="cancel"
-                  phx-value-id={j.id}
-                >drop it</button>, nothing of it has happened yet
-              </div>
-              <div :if={j.state == :running and @stoppable and @asking != j.id} class="dim">
-                <button class="lk" phx-click="stop_ask" phx-value-id={j.id}>stop it</button>
-              </div>
-              <div :if={j.state == :running and @asking == j.id} class="dim">
-                stop it where it is? what it has already done stays done, and a verb left half-way leaves no commit to revert —
-                <button class="lk" phx-click="stop" phx-value-id={j.id}>stop it</button>
-                · <button class="lk" phx-click="stop_keep">let it finish</button>
-              </div>
-              <div :if={j.state == :stopped} class="dim">
-                stopped on your word — <button class="lk" phx-click="retry" phx-value-id={j.id}>run it again</button>, the same line, as a new job
-              </div>
-              <div :if={j.state == :failed} class="dim">
-                it stopped here — <button class="lk" phx-click="retry" phx-value-id={j.id}>run it again</button>, the same line, as a new job
-              </div>
-            </div>
-            <div
-              :if={MapSet.member?(@open, j.id)}
-              class="ograb"
-              role="separator"
-              aria-orientation="horizontal"
-              tabindex="0"
-              aria-label="How tall this output is — drag, or arrow keys; double-click for the default"
-            >
-            </div>
-          </div>
+          <.job_row :for={j <- @jobs} j={j} open={MapSet.member?(@open, j.id)} now={@now} asking={@asking} stoppable={@stoppable} />
         </div>
+      </div>
+    </div>
+    """
+  end
+
+  @doc """
+  One job as a row: the fold control — chip, command line, duration —
+  and under it the output with the job's own words about itself. The
+  Jobs screen lists every job this way; a cartridge's box lists its own
+  inserts and ejects the same way, so a job reads the same wherever it
+  is met. `prefix` keeps the output pane's id apart when two screens
+  show one job at once.
+  """
+  attr :j, :map, required: true
+  attr :open, :boolean, required: true
+  attr :now, :any, required: true
+  attr :asking, :any, default: nil, doc: "the id whose stop is being confirmed"
+  attr :stoppable, :boolean, default: false
+  attr :prefix, :string, default: "jl-"
+
+  def job_row(assigns) do
+    ~H"""
+    <div class={["job", @open && "open"]} data-id={@j.id}>
+      <button
+        class="fold jt"
+        type="button"
+        aria-expanded={to_string(@open)}
+        phx-click="fold"
+        phx-value-id={@j.id}
+      >
+        <.chip class={job_class(@j)}>{job_word(@j)}</.chip>
+        <span class="cmdline">{@j.cmdline}</span>
+        <span class="dur">{duration(@j, @now)}</span>
+      </button>
+      <div class="out">
+        <div class="dim">$ {@j.cmdline}</div>
+        <.job_lines id={@prefix <> @j.id} job={@j.id} />
+        <div :if={@j.state == :pending} class="dim">
+          waiting for your word: confirm it where it was asked, or here —
+          <button class="lk" phx-click="confirm" phx-value-id={@j.id}>run it</button>
+          · <button class="lk" phx-click="cancel" phx-value-id={@j.id}>drop it</button>
+        </div>
+        <div :if={@j.state == :queued} class="dim">
+          waiting its turn behind what is running — <button
+            class="lk"
+            phx-click="cancel"
+            phx-value-id={@j.id}
+          >drop it</button>, nothing of it has happened yet
+        </div>
+        <div :if={@j.state == :running and @stoppable and @asking != @j.id} class="dim">
+          <button class="lk" phx-click="stop_ask" phx-value-id={@j.id}>stop it</button>
+        </div>
+        <div :if={@j.state == :running and @asking == @j.id} class="dim">
+          stop it where it is? what it has already done stays done, and a verb left half-way leaves no commit to revert —
+          <button class="lk" phx-click="stop" phx-value-id={@j.id}>stop it</button>
+          · <button class="lk" phx-click="stop_keep">let it finish</button>
+        </div>
+        <div :if={@j.state == :stopped} class="dim">
+          stopped on your word — <button class="lk" phx-click="retry" phx-value-id={@j.id}>run it again</button>, the same line, as a new job
+        </div>
+        <div :if={@j.state == :failed} class="dim">
+          it stopped here — <button class="lk" phx-click="retry" phx-value-id={@j.id}>run it again</button>, the same line, as a new job
+        </div>
+      </div>
+      <div
+        :if={@open}
+        class="ograb"
+        role="separator"
+        aria-orientation="horizontal"
+        tabindex="0"
+        aria-label="How tall this output is — drag, or arrow keys; double-click for the default"
+      >
       </div>
     </div>
     """

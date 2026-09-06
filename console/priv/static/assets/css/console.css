@@ -332,13 +332,13 @@ table.rows tr.new{animation:seat 1.2s ease-out}
 
 .deployment{border:1px solid var(--line);background:var(--surface);border-radius:3px;padding:16px 18px;display:grid;gap:12px}
 .deployment .now{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:14px}
-.deployment .pick,.zone .pick{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
-.deployment .pick label,.zone .pick label{display:grid;gap:6px;border:1px solid var(--line);border-radius:3px;padding:10px 12px;cursor:pointer;align-content:start}
+.deployment .pick{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.deployment .pick label{display:grid;gap:6px;border:1px solid var(--line);border-radius:3px;padding:10px 12px;cursor:pointer;align-content:start}
 /* The card the deployment picker paints while rendering, and the one a
    static block paints on its own: same look, and neither has to know
    about the other's way of holding the answer. */
-.deployment .pick label.on,.zone .pick label:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
-.deployment .pick label b,.zone .pick label b{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:13px}
+.deployment .pick label.on{border-color:var(--accent);background:var(--accent-soft)}
+.deployment .pick label b{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:13px}
 /* A card goes down to 220px and everything in it has to live there. Grid
    items are min-content wide by default, and the caveat is a chip — a
    chip never wraps — so its 268px of unbreakable line was setting the
@@ -348,11 +348,6 @@ table.rows tr.new{animation:seat 1.2s ease-out}
    in one of these cards next. */
 .deployment .pick label > *{min-width:0}
 .deployment .pick label > .chip{white-space:normal}
-/* Two words and no blurb: the cards shrink to the words rather than
-   stretching to thirds of the block, which is what the deployment's
-   three descriptions need and this does not. */
-.zone .pick{display:flex;flex-wrap:wrap}
-.zone .pick label{min-width:96px}
 .deployment .pick label p{margin:0;font-size:12.5px;color:var(--muted)}
 .deployment .pick .opts{display:flex;gap:8px 12px;align-items:center;flex-wrap:wrap;font-family:var(--mono);font-size:12px;min-width:0}
 .deployment .pick .opts label{display:inline-flex;gap:6px;align-items:center;border:0;padding:0;background:none;border-radius:0;cursor:pointer}
@@ -365,9 +360,9 @@ table.rows tr.new{animation:seat 1.2s ease-out}
 .term .screen .p{color:var(--accent)}
 .term .screen .dim{color:var(--term-dim)}
 
-.term .in{display:flex;gap:8px;align-items:center;font-family:var(--mono);font-size:12.5px;padding:8px 14px;border-top:1px solid var(--term-line);background:var(--term)}
+.term .in{display:flex;gap:8px;align-items:center;font-family:var(--code-face,var(--mono));font-size:var(--code-size,12.5px);padding:8px 14px;border-top:1px solid var(--term-line);background:var(--term)}
 .term .in .p{color:var(--accent);white-space:nowrap}
-.term .in input{flex:1;font-family:var(--mono);font-size:12.5px;padding:4px 0;border:0;background:transparent;color:var(--term-ink);min-width:0;outline:none}
+.term .in input{flex:1;font-family:var(--code-face,var(--mono));font-size:var(--code-size,12.5px);padding:4px 0;border:0;background:transparent;color:var(--term-ink);min-width:0;outline:none}
 .term .in input::placeholder{color:var(--term-dim)}
 .cluster{display:grid;gap:14px;align-content:start}
 .cluster table{border-collapse:collapse;width:100%;font-family:var(--mono);font-size:12.5px}
@@ -484,8 +479,38 @@ table.rows tr.new{animation:seat 1.2s ease-out}
 .logmeta .lk{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--line)}
 .logmeta .lk:hover,.logmeta .lk:focus-visible{color:var(--ink);text-decoration-color:currentColor;outline:none}
 .viewport{position:relative;background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;overflow:hidden;display:grid}
-.lines{overflow:auto;padding:10px 0;font-family:var(--mono);font-size:12px;line-height:1.5;scrollbar-gutter:stable}
+/* The faces the drawer offers (priv/static/assets/fonts/README.md:
+   sources and licences), for two groups of surface chosen apart: `code`,
+   what runs — terminals, jobs, logs, events — and `file`, what is read —
+   the Files sheet, diffs, .env, config.conf, the papers' blocks. Each
+   surface reads its group's choice as `var(--<group>-face, var(--mono))`,
+   `var(--<group>-size, <its own>)` and `var(--<group>-leading, <its own>)`:
+   the properties are set on the root by hooks.js, and absent they leave
+   each surface as drawn. Tamzen is one family per pixel height — a
+   bitmap drawing each — which is why the size is part of its name. */
+@font-face{font-family:"Tamzen5x9";src:url("/assets/fonts/Tamzen05x9r.ttf");font-weight:400}
+@font-face{font-family:"Tamzen5x9";src:url("/assets/fonts/Tamzen05x9b.ttf");font-weight:700}
+@font-face{font-family:"Tamzen6x12";src:url("/assets/fonts/Tamzen06x12r.ttf");font-weight:400}
+@font-face{font-family:"Tamzen6x12";src:url("/assets/fonts/Tamzen06x12b.ttf");font-weight:700}
+@font-face{font-family:"Tamzen7x13";src:url("/assets/fonts/Tamzen07x13r.ttf");font-weight:400}
+@font-face{font-family:"Tamzen7x13";src:url("/assets/fonts/Tamzen07x13b.ttf");font-weight:700}
+@font-face{font-family:"Tamzen7x14";src:url("/assets/fonts/Tamzen07x14r.ttf");font-weight:400}
+@font-face{font-family:"Tamzen7x14";src:url("/assets/fonts/Tamzen07x14b.ttf");font-weight:700}
+@font-face{font-family:"Tamzen8x15";src:url("/assets/fonts/Tamzen08x15r.ttf");font-weight:400}
+@font-face{font-family:"Tamzen8x15";src:url("/assets/fonts/Tamzen08x15b.ttf");font-weight:700}
+@font-face{font-family:"Tamzen8x16";src:url("/assets/fonts/Tamzen08x16r.ttf");font-weight:400}
+@font-face{font-family:"Tamzen8x16";src:url("/assets/fonts/Tamzen08x16b.ttf");font-weight:700}
+@font-face{font-family:"Tamzen10x20";src:url("/assets/fonts/Tamzen10x20r.ttf");font-weight:400}
+@font-face{font-family:"Tamzen10x20";src:url("/assets/fonts/Tamzen10x20b.ttf");font-weight:700}
+@font-face{font-family:"Flexi IBM VGA True";src:url("/assets/fonts/flexi_IBM_VGA00x20r.ttf");font-weight:400}
+@font-face{font-family:"Fira Code";src:url("/assets/fonts/fira_code00x14r.ttf");font-weight:400}
+@font-face{font-family:"Fira Code";src:url("/assets/fonts/fira_code00x14b.ttf");font-weight:700}
+.lines{overflow:auto;padding:10px 0;font-family:var(--code-face,var(--mono));font-size:var(--code-size,12px);line-height:var(--code-leading,1.5);scrollbar-gutter:stable}
 .ln{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:0 12px;padding:0 14px;white-space:pre-wrap;word-break:break-word;border-left:3px solid transparent}
+/* `.ln` is also a line of a pre — the .env, config.conf raw, a card's
+   env, a compose — and there it is a line, not the log's grid: the grid
+   was putting 12px of column gap after every key. */
+pre .ln{display:block}
 .ln:hover{background:rgba(255,255,255,.04)}
 .ln .t{color:var(--term-dim);font-variant-numeric:tabular-nums}
 .ln .s{color:var(--svc);width:72px;overflow:hidden;text-overflow:ellipsis}
@@ -541,17 +566,6 @@ table.rows tr.new{animation:seat 1.2s ease-out}
 .newcard .foot{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .newcard .foot .cmds{flex:1;min-width:240px;display:grid;gap:3px}
 .newcard .foot .cmd{min-width:0}
-/* Same box twice, and the red edge on one of them. They were one block
-   under one heading — "Database and workspace" — which is the shape of a
-   box holding two things: setting up the database is an errand you run
-   whenever the schema moves, and wiping the workspace is the only action
-   on this screen that cannot be undone. The edge marks what it is about,
-   so it had to stop covering both. */
-.zone,.dangerzone{margin-top:22px;border:1px solid var(--line);padding:14px 16px;display:grid;gap:10px;background:var(--surface)}
-.dangerzone{border-left:3px solid var(--bad)}
-.zone h3,.dangerzone h3{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:15px}
-.zone .acts,.dangerzone .acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.zone select,.dangerzone select{font-family:var(--mono);font-size:12px;padding:4px 6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px}
 .confirm{font-family:var(--serif);font-size:13.5px;color:var(--bad);display:none;gap:8px;align-items:center}
 .confirm.on{display:inline-flex}
 
@@ -575,7 +589,7 @@ table.rows tr.new{animation:seat 1.2s ease-out}
 /* The columns keep their air; the row below does not need as much. The
    output belongs to the line above it — half the gap says so, and 14px
    read as a gap between two things rather than one unfolding. */
-.job{display:grid;grid-template-columns:auto 1fr auto auto;column-gap:14px;row-gap:7px;align-items:center;padding:8px 28px;border-top:1px solid var(--line);font-family:var(--mono);font-size:12px;cursor:pointer}
+.job{display:grid;grid-template-columns:auto 1fr auto auto;column-gap:14px;row-gap:7px;align-items:center;padding:8px 28px;border-top:1px solid var(--line);font-family:var(--mono);font-size:12px;line-height:1.5;cursor:pointer}
 .job:first-child{border-top:0}
 /* The job's trigger is a control of its own, so the caret can be drawn
    from its aria-expanded like every other fold — and so the output below
@@ -586,7 +600,7 @@ table.rows tr.new{animation:seat 1.2s ease-out}
 .job .jt ~ .out{cursor:auto}
 .job .cmdline{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .job .dur{color:var(--muted);font-variant-numeric:tabular-nums}
-.job .out{grid-column:1/-1;display:none;background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:10px 14px;white-space:pre-wrap;line-height:1.55;max-height:var(--job-out,220px);overflow:auto}
+.job .out{grid-column:1/-1;display:none;font-family:var(--code-face,var(--mono));font-size:var(--code-size,12px);background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:10px 14px;white-space:pre-wrap;line-height:var(--code-leading,1.55);max-height:var(--job-out,220px);overflow:auto}
 .job.open .out{display:block}
 /* A job's output is capped so a long one does not push the list out of
    reach, and the cap is the reader's: the row under the pane is a grip,
@@ -648,10 +662,48 @@ table.rows tr.new{animation:seat 1.2s ease-out}
 .drawer .top .back svg{width:18px;height:18px;display:block}
 .drawer .top .back[hidden]{display:none}
 .drawer .top{flex-wrap:wrap;row-gap:8px}
-.dtabs{display:flex;gap:2px;width:100%;margin-bottom:-14px;margin-top:6px}
+/* The row of documents (ConsoleWeb.Ribbon): one rule, two placements.
+   In a drawer's header it rides up into the header's own rule, which is
+   where the negative margin belongs and nowhere else. Docked — the
+   second row, under a screen's tabs or a drawer's — it is a band of the
+   house's second surface, lower than the row above, and the document
+   being read is cut into the ground of the pane it opens: a folder and
+   its tab, the same ground, no rule. Decided in
+   console/la-segunda-fila.html (2026-09-05): two rows of one grammar
+   stacked, ten per cent apart in size, told the reader nothing about
+   which one ranks; a subordinate row changes surface and mark, not
+   size alone, and the gold rule stays on the one row that leads. */
+.dtabs{display:flex;gap:2px;width:100%;flex-wrap:wrap}
+.drawer .top .dtabs{margin:6px 0 -14px}
+/* The band is one surface step above the pane it anchors: on the ground
+   it is the rail's surface, so the two read as one furniture; in a
+   drawer, whose ground is that surface already, the step above it —
+   tried on 2026-09-05: the rail's surface in a drawer left nothing but
+   the hairline. */
+.dtabs.docked{flex:none;width:auto;gap:0;padding:4px 8px 0;background:var(--surface);border-bottom:1px solid var(--line)}
+.drawer .dtabs.docked{background:var(--surface-2)}
+/* The band spans the pane, out over the padding of whatever holds it —
+   and takes that padding back as its own, so its first tab starts where
+   the row above starts its: 28px on a screen, the tab row's, 32px in a
+   drawer's papers. */
+.pdocs .dtabs.docked{margin:0 -28px;padding-left:28px;padding-right:28px}
+.papers .dtabs.docked{margin:0 -32px;padding-left:32px;padding-right:32px}
+.dtabs.docked .dtab{font-size:11.5px;letter-spacing:.1em;padding:5px 11px 6px;border-bottom:0;border-radius:2px 2px 0 0;margin-bottom:-1px}
+.dtabs.docked .dtab[aria-selected="true"]{background:var(--ground);color:var(--ink);box-shadow:0 1px 0 var(--ground)}
+/* The air under the row is the row's: 22px on whatever follows it, set
+   here once and nowhere per pane — Git's pane had none because Docker's
+   carried it under Docker's own name. A pane that scrolls takes it as
+   padding, so its lines pass under the row and not under a strip of
+   ground; a pre, which does not scroll the pane, as margin. */
+.dtabs.docked + .booklet,.dtabs.docked + .dkdoc{padding-top:22px}
+.dtabs.docked + pre.env{margin-top:22px}
+.drawer .dtabs.docked .dtab[aria-selected="true"]{background:var(--surface);box-shadow:0 1px 0 var(--surface)}
 .dtab{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.12em;font-size:12.5px;color:var(--muted);padding:6px 12px 8px;border-bottom:3px solid transparent;display:inline-flex;gap:6px;align-items:center}
 .dtab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
-.dtab small{font-family:var(--mono);font-size:10px;letter-spacing:0;color:var(--muted)}
+/* The sublabel is read off the machine — a count, a file's name — so it
+   is mono in lower case, the house's voice for that, and not the tab's
+   condensed capitals, which are for a name. */
+.dtab small{font-family:var(--mono);font-size:10px;letter-spacing:0;text-transform:none;color:var(--muted)}
 .drawer .need{display:grid;gap:8px;margin:2px 0 0;padding:12px 14px;border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);border-radius:3px}
 .drawer .need .want{margin:0;font-style:italic;font-size:14.5px}
 .drawer .need .row{display:grid;grid-template-columns:58px minmax(0,1fr);gap:10px;font-size:13px;align-items:baseline}
@@ -674,8 +726,7 @@ table.rows tr.new{animation:seat 1.2s ease-out}
    a short one. */
 .papers{display:flex;flex-direction:column;min-height:0;padding:0 32px}
 .papers[hidden]{display:none}
-.papers .dtabs{flex:none;margin:0;padding:10px 0 0;background:var(--surface)}
-.papers .booklet{flex:1;min-height:0;overflow:auto;padding:22px 0 60px}
+.papers .booklet{flex:1;min-height:0;overflow:auto;padding:0 0 60px}
 /* What is fixed above a heading is now the header and the row together,
    so both the index's jumps and the index itself clear the two. */
 .papers .booklet{--fixed-above:0px}
@@ -706,7 +757,7 @@ table.rows tr.new{animation:seat 1.2s ease-out}
 .md a{color:var(--accent);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
 .md a[data-open]{font-family:var(--cond);font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-size:.85em;text-decoration:none;border:1px solid var(--accent);padding:1px 6px;border-radius:2px}
 .md code{font-family:var(--mono);font-size:.86em;background:var(--surface-2);padding:.1em .35em;border-radius:2px}
-.md pre{background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:12px 14px;overflow-x:auto;font-size:12.5px;line-height:1.5;margin:0 0 1.2em}
+.md pre{background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:12px 14px;overflow-x:auto;font-family:var(--file-face,var(--mono));font-size:var(--file-size,12.5px);line-height:var(--file-leading,1.5);margin:0 0 1.2em}
 .md pre code{background:none;padding:0;font-size:inherit;color:inherit}
 .md blockquote{margin:0 0 1em;padding:.2em 0 .2em 14px;border-left:3px solid var(--accent);color:var(--muted);font-style:italic}
 .md table{border-collapse:collapse;font-size:13.5px;margin:0 0 1.2em;display:block;overflow-x:auto;max-width:100%}
@@ -806,12 +857,19 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
 .git .row{display:flex;justify-content:space-between;gap:10px;align-items:center}
 .git .row .k{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px;color:var(--muted)}
 .go.done{background:var(--surface);color:var(--ink);border:1px solid var(--ink);box-shadow:none}
-.log{font-family:var(--mono);font-size:12px;line-height:1.55;background:var(--term);color:var(--term-ink);border-radius:3px;padding:12px 14px;min-height:120px;max-height:260px;overflow:auto;white-space:pre-wrap;border:1px solid var(--term-line)}
+.log{font-family:var(--code-face,var(--mono));font-size:var(--code-size,12px);line-height:var(--code-leading,1.55);background:var(--term);color:var(--term-ink);border-radius:3px;padding:12px 14px;min-height:120px;max-height:260px;overflow:auto;white-space:pre-wrap;border:1px solid var(--term-line)}
 .log .dim{color:var(--term-dim)}.log .add{color:#9BD99A}.log .upd{color:#E3B25C}.log .ok{color:#D4B27E;font-weight:500}
 /* What an empty window says is the window's, not the stylesheet's: the
    install screen and the cluster's probes each say what will land here. */
 .log:empty::before{content:attr(data-empty)}
 .log-cap{display:flex;justify-content:space-between;align-items:baseline}
+/* A box's runs: the Jobs screen's rows, in the drawer's width. The list
+   loses the pane's air and the rows their 28px, which were the viewport's
+   margins; the row's own border keeps them apart. */
+.runs{display:grid;gap:8px}
+.runs .nothing{margin:0;font-family:var(--serif);font-style:italic;font-size:13.5px;color:var(--muted)}
+.lines.inbox{padding:0;overflow:visible;border:1px solid var(--line);border-radius:3px}
+.inbox .job{padding:8px 12px}
 /* --- Installation: what the cartridge wrote --------------------------------
    Its own screen, the drawer's full width, one scroll. */
 .install{padding:22px 32px 60px;display:grid;gap:12px;align-content:start}
@@ -850,7 +908,7 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
            --t-const:#61afef;--t-func:#60acea;--t-kw:#c678dd;--t-op:#d19a66;
            --t-mod:#e5c07b;--t-str:#98c379;--t-interp:#e06c75;--t-regex:#be5046;
            margin:0;overflow:auto;max-height:min(62vh,700px);background:var(--term);color:var(--t-base);
-           border-top:1px solid var(--term-line);font-family:var(--mono);font-size:12.5px;line-height:1.6;padding:8px 0}
+           border-top:1px solid var(--term-line);font-family:var(--file-face,var(--mono));font-size:var(--file-size,12.5px);line-height:var(--file-leading,1.6);padding:8px 0}
 .impl .src .n, .impl .src .nv, .impl .src .nb, .impl .src .nx{color:var(--t-base)}
 .impl .src .p{color:var(--t-punct)}
 .impl .src .c, .impl .src .c1, .impl .src .cm, .impl .src .cs, .impl .src .cp, .impl .src .gp{color:var(--t-comment)}
@@ -958,6 +1016,16 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
 .ui .row .help{margin:0;font-size:12.5px;color:var(--muted)}
 .ui .ground{padding:0;background:none;border:0;cursor:pointer;display:flex;align-items:center}
 .ui .ground svg{width:19px;height:19px;display:block}
+.ui .row .glyph{grid-row:1/5;justify-self:center;font-family:var(--code-face,var(--mono));font-size:15px;line-height:1;color:var(--ink)}
+.ui .row .glyph.files{font-family:var(--file-face,var(--mono))}
+.ui .picks{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;color:var(--ink)}
+.ui .picks label{display:inline-flex;gap:6px;align-items:center;font-family:var(--mono);font-size:12.5px}
+.ui select{font-family:var(--mono);font-size:12px;padding:3px 6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px}
+.ui .sample{margin:4px 0 0;padding:10px 14px;background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;font-family:var(--code-face,var(--mono));font-size:var(--code-size,12px);line-height:var(--code-leading,1.5);overflow-x:auto;white-space:pre}
+.ui .sample .dim{color:var(--term-dim)}
+.ui .sample b{font:inherit;font-weight:700;text-transform:none;letter-spacing:0;color:var(--term-ink)}
+.ui .sample.files{font-family:var(--file-face,var(--mono));font-size:var(--file-size,12.5px);line-height:var(--file-leading,1.5)}
+.ui .sample .add{color:#9BD99A}.ui .sample .del{color:#F3A196}
 .cfg .row select option.dim{color:var(--soft)}
 .cfg .row input[type=text],.cfg .row select{font-family:var(--mono);font-size:13px;padding:6px 8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;width:100%;max-width:520px}
 /* The stack field is a .fetch: the house's pair keeps the field's width,
@@ -978,7 +1046,7 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
 .cfg .row.changed label::after{content:"●";color:var(--accent);font-size:10px}
 .cfg .chip.new{font-size:10px;padding:1px 5px}
 .cfg .stack{display:grid;gap:8px}
-.cfg pre.raw{font-family:var(--mono);font-size:12px;line-height:1.5;background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:14px;overflow:auto;margin:0;white-space:pre}
+.cfg pre.raw{font-family:var(--file-face,var(--mono));font-size:var(--file-size,12px);line-height:var(--file-leading,1.5);background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:14px;overflow:auto;margin:0;white-space:pre}
 /* The pre no longer breaks its own lines: each is an element, so the
    container wraps normally and the line keeps its own spaces. An empty
    line is an empty element, and an empty element is no lines tall — so
@@ -999,10 +1067,9 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
    bar and the cartridge's papers. Its ground is the panel's, not a
    modal's surface. */
 #panel-project{padding-top:0}
-.pdocs .dtabs{flex:none;margin:0;padding:0 0 0;background:var(--ground)}
-.pdocs .booklet{flex:1;min-height:0;overflow:auto;padding:14px 0 40px}
+.pdocs .booklet{flex:1;min-height:0;overflow:auto;padding:0 0 60px}
 .pdocs .booklet .toc{top:0}
-.pdocs pre.env{flex:1;min-height:0;margin-top:14px;font-family:var(--mono);font-size:12.5px;line-height:1.6;background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:14px 16px;overflow:auto;margin:0;white-space:normal}
+.pdocs pre.env{flex:1;min-height:0;font-family:var(--file-face,var(--mono));font-size:var(--file-size,12.5px);line-height:var(--file-leading,1.6);background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:14px 16px;overflow:auto;margin:0;white-space:normal}
 .pdocs pre.env .c{color:var(--term-dim)}.pdocs pre.env .k{color:#D4B27E}.pdocs pre.env .m{color:#F3A196}
 .pdocs .nothing{padding:18px 0;max-width:60ch}
 
@@ -1080,3 +1147,116 @@ header.band ::selection{background:color-mix(in srgb,var(--board-ink) 15%,transp
 .impl .src .shot.drawing{display:none}.impl .src.drawn .shot.drawing{display:block}
 /* The template puts newlines between a pre's children; the rows keep their own spaces. */
 .impl pre.src{white-space:normal}
+
+/* --- the Docker screen ---------------------------------------------------------- */
+/* Six documents under the Project screen's row of tabs (`.pdocs`), settled
+   in console/docker-en-la-consola.html. The table is the rail's Containers
+   table across the width the screen has, and the card of the container
+   picked opens under it: the width is for the columns, and the card wants
+   it whole for the env and the mounts. */
+#panel-docker{padding-top:0}
+/* --- the Git screen ------------------------------------------------------------ */
+/* Two documents under the row, on the Docker screen's pane; the sheet of
+   files is the box's (.impl), the log a table like Docker's. */
+#panel-git{padding-top:0}
+/* The shelf too: its four readings are the row, and the planks the pane. */
+#panel-shelf{padding-top:0}
+.shelfp .toolbar .label{letter-spacing:.08em}
+.git .commit{display:grid;gap:8px;max-width:760px;border:1px solid var(--line);background:var(--surface);border-radius:3px;padding:14px 16px}
+.git .commit .head{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
+.git .commit h3{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:15px}
+.git .commit .a{color:var(--good)}.git .commit .r{color:var(--bad)}
+.git .commit input[type=text],.git .commit textarea{font-family:var(--mono);font-size:13px;padding:6px 8px;border:1px solid var(--line);background:var(--ground);color:var(--ink);border-radius:2px;width:100%}
+.git .commit textarea{resize:vertical;line-height:1.5}
+.git .commit input:disabled,.git .commit textarea:disabled{opacity:.6}
+.git .commit .acts{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.git .impl{padding:0}
+.git table.commits td.mono{font-family:var(--mono)}
+.git table.commits .sj{margin-right:8px}
+.git table.commits .hint{display:block;white-space:pre-wrap;max-width:70ch}
+.git table.commits tr[phx-click]{cursor:pointer}
+/* The pane under the row: it scrolls, the row does not — the shape of
+   the Project's booklet, without the booklet's two columns. */
+/* A column and not a grid: a grid of a fixed height sizes its rows to
+   what fits, and a table that scrolls sideways (a scroll container, so
+   its minimum height is nothing) was given the height left over and
+   clipped inside itself — thirteen images of twenty-seven. Here every
+   block keeps its own height and the pane is what scrolls. */
+.pdocs .dkdoc{flex:1;min-height:0;overflow:auto;padding:0 0 60px;display:flex;flex-direction:column;gap:14px}
+.pdocs .dkdoc>*{flex:none;min-width:0}
+.docker .toolbar .note.daemon{margin-left:auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dtab .badge{font-family:var(--mono);font-size:10.5px;padding:1px 6px;border-radius:999px;background:var(--surface-2);color:var(--muted);letter-spacing:0}
+.dtab .badge.bad{background:var(--bad);color:#fff}
+/* A table wider than the rail's: it scrolls inside its own box, never the page. */
+.tbl{overflow-x:auto}
+table.wide{border-collapse:collapse;width:100%;font-family:var(--mono);font-size:12.5px}
+table.wide th{text-align:left;font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.wide td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap}
+table.wide td.k{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px}
+table.wide td.k.mono{font-family:var(--mono);font-weight:400;letter-spacing:0;text-transform:none}
+table.wide td.k .nm{display:block}
+table.wide td .hint{display:block;font-size:11px;color:var(--muted);margin-top:3px;font-family:var(--mono);font-weight:400;letter-spacing:0;text-transform:none}
+/* Whose it is, when it is not this workspace's: the project, beside the name. */
+table.wide td .of{font-family:var(--mono);font-weight:400;letter-spacing:0;text-transform:none;font-size:11px;color:var(--soft);margin-left:8px}
+/* The two columns redrawn every two seconds reserve the width of the
+   widest value they can hold: `1200.0 %` on twelve cores, `1234.5 MiB`. */
+/* The head of a column of measures sits on the edge its values are read
+   by — the right one — and keeps the head's own face otherwise. */
+table.wide th.num{text-align:right}
+table.wide td.num.cpu{min-width:9ch}
+table.wide td.num.mem{min-width:11ch}
+table.wide td.dim,table.wide th.dim{color:var(--muted)}
+table.wide td.wrap{white-space:normal}
+/* A published port is an address, and an address is a door — the rail's
+   own notation — one per line,
+   read down like the list it is, centred in its row. */
+table.wide td.ports .port+.port{margin-top:4px}
+table.wide td.ports .door-ref{white-space:nowrap}
+/* The actions read down from their left edge, as the rail's do: Logs at
+   the same x on every row, Restart after it, and the shell in its own
+   column — a row with fewer buttons leaves the tail empty instead of
+   sliding what it has across. */
+table.wide td.act{text-align:left;width:1%}
+table.wide td.act .btn.mini{padding:2px 8px;font-size:11px;vertical-align:middle}
+/* The shell is a column of its own, last: it opens a session on another
+   screen, where Logs and Restart act from this one. */
+table.wide td.act.shell{padding-left:14px}
+table.wide tr[phx-click]{cursor:pointer}
+table.wide tr.on td{background:var(--accent-soft)}
+/* Another workspace's, or gone: quieter. Not `.other` — that name is the
+   drawer's row for a version typed by hand, and it is a flex row. */
+table.wide tr.dead td,table.wide tr.theirs td{color:var(--soft)}
+table.wide tr.dead td.k,table.wide tr.theirs td.k{color:var(--muted)}
+/* The card: one container, whole. */
+.ficha{border:1px solid var(--line);background:var(--surface);border-radius:3px;padding:14px 16px;display:grid;gap:12px}
+.ficha header{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.ficha h3{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:15px}
+.ficha .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px 22px}
+.ficha .grid>*{min-width:0}
+.ficha .grid>.full{grid-column:1/-1}
+.ficha dl{margin:0;display:grid;grid-template-columns:max-content minmax(0,1fr);gap:4px 12px;font-family:var(--mono);font-size:12px;align-content:start}
+.ficha dt{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:11px;color:var(--muted);white-space:nowrap}
+.ficha dd{margin:0;overflow-wrap:anywhere}
+.ficha dd .m{color:var(--muted)}
+.ficha dd .bad{color:var(--bad)}
+.ficha .cap,.docker h3.cap{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:11px;color:var(--muted);margin:0 0 6px}
+.docker h3.cap{margin:8px 0 0}
+/* The env of a card and the compose of a deployment wear the .env's ground. */
+.ficha pre.env,.docker pre.env{font-family:var(--file-face,var(--mono));font-size:var(--file-size,11.5px);line-height:var(--file-leading,1.6);background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:10px 12px;margin:0;white-space:normal;overflow:auto;flex:none}
+/* The template puts a newline between one line and the next; each keeps its own spaces. */
+.ficha pre.env .ln,.docker pre.env .ln{white-space:pre-wrap}
+.ficha pre.env .k,.docker pre.env .k{color:#D4B27E}
+.ficha pre.env .m,.docker pre.env .m{color:#F3A196}
+.ficha pre.env .c,.docker pre.env .c{color:var(--term-dim)}
+/* A compose or a feed fills what the pane leaves and scrolls alone: the
+   pane is a column, and the one block that grows takes the rest of it,
+   so there is one scroll and not the pane's on top of the block's. */
+.pdocs .dkdoc>pre.env{flex:1;min-height:0}
+.pdocs .dkdoc>.viewport{flex:1;min-height:160px}
+/* The 60px under a document is for its last paragraph not to sit on the
+   edge; a block that ends where the pane ends does not want it. */
+.pdocs .dkdoc:has(>pre.env,>.viewport){padding-bottom:22px}
+/* The feed: the Logs screen's pane, server-rendered — five hundred lines at most. */
+.docker .lines{min-height:0}
+.docker .ln.dim .m{color:var(--term-dim)}
+.docker .acts{display:flex;gap:10px;align-items:center;flex-wrap:wrap}

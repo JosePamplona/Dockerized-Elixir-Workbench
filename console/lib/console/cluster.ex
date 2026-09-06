@@ -13,8 +13,13 @@ defmodule Console.Cluster do
   def answers(port) do
     :inets.start()
 
+    # Asked as the browser asks: the port is reached by the name the
+    # console has for the host, but the request names `localhost`, the
+    # host the reader's browser sends — and the one a prod endpoint's
+    # force_ssl leaves alone. Under the console's own name the endpoint
+    # would answer 301 to https, and the balancer's answer with it.
     for _ <- 1..4 do
-      case :httpc.request(:head, {~c"http://#{host()}:#{port}/", []}, [timeout: 3000], []) do
+      case :httpc.request(:head, {~c"http://#{host()}:#{port}/", [{~c"host", ~c"localhost"}]}, [timeout: 3000], []) do
         {:ok, {{_, code, _}, headers, _}} ->
           served = for {k, v} <- headers, String.downcase(to_string(k)) == "x-served-by", do: to_string(v)
           "HTTP #{code} · X-Served-By: #{Enum.join(served, ", ")}" |> String.trim_trailing(" · X-Served-By: ")

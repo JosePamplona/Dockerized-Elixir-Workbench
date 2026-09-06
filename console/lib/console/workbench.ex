@@ -38,10 +38,46 @@ defmodule Console.Workbench do
   @doc "The usable stacks — the hexpm/elixir tags — asked of Docker Hub through wb.sh; seconds."
   def stacks, do: json(["stacks", "--json"])
 
-  @doc "The workspace's dev image, as wb.sh names it: the project's name with dashes, `:local`."
-  def local_image do
-    name = Console.Config.values(config())["PROJECT_NAME"] || "app"
-    (name |> String.downcase() |> String.replace(" ", "-")) <> ":local"
+  @doc """
+  The project the workspace holds, as `wb.sh` names it: `name` — the
+  compose project, and the prefix of its `_build` and `deps` volumes —
+  and `image`, its dev image. Read off the workspace's own compose when
+  it has one, the record of its creation, and derived from config.conf's
+  PROJECT_NAME otherwise, the way `new` will name it.
+  """
+  def project(ws \\ workspace()) do
+    compose = if ws, do: File.read(Path.join(ws, "docker-compose.yml")), else: :none
+    text = with {:ok, text} <- compose, do: text, else: (_ -> "")
+    lower = (Console.Config.values(config())["PROJECT_NAME"] || "app") |> String.downcase()
+    # The app service's image, not the first image in the file (the pod's).
+    app = text |> String.split("\n  app:\n", parts: 2) |> Enum.at(1, "")
+
+    %{
+      name: capture(text, ~r/^name: (\S+)/m) || String.replace(lower, " ", "_"),
+      image: capture(app, ~r/^    image: (\S+)/m) || String.replace(lower, " ", "-") <> ":local"
+    }
+  end
+
+  defp capture(text, regex), do: regex |> Regex.run(text, capture: :all_but_first) |> then(&(&1 && hd(&1)))
+
+  @doc """
+  What `./wb.sh console` mounted this container for, against what
+  config.conf names now: `nil` when they agree — or when the console
+  runs by hand, with no mount — and the mount's `%{workspace:, project:}`
+  when they do not. The same three checks `wb.sh` makes
+  (`toolchain_here`) and the resident (`mounted_here?`): while they
+  fail every mix and git of a job runs in a container of its own, and
+  the console has to be started again to run them here.
+  """
+  def rebind do
+    mount = %{workspace: System.get_env("WORKSPACE_MOUNT_PATH"), project: System.get_env("WORKSPACE_MOUNT_PROJECT")}
+    ws = workspace()
+
+    cond do
+      is_nil(System.get_env("WORKSPACE_MOUNT")) -> nil
+      mount.workspace == ws and mount.project == project(ws).name -> nil
+      true -> mount
+    end
   end
 
   @doc "config.conf, as `Console.Config` reads it."

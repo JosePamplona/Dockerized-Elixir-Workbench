@@ -26,11 +26,13 @@ RUN apt-get update -y && \
 # no directory in this image for a fresh volume to take its ownership
 # from. A workspace has one (/app/src) and needs none of this — its
 # volumes simply cover its _build and deps, and Mix is told nothing.
-# The workspace's volumes ride in this container too, over the
-# workspace's own two directories, so the resident — the project's BEAM
-# beside the console — finds what the app service compiled. Which is
-# why `Console.Resident` clears these two for that run: inherited, they
-# would send the workspace's compilation into the console's build.
+# The workspace rides in this container too, at /app/src with its two
+# volumes over it as the app service has them, so the resident — the
+# project's BEAM beside the console — and the mix and git that wb.sh
+# runs in here find what the app service compiled. Which is why
+# `Console.Resident` and wb.sh clear these two for those runs:
+# inherited, they would send the workspace's compilation into the
+# console's build.
 RUN mkdir -p /app/console/build /app/console/deps && chown -R elixir:elixir /app/console
 ENV MIX_BUILD_ROOT=/app/console/build \
     MIX_DEPS_PATH=/app/console/deps

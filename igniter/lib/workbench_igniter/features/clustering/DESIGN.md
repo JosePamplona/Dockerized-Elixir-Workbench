@@ -675,6 +675,10 @@ assigned.
   A workspace whose dev deployment has run needs `down` with its
   volumes — or a `createdb` — before its first scaled deployment; the
   seed could also give the scaled database a volume of its own. Open.
+  *Settled 2026-09-05*, the other way round: the dev/prod seed declares
+  the same `POSTGRES_DB`, so whichever deployment initialises the
+  volume creates `APP_prod`, and the prod compose gained the one-shot
+  `migrate` too.
 
 ## References
 

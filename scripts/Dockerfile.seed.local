@@ -87,4 +87,9 @@ RUN mix local.hex --force && \
 # database (idempotent) and starts the server — all from the mounted
 # source. The workspace's docker-compose.yml can override this with
 # its `command:`. Mirrored in the compose seed's comment: keep in sync.
-CMD ["sh", "-c", "cd /app/src && mix setup && mix phx.server"]
+# `exec` on the last step: the shell hands its PID 1 to the BEAM, which
+# handles SIGTERM (it stops the application in order and exits 0).
+# Without it `sh` stayed PID 1, forwarded nothing, and every `down`
+# waited compose's 10 s of grace and killed the app with SIGKILL —
+# `die exit 137` on the daemon's events, measured 2026-09-05.
+CMD ["sh", "-c", "cd /app/src && mix setup && exec mix phx.server"]

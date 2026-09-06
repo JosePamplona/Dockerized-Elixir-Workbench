@@ -7,6 +7,7 @@ defmodule ConsoleWeb.Box do
   """
   use Phoenix.Component
   import ConsoleWeb.Refs
+  import ConsoleWeb.Ribbon, only: [ribbon: 1]
   alias ConsoleWeb.Cartridges
 
   @screens [{"box", "Box"}, {"install", "Installation"}, {"files", "Files"}, {"manual", "Manual"}]
@@ -20,7 +21,11 @@ defmodule ConsoleWeb.Box do
   attr :page, :map, default: nil, doc: "the rendered paper"
   attr :args, :map, required: true, doc: "the form as filled: option name to value(s)"
   attr :recipe, :any, default: nil, doc: "a collection's plan from expand, :asking, || nil"
-  attr :job, :map, default: nil, doc: "the last insert || eject of this box"
+  attr :jobs, :list, default: [], doc: "the inserts and ejects of this box, newest first"
+  attr :open, :any, default: MapSet.new(), doc: "the job ids unfolded"
+  attr :now, :any, default: nil
+  attr :asking, :any, default: nil
+  attr :stoppable, :boolean, default: false
   attr :face, :string, default: "front"
   attr :tab, :string, default: "shelf"
   attr :diff, :any, default: nil, doc: "what the cartridge wrote (Console.Diffs), :loading, || nil"
@@ -35,17 +40,15 @@ defmodule ConsoleWeb.Box do
       <div class="top">
         <div class="who"><h3>{@box["name"]}</h3></div>
         <.link class="btn" patch={"/#{@tab}"}>Put back</.link>
-        <div class="dtabs" role="tablist" aria-label="The box && what comes inside it">
-          <%= for {key, label} <- @screens do %>
-            <% why = screen_unlit(key, @box, @installed, @papers) %>
-            <.link :if={!why} class="dtab" role="tab" patch={"/#{@tab}?box=#{@box["name"]}&screen=#{key}#{if key == "manual", do: "&paper=#{@paper}"}"} aria-selected={to_string(@screen == key)}>{label}</.link>
-            <button :if={why} class="dtab unlit" role="tab" aria-disabled="true" aria-selected="false" title={why} type="button">{label}</button>
-          <% end %>
-        </div>
+        <.ribbon
+          label="The box && what comes inside it"
+          selected={@screen}
+          items={for {key, label} <- @screens, do: %{key: key, label: label, why: screen_unlit(key, @box, @installed, @papers), href: "/#{@tab}?box=#{@box["name"]}&screen=#{key}#{if key == "manual", do: "&paper=#{@paper}"}"}}
+        />
       </div>
 
       <.files :if={@screen == "files"} box={@box} status={@status} diff={@diff} />
-      <.install :if={@screen == "install"} box={@box} c={@c} status={@status} catalog={@catalog} args={@args} recipe={@recipe} job={@job} installed={@installed} />
+      <.install :if={@screen == "install"} box={@box} c={@c} status={@status} catalog={@catalog} args={@args} recipe={@recipe} jobs={@jobs} open={@open} now={@now} asking={@asking} stoppable={@stoppable} installed={@installed} />
       <.manual :if={@screen == "manual"} box={@box} papers={@papers} paper={@paper} page={@page} tab={@tab} />
       <.sheet :if={@screen == "box"} box={@box} c={@c} status={@status} catalog={@catalog} args={@args} recipe={@recipe} installed={@installed} face={@face} />
     </aside>
@@ -136,11 +139,12 @@ defmodule ConsoleWeb.Box do
     """
   end
 
+  @doc "One file of a diff, folded: the sheet the box's Files screen and the Git screen share."
   attr :f, :map, required: true
   attr :i, :integer, required: true
-  attr :status, :map
+  attr :status, :map, default: nil
 
-  defp file(assigns) do
+  def file(assigns) do
     by = Map.get(assigns.f, :by, [])
     assigns = assign(assigns, by: by, shown: Enum.take(by, 3), rest: max(length(by) - 3, 0), id: "f-#{assigns.i}")
 
@@ -396,10 +400,16 @@ defmodule ConsoleWeb.Box do
           <span class="note">{install_note(assigns)}</span>
         </div>
       </form>
-      <div>
-        <div class="log-cap"><span class="label">Output</span><span :if={@job} class="note">{@job.cmdline} · {@job.state}</span></div>
-        <ConsoleWeb.JobsScreen.job_lines :if={@job} id={"jbox-" <> @job.id} job={@job.id} class="log" data-empty="The install output will stream here — && into the jobs tray." />
-        <div :if={!@job} class="log" data-empty="The install output will stream here — && into the jobs tray."></div>
+      <%!-- The box's runs, each the row the Jobs screen draws: the same
+            chip, the same fold, the same grip and the same words at the
+            foot — one way to meet a job, wherever it is met. The unfold
+            state is the Jobs screen's too: it is the same job. --%>
+      <div class="runs">
+        <div class="log-cap"><span class="label">Runs</span><span :if={@jobs != []} class="note">this box's inserts and ejects, newest first · they are in the Jobs tab too</span></div>
+        <p :if={@jobs == []} class="nothing">Nothing has run for this box yet: an insert's output lands here, and in the jobs tray.</p>
+        <div :if={@jobs != []} class="lines inbox" id={"runs-" <> @box["name"]} phx-hook="JobOut">
+          <ConsoleWeb.JobsScreen.job_row :for={j <- @jobs} j={j} open={MapSet.member?(@open, j.id)} now={@now} asking={@asking} stoppable={@stoppable} prefix="jbox-" />
+        </div>
       </div>
     </div>
     """
@@ -532,12 +542,12 @@ defmodule ConsoleWeb.Box do
   defp manual(assigns) do
     ~H"""
     <div class="papers">
-      <div class="dtabs docked" role="tablist" aria-label="The papers the box carries">
-        <%= for {key, label, file} <- Console.Papers.papers() do %>
-          <.link :if={key in @papers} class="dtab" role="tab" patch={"/#{@tab}?box=#{@box["name"]}&screen=manual&paper=#{key}"} aria-selected={to_string(@paper == key)}>{label}<small>{file}</small></.link>
-          <button :if={key not in @papers} class="dtab unlit" role="tab" type="button" aria-disabled="true" title={"this box carries no #{file}"}>{label}<small>—</small></button>
-        <% end %>
-      </div>
+      <.ribbon
+        label="The papers the box carries"
+        selected={@paper}
+        docked
+        items={for {key, label, file} <- Console.Papers.papers(), do: %{key: key, label: label, small: if(key in @papers, do: file, else: "—"), why: key not in @papers && "this box carries no #{file}", href: "/#{@tab}?box=#{@box["name"]}&screen=manual&paper=#{key}"}}
+      />
       <div :if={@page} class={["booklet", @page.toc == [] && "notoc"]} id="d-booklet" phx-hook="Booklet">
         <article class="md">{Phoenix.HTML.raw(@page.html)}</article>
         <nav :if={@page.toc != []} class="toc" aria-label="In this document">

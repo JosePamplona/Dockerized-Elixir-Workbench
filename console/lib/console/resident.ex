@@ -8,15 +8,22 @@ defmodule Console.Resident do
   `answer> ` line out.
 
   Where it runs: inside the console's own container, as a process
-  beside the console (the image is the toolchain, the same the
-  workspace's dev image is an alias of, so they share the workspace's
-  `_build`); on a host running the console by hand, in one long-lived
-  toolchain container instead, since the project's path dependency on
-  the package resolves at `/app/workbench`.
+  beside the console — the image is the toolchain, the same the
+  workspace's dev image is an alias of, and `./wb.sh console` mounts
+  the workspace at `/app/src` with the app's volumes over it
+  (`WORKSPACE_MOUNT`), so the resident compiles from the app's own
+  source path into the app's own `_build` and finds what it compiled.
+  That mount was made for the workspace config.conf named when the
+  console started; named another since, the mount is not this
+  workspace's — the same three checks `wb.sh` makes, `toolchain_here` —
+  and the resident runs in one long-lived container on the workspace's
+  dev image instead, with its volumes, as it does on a host running the
+  console by hand. Slower to start, and right.
 
   It is started on the first question, restarted when it dies, and
-  dropped when the workspace changes (`new`, `delete`): the next
-  question starts a fresh one on the new project.
+  dropped when the workspace changes — `new`, `delete`, or config.conf
+  naming another path: the next question starts a fresh one on the
+  project that is there.
   """
   use GenServer
 
@@ -40,7 +47,7 @@ defmodule Console.Resident do
 
   @impl true
   def handle_call({:ask, request}, from, state) do
-    state = ensure_started(state)
+    state = state |> follow_workspace() |> ensure_started()
 
     if state.port do
       state = %{state | waiting: :queue.in({request, from}, state.waiting)}
@@ -124,23 +131,36 @@ defmodule Console.Resident do
 
   defp ensure_started(state), do: state
 
-  # Inside the console's container the workbench is at its host path and
-  # WORKBENCH_PATH says so to the project's mix.exs; on a host, a toolchain
-  # container with the two mounts the project expects.
+  # A resident of another workspace — config.conf moved on — is dropped;
+  # the one that follows starts on the workspace named now.
+  defp follow_workspace(%{port: port, workspace: ws} = state) when port != nil do
+    if ws == Workbench.workspace(), do: state, else: close(state)
+  end
+
+  defp follow_workspace(state), do: state
+
+  # Here, when this container mounts this very workspace at /app/src;
+  # else a container on the workspace's dev image, with the two mounts
+  # the project's mix.exs expects and the app's volumes over _build and
+  # deps, so nothing compiles through the bind mount there either.
   defp command(ws) do
     dir = Workbench.dir()
+    project = Workbench.project(ws)
     # deps.get and deps.compile first: the package's own dependencies
     # are only fetched, and compiled, with the workbench mounted, which
     # the app service never has. Incremental: a second once done.
     mix = ["do", "deps.get,", "deps.compile,", "workbench.serve"]
 
-    if System.get_env("WORKBENCH_DIR") do
-      # The workspace compiles into its own _build and deps, which is
-      # where the volumes the app service writes to are mounted here
-      # too: what the app compiled is what the resident finds. The two
-      # variables are UNSET for this run — they are the console's own,
-      # set in its image so its build lives under /app/console, and
-      # inherited they would send the workspace's compilation there.
+    if mounted_here?(ws, project) do
+      # The workspace as the app service sees it: /app/src, the volumes
+      # over its _build and deps (WORKSPACE_MOUNT, set by `./wb.sh
+      # console`). Mix keys its manifests on the source path, so from
+      # there what the app compiled is what the resident finds, and
+      # adds to; from the host path it would compile the project again.
+      # The two variables are UNSET for this run — they are the
+      # console's own, set in its image so its build lives under
+      # /app/console, and inherited they would send the workspace's
+      # compilation there.
       env = [
         {~c"WORKBENCH_PATH", String.to_charlist(dir)},
         {~c"MIX_ENV", ~c"dev"},
@@ -148,14 +168,22 @@ defmodule Console.Resident do
         {~c"MIX_DEPS_PATH", false}
       ]
 
-      {System.find_executable("mix"), mix, [cd: ws, env: env]}
+      {System.find_executable("mix"), mix, [cd: System.fetch_env!("WORKSPACE_MOUNT"), env: env]}
     else
-      image = Workbench.local_image()
-
       {System.find_executable("docker"),
-       ["run", "-i", "--rm", "--name", "#{image |> String.replace(":", "_")}_workbench_serve_#{:os.getpid()}",
-        "-v", "#{ws}:/app/src", "-v", "#{dir}:/app/workbench:ro", "-w", "/app/src", image, "mix" | mix], []}
+       ["run", "-i", "--rm", "--name", "#{project.name}_workbench_serve_#{:os.getpid()}",
+        "-v", "#{ws}:/app/src", "-v", "#{dir}:/app/workbench:ro",
+        "-v", "#{project.name}_build:/app/src/_build", "-v", "#{project.name}_deps:/app/src/deps",
+        "-w", "/app/src", project.image, "mix" | mix], []}
     end
+  end
+
+  # The three things `./wb.sh console` says about its mount, against the
+  # workspace config.conf names now — as `toolchain_here` in wb.sh.
+  defp mounted_here?(ws, project) do
+    System.get_env("WORKSPACE_MOUNT") != nil and
+      System.get_env("WORKSPACE_MOUNT_PATH") == ws and
+      System.get_env("WORKSPACE_MOUNT_PROJECT") == project.name
   end
 
   defp close(%{port: nil} = state), do: state

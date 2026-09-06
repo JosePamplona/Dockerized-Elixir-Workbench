@@ -13,6 +13,7 @@ defmodule Console.Application do
       {Phoenix.PubSub, name: Console.PubSub},
       Console.Jobs,
       Console.Logs,
+      Console.Events,
       Console.Resident,
       Console.Bench,
       # Start a worker by calling: Console.Worker.start_link(arg)

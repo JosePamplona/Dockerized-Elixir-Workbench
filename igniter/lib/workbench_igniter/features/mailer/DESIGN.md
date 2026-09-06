@@ -556,7 +556,7 @@ lines conflict"**, nothing written — the same trailing byte, in two
 files earlier inserts had written, both appended to at the end by
 live; then ecto 18 files (176/5), clean, its `AGENTS.md` block being
 in the middle. `priv/static/assets/` held `default.css` and the two
-placeholders; after `mix assets.build` (2.7 kB `app.js`, no LiveView)
+placeholders; after `mix assets.build` (2.7 KiB `app.js`, no LiveView)
 `git status` showed both placeholders modified. Compile with
 `--warnings-as-errors` passed; `mix test` 5 tests, 0 failures.
 
@@ -577,7 +577,7 @@ handler gone, the config block, the components, the layouts), ecto 18
 (176/5), gettext 8 (276/18), mailer 8 (49/1). After the run
 `AGENTS.md`, `assets/js/app.js` and `priv/gettext/errors.pot` all
 ended in one newline. `mix compile --warnings-as-errors` passed, `mix
-assets.build` bundled the 327.8 kB `app.js` with LiveView in it, `mix
+assets.build` bundled the 327.8 KiB `app.js` with LiveView in it, `mix
 test` 5 tests, 0 failures.
 
 *Probe D* — the API-only project, gettext then ecto: clean, and

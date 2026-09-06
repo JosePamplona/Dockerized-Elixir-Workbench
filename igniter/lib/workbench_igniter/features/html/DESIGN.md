@@ -179,7 +179,7 @@ changed, and created `lib/probe_web/components/`, the three
 controller files and `page_html/`, `priv/static/assets/`,
 `priv/static/images/`, the two tests — no issue; then esbuild,
 tailwind, dashboard and ecto over it, each clean; `mix compile
---warnings-as-errors`, `mix assets.build` (2.7 kB `app.js` without
+--warnings-as-errors`, `mix assets.build` (2.7 KiB `app.js` without
 LiveView), and the project's `mix test` — figures in the mailer paper
 §4.3.
 

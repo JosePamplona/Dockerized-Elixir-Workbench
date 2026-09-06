@@ -7,7 +7,18 @@ defmodule ConsoleWeb.Shelf do
   """
   use Phoenix.Component
   import ConsoleWeb.Refs
+  import ConsoleWeb.Ribbon, only: [ribbon: 1]
   alias ConsoleWeb.Cartridges
+
+  @docs [{"all", "All"}, {"collection", "Collections"}, {"base", "Base"}, {"covered", "With a box"}]
+  def docs, do: @docs
+  def doc_names, do: Enum.map(@docs, &elem(&1, 0))
+
+  # How many of the catalog each reading of the shelf holds.
+  defp count(catalog, "all"), do: length(catalog)
+  defp count(catalog, "collection"), do: Enum.count(catalog, & &1["collection"])
+  defp count(catalog, "base"), do: Enum.count(catalog, & &1["base"])
+  defp count(catalog, "covered"), do: Enum.count(catalog, & &1["covers"]["front"])
 
   attr :catalog, :list, required: true
   attr :status, :map, default: nil
@@ -38,20 +49,22 @@ defmodule ConsoleWeb.Shelf do
     assigns = assign(assigns, groups: groups, with_box: with_box, in_count: Enum.count(assigns.catalog, installed?))
 
     ~H"""
-    <div class="shelf-head">
-      <h2>Cartridges <span class="label">{length(@catalog)} cartridges · {@with_box} with a box</span></h2>
-      <div class="toolbar">
-        <div class="filters" role="group" aria-label="Filter the shelf">
-          <button :for={{f, label} <- [{"all", "All"}, {"collection", "Collections"}, {"base", "Base"}, {"covered", "With a box"}]}
-            class="btn" type="button" phx-click="filter" phx-value-filter={f} aria-pressed={to_string(@filter == f)}>{label}</button>
+    <div class="pdocs shelfp">
+      <.ribbon
+        label="The shelf: all of it, or one kind"
+        selected={@filter}
+        docked
+        items={for {key, label} <- docs(), do: %{key: key, label: label, small: "#{count(@catalog, key)}", href: "/#{@tab}?doc=#{key}"}}
+      />
+      <div class="dkdoc">
+        <div class="toolbar">
+          <span class="label">{@in_count} in the project · {@with_box} with a box</span>
+          <span class="sep"></span>
+          <div class="views" role="group" aria-label="How the shelf is laid out" id="shelf-views" phx-hook="ShelfView">
+            <button class="btn" type="button" phx-click="view" phx-value-view="covers" aria-pressed={to_string(@view == "covers")} title="The boxes, on the plank">Covers</button>
+            <button class="btn" type="button" phx-click="view" phx-value-view="list" aria-pressed={to_string(@view == "list")} title="A row for each cartridge, with what it is">List</button>
+          </div>
         </div>
-        <span class="sep"></span>
-        <div class="views" role="group" aria-label="How the shelf is laid out" id="shelf-views" phx-hook="ShelfView">
-          <button class="btn" type="button" phx-click="view" phx-value-view="covers" aria-pressed={to_string(@view == "covers")} title="The boxes, on the plank">Covers</button>
-          <button class="btn" type="button" phx-click="view" phx-value-view="list" aria-pressed={to_string(@view == "list")} title="A row for each cartridge, with what it is">List</button>
-        </div>
-      </div>
-    </div>
     <div id="shelf">
       <%= for {label, list} <- @groups, list != [] do %>
         <div class="row">
@@ -61,6 +74,8 @@ defmodule ConsoleWeb.Shelf do
           <div :if={@view != "list"} class="plank"></div>
         </div>
       <% end %>
+    </div>
+      </div>
     </div>
     """
   end

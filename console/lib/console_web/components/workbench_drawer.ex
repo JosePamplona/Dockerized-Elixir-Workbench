@@ -7,6 +7,7 @@ defmodule ConsoleWeb.WorkbenchDrawer do
   """
   use Phoenix.Component
   import ConsoleWeb.Refs
+  import ConsoleWeb.Ribbon, only: [ribbon: 1]
 
   # The drawer's top row is categories, the way the cartridge's is: what
   # the workbench is set by, what this browser is set by, and what the
@@ -51,15 +52,20 @@ defmodule ConsoleWeb.WorkbenchDrawer do
       <div class="top">
         <h3>Dockerized Elixir Workbench <.chip :if={@version}>v{@version}</.chip></h3>
         <.link class="btn" patch={"/#{@tab}"}>Close</.link>
-        <div class="dtabs" role="tablist" aria-label="The workbench: what sets it, what draws it, what it says">
-          <.link :for={{key, label} <- tabs()} class="dtab" role="tab" patch={"/#{@tab}?wb=#{key}#{if key == "manual", do: "&paper=#{@paper}"}"} aria-selected={to_string(@wb == key)}>{label}</.link>
-        </div>
+        <.ribbon
+          label="The workbench: what sets it, what draws it, what it says"
+          selected={@wb}
+          items={for {key, label} <- tabs(), do: %{key: key, label: label, href: "/#{@tab}?wb=#{key}#{if key == "manual", do: "&paper=#{@paper}"}"}}
+        />
       </div>
       <.config :if={@wb == "config"} config={@config} edits={@edits} raw={@raw} stacks={@stacks} asking={@asking} stacks_error={@stacks_error} installers={@installers} installers_asking={@installers_asking} installers_error={@installers_error} jobs={@jobs} />
       <div :if={@wb == "manual"} class="papers">
-        <div class="dtabs docked" role="tablist" aria-label="The workbench's own papers">
-          <.link :for={{key, label, file} <- Console.Papers.workbench_papers()} class="dtab" role="tab" patch={"/#{@tab}?wb=manual&paper=#{key}"} aria-selected={to_string(@paper == key)}>{label}<small>{file}</small></.link>
-        </div>
+        <.ribbon
+          label="The workbench's own papers"
+          selected={@paper}
+          docked
+          items={for {key, label, file} <- Console.Papers.workbench_papers(), do: %{key: key, label: label, small: file, href: "/#{@tab}?wb=manual&paper=#{key}"}}
+        />
         <div :if={@page} class={["booklet", @page.toc == [] && "notoc"]} id="wb-booklet" phx-hook="Booklet">
           <article class="md">{Phoenix.HTML.raw(@page.html)}</article>
           <nav :if={@page.toc != []} class="toc" aria-label="In this document"><a class="doctitle" href="#top">{@page.title}</a><a :for={{id, text} <- @page.toc} href={"##{id}"}>{text}</a></nav>
@@ -412,7 +418,7 @@ defmodule ConsoleWeb.WorkbenchDrawer do
   defp ui(assigns) do
     ~H"""
     <div class="ui" id="wb-ui" phx-hook="Frame" phx-update="ignore">
-      <p class="lede">How this console is arranged, and the ground it is read on. Kept in this browser, not in <code>config.conf</code>: it is what you are looking at, not what the workbench builds.</p>
+      <p class="lede">How this console is arranged, the ground it is read on, and the face its code is set in. Kept in this browser, not in <code>config.conf</code>: it is what you are looking at, not what the workbench builds.</p>
       <div class="row"><button class="frame" type="button" data-frame="band-bottom" data-axis="band" aria-label="The band: top or bottom"></button><b>The band</b><p class="help" data-help="band-bottom"></p></div>
       <div class="row"><button class="frame" type="button" data-frame="rail-right" data-axis="rail" aria-label="The rail: left or right"></button><b>The rail's side</b><p class="help" data-help="rail-right"></p></div>
       <div class="row"><button class="frame" type="button" data-frame="rail-off" data-axis="off" aria-label="The rail: shown or hidden"></button><b>The rail</b><p class="help" data-help="rail-off"></p></div>
@@ -421,6 +427,31 @@ defmodule ConsoleWeb.WorkbenchDrawer do
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2" /><path d="M12 3a9 9 0 010 18z" fill="currentColor" /></svg>
         </button>
         <b>The ground</b><p class="help" id="help-theme"></p>
+      </div>
+      <div class="row">
+        <span class="glyph" aria-hidden="true">Aa</span>
+        <b>The code</b>
+        <p class="help">What runs: the terminals, the jobs' output, the logs, Docker's events. <span id="help-code"></span></p>
+        <p class="help picks"><label>face <select id="code-face" aria-label="The code face"></select></label><label>size <select id="code-size" aria-label="The code size"></select></label><label>leading <select id="code-leading" aria-label="The code leading, as a ratio of the size"></select></label></p>
+        <%!-- The sample is set in the same properties the surfaces read,
+              so it changes with the selects and nothing has to repaint it:
+              a log line with a bold name, a line of code with the pairs a
+              face can confuse, and the glyphs ligatures like to join. --%>
+        <pre class="sample" aria-label="A sample in the chosen face and size"><span class="dim">app-1  | 02:04:44.962 [info] Running <b>GalacticArcadeWeb.Endpoint</b> with Bandit 1.12.5 at :::4000 (http)</span>
+    &#123;:ok, pid&#125; = Task.start(fn -&gt; Repo.all(from u in User, where: u.age &gt;= 18) end)
+    0O 1lI| ~r/[a-z]+/ != &lt;= -&gt; |&gt; =&gt; &amp;&amp; :: "quoted" 'single' `tick`</pre>
+      </div>
+      <div class="row">
+        <span class="glyph files" aria-hidden="true">Aa</span>
+        <b>The files</b>
+        <p class="help">What is read: the Files sheet, the diffs, <code>.env</code> and <code>config.conf</code>, the papers' code blocks. <span id="help-file"></span></p>
+        <p class="help picks"><label>face <select id="file-face" aria-label="The files' face"></select></label><label>size <select id="file-size" aria-label="The files' size"></select></label><label>leading <select id="file-leading" aria-label="The files' leading, as a ratio of the size"></select></label></p>
+        <pre class="sample files" aria-label="A sample in the chosen face and size"><span class="dim">@@ -12,7 +12,8 @@ defmodule GalacticArcadeWeb.Router do</span>
+       pipe_through :browser
+    <span class="del">-    get "/", PageController, :home</span>
+    <span class="add">+    get "/", PageController, :home, as: :root</span>
+    <span class="add">+    get "/about", PageController, :about</span>
+       live "/rooms/:id", RoomLive, :show</pre>
       </div>
     </div>
     """

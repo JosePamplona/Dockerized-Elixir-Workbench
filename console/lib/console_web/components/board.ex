@@ -5,6 +5,7 @@ defmodule ConsoleWeb.Board do
   alias ConsoleWeb.{Cartridges, Terminal}
 
   attr :status, :map, default: nil
+  attr :rebind, :map, default: nil, doc: "the mount this console was started for, when config.conf names another workspace"
   attr :catalog, :list, default: []
   attr :folded, :any, default: nil, doc: "the section keys folded away, a MapSet"
   attr :reading, :any, default: false, doc: "a reading in flight: :fast, :full, or false — the empty board's own word"
@@ -20,7 +21,7 @@ defmodule ConsoleWeb.Board do
       <p :if={!@error} class="note">./wb.sh status --json — a container start and a Mix boot: seconds, more on a busy host.</p>
     </section>
     <%= if @status do %>
-      <.workspace status={@status} />
+      <.workspace status={@status} rebind={@rebind} />
       <.doors status={@status} catalog={@catalog} folded={@folded} />
       <.deployments status={@status} busy={@busy} folded={@folded} />
       <.containers status={@status} folded={@folded} />
@@ -65,12 +66,34 @@ defmodule ConsoleWeb.Board do
   # and two places saying the same thing is the thing the house keeps
   # learning not to do. The empty board keeps its own word, which is not
   # the same sentence: with nothing on it, "reading…" IS the board.
+  # The console is bound to the workspace it was started for: its
+  # container mounts it, and the volumes of that project, and cannot
+  # mount another. Named another since, config.conf is obeyed — every
+  # verb reads it — but each mix and git of a job goes to a container
+  # of its own, the way the host runs them. Said here, with the way
+  # out: `console` as a job, which starts the console again for the
+  # workspace named now, on the same address.
+  attr :status, :map, required: true
+  attr :rebind, :map, default: nil
+
   defp workspace(assigns) do
     ~H"""
     <section class="ws">
       <span class="label">Workspace</span>
       <p class="name">{@status["compose_project"] || "no project"}</p>
       <div class="path mono">{@status["workspace"]}</div>
+      <p :if={@rebind} class="note">
+        This console was started for <span class="mono">{@rebind.project}</span> at <span class="mono">{@rebind.workspace}</span>.
+        Until it starts again for this workspace, every mix and git of a job runs in a container of its own.
+        <button
+          class="btn mini"
+          phx-click="run"
+          phx-value-args="console"
+          title="./wb.sh console — the console comes up again for this workspace, on the same address; this page reconnects on its own"
+        >
+          Start again
+        </button>
+      </p>
       <div class="urls">
         <.door_ref :if={@status["ports"]["app"]} label="app" path={"localhost:#{@status["ports"]["app"]}"} href={"http://localhost:#{@status["ports"]["app"]}"} />
         <.door_ref :if={@status["ports"]["pgadmin"]} label="pgAdmin" path={"localhost:#{@status["ports"]["pgadmin"]}"} href={"http://localhost:#{@status["ports"]["pgadmin"]}"} />
@@ -129,7 +152,7 @@ defmodule ConsoleWeb.Board do
 
     why =
       cond do
-        assigns.status["exists"] != true -> "the workspace is empty: Deploy → New project starts one"
+        assigns.status["exists"] != true -> "the workspace is empty: Deploy → Project creates one"
         assigns.busy -> "a job is running"
         true -> nil
       end
@@ -167,7 +190,7 @@ defmodule ConsoleWeb.Board do
     <section class={folded?(@folded, "containers") && "folded"}>
       <.head key="containers" name="Containers" label={@sum} folded={@folded} />
       <table class="rows acts" id="containers">
-        <tr :if={@cs == []}><td class="nothing">{if @status["exists"], do: "No containers: the project is down. Deploy → Up.", else: "The workspace is empty: Deploy → New project."}</td></tr>
+        <tr :if={@cs == []}><td class="nothing">{if @status["exists"], do: "No containers: the project is down. Deploy → Up.", else: "The workspace is empty: Deploy → Project."}</td></tr>
         <tr :for={c <- @cs}>
           <td class="k" title={c["Image"]}>{c["Service"]}<span class="hint">{short_image(c["Image"])}</span></td>
           <td class="st"><.chip class={container_class(c)}>{if c["Health"] not in [nil, ""], do: c["Health"], else: c["State"]}</.chip></td>
@@ -210,7 +233,7 @@ defmodule ConsoleWeb.Board do
   end
 
   # The pause container owns the workspace's network namespace and its
-  # ports, and sleeps: ~700 KB with no shell in them.
+  # ports, and sleeps: ~700 kB with no shell in them.
   defp shellable?(c), do: c["Service"] != "network"
 
   # The image without its registry and namespace: `registry.k8s.io/pause`
@@ -237,7 +260,7 @@ defmodule ConsoleWeb.Board do
           <div class="row"><span class="k">tree</span><.chip class={if @status["git"]["clean"], do: "good", else: "warn"}>{if @status["git"]["clean"], do: "clean", else: "dirty"}</.chip></div>
           <div class="row"><span class="k">head</span><span>{@status["git"]["head"] || "no commits yet"}</span></div>
           <div class="row"><span class="k">signs as</span><span title={@status["git"]["identity"]}>{String.replace(@status["git"]["identity"] || "", ~r/ <.*/, "")}</span></div>
-          <button :if={not @status["git"]["clean"]} class="btn" phx-click="run" phx-value-args="commit">Commit pending changes</button>
+          <.link :if={not @status["git"]["clean"]} class="btn" patch="/git" title="the Git screen: what is pending, and the commit with a title">Commit pending changes</.link>
         <% else %>
           <p class="nothing">phx.new initialises the repository; new makes the first commit.</p>
         <% end %>

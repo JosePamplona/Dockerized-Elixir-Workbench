@@ -165,28 +165,6 @@
       <section class="panel on" id="panel-deploy" role="tabpanel">
         <div class="newcard" id="newcard"></div>
         <div class="targets" id="targets"></div>
-        <div class="zone">
-          <h3>Database</h3>
-          <!-- The same question the Deployment card asks, so the same
-               control asks it: which environment this is for. It was a
-               <select>, which hid one of the two answers behind a click
-               and looked like nothing else on the screen. -->
-          <div class="pick" role="radiogroup" aria-label="The environment to set the database up for">
-            <label><div><input type="radio" name="setup-env" value="dev" checked> <b>dev</b></div></label>
-            <label><div><input type="radio" name="setup-env" value="prod"> <b>prod</b></div></label>
-          </div>
-          <div class="acts">
-            <button class="btn" id="setup">Setup the database</button>
-            <span class="note">drops it, creates it, seeds it</span>
-          </div>
-        </div>
-        <div class="dangerzone">
-          <h3>Workspace</h3>
-          <div class="acts">
-            <button class="btn danger" id="delete">Delete the project</button>
-            <span class="confirm" id="delete-confirm">Files, containers, images and volumes go. <button class="btn danger" id="delete-yes">Yes, delete</button><button class="btn" id="delete-no">Keep it</button></span>
-          </div>
-        </div>
       </section>
 
       <section class="panel" id="panel-project" role="tabpanel">
@@ -481,7 +459,7 @@ function renderConsole() {
   const t = $("#containers"); t.replaceChildren();
   const running = state.containers.filter(c => c.state === "running").length;
   $("#containers-sum").textContent = state.containers.length ? `${running} of ${state.containers.length} running` : "none";
-  if (!state.containers.length) t.append(el("tr", {}, el("td", { class: "muted" }, state.project === false ? "The workspace is empty: Deploy → New project." : "No containers: the project is down. Deploy → Up.")));
+  if (!state.containers.length) t.append(el("tr", {}, el("td", { class: "muted" }, state.project === false ? "The workspace is empty: Deploy → Project." : "No containers: the project is down. Deploy → Up.")));
   for (const c of state.containers) {
     const label = c.health || c.state;
     const cls = c.health === "healthy" || (!c.health && c.state === "running") ? "good" : c.state === "running" || c.health === "starting" ? "warn busy" : "bad";
@@ -523,7 +501,7 @@ function renderConsole() {
 // word is the same word — the reader is bringing this one up either way.
 function deployButton(verb, name, running, busy) {
   const extra = verb === "up" && name === "scaled" ? scaledExtra() : "";
-  const why = state.project === false ? "the workspace is empty: Deploy → New project starts one"
+  const why = state.project === false ? "the workspace is empty: Deploy → Project creates one"
     : busy ? "a job is running" : null;
   const b = unlit(el("button", { class: "btn mini", onclick: () => { if (!isUnlit(b)) deploy(verb, name, extra); } },
     verb === "up" ? "Up" : "Down"), why);
@@ -681,7 +659,7 @@ function showTab(name) {
 // screens this console has before earning any of them.
 function renderProjectTab() {
   unlit($("#tab-project"), state.project ? null
-    : "this workspace has no project — Deploy → New project starts one");
+    : "this workspace has no project — Deploy → Project creates one");
   if (!state.project && state.tab === "project") showTab("deploy");
 }
 
@@ -1783,7 +1761,7 @@ function bindLineKeys(input, { history, words, screen, run, clear }) {
 
 // The wb.sh line: the commands wb.sh has, then the cartridges and their
 // options from the catalog. Staged output here; the console runs it as a job.
-const WB_COMMANDS = ["login", "new", "add", "eject", "console", "bake", "commit", "catalog", "status", "stacks", "setup", "up", "build", "logs", "stop", "down", "ps", "iex", "bash", "mix", "delete", "demo", "help"];
+const WB_COMMANDS = ["login", "new", "add", "eject", "console", "bake", "commit", "catalog", "status", "stacks", "up", "build", "logs", "stop", "down", "ps", "iex", "bash", "mix", "delete", "demo", "help"];
 state.cli = { history: new History() };
 function cliWords(line) {
   const parts = line.split(/\s+/);
@@ -1793,8 +1771,7 @@ function cliWords(line) {
     if (parts.length === 2) return state.entries.map(e => e.name);
     const e = byName(name); return e ? e.options.map(o => "--" + o.name.replace(/_/g, "-")) : [];
   }
-  if (cmd === "up" || cmd === "build" || cmd === "logs" || cmd === "stop" || cmd === "down" || cmd === "iex" || cmd === "bash") return parts.at(-2) === "--deploy" ? ["dev", "prod", "scaled"] : ["--deploy", "--replicas", "--no-balancer"];
-  if (cmd === "setup" || cmd === "demo") return ["--env"];
+  if (cmd === "up" || cmd === "build" || cmd === "demo" || cmd === "logs" || cmd === "stop" || cmd === "down" || cmd === "iex" || cmd === "bash") return parts.at(-2) === "--deploy" ? ["dev", "prod", "scaled"] : ["--deploy", "--replicas", "--no-balancer"];
   return [];
 }
 function cliRun(line) {
@@ -1883,8 +1860,8 @@ function renderTargets() {
   const busy = state.jobs.some(j => j.state === "running" && /wb\.sh (up|stop|down|build)\b/.test(j.cmdline));
   const extra = pick === "scaled" ? scaledExtra() : "";
   const card = el("div", { class: "deployment" });
-  // The card had no name while the two around it — New project, Database
-  // and workspace — had one. Singular on purpose: the note beside the chip
+  // The card had no name while the one above it, Project, had one.
+  // Singular on purpose: the note beside the chip
   // says one deployment at a time, and the heading says it first.
   card.append(el("h3", {}, "Deployment"));
   card.append(el("div", { class: "now" },
@@ -2150,7 +2127,7 @@ function renderNewCard() {
   // danger, and it was the quietest thing on the screen; an empty workspace
   // is the safe case, and it was the amber one. The red says now what the
   // confirmation only said after the click, which is a step too late.
-  box.append(el("h3", {}, "New project", state.project === false
+  box.append(el("h3", {}, "Project", state.project === false
     ? el("span", { class: "chip" }, "the workspace is empty")
     : el("span", { class: "chip bad", title: "creating overwrites every file in it" }, "a project exists here")));
   const form = el("div", { class: "form" });
@@ -2199,6 +2176,10 @@ function renderNewCard() {
     el("div", { class: "cmd", id: "np-cmd" }, newCommand())));
   if (state.newp.confirm) foot.append(el("span", { class: "confirm on" }, "A project already exists in this workspace: every file in it goes.", el("button", { class: "btn danger", onclick: () => { state.newp.confirm = false; createProject(); } }, "Yes, overwrite"), el("button", { class: "btn", onclick: () => { state.newp.confirm = false; renderNewCard(); } }, "Keep it")));
   else foot.append(el("button", { class: "btn primary", disabled: busy, onclick: () => { if (state.project !== false) { state.newp.confirm = true; renderNewCard(); } else createProject(); } }, busy ? "Creating…" : "Create project"));
+  // The reverse of Create, on the same card: what the one makes, the
+  // other takes away. Unlit on an empty workspace rather than hidden.
+  if (state.newp.del) foot.append(el("span", { class: "confirm on" }, "Files, containers, images and volumes go.", el("button", { class: "btn danger", onclick: () => { state.newp.del = false; deleteProject(); } }, "Yes, delete"), el("button", { class: "btn", onclick: () => { state.newp.del = false; renderNewCard(); } }, "Keep it")));
+  else { const d = unlit(el("button", { class: "btn danger", onclick: () => { if (!isUnlit(d)) { state.newp.del = true; renderNewCard(); } } }, "Delete the project"), state.project === false ? "the workspace is empty: nothing to delete" : ""); foot.append(d); }
   box.append(foot);
 }
 function createProject() {
@@ -2217,7 +2198,7 @@ function createProject() {
     ["", "* creating Dockerfile"], ["", "* creating .dockerignore"], ["", "* creating rel/overlays/bin/server"],
     ["add", "Create: Dockerfile.local"], ["add", "Create: docker-compose.yml"], ["  ", `  name: ${app} · app port ${STATUS.ports.app}` + (bases.includes("ecto") && (state.newp.gen.database || "postgres") !== "sqlite3" ? ` · pgAdmin ${STATUS.ports.pgadmin}` : " · no database service")],
     ["ok", `Committed New project: ${app} (as ${conf.GIT_IDENTITY === "workbench" ? "Dockerized Elixir Workbench <wb.sh@localhost>" : state.git.identity || "Dockerized Elixir Workbench <wb.sh@localhost>"}).`],
-    ["ok", `✓ ${name} created in ${conf.WORKSPACE_PATH}. Set up the database and bring it up: ./wb.sh setup && ./wb.sh up`],
+    ["ok", `✓ ${name} created in ${conf.WORKSPACE_PATH}. Bring it up: ./wb.sh up`],
   ];
   runJob(newCommand(), lines, { onDone: () => {
     state.project = true; STATUS.compose_project = app;
@@ -2231,18 +2212,10 @@ function createProject() {
   renderNewCard(); jobsPing();
 }
 
-$("#setup").addEventListener("click", () => {
-  const env = $('input[name="setup-env"]:checked').value;
-  runJob(`./wb.sh setup --env ${env}`, [["dim", `[7c1e]workbench/scripts/entrypoint.sh(2): setup ${env}`], ["", `The database for ${MOD}.Repo has been dropped`], ["", `The database for ${MOD}.Repo has been created`], ["", "Running migrations: none pending"], ["", "Seeding: priv/repo/seeds.exs"], ["ok", "✓ database ready."]]);
-  jobsPing();
-});
-$("#delete").addEventListener("click", () => $("#delete-confirm").classList.add("on"));
-$("#delete-no").addEventListener("click", () => $("#delete-confirm").classList.remove("on"));
-$("#delete-yes").addEventListener("click", () => {
-  $("#delete-confirm").classList.remove("on");
-  runJob("./wb.sh --yes delete", [["dim", "⚠️ Warning This action will delete all project files from " + STATUS.workspace], ["dim", "Continuing (--yes)."], ...composeLines("dev", "down"), ["", ` Volume ${STATUS.compose_project}_pgdata  Removed`], ["", ` Image ${IMAGE}:local  Removed`], ["ok", "✓ workspace wiped. Deploy → New project starts the next one."]], { onDone: () => { state.project = false; state.containers = []; state.baked = { dev: false, prod: false, scaled: false }; for (const e of state.entries) e.installed = false; renderConsole(); renderShelf(); renderNewCard(); } });
-  jobsPing();
-});
+function deleteProject() {
+  runJob("./wb.sh --yes delete", [["dim", "⚠️ Warning This action will delete all project files from " + STATUS.workspace], ["dim", "Continuing (--yes)."], ...composeLines("dev", "down"), ["", ` Volume ${STATUS.compose_project}_pgdata  Removed`], ["", ` Image ${IMAGE}:local  Removed`], ["ok", "✓ workspace wiped. Deploy → Project creates the next one."]], { onDone: () => { state.project = false; state.containers = []; state.baked = { dev: false, prod: false, scaled: false }; for (const e of state.entries) e.installed = false; renderConsole(); renderShelf(); renderNewCard(); } });
+  renderNewCard(); jobsPing();
+}
 
 // --- logs: a real capture, replayed ---------------------------------------------
 const logs = {

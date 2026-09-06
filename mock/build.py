@@ -367,4 +367,4 @@ doc = ('<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta
        + head.strip() + "\n</head>\n<body>\n" + body.strip() + "\n</body>\n</html>\n")
 out = f"{M}/workbench-console.html"
 open(out, "w").write(doc)
-print(out, os.path.getsize(out) // 1024, "KB")
+print(out, os.path.getsize(out) // 1024, "KiB")

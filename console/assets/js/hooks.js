@@ -453,6 +453,60 @@ function frameIcon(btn, axis) {
   const scr = `<rect class="o" x="${off ? 1.5 : (right ? 1.5 : 10)}" y="${top}" width="${off ? 23 : 14.5}" height="${hgt}" rx="1"/>`
   btn.innerHTML = `<svg viewBox="0 0 26 19" aria-hidden="true">${band}${rail}${scr}</svg>`
 }
+// --- the code and the files: the face, size and leading of two kinds of
+// surface, chosen in the drawer and kept in this browser. `code` is what
+// runs — the terminals, the jobs' output, the logs, Docker's events;
+// `file` is what is read — the Files sheet, the diffs, .env and
+// config.conf, the papers' code blocks. Each is three custom properties
+// on the root, `--<group>-face`, `--<group>-size` and `--<group>-leading`,
+// that every surface of the group reads with its own default in the
+// fallback — so "the house's" is the properties absent, and each surface
+// keeps the size and leading it was drawn at. A face brings its sizes:
+// Tamzen is a bitmap face, one drawing per size, and the drawing is the
+// family name; the vector faces take any. The leading is unitless, a
+// ratio of the size, so it holds when the size changes.
+const GROUPS = { code: "wb-console-code", file: "wb-console-file" }
+const SIZES = [10, 11, 12, 13, 14, 15, 16, 18, 20]
+const LEADINGS = [1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.8, 2]
+const FACES = {
+  house: { name: "The house's — IBM Plex Mono", sizes: SIZES, family: () => null },
+  fira: { name: "Fira Code", sizes: SIZES, family: () => '"Fira Code"', note: "Ligatures on. SIL Open Font License." },
+  vga: { name: "Flexi IBM VGA", sizes: [14, 16, 18, 20, 24, 32], family: () => '"Flexi IBM VGA True"', note: "The PC's text mode, by VileR. CC BY-SA 4.0." },
+  tamzen: { name: "Tamzen", sizes: [9, 12, 13, 14, 15, 16, 20], family: s => `"Tamzen${{ 9: 5, 12: 6, 13: 7, 14: 7, 15: 8, 16: 8, 20: 10 }[s]}x${s}"`, note: "A bitmap face by Scott Fial: one drawing per size, so the sizes are its own." },
+}
+const usual = f => f.sizes[Math.floor(f.sizes.length / 2)]
+const choiceOf = group => { try { const c = JSON.parse(store.get(GROUPS[group]) || "{}"); return { face: c.face in FACES ? c.face : "house", size: c.size || null, leading: LEADINGS.includes(c.leading) ? c.leading : null } } catch (e) { return { face: "house", size: null, leading: null } } }
+function applyChoice(group, { face, size, leading }) {
+  const root = document.documentElement.style, f = FACES[face]
+  const s = f.sizes.includes(size) ? size : (face === "house" ? null : usual(f))
+  const family = f.family(s || usual(f))
+  if (family) root.setProperty(`--${group}-face`, family); else root.removeProperty(`--${group}-face`)
+  if (s) root.setProperty(`--${group}-size`, `${s}px`); else root.removeProperty(`--${group}-size`)
+  if (leading) root.setProperty(`--${group}-leading`, String(leading)); else root.removeProperty(`--${group}-leading`)
+  return { face, size: s, leading: leading || null }
+}
+for (const g of Object.keys(GROUPS)) applyChoice(g, choiceOf(g))
+// The three selects of one group: the face fills the size's options
+// with its own, and any change is applied at once and kept.
+function bindPicks(el, group) {
+  const faceSel = el.querySelector(`#${group}-face`), sizeSel = el.querySelector(`#${group}-size`), leadSel = el.querySelector(`#${group}-leading`), note = el.querySelector(`#help-${group}`)
+  if (!faceSel || !sizeSel || !leadSel) return
+  let choice = choiceOf(group)
+  const opt = (v, text, on) => { const o = document.createElement("option"); o.value = v; o.textContent = text; o.selected = on; return o }
+  const draw = () => {
+    const f = FACES[choice.face]
+    faceSel.replaceChildren(...Object.entries(FACES).map(([k, v]) => opt(k, v.name, k === choice.face)))
+    sizeSel.replaceChildren(opt("", choice.face === "house" ? "as drawn" : "its usual", !choice.size), ...f.sizes.map(n => opt(n, `${n} px`, n === choice.size)))
+    leadSel.replaceChildren(opt("", "as drawn", !choice.leading), ...LEADINGS.map(n => opt(n, n.toFixed(1), n === choice.leading)))
+    if (note) note.textContent = f.note || "IBM Plex Mono, the house's code face, at each surface's own size."
+  }
+  const keep = () => { choice = applyChoice(group, choice); store.set(GROUPS[group], JSON.stringify(choice)); draw() }
+  faceSel.addEventListener("change", () => { choice = { ...choice, face: faceSel.value, size: null }; keep() })
+  sizeSel.addEventListener("change", () => { choice = { ...choice, size: sizeSel.value ? Number(sizeSel.value) : null }; keep() })
+  leadSel.addEventListener("change", () => { choice = { ...choice, leading: leadSel.value ? Number(leadSel.value) : null }; keep() })
+  draw()
+}
+
 export const Frame = {
   mounted() {
     const paint = () => {
@@ -473,6 +527,7 @@ export const Frame = {
       paint(); dispatchEvent(new Event("resize"))
     })
     this.el.querySelector("#theme")?.addEventListener("click", () => { const t = ground() === "dark" ? "light" : "dark"; document.documentElement.setAttribute("data-theme", t); store.set(THEME_KEY, t); paint(); document.getElementById("ground-toggle")?.dispatchEvent(new Event("repaint")) })
+    for (const g of Object.keys(GROUPS)) bindPicks(this.el, g)
     paint()
   },
 }

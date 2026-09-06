@@ -1,17 +1,19 @@
 defmodule ConsoleWeb.ConsoleLive do
   @moduledoc """
   The console: the workspace on the left, the screens on the right —
-  Deploy, Jobs, Terminal, Logs, Cartridges, Project, Cluster — and the
-  jobs tray at the bottom. Everything it shows comes from the status,
+  Deploy, Jobs, Terminal, Logs, Cartridges, Project, Cluster, Docker —
+  and the jobs tray at the bottom. Everything it shows comes from the status,
   the catalog and `config.conf`; everything it does is `wb.sh` as a
   job. Where the reader is — the screen — lives in the URL.
   """
   use ConsoleWeb, :live_view
 
   alias Console.{Bench, Jobs, Logs, Verbs, Workbench}
-  alias Console.{Diffs, Papers, Project}
-  alias ConsoleWeb.{Box, Cartridges, Deploy, Terminal}
+  alias Console.{Diffs, Docker, Events, Git, Papers, Project}
+  alias ConsoleWeb.{Box, Cartridges, Deploy, DockerScreen, GitScreen, Terminal}
   import ConsoleWeb.{Board, Shelf, ProjectScreen, WorkbenchDrawer, Cluster}
+  import ConsoleWeb.DockerScreen, only: [docker_screen: 1]
+  import ConsoleWeb.GitScreen, only: [git_screen: 1]
   import ConsoleWeb.Terminal, only: [terminal: 1]
   import ConsoleWeb.JobsScreen, only: [jobs_screen: 1, tray: 1]
 
@@ -25,7 +27,10 @@ defmodule ConsoleWeb.ConsoleLive do
     {"terminal", "Terminal"},
     {"shelf", "Cartridges"},
     {"project", "Project"},
-    {"cluster", "Cluster"}
+    {"git", "Git"},
+    {"cluster", "Cluster"},
+    # Last, and never unlit: the daemon is there before any project is.
+    {"docker", "Docker"}
   ]
   @tab_names Enum.map(@tabs, &elem(&1, 0))
 
@@ -44,6 +49,7 @@ defmodule ConsoleWeb.ConsoleLive do
       Jobs.subscribe()
       Logs.subscribe()
       Bench.subscribe()
+      Events.subscribe()
     end
 
     # What the bench holds is what the page opens with: nothing is read
@@ -60,6 +66,7 @@ defmodule ConsoleWeb.ConsoleLive do
       |> assign(
         tab: "deploy",
         status: status,
+        rebind: Workbench.rebind(),
         catalog: catalog,
         config: Workbench.config(),
         version: Workbench.version(),
@@ -98,9 +105,10 @@ defmodule ConsoleWeb.ConsoleLive do
         reading: (is_nil(status) or Bench.reading?(:status)) && :full,
         pick: %{target: nil, replicas: 4, balancer: true},
         newp: %{out: MapSet.new(), gen: %{}},
-        setup_env: "dev",
         restart_logs: false,
-        folded: MapSet.new()
+        folded: MapSet.new(),
+        dk: DockerScreen.initial(if(connected?(socket), do: Enum.reverse(Events.recent()), else: [])),
+        gt: GitScreen.initial()
       )
 
     socket =
@@ -128,7 +136,14 @@ defmodule ConsoleWeb.ConsoleLive do
 
       true ->
         {:noreply,
-         socket |> assign(tab: tab) |> take_box(params) |> take_paper(params) |> take_wb(params)}
+         socket
+         |> assign(tab: tab)
+         |> take_box(params)
+         |> take_paper(params)
+         |> take_wb(params)
+         |> take_docker(params)
+         |> take_git(params)
+         |> take_shelf(params)}
     end
   end
 
@@ -277,8 +292,12 @@ defmodule ConsoleWeb.ConsoleLive do
 
     socket =
       socket
-      |> assign(status: status, reading: false, error: nil, restart_logs: false)
+      |> assign(status: status, reading: false, error: nil, restart_logs: false, rebind: Workbench.rebind())
       |> leave_unlit()
+      # The containers may have changed: the Docker screen reads again.
+      |> dk_read()
+      # And the tree, after a commit or an insert: the Git screen too.
+      |> gt_read(true)
 
     socket =
       if socket.assigns.tab == "project" and (is_nil(socket.assigns.ppage) or moved?),
@@ -383,6 +402,28 @@ defmodule ConsoleWeb.ConsoleLive do
 
   def handle_info(:poll, socket), do: {:noreply, read_status(socket, :fast)}
 
+  # What Docker did on its own: onto the feed, and onto the badge when
+  # it is something that died badly — unless the reader is looking at
+  # the feed right now.
+  def handle_info({:event, event}, socket) do
+    dk = socket.assigns.dk
+    looking = socket.assigns.tab == "docker" and dk.doc == "events"
+    alarm = DockerScreen.alarm?(event, Docker.project(socket.assigns.status)) and not looking
+    events = Enum.take([event | dk.events], 500)
+    {:noreply, assign(socket, dk: %{dk | events: events, alarms: if(alarm, do: dk.alarms + 1, else: dk.alarms)})}
+  end
+
+  # A reading of the stats stream, by container name.
+  def handle_info({port, {:data, {_, line}}}, %{assigns: %{dk: %{port: port} = dk}} = socket) do
+    case Docker.stat(line) do
+      nil -> {:noreply, socket}
+      s -> {:noreply, assign(socket, dk: %{dk | live: Map.put(dk.live, s.name, s)})}
+    end
+  end
+
+  def handle_info({port, {:exit_status, _}}, %{assigns: %{dk: %{port: port} = dk}} = socket),
+    do: {:noreply, assign(socket, dk: %{dk | port: nil})}
+
   # A line of the session's output goes to the screen; the session ends
   # when the process in the container does.
   def handle_info({port, {:data, {_, line}}}, %{assigns: %{term: %{port: port}}} = socket),
@@ -420,6 +461,20 @@ defmodule ConsoleWeb.ConsoleLive do
   def handle_async({:diff, _}, {:exit, why}, socket),
     do:
       {:noreply, assign(socket, diff: nil, error: "the diff could not be read: " <> inspect(why))}
+
+  # What the Docker screen asked the daemon for; a reading that failed
+  # leaves the document empty rather than the page dark.
+  def handle_async({:dk, key}, {:ok, value}, socket),
+    do: {:noreply, assign(socket, dk: Map.put(socket.assigns.dk, key, value))}
+
+  def handle_async({:gt, key}, {:ok, value}, socket),
+    do: {:noreply, assign(socket, gt: Map.put(socket.assigns.gt, key, value))}
+
+  def handle_async({:gt, _key}, {:exit, why}, socket),
+    do: {:noreply, assign(socket, error: "git could not be read: " <> inspect(why))}
+
+  def handle_async({:dk, key}, {:exit, why}, socket),
+    do: {:noreply, socket |> assign(dk: Map.put(socket.assigns.dk, key, if(key == :rows, do: [], else: nil))) |> assign(error: "docker could not be read: " <> inspect(why))}
 
   defp reread(socket, :none), do: socket
 
@@ -616,6 +671,52 @@ defmodule ConsoleWeb.ConsoleLive do
      |> start_async({:probe, key}, fun)}
   end
 
+  # --- the Git screen ---
+  # The message goes to wb.sh through a file: a body has lines, and a
+  # job's argv cannot carry one.
+  def handle_event("git_commit", params, socket) do
+    # A title left blank is the default one, as on the command line.
+    title = if String.trim(params["title"] || "") == "", do: GitScreen.default_title(), else: params["title"]
+    path = Git.message_file(title, params["body"])
+    Jobs.run({:commit, nil}, ["commit", "--message-file", path])
+    {:noreply, socket}
+  end
+
+  def handle_event("git_pick", %{"sha" => sha}, socket) do
+    q = if socket.assigns.gt.pick == sha, do: "", else: "&c=#{sha}"
+    {:noreply, push_patch(socket, to: "/git?doc=history#{q}")}
+  end
+
+  # --- the Docker screen ---
+  def handle_event("dk_scope", %{"scope" => scope}, socket) when scope in ~w(workspace daemon) do
+    dk = %{socket.assigns.dk | scope: scope, rows: nil, images: nil, volumes: nil, networks: nil}
+    {:noreply, socket |> assign(dk: dk) |> dk_read()}
+  end
+
+  def handle_event("dk_stats", _, socket) do
+    dk = socket.assigns.dk
+    {:noreply, socket |> assign(dk: %{dk | stats: not dk.stats, live: %{}}) |> dk_stream()}
+  end
+
+  def handle_event("dk_pick", %{"name" => name}, socket) do
+    # Picked again is put down.
+    q = if socket.assigns.dk.pick == name, do: "", else: "&c=#{name}"
+    {:noreply, push_patch(socket, to: "/docker?doc=containers#{q}")}
+  end
+
+  # The one act on a single container: the deployment stays whole.
+  def handle_event("dk_restart", %{"service" => service}, socket) do
+    deployment = (socket.assigns.status && socket.assigns.status["deployment"]) || "dev"
+    Jobs.run({:restart, service}, ["restart", "--deploy", deployment, service])
+    {:noreply, socket}
+  end
+
+  # Always confirmed: the console runs wb.sh under --yes and asks itself.
+  def handle_event("dk_prune", %{"what" => what}, socket) when what in ["", "images", "build"] do
+    Jobs.run({:prune, nil}, ["prune" | if(what == "", do: [], else: ["--" <> what])], confirm: true)
+    {:noreply, socket}
+  end
+
   # --- the terminal ---
   def handle_event("term_pick", params, socket) do
     t = socket.assigns.term
@@ -766,9 +867,6 @@ defmodule ConsoleWeb.ConsoleLive do
     {:noreply, assign(socket, pick: pick)}
   end
 
-  def handle_event("setup_env", %{"env" => env}, socket) when env in ~w(dev prod),
-    do: {:noreply, assign(socket, setup_env: env)}
-
   def handle_event("new_form", params, socket) do
     ins = params["in"] || %{}
 
@@ -870,15 +968,181 @@ defmodule ConsoleWeb.ConsoleLive do
     end
   end
 
+  # --- the shelf's reading -----------------------------------------------------
+
+  # Which reading of the shelf: /shelf?doc=base. Named in the URL by the
+  # row; kept as it was when a link does not name it — a box opening
+  # over the shelf, its screens — so the shelf behind the drawer stays
+  # where the reader left it.
+  defp take_shelf(%{assigns: %{tab: "shelf"}} = socket, %{"doc" => doc}) when is_binary(doc) do
+    if doc in ConsoleWeb.Shelf.doc_names(), do: assign(socket, filter: doc), else: socket
+  end
+
+  defp take_shelf(socket, _params), do: socket
+
+  # --- the Git screen's state ----------------------------------------------------
+
+  # Which document and which commit: /git?doc=history&c=SHA.
+  defp take_git(%{assigns: %{tab: "git"}} = socket, params) do
+    gt = socket.assigns.gt
+    doc = if params["doc"] in GitScreen.doc_names(), do: params["doc"], else: "pending"
+    pick = params["c"]
+    gt = %{gt | doc: doc, pick: pick, files: if(pick == gt.pick, do: gt.files, else: nil)}
+    socket |> assign(gt: gt) |> gt_read(false)
+  end
+
+  defp take_git(socket, _params), do: socket
+
+  # The tree and the log, read off the page. `again` is a status having
+  # arrived: what was read is read again, since a job may have moved it.
+  defp gt_read(%{assigns: %{tab: "git", gt: gt, status: status}} = socket, again) do
+    ws = status && status["workspace"]
+
+    if connected?(socket) and is_binary(ws) and get_in(status, ["git", "repo"]) == true and Application.get_env(:console, :docker_reads, true) do
+      inserts = get_in(status, ["git", "inserts"]) || []
+
+      socket =
+        if gt.doc == "pending" and (again or is_nil(gt.pending)),
+          do: start_async(socket, {:gt, :pending}, fn -> Git.pending(ws) end),
+          else: socket
+
+      socket =
+        if gt.doc == "history" and (again or is_nil(gt.log)),
+          do: start_async(socket, {:gt, :log}, fn -> Git.log(ws, inserts) end),
+          else: socket
+
+      pick = gt.pick
+
+      if gt.doc == "history" and is_binary(pick) and is_nil(gt.files),
+        do: start_async(socket, {:gt, :files}, fn -> Diffs.files_of(ws, pick) end),
+        else: socket
+    else
+      socket
+    end
+  end
+
+  defp gt_read(socket, _again), do: socket
+
+  # --- the Docker screen's state -----------------------------------------------
+
+  # Which document and which container, from the query: /docker?doc=volumes,
+  # ?doc=containers&c=some_test-app-1, ?doc=deploys&deploy=scaled. Opening
+  # Events is looking at what the badge counted: it starts over.
+  defp take_docker(%{assigns: %{tab: "docker"}} = socket, params) do
+    dk = socket.assigns.dk
+    doc = if params["doc"] in DockerScreen.doc_names(), do: params["doc"], else: "containers"
+    deploy = if params["deploy"] in ~w(dev prod scaled), do: params["deploy"], else: dk.deploy
+    pick = params["c"]
+
+    dk = %{
+      dk
+      | doc: doc,
+        deploy: deploy,
+        pick: pick,
+        card: if(pick == dk.pick, do: dk.card, else: nil),
+        alarms: if(doc == "events", do: 0, else: dk.alarms)
+    }
+
+    socket |> assign(dk: dk) |> dk_read() |> dk_stream()
+  end
+
+  # Leaving the screen closes the stream; the readings stay for the way back.
+  defp take_docker(socket, _params), do: dk_stream(socket)
+
+  # The document's readings, asked of the daemon off the page: short
+  # docker commands, one task each, the answer put where the document
+  # looks for it. Not in tests, which have no daemon.
+  defp dk_read(%{assigns: %{tab: "docker", dk: dk, status: status}} = socket) do
+    if connected?(socket) and Application.get_env(:console, :docker_reads, true) do
+      scope = dk.scope
+
+      socket =
+        if is_nil(dk.daemon),
+          do: start_async(socket, {:dk, :daemon}, fn -> Docker.daemon() end),
+          else: socket
+
+      case dk.doc do
+        "containers" ->
+          socket = start_async(socket, {:dk, :rows}, fn -> Docker.containers(status, scope) end)
+          pick = dk.pick
+          if pick, do: start_async(socket, {:dk, :card}, fn -> Docker.card(pick) end), else: socket
+
+        "images" ->
+          start_async(socket, {:dk, :images}, fn -> Docker.images(status, scope) end)
+
+        # The list is milliseconds; the two measurements are seconds, and
+        # land on their own when they land.
+        "volumes" ->
+          socket
+          |> start_async({:dk, :volumes}, fn -> Docker.volumes(status, scope) end)
+          |> start_async({:dk, :sizes}, fn -> Docker.volume_sizes() end)
+          |> start_async({:dk, :df}, fn -> Docker.df() end)
+
+        "networks" ->
+          start_async(socket, {:dk, :networks}, fn -> Docker.networks(status, scope) end)
+
+        "deploys" ->
+          assign(socket, dk: %{dk | composes: Docker.composes(status)})
+
+        _ ->
+          socket
+      end
+    else
+      socket
+    end
+  end
+
+  defp dk_read(socket), do: socket
+
+  # The stats stream lives with the Containers document: open while it
+  # is in front and Stats is on, closed the moment it is not. The daemon
+  # is asked nothing that nobody is looking at.
+  defp dk_stream(socket) do
+    dk = socket.assigns.dk
+    want = connected?(socket) and socket.assigns.tab == "docker" and dk.doc == "containers" and dk.stats
+
+    cond do
+      want and is_nil(dk.port) ->
+        case System.find_executable("docker") do
+          nil ->
+            socket
+
+          docker ->
+            port = Port.open({:spawn_executable, docker}, [:binary, :exit_status, :stderr_to_stdout, {:line, 65_536}, args: Docker.stats_args()])
+            assign(socket, dk: %{dk | port: port})
+        end
+
+      not want and dk.port ->
+        try do
+          Port.close(dk.port)
+        rescue
+          _ -> :ok
+        end
+
+        assign(socket, dk: %{dk | port: nil, live: %{}})
+
+      true ->
+        socket
+    end
+  end
+
   # --- the page -------------------------------------------------------------
 
   # Why a screen is dark: never hidden, marked, with the reason. Deploy,
   # Jobs and Cartridges are always lit.
+  defp unlit("git", %{status: status}) do
+    cond do
+      not project?(status) -> "this workspace has no project — new makes the first commit"
+      get_in(status, ["git", "repo"]) != true -> "this workspace has no repository — phx.new initialises one"
+      true -> nil
+    end
+  end
+
   defp unlit("project", %{status: status}),
     do:
       if(project?(status),
         do: nil,
-        else: "this workspace has no project — Deploy → New project starts one"
+        else: "this workspace has no project — Deploy → Project creates one"
       )
 
   defp unlit("cluster", %{status: status, catalog: catalog}) do
@@ -913,10 +1177,11 @@ defmodule ConsoleWeb.ConsoleLive do
 
   defp unlit(_, _), do: nil
 
-  # The last insert or eject of the box in hand: its output lands in the drawer.
-  defp box_job(jobs, box),
+  # The inserts and ejects of the box in hand, newest first: its runs,
+  # drawn in the drawer as the rows the Jobs screen draws.
+  defp box_jobs(jobs, box),
     do:
-      Enum.find(
+      Enum.filter(
         jobs,
         &(elem(&1.kind, 0) in [:insert, :eject] and elem(&1.kind, 1) == box["name"])
       )
@@ -1110,6 +1375,7 @@ defmodule ConsoleWeb.ConsoleLive do
       >
         <.board
           status={@status}
+          rebind={@rebind}
           catalog={@catalog}
           reading={@reading}
           busy={@busy}
@@ -1148,6 +1414,7 @@ defmodule ConsoleWeb.ConsoleLive do
               <span :if={t == "shelf" and @status} class="badge">{length(
                 Cartridges.installed(@status)
               )} in</span>
+              <span :if={t == "docker" and @dk.alarms > 0} class="badge bad" title="a container of this workspace died with a code, was killed for memory, or turned unhealthy — since you last looked at Events">{@dk.alarms} died</span>
             </.link>
             <button
               :if={why}
@@ -1169,7 +1436,6 @@ defmodule ConsoleWeb.ConsoleLive do
               jobs={@jobs}
               pick={@pick}
               newp={@newp}
-              setup_env={@setup_env}
             />
           </section>
 
@@ -1188,7 +1454,7 @@ defmodule ConsoleWeb.ConsoleLive do
             <.logs_screen />
           </section>
 
-          <section :if={@tab == "project"} class="panel fill on" role="tabpanel">
+          <section :if={@tab == "project"} class="panel fill on" id="panel-project" role="tabpanel">
             <.project_screen
               carried={Project.carried(@status && @status["workspace"])}
               paper={@ppaper}
@@ -1200,11 +1466,19 @@ defmodule ConsoleWeb.ConsoleLive do
             <.cluster status={@status} probes={@probes} pick={@pick} />
           </section>
 
+          <section :if={@tab == "git"} class="panel fill on" id="panel-git" role="tabpanel">
+            <.git_screen status={@status} gt={@gt} jobs={@jobs} />
+          </section>
+
+          <section :if={@tab == "docker"} class="panel fill on" id="panel-docker" role="tabpanel">
+            <.docker_screen status={@status} dk={@dk} jobs={@jobs} />
+          </section>
+
           <section class={["panel", "fill", @tab == "terminal" && "on"]} role="tabpanel">
             <.terminal status={@status} term={@term} />
           </section>
 
-          <section class={["panel", @tab == "shelf" && "on"]} role="tabpanel">
+          <section class={["panel", "fill", @tab == "shelf" && "on"]} id="panel-shelf" role="tabpanel">
             <.shelf catalog={@catalog} status={@status} filter={@filter} view={@view} tab={@tab} />
           </section>
         </div>
@@ -1245,7 +1519,11 @@ defmodule ConsoleWeb.ConsoleLive do
       recipe={@recipe}
       face={@face}
       tab={@tab}
-      job={box_job(@jobs, @box)}
+      jobs={box_jobs(@jobs, @box)}
+      open={@open_jobs}
+      now={@now}
+      asking={@stop_ask}
+      stoppable={@stoppable}
       diff={@diff}
     />
     """

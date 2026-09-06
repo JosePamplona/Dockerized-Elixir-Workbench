@@ -218,6 +218,21 @@ own face is not house notation — it appears on the band and nowhere else,
 so it lives with the band in `console.css`; `components.css` is for what
 crosses surfaces.
 
+**A measure in a column.** `.num` is a cell that holds a reading — cpu,
+memory, a size, a duration: mono, flush right, tabular digits, no
+wrapping. The notation does half the work; the other half is the
+writer's, and it is a rule: **one unit per column, and a fixed number of
+decimals**. Right-aligned — the column's head too, on the same edge, since a head
+sits where its column is read from — that is what makes the decimal
+points line up without splitting a number in two, and what keeps a column from
+redrawing itself every two seconds — Docker prints three significant
+figures, so the same memory column said `1.9MB`, `1.84MB` and
+`282.4MiB`, a different length on every refresh, and the whole table
+danced. `Console.Docker.stat/1` normalises the stream (cpu with one
+decimal, memory always in MiB with one decimal), and the two live
+columns reserve, in `ch`, the width of the widest value they can hold.
+Decided on 2026-09-05 over the Docker screen's containers table.
+
 ## The rules
 
 * **Edit the tokens, run the build.** A generated file edited by hand is

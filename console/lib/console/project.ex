@@ -60,16 +60,21 @@ defmodule Console.Project do
     end
   end
 
-  @doc "The .env with its secrets replaced by dots: by key name, and inside URLs."
+  @doc """
+  The .env with its secrets replaced by dots: by key name, and inside
+  URLs. A compose file's `KEY: value` lines the same way — the Docker
+  screen shows the three composes, and `POSTGRES_PASSWORD: postgres` is
+  a secret whatever the punctuation after the key.
+  """
   def mask(text) do
     text
     |> String.split("\n")
     |> Enum.map_join("\n", fn line ->
-      case Regex.run(~r/^(\w+)=(.*)$/, line) do
-        [_, key, value] ->
+      case Regex.run(~r/^(\s*)([A-Za-z][A-Za-z0-9_]*)(=|: )(.*)$/, line) do
+        [_, indent, key, sep, value] ->
           cond do
-            Regex.match?(~r/SECRET|TOKEN|PASSWORD|KEY/, key) -> key <> "=••••••••"
-            String.contains?(value, "://") -> key <> "=" <> Regex.replace(~r/:\/\/([^:@\/]+):[^@\/]+@/, value, "://\\1:••••@")
+            Regex.match?(~r/SECRET|TOKEN|PASSWORD|KEY/i, key) -> indent <> key <> sep <> "••••••••"
+            String.contains?(value, "://") -> indent <> key <> sep <> Regex.replace(~r/:\/\/([^:@\/]+):[^@\/]+@/, value, "://\\1:••••@")
             true -> line
           end
 

@@ -238,8 +238,9 @@ the pooler. The commented `# POOL_SIZE="10"` in `.env` stops being
 decorative as soon as the replica count grows.
 
 The one-shot migration step the cluster compose runs before the replicas
-start (`rel/overlays/bin/migrate`, from `phx.gen.release`) is the same
-pattern every platform uses under a different name: Heroku's release
+start (`rel/overlays/bin/migrate`, from `phx.gen.release`; the prod
+compose runs the same service inside its pod) is the same pattern every
+platform uses under a different name: Heroku's release
 phase, Fly.io's `release_command`, a Kubernetes `Job` or Helm
 `pre-upgrade` hook, an ECS standalone task. It assumes a single logical
 primary to migrate, which holds for a primary with read replicas or any

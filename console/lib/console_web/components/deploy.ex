@@ -1,9 +1,10 @@
 defmodule ConsoleWeb.Deploy do
   @moduledoc """
-  The Deploy screen: the New project card, the Deployment card, the
-  database, the workspace. Every button is a `wb.sh` line handed to
-  the `run` event; the two that cannot be taken back come back as a
-  pending job, and the card that asked shows the question.
+  The Deploy screen: the Project card — where a project is created,
+  and the one that is here deleted — and the Deployment card. Every
+  button is a `wb.sh` line handed to the `run` event; the two that
+  cannot be taken back come back as a pending job, and the card that
+  asked shows the question.
   """
   use Phoenix.Component
   import ConsoleWeb.Refs
@@ -11,7 +12,7 @@ defmodule ConsoleWeb.Deploy do
 
   @targets %{
     "dev" => "The dev toolchain image with the source mounted. Recompiles on boot; iex -S mix on the container.",
-    "prod" => "The release image, built from the project's Dockerfile on each up. No source, no Mix.",
+    "prod" => "The release image, built from the project's Dockerfile on each up. No source, no Mix. A one-shot migrate runs first, and the app waits for it.",
     "scaled" => "N production replicas behind an nginx balancer, on a bridge network. A BEAM cluster if clustering is inserted."
   }
 
@@ -26,30 +27,11 @@ defmodule ConsoleWeb.Deploy do
   attr :jobs, :list, default: []
   attr :pick, :map, required: true, doc: "target, replicas, balancer"
   attr :newp, :map, required: true, doc: "out: names left out, gen: the flags"
-  attr :setup_env, :string, default: "dev"
 
   def deploy(assigns) do
     ~H"""
     <.new_card status={@status} catalog={@catalog} config={@config} jobs={@jobs} newp={@newp} />
     <.deployment status={@status} catalog={@catalog} jobs={@jobs} pick={@pick} />
-    <div class="zone">
-      <h3>Database</h3>
-      <form class="pick" id="setup-env" role="radiogroup" aria-label="The environment to set the database up for" phx-change="setup_env">
-        <label :for={env <- ~w(dev prod)}><div><input type="radio" name="env" value={env} checked={@setup_env == env} /> <b>{env}</b></div></label>
-      </form>
-      <div class="acts">
-        <button class={["btn", is_nil(@status) || !@status["exists"] && "unlit"]} aria-disabled={(is_nil(@status) || !@status["exists"]) && "true"} title={(is_nil(@status) || !@status["exists"]) && "the workspace is empty: create a project first"} phx-click={@status && @status["exists"] && "run"} phx-value-args={"setup --env #{@setup_env}"}>Setup the database</button>
-        <span class="note">drops it, creates it, seeds it</span>
-      </div>
-    </div>
-    <div class="dangerzone">
-      <h3>Workspace</h3>
-      <div class="acts">
-        <% pending = pending(@jobs, :delete) %>
-        <button :if={!pending} class={["btn danger", is_nil(@status) || !@status["exists"] && "unlit"]} aria-disabled={(is_nil(@status) || !@status["exists"]) && "true"} title={(is_nil(@status) || !@status["exists"]) && "the workspace is empty: nothing to delete"} phx-click={@status && @status["exists"] && "run"} phx-value-args="delete">Delete the project</button>
-        <span :if={pending} class="confirm on">Files, containers, images and volumes go. <button class="btn danger" phx-click="confirm" phx-value-id={pending.id}>Yes, delete</button><button class="btn" phx-click="cancel" phx-value-id={pending.id}>Keep it</button></span>
-      </div>
-    </div>
     """
   end
 
@@ -59,11 +41,12 @@ defmodule ConsoleWeb.Deploy do
   @doc "Whether a job of these verbs is running or queued."
   def busy?(jobs, verbs), do: Enum.any?(jobs, &(&1.state in [:running, :queued] and elem(&1.kind, 0) in verbs))
 
-  # --- the new project card --------------------------------------------------
+  # --- the project card ------------------------------------------------------
 
   defp new_card(assigns) do
     conf = Console.Config.values(assigns.config)
     pending = pending(assigns.jobs, :new)
+    deleting = pending(assigns.jobs, :delete)
     project? = assigns.status && assigns.status["exists"] == true
     # What the project in this workspace was actually made with, off its
     # own Dockerfile.local. The card's rows say what the *next* creation
@@ -73,11 +56,11 @@ defmodule ConsoleWeb.Deploy do
     # open, and the stack only when the two have come apart, which is
     # exactly when creating again would move the project off it.
     born = project? && Console.Project.born(assigns.status["workspace"])
-    assigns = assign(assigns, conf: conf, pending: pending, project?: project?, born: born, busy: busy?(assigns.jobs, [:new]), cmd: new_command(assigns.catalog, assigns.newp), bases: Cartridges.base(assigns.catalog))
+    assigns = assign(assigns, conf: conf, pending: pending, deleting: deleting, project?: project?, born: born, busy: busy?(assigns.jobs, [:new]), cmd: new_command(assigns.catalog, assigns.newp), bases: Cartridges.base(assigns.catalog))
 
     ~H"""
     <div class="newcard">
-      <h3>New project
+      <h3>Project
         <.chip :if={!@project?}>the workspace is empty</.chip>
         <.chip :if={@project?} class="bad" title="creating overwrites every file in it">a project exists here</.chip>
       </h3>
@@ -133,6 +116,14 @@ defmodule ConsoleWeb.Deploy do
         <div class="cmds"><div class="cmd">{@cmd}</div></div>
         <span :if={@pending} class="confirm on">A project already exists in this workspace: every file in it goes. <button class="btn danger" phx-click="confirm" phx-value-id={@pending.id}>Yes, overwrite</button><button class="btn" phx-click="cancel" phx-value-id={@pending.id}>Keep it</button></span>
         <button :if={!@pending} class="btn primary" disabled={@busy} phx-click="run" phx-value-args={String.replace_prefix(@cmd, "./wb.sh ", "")}>{if @busy, do: "Creating…", else: "Create project"}</button>
+        <%!-- The reverse of Create, on the same card: what the one makes,
+              the other takes away — files, containers, images and volumes.
+              It had a box of its own under "Workspace", beside the database
+              errand; the errand went, and a heading over one button named
+              only what the confirmation already says. Unlit on an empty
+              workspace, never hidden. --%>
+        <button :if={!@deleting} class={["btn danger", !@project? && "unlit"]} aria-disabled={!@project? && "true"} title={!@project? && "the workspace is empty: nothing to delete"} phx-click={@project? && "run"} phx-value-args="delete">Delete the project</button>
+        <span :if={@deleting} class="confirm on">Files, containers, images and volumes go. <button class="btn danger" phx-click="confirm" phx-value-id={@deleting.id}>Yes, delete</button><button class="btn" phx-click="cancel" phx-value-id={@deleting.id}>Keep it</button></span>
       </div>
     </div>
     """

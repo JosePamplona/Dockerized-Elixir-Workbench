@@ -156,7 +156,7 @@ Probe C (API-only, html first): the same files after html, no issue;
 the run's `mix assets.setup` downloaded esbuild 0.25.4 and `mix
 assets.build` bundled `priv/static/assets/js/app.js` — see the
 mailer paper §4.3 for the figures. In probe B esbuild was in from
-birth and `assets.build` wrote a 327.8 kB bundle with LiveView in it.
+birth and `assets.build` wrote a 327.8 KiB bundle with LiveView in it.
 
 **Not measured**: esbuild on a project that replaced the placeholder
 with its own bundle; `mix assets.deploy`; the `--alias:@=.` and

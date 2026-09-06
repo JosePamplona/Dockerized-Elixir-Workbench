@@ -309,7 +309,7 @@ from, html}`, a batch every 50 ms; the `JobLines` hook writes it into a
 drawer alike, and asks for the backlog when it mounts. The same rule
 the Logs screen already followed.
 
-## The covers weigh 58 MB
+## The covers weigh 58 MiB
 
 The mock scales every cover to 560 px JPEG at build time. The console's
 `CoversController` serves the originals — a cover is around a megabyte —
@@ -479,6 +479,148 @@ so that recompile is there either way; the volumes are free to sit
 where Mix looks for them;
 and the bench remembers a failed first reading so a page mounting
 after it asks again instead of waiting forever.
+
+## The console is the toolchain, settled on 2026-09-04
+
+The console began as a page over `wb.sh` and became a container of its
+own — on the toolchain image, since it drives Docker and reads the
+package. Which left a waste in plain sight: `wb.sh`, run *inside* that
+container, went on starting a sibling container on the same image, with
+the same mounts, to run `mix` and `git` it had at hand. Every `add` of
+a collection of N members cost about 4N container starts (one compose
+one-off per insert, which also waited for the database, and three
+`docker run` of git per commit); `new` cost two runs and three of git.
+And a second waste under it: the resident compiled the workspace from
+its host path while the app compiled it from `/app/src`, and Mix keys
+its manifests on the source path — one `_build` volume, two builds.
+
+Four alternatives were weighed. Reimplementing the verbs in the console
+duplicates the logic and was refused. Running `wb.sh` always inside
+the console image, with a launcher on the host, is the cleanest end
+state but a restructuring (the image is built by `new`; the CLI would
+pay a container start per command instead of several) — the horizon,
+not the step. `docker exec` into the console from the host's `wb.sh`
+makes the console being up change where host commands run, and was
+set aside. What was done: **one runner that decides where it runs**,
+the shape `git_read` already had.
+
+| Runner in `wb.sh` | In a container (the host, as before) | Here, in the console |
+| --- | --- | --- |
+| `workspace_igniter` — mix of the package on the project | `docker run` on the dev image, workspace at `/app/src` | `mix` in this process, in `/app/src` |
+| `workspace_git` — git that writes | `docker run` on the dev image | `git -C /app/src`, same identity through the environment |
+| `entrypoint_run` — `new`, `workbench_setup` | `docker run` on the toolchain image | `bash scripts/entrypoint.sh` in this process, from `/app` |
+| `entrypoint_run` — `add`, `expand` | `compose run app` (waits for the database, reads `.env`) | the same entrypoint in this process, no compose |
+| `package_igniter` — the package alone | `docker run` on the toolchain image | **unchanged**: here it would compile the package through the workbench's bind mount |
+
+Per verb, from the console: `new`, `add`, `eject`, `commit` and `bake`
+start no container for mix or git any more (`bake` and `new` still
+`docker build`, which goes to the daemon). `expand` and the full
+`status` were already the resident's; their `wb.sh` branches serve the
+CLI. `setup` and the cold `mix` stay compose one-offs: they need the
+pod's network. `up`, `build`, `stop`, `down`, `logs`, `delete`, `ps`,
+`iex` and `bash` go to the daemon and were never the question.
+`catalog`, `stacks`, `config`, `engine`, `help` and `status --fast`
+never started a toolchain container.
+
+What the mapping brought out, each now in the code:
+
+- **The detector is not `command -v mix`.** A host with Elixir under
+  asdf would take the in-process branch and compile the workspace in
+  place, on the host — the very thing the volumes exist to prevent,
+  and a break of "the host needs Docker and nothing else". `git_read`
+  may test for git because git only reads. So `./wb.sh console` says it
+  explicitly: `WORKSPACE_MOUNT=/app/src`, and with it the host path it
+  mounted there and the volume prefix (`WORKSPACE_MOUNT_PATH`,
+  `WORKSPACE_MOUNT_PROJECT`). `toolchain_here` checks all three against
+  what config.conf names *now*: the container is bound to the workspace
+  named when it started, and named another, the runs go back to
+  containers, which work for any workspace, instead of into the wrong
+  mounts.
+- **The console mounts the workspace a second time, at `/app/src`**,
+  with the two volumes over it — the app service's own arrangement —
+  instead of over the host path. The resident and the in-process runs
+  work there, so the app's build is the one they find and add to. The
+  console's reads (git, diffs, papers) stay on the host path, which the
+  workbench's mount already covers. The workbench itself stays at its
+  host path, because what `wb.sh` hands `docker run -v` must be a host
+  path.
+- **`entrypoint.sh` did not change.** It works from `/app` and enters
+  `src`; with the workspace at `/app/src` that is the same path inside
+  the console. `mix.exs` resolves the package by `WORKBENCH_PATH`,
+  which `toolchain_env` names (and drops the console's own
+  `MIX_BUILD_ROOT` / `MIX_DEPS_PATH`, as the resident already did).
+- **Colour and identity as `NAME=VALUE` pairs.** `COLOR_ENV`,
+  `GIT_COLOR_ENV` and the new `GIT_IDENTITY_ENV` are defined once; a
+  container gets them as `--env` (`"${ARRAY[@]/#/--env=}"`), a run
+  here through `env`.
+- A side effect worth having: when the console kills a job, the signal
+  reaches `mix` and `git` directly. A sibling `docker run` could outlive
+  the `wb.sh` that started it.
+
+Measured from inside the console, the container branch forced against
+the process branch: a container start is 1–2 s here (`status`: 6.1 s →
+5.1 s, the Mix boot is the rest); `expand` through compose is 45 s with
+the database down and 6.5 s with it up, against 3.4 s in process; one
+git call 2.2–3.8 s against 0.06 s. Then the whole thing, on a scratch
+workspace (`test_81`, "Scratch Chiefs") with the console bound to it,
+2026-09-04: `new` from the page in 70 s, `add chiefs_setup` — 13
+cartridges, 13 commits — in **141 s against the 330 s** the same
+collection took through containers; **no container created** by either
+(the daemon's `docker events` watched throughout), no installer missed
+`.env` or the database, the board went to *22 cartridges · 13 the
+workbench can eject* on its own once the job ended, and the console's
+container peaked at 661 MiB during `new` and 900 MiB during the add —
+the project's compile, now in here, with no memory limit set on the
+container. The scratch workspace is left for the user to delete.
+
+**The first run found the binding biting.** The console had been
+started for one workspace (`test_75`), config.conf was then pointed at
+another (`test_80`, another project name), `new` and `add chiefs_setup`
+ran from the console — and three things showed at once: the database
+and the network came up during the add, the board reported `ansi` and
+`clustering` inserted on a project just born, and nothing changed on
+it after the collection landed. One cause. `wb.sh` saw the mounts were
+not this workspace's (`toolchain_here`) and went back to containers,
+as designed — the compose one-offs brought the database up. The
+resident did not look: it entered `/app/src` unconditionally, which
+was `test_75`, whose `ansi` and `clustering` it reported, and it kept
+reporting them since it answers for the project it was started on.
+Now `Console.Resident` makes the same three checks (`mounted_here?`)
+and, failing them, runs as one container on the workspace's dev image
+with its volumes — `Console.Workbench.project/1` reads the name and
+the image off the workspace's compose, as `wb.sh` does — and it drops
+a resident whose workspace is no longer the one config.conf names
+(`follow_workspace`). Verified: bound to `test_75` with config on
+`test_80`, the resident came up as `awesome_virtus_workbench_serve_*`
+and the board turned to the 22 cartridges of the right project;
+`./wb.sh console` again, now bound to `test_80`, and the resident is
+back in process at `/app/src`, `wb.sh` in process, no container.
+
+**And the console now says it, with the way out.** Four alternatives
+were weighed for the binding itself. Mounting the workspaces' parent
+directory solves the path and not the project: the volumes are named
+per project and mounted at creation. A long-lived toolchain container
+per workspace, used by `docker exec` from the console and the host
+alike, removes the binding for good and speeds the host's CLI too (an
+exec is a tenth of a second, a run one to two seconds) — the horizon,
+at the cost of a container per workspace to keep and to end. An
+automatic restart on every change is comfortable and opaque. What was
+done: the notice and a button. `Console.Workbench.rebind/0` makes the
+three checks on every status; the board's workspace section says
+*This console was started for X at Y* and offers *Start again*, which
+runs `console` as a job (`Console.Verbs` admits it now). `wb.sh
+console`, run from inside the console, cannot replace the container
+it runs in — removing it would end the job that asked — so it starts
+a helper container on the console's own image, socket and workbench
+mounted, that runs `./wb.sh console` from outside two seconds later
+and is gone. And `wb.sh console` keeps the port of the console it
+replaces (`docker port`), so the address survives and the page
+reconnects on its own — a container cannot look for a free port on
+the host anyway. Verified both ways with playwright, 2026-09-04:
+config pointed at `test_75` from the host, a job run, the notice up,
+the button pressed, the new console on 4100 in 15 s bound to
+`test_75` and the board on `dolor_sit_amet_gold`; then back to
+`test_80`, 10 s, `awesome_virtus` and its 22 cartridges.
 
 ## Open — one word, two things: *installer*
 

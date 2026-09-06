@@ -182,7 +182,7 @@ on `--no-html`, naming html and `./wb.sh add html`, with `requires ==
 `endpoint.ex` changed — 354 insertions, 62 deletions (the
 uncommenting), no issue; a second run "live is in already: skipping";
 `mix workbench.status` listed live among the installed; `mix
-assets.build` bundled a 327.8 kB `app.js` with LiveView in it; `mix
+assets.build` bundled a 327.8 KiB `app.js` with LiveView in it; `mix
 test` 5/5. *API-only probe, second run*: refused before html, and
 refused after, html having conflicted. *Probe C* — html, esbuild,
 tailwind and dashboard inserted first, then live: "AGENTS.md: the live
@@ -196,7 +196,7 @@ line of `AGENTS.md`, the removal of the flash handler that closes
 `merge3/3` normalises it since (mailer §3.4), and *probe C′* (mailer
 §4.4) — the same order, html, esbuild, tailwind, dashboard, then live —
 inserted live with no issue: 6 files, 339 insertions, 58 deletions,
-the `app.js` bundle then 327.8 kB with LiveView in it, `mix test` 5/5.
+the `app.js` bundle then 327.8 KiB with LiveView in it, `mix test` 5/5.
 
 **Not measured**: a LiveView mounted and connected in a browser after
 the insert; `./wb.sh add live` inside the container; a project that

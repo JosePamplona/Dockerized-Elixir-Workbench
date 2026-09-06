@@ -82,15 +82,18 @@ services:
       database:
         condition: service_healthy
 
+  # No `restart:`, as in the dev compose: the deployment is the unit,
+  # across a reboot too.
   database:
     image: postgres:%{postgres_image_version}
-    restart: unless-stopped
     environment:
       POSTGRES_PASSWORD: postgres
       POSTGRES_USER: postgres
       POSTGRES_DB: %{app_name}_prod
     healthcheck:
-      test: pg_isready -q -d %{app_name}_prod -U postgres
+      # -h forces TCP, as in the dev seed: the init's temporary server
+      # answers the unix socket before the real one listens.
+      test: pg_isready -q -h localhost -d %{app_name}_prod -U postgres
       timeout: 45s
       interval: 10s
       retries: 10

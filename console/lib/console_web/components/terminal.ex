@@ -46,7 +46,7 @@ defmodule ConsoleWeb.Terminal do
   Where a session can open: every running app container, the database and
   pgAdmin beside them, or a one-off toolchain container when nothing runs.
 
-  The workspace's other container is `network` — the pause image, ~700 KB
+  The workspace's other container is `network` — the pause image, ~700 kB
   that own the ports and sleep — and it is not here: it carries no shell
   at all. That is the one case the house's rule hides rather than marks:
   `.unlit` is for what the reader could have, and this is not applicable

@@ -76,7 +76,7 @@ Templates and assets live under `priv/features/exdoc/`:
 | `assets/token.md` | "Get access tokens" page (auth0 only) |
 | `assets/TESTING.md` | `mix cover` placeholder |
 
-The PNG logo (binary, ~760K) lives outside the compiled module, in the
+The PNG logo (binary, ~1.9 MB) lives outside the compiled module, in the
 cartridge's `priv/` mirror (`priv/features/exdoc/images/app-logo.png`),
 planted byte-for-byte with `plant_binary_asset/3`.
 

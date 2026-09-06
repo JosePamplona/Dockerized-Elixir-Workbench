@@ -38,8 +38,9 @@ if [ $# -gt 0 ]; then echo "[$HOSTNAME]$0($#): $@"; fi
   }
 
   # default_cmd()
-    # Default command to initialize the server
-  default_cmd() { mix phx.server; }
+    # Default command to initialize the server. `exec`, as the image's
+    # CMD does: the BEAM takes PID 1 and with it the SIGTERM of a stop.
+  default_cmd() { exec mix phx.server; }
 
 # SCRIPT -----------------------------------------------------------------------
 
@@ -114,26 +115,4 @@ if [ $# -gt 0 ]; then echo "[$HOSTNAME]$0($#): $@"; fi
 
     else args_error missing; fi
 
-  elif [ "$1" == "setup" ]; then
-    shift
-    if [ $# -gt 0 ]; then
-      export MIX_ENV="$1"
-
-      # Outside dev, the seeds step boots the app from the mounted
-      # source and Phoenix logs a "Could not warm up static assets"
-      # error: digested assets only exist inside the release image.
-      # Announce it as expected so the log explains itself.
-      if [ "$MIX_ENV" != "dev" ]; then
-        echo "ℹ️  ${B}Note${R} A 'Could not warm up static assets' error may" \
-          "appear below. It is expected and harmless here: digested" \
-          "production assets only exist inside the release image, and this" \
-          "setup boots the app from the mounted source, where they are" \
-          "never generated."
-      fi
-
-      mix ecto.drop --force --force-drop && \
-      mix ecto.setup
-
-    else args_error missing; fi
-    
   else default_cmd; fi

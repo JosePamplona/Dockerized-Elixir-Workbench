@@ -7,12 +7,14 @@ defmodule Console.Verbs do
   what it is about: the deployment, the cartridge), whether it wants a
   confirmation first, and which reading of the workbench follows it.
 
-  Three verbs are not jobs. `login` is a dialogue, `console` is this
-  page, and `logs`, `iex` and `bash` are streams that never end — they
-  get a connection of their own, not a place in the queue.
+  Three verbs are not jobs. `login` is a dialogue, and `logs`, `iex`
+  and `bash` are streams that never end — they get a connection of
+  their own, not a place in the queue. `console` is this page, and a
+  job all the same: run from in here it starts the console again, for
+  the workspace config.conf names now (see `Console.Workbench.rebind/0`).
   """
 
-  @verbs ~w(new add eject bake commit setup up build stop down delete demo mix ps catalog status stacks expand config help)
+  @verbs ~w(new add eject bake commit up build stop down restart prune delete demo mix ps catalog status stacks expand config console help)
 
   @doc "Every verb a job may start with."
   def verbs, do: @verbs
@@ -41,6 +43,8 @@ defmodule Console.Verbs do
   def kind("eject", [name | _]), do: {:eject, name}
   def kind("expand", args), do: {:expand, args |> Enum.reject(&(&1 == "--json")) |> List.first()}
   def kind(verb, args) when verb in ~w(up build stop down), do: {String.to_atom(verb), deployment(args)}
+  # `restart app`, `restart --deploy scaled app2`: about the service.
+  def kind("restart", args), do: {:restart, args |> Enum.reject(&(String.starts_with?(&1, "--") or &1 in ~w(dev prod scaled))) |> List.first()}
   def kind(verb, _), do: {String.to_atom(verb), nil}
 
   # `--deploy TARGET`, or dev — the default every one of those verbs takes.
@@ -52,13 +56,15 @@ defmodule Console.Verbs do
   end
 
   @doc """
-  Whether the job must be confirmed before it runs. `delete` always;
-  `new` when the workspace already holds a project, since it overwrites
-  every file in it. The console owns this gate: `wb.sh` runs under
+  Whether the job must be confirmed before it runs. `delete` and
+  `prune` always; `new` when the workspace already holds a project,
+  since it overwrites every file in it. The console owns this gate: `wb.sh` runs under
   `--yes` and never asks.
   """
   @spec confirm?(kind(), boolean()) :: boolean()
   def confirm?({:delete, _}, _project?), do: true
+  # Prune removes what other workspaces left: always asked, whatever it is about.
+  def confirm?({:prune, _}, _project?), do: true
   def confirm?({:new, _}, project?), do: project?
   def confirm?(_, _), do: false
 
@@ -71,7 +77,7 @@ defmodule Console.Verbs do
   """
   @spec reread(kind()) :: :fast | :full | :all | :config | :none
   def reread({:config, _}), do: :config
-  def reread({verb, _}) when verb in [:up, :build, :stop, :down, :setup, :demo, :mix], do: :fast
+  def reread({verb, _}) when verb in [:up, :build, :stop, :down, :restart, :prune, :demo, :mix], do: :fast
   def reread({verb, _}) when verb in [:insert, :eject, :commit, :bake], do: :full
   def reread({verb, _}) when verb in [:new, :delete], do: :all
   def reread(_), do: :none

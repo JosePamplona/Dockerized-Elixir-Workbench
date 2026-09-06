@@ -242,3 +242,10 @@ Decided on 2026-09-05 over the Docker screen's containers table.
 * **A role is added when a consumer needs it**, not in anticipation.
   `link` exists because diagrams draw HTTP edges; `soft` because they
   set sublabels; neither existed while the console was the only reader.
+* **The scrollbar sits on the edge of the box that scrolls**, with
+  nothing between the two. Side air goes on the element that scrolls
+  (or on its content), never on a wrapper around it, and a measure goes
+  on the content, never on the scroller; a bordered box that scrolls
+  keeps its bar on its own inner edge. Every pane that can scroll says
+  `scrollbar-gutter:stable`. The note on scrollbars in components.css
+  says why.

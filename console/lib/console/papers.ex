@@ -1,8 +1,8 @@
 defmodule Console.Papers do
   @moduledoc """
   The papers a box carries — README, DESIGN, CHANGELOG — read off the
-  mounted workbench and rendered into a booklet: the article, a table
-  of contents from its h2s when there are enough, and every relative
+  mounted workbench and rendered into a booklet: the article, an index
+  of its h2s whenever it has any (`booklet/3`), and every relative
   link rewritten to what the console can open (another box, another
   paper) or sent to the repository on GitHub. A figure goes in an
   `<img>` served by `ConsoleWeb.FiguresController`, never inline.
@@ -38,12 +38,28 @@ defmodule Console.Papers do
         |> rewrite_images(name)
         |> mark_revisions()
 
-      {html, heads} = head_ids(html, "h-")
-      title = doc_title(html, file)
-      %{html: html, toc: if(length(heads) >= 3, do: heads, else: []), title: title}
+      booklet(html, "h-", file)
     else
       _ -> nil
     end
+  end
+
+  @doc """
+  The booklet a paper is read in: the article with its h2s given ids,
+  the index of those h2s, and the document's title. One shape for every
+  paper the console shows — a cartridge's, the workbench's, the
+  project's — so the rule of the index lives here and nowhere else.
+
+  The index is there whenever the paper has a section. It used to want
+  three: with fewer, the paper was read full-width, without the column
+  — and a changelog, whose h2s are its versions, has one or two for
+  most of its life, so the same kind of document took two shapes beside
+  a README that always had its index. A document with no h2 at all is
+  the one that reads full-width; there is nothing to index.
+  """
+  def booklet(html, prefix, file) do
+    {html, heads} = head_ids(html, prefix)
+    %{html: html, toc: heads, title: doc_title(html, file)}
   end
 
   @doc """
@@ -95,9 +111,7 @@ defmodule Console.Papers do
           |> then(&Regex.replace(~r/<a href="CHANGELOG\.md[^"]*"/, &1, ~s(<a href="?wb=manual&amp;paper=changelog" data-patch)))
           |> then(&Regex.replace(~r/<a href="(https?:[^"]*)"/, &1, ~s(<a href="\\1" target="_blank" rel="noopener")))
 
-        {html, heads} = head_ids(html, "w-")
-        title = doc_title(html, file)
-        %{html: html, toc: if(length(heads) >= 3, do: heads, else: []), title: title}
+        booklet(html, "w-", file)
 
       _ ->
         nil

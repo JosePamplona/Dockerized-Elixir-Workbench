@@ -85,6 +85,17 @@
    not ::-webkit-scrollbar: Firefox ignores it, so the standard would have to
    be written anyway, and the day you use it Chrome stops drawing overlay
    scrollbars on macOS — the look changes and the layout changes with it.
+   Where the bar is drawn is not a colour but it is the house's too: on the
+   edge of the box that scrolls, with nothing between the two. The browser
+   already puts it there; what moves it is padding on a wrapper *around*
+   the scroller, which is how the console's panes came to carry their bars
+   at 28px, 32px and half a modal in from the edge. So the side air of a
+   pane goes on the element that scrolls, or on what it holds — never on
+   a wrapper — and a measure (max-width) goes on the content, never on the
+   scroller. A box with its own border (a terminal, a pre) is a box that
+   scrolls, and its bar sits on its own inner edge by the same rule. And
+   every pane that can scroll says `scrollbar-gutter:stable`, so nothing
+   under it steps sideways the moment the bar appears.
    Selected text is the board, turned to face the ground it lands on.
      The browser's blue was the last place it was still leaking in — the
      same blue the checkboxes wore before accent-color, and the one

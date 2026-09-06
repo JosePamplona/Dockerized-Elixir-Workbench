@@ -23,13 +23,13 @@ import "phoenix_html"
 import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/console"
-import {Booklet, Cli, Clock, Folds, Frame, Ground, JobLines, JobOut, Logs, Rail, ShelfView, Term} from "./hooks"
+import {Booklet, Cli, Clock, Face, Folds, Frame, Ground, JobLines, JobOut, Logs, Rail, ShelfView, Term} from "./hooks"
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {...colocatedHooks, Booklet, Cli, Clock, Folds, Frame, Ground, JobLines, JobOut, Logs, Rail, ShelfView, Term},
+  hooks: {...colocatedHooks, Booklet, Cli, Clock, Face, Folds, Frame, Ground, JobLines, JobOut, Logs, Rail, ShelfView, Term},
 })
 
 // The band's gold rule is the loading bar. It is always there — a full

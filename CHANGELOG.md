@@ -147,6 +147,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **The box's Installation and Files screens did not scroll.** The
+  drawer clips what passes its height, and only the papers and the UI
+  pane scrolled inside it: a long options form, or the runs under it,
+  ran out of reach on a short window. Every screen of the drawer
+  scrolls on its own now, the box's two faces included.
+
+- **A paper's figures opened the viewer only on the first paper.** The
+  `Booklet` hook wrapped each figure — the expand hint, the click that
+  opens the viewer — when it mounted, and the booklet is one element for
+  every paper of a box: turning from the README to the DESIGN patched
+  new figures into it, and they stayed bare images. The wrapping runs on
+  every patch now, idempotently.
+
 - **The scaled deployment over a dev database.** The clustering paper
   left it open (§5): `up --deploy scaled` recreated the dev `database`
   container carrying its anonymous volume over, so `POSTGRES_DB` was
@@ -219,6 +232,35 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   status says down, Up raises it whole. What it gives up — a database
   that crashes is not restarted alone — the events feed says, and
   Restart is a click.
+- **The scrollbar sits on the edge of the box that scrolls.** The
+  console drew it in four places at once: on the panel's edge for the
+  document tabs and the drawer's Files and faces, 28px in on Project,
+  Git, Docker and the shelf, 32px in on the papers of a box and of the
+  workbench, and halfway across the modal on Config and Interface,
+  whose panes were also clamped to 860px. All the same cause — when a
+  row was docked above a scroller the scroller went down a level, and
+  the padding stayed on the wrapper around it. The bottom had the same
+  fault: the filled panel kept 22px of ground under the scroller, so
+  the last row of boxes was cut a strip above the band and the bar
+  stopped short of it while the rail's ran to the edge. The air is now
+  on the scroller (or on the row and the content beside it), the
+  measure on the form's blocks, and every pane that can scroll says
+  `scrollbar-gutter:stable`. Written as a rule of the house, in the
+  scrollbar note of components.css and in assets/design/README.md.
+- **The box is turned by hand.** A click on the box in the drawer's
+  Box screen turns it over, and Enter or Space with it focused; the
+  button that stood under it is gone. The cursor had promised a viewer
+  since the mock, and the console never wired one: the lozenge a figure
+  shows on hover now sits in the box's corner and opens the viewer on
+  the side that shows, without turning the box.
+- **Every paper with a section has its index.** The column of h2s
+  beside a paper wanted three of them; with fewer the paper was read
+  full-width, and a changelog — whose h2s are its versions — has one or
+  two for most of its life, so it took a different shape from the
+  README beside it. The index is there whenever there is an h2, and the
+  rule lives once, in `Console.Papers.booklet/3`, where the three
+  renderers (a cartridge's papers, the workbench's, the project's) had
+  each carried a copy of the number.
 
 ### Fixed
 

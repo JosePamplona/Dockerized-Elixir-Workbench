@@ -682,12 +682,12 @@ pre .ln{display:block}
    the hairline. */
 .dtabs.docked{flex:none;width:auto;gap:0;padding:4px 8px 0;background:var(--surface);border-bottom:1px solid var(--line)}
 .drawer .dtabs.docked{background:var(--surface-2)}
-/* The band spans the pane, out over the padding of whatever holds it —
-   and takes that padding back as its own, so its first tab starts where
-   the row above starts its: 28px on a screen, the tab row's, 32px in a
-   drawer's papers. */
-.pdocs .dtabs.docked{margin:0 -28px;padding-left:28px;padding-right:28px}
-.papers .dtabs.docked{margin:0 -32px;padding-left:32px;padding-right:32px}
+/* The band spans the pane, and carries the side air itself, so its first
+   tab starts where the row above starts its: 28px on a screen, the tab
+   row's, 32px in a drawer's papers. The same air is on the scroller under
+   it, not on the pane around both — a scroller's bar sits on its own edge. */
+.pdocs .dtabs.docked{padding-left:28px;padding-right:28px}
+.papers .dtabs.docked{padding-left:32px;padding-right:32px}
 .dtabs.docked .dtab{font-size:11.5px;letter-spacing:.1em;padding:5px 11px 6px;border-bottom:0;border-radius:2px 2px 0 0;margin-bottom:-1px}
 .dtabs.docked .dtab[aria-selected="true"]{background:var(--ground);color:var(--ink);box-shadow:0 1px 0 var(--ground)}
 /* The air under the row is the row's: 22px on whatever follows it, set
@@ -724,15 +724,24 @@ pre .ln{display:block}
    under it, and auto rows share that space out — which grew the row of
    papers itself, by as much as a hundred pixels, whenever the sheet was
    a short one. */
-.papers{display:flex;flex-direction:column;min-height:0;padding:0 32px}
+/* The side air is the booklet's, not the pane's: the booklet is what
+   scrolls, and the bar of a scroller is drawn on the edge of its own
+   box — padding on a wrapper around it moved the bar 32px into the
+   drawer, while the drawer's other screens kept theirs on the edge.
+   See the scrollbar note in components.css. */
+.papers{display:flex;flex-direction:column;min-height:0;padding:0}
 .papers[hidden]{display:none}
-.papers .booklet{flex:1;min-height:0;overflow:auto;padding:0 0 60px}
+.papers .booklet{flex:1;min-height:0;overflow:auto;padding:0 32px 60px;scrollbar-gutter:stable}
 /* What is fixed above a heading is now the header and the row together,
    so both the index's jumps and the index itself clear the two. */
 .papers .booklet{--fixed-above:0px}
 .papers .booklet .toc{top:0}
 .booklet{display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:32px;padding:26px 32px 60px}
-.drawer > .booklet,.drawer > .ui{min-height:0;overflow:auto}
+/* Every screen of the drawer scrolls on its own under the fixed top —
+   the papers and the UI pane did, the Installation and Files screens
+   and the box's two faces did not: past the drawer's height they were
+   clipped, options and runs out of reach on a short window. */
+.drawer > .booklet,.drawer > .ui,.drawer > .install,.drawer > .body{min-height:0;overflow:auto}
 .booklet[hidden]{display:none}
 .booklet.notoc{grid-template-columns:minmax(0,1fr)}
 .booklet .toc{position:sticky;top:0;align-self:start;display:grid;gap:6px;font-family:var(--cond);font-weight:600;letter-spacing:.06em;font-size:12.5px;text-transform:uppercase;border-left:1px solid var(--line);padding-left:12px}
@@ -981,12 +990,20 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
 /* --- config.conf as a form ------------------------------------------- */
 /* No top padding: the bar's own is the air above it, so it is already at
    its docked place at rest and does not travel there. See the note on the
-   bar itself. */
-.cfg{display:flex;flex-direction:column;min-height:0;padding:0 32px;max-width:860px}
-.cfg .cfgbody{flex:1;min-height:0;overflow:auto;display:grid;gap:26px;padding:26px 0 60px}
+   bar itself. No side padding and no measure either: the pane is the
+   drawer's width, so the body's bar is drawn on the drawer's edge like
+   the papers' — the 860px measure and the 32px of air the form had are
+   the bar's and the form's own, below. */
+.cfg{display:flex;flex-direction:column;min-height:0;padding:0}
+.cfg .cfgbody{flex:1;min-height:0;overflow:auto;display:grid;gap:26px;padding:26px 32px 60px;scrollbar-gutter:stable}
+/* 796px is the measure the form always had: 860px less 32px of air on
+   each side, kept on the form's blocks now that the pane no longer
+   clamps — a clamp on the pane clamped the scroller with it. */
+.cfg .cfgbody>*,.cfg .bar{max-width:796px}
 /* The pane's first row; the form under it is what scrolls. See .docked
-   for what the three rows share. */
-.cfg .bar{flex:none;display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--surface);padding:10px 0}
+   for what the three rows share. Its side air is margin, not padding: the
+   bar is not a scroller, and margin keeps its rule where it was. */
+.cfg .bar{flex:none;display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--surface);padding:10px 0;margin:0 32px}
 .cfg .bar .note{flex:1;min-width:200px}
 .cfg .sec{display:grid;gap:14px}
 .cfg .sec .intro{margin:-6px 0 0;font-size:13.5px;color:var(--muted);max-width:60ch}
@@ -1008,7 +1025,12 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
    gets, this says what this browser is showing right now. Each control
    is its own state, so the sentence beside it is written by the same
    hand that draws the icon. */
-.ui{display:grid;gap:22px;padding:26px 32px 60px;max-width:860px;align-content:start}
+/* The pane is the drawer's width and scrolls to its edge; the 796px
+   measure (860px less the air) is on what it holds, as on Config — a
+   max-width on the scroller had its bar standing in the middle of the
+   drawer. */
+.ui{display:grid;gap:22px;padding:26px 32px 60px;align-content:start;scrollbar-gutter:stable}
+.ui>*{max-width:796px}
 .ui .lede{margin:0;font-size:13.5px;color:var(--muted);max-width:60ch}
 .ui .row{display:grid;grid-template-columns:34px minmax(0,1fr);gap:4px 16px;align-items:center}
 .ui .row button{grid-row:1/3;justify-self:center;color:var(--ink)}
@@ -1067,18 +1089,37 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
    bar and the cartridge's papers. Its ground is the panel's, not a
    modal's surface. */
 #panel-project{padding-top:0}
-.pdocs .booklet{flex:1;min-height:0;overflow:auto;padding:0 0 60px}
+/* And its side air too, on every panel that holds a `.pdocs`: the pane
+   under the row is what scrolls, and its bar belongs on the panel's edge,
+   where the document panels' is — a padded panel around the scroller had
+   it 28px in. The 28px moves onto the row, the scrollers, and whatever
+   else the pane holds directly. */
+#panel-project,#panel-docker,#panel-git,#panel-shelf{padding:0}
+/* And the bottom: the 22px the filled panel keeps under itself is a
+   strip of ground below the scroller's end, where the last row of boxes
+   is cut and the bar stops short of the band — while the rail's bar runs
+   to the edge beside it. The scroller ends where the panel ends, and the
+   air under a document is its own padding-bottom, as on every screen. */
+.pdocs .booklet{flex:1;min-height:0;overflow:auto;padding:0 28px 60px;scrollbar-gutter:stable}
 .pdocs .booklet .toc{top:0}
 .pdocs pre.env{flex:1;min-height:0;font-family:var(--file-face,var(--mono));font-size:var(--file-size,12.5px);line-height:var(--file-leading,1.6);background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:14px 16px;overflow:auto;margin:0;white-space:normal}
 .pdocs pre.env .c{color:var(--term-dim)}.pdocs pre.env .k{color:#D4B27E}.pdocs pre.env .m{color:#F3A196}
-.pdocs .nothing{padding:18px 0;max-width:60ch}
+.pdocs>pre.env{margin-left:28px;margin-right:28px;margin-bottom:22px}
+.pdocs .nothing{padding:18px 28px;max-width:60ch}
 
 /* --- figures: a hint on hover, a viewer on click --------------------------- */
 .fig{position:relative;margin:0 0 1.2em}
 .fig>svg.diagram,.fig>img{margin:0;cursor:zoom-in}
 .fig .expand{position:absolute;right:8px;top:8px;font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:11px;color:var(--ink);background:var(--surface);border:1px solid var(--line);padding:3px 8px;border-radius:2px;opacity:0;transition:opacity .15s;pointer-events:none}
 .fig:hover .expand,.fig:focus-within .expand{opacity:1}
-.hand .face{cursor:zoom-in}
+/* The box turns under the hand — a click, or Enter and Space with it
+   focused — and the lozenge in its corner is what opens the viewer, the
+   same lozenge a figure shows on hover, but a button: it has to be
+   pressed without turning the box. The button that turned it used to
+   stand under the box; a box is turned by picking it up. */
+.hand .face{cursor:pointer}
+.hand .expand{position:absolute;right:8px;top:8px;z-index:1;font:inherit;font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:11px;color:var(--ink);background:var(--surface);border:1px solid var(--line);padding:3px 8px;border-radius:2px;cursor:zoom-in;opacity:0;transition:opacity .15s}
+.hand .face:hover .expand,.hand .face:focus-within .expand,.hand .expand:focus-visible{opacity:1}
 .viewer{position:fixed;inset:0;z-index:9;background:rgba(10,4,14,.86);display:none;flex-direction:column}
 .viewer.on{display:flex}
 .viewer .bar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--line)}
@@ -1182,7 +1223,7 @@ header.band ::selection{background:color-mix(in srgb,var(--board-ink) 15%,transp
    its minimum height is nothing) was given the height left over and
    clipped inside itself — thirteen images of twenty-seven. Here every
    block keeps its own height and the pane is what scrolls. */
-.pdocs .dkdoc{flex:1;min-height:0;overflow:auto;padding:0 0 60px;display:flex;flex-direction:column;gap:14px}
+.pdocs .dkdoc{flex:1;min-height:0;overflow:auto;padding:0 28px 60px;display:flex;flex-direction:column;gap:14px;scrollbar-gutter:stable}
 .pdocs .dkdoc>*{flex:none;min-width:0}
 .docker .toolbar .note.daemon{margin-left:auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dtab .badge{font-family:var(--mono);font-size:10.5px;padding:1px 6px;border-radius:999px;background:var(--surface-2);color:var(--muted);letter-spacing:0}

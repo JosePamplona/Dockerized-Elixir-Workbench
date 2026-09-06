@@ -51,10 +51,10 @@ defmodule Console.Project do
   def render(workspace, key) do
     with {_, _, file} <- Enum.find(@papers, &(elem(&1, 0) == key)),
          {:ok, md} <- File.read(Path.join(workspace, file)) do
-      html = md |> Papers.to_html() |> String.replace(~r/<img src="(?!https?:|data:)/, ~s(<img src="#" data-missing=")) |> Papers.head_ids("p-")
-      {html, heads} = html
-      title = Papers.doc_title(html, file)
-      %{html: html, toc: if(length(heads) >= 3, do: heads, else: []), title: title}
+      md
+      |> Papers.to_html()
+      |> String.replace(~r/<img src="(?!https?:|data:)/, ~s(<img src="#" data-missing="))
+      |> Papers.booklet("p-", file)
     else
       _ -> nil
     end

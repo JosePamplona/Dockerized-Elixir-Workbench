@@ -197,7 +197,12 @@ defmodule ConsoleWeb.Box do
     ~H"""
     <div class="body">
       <div class="hand">
-        <div class="face" id="d-face">
+        <%!-- The box is turned by hand: a click on it, Enter or Space
+              with it focused. Not a <button>: its two sides hold headings
+              and paragraphs, which a button may not. The lozenge in the
+              corner opens the viewer on the side that shows; it stops its
+              click from turning the box. --%>
+        <div class="face" id="d-face" role="button" tabindex="0" phx-hook="Face" phx-click="flip" phx-keydown="flip" phx-key="Enter" aria-label={if @face == "front", do: "Turn it over", else: "Turn it back"}>
           <div class={["card", @face == "back" && "back"]} id="d-card">
             <div class="side front">
               <img :if={@box["covers"]["front"]} src={"/covers/#{@box["covers"]["front"]}"} alt={"#{@box["name"]} — box cover"} draggable="false" />
@@ -210,8 +215,8 @@ defmodule ConsoleWeb.Box do
               <div :if={is_nil(@box["covers"]["back"])} class="typeset"><h4>{@box["summary"] || @box["name"]}</h4><p :if={@box["example"]}>$ {@box["example"]}</p><span class="nocover">{if @box["pending"], do: "not done yet — the drawing, through the sheet", else: "typeset back — the composed back would go here"}</span></div>
             </div>
           </div>
+          <button class="expand" type="button" aria-label="See this side large">⤢ expand</button>
         </div>
-        <button class="btn" type="button" phx-click="flip">{if @face == "front", do: "Turn it over", else: "Turn it back"}</button>
       </div>
       <div class="sheet">
         <div class="head">

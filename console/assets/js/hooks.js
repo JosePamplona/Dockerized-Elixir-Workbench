@@ -401,14 +401,23 @@ export const Logs = {
 // --- the booklet: a paper's in-console links go through the socket, and
 // the index scrolls the drawer, not the page.
 export const Booklet = {
-  mounted() {
-    // Every figure gets the expand hint and opens the viewer.
+  // Every figure gets the expand hint and opens the viewer. Done on
+  // mount and on every patch: the booklet is one element for every
+  // paper of a box, so turning from the README to the DESIGN brings
+  // new figures into the same element, and a figure only met on mount
+  // stayed a bare image — no hint, no viewer. Idempotent, so a patch
+  // that leaves the figures alone changes nothing.
+  figures() {
     for (const img of this.el.querySelectorAll("article.md img")) {
       if (img.closest(".fig")) continue
       const wrap = document.createElement("figure"); wrap.className = "fig"
       img.replaceWith(wrap); const hint = document.createElement("span"); hint.className = "expand"; hint.textContent = "⤢ expand"; wrap.append(img, hint)
       wrap.addEventListener("click", () => openViewer(img, img.alt || "Figure"))
     }
+  },
+  updated() { this.figures() },
+  mounted() {
+    this.figures()
     this.el.addEventListener("click", ev => {
       const a = ev.target.closest("a"); if (!a) return
       if (a.hasAttribute("data-patch")) { ev.preventDefault(); this.pushEvent("goto", { href: a.getAttribute("href") }) }
@@ -418,6 +427,23 @@ export const Booklet = {
         const target = id === "top" ? this.el.querySelector(".md") : document.getElementById(id)
         if (target) target.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" })
       }
+    })
+  },
+}
+
+// --- the box in hand: a click turns it (phx-click on the face; Enter is
+// phx-keydown, Space is the browser's own for a button and is given here),
+// and the lozenge in its corner opens the viewer on the side that shows.
+// The lozenge stops its click before the document, where LiveView listens
+// for the face's.
+export const Face = {
+  mounted() {
+    this.el.addEventListener("keydown", ev => { if (ev.key === " " && ev.target === this.el) { ev.preventDefault(); this.el.click() } })
+    this.el.querySelector(".expand").addEventListener("click", ev => {
+      ev.stopPropagation()
+      const back = this.el.querySelector(".card").classList.contains("back")
+      const img = this.el.querySelector(back ? ".side.back img" : ".side.front img")
+      if (img) openViewer(img, img.alt || (back ? "The back of the box" : "The box"))
     })
   },
 }

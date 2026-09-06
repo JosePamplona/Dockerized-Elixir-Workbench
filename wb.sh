@@ -18,7 +18,7 @@
 
   # The workbench is wherever this script lives; run everything from here.
   WORKBENCH_PATH="$( cd "$( dirname "$0" )" && pwd )"
-  cd "$WORKBENCH_PATH"
+  cd "$WORKBENCH_PATH" || exit 1
 
   # Environment overrides survive config.conf (e.g. WORKSPACE_PATH=./x ./wb.sh),
   # for a second workspace beside the configured one without editing it.
@@ -32,11 +32,12 @@
   export WB_YES="${WB_YES:-false}"
 
   SCRIPT_CONFIG_FILE="config.conf"
+  # shellcheck source=config.conf disable=SC1091  # followed under -x; a plain run need not read the user's config
   source "./$SCRIPT_CONFIG_FILE"
 
   # Workbench configuration --------------------------------------------------
 
-    WORKBENCH_VERSION=$( sed '3!d' $0 | sed -n 's/^.*v\(.*\).*/\1/p' )
+    WORKBENCH_VERSION=$( sed '3!d' "$0" | sed -n 's/^.*v\(.*\).*/\1/p' )
     PROJECT_NAME="${PROJECT_NAME_OVERRIDE:-$PROJECT_NAME}"
 
     # Workspace: directory where the project is generated (volume mount
@@ -66,11 +67,11 @@
     COMPOSE_FILE="docker-compose.yml"
     COMPOSE_SEED="docker-compose.seed.yml"
     # The entrypoint script runs from the mounted workbench (workdir /app).
-    CONTAINER_ENTRYPOINT="bash workbench/scripts/entrypoint.sh"
+    CONTAINER_ENTRYPOINT=(bash workbench/scripts/entrypoint.sh)
     # TTY flags only when running from an interactive terminal (CI-safe).
     if [ -t 0 ]
-    then DOCKER_TTY_FLAGS="--tty --interactive"
-    else DOCKER_TTY_FLAGS=""
+    then DOCKER_TTY_FLAGS=(--tty --interactive)
+    else DOCKER_TTY_FLAGS=()
     fi
     # Colour without a terminal. The console runs this script on a pipe,
     # and there mix, hex, git and compose turn their colours off on their
@@ -95,20 +96,11 @@
 
     # Elixir project files - - - - - - - - - - - - - - - - - - - - - - - - - -
     LOWER_CASE=$( echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' )
-    ELIXIR_PROJECT_NAME=$( echo $LOWER_CASE | tr ' ' '_' )
+    ELIXIR_PROJECT_NAME=$( echo "$LOWER_CASE" | tr ' ' '_' )
     MIX_FILE="mix.exs"
     EXISTING_PROJECT=$(
       [ -f "$WORKSPACE_PATH/$MIX_FILE" ] && echo true || echo false
     )
-
-    # Git - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    if [ -d "$WORKSPACE_PATH/.git" ]
-    then REPO_URL=$(
-      git -C "$WORKSPACE_PATH" config --get remote.origin.url | \
-      sed 's/\.git$//'
-    )
-    else REPO_URL="https://github.com/user/repo"
-    fi
 
   # Docker ---------------------------------------------------------------------
 
@@ -130,7 +122,7 @@
     # but the creating ones reads them from there — config.conf may since
     # have moved on to name the next project, and several workspaces can
     # be driven from one workbench.
-    if [ $EXISTING_PROJECT == true ] && [ -f "$WORKSPACE_PATH/$COMPOSE_FILE" ] && \
+    if [ "$EXISTING_PROJECT" == true ] && [ -f "$WORKSPACE_PATH/$COMPOSE_FILE" ] && \
        [ "$1" != "new" ]
     then
       ELIXIR_PROJECT_NAME=$(
@@ -173,7 +165,7 @@
     # for on its own, inside the source mount — Mix is told nothing, and
     # neither is anything else that assumes where deps/ is (see the
     # toolchain dockerfile).
-    BUILD_VOLUMES="--volume ${ELIXIR_PROJECT_NAME}_build:/app/src/_build --volume ${ELIXIR_PROJECT_NAME}_deps:/app/src/deps"
+    BUILD_VOLUMES=(--volume "${ELIXIR_PROJECT_NAME}_build:/app/src/_build" --volume "${ELIXIR_PROJECT_NAME}_deps:/app/src/deps")
     WORKBENCH_VOLUME="$WORKBENCH_PATH:/app/workbench:ro"
     # Where the workspace is on THIS side, when this side is the
     # toolchain. './wb.sh console' runs the console on the toolchain
@@ -240,9 +232,9 @@
   # confirm <MESSAGE>
     # Prints MESSAGE and spects input prompt for continue or exit the script
   confirm() {
-    echo "⚠️  ${B}Warning${R} $@"
+    echo "⚠️  ${B}Warning${R} $*"
     if [ "$WB_YES" == true ]; then echo "Continuing (--yes)."; echo; return; fi
-    read -n 1 -p $'Should continue? [y/N] ' INPUT
+    read -r -n 1 -p $'Should continue? [y/N] ' INPUT
     if [ "$INPUT" != "y" ]; then exit 0; fi
     echo
   }
@@ -266,16 +258,16 @@
   env_flag_error() {
     terminate \
       "Deployments are selected with ${B}--deploy${R}, not --env:" \
-      "  ./$(basename $0) $COMMAND_NAME --deploy dev|prod|scaled"
+      "  ./$(basename "$0") $COMMAND_NAME --deploy dev|prod|scaled"
   }
 
   # warning <MESSAGE>
     # Prints a warning without interrupting: the command carries on.
-  warning() { echo "⚠️  ${B}Warning${R} $@"; echo; }
+  warning() { echo "⚠️  ${B}Warning${R} $*"; echo; }
 
   # terminate <MESSAGE>
     # Print error and terminate with sigerr 1
-  terminate() { echo "${B}${C1}Error${R} $@"; echo; exit 1; }
+  terminate() { echo "${B}${C1}Error${R} $*"; echo; exit 1; }
 
   # first_free_port <BASE>
     # Prints the first host port available starting from BASE.
@@ -285,7 +277,7 @@
       exec 3>&- 3<&-
       port=$((port + 1))
     done
-    echo $port
+    echo "$port"
   }
 
   # phx_new_versions
@@ -413,7 +405,7 @@
 
     terminate \
       "There is no phx_new $1 on hex (${Li}https://hex.pm/packages/phx_new/versions${R})." \
-      "Name one that exists ('./$(basename $0) new --phx-new VERSION') or leave" \
+      "Name one that exists ('./$(basename "$0") new --phx-new VERSION') or leave" \
       "PHX_NEW_VERSION empty in $SCRIPT_CONFIG_FILE for the newest that runs on this stack."
   }
 
@@ -425,13 +417,14 @@
     # requirement beforehand, so it is asked here, where the remedy is
     # the workbench's own: another stack, or another installer.
   check_stack_runs_phx_new() {
-    local requirement=$(phx_new_elixir_requirement "$1")
+    local requirement
+    requirement=$(phx_new_elixir_requirement "$1")
 
     [ -n "$requirement" ] || return 0
     stack_satisfies "$requirement" || terminate \
       "phx_new $1 needs Elixir $requirement, and this stack is $ELIXIR_VERSION." \
-      "Move the stack up ('./$(basename $0) stacks') or name an installer that" \
-      "runs on this one ('./$(basename $0) new --phx-new VERSION')."
+      "Move the stack up ('./$(basename "$0") stacks') or name an installer that" \
+      "runs on this one ('./$(basename "$0") new --phx-new VERSION')."
   }
 
   # workspace_compose [COMMAND...]
@@ -462,7 +455,7 @@
 
     [ -f "$COMPOSE_TARGET" ] || terminate \
       "This workspace has no '$1' deployment ($(basename "$COMPOSE_TARGET")" \
-      "does not exist). Create it with: ./$(basename $0) up --deploy $1"
+      "does not exist). Create it with: ./$(basename "$0") up --deploy $1"
   }
 
   # app_is_running [FILE] [SERVICE]
@@ -494,19 +487,19 @@
     local seed_path="$SCRIPTS_DIR/$LOCAL_DOCKERFILE_SEED"
     local file_path="$SCRIPTS_DIR/$LOCAL_DOCKERFILE"
 
-    cp $seed_path $file_path
+    cp "$seed_path" "$file_path"
 
-    sed -i "s/%{elixir_version}/$ELIXIR_VERSION/" $file_path
-    sed -i "s/%{erlang_version}/$ERLANG_VERSION/" $file_path
-    sed -i "s/%{debian_version}/$DEBIAN_VERSION/" $file_path
-    sed -i "s/%{phx_new_version}/$PHX_NEW_VERSION/" $file_path
+    sed -i "s/%{elixir_version}/$ELIXIR_VERSION/" "$file_path"
+    sed -i "s/%{erlang_version}/$ERLANG_VERSION/" "$file_path"
+    sed -i "s/%{debian_version}/$DEBIAN_VERSION/" "$file_path"
+    sed -i "s/%{phx_new_version}/$PHX_NEW_VERSION/" "$file_path"
   }
 
   # prepare_workspace
     # Ensures an empty workspace directory (confirming first when a project
     # already exists there) and bakes the local dockerfile from seed.
   prepare_workspace() {
-    if [ $EXISTING_PROJECT == true ]; then
+    if [ "$EXISTING_PROJECT" == true ]; then
       confirm \
         "A project already exists in $WORKSPACE_PATH. This action will" \
         "overwrite all its files." && \
@@ -550,17 +543,17 @@
 
     cp "$SCRIPTS_DIR/$COMPOSE_SEED" "$file_path"
 
-    sed -i "s/%{app_name}/$ELIXIR_PROJECT_NAME/"                 $file_path
-    sed -i "s/%{compose_image}/$image/"                          $file_path
-    sed -i "s/%{compose_dockerfile}/$dockerfile/"                $file_path
-    sed -i "s/%{uid}/$(id -u)/"                                  $file_path
-    sed -i "s/%{gid}/$(id -g)/"                                  $file_path
-    sed -i "s/%{app_port}/$APP_PORT/"                            $file_path
-    sed -i "s/%{internal_port}/$APP_INTERNAL_PORT/g"             $file_path
-    sed -i "s/%{pgadmin_port}/$PGADMIN_PORT/"                    $file_path
-    sed -i "s/%{pgadmin_internal_port}/$PGADMIN_INTERNAL_PORT/g" $file_path
-    sed -i "s/%{postgres_image_version}/$POSTGRES_IMAGE_VERSION/" $file_path
-    sed -i "s/%{pgadmin_image_version}/$PGADMIN_IMAGE_VERSION/"  $file_path
+    sed -i "s/%{app_name}/$ELIXIR_PROJECT_NAME/"                 "$file_path"
+    sed -i "s/%{compose_image}/$image/"                          "$file_path"
+    sed -i "s/%{compose_dockerfile}/$dockerfile/"                "$file_path"
+    sed -i "s/%{uid}/$(id -u)/"                                  "$file_path"
+    sed -i "s/%{gid}/$(id -g)/"                                  "$file_path"
+    sed -i "s/%{app_port}/$APP_PORT/"                            "$file_path"
+    sed -i "s/%{internal_port}/$APP_INTERNAL_PORT/g"             "$file_path"
+    sed -i "s/%{pgadmin_port}/$PGADMIN_PORT/"                    "$file_path"
+    sed -i "s/%{pgadmin_internal_port}/$PGADMIN_INTERNAL_PORT/g" "$file_path"
+    sed -i "s/%{postgres_image_version}/$POSTGRES_IMAGE_VERSION/" "$file_path"
+    sed -i "s/%{pgadmin_image_version}/$PGADMIN_IMAGE_VERSION/"  "$file_path"
 
     # The one-shot 'migrate' service is the production deployment's:
     # the dev image migrates itself on boot ('mix setup' in the
@@ -569,12 +562,12 @@
     # ran to completion, so the database it needed was healthy.
     if [ "$dockerfile" == "$LOCAL_DOCKERFILE" ]
     then
-      sed -i '/^  # One-shot migration/,/^  database:/{/^  database:/!d}' $file_path
+      sed -i '/^  # One-shot migration/,/^  database:/{/^  database:/!d}' "$file_path"
     else
       sed -i '/^  app:/,/^  # One-shot migration/{
         s/^      database:$/      migrate:/
         s/condition: service_healthy$/condition: service_completed_successfully/
-      }' $file_path
+      }' "$file_path"
     fi
 
     # Remove the database & pgadmin services on projects without a
@@ -583,10 +576,10 @@
     # depends_on — on it or on the database — is the next three lines.
     if ! workspace_needs_database
     then
-      sed -i '/^  # One-shot migration/,/^  database:/{/^  database:/!d}' $file_path
-      sed -i '/^  database:/,/^volumes:/{/^volumes:/!d}' $file_path
-      sed -i '/^    depends_on:/,+2d'       $file_path
-      sed -i "/# pgAdmin port/,/:$PGADMIN_INTERNAL_PORT\$/d" $file_path
+      sed -i '/^  # One-shot migration/,/^  database:/{/^  database:/!d}' "$file_path"
+      sed -i '/^  database:/,/^volumes:/{/^volumes:/!d}' "$file_path"
+      sed -i '/^    depends_on:/,+2d'       "$file_path"
+      sed -i "/# pgAdmin port/,/:$PGADMIN_INTERNAL_PORT\$/d" "$file_path"
     fi
   }
 
@@ -655,13 +648,13 @@
     # asks for the reader's word itself.
   prune_workbench() {
     local here="" p v projects="" containers="" networks="" volumes=""
-    [ $EXISTING_PROJECT == true ] && here=$(compose_project_name)
+    [ "$EXISTING_PROJECT" == true ] && here=$(compose_project_name)
     case "$1" in
       --images)
         confirm "This action will remove every untagged image: the layers a prod bake leaves behind." && \
         docker image prune --force ;;
       --build)
-        [ $EXISTING_PROJECT == true ] || terminate "There is no project."
+        [ "$EXISTING_PROJECT" == true ] || terminate "There is no project."
         confirm \
           "This action will remove ${ELIXIR_PROJECT_NAME}_build and ${ELIXIR_PROJECT_NAME}_deps:" \
           "the next 'up' compiles the project from scratch." && \
@@ -676,7 +669,7 @@
             } | sort -u); do
           [ "$p" == "$here" ] && continue
           if workbench_project "$p"
-          then projects="$projects $p"
+          then projects="${projects:+$projects }$p"
           else echo "  $p: not a workspace of this workbench, left alone"; fi
         done
         for p in $projects; do
@@ -689,13 +682,14 @@
             docker volume inspect "$v" > /dev/null 2>&1 && volumes="$volumes $v"
           done
         done
-        volumes=$(echo $volumes | tr ' ' '\n' | sort -u)
-        containers=$(echo $containers | tr ' ' '\n' | sort -u)
-        networks=$(echo $networks | tr ' ' '\n' | sort -u)
-        echo "Of the workspaces other than '${here:-none}' —$(echo $projects | sed 's/ /, /g') — and never the console:"
+        volumes=$(xargs -n1 <<< "$volumes" | sort -u)
+        containers=$(xargs -n1 <<< "$containers" | sort -u)
+        networks=$(xargs -n1 <<< "$networks" | sort -u)
+        echo "Of the workspaces other than '${here:-none}' —${projects// /, } — and never the console:"
         echo "  $(echo "$containers" | grep -c .) stopped containers," \
              "$(echo "$networks" | grep -c .) networks," \
              "$(echo "$volumes" | grep -c .) named volumes."
+        # shellcheck disable=SC2086  # word splitting intended: the three lists are one id per line
         confirm \
           "This action will remove them, the data volumes of their databases included." \
           "What a running container of another project still uses stays." && \
@@ -781,8 +775,8 @@
     # container after it and this process: two at once — the console
     # reads on every page it serves — must not fight over one name.
   entrypoint_run() {
-    local tty_flags="$DOCKER_TTY_FLAGS" compose_tty=""
-    if [ "$1" == "-T" ]; then tty_flags=""; compose_tty="-T"; shift; fi
+    local tty_flags=("${DOCKER_TTY_FLAGS[@]}") compose_tty=""
+    if [ "$1" == "-T" ]; then tty_flags=(); compose_tty="-T"; shift; fi
     local name="$1"
     if toolchain_here; then
       entrypoint_here "$@"
@@ -790,19 +784,19 @@
       workspace_compose run \
         --rm $compose_tty \
         --name "${APP_NAME}_workbench_${name}_$$" \
-        --volume $WORKBENCH_VOLUME \
-        app $CONTAINER_ENTRYPOINT "$@"
+        --volume "$WORKBENCH_VOLUME" \
+        app "${CONTAINER_ENTRYPOINT[@]}" "$@"
     else
       ensure_build_volumes
       docker run \
-        $tty_flags \
+        "${tty_flags[@]}" \
         "${COLOR_ENV[@]/#/--env=}" \
         --name "${APP_NAME}_workbench_${name}_$$" \
         --rm \
-        --volume $SOURCE_CODE_VOLUME \
-        --volume $WORKBENCH_VOLUME \
-        $BUILD_VOLUMES \
-        $TOOLCHAIN_IMAGE $CONTAINER_ENTRYPOINT "$@"
+        --volume "$SOURCE_CODE_VOLUME" \
+        --volume "$WORKBENCH_VOLUME" \
+        "${BUILD_VOLUMES[@]}" \
+        "$TOOLCHAIN_IMAGE" "${CONTAINER_ENTRYPOINT[@]}" "$@"
     fi
   }
 
@@ -844,19 +838,20 @@
 
   workspace_igniter() {
     if toolchain_here; then
+      # shellcheck disable=SC1010  # 'do' is mix's own task here, not the keyword
       (cd "$WORKSPACE_MOUNT" && toolchain_env mix do deps.get, deps.compile, "$@")
     else
       ensure_build_volumes
       docker run \
-        $DOCKER_TTY_FLAGS \
+        "${DOCKER_TTY_FLAGS[@]}" \
         "${COLOR_ENV[@]/#/--env=}" \
         --rm \
         --name "${APP_NAME}_workbench_$1_$$" \
-        --volume $SOURCE_CODE_VOLUME \
-        --volume $WORKBENCH_VOLUME \
-        $BUILD_VOLUMES \
+        --volume "$SOURCE_CODE_VOLUME" \
+        --volume "$WORKBENCH_VOLUME" \
+        "${BUILD_VOLUMES[@]}" \
         --workdir /app/src \
-        $LOCAL_IMAGE sh -c \
+        "$LOCAL_IMAGE" sh -c \
           'exec mix do deps.get, deps.compile, "$@"' \
           mix "$@"
     fi
@@ -872,17 +867,17 @@
   package_igniter() {
     docker image inspect "$TOOLCHAIN_IMAGE" > /dev/null 2>&1 || terminate \
       "No toolchain image $TOOLCHAIN_IMAGE yet, and the catalog is read" \
-      "with it. Create a project first: ./$(basename $0) new"
+      "with it. Create a project first: ./$(basename "$0") new"
     docker run \
       --rm \
       "${COLOR_ENV[@]/#/--env=}" \
       --name "workbench_package_$1_$$" \
       --volume "$WORKBENCH_PATH/igniter:/app/igniter" \
-      --volume $WORKBENCH_VOLUME \
+      --volume "$WORKBENCH_VOLUME" \
       --volume workbench_package_build:/app/igniter/_build \
       --volume workbench_package_deps:/app/igniter/deps \
       --workdir /app/igniter \
-      $TOOLCHAIN_IMAGE sh -c \
+      "$TOOLCHAIN_IMAGE" sh -c \
         'mix deps.get > /dev/null 2>&1; exec mix "$@"' \
         mix "$@"
   }
@@ -907,6 +902,7 @@
       [ -n "$line" ] || continue
       name=${line%% *}; [ "$name" == "$line" ] && argv="" || argv=${line#* }
       $first || printf ','; first=false
+      # shellcheck disable=SC2086  # word splitting intended: $argv is the rest of the plan line, one word per option
       printf '{"name": %s, "argv": [%s]}' "$(json_string "$name")" "$(words_json $argv)"
     done
     printf ']\n'
@@ -948,9 +944,9 @@
         --rm \
         "${GIT_COLOR_ENV[@]/#/--env=}" \
         "${GIT_IDENTITY_ENV[@]/#/--env=}" \
-        --volume $SOURCE_CODE_VOLUME \
+        --volume "$SOURCE_CODE_VOLUME" \
         --workdir /app/src \
-        $LOCAL_IMAGE git "$@"
+        "$LOCAL_IMAGE" git "$@"
     fi
   }
 
@@ -1004,7 +1000,7 @@
       terminate \
         "The workspace has changes git does not have, and '$1' needs a" \
         "clean tree: each cartridge is one commit, so 'eject' can revert" \
-        "it alone. Commit them first: ./$(basename $0) commit \"MESSAGE\""
+        "it alone. Commit them first: ./$(basename "$0") commit \"MESSAGE\""
     fi
   }
 
@@ -1085,12 +1081,12 @@
     # them joined, which none of the workbench's composes does.
   workspace_addresses() {
     local ids
-    ids=$(docker compose --project-name "$(compose_project_name)" ps --quiet 2>/dev/null)
-    [ -n "$ids" ] || { printf '{}'; return; }
+    mapfile -t ids < <(docker compose --project-name "$(compose_project_name)" ps --quiet 2>/dev/null)
+    [ ${#ids[@]} -gt 0 ] || { printf '{}'; return; }
     printf '{%s}' "$(
       docker inspect --format \
         '"{{index .Config.Labels "com.docker.compose.service"}}": "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}"' \
-        $ids 2>/dev/null | paste -sd, -
+        "${ids[@]}" 2>/dev/null | paste -sd, -
     )"
   }
 
@@ -1108,7 +1104,7 @@
     # console can draw the empty workspace instead of an error.
   status_json() {
     local port pgadmin project
-    if [ $EXISTING_PROJECT != true ]; then
+    if [ "$EXISTING_PROJECT" != true ]; then
       printf '{\n'
       printf '  "exists": false,\n'
       printf '  "workspace": %s,\n' "$(json_string "$WORKSPACE_PATH")"
@@ -1163,6 +1159,7 @@
       while IFS=$'\x1f' read -r sha subject date; do
         # The subject is 'Insert NAME [ARGV]': the options the cartridge
         # went in with, as an array, so no reader has to parse a subject.
+        # shellcheck disable=SC2086  # word splitting intended: the subject's words are that argv
         set -- $subject; shift 2
         printf '{"sha": "%s", "feature": "%s", "subject": %s, "date": "%s", "argv": [%s]},' \
           "$sha" "$(echo "$subject" | awk '{print $2}')" "$(json_string "$subject")" "$date" "$(words_json "$@")"
@@ -1188,7 +1185,7 @@
     echo "  app      ${Li}http://localhost:$port${R}"
     [ -n "$pgadmin" ] && echo "  pgAdmin  ${Li}http://localhost:$pgadmin${R}"
     echo
-    echo "${B}Deployments${R}  (baked compose files; up with: ./$(basename $0) up --deploy TARGET)"
+    echo "${B}Deployments${R}  (baked compose files; up with: ./$(basename "$0") up --deploy TARGET)"
     for target in dev prod scaled; do
       if [ -f "$WORKSPACE_PATH/$(compose_file_for $target)" ]
       then echo "  $(printf '%-7s' $target) baked"
@@ -1196,13 +1193,14 @@
     done
     echo
     echo "${B}Containers${R}  (dev and prod share their names: the image tells them apart)"
+    # shellcheck disable=SC2001  # sed indents every line of a multi-line value; the expansion for that is not legible
     if [ -n "$containers" ]
     then echo "$containers" | sed 's/^/  /'
     else echo "  none"; fi
     echo
     echo "${B}Git${R}  (commits the workbench makes, signed as $GIT_NAME <$GIT_EMAIL>)"
     if [ -d "$WORKSPACE_PATH/.git" ]; then
-      if workspace_dirty; then echo "  tree: changes git does not have (./$(basename $0) commit)"
+      if workspace_dirty; then echo "  tree: changes git does not have (./$(basename "$0") commit)"
       else echo "  tree: clean"; fi
       echo "  head: $(git_read log --format='%h %s' -n 1 2>/dev/null || echo 'no commits yet')"
       active_inserts | awk -F'\x1f' '{ printf "  insert: %s %s\n", substr($1, 1, 7), $2 }'
@@ -1306,9 +1304,9 @@
     upstream=$(mktemp)
     REPLICA_PORTS=()
 
-    while [ $i -le $REPLICAS ]; do
+    while [ "$i" -le "$REPLICAS" ]; do
       port=$(first_free_port $port)
-      REPLICA_PORTS+=( $port )
+      REPLICA_PORTS+=( "$port" )
 
       printf '  app%s:\n    <<: *app\n    ports:\n      - %s:%s\n\n' \
         "$i" "$port" "$APP_INTERNAL_PORT" >> "$services"
@@ -1323,38 +1321,38 @@
 
     # 'r' queues the generated block after the marker line, 'd' drops the
     # marker: no escaping of newlines into a sed replacement.
-    sed -i -e "/%{app_services}/r $services"     -e "/%{app_services}/d"     $file_path
-    sed -i -e "/%{balancer_depends}/r $depends"  -e "/%{balancer_depends}/d" $file_path
-    sed -i -e "/%{upstream_servers}/r $upstream" -e "/%{upstream_servers}/d" $file_path
+    sed -i -e "/%{app_services}/r $services"     -e "/%{app_services}/d"     "$file_path"
+    sed -i -e "/%{balancer_depends}/r $depends"  -e "/%{balancer_depends}/d" "$file_path"
+    sed -i -e "/%{upstream_servers}/r $upstream" -e "/%{upstream_servers}/d" "$file_path"
     rm -f "$services" "$depends" "$upstream"
 
-    sed -i "s/%{app_name}/$ELIXIR_PROJECT_NAME/g"                  $file_path
-    sed -i "s/%{compose_image}/$APP_NAME:$APP_VERSION-prod/g"      $file_path
-    sed -i "s/%{compose_dockerfile}/$PROD_DOCKERFILE/g"            $file_path
-    sed -i "s/%{balancer_port}/$BALANCER_PORT/"                    $file_path
-    sed -i "s/%{nginx_image_version}/$NGINX_IMAGE_VERSION/"        $file_path
-    sed -i "s/%{postgres_image_version}/$POSTGRES_IMAGE_VERSION/"  $file_path
+    sed -i "s/%{app_name}/$ELIXIR_PROJECT_NAME/g"                  "$file_path"
+    sed -i "s/%{compose_image}/$APP_NAME:$APP_VERSION-prod/g"      "$file_path"
+    sed -i "s/%{compose_dockerfile}/$PROD_DOCKERFILE/g"            "$file_path"
+    sed -i "s/%{balancer_port}/$BALANCER_PORT/"                    "$file_path"
+    sed -i "s/%{nginx_image_version}/$NGINX_IMAGE_VERSION/"        "$file_path"
+    sed -i "s/%{postgres_image_version}/$POSTGRES_IMAGE_VERSION/"  "$file_path"
 
     # Without the clustering feature the release is not distributed, so
     # DNSCluster would poll DNS forever, connect to nobody and warn about
     # it on every boot. Leaving the variable unset keeps it out of the
     # supervision tree (runtime.exs falls back to :ignore).
-    clustering_installed || sed -i '/^    DNS_CLUSTER_QUERY:/d' $file_path
+    clustering_installed || sed -i '/^    DNS_CLUSTER_QUERY:/d' "$file_path"
 
     # Without a balancer the replicas are only reachable on their own
     # ports; its nginx config goes with it.
     if [ "$BALANCER" == false ]; then
-      sed -i '/^  # Single entry point/,/^$/d' $file_path
-      sed -i '/^configs:/,$d'                  $file_path
+      sed -i '/^  # Single entry point/,/^$/d' "$file_path"
+      sed -i '/^configs:/,$d'                  "$file_path"
     fi
 
     # Projects without a database server have nothing to migrate and no
     # database: drop both services and the app anchor's references to them.
     if ! workspace_needs_database
     then
-      sed -i '/^  # One-shot migration/,/^configs:/{/^configs:/!d}' $file_path
-      sed -i '/^  depends_on:$/,+2d'                                $file_path
-      sed -i '/^    DATABASE_URL:/d'                                $file_path
+      sed -i '/^  # One-shot migration/,/^configs:/{/^configs:/!d}' "$file_path"
+      sed -i '/^  depends_on:$/,+2d'                                "$file_path"
+      sed -i '/^    DATABASE_URL:/d'                                "$file_path"
     fi
   }
 
@@ -1378,7 +1376,7 @@
       "isolated, behind the balancer but without forming a BEAM cluster." \
       "That is a valid deployment for a stateless application. To connect" \
       "them (PubSub across nodes, Presence, distributed registries), stop" \
-      "here and run: ./$(basename $0) add clustering"
+      "here and run: ./$(basename "$0") add clustering"
   }
 
   # deployed_message
@@ -1387,8 +1385,8 @@
     echo
     echo "Application deploying at ${Li}http://localhost:$(workspace_app_port)${R}" \
       "(first boot compiles: give it a moment)."
-    echo "Follow the logs with ${B}./$(basename $0) logs${R}," \
-      "stop everything with ${B}./$(basename $0) stop${R}."
+    echo "Follow the logs with ${B}./$(basename "$0") logs${R}," \
+      "stop everything with ${B}./$(basename "$0") stop${R}."
   }
 
   # scaled_deployed_message
@@ -1422,7 +1420,7 @@
       echo "  ${B}curl -sI http://localhost:$BALANCER_PORT | grep X-Served-By${R}"
     fi
     echo
-    echo "Stop everything with ${B}./$(basename $0) down --deploy scaled${R}."
+    echo "Stop everything with ${B}./$(basename "$0") down --deploy scaled${R}."
   }
 
   # help
@@ -1438,10 +1436,11 @@
       echo
     }
 
-    local script_name=$(basename "$0")
+    local script_name
+    script_name=$(basename "$0")
 
     section "NAME"
-    section_content "$(sed -n '2s/# //p' $0)"
+    section_content "$(sed -n '2s/# //p' "$0")"
 
     section "VERSION"
     section_content \
@@ -1792,10 +1791,10 @@
         if [ -n "$PHX_NEW_NEWEST" ]
         then terminate \
           "No phx_new of the $PHX_NEW_CANDIDATES releases below $PHX_NEW_NEWEST runs on Elixir $ELIXIR_VERSION." \
-          "Move the stack up ('./$(basename $0) stacks') or name an older installer" \
-          "('./$(basename $0) new --phx-new VERSION')."
+          "Move the stack up ('./$(basename "$0") stacks') or name an older installer" \
+          "('./$(basename "$0") new --phx-new VERSION')."
         else terminate \
-          "hex.pm did not answer for phx_new. Name a version: ./$(basename $0) new --phx-new 1.8.13"
+          "hex.pm did not answer for phx_new. Name a version: ./$(basename "$0") new --phx-new 1.8.13"
         fi
       fi
 
@@ -1819,7 +1818,7 @@
       docker build \
         --build-arg UID="$(id -u)" \
         --build-arg GID="$(id -g)" \
-        --file $LOCAL_DOCKERFILE --tag $TOOLCHAIN_IMAGE . )
+        --file "$LOCAL_DOCKERFILE" --tag "$TOOLCHAIN_IMAGE" . )
   }
 
   # create_project <SETUP_COMMAND> [PHOENIX_NEW_OPTIONS...]
@@ -1834,8 +1833,8 @@
     prepare_workspace && \
     ensure_build_volumes && \
     build_toolchain && \
-    docker tag $TOOLCHAIN_IMAGE $LOCAL_IMAGE && \
-    entrypoint_run new $ELIXIR_PROJECT_NAME "$@" && \
+    docker tag "$TOOLCHAIN_IMAGE" "$LOCAL_IMAGE" && \
+    entrypoint_run new "$ELIXIR_PROJECT_NAME" "$@" && \
     register_igniter_package && \
     entrypoint_run "$setup_command" "${SETUP_FLAGS[@]}" && \
     # The project keeps its own baked copy of the toolchain dockerfile,
@@ -1874,8 +1873,8 @@ if [ $# -gt 0 ]; then
       GITHUB_TOKEN=$2
       REGISTRY_SERVER="ghcr.io"
 
-      echo $GITHUB_TOKEN | docker login $REGISTRY_SERVER \
-        --username $GITHUB_USER \
+      echo "$GITHUB_TOKEN" | docker login "$REGISTRY_SERVER" \
+        --username "$GITHUB_USER" \
         --password-stdin
     fi
 
@@ -1914,9 +1913,9 @@ if [ $# -gt 0 ]; then
     workspace_commit "New project: $ELIXIR_PROJECT_NAME"
 
   elif [ "$1" == "add" ]; then
-    ENTRYPOINT_COMMAND=$1; shift
+    shift
 
-    if [ $EXISTING_PROJECT == true ]; then
+    if [ "$EXISTING_PROJECT" == true ]; then
       if [ $# -gt 0 ]; then
         require_clean_workspace add
 
@@ -1943,6 +1942,7 @@ if [ $# -gt 0 ]; then
           # failed commit leaves a cartridge that did land, and stays
           # for the reader to commit by hand.
           while IFS= read -r INSERT <&3; do
+            # shellcheck disable=SC2086  # word splitting intended: $INSERT is 'NAME [ARGV]', one word per option
             if entrypoint_run add $INSERT
             then workspace_commit "Insert $INSERT" || exit 1
             else undo_failed_insert "$INSERT"; exit 1
@@ -1952,17 +1952,17 @@ if [ $# -gt 0 ]; then
           if workspace_needs_database && \
              ! grep -q "^  database:" "$WORKSPACE_PATH/$COMPOSE_FILE"; then
             echo "The project now runs on a database and the compose has none:" \
-              "./$(basename $0) bake bakes it in, and the next up creates it."
+              "./$(basename "$0") bake bakes it in, and the next up creates it."
           fi
         fi
 
-      else args_error "Missing feature name. Try: ./$(basename $0) add healthcheck"; fi
+      else args_error "Missing feature name. Try: ./$(basename "$0") add healthcheck"; fi
     else terminate "There is no project to add features to."; fi
 
   elif [ "$1" == "eject" ]; then
     shift
-    if [ $EXISTING_PROJECT == true ]; then
-      [ $# -gt 0 ] || args_error "Missing feature name. Try: ./$(basename $0) eject credo"
+    if [ "$EXISTING_PROJECT" == true ]; then
+      [ $# -gt 0 ] || args_error "Missing feature name. Try: ./$(basename "$0") eject credo"
       FEATURE=$1
       require_clean_workspace eject
       # The latest insert of this cartridge: its subject starts with the
@@ -1988,26 +1988,26 @@ if [ $# -gt 0 ]; then
         # here: a check that cannot run is not a verdict.
         echo "${B}Note${R} could not ask the project what builds on $FEATURE; ejecting anyway."
       else
-        DEPENDENTS=$(echo "$DEPENDENTS" | json_answer | tr -d '[]"' | tr ',' ' ')
+        DEPENDENTS=$(echo "$DEPENDENTS" | json_answer | tr -d '[]"' | tr ',' ' ' | xargs)
         if [ -n "$DEPENDENTS" ]; then
           CHAIN=$(
-            for d in $DEPENDENTS; do printf './%s eject %s && ' "$(basename $0)" "$d"; done | \
+            for d in $DEPENDENTS; do printf './%s eject %s && ' "$(basename "$0")" "$d"; done | \
             sed 's/ && $//'
           )
           # terminate says its pieces on one line, so this reads as
           # sentences and not as a block: one dependent takes the
           # singular and no talk of order, since there is none to give.
-          if [ "$(echo $DEPENDENTS | wc -w)" -eq 1 ]
+          if [ "$(echo "$DEPENDENTS" | wc -w)" -eq 1 ]
           then VERB="builds"; THEM="it";   ORDER=""
           else VERB="build";  THEM="them"; ORDER=", in this order"
           fi
           terminate \
-            "$(echo $DEPENDENTS | sed 's/ /, /g') $VERB on $FEATURE: ejecting $FEATURE would" \
+            "${DEPENDENTS// /, } $VERB on $FEATURE: ejecting $FEATURE would" \
             "leave $THEM standing on nothing. Take $THEM out first$ORDER: $CHAIN"
         fi
       fi
 
-      echo "Reverting $(workspace_git log --format='%h %s' -n 1 $SHA)"
+      echo "Reverting $(workspace_git log --format='%h %s' -n 1 "$SHA")"
       if workspace_git revert --no-edit "$SHA" > /dev/null; then
         echo "Ejected ${B}$FEATURE${R}: $(workspace_git log --format='%h %s' -n 1)" \
           "(as $GIT_NAME <$GIT_EMAIL>)."
@@ -2052,14 +2052,14 @@ if [ $# -gt 0 ]; then
     case "$1" in
       use)
         TAG="$2"
-        [ -n "$TAG" ] || args_error "Missing tag. Try: ./$(basename $0) stacks use 1.19.2-erlang-28.1-debian-trixie-20251103-slim"
+        [ -n "$TAG" ] || args_error "Missing tag. Try: ./$(basename "$0") stacks use 1.19.2-erlang-28.1-debian-trixie-20251103-slim"
         echo "$TAG" | grep -qE '^[0-9][0-9.]*-erlang-[0-9][0-9.]*-debian-.+$' || \
           terminate "That does not look like a hexpm/elixir tag (ELIXIR-erlang-OTP-debian-DEBIAN)."
         docker manifest inspect "hexpm/elixir:$TAG" > /dev/null || \
           terminate "hexpm/elixir:$TAG is not on Docker Hub."
-        ELIXIR=$(echo "$TAG" | sed 's/-erlang-.*//')
-        ERLANG=$(echo "$TAG" | sed 's/.*-erlang-//; s/-debian-.*//')
-        DEBIAN=$(echo "$TAG" | sed 's/.*-debian-//')
+        ELIXIR="${TAG%%-erlang-*}"
+        ERLANG="${TAG#*-erlang-}"; ERLANG="${ERLANG%%-debian-*}"
+        DEBIAN="${TAG##*-debian-}"
         sed -i "s|^export ELIXIR_VERSION=.*|export ELIXIR_VERSION=\"$ELIXIR\"|" "$WORKBENCH_PATH/config.conf"
         sed -i "s|^export ERLANG_VERSION=.*|export ERLANG_VERSION=\"$ERLANG\"|" "$WORKBENCH_PATH/config.conf"
         sed -i "s|^export DEBIAN_VERSION=.*|export DEBIAN_VERSION=\"$DEBIAN\"|" "$WORKBENCH_PATH/config.conf"
@@ -2086,7 +2086,7 @@ if [ $# -gt 0 ]; then
         [ "$1" == "-n" ] && N="$2" || N=12
         CURRENT="${ELIXIR_VERSION}-erlang-${ERLANG_VERSION}-debian-${DEBIAN_VERSION}"
         LIST=$(stacks_list | head -n "$N") || terminate "Docker Hub did not answer."
-        echo "Usable hexpm/elixir images (highest first; pick one: ./$(basename $0) stacks use TAG):"
+        echo "Usable hexpm/elixir images (highest first; pick one: ./$(basename "$0") stacks use TAG):"
         echo "$LIST" | while read -r t; do
           if [ "$t" == "$CURRENT" ]
           then echo "  ${B}* $t${R} (config.conf)"
@@ -2190,6 +2190,7 @@ if [ $# -gt 0 ]; then
         # the console serves an empty workspace too, where 'new' is the
         # first act.
         docker image inspect "$CONSOLE_IMAGE" > /dev/null 2>&1 || {
+          # shellcheck disable=SC2015  # terminate is wanted when either step fails
           ensure_toolchain && console_build || terminate "The console image did not build."
         }
         # From inside the console — the job its page runs to bind it to
@@ -2207,7 +2208,7 @@ if [ $# -gt 0 ]; then
             --volume "$WORKBENCH_PATH:$WORKBENCH_PATH" \
             --workdir "$WORKBENCH_PATH" \
             --env HOME=/home/elixir \
-            "$CONSOLE_IMAGE" sh -c "sleep 2; ./$(basename $0) console" > /dev/null && \
+            "$CONSOLE_IMAGE" sh -c "sleep 2; ./$(basename "$0") console" > /dev/null && \
           echo "The console starts again in a moment, for ${B}$WORKSPACE_PATH${R}," \
             "on the same address: this page reconnects on its own."
           exit 0
@@ -2249,7 +2250,7 @@ if [ $# -gt 0 ]; then
           --publish "127.0.0.1:$CONSOLE_PORT:4000" \
           "$CONSOLE_IMAGE" > /dev/null && \
         echo "The console is coming up on ${B}http://localhost:$CONSOLE_PORT${R}" \
-          "(first run compiles it: ./$(basename $0) console logs)." ;;
+          "(first run compiles it: ./$(basename "$0") console logs)." ;;
       down)  docker rm -f "$CONSOLE_NAME" > /dev/null 2>&1 && echo "Console down." || echo "The console was not up." ;;
       logs)  docker logs --follow "$CONSOLE_NAME" ;;
       build) ensure_toolchain && console_build ;;
@@ -2257,7 +2258,7 @@ if [ $# -gt 0 ]; then
     esac
 
   elif [ "$1" == "bake" ]; then
-    if [ $EXISTING_PROJECT == true ]; then
+    if [ "$EXISTING_PROJECT" == true ]; then
       require_clean_workspace bake
       # A workspace baked before the volumes moved over _build and deps
       # has neither directory yet.
@@ -2300,7 +2301,7 @@ if [ $# -gt 0 ]; then
 
   elif [ "$1" == "commit" ]; then
     shift
-    if [ $EXISTING_PROJECT == true ]; then
+    if [ "$EXISTING_PROJECT" == true ]; then
       # The message: the words that follow, or a file with a title and
       # a body — the console's, whose jobs travel as argv and cannot
       # carry a line break.
@@ -2317,7 +2318,7 @@ if [ $# -gt 0 ]; then
     # The catalog is the workbench's, not the workspace's: with a project
     # it is read through the project (the package is a dependency there
     # already, compiled); without one, off the package itself.
-    if [ $EXISTING_PROJECT == true ]
+    if [ "$EXISTING_PROJECT" == true ]
     then CATALOG_READER=workspace_igniter
     else CATALOG_READER=package_igniter; fi
     case "$1" in
@@ -2331,7 +2332,7 @@ if [ $# -gt 0 ]; then
     shift
     case "$1" in
       --json) status_json "$2" ;;
-      "")     if [ $EXISTING_PROJECT == true ]
+      "")     if [ "$EXISTING_PROJECT" == true ]
               then status_report
               else terminate "There is no project in $WORKSPACE_PATH."; fi ;;
       *)      args_error invalid ;;
@@ -2347,7 +2348,7 @@ if [ $# -gt 0 ]; then
     case "$1" in
       set)
         shift
-        [ $# -gt 0 ] || args_error "Missing assignments. Try: ./$(basename $0) config set PROJECT_NAME=\"My App\""
+        [ $# -gt 0 ] || args_error "Missing assignments. Try: ./$(basename "$0") config set PROJECT_NAME=\"My App\""
         for ASSIGNMENT in "$@"; do
           KEY="${ASSIGNMENT%%=*}"; VALUE="${ASSIGNMENT#*=}"
           echo "$KEY" | grep -qE '^[A-Z][A-Z0-9_]*$' || terminate "Not a key: '$KEY' (KEY=VALUE, keys are UPPER_CASE)."
@@ -2356,7 +2357,7 @@ if [ $# -gt 0 ]; then
           sed -i "s|^export $KEY=.*|export $KEY=\"$ESCAPED\"|" "$WORKBENCH_PATH/config.conf"
           echo "config.conf now says ${B}$KEY=\"$VALUE\"${R}."
         done ;;
-      *) args_error "Try: ./$(basename $0) config set KEY=VALUE [KEY=VALUE …]" ;;
+      *) args_error "Try: ./$(basename "$0") config set KEY=VALUE [KEY=VALUE …]" ;;
     esac
 
   elif [ "$1" == "expand" ]; then
@@ -2364,19 +2365,19 @@ if [ $# -gt 0 ]; then
     # The planning half of 'add', on its own: what inserting CARTRIDGE
     # with these options would run, one per line — or as JSON — minus
     # what the project already carries. Nothing is written.
-    if [ $EXISTING_PROJECT == true ]; then
+    if [ "$EXISTING_PROJECT" == true ]; then
       [ "$1" == "--json" ] && { EXPAND_JSON=true; shift; } || EXPAND_JSON=false
       if [ $# -gt 0 ]; then
         PLAN=$(expand_plan "$@") || terminate "Could not expand '$1'."
         if $EXPAND_JSON
         then echo "$PLAN" | plan_json
         else echo "$PLAN"; fi
-      else args_error "Missing cartridge name. Try: ./$(basename $0) expand chiefs_setup"; fi
+      else args_error "Missing cartridge name. Try: ./$(basename "$0") expand chiefs_setup"; fi
     else terminate "There is no project to expand a cartridge against."; fi
 
   elif [ "$1" == "up" ]; then
     COMPOSE_COMMAND=$1; shift
-    if [ $EXISTING_PROJECT == true ]; then
+    if [ "$EXISTING_PROJECT" == true ]; then
       parse_deploy_args "$@"
 
       # Every deployment of a workspace shares one compose project, but
@@ -2388,18 +2389,18 @@ if [ $# -gt 0 ]; then
         bake_scaled_compose && \
         docker compose \
           --file "$WORKSPACE_PATH/$SCALED_COMPOSE_FILE" \
-          $COMPOSE_COMMAND --detach --build --remove-orphans && \
+          "$COMPOSE_COMMAND" --detach --build --remove-orphans && \
         scaled_deployed_message
 
       elif [ "$DEPLOY_ARG" == "prod" ]; then
         bake_prod_compose && \
         docker compose \
           --file "$WORKSPACE_PATH/$PROD_COMPOSE_FILE" \
-          $COMPOSE_COMMAND --detach --build --remove-orphans && \
+          "$COMPOSE_COMMAND" --detach --build --remove-orphans && \
         deployed_message
 
       else
-        workspace_compose $COMPOSE_COMMAND --detach --remove-orphans && \
+        workspace_compose "$COMPOSE_COMMAND" --detach --remove-orphans && \
         deployed_message
       fi
 
@@ -2407,7 +2408,7 @@ if [ $# -gt 0 ]; then
 
   elif [ "$1" == "build" ]; then
     shift
-    if [ $EXISTING_PROJECT == true ]; then
+    if [ "$EXISTING_PROJECT" == true ]; then
       parse_deploy_args "$@"
 
       if [ "$DEPLOY_ARG" == "scaled" ]; then
@@ -2436,21 +2437,21 @@ if [ $# -gt 0 ]; then
 
   elif [ "$1" == "logs" ]; then
     shift
-    if [ $EXISTING_PROJECT == true ]; then
+    if [ "$EXISTING_PROJECT" == true ]; then
       case "$1" in
         --deploy) DEPLOY_ARG="$2"; shift 2 ;;
         -e|--env) env_flag_error ;;
         *)        DEPLOY_ARG=dev ;;
       esac
 
-      resolve_compose_file $DEPLOY_ARG && \
-      docker compose --file "$COMPOSE_TARGET" logs --follow $@
+      resolve_compose_file "$DEPLOY_ARG" && \
+      docker compose --file "$COMPOSE_TARGET" logs --follow "$@"
 
     else terminate "There is no project."; fi
 
   elif [ "$1" == "stop" ] || [ "$1" == "down" ] || [ "$1" == "ps" ] || [ "$1" == "restart" ]; then
     COMPOSE_COMMAND=$1; shift
-    if [ $EXISTING_PROJECT == true ]; then
+    if [ "$EXISTING_PROJECT" == true ]; then
       case "$1" in
         --deploy) DEPLOY_ARG="$2"; shift 2 ;;
         -e|--env) env_flag_error ;;
@@ -2465,14 +2466,14 @@ if [ $# -gt 0 ]; then
       # SERVICE' is not.
       [ "$COMPOSE_COMMAND" == "down" ] && ORPHANS="--remove-orphans" || ORPHANS=""
 
-      resolve_compose_file $DEPLOY_ARG && \
-      docker compose --file "$COMPOSE_TARGET" $COMPOSE_COMMAND $ORPHANS "$@"
+      resolve_compose_file "$DEPLOY_ARG" && \
+      docker compose --file "$COMPOSE_TARGET" "$COMPOSE_COMMAND" ${ORPHANS:+"$ORPHANS"} "$@"
 
     else terminate "There is no project."; fi
 
   elif [ "$1" == "iex" ] || [ "$1" == "bash" ]; then
     SESSION_KIND=$1; shift
-    if [ $EXISTING_PROJECT == true ]; then
+    if [ "$EXISTING_PROJECT" == true ]; then
       case "$1" in
         --deploy) DEPLOY_ARG="$2"; shift 2 ;;
         -e|--env) env_flag_error ;;
@@ -2482,11 +2483,11 @@ if [ $# -gt 0 ]; then
       # The service to attach to: 'app' everywhere but in the scaled
       # deployment, where the replicas are app1..appN.
       SERVICE="${1:-app}"
-      resolve_compose_file $DEPLOY_ARG
+      resolve_compose_file "$DEPLOY_ARG"
 
       app_is_running "$COMPOSE_TARGET" "$SERVICE" || terminate \
         "The $SERVICE container of the $DEPLOY_ARG deployment is not running." \
-        "Start it with: ./$(basename $0) up --deploy $DEPLOY_ARG"
+        "Start it with: ./$(basename "$0") up --deploy $DEPLOY_ARG"
 
       # The release remote shell stops the node it is attached to when its
       # input reaches EOF, so a redirected or piped stdin would take the
@@ -2506,42 +2507,42 @@ if [ $# -gt 0 ]; then
       if [ "$DEPLOY_ARG" == "dev" ]
       then
         if [ "$SESSION_KIND" == "iex" ]
-        then SESSION_COMMAND="iex -S mix"
-        else SESSION_COMMAND="bash"; fi
+        then SESSION_COMMAND=(iex -S mix)
+        else SESSION_COMMAND=(bash); fi
         WORKDIR_FLAGS=( --workdir /app/src )
       else
         if [ "$SESSION_KIND" == "iex" ]
-        then SESSION_COMMAND="/app/bin/$ELIXIR_PROJECT_NAME remote"
-        else SESSION_COMMAND="bash"; fi
+        then SESSION_COMMAND=("/app/bin/$ELIXIR_PROJECT_NAME" remote)
+        else SESSION_COMMAND=(bash); fi
         WORKDIR_FLAGS=()
       fi
 
       docker compose --file "$COMPOSE_TARGET" \
-        exec "${WORKDIR_FLAGS[@]}" $SERVICE $SESSION_COMMAND
+        exec "${WORKDIR_FLAGS[@]}" "$SERVICE" "${SESSION_COMMAND[@]}"
 
     else terminate "There is no project."; fi
 
   elif [ "$1" == "mix" ]; then
     shift
-    if [ $EXISTING_PROJECT == true ]; then
+    if [ "$EXISTING_PROJECT" == true ]; then
       # Warm path: exec on the running app container (fast, no startup).
       # Cold path: one-off container (starts the database dependency too).
       # compose exec and run take --env as docker run does.
       if app_is_running; then
-        workspace_compose exec "${COLOR_ENV[@]/#/--env=}" --workdir /app/src app mix $@
+        workspace_compose exec "${COLOR_ENV[@]/#/--env=}" --workdir /app/src app mix "$@"
       else
         workspace_compose run \
           --rm \
           "${COLOR_ENV[@]/#/--env=}" \
           --name "${APP_NAME}_workbench_mix" \
           --workdir /app/src \
-          app mix $@
+          app mix "$@"
       fi
 
     else terminate "There is no project."; fi
 
   elif [ "$1" == "delete" ]; then
-    if [ $EXISTING_PROJECT == true ]; then
+    if [ "$EXISTING_PROJECT" == true ]; then
       confirm \
         "This action will delete all project files from $WORKSPACE_PATH" \
         "along with its containers, images and database volumes." && \
@@ -2552,7 +2553,7 @@ if [ $# -gt 0 ]; then
           --remove-orphans
       fi && \
       wipe_workspace && \
-      docker rmi $LOCAL_IMAGE 2>/dev/null; \
+      docker rmi "$LOCAL_IMAGE" 2>/dev/null; \
       rm -f "$SCRIPTS_DIR/$LOCAL_DOCKERFILE"
 
     else terminate "There is no project to delete."; fi
@@ -2562,7 +2563,7 @@ if [ $# -gt 0 ]; then
     prune_workbench "$@"
 
   elif [ "$1" == "demo" ]; then
-    WORKBENCH_SCRIPT="$WORKBENCH_PATH/$(basename $0)"; shift;
+    WORKBENCH_SCRIPT="$WORKBENCH_PATH/$(basename "$0")"; shift;
 
     # One deployment end to end. The database needs no step of its own:
     # the dev image creates it on boot, the release deployments migrate
@@ -2570,7 +2571,7 @@ if [ $# -gt 0 ]; then
     parse_deploy_args "$@"
 
     "$WORKBENCH_SCRIPT" new && \
-    "$WORKBENCH_SCRIPT" up --deploy $DEPLOY_ARG && \
+    "$WORKBENCH_SCRIPT" up --deploy "$DEPLOY_ARG" && \
     {
       # Following the logs blocks the demo while the application is
       # tried out. Ctrl+C hits the whole foreground process group, so

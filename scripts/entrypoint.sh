@@ -2,7 +2,7 @@
 # Elixir App image entrypoint script (Igniter edition)
 
 # Prints service script name with arguments detail
-if [ $# -gt 0 ]; then echo "[$HOSTNAME]$0($#): $@"; fi
+if [ $# -gt 0 ]; then echo "[$HOSTNAME]$0($#): $*"; fi
 
 # CONFIGURATION ----------------------------------------------------------------
   # Text formatting codes
@@ -19,7 +19,7 @@ if [ $# -gt 0 ]; then echo "[$HOSTNAME]$0($#): $@"; fi
     # Prints error and spects input prompt for continue or cancel
   failure() {
     echo "🛑  ${B}${C1}Failure${R}"
-    read -n 1 -p $'Should continue? [y/N] ' INPUT
+    read -r -n 1 -p $'Should continue? [y/N] ' INPUT
     if [ "$INPUT" != "y" ]; then
       exit 1
     fi
@@ -57,14 +57,14 @@ if [ $# -gt 0 ]; then echo "[$HOSTNAME]$0($#): $@"; fi
     exit 1
   fi
 
-  cd "src"
+  cd "src" || exit 1
   
   if   [ "$1" == "new" ]; then
     shift
     if [ $# -ge 1 ]; then
       PROJECT_NAME=$1; shift
 
-      { echo y; echo n; } | mix phx.new . --app $PROJECT_NAME --verbose $@
+      { echo y; echo n; } | mix phx.new . --app "$PROJECT_NAME" --verbose "$@"
 
     elif [ $# -lt 2 ]; then args_error missing
     else args_error too_many; fi

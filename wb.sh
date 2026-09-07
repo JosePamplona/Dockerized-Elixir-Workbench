@@ -2203,8 +2203,6 @@ if [ $# -gt 0 ]; then
     console_build() {
       docker build \
         --build-arg "TOOLCHAIN=$TOOLCHAIN_IMAGE" \
-        --build-arg "DOCKER_VERSION=$(docker version --format '{{.Server.Version}}')" \
-        --build-arg "COMPOSE_VERSION=$(docker compose version --short | sed 's/-.*//')" \
         --tag "$CONSOLE_IMAGE" "$CONSOLE_DIR"
     }
 

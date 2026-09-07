@@ -1,25 +1,29 @@
 # The console's image: the workbench's own toolchain (Elixir, Phoenix's
-# generator, git) plus the Docker CLI and the compose plugin, since the
-# console drives the host's Docker through its socket, mounted by
-# `./wb.sh console`. Static binaries from Docker's own downloads, pinned
-# by wb.sh to the host's versions, so the CLI in here and the daemon out
-# there speak the same API.
+# generator, git) plus the Docker CLI with its buildx and compose
+# plugins, since the console drives the host's Docker through its
+# socket, mounted by `./wb.sh console`. The three come from Docker's own
+# apt repository for this Debian, the CLI without the daemon: the
+# client negotiates its API with whatever engine answers the socket,
+# so nothing here need match the host's versions. They used to be
+# static binaries pinned to the host's, and buildx was not among them,
+# which sent every build from in here through the deprecated legacy
+# builder, warning as it went.
 ARG TOOLCHAIN=workbench:1.19.2-28.1
 FROM ${TOOLCHAIN}
-ARG DOCKER_VERSION=28.1.1
-ARG COMPOSE_VERSION=2.35.1
 
 USER root
 RUN apt-get update -y && \
-    apt-get install -y curl && \
+    apt-get install -y ca-certificates curl && \
+    install -m 0755 -d /etc/apt/keyrings && \
+    curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc && \
+    . /etc/os-release && \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc]" \
+      "https://download.docker.com/linux/debian ${VERSION_CODENAME} stable" \
+      > /etc/apt/sources.list.d/docker.list && \
+    apt-get update -y && \
+    apt-get install -y docker-ce-cli docker-buildx-plugin docker-compose-plugin && \
     apt-get clean && \
-    rm -f /var/lib/apt/lists/*_* && \
-    curl -fsSL "https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz" | \
-      tar -xz -C /usr/local/bin --strip-components=1 docker/docker && \
-    mkdir -p /usr/local/lib/docker/cli-plugins && \
-    curl -fsSL -o /usr/local/lib/docker/cli-plugins/docker-compose \
-      "https://github.com/docker/compose/releases/download/v${COMPOSE_VERSION}/docker-compose-linux-x86_64" && \
-    chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+    rm -f /var/lib/apt/lists/*_*
 # The console compiles into its own two volumes. It is the one project
 # here that still needs Mix pointed at them: its source is mounted at
 # the workbench's own host path, which no image can know, so there is

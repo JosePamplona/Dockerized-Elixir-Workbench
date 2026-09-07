@@ -189,6 +189,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **The console warned of the legacy builder on every build.** Its
+  image carried Docker's static CLI and the compose plugin, pinned to
+  the host's versions, and no buildx: a `docker build` from in there —
+  the toolchain image of a new project, `bake`, `console build` — fell
+  back to the deprecated builder and said so. The CLI and both plugins
+  now come from Docker's apt repository for the image's Debian, no
+  daemon, no versions to pin: the client negotiates its API with the
+  engine on the socket, so the two build args wb.sh took off the host
+  are gone with the warning.
 - **`up --deploy scaled` on a project without a database or clustering
   wrote a compose Compose rejects.** The app anchor kept an
   `environment:` with nothing under it but comments, and compose

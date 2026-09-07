@@ -99,7 +99,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `up --deploy prod`: SQL Server's first start on a fresh volume
   outlasted its healthcheck's retries and compose gave up on it, so its
   healthcheck carries a `start_period` of three minutes now, as the
-  app's does.
+  app's does — and so do MySQL's (90 s: its first start initialises the
+  data directory and runs a temporary server first, longer than its
+  retries allowed on a busy host, so the job failed and the next `up`
+  found it healthy) and Postgres's (30 s). MySQL also skips the time
+  zone tables at init (`MYSQL_INITDB_SKIP_TZINFO`, the image's own
+  switch): seconds of the first start Ecto never asks for.
 - **pgadmin and k6 are cartridges.** Step 3 of `scripts/PLAN.md`: the
   first two cartridges that bring a container rather than Elixir code.
   **pgadmin** installs `pgadmin/servers.json` — the servers pgAdmin

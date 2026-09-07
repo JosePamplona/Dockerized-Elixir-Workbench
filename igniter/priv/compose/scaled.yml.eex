@@ -111,20 +111,31 @@ services:<%= for {n, port} <- @replicas do %>
       test: pg_isready -q -h localhost -d <%= @app_name %>_prod -U postgres
       timeout: 45s
       interval: 10s
-      retries: 10<% end %><%= if @engine == "mysql" do %>
+      retries: 10
+      # Its init is quick, but it is an init: the same allowance, shorter.
+      start_period: 30s<% end %><%= if @engine == "mysql" do %>
   database:
     image: mysql:<%= @mysql_version %>
     environment:
       # phx.new's own dev credentials for MySQL: root, no password.
       MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
       MYSQL_DATABASE: <%= @app_name %>_prod
+      # The image's init loads the time zone tables unless told not to:
+      # seconds of the first start, for CONVERT_TZ(), which Ecto never
+      # asks for — it works in UTC.
+      MYSQL_INITDB_SKIP_TZINFO: "1"
     healthcheck:
       # 127.0.0.1 forces TCP, as in the dev compose: the init's temporary
       # server answers the unix socket before the real one listens.
       test: mysqladmin ping -h 127.0.0.1 --silent
       timeout: 45s
       interval: 10s
-      retries: 10<% end %><%= if @engine == "mssql" do %>
+      retries: 10
+      # The first start on a fresh volume initialises the data directory,
+      # runs a temporary server and shuts it down before the real one
+      # listens: a minute or more on a busy host, and a failure in this
+      # period does not count — compose used to give up on it.
+      start_period: 90s<% end %><%= if @engine == "mssql" do %>
   database:
     image: mcr.microsoft.com/mssql/server:<%= @mssql_version %>
     environment:

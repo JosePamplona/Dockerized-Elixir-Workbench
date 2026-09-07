@@ -100,6 +100,10 @@ services:
       # does not create the database; 'mix ecto.create' does that for
       # dev on its own).
       MYSQL_DATABASE: lorem_ipsum_prod
+      # The image's init loads the time zone tables unless told not to:
+      # seconds of the first start, for CONVERT_TZ(), which Ecto never
+      # asks for — it works in UTC.
+      MYSQL_INITDB_SKIP_TZINFO: "1"
     depends_on:
       - network
     healthcheck:
@@ -110,6 +114,11 @@ services:
       timeout: 45s
       interval: 10s
       retries: 10
+      # The first start on a fresh volume initialises the data directory,
+      # runs a temporary server and shuts it down before the real one
+      # listens: a minute or more on a busy host, and a failure in this
+      # period does not count — compose used to give up on it.
+      start_period: 90s
 
 volumes:
   build:

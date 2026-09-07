@@ -115,6 +115,10 @@ services:
       # phx.new's own dev credentials for MySQL: root, no password.
       MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
       MYSQL_DATABASE: lorem_ipsum_prod
+      # The image's init loads the time zone tables unless told not to:
+      # seconds of the first start, for CONVERT_TZ(), which Ecto never
+      # asks for — it works in UTC.
+      MYSQL_INITDB_SKIP_TZINFO: "1"
     healthcheck:
       # 127.0.0.1 forces TCP, as in the dev compose: the init's temporary
       # server answers the unix socket before the real one listens.
@@ -122,6 +126,11 @@ services:
       timeout: 45s
       interval: 10s
       retries: 10
+      # The first start on a fresh volume initialises the data directory,
+      # runs a temporary server and shuts it down before the real one
+      # listens: a minute or more on a busy host, and a failure in this
+      # period does not count — compose used to give up on it.
+      start_period: 90s
 
 configs:
   # $$ escapes compose's own interpolation: nginx must see a single $.

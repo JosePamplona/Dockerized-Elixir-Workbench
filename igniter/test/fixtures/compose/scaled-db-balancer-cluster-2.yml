@@ -108,6 +108,8 @@ services:
       timeout: 45s
       interval: 10s
       retries: 10
+      # Its init is quick, but it is an init: the same allowance, shorter.
+      start_period: 30s
 
 configs:
   # $$ escapes compose's own interpolation: nginx must see a single $.

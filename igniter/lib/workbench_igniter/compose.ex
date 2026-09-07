@@ -10,7 +10,7 @@ defmodule WorkbenchIgniter.Compose do
   the image and the Dockerfile, the host ports (chosen on the host, so
   handed over), the service versions, whether the clustering cartridge
   is in — and the **services**: the containers the project's cartridges
-  ask the workspace for, by name (`postgres`, `pgadmin`), declared by
+  ask the workspace for, by name (`postgres`, `pgadmin`, `k6`), declared by
   each cartridge's `services/1` and gathered by `Features.services/1`.
   They arrive as `--services`, or, when the flag is absent, are read off
   the project the task runs in. `render/1` writes the YAML the two
@@ -42,6 +42,7 @@ defmodule WorkbenchIgniter.Compose do
             postgres_version: String.t(),
             pgadmin_version: String.t(),
             nginx_version: String.t(),
+            k6_version: String.t(),
             services: [String.t()],
             clustering: boolean(),
             replicas: pos_integer(),
@@ -62,6 +63,7 @@ defmodule WorkbenchIgniter.Compose do
               postgres_version: "latest",
               pgadmin_version: "latest",
               nginx_version: "alpine",
+              k6_version: "latest",
               services: [],
               clustering: false,
               replicas: 4,
@@ -93,6 +95,7 @@ defmodule WorkbenchIgniter.Compose do
     postgres_version: :string,
     pgadmin_version: :string,
     nginx_version: :string,
+    k6_version: :string,
     services: :string,
     clustering: :boolean,
     replicas: :integer,
@@ -215,7 +218,9 @@ defmodule WorkbenchIgniter.Compose do
       internal_port: plan.internal_port,
       postgres_version: plan.postgres_version,
       nginx_version: plan.nginx_version,
+      k6_version: plan.k6_version,
       database: "postgres" in plan.services,
+      k6: "k6" in plan.services,
       clustering: plan.clustering,
       replicas: Enum.with_index(plan.replica_ports, fn port, i -> {i + 1, port} end),
       balancer: plan.balancer_port != nil,
@@ -239,8 +244,10 @@ defmodule WorkbenchIgniter.Compose do
       pgadmin_internal_port: plan.pgadmin_internal_port,
       postgres_version: plan.postgres_version,
       pgadmin_version: plan.pgadmin_version,
+      k6_version: plan.k6_version,
       postgres: postgres,
       pgadmin: "pgadmin" in plan.services,
+      k6: "k6" in plan.services,
       dev: dev,
       # The release migrates as a deployment step, before the app; the
       # dev image migrates itself on boot, so its file has no migrator.

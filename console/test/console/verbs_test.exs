@@ -22,6 +22,11 @@ defmodule Console.VerbsTest do
                Verbs.parse("restart --deploy scaled app2")
 
       assert {:ok, {:prune, nil}, ["prune", "--images"]} = Verbs.parse("prune --images")
+
+      assert {:ok, {:k6, "smoke.js"}, ["k6"]} = Verbs.parse("k6")
+
+      assert {:ok, {:k6, "spike.js"}, ["k6", "--deploy", "scaled", "spike.js", "--vus", "20"]} =
+               Verbs.parse("k6 --deploy scaled spike.js --vus 20")
     end
 
     test "refuses what is not a verb, and an empty line" do

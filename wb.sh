@@ -585,6 +585,7 @@
       --postgres-version "$POSTGRES_IMAGE_VERSION" \
       --pgadmin-version "$PGADMIN_IMAGE_VERSION" \
       --nginx-version "$NGINX_IMAGE_VERSION" \
+      --k6-version "${K6_IMAGE_VERSION:-latest}" \
       --out "/app/src/$3.baking" > /dev/null
     then mv "$file_path.baking" "$file_path"
     else rm -f "$file_path.baking"; return 1
@@ -1353,6 +1354,7 @@
       --internal-port "$APP_INTERNAL_PORT" \
       --postgres-version "$POSTGRES_IMAGE_VERSION" \
       --nginx-version "$NGINX_IMAGE_VERSION" \
+      --k6-version "${K6_IMAGE_VERSION:-latest}" \
       --replicas "$REPLICAS" \
       --replica-ports "$replica_ports" \
       "${balancer_flag[@]}" \
@@ -1672,6 +1674,16 @@
       "  distributed is baked in by the 'clustering' feature, so" \
       "  installing it afterwards means building again." \
       "- OPTIONS: Flags for 'docker compose build', e.g. --no-cache."
+
+    print_command "k6 [--deploy TARGET] [SCRIPT] [K6_OPTIONS...]"
+    section_content \
+      "Run a k6 load test against the deployment that is up, with the" \
+      "k6 cartridge's tool (./$(basename "$0") add k6): the scripts live in the" \
+      "project's k6/ directory and reach the app through BASE_URL, set" \
+      "by the compose for each topology." \
+      "- TARGET: Deployment to test (Default: dev)." \
+      "- SCRIPT: A file under k6/ (Default: smoke.js)." \
+      "- K6_OPTIONS: Passed to 'k6 run', e.g. --vus 20 --duration 1m."
 
     print_command "logs [--deploy TARGET] [SERVICE...]"
     section_content \
@@ -2566,6 +2578,29 @@ if [ $# -gt 0 ]; then
   elif [ "$1" == "prune" ]; then
     shift
     prune_workbench "$@"
+
+  elif [ "$1" == "k6" ]; then
+    shift
+    if [ "$EXISTING_PROJECT" == true ]; then
+      # A load test against a deployment that is up: the k6 cartridge
+      # puts the tool in the compose under a profile 'up' never starts,
+      # with the source of the scripts mounted, and BASE_URL set for the
+      # topology — the app on localhost in the pod, the balancer or the
+      # 'app' alias on the bridge — so the same script runs on any of
+      # the three. Everything after the script goes to k6 itself.
+      case "$1" in
+        --deploy) DEPLOY_ARG="$2"; shift 2 ;;
+        *)        DEPLOY_ARG=dev ;;
+      esac
+      resolve_compose_file "$DEPLOY_ARG"
+      grep -q '^  k6:' "$COMPOSE_TARGET" || terminate \
+        "The $DEPLOY_ARG deployment carries no k6: insert the cartridge and bake" \
+        "(./$(basename "$0") add k6, then ./$(basename "$0") bake; prod and scaled bake on their next up)."
+      SCRIPT="${1:-smoke.js}"; [ $# -gt 0 ] && shift
+      [ -f "$WORKSPACE_PATH/k6/$SCRIPT" ] || terminate \
+        "No k6/$SCRIPT in the workspace. The scripts live in the project's k6/ directory."
+      docker compose --file "$COMPOSE_TARGET" --profile tools run --rm k6 run "/scripts/$SCRIPT" "$@"
+    else terminate "There is no project."; fi
 
   elif [ "$1" == "demo" ]; then
     WORKBENCH_SCRIPT="$WORKBENCH_PATH/$(basename "$0")"; shift;

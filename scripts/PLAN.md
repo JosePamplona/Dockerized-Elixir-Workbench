@@ -150,6 +150,15 @@ mechanism without changing a single file it writes.
    drawing the service list is step 3's, with the first cartridge that
    brings a service of its own.
 3. `pgadmin` and `k6` as cartridges, with the `k6` verb.
+   *Landed on 2026-09-06*: each installs one file the project owns —
+   `pgadmin/servers.json`, `k6/smoke.js` — which is its mark, and
+   declares its service; the compose references the servers file
+   instead of carrying the JSON inline. k6 sits under `profiles:
+   [tools]` and gets `BASE_URL` per topology; `./wb.sh k6` runs it with
+   `compose --profile tools run`. Ecto declares `postgres` alone: a
+   vanilla `new` no longer brings pgAdmin, `chiefs_setup` does. The
+   console still draws pgAdmin off the published ports; the service
+   list is in the status for when a screen wants it.
 4. `mysql` and `mssql` services, with their healthchecks; the ecto
    cartridge's table stops saying "no service".
 5. Monitoring.

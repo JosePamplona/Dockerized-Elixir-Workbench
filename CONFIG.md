@@ -41,6 +41,7 @@ There is no host ports configuration: each workspace gets the first available po
 | `POSTGRES_IMAGE_VERSION` | string | `"latest"` | _Postgres_ docker image baked into new workspaces.<br/>Available versions: <https://hub.docker.com/_/postgres/tags> |
 | `PGADMIN_IMAGE_VERSION` | string | `"latest"` | _PgAdmin_ docker image baked into new workspaces.<br/>Available versions: <https://hub.docker.com/r/dpage/pgadmin4/tags> |
 | `NGINX_IMAGE_VERSION` | string | `"alpine"` | _nginx_ docker image used as the load balancer of the scaled deployment (`up --deploy scaled`).<br/>Available versions: <https://hub.docker.com/_/nginx/tags> |
+| `K6_IMAGE_VERSION` | string | `"latest"` | _k6_ docker image the `k6` cartridge puts in the compose, run by `./wb.sh k6`.<br/>Available versions: <https://hub.docker.com/r/grafana/k6/tags> |
 
 There is nothing else: the retired feature flags (`ENHANCE`, `EXDOC`, `COVERALLS`, `HEALTH`, …) died with the opinionated `workbench.setup` composition. Their features live on as cartridges — the ones the chief still picks, in the `chiefs_setup` collection — and each cartridge's options are set on its own installer (`./wb.sh add coveralls --theme custom`), not here.
 

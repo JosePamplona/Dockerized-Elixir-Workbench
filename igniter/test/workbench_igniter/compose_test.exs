@@ -26,10 +26,16 @@ defmodule WorkbenchIgniter.ComposeTest do
   @cases [
     {"dev-db.yml", @dev ++ ~w(--services postgres,pgadmin)},
     {"dev-nodb.yml", @dev ++ ["--services", ""]},
+    {"dev-db-k6.yml", @dev ++ ~w(--services postgres,pgadmin,k6)},
     {"prod-db.yml", @prod ++ ~w(--services postgres,pgadmin)},
     {"prod-nodb.yml", @prod ++ ~w(--services none)},
+    {"prod-db-k6.yml", @prod ++ ~w(--services postgres,pgadmin,k6)},
     {"scaled-db-balancer-cluster-4.yml",
      @scaled ++ ~w(--services postgres,pgadmin --clustering) ++ @balancer},
+    {"scaled-db-balancer-cluster-4-k6.yml",
+     @scaled ++ ~w(--services postgres,pgadmin,k6 --clustering) ++ @balancer},
+    {"scaled-db-nobalancer-cluster-4-k6.yml",
+     @scaled ++ ~w(--services postgres,pgadmin,k6 --clustering) ++ @no_balancer},
     {"scaled-db-balancer-cluster-2.yml",
      @scaled ++
        ~w(--services postgres --clustering --replicas 2 --balancer-port 4000 --replica-ports 4001,4002)},
@@ -49,7 +55,7 @@ defmodule WorkbenchIgniter.ComposeTest do
      @scaled ++ ~w(--services none --no-clustering) ++ @no_balancer}
   ]
 
-  describe "render/1 writes the file the bash bake wrote" do
+  describe "render/1 writes the fixture" do
     for {fixture, argv} <- @cases do
       test fixture do
         {:ok, plan} = Compose.plan_from_argv(unquote(argv))
@@ -114,8 +120,18 @@ defmodule WorkbenchIgniter.ComposeTest do
   end
 
   describe "services/1" do
-    test "a Phoenix project with Ecto asks for postgres and pgadmin" do
-      assert {["postgres", "pgadmin"], _} = Compose.services(phx_test_project())
+    test "a Phoenix project with Ecto asks for postgres alone: pgadmin is a cartridge" do
+      assert {["postgres"], _} = Compose.services(phx_test_project())
+    end
+
+    test "with pgadmin and k6 inserted, the three in catalog order" do
+      igniter =
+        phx_test_project()
+        |> Igniter.compose_task("workbench.install.pgadmin", [])
+        |> Igniter.compose_task("workbench.install.k6", [])
+        |> apply_igniter!()
+
+      assert {["pgadmin", "k6", "postgres"], _} = Compose.services(igniter)
     end
 
     test "a project without ecto_sql asks for nothing" do
@@ -132,8 +148,8 @@ defmodule WorkbenchIgniter.ComposeTest do
   describe "the ecto cartridge's services" do
     alias WorkbenchIgniter.Features.Ecto
 
-    test "postgres brings its pgadmin" do
-      assert Ecto.services(%{database: "postgres"}) == ["postgres", "pgadmin"]
+    test "postgres brings the database, and nothing else" do
+      assert Ecto.services(%{database: "postgres"}) == ["postgres"]
     end
 
     test "the other adapters bring no container yet" do

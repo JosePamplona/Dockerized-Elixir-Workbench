@@ -14,7 +14,7 @@ defmodule Console.Verbs do
   the workspace config.conf names now (see `Console.Workbench.rebind/0`).
   """
 
-  @verbs ~w(new add eject bake commit up build stop down restart prune delete demo mix ps catalog status stacks expand config console help)
+  @verbs ~w(new add eject bake commit up build stop down restart prune delete demo mix ps catalog status stacks expand config console help k6)
 
   @doc "Every verb a job may start with."
   def verbs, do: @verbs
@@ -58,6 +58,14 @@ defmodule Console.Verbs do
        args
        |> Enum.reject(&(String.starts_with?(&1, "--") or &1 in ~w(dev prod scaled)))
        |> List.first()}
+
+  # `k6`, `k6 --deploy scaled spike.js --vus 20`: about the script.
+  def kind("k6", args),
+    do:
+      {:k6,
+       args
+       |> Enum.reject(&(String.starts_with?(&1, "--") or &1 in ~w(dev prod scaled)))
+       |> List.first() || "smoke.js"}
 
   def kind(verb, _), do: {String.to_atom(verb), nil}
 

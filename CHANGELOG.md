@@ -79,6 +79,21 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   before it went (`test/support/compose_golden.sh`), are what the
   templates are tested against. The one cost: a bake is a run of the
   package in the toolchain image, seconds, where it was a `sed`.
+- **pgadmin and k6 are cartridges.** Step 3 of `scripts/PLAN.md`: the
+  first two cartridges that bring a container rather than Elixir code.
+  **pgadmin** installs `pgadmin/servers.json` — the servers pgAdmin
+  opens with, which the compose used to carry inline — requires ecto on
+  postgres, and asks for the `pgadmin` service; ecto asks for `postgres`
+  alone now, so a vanilla `new` brings the database and no pgAdmin, and
+  `chiefs_setup` inserts pgadmin among its picks. **k6** installs
+  `k6/smoke.js` and asks for a `k6` service under a compose profile
+  `up` never starts, with the project's `k6/` mounted as its scripts and
+  `BASE_URL` set for the topology — `localhost` in the pod, the balancer
+  or the `app` alias on the bridge. `./wb.sh k6 [--deploy TARGET]
+  [SCRIPT] [K6_OPTIONS...]` runs one against the deployment that is up;
+  the console knows the verb. `K6_IMAGE_VERSION` joins `config.conf`.
+  The no-database compose files lose the dangling `configs:` block the
+  bash left. Neither cartridge has a cover yet.
 - **The cartridges say which services the compose carries.** Step 2 of
   `scripts/PLAN.md`. A cartridge's manifest gains `services/1`: the
   compose services it needs, by name, given its state — ecto on

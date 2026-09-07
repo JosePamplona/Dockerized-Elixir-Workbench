@@ -50,6 +50,9 @@ defmodule WorkbenchIgniter.Features do
     Features.Healthcheck2,
     Features.Ash,
     Features.Specdd,
+    # Services of the workspace, declared for the compose (scripts/PLAN.md).
+    Features.Pgadmin,
+    Features.K6,
     # The base cartridges: capabilities phx.new decides at generation
     # time, added after the fact (WorkbenchIgniter.PhxDelta).
     Features.Mailer,

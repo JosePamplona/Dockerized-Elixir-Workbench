@@ -88,21 +88,3 @@ services:
 volumes:
   build:
   deps:
-
-configs:
-  pgadmin_servers:
-    content: |
-      {
-        "Servers": {
-          "1": {
-            "Group": "Dockerized workbench",
-            "Name": "lorem_ipsum",
-            "Host": "localhost",
-            "Port": 5432,
-            "MaintenanceDB": "postgres",
-            "Username": "postgres",
-            "PassFile": "/var/lib/pgadmin/pgpass",
-            "SSLMode": "prefer"
-          }
-        }
-      }

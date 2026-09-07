@@ -120,6 +120,17 @@ release templates with the distributed-node exports DNSCluster needs,
 plus `DNS_CLUSTER_QUERY` in the environment files. Installed by hand
 with `wb.sh add clustering`.
 
+[pgadmin](pgadmin/) and [k6](k6/) bring the workspace a **service**:
+a container the compose carries because the project asked for it. A
+cartridge says so with `services/1` — the names `mix workbench.compose`
+renders (`postgres`, declared by ecto on that adapter; `pgadmin`; `k6`)
+— and what the installer writes is the file the service opens with,
+which is also the mark: pgAdmin's `pgadmin/servers.json`, k6's
+`k6/smoke.js`. The compose is baked from what the project carries
+(`./wb.sh bake` after the insert), never the other way round; see
+`scripts/PLAN.md`. pgadmin is a chiefs_setup pick, beside psql_extras,
+and refuses off Postgres as it does; k6 is inserted by hand.
+
 [healthcheck2](healthcheck2/) is the vanilla counterpart of
 `healthcheck`: liveness and readiness probes as the first plug of the
 endpoint, no dependency, no router change. Installed by hand with

@@ -75,12 +75,12 @@ defmodule WorkbenchIgniter.Features.Ecto do
     {%{database: facts.database}, igniter}
   end
 
-  # A Postgres in the workspace, and pgAdmin beside it — pgAdmin rides
-  # with the database until it is a cartridge of its own (scripts/PLAN.md,
-  # step 3). MySQL and MSSQL get their services in step 4; SQLite is a
-  # file and needs none.
+  # A Postgres in the workspace. pgAdmin is a cartridge of its own
+  # (pgadmin), no longer riding with the database. MySQL and MSSQL get
+  # their services in step 4 of scripts/PLAN.md; SQLite is a file and
+  # needs none.
   @impl true
-  def services(%{database: "postgres"}), do: ["postgres", "pgadmin"]
+  def services(%{database: "postgres"}), do: ["postgres"]
   def services(_state), do: []
 
   @doc "Installer body, run by the mix task shell as its `igniter/1`."

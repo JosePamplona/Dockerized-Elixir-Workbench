@@ -42,6 +42,7 @@ defmodule WorkbenchIgniter.Features.ChiefsSetup do
       {"versioning", []},
       {"osmon", []},
       {"psql_extras", []},
+      {"pgadmin", []},
       {"credo", []},
       {"mock", []},
       {"exdebug", []},

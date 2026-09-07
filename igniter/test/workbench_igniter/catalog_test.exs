@@ -25,10 +25,10 @@ defmodule WorkbenchIgniter.CatalogTest do
   @cartridges ~w(chiefs_setup ansi toolchain versioning
                  osmon psql_extras credo mock exdebug rest graphql
                  coveralls exdoc guidelines enhancements auth0 openai healthcheck stripe
-                 githooks exmachina clustering healthcheck2 ash specdd
+                 githooks exmachina clustering healthcheck2 ash specdd pgadmin k6
                  mailer gettext ecto esbuild tailwind html live dashboard)
   # The chiefs_setup recipe with its default choices, in insertion order.
-  @picks ~w(ansi toolchain versioning osmon psql_extras credo mock exdebug rest
+  @picks ~w(ansi toolchain versioning osmon psql_extras pgadmin credo mock exdebug rest
             coveralls exdoc enhancements healthcheck)
   # Base cartridges a default phx.new project already carries.
   @in_by_default ~w(mailer gettext ecto esbuild tailwind html live dashboard)
@@ -232,7 +232,7 @@ defmodule WorkbenchIgniter.CatalogTest do
 
       # The facts column says what is true of the box, and nothing when
       # nothing is — there is no kind to print.
-      assert output =~ ~r/^chiefs_setup +v\d+\.\d+\.\d+ +inserts 13 +Your project is vanilla/m
+      assert output =~ ~r/^chiefs_setup +v\d+\.\d+\.\d+ +inserts 14 +Your project is vanilla/m
       assert output =~ ~r/^mailer +\S+ +base +You want to see the mail/m
       assert output =~ ~r/^stripe +- +pending +Your users should be able to pay/m
       assert output =~ ~r/^healthcheck2 +v0\.1\.0 +Your platform polls/m
@@ -302,7 +302,8 @@ defmodule WorkbenchIgniter.CatalogTest do
     defp others_installed("auth0"), do: ["mock", "enhancements"]
     defp others_installed("openai"), do: ["mock", "enhancements", "auth0"]
     defp others_installed("guidelines"), do: ["exdoc"]
-    defp others_installed("chiefs_setup"), do: @picks
+    # The status lists them in catalog order, which is not the recipe's.
+    defp others_installed("chiefs_setup"), do: Enum.filter(@cartridges, &(&1 in @picks))
     defp others_installed(_name), do: []
   end
 end

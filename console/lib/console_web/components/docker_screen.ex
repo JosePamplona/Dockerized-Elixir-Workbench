@@ -166,7 +166,10 @@ defmodule ConsoleWeb.DockerScreen do
         >Stats</button>
       <% end %>
       {render_slot(@inner_block)}
-      <span :if={@dk.daemon} class="note daemon">{@dk.daemon}</span>
+      <code :if={@dk.daemon} class="code-box daemon"><span
+        :for={{k, v} <- @dk.daemon}
+        class="ln"
+      ><span class="k">{k}</span>{v}</span></code>
     </div>
     """
   end

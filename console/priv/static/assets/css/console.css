@@ -1238,7 +1238,20 @@ header.band ::selection{background:color-mix(in srgb,var(--board-ink) 15%,transp
    block keeps its own height and the pane is what scrolls. */
 .pdocs .dkdoc{flex:1;min-height:0;overflow:auto;padding:0 28px 60px;display:flex;flex-direction:column;gap:14px;scrollbar-gutter:stable}
 .pdocs .dkdoc>*{flex:none;min-width:0}
-.docker .toolbar .note.daemon{margin-left:auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* A line read off the machine — the daemon's version, CPUs, memory,
+   driver, host and kernel — is code, and set as one: the terminal's
+   ground and face, in a box of its own under the scope buttons. It was
+   a note at the toolbar's right, cut with an ellipsis at any width the
+   rail left it: the kernel went unread. `.code-box` is the recipe the
+   job's output, the log and the papers' blocks each write for
+   themselves, named once for a few lines that are not a log. */
+.code-box{display:block;font-family:var(--code-face,var(--mono));font-size:var(--code-size,12px);line-height:round(calc(var(--code-size,12px) * var(--code-leading,1.5)),1px);background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:8px 14px;white-space:normal;overflow-wrap:anywhere}
+/* Its lines are `.ln`, a key and a value each — the template's own
+   air between them is not the box's — and the key is a column of nine
+   cells, dim, so the values stand in a line of their own. */
+.code-box .ln{display:block;white-space:pre-wrap}
+.code-box .k{display:inline-block;min-width:9ch;color:var(--term-dim)}
+.docker .toolbar .code-box.daemon{flex-basis:100%;min-width:0;margin-top:2px}
 .dtab .badge{font-family:var(--mono);font-size:10.5px;padding:1px 6px;border-radius:999px;background:var(--surface-2);color:var(--muted);letter-spacing:0}
 .dtab .badge.bad{background:var(--bad);color:#fff}
 /* A table wider than the rail's: it scrolls inside its own box, never the page. */

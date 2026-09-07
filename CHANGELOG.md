@@ -31,6 +31,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **The daemon is set as code, a key a line.** Docker's version and
+  platform, the host's CPUs and memory, the storage driver and its root,
+  the OS and the kernel sat in one sentence, a note at the toolbar's
+  right cut with an ellipsis at any width the rail left. They are a
+  `.code-box` now — the terminal's ground and face in a row of their own
+  under the scope buttons — five lines, `docker`, `host`, `storage`,
+  `os`, `kernel`, the key dim in a column of nine cells.
+  `Console.Docker.daemon/0` returns those pairs instead of the sentence.
 - **The subordinate row's open tab is outlined.** The `docked` ribbon —
   a screen's documents, a box's papers — drew its selected tab as a fill
   that opened into the pane; it now carries the row's own hairline on

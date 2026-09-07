@@ -878,7 +878,7 @@
   workspace_igniter() {
     if toolchain_here; then
       # shellcheck disable=SC1010  # 'do' is mix's own task here, not the keyword
-      (cd "$WORKSPACE_MOUNT" && toolchain_env mix do deps.get, deps.compile, "$@")
+      (cd "$WORKSPACE_MOUNT" && toolchain_env mix do deps.get + deps.compile + "$@")
     else
       ensure_build_volumes
       docker run \
@@ -891,9 +891,26 @@
         "${BUILD_VOLUMES[@]}" \
         --workdir /app/src \
         "$LOCAL_IMAGE" sh -c \
-          'exec mix do deps.get, deps.compile, "$@"' \
+          'exec mix do deps.get + deps.compile + "$@"' \
           mix "$@"
     fi
+  }
+
+  # reader_igniter <TASK> [ARGS...]
+    # workspace_igniter for the readers: the status, which the console
+    # reads on every page it serves, while a job may be running a mix
+    # of its own beside it. Hex keeps its registry cache in
+    # ~/.hex/cache.ets and rewrites it in place; a reader opening the
+    # file while the job's mix writes it finds a bad one, says so on
+    # stderr ("Error opening ETS file ...: :badfile") and throws the
+    # cache away. In the console the readers get a Hex home of their
+    # own, under the console's build volume so it outlives the
+    # container; anywhere else every run has a container, and a home,
+    # to itself.
+  reader_igniter() {
+    if toolchain_here
+    then ( export HEX_HOME="${MIX_BUILD_ROOT:-$HOME}/hex"; workspace_igniter "$@" )
+    else workspace_igniter "$@"; fi
   }
 
   # package_igniter <TASK> [ARGS...]
@@ -917,7 +934,7 @@
       --volume workbench_package_deps:/app/igniter/deps \
       --workdir /app/igniter \
       "$TOOLCHAIN_IMAGE" sh -c \
-        'mix do deps.get, compile > /dev/null 2>&1; exec mix "$@"' \
+        'mix do deps.get + compile > /dev/null 2>&1; exec mix "$@"' \
         mix "$@"
   }
 
@@ -1162,7 +1179,7 @@
     pgadmin=$(workspace_pgadmin_port)
     if [ "$1" == "--fast" ]
     then project=""
-    else project=$(workspace_igniter workbench.status --json 2>/dev/null | json_answer); fi
+    else project=$(reader_igniter workbench.status --json 2>/dev/null | json_answer); fi
 
     # printf, never echo, and every value as an argument rather than
     # part of the format: what goes in here is JSON already, full of the
@@ -1246,7 +1263,7 @@
     else echo "  not a repository"; fi
     echo
     echo "${B}Cartridges${R}  (mix workbench.status, read off the source)"
-    workspace_igniter workbench.status 2>/dev/null | sed 's/^/  /'
+    reader_igniter workbench.status 2>/dev/null | sed 's/^/  /'
   }
 
   # bake_prod_compose

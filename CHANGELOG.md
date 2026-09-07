@@ -189,6 +189,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **Two warnings and an error at the end of every creation from the
+  console.** Mix 1.19 deprecates the commas `mix do` took between
+  tasks, and the three places wb.sh chained tasks that way — the
+  workspace's igniter runs, in-process and in a container, and the
+  package's — said so on every status the console read; they chain
+  with `+` now. And `Error opening ETS file ~/.hex/cache.ets: :badfile`:
+  Hex rewrites its registry cache in place, and since the workspace
+  rides in the console's container the readers of the status opened it
+  while the job's own mix was writing it, so Hex threw the cache away
+  and fetched the registry again. The readers have a Hex home of their
+  own now (`reader_igniter`), under the console's build volume; the jobs
+  keep the user's, and no longer share it with anyone.
 - **The console warned of the legacy builder on every build.** Its
   image carried Docker's static CLI and the compose plugin, pinned to
   the host's versions, and no buildx: a `docker build` from in there —

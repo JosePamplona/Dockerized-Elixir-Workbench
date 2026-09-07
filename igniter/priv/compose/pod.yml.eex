@@ -190,10 +190,6 @@ services:
       # does not create the database; 'mix ecto.create' does that for
       # dev on its own).
       MYSQL_DATABASE: <%= @app_name %>_prod
-      # The image's init loads the time zone tables unless told not to:
-      # seconds of the first start, for CONVERT_TZ(), which Ecto never
-      # asks for — it works in UTC.
-      MYSQL_INITDB_SKIP_TZINFO: "1"
     depends_on:
       - network
     healthcheck:

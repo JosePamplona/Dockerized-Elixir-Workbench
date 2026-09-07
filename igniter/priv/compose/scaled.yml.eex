@@ -120,10 +120,6 @@ services:<%= for {n, port} <- @replicas do %>
       # phx.new's own dev credentials for MySQL: root, no password.
       MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
       MYSQL_DATABASE: <%= @app_name %>_prod
-      # The image's init loads the time zone tables unless told not to:
-      # seconds of the first start, for CONVERT_TZ(), which Ecto never
-      # asks for — it works in UTC.
-      MYSQL_INITDB_SKIP_TZINFO: "1"
     healthcheck:
       # 127.0.0.1 forces TCP, as in the dev compose: the init's temporary
       # server answers the unix socket before the real one listens.

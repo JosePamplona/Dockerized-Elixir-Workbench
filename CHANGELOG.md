@@ -102,9 +102,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   app's does — and so do MySQL's (90 s: its first start initialises the
   data directory and runs a temporary server first, longer than its
   retries allowed on a busy host, so the job failed and the next `up`
-  found it healthy) and Postgres's (30 s). MySQL also skips the time
-  zone tables at init (`MYSQL_INITDB_SKIP_TZINFO`, the image's own
-  switch): seconds of the first start Ecto never asks for.
+  found it healthy) and Postgres's (30 s). The images run as they come,
+  no init switches: the allowance is the whole fix.
 - **pgadmin and k6 are cartridges.** Step 3 of `scripts/PLAN.md`: the
   first two cartridges that bring a container rather than Elixir code.
   **pgadmin** installs `pgadmin/servers.json` — the servers pgAdmin

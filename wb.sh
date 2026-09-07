@@ -58,14 +58,12 @@
     PROD_DOCKERFILE="Dockerfile"
     PROD_COMPOSE_FILE="docker-compose.prod.yml"
     SCALED_COMPOSE_FILE="docker-compose.scaled.yml"
-    SCALED_COMPOSE_SEED="docker-compose.scaled.seed.yml"
     # Replicas the scaled deployment starts unless --replicas says
     # otherwise; the balancer sits in front of them.
     DEFAULT_REPLICAS=4
     LOCAL_DOCKERFILE="Dockerfile.local"
     LOCAL_DOCKERFILE_SEED="Dockerfile.seed.local"
     COMPOSE_FILE="docker-compose.yml"
-    COMPOSE_SEED="docker-compose.seed.yml"
     # The entrypoint script runs from the mounted workbench (workdir /app).
     CONTAINER_ENTRYPOINT=(bash workbench/scripts/entrypoint.sh)
     # TTY flags only when running from an interactive terminal (CI-safe).
@@ -558,55 +556,42 @@
   }
 
   # bake_compose <IMAGE> <DOCKERFILE> <TARGET_FILE>
-    # Generates a compose file into the workspace from the seed, with the
-    # real configuration values baked in. The workspace's compose is the
-    # source of truth of its orchestration (name, ports, images); the
-    # start command is each image's own CMD.
+    # Writes a compose file of the pod topology into the workspace —
+    # the dev file with the dev toolchain image and dockerfile, the prod
+    # file with the release's — off `mix workbench.compose` in the
+    # igniter package (scripts/PLAN.md), which renders it from the flags
+    # alone: this side keeps deciding the ports, the images and the two
+    # facts of the project it grep's, and hands them over. Written to a
+    # temporary first, so a task that fails leaves the file as it was.
   bake_compose() {
-    local image="$1"
-    local dockerfile="$2"
-    local file_path="$WORKSPACE_PATH/$3"
+    local image="$1" dockerfile="$2" file_path="$WORKSPACE_PATH/$3" deploy
+    if [ "$dockerfile" == "$LOCAL_DOCKERFILE" ]; then deploy=dev; else deploy=prod; fi
 
-    cp "$SCRIPTS_DIR/$COMPOSE_SEED" "$file_path"
-
-    sed -i "s/%{app_name}/$ELIXIR_PROJECT_NAME/"                 "$file_path"
-    sed -i "s/%{compose_image}/$image/"                          "$file_path"
-    sed -i "s/%{compose_dockerfile}/$dockerfile/"                "$file_path"
-    sed -i "s/%{uid}/$(id -u)/"                                  "$file_path"
-    sed -i "s/%{gid}/$(id -g)/"                                  "$file_path"
-    sed -i "s/%{app_port}/$APP_PORT/"                            "$file_path"
-    sed -i "s/%{internal_port}/$APP_INTERNAL_PORT/g"             "$file_path"
-    sed -i "s/%{pgadmin_port}/$PGADMIN_PORT/"                    "$file_path"
-    sed -i "s/%{pgadmin_internal_port}/$PGADMIN_INTERNAL_PORT/g" "$file_path"
-    sed -i "s/%{postgres_image_version}/$POSTGRES_IMAGE_VERSION/" "$file_path"
-    sed -i "s/%{pgadmin_image_version}/$PGADMIN_IMAGE_VERSION/"  "$file_path"
-
-    # The one-shot 'migrate' service is the production deployment's:
-    # the dev image migrates itself on boot ('mix setup' in the
-    # Dockerfile.local CMD), so the dev compose drops the service, and
-    # the prod compose hands the app's wait over to it — the migration
-    # ran to completion, so the database it needed was healthy.
-    if [ "$dockerfile" == "$LOCAL_DOCKERFILE" ]
-    then
-      sed -i '/^  # One-shot migration/,/^  database:/{/^  database:/!d}' "$file_path"
-    else
-      sed -i '/^  app:/,/^  # One-shot migration/{
-        s/^      database:$/      migrate:/
-        s/condition: service_healthy$/condition: service_completed_successfully/
-      }' "$file_path"
+    if package_igniter workbench.compose \
+      --deploy "$deploy" \
+      --app-name "$ELIXIR_PROJECT_NAME" \
+      --image "$image" \
+      --dockerfile "$dockerfile" \
+      --uid "$(id -u)" \
+      --gid "$(id -g)" \
+      --app-port "$APP_PORT" \
+      --internal-port "$APP_INTERNAL_PORT" \
+      --pgadmin-port "$PGADMIN_PORT" \
+      --pgadmin-internal-port "$PGADMIN_INTERNAL_PORT" \
+      --postgres-version "$POSTGRES_IMAGE_VERSION" \
+      --pgadmin-version "$PGADMIN_IMAGE_VERSION" \
+      --nginx-version "$NGINX_IMAGE_VERSION" \
+      "$(database_flag)" > "$file_path.baking"
+    then mv "$file_path.baking" "$file_path"
+    else rm -f "$file_path.baking"; return 1
     fi
+  }
 
-    # Remove the database & pgadmin services on projects without a
-    # database server (the network holder and the pod structure remain).
-    # Nothing to migrate either: the migrator goes first, so the app's
-    # depends_on — on it or on the database — is the next three lines.
-    if ! workspace_needs_database
-    then
-      sed -i '/^  # One-shot migration/,/^  database:/{/^  database:/!d}' "$file_path"
-      sed -i '/^  database:/,/^volumes:/{/^volumes:/!d}' "$file_path"
-      sed -i '/^    depends_on:/,+2d'       "$file_path"
-      sed -i "/# pgAdmin port/,/:$PGADMIN_INTERNAL_PORT\$/d" "$file_path"
-    fi
+  # database_flag
+    # `--database` or `--no-database` for workbench.compose, off the
+    # same question the pod's services hang on.
+  database_flag() {
+    if workspace_needs_database; then echo "--database"; else echo "--no-database"; fi
   }
 
   # ensure_build_volumes
@@ -641,7 +626,7 @@
   # workbench_project <PROJECT>
     # Whether a compose project on the daemon is a workspace of this
     # workbench, read off the working directory its containers name:
-    # the compose file there starts with the seed's own first line, or
+    # the compose file there starts with the header's first line, or
     # the directory is under this workbench's _workspaces (a deleted
     # workspace leaves its containers behind and its files gone). A
     # project with no container left is told by its name alone, if a
@@ -921,7 +906,7 @@
       --volume workbench_package_deps:/app/igniter/deps \
       --workdir /app/igniter \
       "$TOOLCHAIN_IMAGE" sh -c \
-        'mix deps.get > /dev/null 2>&1; exec mix "$@"' \
+        'mix do deps.get, compile > /dev/null 2>&1; exec mix "$@"' \
         mix "$@"
   }
 
@@ -1269,21 +1254,12 @@
       head -n 1
     )
 
+    # The release has no source mount, no build volumes and no build
+    # identity: the prod rendering leaves them out.
     bake_compose \
       "$APP_NAME:$APP_VERSION-prod" \
       "$PROD_DOCKERFILE" \
-      "$PROD_COMPOSE_FILE" && \
-    # The app's volumes go whole — the source mount and the two build
-    # volumes with their comment, everything up to depends_on. This
-    # took two lines once, the key and the mount, and when the build
-    # volumes joined the block the rest was left standing under
-    # env_file, where compose read 'build:/app/src/_build' as a file.
-    # The top-level declaration goes with them: a release has no
-    # _build and no deps to keep.
-    sed -i '/^    volumes:/,/^    depends_on:/{/^    depends_on:/!d}' "$WORKSPACE_PATH/$PROD_COMPOSE_FILE" && \
-    sed -i '/^volumes:/,/^$/d' "$WORKSPACE_PATH/$PROD_COMPOSE_FILE" && \
-    sed -i '/^      # These arguments/,/GID:/d' \
-      "$WORKSPACE_PATH/$PROD_COMPOSE_FILE"
+      "$PROD_COMPOSE_FILE"
   }
 
   # parse_deploy_args [ARGS...]
@@ -1316,22 +1292,20 @@
   }
 
   # bake_scaled_compose
-    # Generates the workspace's scaled compose file from its seed: the
-    # production image replicated REPLICAS times on a bridge
-    # network, each replica with its own host port. Leaves the chosen
-    # ports in the REPLICA_PORTS array.
+    # Writes the workspace's scaled compose file, off workbench.compose
+    # as bake_compose does: the production image replicated REPLICAS
+    # times on a bridge network, each replica with its own host port.
+    # The ports are chosen here and left in the REPLICA_PORTS array.
   bake_scaled_compose() {
     local file_path="$WORKSPACE_PATH/$SCALED_COMPOSE_FILE"
-    local services depends upstream
     local port=4000
     local i=1
+    local balancer_flag clustering_flag replica_ports
 
     APP_VERSION=$(
       sed -n 's/^.*version: "\(.*\)".*/\1/p' "$WORKSPACE_PATH/$MIX_FILE" | \
       head -n 1
     )
-
-    cp "$SCRIPTS_DIR/$SCALED_COMPOSE_SEED" "$file_path"
 
     # The balancer takes the first free port: it is the deployment's single
     # entry point. Every replica publishes its own too, so a specific
@@ -1340,62 +1314,42 @@
     if [ "$BALANCER" == true ]; then
       BALANCER_PORT=$(first_free_port $port)
       port=$((BALANCER_PORT + 1))
+      balancer_flag=(--balancer-port "$BALANCER_PORT")
+    else
+      balancer_flag=(--no-balancer)
     fi
 
-    services=$(mktemp)
-    depends=$(mktemp)
-    upstream=$(mktemp)
     REPLICA_PORTS=()
-
     while [ "$i" -le "$REPLICAS" ]; do
       port=$(first_free_port $port)
       REPLICA_PORTS+=( "$port" )
-
-      printf '  app%s:\n    <<: *app\n    ports:\n      - %s:%s\n\n' \
-        "$i" "$port" "$APP_INTERNAL_PORT" >> "$services"
-      printf '      app%s:\n        condition: service_started\n' \
-        "$i" >> "$depends"
-      printf '        server app%s:%s;\n' \
-        "$i" "$APP_INTERNAL_PORT" >> "$upstream"
-
       port=$((port + 1))
       i=$((i + 1))
     done
-
-    # 'r' queues the generated block after the marker line, 'd' drops the
-    # marker: no escaping of newlines into a sed replacement.
-    sed -i -e "/%{app_services}/r $services"     -e "/%{app_services}/d"     "$file_path"
-    sed -i -e "/%{balancer_depends}/r $depends"  -e "/%{balancer_depends}/d" "$file_path"
-    sed -i -e "/%{upstream_servers}/r $upstream" -e "/%{upstream_servers}/d" "$file_path"
-    rm -f "$services" "$depends" "$upstream"
-
-    sed -i "s/%{app_name}/$ELIXIR_PROJECT_NAME/g"                  "$file_path"
-    sed -i "s/%{compose_image}/$APP_NAME:$APP_VERSION-prod/g"      "$file_path"
-    sed -i "s/%{compose_dockerfile}/$PROD_DOCKERFILE/g"            "$file_path"
-    sed -i "s/%{balancer_port}/$BALANCER_PORT/"                    "$file_path"
-    sed -i "s/%{nginx_image_version}/$NGINX_IMAGE_VERSION/"        "$file_path"
-    sed -i "s/%{postgres_image_version}/$POSTGRES_IMAGE_VERSION/"  "$file_path"
+    replica_ports=$(IFS=,; echo "${REPLICA_PORTS[*]}")
 
     # Without the clustering feature the release is not distributed, so
     # DNSCluster would poll DNS forever, connect to nobody and warn about
-    # it on every boot. Leaving the variable unset keeps it out of the
-    # supervision tree (runtime.exs falls back to :ignore).
-    clustering_installed || sed -i '/^    DNS_CLUSTER_QUERY:/d' "$file_path"
+    # it on every boot. The rendering leaves DNS_CLUSTER_QUERY out, which
+    # keeps it out of the supervision tree (runtime.exs falls back to
+    # :ignore).
+    if clustering_installed; then clustering_flag=--clustering; else clustering_flag=--no-clustering; fi
 
-    # Without a balancer the replicas are only reachable on their own
-    # ports; its nginx config goes with it.
-    if [ "$BALANCER" == false ]; then
-      sed -i '/^  # Single entry point/,/^$/d' "$file_path"
-      sed -i '/^configs:/,$d'                  "$file_path"
-    fi
-
-    # Projects without a database server have nothing to migrate and no
-    # database: drop both services and the app anchor's references to them.
-    if ! workspace_needs_database
-    then
-      sed -i '/^  # One-shot migration/,/^configs:/{/^configs:/!d}' "$file_path"
-      sed -i '/^  depends_on:$/,+2d'                                "$file_path"
-      sed -i '/^    DATABASE_URL:/d'                                "$file_path"
+    if package_igniter workbench.compose \
+      --deploy scaled \
+      --app-name "$ELIXIR_PROJECT_NAME" \
+      --image "$APP_NAME:$APP_VERSION-prod" \
+      --dockerfile "$PROD_DOCKERFILE" \
+      --internal-port "$APP_INTERNAL_PORT" \
+      --postgres-version "$POSTGRES_IMAGE_VERSION" \
+      --nginx-version "$NGINX_IMAGE_VERSION" \
+      --replicas "$REPLICAS" \
+      --replica-ports "$replica_ports" \
+      "${balancer_flag[@]}" \
+      "$clustering_flag" \
+      "$(database_flag)" > "$file_path.baking"
+    then mv "$file_path.baking" "$file_path"
+    else rm -f "$file_path.baking"; return 1
     fi
   }
 

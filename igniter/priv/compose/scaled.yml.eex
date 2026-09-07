@@ -8,7 +8,7 @@
 # without the balancer when --no-balancer is given; 'up --deploy scaled'
 # writes it again each time.
 
-name: %{app_name}
+name: <%= @app_name %>
 
 # Scaled deployment: the production replicas live on a regular bridge
 # network — one IP each — all answering to the `app` network alias, so
@@ -30,53 +30,58 @@ name: %{app_name}
 # a valid deployment on its own, and DNS_CLUSTER_QUERY is left out.
 
 x-app: &app
-  image: %{compose_image}
+  image: <%= @image %>
   build:
     context: .
-    dockerfile: %{compose_dockerfile}
+    dockerfile: <%= @dockerfile %>
   env_file:
     - ./.env
   environment:
     # Overrides what .env declares: the pod's localhost database is gone,
-    # and the name every replica answers to is the shared network alias.
-    DNS_CLUSTER_QUERY: app
-    DATABASE_URL: ecto://postgres:postgres@database/%{app_name}_prod
+    # and the name every replica answers to is the shared network alias.<%= if @clustering do %>
+    DNS_CLUSTER_QUERY: app<% end %><%= if @database do %>
+    DATABASE_URL: ecto://postgres:postgres@database/<%= @app_name %>_prod<% end %>
   networks:
     default:
       aliases:
-        - app
+        - app<%= if @database do %>
   depends_on:
     migrate:
-      condition: service_completed_successfully
+      condition: service_completed_successfully<% end %>
 
-services:
-%{app_services}
+services:<%= for {n, port} <- @replicas do %>
+  app<%= n %>:
+    <<: *app
+    ports:
+      - <%= port %>:<%= @internal_port %>
+<% end %><%= if @balancer do %>
   # Single entry point in front of the replicas. They also publish one
   # host port each, so a specific node can still be addressed — which is
   # how cross-node behaviour is demonstrated.
   balancer:
-    image: nginx:%{nginx_image_version}
+    image: nginx:<%= @nginx_version %>
     ports:
-      - %{balancer_port}:80
-    depends_on:
-%{balancer_depends}
+      - <%= @balancer_port %>:80
+    depends_on:<%= for {n, _port} <- @replicas do %>
+      app<%= n %>:
+        condition: service_started<% end %>
     configs:
       - source: balancer_conf
         target: /etc/nginx/conf.d/default.conf
-
+<% end %><%= if @database do %>
   # One-shot migration (rel/overlays/bin/migrate, from phx.gen.release),
   # so the replicas do not race each other running it on boot. The
   # database itself is created by the postgres image from POSTGRES_DB.
   migrate:
-    image: %{compose_image}
+    image: <%= @image %>
     build:
       context: .
-      dockerfile: %{compose_dockerfile}
+      dockerfile: <%= @dockerfile %>
     command: /app/bin/migrate
     env_file:
       - ./.env
     environment:
-      DATABASE_URL: ecto://postgres:postgres@database/%{app_name}_prod
+      DATABASE_URL: ecto://postgres:postgres@database/<%= @app_name %>_prod
     depends_on:
       database:
         condition: service_healthy
@@ -84,19 +89,19 @@ services:
   # No `restart:`, as in the dev compose: the deployment is the unit,
   # across a reboot too.
   database:
-    image: postgres:%{postgres_image_version}
+    image: postgres:<%= @postgres_version %>
     environment:
       POSTGRES_PASSWORD: postgres
       POSTGRES_USER: postgres
-      POSTGRES_DB: %{app_name}_prod
+      POSTGRES_DB: <%= @app_name %>_prod
     healthcheck:
       # -h forces TCP, as in the dev seed: the init's temporary server
       # answers the unix socket before the real one listens.
-      test: pg_isready -q -h localhost -d %{app_name}_prod -U postgres
+      test: pg_isready -q -h localhost -d <%= @app_name %>_prod -U postgres
       timeout: 45s
       interval: 10s
       retries: 10
-
+<% end %><%= if @balancer do %>
 configs:
   # $$ escapes compose's own interpolation: nginx must see a single $.
   balancer_conf:
@@ -108,8 +113,8 @@ configs:
         ''      close;
       }
 
-      upstream replicas {
-%{upstream_servers}
+      upstream replicas {<%= for {n, _port} <- @replicas do %>
+        server app<%= n %>:<%= @internal_port %>;<% end %>
       }
 
       server {
@@ -129,3 +134,4 @@ configs:
           add_header X-Served-By $$upstream_addr always;
         }
       }
+<% end %>

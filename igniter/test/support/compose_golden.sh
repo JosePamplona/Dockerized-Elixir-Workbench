@@ -17,6 +17,15 @@
 #   git show <commit>:scripts/docker-compose.seed.yml > /tmp/seeds/docker-compose.seed.yml
 #   git show <commit>:scripts/docker-compose.scaled.seed.yml > /tmp/seeds/docker-compose.scaled.seed.yml
 #   ./test/support/compose_golden.sh /tmp/wb.sh /tmp/seeds
+#
+# Two fixtures were then corrected by hand, because the bash was wrong
+# and the port is not to inherit it: prod-nodb.yml came out truncated at
+# the app's env_file (the no-database branch had deleted the depends_on
+# line bake_prod_compose's volume cut ended on, so sed cut to the end of
+# the file — a live bug of `up --deploy prod` on a project without a
+# database), and the four scaled-*-nobalancer-* files ended with a blank
+# line that `sed '/^configs:/,$d'` left behind. The templates' output is
+# the fixture in both cases.
 # shellcheck disable=SC2034  # the variables below feed the functions eval'd from wb.sh
 set -euo pipefail
 

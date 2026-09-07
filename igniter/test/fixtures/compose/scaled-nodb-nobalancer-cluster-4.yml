@@ -65,4 +65,3 @@ services:
     <<: *app
     ports:
       - 4003:4000
-

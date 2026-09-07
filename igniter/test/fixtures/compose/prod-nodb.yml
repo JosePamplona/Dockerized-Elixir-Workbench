@@ -58,3 +58,30 @@ services:
     network_mode: "service:network"
     env_file:
       - ./.env
+    healthcheck:
+      # TCP-connect probe via bash (present in both the dev toolchain and
+      # the prod runner image): no curl/wget needed.
+      test: ["CMD", "bash", "-c", "</dev/tcp/localhost/4000"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      # First compile & boot may take a while: not counted as failures.
+      start_period: 120s
+
+configs:
+  pgadmin_servers:
+    content: |
+      {
+        "Servers": {
+          "1": {
+            "Group": "Dockerized workbench",
+            "Name": "lorem_ipsum",
+            "Host": "localhost",
+            "Port": 5432,
+            "MaintenanceDB": "postgres",
+            "Username": "postgres",
+            "PassFile": "/var/lib/pgadmin/pgpass",
+            "SSLMode": "prefer"
+          }
+        }
+      }

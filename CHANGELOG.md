@@ -67,6 +67,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Git is the first fold of the rail.** Under the workspace, the
   rail's sections read Git, Doors, Deployments, Containers, Inserted;
   the tree and the branch used to sit fourth.
+- **The compose files are rendered by the igniter, not carved by `sed`.**
+  Step 1 of `scripts/PLAN.md`: `mix workbench.compose` renders the dev,
+  prod and scaled files from EEx templates under `igniter/priv/compose/`
+  — one skeleton per topology, the pod and the bridge — off flags
+  alone, and `wb.sh`'s three bakes hand it what they still decide: the
+  ports, the images, the two facts they grep off the project. The seeds
+  and their range deletions are gone; a bake that fails leaves the file
+  as it was. The output is the same to the byte: thirteen fixtures
+  under `igniter/test/fixtures/compose/`, generated from the bash bake
+  before it went (`test/support/compose_golden.sh`), are what the
+  templates are tested against. The one cost: a bake is a run of the
+  package in the toolchain image, seconds, where it was a `sed`.
 - **The console's LiveView is split by screen.** `ConsoleWeb.ConsoleLive`
   held every screen's state handling in one module of 1 500 lines. Each
   screen's state now lives under its name — `ConsoleWeb.ConsoleLive.Docker`,
@@ -124,6 +136,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **`up --deploy prod` wrote a truncated compose for a project without a
+  database.** The no-database cut removed the app's `depends_on`, which
+  was the line the prod cut of the volumes ended on, so `sed` cut to the
+  end of the file: no healthcheck, no `configs:`. Found by the golden
+  corpus; the rendered file carries everything.
 - **A box's doors never read their `when`.** `Cartridges.holds?/3`
   matched any map with its first clause, so a door's `when` was
   unwrapped twice and always held: a door meant only for `--with x` or

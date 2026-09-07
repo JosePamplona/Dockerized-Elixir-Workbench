@@ -124,6 +124,16 @@ mechanism without changing a single file it writes.
 1. `WorkbenchIgniter.Compose` and `mix workbench.compose` render the
    dev, prod and scaled files exactly as `wb.sh` writes them now, golden
    tests against the current output; `wb.sh` redirects the task.
+   *Landed on 2026-09-06*: thirteen fixtures generated from the bash
+   bake (`igniter/test/support/compose_golden.sh`), two of them
+   corrected where the bash was wrong — `up --deploy prod` without a
+   database wrote a truncated file, and the no-balancer scaled file
+   ended in a stray blank line; both are recorded in the harness. Two
+   templates, `priv/compose/pod.yml.eex` and `scaled.yml.eex`; the flag
+   interface is the test's fixture table. Verified against test_85's
+   three files: identical below the header. What the bash left and the
+   templates reproduce on purpose, for step 2 to clean: a
+   `configs: pgadmin_servers` block in the no-database pod files.
 2. Services come from the cartridges; `status --json` lists them; ports
    are read back; the grep goes.
 3. `pgadmin` and `k6` as cartridges, with the `k6` verb.

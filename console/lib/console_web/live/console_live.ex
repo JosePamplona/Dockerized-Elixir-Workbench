@@ -598,17 +598,30 @@ defmodule ConsoleWeb.ConsoleLive do
     {:noreply, assign(socket, pick: pick)}
   end
 
-  def handle_event("new_form", params, socket) do
+  def handle_event("new_form", params, socket),
+    do: {:noreply, assign(socket, newp: newp_from(params, socket.assigns.catalog))}
+
+  # Create is the form submitted, and the line is built from what it
+  # carries — never read off the button: a command rendered onto it and
+  # a click in the same instant as the last change ran the command as it
+  # was before that change (2026-09-07: --database mssql chosen, a bare
+  # `new` run).
+  def handle_event("new_submit", params, socket) do
+    newp = newp_from(params, socket.assigns.catalog)
+    cmd = Deploy.new_command(socket.assigns.catalog, newp)
+    {:noreply, socket |> assign(newp: newp) |> run(String.replace_prefix(cmd, "./wb.sh ", ""))}
+  end
+
+  # The card's form as state: the base cartridges left out, the flags.
+  defp newp_from(params, catalog) do
     ins = params["in"] || %{}
 
     out =
-      for e <- Cartridges.base(socket.assigns.catalog),
-          ins[e["name"]] != "on",
-          into: MapSet.new(),
-          do: e["name"]
+      for e <- Cartridges.base(catalog), ins[e["name"]] != "on", into: MapSet.new(), do: e["name"]
 
-    {:noreply, assign(socket, newp: %{out: out, gen: params["gen"] || %{}})}
+    %{out: out, gen: params["gen"] || %{}}
   end
+
 
   defp run(socket, line) do
     case Verbs.parse(line) do

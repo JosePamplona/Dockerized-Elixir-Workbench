@@ -83,7 +83,7 @@ defmodule ConsoleWeb.Deploy do
           a project exists here
         </.chip>
       </h3>
-      <form class="form" id="new-project" phx-change="new_form">
+      <form class="form" id="new-project" phx-change="new_form" phx-submit="new_submit">
         <.given label="project name" value={@conf["PROJECT_NAME"]} />
         <.given label="workspace" value={@conf["WORKSPACE_PATH"]} />
         <.given
@@ -177,13 +177,14 @@ defmodule ConsoleWeb.Deploy do
           phx-click="cancel"
           phx-value-id={@pending.id}
         >Keep it</button></span>
-        <button
-          :if={!@pending}
-          class="btn primary"
-          disabled={@busy}
-          phx-click="run"
-          phx-value-args={String.replace_prefix(@cmd, "./wb.sh ", "")}
-        >{if @busy, do: "Creating…", else: "Create project"}</button>
+        <%!-- The form's submit, not a click carrying the command: the
+              command was rendered onto this button, and a change and a
+              click in the same instant sent the command as it was before
+              the change — a --database chosen, a bare `new` run. Submitted,
+              the form travels whole and the server builds the line from it. --%>
+        <button :if={!@pending} class="btn primary" type="submit" form="new-project" disabled={@busy}>
+          {if @busy, do: "Creating…", else: "Create project"}
+        </button>
         <%!-- The reverse of Create, on the same card: what the one makes,
               the other takes away — files, containers, images and volumes.
               It had a box of its own under "Workspace", beside the database

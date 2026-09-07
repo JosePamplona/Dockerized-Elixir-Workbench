@@ -214,6 +214,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   daemon, no versions to pin: the client negotiates its API with the
   engine on the socket, so the two build args wb.sh took off the host
   are gone with the warning.
+- **The console's «Create project» ran a stale command.** The line was
+  rendered onto the button, and a change of the form and the click in
+  the same instant sent it as it was before the change: a `--database
+  mssql` chosen, a bare `new` run, a Postgres project born. Create is
+  the form's submit now, and the server builds the line from what the
+  form carries.
 - **`up --deploy scaled` on a project without a database or clustering
   wrote a compose Compose rejects.** The app anchor kept an
   `environment:` with nothing under it but comments, and compose

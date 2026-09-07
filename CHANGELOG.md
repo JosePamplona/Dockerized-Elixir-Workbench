@@ -31,6 +31,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **Git is the first fold of the rail.** Under the workspace, the
+  rail's sections read Git, Doors, Deployments, Containers, Inserted;
+  the tree and the branch used to sit fourth.
 - **The console's LiveView is split by screen.** `ConsoleWeb.ConsoleLive`
   held every screen's state handling in one module of 1 500 lines. Each
   screen's state now lives under its name — `ConsoleWeb.ConsoleLive.Docker`,

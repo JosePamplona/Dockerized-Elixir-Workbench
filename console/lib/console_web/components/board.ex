@@ -32,10 +32,10 @@ defmodule ConsoleWeb.Board do
     </section>
     <%= if @status do %>
       <.workspace status={@status} rebind={@rebind} />
+      <.git status={@status} folded={@folded} />
       <.doors status={@status} catalog={@catalog} folded={@folded} />
       <.deployments status={@status} busy={@busy} folded={@folded} />
       <.containers status={@status} folded={@folded} />
-      <.git status={@status} folded={@folded} />
       <.inserted status={@status} catalog={@catalog} folded={@folded} />
       <p :if={@error} class="note">{@error}</p>
     <% end %>

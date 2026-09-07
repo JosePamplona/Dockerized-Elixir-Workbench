@@ -167,6 +167,15 @@ mechanism without changing a single file it writes.
    SQL Server's database in the release deployments, `data_init` chowns
    SQLite's volume for `nobody`, and scaled refuses SQLite. One table in
    the ecto module writes the release's connection for both its
-   installer and `new`.
+   installer and `new`. *Run live the same day*: MySQL, SQLite and SQL
+   Server each through `new`, `up` and `up --deploy prod` on fresh
+   workspaces, k6 against the MySQL one (66 requests, every check
+   green), pgadmin inserted, baked and up on a fresh Postgres one. SQL
+   Server's first start outlasted its healthcheck's retries: it has a
+   `start_period` now. One limit seen on the way, not of these steps:
+   the host ports are chosen when a file is baked, and `up` does not
+   notice when another workspace took them since — it fails on
+   Docker's "port is already allocated". A bake that re-reads its
+   ports, or an `up` that checks them, is the fix; not done.
 5. Monitoring.
 6. Umbrella, on its own plan.

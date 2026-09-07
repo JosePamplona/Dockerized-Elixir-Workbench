@@ -142,7 +142,11 @@ services:<%= for {n, port} <- @replicas do %>
       test: /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P some!Password -Q "SELECT 1" -b
       timeout: 45s
       interval: 10s
-      retries: 10<% end %>
+      retries: 10
+      # The first start on a fresh volume takes SQL Server minutes —
+      # system databases, tempdb — and a failure in this period does not
+      # count, or compose gave up on it before it answered (seen 2026-09-07).
+      start_period: 180s<% end %>
 <% end %><%= if @k6 do %>
   # A load tool, not a service of the deployment: k6 runs to completion,
   # so it sits under a profile 'up' never starts — './wb.sh k6 [SCRIPT]

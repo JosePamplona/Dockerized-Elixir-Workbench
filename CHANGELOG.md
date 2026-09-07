@@ -95,6 +95,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   chowns it for the release's `nobody` in a one-shot `data_init`, and
   migrates as with a server; a scaled deployment refuses SQLite.
   `MYSQL_IMAGE_VERSION` and `MSSQL_IMAGE_VERSION` join `config.conf`.
+  Run for real on 2026-09-07, each engine through `new`, `up` and
+  `up --deploy prod`: SQL Server's first start on a fresh volume
+  outlasted its healthcheck's retries and compose gave up on it, so its
+  healthcheck carries a `start_period` of three minutes now, as the
+  app's does.
 - **pgadmin and k6 are cartridges.** Step 3 of `scripts/PLAN.md`: the
   first two cartridges that bring a container rather than Elixir code.
   **pgadmin** installs `pgadmin/servers.json` — the servers pgAdmin

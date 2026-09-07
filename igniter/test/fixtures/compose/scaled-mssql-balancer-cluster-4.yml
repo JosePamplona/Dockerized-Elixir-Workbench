@@ -136,6 +136,10 @@ services:
       timeout: 45s
       interval: 10s
       retries: 10
+      # The first start on a fresh volume takes SQL Server minutes —
+      # system databases, tempdb — and a failure in this period does not
+      # count, or compose gave up on it before it answered (seen 2026-09-07).
+      start_period: 180s
 
 configs:
   # $$ escapes compose's own interpolation: nginx must see a single $.

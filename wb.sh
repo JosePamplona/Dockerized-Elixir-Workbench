@@ -655,7 +655,10 @@
     [ -n "$dir" ] || { grep -qs "^name: $1\$" "$WORKBENCH_PATH"/_workspaces/*/docker-compose.yml; return; }
     case "$dir" in "$WORKBENCH_PATH/_workspaces/"*) return 0 ;; esac
     for file in "$dir/$COMPOSE_FILE" "$dir/$SCALED_COMPOSE_FILE" "$dir/$PROD_COMPOSE_FILE"; do
-      [ -f "$file" ] && head -n 1 "$file" | grep -q '^# Compose seed, baked by wb.sh' && return 0
+      # The header's first line, as the workbench writes it now and as it
+      # wrote it before 2026-09-06 ("Compose seed, baked by wb.sh").
+      [ -f "$file" ] && head -n 1 "$file" | \
+        grep -qE '^# (Compose seed, baked by wb\.sh|The workspace.s (orchestration|scaled deployment), baked by the workbench)' && return 0
     done
     return 1
   }

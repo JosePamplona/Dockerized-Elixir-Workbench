@@ -12,7 +12,7 @@
 # replaces the pod pattern with a bridge network. './wb.sh bake' writes
 # this file again for the project as it is now.
 
-name: %{app_name}
+name: lorem_ipsum
 
 services:
   # Pod pattern: this service's only job is to own the workspace's network
@@ -34,13 +34,13 @@ services:
     image: registry.k8s.io/pause:3.10
     ports:
       # Application port (host:container).
-      - %{app_port}:%{internal_port}
+      - 4000:4000
       # pgAdmin port. The database is not published: it is only
       # reachable from inside this workspace.
-      - %{pgadmin_port}:%{pgadmin_internal_port}
+      - 5050:5050
 
   app:
-    image: %{compose_image}
+    image: lorem-ipsum:0.1.0-prod
     build:
       # Baked by the workbench: Dockerfile.local (dev toolchain) in
       # docker-compose.yml — whose app service also runs the workbench
@@ -48,15 +48,7 @@ services:
       # and the production Dockerfile in docker-compose.prod.yml, baked
       # by 'up --env prod'. Do not point docker-compose.yml at the
       # production Dockerfile.
-      dockerfile: %{compose_dockerfile}
-      # These arguments are only relevant for 'Dockerfile.local'.
-      # Build identity for standalone builds (no workbench): the image is
-      # born with the workspace creator's UID/GID, so files written into
-      # the mounted source keep the right ownership. Edit if you build
-      # this project on a host with a different user.
-      args:
-        UID: %{uid}
-        GID: %{gid}
+      dockerfile: Dockerfile
     # The image starts itself (CMD). Defaults per dockerfile —
     #   Dockerfile.local: sh -c 'cd /app/src && mix setup && exec mix phx.server'
     #   Dockerfile (prod): /app/bin/server
@@ -69,22 +61,13 @@ services:
     network_mode: "service:network"
     env_file:
       - ./.env
-    volumes:
-      - .:/app/src
-      # Compiled code and dependencies stay inside Docker, never in the
-      # bind mount: a volume covers each of the two directories Mix
-      # writes into, where Mix already looks for them — nothing is
-      # written through to the host, and nothing has to be told where
-      # they went. 'delete' drops them with the project.
-      - build:/app/src/_build
-      - deps:/app/src/deps
     depends_on:
-      database:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     healthcheck:
       # TCP-connect probe via bash (present in both the dev toolchain and
       # the prod runner image): no curl/wget needed.
-      test: ["CMD", "bash", "-c", "</dev/tcp/localhost/%{internal_port}"]
+      test: ["CMD", "bash", "-c", "</dev/tcp/localhost/4000"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -100,9 +83,9 @@ services:
   # implies a healthy one). The dev compose has no such service: the
   # dev image migrates itself on boot ('mix setup' in its CMD).
   migrate:
-    image: %{compose_image}
+    image: lorem-ipsum:0.1.0-prod
     build:
-      dockerfile: %{compose_dockerfile}
+      dockerfile: Dockerfile
     command: /app/bin/migrate
     network_mode: "service:network"
     env_file:
@@ -112,7 +95,7 @@ services:
         condition: service_healthy
 
   database:
-    image: postgres:%{postgres_image_version}
+    image: postgres:latest
     network_mode: "service:network"
     environment:
       POSTGRES_PASSWORD: postgres
@@ -123,7 +106,7 @@ services:
       # database; 'mix ecto.create' does that for dev on its own). The
       # prod and scaled deployments share this container's volume with
       # dev, so the database has to be there from the first init.
-      POSTGRES_DB: %{app_name}_prod
+      POSTGRES_DB: lorem_ipsum_prod
     depends_on:
       - network
     healthcheck:
@@ -137,7 +120,7 @@ services:
       retries: 10
 
   pgadmin:
-    image: dpage/pgadmin4:%{pgadmin_image_version}
+    image: dpage/pgadmin4:latest
     network_mode: "service:network"
     # `exec` on the last step, as the app's CMD: without it this shell
     # stayed PID 1 and every stop of pgadmin waited the 10 s of grace
@@ -151,7 +134,7 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: pgadmin4@pgadmin.org
       PGADMIN_DEFAULT_PASSWORD: pass
-      PGADMIN_LISTEN_PORT: %{pgadmin_internal_port}
+      PGADMIN_LISTEN_PORT: 5050
       PGADMIN_CONFIG_SERVER_MODE: 'False'
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
     depends_on:
@@ -160,10 +143,6 @@ services:
       - source: pgadmin_servers
         target: /pgadmin4/servers.json
 
-volumes:
-  build:
-  deps:
-
 configs:
   pgadmin_servers:
     content: |
@@ -171,7 +150,7 @@ configs:
         "Servers": {
           "1": {
             "Group": "Dockerized workbench",
-            "Name": "%{app_name}",
+            "Name": "lorem_ipsum",
             "Host": "localhost",
             "Port": 5432,
             "MaintenanceDB": "postgres",

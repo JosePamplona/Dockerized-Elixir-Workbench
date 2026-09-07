@@ -600,7 +600,9 @@ pre .ln{display:block}
 .job .jt ~ .out{cursor:auto}
 .job .cmdline{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .job .dur{color:var(--muted);font-variant-numeric:tabular-nums}
-.job .out{grid-column:1/-1;display:none;font-family:var(--code-face,var(--mono));font-size:var(--code-size,12px);background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:10px 14px;white-space:pre-wrap;line-height:var(--code-leading,1.55);max-height:var(--job-out,220px);overflow:auto}
+/* The leading is rounded to a pixel: the drawer's ratio times a bitmap
+   size is 19.5px, and the lines took turns at 19 and 20. */
+.job .out{grid-column:1/-1;display:none;font-family:var(--code-face,var(--mono));font-size:var(--code-size,12px);background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:10px 14px;white-space:pre-wrap;line-height:round(calc(var(--code-size,12px) * var(--code-leading,1.55)),1px);max-height:var(--job-out,220px);overflow:auto}
 .job.open .out{display:block}
 /* A job's output is capped so a long one does not push the list out of
    reach, and the cap is the reader's: the row under the pane is a grip,
@@ -631,15 +633,21 @@ pre .ln{display:block}
    a cartridge goes in. */
 .scrim{position:fixed;inset:0;background:rgba(10,4,14,.42);backdrop-filter:blur(1.5px);opacity:0;pointer-events:none;transition:opacity .2s;z-index:5}
 .scrim.on{opacity:1;pointer-events:auto}
+/* Whole pixels. `inset:0; margin:auto` split the room's leftover in
+   halves, and 94vw is seldom whole: the drawer landed at x.03, and with
+   it every code block inside — a bitmap face drawn half a pixel off is
+   a blur. The width and height are rounded down, then the corner is:
+   the box's runs, the papers' blocks and the diffs all start on the grid. */
 .drawer{
-  position:fixed;inset:0;margin:auto;width:min(1040px,94vw);height:min(88vh,920px);
+  --dw:round(down,min(1040px,94vw),1px);--dh:round(down,min(88vh,920px),1px);
+  position:fixed;left:round(down,calc((100vw - var(--dw)) / 2),1px);top:round(down,calc((100vh - var(--dh)) / 2),1px);margin:0;width:var(--dw);height:var(--dh);
   background:var(--surface);border:1px solid var(--line);border-radius:4px;
   transform:translateY(14px) scale(.985);opacity:0;pointer-events:none;
   transition:transform .22s cubic-bezier(.2,.7,.2,1),opacity .18s;
   overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,.45);display:grid;grid-template-rows:auto minmax(0,1fr);z-index:6
 }
 .drawer.on{transform:none;opacity:1;pointer-events:auto}
-@media (max-width:700px){.drawer{width:100vw;height:100vh;border-radius:0;border:0}}
+@media (max-width:700px){.drawer{--dw:100vw;--dh:100vh;border-radius:0;border:0}}
 /* Above the config tab's own sticky bar (z-index 1), which scrolled over these tabs. */
 /* The drawer is its header and its pane, and the pane is what scrolls —
    so the header does not have to be told to stay: it is a row of the

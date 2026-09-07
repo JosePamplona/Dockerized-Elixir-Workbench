@@ -696,8 +696,13 @@ pre .ln{display:block}
    it, not on the pane around both — a scroller's bar sits on its own edge. */
 .pdocs .dtabs.docked{padding-left:28px;padding-right:28px}
 .papers .dtabs.docked{padding-left:32px;padding-right:32px}
-.dtabs.docked .dtab{font-size:11.5px;letter-spacing:.1em;padding:5px 11px 6px;border-bottom:0;border-radius:2px 2px 0 0;margin-bottom:-1px}
-.dtabs.docked .dtab[aria-selected="true"]{background:var(--ground);color:var(--ink);box-shadow:0 1px 0 var(--ground)}
+/* Every tab of the row wears a hairline's width on three sides, so the
+   selected one can show it without moving its word: the one being read
+   is outlined in the row's own line, left, right and top, and opens at
+   the foot into the pane — the row's rule runs under the others and
+   stops at its edges. */
+.dtabs.docked .dtab{font-size:11.5px;letter-spacing:.1em;padding:4px 10px 6px;border:1px solid transparent;border-bottom:0;border-radius:2px 2px 0 0;margin-bottom:-1px}
+.dtabs.docked .dtab[aria-selected="true"]{background:var(--ground);color:var(--ink);border-color:var(--line);box-shadow:0 1px 0 var(--ground)}
 /* The air under the row is the row's: 22px on whatever follows it, set
    here once and nowhere per pane — Git's pane had none because Docker's
    carried it under Docker's own name. A pane that scrolls takes it as

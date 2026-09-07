@@ -31,6 +31,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **The subordinate row's open tab is outlined.** The `docked` ribbon —
+  a screen's documents, a box's papers — drew its selected tab as a fill
+  that opened into the pane; it now carries the row's own hairline on
+  its left, right and top too, a folder tab closed on three sides.
 - **Git is the first fold of the rail.** Under the workspace, the
   rail's sections read Git, Doors, Deployments, Containers, Inserted;
   the tree and the branch used to sit fourth.

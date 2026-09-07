@@ -53,6 +53,29 @@ defmodule Mix.Tasks.Workbench.SetupTest do
       assert igniter.assigns[:test_files][".env"] == "EXISTING=true\n"
     end
 
+    test "writes the connection of the adapter the project was generated with" do
+      igniter =
+        WorkbenchIgniter.TestProject.new(
+          ~w(--app test --module Test --database mysql --adapter bandit)
+        )
+        |> Igniter.compose_task("workbench.setup", [])
+        |> apply_igniter!()
+
+      assert igniter.assigns[:test_files][".env"] =~
+               ~s|DATABASE_URL="ecto://root:@localhost:3306/test_prod"|
+
+      igniter =
+        WorkbenchIgniter.TestProject.new(
+          ~w(--app test --module Test --database sqlite3 --adapter bandit)
+        )
+        |> Igniter.compose_task("workbench.setup", [])
+        |> apply_igniter!()
+
+      env = igniter.assigns[:test_files][".env"]
+      assert env =~ ~s|DATABASE_PATH="/app/data/test_prod.db"|
+      refute env =~ "DATABASE_URL"
+    end
+
     test "--no-ecto drops the database entries from .env" do
       igniter = setup_project(["--no-ecto"]) |> apply_igniter!()
 

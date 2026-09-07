@@ -52,7 +52,17 @@ defmodule WorkbenchIgniter.ComposeTest do
     {"scaled-nodb-nobalancer-cluster-4.yml",
      @scaled ++ ~w(--services none --clustering) ++ @no_balancer},
     {"scaled-nodb-nobalancer-nocluster-4.yml",
-     @scaled ++ ~w(--services none --no-clustering) ++ @no_balancer}
+     @scaled ++ ~w(--services none --no-clustering) ++ @no_balancer},
+    {"dev-mysql.yml", @dev ++ ~w(--services mysql --mysql-version 8)},
+    {"prod-mysql.yml", @prod ++ ~w(--services mysql --mysql-version 8)},
+    {"scaled-mysql-balancer-cluster-4.yml",
+     @scaled ++ ~w(--services mysql --mysql-version 8 --clustering) ++ @balancer},
+    {"dev-mssql.yml", @dev ++ ~w(--services mssql --mssql-version 2022-latest)},
+    {"prod-mssql.yml", @prod ++ ~w(--services mssql --mssql-version 2022-latest)},
+    {"scaled-mssql-balancer-cluster-4.yml",
+     @scaled ++ ~w(--services mssql --mssql-version 2022-latest --clustering) ++ @balancer},
+    {"dev-sqlite.yml", @dev ++ ~w(--services sqlite)},
+    {"prod-sqlite.yml", @prod ++ ~w(--services sqlite)}
   ]
 
   describe "render/1 writes the fixture" do
@@ -117,6 +127,16 @@ defmodule WorkbenchIgniter.ComposeTest do
       assert {:error, "unknown or malformed option --port"} =
                Compose.plan_from_argv(~w(--deploy dev --port 1))
     end
+
+    test "one database at most" do
+      assert {:error, "one database at most, got postgres and mysql"} =
+               Compose.plan_from_argv(@dev ++ ~w(--services postgres,mysql))
+    end
+
+    test "no SQLite on the scaled deployment" do
+      assert {:error, "a scaled deployment cannot run on SQLite" <> _} =
+               Compose.plan_from_argv(@scaled ++ ~w(--services sqlite) ++ @balancer)
+    end
   end
 
   describe "services/1" do
@@ -148,13 +168,26 @@ defmodule WorkbenchIgniter.ComposeTest do
   describe "the ecto cartridge's services" do
     alias WorkbenchIgniter.Features.Ecto
 
-    test "postgres brings the database, and nothing else" do
+    test "each adapter asks for its own: a server, or a place for the file" do
       assert Ecto.services(%{database: "postgres"}) == ["postgres"]
+      assert Ecto.services(%{database: "mysql"}) == ["mysql"]
+      assert Ecto.services(%{database: "mssql"}) == ["mssql"]
+      assert Ecto.services(%{database: "sqlite3"}) == ["sqlite"]
+      assert Ecto.services(%{}) == []
     end
 
-    test "the other adapters bring no container yet" do
-      for db <- ~w(mysql mssql sqlite3), do: assert(Ecto.services(%{database: db}) == [])
-      assert Ecto.services(%{}) == []
+    test "connection/2 is phx.new's dev credentials on the workspace's service, or the file's path" do
+      assert Ecto.connection("postgres", :test) ==
+               ~s|DATABASE_URL="ecto://postgres:postgres@localhost:5432/test_prod"|
+
+      assert Ecto.connection("mysql", :test) ==
+               ~s|DATABASE_URL="ecto://root:@localhost:3306/test_prod"|
+
+      assert Ecto.connection("mssql", :test) ==
+               ~s|DATABASE_URL="ecto://sa:some!Password@localhost:1433/test_prod"|
+
+      assert Ecto.connection("sqlite3", :test) == ~s|DATABASE_PATH="/app/data/test_prod.db"|
+      assert Ecto.credentials("sqlite3") == nil
     end
 
     test "reads the adapter off the project" do

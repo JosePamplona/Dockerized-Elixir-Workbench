@@ -79,6 +79,22 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   before it went (`test/support/compose_golden.sh`), are what the
   templates are tested against. The one cost: a bake is a run of the
   package in the toolchain image, seconds, where it was a `sed`.
+- **The compose serves every adapter ecto offers.** Step 4 of
+  `scripts/PLAN.md`. Ecto declares its engine as the service it needs —
+  `postgres`, `mysql`, `mssql`, or `sqlite` for a place to keep the
+  file — and the compose runs the server as `database` with a
+  healthcheck of its own: MySQL pinged over TCP, since its image's init
+  answers on the socket before the real server listens (the same trap
+  `pg_isready -h` avoids); SQL Server through `sqlcmd`, with a one-shot
+  `database_init` in the release deployments because its image creates
+  no database. Each is configured to phx.new's own dev credentials, so
+  the project's configuration stays untouched, and the release's
+  `DATABASE_URL` — written by ecto's installer and by `new` off one
+  table now — matches; `new --database mysql` used to get a Postgres
+  URL. On SQLite the production deployment mounts a `data` volume,
+  chowns it for the release's `nobody` in a one-shot `data_init`, and
+  migrates as with a server; a scaled deployment refuses SQLite.
+  `MYSQL_IMAGE_VERSION` and `MSSQL_IMAGE_VERSION` join `config.conf`.
 - **pgadmin and k6 are cartridges.** Step 3 of `scripts/PLAN.md`: the
   first two cartridges that bring a container rather than Elixir code.
   **pgadmin** installs `pgadmin/servers.json` — the servers pgAdmin
@@ -168,6 +184,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **`up --deploy scaled` on a project without a database or clustering
+  wrote a compose Compose rejects.** The app anchor kept an
+  `environment:` with nothing under it but comments, and compose
+  requires a mapping. Found when every fixture was put through
+  `docker compose config`; the key is left out when nothing goes in it.
 - **`up --deploy prod` wrote a truncated compose for a project without a
   database.** The no-database cut removed the app's `depends_on`, which
   was the line the prod cut of the volumes ended on, so `sed` cut to the

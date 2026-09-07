@@ -36,9 +36,6 @@ x-app: &app
     dockerfile: Dockerfile
   env_file:
     - ./.env
-  environment:
-    # Overrides what .env declares: the pod's localhost database is gone,
-    # and the name every replica answers to is the shared network alias.
   networks:
     default:
       aliases:

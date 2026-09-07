@@ -25,7 +25,11 @@
 # the file — a live bug of `up --deploy prod` on a project without a
 # database), and the four scaled-*-nobalancer-* files ended with a blank
 # line that `sed '/^configs:/,$d'` left behind. The templates' output is
-# the fixture in both cases.
+# the fixture in both cases. A third correction came with step 4: the
+# two scaled-nodb-*-nocluster files carried an `environment:` with
+# nothing under it but comments, which compose rejects ("must be a
+# mapping") — `up --deploy scaled` on a project without a database or
+# clustering could not have started; the templates leave the key out.
 # shellcheck disable=SC2034  # the variables below feed the functions eval'd from wb.sh
 set -euo pipefail
 

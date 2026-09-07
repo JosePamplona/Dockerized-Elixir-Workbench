@@ -36,15 +36,18 @@ with `phx.new`'s version of the file beside it.
 
 On top of the delta, the one thing `phx.new` leaves to the environment:
 `DATABASE_URL` (or `DATABASE_PATH` for SQLite) in `.env` and
-`.env.sample`, with the workspace's own Postgres — `localhost:5432`
-inside the pod, `postgres:postgres` — as `workbench.setup` writes it
-for a project born with Ecto.
+`.env.sample`, pointing at the workspace's own server — on `localhost`
+inside the pod, with the dev credentials `phx.new` configures the
+project with (`postgres:postgres`, `root` with no password, `sa` with
+`some!Password`) — or at `/app/data/<app>_prod.db`, the volume the
+release's compose mounts for the SQLite file. The same line
+`workbench.setup` writes for a project born with Ecto.
 
 ## Options
 
 | Option | Default | Values |
 | --- | --- | --- |
-| `--database` | `postgres` | `postgres` (the workspace's compose provides one), `mysql`, `mssql` (no service in the compose: point `DATABASE_URL` at yours), `sqlite3` (a file, no service) |
+| `--database` | `postgres` | `postgres`, `mysql`, `mssql` — the workspace's compose provides the server, configured with `phx.new`'s dev credentials — or `sqlite3`, a file, with a volume for it in a release |
 | `--binary-id` | off | `binary_id` as the primary key type of generated schemas — `phx.new --binary-id`, the `generators` entry of `config.exs` |
 
 Both are `phx.new` flags it accepts without Ecto and only Ecto reads:
@@ -60,12 +63,15 @@ The workspace's `docker-compose.yml` was baked for the project as it
 was, without a database service. Two commands finish the job:
 
 ```sh
-./wb.sh bake     # bakes docker-compose.yml again from the seed, with the Postgres (a commit)
+./wb.sh bake     # bakes docker-compose.yml again, with the server the adapter needs (a commit)
 ./wb.sh setup    # creates and seeds the database
 ```
 
 `wb.sh add ecto` says so when it is done. With `--database sqlite3`
-there is no service to add and `bake` leaves the compose without one.
+there is no server: the dev compose stays as it was (the file lives
+beside the source), and the prod compose gets a `data` volume for it
+and the migrator; the scaled deployment refuses SQLite, since replicas
+cannot share a file.
 
 ## Idempotency
 

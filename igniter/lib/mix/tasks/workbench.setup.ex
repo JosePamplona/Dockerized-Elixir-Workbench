@@ -22,7 +22,12 @@ defmodule Mix.Tasks.Workbench.Setup do
   * generates `.env` and `.env.sample` — the workspace compose declares
     `env_file: ./.env`, so a missing file aborts `docker compose` before
     boot, and `PORT` / `DATABASE_URL` / `SECRET_KEY_BASE` are what the
-    production release reads at runtime
+    production release reads at runtime. The database line is the one
+    the ecto cartridge writes after an insert
+    (`WorkbenchIgniter.Features.Ecto.connection/2`): the workspace's
+    server for the adapter the project was generated with — Postgres,
+    MySQL or MSSQL, with phx.new's own credentials, on `localhost`
+    inside the pod — or the path of the SQLite file on its volume
   * adds `.env` to `.gitignore` — that file carries the generated secret
 
   Everything the retired opinionated setup used to do is deliberately
@@ -44,10 +49,8 @@ defmodule Mix.Tasks.Workbench.Setup do
   * `--internal-port` - Port the server binds inside the container
     (`PORT` in `.env`); must match the workspace compose mapping.
     Default: `4000`.
-  * `--db-host`, `--db-port`, `--db-user`, `--db-pass` - Database
-    connection data for the `DATABASE_URL` the release reads.
   * `--no-ecto` - The project was generated without Ecto: `.env` carries
-    no `DATABASE_URL`.
+    no database line.
   """
 
   @impl Igniter.Mix.Task
@@ -58,18 +61,10 @@ defmodule Mix.Tasks.Workbench.Setup do
       composes: [],
       schema: [
         internal_port: :string,
-        db_host: :string,
-        db_port: :string,
-        db_user: :string,
-        db_pass: :string,
         ecto: :boolean
       ],
       defaults: [
         internal_port: "4000",
-        db_host: "localhost",
-        db_port: "5432",
-        db_user: "postgres",
-        db_pass: "postgres",
         ecto: true
       ]
     }
@@ -107,6 +102,10 @@ defmodule Mix.Tasks.Workbench.Setup do
   # --- .env / .env.sample -----------------------------------------------------
 
   defp create_env_files(igniter, app_name, opts) do
+    # The adapter the project was generated with, read off its driver —
+    # the same reading the ecto cartridge and the status make.
+    {facts, igniter} = WorkbenchIgniter.PhxDelta.facts(igniter)
+
     # The template's feature sections read their flags through
     # `assigns[...]`, so a vanilla project simply passes none of them.
     env_assigns = [
@@ -115,7 +114,7 @@ defmodule Mix.Tasks.Workbench.Setup do
       # port only lives in the workspace compose port mapping.
       port: opts[:internal_port],
       ecto: opts[:ecto],
-      database_url: database_url(app_name, opts),
+      connection: WorkbenchIgniter.Features.Ecto.connection(facts.database, app_name),
       secret_key_base: WorkbenchIgniter.secret_key_base()
     ]
 
@@ -137,12 +136,5 @@ defmodule Mix.Tasks.Workbench.Setup do
       env_assigns,
       on_exists: :skip
     )
-  end
-
-  defp database_url(app_name, opts) do
-    credentials = "#{opts[:db_user]}:#{opts[:db_pass]}"
-    host = "#{opts[:db_host]}:#{opts[:db_port]}"
-
-    "ecto://#{credentials}@#{host}/#{app_name}_prod"
   end
 end

@@ -585,6 +585,8 @@
       --postgres-version "$POSTGRES_IMAGE_VERSION" \
       --pgadmin-version "$PGADMIN_IMAGE_VERSION" \
       --nginx-version "$NGINX_IMAGE_VERSION" \
+      --mysql-version "${MYSQL_IMAGE_VERSION:-8}" \
+      --mssql-version "${MSSQL_IMAGE_VERSION:-2022-latest}" \
       --k6-version "${K6_IMAGE_VERSION:-latest}" \
       --out "/app/src/$3.baking" > /dev/null
     then mv "$file_path.baking" "$file_path"
@@ -1354,6 +1356,8 @@
       --internal-port "$APP_INTERNAL_PORT" \
       --postgres-version "$POSTGRES_IMAGE_VERSION" \
       --nginx-version "$NGINX_IMAGE_VERSION" \
+      --mysql-version "${MYSQL_IMAGE_VERSION:-8}" \
+      --mssql-version "${MSSQL_IMAGE_VERSION:-2022-latest}" \
       --k6-version "${K6_IMAGE_VERSION:-latest}" \
       --replicas "$REPLICAS" \
       --replica-ports "$replica_ports" \

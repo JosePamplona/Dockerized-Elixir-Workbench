@@ -161,5 +161,12 @@ mechanism without changing a single file it writes.
    list is in the status for when a screen wants it.
 4. `mysql` and `mssql` services, with their healthchecks; the ecto
    cartridge's table stops saying "no service".
+   *Landed on 2026-09-07*, SQLite in a release with it: ecto declares
+   the engine (`postgres`, `mysql`, `mssql`, `sqlite`), the `database`
+   service keeps its name and takes its engine, `database_init` creates
+   SQL Server's database in the release deployments, `data_init` chowns
+   SQLite's volume for `nobody`, and scaled refuses SQLite. One table in
+   the ecto module writes the release's connection for both its
+   installer and `new`.
 5. Monitoring.
 6. Umbrella, on its own plan.

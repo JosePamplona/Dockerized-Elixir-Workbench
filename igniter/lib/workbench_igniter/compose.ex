@@ -9,9 +9,14 @@ defmodule WorkbenchIgniter.Compose do
   what the script knows and the templates cannot: the project's name,
   the image and the Dockerfile, the host ports (chosen on the host, so
   handed over), the service versions, whether the clustering cartridge
-  is in — and the **services**: the containers the project's cartridges
-  ask the workspace for, by name (`postgres`, `pgadmin`, `k6`), declared by
-  each cartridge's `services/1` and gathered by `Features.services/1`.
+  is in — and the **services**: what the project's cartridges ask the
+  workspace for, by name — a database (`postgres`, `mysql`, `mssql`,
+  or `sqlite`: no server, a volume for the file in a release), `pgadmin`,
+  `k6` — declared by each cartridge's `services/1` and gathered by
+  `Features.services/1`. One database at most; the servers take the
+  credentials phx.new configures the project with
+  (`WorkbenchIgniter.Features.Ecto.credentials/1`), so the compose and
+  the project agree without a line of configuration.
   They arrive as `--services`, or, when the flag is absent, are read off
   the project the task runs in. `render/1` writes the YAML the two
   templates under `priv/compose/` describe; `mix workbench.compose` is
@@ -43,6 +48,8 @@ defmodule WorkbenchIgniter.Compose do
             pgadmin_version: String.t(),
             nginx_version: String.t(),
             k6_version: String.t(),
+            mysql_version: String.t(),
+            mssql_version: String.t(),
             services: [String.t()],
             clustering: boolean(),
             replicas: pos_integer(),
@@ -64,6 +71,8 @@ defmodule WorkbenchIgniter.Compose do
               pgadmin_version: "latest",
               nginx_version: "alpine",
               k6_version: "latest",
+              mysql_version: "8",
+              mssql_version: "2022-latest",
               services: [],
               clustering: false,
               replicas: 4,
@@ -96,6 +105,8 @@ defmodule WorkbenchIgniter.Compose do
     pgadmin_version: :string,
     nginx_version: :string,
     k6_version: :string,
+    mysql_version: :string,
+    mssql_version: :string,
     services: :string,
     clustering: :boolean,
     replicas: :integer,
@@ -193,67 +204,110 @@ defmodule WorkbenchIgniter.Compose do
 
   defp replica_ports(_deploy, _opts), do: {:ok, []}
 
-  # What the deployment's template reads and has no default for.
+  @databases ~w(postgres mysql mssql sqlite)
+
+  # What the deployment's template reads and has no default for, and
+  # the two shapes no file can take: two databases, or replicas on a file.
   defp check(%Plan{} = plan) do
     required =
       [:app_name, :image, :dockerfile] ++
         if(plan.deploy == :scaled, do: [], else: [:app_port, :uid, :gid]) ++
         if(plan.deploy != :scaled and "pgadmin" in plan.services, do: [:pgadmin_port], else: [])
 
-    case Enum.filter(required, &is_nil(Map.get(plan, &1))) do
-      [] -> {:ok, plan}
-      missing -> {:error, "missing: " <> Enum.map_join(missing, ", ", &"--#{flag(&1)}")}
+    missing = Enum.filter(required, &is_nil(Map.get(plan, &1)))
+    databases = Enum.filter(plan.services, &(&1 in @databases))
+
+    cond do
+      missing != [] ->
+        {:error, "missing: " <> Enum.map_join(missing, ", ", &"--#{flag(&1)}")}
+
+      length(databases) > 1 ->
+        {:error, "one database at most, got " <> Enum.join(databases, " and ")}
+
+      plan.deploy == :scaled and "sqlite" in databases ->
+        {:error, "a scaled deployment cannot run on SQLite: the replicas cannot share a file"}
+
+      true ->
+        {:ok, plan}
     end
   end
 
   defp flag(key), do: key |> Atom.to_string() |> String.replace("_", "-")
 
+  # The database the plan carries, as the templates read it: the engine,
+  # whether it is a server (a container with a healthcheck) or the file,
+  # and the credentials the server is configured with.
+  defp database(%Plan{services: services}) do
+    engine = Enum.find(services, &(&1 in @databases))
+    server = engine in ~w(postgres mysql mssql)
+    credentials = if server, do: WorkbenchIgniter.Features.Ecto.credentials(engine), else: nil
+
+    [
+      engine: engine,
+      server: server,
+      sqlite: engine == "sqlite",
+      db_user: credentials && credentials.user,
+      db_password: credentials && credentials.password
+    ]
+  end
+
   @doc "The compose file the plan describes, as text."
   @spec render(Plan.t()) :: String.t()
   def render(%Plan{deploy: :scaled} = plan) do
     scaled(
-      app_name: plan.app_name,
-      image: plan.image,
-      dockerfile: plan.dockerfile,
-      internal_port: plan.internal_port,
-      postgres_version: plan.postgres_version,
-      nginx_version: plan.nginx_version,
-      k6_version: plan.k6_version,
-      database: "postgres" in plan.services,
-      k6: "k6" in plan.services,
-      clustering: plan.clustering,
-      replicas: Enum.with_index(plan.replica_ports, fn port, i -> {i + 1, port} end),
-      balancer: plan.balancer_port != nil,
-      balancer_port: plan.balancer_port
+      [
+        app_name: plan.app_name,
+        image: plan.image,
+        dockerfile: plan.dockerfile,
+        internal_port: plan.internal_port,
+        postgres_version: plan.postgres_version,
+        nginx_version: plan.nginx_version,
+        k6_version: plan.k6_version,
+        mysql_version: plan.mysql_version,
+        mssql_version: plan.mssql_version,
+        k6: "k6" in plan.services,
+        clustering: plan.clustering,
+        replicas: Enum.with_index(plan.replica_ports, fn port, i -> {i + 1, port} end),
+        balancer: plan.balancer_port != nil,
+        balancer_port: plan.balancer_port
+      ] ++ database(plan)
     )
   end
 
   def render(%Plan{deploy: deploy} = plan) do
     dev = deploy == :dev
-    postgres = "postgres" in plan.services
+    database = database(plan)
+    server = database[:server]
 
     pod(
-      app_name: plan.app_name,
-      image: plan.image,
-      dockerfile: plan.dockerfile,
-      uid: plan.uid,
-      gid: plan.gid,
-      app_port: plan.app_port,
-      internal_port: plan.internal_port,
-      pgadmin_port: plan.pgadmin_port,
-      pgadmin_internal_port: plan.pgadmin_internal_port,
-      postgres_version: plan.postgres_version,
-      pgadmin_version: plan.pgadmin_version,
-      k6_version: plan.k6_version,
-      postgres: postgres,
-      pgadmin: "pgadmin" in plan.services,
-      k6: "k6" in plan.services,
-      dev: dev,
-      # The release migrates as a deployment step, before the app; the
-      # dev image migrates itself on boot, so its file has no migrator.
-      migrate: not dev and postgres,
-      app_waits_for: if(dev, do: "database", else: "migrate"),
-      app_waits_until: if(dev, do: "service_healthy", else: "service_completed_successfully")
+      [
+        app_name: plan.app_name,
+        image: plan.image,
+        dockerfile: plan.dockerfile,
+        uid: plan.uid,
+        gid: plan.gid,
+        app_port: plan.app_port,
+        internal_port: plan.internal_port,
+        pgadmin_port: plan.pgadmin_port,
+        pgadmin_internal_port: plan.pgadmin_internal_port,
+        postgres_version: plan.postgres_version,
+        pgadmin_version: plan.pgadmin_version,
+        k6_version: plan.k6_version,
+        mysql_version: plan.mysql_version,
+        mssql_version: plan.mssql_version,
+        postgres: database[:engine] == "postgres",
+        pgadmin: "pgadmin" in plan.services,
+        k6: "k6" in plan.services,
+        dev: dev,
+        # The release migrates as a deployment step, before the app — on a
+        # server or on the SQLite file; the dev image migrates itself on
+        # boot, so its file has no migrator. The app waits for the migrator
+        # in a release, and for the server in dev; for nothing on a file.
+        migrate: not dev and (server or database[:sqlite]),
+        app_waits: if(dev, do: server, else: server or database[:sqlite]),
+        app_waits_for: if(dev, do: "database", else: "migrate"),
+        app_waits_until: if(dev, do: "service_healthy", else: "service_completed_successfully")
+      ] ++ database
     )
   end
 end

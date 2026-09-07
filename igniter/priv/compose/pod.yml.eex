@@ -77,7 +77,11 @@ services:
       # written through to the host, and nothing has to be told where
       # they went. 'delete' drops them with the project.
       - build:/app/src/_build
-      - deps:/app/src/deps<% end %><%= if @postgres do %>
+      - deps:/app/src/deps<% end %><%= if @sqlite and not @dev do %>
+    volumes:
+      # The SQLite file, on a volume that outlives the container: the
+      # release opens it where DATABASE_PATH (.env) says, /app/data.
+      - data:/app/data<% end %><%= if @app_waits do %>
     depends_on:
       <%= @app_waits_for %>:
         condition: <%= @app_waits_until %><% end %>
@@ -106,11 +110,47 @@ services:
     command: /app/bin/migrate
     network_mode: "service:network"
     env_file:
-      - ./.env
+      - ./.env<%= if @sqlite do %>
+    volumes:
+      - data:/app/data
+    depends_on:
+      data_init:
+        condition: service_completed_successfully<% end %><%= if @engine == "mssql" do %>
+    depends_on:
+      database_init:
+        condition: service_completed_successfully<% end %><%= if @engine in ["postgres", "mysql"] do %>
+    depends_on:
+      database:
+        condition: service_healthy<% end %>
+<%= if @engine == "mssql" do %>
+  # The creation, before the migration: bin/migrate runs the migrations
+  # and creates no database, and this image — unlike the postgres and
+  # mysql ones — has no variable that creates one at its first init.
+  # One-shot, on the same image, run to completion once the server is
+  # healthy; the migrator waits for it. The dev compose has no such
+  # service: 'mix setup' creates the database on its own.
+  database_init:
+    image: mcr.microsoft.com/mssql/server:<%= @mssql_version %>
+    network_mode: "service:network"
+    command: ["/opt/mssql-tools18/bin/sqlcmd", "-C", "-S", "localhost", "-U", "sa", "-P", "some!Password", "-b", "-Q", "IF DB_ID('<%= @app_name %>_prod') IS NULL CREATE DATABASE [<%= @app_name %>_prod]"]
     depends_on:
       database:
         condition: service_healthy
-<% end %><%= if @postgres do %>
+<% end %><%= if @sqlite do %>
+  # A place for the file, before the migration: the release runs as
+  # nobody, and a named volume mounted where the image has no directory
+  # comes up owned by root. This one-shot, as root on the same image,
+  # hands /app/data to nobody once; the migrator waits for it, and the
+  # volume keeps the ownership from then on.
+  data_init:
+    image: <%= @image %>
+    build:
+      dockerfile: <%= @dockerfile %>
+    user: root
+    command: ["sh", "-c", "chown nobody /app/data"]
+    volumes:
+      - data:/app/data
+<% end %><% end %><%= if @engine == "postgres" do %>
   database:
     image: postgres:<%= @postgres_version %>
     network_mode: "service:network"
@@ -132,6 +172,52 @@ services:
       # fresh volume said healthy before the real server listened, and
       # the migrator's first connections were refused.
       test: pg_isready -q -h localhost -d postgres -U postgres
+      timeout: 45s
+      interval: 10s
+      retries: 10
+<% end %><%= if @engine == "mysql" do %>
+  database:
+    image: mysql:<%= @mysql_version %>
+    network_mode: "service:network"
+    environment:
+      # phx.new's own dev credentials for MySQL: root, no password.
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      # Created when the data directory is initialised, and only then,
+      # as POSTGRES_DB is: the production database the release
+      # deployments migrate into ('bin/migrate' runs the migrations, it
+      # does not create the database; 'mix ecto.create' does that for
+      # dev on its own).
+      MYSQL_DATABASE: <%= @app_name %>_prod
+    depends_on:
+      - network
+    healthcheck:
+      # 127.0.0.1 forces TCP: the image's init runs a temporary server
+      # that answers only on the unix socket, so with -h localhost a
+      # fresh volume said healthy before the real server listened.
+      test: mysqladmin ping -h 127.0.0.1 --silent
+      timeout: 45s
+      interval: 10s
+      retries: 10
+<% end %><%= if @engine == "mssql" do %>
+  database:
+    image: mcr.microsoft.com/mssql/server:<%= @mssql_version %>
+    network_mode: "service:network"
+    environment:
+      # Microsoft's licence, accepted by running the image at all.
+      ACCEPT_EULA: "Y"
+      # phx.new's own dev credentials for MSSQL.
+      MSSQL_SA_PASSWORD: some!Password
+    # The image declares no volume of its own, where the postgres and
+    # mysql ones keep their data on the one theirs declares: an
+    # anonymous one here, so a stop and a start keep the data as they do.
+    volumes:
+      - /var/opt/mssql
+    depends_on:
+      - network
+    healthcheck:
+      # mssql-tools18 is where the 2022 image ships sqlcmd; -C trusts
+      # the server's own certificate, -b fails the command on an error.
+      test: /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P some!Password -Q "SELECT 1" -b
       timeout: 45s
       interval: 10s
       retries: 10
@@ -177,6 +263,10 @@ services:
 volumes:
   build:
   deps:
+<% end %><%= if @sqlite and not @dev do %>
+volumes:
+  # The SQLite file of the release: 'delete' drops it with the project.
+  data:
 <% end %><%= if @pgadmin do %>
 configs:
   # The servers pgAdmin opens with: the pgadmin cartridge's file, the

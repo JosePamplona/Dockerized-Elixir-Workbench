@@ -8,7 +8,7 @@
 # without the balancer when --no-balancer is given; 'up --deploy scaled'
 # writes it again each time.
 
-name: <%= @app_name %>
+name: lorem_ipsum
 
 # Scaled deployment: the production replicas live on a regular bridge
 # network — one IP each — all answering to the `app` network alias, so
@@ -30,103 +30,96 @@ name: <%= @app_name %>
 # a valid deployment on its own, and DNS_CLUSTER_QUERY is left out.
 
 x-app: &app
-  image: <%= @image %>
+  image: lorem-ipsum:0.1.0-prod
   build:
     context: .
-    dockerfile: <%= @dockerfile %>
+    dockerfile: Dockerfile
   env_file:
-    - ./.env<%= if @clustering or @server do %>
+    - ./.env
   environment:
     # Overrides what .env declares: the pod's localhost database is gone,
-    # and the name every replica answers to is the shared network alias.<%= if @clustering do %>
-    DNS_CLUSTER_QUERY: app<% end %><%= if @server do %>
-    DATABASE_URL: ecto://<%= @db_user %>:<%= @db_password %>@database/<%= @app_name %>_prod<% end %><% end %>
+    # and the name every replica answers to is the shared network alias.
+    DNS_CLUSTER_QUERY: app
+    DATABASE_URL: ecto://sa:some!Password@database/lorem_ipsum_prod
   networks:
     default:
       aliases:
-        - app<%= if @server do %>
+        - app
   depends_on:
     migrate:
-      condition: service_completed_successfully<% end %>
+      condition: service_completed_successfully
 
-services:<%= for {n, port} <- @replicas do %>
-  app<%= n %>:
+services:
+  app1:
     <<: *app
     ports:
-      - <%= port %>:<%= @internal_port %>
-<% end %><%= if @balancer do %>
+      - 4001:4000
+
+  app2:
+    <<: *app
+    ports:
+      - 4002:4000
+
+  app3:
+    <<: *app
+    ports:
+      - 4003:4000
+
+  app4:
+    <<: *app
+    ports:
+      - 4004:4000
+
   # Single entry point in front of the replicas. They also publish one
   # host port each, so a specific node can still be addressed — which is
   # how cross-node behaviour is demonstrated.
   balancer:
-    image: nginx:<%= @nginx_version %>
+    image: nginx:alpine
     ports:
-      - <%= @balancer_port %>:80
-    depends_on:<%= for {n, _port} <- @replicas do %>
-      app<%= n %>:
-        condition: service_started<% end %>
+      - 4000:80
+    depends_on:
+      app1:
+        condition: service_started
+      app2:
+        condition: service_started
+      app3:
+        condition: service_started
+      app4:
+        condition: service_started
     configs:
       - source: balancer_conf
         target: /etc/nginx/conf.d/default.conf
-<% end %><%= if @server do %>
+
   # One-shot migration (rel/overlays/bin/migrate, from phx.gen.release),
-  # so the replicas do not race each other running it on boot. The<%= if @engine == "postgres" do %>
-  # database itself is created by the postgres image from POSTGRES_DB.<% end %><%= if @engine == "mysql" do %>
-  # database itself is created by the mysql image from MYSQL_DATABASE.<% end %><%= if @engine == "mssql" do %>
+  # so the replicas do not race each other running it on boot. The
   # database itself is created by database_init below: the mssql image
   # has no variable that creates one, so a one-shot does, once the
-  # server is healthy, and the migrator waits for it instead.<% end %>
+  # server is healthy, and the migrator waits for it instead.
   migrate:
-    image: <%= @image %>
+    image: lorem-ipsum:0.1.0-prod
     build:
       context: .
-      dockerfile: <%= @dockerfile %>
+      dockerfile: Dockerfile
     command: /app/bin/migrate
     env_file:
       - ./.env
     environment:
-      DATABASE_URL: ecto://<%= @db_user %>:<%= @db_password %>@database/<%= @app_name %>_prod
-    depends_on:<%= if @engine == "mssql" do %>
+      DATABASE_URL: ecto://sa:some!Password@database/lorem_ipsum_prod
+    depends_on:
       database_init:
         condition: service_completed_successfully
 
   database_init:
-    image: mcr.microsoft.com/mssql/server:<%= @mssql_version %>
-    command: ["/opt/mssql-tools18/bin/sqlcmd", "-C", "-S", "database", "-U", "sa", "-P", "some!Password", "-b", "-Q", "IF DB_ID('<%= @app_name %>_prod') IS NULL CREATE DATABASE [<%= @app_name %>_prod]"]
-    depends_on:<% end %>
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    command: ["/opt/mssql-tools18/bin/sqlcmd", "-C", "-S", "database", "-U", "sa", "-P", "some!Password", "-b", "-Q", "IF DB_ID('lorem_ipsum_prod') IS NULL CREATE DATABASE [lorem_ipsum_prod]"]
+    depends_on:
       database:
         condition: service_healthy
 
   # No `restart:`, as in the dev compose: the deployment is the unit,
-  # across a reboot too.<%= if @engine == "postgres" do %>
+  # across a reboot too.
   database:
-    image: postgres:<%= @postgres_version %>
-    environment:
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_USER: postgres
-      POSTGRES_DB: <%= @app_name %>_prod
-    healthcheck:
-      # -h forces TCP, as in the dev seed: the init's temporary server
-      # answers the unix socket before the real one listens.
-      test: pg_isready -q -h localhost -d <%= @app_name %>_prod -U postgres
-      timeout: 45s
-      interval: 10s
-      retries: 10<% end %><%= if @engine == "mysql" do %>
-  database:
-    image: mysql:<%= @mysql_version %>
-    environment:
-      # phx.new's own dev credentials for MySQL: root, no password.
-      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
-      MYSQL_DATABASE: <%= @app_name %>_prod
-    healthcheck:
-      # 127.0.0.1 forces TCP, as in the dev compose: the init's temporary
-      # server answers the unix socket before the real one listens.
-      test: mysqladmin ping -h 127.0.0.1 --silent
-      timeout: 45s
-      interval: 10s
-      retries: 10<% end %><%= if @engine == "mssql" do %>
-  database:
-    image: mcr.microsoft.com/mssql/server:<%= @mssql_version %>
+    image: mcr.microsoft.com/mssql/server:2022-latest
     environment:
       # Microsoft's licence, accepted by running the image at all.
       ACCEPT_EULA: "Y"
@@ -142,21 +135,8 @@ services:<%= for {n, port} <- @replicas do %>
       test: /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P some!Password -Q "SELECT 1" -b
       timeout: 45s
       interval: 10s
-      retries: 10<% end %>
-<% end %><%= if @k6 do %>
-  # A load tool, not a service of the deployment: k6 runs to completion,
-  # so it sits under a profile 'up' never starts — './wb.sh k6 [SCRIPT]
-  # --deploy scaled' runs it. On this network it aims at the balancer
-  # when there is one, and at the `app` alias otherwise — the name every
-  # replica answers to, so Docker's DNS spreads the users over them.
-  k6:
-    image: grafana/k6:<%= @k6_version %>
-    profiles: [tools]
-    environment:
-      BASE_URL: <%= if @balancer, do: "http://balancer", else: "http://app:#{@internal_port}" %>
-    volumes:
-      - ./k6:/scripts:ro
-<% end %><%= if @balancer do %>
+      retries: 10
+
 configs:
   # $$ escapes compose's own interpolation: nginx must see a single $.
   balancer_conf:
@@ -168,8 +148,11 @@ configs:
         ''      close;
       }
 
-      upstream replicas {<%= for {n, _port} <- @replicas do %>
-        server app<%= n %>:<%= @internal_port %>;<% end %>
+      upstream replicas {
+        server app1:4000;
+        server app2:4000;
+        server app3:4000;
+        server app4:4000;
       }
 
       server {
@@ -189,4 +172,3 @@ configs:
           add_header X-Served-By $$upstream_addr always;
         }
       }
-<% end %>

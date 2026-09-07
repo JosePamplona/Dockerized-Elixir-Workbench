@@ -39,6 +39,8 @@ There is no host ports configuration: each workspace gets the first available po
 | Variable | Type | Example | Description |
 | --: | :-- | :-- | :-- |
 | `POSTGRES_IMAGE_VERSION` | string | `"latest"` | _Postgres_ docker image baked into new workspaces.<br/>Available versions: <https://hub.docker.com/_/postgres/tags> |
+| `MYSQL_IMAGE_VERSION` | string | `"8"` | _MySQL_ docker image the compose runs for a project on `--database mysql`.<br/>Available versions: <https://hub.docker.com/_/mysql/tags> |
+| `MSSQL_IMAGE_VERSION` | string | `"2022-latest"` | _SQL Server_ docker image the compose runs for a project on `--database mssql` (amd64 only; the compose sets `ACCEPT_EULA`, so running it accepts Microsoft's licence).<br/>Available versions: <https://mcr.microsoft.com/en-us/artifact/mar/mssql/server/tags> |
 | `PGADMIN_IMAGE_VERSION` | string | `"latest"` | _PgAdmin_ docker image baked into new workspaces.<br/>Available versions: <https://hub.docker.com/r/dpage/pgadmin4/tags> |
 | `NGINX_IMAGE_VERSION` | string | `"alpine"` | _nginx_ docker image used as the load balancer of the scaled deployment (`up --deploy scaled`).<br/>Available versions: <https://hub.docker.com/_/nginx/tags> |
 | `K6_IMAGE_VERSION` | string | `"latest"` | _k6_ docker image the `k6` cartridge puts in the compose, run by `./wb.sh k6`.<br/>Available versions: <https://hub.docker.com/r/grafana/k6/tags> |

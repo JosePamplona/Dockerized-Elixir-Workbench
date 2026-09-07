@@ -54,7 +54,7 @@ defmodule WorkbenchIgniter.Features.EctoTest do
     assert files["mix.exs"] =~ ":ecto_sqlite3"
     refute files["mix.exs"] =~ ":postgrex"
     assert files["config/runtime.exs"] =~ ~s|System.get_env("DATABASE_PATH")|
-    assert files[".env"] =~ ~s|DATABASE_PATH="test_prod.db"|
+    assert files[".env"] =~ ~s|DATABASE_PATH="/app/data/test_prod.db"|
   end
 
   test "--binary-id: the generators entry, as phx.new --binary-id writes it" do

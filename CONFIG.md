@@ -20,7 +20,7 @@ The installer and the stack have to hold each other, and that pair decides the r
 | `WORKSPACE_PATH` | string | `"./_workspace"` | (`wb.sh` only) Directory where the project is generated, used as the container volume mount point. Relative paths resolve from the workbench directory; any absolute path works. The workbench itself stays permanently in its own directory. |
 | `PROJECT_NAME` | string | `"Lorem Ipsum"` | This is the full & main name of the project. It will be used by Phoenix in order to create a new project. It must be capitalized and separated by spaces. |
 | `PHX_NEW_VERSION` | string | `""` | The Phoenix installer to generate with. Empty resolves to the newest `phx_new` on hex that runs on the stack below; a version pins it. Never written back: the workspace's `Dockerfile.local` records what a creation actually used. |
-| `ELIXIR_VERSION` | string | `"1.17.3"` | Elixir version component from app Docker image to use.<br/>Available Versions: <https://hub.docker.com/r/hexpm/elixir/tags> |
+| `ELIXIR_VERSION` | string | `"1.18.4"` | Elixir version component from app Docker image to use, `1.18` or newer: since 1.18 Mix locks the build and deps directories, which the workbench relies on to compile the workspace from two sides (`stacks use` and `new` refuse an older one).<br/>Available Versions: <https://hub.docker.com/r/hexpm/elixir/tags> |
 | `ERLANG_VERSION` | string | `"27.1.1"` | Erlang version component from app Docker image to use.<br/>Available Versions: <https://hub.docker.com/r/hexpm/elixir/tags> |
 | `DEBIAN_VERSION` | string | `"buster-20240612-slim"` | Debian version component from app Docker image to use.<br/>Available Versions: <https://hub.docker.com/r/hexpm/elixir/tags> |
 

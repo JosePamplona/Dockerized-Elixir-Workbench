@@ -154,8 +154,10 @@ defmodule Console.Resident do
 
   # Here, when this container mounts this very workspace at /app/src;
   # else a container on the workspace's dev image, with the two mounts
-  # the project's mix.exs expects and the app's volumes over _build and
-  # deps, so nothing compiles through the bind mount there either.
+  # the project's mix.exs expects and, over _build and deps, the
+  # workbench's own build volume and the deps shared with the app — so
+  # nothing compiles through the bind mount there either, and nothing
+  # compiles into the app's build.
   defp command(ws) do
     dir = Workbench.dir()
     project = Workbench.project(ws)
@@ -165,11 +167,13 @@ defmodule Console.Resident do
     mix = ["do", "deps.get,", "deps.compile,", "workbench.serve"]
 
     if mounted_here?(ws, project) do
-      # The workspace as the app service sees it: /app/src, the volumes
-      # over its _build and deps (WORKSPACE_MOUNT, set by `./wb.sh
-      # console`). Mix keys its manifests on the source path, so from
-      # there what the app compiled is what the resident finds, and
-      # adds to; from the host path it would compile the project again.
+      # The workspace as the app service sees it: /app/src, with the
+      # workbench's build volume and the shared deps over its _build and
+      # deps (WORKSPACE_MOUNT, set by `./wb.sh console`). The same source
+      # path as the app, so a manifest reads the same either side; a
+      # build of its own, so the two BEAMs never compile into one
+      # _build — the resident compiles what an insert changed for
+      # itself, and the app does the same for itself on its next request.
       # The two variables are UNSET for this run — they are the
       # console's own, set in its image so its build lives under
       # /app/console, and inherited they would send the workspace's
@@ -195,7 +199,7 @@ defmodule Console.Resident do
          "-v",
          "#{dir}:/app/workbench:ro",
          "-v",
-         "#{project.name}_build:/app/src/_build",
+         "#{project.name}_workbench_build:/app/src/_build",
          "-v",
          "#{project.name}_deps:/app/src/deps",
          "-w",

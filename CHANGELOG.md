@@ -66,6 +66,26 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `Jobs.signal/2` calls `System.cmd/3` instead of `:os.cmd/1`. No check
   was relaxed and no line carries a disable directive.
 
+- **The workbench compiles into its own build.** Two BEAMs compiled the
+  workspace into one `_build`: the app service, and the console's
+  resident — with every `mix` the console ran in-process, and every
+  one-off `add` from the host, which ran as the compose's `app`. They
+  were kept apart by Mix's build lock alone, which exists since Elixir
+  1.18 and nothing required. Every run of the workbench now compiles
+  into `<project>_workbench_build`, a volume of its own labelled under
+  the project for `prune`, mounted over `_build` in the console's
+  container and in the one-off runs; the app's `build` volume is the
+  app's alone. `add` and `expand` from the host run on the workspace's
+  dev image directly, no longer as a compose one-off waiting for the
+  database they never used. The two sides share `deps/` — sources only,
+  and only `deps.get` writes there — so `stacks use` and `new` refuse
+  an Elixir below 1.18, where Mix locks that directory too. The price:
+  what an insert changes compiles twice, incrementally; a build's worth
+  of disk per workspace; the first `up` after `new` compiles the
+  project once more. `prune --build` and `delete` remove the new volume.
+  The resident stays, and `console/PLAN.md` says why `:erpc` does not
+  replace it.
+
 ### Fixed
 
 - **A box's doors never read their `when`.** `Cartridges.holds?/3`
@@ -78,6 +98,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **`psql_extras`'s tests ran on a project without Ecto** and had
   refused since the cartridge learned to require it; they run on a
   Phoenix project now.
+- **A box's runs are drawn on whole pixels.** The drawer sat wherever
+  `margin:auto` left it — `94vw` is seldom whole, so it landed at x.03 —
+  and a bitmap face such as Tamzen, drawn half a pixel off, is a blur.
+  The drawer's width, height and corner are now rounded to the pixel,
+  and a job's output rounds its leading too: 13px at 1.5 gave 19.5px
+  lines that took turns at 19 and 20.
 
 ## v0.11.0 - (2026-09-06)
 

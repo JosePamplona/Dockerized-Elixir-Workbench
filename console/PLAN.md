@@ -622,6 +622,36 @@ the button pressed, the new console on 4100 in 15 s bound to
 `test_75` and the board on `dolor_sit_amet_gold`; then back to
 `test_80`, 10 s, `awesome_virtus` and its 22 cartridges.
 
+## The resident stays, settled on 2026-09-06
+
+The section of 2026-09-02 retires the resident for `:erpc` on the dev
+node. It is not going to happen, and the reason it was written for is
+gone: the resident compiled the workspace from another source path
+through the bind mount, and the revision of 2026-09-04 put it in the
+console's container, at `/app/src`, on volumes. What `:erpc` would
+still buy — one BEAM less, `iex` on the app's node — costs a
+distributed dev node with a name and a cookie in the compose and the
+entrypoint, the console joining the workspace's network, the cookie
+shared, the OTP pinned once the console is a release, and a regression:
+with the app down, nothing could say what the project carries. The
+resident answers with the app down. Distributing dev to ask it a
+question is the wrong shape; the right one passes through the prod
+Dockerfile, and dirties the project with the workbench's environment.
+
+What was wrong, and is fixed, is narrower: two BEAMs compiling into one
+`_build` — the app service and the resident, and with it every `mix`
+the console runs in-process on the workspace. Since 2026-09-06 the
+workbench compiles into a volume of its own, `<project>_workbench_build`,
+mounted over `_build` in the console's container and in every one-off
+run of the workbench (`add` no longer runs as the compose's `app`); the
+app's `build` volume is the app's alone. Both sides share `deps/`:
+sources only, and Mix locks the deps directory since 1.18, which
+`stacks use` and `new` now require. The price is a second incremental
+compile of what an insert changed, a build's worth of disk per
+workspace, and the first `up` after `new` compiling the project once
+more. `:erpc` stays on the shelf for the terminal's `iex`, if ever, on
+its own merits.
+
 ## Open — one word, two things: *installer*
 
 `wb.sh installers` is the verb for the Phoenix generators: the stable

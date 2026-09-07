@@ -158,27 +158,36 @@
     APP_INTERNAL_PORT="4000"
     PGADMIN_INTERNAL_PORT="5050"
     SOURCE_CODE_VOLUME="$WORKSPACE_PATH:/app/src"
-    # Where Mix compiles: two named volumes the workspace's compose
-    # declares (build, deps — under the compose project's name), so a
-    # one-off run shares them with the app service and nothing compiles
-    # through the bind mount. They cover the two directories Mix looks
-    # for on its own, inside the source mount — Mix is told nothing, and
-    # neither is anything else that assumes where deps/ is (see the
-    # toolchain dockerfile).
-    BUILD_VOLUMES=(--volume "${ELIXIR_PROJECT_NAME}_build:/app/src/_build" --volume "${ELIXIR_PROJECT_NAME}_deps:/app/src/deps")
+    # Where Mix compiles. Two sides compile the workspace, and never
+    # into the same directory: the app service into the compose's
+    # `build` volume, and every run of the workbench — new, add, the
+    # reads, the console's resident — into a volume of its own,
+    # <project>_workbench_build. The app's build is written by the app
+    # alone, so no two BEAMs ever compile into one _build, whatever the
+    # stack's Mix does about locking. The two sides share deps/ (the
+    # compose's `deps` volume): sources only, since what compiles from
+    # them lands in each side's _build; only deps.get writes there, and
+    # Mix locks the deps directory since 1.18 (the floor below). Both
+    # volumes cover the directories Mix looks for on its own, inside the
+    # source mount — Mix is told nothing, and neither is anything else
+    # that assumes where deps/ is (see the toolchain dockerfile) — so
+    # nothing compiles through the bind mount. The one price: the first
+    # up after new compiles the project once more, into the app's own.
+    WORKBENCH_BUILD_VOLUME="${ELIXIR_PROJECT_NAME}_workbench_build"
+    BUILD_VOLUMES=(--volume "$WORKBENCH_BUILD_VOLUME:/app/src/_build" --volume "${ELIXIR_PROJECT_NAME}_deps:/app/src/deps")
     WORKBENCH_VOLUME="$WORKBENCH_PATH:/app/workbench:ro"
     # Where the workspace is on THIS side, when this side is the
     # toolchain. './wb.sh console' runs the console on the toolchain
     # image and mounts the workspace in it at /app/src — the path the
     # one-off containers and the app service mount it at — with the
-    # same two volumes over its _build and deps, and says so with these
-    # three. With them set (toolchain_here), the runs that need nothing
-    # but the toolchain — mix on the project, git that writes, the
-    # entrypoint's new and add — happen here instead of in a container
-    # of their own: same image, same mounts, same command, a container
-    # start less each; and a Mix that compiles from the same source
-    # path into the same volumes as the app, so it finds the app's
-    # build and adds to it instead of making its own. The path alone
+    # workbench's build volume and the shared deps over its _build and
+    # deps, and says so with these three. With them set
+    # (toolchain_here), the runs that need nothing but the toolchain —
+    # mix on the project, git that writes, the entrypoint's new and add
+    # — happen here instead of in a container of their own: same image,
+    # same mounts, same command, a container start less each; and a Mix
+    # that compiles from the same source path the app compiles from,
+    # into the workbench's own build. The path alone
     # does not decide: the mounts were made for one workspace and one
     # volume name, and config.conf may since name another — then the
     # mounts are not this workspace's, and the run goes to a container
@@ -358,6 +367,23 @@
   phx_new_release_status() {
     curl -s -I -o /dev/null -w '%{http_code}' \
       "https://hex.pm/api/packages/phx_new/releases/$1"
+  }
+
+  # require_stack_floor <ELIXIR_VERSION>
+    # The floor of the stack, whatever the installer asks for: Mix locks
+    # the build directory and the deps directory since Elixir 1.18. The
+    # workbench compiles the workspace from two sides that share deps/
+    # (each side has its own _build), and below 1.18 two deps.get at
+    # once — the app on boot, a workbench run after an insert — could
+    # write the same directory unguarded. Checked where the stack is
+    # chosen ('stacks use') and where it is first built ('new').
+  ELIXIR_FLOOR="1.18"
+  require_stack_floor() {
+    [ "$(printf '%s\n' "$ELIXIR_FLOOR" "$1" | sort -V | head -n 1)" == "$ELIXIR_FLOOR" ] || \
+      terminate \
+        "Elixir $1 is below the workbench's floor, $ELIXIR_FLOOR: since 1.18 Mix locks" \
+        "the build and deps directories, which the workbench relies on to compile the" \
+        "workspace from two sides. Pick a newer stack: ./$(basename "$0") stacks"
   }
 
   # stack_satisfies <REQUIREMENT>
@@ -584,13 +610,16 @@
   }
 
   # ensure_build_volumes
-    # Creates the workspace's two build volumes wearing the labels
-    # Compose puts on the volumes it creates itself. The one-off runs
-    # (new, add, the reads) reach them before the first 'up' does, and a
-    # volume born from 'docker run' carries no labels: Compose then finds
-    # a volume it cannot recognise as its own and warns about it on every
-    # command. Idempotent — on an existing volume 'docker volume create'
-    # is a no-op — so it is called wherever a one-off mounts them.
+    # Creates the workspace's three build volumes — the app's build, the
+    # shared deps, the workbench's build — wearing the labels Compose
+    # puts on the volumes it creates itself. The one-off runs (new, add,
+    # the reads) reach them before the first 'up' does, and a volume
+    # born from 'docker run' carries no labels: Compose then finds a
+    # volume it cannot recognise as its own and warns about it on every
+    # command. The workbench's build is not in the compose at all; the
+    # label puts it under the project for 'prune' to find. Idempotent —
+    # on an existing volume 'docker volume create' is a no-op — so it is
+    # called wherever a one-off mounts them.
     #
     # And the two directories they cover, when the workspace is there:
     # a mount point Docker has to create itself, inside a bind mount,
@@ -600,7 +629,7 @@
   ensure_build_volumes() {
     local volume
     [ -d "$WORKSPACE_PATH" ] && mkdir -p "$WORKSPACE_PATH/_build" "$WORKSPACE_PATH/deps"
-    for volume in build deps
+    for volume in build deps workbench_build
     do
       docker volume create \
         --label com.docker.compose.project="$ELIXIR_PROJECT_NAME" \
@@ -656,9 +685,9 @@
       --build)
         [ "$EXISTING_PROJECT" == true ] || terminate "There is no project."
         confirm \
-          "This action will remove ${ELIXIR_PROJECT_NAME}_build and ${ELIXIR_PROJECT_NAME}_deps:" \
-          "the next 'up' compiles the project from scratch." && \
-        docker volume rm "${ELIXIR_PROJECT_NAME}_build" "${ELIXIR_PROJECT_NAME}_deps" ;;
+          "This action will remove ${ELIXIR_PROJECT_NAME}_build, ${ELIXIR_PROJECT_NAME}_deps and $WORKBENCH_BUILD_VOLUME:" \
+          "the next 'up' compiles the project from scratch, and so does the next workbench run." && \
+        docker volume rm "${ELIXIR_PROJECT_NAME}_build" "${ELIXIR_PROJECT_NAME}_deps" "$WORKBENCH_BUILD_VOLUME" ;;
       "")
         # Every compose project that left something on the daemon, this
         # workspace's aside; of those, the workbench's own.
@@ -678,7 +707,7 @@
           networks="$networks $(docker network ls --filter "label=com.docker.compose.project=$p" --quiet)"
           volumes="$volumes $(docker volume ls --filter "label=com.docker.compose.project=$p" --quiet)"
           # The build volumes made before wb.sh labelled them carry the name alone.
-          for v in "${p}_build" "${p}_deps"; do
+          for v in "${p}_build" "${p}_deps" "${p}_workbench_build"; do
             docker volume inspect "$v" > /dev/null 2>&1 && volumes="$volumes $v"
           done
         done
@@ -775,17 +804,28 @@
     # container after it and this process: two at once — the console
     # reads on every page it serves — must not fight over one name.
   entrypoint_run() {
-    local tty_flags=("${DOCKER_TTY_FLAGS[@]}") compose_tty=""
-    if [ "$1" == "-T" ]; then tty_flags=(); compose_tty="-T"; shift; fi
+    local tty_flags=("${DOCKER_TTY_FLAGS[@]}")
+    if [ "$1" == "-T" ]; then tty_flags=(); shift; fi
     local name="$1"
     if toolchain_here; then
       entrypoint_here "$@"
     elif [ -f "$WORKSPACE_PATH/$COMPOSE_FILE" ]; then
-      workspace_compose run \
-        --rm $compose_tty \
+      # On the workspace's own dev image — the one its Dockerfile.local
+      # built, installer stamped — and never as the compose's `app`:
+      # `add` and `expand` compile the project and ask nothing of the
+      # database or the .env, and the app service would put them in the
+      # app's build. This used to be a compose one-off, which also waited
+      # for the database to be healthy.
+      ensure_build_volumes
+      docker run \
+        "${tty_flags[@]}" \
+        "${COLOR_ENV[@]/#/--env=}" \
         --name "${APP_NAME}_workbench_${name}_$$" \
+        --rm \
+        --volume "$SOURCE_CODE_VOLUME" \
         --volume "$WORKBENCH_VOLUME" \
-        app "${CONTAINER_ENTRYPOINT[@]}" "$@"
+        "${BUILD_VOLUMES[@]}" \
+        "$LOCAL_IMAGE" "${CONTAINER_ENTRYPOINT[@]}" "$@"
     else
       ensure_build_volumes
       docker run \
@@ -1898,6 +1938,7 @@ if [ $# -gt 0 ]; then
       esac
     done
     set -- "${PHX_NEW_ARGS[@]}"
+    require_stack_floor "$ELIXIR_VERSION"
     resolve_installer
 
     # Host ports for this workspace: first available ones.
@@ -2060,6 +2101,7 @@ if [ $# -gt 0 ]; then
         ELIXIR="${TAG%%-erlang-*}"
         ERLANG="${TAG#*-erlang-}"; ERLANG="${ERLANG%%-debian-*}"
         DEBIAN="${TAG##*-debian-}"
+        require_stack_floor "$ELIXIR"
         sed -i "s|^export ELIXIR_VERSION=.*|export ELIXIR_VERSION=\"$ELIXIR\"|" "$WORKBENCH_PATH/config.conf"
         sed -i "s|^export ERLANG_VERSION=.*|export ERLANG_VERSION=\"$ERLANG\"|" "$WORKBENCH_PATH/config.conf"
         sed -i "s|^export DEBIAN_VERSION=.*|export DEBIAN_VERSION=\"$DEBIAN\"|" "$WORKBENCH_PATH/config.conf"
@@ -2234,7 +2276,7 @@ if [ $# -gt 0 ]; then
           --volume workbench_console_build:/app/console/build \
           --volume workbench_console_deps:/app/console/deps \
           --volume "$WORKSPACE_PATH:/app/src" \
-          --volume "${ELIXIR_PROJECT_NAME}_build:/app/src/_build" \
+          --volume "$WORKBENCH_BUILD_VOLUME:/app/src/_build" \
           --volume "${ELIXIR_PROJECT_NAME}_deps:/app/src/deps" \
           --env WORKSPACE_MOUNT=/app/src \
           --env "WORKSPACE_MOUNT_PATH=$WORKSPACE_PATH" \
@@ -2552,6 +2594,8 @@ if [ $# -gt 0 ]; then
           --rmi local \
           --remove-orphans
       fi && \
+      # The workbench's build is not the compose's to remove.
+      { docker volume rm "$WORKBENCH_BUILD_VOLUME" > /dev/null 2>&1 || true; } && \
       wipe_workspace && \
       docker rmi "$LOCAL_IMAGE" 2>/dev/null; \
       rm -f "$SCRIPTS_DIR/$LOCAL_DOCKERFILE"

@@ -18,8 +18,10 @@ defmodule Mix.Tasks.Workbench.Status do
 
   ## Options
 
-  * `--json` - One JSON object, `{"app": ..., "phx": {...}, "cartridges": [...]}`
-    — `phx` is the project's shape in phx.new's terms: each capability,
+  * `--json` - One JSON object, `{"app": ..., "phx": {...}, "cartridges": [...], "services": [...]}`
+    — `services` are the compose services the installed cartridges ask
+    the workspace for (`postgres`, `pgadmin`), what `mix workbench.compose`
+    bakes in; `phx` is the project's shape in phx.new's terms: each capability,
     the database, the adapter, the flags that would generate it today,
     and `generator`: which `phx.new` made the project (`project`), where
     that is recorded (`source`: the workspace's `Dockerfile.local`, or
@@ -40,7 +42,7 @@ defmodule Mix.Tasks.Workbench.Status do
     # that reads the source.
     Application.ensure_all_started(:rewrite)
 
-    %{app: app, phx: phx, cartridges: cartridges} = answer = read()
+    %{app: app, phx: phx, cartridges: cartridges, services: services} = answer = read()
 
     if opts[:json] do
       IO.puts(Jason.encode!(answer, pretty: true))
@@ -49,7 +51,9 @@ defmodule Mix.Tasks.Workbench.Status do
 
       IO.puts("Cartridges of #{app}: #{length(installed)} installed, #{length(missing)} not.")
       IO.puts("As phx.new would generate it today: mix phx.new . #{Enum.join(phx.flags, " ")}")
-      IO.puts(generator_line(phx.generator) <> "\n")
+      IO.puts(generator_line(phx.generator))
+      IO.puts("Services: " <> if(services == [], do: "none", else: Enum.join(services, ", ")))
+      IO.puts("")
 
       for {title, list} <- [{"Installed", installed}, {"Not installed", missing}],
           list != [] do
@@ -59,13 +63,14 @@ defmodule Mix.Tasks.Workbench.Status do
   end
 
   @doc """
-  The status as one map — `app`, `phx`, `cartridges` — read off the
-  project's source through Igniter. What `--json` prints, and what the
-  resident (`mix workbench.serve`) answers.
+  The status as one map — `app`, `phx`, `cartridges`, `services` — read
+  off the project's source through Igniter. What `--json` prints, and
+  what the resident (`mix workbench.serve`) answers.
   """
   def read do
     app = Mix.Project.config()[:app]
     {cartridges, igniter} = Features.status(Igniter.new())
+    {services, igniter} = Features.services(igniter)
     {facts, igniter} = WorkbenchIgniter.PhxDelta.facts(igniter)
     {generator, _igniter} = WorkbenchIgniter.PhxDelta.generator(igniter)
 
@@ -74,7 +79,7 @@ defmodule Mix.Tasks.Workbench.Status do
       |> Map.put(:flags, WorkbenchIgniter.PhxDelta.flags(facts))
       |> Map.put(:generator, generator)
 
-    %{app: app, phx: phx, cartridges: cartridges}
+    %{app: app, phx: phx, cartridges: cartridges, services: services}
   end
 
   defp indent(text), do: text |> String.split("\n") |> Enum.map_join("\n", &("  " <> &1))

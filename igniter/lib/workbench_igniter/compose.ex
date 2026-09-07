@@ -8,11 +8,14 @@ defmodule WorkbenchIgniter.Compose do
   deployment a **bridge** network with one IP per replica. The rest is
   what the script knows and the templates cannot: the project's name,
   the image and the Dockerfile, the host ports (chosen on the host, so
-  handed over), the service versions, and two facts of the project —
-  whether it runs on a database server, whether the clustering cartridge
-  is in. `render/1` writes the YAML the two templates under
-  `priv/compose/` describe; `mix workbench.compose` is the shell around
-  it that `wb.sh bake` redirects into the workspace.
+  handed over), the service versions, whether the clustering cartridge
+  is in — and the **services**: the containers the project's cartridges
+  ask the workspace for, by name (`postgres`, `pgadmin`), declared by
+  each cartridge's `services/1` and gathered by `Features.services/1`.
+  They arrive as `--services`, or, when the flag is absent, are read off
+  the project the task runs in. `render/1` writes the YAML the two
+  templates under `priv/compose/` describe; `mix workbench.compose` is
+  the shell around it that `wb.sh bake` runs into the workspace.
 
   The templates carry the prose of the files they write: a compose the
   reader opens should say why it is shaped as it is. Their control tags
@@ -39,7 +42,7 @@ defmodule WorkbenchIgniter.Compose do
             postgres_version: String.t(),
             pgadmin_version: String.t(),
             nginx_version: String.t(),
-            database: boolean(),
+            services: [String.t()],
             clustering: boolean(),
             replicas: pos_integer(),
             replica_ports: [pos_integer()],
@@ -59,7 +62,7 @@ defmodule WorkbenchIgniter.Compose do
               postgres_version: "latest",
               pgadmin_version: "latest",
               nginx_version: "alpine",
-              database: true,
+              services: [],
               clustering: false,
               replicas: 4,
               replica_ports: [],
@@ -90,35 +93,70 @@ defmodule WorkbenchIgniter.Compose do
     postgres_version: :string,
     pgadmin_version: :string,
     nginx_version: :string,
-    database: :boolean,
+    services: :string,
     clustering: :boolean,
     replicas: :integer,
     replica_ports: :string,
     balancer_port: :integer,
-    balancer: :boolean
+    balancer: :boolean,
+    out: :string
   ]
 
-  @doc "The plan a `mix workbench.compose` argv describes, or why it does not."
-  @spec plan_from_argv([String.t()]) :: {:ok, Plan.t()} | {:error, String.t()}
-  def plan_from_argv(argv) do
+  @doc """
+  The plan a `mix workbench.compose` argv describes, or why it does not.
+
+  The services come from `--services` when it is there — names
+  separated by commas, `""` or `none` for no service at all — and from
+  `read_services` otherwise: by default the project the task runs in,
+  through `services/1`. `--out` is the task's, not the plan's, and is
+  accepted here so one argv serves both.
+  """
+  @spec plan_from_argv([String.t()], (-> [String.t()])) :: {:ok, Plan.t()} | {:error, String.t()}
+  def plan_from_argv(argv, read_services \\ &project_services/0) do
     case OptionParser.parse(argv, strict: @switches) do
-      {opts, [], []} -> build(opts)
+      {opts, [], []} -> build(opts, read_services)
       {_, _, [{flag, _} | _]} -> {:error, "unknown or malformed option #{flag}"}
       {_, [arg | _], _} -> {:error, "unexpected argument #{inspect(arg)}"}
     end
   end
 
-  defp build(opts) do
+  @doc """
+  The services the project asks for, off its installed cartridges
+  (`WorkbenchIgniter.Features.services/1`). Same shape as the status
+  readings: the igniter comes back with the files it read.
+  """
+  @spec services(Igniter.t()) :: {[String.t()], Igniter.t()}
+  def services(igniter), do: WorkbenchIgniter.Features.services(igniter)
+
+  # The project the task runs in, read as `workbench.status` reads it:
+  # a plain task, only the rewrite application that reads the source.
+  defp project_services do
+    Application.ensure_all_started(:rewrite)
+    {services, _igniter} = services(Igniter.new())
+    services
+  end
+
+  defp build(opts, read_services) do
     with {:ok, deploy} <- deploy(opts[:deploy]),
          {:ok, ports} <- replica_ports(deploy, opts) do
       plan =
-        struct(Plan, Keyword.drop(opts, [:deploy, :replica_ports, :balancer]))
+        struct(Plan, Keyword.drop(opts, [:deploy, :replica_ports, :balancer, :services, :out]))
         |> Map.put(:deploy, deploy)
         |> Map.put(:replica_ports, ports)
+        |> Map.put(:services, services_of(opts, read_services))
         # `--no-balancer` is the one way to leave it out; a port means it is in.
         |> Map.update!(:balancer_port, &if(opts[:balancer] == false, do: nil, else: &1))
 
       check(plan)
+    end
+  end
+
+  # Named on the command line, or asked of the project when they are not.
+  defp services_of(opts, read_services) do
+    case Keyword.fetch(opts, :services) do
+      {:ok, "none"} -> []
+      {:ok, list} -> list |> String.split(",", trim: true) |> Enum.map(&String.trim/1)
+      :error -> read_services.()
     end
   end
 
@@ -157,7 +195,7 @@ defmodule WorkbenchIgniter.Compose do
     required =
       [:app_name, :image, :dockerfile] ++
         if(plan.deploy == :scaled, do: [], else: [:app_port, :uid, :gid]) ++
-        if(plan.deploy != :scaled and plan.database, do: [:pgadmin_port], else: [])
+        if(plan.deploy != :scaled and "pgadmin" in plan.services, do: [:pgadmin_port], else: [])
 
     case Enum.filter(required, &is_nil(Map.get(plan, &1))) do
       [] -> {:ok, plan}
@@ -177,7 +215,7 @@ defmodule WorkbenchIgniter.Compose do
       internal_port: plan.internal_port,
       postgres_version: plan.postgres_version,
       nginx_version: plan.nginx_version,
-      database: plan.database,
+      database: "postgres" in plan.services,
       clustering: plan.clustering,
       replicas: Enum.with_index(plan.replica_ports, fn port, i -> {i + 1, port} end),
       balancer: plan.balancer_port != nil,
@@ -187,6 +225,7 @@ defmodule WorkbenchIgniter.Compose do
 
   def render(%Plan{deploy: deploy} = plan) do
     dev = deploy == :dev
+    postgres = "postgres" in plan.services
 
     pod(
       app_name: plan.app_name,
@@ -200,11 +239,12 @@ defmodule WorkbenchIgniter.Compose do
       pgadmin_internal_port: plan.pgadmin_internal_port,
       postgres_version: plan.postgres_version,
       pgadmin_version: plan.pgadmin_version,
-      database: plan.database,
+      postgres: postgres,
+      pgadmin: "pgadmin" in plan.services,
       dev: dev,
       # The release migrates as a deployment step, before the app; the
       # dev image migrates itself on boot, so its file has no migrator.
-      migrate: not dev and plan.database,
+      migrate: not dev and postgres,
       app_waits_for: if(dev, do: "database", else: "migrate"),
       app_waits_until: if(dev, do: "service_healthy", else: "service_completed_successfully")
     )

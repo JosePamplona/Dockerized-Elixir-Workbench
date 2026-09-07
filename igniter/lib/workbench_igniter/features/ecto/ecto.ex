@@ -66,6 +66,23 @@ defmodule WorkbenchIgniter.Features.Ecto do
   @impl true
   def installed?(igniter), do: dep_installed?(igniter, :ecto_sql)
 
+  # The adapter, as phx.new names it, read off the driver in the deps —
+  # the same reading the status makes of the project's shape; postgres
+  # when no other driver says otherwise.
+  @impl true
+  def state(igniter) do
+    {facts, igniter} = WorkbenchIgniter.PhxDelta.facts(igniter)
+    {%{database: facts.database}, igniter}
+  end
+
+  # A Postgres in the workspace, and pgAdmin beside it — pgAdmin rides
+  # with the database until it is a cartridge of its own (scripts/PLAN.md,
+  # step 3). MySQL and MSSQL get their services in step 4; SQLite is a
+  # file and needs none.
+  @impl true
+  def services(%{database: "postgres"}), do: ["postgres", "pgadmin"]
+  def services(_state), do: []
+
   @doc "Installer body, run by the mix task shell as its `igniter/1`."
   def install(igniter) do
     database = igniter.args.options[:database] || "postgres"

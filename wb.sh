@@ -559,15 +559,19 @@
     # Writes a compose file of the pod topology into the workspace —
     # the dev file with the dev toolchain image and dockerfile, the prod
     # file with the release's — off `mix workbench.compose` in the
-    # igniter package (scripts/PLAN.md), which renders it from the flags
-    # alone: this side keeps deciding the ports, the images and the two
-    # facts of the project it grep's, and hands them over. Written to a
-    # temporary first, so a task that fails leaves the file as it was.
+    # igniter package (scripts/PLAN.md), run on the project: this side
+    # decides the ports and the images and hands them over; which
+    # services the project asks for — a Postgres and its pgAdmin with
+    # ecto on postgres, none without — the task reads off the project's
+    # cartridges, each declaring its own. The task writes into the
+    # workspace itself (/app/src on its side, --out), since a mix run's
+    # stdout carries deps.get's lines too; to a temporary first, so a
+    # task that fails leaves the file as it was.
   bake_compose() {
     local image="$1" dockerfile="$2" file_path="$WORKSPACE_PATH/$3" deploy
     if [ "$dockerfile" == "$LOCAL_DOCKERFILE" ]; then deploy=dev; else deploy=prod; fi
 
-    if package_igniter workbench.compose \
+    if workspace_igniter workbench.compose \
       --deploy "$deploy" \
       --app-name "$ELIXIR_PROJECT_NAME" \
       --image "$image" \
@@ -581,17 +585,36 @@
       --postgres-version "$POSTGRES_IMAGE_VERSION" \
       --pgadmin-version "$PGADMIN_IMAGE_VERSION" \
       --nginx-version "$NGINX_IMAGE_VERSION" \
-      "$(database_flag)" > "$file_path.baking"
+      --out "/app/src/$3.baking" > /dev/null
     then mv "$file_path.baking" "$file_path"
     else rm -f "$file_path.baking"; return 1
     fi
   }
 
-  # database_flag
-    # `--database` or `--no-database` for workbench.compose, off the
-    # same question the pod's services hang on.
-  database_flag() {
-    if workspace_needs_database; then echo "--database"; else echo "--no-database"; fi
+  # compose_ports
+    # The workspace's published ports, read back off its dev compose —
+    # the file is where they live, so a bake moves nothing — and chosen
+    # fresh, the first free ones, only when the file has none yet.
+  compose_ports() {
+    APP_PORT=$(workspace_app_port)
+    PGADMIN_PORT=$(workspace_pgadmin_port)
+    [ -n "$APP_PORT" ]     || APP_PORT=$(first_free_port 4000)
+    [ -n "$PGADMIN_PORT" ] || PGADMIN_PORT=$(first_free_port 5050)
+  }
+
+  # compose_behind
+    # Whether the dev compose no longer says what the project asks for —
+    # a cartridge in or out that brings a service — told the only sure
+    # way: rendering it again beside the file and comparing. The file
+    # itself is not touched.
+  compose_behind() {
+    local check="$COMPOSE_FILE.check" behind=1
+    compose_ports
+    if bake_compose "$LOCAL_IMAGE" "$LOCAL_DOCKERFILE" "$check" && \
+       ! cmp -s "$WORKSPACE_PATH/$check" "$WORKSPACE_PATH/$COMPOSE_FILE"
+    then behind=0; fi
+    rm -f "$WORKSPACE_PATH/$check"
+    return $behind
   }
 
   # ensure_build_volumes
@@ -720,30 +743,15 @@
     esac
   }
 
-  # workspace_needs_database
-    # Whether the project runs on a database server: an Ecto repo in
-    # config.exs, and not the SQLite adapter (a file, no service).
-  workspace_needs_database() {
-    grep -q "ecto_repos" "$WORKSPACE_PATH/config/config.exs" 2>/dev/null && \
-    ! grep -q "ecto_sqlite3" "$WORKSPACE_PATH/$MIX_FILE" 2>/dev/null
+  # workspace_port <COMPOSE_FILE> <INTERNAL_PORT>
+    # The host port a compose file of the workspace publishes for a
+    # container port — nothing when the file, or the service, is not
+    # there. The two below read the dev file, where the ports live.
+  workspace_port() {
+    sed -n "s/^ *- \([0-9]*\):$2\$/\1/p" "$WORKSPACE_PATH/$1" | head -n 1
   }
-
-  # workspace_app_port
-    # Reads the application host port from the workspace's compose file.
-  workspace_app_port() {
-    sed -n "s/^ *- \([0-9]*\):$APP_INTERNAL_PORT\$/\1/p" \
-      "$WORKSPACE_PATH/$COMPOSE_FILE" | \
-    head -n 1
-  }
-
-  # workspace_pgadmin_port
-    # Reads the pgAdmin host port from the workspace's compose file
-    # (nothing on projects without Ecto, where the service is dropped).
-  workspace_pgadmin_port() {
-    sed -n "s/^ *- \([0-9]*\):$PGADMIN_INTERNAL_PORT\$/\1/p" \
-      "$WORKSPACE_PATH/$COMPOSE_FILE" | \
-    head -n 1
-  }
+  workspace_app_port()     { workspace_port "$COMPOSE_FILE" "$APP_INTERNAL_PORT"; }
+  workspace_pgadmin_port() { workspace_port "$COMPOSE_FILE" "$PGADMIN_INTERNAL_PORT"; }
 
   # Where the toolchain runs -------------------------------------------------
     # Four runners below need the toolchain and nothing else: mix on the
@@ -1248,7 +1256,9 @@
     # Dockerfile runs as nobody).
   bake_prod_compose() {
     APP_PORT=$(workspace_app_port)
-    PGADMIN_PORT=$(first_free_port 5050)
+    # Its own pgAdmin port, kept across bakes; the first free one the first time.
+    PGADMIN_PORT=$(workspace_port "$PROD_COMPOSE_FILE" "$PGADMIN_INTERNAL_PORT")
+    [ -n "$PGADMIN_PORT" ] || PGADMIN_PORT=$(first_free_port 5050)
     APP_VERSION=$(
       sed -n 's/^.*version: "\(.*\)".*/\1/p' "$WORKSPACE_PATH/$MIX_FILE" | \
       head -n 1
@@ -1335,7 +1345,7 @@
     # :ignore).
     if clustering_installed; then clustering_flag=--clustering; else clustering_flag=--no-clustering; fi
 
-    if package_igniter workbench.compose \
+    if workspace_igniter workbench.compose \
       --deploy scaled \
       --app-name "$ELIXIR_PROJECT_NAME" \
       --image "$APP_NAME:$APP_VERSION-prod" \
@@ -1347,7 +1357,7 @@
       --replica-ports "$replica_ports" \
       "${balancer_flag[@]}" \
       "$clustering_flag" \
-      "$(database_flag)" > "$file_path.baking"
+      --out "/app/src/$SCALED_COMPOSE_FILE.baking" > /dev/null
     then mv "$file_path.baking" "$file_path"
     else rm -f "$file_path.baking"; return 1
     fi
@@ -1570,9 +1580,9 @@
 
     print_command "bake"
     section_content \
-      "Bake the workspace's compose again from the seed, for the project" \
-      "as it is now — with the database and pgAdmin when it runs on a" \
-      "database server, without them when it does not (or on SQLite) —" \
+      "Bake the workspace's compose again, for the project as it is now" \
+      "— with the services its cartridges ask for: a Postgres and its" \
+      "pgAdmin with ecto on postgres, none without (or on SQLite) —" \
       "keeping its ports, as one commit. What 'add ecto' asks for next." \
       "The toolchain Dockerfile is baked again too when the seed moved," \
       "keeping the project's own Phoenix installer, and its image rebuilt." \
@@ -1947,10 +1957,9 @@ if [ $# -gt 0 ]; then
             fi
           done 3<<< "$PLAN"
 
-          if workspace_needs_database && \
-             ! grep -q "^  database:" "$WORKSPACE_PATH/$COMPOSE_FILE"; then
-            echo "The project now runs on a database and the compose has none:" \
-              "./$(basename "$0") bake bakes it in, and the next up creates it."
+          if compose_behind; then
+            echo "The compose is behind what the project asks for now:" \
+              "./$(basename "$0") bake bakes it again, and the next up brings it up."
           fi
         fi
 
@@ -2263,10 +2272,7 @@ if [ $# -gt 0 ]; then
       # has neither directory yet.
       ensure_build_volumes
       # The workspace keeps its ports; the compose is where they live.
-      APP_PORT=$(workspace_app_port)
-      PGADMIN_PORT=$(workspace_pgadmin_port)
-      [ -n "$APP_PORT" ]     || APP_PORT=$(first_free_port 4000)
-      [ -n "$PGADMIN_PORT" ] || PGADMIN_PORT=$(first_free_port 5050)
+      compose_ports
 
       # The toolchain Dockerfile too: the seed may have moved since this
       # project was born — where Mix compiles, what the image carries —
@@ -2290,9 +2296,7 @@ if [ $# -gt 0 ]; then
       bake_compose "$LOCAL_IMAGE" "$LOCAL_DOCKERFILE" "$COMPOSE_FILE" && \
       if workspace_dirty; then
         workspace_commit "Bake $COMPOSE_FILE" && \
-        if workspace_needs_database; then
-          echo "The compose now has the database: the next up creates it."
-        fi
+        echo "The compose says what the project asks for now: the next up brings it up."
       else
         echo "$COMPOSE_FILE is already what the project asks for: nothing to bake."
       fi

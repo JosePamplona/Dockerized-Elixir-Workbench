@@ -34,7 +34,7 @@ services:
     image: registry.k8s.io/pause:3.10
     ports:
       # Application port (host:container).
-      - <%= @app_port %>:<%= @internal_port %><%= if @database do %>
+      - <%= @app_port %>:<%= @internal_port %><%= if @postgres do %>
       # pgAdmin port. The database is not published: it is only
       # reachable from inside this workspace.
       - <%= @pgadmin_port %>:<%= @pgadmin_internal_port %><% end %>
@@ -77,7 +77,7 @@ services:
       # written through to the host, and nothing has to be told where
       # they went. 'delete' drops them with the project.
       - build:/app/src/_build
-      - deps:/app/src/deps<% end %><%= if @database do %>
+      - deps:/app/src/deps<% end %><%= if @postgres do %>
     depends_on:
       <%= @app_waits_for %>:
         condition: <%= @app_waits_until %><% end %>
@@ -110,7 +110,7 @@ services:
     depends_on:
       database:
         condition: service_healthy
-<% end %><%= if @database do %>
+<% end %><%= if @postgres do %>
   database:
     image: postgres:<%= @postgres_version %>
     network_mode: "service:network"
@@ -135,7 +135,7 @@ services:
       timeout: 45s
       interval: 10s
       retries: 10
-
+<% end %><%= if @pgadmin do %>
   pgadmin:
     image: dpage/pgadmin4:<%= @pgadmin_version %>
     network_mode: "service:network"

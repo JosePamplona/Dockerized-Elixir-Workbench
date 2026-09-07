@@ -130,6 +130,30 @@ defmodule WorkbenchIgniter.Features do
     end)
   end
 
+  @doc """
+  The compose services the project asks for: what every installed
+  cartridge declares (`services/1`, off its state), in catalog order,
+  each name once. What `mix workbench.compose` bakes into the
+  workspace's compose, and what `mix workbench.status` reports as
+  `services`. Returns the igniter too, as `status/1` does.
+  """
+  @spec services(Igniter.t()) :: {[String.t()], Igniter.t()}
+  def services(igniter) do
+    {lists, igniter} =
+      Enum.map_reduce(catalog(), igniter, fn feature, igniter ->
+        case feature.installed?(igniter) do
+          {true, igniter} ->
+            {state, igniter} = feature.state(igniter)
+            {feature.services(state), igniter}
+
+          {false, igniter} ->
+            {[], igniter}
+        end
+      end)
+
+    {lists |> List.flatten() |> Enum.uniq(), igniter}
+  end
+
   defp version(nil), do: nil
   defp version({version, date}), do: %{version: version, date: date}
 

@@ -136,6 +136,19 @@ mechanism without changing a single file it writes.
    `configs: pgadmin_servers` block in the no-database pod files.
 2. Services come from the cartridges; `status --json` lists them; ports
    are read back; the grep goes.
+   *Landed on 2026-09-06*: `services/1` on the manifest, `[]` by
+   default; ecto's `state/1` reports the adapter off `PhxDelta.facts/1`
+   and asks for `postgres` and `pgadmin` on postgres, nothing otherwise
+   (mysql and mssql used to get a Postgres they never used).
+   `Features.services/1` is the union over the installed cartridges;
+   `Status.read/0` carries it; `workbench.compose` reads it off the
+   project when `--services` is not given, and writes with `--out`
+   because a mix run's stdout is not clean. `wb.sh` runs the task on
+   the project (`workspace_igniter`), reads the prod file's pgAdmin
+   port back, and tells `add` the compose is behind by rendering and
+   comparing. The console still draws pgAdmin off the published ports;
+   drawing the service list is step 3's, with the first cartridge that
+   brings a service of its own.
 3. `pgadmin` and `k6` as cartridges, with the `k6` verb.
 4. `mysql` and `mssql` services, with their healthchecks; the ecto
    cartridge's table stops saying "no service".

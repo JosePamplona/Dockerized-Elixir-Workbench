@@ -6,15 +6,20 @@ defmodule Mix.Tasks.Workbench.Compose do
   @moduledoc """
   #{@shortdoc}
 
-      mix workbench.compose --deploy dev|prod|scaled [OPTIONS] > docker-compose.yml
+      mix workbench.compose --deploy dev|prod|scaled [OPTIONS] [--out FILE]
 
-  The YAML of one deployment, on standard output: `wb.sh bake` runs
-  this in the toolchain image and redirects it into the workspace. The
-  task holds no opinion of its own about the project: everything that
-  shapes the file arrives as an option — the host ports because they
-  are chosen on the host, the two facts of the project because the
-  script reads them today. `WorkbenchIgniter.Compose` renders the plan
-  the options make, off the templates under `priv/compose/`.
+  The YAML of one deployment: on standard output, or into `--out FILE`
+  — which is how `wb.sh bake` runs it, in the toolchain image with the
+  workspace mounted, since the `deps.get` and `deps.compile` before the
+  task write to standard output too. Everything that shapes the file
+  arrives as an option — the host ports because they are chosen on the
+  host, the images and versions because `config.conf` names them —
+  except the services, which the task asks the project for when
+  `--services` is not given: what the installed cartridges declare
+  (`WorkbenchIgniter.Features.services/1`). With `--services` the task
+  holds no opinion of its own, and a test can run it without a project.
+  `WorkbenchIgniter.Compose` renders the plan the options make, off the
+  templates under `priv/compose/`.
 
   ## Options
 
@@ -29,24 +34,32 @@ defmodule Mix.Tasks.Workbench.Compose do
     `--pgadmin-internal-port` (5050).
   * `--postgres-version V`, `--pgadmin-version V`, `--nginx-version V` -
     the service images' tags.
-  * `--database` / `--no-database` - whether the project runs on a
-    database server (on by default). Without one there is no database,
-    no pgAdmin and nothing to migrate.
+  * `--services LIST` - the containers the workspace runs beside the
+    app, by name, separated by commas: `postgres`, `pgadmin`. `""` or
+    `none` for no service at all. Absent, the project is asked. Without
+    `postgres` there is no database and nothing to migrate; without
+    `pgadmin`, no pgAdmin.
   * `--clustering` / `--no-clustering` - scaled: whether the release is
     distributed, which decides `DNS_CLUSTER_QUERY`.
   * `--replicas N`, `--replica-ports P1,P2,…` - scaled: how many, and
     the host port of each, in order.
   * `--balancer-port N` / `--no-balancer` - scaled: the entry point in
     front of the replicas, or none.
+  * `--out FILE` - write the file there instead of standard output.
   """
 
   alias WorkbenchIgniter.Compose
 
   @impl Mix.Task
   def run(argv) do
+    {opts, _, _} = OptionParser.parse(argv, switches: [out: :string])
+
     case Compose.plan_from_argv(argv) do
-      {:ok, plan} -> IO.write(Compose.render(plan))
+      {:ok, plan} -> write(Compose.render(plan), opts[:out])
       {:error, why} -> Mix.raise("workbench.compose: " <> why)
     end
   end
+
+  defp write(yaml, nil), do: IO.write(yaml)
+  defp write(yaml, path), do: File.write!(path, yaml)
 end

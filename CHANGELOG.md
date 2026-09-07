@@ -79,6 +79,23 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   before it went (`test/support/compose_golden.sh`), are what the
   templates are tested against. The one cost: a bake is a run of the
   package in the toolchain image, seconds, where it was a `sed`.
+- **The cartridges say which services the compose carries.** Step 2 of
+  `scripts/PLAN.md`. A cartridge's manifest gains `services/1`: the
+  compose services it needs, by name, given its state — ecto on
+  postgres asks for `postgres` and `pgadmin` (the latter rides along
+  until it is a cartridge of its own), any other adapter for none. The
+  status publishes the list (`status --json`'s `project.services`, the
+  resident's answer, a `Services:` line in the listing), and
+  `mix workbench.compose` reads it off the project when its `--services`
+  flag is not given — which is how `wb.sh` calls it now, on the project,
+  writing into the workspace with `--out`. The grep over `config.exs`
+  and `mix.exs` that decided the database is gone; so is the guess it
+  made for mysql and mssql, which got a Postgres they never used. The
+  published ports are read back off the file a bake rewrites — the prod
+  file's pgAdmin port too, which used to be chosen anew each time — and
+  `add` says the compose is behind by rendering it again and comparing,
+  not by grepping for a service.
+
 - **The console's LiveView is split by screen.** `ConsoleWeb.ConsoleLive`
   held every screen's state handling in one module of 1 500 lines. Each
   screen's state now lives under its name — `ConsoleWeb.ConsoleLive.Docker`,

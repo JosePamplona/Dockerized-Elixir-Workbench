@@ -7,3 +7,6 @@ erl_crash.dump
 # Disposable workspaces used for workbench validation runs.
 /_tests_workspace/
 /priv/plts/
+
+# ExUnit's @tag :tmp_dir scratch (compose_test writes --out files there).
+/tmp/

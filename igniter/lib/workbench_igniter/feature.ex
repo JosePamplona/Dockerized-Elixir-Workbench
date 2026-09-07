@@ -153,6 +153,16 @@ defmodule WorkbenchIgniter.Feature do
   """
   @callback console() :: keyword()
 
+  @doc """
+  The compose services the cartridge needs the workspace to run, by
+  name, given what the project carries of it (`state/1`): the workbench
+  bakes them into the workspace's compose (`mix workbench.compose`,
+  scripts/PLAN.md). The names the renderer knows today are `"postgres"`
+  and `"pgadmin"`. A cartridge that needs no container says nothing —
+  the default.
+  """
+  @callback services(state :: map()) :: [String.t()]
+
   defmacro __using__(_opts) do
     quote do
       @behaviour WorkbenchIgniter.Feature
@@ -195,7 +205,11 @@ defmodule WorkbenchIgniter.Feature do
       @impl WorkbenchIgniter.Feature
       def console, do: []
 
+      @impl WorkbenchIgniter.Feature
+      def services(_state), do: []
+
       defoverridable requires: 0,
+                     services: 1,
                      afterwards: 0,
                      console: 0,
                      pending?: 0,

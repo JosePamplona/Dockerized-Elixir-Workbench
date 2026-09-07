@@ -511,12 +511,12 @@ table.rows tr.new{animation:seat 1.2s ease-out}
    env, a compose — and there it is a line, not the log's grid: the grid
    was putting 12px of column gap after every key. */
 pre .ln{display:block}
-.ln:hover{background:rgba(255,255,255,.04)}
+.ln:hover{background:var(--term-tint)}
 .ln .t{color:var(--term-dim);font-variant-numeric:tabular-nums}
 .ln .s{color:var(--svc);width:72px;overflow:hidden;text-overflow:ellipsis}
 .ln.debug .m{color:var(--term-dim)}
-.ln.warn{border-left-color:var(--warn)}.ln.warn .m{color:#F0C87A}
-.ln.error{border-left-color:var(--bad);background:rgba(224,108,95,.08)}.ln.error .m{color:#F3A196}
+.ln.warn{border-left-color:var(--warn)}.ln.warn .m{color:var(--ansi-yellow)}
+.ln.error{border-left-color:var(--bad);background:rgba(224,108,95,.08)}.ln.error .m{color:var(--ansi-red)}
 .ln.cont .s,.ln.cont .t{visibility:hidden}
 .ln.hit .m mark{background:var(--accent);color:var(--accent-ink);padding:0 2px}
 .lines.no-ts .ln{grid-template-columns:auto minmax(0,1fr)}.lines.no-ts .t{display:none}
@@ -625,7 +625,7 @@ pre .ln{display:block}
 .job .ograb:hover::after,.job .ograb:focus-visible::after{opacity:.7}
 .job .ograb.dragging::after{opacity:1;top:1px;height:3px}
 .job .ograb:focus-visible{outline:none}
-.out .dim{color:var(--term-dim)}.out .add{color:#9BD99A}.out .upd{color:#E3B25C}.out .ok{color:#D4B27E;font-weight:500}.out .err{color:#F3A196}
+.out .dim{color:var(--term-dim)}.out .add{color:var(--ansi-green)}.out .upd{color:var(--ansi-yellow)}.out .ok{color:var(--accent);font-weight:500}.out .err{color:var(--ansi-red)}
 
 /* --- the box in hand (drawer) ----------------------------------------- */
 /* The box in hand sits in the middle of the room; the scrim is light
@@ -880,7 +880,7 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
 .git .row .k{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px;color:var(--muted)}
 .go.done{background:var(--surface);color:var(--ink);border:1px solid var(--ink);box-shadow:none}
 .log{font-family:var(--code-face,var(--mono));font-size:var(--code-size,12px);line-height:var(--code-leading,1.55);background:var(--term);color:var(--term-ink);border-radius:3px;padding:12px 14px;min-height:120px;max-height:260px;overflow:auto;white-space:pre-wrap;border:1px solid var(--term-line)}
-.log .dim{color:var(--term-dim)}.log .add{color:#9BD99A}.log .upd{color:#E3B25C}.log .ok{color:#D4B27E;font-weight:500}
+.log .dim{color:var(--term-dim)}.log .add{color:var(--ansi-green)}.log .upd{color:var(--ansi-yellow)}.log .ok{color:var(--accent);font-weight:500}
 /* What an empty window says is the window's, not the stylesheet's: the
    install screen and the cluster's probes each say what will land here. */
 .log:empty::before{content:attr(data-empty)}
@@ -923,28 +923,42 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
    console/elixir_color_theme.jsonc is One Dark: twelve rules meant for a
    dark editor. They go in here as they were written, on the house's own
    dark ground — the one the Logs screen already uses — instead of being
-   re-derived for paper, which is what made them read muddy.
+   re-derived for paper, which is what made them read muddy. On the light
+   ground the terminal is paper since 2026-09-07, and the twelve are One
+   Light's, the same author's pair, role for role
+   (assets/design/fuente-claro.html is where that was decided). The two
+   sets follow the ground the way tokens.css does — light on the root,
+   dark under the scheme and under the toggle.
    Every Makeup lexer emits these same classes, so a language added later
-   costs this block nothing. */
-.impl .src{--t-base:#abb2bf;--t-punct:#828997;--t-comment:#5c6370;--t-atom:#56b6c2;
-           --t-const:#61afef;--t-func:#60acea;--t-kw:#c678dd;--t-op:#d19a66;
-           --t-mod:#e5c07b;--t-str:#98c379;--t-interp:#e06c75;--t-regex:#be5046;
-           margin:0;overflow:auto;max-height:min(62vh,700px);background:var(--term);color:var(--t-base);
+   costs this block nothing. The twelve are properties of the root, so
+   the reader's own — set by hooks.js from the Interface tab, where a
+   VS Code jsonc pastes in and out, one palette a ground — reach every
+   `.src` at once: the Files sheet's, and the sample the tab shows. */
+:root{--t-base:#383a42;--t-punct:#696c77;--t-comment:#a0a1a7;--t-atom:#0184bc;
+      --t-const:#4078f2;--t-func:#4078f2;--t-kw:#a626a4;--t-op:#986801;
+      --t-mod:#c18401;--t-str:#50a14f;--t-interp:#e45649;--t-regex:#ca1243}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--t-base:#abb2bf;--t-punct:#828997;--t-comment:#5c6370;--t-atom:#56b6c2;
+      --t-const:#61afef;--t-func:#60acea;--t-kw:#c678dd;--t-op:#d19a66;
+      --t-mod:#e5c07b;--t-str:#98c379;--t-interp:#e06c75;--t-regex:#be5046}}
+:root[data-theme="dark"]{--t-base:#abb2bf;--t-punct:#828997;--t-comment:#5c6370;--t-atom:#56b6c2;
+      --t-const:#61afef;--t-func:#60acea;--t-kw:#c678dd;--t-op:#d19a66;
+      --t-mod:#e5c07b;--t-str:#98c379;--t-interp:#e06c75;--t-regex:#be5046}
+.impl .src{margin:0;overflow:auto;max-height:min(62vh,700px);background:var(--term);color:var(--t-base);
            border-top:1px solid var(--term-line);font-family:var(--file-face,var(--mono));font-size:var(--file-size,12.5px);line-height:var(--file-leading,1.6);padding:8px 0}
-.impl .src .n, .impl .src .nv, .impl .src .nb, .impl .src .nx{color:var(--t-base)}
-.impl .src .p{color:var(--t-punct)}
-.impl .src .c, .impl .src .c1, .impl .src .cm, .impl .src .cs, .impl .src .cp, .impl .src .gp{color:var(--t-comment)}
-.impl .src .ss, .impl .src .se, .impl .src .sc{color:var(--t-atom)}
-.impl .src .no, .impl .src .kc, .impl .src .bp, .impl .src .nn{color:var(--t-const)}
-.impl .src .nf, .impl .src .ne{color:var(--t-func)}
-.impl .src .k, .impl .src .kd, .impl .src .kn, .impl .src .kp, .impl .src .kr, .impl .src .kt{color:var(--t-kw)}
-.impl .src .o, .impl .src .ow, .impl .src .mi, .impl .src .mf, .impl .src .mo, .impl .src .mh, .impl .src .mb{color:var(--t-op)}
-.impl .src .nc, .impl .src .ni, .impl .src .nl, .impl .src .nt{color:var(--t-mod)}
-.impl .src .s, .impl .src .s1, .impl .src .s2, .impl .src .sb, .impl .src .sd, .impl .src .sh, .impl .src .sx{color:var(--t-str)}
-.impl .src .si, .impl .src .na, .impl .src .nd{color:var(--t-interp)}
-.impl .src .sr{color:var(--t-regex)}
-.impl .src .c, .impl .src .c1, .impl .src .cm{font-style:italic}
-.impl .src .err{color:var(--t-interp);text-decoration:underline wavy}
+.src .n, .src .nv, .src .nb, .src .nx{color:var(--t-base)}
+.src .p{color:var(--t-punct)}
+.src .c, .src .c1, .src .cm, .src .cs, .src .cp, .src .gp{color:var(--t-comment)}
+.src .ss, .src .se, .src .sc{color:var(--t-atom)}
+.src .no, .src .kc, .src .bp, .src .nn{color:var(--t-const)}
+.src .nf, .src .ne{color:var(--t-func)}
+.src .k, .src .kd, .src .kn, .src .kp, .src .kr, .src .kt{color:var(--t-kw)}
+.src .o, .src .ow, .src .mi, .src .mf, .src .mo, .src .mh, .src .mb{color:var(--t-op)}
+.src .nc, .src .ni, .src .nl, .src .nt{color:var(--t-mod)}
+.src .s, .src .s1, .src .s2, .src .sb, .src .sd, .src .sh, .src .sx{color:var(--t-str)}
+.src .si, .src .na, .src .nd{color:var(--t-interp)}
+.src .sr{color:var(--t-regex)}
+.src .c, .src .c1, .src .cm{font-style:italic}
+.src .err{color:var(--t-interp);text-decoration:underline wavy}
 /* A row carries both line numbers — a removal has no new one, an
    addition no old one — so a hunk can be followed on either side. */
 /* As wide as the longest line, never narrower than the window: a row's
@@ -971,14 +985,14 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
    line's green used to run all the way to the left edge, tinting numbers
    that are no part of the change. Now the change begins where its sign
    is, which is where it begins in the patch too. */
-.impl .dl .gut{flex:none;width:3.4em;padding-right:.8em;text-align:right;color:var(--term-dim);user-select:none;font-variant-numeric:tabular-nums;background:rgba(255,255,255,.05)}
+.impl .dl .gut{flex:none;width:3.4em;padding-right:.8em;text-align:right;color:var(--term-dim);user-select:none;font-variant-numeric:tabular-nums;background:var(--term-tint)}
 .impl .dl .sg{flex:none;width:1.6em;text-align:center;color:var(--term-dim);user-select:none}
 .impl .dl .cd{flex:none;padding-right:16px}
 .impl .dl.add{background:rgba(46,139,87,.20)}
 .impl .dl.add .sg{color:var(--good)}
 .impl .dl.del{background:rgba(192,57,43,.20)}
 .impl .dl.del .sg{color:var(--bad)}
-.impl .dl.hunk{color:var(--soft);background:rgba(255,255,255,.04)}
+.impl .dl.hunk{color:var(--soft);background:var(--term-tint)}
 .impl .dl.meta{color:var(--term-dim)}
 .impl .shot{margin:0;padding:16px;background:var(--term);display:flex;justify-content:center}
 .impl .shot svg, .impl .shot img{max-width:100%;max-height:420px;height:auto}
@@ -1060,7 +1074,25 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
 .ui .sample .dim{color:var(--term-dim)}
 .ui .sample b{font:inherit;font-weight:700;text-transform:none;letter-spacing:0;color:var(--term-ink)}
 .ui .sample.files{font-family:var(--file-face,var(--mono));font-size:var(--file-size,12.5px);line-height:var(--file-leading,1.5)}
-.ui .sample .add{color:#9BD99A}.ui .sample .del{color:#F3A196}
+.ui .sample .add{color:var(--ansi-green)}.ui .sample .del{color:var(--ansi-red)}
+/* The colours: twelve swatches, each the rule of the jsonc it stands
+   for, and a sample of source set in them — a `.src`, so it reads the
+   same properties the Files sheet does and changes as they do. Under
+   them a jsonc goes in and out: paste VS Code's, or read this one back. */
+.ui .sample.src{color:var(--t-base);font-family:var(--file-face,var(--mono));font-size:var(--file-size,12.5px);line-height:var(--file-leading,1.5)}
+.ui .swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:6px 14px;margin:2px 0 0}
+.ui .swatches label{display:inline-flex;gap:8px;align-items:center;font-family:var(--mono);font-size:12px;color:var(--ink);cursor:pointer}
+.ui .swatches input[type=color]{width:22px;height:22px;padding:0;border:1px solid var(--line);border-radius:2px;background:none;cursor:pointer}
+.ui .swatches input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+.ui .swatches input[type=color]::-webkit-color-swatch{border:0;border-radius:1px}
+.ui .swatches small{color:var(--muted)}
+/* This row is one taller than the others: swatches, sample, and the jsonc under them. */
+.ui .row.colours .glyph{grid-row:1/6}
+.ui .row .jsonc{grid-column:2;display:grid;gap:8px;margin-top:6px}
+.ui .jsonc textarea{width:100%;min-height:96px;resize:vertical;font-family:var(--mono);font-size:11.5px;line-height:1.45;padding:8px 10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;white-space:pre-wrap;overflow:auto}
+.ui .jsonc .acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ui .jsonc .word{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.ui .jsonc .word.bad{color:var(--bad)}
 .cfg .row select option.dim{color:var(--soft)}
 .cfg .row input[type=text],.cfg .row select{font-family:var(--mono);font-size:13px;padding:6px 8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;width:100%;max-width:520px}
 /* The stack field is a .fetch: the house's pair keeps the field's width,
@@ -1088,7 +1120,7 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
    it is given one, in the unit that is exactly one: 1lh. */
 .cfg pre.raw{white-space:normal}
 .cfg pre.raw .ln,.pdocs pre.env .ln{white-space:pre-wrap;min-height:1.5em;min-height:1lh}
-.cfg pre.raw .c{color:var(--term-dim)}.cfg pre.raw .k{color:#D4B27E}.cfg pre.raw .v{color:#9BD99A}
+.cfg pre.raw .c{color:var(--term-dim)}.cfg pre.raw .k{color:var(--accent)}.cfg pre.raw .v{color:var(--ansi-green)}
 @media (max-width:700px){.cfg .row{grid-template-columns:1fr}.cfg .row .help{grid-column:1}}
 
 /* --- the project's own documents --------------------------------------- */
@@ -1116,7 +1148,7 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
 .pdocs .booklet{flex:1;min-height:0;overflow:auto;padding:0 28px 60px;scrollbar-gutter:stable}
 .pdocs .booklet .toc{top:0}
 .pdocs pre.env{flex:1;min-height:0;font-family:var(--file-face,var(--mono));font-size:var(--file-size,12.5px);line-height:var(--file-leading,1.6);background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:14px 16px;overflow:auto;margin:0;white-space:normal}
-.pdocs pre.env .c{color:var(--term-dim)}.pdocs pre.env .k{color:#D4B27E}.pdocs pre.env .m{color:#F3A196}
+.pdocs pre.env .c{color:var(--term-dim)}.pdocs pre.env .k{color:var(--accent)}.pdocs pre.env .m{color:var(--ansi-red)}
 .pdocs>pre.env{margin-left:28px;margin-right:28px;margin-bottom:22px}
 .pdocs .nothing{padding:18px 28px;max-width:60ch}
 
@@ -1190,8 +1222,8 @@ header.band ::selection{background:color-mix(in srgb,var(--board-ink) 15%,transp
    for an error, blue underline for a link. Console.ANSI turns the escapes
    into these; the palette is the terminal ground's. */
 .ansi-b{font-weight:600}.ansi-d{color:var(--term-dim)}.ansi-u{text-decoration:underline}
-.ansi-fg-1,.ansi-fg-9{color:#F3A196}.ansi-fg-2,.ansi-fg-10{color:#9BD99A}.ansi-fg-3,.ansi-fg-11{color:#E3B25C}
-.ansi-fg-4,.ansi-fg-12{color:#8FB8F0}.ansi-fg-5,.ansi-fg-13{color:#D3A6E8}.ansi-fg-6,.ansi-fg-14{color:#8FDCD8}
+.ansi-fg-1,.ansi-fg-9{color:var(--ansi-red)}.ansi-fg-2,.ansi-fg-10{color:var(--ansi-green)}.ansi-fg-3,.ansi-fg-11{color:var(--ansi-yellow)}
+.ansi-fg-4,.ansi-fg-12{color:var(--ansi-blue)}.ansi-fg-5,.ansi-fg-13{color:var(--ansi-magenta)}.ansi-fg-6,.ansi-fg-14{color:var(--ansi-cyan)}
 .out .lk{background:none;border:0;padding:0;color:inherit;text-decoration:underline;cursor:pointer;font:inherit}
 /* A template puts a newline between one line's div and the next, and a
    pre-wrap container would print each as a blank line: the container
@@ -1312,8 +1344,8 @@ table.wide tr.dead td.k,table.wide tr.theirs td.k{color:var(--muted)}
 .ficha pre.env,.docker pre.env{font-family:var(--file-face,var(--mono));font-size:var(--file-size,11.5px);line-height:var(--file-leading,1.6);background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:10px 12px;margin:0;white-space:normal;overflow:auto;flex:none}
 /* The template puts a newline between one line and the next; each keeps its own spaces. */
 .ficha pre.env .ln,.docker pre.env .ln{white-space:pre-wrap}
-.ficha pre.env .k,.docker pre.env .k{color:#D4B27E}
-.ficha pre.env .m,.docker pre.env .m{color:#F3A196}
+.ficha pre.env .k,.docker pre.env .k{color:var(--accent)}
+.ficha pre.env .m,.docker pre.env .m{color:var(--ansi-red)}
 .ficha pre.env .c,.docker pre.env .c{color:var(--term-dim)}
 /* A compose or a feed fills what the pane leaves and scrolls alone: the
    pane is a column, and the one block that grows takes the rest of it,

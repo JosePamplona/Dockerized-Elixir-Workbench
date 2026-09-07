@@ -202,6 +202,16 @@ on the page when the socket goes — a server that cannot be reached cannot
 be the one to say so. `assets/design/estado-en-la-banda.html` is the page
 it was decided on, with the five candidates and what each would cost.
 
+The terminal follows the ground since 2026-09-07: `term`, `term-ink`,
+`term-dim`, `term-line`, `term-scroll` carry a light value, `term-tint`
+washes a line on it, and the six `ansi-*` are what a job's colours are set
+in on each ground, the same red, green and yellow as the semantic three
+so an error in a job and a chip in red say the same thing. The Files
+sheet's twelve are One Dark on the dark ground and One Light on the light,
+kept beside the jsonc in `console.css`, not here: they are an editor's
+palette, not the house's. `assets/design/fuente-claro.html` is the page
+it was decided on, with the three candidates and what each lost.
+
 Two things came from it. `board-warn` and `board-bad` are roles now,
 because the band is the one surface whose ground does not follow the
 theme — it is the same violet on both, like a cover's board — so a

@@ -752,6 +752,33 @@ defmodule ConsoleWeb.WorkbenchDrawer do
     <span class="add">+    get "/about", PageController, :about</span>
        live "/rooms/:id", RoomLive, :show</pre>
       </div>
+      <div class="row colours">
+        <span class="glyph files" aria-hidden="true">#</span>
+        <b>The colours</b>
+        <p class="help">
+          What a file's tokens are set in, on the Files sheet: the twelve rules of <code>console/elixir_color_theme.jsonc</code>, One Dark as VS Code reads
+          it and One Light on the light ground, one palette a ground for every language the console colours.
+          This one is <span id="colours-ground"></span>.
+        </p>
+        <p class="swatches" id="swatches" aria-label="The twelve colours"></p>
+        <pre class="sample src" aria-label="A sample in the chosen colours">{Phoenix.HTML.raw(Console.Highlight.sample())}</pre>
+        <div class="jsonc">
+          <textarea
+            id="jsonc"
+            aria-label="A VS Code colour theme, as jsonc"
+            placeholder={
+              ~s(Paste a VS Code jsonc here — editor.tokenColorCustomizations with its textMateRules, or a theme's tokenColors — and apply it; or read this palette back as one.)
+            }
+            spellcheck="false"
+          ></textarea>
+          <p class="acts">
+            <button class="btn" type="button" id="jsonc-apply">Apply the jsonc</button>
+            <button class="btn" type="button" id="jsonc-show">Read mine as jsonc</button>
+            <button class="btn" type="button" id="jsonc-reset">Back to the house's</button>
+            <span class="word" id="jsonc-word"></span>
+          </p>
+        </div>
+      </div>
     </div>
     """
   end

@@ -533,6 +533,105 @@ function bindPicks(el, group) {
   draw()
 }
 
+// --- the colours: the twelve rules of console/elixir_color_theme.jsonc,
+// each a property on the root the `.src` surfaces read, kept in this
+// browser like the faces — one palette a ground, because a colour that
+// reads on the dark terminal is lost on paper: the reader's dark set
+// rides over One Dark, the light set over One Light, and the ground's
+// change swaps them. The scopes are the jsonc's own, so a VS Code theme
+// pastes in — its rules are matched to the twelve by scope, as an editor
+// matches them: equal, or a parent of it — and this palette reads back
+// out in the same shape, to carry to VS Code.
+const COLOURS_KEY = "wb-console-colours"
+const HOUSE = { dark: "One Dark", light: "One Light" }
+const TOKENS = [
+  { key: "base", name: "code", scopes: ["source.elixir"] },
+  { key: "punct", name: "brackets", scopes: ["punctuation.section.scope.elixir", "punctuation.section.array.elixir", "punctuation.section.function.elixir", "punctuation.section.list.begin.elixir", "punctuation.section.list.end.elixir"] },
+  { key: "comment", name: "comments", scopes: ["punctuation.definition.comment.elixir", "comment.line.number-sign.elixir", "comment.unused.elixir", "comment.documentation.heredoc.elixir"], style: "italic" },
+  { key: "atom", name: "atoms", scopes: ["constant.character.escape.elixir", "constant.other.symbol.elixir"] },
+  { key: "const", name: "constants", scopes: ["punctuation.definition.constant.elixir", "constant.language.elixir", "constant.numeric.elixir"] },
+  { key: "func", name: "functions", scopes: ["entity.name.function.elixir"] },
+  { key: "kw", name: "keywords", scopes: ["keyword.control.module.elixir", "keyword.control.elixir", "variable.other.anonymous.elixir"] },
+  { key: "op", name: "operators", scopes: ["keyword.operator.other.elixir", "keyword.operator.assignment.elixir", "keyword.operator.logical.elixir", "keyword.operator.comparison.elixir", "keyword.operator.arithmetic.elixir", "punctuation.separator.object.elixir", "punctuation.separator.method.elixir", "parameter.variable.function.elixir"] },
+  { key: "mod", name: "modules", scopes: ["variable.other.constant.elixir", "entity.name.type.module.elixir"] },
+  { key: "str", name: "strings", scopes: ["punctuation.definition.string.begin.elixir", "punctuation.definition.string.end.elixir", "string.quoted.double.elixir", "support.function.variable.quoted.single.elixir", "string.quoted.double.interpolated.elixir", "string.quoted.double.literal.elixir"] },
+  { key: "interp", name: "embedded", scopes: ["punctuation.section.embedded.elixir", "keyword.other.special-method.elixir", "punctuation.definition.variable.elixir", "variable.other.readwrite.module.elixir", "variable.language.elixir"] },
+  { key: "regex", name: "regex", scopes: ["punctuation.section.regexp.begin.elixir", "punctuation.section.regexp.end.elixir", "string.regexp.interpolated.elixir", "string.regexp.group.elixir", "string.regexp.character-class.elixir", "string.regexp.arbitrary-repitition.elixir"] },
+]
+const HEX = /^#[0-9a-f]{6}$/i
+// What is kept: `{dark: {...}, light: {...}}`. A flat map is the shape
+// of the first days, when there was one ground for code: it was dark's.
+const clean = c => Object.fromEntries(TOKENS.filter(t => HEX.test((c || {})[t.key] || "")).map(t => [t.key, c[t.key].toLowerCase()]))
+const coloursOf = () => { try { const c = JSON.parse(store.get(COLOURS_KEY) || "{}"); return c.dark || c.light ? { dark: clean(c.dark), light: clean(c.light) } : { dark: clean(c), light: {} } } catch (e) { return { dark: {}, light: {} } } }
+function applyColours(all) {
+  const root = document.documentElement.style, c = all[ground()] || {}
+  for (const t of TOKENS) { if (c[t.key]) root.setProperty(`--t-${t.key}`, c[t.key]); else root.removeProperty(`--t-${t.key}`) }
+}
+applyColours(coloursOf())
+// The ground changes under the palette — the toggle, or the machine —
+// and the other set goes on; whoever draws swatches listens too.
+const onGround = f => { new MutationObserver(f).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] }); matchMedia("(prefers-color-scheme: dark)").addEventListener("change", f) }
+onGround(() => applyColours(coloursOf()))
+// The colour each token shows now: the reader's, or the stylesheet's.
+const shownColour = key => getComputedStyle(document.documentElement).getPropertyValue(`--t-${key}`).trim().toLowerCase()
+// A jsonc is JSON with comments and trailing commas; VS Code's settings
+// carry the rules under editor.tokenColorCustomizations.textMateRules, a
+// theme file under tokenColors, and a bare array is taken as the rules.
+function parseJsonc(text) {
+  const bare = text.replace(/("(?:[^"\\]|\\.)*")|\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, (m, str) => str || "").replace(/,(\s*[}\]])/g, "$1")
+  const doc = JSON.parse(bare)
+  const rules = Array.isArray(doc) ? doc : doc.tokenColors || (doc["editor.tokenColorCustomizations"] || doc).textMateRules
+  if (!Array.isArray(rules)) throw new Error("no textMateRules, no tokenColors")
+  return rules
+}
+// A rule's scope covers a token's when it is the same, or a parent of it.
+const covers = (rule, scope) => scope === rule || scope.startsWith(rule + ".")
+function coloursFromRules(rules) {
+  const c = {}
+  for (const r of rules) {
+    const fg = r.settings && r.settings.foreground
+    if (!fg || !HEX.test(fg)) continue
+    const scopes = Array.isArray(r.scope) ? r.scope : String(r.scope || "").split(",")
+    for (const t of TOKENS) if (scopes.some(rs => t.scopes.some(ts => covers(rs.trim(), ts)))) c[t.key] = fg.toLowerCase()
+  }
+  return c
+}
+const asJsonc = () => JSON.stringify({ "editor.tokenColorCustomizations": { textMateRules: TOKENS.map(t => ({ scope: t.scopes.length === 1 ? t.scopes[0] : t.scopes, settings: { ...(t.style ? { fontStyle: t.style } : {}), foreground: shownColour(t.key) } })) } }, null, 2)
+function bindColours(el) {
+  const swatches = el.querySelector("#swatches"), area = el.querySelector("#jsonc"), word = el.querySelector("#jsonc-word"), reset = el.querySelector("#jsonc-reset"), which = el.querySelector("#colours-ground")
+  if (!swatches || !area) return
+  let all = coloursOf()
+  const mine = () => all[ground()] || {}
+  const say = (text, bad) => { if (word) { word.textContent = text; word.classList.toggle("bad", !!bad) } }
+  const set = c => { all = { ...all, [ground()]: c }; applyColours(all) }
+  const keep = () => { store.set(COLOURS_KEY, JSON.stringify(all)); draw() }
+  const draw = () => {
+    const g = ground()
+    if (which) which.textContent = `the ${g} ground's — ${HOUSE[g]} underneath`
+    if (reset) reset.textContent = `Back to ${HOUSE[g]}`
+    swatches.replaceChildren(...TOKENS.map(t => {
+      const label = document.createElement("label"), input = document.createElement("input"), name = document.createElement("span"), own = document.createElement("small")
+      input.type = "color"; input.value = shownColour(t.key); input.setAttribute("aria-label", `${t.name}, the colour`)
+      input.addEventListener("input", () => { set({ ...mine(), [t.key]: input.value.toLowerCase() }); own.textContent = "·" })
+      input.addEventListener("change", () => { store.set(COLOURS_KEY, JSON.stringify(all)); say("") })
+      name.textContent = t.name; own.textContent = mine()[t.key] ? "·" : ""; own.title = "set by you"
+      label.append(input, name, own); return label
+    }))
+  }
+  el.querySelector("#jsonc-apply")?.addEventListener("click", () => {
+    try {
+      const found = coloursFromRules(parseJsonc(area.value))
+      const n = Object.keys(found).length
+      if (!n) return say("no rule of it covers any of the twelve", true)
+      set({ ...mine(), ...found }); keep(); say(`${n} of 12 taken, for the ${ground()} ground`)
+    } catch (e) { say(`not read: ${e.message}`, true) }
+  })
+  el.querySelector("#jsonc-show")?.addEventListener("click", () => { area.value = asJsonc(); say(`the ${ground()} ground's palette, as VS Code reads it — copy it out`); area.focus(); area.select() })
+  reset?.addEventListener("click", () => { set({}); keep(); say(`${HOUSE[ground()]}, as it came`) })
+  onGround(() => { all = coloursOf(); draw() })
+  draw()
+}
+
 export const Frame = {
   mounted() {
     const paint = () => {
@@ -554,6 +653,7 @@ export const Frame = {
     })
     this.el.querySelector("#theme")?.addEventListener("click", () => { const t = ground() === "dark" ? "light" : "dark"; document.documentElement.setAttribute("data-theme", t); store.set(THEME_KEY, t); paint(); document.getElementById("ground-toggle")?.dispatchEvent(new Event("repaint")) })
     for (const g of Object.keys(GROUPS)) bindPicks(this.el, g)
+    bindColours(this.el)
     paint()
   },
 }

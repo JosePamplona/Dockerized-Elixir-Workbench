@@ -24,11 +24,18 @@
   --shelf:#7A5E3E;
   --shelf-edge:#5C4530;
   --scroll:#C9BDCE;
-  --term:#120B17;
-  --term-ink:#D9CFDF;
-  --term-dim:#8B7C96;
-  --term-line:#2B1F33;
-  --term-scroll:#4A3A57;
+  --term:#FDFBFE;
+  --term-ink:#2B2133;
+  --term-dim:#8F819A;
+  --term-line:#D6CBDA;
+  --term-scroll:#C9BDCE;
+  --term-tint:rgba(29,20,36,.05);
+  --ansi-red:#B5473A;
+  --ansi-green:#2E8B57;
+  --ansi-yellow:#B7791F;
+  --ansi-blue:#3F6FA8;
+  --ansi-magenta:#8E44AD;
+  --ansi-cyan:#1F8A8A;
   --svc-app:#B58BD9;
   --svc-database:#6FA8DC;
   --svc-pgadmin:#5FBFA6;
@@ -63,6 +70,18 @@
     --shelf:#3A2A45;
     --shelf-edge:#2A1D33;
     --scroll:#52425F;
+    --term:#120B17;
+    --term-ink:#D9CFDF;
+    --term-dim:#8B7C96;
+    --term-line:#2B1F33;
+    --term-scroll:#4A3A57;
+    --term-tint:rgba(255,255,255,.05);
+    --ansi-red:#F3A196;
+    --ansi-green:#9BD99A;
+    --ansi-yellow:#E3B25C;
+    --ansi-blue:#8FB8F0;
+    --ansi-magenta:#D3A6E8;
+    --ansi-cyan:#8FDCD8;
   }
 }
 :root[data-theme="dark"]{
@@ -88,4 +107,16 @@
   --shelf:#3A2A45;
   --shelf-edge:#2A1D33;
   --scroll:#52425F;
+  --term:#120B17;
+  --term-ink:#D9CFDF;
+  --term-dim:#8B7C96;
+  --term-line:#2B1F33;
+  --term-scroll:#4A3A57;
+  --term-tint:rgba(255,255,255,.05);
+  --ansi-red:#F3A196;
+  --ansi-green:#9BD99A;
+  --ansi-yellow:#E3B25C;
+  --ansi-blue:#8FB8F0;
+  --ansi-magenta:#D3A6E8;
+  --ansi-cyan:#8FDCD8;
 }

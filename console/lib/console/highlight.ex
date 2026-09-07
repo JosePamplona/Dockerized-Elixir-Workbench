@@ -103,6 +103,29 @@ defmodule Console.Highlight do
     end
   end
 
+  # A few lines that touch every one of the palette's twelve rules —
+  # keywords, a module, an attribute, `use`, strings, atoms, a number,
+  # a function, operators, a regex, brackets and a comment — for the
+  # Interface tab to show the colours on.
+  @sample """
+  defmodule Arcade.Room do
+    @moduledoc "A room, and the players in it."
+    use GenServer
+    alias Arcade.{Repo, Player}
+
+    @max 8
+    # A late player is turned away; nil is nobody.
+    def join(%{players: ps} = room, %Player{} = p) when length(ps) < @max do
+      valid? = Regex.match?(~r/^[a-z_]+$/, p.name) && p.age >= 18
+      if valid?, do: {:ok, %{room | players: [p | ps]}}, else: {:error, :refused}
+    end
+  end
+  """
+
+  @doc "The sample above, coloured by the Elixir lexer: inner HTML for a `.src`."
+  @spec sample() :: binary()
+  def sample, do: Makeup.highlight_inner_html(@sample, lexer: Makeup.Lexers.ElixirLexer)
+
   @doc """
   The file one line at a time, for a sheet that shows a patch: the
   treatment, and — for a lexer or plain — one HTML string per line,

@@ -16,6 +16,27 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **The code follows the ground.** The terminal — jobs' output, the
+  logs, the Terminal screen, `.env` and `config.conf`, the papers'
+  blocks, the Files sheet — was dark on both grounds; on the light one
+  it is paper now. `term`, `term-ink`, `term-dim`, `term-line` and
+  `term-scroll` carry a light value in `assets/design/tokens.json`,
+  `term-tint` washes a hovered line or a diff's gutter, and six
+  `ansi-*` roles replace every colour the console wrote by hand on a
+  terminal surface. The Files sheet's twelve are One Light on the light
+  ground, One Dark's pair; the Interface tab keeps a palette a ground
+  and edits the one being read. `assets/design/fuente-claro.html` is
+  the page the palette was chosen on.
+- **The colours are the reader's.** The Interface tab of the workbench
+  drawer gains *The colours*: the twelve rules of
+  `console/elixir_color_theme.jsonc` as swatches, a sample of Elixir set
+  in them, and a box a VS Code jsonc pastes into — its
+  `editor.tokenColorCustomizations`, a theme's `tokenColors`, or the bare
+  rules, matched to the twelve by scope — and reads back out of, in the
+  same shape, to carry to VS Code. The twelve are properties of the root,
+  kept in this browser like the faces, so the Files sheet and the sample
+  change as they are set. One palette for every language the console
+  colours: every Makeup lexer speaks the same classes.
 - **Every push runs the checks.** A GitHub Actions workflow
   (`.github/workflows/ci.yml`) puts the two scripts through ShellCheck
   and each Elixir package — `igniter/`, `console/` — through

@@ -58,11 +58,11 @@ The console's own terminal, for the terminal-window primitive (see [primitive-te
 | Token | Hex | Purpose |
 |---|---|---|
 | `terminal-page` | `#160F1B` | Page background behind the window |
-| `terminal-paper` | `#120B17` | Window body, node fill |
-| `terminal-bar` | `#2B1F33` | Titlebar strip |
-| `terminal-border` | `#2B1F33` | Window border, hairlines |
-| `terminal-ink` | `#D9CFDF` | Primary text, primary stroke |
-| `terminal-muted` | `#8B7C96` | Secondary text, sublabels, ring stroke |
+| `terminal-paper` | `#FDFBFE` | Window body, node fill |
+| `terminal-bar` | `#D6CBDA` | Titlebar strip |
+| `terminal-border` | `#D6CBDA` | Window border, hairlines |
+| `terminal-ink` | `#2B2133` | Primary text, primary stroke |
+| `terminal-muted` | `#8F819A` | Secondary text, sublabels, ring stroke |
 | `terminal-soft` | `#7E7189` | Tertiary — inactive dots, spokes |
 | `terminal-accent` | `#D4B27E` | The one accent — focal station, prompt sign, active dot |
 | `terminal-accent-tint` | `rgba(212,178,126,.14)` | Fill for accent-bordered boxes |

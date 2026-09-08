@@ -214,6 +214,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   daemon, no versions to pin: the client negotiates its API with the
   engine on the socket, so the two build args wb.sh took off the host
   are gone with the warning.
+- **A Postgres project without the pgadmin cartridge still published
+  pgAdmin's port.** The port line on the pod's `network` service hung on
+  Postgres being in, not on pgadmin, so the status read a port and the
+  console drew a link to nothing on the rail and among the doors. It
+  hangs on the cartridge now; a vanilla `new` publishes the app alone.
+  `./wb.sh bake` takes the line out of a workspace baked before.
 - **The console's «Create project» ran a stale command.** The line was
   rendered onto the button, and a change of the form and the click in
   the same instant sent it as it was before the change: a `--database

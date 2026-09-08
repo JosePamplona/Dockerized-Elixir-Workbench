@@ -35,8 +35,8 @@ services:
     ports:
       # Application port (host:container).
       - 4000:4000
-      # pgAdmin port. The database is not published: it is only
-      # reachable from inside this workspace.
+      # pgAdmin port, with the pgadmin cartridge in. The database is not
+      # published: it is only reachable from inside this workspace.
       - 5050:5050
 
   app:

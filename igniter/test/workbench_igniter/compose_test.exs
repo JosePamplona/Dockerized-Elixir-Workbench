@@ -25,6 +25,9 @@ defmodule WorkbenchIgniter.ComposeTest do
 
   @cases [
     {"dev-db.yml", @dev ++ ~w(--services postgres,pgadmin)},
+    # A vanilla `new` on Postgres: the database, no pgAdmin and no port for it.
+    {"dev-postgres.yml", @dev ++ ~w(--services postgres)},
+    {"prod-postgres.yml", @prod ++ ~w(--services postgres)},
     {"dev-nodb.yml", @dev ++ ["--services", ""]},
     {"dev-db-k6.yml", @dev ++ ~w(--services postgres,pgadmin,k6)},
     {"prod-db.yml", @prod ++ ~w(--services postgres,pgadmin)},

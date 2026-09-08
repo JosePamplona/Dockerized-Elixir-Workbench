@@ -34,9 +34,9 @@ services:
     image: registry.k8s.io/pause:3.10
     ports:
       # Application port (host:container).
-      - <%= @app_port %>:<%= @internal_port %><%= if @postgres do %>
-      # pgAdmin port. The database is not published: it is only
-      # reachable from inside this workspace.
+      - <%= @app_port %>:<%= @internal_port %><%= if @pgadmin do %>
+      # pgAdmin port, with the pgadmin cartridge in. The database is not
+      # published: it is only reachable from inside this workspace.
       - <%= @pgadmin_port %>:<%= @pgadmin_internal_port %><% end %>
 
   app:

@@ -59,8 +59,8 @@ defmodule Console.MixProject do
       # the same token vocabulary out of all of them, so the palette is
       # written once and a new language costs no CSS. When a file turns
       # up that no makeup_* covers, makeup_syntect (the Sublime grammars
-      # through a precompiled Rust NIF) is the escape hatch — until then
-      # an unknown extension is shown plain, never guessed at.
+      # through a precompiled Rust NIF) is the escape hatch: Markdown reads
+      # through it. An unknown extension is shown plain, never guessed at.
       # The papers a box carries, rendered escaping the HTML in them (console/README.md).
       {:mdex, "~> 0.13"},
       # The workbench's own package: the catalog is read in this BEAM, off the
@@ -72,6 +72,12 @@ defmodule Console.MixProject do
       {:makeup_html, "~> 0.2"},
       {:makeup_js, "~> 0.1"},
       {:makeup_json, "~> 1.0"},
+      {:makeup_ts, "~> 0.2"},
+      {:makeup_css, "~> 0.2"},
+      {:makeup_syntect, "~> 0.1"},
+      # makeup_syntect asks for rustler_precompiled 0.8 and mdex_native for
+      # 0.9; the two differ in nothing either uses, so the newer one is kept.
+      {:rustler_precompiled, "~> 0.9", override: true},
       {:dns_cluster, "~> 0.2.0"},
       {:bandit, "~> 1.5"},
       # Static checks, run by CI: style and consistency, then success typing.

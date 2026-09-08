@@ -756,12 +756,22 @@ defmodule ConsoleWeb.WorkbenchDrawer do
         <span class="glyph files" aria-hidden="true">#</span>
         <b>The colours</b>
         <p class="help">
-          What a file's tokens are set in, on the Files sheet: the twelve rules of <code>console/elixir_color_theme.jsonc</code>, One Dark as VS Code reads
-          it and One Light on the light ground, one palette a ground for every language the console colours.
+          What a file's tokens are set in, on the Files sheet: the rules of <code>console/elixir_color_theme.jsonc</code>, One Dark as VS Code reads
+          it and One Light on the light ground, a palette a ground and a language — Elixir, HTML and its templates, CSS, TypeScript and JavaScript, JSON, Markdown, Godot.
           This one is <span id="colours-ground"></span>.
         </p>
-        <p class="swatches" id="swatches" aria-label="The twelve colours"></p>
-        <pre class="sample src" aria-label="A sample in the chosen colours">{Phoenix.HTML.raw(Console.Highlight.sample())}</pre>
+        <p class="help picks">
+          <label>language
+          <select id="colours-lang" aria-label="The language whose colours these are"></select></label>
+        </p>
+        <p class="swatches" id="swatches" aria-label="The colours"></p>
+        <pre
+          :for={lang <- Console.Highlight.languages()}
+          class="sample src"
+          data-lang={lang}
+          hidden={lang != :elixir}
+          aria-label={"A sample of #{lang} in the chosen colours"}
+        >{Phoenix.HTML.raw(Console.Highlight.sample(lang))}</pre>
         <div class="jsonc">
           <textarea
             id="jsonc"

@@ -933,7 +933,12 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
    costs this block nothing. The twelve are properties of the root, so
    the reader's own — set by hooks.js from the Interface tab, where a
    VS Code jsonc pastes in and out, one palette a ground — reach every
-   `.src` at once: the Files sheet's, and the sample the tab shows. */
+   `.src` at once: the Files sheet's, and the sample the tab shows.
+   A palette a language, too: the seven the tab names — elixir, html,
+   css, ts, json, markdown, godot — carry the twelve as `--t-<lang>-<key>`, which on the
+   root fall back to the shared twelve, and a `.src[data-lang]` reads
+   its language's. So a language left alone is the house's palette, and
+   a colour set for JSON's keys never reaches a module in Elixir. */
 :root{--t-base:#383a42;--t-punct:#696c77;--t-comment:#a0a1a7;--t-atom:#0184bc;
       --t-const:#4078f2;--t-func:#4078f2;--t-kw:#a626a4;--t-op:#986801;
       --t-mod:#c18401;--t-str:#50a14f;--t-interp:#e45649;--t-regex:#ca1243}
@@ -943,20 +948,40 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
 :root[data-theme="dark"]{--t-base:#abb2bf;--t-punct:#828997;--t-comment:#5c6370;--t-atom:#56b6c2;
       --t-const:#61afef;--t-func:#60acea;--t-kw:#c678dd;--t-op:#d19a66;
       --t-mod:#e5c07b;--t-str:#98c379;--t-interp:#e06c75;--t-regex:#be5046}
+:root{--t-elixir-base:var(--t-base);--t-elixir-punct:var(--t-punct);--t-elixir-comment:var(--t-comment);--t-elixir-atom:var(--t-atom);--t-elixir-const:var(--t-const);--t-elixir-func:var(--t-func);--t-elixir-kw:var(--t-kw);--t-elixir-op:var(--t-op);--t-elixir-mod:var(--t-mod);--t-elixir-str:var(--t-str);--t-elixir-interp:var(--t-interp);--t-elixir-regex:var(--t-regex);--t-html-base:var(--t-base);--t-html-punct:var(--t-punct);--t-html-comment:var(--t-comment);--t-html-atom:var(--t-atom);--t-html-const:var(--t-const);--t-html-func:var(--t-func);--t-html-kw:var(--t-kw);--t-html-op:var(--t-op);--t-html-mod:var(--t-mod);--t-html-str:var(--t-str);--t-html-interp:var(--t-interp);--t-html-regex:var(--t-regex);--t-css-base:var(--t-base);--t-css-punct:var(--t-punct);--t-css-comment:var(--t-comment);--t-css-atom:var(--t-atom);--t-css-const:var(--t-const);--t-css-func:var(--t-func);--t-css-kw:var(--t-kw);--t-css-op:var(--t-op);--t-css-mod:var(--t-mod);--t-css-str:var(--t-str);--t-css-interp:var(--t-interp);--t-css-regex:var(--t-regex);--t-ts-base:var(--t-base);--t-ts-punct:var(--t-punct);--t-ts-comment:var(--t-comment);--t-ts-atom:var(--t-atom);--t-ts-const:var(--t-const);--t-ts-func:var(--t-func);--t-ts-kw:var(--t-kw);--t-ts-op:var(--t-op);--t-ts-mod:var(--t-mod);--t-ts-str:var(--t-str);--t-ts-interp:var(--t-interp);--t-ts-regex:var(--t-regex);--t-json-base:var(--t-base);--t-json-punct:var(--t-punct);--t-json-comment:var(--t-comment);--t-json-atom:var(--t-atom);--t-json-const:var(--t-const);--t-json-func:var(--t-func);--t-json-kw:var(--t-kw);--t-json-op:var(--t-op);--t-json-mod:var(--t-mod);--t-json-str:var(--t-str);--t-json-interp:var(--t-interp);--t-json-regex:var(--t-regex);--t-markdown-base:var(--t-base);--t-markdown-punct:var(--t-punct);--t-markdown-comment:var(--t-comment);--t-markdown-atom:var(--t-atom);--t-markdown-const:var(--t-const);--t-markdown-func:var(--t-func);--t-markdown-kw:var(--t-kw);--t-markdown-op:var(--t-op);--t-markdown-mod:var(--t-mod);--t-markdown-str:var(--t-str);--t-markdown-interp:var(--t-interp);--t-markdown-regex:var(--t-regex);--t-godot-base:var(--t-base);--t-godot-punct:var(--t-punct);--t-godot-comment:var(--t-comment);--t-godot-atom:var(--t-atom);--t-godot-const:var(--t-const);--t-godot-func:var(--t-func);--t-godot-kw:var(--t-kw);--t-godot-op:var(--t-op);--t-godot-mod:var(--t-mod);--t-godot-str:var(--t-str);--t-godot-interp:var(--t-interp);--t-godot-regex:var(--t-regex)}
+.src[data-lang="elixir"]{--t-base:var(--t-elixir-base);--t-punct:var(--t-elixir-punct);--t-comment:var(--t-elixir-comment);--t-atom:var(--t-elixir-atom);--t-const:var(--t-elixir-const);--t-func:var(--t-elixir-func);--t-kw:var(--t-elixir-kw);--t-op:var(--t-elixir-op);--t-mod:var(--t-elixir-mod);--t-str:var(--t-elixir-str);--t-interp:var(--t-elixir-interp);--t-regex:var(--t-elixir-regex)}
+.src[data-lang="html"]{--t-base:var(--t-html-base);--t-punct:var(--t-html-punct);--t-comment:var(--t-html-comment);--t-atom:var(--t-html-atom);--t-const:var(--t-html-const);--t-func:var(--t-html-func);--t-kw:var(--t-html-kw);--t-op:var(--t-html-op);--t-mod:var(--t-html-mod);--t-str:var(--t-html-str);--t-interp:var(--t-html-interp);--t-regex:var(--t-html-regex)}
+.src[data-lang="css"]{--t-base:var(--t-css-base);--t-punct:var(--t-css-punct);--t-comment:var(--t-css-comment);--t-atom:var(--t-css-atom);--t-const:var(--t-css-const);--t-func:var(--t-css-func);--t-kw:var(--t-css-kw);--t-op:var(--t-css-op);--t-mod:var(--t-css-mod);--t-str:var(--t-css-str);--t-interp:var(--t-css-interp);--t-regex:var(--t-css-regex)}
+.src[data-lang="ts"]{--t-base:var(--t-ts-base);--t-punct:var(--t-ts-punct);--t-comment:var(--t-ts-comment);--t-atom:var(--t-ts-atom);--t-const:var(--t-ts-const);--t-func:var(--t-ts-func);--t-kw:var(--t-ts-kw);--t-op:var(--t-ts-op);--t-mod:var(--t-ts-mod);--t-str:var(--t-ts-str);--t-interp:var(--t-ts-interp);--t-regex:var(--t-ts-regex)}
+.src[data-lang="json"]{--t-base:var(--t-json-base);--t-punct:var(--t-json-punct);--t-comment:var(--t-json-comment);--t-atom:var(--t-json-atom);--t-const:var(--t-json-const);--t-func:var(--t-json-func);--t-kw:var(--t-json-kw);--t-op:var(--t-json-op);--t-mod:var(--t-json-mod);--t-str:var(--t-json-str);--t-interp:var(--t-json-interp);--t-regex:var(--t-json-regex)}
+.src[data-lang="markdown"]{--t-base:var(--t-markdown-base);--t-punct:var(--t-markdown-punct);--t-comment:var(--t-markdown-comment);--t-atom:var(--t-markdown-atom);--t-const:var(--t-markdown-const);--t-func:var(--t-markdown-func);--t-kw:var(--t-markdown-kw);--t-op:var(--t-markdown-op);--t-mod:var(--t-markdown-mod);--t-str:var(--t-markdown-str);--t-interp:var(--t-markdown-interp);--t-regex:var(--t-markdown-regex)}
+.src[data-lang="godot"]{--t-base:var(--t-godot-base);--t-punct:var(--t-godot-punct);--t-comment:var(--t-godot-comment);--t-atom:var(--t-godot-atom);--t-const:var(--t-godot-const);--t-func:var(--t-godot-func);--t-kw:var(--t-godot-kw);--t-op:var(--t-godot-op);--t-mod:var(--t-godot-mod);--t-str:var(--t-godot-str);--t-interp:var(--t-godot-interp);--t-regex:var(--t-godot-regex)}
 .impl .src{margin:0;overflow:auto;max-height:min(62vh,700px);background:var(--term);color:var(--t-base);
            border-top:1px solid var(--term-line);font-family:var(--file-face,var(--mono));font-size:var(--file-size,12.5px);line-height:var(--file-leading,1.6);padding:8px 0}
 .src .n, .src .nv, .src .nb, .src .nx{color:var(--t-base)}
 .src .p{color:var(--t-punct)}
 .src .c, .src .c1, .src .cm, .src .cs, .src .cp, .src .gp{color:var(--t-comment)}
 .src .ss, .src .se, .src .sc{color:var(--t-atom)}
-.src .no, .src .kc, .src .bp, .src .nn{color:var(--t-const)}
+.src .no, .src .kc, .src .bp, .src .nn, .src .m, .src .mi, .src .mf, .src .mo, .src .mh, .src .mb{color:var(--t-const)}
 .src .nf, .src .ne{color:var(--t-func)}
-.src .k, .src .kd, .src .kn, .src .kp, .src .kr, .src .kt{color:var(--t-kw)}
-.src .o, .src .ow, .src .mi, .src .mf, .src .mo, .src .mh, .src .mb{color:var(--t-op)}
-.src .nc, .src .ni, .src .nl, .src .nt{color:var(--t-mod)}
+.src .k, .src .kd, .src .kn, .src .kp, .src .kr{color:var(--t-kw)}
+.src .o, .src .ow{color:var(--t-op)}
+.src .nc, .src .ni, .src .nl, .src .nt, .src .kt{color:var(--t-mod)}
 .src .s, .src .s1, .src .s2, .src .sb, .src .sd, .src .sh, .src .sx{color:var(--t-str)}
 .src .si, .src .na, .src .nd{color:var(--t-interp)}
 .src .sr{color:var(--t-regex)}
+/* Markdown, through syntect: a heading, bold, italic, and one class for
+   what the grammar calls generic — code, a link's address, a list, a
+   quote. Each takes a rule of the twelve, so the reader's jsonc reaches
+   them by the scopes VS Code names them with. */
+.src .gh{color:var(--t-interp);font-weight:700}.src .gs{color:var(--t-op);font-weight:700}.src .ge{color:var(--t-kw);font-style:italic}.src .g{color:var(--t-str)}
+/* Where a lexer's class means another thing in its language, the rule
+   moves: CSS's properties are its keywords and not constants, its ids,
+   pseudo-classes and colours are atoms, its class selectors stand
+   apart from at-rules; a Godot annotation or uniform is a mark on the
+   line, not a keyword. */
+.src[data-lang="css"] .kc{color:var(--t-kw)}.src[data-lang="css"] .no{color:var(--t-atom)}.src[data-lang="css"] .nc{color:var(--t-interp)}
+.src[data-lang="godot"] .kd{color:var(--t-interp)}
 .src .c, .src .c1, .src .cm{font-style:italic}
 .src .err{color:var(--t-interp);text-decoration:underline wavy}
 /* A row carries both line numbers — a removal has no new one, an
@@ -1151,6 +1176,20 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
 .pdocs pre.env .c{color:var(--term-dim)}.pdocs pre.env .k{color:var(--accent)}.pdocs pre.env .m{color:var(--ansi-red)}
 .pdocs>pre.env{margin-left:28px;margin-right:28px;margin-bottom:22px}
 .pdocs .nothing{padding:18px 28px;max-width:60ch}
+/* Doors: the plan of the project's addresses, five rows of doors and
+   probes with what they answered beside them. It scrolls like the
+   booklet, and its rows are the rail's `.urls` with a chip after each. */
+.pdocs .doors{flex:1;min-height:0;overflow:auto;padding:22px 28px 60px;display:grid;gap:24px;align-content:start;scrollbar-gutter:stable}
+.doors .lede{margin:0;font-size:13.5px;color:var(--muted);max-width:72ch;display:flex;gap:6px 14px;align-items:center;flex-wrap:wrap}
+.doors .lede b{color:var(--ink)}
+.doors section{display:grid;gap:10px}
+.doors h3{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:14px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+/* One door a line: a list is read down, a row of doors is scanned, and
+   this paper is for reading — who opens what, and what it answered. */
+.doors .urls{display:grid;gap:8px;justify-items:start}
+/* A door with what it answered: `.call`, not `.row`, which the drawer already owns. */
+.doors .call{display:inline-flex;gap:6px;align-items:center}
+.doors .nothing{margin:0;font-family:var(--serif);font-style:italic;font-size:13.5px;color:var(--muted);padding:0}
 
 /* --- figures: a hint on hover, a viewer on click --------------------------- */
 .fig{position:relative;margin:0 0 1.2em}

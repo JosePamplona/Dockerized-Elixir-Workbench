@@ -16,6 +16,7 @@ defmodule ConsoleWeb.ConsoleLive do
   alias Console.{Bench, Events, Jobs, Logs, Project, Verbs, Workbench}
   alias ConsoleWeb.{Box, Cartridges, Deploy, DockerScreen, GitScreen}
   alias ConsoleWeb.ConsoleLive.{Docker, Drawer, Git, Hand, Term}
+  alias ConsoleWeb.Doors
   import ConsoleWeb.{Board, Shelf, ProjectScreen, WorkbenchDrawer, Cluster}
   import ConsoleWeb.Band, only: [state: 1, errands: 1]
   import ConsoleWeb.DockerScreen, only: [docker_screen: 1]
@@ -80,6 +81,7 @@ defmodule ConsoleWeb.ConsoleLive do
         face: "front",
         ppaper: "readme",
         ppage: nil,
+        preads: %{},
         wb: nil,
         wbpaper: "readme",
         wbpage: nil,
@@ -178,10 +180,30 @@ defmodule ConsoleWeb.ConsoleLive do
     paper =
       if params["paper"] in carried, do: params["paper"], else: List.first(carried) || "readme"
 
-    assign(socket, ppaper: paper, ppage: Project.render(ws, paper))
+    socket
+    |> assign(ppaper: paper, ppage: Project.render(ws, paper))
+    |> ask_doors()
   end
 
   defp take_paper(socket, _params), do: socket
+
+  # Doors calls every address it can, once, when it comes in front and
+  # when asked again; with nothing up there is nothing to call.
+  defp ask_doors(%{assigns: %{ppaper: "doors"}} = socket) do
+    page = Doors.page(socket.assigns.status, socket.assigns.catalog)
+
+    case page && page.up && Doors.hrefs(page) do
+      hrefs when is_list(hrefs) and hrefs != [] ->
+        socket
+        |> assign(preads: :asking)
+        |> start_async({:doors, :read}, fn -> Doors.read(hrefs) end)
+
+      _ ->
+        assign(socket, preads: %{})
+    end
+  end
+
+  defp ask_doors(socket), do: socket
 
   # Which reading of the shelf: /shelf?doc=base. Named in the URL by the
   # row; kept as it was when a link does not name it — a box opening
@@ -357,6 +379,12 @@ defmodule ConsoleWeb.ConsoleLive do
       {:noreply,
        assign(socket, probes: Map.put(socket.assigns.probes, key, ["failed: " <> inspect(why)]))}
 
+  def handle_async({:doors, :read}, {:ok, reads}, socket),
+    do: {:noreply, assign(socket, preads: reads)}
+
+  def handle_async({:doors, :read}, {:exit, _}, socket),
+    do: {:noreply, assign(socket, preads: %{})}
+
   def handle_async({:diff, _} = key, result, socket), do: Hand.async(key, result, socket)
   def handle_async({:dk, _} = key, result, socket), do: Docker.async(key, result, socket)
   def handle_async({:gt, _} = key, result, socket), do: Git.async(key, result, socket)
@@ -470,6 +498,8 @@ defmodule ConsoleWeb.ConsoleLive do
     do: Drawer.event("installers_ask", params, socket)
 
   # --- the cluster's probes, run by the console ---
+  def handle_event("doors_read", _params, socket), do: {:noreply, ask_doors(socket)}
+
   def handle_event("probe", %{"key" => key}, socket) when key in ~w(answers peers) do
     status = socket.assigns.status
     key = String.to_existing_atom(key)
@@ -621,7 +651,6 @@ defmodule ConsoleWeb.ConsoleLive do
 
     %{out: out, gen: params["gen"] || %{}}
   end
-
 
   defp run(socket, line) do
     case Verbs.parse(line) do
@@ -875,6 +904,9 @@ defmodule ConsoleWeb.ConsoleLive do
               carried={Project.carried(@status && @status["workspace"])}
               paper={@ppaper}
               page={@ppage}
+              doors={@ppaper == "doors" && Doors.page(@status, @catalog)}
+              reads={@preads}
+              port={@status && @status["ports"]["app"]}
             />
           </section>
 

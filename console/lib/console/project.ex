@@ -3,7 +3,9 @@ defmodule Console.Project do
   The project's own papers, off the workspace: README.md, CHANGELOG.md
   and `.env`. The `.env` travels masked — a secret, a token, a password,
   a key, and the credentials inside a URL are replaced before the text
-  leaves this module, so no page ever carries them.
+  leaves this module, so no page ever carries them. A fourth, Doors, is
+  no file: it is composed off the status by `ConsoleWeb.Doors`, and it
+  is on the ribbon whenever there is a workspace to draw it for.
   """
 
   alias Console.Papers
@@ -11,7 +13,8 @@ defmodule Console.Project do
   @papers [
     {"readme", "README", "README.md"},
     {"changelog", "CHANGELOG", "CHANGELOG.md"},
-    {"env", ".env", ".env"}
+    {"env", ".env", ".env"},
+    {"doors", "Doors", nil}
   ]
 
   def papers, do: @papers
@@ -38,14 +41,25 @@ defmodule Console.Project do
     end
   end
 
-  @doc "Which of the three the workspace has."
+  @doc "Which of the four the workspace has: the files it holds, and Doors, which is drawn."
   def carried(nil), do: []
 
   def carried(workspace),
-    do: for({key, _, file} <- @papers, File.regular?(Path.join(workspace, file)), do: key)
+    do:
+      for(
+        {key, _, file} <- @papers,
+        is_nil(file) or File.regular?(Path.join(workspace, file)),
+        do: key
+      )
 
-  @doc "A paper rendered: the booklet for the two in Markdown, the masked lines for .env."
+  @doc """
+  A paper rendered: the booklet for the two in Markdown, the masked lines
+  for .env. Doors is drawn by the screen off the status as it stands, so
+  its page is only the word that it was taken.
+  """
   def render(nil, _key), do: nil
+
+  def render(_workspace, "doors"), do: %{doors: true}
 
   def render(workspace, "env") do
     case File.read(Path.join(workspace, ".env")) do

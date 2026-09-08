@@ -536,44 +536,120 @@ function bindPicks(el, group) {
 // --- the colours: the twelve rules of console/elixir_color_theme.jsonc,
 // each a property on the root the `.src` surfaces read, kept in this
 // browser like the faces — one palette a ground, because a colour that
-// reads on the dark terminal is lost on paper: the reader's dark set
-// rides over One Dark, the light set over One Light, and the ground's
-// change swaps them. The scopes are the jsonc's own, so a VS Code theme
-// pastes in — its rules are matched to the twelve by scope, as an editor
-// matches them: equal, or a parent of it — and this palette reads back
-// out in the same shape, to carry to VS Code.
+// reads on the dark terminal is lost on paper, and one a language,
+// because JSON's keys and Elixir's modules share a class and not a
+// meaning. A language names only the rules it has: JSON has no keywords.
+// The scopes are the language's own in VS Code's grammars, so a theme
+// pastes in — each rule matched to the roles by scope, as an editor
+// matches them: equal, or a parent of it, and a scope with no language
+// reaches every language that lists one under it — and reads back out
+// in the same shape, every language at once, to carry to VS Code.
 const COLOURS_KEY = "wb-console-colours"
 const HOUSE = { dark: "One Dark", light: "One Light" }
-const TOKENS = [
-  { key: "base", name: "code", scopes: ["source.elixir"] },
-  { key: "punct", name: "brackets", scopes: ["punctuation.section.scope.elixir", "punctuation.section.array.elixir", "punctuation.section.function.elixir", "punctuation.section.list.begin.elixir", "punctuation.section.list.end.elixir"] },
-  { key: "comment", name: "comments", scopes: ["punctuation.definition.comment.elixir", "comment.line.number-sign.elixir", "comment.unused.elixir", "comment.documentation.heredoc.elixir"], style: "italic" },
-  { key: "atom", name: "atoms", scopes: ["constant.character.escape.elixir", "constant.other.symbol.elixir"] },
-  { key: "const", name: "constants", scopes: ["punctuation.definition.constant.elixir", "constant.language.elixir", "constant.numeric.elixir"] },
-  { key: "func", name: "functions", scopes: ["entity.name.function.elixir"] },
-  { key: "kw", name: "keywords", scopes: ["keyword.control.module.elixir", "keyword.control.elixir", "variable.other.anonymous.elixir"] },
-  { key: "op", name: "operators", scopes: ["keyword.operator.other.elixir", "keyword.operator.assignment.elixir", "keyword.operator.logical.elixir", "keyword.operator.comparison.elixir", "keyword.operator.arithmetic.elixir", "punctuation.separator.object.elixir", "punctuation.separator.method.elixir", "parameter.variable.function.elixir"] },
-  { key: "mod", name: "modules", scopes: ["variable.other.constant.elixir", "entity.name.type.module.elixir"] },
-  { key: "str", name: "strings", scopes: ["punctuation.definition.string.begin.elixir", "punctuation.definition.string.end.elixir", "string.quoted.double.elixir", "support.function.variable.quoted.single.elixir", "string.quoted.double.interpolated.elixir", "string.quoted.double.literal.elixir"] },
-  { key: "interp", name: "embedded", scopes: ["punctuation.section.embedded.elixir", "keyword.other.special-method.elixir", "punctuation.definition.variable.elixir", "variable.other.readwrite.module.elixir", "variable.language.elixir"] },
-  { key: "regex", name: "regex", scopes: ["punctuation.section.regexp.begin.elixir", "punctuation.section.regexp.end.elixir", "string.regexp.interpolated.elixir", "string.regexp.group.elixir", "string.regexp.character-class.elixir", "string.regexp.arbitrary-repitition.elixir"] },
-]
+const KEYS = ["base", "punct", "comment", "atom", "const", "func", "kw", "op", "mod", "str", "interp", "regex"]
+const LANGS = {
+  elixir: { name: "Elixir and its templates", roles: [
+    { key: "base", name: "code", scopes: ["source.elixir"] },
+    { key: "punct", name: "brackets", scopes: ["punctuation.section.scope.elixir", "punctuation.section.array.elixir", "punctuation.section.function.elixir", "punctuation.section.list.begin.elixir", "punctuation.section.list.end.elixir"] },
+    { key: "comment", name: "comments", scopes: ["punctuation.definition.comment.elixir", "comment.line.number-sign.elixir", "comment.unused.elixir", "comment.documentation.heredoc.elixir"], style: "italic" },
+    { key: "atom", name: "atoms", scopes: ["constant.character.escape.elixir", "constant.other.symbol.elixir"] },
+    { key: "const", name: "constants, numbers", scopes: ["punctuation.definition.constant.elixir", "constant.language.elixir", "constant.numeric.elixir"] },
+    { key: "func", name: "functions", scopes: ["entity.name.function.elixir"] },
+    { key: "kw", name: "keywords", scopes: ["keyword.control.module.elixir", "keyword.control.elixir", "variable.other.anonymous.elixir"] },
+    { key: "op", name: "operators", scopes: ["keyword.operator.other.elixir", "keyword.operator.assignment.elixir", "keyword.operator.logical.elixir", "keyword.operator.comparison.elixir", "keyword.operator.arithmetic.elixir", "punctuation.separator.object.elixir", "punctuation.separator.method.elixir", "parameter.variable.function.elixir"] },
+    { key: "mod", name: "modules", scopes: ["variable.other.constant.elixir", "entity.name.type.module.elixir"] },
+    { key: "str", name: "strings", scopes: ["punctuation.definition.string.begin.elixir", "punctuation.definition.string.end.elixir", "string.quoted.double.elixir", "support.function.variable.quoted.single.elixir", "string.quoted.double.interpolated.elixir", "string.quoted.double.literal.elixir"] },
+    { key: "interp", name: "embedded", scopes: ["punctuation.section.embedded.elixir", "keyword.other.special-method.elixir", "punctuation.definition.variable.elixir", "variable.other.readwrite.module.elixir", "variable.language.elixir"] },
+    { key: "regex", name: "regex", scopes: ["punctuation.section.regexp.begin.elixir", "punctuation.section.regexp.end.elixir", "string.regexp.interpolated.elixir", "string.regexp.group.elixir", "string.regexp.character-class.elixir", "string.regexp.arbitrary-repitition.elixir"] },
+  ] },
+  html: { name: "HTML and its templates", roles: [
+    { key: "base", name: "Elixir in a template", scopes: ["text.html.basic", "source.elixir.embedded.html"] },
+    { key: "punct", name: "brackets, braces", scopes: ["punctuation.definition.tag.begin.html", "punctuation.definition.tag.end.html", "punctuation.section.embedded.begin.elixir", "punctuation.section.embedded.end.elixir"] },
+    { key: "comment", name: "comments, doctype", scopes: ["comment.block.html", "meta.tag.metadata.doctype.html"], style: "italic" },
+    { key: "mod", name: "tags", scopes: ["entity.name.tag.html"] },
+    { key: "interp", name: "attributes, assigns", scopes: ["entity.other.attribute-name.html", "variable.other.readwrite.module.elixir"] },
+    { key: "str", name: "values, text", scopes: ["string.quoted.double.html", "string.quoted.single.html"] },
+    { key: "op", name: "equals, operators", scopes: ["punctuation.separator.key-value.html"] },
+    { key: "const", name: "numbers", scopes: ["constant.numeric.elixir"] },
+  ] },
+  css: { name: "CSS and SCSS", roles: [
+    { key: "base", name: "tag selectors, values", scopes: ["source.css", "entity.name.tag.css", "support.constant.property-value.css"] },
+    { key: "punct", name: "braces, semicolons", scopes: ["punctuation.section.property-list.css", "punctuation.terminator.rule.css", "punctuation.separator.list.comma.css"] },
+    { key: "comment", name: "comments", scopes: ["comment.block.css"], style: "italic" },
+    { key: "atom", name: "ids, pseudo-classes, colours", scopes: ["entity.other.attribute-name.id.css", "entity.other.attribute-name.pseudo-class.css", "constant.other.color.rgb-value.hex.css"] },
+    { key: "const", name: "numbers, units", scopes: ["constant.numeric.css", "keyword.other.unit.css"] },
+    { key: "func", name: "functions", scopes: ["support.function.css", "support.function.misc.css"] },
+    { key: "kw", name: "properties", scopes: ["support.type.property-name.css"] },
+    { key: "op", name: "combinators, operators", scopes: ["keyword.operator.combinator.css", "keyword.operator.arithmetic.css"] },
+    { key: "mod", name: "at-rules, !important", scopes: ["keyword.control.at-rule.css", "keyword.other.important.css"] },
+    { key: "str", name: "strings", scopes: ["string.quoted.double.css", "string.quoted.single.css"] },
+    { key: "interp", name: "class selectors", scopes: ["entity.other.attribute-name.class.css"] },
+  ] },
+  json: { name: "JSON", roles: [
+    { key: "punct", name: "brackets, commas", scopes: ["punctuation.separator.dictionary.key-value.json", "punctuation.separator.dictionary.pair.json", "punctuation.separator.array.json", "punctuation.definition.dictionary.begin.json", "punctuation.definition.dictionary.end.json", "punctuation.definition.array.begin.json", "punctuation.definition.array.end.json"] },
+    { key: "comment", name: "comments", scopes: ["comment.block.json", "comment.line.double-slash.json"], style: "italic" },
+    { key: "const", name: "numbers, true, false, null", scopes: ["constant.numeric.json", "constant.language.json"] },
+    { key: "mod", name: "keys", scopes: ["support.type.property-name.json"] },
+    { key: "str", name: "strings", scopes: ["string.quoted.double.json"] },
+  ] },
+  ts: { name: "TypeScript and JavaScript", roles: [
+    { key: "base", name: "names", scopes: ["source.ts", "variable.other.readwrite.ts"] },
+    { key: "punct", name: "brackets", scopes: ["punctuation.definition.block.ts", "meta.brace.round.ts", "meta.brace.square.ts", "punctuation.terminator.statement.ts"] },
+    { key: "comment", name: "comments", scopes: ["comment.line.double-slash.ts", "comment.block.ts", "comment.block.documentation.ts"], style: "italic" },
+    { key: "const", name: "numbers", scopes: ["constant.numeric.ts", "constant.language.ts"] },
+    { key: "func", name: "functions", scopes: ["entity.name.function.ts", "support.function.ts"] },
+    { key: "kw", name: "keywords", scopes: ["keyword.control.ts", "storage.type.ts", "storage.modifier.ts", "keyword.operator.new.ts", "variable.language.this.ts"] },
+    { key: "op", name: "operators", scopes: ["keyword.operator.assignment.ts", "keyword.operator.arithmetic.ts", "keyword.operator.comparison.ts", "keyword.operator.logical.ts", "keyword.operator.ternary.ts"] },
+    { key: "mod", name: "types, classes", scopes: ["entity.name.type.ts", "entity.name.type.class.ts", "support.type.primitive.ts", "support.class.ts"] },
+    { key: "str", name: "strings", scopes: ["string.quoted.double.ts", "string.quoted.single.ts", "string.template.ts"] },
+    { key: "interp", name: "template holes", scopes: ["punctuation.definition.template-expression.begin.ts", "punctuation.definition.template-expression.end.ts"] },
+  ] },
+  markdown: { name: "Markdown", roles: [
+    { key: "base", name: "text", scopes: ["text.html.markdown"] },
+    { key: "punct", name: "marks", scopes: ["punctuation.definition.markdown", "punctuation.definition.heading.markdown", "punctuation.definition.bold.markdown", "punctuation.definition.italic.markdown", "punctuation.definition.raw.markdown", "punctuation.definition.list.begin.markdown"] },
+    { key: "const", name: "a fence's language", scopes: ["fenced_code.block.language.markdown"] },
+    { key: "interp", name: "headings", scopes: ["markup.heading.markdown", "entity.name.section.markdown"] },
+    { key: "op", name: "bold", scopes: ["markup.bold.markdown"] },
+    { key: "kw", name: "italic", scopes: ["markup.italic.markdown"] },
+    { key: "str", name: "code, links, lists, quotes", scopes: ["markup.inline.raw.string.markdown", "markup.fenced_code.block.markdown", "markup.underline.link.markdown", "markup.list.unnumbered.markdown", "markup.list.numbered.markdown", "markup.quote.markdown"] },
+  ] },
+  // GDScript's scopes are the godot-tools extension's; the shader's are
+  // GLSL's, the scene's INI's — the three kinds of file share the palette.
+  godot: { name: "Godot: GDScript, shaders, scenes", roles: [
+    { key: "base", name: "names", scopes: ["source.gdscript", "variable.other.gdscript", "variable.parameter.function.gdscript"] },
+    { key: "punct", name: "brackets", scopes: ["punctuation.definition.parameters.begin.gdscript", "punctuation.definition.parameters.end.gdscript", "punctuation.separator.parameters.gdscript"] },
+    { key: "comment", name: "comments", scopes: ["comment.line.number-sign.gdscript", "comment.line.double-slash.glsl", "comment.block.glsl"], style: "italic" },
+    { key: "const", name: "numbers", scopes: ["constant.numeric.gdscript", "constant.numeric.glsl"] },
+    { key: "func", name: "functions", scopes: ["entity.name.function.gdscript", "support.function.builtin.gdscript", "support.function.glsl"] },
+    { key: "kw", name: "keywords", scopes: ["keyword.control.gdscript", "keyword.language.gdscript", "keyword.control.glsl"] },
+    { key: "op", name: "operators", scopes: ["keyword.operator.gdscript", "keyword.operator.wordlike.gdscript", "keyword.operator.glsl"] },
+    { key: "mod", name: "var, const, func, signal, types", scopes: ["storage.type.gdscript", "storage.type.var.gdscript", "storage.type.const.gdscript", "storage.type.function.gdscript", "entity.other.inherited-class.gdscript", "entity.name.type.class.gdscript", "storage.type.glsl"] },
+    { key: "str", name: "strings, scene values", scopes: ["string.quoted.double.gdscript", "string.quoted.single.gdscript", "string.quoted.double.ini"] },
+    { key: "interp", name: "annotations, uniforms, scene keys", scopes: ["entity.name.function.decorator.gdscript", "storage.modifier.gdscript", "storage.type.qualifier.glsl", "keyword.other.definition.ini"] },
+  ] },
+}
 const HEX = /^#[0-9a-f]{6}$/i
-// What is kept: `{dark: {...}, light: {...}}`. A flat map is the shape
-// of the first days, when there was one ground for code: it was dark's.
-const clean = c => Object.fromEntries(TOKENS.filter(t => HEX.test((c || {})[t.key] || "")).map(t => [t.key, c[t.key].toLowerCase()]))
-const coloursOf = () => { try { const c = JSON.parse(store.get(COLOURS_KEY) || "{}"); return c.dark || c.light ? { dark: clean(c.dark), light: clean(c.light) } : { dark: clean(c), light: {} } } catch (e) { return { dark: {}, light: {} } } }
+// What is kept: `{dark: {elixir: {...}, json: {...}}, light: {...}}`. A
+// ground holding the keys themselves is the shape of the first days,
+// when there was one language for colour: it was Elixir's.
+const clean = c => Object.fromEntries(KEYS.filter(k => HEX.test((c || {})[k] || "")).map(k => [k, c[k].toLowerCase()]))
+const cleanGround = g => {
+  if (!g) return {}
+  if (KEYS.some(k => k in g)) return { elixir: clean(g) }
+  return Object.fromEntries(Object.keys(LANGS).filter(l => g[l]).map(l => [l, clean(g[l])]))
+}
+const coloursOf = () => { try { const c = JSON.parse(store.get(COLOURS_KEY) || "{}"); return c.dark || c.light ? { dark: cleanGround(c.dark), light: cleanGround(c.light) } : { dark: cleanGround(c), light: {} } } catch (e) { return { dark: {}, light: {} } } }
 function applyColours(all) {
-  const root = document.documentElement.style, c = all[ground()] || {}
-  for (const t of TOKENS) { if (c[t.key]) root.setProperty(`--t-${t.key}`, c[t.key]); else root.removeProperty(`--t-${t.key}`) }
+  const root = document.documentElement.style, g = all[ground()] || {}
+  for (const l of Object.keys(LANGS)) for (const k of KEYS) { const v = (g[l] || {})[k]; if (v) root.setProperty(`--t-${l}-${k}`, v); else root.removeProperty(`--t-${l}-${k}`) }
 }
 applyColours(coloursOf())
 // The ground changes under the palette — the toggle, or the machine —
 // and the other set goes on; whoever draws swatches listens too.
 const onGround = f => { new MutationObserver(f).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] }); matchMedia("(prefers-color-scheme: dark)").addEventListener("change", f) }
 onGround(() => applyColours(coloursOf()))
-// The colour each token shows now: the reader's, or the stylesheet's.
-const shownColour = key => getComputedStyle(document.documentElement).getPropertyValue(`--t-${key}`).trim().toLowerCase()
+// The colour a language's role shows now: the reader's, or the stylesheet's.
+const shownColour = (lang, key) => getComputedStyle(document.documentElement).getPropertyValue(`--t-${lang}-${key}`).trim().toLowerCase()
 // A jsonc is JSON with comments and trailing commas; VS Code's settings
 // carry the rules under editor.tokenColorCustomizations.textMateRules, a
 // theme file under tokenColors, and a bare array is taken as the rules.
@@ -584,50 +660,56 @@ function parseJsonc(text) {
   if (!Array.isArray(rules)) throw new Error("no textMateRules, no tokenColors")
   return rules
 }
-// A rule's scope covers a token's when it is the same, or a parent of it.
+// A rule's scope covers a role's when it is the same, or a parent of it.
 const covers = (rule, scope) => scope === rule || scope.startsWith(rule + ".")
+// The rules, sorted into languages: `{elixir: {kw: "#..."}, json: {...}}`.
 function coloursFromRules(rules) {
-  const c = {}
+  const out = {}
   for (const r of rules) {
     const fg = r.settings && r.settings.foreground
     if (!fg || !HEX.test(fg)) continue
-    const scopes = Array.isArray(r.scope) ? r.scope : String(r.scope || "").split(",")
-    for (const t of TOKENS) if (scopes.some(rs => t.scopes.some(ts => covers(rs.trim(), ts)))) c[t.key] = fg.toLowerCase()
+    const scopes = (Array.isArray(r.scope) ? r.scope : String(r.scope || "").split(",")).map(x => x.trim()).filter(Boolean)
+    for (const [l, lang] of Object.entries(LANGS)) for (const role of lang.roles) if (scopes.some(rs => role.scopes.some(ts => covers(rs, ts)))) (out[l] ||= {})[role.key] = fg.toLowerCase()
   }
-  return c
+  return out
 }
-const asJsonc = () => JSON.stringify({ "editor.tokenColorCustomizations": { textMateRules: TOKENS.map(t => ({ scope: t.scopes.length === 1 ? t.scopes[0] : t.scopes, settings: { ...(t.style ? { fontStyle: t.style } : {}), foreground: shownColour(t.key) } })) } }, null, 2)
+const asJsonc = () => JSON.stringify({ "editor.tokenColorCustomizations": { textMateRules: Object.entries(LANGS).flatMap(([l, lang]) => lang.roles.map(role => ({ scope: role.scopes.length === 1 ? role.scopes[0] : role.scopes, settings: { ...(role.style ? { fontStyle: role.style } : {}), foreground: shownColour(l, role.key) } }))) } }, null, 2)
 function bindColours(el) {
-  const swatches = el.querySelector("#swatches"), area = el.querySelector("#jsonc"), word = el.querySelector("#jsonc-word"), reset = el.querySelector("#jsonc-reset"), which = el.querySelector("#colours-ground")
-  if (!swatches || !area) return
-  let all = coloursOf()
-  const mine = () => all[ground()] || {}
+  const swatches = el.querySelector("#swatches"), area = el.querySelector("#jsonc"), word = el.querySelector("#jsonc-word"), reset = el.querySelector("#jsonc-reset"), which = el.querySelector("#colours-ground"), langSel = el.querySelector("#colours-lang")
+  if (!swatches || !area || !langSel) return
+  let all = coloursOf(), lang = "elixir"
+  const mine = () => (all[ground()] || {})[lang] || {}
   const say = (text, bad) => { if (word) { word.textContent = text; word.classList.toggle("bad", !!bad) } }
-  const set = c => { all = { ...all, [ground()]: c }; applyColours(all) }
+  const set = c => { const g = ground(); all = { ...all, [g]: { ...(all[g] || {}), [lang]: c } }; applyColours(all) }
+  const merge = found => { const g = ground(), was = all[g] || {}; all = { ...all, [g]: Object.fromEntries(Object.keys(LANGS).map(l => [l, { ...(was[l] || {}), ...(found[l] || {}) }])) }; applyColours(all) }
   const keep = () => { store.set(COLOURS_KEY, JSON.stringify(all)); draw() }
+  langSel.replaceChildren(...Object.entries(LANGS).map(([l, v]) => { const o = document.createElement("option"); o.value = l; o.textContent = v.name; return o }))
   const draw = () => {
     const g = ground()
-    if (which) which.textContent = `the ${g} ground's — ${HOUSE[g]} underneath`
+    langSel.value = lang
+    for (const pre of el.querySelectorAll(".sample.src[data-lang]")) pre.hidden = pre.dataset.lang !== lang
+    if (which) which.textContent = `the ${g} ground's, for ${LANGS[lang].name} — ${HOUSE[g]} underneath`
     if (reset) reset.textContent = `Back to ${HOUSE[g]}`
-    swatches.replaceChildren(...TOKENS.map(t => {
+    swatches.replaceChildren(...LANGS[lang].roles.map(role => {
       const label = document.createElement("label"), input = document.createElement("input"), name = document.createElement("span"), own = document.createElement("small")
-      input.type = "color"; input.value = shownColour(t.key); input.setAttribute("aria-label", `${t.name}, the colour`)
-      input.addEventListener("input", () => { set({ ...mine(), [t.key]: input.value.toLowerCase() }); own.textContent = "·" })
+      input.type = "color"; input.value = shownColour(lang, role.key); input.setAttribute("aria-label", `${role.name}, the colour`)
+      input.addEventListener("input", () => { set({ ...mine(), [role.key]: input.value.toLowerCase() }); own.textContent = "·" })
       input.addEventListener("change", () => { store.set(COLOURS_KEY, JSON.stringify(all)); say("") })
-      name.textContent = t.name; own.textContent = mine()[t.key] ? "·" : ""; own.title = "set by you"
+      name.textContent = role.name; own.textContent = mine()[role.key] ? "·" : ""; own.title = "set by you"
       label.append(input, name, own); return label
     }))
   }
+  langSel.addEventListener("change", () => { lang = langSel.value in LANGS ? langSel.value : "elixir"; say(""); draw() })
   el.querySelector("#jsonc-apply")?.addEventListener("click", () => {
     try {
       const found = coloursFromRules(parseJsonc(area.value))
-      const n = Object.keys(found).length
-      if (!n) return say("no rule of it covers any of the twelve", true)
-      set({ ...mine(), ...found }); keep(); say(`${n} of 12 taken, for the ${ground()} ground`)
+      const n = Object.values(found).reduce((a, c) => a + Object.keys(c).length, 0)
+      if (!n) return say("no rule of it covers any role of any language", true)
+      merge(found); keep(); say(`${n} rules taken, for the ${ground()} ground: ${Object.keys(found).map(l => `${Object.keys(found[l]).length} ${l}`).join(", ")}`)
     } catch (e) { say(`not read: ${e.message}`, true) }
   })
-  el.querySelector("#jsonc-show")?.addEventListener("click", () => { area.value = asJsonc(); say(`the ${ground()} ground's palette, as VS Code reads it — copy it out`); area.focus(); area.select() })
-  reset?.addEventListener("click", () => { set({}); keep(); say(`${HOUSE[ground()]}, as it came`) })
+  el.querySelector("#jsonc-show")?.addEventListener("click", () => { area.value = asJsonc(); say(`the ${ground()} ground's palettes, every language, as VS Code reads them — copy them out`); area.focus(); area.select() })
+  reset?.addEventListener("click", () => { set({}); keep(); say(`${HOUSE[ground()]} for ${LANGS[lang].name}, as it came`) })
   onGround(() => { all = coloursOf(); draw() })
   draw()
 }

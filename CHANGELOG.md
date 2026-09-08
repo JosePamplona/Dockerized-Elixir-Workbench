@@ -16,6 +16,34 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **Doors, a paper of the Project tab.** The plan of every address the
+  project answers to, drawn off the status: the workbench's own app and
+  pgAdmin; the doors the inserted cartridges open, each called once with
+  what it answered beside it as a chip; the doors an inserted cartridge
+  keeps shut, unlit with what would open them — `--with ash_admin`,
+  exdoc inserted — which the rail's Doors section, filtered to the open
+  ones, could never say; the probes the cartridges have the console
+  call; and the doors of the cartridges not in yet. The rail stays the
+  bell, this is the map. Its ribbon tab wears the app's port where the
+  others wear a file's name, and it is never unlit for want of a file.
+- **A palette a language.** The colours of the Interface tab are kept
+  per language as well as per ground: Elixir; HTML and its templates;
+  CSS and SCSS; TypeScript and JavaScript; JSON; Markdown; and Godot,
+  whose scripts, shaders, scenes and project file share one — each
+  naming only the rules it has (JSON has keys and no keywords), each
+  with a sample of its own, and each stamped on the Files sheet's
+  `.src` as `data-lang`. A pasted jsonc sorts itself by the language
+  its scopes name, a scope with no language reaching every language
+  that lists one under it, and reads back out with every language at
+  once. Three lexers come in for it: `makeup_ts` for `.ts`,
+  `makeup_css` for `.css`, and `makeup_syntect` — the Rust NIF the
+  highlighter's notes named as the escape hatch — for `.md`, `.scss`,
+  `.gd`, `.gdshader` (through GLSL), `.tscn`, `.tres` and
+  `project.godot` (through INI), so the README, AGENTS.md and guides a
+  cartridge writes read coloured on the sheet. Numbers moved from the
+  operators' rule to the constants', where the jsonc has them, and
+  types to the modules'; CSS's properties and Godot's annotations take
+  a rule of their own where their class would have meant another thing.
 - **The code follows the ground.** The terminal — jobs' output, the
   logs, the Terminal screen, `.env` and `config.conf`, the papers'
   blocks, the Files sheet — was dark on both grounds; on the light one

@@ -296,7 +296,12 @@ defmodule ConsoleWeb.Box do
         <div :if={@f.treatment == :image && not @f.gone} class="shot">
           <img src={"/blob/#{@f.tip}/#{@f.path}"} alt={@f.path} />
         </div>
-        <pre :if={@f.treatment != :image && @f.treatment != :omit} class="src" id={"#{@id}-src"}>
+        <pre
+          :if={@f.treatment != :image && @f.treatment != :omit}
+          class="src"
+          id={"#{@id}-src"}
+          data-lang={Console.Highlight.lang(@f.path)}
+        >
           <div :if={String.downcase(Path.extname(@f.path)) == ".svg" && not @f.gone} class="switch">
             <button type="button" class="on" aria-pressed="true" phx-click={Phoenix.LiveView.JS.remove_class("drawn", to: "##{@id}-src") |> Phoenix.LiveView.JS.add_class("on", to: "##{@id}-src .switch button:first-child") |> Phoenix.LiveView.JS.remove_class("on", to: "##{@id}-src .switch button:last-child")}>code</button>
             <button type="button" aria-pressed="false" phx-click={Phoenix.LiveView.JS.add_class("drawn", to: "##{@id}-src") |> Phoenix.LiveView.JS.remove_class("on", to: "##{@id}-src .switch button:first-child") |> Phoenix.LiveView.JS.add_class("on", to: "##{@id}-src .switch button:last-child")}>drawing</button>

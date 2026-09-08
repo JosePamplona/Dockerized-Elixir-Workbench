@@ -321,6 +321,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   and a job's output rounds its leading too: 13px at 1.5 gave 19.5px
   lines that took turns at 19 and 20.
 
+### Removed
+
+- **The decision pages of the console.** `console/la-segunda-fila.html`,
+  `console/docker-en-la-consola.html` and `console/colorear-el-codigo.html`
+  are gone: each was made to settle one question of the interface — the
+  second row of tabs, the Docker screen, the colour of the code — and
+  each is settled, its answer in the console and in this file. They stay
+  in the history for whoever wants the candidates.
+
 ## v0.11.0 - (2026-09-06)
 
 ### Added

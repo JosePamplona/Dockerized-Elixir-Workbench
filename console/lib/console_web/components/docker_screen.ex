@@ -2,8 +2,9 @@ defmodule ConsoleWeb.DockerScreen do
   @moduledoc """
   The Docker screen: what the daemon holds, in six documents under the
   row of tabs the Project screen has — Containers, Images, Volumes,
-  Networks, Events, Deploys. Settled in `console/docker-en-la-consola.html`
-  (2026-09-05): the table across the top of Containers and the card of
+  Networks, Events, Deploys. Settled on 2026-09-05 in a decision page,
+  `console/docker-en-la-consola.html`, retired once the answer was in
+  (it stays in the history): the table across the top of Containers and the card of
   the container picked *under* it, never beside it, because the width
   is for the columns and the card wants it whole for the env and the
   mounts; the console itself a row like the others, marked; Events with

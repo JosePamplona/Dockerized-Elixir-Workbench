@@ -124,6 +124,12 @@ defmodule ConsoleWeb.Board do
           path={"localhost:#{@status["ports"]["pgadmin"]}"}
           href={"http://localhost:#{@status["ports"]["pgadmin"]}"}
         />
+        <.door_ref
+          :if={@status["ports"]["grafana"]}
+          label="Grafana"
+          path={"localhost:#{@status["ports"]["grafana"]}"}
+          href={"http://localhost:#{@status["ports"]["grafana"]}"}
+        />
       </div>
     </section>
     """

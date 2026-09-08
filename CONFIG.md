@@ -34,7 +34,7 @@ The workbench commits what it does to the workspace: the first commit after `new
 
 ## Docker containers specs
 
-There is no host ports configuration: each workspace gets the first available ports at creation (application from `4000`, pgAdmin from `5050`), baked into its own `docker-compose.yml` (`up --deploy scaled` picks its own free ports, one per replica plus the balancer's, when it bakes `docker-compose.scaled.yml`) — that file is the source of truth of the workspace orchestration; edit it to change ports or images. The database is not published to the host: it is only reachable from inside its workspace (the `app` service shares its network namespace). Several workspaces can run simultaneously without conflicts.
+There is no host ports configuration: each workspace gets the first available ports at creation (application from `4000`, pgAdmin from `5050`, Grafana from `3000`), baked into its own `docker-compose.yml` (`up --deploy scaled` picks its own free ports, one per replica plus the balancer's, when it bakes `docker-compose.scaled.yml`) — that file is the source of truth of the workspace orchestration; edit it to change ports or images. The database is not published to the host: it is only reachable from inside its workspace (the `app` service shares its network namespace). Several workspaces can run simultaneously without conflicts.
 
 | Variable | Type | Example | Description |
 | --: | :-- | :-- | :-- |
@@ -44,6 +44,8 @@ There is no host ports configuration: each workspace gets the first available po
 | `PGADMIN_IMAGE_VERSION` | string | `"latest"` | _PgAdmin_ docker image baked into new workspaces.<br/>Available versions: <https://hub.docker.com/r/dpage/pgadmin4/tags> |
 | `NGINX_IMAGE_VERSION` | string | `"alpine"` | _nginx_ docker image used as the load balancer of the scaled deployment (`up --deploy scaled`).<br/>Available versions: <https://hub.docker.com/_/nginx/tags> |
 | `K6_IMAGE_VERSION` | string | `"latest"` | _k6_ docker image the `k6` cartridge puts in the compose, run by `./wb.sh k6`.<br/>Available versions: <https://hub.docker.com/r/grafana/k6/tags> |
+| `PROMETHEUS_IMAGE_VERSION` | string | `"latest"` | _Prometheus_ docker image the `monitoring` cartridge puts in the compose, scraping the app's `/metrics`.<br/>Available versions: <https://hub.docker.com/r/prom/prometheus/tags> |
+| `GRAFANA_IMAGE_VERSION` | string | `"latest"` | _Grafana_ docker image the `monitoring` cartridge puts in the compose, published on its own port (the first free one from `3000`).<br/>Available versions: <https://hub.docker.com/r/grafana/grafana/tags> |
 
 There is nothing else: the retired feature flags (`ENHANCE`, `EXDOC`, `COVERALLS`, `HEALTH`, …) died with the opinionated `workbench.setup` composition. Their features live on as cartridges — the ones the chief still picks, in the `chiefs_setup` collection — and each cartridge's options are set on its own installer (`./wb.sh add coveralls --theme custom`), not here.
 

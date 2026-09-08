@@ -120,16 +120,23 @@ release templates with the distributed-node exports DNSCluster needs,
 plus `DNS_CLUSTER_QUERY` in the environment files. Installed by hand
 with `wb.sh add clustering`.
 
-[pgadmin](pgadmin/) and [k6](k6/) bring the workspace a **service**:
-a container the compose carries because the project asked for it. A
-cartridge says so with `services/1` — the names `mix workbench.compose`
-renders (`postgres`, declared by ecto on that adapter; `pgadmin`; `k6`)
-— and what the installer writes is the file the service opens with,
-which is also the mark: pgAdmin's `pgadmin/servers.json`, k6's
-`k6/smoke.js`. The compose is baked from what the project carries
-(`./wb.sh bake` after the insert), never the other way round; see
-`scripts/PLAN.md`. pgadmin is a chiefs_setup pick, beside psql_extras,
-and refuses off Postgres as it does; k6 is inserted by hand.
+[pgadmin](pgadmin/), [k6](k6/) and [monitoring](monitoring/) bring the
+workspace a **service**: a container the compose carries because the
+project asked for it. A cartridge says so with `services/1` — the names
+`mix workbench.compose` renders (`postgres`, `mysql`, `mssql` or
+`sqlite`, declared by ecto off its adapter; `pgadmin`; `k6`;
+`prometheus` and `grafana`) — and what the installer writes is the file
+the service opens with: pgAdmin's `pgadmin/servers.json`, k6's
+`k6/smoke.js`, Prometheus's `monitoring/prometheus.yml` and Grafana's
+`monitoring/grafana/datasource.yml`. For the first two the file is the
+mark too; monitoring writes Elixir as well — PromEx, whose module is
+its mark — so that what the containers read has something to read.
+What is the topology's (where the app is, where Prometheus is) the
+compose hands over, so the files serve every deployment. The compose is
+baked from what the project carries (`./wb.sh bake` after the insert),
+never the other way round; see `scripts/PLAN.md`. pgadmin is a
+chiefs_setup pick, beside psql_extras, and refuses off Postgres as it
+does; k6 and monitoring are inserted by hand.
 
 [healthcheck2](healthcheck2/) is the vanilla counterpart of
 `healthcheck`: liveness and readiness probes as the first plug of the

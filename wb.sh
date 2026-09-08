@@ -155,6 +155,7 @@
     # chosen per workspace and mapped to these in its compose file.
     APP_INTERNAL_PORT="4000"
     PGADMIN_INTERNAL_PORT="5050"
+    GRAFANA_INTERNAL_PORT="3000"
     SOURCE_CODE_VOLUME="$WORKSPACE_PATH:/app/src"
     # Where Mix compiles. Two sides compile the workspace, and never
     # into the same directory: the app service into the compose's
@@ -615,9 +616,9 @@
     # file with the release's — off `mix workbench.compose` in the
     # igniter package (scripts/PLAN.md), run on the project: this side
     # decides the ports and the images and hands them over; which
-    # services the project asks for — a Postgres and its pgAdmin with
-    # ecto on postgres, none without — the task reads off the project's
-    # cartridges, each declaring its own. The task writes into the
+    # services the project asks for — a database with ecto, pgAdmin,
+    # k6, Prometheus and Grafana with their cartridges — the task reads
+    # off the project's cartridges, each declaring its own. The task writes into the
     # workspace itself (/app/src on its side, --out), since a mix run's
     # stdout carries deps.get's lines too; to a temporary first, so a
     # task that fails leaves the file as it was.
@@ -636,12 +637,16 @@
       --internal-port "$APP_INTERNAL_PORT" \
       --pgadmin-port "$PGADMIN_PORT" \
       --pgadmin-internal-port "$PGADMIN_INTERNAL_PORT" \
+      --grafana-port "$GRAFANA_PORT" \
+      --grafana-internal-port "$GRAFANA_INTERNAL_PORT" \
       --postgres-version "$POSTGRES_IMAGE_VERSION" \
       --pgadmin-version "$PGADMIN_IMAGE_VERSION" \
       --nginx-version "$NGINX_IMAGE_VERSION" \
       --mysql-version "${MYSQL_IMAGE_VERSION:-8}" \
       --mssql-version "${MSSQL_IMAGE_VERSION:-2022-latest}" \
       --k6-version "${K6_IMAGE_VERSION:-latest}" \
+      --prometheus-version "${PROMETHEUS_IMAGE_VERSION:-latest}" \
+      --grafana-version "${GRAFANA_IMAGE_VERSION:-latest}" \
       --out "/app/src/$3.baking" > /dev/null
     then mv "$file_path.baking" "$file_path"
     else rm -f "$file_path.baking"; return 1
@@ -655,8 +660,10 @@
   compose_ports() {
     APP_PORT=$(workspace_app_port)
     PGADMIN_PORT=$(workspace_pgadmin_port)
+    GRAFANA_PORT=$(workspace_grafana_port)
     [ -n "$APP_PORT" ]     || APP_PORT=$(first_free_port 4000)
     [ -n "$PGADMIN_PORT" ] || PGADMIN_PORT=$(first_free_port 5050)
+    [ -n "$GRAFANA_PORT" ] || GRAFANA_PORT=$(first_free_port 3000)
   }
 
   # compose_behind
@@ -803,12 +810,13 @@
   # workspace_port <COMPOSE_FILE> <INTERNAL_PORT>
     # The host port a compose file of the workspace publishes for a
     # container port — nothing when the file, or the service, is not
-    # there. The two below read the dev file, where the ports live.
+    # there. The three below read the dev file, where the ports live.
   workspace_port() {
-    sed -n "s/^ *- \([0-9]*\):$2\$/\1/p" "$WORKSPACE_PATH/$1" | head -n 1
+    sed -n "s/^ *- \([0-9]*\):$2\$/\1/p" "$WORKSPACE_PATH/$1" 2>/dev/null | head -n 1
   }
   workspace_app_port()     { workspace_port "$COMPOSE_FILE" "$APP_INTERNAL_PORT"; }
   workspace_pgadmin_port() { workspace_port "$COMPOSE_FILE" "$PGADMIN_INTERNAL_PORT"; }
+  workspace_grafana_port() { workspace_port "$COMPOSE_FILE" "$GRAFANA_INTERNAL_PORT"; }
 
   # Where the toolchain runs -------------------------------------------------
     # Four runners below need the toolchain and nothing else: mix on the
@@ -1213,13 +1221,13 @@
     # Without a project it still answers, with 'exists' false, so the
     # console can draw the empty workspace instead of an error.
   status_json() {
-    local port pgadmin project
+    local port pgadmin grafana project
     if [ "$EXISTING_PROJECT" != true ]; then
       printf '{\n'
       printf '  "exists": false,\n'
       printf '  "workspace": %s,\n' "$(json_string "$WORKSPACE_PATH")"
       printf '  "compose_project": null,\n'
-      printf '  "ports": {"app": null, "pgadmin": null},\n'
+      printf '  "ports": {"app": null, "pgadmin": null, "grafana": null},\n'
       printf '  "baked": {"dev": false, "prod": false, "scaled": false},\n'
       printf '  "deployment": null,\n'
       printf '  "containers": [],\n'
@@ -1231,6 +1239,7 @@
     fi
     port=$(workspace_app_port)
     pgadmin=$(workspace_pgadmin_port)
+    grafana=$(workspace_grafana_port)
     if [ "$1" == "--fast" ]
     then project=""
     else project=$(reader_igniter workbench.status --json 2>/dev/null | json_answer); fi
@@ -1243,7 +1252,7 @@
     printf '  "exists": true,\n'
     printf '  "workspace": %s,\n' "$(json_string "$WORKSPACE_PATH")"
     printf '  "compose_project": %s,\n' "$(json_string "$(compose_project_name)")"
-    printf '  "ports": {"app": %s, "pgadmin": %s},\n' "${port:-null}" "${pgadmin:-null}"
+    printf '  "ports": {"app": %s, "pgadmin": %s, "grafana": %s},\n' "${port:-null}" "${pgadmin:-null}" "${grafana:-null}"
     printf '  "baked": {\n'
     printf '    "dev": true,\n'
     printf '    "prod": %s,\n' "$([ -f "$WORKSPACE_PATH/$PROD_COMPOSE_FILE" ] && echo true || echo false)"
@@ -1285,15 +1294,17 @@
   # status_report
     # The same, for a person.
   status_report() {
-    local port pgadmin containers
+    local port pgadmin grafana containers
     port=$(workspace_app_port)
     pgadmin=$(workspace_pgadmin_port)
+    grafana=$(workspace_grafana_port)
     containers=$(workspace_containers '{{.Service}} {{.State}}{{if .Health}}/{{.Health}}{{end}} ({{.Image}})')
 
     echo "${B}Workspace${R}  $WORKSPACE_PATH"
     echo "${B}Project${R}    $(compose_project_name)"
     echo "  app      ${Li}http://localhost:$port${R}"
     [ -n "$pgadmin" ] && echo "  pgAdmin  ${Li}http://localhost:$pgadmin${R}"
+    [ -n "$grafana" ] && echo "  Grafana  ${Li}http://localhost:$grafana${R}"
     echo
     echo "${B}Deployments${R}  (baked compose files; up with: ./$(basename "$0") up --deploy TARGET)"
     for target in dev prod scaled; do
@@ -1330,9 +1341,12 @@
     # Dockerfile runs as nobody).
   bake_prod_compose() {
     APP_PORT=$(workspace_app_port)
-    # Its own pgAdmin port, kept across bakes; the first free one the first time.
+    # Its own pgAdmin and Grafana ports, kept across bakes; the first
+    # free ones the first time.
     PGADMIN_PORT=$(workspace_port "$PROD_COMPOSE_FILE" "$PGADMIN_INTERNAL_PORT")
     [ -n "$PGADMIN_PORT" ] || PGADMIN_PORT=$(first_free_port 5050)
+    GRAFANA_PORT=$(workspace_port "$PROD_COMPOSE_FILE" "$GRAFANA_INTERNAL_PORT")
+    [ -n "$GRAFANA_PORT" ] || GRAFANA_PORT=$(first_free_port 3000)
     APP_VERSION=$(
       sed -n 's/^.*version: "\(.*\)".*/\1/p' "$WORKSPACE_PATH/$MIX_FILE" | \
       head -n 1
@@ -1379,12 +1393,17 @@
     # Writes the workspace's scaled compose file, off workbench.compose
     # as bake_compose does: the production image replicated REPLICAS
     # times on a bridge network, each replica with its own host port.
-    # The ports are chosen here and left in the REPLICA_PORTS array.
+    # The ports are chosen here and left in the REPLICA_PORTS array;
+    # Grafana's, with the monitoring cartridge in, is kept across bakes
+    # as the prod file keeps its own.
   bake_scaled_compose() {
     local file_path="$WORKSPACE_PATH/$SCALED_COMPOSE_FILE"
     local port=4000
     local i=1
     local balancer_flag clustering_flag replica_ports
+
+    GRAFANA_PORT=$(workspace_port "$SCALED_COMPOSE_FILE" "$GRAFANA_INTERNAL_PORT")
+    [ -n "$GRAFANA_PORT" ] || GRAFANA_PORT=$(first_free_port 3000)
 
     APP_VERSION=$(
       sed -n 's/^.*version: "\(.*\)".*/\1/p' "$WORKSPACE_PATH/$MIX_FILE" | \
@@ -1430,6 +1449,10 @@
       --mysql-version "${MYSQL_IMAGE_VERSION:-8}" \
       --mssql-version "${MSSQL_IMAGE_VERSION:-2022-latest}" \
       --k6-version "${K6_IMAGE_VERSION:-latest}" \
+      --prometheus-version "${PROMETHEUS_IMAGE_VERSION:-latest}" \
+      --grafana-version "${GRAFANA_IMAGE_VERSION:-latest}" \
+      --grafana-port "$GRAFANA_PORT" \
+      --grafana-internal-port "$GRAFANA_INTERNAL_PORT" \
       --replicas "$REPLICAS" \
       --replica-ports "$replica_ports" \
       "${balancer_flag[@]}" \
@@ -1658,8 +1681,8 @@
     print_command "bake"
     section_content \
       "Bake the workspace's compose again, for the project as it is now" \
-      "— with the services its cartridges ask for: a Postgres and its" \
-      "pgAdmin with ecto on postgres, none without (or on SQLite) —" \
+      "— with the services its cartridges ask for: a database with ecto," \
+      "pgAdmin, k6, Prometheus and Grafana with theirs, none without —" \
       "keeping its ports, as one commit. What 'add ecto' asks for next." \
       "The toolchain Dockerfile is baked again too when the seed moved," \
       "keeping the project's own Phoenix installer, and its image rebuilt." \
@@ -1755,7 +1778,8 @@
       "Run a k6 load test against the deployment that is up, with the" \
       "k6 cartridge's tool (./$(basename "$0") add k6): the scripts live in the" \
       "project's k6/ directory and reach the app through BASE_URL, set" \
-      "by the compose for each topology." \
+      "by the compose for each topology. With the monitoring cartridge" \
+      "in, the results go to Prometheus too, for Grafana to draw." \
       "- TARGET: Deployment to test (Default: dev)." \
       "- SCRIPT: A file under k6/ (Default: smoke.js)." \
       "- K6_OPTIONS: Passed to 'k6 run', e.g. --vus 20 --duration 1m."
@@ -1765,9 +1789,9 @@
       "Follow the workspace containers logs (Ctrl+C detaches, the" \
       "containers keep running)." \
       "- TARGET: Deployment whose logs to read (Defalut: dev)." \
-      "- SERVICE: Restrict to some services (app, database, pgadmin;" \
-      "  migrate too with '--deploy prod'; app1..appN, balancer and" \
-      "  migrate with '--deploy scaled')."
+      "- SERVICE: Restrict to some services (app, database, pgadmin," \
+      "  prometheus, grafana; migrate too with '--deploy prod'; app1..appN," \
+      "  balancer and migrate with '--deploy scaled')."
 
     print_command "stop | down | ps | restart [--deploy TARGET] [SERVICE...]"
     section_content \
@@ -1776,9 +1800,9 @@
       "'restart' brings the named services up again, the deployment" \
       "left whole)." \
       "- TARGET: Deployment to act on (Defalut: dev)." \
-      "- SERVICE: Restrict to some services (app, database, pgadmin;" \
-      "  migrate too with '--deploy prod'; app1..appN, balancer and" \
-      "  migrate with '--deploy scaled')."
+      "- SERVICE: Restrict to some services (app, database, pgadmin," \
+      "  prometheus, grafana; migrate too with '--deploy prod'; app1..appN," \
+      "  balancer and migrate with '--deploy scaled')."
 
     print_command "prune [--images | --build]"
     section_content \
@@ -1998,6 +2022,7 @@ if [ $# -gt 0 ]; then
     # Host ports for this workspace: first available ones.
     APP_PORT=$(first_free_port 4000)
     PGADMIN_PORT=$(first_free_port 5050)
+    GRAFANA_PORT=$(first_free_port 3000)
 
     # The vanilla creation: config.conf only names the project, the
     # workspace and the stack versions, since they shape the project

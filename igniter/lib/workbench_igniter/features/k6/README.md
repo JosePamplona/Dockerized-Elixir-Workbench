@@ -20,6 +20,11 @@ topology k6 runs in: `http://localhost:4000` inside the pod (dev and
 prod), `http://balancer` on the scaled network when the balancer is in,
 `http://app:4000` — the alias every replica answers to — when it is not.
 
+With the monitoring cartridge in as well, the compose sets `K6_OUT` and
+`K6_PROMETHEUS_RW_SERVER_URL` on the container too, so every run writes
+its results to the workspace's Prometheus as `k6_*` metrics, for Grafana
+to draw beside the app's; nothing about the verb changes.
+
 ## What it installs
 
 * `k6/smoke.js` — five virtual users for fifteen seconds asking the

@@ -53,6 +53,7 @@ defmodule WorkbenchIgniter.Features do
     # Services of the workspace, declared for the compose (scripts/PLAN.md).
     Features.Pgadmin,
     Features.K6,
+    Features.Monitoring,
     # The base cartridges: capabilities phx.new decides at generation
     # time, added after the fact (WorkbenchIgniter.PhxDelta).
     Features.Mailer,

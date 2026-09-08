@@ -15,8 +15,8 @@ defmodule ConsoleWeb.Doors do
   alias ConsoleWeb.Cartridges
 
   @doc """
-  The plan, off the status and the catalog: `own` (the workbench's app
-  and pgAdmin), `open` and `shut` (every door of every inserted
+  The plan, off the status and the catalog: `own` (the workbench's app,
+  pgAdmin and Grafana), `open` and `shut` (every door of every inserted
   cartridge, sorted by whether it can be pressed), `probes` (what the
   cartridges have the console call), `waiting` (the doors of the
   cartridges not in, each saying which insert opens it). Nil without a
@@ -72,15 +72,15 @@ defmodule ConsoleWeb.Doors do
     end
   end
 
-  # The workbench's own addresses: the app, and pgAdmin when it has a
-  # port. Both ride the deployment: with nothing up, neither answers.
+  # The workbench's own addresses: the app, and pgAdmin and Grafana when
+  # they have a port. All ride the deployment: with nothing up, none
+  # answers.
   defp own(status, base, up) do
-    pg = get_in(status, ["ports", "pgadmin"])
-
     [%{label: "app", path: "localhost:#{get_in(status, ["ports", "app"])}", href: up && base}] ++
-      if pg,
-        do: [%{label: "pgAdmin", path: "localhost:#{pg}", href: up && "http://localhost:#{pg}"}],
-        else: []
+      for {label, key} <- [{"pgAdmin", "pgadmin"}, {"Grafana", "grafana"}],
+          port = get_in(status, ["ports", key]) do
+        %{label: label, path: "localhost:#{port}", href: up && "http://localhost:#{port}"}
+      end
   end
 
   # One door of an inserted cartridge: shut by its condition, or by the

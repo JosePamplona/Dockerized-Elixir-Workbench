@@ -91,7 +91,10 @@ defmodule ConsoleWeb.ProjectScreen do
         <button :if={@doors.up} class="btn" type="button" phx-click="doors_read">Ask again</button>
       </p>
       <section>
-        <h3>The workbench's <span class="label">the app, and pgAdmin when it has a port</span></h3>
+        <h3>
+          The workbench's
+          <span class="label">the app, and pgAdmin and Grafana when they have a port</span>
+        </h3>
         <div class="urls">
           <span :for={d <- @doors.own} class="call">
             <.door_ref label={d.label} path={d.path} href={d.href} why={!d.href && "the app is down"} />

@@ -12,7 +12,7 @@
 # replaces the pod pattern with a bridge network. './wb.sh bake' writes
 # this file again for the project as it is now.
 
-name: <%= @app_name %>
+name: lorem_ipsum
 
 services:
   # Pod pattern: this service's only job is to own the workspace's network
@@ -34,16 +34,16 @@ services:
     image: registry.k8s.io/pause:3.10
     ports:
       # Application port (host:container).
-      - <%= @app_port %>:<%= @internal_port %><%= if @pgadmin do %>
+      - 4000:4000
       # pgAdmin port, with the pgadmin cartridge in. The database is not
       # published: it is only reachable from inside this workspace.
-      - <%= @pgadmin_port %>:<%= @pgadmin_internal_port %><% end %><%= if @grafana do %>
+      - 5050:5050
       # Grafana port, with the monitoring cartridge in. Prometheus is not
       # published: Grafana reads it from inside this workspace.
-      - <%= @grafana_port %>:<%= @grafana_internal_port %><% end %>
+      - 3000:3000
 
   app:
-    image: <%= @image %>
+    image: lorem-ipsum:local
     build:
       # Baked by the workbench: Dockerfile.local (dev toolchain) in
       # docker-compose.yml — whose app service also runs the workbench
@@ -51,15 +51,15 @@ services:
       # and the production Dockerfile in docker-compose.prod.yml, baked
       # by 'up --env prod'. Do not point docker-compose.yml at the
       # production Dockerfile.
-      dockerfile: <%= @dockerfile %><%= if @dev do %>
+      dockerfile: Dockerfile.local
       # These arguments are only relevant for 'Dockerfile.local'.
       # Build identity for standalone builds (no workbench): the image is
       # born with the workspace creator's UID/GID, so files written into
       # the mounted source keep the right ownership. Edit if you build
       # this project on a host with a different user.
       args:
-        UID: <%= @uid %>
-        GID: <%= @gid %><% end %>
+        UID: 1000
+        GID: 1000
     # The image starts itself (CMD). Defaults per dockerfile —
     #   Dockerfile.local: sh -c 'cd /app/src && mix setup && exec mix phx.server'
     #   Dockerfile (prod): /app/bin/server
@@ -71,7 +71,7 @@ services:
     init: true
     network_mode: "service:network"
     env_file:
-      - ./.env<%= if @dev do %>
+      - ./.env
     volumes:
       - .:/app/src
       # Compiled code and dependencies stay inside Docker, never in the
@@ -80,82 +80,24 @@ services:
       # written through to the host, and nothing has to be told where
       # they went. 'delete' drops them with the project.
       - build:/app/src/_build
-      - deps:/app/src/deps<% end %><%= if @sqlite and not @dev do %>
-    volumes:
-      # The SQLite file, on a volume that outlives the container: the
-      # release opens it where DATABASE_PATH (.env) says, /app/data.
-      - data:/app/data<% end %><%= if @app_waits != [] do %>
-    depends_on:<%= for {service, condition} <- @app_waits do %>
-      <%= service %>:
-        condition: <%= condition %><% end %><% end %>
+      - deps:/app/src/deps
+    depends_on:
+      database:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
     healthcheck:
       # TCP-connect probe via bash (present in both the dev toolchain and
       # the prod runner image): no curl/wget needed.
-      test: ["CMD", "bash", "-c", "</dev/tcp/localhost/<%= @internal_port %>"]
+      test: ["CMD", "bash", "-c", "</dev/tcp/localhost/4000"]
       interval: 10s
       timeout: 5s
       retries: 3
       # First compile & boot may take a while: not counted as failures.
       start_period: 120s
-<%= if @migrate do %>
-  # One-shot migration (rel/overlays/bin/migrate, from phx.gen.release):
-  # the release phase every platform has under its own name — Heroku's
-  # release phase, Fly's release_command, a Kubernetes Job. The same
-  # image as the app, one command, run to completion before the app
-  # starts: in docker-compose.prod.yml the app's depends_on waits on
-  # this service instead of on the database (a migration that completed
-  # implies a healthy one). The dev compose has no such service: the
-  # dev image migrates itself on boot ('mix setup' in its CMD).
-  migrate:
-    image: <%= @image %>
-    build:
-      dockerfile: <%= @dockerfile %>
-    command: /app/bin/migrate
-    network_mode: "service:network"
-    env_file:
-      - ./.env<%= if @sqlite do %>
-    volumes:
-      - data:/app/data
-    depends_on:
-      data_init:
-        condition: service_completed_successfully<% end %><%= if @engine == "mssql" do %>
-    depends_on:
-      database_init:
-        condition: service_completed_successfully<% end %><%= if @engine in ["postgres", "mysql"] do %>
-    depends_on:
-      database:
-        condition: service_healthy<% end %>
-<%= if @engine == "mssql" do %>
-  # The creation, before the migration: bin/migrate runs the migrations
-  # and creates no database, and this image — unlike the postgres and
-  # mysql ones — has no variable that creates one at its first init.
-  # One-shot, on the same image, run to completion once the server is
-  # healthy; the migrator waits for it. The dev compose has no such
-  # service: 'mix setup' creates the database on its own.
-  database_init:
-    image: mcr.microsoft.com/mssql/server:<%= @mssql_version %>
-    network_mode: "service:network"
-    command: ["/opt/mssql-tools18/bin/sqlcmd", "-C", "-S", "localhost", "-U", "sa", "-P", "some!Password", "-b", "-Q", "IF DB_ID('<%= @app_name %>_prod') IS NULL CREATE DATABASE [<%= @app_name %>_prod]"]
-    depends_on:
-      database:
-        condition: service_healthy
-<% end %><%= if @sqlite do %>
-  # A place for the file, before the migration: the release runs as
-  # nobody, and a named volume mounted where the image has no directory
-  # comes up owned by root. This one-shot, as root on the same image,
-  # hands /app/data to nobody once; the migrator waits for it, and the
-  # volume keeps the ownership from then on.
-  data_init:
-    image: <%= @image %>
-    build:
-      dockerfile: <%= @dockerfile %>
-    user: root
-    command: ["sh", "-c", "chown nobody /app/data"]
-    volumes:
-      - data:/app/data
-<% end %><% end %><%= if @engine == "postgres" do %>
+
   database:
-    image: postgres:<%= @postgres_version %>
+    image: postgres:latest
     network_mode: "service:network"
     environment:
       POSTGRES_PASSWORD: postgres
@@ -166,7 +108,7 @@ services:
       # database; 'mix ecto.create' does that for dev on its own). The
       # prod and scaled deployments share this container's volume with
       # dev, so the database has to be there from the first init.
-      POSTGRES_DB: <%= @app_name %>_prod
+      POSTGRES_DB: lorem_ipsum_prod
     depends_on:
       - network
     healthcheck:
@@ -180,64 +122,9 @@ services:
       retries: 10
       # Its init is quick, but it is an init: the same allowance, shorter.
       start_period: 30s
-<% end %><%= if @engine == "mysql" do %>
-  database:
-    image: mysql:<%= @mysql_version %>
-    network_mode: "service:network"
-    environment:
-      # phx.new's own dev credentials for MySQL: root, no password.
-      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
-      # Created when the data directory is initialised, and only then,
-      # as POSTGRES_DB is: the production database the release
-      # deployments migrate into ('bin/migrate' runs the migrations, it
-      # does not create the database; 'mix ecto.create' does that for
-      # dev on its own).
-      MYSQL_DATABASE: <%= @app_name %>_prod
-    depends_on:
-      - network
-    healthcheck:
-      # 127.0.0.1 forces TCP: the image's init runs a temporary server
-      # that answers only on the unix socket, so with -h localhost a
-      # fresh volume said healthy before the real server listened.
-      test: mysqladmin ping -h 127.0.0.1 --silent
-      timeout: 45s
-      interval: 10s
-      retries: 10
-      # The first start on a fresh volume initialises the data directory,
-      # runs a temporary server and shuts it down before the real one
-      # listens: a minute or more on a busy host, and a failure in this
-      # period does not count — compose used to give up on it.
-      start_period: 90s
-<% end %><%= if @engine == "mssql" do %>
-  database:
-    image: mcr.microsoft.com/mssql/server:<%= @mssql_version %>
-    network_mode: "service:network"
-    environment:
-      # Microsoft's licence, accepted by running the image at all.
-      ACCEPT_EULA: "Y"
-      # phx.new's own dev credentials for MSSQL.
-      MSSQL_SA_PASSWORD: some!Password
-    # The image declares no volume of its own, where the postgres and
-    # mysql ones keep their data on the one theirs declares: an
-    # anonymous one here, so a stop and a start keep the data as they do.
-    volumes:
-      - /var/opt/mssql
-    depends_on:
-      - network
-    healthcheck:
-      # mssql-tools18 is where the 2022 image ships sqlcmd; -C trusts
-      # the server's own certificate, -b fails the command on an error.
-      test: /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P some!Password -Q "SELECT 1" -b
-      timeout: 45s
-      interval: 10s
-      retries: 10
-      # The first start on a fresh volume takes SQL Server minutes —
-      # system databases, tempdb — and a failure in this period does not
-      # count, or compose gave up on it before it answered (seen 2026-09-07).
-      start_period: 180s
-<% end %><%= if @pgadmin do %>
+
   pgadmin:
-    image: dpage/pgadmin4:<%= @pgadmin_version %>
+    image: dpage/pgadmin4:latest
     network_mode: "service:network"
     # `exec` on the last step, as the app's CMD: without it this shell
     # stayed PID 1 and every stop of pgadmin waited the 10 s of grace
@@ -251,7 +138,7 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: pgadmin4@pgadmin.org
       PGADMIN_DEFAULT_PASSWORD: pass
-      PGADMIN_LISTEN_PORT: <%= @pgadmin_internal_port %>
+      PGADMIN_LISTEN_PORT: 5050
       PGADMIN_CONFIG_SERVER_MODE: 'False'
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
     depends_on:
@@ -259,26 +146,26 @@ services:
     configs:
       - source: pgadmin_servers
         target: /pgadmin4/servers.json
-<% end %><%= if @k6 do %>
+
   # A load tool, not a service of the deployment: k6 runs to completion,
   # so it sits under a profile 'up' never starts — './wb.sh k6 [SCRIPT]'
   # runs it ('compose --profile tools run --rm k6'). It joins the pod, so
   # the app is on localhost for it as for everything else here; the
   # scripts are the project's own, under k6/.
   k6:
-    image: grafana/k6:<%= @k6_version %>
+    image: grafana/k6:latest
     profiles: [tools]
     network_mode: "service:network"
     environment:
-      BASE_URL: http://localhost:<%= @internal_port %><%= if @prometheus do %>
+      BASE_URL: http://localhost:4000
       # Its results go to Prometheus as well, as metrics of its own
       # (k6_*), for Grafana to draw beside the app's: the remote write
       # the prometheus service above accepts because of this.
       K6_OUT: experimental-prometheus-rw
-      K6_PROMETHEUS_RW_SERVER_URL: http://localhost:9090/api/v1/write<% end %>
+      K6_PROMETHEUS_RW_SERVER_URL: http://localhost:9090/api/v1/write
     volumes:
       - ./k6:/scripts:ro
-<% end %><%= if @prometheus do %>
+
   # Prometheus, with the monitoring cartridge in: every few seconds it
   # scrapes the app's /metrics (PromEx.Plug in the endpoint) and keeps
   # what it read. Its configuration is the project's own,
@@ -288,14 +175,14 @@ services:
   # network. Not published: Grafana reads it from inside the pod, and a
   # query is Grafana's Explore.
   prometheus:
-    image: prom/prometheus:<%= @prometheus_version %>
-    network_mode: "service:network"<%= if @k6 do %>
+    image: prom/prometheus:latest
+    network_mode: "service:network"
     # The image's own command, plus the receiver k6 writes its results
     # to (./wb.sh k6, with the monitoring cartridge in).
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
-      - --web.enable-remote-write-receiver<% end %>
+      - --web.enable-remote-write-receiver
     depends_on:
       - network
     configs:
@@ -303,7 +190,7 @@ services:
         target: /etc/prometheus/prometheus.yml
       - source: prometheus_targets
         target: /etc/prometheus/targets.yml
-<% end %><%= if @grafana do %>
+
   # Grafana, on the Prometheus above: its datasource is provisioned off
   # the project's monitoring/grafana/datasource.yml, and its dashboards
   # are the ones PromEx uploads when the app starts — which is why the
@@ -311,10 +198,10 @@ services:
   # the door opens without a sign-in; the credentials the app uploads
   # with are the image's defaults, named here.
   grafana:
-    image: grafana/grafana:<%= @grafana_version %>
+    image: grafana/grafana:latest
     network_mode: "service:network"
     environment:
-      GF_SERVER_HTTP_PORT: <%= @grafana_internal_port %>
+      GF_SERVER_HTTP_PORT: 3000
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: admin
       GF_AUTH_ANONYMOUS_ENABLED: "true"
@@ -326,7 +213,7 @@ services:
       - prometheus
     healthcheck:
       # busybox's wget, which the Alpine image carries.
-      test: wget -q --spider http://localhost:<%= @grafana_internal_port %>/api/health
+      test: wget -q --spider http://localhost:3000/api/health
       interval: 10s
       timeout: 5s
       # The first start on a fresh volume runs Grafana's migrations —
@@ -339,20 +226,16 @@ services:
     configs:
       - source: grafana_datasource
         target: /etc/grafana/provisioning/datasources/datasource.yml
-<% end %><%= if @dev do %>
+
 volumes:
   build:
   deps:
-<% end %><%= if @sqlite and not @dev do %>
-volumes:
-  # The SQLite file of the release: 'delete' drops it with the project.
-  data:
-<% end %><%= if @pgadmin or @prometheus or @grafana do %>
-configs:<%= if @pgadmin do %>
+
+configs:
   # The servers pgAdmin opens with: the pgadmin cartridge's file, the
   # project's own (pgadmin/servers.json), not a copy kept in here.
   pgadmin_servers:
-    file: ./pgadmin/servers.json<% end %><%= if @prometheus do %>
+    file: ./pgadmin/servers.json
   # Prometheus's configuration, the project's own (monitoring/
   # prometheus.yml), and the targets of its job — the topology's, so
   # written here: the app, on localhost inside the pod.
@@ -360,9 +243,8 @@ configs:<%= if @pgadmin do %>
     file: ./monitoring/prometheus.yml
   prometheus_targets:
     content: |
-      - targets: ["localhost:<%= @internal_port %>"]<% end %><%= if @grafana do %>
+      - targets: ["localhost:4000"]
   # The datasource Grafana provisions at start, the project's own
   # (monitoring/grafana/datasource.yml); PROMETHEUS_URL above fills it.
   grafana_datasource:
-    file: ./monitoring/grafana/datasource.yml<% end %>
-<% end %>
+    file: ./monitoring/grafana/datasource.yml

@@ -176,6 +176,27 @@ mechanism without changing a single file it writes.
    the host ports are chosen when a file is baked, and `up` does not
    notice when another workspace took them since — it fails on
    Docker's "port is already allocated". A bake that re-reads its
-   ports, or an `up` that checks them, is the fix; not done.
+   ports, or an `up` that checks them, is the fix. *Done the same day*:
+   a free port is one nothing listens on and no other workspace has
+   baked, and `up` checks the file's ports before compose does, naming
+   the holder.
 5. Monitoring.
+   *Landed on 2026-09-07*: the `monitoring` cartridge — PromEx in the
+   app (the plugins the project's shape calls for, `/metrics` on the
+   endpoint, the Grafana client at runtime off `GRAFANA_HOST`) and
+   `prometheus` with `grafana` in the compose, Grafana published beside
+   the app's port and healthy before the app starts, so the dashboards
+   PromEx uploads land. The rule the step settled: a service opens with
+   a file the project owns, and what is the topology's the compose
+   writes — Prometheus's targets (`localhost` in the pod, one line per
+   replica by name on the scaled network), `PROMETHEUS_URL`,
+   `GRAFANA_HOST` — so one insert serves the three deployments. k6's
+   results go to Prometheus by remote write when both are in. The app's
+   `depends_on` became a list in the templates for it. Grafana enters
+   the console as the workbench's own door, off its port, as pgAdmin
+   does; the service list is still not drawn as such. *Run live the
+   next day*, dev and prod with k6 on a fresh Postgres workspace: the
+   five dashboards up, k6's requests in Prometheus; Grafana's first
+   start took four and a half minutes and its healthcheck allows five
+   now. The scaled file is validated by `docker compose config` alone.
 6. Umbrella, on its own plan.

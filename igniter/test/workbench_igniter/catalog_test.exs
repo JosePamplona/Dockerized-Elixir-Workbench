@@ -25,7 +25,7 @@ defmodule WorkbenchIgniter.CatalogTest do
   @cartridges ~w(chiefs_setup ansi toolchain versioning
                  osmon psql_extras credo mock exdebug rest graphql
                  coveralls exdoc guidelines enhancements auth0 openai healthcheck stripe
-                 githooks exmachina clustering healthcheck2 ash specdd pgadmin k6
+                 githooks exmachina clustering healthcheck2 ash specdd pgadmin k6 monitoring
                  mailer gettext ecto esbuild tailwind html live dashboard)
   # The chiefs_setup recipe with its default choices, in insertion order.
   @picks ~w(ansi toolchain versioning osmon psql_extras pgadmin credo mock exdebug rest

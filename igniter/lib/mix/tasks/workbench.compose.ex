@@ -29,19 +29,23 @@ defmodule Mix.Tasks.Workbench.Compose do
   * `--image IMAGE`, `--dockerfile FILE` - the app's image and what
     builds it: the dev image and `Dockerfile.local`, or the release.
   * `--uid N`, `--gid N` - the build identity the dev image is born with.
-  * `--app-port N`, `--pgadmin-port N` - host ports of the pod; the
-    container side is `--internal-port` (4000) and
-    `--pgadmin-internal-port` (5050).
+  * `--app-port N`, `--pgadmin-port N`, `--grafana-port N` - host
+    ports; the container side is `--internal-port` (4000),
+    `--pgadmin-internal-port` (5050) and `--grafana-internal-port`
+    (3000). The app's and pgAdmin's are the pod's; Grafana publishes
+    its own on the scaled network too.
   * `--postgres-version V`, `--mysql-version V`, `--mssql-version V`,
-    `--pgadmin-version V`, `--nginx-version V`, `--k6-version V` - the
-    service images' tags.
+    `--pgadmin-version V`, `--nginx-version V`, `--k6-version V`,
+    `--prometheus-version V`, `--grafana-version V` - the service
+    images' tags.
   * `--services LIST` - what the workspace runs beside the app, by
     name, separated by commas: a database — `postgres`, `mysql`,
     `mssql`, or `sqlite`, which is no server but a volume for the file
-    in a release — and `pgadmin`, `k6`. `""` or `none` for no service
-    at all. Absent, the project is asked. One database at most, and
-    never `sqlite` on the scaled deployment: replicas cannot share a
-    file. Without a database there is nothing to migrate.
+    in a release — and `pgadmin`, `k6`, `prometheus`, `grafana`. `""`
+    or `none` for no service at all. Absent, the project is asked. One
+    database at most, and never `sqlite` on the scaled deployment:
+    replicas cannot share a file. Without a database there is nothing
+    to migrate; with `grafana`, the app waits for it.
   * `--clustering` / `--no-clustering` - scaled: whether the release is
     distributed, which decides `DNS_CLUSTER_QUERY`.
   * `--replicas N`, `--replica-ports P1,P2,…` - scaled: how many, and

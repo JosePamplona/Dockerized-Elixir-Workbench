@@ -16,6 +16,34 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **Monitoring: PromEx, Prometheus and Grafana.** Step 5 of
+  `scripts/PLAN.md`, the **monitoring** cartridge. In the app, `prom_ex`
+  and a `MyApp.PromEx` module with the plugins the project's shape calls
+  for — Application, Beam and Phoenix; Ecto with a repo; LiveView with
+  `phoenix_live_view` — first in the supervision tree, its `/metrics`
+  served by the endpoint before `Plug.Telemetry`, off in test, and the
+  Grafana client read at runtime off `GRAFANA_HOST`. In the workspace,
+  the `prometheus` and `grafana` services the compose renders: Prometheus
+  on the app's `/metrics`, Grafana on Prometheus, published beside the
+  app's port (the first free one from `3000`), anonymous as admin so the
+  door opens without a form, and healthy before the app starts, so the
+  dashboards PromEx uploads on start find it there. Each container opens
+  with a file the project owns, `monitoring/prometheus.yml` and
+  `monitoring/grafana/datasource.yml`; what is the topology's the
+  compose writes — Prometheus's targets file (`localhost` in the pod, one
+  line per replica by name on the scaled network), `PROMETHEUS_URL` for
+  the datasource, `GRAFANA_HOST` for the app — so one insert serves the
+  three deployments. With k6 in, its results go to Prometheus by remote
+  write (`K6_OUT`, and the receiver flag on Prometheus). `./wb.sh status`
+  and the console's board and Doors show Grafana's address; the terminal
+  and the Docker screen open a shell on both containers.
+  `PROMETHEUS_IMAGE_VERSION` and `GRAFANA_IMAGE_VERSION` join
+  `config.conf`. Run live on 2026-09-08 on a fresh Postgres workspace,
+  dev and prod, k6 included: Grafana's first start on a fresh volume
+  ran its 813 migrations for four and a half minutes beside the app
+  compiling, past a 30 s start period, and the app's `depends_on` then
+  failed the whole `up` — its healthcheck allows five minutes now, as
+  SQL Server's allows three. No cover yet.
 - **Doors, a paper of the Project tab.** The plan of every address the
   project answers to, drawn off the status: the workbench's own app and
   pgAdmin; the doors the inserted cartridges open, each called once with

@@ -12,7 +12,7 @@ The workbench stays permanently in this directory. Projects are generated into t
 
 The workbench stays in his directory and never changes shape. What it builds does — every cartridge and every deployment adds its own containers, routes and edges — so the shape of a project is not described here: each cartridge's README says what it installs and how it is wired, the [deployments](#deployment) say what they bring up, and the workbench itself tells what is there right now (`./wb.sh status`) and what could be (`./wb.sh catalog`). What follows is the part that holds for every project.
 
-A project is generated into its **workspace** (`WORKSPACE_PATH`), which owns its orchestration: a `docker-compose.yml` with the project's name, images and host ports baked in at creation — the first free ones from `4000` (application) and, when the pgadmin cartridge is in, `5050` (pgAdmin): free meaning nothing listens on them and no other workspace under `_workspaces/` has them in a compose file of its own, so several workspaces run side by side whether or not they were up when the next one was made. `up` refuses, naming the holder, when a port the file publishes is taken meanwhile; the fix is the port line in the file. Inside it the services follow the **pod pattern**: a `network` container owns the workspace's network namespace and its published ports, and every other service joins it, so they all reach each other on `localhost` and the project keeps Phoenix's default database configuration untouched. The database is never published: it is reachable only from inside its workspace.
+A project is generated into its **workspace** (`WORKSPACE_PATH`), which owns its orchestration: a `docker-compose.yml` with the project's name, images and host ports baked in at creation — the first free ones from `4000` (application) and, when the cartridges that bring them are in, `5050` (pgAdmin) and `3000` (Grafana): free meaning nothing listens on them and no other workspace under `_workspaces/` has them in a compose file of its own, so several workspaces run side by side whether or not they were up when the next one was made. `up` refuses, naming the holder, when a port the file publishes is taken meanwhile; the fix is the port line in the file. Inside it the services follow the **pod pattern**: a `network` container owns the workspace's network namespace and its published ports, and every other service joins it, so they all reach each other on `localhost` and the project keeps Phoenix's default database configuration untouched. The database is never published: it is reachable only from inside its workspace.
 
 ### Orchestration files of a workspace
 
@@ -156,9 +156,17 @@ These commands run on the **running** app container (`exec`): they enter instant
 
 The **k6** cartridge puts [k6](https://k6.io/) in the compose under a profile `up` never starts, with the project's `k6/` directory mounted as its scripts, and installs `k6/smoke.js` to begin with. `./wb.sh k6` runs a script against the deployment that is up — `smoke.js` by default, anything after it goes to `k6 run` (`--vus 20 --duration 1m`). The script reaches the app through `BASE_URL`, which the compose sets for each topology: the app on `localhost` inside the pod, the balancer on the scaled deployment, or the `app` alias — every replica at once — when the balancer is left out. So the same script runs on dev, prod and scaled.
 
+### Monitoring
+
+```sh
+./wb.sh add monitoring && ./wb.sh bake
+```
+
+The **monitoring** cartridge puts [PromEx](https://hexdocs.pm/prom_ex) in the app — the plugins its shape calls for (Application, Beam, Phoenix; Ecto with a repo; LiveView with `phoenix_live_view`), `/metrics` served by the endpoint — and [Prometheus](https://prometheus.io) with [Grafana](https://grafana.com) in the compose. Grafana is published on its own port beside the app's (the first free one from `3000`; `./wb.sh status` and the console say which), signed in already, with a dashboard per plugin: PromEx uploads them when the app starts, and the app waits for Grafana to be there. Each container opens with a file the project owns, `monitoring/prometheus.yml` and `monitoring/grafana/datasource.yml`; what is the topology's — the app on `localhost` inside the pod, one target per replica on the scaled network, where Prometheus and Grafana are — the compose hands over, so the same insert serves dev, prod and scaled. With k6 in, `./wb.sh k6` writes its results to Prometheus too, for Grafana to draw beside the app's.
+
 ### Services that are cartridges
 
-Some cartridges bring a container rather than Elixir code: **pgadmin** (pgAdmin over the project's Postgres, its `pgadmin/servers.json` in the workspace; requires ecto on postgres) and **k6**. Each declares the compose service it needs, and `./wb.sh bake` writes it in — `add` says so when the compose is behind — while the prod and scaled files pick it up on their next `up`. A vanilla `new` brings the database alone; `chiefs_setup` inserts pgadmin among its picks.
+Some cartridges bring a container rather than Elixir code: **pgadmin** (pgAdmin over the project's Postgres, its `pgadmin/servers.json` in the workspace; requires ecto on postgres), **k6**, and **monitoring** (Prometheus and Grafana, beside the PromEx it installs). Each declares the compose services it needs, and `./wb.sh bake` writes them in — `add` says so when the compose is behind — while the prod and scaled files pick them up on their next `up`. A vanilla `new` brings the database alone; `chiefs_setup` inserts pgadmin among its picks.
 
 ### Add features
 
@@ -168,7 +176,7 @@ Workbench features can be installed on the existing project at any time:
 ./wb.sh add [FEATURE] [OPTIONS]
 ```
 
-`[FEATURE]` is one of: **chiefs_setup**, **ansi**, **toolchain**, **versioning**, **healthcheck**, **rest**, **graphql**, **coveralls**, **exdoc**, **guidelines**, **enhancements**, **auth0**, **openai**, **credo**, **githooks**, **exmachina**, **mock**, **exdebug**, **psql_extras**, **pgadmin**, **k6**, **osmon**, **clustering**, **healthcheck2**, **ash**, **mailer**, **gettext**, **ecto**, **esbuild**, **tailwind**, **html**, **live**, **dashboard**. `[OPTIONS]` are the flags of the corresponding `mix workbench.install.FEATURE` task.
+`[FEATURE]` is one of: **chiefs_setup**, **ansi**, **toolchain**, **versioning**, **healthcheck**, **rest**, **graphql**, **coveralls**, **exdoc**, **guidelines**, **enhancements**, **auth0**, **openai**, **credo**, **githooks**, **exmachina**, **mock**, **exdebug**, **psql_extras**, **pgadmin**, **k6**, **monitoring**, **osmon**, **clustering**, **healthcheck2**, **ash**, **mailer**, **gettext**, **ecto**, **esbuild**, **tailwind**, **html**, **live**, **dashboard**. `[OPTIONS]` are the flags of the corresponding `mix workbench.install.FEATURE` task.
 
 **chiefs_setup** is a *collection*: a cartridge whose installer inserts other cartridges — the workbench's picks (the house's settings, the dep-only quintet, REST or GraphQL as its `--interface` says, coveralls, exdoc, enhancements and healthcheck). Adding it inserts each missing member as its own commit, so `eject` still reverts one cartridge alone; the collection leaves no commit of its own.
 

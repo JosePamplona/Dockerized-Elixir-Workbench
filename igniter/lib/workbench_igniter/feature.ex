@@ -157,9 +157,10 @@ defmodule WorkbenchIgniter.Feature do
   The compose services the cartridge needs the workspace to run, by
   name, given what the project carries of it (`state/1`): the workbench
   bakes them into the workspace's compose (`mix workbench.compose`,
-  scripts/PLAN.md). The names the renderer knows today are `"postgres"`
-  and `"pgadmin"`. A cartridge that needs no container says nothing —
-  the default.
+  scripts/PLAN.md). The names the renderer knows today are the databases
+  (`"postgres"`, `"mysql"`, `"mssql"`, `"sqlite"`), `"pgadmin"`, `"k6"`,
+  `"prometheus"` and `"grafana"`. A cartridge that needs no container
+  says nothing — the default.
   """
   @callback services(state :: map()) :: [String.t()]
 

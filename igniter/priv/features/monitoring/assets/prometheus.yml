@@ -1,0 +1,19 @@
+# Prometheus, as the workbench's monitoring cartridge installed it.
+#
+# One job: the app's /metrics, which PromEx.Plug serves in the endpoint.
+# Its targets are not written here, because they are the topology's —
+# the app on localhost inside the pod (dev and prod), one line per
+# replica on the scaled network — so the compose writes them, into the
+# targets file this job reads. Everything else about Prometheus is this
+# file's: add a job, a rule file, or a longer interval here, and the
+# next up reads it (./wb.sh restart prometheus).
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: app
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/targets.yml

@@ -271,14 +271,15 @@ defmodule ConsoleWeb.DockerScreen do
   defp shell(assigns) do
     shellable =
       assigns.mine and not assigns.c.console? and
-        Regex.match?(~r/^(app\d*|database|pgadmin)$/, assigns.c.service)
+        Regex.match?(~r/^(app\d*|database|pgadmin|prometheus|grafana)$/, assigns.c.service)
 
     down = assigns.c.state != "running"
-    # The Terminal's own rule: psql on the database, sh on pgAdmin's Alpine, bash elsewhere.
+    # The Terminal's own rule: psql on the database, sh on the Alpine and
+    # busybox images (pgAdmin, Grafana, Prometheus), bash elsewhere.
     shell =
       case assigns.c.service do
         "database" -> "psql"
-        "pgadmin" -> "sh"
+        s when s in ~w(pgadmin prometheus grafana) -> "sh"
         _ -> "bash"
       end
 
@@ -691,7 +692,7 @@ defmodule ConsoleWeb.DockerScreen do
       </table>
     </div>
     <p :if={@dk.networks} class="note">
-      The workspace's app, database and pgadmin are not on any network of their own: they share the pod's — the
+      The workspace's app and the services beside it — database, pgadmin, prometheus, grafana — are not on any network of their own: they share the pod's — the
       <code>network</code>
       container's — and reach each other on localhost.
     </p>
@@ -761,7 +762,8 @@ defmodule ConsoleWeb.DockerScreen do
   defp who(_), do: "daemon"
 
   defp svc_color(%{type: "container", service: s})
-       when s in ~w(app database pgadmin network balancer migrate), do: "var(--svc-#{s})"
+       when s in ~w(app database pgadmin prometheus grafana network balancer migrate),
+       do: "var(--svc-#{s})"
 
   defp svc_color(%{type: "container", service: "app" <> _}), do: "var(--svc-app)"
   defp svc_color(_), do: "var(--term-dim)"

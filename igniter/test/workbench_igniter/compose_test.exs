@@ -12,14 +12,16 @@ defmodule WorkbenchIgniter.ComposeTest do
 
   # The pod deployments, as `wb.sh bake` and `up --deploy prod` ask for them.
   @pod ~w(--app-name lorem_ipsum --uid 1000 --gid 1000 --app-port 4000 --pgadmin-port 5050
-          --postgres-version latest --pgadmin-version latest --nginx-version alpine)
+          --grafana-port 3000 --postgres-version latest --pgadmin-version latest
+          --nginx-version alpine)
   @dev ~w(--deploy dev --image lorem-ipsum:local --dockerfile Dockerfile.local) ++ @pod
   @prod ~w(--deploy prod --image lorem-ipsum:0.1.0-prod --dockerfile Dockerfile) ++ @pod
 
   # The scaled deployment, as `up --deploy scaled` asks for it: the
   # balancer takes the first port and the replicas the ones after.
   @scaled ~w(--deploy scaled --app-name lorem_ipsum --image lorem-ipsum:0.1.0-prod
-             --dockerfile Dockerfile --postgres-version latest --nginx-version alpine)
+             --dockerfile Dockerfile --postgres-version latest --nginx-version alpine
+             --grafana-port 3000)
   @balancer ~w(--balancer-port 4000 --replica-ports 4001,4002,4003,4004)
   @no_balancer ~w(--no-balancer --replica-ports 4000,4001,4002,4003)
 
@@ -65,7 +67,16 @@ defmodule WorkbenchIgniter.ComposeTest do
     {"scaled-mssql-balancer-cluster-4.yml",
      @scaled ++ ~w(--services mssql --mssql-version 2022-latest --clustering) ++ @balancer},
     {"dev-sqlite.yml", @dev ++ ~w(--services sqlite)},
-    {"prod-sqlite.yml", @prod ++ ~w(--services sqlite)}
+    {"prod-sqlite.yml", @prod ++ ~w(--services sqlite)},
+    # The monitoring cartridge's two services; with k6, its results go to Prometheus.
+    {"dev-db-monitoring.yml", @dev ++ ~w(--services postgres,pgadmin,prometheus,grafana)},
+    {"dev-nodb-monitoring.yml", @dev ++ ~w(--services prometheus,grafana)},
+    {"dev-db-k6-monitoring.yml", @dev ++ ~w(--services postgres,pgadmin,k6,prometheus,grafana)},
+    {"prod-db-monitoring.yml", @prod ++ ~w(--services postgres,pgadmin,prometheus,grafana)},
+    {"scaled-db-balancer-cluster-4-k6-monitoring.yml",
+     @scaled ++ ~w(--services postgres,pgadmin,k6,prometheus,grafana --clustering) ++ @balancer},
+    {"scaled-nodb-nobalancer-nocluster-4-monitoring.yml",
+     @scaled ++ ~w(--services prometheus,grafana --no-clustering) ++ @no_balancer}
   ]
 
   describe "render/1 writes the fixture" do
@@ -103,6 +114,19 @@ defmodule WorkbenchIgniter.ComposeTest do
       assert {:error, "missing: --app-port, --uid, --gid"} =
                Compose.plan_from_argv(
                  ~w(--deploy dev --app-name x --image i --dockerfile d --services postgres)
+               )
+    end
+
+    test "asks for the grafana port with grafana, on every deployment" do
+      assert {:error, "missing: --app-port, --uid, --gid, --grafana-port"} =
+               Compose.plan_from_argv(
+                 ~w(--deploy dev --app-name x --image i --dockerfile d --services prometheus,grafana)
+               )
+
+      assert {:error, "missing: --grafana-port"} =
+               Compose.plan_from_argv(
+                 ~w(--deploy scaled --app-name x --image i --dockerfile d --services grafana) ++
+                   @balancer
                )
     end
 
@@ -147,14 +171,16 @@ defmodule WorkbenchIgniter.ComposeTest do
       assert {["postgres"], _} = Compose.services(phx_test_project())
     end
 
-    test "with pgadmin and k6 inserted, the three in catalog order" do
+    test "with pgadmin, k6 and monitoring inserted, every service in catalog order" do
       igniter =
         phx_test_project()
         |> Igniter.compose_task("workbench.install.pgadmin", [])
         |> Igniter.compose_task("workbench.install.k6", [])
+        |> Igniter.compose_task("workbench.install.monitoring", [])
         |> apply_igniter!()
 
-      assert {["pgadmin", "k6", "postgres"], _} = Compose.services(igniter)
+      assert {["pgadmin", "k6", "prometheus", "grafana", "postgres"], _} =
+               Compose.services(igniter)
     end
 
     test "a project without ecto_sql asks for nothing" do

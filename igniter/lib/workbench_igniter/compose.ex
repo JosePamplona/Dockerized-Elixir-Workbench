@@ -12,8 +12,8 @@ defmodule WorkbenchIgniter.Compose do
   is in — and the **services**: what the project's cartridges ask the
   workspace for, by name — a database (`postgres`, `mysql`, `mssql`,
   or `sqlite`: no server, a volume for the file in a release), `pgadmin`,
-  `k6` — declared by each cartridge's `services/1` and gathered by
-  `Features.services/1`. One database at most; the servers take the
+  `k6`, `prometheus` and `grafana` — declared by each cartridge's
+  `services/1` and gathered by `Features.services/1`. One database at most; the servers take the
   credentials phx.new configures the project with
   (`WorkbenchIgniter.Features.Ecto.credentials/1`), so the compose and
   the project agree without a line of configuration.
@@ -44,12 +44,16 @@ defmodule WorkbenchIgniter.Compose do
             internal_port: pos_integer(),
             pgadmin_port: pos_integer() | nil,
             pgadmin_internal_port: pos_integer(),
+            grafana_port: pos_integer() | nil,
+            grafana_internal_port: pos_integer(),
             postgres_version: String.t(),
             pgadmin_version: String.t(),
             nginx_version: String.t(),
             k6_version: String.t(),
             mysql_version: String.t(),
             mssql_version: String.t(),
+            prometheus_version: String.t(),
+            grafana_version: String.t(),
             services: [String.t()],
             clustering: boolean(),
             replicas: pos_integer(),
@@ -67,12 +71,16 @@ defmodule WorkbenchIgniter.Compose do
               internal_port: 4000,
               pgadmin_port: nil,
               pgadmin_internal_port: 5050,
+              grafana_port: nil,
+              grafana_internal_port: 3000,
               postgres_version: "latest",
               pgadmin_version: "latest",
               nginx_version: "alpine",
               k6_version: "latest",
               mysql_version: "8",
               mssql_version: "2022-latest",
+              prometheus_version: "latest",
+              grafana_version: "latest",
               services: [],
               clustering: false,
               replicas: 4,
@@ -101,12 +109,16 @@ defmodule WorkbenchIgniter.Compose do
     internal_port: :integer,
     pgadmin_port: :integer,
     pgadmin_internal_port: :integer,
+    grafana_port: :integer,
+    grafana_internal_port: :integer,
     postgres_version: :string,
     pgadmin_version: :string,
     nginx_version: :string,
     k6_version: :string,
     mysql_version: :string,
     mssql_version: :string,
+    prometheus_version: :string,
+    grafana_version: :string,
     services: :string,
     clustering: :boolean,
     replicas: :integer,
@@ -209,12 +221,7 @@ defmodule WorkbenchIgniter.Compose do
   # What the deployment's template reads and has no default for, and
   # the two shapes no file can take: two databases, or replicas on a file.
   defp check(%Plan{} = plan) do
-    required =
-      [:app_name, :image, :dockerfile] ++
-        if(plan.deploy == :scaled, do: [], else: [:app_port, :uid, :gid]) ++
-        if(plan.deploy != :scaled and "pgadmin" in plan.services, do: [:pgadmin_port], else: [])
-
-    missing = Enum.filter(required, &is_nil(Map.get(plan, &1)))
+    missing = Enum.filter(required(plan), &is_nil(Map.get(plan, &1)))
     databases = Enum.filter(plan.services, &(&1 in @databases))
 
     cond do
@@ -230,6 +237,18 @@ defmodule WorkbenchIgniter.Compose do
       true ->
         {:ok, plan}
     end
+  end
+
+  # The pod deployments need the app's port and the build identity; a
+  # port is asked for with the service that publishes it — pgAdmin's on
+  # the pod, Grafana's on every topology.
+  defp required(%Plan{deploy: deploy, services: services}) do
+    pod = deploy != :scaled
+
+    [:app_name, :image, :dockerfile] ++
+      if(pod, do: [:app_port, :uid, :gid], else: []) ++
+      if(pod and "pgadmin" in services, do: [:pgadmin_port], else: []) ++
+      if("grafana" in services, do: [:grafana_port], else: [])
   end
 
   defp flag(key), do: key |> Atom.to_string() |> String.replace("_", "-")
@@ -265,7 +284,21 @@ defmodule WorkbenchIgniter.Compose do
         k6_version: plan.k6_version,
         mysql_version: plan.mysql_version,
         mssql_version: plan.mssql_version,
+        prometheus_version: plan.prometheus_version,
+        grafana_version: plan.grafana_version,
+        grafana_port: plan.grafana_port,
+        grafana_internal_port: plan.grafana_internal_port,
         k6: "k6" in plan.services,
+        prometheus: "prometheus" in plan.services,
+        grafana: "grafana" in plan.services,
+        # What every replica waits for: the migration, and Grafana when
+        # the app uploads its dashboards there on start.
+        app_waits:
+          if(database(plan)[:server],
+            do: [{"migrate", "service_completed_successfully"}],
+            else: []
+          ) ++
+            if("grafana" in plan.services, do: [{"grafana", "service_healthy"}], else: []),
         clustering: plan.clustering,
         replicas: Enum.with_index(plan.replica_ports, fn port, i -> {i + 1, port} end),
         balancer: plan.balancer_port != nil,
@@ -295,18 +328,32 @@ defmodule WorkbenchIgniter.Compose do
         k6_version: plan.k6_version,
         mysql_version: plan.mysql_version,
         mssql_version: plan.mssql_version,
+        prometheus_version: plan.prometheus_version,
+        grafana_version: plan.grafana_version,
+        grafana_port: plan.grafana_port,
+        grafana_internal_port: plan.grafana_internal_port,
         postgres: database[:engine] == "postgres",
         pgadmin: "pgadmin" in plan.services,
         k6: "k6" in plan.services,
+        prometheus: "prometheus" in plan.services,
+        grafana: "grafana" in plan.services,
         dev: dev,
         # The release migrates as a deployment step, before the app — on a
         # server or on the SQLite file; the dev image migrates itself on
         # boot, so its file has no migrator. The app waits for the migrator
-        # in a release, and for the server in dev; for nothing on a file.
+        # in a release, and for the server in dev; for nothing on a file —
+        # and for Grafana, when it uploads its dashboards there on start.
         migrate: not dev and (server or database[:sqlite]),
-        app_waits: if(dev, do: server, else: server or database[:sqlite]),
-        app_waits_for: if(dev, do: "database", else: "migrate"),
-        app_waits_until: if(dev, do: "service_healthy", else: "service_completed_successfully")
+        app_waits:
+          if(dev,
+            do: if(server, do: [{"database", "service_healthy"}], else: []),
+            else:
+              if(server or database[:sqlite],
+                do: [{"migrate", "service_completed_successfully"}],
+                else: []
+              )
+          ) ++
+            if("grafana" in plan.services, do: [{"grafana", "service_healthy"}], else: [])
       ] ++ database
     )
   end

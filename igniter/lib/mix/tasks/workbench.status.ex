@@ -20,7 +20,7 @@ defmodule Mix.Tasks.Workbench.Status do
 
   * `--json` - One JSON object, `{"app": ..., "phx": {...}, "cartridges": [...], "services": [...]}`
     — `services` are the compose services the installed cartridges ask
-    the workspace for (`postgres`, `pgadmin`), what `mix workbench.compose`
+    the workspace for (`postgres`, `pgadmin`, `grafana`…), what `mix workbench.compose`
     bakes in; `phx` is the project's shape in phx.new's terms: each capability,
     the database, the adapter, the flags that would generate it today,
     and `generator`: which `phx.new` made the project (`project`), where

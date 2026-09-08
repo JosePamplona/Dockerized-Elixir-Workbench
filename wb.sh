@@ -17,7 +17,12 @@
 # CONFIGURATION ================================================================
 
   # The workbench is wherever this script lives; run everything from here.
-  WORKBENCH_PATH="$( cd "$( dirname "$0" )" && pwd )"
+  # BASH_SOURCE and not $0, so the path holds when the script is sourced
+  # instead of run. WORKBENCH_SELF is this file, absolute: the cd below
+  # leaves a relative $0 pointing nowhere, and two readers open the
+  # script itself — the version off line 3, the help's name off line 2.
+  WORKBENCH_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+  WORKBENCH_SELF="$WORKBENCH_PATH/$( basename "${BASH_SOURCE[0]}" )"
   cd "$WORKBENCH_PATH" || exit 1
 
   # Environment overrides survive config.conf (e.g. WORKSPACE_PATH=./x ./wb.sh),
@@ -28,7 +33,7 @@
   # -y|--yes before the command answers every confirmation, for scripts
   # and for whatever drives the workbench without a terminal. Exported,
   # so 'demo' hands it to the commands it runs.
-  if [ "$1" == "-y" ] || [ "$1" == "--yes" ]; then WB_YES=true; shift; fi
+  if [[ "$1" == "-y" ]] || [[ "$1" == "--yes" ]]; then WB_YES=true; shift; fi
   export WB_YES="${WB_YES:-false}"
 
   SCRIPT_CONFIG_FILE="config.conf"
@@ -37,7 +42,7 @@
 
   # Workbench configuration --------------------------------------------------
 
-    WORKBENCH_VERSION=$( sed '3!d' "$0" | sed -n 's/^.*v\(.*\).*/\1/p' )
+    WORKBENCH_VERSION=$( sed '3!d' "$WORKBENCH_SELF" | sed -n 's/^.*v\(.*\).*/\1/p' )
     PROJECT_NAME="${PROJECT_NAME_OVERRIDE:-$PROJECT_NAME}"
 
     # Workspace: directory where the project is generated (volume mount
@@ -82,7 +87,7 @@
     # Kept as NAME=VALUE pairs, like the git identity below: a container
     # gets each as --env ("${ARRAY[@]/#/--env=}"), and a run in this very
     # container (toolchain_env) gets them through env.
-    if [ "${WB_ANSI:-}" == "always" ]
+    if [[ "${WB_ANSI:-}" == "always" ]]
     then
       COLOR_ENV=("ELIXIR_ERL_OPTIONS=-elixir ansi_enabled true")
       GIT_COLOR_ENV=(GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=color.ui GIT_CONFIG_VALUE_0=always)
@@ -120,7 +125,7 @@
     # but the creating ones reads them from there — config.conf may since
     # have moved on to name the next project, and several workspaces can
     # be driven from one workbench.
-    if [ "$EXISTING_PROJECT" == true ] && [ -f "$WORKSPACE_PATH/$COMPOSE_FILE" ] && \
+    if [[ "$EXISTING_PROJECT" == true ]] && [ -f "$WORKSPACE_PATH/$COMPOSE_FILE" ] && \
        [ "$1" != "new" ]
     then
       ELIXIR_PROJECT_NAME=$(
@@ -208,7 +213,7 @@
     WORKBENCH_GIT_EMAIL="wb.sh@localhost"
     GIT_NAME="$WORKBENCH_GIT_NAME"
     GIT_EMAIL="$WORKBENCH_GIT_EMAIL"
-    if [ "${GIT_IDENTITY:-user}" == "user" ] && command -v git > /dev/null 2>&1; then
+    if [[ "${GIT_IDENTITY:-user}" == "user" ]] && command -v git > /dev/null 2>&1; then
       HOST_GIT_NAME=$(git -C "$HOME" config --get user.name 2>/dev/null)
       HOST_GIT_EMAIL=$(git -C "$HOME" config --get user.email 2>/dev/null)
       if [ -n "$HOST_GIT_NAME" ] && [ -n "$HOST_GIT_EMAIL" ]; then
@@ -235,13 +240,13 @@
 # FUNCTIONS ====================================================================
 
   # If echo handles -e option, overrides the command
-  if [ "$(echo -e)" == "" ]; then echo() { command echo -e "$@"; } fi
+  if [[ "$(echo -e)" == "" ]]; then echo() { command echo -e "$@"; } fi
 
   # confirm <MESSAGE>
     # Prints MESSAGE and spects input prompt for continue or exit the script
   confirm() {
     echo "⚠️  ${B}Warning${R} $*"
-    if [ "$WB_YES" == true ]; then echo "Continuing (--yes)."; echo; return; fi
+    if [[ "$WB_YES" == true ]]; then echo "Continuing (--yes)."; echo; return; fi
     read -r -n 1 -p $'Should continue? [y/N] ' INPUT
     if [ "$INPUT" != "y" ]; then exit 0; fi
     echo
@@ -250,9 +255,9 @@
   # args_error <ERROR>
     # Prints a default messages for argument errors.
   args_error() {
-    if   [ "$1" == "missing" ];  then echo "Missing arguments."
-    elif [ "$1" == "too_many" ]; then echo "Too many arguments."
-    elif [ "$1" == "invalid" ];  then echo "Invalid argument."
+    if   [[ "$1" == "missing" ]];  then echo "Missing arguments."
+    elif [[ "$1" == "too_many" ]]; then echo "Too many arguments."
+    elif [[ "$1" == "invalid" ]];  then echo "Invalid argument."
     elif [ "$1" != "" ];         then echo "$@"
     else echo "Argument error."; fi
     exit 1
@@ -305,7 +310,7 @@
     here=$(cd "$WORKSPACE_PATH" 2>/dev/null && pwd -P)
     for file in "$WORKBENCH_PATH"/_workspaces/*/docker-compose*.yml; do
       [ -f "$file" ] || continue
-      [ "$(cd "$(dirname "$file")" && pwd -P)" == "$here" ] && continue
+      [[ "$(cd "$(dirname "$file")" && pwd -P)" == "$here" ]] && continue
       sed -n 's/^ *- \([0-9]*\):[0-9]*$/\1/p' "$file"
     done | sort -un
   }
@@ -326,7 +331,7 @@
       exec 3>&- 3<&-
       holder=$(docker ps --format '{{.Label "com.docker.compose.project"}} {{.Ports}}' 2>/dev/null | \
         grep -E "[:]$port->" | cut -d' ' -f1 | head -n 1)
-      [ "$holder" == "$mine" ] && continue
+      [[ "$holder" == "$mine" ]] && continue
       free=$(first_free_port "$port")
       if [ -n "$holder" ]; then
         terminate \
@@ -432,7 +437,7 @@
     # chosen ('stacks use') and where it is first built ('new').
   ELIXIR_FLOOR="1.18"
   require_stack_floor() {
-    [ "$(printf '%s\n' "$ELIXIR_FLOOR" "$1" | sort -V | head -n 1)" == "$ELIXIR_FLOOR" ] || \
+    [[ "$(printf '%s\n' "$ELIXIR_FLOOR" "$1" | sort -V | head -n 1)" == "$ELIXIR_FLOOR" ]] || \
       terminate \
         "Elixir $1 is below the workbench's floor, $ELIXIR_FLOOR: since 1.18 Mix locks" \
         "the build and deps directories, which the workbench relies on to compile the" \
@@ -480,7 +485,7 @@
     # Only a 404 refuses: hex unreachable judges nothing, as everywhere
     # else here.
   check_phx_new_exists() {
-    [ "$(phx_new_release_status "$1")" == "404" ] || return 0
+    [[ "$(phx_new_release_status "$1")" == "404" ]] || return 0
 
     terminate \
       "There is no phx_new $1 on hex (${Li}https://hex.pm/packages/phx_new/versions${R})." \
@@ -578,7 +583,7 @@
     # Ensures an empty workspace directory (confirming first when a project
     # already exists there) and bakes the local dockerfile from seed.
   prepare_workspace() {
-    if [ "$EXISTING_PROJECT" == true ]; then
+    if [[ "$EXISTING_PROJECT" == true ]]; then
       confirm \
         "A project already exists in $WORKSPACE_PATH. This action will" \
         "overwrite all its files." && \
@@ -624,7 +629,7 @@
     # task that fails leaves the file as it was.
   bake_compose() {
     local image="$1" dockerfile="$2" file_path="$WORKSPACE_PATH/$3" deploy
-    if [ "$dockerfile" == "$LOCAL_DOCKERFILE" ]; then deploy=dev; else deploy=prod; fi
+    if [[ "$dockerfile" == "$LOCAL_DOCKERFILE" ]]; then deploy=dev; else deploy=prod; fi
 
     if workspace_igniter workbench.compose \
       --deploy "$deploy" \
@@ -752,13 +757,13 @@
     # asks for the reader's word itself.
   prune_workbench() {
     local here="" p v projects="" containers="" networks="" volumes=""
-    [ "$EXISTING_PROJECT" == true ] && here=$(compose_project_name)
+    [[ "$EXISTING_PROJECT" == true ]] && here=$(compose_project_name)
     case "$1" in
       --images)
         confirm "This action will remove every untagged image: the layers a prod bake leaves behind." && \
         docker image prune --force ;;
       --build)
-        [ "$EXISTING_PROJECT" == true ] || terminate "There is no project."
+        [[ "$EXISTING_PROJECT" == true ]] || terminate "There is no project."
         confirm \
           "This action will remove ${ELIXIR_PROJECT_NAME}_build, ${ELIXIR_PROJECT_NAME}_deps and $WORKBENCH_BUILD_VOLUME:" \
           "the next 'up' compiles the project from scratch, and so does the next workbench run." && \
@@ -771,7 +776,7 @@
               docker network ls --filter label=com.docker.compose.project --format '{{.Label "com.docker.compose.project"}}'
               docker volume ls --filter label=com.docker.compose.project --format '{{.Label "com.docker.compose.project"}}'
             } | sort -u); do
-          [ "$p" == "$here" ] && continue
+          [[ "$p" == "$here" ]] && continue
           if workbench_project "$p"
           then projects="${projects:+$projects }$p"
           else echo "  $p: not a workspace of this workbench, left alone"; fi
@@ -838,8 +843,8 @@
     # it — all three checks, see WORKSPACE_MOUNT.
   toolchain_here() {
     [ -n "$WORKSPACE_MOUNT" ] && \
-    [ "${WORKSPACE_MOUNT_PATH:-}" == "$WORKSPACE_PATH" ] && \
-    [ "${WORKSPACE_MOUNT_PROJECT:-}" == "$ELIXIR_PROJECT_NAME" ]
+    [[ "${WORKSPACE_MOUNT_PATH:-}" == "$WORKSPACE_PATH" ]] && \
+    [[ "${WORKSPACE_MOUNT_PROJECT:-}" == "$ELIXIR_PROJECT_NAME" ]]
   }
 
   # toolchain_env [NAME=VALUE...] <COMMAND...>
@@ -866,7 +871,7 @@
     # reads on every page it serves — must not fight over one name.
   entrypoint_run() {
     local tty_flags=("${DOCKER_TTY_FLAGS[@]}")
-    if [ "$1" == "-T" ]; then tty_flags=(); shift; fi
+    if [[ "$1" == "-T" ]]; then tty_flags=(); shift; fi
     local name="$1"
     if toolchain_here; then
       entrypoint_here "$@"
@@ -1018,7 +1023,7 @@
     printf '['
     while IFS= read -r line; do
       [ -n "$line" ] || continue
-      name=${line%% *}; [ "$name" == "$line" ] && argv="" || argv=${line#* }
+      name=${line%% *}; [[ "$name" == "$line" ]] && argv="" || argv=${line#* }
       $first || printf ','; first=false
       # shellcheck disable=SC2086  # word splitting intended: $argv is the rest of the plan line, one word per option
       printf '{"name": %s, "argv": [%s]}' "$(json_string "$name")" "$(words_json $argv)"
@@ -1240,7 +1245,7 @@
     port=$(workspace_app_port)
     pgadmin=$(workspace_pgadmin_port)
     grafana=$(workspace_grafana_port)
-    if [ "$1" == "--fast" ]
+    if [[ "$1" == "--fast" ]]
     then project=""
     else project=$(reader_igniter workbench.status --json 2>/dev/null | json_answer); fi
 
@@ -1414,7 +1419,7 @@
     # entry point. Every replica publishes its own too, so a specific
     # node can still be addressed — which is how the cross-node
     # behaviour is demonstrated.
-    if [ "$BALANCER" == true ]; then
+    if [[ "$BALANCER" == true ]]; then
       BALANCER_PORT=$(first_free_port $port)
       port=$((BALANCER_PORT + 1))
       balancer_flag=(--balancer-port "$BALANCER_PORT")
@@ -1505,7 +1510,7 @@
     echo
     clustering_warning
     echo "Scaled deployment coming up with $REPLICAS replicas:"
-    if [ "$BALANCER" == true ]; then
+    if [[ "$BALANCER" == true ]]; then
       echo "  balancer  ${Li}http://localhost:$BALANCER_PORT${R}  (round-robin entry point)"
     fi
     for port in "${REPLICA_PORTS[@]}"
@@ -1521,7 +1526,7 @@
       echo "  iex> node()      # $ELIXIR_PROJECT_NAME@172.x.x.x"
       echo "  iex> Node.list() # the other $((REPLICAS - 1))"
     fi
-    if [ "$BALANCER" == true ]; then
+    if [[ "$BALANCER" == true ]]; then
       echo
       echo "See the balancing: the X-Served-By address is the node that answered."
       echo "  ${B}curl -sI http://localhost:$BALANCER_PORT | grep X-Served-By${R}"
@@ -1547,7 +1552,7 @@
     script_name=$(basename "$0")
 
     section "NAME"
-    section_content "$(sed -n '2s/# //p' "$0")"
+    section_content "$(sed -n '2s/# //p' "$WORKBENCH_SELF")"
 
     section "VERSION"
     section_content \
@@ -1872,7 +1877,7 @@
     done
 
     SETUP_FLAGS=( --internal-port "$APP_INTERNAL_PORT" )
-    [ "$ECTO" == false ] && SETUP_FLAGS+=( --no-ecto )
+    [[ "$ECTO" == false ]] && SETUP_FLAGS+=( --no-ecto )
     true
   }
 
@@ -1900,7 +1905,7 @@
       # archive at all.
       check_phx_new_exists "$PHX_NEW_VERSION"
       check_stack_runs_phx_new "$PHX_NEW_VERSION"
-      if [ "$PHX_NEW_NAMED" == "setting" ]; then
+      if [[ "$PHX_NEW_NAMED" == "setting" ]]; then
         echo "Phoenix installer: ${B}phx_new $PHX_NEW_VERSION${R}" \
           "(PHX_NEW_VERSION in $SCRIPT_CONFIG_FILE; --phx-new names another)."
       fi
@@ -1916,7 +1921,7 @@
         fi
       fi
 
-      if [ "$PHX_NEW_VERSION" == "$PHX_NEW_NEWEST" ]
+      if [[ "$PHX_NEW_VERSION" == "$PHX_NEW_NEWEST" ]]
       then echo "Phoenix installer: ${B}phx_new $PHX_NEW_VERSION${R} (the newest on hex; --phx-new names another)."
       # Not the newest, and never silently: nobody named a version and
       # the answer is not the obvious one, so the reason travels with it.
@@ -1975,7 +1980,7 @@ if [ $# -gt 0 ]; then
   # The invoked command, for messages written before any branch shifts it.
   COMMAND_NAME="$1"
 
-  if   [ "$1" == "login" ]; then
+  if   [[ "$1" == "login" ]]; then
     shift
 
     if [ $# -eq 0 ]; then
@@ -1996,7 +2001,7 @@ if [ $# -gt 0 ]; then
         --password-stdin
     fi
 
-  elif [ "$1" == "new" ]; then
+  elif [[ "$1" == "new" ]]; then
     shift
 
     # The Phoenix installer for this creation, in order of authority:
@@ -2032,10 +2037,10 @@ if [ $# -gt 0 ]; then
     create_project workbench_setup "$@" && \
     workspace_commit "New project: $ELIXIR_PROJECT_NAME"
 
-  elif [ "$1" == "add" ]; then
+  elif [[ "$1" == "add" ]]; then
     shift
 
-    if [ "$EXISTING_PROJECT" == true ]; then
+    if [[ "$EXISTING_PROJECT" == true ]]; then
       if [ $# -gt 0 ]; then
         require_clean_workspace add
 
@@ -2078,9 +2083,9 @@ if [ $# -gt 0 ]; then
       else args_error "Missing feature name. Try: ./$(basename "$0") add healthcheck"; fi
     else terminate "There is no project to add features to."; fi
 
-  elif [ "$1" == "eject" ]; then
+  elif [[ "$1" == "eject" ]]; then
     shift
-    if [ "$EXISTING_PROJECT" == true ]; then
+    if [[ "$EXISTING_PROJECT" == true ]]; then
       [ $# -gt 0 ] || args_error "Missing feature name. Try: ./$(basename "$0") eject credo"
       FEATURE=$1
       require_clean_workspace eject
@@ -2140,7 +2145,7 @@ if [ $# -gt 0 ]; then
 
     else terminate "There is no project."; fi
 
-  elif [ "$1" == "stacks" ]; then
+  elif [[ "$1" == "stacks" ]]; then
     shift
     # The usable hexpm/elixir images, asked of Docker Hub itself.
     # The API prunes server-side (name=-slim: ~1M tags down to the slim
@@ -2199,16 +2204,16 @@ if [ $# -gt 0 ]; then
         fi
         printf '['; FIRST=true
         echo "$LIST" | while read -r t; do
-          [ "$FIRST" == true ] && FIRST=false || printf ','
+          [[ "$FIRST" == true ]] && FIRST=false || printf ','
           printf '\n  "%s"' "$t"
         done; printf '\n]\n' ;;
       ""|-n)
-        [ "$1" == "-n" ] && N="$2" || N=12
+        [[ "$1" == "-n" ]] && N="$2" || N=12
         CURRENT="${ELIXIR_VERSION}-erlang-${ERLANG_VERSION}-debian-${DEBIAN_VERSION}"
         LIST=$(stacks_list | head -n "$N") || terminate "Docker Hub did not answer."
         echo "Usable hexpm/elixir images (highest first; pick one: ./$(basename "$0") stacks use TAG):"
         echo "$LIST" | while read -r t; do
-          if [ "$t" == "$CURRENT" ]
+          if [[ "$t" == "$CURRENT" ]]
           then echo "  ${B}* $t${R} (config.conf)"
           else echo "    $t"; fi
         done
@@ -2217,7 +2222,7 @@ if [ $# -gt 0 ]; then
       *) args_error invalid ;;
     esac
 
-  elif [ "$1" == "engine" ]; then
+  elif [[ "$1" == "engine" ]]; then
     shift
     # Which Docker the script talks to: the CLI's context, per user and
     # kept across terminals. On Linux there are two — the native engine
@@ -2237,7 +2242,7 @@ if [ $# -gt 0 ]; then
         docker context ls --format '  {{if .Current}}*{{else}} {{end}} {{.Name}}\t{{.DockerEndpoint}}' ;;
       toggle)
         # Between the two Linux engines; elsewhere there is one to use.
-        if [ "$(docker context show)" == "default" ] && docker context inspect desktop-linux > /dev/null 2>&1
+        if [[ "$(docker context show)" == "default" ]] && docker context inspect desktop-linux > /dev/null 2>&1
         then docker context use desktop-linux > /dev/null 2>&1
         else docker context use default > /dev/null 2>&1; fi
         engine_say ;;
@@ -2246,7 +2251,7 @@ if [ $# -gt 0 ]; then
       *)       docker context use "$1" > /dev/null 2>&1 && engine_say ;;
     esac
 
-  elif [ "$1" == "console" ]; then
+  elif [[ "$1" == "console" ]]; then
     shift
     # The console: a Phoenix LiveView app in console/, run as a container
     # that drives this very workbench — Docker's socket mounted, and the
@@ -2375,8 +2380,8 @@ if [ $# -gt 0 ]; then
       *)     args_error invalid ;;
     esac
 
-  elif [ "$1" == "bake" ]; then
-    if [ "$EXISTING_PROJECT" == true ]; then
+  elif [[ "$1" == "bake" ]]; then
+    if [[ "$EXISTING_PROJECT" == true ]]; then
       require_clean_workspace bake
       # A workspace baked before the volumes moved over _build and deps
       # has neither directory yet.
@@ -2412,13 +2417,13 @@ if [ $# -gt 0 ]; then
       fi
     else terminate "There is no project."; fi
 
-  elif [ "$1" == "commit" ]; then
+  elif [[ "$1" == "commit" ]]; then
     shift
-    if [ "$EXISTING_PROJECT" == true ]; then
+    if [[ "$EXISTING_PROJECT" == true ]]; then
       # The message: the words that follow, or a file with a title and
       # a body — the console's, whose jobs travel as argv and cannot
       # carry a line break.
-      if [ "$1" == "--message-file" ]; then
+      if [[ "$1" == "--message-file" ]]; then
         [ -r "$2" ] || terminate "No message file at '$2'."
         workspace_commit "$(cat "$2")"
       else
@@ -2426,12 +2431,12 @@ if [ $# -gt 0 ]; then
       fi
     else terminate "There is no project to commit."; fi
 
-  elif [ "$1" == "catalog" ]; then
+  elif [[ "$1" == "catalog" ]]; then
     shift
     # The catalog is the workbench's, not the workspace's: with a project
     # it is read through the project (the package is a dependency there
     # already, compiled); without one, off the package itself.
-    if [ "$EXISTING_PROJECT" == true ]
+    if [[ "$EXISTING_PROJECT" == true ]]
     then CATALOG_READER=workspace_igniter
     else CATALOG_READER=package_igniter; fi
     case "$1" in
@@ -2441,17 +2446,17 @@ if [ $# -gt 0 ]; then
       *)      args_error invalid ;;
     esac
 
-  elif [ "$1" == "status" ]; then
+  elif [[ "$1" == "status" ]]; then
     shift
     case "$1" in
       --json) status_json "$2" ;;
-      "")     if [ "$EXISTING_PROJECT" == true ]
+      "")     if [[ "$EXISTING_PROJECT" == true ]]
               then status_report
               else terminate "There is no project in $WORKSPACE_PATH."; fi ;;
       *)      args_error invalid ;;
     esac
 
-  elif [ "$1" == "config" ]; then
+  elif [[ "$1" == "config" ]]; then
     shift
     # The one writer of config.conf: 'set KEY=VALUE …' writes each value
     # in place — comments and order stay — on the same sed 'stacks use'
@@ -2473,13 +2478,13 @@ if [ $# -gt 0 ]; then
       *) args_error "Try: ./$(basename "$0") config set KEY=VALUE [KEY=VALUE …]" ;;
     esac
 
-  elif [ "$1" == "expand" ]; then
+  elif [[ "$1" == "expand" ]]; then
     shift
     # The planning half of 'add', on its own: what inserting CARTRIDGE
     # with these options would run, one per line — or as JSON — minus
     # what the project already carries. Nothing is written.
-    if [ "$EXISTING_PROJECT" == true ]; then
-      [ "$1" == "--json" ] && { EXPAND_JSON=true; shift; } || EXPAND_JSON=false
+    if [[ "$EXISTING_PROJECT" == true ]]; then
+      [[ "$1" == "--json" ]] && { EXPAND_JSON=true; shift; } || EXPAND_JSON=false
       if [ $# -gt 0 ]; then
         PLAN=$(expand_plan "$@") || terminate "Could not expand '$1'."
         if $EXPAND_JSON
@@ -2488,9 +2493,9 @@ if [ $# -gt 0 ]; then
       else args_error "Missing cartridge name. Try: ./$(basename "$0") expand chiefs_setup"; fi
     else terminate "There is no project to expand a cartridge against."; fi
 
-  elif [ "$1" == "up" ]; then
+  elif [[ "$1" == "up" ]]; then
     COMPOSE_COMMAND=$1; shift
-    if [ "$EXISTING_PROJECT" == true ]; then
+    if [[ "$EXISTING_PROJECT" == true ]]; then
       parse_deploy_args "$@"
 
       # Every deployment of a workspace shares one compose project, but
@@ -2498,7 +2503,7 @@ if [ $# -gt 0 ]; then
       # scaled one has app1..N plus balancer and migrate, and
       # --replicas/--no-balancer change that set between runs. Without --remove-orphans the containers of
       # the previous shape stay up, unmanaged and invisible to 'ps'.
-      if [ "$DEPLOY_ARG" == "scaled" ]; then
+      if [[ "$DEPLOY_ARG" == "scaled" ]]; then
         bake_scaled_compose && \
         check_ports "$WORKSPACE_PATH/$SCALED_COMPOSE_FILE" && \
         docker compose \
@@ -2506,7 +2511,7 @@ if [ $# -gt 0 ]; then
           "$COMPOSE_COMMAND" --detach --build --remove-orphans && \
         scaled_deployed_message
 
-      elif [ "$DEPLOY_ARG" == "prod" ]; then
+      elif [[ "$DEPLOY_ARG" == "prod" ]]; then
         bake_prod_compose && \
         check_ports "$WORKSPACE_PATH/$PROD_COMPOSE_FILE" && \
         docker compose \
@@ -2522,12 +2527,12 @@ if [ $# -gt 0 ]; then
 
     else terminate "There is no project to deploy."; fi
 
-  elif [ "$1" == "build" ]; then
+  elif [[ "$1" == "build" ]]; then
     shift
-    if [ "$EXISTING_PROJECT" == true ]; then
+    if [[ "$EXISTING_PROJECT" == true ]]; then
       parse_deploy_args "$@"
 
-      if [ "$DEPLOY_ARG" == "scaled" ]; then
+      if [[ "$DEPLOY_ARG" == "scaled" ]]; then
         # Said before building: whether the image comes out distributed is
         # decided by rel/env.sh.eex, which mix release bakes into it, so
         # installing the feature afterwards means building again.
@@ -2537,7 +2542,7 @@ if [ $# -gt 0 ]; then
         docker compose \
           --file "$WORKSPACE_PATH/$SCALED_COMPOSE_FILE" build app1 "${DEPLOY_REST[@]}"
 
-      elif [ "$DEPLOY_ARG" == "prod" ]; then
+      elif [[ "$DEPLOY_ARG" == "prod" ]]; then
         bake_prod_compose && \
         docker compose \
           --file "$WORKSPACE_PATH/$PROD_COMPOSE_FILE" build app "${DEPLOY_REST[@]}"
@@ -2551,9 +2556,9 @@ if [ $# -gt 0 ]; then
 
     else terminate "There is no project to build."; fi
 
-  elif [ "$1" == "logs" ]; then
+  elif [[ "$1" == "logs" ]]; then
     shift
-    if [ "$EXISTING_PROJECT" == true ]; then
+    if [[ "$EXISTING_PROJECT" == true ]]; then
       case "$1" in
         --deploy) DEPLOY_ARG="$2"; shift 2 ;;
         -e|--env) env_flag_error ;;
@@ -2565,9 +2570,9 @@ if [ $# -gt 0 ]; then
 
     else terminate "There is no project."; fi
 
-  elif [ "$1" == "stop" ] || [ "$1" == "down" ] || [ "$1" == "ps" ] || [ "$1" == "restart" ]; then
+  elif [[ "$1" == "stop" ]] || [[ "$1" == "down" ]] || [[ "$1" == "ps" ]] || [[ "$1" == "restart" ]]; then
     COMPOSE_COMMAND=$1; shift
-    if [ "$EXISTING_PROJECT" == true ]; then
+    if [[ "$EXISTING_PROJECT" == true ]]; then
       case "$1" in
         --deploy) DEPLOY_ARG="$2"; shift 2 ;;
         -e|--env) env_flag_error ;;
@@ -2580,16 +2585,16 @@ if [ $# -gt 0 ]; then
       # container that leaves the deployment whole — the same service,
       # the same image, up again — which is why it is here and 'stop
       # SERVICE' is not.
-      [ "$COMPOSE_COMMAND" == "down" ] && ORPHANS="--remove-orphans" || ORPHANS=""
+      [[ "$COMPOSE_COMMAND" == "down" ]] && ORPHANS="--remove-orphans" || ORPHANS=""
 
       resolve_compose_file "$DEPLOY_ARG" && \
       docker compose --file "$COMPOSE_TARGET" "$COMPOSE_COMMAND" ${ORPHANS:+"$ORPHANS"} "$@"
 
     else terminate "There is no project."; fi
 
-  elif [ "$1" == "iex" ] || [ "$1" == "bash" ]; then
+  elif [[ "$1" == "iex" ]] || [[ "$1" == "bash" ]]; then
     SESSION_KIND=$1; shift
-    if [ "$EXISTING_PROJECT" == true ]; then
+    if [[ "$EXISTING_PROJECT" == true ]]; then
       case "$1" in
         --deploy) DEPLOY_ARG="$2"; shift 2 ;;
         -e|--env) env_flag_error ;;
@@ -2609,7 +2614,7 @@ if [ $# -gt 0 ]; then
       # input reaches EOF, so a redirected or piped stdin would take the
       # application down instead of just detaching. Only dev is safe: its
       # 'iex -S mix' runs its own VM inside the container.
-      if [ "$SESSION_KIND" == "iex" ] && [ "$DEPLOY_ARG" != "dev" ] && [ ! -t 0 ]
+      if [[ "$SESSION_KIND" == "iex" ]] && [ "$DEPLOY_ARG" != "dev" ] && [ ! -t 0 ]
       then terminate \
         "'iex --deploy $DEPLOY_ARG' opens the release remote shell, which stops" \
         "the node when its input reaches EOF: it needs an interactive" \
@@ -2620,14 +2625,14 @@ if [ $# -gt 0 ]; then
 
       # Only the dev image carries Mix and the mounted source; prod and
       # scaled run the release, whose shell is 'bin/<app> remote'.
-      if [ "$DEPLOY_ARG" == "dev" ]
+      if [[ "$DEPLOY_ARG" == "dev" ]]
       then
-        if [ "$SESSION_KIND" == "iex" ]
+        if [[ "$SESSION_KIND" == "iex" ]]
         then SESSION_COMMAND=(iex -S mix)
         else SESSION_COMMAND=(bash); fi
         WORKDIR_FLAGS=( --workdir /app/src )
       else
-        if [ "$SESSION_KIND" == "iex" ]
+        if [[ "$SESSION_KIND" == "iex" ]]
         then SESSION_COMMAND=("/app/bin/$ELIXIR_PROJECT_NAME" remote)
         else SESSION_COMMAND=(bash); fi
         WORKDIR_FLAGS=()
@@ -2638,9 +2643,9 @@ if [ $# -gt 0 ]; then
 
     else terminate "There is no project."; fi
 
-  elif [ "$1" == "mix" ]; then
+  elif [[ "$1" == "mix" ]]; then
     shift
-    if [ "$EXISTING_PROJECT" == true ]; then
+    if [[ "$EXISTING_PROJECT" == true ]]; then
       # Warm path: exec on the running app container (fast, no startup).
       # Cold path: one-off container (starts the database dependency too).
       # compose exec and run take --env as docker run does.
@@ -2657,8 +2662,8 @@ if [ $# -gt 0 ]; then
 
     else terminate "There is no project."; fi
 
-  elif [ "$1" == "delete" ]; then
-    if [ "$EXISTING_PROJECT" == true ]; then
+  elif [[ "$1" == "delete" ]]; then
+    if [[ "$EXISTING_PROJECT" == true ]]; then
       confirm \
         "This action will delete all project files from $WORKSPACE_PATH" \
         "along with its containers, images and database volumes." && \
@@ -2676,13 +2681,13 @@ if [ $# -gt 0 ]; then
 
     else terminate "There is no project to delete."; fi
 
-  elif [ "$1" == "prune" ]; then
+  elif [[ "$1" == "prune" ]]; then
     shift
     prune_workbench "$@"
 
-  elif [ "$1" == "k6" ]; then
+  elif [[ "$1" == "k6" ]]; then
     shift
-    if [ "$EXISTING_PROJECT" == true ]; then
+    if [[ "$EXISTING_PROJECT" == true ]]; then
       # A load test against a deployment that is up: the k6 cartridge
       # puts the tool in the compose under a profile 'up' never starts,
       # with the source of the scripts mounted, and BASE_URL set for the
@@ -2703,8 +2708,8 @@ if [ $# -gt 0 ]; then
       docker compose --file "$COMPOSE_TARGET" --profile tools run --rm k6 run "/scripts/$SCRIPT" "$@"
     else terminate "There is no project."; fi
 
-  elif [ "$1" == "demo" ]; then
-    WORKBENCH_SCRIPT="$WORKBENCH_PATH/$(basename "$0")"; shift;
+  elif [[ "$1" == "demo" ]]; then
+    WORKBENCH_SCRIPT="$WORKBENCH_SELF"; shift;
 
     # One deployment end to end. The database needs no step of its own:
     # the dev image creates it on boot, the release deployments migrate
@@ -2726,7 +2731,7 @@ if [ $# -gt 0 ]; then
       "$WORKBENCH_SCRIPT" delete
     }
 
-  elif [ "$1" == "help" ]; then
+  elif [[ "$1" == "help" ]]; then
     help
   else args_error invalid; fi
 else help; fi

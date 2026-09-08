@@ -249,6 +249,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **The version and the help's name, empty when wb.sh is called by a
+  relative path from elsewhere.** Two readers open the script's own file
+  to answer — the version off line 3, the name off line 2 — and they
+  opened it as `$0`, which the `cd` to `WORKBENCH_PATH` three lines into
+  the script had already made meaningless: `repos/workbench/wb.sh help`
+  from `~` printed two `sed: can't read` and left both fields blank.
+  `WORKBENCH_SELF` is the script's file, absolute, and the three places
+  that want it — those two and `demo` — take it from there. It is read
+  off `BASH_SOURCE` and not `$0` now, so it holds when the script is
+  sourced rather than run. The string comparisons became `[[ … == … ]]`
+  while there: `==` is bash's operator, and `[ ]` only tolerated it.
+
 - **Two warnings and an error at the end of every creation from the
   console.** Mix 1.19 deprecates the commas `mix do` took between
   tasks, and the three places wb.sh chained tasks that way — the

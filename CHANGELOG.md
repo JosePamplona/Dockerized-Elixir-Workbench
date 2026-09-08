@@ -214,6 +214,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   daemon, no versions to pin: the client negotiates its API with the
   engine on the socket, so the two build args wb.sh took off the host
   are gone with the warning.
+- **Two workspaces made while each other slept were given the same
+  port.** `first_free_port` asked only what listened at that moment, and
+  a workspace that is down holds its ports as surely as one that is up:
+  six workspaces ended up baked on 4001, to meet Docker's "port is
+  already allocated" on their first `up` together. A free port is now
+  one nothing listens on and no other workspace under `_workspaces/` has
+  in a compose file of its own — the scaled files' replica ports
+  included. And `up` checks the file's ports before compose does: one
+  held by another workspace's containers is refused naming that
+  workspace and a free port to move to; one held by a process on the
+  host is said so. The fix is the port line in the file, which prod and
+  scaled read on their next `up`.
 - **A Postgres project without the pgadmin cartridge still published
   pgAdmin's port.** The port line on the pod's `network` service hung on
   Postgres being in, not on pgadmin, so the status read a port and the

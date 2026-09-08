@@ -277,14 +277,68 @@
   terminate() { echo "${B}${C1}Error${R} $*"; echo; exit 1; }
 
   # first_free_port <BASE>
-    # Prints the first host port available starting from BASE.
+    # Prints the first host port available starting from BASE: one
+    # nothing listens on now, and no other workspace has baked into a
+    # compose file of its own. A port is chosen once, when a file is
+    # baked, and the file keeps it — so a workspace that is down holds
+    # its ports as surely as one that is up, and two workspaces created
+    # while each other slept used to be given the same one, to collide
+    # on their first up together (seen 2026-09-07: six on 4001).
   first_free_port() {
-    local port=$1
-    while (exec 3<>"/dev/tcp/127.0.0.1/$port") 2>/dev/null; do
+    local port=$1 baked
+    baked=$(baked_ports)
+    while (exec 3<>"/dev/tcp/127.0.0.1/$port") 2>/dev/null || grep -qx "$port" <<< "$baked"; do
       exec 3>&- 3<&-
       port=$((port + 1))
     done
     echo "$port"
+  }
+
+  # baked_ports
+    # The host ports every OTHER workspace under _workspaces/ publishes
+    # in its compose files, one per line: what first_free_port must not
+    # give again. A workspace kept elsewhere is not seen; its ports are
+    # its own to keep apart.
+  baked_ports() {
+    local file here
+    here=$(cd "$WORKSPACE_PATH" 2>/dev/null && pwd -P)
+    for file in "$WORKBENCH_PATH"/_workspaces/*/docker-compose*.yml; do
+      [ -f "$file" ] || continue
+      [ "$(cd "$(dirname "$file")" && pwd -P)" == "$here" ] && continue
+      sed -n 's/^ *- \([0-9]*\):[0-9]*$/\1/p' "$file"
+    done | sort -un
+  }
+
+  # check_ports <COMPOSE_FILE>
+    # Before an up: every host port the file publishes must be free, or
+    # already ours — the deployment that is up being raised again. One
+    # another workspace's containers hold is named, with the workspace;
+    # one a process on this host holds is said so. Both used to surface
+    # as Docker's "port is already allocated", after the images built.
+  check_ports() {
+    local file="$1" port holder mine free
+    mine=$(compose_project_name)
+    # A process substitution, not a pipe into the loop: terminate must
+    # end this shell, and in a pipeline it would only end the loop's.
+    while read -r port; do
+      (exec 3<>"/dev/tcp/127.0.0.1/$port") 2>/dev/null || continue
+      exec 3>&- 3<&-
+      holder=$(docker ps --format '{{.Label "com.docker.compose.project"}} {{.Ports}}' 2>/dev/null | \
+        grep -E "[:]$port->" | cut -d' ' -f1 | head -n 1)
+      [ "$holder" == "$mine" ] && continue
+      free=$(first_free_port "$port")
+      if [ -n "$holder" ]; then
+        terminate \
+          "Port $port, which $(basename "$file") publishes, is held by the '$holder' workspace's containers." \
+          "Take that one down (./$(basename "$0") down there), or give this workspace another port:" \
+          "change $port in the file's port line ($free is free) and run up again — the prod and" \
+          "scaled files take the app port from docker-compose.yml on their next up."
+      else
+        terminate \
+          "Port $port, which $(basename "$file") publishes, is held by a process on this host." \
+          "Free it, or change $port in the file's port line ($free is free) and run up again."
+      fi
+    done < <(sed -n 's/^ *- \([0-9]*\):[0-9]*$/\1/p' "$file" | sort -un)
   }
 
   # phx_new_versions
@@ -2421,6 +2475,7 @@ if [ $# -gt 0 ]; then
       # the previous shape stay up, unmanaged and invisible to 'ps'.
       if [ "$DEPLOY_ARG" == "scaled" ]; then
         bake_scaled_compose && \
+        check_ports "$WORKSPACE_PATH/$SCALED_COMPOSE_FILE" && \
         docker compose \
           --file "$WORKSPACE_PATH/$SCALED_COMPOSE_FILE" \
           "$COMPOSE_COMMAND" --detach --build --remove-orphans && \
@@ -2428,12 +2483,14 @@ if [ $# -gt 0 ]; then
 
       elif [ "$DEPLOY_ARG" == "prod" ]; then
         bake_prod_compose && \
+        check_ports "$WORKSPACE_PATH/$PROD_COMPOSE_FILE" && \
         docker compose \
           --file "$WORKSPACE_PATH/$PROD_COMPOSE_FILE" \
           "$COMPOSE_COMMAND" --detach --build --remove-orphans && \
         deployed_message
 
       else
+        check_ports "$WORKSPACE_PATH/$COMPOSE_FILE" && \
         workspace_compose "$COMPOSE_COMMAND" --detach --remove-orphans && \
         deployed_message
       fi

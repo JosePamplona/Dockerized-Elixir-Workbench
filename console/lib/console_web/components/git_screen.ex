@@ -149,14 +149,8 @@ defmodule ConsoleWeb.GitScreen do
         <tr>
           <th></th><th>commit</th><th class="dim">when</th><th class="dim">who</th>
         </tr>
-        <tr
-          :for={c <- @gt.log}
-          class={@gt.pick == c.sha && "on"}
-          phx-click="git_pick"
-          phx-value-sha={c.sha}
-          title="its diff, below"
-        >
-          <td class="dim mono">{c.short}</td>
+        <tr :for={c <- @gt.log} class={picked?(@gt.pick, c.sha) && "on"}>
+          <td><.commit_ref sha={c.sha} subject={c.subject} date={c.date} /></td>
           <td class="wrap">
             <span class="sj">{c.subject}</span><.cart_ref
               :if={c.insert}
@@ -179,6 +173,9 @@ defmodule ConsoleWeb.GitScreen do
     </div>
     """
   end
+
+  # The picked commit, by any prefix of its sha: a mention carries seven characters.
+  defp picked?(pick, sha), do: is_binary(pick) and pick != "" and String.starts_with?(sha, pick)
 
   # "1 file", "12 files": the count and its noun.
   defp files_word([_]), do: "1 file"

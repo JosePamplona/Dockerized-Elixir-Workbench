@@ -532,7 +532,7 @@ defmodule ConsoleWeb.Board do
             </.chip>
           </div>
           <div class="row">
-            <span class="k">head</span><span>{@status["git"]["head"] || "no commits yet"}</span>
+            <span class="k">head</span><span class="head"><.head_ref head={@status["git"]["head"]} /></span>
           </div>
           <div class="row">
             <span class="k">signs as</span><span title={@status["git"]["identity"]}>{String.replace(
@@ -610,12 +610,35 @@ defmodule ConsoleWeb.Board do
     """
   end
 
+  # The origin, and for a cartridge that came by commit the commit itself
+  # beside it: the mention opens History on the insert, its diff shown.
   defp origin(assigns) do
     {word, cls, why} = Cartridges.origin(assigns.status, assigns.c)
-    assigns = assign(assigns, word: word, cls: cls, why: why)
+    insert = Cartridges.insert(assigns.status, assigns.c["name"])
+    assigns = assign(assigns, word: word, cls: cls, why: why, insert: insert)
 
     ~H"""
     <.chip class={@cls} title={@why}>{@word}</.chip>
+    <.commit_ref
+      :if={@insert}
+      sha={@insert["sha"]}
+      subject={@insert["subject"]}
+      date={@insert["date"]}
+    />
     """
   end
+
+  # HEAD as `wb.sh status` writes it, `SHA subject`: the sha a mention, the subject beside.
+  attr :head, :any, default: nil
+
+  defp head_ref(%{head: head} = assigns) when is_binary(head) and head != "" do
+    [sha | subject] = String.split(head, " ", parts: 2)
+    assigns = assign(assigns, sha: sha, subject: List.first(subject) || "")
+
+    ~H"""
+    <.commit_ref sha={@sha} subject={@subject} /> {@subject}
+    """
+  end
+
+  defp head_ref(assigns), do: ~H"no commits yet"
 end

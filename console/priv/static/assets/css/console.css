@@ -350,6 +350,8 @@ table.rows tr.new{animation:seat 1.2s ease-out}
 #slots td.ver{white-space:nowrap;padding-left:10px}
 #slots td.og{width:1%;white-space:nowrap;padding-left:10px}
 #slots td.og .chip+.chip{margin-left:6px}
+#slots td.og .commit-ref{margin-left:6px}
+.git .row .head{display:inline-flex;gap:8px;align-items:baseline;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #deployments td.k{white-space:nowrap}
 #deployments tr.hd th{text-align:left;font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);padding:0 10px 4px 0;border-bottom:1px solid var(--line)}
 #deployments tr.hd + tr td{border-top:0}

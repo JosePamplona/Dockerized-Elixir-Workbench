@@ -4,10 +4,12 @@ defmodule ConsoleWeb.ConsoleLive.Git do
   and which commit, the tree and the log read off the workspace, and
   the commit the reader writes. Pending and History are papers of the
   Project tab: `/project?paper=history&commit=SHA` is where a
-  `.commit-ref` lands, the commit picked and its diff open.
+  `.commit-ref` lands — the Record's birth, the rail's HEAD, an
+  insert's chip, a row of History itself — the commit picked and its
+  diff open. Any prefix of the sha will do: a mention carries seven.
   """
   import Phoenix.Component, only: [assign: 2]
-  import Phoenix.LiveView, only: [connected?: 1, push_patch: 2, start_async: 3]
+  import Phoenix.LiveView, only: [connected?: 1, start_async: 3]
 
   alias Console.{Diffs, Git, Jobs}
   alias ConsoleWeb.GitScreen
@@ -82,11 +84,6 @@ defmodule ConsoleWeb.ConsoleLive.Git do
     path = Git.message_file(title, params["body"])
     Jobs.run({:commit, nil}, ["commit", "--message-file", path])
     {:noreply, socket}
-  end
-
-  def event("git_pick", %{"sha" => sha}, socket) do
-    q = if socket.assigns.gt.pick == sha, do: "", else: "&commit=#{sha}"
-    {:noreply, push_patch(socket, to: "/project?paper=history#{q}")}
   end
 
   # --- what arrives ---------------------------------------------------------

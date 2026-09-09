@@ -286,9 +286,12 @@ defmodule ConsoleWeb.RecordSheet do
           </tr>
         </thead>
         <tbody>
-          <tr :for={f <- @birth.flags}>
+          <tr :for={f <- @birth.flags} class={f.moot && "unlit"} title={f.moot}>
             <td class="used">
-              <span class="fact" title={if f.used, do: "given to phx.new", else: "not given"}>
+              <span
+                class="fact"
+                title={f.moot || if(f.used, do: "given to phx.new", else: "not given")}
+              >
                 <input type="checkbox" checked={f.used} aria-readonly="true" tabindex="-1" />
               </span>
             </td>

@@ -188,6 +188,23 @@ defmodule ConsoleWeb.RecordTest do
     assert %{cartridge: "esbuild", installed: false} =
              Enum.find(page.birth.flags, &(&1.name == "no-esbuild"))
 
+    # A flag another flag makes moot is marked, with the reason: the
+    # database and the ids without Ecto, --no-live without HTML views.
+    refute Enum.any?(page.birth.flags, & &1.moot)
+    no_ecto = put_in(@status, ["project", "birth", "phx", "ecto"], false)
+
+    assert Record.page(no_ecto, @catalog).birth.flags
+           |> Enum.filter(& &1.moot)
+           |> Enum.map(& &1.name) ==
+             ["database", "binary-id"]
+
+    no_html = put_in(@status, ["project", "birth", "phx", "html"], false)
+
+    assert Record.page(no_html, @catalog).birth.flags
+           |> Enum.filter(& &1.moot)
+           |> Enum.map(& &1.name) ==
+             ["no-live"]
+
     # The toolchain's phx_new moved past the generator: said, with the remedy in the sheet.
     assert %{born: "1.8.13", at_hand: "1.8.14", in_sync: false} = page.birth.installer
     assert page.birth.moved == 1

@@ -160,10 +160,11 @@ defmodule ConsoleWeb.Record do
         ]
 
     flags =
-      Enum.map(
-        flags,
-        &Map.put(&1, :installed, &1.cartridge && Cartridges.installed?(status, &1.cartridge))
-      )
+      Enum.map(flags, fn f ->
+        f
+        |> Map.put(:installed, f.cartridge && Cartridges.installed?(status, f.cartridge))
+        |> Map.put(:moot, moot(f.name, born_phx))
+      end)
 
     %{
       sha: b["sha"],
@@ -187,6 +188,19 @@ defmodule ConsoleWeb.Record do
   end
 
   defp birth(_project, _status), do: nil
+
+  # A flag another flag makes moot, as phx.new's own generator binds them
+  # (Phx.New.Generator.put_binding/1): the database and the id type only
+  # exist with Ecto, and `live = html && live` — without HTML views there
+  # is no LiveView to leave out. Marked, never hidden, with the reason.
+  defp moot(name, %{"ecto" => false}) when name in ["database", "binary-id"],
+    do: "only with Ecto: --no-ecto leaves the database out, so this flag has nothing to say"
+
+  defp moot("no-live", %{"html" => false}),
+    do:
+      "only with HTML views: --no-html already leaves LiveView out (live = html && live in phx.new)"
+
+  defp moot(_name, _born), do: nil
 
   defp flag(name, used, arg, cartridge, now \\ nil, default \\ nil),
     do: %{

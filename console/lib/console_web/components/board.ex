@@ -589,7 +589,10 @@ defmodule ConsoleWeb.Board do
                 version={c["version"] && c["version"]["version"]}
               />
             </td>
-            <td class="og"><.origin status={@status} c={c} /></td>
+            <td class="og">
+              <.chip :for={f <- Cartridges.facts(c)}>{f}</.chip>
+              <.origin status={@status} c={c} />
+            </td>
             <td
               class="muted ver"
               title={

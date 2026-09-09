@@ -275,9 +275,10 @@ def components_css():
      one taught the reader the other wrong.
      The layer, as an 8px square before the label — the mark the logs'
      service filter already uses, meaning "which layer answers here":
-       .route  (default) violet, addr-route: a route the project offers
-       .port   blue, addr-port: a port the compose publishes
-       .console gold, svc-console: the console itself, the page being read
+       .door-route   (default) violet, addr-route: a route the project offers
+       .door-port    blue, addr-port: a port the compose publishes
+       .door-console gold, svc-console: the console itself, the page being read
+     (prefixed, because `.console` is the LiveView console's own root.)
      A route is written on its port — <span><em>:4001</em>/dev/mailbox</span>,
      the port dimmed — because it rides on one; a port is written whole.
      What answered when it was called goes *inside* the border, attached
@@ -501,8 +502,8 @@ def components_css():
 .door-ref:hover:not(.unlit),.door-ref:focus-visible:not(.unlit){border-color:var(--ink);outline:none}
 /* The layer square: the logs' 8px service swatch, saying which layer answers. */
 .door-ref::before{content:"";width:8px;height:8px;border-radius:2px;flex:none;background:var(--addr-route)}
-.door-ref.port::before{background:var(--addr-port)}
-.door-ref.console::before{background:var(--svc-console)}
+.door-ref.door-port::before{background:var(--addr-port)}
+.door-ref.door-console::before{background:var(--svc-console)}
 /* The reading, attached inside the border: the chip's plate behind the box's own line. */
 .door-ref:has(.read){padding-right:0}
 .door-ref .read{display:inline-flex;align-items:center;gap:5px;align-self:stretch;margin:-3px 0 -3px 1px;padding:3px 8px;border-left:1px solid var(--line);border-radius:0 2px 2px 0;font-family:var(--mono);font-style:normal;font-weight:500;font-size:11px;background:var(--surface-2);color:var(--muted)}

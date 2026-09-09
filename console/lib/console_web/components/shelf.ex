@@ -124,12 +124,14 @@ defmodule ConsoleWeb.Shelf do
     """
   end
 
-  defp front(e),
+  @doc "The cover a box shows: its front, or the placeholder for a box without one."
+  def front(e),
     do:
       e["covers"]["front"] ||
         if(e["pending"], do: "empty_cover_placeholder.jpg", else: "cover_placeholder.png")
 
-  defp title(e), do: e["name"] |> String.replace(~r/(\d+)$/, " \\1") |> String.replace("_", " ")
+  @doc "The box's title: its name, spaced."
+  def title(e), do: e["name"] |> String.replace(~r/(\d+)$/, " \\1") |> String.replace("_", " ")
 
   attr :e, :map, required: true
   attr :status, :map

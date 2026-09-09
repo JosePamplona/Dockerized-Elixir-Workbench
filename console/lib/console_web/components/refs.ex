@@ -61,12 +61,22 @@ defmodule ConsoleWeb.Refs do
     <span class="pair">
       <a
         :if={@open}
-        class={["door-ref", @kind]}
+        class={["door-ref", "door-" <> @kind]}
         href={@href}
         target="_blank"
         title={door_title(@who, @path, @why)}
-      ><b>{@label}</b><span><em :if={@port}>:{@port}</em>{@path}</span><i :if={@read} class={["read", elem(@read, 1)]}>{elem(@read, 0)}</i></a>
-      <span :if={!@open} class={["door-ref", @kind, @why && "unlit"]} title={door_title(@who, @path, @why)}><b>{@label}</b><span><em :if={@port}>:{@port}</em>{@path}</span><i :if={@read} class={["read", elem(@read, 1)]}>{elem(@read, 0)}</i></span>
+      ><b>{@label}</b><span><em :if={@port}>:{@port}</em>{@path}</span><i
+        :if={@read}
+        class={["read", elem(@read, 1)]}
+      >{elem(@read, 0)}</i></a>
+      <span
+        :if={!@open}
+        class={["door-ref", "door-" <> @kind, @why && "unlit"]}
+        title={door_title(@who, @path, @why)}
+      ><b>{@label}</b><span><em :if={@port}>:{@port}</em>{@path}</span><i
+        :if={@read}
+        class={["read", elem(@read, 1)]}
+      >{elem(@read, 0)}</i></span>
       <.cart_ref :if={@who} name={@who} installed={@who_installed} />
     </span>
     """

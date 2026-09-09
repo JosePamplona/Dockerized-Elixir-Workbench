@@ -1176,20 +1176,70 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
 .pdocs pre.env .c{color:var(--term-dim)}.pdocs pre.env .k{color:var(--accent)}.pdocs pre.env .m{color:var(--ansi-red)}
 .pdocs>pre.env{margin-left:28px;margin-right:28px;margin-bottom:22px}
 .pdocs .nothing{padding:18px 28px;max-width:60ch}
-/* Doors: the plan of the project's addresses, four rows of doors with
-   what they answered beside them. It scrolls like the
-   booklet, and its rows are the rail's `.urls` with a chip after each. */
-.pdocs .doors{flex:1;min-height:0;overflow:auto;padding:22px 28px 60px;display:grid;gap:24px;align-content:start;scrollbar-gutter:stable}
-.doors .lede{margin:0;font-size:13.5px;color:var(--muted);max-width:72ch;display:flex;gap:6px 14px;align-items:center;flex-wrap:wrap}
-.doors .lede b{color:var(--ink)}
-.doors section{display:grid;gap:10px}
-.doors h3{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:14px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
-/* One door a line: a list is read down, a row of doors is scanned, and
-   this paper is for reading — who opens what, and what it answered. */
-.doors .urls{display:grid;gap:8px;justify-items:start}
-/* A door with what it answered: `.call`, not `.row`, which the drawer already owns. */
-.doors .call{display:inline-flex;gap:6px;align-items:center}
-.doors .nothing{margin:0;font-family:var(--serif);font-style:italic;font-size:13.5px;color:var(--muted);padding:0}
+/* Record: what the project is, drawn off the status — its birth in two
+   tables with the command between, the cartridges on the shelf's own row
+   with three columns after it, the deployments with the console first.
+   It scrolls like the booklet. Decided on console/el-estado-del-proyecto.html. */
+.pdocs .record{flex:1;min-height:0;overflow:auto;padding:22px 28px 60px;display:grid;gap:26px;align-content:start;scrollbar-gutter:stable}
+.record .name{font-family:var(--cond);font-weight:700;font-size:30px;letter-spacing:.02em;line-height:1;margin:0;overflow-wrap:anywhere}
+.record section{display:grid;gap:10px}
+.record h3{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:14px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.record h3 .label{font-weight:500;letter-spacing:.1em;display:inline-flex;gap:6px;align-items:baseline}
+.record h3 .chip{font-weight:500;letter-spacing:0}
+.record .nothing{margin:0;font-family:var(--serif);font-style:italic;font-size:13.5px;color:var(--muted);padding:0}
+.record .argv{font-family:var(--mono);font-size:12px;white-space:normal}
+.record .argv>span{white-space:normal;margin-right:6px}
+.record .argv .dflt,.record .argv.dflt{color:var(--muted)}
+.record .pairs{display:grid;justify-items:start;gap:6px}
+/* Birth: the two tables share their three columns; the flags table has five. */
+.record table.rows.shape{width:100%;table-layout:fixed;border-collapse:collapse;font-family:var(--mono);font-size:12.5px}
+.record table.rows.shape col.c1{width:170px}
+.record table.rows.shape col.c3{width:44%}
+.record table.rows.shape th{text-align:left;font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);padding:0 18px 6px 0;border-bottom:1px solid var(--line)}
+.record table.rows.shape td{padding:7px 18px 7px 0;border-top:1px solid var(--line);vertical-align:middle;overflow-wrap:anywhere}
+.record table.rows.shape tbody tr:first-child td{border-top:0}
+.record table.rows.shape td.k{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px}
+.record table.rows.shape td:last-child{color:var(--muted)}
+.record table.rows.flags col.f0{width:60px}
+.record table.rows.flags col.f1{width:140px}
+.record table.rows.flags col.f2{width:170px}
+.record table.rows.flags col.f4{width:130px}
+.record table.rows.flags td.used,.record table.rows.flags th.used{text-align:center;padding-right:0}
+.record table.rows.flags td.doc{font-family:var(--serif);font-size:13.5px;line-height:1.45;color:var(--muted)}
+.record table.rows.flags td:last-child{color:inherit}
+.record input.fact{accent-color:var(--accent);width:14px;height:14px;margin:0;vertical-align:middle;cursor:default}
+.record .cmdblock{display:grid;gap:8px;margin:14px 0 22px}
+.record .cmdblock .thead{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);padding-bottom:6px;border-bottom:1px solid var(--line)}
+.record .cmd{margin:0;font-family:var(--mono);font-size:12px;line-height:1.6;background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:10px 14px;white-space:pre-wrap;overflow-wrap:anywhere}
+/* Cartridges: the shelf's .lrow, four cells of its own and three of the paper's. */
+.record .list{display:grid}
+.record .lrow{display:grid;grid-template-columns:24px minmax(110px,128px) minmax(0,142px) 46px minmax(0,.9fr) minmax(0,2fr);gap:14px;align-items:center;width:100%;text-align:left;padding:7px 6px;border-top:1px solid var(--line);color:var(--ink)}
+.record .list .lrow:first-child{border-top:0}
+.record .lrow:not(.head):hover{background:var(--surface-2)}
+.record .lrow .th{width:24px;height:34px;border-radius:2px;overflow:hidden;display:block;background:var(--board)}
+.record .lrow .th img{width:100%;height:100%;object-fit:cover;display:block}
+.record .lrow .fx{display:flex;gap:6px;flex-wrap:wrap}
+.record .lrow .vr{font-family:var(--mono);font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.record .lrow .col{min-width:0;font-family:var(--mono);font-size:12.5px}
+.record .lrow.head{padding-top:0;padding-bottom:6px;align-items:end}
+.record .lrow.head .label{font-size:10px;letter-spacing:.1em}
+.record .lrow.head .label.addr{display:inline-flex;align-items:center;gap:8px}
+.record .go{display:inline-flex;align-items:center;justify-content:center;width:2em;height:2em;font-size:11px;padding:0;border:1px solid var(--line);border-radius:2px;background:var(--surface-2);color:var(--muted);cursor:pointer}
+.record .go:hover{color:var(--ink);background:var(--surface)}
+.record .go svg{width:15px;height:15px;display:block}
+.record .go[aria-busy="true"]{color:var(--accent);cursor:progress}
+.record .go[aria-busy="true"] svg{animation:fetch-turn 1s linear infinite}
+/* Deployments: the console first, under its own rule. */
+.record table.rows.deps{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px}
+.record table.rows.deps th{text-align:left;font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);padding:0 18px 6px 0;border-bottom:1px solid var(--line)}
+.record table.rows.deps td{padding:7px 18px 7px 0;border-top:1px solid var(--line);vertical-align:top}
+.record table.rows.deps tbody tr:first-child td{border-top:0}
+.record table.rows.deps td.k{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px;width:90px}
+.record table.rows.deps td.sync{white-space:nowrap}
+.record table.rows.deps .drift{display:inline-flex;gap:6px;vertical-align:middle;margin-left:8px}
+.record table.rows.deps tr.own td{border-top:0;border-bottom:1px solid var(--line);padding-bottom:12px}
+.record table.rows.deps tr.own td.k{color:var(--muted)}
+.record table.rows.deps tr.own + tr td{border-top:0;padding-top:12px}
 
 /* --- figures: a hint on hover, a viewer on click --------------------------- */
 .fig{position:relative;margin:0 0 1.2em}

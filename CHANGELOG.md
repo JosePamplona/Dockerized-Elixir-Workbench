@@ -16,6 +16,30 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **The Record paper, first on the Project tab.** What the project is,
+  drawn off the status and nothing else, in three tenses. *Birth*: the
+  toolchain and installer stamped in Dockerfile.local, the `mix phx.new`
+  that generated it, and each flag with whether it was given, its
+  argument, phx.new's own words and the base cartridge that owns it —
+  all read off the first commit (`project.birth`), with a warn `now …`
+  on any fact that moved since and `installer now …` when the
+  toolchain's phx_new is not the generator. *Cartridges*: the shelf's
+  own row — cover, mention, origin, edition — with the installation
+  parameters as the flags `add` took (a default dimmed) and every
+  address the cartridge opens, a route on the app's port with what it
+  answered when the console called, or the port of the service it asks
+  for with what `docker compose ps` says of it; the reload button in the
+  column's head calls every route again. *Deployments*: the console
+  first — the workbench's own container, gold, mounted on this
+  workspace — then dev, prod and scaled, each with its compose file
+  baked, out of sync or not baked, the in-sync check with what is stray
+  or missing, up or down, and its services as ports. `ConsoleWeb.Record`
+  is the plan, `ConsoleWeb.RecordSheet` the sheet; Doors, the paper,
+  retires into it, and `ConsoleWeb.Doors` keeps only the call. The
+  ribbon reads Record · .env · README · CHANGELOG, Record's sublabel the
+  first commit's sha. The layer classes on `.door-ref` are `door-route`,
+  `door-port` and `door-console`, prefixed because `.console` is the
+  LiveView console's own root.
 - **`mix workbench.status` publishes the birth and the deployments.** Two
   more facts the Record paper reads, both from what the project already
   has. `birth`, off the first commit and never inferred

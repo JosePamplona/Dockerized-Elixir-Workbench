@@ -15,6 +15,12 @@ defmodule ConsoleWeb.RecordSheet do
   attr :status, :map, default: nil
   attr :busy, :boolean, default: false, doc: "a deploy job is in flight"
 
+  attr :composes, :list,
+    default: [],
+    doc: "the three compose files as Console.Docker.composes/1 reads them"
+
+  attr :deploy, :any, default: nil, doc: "which file is open under the table, or nil"
+
   def record_sheet(assigns) do
     ~H"""
     <div class="record" id="p-record">
@@ -186,8 +192,74 @@ defmodule ConsoleWeb.RecordSheet do
             </tr>
           </tbody>
         </table>
+        <.compose_file composes={@composes} deploy={@deploy} />
       </section>
     </div>
+    """
+  end
+
+  # The compose file itself, read under the table: one of the three,
+  # picked on the toolbar and named in the URL; none open until picked,
+  # so the paper stays a paper. Read only — wb.sh alone writes the
+  # workspace — and the secrets masked. It read under Docker's Deploys
+  # until 2026-09-09; the files are the workspace's, so they read here.
+  attr :composes, :list, required: true
+  attr :deploy, :any, required: true
+
+  defp compose_file(assigns) do
+    chosen = Enum.find(assigns.composes, &(&1.key == assigns.deploy))
+    assigns = assign(assigns, chosen: chosen)
+
+    ~H"""
+    <div class="toolbar cfile">
+      <span class="label">the file</span>
+      <%= for c <- @composes do %>
+        <.link
+          :if={c.lines}
+          class="btn"
+          patch={"/project?paper=record" <> if(@deploy == c.key, do: "", else: "&deploy=#{c.key}")}
+          aria-pressed={to_string(@deploy == c.key)}
+          title={"#{c.file}#{if @deploy == c.key, do: " — close", else: ""}"}
+        >{c.key}</.link>
+        <button
+          :if={is_nil(c.lines)}
+          class="btn unlit"
+          type="button"
+          aria-disabled="true"
+          title={"not baked: no #{c.file} in this workspace — Bake, or Up"}
+        >{c.key}</button>
+      <% end %>
+      <span :if={@chosen && @chosen.lines} class="note">
+        {@chosen.file} · read only: wb.sh alone writes the workspace · secrets masked
+      </span>
+    </div>
+    <pre :if={@chosen && @chosen.lines} class="env yaml"><.yaml_line :for={line <- @chosen.lines} line={line} /></pre>
+    """
+  end
+
+  attr :line, :string, required: true
+
+  defp yaml_line(assigns) do
+    assigns =
+      assign(assigns,
+        parts:
+          cond do
+            String.match?(assigns.line, ~r/^\s*#/) or String.trim(assigns.line) == "" ->
+              [{"c", assigns.line}]
+
+            m = Regex.run(~r/^(\s*-?\s*[\w.-]+:)(.*)$/, assigns.line) ->
+              [
+                {"k", Enum.at(m, 1)},
+                {if(String.contains?(Enum.at(m, 2), "•"), do: "m"), Enum.at(m, 2)}
+              ]
+
+            true ->
+              [{nil, assigns.line}]
+          end
+      )
+
+    ~H"""
+    <div class="ln"><span :for={{cls, text} <- @parts} class={cls}>{text}</span></div>
     """
   end
 

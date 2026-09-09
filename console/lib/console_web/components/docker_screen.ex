@@ -1,8 +1,10 @@
 defmodule ConsoleWeb.DockerScreen do
   @moduledoc """
-  The Docker screen: what the daemon holds, in six documents under the
+  The Docker screen: what the daemon holds, in five documents under the
   row of tabs the Project screen has — Containers, Images, Volumes,
-  Networks, Events, Deploys. Settled on 2026-09-05 in a decision page,
+  Networks, Events. Deploys, the compose files, was the sixth until
+  2026-09-09: the files are the workspace's, and they read under the
+  Record's deployments now. Settled on 2026-09-05 in a decision page,
   `console/docker-en-la-consola.html`, retired once the answer was in
   (it stays in the history): the table across the top of Containers and the card of
   the container picked *under* it, never beside it, because the width
@@ -28,8 +30,7 @@ defmodule ConsoleWeb.DockerScreen do
     {"images", "Images"},
     {"volumes", "Volumes"},
     {"networks", "Networks"},
-    {"events", "Events"},
-    {"deploys", "Deploys"}
+    {"events", "Events"}
   ]
 
   def docs, do: @docs
@@ -50,8 +51,6 @@ defmodule ConsoleWeb.DockerScreen do
       sizes: nil,
       networks: nil,
       df: nil,
-      composes: nil,
-      deploy: "dev",
       events: events,
       alarms: 0,
       port: nil,
@@ -108,7 +107,6 @@ defmodule ConsoleWeb.DockerScreen do
         <.volumes_doc :if={@dk.doc == "volumes"} dk={@dk} status={@status} jobs={@jobs} />
         <.networks_doc :if={@dk.doc == "networks"} dk={@dk} />
         <.events_doc :if={@dk.doc == "events"} dk={@dk} status={@status} />
-        <.deploys_doc :if={@dk.doc == "deploys"} dk={@dk} status={@status} />
       </div>
     </div>
     """
@@ -124,9 +122,6 @@ defmodule ConsoleWeb.DockerScreen do
   defp doc_sum("volumes", %{volumes: vs}) when is_list(vs), do: "#{length(vs)}"
   defp doc_sum("networks", %{networks: ns}) when is_list(ns), do: "#{length(ns)}"
   defp doc_sum("events", %{events: es}), do: "#{length(es)}"
-
-  defp doc_sum("deploys", %{composes: cs}) when is_list(cs),
-    do: "#{Enum.count(cs, & &1.lines)} baked"
 
   defp doc_sum(_, _), do: nil
 
@@ -768,70 +763,4 @@ defmodule ConsoleWeb.DockerScreen do
 
   defp svc_color(%{type: "container", service: "app" <> _}), do: "var(--svc-app)"
   defp svc_color(_), do: "var(--term-dim)"
-
-  # --- Deploys --------------------------------------------------------------------
-
-  attr :dk, :map, required: true
-  attr :status, :map, default: nil
-
-  defp deploys_doc(assigns) do
-    composes = assigns.dk.composes || []
-    chosen = Enum.find(composes, &(&1.key == assigns.dk.deploy)) || List.first(composes)
-    assigns = assign(assigns, composes: composes, chosen: chosen)
-
-    ~H"""
-    <div class="toolbar">
-      <span class="label">Deployment</span>
-      <%= for c <- @composes do %>
-        <.link
-          :if={c.lines}
-          class="btn"
-          patch={"/docker?doc=deploys&deploy=#{c.key}"}
-          aria-pressed={to_string(@chosen && @chosen.key == c.key)}
-          title={c.file}
-        >{c.key}</.link>
-        <button
-          :if={is_nil(c.lines)}
-          class="btn unlit"
-          type="button"
-          aria-disabled="true"
-          title={"not baked: no #{c.file} in this workspace — Deploy → Bake, or Up"}
-        >{c.key}</button>
-      <% end %>
-      <span :if={@chosen && @chosen.lines} class="note">{@chosen.file} · read only: wb.sh alone writes the workspace · secrets masked</span>
-    </div>
-    <p :if={is_nil(@chosen) or is_nil(@chosen.lines)} class="note">
-      {if @status && @status["exists"],
-        do: "This deployment is not baked yet.",
-        else: "This workspace has no project: no compose files."}
-    </p>
-    <pre :if={@chosen && @chosen.lines} class="env yaml"><.yaml_line :for={line <- @chosen.lines} line={line} /></pre>
-    """
-  end
-
-  attr :line, :string, required: true
-
-  defp yaml_line(assigns) do
-    assigns =
-      assign(assigns,
-        parts:
-          cond do
-            String.match?(assigns.line, ~r/^\s*#/) or String.trim(assigns.line) == "" ->
-              [{"c", assigns.line}]
-
-            m = Regex.run(~r/^(\s*-?\s*[\w.-]+:)(.*)$/, assigns.line) ->
-              [
-                {"k", Enum.at(m, 1)},
-                {if(String.contains?(Enum.at(m, 2), "•"), do: "m"), Enum.at(m, 2)}
-              ]
-
-            true ->
-              [{nil, assigns.line}]
-          end
-      )
-
-    ~H"""
-    <div class="ln"><span :for={{cls, text} <- @parts} class={cls}>{text}</span></div>
-    """
-  end
 end

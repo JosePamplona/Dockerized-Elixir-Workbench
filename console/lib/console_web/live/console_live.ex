@@ -79,6 +79,8 @@ defmodule ConsoleWeb.ConsoleLive do
         diff: nil,
         face: "front",
         ppaper: "record",
+        pdeploy: nil,
+        pcomposes: [],
         ppage: nil,
         preads: %{},
         wb: nil,
@@ -181,6 +183,12 @@ defmodule ConsoleWeb.ConsoleLive do
 
     socket
     |> assign(ppaper: paper, ppage: Project.render(ws, paper))
+    |> assign(
+      pdeploy:
+        if(paper == "record" and params["deploy"] in ~w(dev prod scaled), do: params["deploy"]),
+      pcomposes:
+        if(paper == "record", do: Console.Docker.composes(socket.assigns.status), else: [])
+    )
   end
 
   defp take_paper(socket, _params), do: socket
@@ -251,6 +259,12 @@ defmodule ConsoleWeb.ConsoleLive do
       |> reread_paper(moved?)
       |> reask_diff(moved?)
       |> assign(preads: %{})
+      |> then(
+        &if(&1.assigns.ppaper == "record",
+          do: assign(&1, pcomposes: Console.Docker.composes(status)),
+          else: &1
+        )
+      )
 
     {:noreply, socket}
   end
@@ -902,6 +916,8 @@ defmodule ConsoleWeb.ConsoleLive do
               gt={@gt}
               jobs={@jobs}
               busy={@busy}
+              composes={@pcomposes}
+              deploy={@pdeploy}
             />
           </section>
 

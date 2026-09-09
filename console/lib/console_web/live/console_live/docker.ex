@@ -11,18 +11,16 @@ defmodule ConsoleWeb.ConsoleLive.Docker do
   alias ConsoleWeb.DockerScreen
 
   # Which document and which container, from the query: /docker?doc=volumes,
-  # ?doc=containers&c=some_test-app-1, ?doc=deploys&deploy=scaled. Opening
-  # Events is looking at what the badge counted: it starts over.
+  # ?doc=containers&c=some_test-app-1. Opening Events is looking at what
+  # the badge counted: it starts over.
   def take(%{assigns: %{tab: "docker"}} = socket, params) do
     dk = socket.assigns.dk
     doc = if params["doc"] in DockerScreen.doc_names(), do: params["doc"], else: "containers"
-    deploy = if params["deploy"] in ~w(dev prod scaled), do: params["deploy"], else: dk.deploy
     pick = params["c"]
 
     dk = %{
       dk
       | doc: doc,
-        deploy: deploy,
         pick: pick,
         card: if(pick == dk.pick, do: dk.card, else: nil),
         alarms: if(doc == "events", do: 0, else: dk.alarms)
@@ -74,9 +72,6 @@ defmodule ConsoleWeb.ConsoleLive.Docker do
 
       "networks" ->
         start_async(socket, {:dk, :networks}, fn -> Docker.networks(status, scope) end)
-
-      "deploys" ->
-        assign(socket, dk: %{dk | composes: Docker.composes(status)})
 
       _ ->
         socket

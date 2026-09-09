@@ -174,6 +174,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **The compose files read under the Record's deployments, not under
+  Docker.** Docker's *Deploys* document — the three files as a YAML
+  sheet with the secrets masked, one picked on a toolbar — moves whole
+  to the Record, under the deployments table, where each row is
+  already the file's summary; the files are the workspace's, not the
+  daemon's, and Docker keeps its five documents. None is open until
+  picked (`/project?paper=record&deploy=prod`), so the paper stays a
+  paper; a status arriving reads the files again, since a bake may
+  have rewritten one. In the same round the rail and the Record share
+  the deployment row — up, stopped or down; Up or Stop, Down and Bake —
+  every sha the console shows is a `.commit-ref`, the rail's Cartridges
+  wear the facts chips before the origin, and the rail's Services &
+  Doors lists one address a line.
 - **Knock: the doors are called only when the reader rings.** One
   reading for the whole page, shared by the rail's Services & Doors and
   the Record's addresses, and taken only when the reader presses the

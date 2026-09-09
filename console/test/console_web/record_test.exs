@@ -265,6 +265,10 @@ defmodule ConsoleWeb.RecordTest do
     assert %{deploy: "prod", in_sync: false, stray: ["grafana"], status: "down", present: false} =
              prod
 
+    # Stopped: the containers are there, none running — dev after a Stop.
+    stopped = Map.put(@status, "deployment", nil)
+    assert %{status: "stopped", present: true} = Enum.at(Record.deployments(stopped), 0)
+
     assert Enum.all?(prod.services, &(&1.why == "the deployment is down" and is_nil(&1.read)))
     assert %{deploy: "scaled", baked: false, status: nil, services: []} = scaled
   end

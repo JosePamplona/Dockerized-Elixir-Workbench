@@ -254,8 +254,17 @@ defmodule ConsoleWeb.Board do
               <.chip :if={d.baked && d.in_sync != false} class="good">baked</.chip>
             </td>
             <td>
-              <.chip :if={d.status == "up"} class="good">running</.chip>
-              <.chip :if={d.status == "down"} class="off">down</.chip>
+              <.chip :if={d.status == "up"} class="good">up</.chip>
+              <.chip
+                :if={d.status == "stopped"}
+                class="off"
+                title="its containers are there, stopped: Up brings them back fast"
+              >
+                stopped
+              </.chip>
+              <.chip :if={d.status == "down"} class="off" title="no containers: Up creates them">
+                down
+              </.chip>
             </td>
             <td class="act">
               <.bake_button name={d.deploy} status={@status} busy={@busy} baked={d.baked} />

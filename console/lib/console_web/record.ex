@@ -378,17 +378,23 @@ defmodule ConsoleWeb.Record do
       up = up_one == deploy
       published = if(baked and ws, do: published(Path.join(ws, @files[deploy])), else: %{})
 
+      present = Enum.any?(status["containers"] || [], &(of_deployment(&1) == deploy))
+
       %{
         deploy: deploy,
         baked: baked,
-        present: Enum.any?(status["containers"] || [], &(of_deployment(&1) == deploy)),
+        present: present,
         in_sync: d["in_sync"],
         stray: d["stray"] || [],
         missing: d["missing"] || [],
+        # up: running. stopped: its containers are there, stopped — a Stop,
+        # for a fast Up again. down: no containers at all. Nothing when
+        # the file is not baked.
         status:
           cond do
             not baked -> nil
             up -> "up"
+            present -> "stopped"
             true -> "down"
           end,
         services:

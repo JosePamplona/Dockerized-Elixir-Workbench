@@ -146,7 +146,16 @@ defmodule ConsoleWeb.RecordSheet do
               </td>
               <td class="st">
                 <.chip :if={d.status == "up"} class="good">up</.chip>
-                <.chip :if={d.status == "down"} class="off">down</.chip>
+                <.chip
+                  :if={d.status == "stopped"}
+                  class="off"
+                  title="its containers are there, stopped: Up brings them back fast"
+                >
+                  stopped
+                </.chip>
+                <.chip :if={d.status == "down"} class="off" title="no containers: Up creates them">
+                  down
+                </.chip>
               </td>
               <td><span class="pairs"><.address :for={a <- d.services} a={a} /></span></td>
               <td class="act">

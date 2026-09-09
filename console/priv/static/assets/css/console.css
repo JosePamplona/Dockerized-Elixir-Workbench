@@ -1259,15 +1259,17 @@ span.fact input{accent-color:var(--accent);width:14px;height:14px;margin:0;verti
 .record .go[aria-busy="true"]{color:var(--accent);cursor:progress}
 .record .go[aria-busy="true"] svg{animation:knock-ring .6s ease-in-out infinite;transform-origin:50% 20%}
 /* Deployments: one row per compose file. */
-/* Columns as wide as their content and packed to the left, not spread
-   across the pane: the reader's eye goes down one edge. */
-.record table.rows.deps{width:auto;max-width:100%;justify-self:start;border-collapse:collapse;font-family:var(--mono);font-size:12.5px}
+/* The columns hug their content from the left, the services take the
+   slack, and the actions sit on the right edge: the row reads from the
+   name to the button, the way the rail's does. */
+.record table.rows.deps{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px}
+.record table.rows.deps td.k,.record table.rows.deps td.file,.record table.rows.deps td.st,.record table.rows.deps th.narrow{width:1%;white-space:nowrap}
 .record table.rows.deps th{text-align:left;font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);padding:0 18px 6px 0;border-bottom:1px solid var(--line)}
 .record table.rows.deps td{padding:7px 18px 7px 0;border-top:1px solid var(--line);vertical-align:top}
 .record table.rows.deps tbody tr:first-child td{border-top:0}
 .record table.rows.deps td.k{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px;width:90px}
 .record table.rows.deps td.sync{white-space:normal}
-.record table.rows.deps td.act{white-space:nowrap;text-align:left;padding-right:0}
+.record table.rows.deps td.act{width:1%;white-space:nowrap;text-align:right;padding-right:0}
 .record table.rows.deps td.act .btn+.btn{margin-left:6px}
 .record table.rows.deps .drift{display:inline-flex;flex-wrap:wrap;gap:6px;vertical-align:middle}
 

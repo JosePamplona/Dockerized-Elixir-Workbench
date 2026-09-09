@@ -113,7 +113,7 @@ defmodule ConsoleWeb.RecordSheet do
           <tbody>
             <tr :for={d <- @record.deployments}>
               <td class="k">{d.deploy}</td>
-              <td>
+              <td class="file">
                 <.chip :if={!d.baked} class="off" title={"up --deploy #{d.deploy} bakes it"}>
                   not baked
                 </.chip>
@@ -144,7 +144,7 @@ defmodule ConsoleWeb.RecordSheet do
                   </.chip>
                 </span>
               </td>
-              <td>
+              <td class="st">
                 <.chip :if={d.status == "up"} class="good">up</.chip>
                 <.chip :if={d.status == "down"} class="off">down</.chip>
               </td>

@@ -1275,12 +1275,16 @@ span.fact input{accent-color:var(--accent);width:14px;height:14px;margin:0;verti
 .record table.rows.deps td.k{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px;width:90px}
 .record table.rows.deps td.sync{white-space:normal}
 .record table.rows.deps td.act{width:1%;white-space:nowrap;text-align:right;padding-right:0}
-/* The compose file under the deployments: a ribbon of the three, the file its tab's sublabel, and the YAML sheet. */
-.record .cfile{margin-top:18px;display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px}
-.record .cfile .dtabs.docked{padding-left:0;padding-right:0;background:transparent}
-.record .cfile .dtab small{font-size:11px}
-.record .cfile .note{padding-bottom:6px}
-.record pre.env.yaml{margin-top:10px;max-height:60vh}
+/* The eye before the file's chip: the row's own way to open the file in the box under. */
+.record table.rows.deps td.file .go{vertical-align:middle;margin-right:8px}
+.record table.rows.deps td.file .go[aria-pressed="true"]{color:var(--ink);background:var(--ground);border-color:var(--ink)}
+/* The file under the deployments: a strip that names it, then the YAML sheet. */
+.record .fsheet{margin-top:18px}
+.record .fsheet .strip{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;padding:0 0 6px 2px}
+.record .fsheet .strip .label{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted)}
+.record .fsheet .strip .fname{font-family:var(--mono);font-size:12.5px;color:var(--ink)}
+.record .fsheet .strip .note{margin-left:auto}
+.record .fsheet pre.env.yaml{margin:0;max-height:60vh}
 .record table.rows.deps td.act .btn+.btn{margin-left:6px}
 .record table.rows.deps .drift{display:inline-flex;flex-wrap:wrap;gap:6px;vertical-align:middle}
 

@@ -1210,7 +1210,12 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
 .record table.rows.flags td.used,.record table.rows.flags th.used{text-align:center;padding-right:0}
 .record table.rows.flags td.doc{font-family:var(--serif);font-size:13.5px;line-height:1.45;color:var(--muted)}
 .record table.rows.flags td:last-child{color:inherit}
-.record input.fact{accent-color:var(--accent);width:14px;height:14px;margin:0;vertical-align:middle;cursor:default}
+/* A fact drawn as a checkbox, never a control: the reader cannot toggle it.
+   No `disabled` — that dims it as a control not yet usable — and no inline
+   handler, which the CSP would not run: the input takes no pointer and no
+   focus, and the span around it keeps the title. */
+.record span.fact{display:inline-block;line-height:0}
+.record span.fact input{accent-color:var(--accent);width:14px;height:14px;margin:0;vertical-align:middle;pointer-events:none}
 .record .cmdblock{display:grid;gap:8px;margin:14px 0 22px}
 .record .cmdblock .thead{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);padding-bottom:6px;border-bottom:1px solid var(--line)}
 .record .cmd{margin:0;font-family:var(--mono);font-size:12px;line-height:1.6;background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:10px 14px;white-space:pre-wrap;overflow-wrap:anywhere}

@@ -143,16 +143,14 @@ defmodule ConsoleWeb.RecordSheet do
                 <.chip :if={d.baked && d.in_sync != false} class="good">baked</.chip>
               </td>
               <td class="sync">
-                <input
-                  :if={d.baked}
-                  type="checkbox"
-                  class="fact"
-                  checked={d.in_sync == true}
-                  aria-readonly="true"
-                  tabindex="-1"
-                  onclick="return false"
-                  title={sync_title(d)}
-                />
+                <span :if={d.baked} class="fact" title={sync_title(d)}>
+                  <input
+                    type="checkbox"
+                    checked={d.in_sync == true}
+                    aria-readonly="true"
+                    tabindex="-1"
+                  />
+                </span>
                 <span :if={d.stray != [] or d.missing != []} class="drift">
                   <.chip
                     :for={s <- d.stray}
@@ -290,15 +288,9 @@ defmodule ConsoleWeb.RecordSheet do
         <tbody>
           <tr :for={f <- @birth.flags}>
             <td class="used">
-              <input
-                type="checkbox"
-                class="fact"
-                checked={f.used}
-                aria-readonly="true"
-                tabindex="-1"
-                onclick="return false"
-                title={if f.used, do: "given to phx.new", else: "not given"}
-              />
+              <span class="fact" title={if f.used, do: "given to phx.new", else: "not given"}>
+                <input type="checkbox" checked={f.used} aria-readonly="true" tabindex="-1" />
+              </span>
             </td>
             <td><span class="argv">--{f.name}</span></td>
             <td>

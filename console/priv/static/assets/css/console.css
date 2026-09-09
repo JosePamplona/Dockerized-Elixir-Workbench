@@ -329,10 +329,6 @@ table.rows tr.new{animation:seat 1.2s ease-out}
    after itself, a column keeps its distance from the one before. */
 #slots td.ver{white-space:nowrap;padding-left:10px}
 #slots td.og{width:1%;white-space:nowrap;padding-left:10px}
-/* The addresses a cartridge opens, and the services a deployment runs,
-   on a row of their own under the cartridge's or the deployment's: the
-   rail is 380px, and a door is wider than the columns beside it. */
-table.rows tr.svcs td{border-top:0;padding-top:0;padding-bottom:9px}
 #deployments td.sync{width:1%;padding-left:10px}
 #deployments tr.hd th{text-align:left;font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);padding:0 10px 4px 0;border-bottom:1px solid var(--line)}
 #deployments tr.hd th.sync{padding-left:10px;white-space:nowrap}

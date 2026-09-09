@@ -33,6 +33,7 @@ defmodule ConsoleWeb.Board do
     <%= if @status do %>
       <.workspace status={@status} rebind={@rebind} />
       <.git status={@status} folded={@folded} />
+      <.services_doors status={@status} catalog={@catalog} folded={@folded} />
       <.deployments status={@status} busy={@busy} folded={@folded} />
       <.containers status={@status} folded={@folded} />
       <.inserted status={@status} catalog={@catalog} folded={@folded} />
@@ -137,8 +138,69 @@ defmodule ConsoleWeb.Board do
     """
   end
 
-  # The three deployments as the Record draws them — baked, in sync, up,
-  # and the services as ports — with the row's one action beside.
+  # Every address the workspace answers to, in one place: the services
+  # of the deployment that is up (dev's file when none is) as ports with
+  # what docker compose ps says of each, then every door the inserted
+  # cartridges open on the app's port, with the mention of who opened
+  # it. The faces are the Record's; a door here carries no reading, the
+  # rail calls nothing. Neither fits beside its row's other columns at
+  # 380px, which is why they are gathered here and not in Cartridges and
+  # Deployments (tried on 2026-09-09).
+  defp services_doors(assigns) do
+    rows = Record.deployments(assigns.status)
+    up = assigns.status["deployment"]
+    deployment = Enum.find(rows, &(&1.deploy == (up || "dev"))) || %{services: []}
+    entry = fn c -> Enum.find(assigns.catalog, &(&1["name"] == c["name"])) || c end
+
+    doors =
+      for c <- Cartridges.installed(assigns.status),
+          a <- Record.addresses(assigns.status, c, entry.(c)),
+          a.kind == "route",
+          do: {c, a}
+
+    assigns =
+      assign(assigns,
+        services: deployment.services,
+        deployment: up || "dev",
+        doors: doors,
+        sum:
+          "#{length(deployment.services)} service#{if length(deployment.services) == 1, do: "", else: "s"} · #{length(doors)} door#{if length(doors) == 1, do: "", else: "s"}"
+      )
+
+    ~H"""
+    <section class={folded?(@folded, "doors") && "folded"}>
+      <.head key="doors" name="Services & Doors" label={@sum} folded={@folded} />
+      <div class="urls">
+        <p :if={@services == [] and @doors == []} class="nothing">
+          Nothing answers yet: deploy, and cartridges open doors here — docs, dashboard, mailbox, swagger…
+        </p>
+        <.door_ref
+          :for={a <- @services}
+          label={a.label}
+          path={a.path}
+          href={a.href}
+          why={a.why}
+          kind={a.kind}
+          read={a.read}
+        />
+        <.door_ref
+          :for={{c, a} <- @doors}
+          label={a.label}
+          path={a.path}
+          href={a.href}
+          why={a.why}
+          kind={a.kind}
+          port={a.port}
+          who={c["name"]}
+        />
+      </div>
+    </section>
+    """
+  end
+
+  # The three deployments as the Record draws them — baked, in sync, up —
+  # with the row's one action beside. The services go in Services & Doors:
+  # a port face does not fit in a sixth column of a 380px rail.
   defp deployments(assigns) do
     assigns = assign(assigns, rows: Record.deployments(assigns.status))
 
@@ -195,22 +257,6 @@ defmodule ConsoleWeb.Board do
                 status={@status}
                 busy={@busy}
               />
-            </td>
-          </tr>
-          <tr :if={d.services != []} class="svcs">
-            <td></td>
-            <td colspan="4">
-              <span class="pairs">
-                <.door_ref
-                  :for={a <- d.services}
-                  label={a.label}
-                  path={a.path}
-                  href={a.href}
-                  why={a.why}
-                  kind={a.kind}
-                  read={a.read}
-                />
-              </span>
             </td>
           </tr>
         <% end %>
@@ -430,24 +476,19 @@ defmodule ConsoleWeb.Board do
   defp git_sum(g), do: if(g["clean"], do: "clean", else: "changes git does not have")
 
   # The cartridges in the project, on the Record's columns: the mention,
-  # the origin, the edition, and every address each opens — which is why
-  # the rail's Doors section went (2026-09-09): a door beside its
-  # cartridge says who opened it without a mention beside the door.
+  # the origin, the edition. The addresses each opens are not here — at
+  # 380px a door does not fit beside three columns — but in Services &
+  # Doors above, with the mention beside each.
   defp inserted(assigns) do
     ins = Cartridges.installed(assigns.status)
     revertible = Enum.count(ins, &Cartridges.insert(assigns.status, &1["name"]))
-    entry = fn c -> Enum.find(assigns.catalog, &(&1["name"] == c["name"])) || c end
 
     sum =
       if ins == [],
         do: "none",
         else: "#{length(ins)} in · #{revertible} the workbench can eject"
 
-    assigns =
-      assign(assigns,
-        ins: Enum.map(ins, &{&1, Record.addresses(assigns.status, &1, entry.(&1))}),
-        sum: sum
-      )
+    assigns = assign(assigns, ins: ins, sum: sum)
 
     ~H"""
     <section class={folded?(@folded, "inserted") && "folded"}>
@@ -456,7 +497,7 @@ defmodule ConsoleWeb.Board do
         <tr :if={@ins == []}>
           <td class="nothing">Nothing inserted yet: the shelf is in Cartridges.</td>
         </tr>
-        <%= for {c, addresses} <- @ins do %>
+        <%= for c <- @ins do %>
           <tr>
             <td>
               <.cart_ref
@@ -475,22 +516,6 @@ defmodule ConsoleWeb.Board do
               }
             >
               {if c["version"], do: "v#{c["version"]["version"]}", else: "unversioned"}
-            </td>
-          </tr>
-          <tr :if={addresses != []} class="svcs">
-            <td colspan="3">
-              <span class="pairs">
-                <.door_ref
-                  :for={a <- addresses}
-                  label={a.label}
-                  path={a.path}
-                  href={a.href}
-                  why={a.why}
-                  kind={a.kind}
-                  port={a.kind == "route" && a.port}
-                  read={a.read}
-                />
-              </span>
             </td>
           </tr>
         <% end %>

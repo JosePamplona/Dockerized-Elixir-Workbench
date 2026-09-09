@@ -146,6 +146,15 @@ defmodule ConsoleWeb.Board do
     <section class={folded?(@folded, "deployments") && "folded"}>
       <.head key="deployments" name="Deployments" label="docker compose" folded={@folded} />
       <table class="rows" id="deployments">
+        <tr class="hd">
+          <th></th>
+          <th title="the deployment's compose file: baked, out of sync with the project, or not baked yet">
+            file
+          </th>
+          <th class="sync" title="whether the file says what the cartridges ask for now">in sync</th>
+          <th>status</th>
+          <th></th>
+        </tr>
         <%= for d <- @rows do %>
           <tr>
             <td class="k">{d.deploy}</td>

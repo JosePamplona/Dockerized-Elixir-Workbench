@@ -334,6 +334,9 @@ table.rows tr.new{animation:seat 1.2s ease-out}
    rail is 380px, and a door is wider than the columns beside it. */
 table.rows tr.svcs td{border-top:0;padding-top:0;padding-bottom:9px}
 #deployments td.sync{width:1%;padding-left:10px}
+#deployments tr.hd th{text-align:left;font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);padding:0 10px 4px 0;border-bottom:1px solid var(--line)}
+#deployments tr.hd th.sync{padding-left:10px;white-space:nowrap}
+#deployments tr.hd + tr td{border-top:0}
 
 .deployment{border:1px solid var(--line);background:var(--surface);border-radius:3px;padding:16px 18px;display:grid;gap:12px}
 .deployment .now{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:14px}

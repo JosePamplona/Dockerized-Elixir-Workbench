@@ -92,18 +92,23 @@ defmodule Console.Verbs do
 
   @doc """
   What to read again once the job has ended. `:fast` is the status
-  without the cartridges (containers, ports, git — tenths of a second);
-  `:full` asks the cartridges too (a Mix boot); `:all` is a new
+  without the project (containers, ports, git — tenths of a second);
+  `:full` asks the project too — the cartridges, the birth, the
+  deployments' files, milliseconds from the resident; `:all` is a new
   workspace altogether — both, and the project's papers; `:config` is
   config.conf again, after a save; `:none` for the verbs that only read.
+
+  `up` and `build` read the project again because they bake: `up
+  --deploy prod` and `build --deploy` write the prod and scaled
+  composes, and whether a file is in sync with the cartridges is the
+  project's to say. `stop`, `down` and `restart` touch no file.
   """
   @spec reread(kind()) :: :fast | :full | :all | :config | :none
   def reread({:config, _}), do: :config
 
-  def reread({verb, _}) when verb in [:up, :build, :stop, :down, :restart, :prune, :demo, :mix],
-    do: :fast
+  def reread({verb, _}) when verb in [:stop, :down, :restart, :prune, :demo, :mix], do: :fast
 
-  def reread({verb, _}) when verb in [:insert, :eject, :commit, :bake], do: :full
+  def reread({verb, _}) when verb in [:up, :build, :insert, :eject, :commit, :bake], do: :full
   def reread({verb, _}) when verb in [:new, :delete], do: :all
   def reread(_), do: :none
 end

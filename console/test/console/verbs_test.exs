@@ -49,7 +49,10 @@ defmodule Console.VerbsTest do
   end
 
   test "reread/1: what each verb could have changed" do
-    assert Verbs.reread({:up, "dev"}) == :fast
+    # up and build bake a compose: the project says whether the file is in sync.
+    assert Verbs.reread({:up, "dev"}) == :full
+    assert Verbs.reread({:build, "prod"}) == :full
+    assert Verbs.reread({:stop, "dev"}) == :fast
     assert Verbs.reread({:restart, "app"}) == :fast
     assert Verbs.reread({:prune, nil}) == :fast
     assert Verbs.reread({:insert, "rest"}) == :full

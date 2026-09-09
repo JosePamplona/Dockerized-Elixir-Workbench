@@ -266,7 +266,7 @@ defmodule ConsoleWeb.Board do
               <.bake_button name={d.deploy} status={@status} busy={@busy} baked={d.baked} />
               <.deploy_button
                 :if={@status["deployment"] == d.deploy}
-                verb="down"
+                verb="stop"
                 name={d.deploy}
                 status={@status}
                 busy={@busy}
@@ -355,8 +355,10 @@ defmodule ConsoleWeb.Board do
 
   # The row's one action, in the row's own words. Only two things stop
   # it — nothing to deploy into, a job in flight. Another deployment up
-  # is the ordinary case: Up replaces it, and the title says so.
-  attr :verb, :string, required: true, values: ~w(up down)
+  # is the ordinary case: Up replaces it, and the title says so. The
+  # other way is Stop, not Down: the containers stay for a fast Up
+  # again; `down`, which removes them, stays a command of the shell.
+  attr :verb, :string, required: true, values: ~w(up stop)
   attr :name, :string, required: true
   attr :status, :map, required: true
   attr :busy, :boolean, default: false
@@ -377,10 +379,16 @@ defmodule ConsoleWeb.Board do
     title =
       why ||
         cmd <>
-          if(replaces,
-            do: " — #{running} is running and goes down: one deployment at a time",
-            else: ""
-          )
+          cond do
+            replaces ->
+              " — #{running} is running and goes down: one deployment at a time"
+
+            assigns.verb == "stop" ->
+              " — stops its containers and keeps them, for a fast Up again"
+
+            true ->
+              ""
+          end
 
     assigns = assign(assigns, why: why, title: title, cmd: cmd)
 
@@ -392,7 +400,7 @@ defmodule ConsoleWeb.Board do
       phx-click={!@why && "run"}
       phx-value-args={String.replace_prefix(@cmd, "./wb.sh ", "")}
     >
-      {if @verb == "up", do: "Up", else: "Down"}
+      {if @verb == "up", do: "Up", else: "Stop"}
     </button>
     """
   end

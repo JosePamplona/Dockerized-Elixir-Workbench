@@ -159,7 +159,7 @@ defmodule ConsoleWeb.RecordSheet do
                 <.bake_button name={d.deploy} status={@status} busy={@busy} baked={d.baked} />
                 <.deploy_button
                   :if={d.status == "up"}
-                  verb="down"
+                  verb="stop"
                   name={d.deploy}
                   status={@status}
                   busy={@busy}

@@ -174,6 +174,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **The rail draws its Cartridges and Deployments on the Record's rows.**
+  *Inserted* is *Cartridges*: the mention, then the origin, then the
+  edition, and under each row every address the cartridge opens — the
+  ports of the services it asks for and its routes on the app's port,
+  the Record's own faces, without a reading since the rail calls
+  nothing. With the doors beside their cartridges the rail's Doors
+  section goes: a door under its cartridge says who opened it without a
+  mention beside the door. *Deployments* gains the in-sync check and,
+  under each row, the services the compose runs as ports with what
+  `docker compose ps` says of each; the file's chip says baked, out of
+  sync or not baked, as on the paper. `ConsoleWeb.Record.addresses/4`
+  and `deployments/1` are the two rows, lent to both.
 - **The Project card on Deploy is intention again.** Its rows say what
   the next `new` would use, off config.conf and nothing else: the
   installer row no longer answers with the stamp of the project born

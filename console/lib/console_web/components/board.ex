@@ -2,7 +2,7 @@ defmodule ConsoleWeb.Board do
   @moduledoc "The rail: the configured workspace, as the status says it."
   use Phoenix.Component
   import ConsoleWeb.Refs
-  alias ConsoleWeb.{Cartridges, Terminal}
+  alias ConsoleWeb.{Cartridges, Record, Terminal}
 
   attr :status, :map, default: nil
 
@@ -33,7 +33,6 @@ defmodule ConsoleWeb.Board do
     <%= if @status do %>
       <.workspace status={@status} rebind={@rebind} />
       <.git status={@status} folded={@folded} />
-      <.doors status={@status} catalog={@catalog} folded={@folded} />
       <.deployments status={@status} busy={@busy} folded={@folded} />
       <.containers status={@status} folded={@folded} />
       <.inserted status={@status} catalog={@catalog} folded={@folded} />
@@ -138,72 +137,94 @@ defmodule ConsoleWeb.Board do
     """
   end
 
-  defp doors(assigns) do
-    doors = Cartridges.contributions(assigns.status, assigns.catalog, "doors")
-    assigns = assign(assigns, doors: doors, up: Cartridges.app_up?(assigns.status))
-
-    ~H"""
-    <section class={folded?(@folded, "doors") && "folded"}>
-      <.head
-        key="doors"
-        name="Doors"
-        folded={@folded}
-        label={if @doors == [], do: "none yet", else: "#{length(@doors)} open by cartridges"}
-      />
-      <div class="urls">
-        <p :if={@doors == []} class="nothing">
-          Cartridges open doors here: docs, dashboard, mailbox, swagger, graphiql, admin…
-        </p>
-        <.door_ref
-          :for={{c, d} <- @doors}
-          label={d["label"]}
-          path={Cartridges.fill_path(d["path"], c)}
-          href={"http://localhost:#{@status["ports"]["app"]}#{Cartridges.fill_path(d["path"], c)}"}
-          who={c["name"]}
-          why={!@up && "the app is down"}
-        />
-      </div>
-    </section>
-    """
-  end
-
+  # The three deployments as the Record draws them — baked, in sync, up,
+  # and the services as ports — with the row's one action beside.
   defp deployments(assigns) do
+    assigns = assign(assigns, rows: Record.deployments(assigns.status))
+
     ~H"""
     <section class={folded?(@folded, "deployments") && "folded"}>
       <.head key="deployments" name="Deployments" label="docker compose" folded={@folded} />
       <table class="rows" id="deployments">
-        <tr :for={name <- ~w(dev prod scaled)}>
-          <td class="k">{name}</td>
-          <td class="st">
-            <.chip class={!@status["baked"][name] && "off"}>
-              {if @status["baked"][name], do: "baked", else: "not baked"}
-            </.chip>
-          </td>
-          <td>
-            <.chip class={if @status["deployment"] == name, do: "good", else: "off"}>
-              {if @status["deployment"] == name, do: "running", else: "down"}
-            </.chip>
-          </td>
-          <td class="act">
-            <.deploy_button
-              :if={@status["deployment"] == name}
-              verb="down"
-              name={name}
-              status={@status}
-              busy={@busy}
-            />
-            <.deploy_button
-              :if={@status["deployment"] != name and @status["baked"][name]}
-              verb="up"
-              name={name}
-              status={@status}
-              busy={@busy}
-            />
-          </td>
-        </tr>
+        <%= for d <- @rows do %>
+          <tr>
+            <td class="k">{d.deploy}</td>
+            <td class="st">
+              <.chip :if={!d.baked} class="off" title={"up --deploy #{d.deploy} bakes it"}>
+                not baked
+              </.chip>
+              <.chip
+                :if={d.baked && d.in_sync == false}
+                class="warn"
+                title="the file no longer says what the cartridges ask for: bake writes it again"
+              >
+                out of sync
+              </.chip>
+              <.chip :if={d.baked && d.in_sync != false} class="good">baked</.chip>
+            </td>
+            <td class="sync">
+              <span :if={d.baked && is_boolean(d.in_sync)} class="fact" title={sync_title(d)}>
+                <input type="checkbox" checked={d.in_sync} aria-readonly="true" tabindex="-1" />
+              </span>
+            </td>
+            <td>
+              <.chip :if={d.status == "up"} class="good">running</.chip>
+              <.chip :if={d.status == "down"} class="off">down</.chip>
+            </td>
+            <td class="act">
+              <.deploy_button
+                :if={@status["deployment"] == d.deploy}
+                verb="down"
+                name={d.deploy}
+                status={@status}
+                busy={@busy}
+              />
+              <.deploy_button
+                :if={@status["deployment"] != d.deploy and d.baked}
+                verb="up"
+                name={d.deploy}
+                status={@status}
+                busy={@busy}
+              />
+            </td>
+          </tr>
+          <tr :if={d.services != []} class="svcs">
+            <td></td>
+            <td colspan="4">
+              <span class="pairs">
+                <.door_ref
+                  :for={a <- d.services}
+                  label={a.label}
+                  path={a.path}
+                  href={a.href}
+                  why={a.why}
+                  kind={a.kind}
+                  read={a.read}
+                />
+              </span>
+            </td>
+          </tr>
+        <% end %>
       </table>
     </section>
     """
+  end
+
+  defp sync_title(%{in_sync: true}),
+    do: "every service the cartridges ask for is in the file, and nothing else"
+
+  defp sync_title(d) do
+    Enum.join(
+      Enum.reject(
+        [
+          d.stray != [] &&
+            "declares " <> Enum.join(d.stray, ", ") <> ", which no cartridge asks for any more",
+          d.missing != [] && "lacks " <> Enum.join(d.missing, ", ")
+        ],
+        &(!&1)
+      ),
+      " · "
+    ) <> " — bake writes it again"
   end
 
   # The row's one action, in the row's own words. Only two things stop
@@ -399,45 +420,71 @@ defmodule ConsoleWeb.Board do
   defp git_sum(%{"repo" => false}), do: "no repository"
   defp git_sum(g), do: if(g["clean"], do: "clean", else: "changes git does not have")
 
+  # The cartridges in the project, on the Record's columns: the mention,
+  # the origin, the edition, and every address each opens — which is why
+  # the rail's Doors section went (2026-09-09): a door beside its
+  # cartridge says who opened it without a mention beside the door.
   defp inserted(assigns) do
     ins = Cartridges.installed(assigns.status)
     revertible = Enum.count(ins, &Cartridges.insert(assigns.status, &1["name"]))
+    entry = fn c -> Enum.find(assigns.catalog, &(&1["name"] == c["name"])) || c end
 
     sum =
       if ins == [],
         do: "none",
-        else:
-          "#{length(ins)} cartridge#{if length(ins) == 1, do: "", else: "s"} · #{revertible} the workbench can eject"
+        else: "#{length(ins)} in · #{revertible} the workbench can eject"
 
-    assigns = assign(assigns, ins: ins, sum: sum)
+    assigns =
+      assign(assigns,
+        ins: Enum.map(ins, &{&1, Record.addresses(assigns.status, &1, entry.(&1))}),
+        sum: sum
+      )
 
     ~H"""
     <section class={folded?(@folded, "inserted") && "folded"}>
-      <.head key="inserted" name="Inserted" label={@sum} folded={@folded} />
+      <.head key="inserted" name="Cartridges" label={@sum} folded={@folded} />
       <table class="rows" id="slots">
         <tr :if={@ins == []}>
           <td class="nothing">Nothing inserted yet: the shelf is in Cartridges.</td>
         </tr>
-        <tr :for={c <- @ins}>
-          <td>
-            <.cart_ref
-              name={c["name"]}
-              installed={true}
-              version={c["version"] && c["version"]["version"]}
-            />
-          </td>
-          <td
-            class="muted ver"
-            title={
-              if c["version"],
-                do: "#{c["version"]["date"]} in its CHANGELOG",
-                else: "no CHANGELOG to read a version from"
-            }
-          >
-            {if c["version"], do: "v#{c["version"]["version"]}", else: "unversioned"}
-          </td>
-          <td class="og"><.origin status={@status} c={c} /></td>
-        </tr>
+        <%= for {c, addresses} <- @ins do %>
+          <tr>
+            <td>
+              <.cart_ref
+                name={c["name"]}
+                installed={true}
+                version={c["version"] && c["version"]["version"]}
+              />
+            </td>
+            <td class="og"><.origin status={@status} c={c} /></td>
+            <td
+              class="muted ver"
+              title={
+                if c["version"],
+                  do: "#{c["version"]["date"]} in its CHANGELOG",
+                  else: "no CHANGELOG to read a version from"
+              }
+            >
+              {if c["version"], do: "v#{c["version"]["version"]}", else: "unversioned"}
+            </td>
+          </tr>
+          <tr :if={addresses != []} class="svcs">
+            <td colspan="3">
+              <span class="pairs">
+                <.door_ref
+                  :for={a <- addresses}
+                  label={a.label}
+                  path={a.path}
+                  href={a.href}
+                  why={a.why}
+                  kind={a.kind}
+                  port={a.kind == "route" && a.port}
+                  read={a.read}
+                />
+              </span>
+            </td>
+          </tr>
+        <% end %>
       </table>
     </section>
     """

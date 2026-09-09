@@ -328,7 +328,12 @@ table.rows tr.new{animation:seat 1.2s ease-out}
    follows, as it does before the origin: a name does not carry space
    after itself, a column keeps its distance from the one before. */
 #slots td.ver{white-space:nowrap;padding-left:10px}
-#slots td.og{width:1%;white-space:nowrap;text-align:right;padding-left:10px}
+#slots td.og{width:1%;white-space:nowrap;padding-left:10px}
+/* The addresses a cartridge opens, and the services a deployment runs,
+   on a row of their own under the cartridge's or the deployment's: the
+   rail is 380px, and a door is wider than the columns beside it. */
+table.rows tr.svcs td{border-top:0;padding-top:0;padding-bottom:9px}
+#deployments td.sync{width:1%;padding-left:10px}
 
 .deployment{border:1px solid var(--line);background:var(--surface);border-radius:3px;padding:16px 18px;display:grid;gap:12px}
 .deployment .now{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:14px}
@@ -1193,7 +1198,7 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
 .record .argv{font-family:var(--mono);font-size:12px;white-space:normal}
 .record .argv>span{white-space:normal;margin-right:6px}
 .record .argv .dflt,.record .argv.dflt{color:var(--muted)}
-.record .pairs{display:grid;justify-items:start;gap:6px}
+.pairs{display:grid;justify-items:start;gap:6px}
 /* Birth: the two tables share their three columns; the flags table has five. */
 .record table.rows.shape{width:100%;table-layout:fixed;border-collapse:collapse;font-family:var(--mono);font-size:12.5px}
 .record table.rows.shape col.c1{width:170px}
@@ -1214,8 +1219,8 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
    No `disabled` — that dims it as a control not yet usable — and no inline
    handler, which the CSP would not run: the input takes no pointer and no
    focus, and the span around it keeps the title. */
-.record span.fact{display:inline-block;line-height:0}
-.record span.fact input{accent-color:var(--accent);width:14px;height:14px;margin:0;vertical-align:middle;pointer-events:none}
+span.fact{display:inline-block;line-height:0}
+span.fact input{accent-color:var(--accent);width:14px;height:14px;margin:0;vertical-align:middle;pointer-events:none}
 .record .cmdblock{display:grid;gap:8px;margin:14px 0 22px}
 .record .cmdblock .thead{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);padding-bottom:6px;border-bottom:1px solid var(--line)}
 .record .cmd{margin:0;font-family:var(--mono);font-size:12px;line-height:1.6;background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:10px 14px;white-space:pre-wrap;overflow-wrap:anywhere}

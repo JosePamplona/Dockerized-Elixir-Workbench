@@ -237,14 +237,24 @@ defmodule ConsoleWeb.Record do
         origin: Cartridges.origin(status, c),
         facts: Cartridges.facts(e),
         params: params(c, if(e["options"], do: e, else: c)),
-        addresses:
-          services(c, e, status) ++
-            for(
-              d <- get_in(e, ["console", "doors"]) || [],
-              do: route(status, c, d, port, up, reads)
-            )
+        addresses: addresses(status, c, e, port, up, reads)
       }
     end)
+  end
+
+  @doc """
+  Every address a cartridge opens, the ports of the services it asks
+  for first and then its routes on the app's port — one face each,
+  with the reading when there is one. What the Record's row shows, and
+  the rail's Cartridges section too.
+  """
+  def addresses(status, c, e, reads \\ %{}),
+    do:
+      addresses(status, c, e, get_in(status, ["ports", "app"]), Cartridges.app_up?(status), reads)
+
+  defp addresses(status, c, e, port, up, reads) do
+    services(c, e, status) ++
+      for(d <- get_in(e, ["console", "doors"]) || [], do: route(status, c, d, port, up, reads))
   end
 
   @doc """
@@ -359,6 +369,14 @@ defmodule ConsoleWeb.Record do
   defp read(reads, href), do: reads[href]
 
   # --- deployments ----------------------------------------------------------------
+
+  @doc """
+  The three deployments, off the status: each compose file baked, in
+  sync with what the cartridges ask for (nil when the status is a fast
+  one, without the project), up or down, and its services as ports.
+  What the Record's table shows, and the rail's Deployments too.
+  """
+  def deployments(status), do: deployments(status, status["project"] || %{})
 
   defp deployments(status, project) do
     ws = status["workspace"]

@@ -267,7 +267,6 @@ defmodule ConsoleWeb.Board do
               </.chip>
             </td>
             <td class="act">
-              <.bake_button name={d.deploy} status={@status} busy={@busy} baked={d.baked} />
               <.deploy_button
                 :if={@status["deployment"] == d.deploy}
                 verb="stop"
@@ -290,6 +289,7 @@ defmodule ConsoleWeb.Board do
                 busy={@busy}
                 present={d.present}
               />
+              <.bake_button name={d.deploy} status={@status} busy={@busy} baked={d.baked} />
             </td>
           </tr>
         <% end %>

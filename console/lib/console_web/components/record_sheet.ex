@@ -159,7 +159,6 @@ defmodule ConsoleWeb.RecordSheet do
               </td>
               <td><span class="pairs"><.address :for={a <- d.services} a={a} /></span></td>
               <td class="act">
-                <.bake_button name={d.deploy} status={@status} busy={@busy} baked={d.baked} />
                 <.deploy_button
                   :if={d.status == "up"}
                   verb="stop"
@@ -182,6 +181,7 @@ defmodule ConsoleWeb.RecordSheet do
                   busy={@busy}
                   present={d.present}
                 />
+                <.bake_button name={d.deploy} status={@status} busy={@busy} baked={d.baked} />
               </td>
             </tr>
           </tbody>

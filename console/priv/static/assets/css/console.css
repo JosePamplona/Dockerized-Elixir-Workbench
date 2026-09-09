@@ -1176,8 +1176,8 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
 .pdocs pre.env .c{color:var(--term-dim)}.pdocs pre.env .k{color:var(--accent)}.pdocs pre.env .m{color:var(--ansi-red)}
 .pdocs>pre.env{margin-left:28px;margin-right:28px;margin-bottom:22px}
 .pdocs .nothing{padding:18px 28px;max-width:60ch}
-/* Doors: the plan of the project's addresses, five rows of doors and
-   probes with what they answered beside them. It scrolls like the
+/* Doors: the plan of the project's addresses, four rows of doors with
+   what they answered beside them. It scrolls like the
    booklet, and its rows are the rail's `.urls` with a chip after each. */
 .pdocs .doors{flex:1;min-height:0;overflow:auto;padding:22px 28px 60px;display:grid;gap:24px;align-content:start;scrollbar-gutter:stable}
 .doors .lede{margin:0;font-size:13.5px;color:var(--muted);max-width:72ch;display:flex;gap:6px 14px;align-items:center;flex-wrap:wrap}

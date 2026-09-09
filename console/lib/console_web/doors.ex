@@ -6,10 +6,11 @@ defmodule ConsoleWeb.Doors do
   The rail's Doors section is the bell — the doors open right now,
   pressable. This is the map, and it says what the rail cannot afford
   to: the doors a cartridge keeps shut and what would open them, the
-  doors of the cartridges not yet in, the probes the cartridges declare,
-  the workbench's own two addresses, and the port they all sit on for
-  the deployment that is up. Nothing here is hidden for being shut: a
-  shut door is drawn unlit, with its reason.
+  doors of the cartridges not yet in, the workbench's own two addresses,
+  and the port they all sit on for the deployment that is up. Nothing
+  here is hidden for being shut: a shut door is drawn unlit, with its
+  reason. A health endpoint is a door like the rest: the project's
+  route, read and called, never a probe kept for the workbench.
   """
 
   alias ConsoleWeb.Cartridges
@@ -17,10 +18,9 @@ defmodule ConsoleWeb.Doors do
   @doc """
   The plan, off the status and the catalog: `own` (the workbench's app,
   pgAdmin and Grafana), `open` and `shut` (every door of every inserted
-  cartridge, sorted by whether it can be pressed), `probes` (what the
-  cartridges have the console call), `waiting` (the doors of the
-  cartridges not in, each saying which insert opens it). Nil without a
-  status.
+  cartridge, sorted by whether it can be pressed), `waiting` (the doors
+  of the cartridges not in, each saying which insert opens it). Nil
+  without a status.
   """
   def page(nil, _catalog), do: nil
 
@@ -43,18 +43,8 @@ defmodule ConsoleWeb.Doors do
       own: own(status, base, up),
       open: Enum.reject(doors, & &1.why),
       shut: Enum.filter(doors, & &1.why),
-      probes: probes(installed, entry, base, up),
       waiting: waiting(status, catalog)
     }
-  end
-
-  # What the inserted cartridges have the console call, with the option
-  # values filled in; an address only while something answers.
-  defp probes(installed, entry, base, up) do
-    for c <- installed, p <- get_in(entry.(c), ["console", "probes"]) || [] do
-      path = Cartridges.fill_path(p["path"], c)
-      %{label: p["label"], path: path, href: up && base && base <> path, who: c["name"]}
-    end
   end
 
   # The doors of the cartridges not in: each says which insert opens it.
@@ -111,9 +101,9 @@ defmodule ConsoleWeb.Doors do
     }
   end
 
-  @doc "The addresses of a plan the console can call: the open doors', the probes', its own."
+  @doc "The addresses of a plan the console can call: the open doors' and its own."
   def hrefs(page),
-    do: for(x <- page.own ++ page.open ++ page.probes, is_binary(x.href), uniq: true, do: x.href)
+    do: for(x <- page.own ++ page.open, is_binary(x.href), uniq: true, do: x.href)
 
   @doc """
   What each address answered, called once: the status code as a chip's

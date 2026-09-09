@@ -72,7 +72,7 @@ defmodule WorkbenchIgniter.Features.Healthcheck2 do
     do: Module.concat([Igniter.Libs.Phoenix.web_module(igniter), Plugs, Health])
 
   @impl true
-  def console, do: [probes: [{"live", "{path}/live"}, {"ready", "{path}/ready"}]]
+  def console, do: [doors: [{"live", "{path}/live"}, {"ready", "{path}/ready"}]]
 
   # What the project carries: the prefix, read off the plug it installed.
   @impl true

@@ -361,6 +361,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Removed
 
+- **`probes:` leaves the cartridge manifest.** `console/0` had two kinds
+  of address — the *doors* a cartridge opens on the app's port, and the
+  *probes* "the console polls and shows on the board", which nothing
+  ever polled. The only difference left was a face, `.probe-ref`, the
+  door minus its box, and a promise the project would have been keeping
+  for the workbench's sake. Decided on 2026-09-08, with the Record
+  paper: the project owes the workbench nothing — a health endpoint is a
+  route it has for its own reasons, and the console reads it and calls
+  it like any other door. healthcheck and healthcheck2 now declare their
+  paths as doors; the catalog's `console` carries `doors` and `tabs`;
+  `Doors` has no probes row, the box no *Answers* row, `Refs` no
+  `probe_ref`. The design system's `.probe-ref` and its decision page
+  retire with the address component that follows.
 - **The decision pages of the console.** `console/la-segunda-fila.html`,
   `console/docker-en-la-consola.html` and `console/colorear-el-codigo.html`
   are gone: each was made to settle one question of the interface — the

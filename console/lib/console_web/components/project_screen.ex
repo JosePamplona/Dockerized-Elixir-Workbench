@@ -6,7 +6,7 @@ defmodule ConsoleWeb.ProjectScreen do
   """
   use Phoenix.Component
   import ConsoleWeb.Ribbon, only: [ribbon: 1]
-  import ConsoleWeb.Refs, only: [door_ref: 1, probe_ref: 1, chip: 1]
+  import ConsoleWeb.Refs, only: [door_ref: 1, chip: 1]
 
   attr :carried, :list, required: true
   attr :paper, :string, required: true
@@ -73,17 +73,17 @@ defmodule ConsoleWeb.ProjectScreen do
   attr :doors, :map, required: true
   attr :reads, :any, required: true
 
-  # The plan. Five rows: the workbench's own addresses, the doors open,
-  # the doors shut with their reasons, the probes, and the doors of the
-  # cartridges not in. Beside each address the console could call, what
-  # it answered — a chip — and a way to ask again.
+  # The plan. Four rows: the workbench's own addresses, the doors open,
+  # the doors shut with their reasons, and the doors of the cartridges
+  # not in. Beside each address the console could call, what it
+  # answered — a chip — and a way to ask again.
   defp doors_sheet(assigns) do
     ~H"""
     <div class="doors" id="p-doors">
       <p class="lede">
         <span :if={@doors.up}>
           <b>{@doors.deployment}</b>
-          is up on <span class="mono">localhost:{@doors.port}</span>: every open door and probe was called once, and answered as the chips say.
+          is up on <span class="mono">localhost:{@doors.port}</span>: every open door was called once, and answered as the chips say.
         </span>
         <span :if={!@doors.up}>
           No deployment is up: the doors are drawn shut. Deploy, and they open on <span class="mono">localhost:{@doors.port || "the port"}</span>.
@@ -126,24 +126,6 @@ defmodule ConsoleWeb.ProjectScreen do
         </p>
         <div class="urls">
           <.door_ref :for={d <- @doors.shut} label={d.label} path={d.path} who={d.who} why={d.why} />
-        </div>
-      </section>
-      <section>
-        <h3>
-          Probes
-          <span class="label">{count(@doors.probes, "path")} the cartridges have the console call</span>
-        </h3>
-        <p :if={@doors.probes == []} class="nothing">
-          None declared: healthcheck and healthcheck2 each bring some.
-        </p>
-        <div class="urls">
-          <.probe_ref
-            :for={p <- @doors.probes}
-            label={p.label}
-            path={p.path}
-            who={p.who}
-            read={read(@reads, p.href)}
-          />
         </div>
       </section>
       <section>

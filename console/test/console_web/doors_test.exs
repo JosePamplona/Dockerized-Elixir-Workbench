@@ -35,7 +35,7 @@ defmodule ConsoleWeb.DoorsTest do
     },
     %{
       "name" => "healthcheck",
-      "console" => %{"probes" => [%{"label" => "health", "path" => "{endpoint}"}]}
+      "console" => %{"doors" => [%{"label" => "health", "path" => "{endpoint}"}]}
     },
     %{
       "name" => "graphql",
@@ -61,16 +61,16 @@ defmodule ConsoleWeb.DoorsTest do
     assert page.up and page.port == 4000 and page.deployment == "dev"
     assert Enum.map(page.own, & &1.href) == ["http://localhost:4000", "http://localhost:5050"]
 
+    # healthcheck's endpoint is a door like rest's: filled from the
+    # option the project reports, open while the app answers.
     assert Enum.map(page.open, &{&1.label, &1.href, &1.who}) == [
              {"swagger", "http://localhost:4000/dev/swagger", "rest"},
-             {"openapi", "http://localhost:4000/dev/openapi", "rest"}
+             {"openapi", "http://localhost:4000/dev/openapi", "rest"},
+             {"health", "http://localhost:4000/healthz", "healthcheck"}
            ]
 
     assert [%{label: "admin", why: "only with --with ash_admin", href: false, who: "ash"}] =
              page.shut
-
-    assert [%{label: "health", path: "/healthz", href: "http://localhost:4000/healthz"}] =
-             page.probes
 
     assert Enum.map(page.waiting, &{&1.label, &1.why}) == [
              {"graphiql", "insert graphql first"},
@@ -95,10 +95,9 @@ defmodule ConsoleWeb.DoorsTest do
     assert Enum.map(page.shut, & &1.why) == [
              "only with --with ash_admin",
              "the app is down",
+             "the app is down",
              "the app is down"
            ]
-
-    assert [%{href: false}] = page.probes
     assert Enum.map(page.own, & &1.href) == [false, false]
     assert Doors.hrefs(page) == []
   end

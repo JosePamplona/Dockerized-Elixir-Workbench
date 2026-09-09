@@ -185,12 +185,10 @@ defmodule WorkbenchIgniter.Features do
   end
 
   # What the cartridge adds to the console, as plain maps: doors with
-  # their condition (or nil), probes, tabs.
+  # their condition (or nil), tabs.
   defp console(spec) do
     %{
       doors: for(d <- Keyword.get(spec, :doors, []), do: door(d)),
-      probes:
-        for({label, path} <- Keyword.get(spec, :probes, []), do: %{label: label, path: path}),
       tabs: Keyword.get(spec, :tabs, [])
     }
   end

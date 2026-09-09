@@ -139,13 +139,16 @@ defmodule WorkbenchIgniter.Feature do
   What the cartridge adds to the console once it is in — the cartridge
   lights the console up. A keyword list of:
 
-    * `doors:` — links on the app's port: `{label, path}` or
-      `{label, path, when: condition}`, shown only when the condition
-      holds: `{:with, value}` (the cartridge's `state/1` reports the
-      value under `:with`), `{:cartridge, name}` (that cartridge is in).
-    * `probes:` — paths the console polls and shows on the board:
-      `{label, path}`; `{option}` in a path is the option's value as
-      `state/1` reports it, or its default.
+    * `doors:` — routes the project answers on the app's port once the
+      cartridge is in, a health endpoint as much as a docs page:
+      `{label, path}` or `{label, path, when: condition}`, shown only
+      when the condition holds: `{:with, value}` (the cartridge's
+      `state/1` reports the value under `:with`), `{:cartridge, name}`
+      (that cartridge is in). `{option}` in a path is the option's value
+      as `state/1` reports it, or its default. The console reads them
+      and calls them; it asks nothing of the project for its own sake —
+      a route exists for the project's reasons, and the workbench only
+      takes advantage of it.
     * `tabs:` — screens the console shows only with this cartridge:
       `:cluster`.
 

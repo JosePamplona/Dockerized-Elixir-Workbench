@@ -1,9 +1,10 @@
 defmodule ConsoleWeb.Refs do
   @moduledoc """
   The house's notation (assets/design, components.css) as components:
-  the mention of a cartridge, the door on the app's port, the probe,
-  the chip, and `unlit` — the one way the console says *not available*:
-  never hidden, marked, with the reason in the title.
+  the mention of a cartridge, the door on the app's port, the chip, and
+  `unlit` — the one way the console says *not available*: never hidden,
+  marked, with the reason in the title. There is no probe: a health
+  endpoint is a door the console calls like any other.
   """
   use Phoenix.Component
 
@@ -64,22 +65,6 @@ defmodule ConsoleWeb.Refs do
 
   defp door_title(who, path, why),
     do: Enum.join(Enum.reject([who && "#{who}:", path, why && "— #{why}"], &(!&1)), " ")
-
-  @doc "The same address when the console is the one calling it, with what it answered."
-  attr :label, :string, required: true
-  attr :path, :string, required: true
-  attr :who, :string, default: nil
-  attr :read, :any, default: nil, doc: "{text, chip class}"
-
-  def probe_ref(assigns) do
-    ~H"""
-    <span class="pair">
-      <span class="probe-ref" title={"#{if @who, do: "#{@who}: "}#{@path}"}><b>{@label}</b><span>{@path}</span></span>
-      <.cart_ref :if={@who} name={@who} installed={true} />
-      <span :if={@read} class={["chip", elem(@read, 1)]}>{elem(@read, 0)}</span>
-    </span>
-    """
-  end
 
   @doc "A reading the console reports."
   attr :class, :string, default: nil

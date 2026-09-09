@@ -531,12 +531,6 @@ defmodule ConsoleWeb.Box do
           why={door_shut(@box, @c, @status, d, @installed, @up)}
         />
       </span>
-      <span :if={(@console["probes"] || []) != []} class="k">Answers</span>
-      <span :if={(@console["probes"] || []) != []} class="v"><.probe_ref
-        :for={p <- @console["probes"]}
-        label={p["label"]}
-        path={Cartridges.fill_path(p["path"], @c)}
-      /></span>
       <span :if={(@console["tabs"] || []) != []} class="k">Lights</span>
       <span :if={(@console["tabs"] || []) != []} class="v"><span
         :for={t <- @console["tabs"]}

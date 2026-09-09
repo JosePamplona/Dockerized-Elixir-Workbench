@@ -31,7 +31,7 @@ defmodule ConsoleWeb.Cartridges do
   @doc """
   What each inserted cartridge adds to the console, off the manifest's
   `console/0` as the catalog carries it: `[{entry, item}]` for `kind`
-  in doors, probes, tabs — only the items whose condition holds.
+  in doors, tabs — only the items whose condition holds.
   """
   def contributions(status, catalog, kind) do
     for c <- installed(status),

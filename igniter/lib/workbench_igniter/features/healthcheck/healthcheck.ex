@@ -21,7 +21,7 @@ defmodule WorkbenchIgniter.Features.Healthcheck do
   def task, do: "workbench.install.healthcheck"
 
   @impl true
-  def console, do: [probes: [{"health", "{endpoint}"}]]
+  def console, do: [doors: [{"health", "{endpoint}"}]]
 
   # The installer's options, one line each: the task's "## Options"
   # section and the help a form shows are rendered from here.

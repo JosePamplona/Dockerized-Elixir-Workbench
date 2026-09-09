@@ -194,11 +194,15 @@ cartridges as `base`.
 
 A cartridge can light the console up: `console/0` names the *doors* it
 opens on the app's port (exdoc `/dev/docs`, rest `/dev/swagger`, mailer
-`/dev/mailbox`, ash `/admin` when `ash_admin` is in…), the *probes* the
-console polls (healthcheck2 `{path}/live`, `{path}/ready`) and the
-*tabs* it turns on (clustering → Cluster). The catalog carries it as
-`console`; the console shows the doors of what is inserted and nothing
-of what is not.
+`/dev/mailbox`, ash `/admin` when `ash_admin` is in, healthcheck2
+`{path}/live` and `{path}/ready`) and the *tabs* it turns on (clustering
+→ Cluster). The catalog carries it as `console`; the console shows the
+doors of what is inserted and nothing of what is not. There is no
+separate kind for a health endpoint: it is a route the project has for
+its own reasons, and the console reads it and calls it like any other
+door — the project owes the workbench nothing, and a "probe" it would
+carry for the workbench's sake was the one contract running the wrong
+way (settled 2026-09-08).
 
 [ash](ash/) is the fourth: the Ash framework, configured with the
 choices of ash-hq.org's installer for an existing app (`--data-layer`,

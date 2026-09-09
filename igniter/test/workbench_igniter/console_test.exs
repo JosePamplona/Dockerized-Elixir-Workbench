@@ -9,7 +9,7 @@ defmodule WorkbenchIgniter.ConsoleTest do
 
   alias WorkbenchIgniter.Features
 
-  test "doors, probes and tabs, with their conditions" do
+  test "doors and tabs, with their conditions" do
     by = fn name ->
       Features.entry(Enum.find(Features.catalog(), &(&1.name() == name))).console
     end
@@ -23,19 +23,21 @@ defmodule WorkbenchIgniter.ConsoleTest do
     assert by.("ash").doors == [%{label: "admin", path: "/admin", when: %{with: "ash_admin"}}]
     assert Enum.map(by.("rest").doors, & &1.path) == ["/dev/swagger", "/dev/openapi"]
 
-    assert by.("healthcheck2").probes == [
-             %{label: "live", path: "{path}/live"},
-             %{label: "ready", path: "{path}/ready"}
+    # A health endpoint is a door like any other: the project's route,
+    # which the console reads and calls — never a probe the project
+    # would carry for the workbench's sake.
+    assert by.("healthcheck2").doors == [
+             %{label: "live", path: "{path}/live", when: nil},
+             %{label: "ready", path: "{path}/ready", when: nil}
            ]
 
     assert by.("clustering").tabs == [:cluster]
-    assert by.("credo") == %{doors: [], probes: [], tabs: []}
+    assert by.("credo") == %{doors: [], tabs: []}
   end
 
-  test "every door and probe path starts with a slash or an {option}" do
+  test "every door path starts with a slash or an {option}" do
     for feature <- Features.catalog(),
-        %{path: path} <-
-          Features.entry(feature).console.doors ++ Features.entry(feature).console.probes do
+        %{path: path} <- Features.entry(feature).console.doors do
       assert String.starts_with?(path, ["/", "{"]), "#{feature.name()}: #{path}"
     end
   end

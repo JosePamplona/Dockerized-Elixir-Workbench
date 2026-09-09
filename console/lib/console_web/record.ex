@@ -159,6 +159,12 @@ defmodule ConsoleWeb.Record do
           )
         ]
 
+    flags =
+      Enum.map(
+        flags,
+        &Map.put(&1, :installed, &1.cartridge && Cartridges.installed?(status, &1.cartridge))
+      )
+
     %{
       sha: b["sha"],
       date: b["date"],

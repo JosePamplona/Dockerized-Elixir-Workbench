@@ -318,7 +318,7 @@ defmodule ConsoleWeb.RecordSheet do
               </.chip>
             </td>
             <td class="doc">{f.doc}</td>
-            <td><.cart_ref :if={f.cartridge} name={f.cartridge} installed={true} /></td>
+            <td><.cart_ref :if={f.cartridge} name={f.cartridge} installed={f.installed} /></td>
           </tr>
         </tbody>
       </table>

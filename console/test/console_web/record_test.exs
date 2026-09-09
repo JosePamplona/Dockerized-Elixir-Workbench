@@ -181,6 +181,13 @@ defmodule ConsoleWeb.RecordTest do
     assert %{name: "database", used: true, arg: "postgres", default: true, now: nil} =
              Enum.find(page.birth.flags, &(&1.name == "database"))
 
+    # The cartridge beside a flag wears what the project carries, not a dot for everyone.
+    assert %{cartridge: "ecto", installed: true} =
+             Enum.find(page.birth.flags, &(&1.name == "no-ecto"))
+
+    assert %{cartridge: "esbuild", installed: false} =
+             Enum.find(page.birth.flags, &(&1.name == "no-esbuild"))
+
     # The toolchain's phx_new moved past the generator: said, with the remedy in the sheet.
     assert %{born: "1.8.13", at_hand: "1.8.14", in_sync: false} = page.birth.installer
     assert page.birth.moved == 1

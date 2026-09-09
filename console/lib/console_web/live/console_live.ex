@@ -21,7 +21,6 @@ defmodule ConsoleWeb.ConsoleLive do
   import ConsoleWeb.{Board, Shelf, ProjectScreen, WorkbenchDrawer, Cluster}
   import ConsoleWeb.Band, only: [state: 1, errands: 1]
   import ConsoleWeb.DockerScreen, only: [docker_screen: 1]
-  import ConsoleWeb.GitScreen, only: [git_screen: 1]
   import ConsoleWeb.LogsScreen, only: [logs_screen: 1]
   import ConsoleWeb.Terminal, only: [terminal: 1]
   import ConsoleWeb.JobsScreen, only: [jobs_screen: 1, tray: 1]
@@ -36,7 +35,6 @@ defmodule ConsoleWeb.ConsoleLive do
     {"terminal", "Terminal"},
     {"shelf", "Cartridges"},
     {"project", "Project"},
-    {"git", "Git"},
     {"cluster", "Cluster"},
     # Last, and never unlit: the daemon is there before any project is.
     {"docker", "Docker"}
@@ -177,7 +175,7 @@ defmodule ConsoleWeb.ConsoleLive do
   # The project's paper, from the query on /project.
   defp take_paper(%{assigns: %{tab: "project"}} = socket, params) do
     ws = socket.assigns.status && socket.assigns.status["workspace"]
-    carried = Project.carried(ws)
+    carried = Project.carried(socket.assigns.status)
 
     paper =
       if params["paper"] in carried, do: params["paper"], else: List.first(carried) || "readme"
@@ -670,19 +668,6 @@ defmodule ConsoleWeb.ConsoleLive do
 
   # Why a screen is dark: never hidden, marked, with the reason. Deploy,
   # Jobs and Cartridges are always lit.
-  defp unlit("git", %{status: status}) do
-    cond do
-      not project?(status) ->
-        "this workspace has no project — new makes the first commit"
-
-      get_in(status, ["git", "repo"]) != true ->
-        "this workspace has no repository — phx.new initialises one"
-
-      true ->
-        nil
-    end
-  end
-
   defp unlit("project", %{status: status}),
     do:
       if(project?(status),
@@ -904,21 +889,20 @@ defmodule ConsoleWeb.ConsoleLive do
 
           <section :if={@tab == "project"} class="panel fill on" id="panel-project" role="tabpanel">
             <.project_screen
-              carried={Project.carried(@status && @status["workspace"])}
+              carried={Project.carried(@status)}
               paper={@ppaper}
               page={@ppage}
               record={@ppaper == "record" && Record.page(@status, @catalog, @preads, @pconsole)}
               reads={@preads}
               birth={get_in(@status || %{}, ["project", "birth", "sha"])}
+              status={@status}
+              gt={@gt}
+              jobs={@jobs}
             />
           </section>
 
           <section :if={@tab == "cluster"} class="panel on" role="tabpanel">
             <.cluster status={@status} probes={@probes} pick={@pick} />
-          </section>
-
-          <section :if={@tab == "git"} class="panel fill on" id="panel-git" role="tabpanel">
-            <.git_screen status={@status} gt={@gt} jobs={@jobs} />
           </section>
 
           <section :if={@tab == "docker"} class="panel fill on" id="panel-docker" role="tabpanel">

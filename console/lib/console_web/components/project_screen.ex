@@ -2,12 +2,14 @@ defmodule ConsoleWeb.ProjectScreen do
   @moduledoc """
   The project's own papers: Record — what the project is, drawn off the
   status, with every address it answers to and what each answered when
-  the console called — then README, CHANGELOG and the .env with its
-  secrets masked.
+  the console called — then the .env with its secrets masked, README,
+  CHANGELOG, and the workspace's git as Pending and History.
   """
   use Phoenix.Component
   import ConsoleWeb.Ribbon, only: [ribbon: 1]
   import ConsoleWeb.RecordSheet, only: [record_sheet: 1]
+  import ConsoleWeb.GitScreen, only: [git_pending: 1, git_history: 1]
+  alias ConsoleWeb.GitScreen
 
   attr :carried, :list, required: true
   attr :paper, :string, required: true
@@ -15,6 +17,9 @@ defmodule ConsoleWeb.ProjectScreen do
   attr :record, :any, default: nil, doc: "ConsoleWeb.Record.page/4, when Record is the paper"
   attr :reads, :any, default: %{}, doc: "what the routes answered: a map by href, or :asking"
   attr :birth, :any, default: nil, doc: "the first commit's sha, the Record tab's sublabel"
+  attr :status, :map, default: nil
+  attr :gt, :map, default: nil, doc: "the git papers' state, ConsoleWeb.ConsoleLive.Git"
+  attr :jobs, :list, default: []
 
   def project_screen(assigns) do
     ~H"""
@@ -28,7 +33,7 @@ defmodule ConsoleWeb.ProjectScreen do
               do: %{
                 key: key,
                 label: label,
-                small: small(key, file, key in @carried, @birth),
+                small: small(key, file, key in @carried, @birth, @gt, @status),
                 why: key not in @carried && paper_why(key, file),
                 href: "/project?paper=#{key}"
               }
@@ -50,6 +55,10 @@ defmodule ConsoleWeb.ProjectScreen do
       </div>
       <pre :if={@page && @page[:env]} class="env"><%= for line <- @page.env do %><.env_line line={line} /><% end %></pre>
       <.record_sheet :if={@page && @page[:record] && @record} record={@record} reads={@reads} />
+      <div :if={@page && @page[:git] && @gt} class="dkdoc git">
+        <.git_pending :if={@page[:git] == "pending"} gt={@gt} status={@status} jobs={@jobs} />
+        <.git_history :if={@page[:git] == "history"} gt={@gt} status={@status} />
+      </div>
       <div :if={is_nil(@page)} class="nothing">
         This workspace carries none of the project's papers.
       </div>
@@ -57,15 +66,22 @@ defmodule ConsoleWeb.ProjectScreen do
     """
   end
 
-  # The ribbon's sublabel: the file a paper is, or for Record the first
-  # commit it is read off — it is drawn, not read off a file.
-  defp small("record", _file, true, birth),
+  # The ribbon's sublabel: the file a paper is; for the drawn ones what
+  # they are read off — Record the first commit, Pending the tree,
+  # History the HEAD.
+  defp small("record", _file, true, birth, _gt, _status),
     do: if(birth, do: String.slice(birth, 0, 7), else: "—")
 
-  defp small(_key, file, true, _port), do: file
-  defp small(_key, _file, false, _port), do: "—"
+  defp small(key, _file, true, _birth, gt, status) when key in ["pending", "history"],
+    do: GitScreen.doc_sum(key, gt || %{}, status)
+
+  defp small(_key, file, true, _birth, _gt, _status), do: file
+  defp small(_key, _file, false, _birth, _gt, _status), do: "—"
 
   defp paper_why("record", _), do: "no workspace read yet: the record is drawn off its status"
+
+  defp paper_why(key, _) when key in ["pending", "history"],
+    do: "this workspace has no repository — phx.new initialises one, new makes the first commit"
 
   defp paper_why("changelog", _),
     do:

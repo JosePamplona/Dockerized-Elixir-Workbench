@@ -62,12 +62,17 @@ defmodule ConsoleWeb.TabsTest do
     assert html =~ "The daemon"
   end
 
-  test "the Git screen is unlit without a project, and says why", %{conn: conn} do
-    {:ok, _view, html} = live(conn, "/deploy")
-    [tab] = Regex.run(~r{<button[^>]*>\s*Git\s*</button>}s, html)
-    assert tab =~ ~s(aria-disabled="true")
-    # Whichever status a test before this one left on the bench, the reason is there.
-    assert tab =~ "no project" or tab =~ "no repository"
+  test "there is no Git tab: its two papers are the Project's, unlit without a repository", %{
+    conn: conn
+  } do
+    arrives(status([]))
+    {:ok, _view, html} = live(conn, "/project")
+    refute Regex.match?(~r{<(a|button)[^>]*>\s*Git\s*</(a|button)>}s, html)
+
+    for paper <- ["Pending", "History"] do
+      [tab] = Regex.run(~r{<button[^>]*>\s*#{paper}.*?</button>}s, html)
+      assert tab =~ ~s(aria-disabled="true") and tab =~ "no repository"
+    end
   end
 
   test "no containers at all is no pulse", %{conn: conn} do

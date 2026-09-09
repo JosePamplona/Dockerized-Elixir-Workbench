@@ -1,12 +1,16 @@
 defmodule Console.Project do
   @moduledoc """
-  The project's own papers, off the workspace: Record, README.md,
-  CHANGELOG.md and `.env`. The `.env` travels masked — a secret, a
-  token, a password, a key, and the credentials inside a URL are
-  replaced before the text leaves this module, so no page ever carries
-  them. Record is no file: it is composed off the status by
-  `ConsoleWeb.Record` — what the project is, first on the ribbon
-  whenever there is a project to draw it for.
+  The project's own papers, off the workspace: Record, `.env`,
+  README.md, CHANGELOG.md, and its git as Pending and History. The
+  `.env` travels masked — a secret, a token, a password, a key, and the
+  credentials inside a URL are replaced before the text leaves this
+  module, so no page ever carries them. Three are no file: Record is
+  composed off the status by `ConsoleWeb.Record` — what the project is,
+  first on the ribbon whenever there is a project to draw it for — and
+  Pending and History are the workspace's git, read by
+  `ConsoleWeb.ConsoleLive.Git`, there whenever there is a repository.
+  Git was a tab of its own until 2026-09-09: the repository is the
+  project's, so its papers are the project's too.
   """
 
   alias Console.Papers
@@ -15,7 +19,9 @@ defmodule Console.Project do
     {"record", "Record", nil},
     {"env", ".env", ".env"},
     {"readme", "README", "README.md"},
-    {"changelog", "CHANGELOG", "CHANGELOG.md"}
+    {"changelog", "CHANGELOG", "CHANGELOG.md"},
+    {"pending", "Pending", nil},
+    {"history", "History", nil}
   ]
 
   def papers, do: @papers
@@ -42,16 +48,24 @@ defmodule Console.Project do
     end
   end
 
-  @doc "Which of the four the workspace has: the files it holds, and Record, which is drawn."
+  @doc """
+  Which of the six the workspace has, off the status: the files it
+  holds, Record whenever there is a project, Pending and History
+  whenever there is a repository. Nothing without a status.
+  """
   def carried(nil), do: []
 
-  def carried(workspace),
-    do:
-      for(
-        {key, _, file} <- @papers,
-        is_nil(file) or File.regular?(Path.join(workspace, file)),
-        do: key
-      )
+  def carried(%{"exists" => true, "workspace" => workspace} = status) when is_binary(workspace) do
+    repo? = get_in(status, ["git", "repo"]) == true
+
+    for {key, _, file} <- @papers, carried?(key, file, workspace, repo?), do: key
+  end
+
+  def carried(_status), do: []
+
+  defp carried?("record", _file, _workspace, _repo?), do: true
+  defp carried?(key, _file, _workspace, repo?) when key in ["pending", "history"], do: repo?
+  defp carried?(_key, file, workspace, _repo?), do: File.regular?(Path.join(workspace, file))
 
   @doc """
   A paper rendered: the booklet for the two in Markdown, the masked lines
@@ -61,6 +75,8 @@ defmodule Console.Project do
   def render(nil, _key), do: nil
 
   def render(_workspace, "record"), do: %{record: true}
+  def render(_workspace, "pending"), do: %{git: "pending"}
+  def render(_workspace, "history"), do: %{git: "history"}
 
   def render(workspace, "env") do
     case File.read(Path.join(workspace, ".env")) do

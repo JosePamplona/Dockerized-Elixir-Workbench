@@ -1331,9 +1331,8 @@ header.band ::selection{background:color-mix(in srgb,var(--board-ink) 15%,transp
    it whole for the env and the mounts. */
 #panel-docker{padding-top:0}
 /* --- the Git screen ------------------------------------------------------------ */
-/* Two documents under the row, on the Docker screen's pane; the sheet of
-   files is the box's (.impl), the log a table like Docker's. */
-#panel-git{padding-top:0}
+/* The git papers of the Project tab, on the Docker screen's pane; the
+   sheet of files is the box's (.impl), the log a table like Docker's. */
 /* The shelf too: its four readings are the row, and the planks the pane. */
 #panel-shelf{padding-top:0}
 .shelfp .toolbar .label{letter-spacing:.08em}

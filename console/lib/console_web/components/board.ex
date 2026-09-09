@@ -385,8 +385,8 @@ defmodule ConsoleWeb.Board do
           <.link
             :if={not @status["git"]["clean"]}
             class="btn"
-            patch="/git"
-            title="the Git screen: what is pending, and the commit with a title"
+            patch="/project?paper=pending"
+            title="the Pending paper: what is pending, and the commit with a title"
           >Commit pending changes</.link>
         <% else %>
           <p class="nothing">phx.new initialises the repository; new makes the first commit.</p>

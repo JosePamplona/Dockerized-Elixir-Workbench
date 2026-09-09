@@ -175,6 +175,20 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **Git's two documents are papers of the Project tab.** The repository
+  is the project's, so Pending and History follow Record, .env, README
+  and CHANGELOG on the Project ribbon, and the Git tab goes; the top row
+  reads Deploy, Jobs, Logs, Terminal, Cartridges, Project, Cluster,
+  Docker. Pending's sublabel is the tree (clean, dirty, or the files a
+  commit would take), History's the HEAD. `/project?paper=history&commit=SHA`
+  opens History on that commit with its diff — where a `.commit-ref`
+  lands, the Record's birth first. Without a repository the two are
+  unlit with the reason, as CHANGELOG is without its file. The rail's
+  "Commit pending changes" lands on Pending. `ConsoleWeb.GitScreen` keeps
+  the two documents, `git_pending/1` and `git_history/1`;
+  `Console.Project.carried/1` reads the status now, since which papers
+  there are depends on the project and its repository, not on files
+  alone.
 - **The address component: one face, the layer as a square, the reading
   attached.** `.door-ref` in the design system now says which layer
   answers at an address — an 8px square before the label, the mark the

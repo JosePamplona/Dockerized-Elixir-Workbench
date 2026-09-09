@@ -1,8 +1,10 @@
 defmodule ConsoleWeb.ConsoleLive.Git do
   @moduledoc """
-  The Git screen's state, off the page: which document and which commit
-  the URL names, the tree and the log read off the workspace, and the
-  commit the reader writes.
+  The git papers' state, off the page: which of the two the URL names
+  and which commit, the tree and the log read off the workspace, and
+  the commit the reader writes. Pending and History are papers of the
+  Project tab: `/project?paper=history&commit=SHA` is where a
+  `.commit-ref` lands, the commit picked and its diff open.
   """
   import Phoenix.Component, only: [assign: 2]
   import Phoenix.LiveView, only: [connected?: 1, push_patch: 2, start_async: 3]
@@ -10,11 +12,11 @@ defmodule ConsoleWeb.ConsoleLive.Git do
   alias Console.{Diffs, Git, Jobs}
   alias ConsoleWeb.GitScreen
 
-  # Which document and which commit: /git?doc=history&c=SHA.
-  def take(%{assigns: %{tab: "git"}} = socket, params) do
+  # Which paper and which commit: /project?paper=history&commit=SHA.
+  def take(%{assigns: %{tab: "project", ppaper: doc}} = socket, params)
+      when doc in ["pending", "history"] do
     gt = socket.assigns.gt
-    doc = if params["doc"] in GitScreen.doc_names(), do: params["doc"], else: "pending"
-    pick = params["c"]
+    pick = params["commit"]
     gt = %{gt | doc: doc, pick: pick, files: if(pick == gt.pick, do: gt.files, else: nil)}
     socket |> assign(gt: gt) |> read(false)
   end
@@ -23,7 +25,8 @@ defmodule ConsoleWeb.ConsoleLive.Git do
 
   # The tree and the log, read off the page. `again` is a status having
   # arrived: what was read is read again, since a job may have moved it.
-  def read(%{assigns: %{tab: "git", gt: gt, status: status}} = socket, again) do
+  def read(%{assigns: %{tab: "project", ppaper: doc, gt: gt, status: status}} = socket, again)
+      when doc in ["pending", "history"] do
     ws = status && status["workspace"]
 
     if connected?(socket) and is_binary(ws) and get_in(status, ["git", "repo"]) == true and
@@ -82,8 +85,8 @@ defmodule ConsoleWeb.ConsoleLive.Git do
   end
 
   def event("git_pick", %{"sha" => sha}, socket) do
-    q = if socket.assigns.gt.pick == sha, do: "", else: "&c=#{sha}"
-    {:noreply, push_patch(socket, to: "/git?doc=history#{q}")}
+    q = if socket.assigns.gt.pick == sha, do: "", else: "&commit=#{sha}"
+    {:noreply, push_patch(socket, to: "/project?paper=history#{q}")}
   end
 
   # --- what arrives ---------------------------------------------------------

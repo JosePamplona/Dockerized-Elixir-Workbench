@@ -1,11 +1,14 @@
 defmodule ConsoleWeb.GitScreen do
   @moduledoc """
-  The Git screen: the workspace's git in two documents under the row —
-  *Pending*, what a commit would take, file by file on the sheet the
-  box's Files screen draws, with the commit's title and body above it;
-  and *History*, the log with the cartridge inserts marked, each commit
-  opening its diff on the same sheet. The rail said `dirty` and offered
-  a commit it could not name; this is where it is named and seen.
+  The workspace's git as two papers of the Project tab — *Pending*,
+  what a commit would take, file by file on the sheet the box's Files
+  screen draws, with the commit's title and body above it; and
+  *History*, the log with the cartridge inserts marked, each commit
+  opening its diff on the same sheet (`/project?paper=history&commit=SHA`,
+  where a `.commit-ref` lands). The rail said `dirty` and offered a
+  commit it could not name; this is where it is named and seen. They
+  were a tab of their own, Git, until 2026-09-09: the repository is the
+  project's, so these are its papers.
 
   Narrow on purpose: no branches, no remotes, no discarding by file —
   `wb.sh` alone writes the workspace, the commit is its job, and the
@@ -15,7 +18,6 @@ defmodule ConsoleWeb.GitScreen do
   """
   use Phoenix.Component
   import ConsoleWeb.Refs
-  import ConsoleWeb.Ribbon, only: [ribbon: 1]
   import ConsoleWeb.Box, only: [file: 1]
 
   @docs [{"pending", "Pending"}, {"history", "History"}]
@@ -28,49 +30,25 @@ defmodule ConsoleWeb.GitScreen do
   @doc "The title the form opens with: the one `wb.sh commit` uses when nobody names the commit."
   def default_title, do: "Workbench: commit pending changes"
 
-  attr :status, :map, default: nil
-  attr :gt, :map, required: true
-  attr :jobs, :list, required: true
-
-  def git_screen(assigns) do
-    ~H"""
-    <div class="pdocs git">
-      <.ribbon
-        label="The workspace's git"
-        selected={@gt.doc}
-        docked
-        items={
-          for {key, label} <- docs(),
-              do: %{
-                key: key,
-                label: label,
-                small: doc_sum(key, @gt, @status),
-                href: "/git?doc=#{key}"
-              }
-        }
-      />
-      <div class="dkdoc">
-        <.pending_doc :if={@gt.doc == "pending"} gt={@gt} status={@status} jobs={@jobs} />
-        <.history_doc :if={@gt.doc == "history"} gt={@gt} status={@status} />
-      </div>
-    </div>
-    """
+  @doc "The ribbon's sublabel for a paper: Pending's tree, History's HEAD."
+  def doc_sum("history", _gt, status) do
+    case status && get_in(status, ["git", "head"]) do
+      head when is_binary(head) -> head |> String.split(" ") |> List.first()
+      _ -> nil
+    end
   end
 
-  defp doc_sum("pending", %{pending: %{files: fs}}, _),
+  def doc_sum("pending", %{pending: %{files: fs}}, _),
     do:
       if(fs == [],
         do: "clean",
         else: "#{length(fs)} file#{if length(fs) == 1, do: "", else: "s"}"
       )
 
-  defp doc_sum("pending", _, status),
+  def doc_sum("pending", _, status),
     do: if(status && status["git"]["clean"], do: "clean", else: "dirty")
 
-  defp doc_sum("history", %{log: log}, _) when is_list(log),
-    do: "#{length(log)} commit#{if length(log) == 1, do: "", else: "s"}"
-
-  defp doc_sum(_, _, _), do: nil
+  def doc_sum(_, _, _), do: nil
 
   # --- Pending --------------------------------------------------------------------
 
@@ -78,7 +56,8 @@ defmodule ConsoleWeb.GitScreen do
   attr :status, :map, default: nil
   attr :jobs, :list, required: true
 
-  defp pending_doc(assigns) do
+  @doc "Pending: what a commit would take, and the commit."
+  def git_pending(assigns) do
     busy =
       Enum.any?(
         assigns.jobs,
@@ -160,7 +139,8 @@ defmodule ConsoleWeb.GitScreen do
   attr :gt, :map, required: true
   attr :status, :map, default: nil
 
-  defp history_doc(assigns) do
+  @doc "History: the log, and the picked commit's diff."
+  def git_history(assigns) do
     ~H"""
     <p :if={is_nil(@gt.log)} class="note">Reading the log…</p>
     <p :if={@gt.log == []} class="note">No commits yet: new makes the first.</p>

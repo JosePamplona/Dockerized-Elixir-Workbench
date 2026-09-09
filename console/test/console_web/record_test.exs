@@ -254,7 +254,7 @@ defmodule ConsoleWeb.RecordTest do
     page = Record.page(@status, @catalog)
 
     [dev, prod, scaled] = page.deployments
-    assert %{deploy: "dev", baked: true, in_sync: true, status: "up"} = dev
+    assert %{deploy: "dev", baked: true, in_sync: true, status: "up", present: true} = dev
 
     assert Enum.map(dev.services, &{&1.label, &1.path, &1.read}) == [
              {"network", "", {"running", "good"}},
@@ -262,7 +262,9 @@ defmodule ConsoleWeb.RecordTest do
              {"database", ":5432", {"healthy", "good"}}
            ]
 
-    assert %{deploy: "prod", in_sync: false, stray: ["grafana"], status: "down"} = prod
+    assert %{deploy: "prod", in_sync: false, stray: ["grafana"], status: "down", present: false} =
+             prod
+
     assert Enum.all?(prod.services, &(&1.why == "the deployment is down" and is_nil(&1.read)))
     assert %{deploy: "scaled", baked: false, status: nil, services: []} = scaled
   end

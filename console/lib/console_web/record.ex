@@ -381,6 +381,7 @@ defmodule ConsoleWeb.Record do
       %{
         deploy: deploy,
         baked: baked,
+        present: Enum.any?(status["containers"] || [], &(of_deployment(&1) == deploy)),
         in_sync: d["in_sync"],
         stray: d["stray"] || [],
         missing: d["missing"] || [],
@@ -433,6 +434,17 @@ defmodule ConsoleWeb.Record do
           end
           |> List.flatten()
       }
+    end
+  end
+
+  # Which deployment a container belongs to, as `wb.sh workspace_deployment`
+  # tells them apart: a replica is the scaled one, a release image the
+  # prod one, the rest dev.
+  defp of_deployment(c) do
+    cond do
+      Regex.match?(~r/^app\d+$/, c["Service"] || "") -> "scaled"
+      String.ends_with?(c["Image"] || "", "-prod") -> "prod"
+      true -> "dev"
     end
   end
 

@@ -278,6 +278,14 @@ defmodule ConsoleWeb.Board do
                 status={@status}
                 busy={@busy}
               />
+              <.deploy_button
+                :if={d.baked}
+                verb="down"
+                name={d.deploy}
+                status={@status}
+                busy={@busy}
+                present={d.present}
+              />
             </td>
           </tr>
         <% end %>
@@ -358,7 +366,8 @@ defmodule ConsoleWeb.Board do
   # is the ordinary case: Up replaces it, and the title says so. The
   # other way is Stop, not Down: the containers stay for a fast Up
   # again; `down`, which removes them, stays a command of the shell.
-  attr :verb, :string, required: true, values: ~w(up stop)
+  attr :verb, :string, required: true, values: ~w(up stop down)
+  attr :present, :boolean, default: true, doc: "the deployment has containers: what down removes"
   attr :name, :string, required: true
   attr :status, :map, required: true
   attr :busy, :boolean, default: false
@@ -369,9 +378,17 @@ defmodule ConsoleWeb.Board do
 
     why =
       cond do
-        assigns.status["exists"] != true -> "the workspace is empty: Deploy → Project creates one"
-        assigns.busy -> "a job is running"
-        true -> nil
+        assigns.status["exists"] != true ->
+          "the workspace is empty: Deploy → Project creates one"
+
+        assigns.busy ->
+          "a job is running"
+
+        assigns.verb == "down" and not assigns.present ->
+          "nothing to take down: no containers of this deployment"
+
+        true ->
+          nil
       end
 
     replaces = assigns.verb == "up" && running && running != assigns.name
@@ -385,6 +402,9 @@ defmodule ConsoleWeb.Board do
 
             assigns.verb == "stop" ->
               " — stops its containers and keeps them, for a fast Up again"
+
+            assigns.verb == "down" ->
+              " — removes its containers and network; the volumes stay"
 
             true ->
               ""
@@ -400,7 +420,7 @@ defmodule ConsoleWeb.Board do
       phx-click={!@why && "run"}
       phx-value-args={String.replace_prefix(@cmd, "./wb.sh ", "")}
     >
-      {if @verb == "up", do: "Up", else: "Stop"}
+      {%{"up" => "Up", "stop" => "Stop", "down" => "Down"}[@verb]}
     </button>
     """
   end

@@ -171,6 +171,14 @@ defmodule ConsoleWeb.RecordSheet do
                   status={@status}
                   busy={@busy}
                 />
+                <.deploy_button
+                  :if={d.baked}
+                  verb="down"
+                  name={d.deploy}
+                  status={@status}
+                  busy={@busy}
+                  present={d.present}
+                />
               </td>
             </tr>
           </tbody>

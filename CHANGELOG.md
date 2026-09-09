@@ -174,6 +174,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **One reading of the doors, shared by the rail and the Record.** The
+  console calls every open route once when the page comes with
+  something up, when the Record comes in front, when a status arrives
+  with a deployment up — a job the reader ran — and when the reader
+  presses the reload, which now sits on the head of the rail's Services
+  & Doors as well as on the Record's addresses column: never on a clock.
+  What each answered goes on the door's face in both places. Deployments
+  in the rail gains a Bake button per row — `bake` for dev, `build
+  --deploy` for prod and scaled — and the rail opens with Services &
+  Doors, the workspace's own app link gone since the section's first
+  line is that port with its state.
 - **The rail's Inserted is Cartridges, Doors is Services & Doors, and
   Deployments says in sync.** *Cartridges*: the mention, then the
   origin, then the edition, the Record's order. *Deployments* gains the

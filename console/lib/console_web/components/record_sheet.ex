@@ -47,7 +47,7 @@ defmodule ConsoleWeb.RecordSheet do
                 :if={@record.up}
                 class="go"
                 type="button"
-                phx-click="record_read"
+                phx-click="doors_read"
                 aria-busy={to_string(@reads == :asking)}
                 title="call every route again, and read what each answers"
               >

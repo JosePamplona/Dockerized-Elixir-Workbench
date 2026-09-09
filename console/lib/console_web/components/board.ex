@@ -12,6 +12,7 @@ defmodule ConsoleWeb.Board do
 
   attr :catalog, :list, default: []
   attr :folded, :any, default: nil, doc: "the section keys folded away, a MapSet"
+  attr :reads, :any, default: %{}, doc: "what the doors answered when called, by href, or :asking"
 
   attr :reading, :any,
     default: false,
@@ -32,7 +33,7 @@ defmodule ConsoleWeb.Board do
     </section>
     <%= if @status do %>
       <.workspace status={@status} rebind={@rebind} />
-      <.services_doors status={@status} catalog={@catalog} folded={@folded} />
+      <.services_doors status={@status} catalog={@catalog} folded={@folded} reads={@reads} />
       <.git status={@status} folded={@folded} />
       <.deployments status={@status} busy={@busy} folded={@folded} />
       <.containers status={@status} folded={@folded} />
@@ -57,6 +58,7 @@ defmodule ConsoleWeb.Board do
   attr :name, :string, required: true
   attr :label, :string, default: nil
   attr :folded, :any, default: nil
+  slot :inner_block, doc: "a control at the head's right edge, beside the fold"
 
   defp head(assigns) do
     ~H"""
@@ -70,6 +72,7 @@ defmodule ConsoleWeb.Board do
       >
         {@name}<span :if={@label} class="label">{@label}</span>
       </button>
+      {render_slot(@inner_block)}
     </h2>
     """
   end
@@ -123,6 +126,11 @@ defmodule ConsoleWeb.Board do
   # rail calls nothing. Neither fits beside its row's other columns at
   # 380px, which is why they are gathered here and not in Cartridges and
   # Deployments (tried on 2026-09-09).
+  attr :status, :map, required: true
+  attr :catalog, :list, default: []
+  attr :folded, :any, default: nil
+  attr :reads, :any, default: %{}
+
   defp services_doors(assigns) do
     rows = Record.deployments(assigns.status)
     up = assigns.status["deployment"]
@@ -131,7 +139,7 @@ defmodule ConsoleWeb.Board do
 
     doors =
       for c <- Cartridges.installed(assigns.status),
-          a <- Record.addresses(assigns.status, c, entry.(c)),
+          a <- Record.addresses(assigns.status, c, entry.(c), assigns.reads),
           a.kind == "route",
           do: {c, a}
 
@@ -139,6 +147,7 @@ defmodule ConsoleWeb.Board do
       assign(assigns,
         services: deployment.services,
         deployment: up || "dev",
+        up: up != nil,
         doors: doors,
         sum:
           "#{length(deployment.services)} service#{if length(deployment.services) == 1, do: "", else: "s"} · #{length(doors)} door#{if length(doors) == 1, do: "", else: "s"}"
@@ -146,7 +155,27 @@ defmodule ConsoleWeb.Board do
 
     ~H"""
     <section class={folded?(@folded, "doors") && "folded"}>
-      <.head key="doors" name="Services & Doors" label={@sum} folded={@folded} />
+      <.head key="doors" name="Services & Doors" label={@sum} folded={@folded}>
+        <button
+          :if={@up}
+          class="go"
+          type="button"
+          phx-click="doors_read"
+          aria-busy={to_string(@reads == :asking)}
+          title="call every door again, and read what each answers — the Record reads the same"
+        >
+          <.reload /><span class="sr">Call every door again</span>
+        </button>
+        <button
+          :if={!@up}
+          class="go unlit"
+          type="button"
+          aria-disabled="true"
+          title="nothing is up: deploy, and every door is called once and answers in a chip"
+        >
+          <.reload /><span class="sr">Call every door</span>
+        </button>
+      </.head>
       <div class="urls">
         <p :if={@services == [] and @doors == []} class="nothing">
           Nothing answers yet: deploy, and cartridges open doors here — docs, dashboard, mailbox, swagger…
@@ -169,9 +198,23 @@ defmodule ConsoleWeb.Board do
           kind={a.kind}
           port={a.port}
           who={c["name"]}
+          read={a.read}
         />
       </div>
     </section>
+    """
+  end
+
+  defp reload(assigns) do
+    ~H"""
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path
+      d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4h-4"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2.2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    /></svg>
     """
   end
 

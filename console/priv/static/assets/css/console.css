@@ -227,6 +227,12 @@ body.rail-off .grip{display:none}
 
 section h2{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:15px;margin:0 0 10px;display:flex;align-items:baseline;gap:10px}
 section h2 .label{font-weight:500;letter-spacing:.1em}
+/* A control at a head's right edge: the reload of Services & Doors — .fetch's .go, standing alone. */
+section h2 .go{margin-left:auto;display:inline-flex;align-items:center;justify-content:center;width:2em;height:2em;font-size:11px;padding:0;border:1px solid var(--line);border-radius:2px;background:var(--surface-2);color:var(--muted);cursor:pointer;align-self:center}
+section h2 .go:hover{color:var(--ink);background:var(--surface)}
+section h2 .go svg{width:15px;height:15px;display:block}
+section h2 .go[aria-busy="true"]{color:var(--accent);cursor:progress}
+section h2 .go[aria-busy="true"] svg{animation:fetch-turn 1s linear infinite}
 /* The head of a section in the rail is the control that folds it: the
    heading stays a heading and the button inside it takes the whole line,
    which is the accordion a screen reader expects (aria-expanded on the
@@ -254,6 +260,8 @@ section h2 .label{font-weight:500;letter-spacing:.1em}
    eye and must wrap together, so each goes in a .pair — which is also
    what a probe and its reading need. */
 .urls{display:flex;flex-wrap:wrap;gap:9px}
+/* A door and its mention wrap as one pair, and the mention drops a line when the rail is too narrow for both. */
+.urls .pair{display:inline-flex;flex-wrap:wrap;gap:6px;align-items:center;max-width:100%}
 .pair{display:inline-flex;align-items:center;gap:6px;min-width:0}
 
 table.rows{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px}

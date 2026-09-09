@@ -112,6 +112,11 @@ defmodule ConsoleWeb.ConsoleLive do
       )
 
     socket = follow_logs(socket, status)
+    # The rail's doors are read as the page comes, once, when something is up.
+    socket =
+      if (connected?(socket) and status) && status["deployment"],
+        do: ask_doors(socket),
+        else: socket
 
     {:ok, socket, layout: false}
   end
@@ -181,28 +186,30 @@ defmodule ConsoleWeb.ConsoleLive do
 
     socket
     |> assign(ppaper: paper, ppage: Project.render(ws, paper))
-    |> ask_record()
+    |> then(&if(paper == "record", do: ask_doors(&1), else: &1))
   end
 
   defp take_paper(socket, _params), do: socket
 
-  # The Record calls every open route, once, when it comes in front and
-  # when asked again; with nothing up there is nothing to call.
-  defp ask_record(%{assigns: %{ppaper: "record"}} = socket) do
+  # One reading of the doors for the whole page — the rail's Services &
+  # Doors and the Record's addresses share it. Every open route is
+  # called once, when the Record comes in front, when a status arrives
+  # with something up (a job the reader ran), and when the reader
+  # presses the reload on either: never on a clock. With nothing up
+  # there is nothing to call.
+  defp ask_doors(socket) do
     page = Record.page(socket.assigns.status, socket.assigns.catalog)
 
     case page && page.up && Record.hrefs(page) do
       hrefs when is_list(hrefs) and hrefs != [] ->
         socket
         |> assign(preads: :asking)
-        |> start_async({:record, :read}, fn -> Doors.read(hrefs) end)
+        |> start_async({:doors, :read}, fn -> Doors.read(hrefs) end)
 
       _ ->
         assign(socket, preads: %{})
     end
   end
-
-  defp ask_record(socket), do: socket
 
   # Which reading of the shelf: /shelf?doc=base. Named in the URL by the
   # row; kept as it was when a link does not name it — a box opening
@@ -247,6 +254,12 @@ defmodule ConsoleWeb.ConsoleLive do
       |> Git.read(true)
       |> reread_paper(moved?)
       |> reask_diff(moved?)
+      |> then(
+        &if(connected?(&1) and status["deployment"],
+          do: ask_doors(&1),
+          else: assign(&1, preads: %{})
+        )
+      )
 
     {:noreply, socket}
   end
@@ -378,10 +391,10 @@ defmodule ConsoleWeb.ConsoleLive do
       {:noreply,
        assign(socket, probes: Map.put(socket.assigns.probes, key, ["failed: " <> inspect(why)]))}
 
-  def handle_async({:record, :read}, {:ok, reads}, socket),
+  def handle_async({:doors, :read}, {:ok, reads}, socket),
     do: {:noreply, assign(socket, preads: reads)}
 
-  def handle_async({:record, :read}, {:exit, _}, socket),
+  def handle_async({:doors, :read}, {:exit, _}, socket),
     do: {:noreply, assign(socket, preads: %{})}
 
   def handle_async({:diff, _} = key, result, socket), do: Hand.async(key, result, socket)
@@ -497,7 +510,7 @@ defmodule ConsoleWeb.ConsoleLive do
     do: Drawer.event("installers_ask", params, socket)
 
   # --- the cluster's probes, run by the console ---
-  def handle_event("record_read", _params, socket), do: {:noreply, ask_record(socket)}
+  def handle_event("doors_read", _params, socket), do: {:noreply, ask_doors(socket)}
 
   def handle_event("probe", %{"key" => key}, socket) when key in ~w(answers peers) do
     status = socket.assigns.status
@@ -804,6 +817,7 @@ defmodule ConsoleWeb.ConsoleLive do
           status={@status}
           rebind={@rebind}
           catalog={@catalog}
+          reads={@preads}
           reading={@reading}
           busy={@busy}
           error={@error}

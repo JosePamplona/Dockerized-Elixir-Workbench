@@ -1288,7 +1288,6 @@ span.fact input{accent-color:var(--accent);width:14px;height:14px;margin:0;verti
 /* The box's cap is the reader's, as a job's: the grip under it moves --job-out, 60vh until dragged. */
 .record .fsheet pre.env.yaml{margin:0;max-height:var(--job-out,60vh)}
 .record .fsheet .ograb{margin:-4px 0 0}
-.record table.rows.deps td.act .btn+.btn{margin-left:6px}
 .record table.rows.deps .drift{display:inline-flex;flex-wrap:wrap;gap:6px;vertical-align:middle}
 
 /* --- figures: a hint on hover, a viewer on click --------------------------- */

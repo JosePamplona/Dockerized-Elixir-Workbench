@@ -20,6 +20,7 @@ defmodule ConsoleWeb.ProjectScreen do
   attr :status, :map, default: nil
   attr :gt, :map, default: nil, doc: "the git papers' state, ConsoleWeb.ConsoleLive.Git"
   attr :jobs, :list, default: []
+  attr :busy, :boolean, default: false, doc: "a deploy job is in flight"
 
   def project_screen(assigns) do
     ~H"""
@@ -54,7 +55,13 @@ defmodule ConsoleWeb.ProjectScreen do
         </nav>
       </div>
       <pre :if={@page && @page[:env]} class="env"><%= for line <- @page.env do %><.env_line line={line} /><% end %></pre>
-      <.record_sheet :if={@page && @page[:record] && @record} record={@record} reads={@reads} />
+      <.record_sheet
+        :if={@page && @page[:record] && @record}
+        record={@record}
+        reads={@reads}
+        status={@status}
+        busy={@busy}
+      />
       <div :if={@page && @page[:git] && @gt} class="dkdoc git">
         <.git_pending :if={@page[:git] == "pending"} gt={@gt} status={@status} jobs={@jobs} />
         <.git_history :if={@page[:git] == "history"} gt={@gt} status={@status} />

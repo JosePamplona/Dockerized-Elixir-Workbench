@@ -910,6 +910,7 @@ defmodule ConsoleWeb.ConsoleLive do
               status={@status}
               gt={@gt}
               jobs={@jobs}
+              busy={@busy}
             />
           </section>
 

@@ -8,9 +8,12 @@ defmodule ConsoleWeb.RecordSheet do
   use Phoenix.Component
   import ConsoleWeb.Refs
   import ConsoleWeb.Shelf, only: [front: 1]
+  import ConsoleWeb.Board, only: [bake_button: 1, deploy_button: 1]
 
   attr :record, :map, required: true
   attr :reads, :any, required: true
+  attr :status, :map, default: nil
+  attr :busy, :boolean, default: false, doc: "a deploy job is in flight"
 
   def record_sheet(assigns) do
     ~H"""
@@ -102,6 +105,7 @@ defmodule ConsoleWeb.RecordSheet do
               <th title="the services the compose file declares; with the deployment up, what docker compose ps says of each">
                 services
               </th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -151,6 +155,23 @@ defmodule ConsoleWeb.RecordSheet do
                 <.chip :if={d.status == "down"} class="off">down</.chip>
               </td>
               <td><span class="pairs"><.address :for={a <- d.services} a={a} /></span></td>
+              <td class="act">
+                <.bake_button name={d.deploy} status={@status} busy={@busy} baked={d.baked} />
+                <.deploy_button
+                  :if={d.status == "up"}
+                  verb="down"
+                  name={d.deploy}
+                  status={@status}
+                  busy={@busy}
+                />
+                <.deploy_button
+                  :if={d.status != "up" and d.baked}
+                  verb="up"
+                  name={d.deploy}
+                  status={@status}
+                  busy={@busy}
+                />
+              </td>
             </tr>
           </tbody>
         </table>

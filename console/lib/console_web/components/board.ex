@@ -308,7 +308,12 @@ defmodule ConsoleWeb.Board do
   # which is where wb.sh bakes those two, and builds the release image
   # they share on the way. Always there: a file in sync can be baked
   # again, and one not baked yet is what this makes.
-  defp bake_button(assigns) do
+  attr :name, :string, required: true
+  attr :status, :map, required: true
+  attr :busy, :boolean, default: false
+  attr :baked, :boolean, default: false
+
+  def bake_button(assigns) do
     verb = if assigns.name == "dev", do: "bake", else: "build"
     cmd = ConsoleWeb.Deploy.cmdline(verb, assigns.name, "")
 
@@ -351,7 +356,12 @@ defmodule ConsoleWeb.Board do
   # The row's one action, in the row's own words. Only two things stop
   # it — nothing to deploy into, a job in flight. Another deployment up
   # is the ordinary case: Up replaces it, and the title says so.
-  defp deploy_button(assigns) do
+  attr :verb, :string, required: true, values: ~w(up down)
+  attr :name, :string, required: true
+  attr :status, :map, required: true
+  attr :busy, :boolean, default: false
+
+  def deploy_button(assigns) do
     running = assigns.status["deployment"]
     cmd = ConsoleWeb.Deploy.cmdline(assigns.verb, assigns.name, "")
 

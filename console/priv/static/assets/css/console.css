@@ -1267,6 +1267,8 @@ span.fact input{accent-color:var(--accent);width:14px;height:14px;margin:0;verti
 .record table.rows.deps tbody tr:first-child td{border-top:0}
 .record table.rows.deps td.k{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px;width:90px}
 .record table.rows.deps td.sync{white-space:normal}
+.record table.rows.deps td.act{white-space:nowrap;text-align:left;padding-right:0}
+.record table.rows.deps td.act .btn+.btn{margin-left:6px}
 .record table.rows.deps .drift{display:inline-flex;flex-wrap:wrap;gap:6px;vertical-align:middle;margin-left:8px}
 
 /* --- figures: a hint on hover, a viewer on click --------------------------- */

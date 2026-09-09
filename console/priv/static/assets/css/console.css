@@ -269,7 +269,9 @@ section h2 .go[aria-busy="true"] svg{animation:knock-ring .6s ease-in-out infini
    they sit. A door and the cartridge that opened it are one thing to the
    eye and must wrap together, so each goes in a .pair — which is also
    what a probe and its reading need. */
-.urls{display:flex;flex-wrap:wrap;gap:9px}
+/* One address a line: a list is read down, a row is scanned, and the rail
+   is read — who answers where, and what it said. */
+.urls{display:grid;justify-items:start;gap:8px}
 /* A door and its mention wrap as one pair, and the mention drops a line when the rail is too narrow for both. */
 .urls .pair{display:inline-flex;flex-wrap:wrap;gap:6px;align-items:center;max-width:100%}
 .pair{display:inline-flex;align-items:center;gap:6px;min-width:0}

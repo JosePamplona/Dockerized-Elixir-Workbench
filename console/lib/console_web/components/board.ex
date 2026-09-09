@@ -32,8 +32,8 @@ defmodule ConsoleWeb.Board do
     </section>
     <%= if @status do %>
       <.workspace status={@status} rebind={@rebind} />
-      <.git status={@status} folded={@folded} />
       <.services_doors status={@status} catalog={@catalog} folded={@folded} />
+      <.git status={@status} folded={@folded} />
       <.deployments status={@status} busy={@busy} folded={@folded} />
       <.containers status={@status} folded={@folded} />
       <.inserted status={@status} catalog={@catalog} folded={@folded} />
@@ -111,29 +111,6 @@ defmodule ConsoleWeb.Board do
           Start again
         </button>
       </p>
-      <div class="urls">
-        <.door_ref
-          :if={@status["ports"]["app"]}
-          label="app"
-          kind="port"
-          path={"localhost:#{@status["ports"]["app"]}"}
-          href={"http://localhost:#{@status["ports"]["app"]}"}
-        />
-        <.door_ref
-          :if={@status["ports"]["pgadmin"]}
-          label="pgAdmin"
-          kind="port"
-          path={"localhost:#{@status["ports"]["pgadmin"]}"}
-          href={"http://localhost:#{@status["ports"]["pgadmin"]}"}
-        />
-        <.door_ref
-          :if={@status["ports"]["grafana"]}
-          label="Grafana"
-          kind="port"
-          path={"localhost:#{@status["ports"]["grafana"]}"}
-          href={"http://localhost:#{@status["ports"]["grafana"]}"}
-        />
-      </div>
     </section>
     """
   end

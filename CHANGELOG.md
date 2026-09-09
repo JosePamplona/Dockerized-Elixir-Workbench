@@ -16,6 +16,32 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **A decision page for the Project tab's Record paper.**
+  `console/el-estado-del-proyecto.html`, drawn on `_workspaces/test_001`
+  as it stood on 2026-09-08, settles where a project's state is read and
+  shown. The finding: there is no state file — the truth is the
+  project's own code and git, Dockerfile.local, the baked composes and
+  Docker, joined only by `status --json` — and the Deploy card had been
+  mixing that with config.conf's intention. The paper, **Record**, first
+  on the Project ribbon and drawn off the status like Doors was: *Birth*,
+  read off the first commit and never inferred (the toolchain and
+  installer stamped in Dockerfile.local, the `mix phx.new` command and
+  each flag with its value, phx.new's own words and the base cartridge
+  that owns it, a warn `now …` where a fact has moved since);
+  *Cartridges*, the shelf's own row plus the installation parameters as
+  `add` flags and every address the cartridge opens; *Deployments*, the
+  console first and then dev, prod and scaled with their compose file's
+  state, whether it is in sync with what the cartridges ask for, and
+  their services. What it decided on the way: doors and probes are one
+  face — `probes:` leaves the manifest, since the project owes the
+  workbench nothing — with the reading attached inside the border and
+  an 8px square for the layer (a port the compose publishes, a route
+  the project offers, the console); a `.commit-ref` for every sha,
+  opening History on that commit; Git's two documents fold into the
+  Project tab; the service is named by its role, `database`; and
+  test_001's prod compose is out of sync for real — it still declares
+  prometheus and grafana after monitoring's revert, which
+  `compose_behind` cannot see because it only compares dev.
 - **Monitoring: PromEx, Prometheus and Grafana.** Step 5 of
   `scripts/PLAN.md`, the **monitoring** cartridge. In the app, `prom_ex`
   and a `MyApp.PromEx` module with the plugins the project's shape calls

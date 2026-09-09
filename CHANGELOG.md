@@ -134,6 +134,26 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **The address component: one face, the layer as a square, the reading
+  attached.** `.door-ref` in the design system now says which layer
+  answers at an address — an 8px square before the label, the mark the
+  logs' service filter already uses: violet (`addr-route`) for a route
+  the project offers on the app's port, blue (`addr-port`) for a port
+  the compose publishes, gold (`svc-console`) for the console itself,
+  the accent's focal-node use — and carries what the address answered
+  *inside* its border, at the right edge, as the chip's plate behind the
+  box's own line, so a reading in a wrapping row can never drift to the
+  wrong door. A route is written on its port, `:4001/dev/mailbox`. The
+  three roles join `tokens.json`; `Refs.door_ref/1` takes `kind`, `port`
+  and `read`; the rail's and Doors' own addresses are ports. `.probe-ref`
+  is gone from `components.css` with the probe itself, and
+  `assets/design/puertas-y-sondas.html` — the page that split door from
+  probe on the premise that nobody presses a probe — is superseded by
+  the Record paper's finding that the premise was false. New beside the
+  two references: `.commit-ref`, a mention of a commit — the short sha,
+  boxed because it opens History on that commit with its diff, the
+  subject and date in the title — and `Refs.commit_ref/1`, for every
+  place a sha was written by hand.
 - **The daemon is set as code, a key a line.** Docker's version and
   platform, the host's CPUs and memory, the storage driver and its root,
   the OS and the kernel sat in one sentence, a note at the toolbar's

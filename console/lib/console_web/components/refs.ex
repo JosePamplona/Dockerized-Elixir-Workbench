@@ -34,9 +34,15 @@ defmodule ConsoleWeb.Refs do
   end
 
   @doc """
-  An address on the app's port: the label first, then the address in
-  mono. Who opened it goes beside as a mention, never inside. `why` is
-  the reason there is nothing to press, and it takes the href with it.
+  An address: the label first, then the address in mono. Who opened it
+  goes beside as a mention, never inside. `why` is the reason there is
+  nothing to press, and it takes the href with it. `kind` is the layer
+  the square before the label says — `"route"` (the project's, on the
+  app's port), `"port"` (the compose's), `"console"` (the workbench's
+  own). `port` writes a route on its port, `:4001/dev/mailbox`, the port
+  dimmed. `read` is what the address answered when the console called
+  it, `{text, chip class}`, attached inside the border; nil when nothing
+  called it.
   """
   attr :label, :string, required: true
   attr :path, :string, required: true
@@ -44,6 +50,9 @@ defmodule ConsoleWeb.Refs do
   attr :who, :string, default: nil
   attr :who_installed, :boolean, default: true
   attr :why, :string, default: nil
+  attr :kind, :string, default: "route", values: ~w(route port console)
+  attr :port, :any, default: nil
+  attr :read, :any, default: nil
 
   def door_ref(assigns) do
     assigns = assign(assigns, open: assigns.href && !assigns.why)
@@ -52,12 +61,12 @@ defmodule ConsoleWeb.Refs do
     <span class="pair">
       <a
         :if={@open}
-        class="door-ref"
+        class={["door-ref", @kind]}
         href={@href}
         target="_blank"
         title={door_title(@who, @path, @why)}
-      ><b>{@label}</b><span>{@path}</span></a>
-      <span :if={!@open} class={["door-ref", @why && "unlit"]} title={door_title(@who, @path, @why)}><b>{@label}</b><span>{@path}</span></span>
+      ><b>{@label}</b><span><em :if={@port}>:{@port}</em>{@path}</span><i :if={@read} class={["read", elem(@read, 1)]}>{elem(@read, 0)}</i></a>
+      <span :if={!@open} class={["door-ref", @kind, @why && "unlit"]} title={door_title(@who, @path, @why)}><b>{@label}</b><span><em :if={@port}>:{@port}</em>{@path}</span><i :if={@read} class={["read", elem(@read, 1)]}>{elem(@read, 0)}</i></span>
       <.cart_ref :if={@who} name={@who} installed={@who_installed} />
     </span>
     """
@@ -65,6 +74,24 @@ defmodule ConsoleWeb.Refs do
 
   defp door_title(who, path, why),
     do: Enum.join(Enum.reject([who && "#{who}:", path, why && "— #{why}"], &(!&1)), " ")
+
+  @doc """
+  A mention of a commit: the short sha, boxed because it opens History on
+  that commit with its diff, the subject and date in the title.
+  """
+  attr :sha, :string, required: true
+  attr :subject, :string, default: nil
+  attr :date, :string, default: nil
+
+  def commit_ref(assigns) do
+    ~H"""
+    <.link
+      class="commit-ref"
+      patch={"/project?paper=history&commit=#{@sha}"}
+      title={Enum.join(Enum.reject([@subject, @date], &is_nil/1), " · ") <> " — open in History, with its diff"}
+    >{String.slice(@sha, 0, 7)}</.link>
+    """
+  end
 
   @doc "A reading the console reports."
   attr :class, :string, default: nil

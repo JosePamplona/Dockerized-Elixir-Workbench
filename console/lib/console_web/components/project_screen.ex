@@ -97,7 +97,7 @@ defmodule ConsoleWeb.ProjectScreen do
         </h3>
         <div class="urls">
           <span :for={d <- @doors.own} class="call">
-            <.door_ref label={d.label} path={d.path} href={d.href} why={!d.href && "the app is down"} />
+            <.door_ref label={d.label} path={d.path} href={d.href} why={!d.href && "the app is down"} kind="port" />
             <.reading reads={@reads} href={d.href} />
           </span>
         </div>

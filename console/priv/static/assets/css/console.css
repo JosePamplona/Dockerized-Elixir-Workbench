@@ -249,7 +249,7 @@ section h2 .label{font-weight:500;letter-spacing:.1em}
 .ws .name{font-family:var(--cond);font-weight:700;font-size:30px;letter-spacing:.02em;line-height:1;margin:0;overflow-wrap:anywhere}
 .ws .path{color:var(--muted)}
 /* The addresses on the app's port. What they look like is the house's
-   (.door-ref, .probe-ref in components.css); what is left here is where
+   (.door-ref in components.css); what is left here is where
    they sit. A door and the cartridge that opened it are one thing to the
    eye and must wrap together, so each goes in a .pair — which is also
    what a probe and its reading need. */
@@ -307,7 +307,7 @@ table.rows td .hint{display:block;font-size:11.5px;color:var(--muted);margin-top
    empty cell holds the place for the rows that have no action. */
 table.rows td.act{width:var(--act);white-space:nowrap;text-align:right}
 table.rows td .btn.mini{padding:2px 8px;font-size:11px;vertical-align:middle}
-/* .chip, .cart-ref, .door-ref and .probe-ref are the house's notation:
+/* .chip, .cart-ref, .door-ref and .commit-ref are the house's notation:
    all four come in generated, from assets/design/generated/components.css.
    The chip used to be written here by hand, which is how it drifted into
    being the mention's declaration exactly — nobody was watching two files

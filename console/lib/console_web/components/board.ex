@@ -115,18 +115,21 @@ defmodule ConsoleWeb.Board do
         <.door_ref
           :if={@status["ports"]["app"]}
           label="app"
+          kind="port"
           path={"localhost:#{@status["ports"]["app"]}"}
           href={"http://localhost:#{@status["ports"]["app"]}"}
         />
         <.door_ref
           :if={@status["ports"]["pgadmin"]}
           label="pgAdmin"
+          kind="port"
           path={"localhost:#{@status["ports"]["pgadmin"]}"}
           href={"http://localhost:#{@status["ports"]["pgadmin"]}"}
         />
         <.door_ref
           :if={@status["ports"]["grafana"]}
           label="Grafana"
+          kind="port"
           path={"localhost:#{@status["ports"]["grafana"]}"}
           href={"http://localhost:#{@status["ports"]["grafana"]}"}
         />

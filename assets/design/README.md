@@ -12,7 +12,7 @@ assets/design/
 ├── build.py                ./assets/design/build.py [--check], from the repository root
 └── generated/              projections; every one says it is generated
     ├── tokens.css          custom properties for the console (light, dark by media query, dark by data-theme)
-    ├── components.css      the house's notation: the mention, the door, the probe, the chip, the seal
+    ├── components.css      the house's notation: the mention, the door, the commit, the chip, the seal
     └── diagram-design.md   the diagram-design skill's style guide; also installed as the
                             profile ~/.diagram-design/profiles/workbench.md that the
                             repository's .diagram-design marker names
@@ -60,27 +60,47 @@ one: a bordered box is a door you press.
   (inserted: good dot), `.unknown` (no such cartridge: dashed, struck,
   no link). It never wears the gold. A printed back plate uses the bare
   form — a plate knows no project.
-* **`.door-ref`** — an address on the app's port that a cartridge opened
-  (`/dev/docs`, `/dev/mailbox`, `/admin`). One order wherever it is read:
-  the label first, in the house's lettering because it is a name, then
-  the address in mono because it is read off the machine. Who opened it
-  is never inside it — that is a mention, so it goes beside as a
-  `.cart-ref` and opens that box with the same click. It has no states of
-  its own: pressable while something answers, `.unlit` with the reason in
-  the title when nothing does, and an unlit door drops its `href` too,
-  since `.unlit` dims a link but cannot stop one. The addresses the
-  workbench opens itself (`app`, `pgAdmin`) wear it with nothing beside
-  them: having nobody to name is the fact.
-* **`.probe-ref`** — the same address when the console is the one calling
-  it (healthcheck2's `{path}/live`). It is the door minus the box — no
-  border, no ground, no cursor — because the line already drawn between
-  the chip and the mention holds one floor down: a bordered box is a door
-  you press, and nobody presses a probe. What it answered goes beside it
-  in a `.chip`. `assets/design/puertas-y-sondas.html` is the page the two
-  were decided on, with the five candidates and the finding that started
-  it: the same door was drawn one way in the rail and another on the box,
-  and the `<small>` meant the cartridge in one and the door's own name in
-  the other.
+* **`.door-ref`** — an address: a route the project offers on the app's
+  port (`/dev/docs`, `/dev/mailbox`, healthcheck2's `{path}/live`) or a
+  port the compose publishes for a service (`localhost:4001`,
+  `database:5432`). One order wherever it is read: the label first, in
+  the house's lettering because it is a name, then the address in mono
+  because it is read off the machine. Who opened it is never inside it —
+  that is a mention, so it goes beside as a `.cart-ref` and opens that
+  box with the same click. It has no states of its own: pressable while
+  something answers, `.unlit` with the reason in the title when nothing
+  does, and an unlit door drops its `href` too, since `.unlit` dims a
+  link but cannot stop one. The addresses the workbench opens itself
+  (`app`) wear it with nothing beside them: having nobody to name is the
+  fact.
+  Two things ride on it, both decided on 2026-09-08 over the Record paper
+  (`console/el-estado-del-proyecto.html`). **The layer**, as the 8px
+  square the logs' service filter already uses, before the label: violet
+  (`addr-route`) for a route the project offers, blue (`addr-port`) for a
+  port the compose publishes, gold (`svc-console`) for the console itself
+  — the page being read, the accent's focal-node use. A route is written
+  on its port, `:4001/dev/mailbox` with the port dimmed, because it rides
+  on one; a port is written whole. **The reading**, what answered when
+  it was called, attached *inside* the border at the right edge — the
+  chip's plate and voice behind the box's own 1px line, so a reading in a
+  wrapping row can never drift to the wrong door. A route answers an
+  HTTP code, a port what its healthcheck said (`healthy`, `running`);
+  nothing when nothing called it. It is the one place a chip's plate sits
+  inside a pressable box: the box's face, not a target of its own.
+  There is no probe any more. `.probe-ref` was the door minus the box for
+  "an address the console polls", and nothing ever polled: the project
+  owes the workbench nothing, a health endpoint is a route it has for its
+  own reasons, and the console reads it and calls it like any other door.
+  `assets/design/puertas-y-sondas.html`, the page that had split the two,
+  retires with it; its finding — the same door drawn one way in the rail
+  and another on the box — stays true and is what `.door-ref` fixed.
+* **`.commit-ref`** — a mention of a commit, the third reference beside
+  the cartridge and the door: the short sha in mono, in a 1px box because
+  it is pressed — it opens History on that commit with its diff — and
+  with no dot, because a commit has no state to mark. The subject and the
+  date go in the title. Wherever a sha is written: the Record's birth,
+  the origin chip, the rail's HEAD, History's own rows. Not on a ribbon's
+  sublabel, which is small text and no box.
 * **`.chip`** — a reading the console reports: a container's health, a
   job's exit code, the edition of a box. Roles: bare (a fact with no
   state — `v0.2.0`, `base`, `collection`), `.good`/`.warn`/`.bad` (a
@@ -173,7 +193,8 @@ one: a bordered box is a door you press.
 * **`.stamp`** — the golden state seal (`INSERTED`): the accent plate
   in condensed uppercase, tilted by whoever places it. This is one of
   the accent's three canonical uses (a control the reader acts on, a stamp,
-  a focal node),
+  a focal node — the console's own square on an address is this third one:
+  the page being read, marked gold once),
   and why nothing else is gold — and why a chip's plate is a tint and
   never a saturated fill: nothing may compete with the seal.
 
@@ -194,8 +215,8 @@ one place instead of six.
 **The state on the band.** The band's middle says what the console is
 doing: a dot and a word, mono in lower case — `idle`, `up dev`, `reading
 the cartridges…`, `waiting for your word`, `no connection`. It is the
-chip's grammar with the plate taken off, the move `.probe-ref` already
-made on `.door-ref`: nobody presses it, so it has no box. The dot pulses
+chip's grammar with the plate taken off: nobody presses it, so it has no
+box. The dot pulses
 only while something is moving, which is what `.chip.busy`'s dot means,
 and the last of those five is written in CSS on the class LiveView puts
 on the page when the socket goes — a server that cannot be reached cannot

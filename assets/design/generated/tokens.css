@@ -42,6 +42,9 @@
   --svc-network:#9A8FA3;
   --svc-balancer:#E0955A;
   --svc-migrate:#C9A0DC;
+  --svc-console:#9A7A3E;
+  --addr-port:#3F6FA8;
+  --addr-route:#6E3E8C;
   --cond:"Barlow Condensed","Arial Narrow", Impact, sans-serif;
   --serif:"Source Serif 4",Georgia, "Times New Roman", serif;
   --mono:"IBM Plex Mono",ui-monospace, "SF Mono", Menlo, monospace;
@@ -82,6 +85,9 @@
     --ansi-blue:#8FB8F0;
     --ansi-magenta:#D3A6E8;
     --ansi-cyan:#8FDCD8;
+    --svc-console:#D4B27E;
+    --addr-port:#8DBBE8;
+    --addr-route:#BE9BDE;
   }
 }
 :root[data-theme="dark"]{
@@ -119,4 +125,7 @@
   --ansi-blue:#8FB8F0;
   --ansi-magenta:#D3A6E8;
   --ansi-cyan:#8FDCD8;
+  --svc-console:#D4B27E;
+  --addr-port:#8DBBE8;
+  --addr-route:#BE9BDE;
 }

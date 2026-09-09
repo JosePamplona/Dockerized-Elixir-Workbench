@@ -9,8 +9,8 @@ defmodule ConsoleWeb.Band do
   What the console is doing, in the band's middle: a dot and a word.
 
   One place, always in front — the tray is per screen and the rail can be
-  hidden. It is the chip's grammar minus the plate, the same move the
-  probe made on the door: nobody presses this, so it has no box. Mono in
+  hidden. It is the chip's grammar minus the plate: nobody presses this,
+  so it has no box. Mono in
   lower case, because everything here is read off the machine.
 
   The order is the order of what matters: your word first, since it is the

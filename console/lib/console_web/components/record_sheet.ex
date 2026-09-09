@@ -103,6 +103,7 @@ defmodule ConsoleWeb.RecordSheet do
           <thead>
             <tr>
               <th></th>
+              <th title="the compose file the deployment is baked into">name</th>
               <th title="the deployment's compose file, baked into the workspace, out of sync with the project, or not baked yet">
                 file
               </th>
@@ -119,6 +120,7 @@ defmodule ConsoleWeb.RecordSheet do
           <tbody>
             <tr :for={d <- @record.deployments}>
               <td class="k">{d.deploy}</td>
+              <td class="fname"><span class={["argv", !d.baked && "dflt"]}>{d.file}</span></td>
               <td class="file">
                 <.chip :if={!d.baked} class="off" title={"up --deploy #{d.deploy} bakes it"}>
                   not baked

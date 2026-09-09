@@ -382,6 +382,7 @@ defmodule ConsoleWeb.Record do
 
       %{
         deploy: deploy,
+        file: @files[deploy],
         baked: baked,
         present: present,
         in_sync: d["in_sync"],

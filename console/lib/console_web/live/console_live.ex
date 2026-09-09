@@ -79,7 +79,6 @@ defmodule ConsoleWeb.ConsoleLive do
         diff: nil,
         face: "front",
         ppaper: "record",
-        pconsole: nil,
         ppage: nil,
         preads: %{},
         wb: nil,
@@ -182,7 +181,6 @@ defmodule ConsoleWeb.ConsoleLive do
 
     socket
     |> assign(ppaper: paper, ppage: Project.render(ws, paper))
-    |> assign(pconsole: if(paper == "record", do: Console.Docker.card("workbench_console")))
     |> ask_record()
   end
 
@@ -892,7 +890,7 @@ defmodule ConsoleWeb.ConsoleLive do
               carried={Project.carried(@status)}
               paper={@ppaper}
               page={@ppage}
-              record={@ppaper == "record" && Record.page(@status, @catalog, @preads, @pconsole)}
+              record={@ppaper == "record" && Record.page(@status, @catalog, @preads)}
               reads={@preads}
               birth={get_in(@status || %{}, ["project", "birth", "sha"])}
               status={@status}

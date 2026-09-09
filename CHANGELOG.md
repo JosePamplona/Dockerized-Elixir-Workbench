@@ -29,16 +29,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   address the cartridge opens, a route on the app's port with what it
   answered when the console called, or the port of the service it asks
   for with what `docker compose ps` says of it; the reload button in the
-  column's head calls every route again. *Deployments*: the console
-  first — the workbench's own container, gold, mounted on this
-  workspace — then dev, prod and scaled, each with its compose file
+  column's head calls every route again. *Deployments*: dev, prod and
+  scaled, each with its compose file
   baked, out of sync or not baked, the in-sync check with what is stray
   or missing, up or down, and its services as ports. `ConsoleWeb.Record`
   is the plan, `ConsoleWeb.RecordSheet` the sheet; Doors, the paper,
   retires into it, and `ConsoleWeb.Doors` keeps only the call. The
   ribbon reads Record · .env · README · CHANGELOG, Record's sublabel the
   first commit's sha. The layer classes on `.door-ref` are `door-route`,
-  `door-port` and `door-console`, prefixed because `.console` is the
+  and `door-port`, prefixed because `.console` is the
   LiveView console's own root.
 - **`mix workbench.status` publishes the birth and the deployments.** Two
   more facts the Record paper reads, both from what the project already
@@ -202,12 +201,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   answers at an address — an 8px square before the label, the mark the
   logs' service filter already uses: violet (`addr-route`) for a route
   the project offers on the app's port, blue (`addr-port`) for a port
-  the compose publishes, gold (`svc-console`) for the console itself,
-  the accent's focal-node use — and carries what the address answered
+  the compose publishes — and carries what the address answered
   *inside* its border, at the right edge, as the chip's plate behind the
   box's own line, so a reading in a wrapping row can never drift to the
   wrong door. A route is written on its port, `:4001/dev/mailbox`. The
-  three roles join `tokens.json`; `Refs.door_ref/1` takes `kind`, `port`
+  two roles join `tokens.json`; `Refs.door_ref/1` takes `kind`, `port`
   and `read`; the rail's and Doors' own addresses are ports. `.probe-ref`
   is gone from `components.css` with the probe itself, and
   `assets/design/puertas-y-sondas.html` — the page that split door from

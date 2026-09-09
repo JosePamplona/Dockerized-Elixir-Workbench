@@ -77,8 +77,7 @@ one: a bordered box is a door you press.
   (`console/el-estado-del-proyecto.html`). **The layer**, as the 8px
   square the logs' service filter already uses, before the label: violet
   (`addr-route`) for a route the project offers, blue (`addr-port`) for a
-  port the compose publishes, gold (`svc-console`) for the console itself
-  — the page being read, the accent's focal-node use. A route is written
+  port the compose publishes. A route is written
   on its port, `:4001/dev/mailbox` with the port dimmed, because it rides
   on one; a port is written whole. **The reading**, what answered when
   it was called, attached *inside* the border at the right edge — the
@@ -193,8 +192,7 @@ one: a bordered box is a door you press.
 * **`.stamp`** — the golden state seal (`INSERTED`): the accent plate
   in condensed uppercase, tilted by whoever places it. This is one of
   the accent's three canonical uses (a control the reader acts on, a stamp,
-  a focal node — the console's own square on an address is this third one:
-  the page being read, marked gold once),
+  a focal node),
   and why nothing else is gold — and why a chip's plate is a tint and
   never a saturated fill: nothing may compete with the seal.
 

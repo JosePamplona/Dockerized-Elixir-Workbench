@@ -12,8 +12,9 @@ defmodule ConsoleWeb.Record do
   each opens: a route on the app's port. The *deployments* are the
   compose files beside the project, `project.deployments`: baked, in
   sync with what the cartridges ask for, up, and their services as
-  ports with what `docker compose ps` says of each; the console itself
-  first, the workbench's own container, mounted on this workspace.
+  ports with what `docker compose ps` says of each. The console itself
+  had a row here for a day and went (2026-09-09): not a deployment, and
+  nothing it said was not evident from reading the page on it.
 
   Every address is one face, `.door-ref`, with the reading attached: a
   route answers an HTTP code when the console calls it (`read/1`), a
@@ -65,15 +66,13 @@ defmodule ConsoleWeb.Record do
   @doc """
   The plan, off the status and the catalog: nil without a project.
   `reads` is what the console's last call answered, by href, or
-  `:asking`; `console` is the console's own container as
-  `Console.Docker.card/1` describes it, or nil when the console runs
-  by hand.
+  `:asking`.
   """
-  def page(status, catalog, reads \\ %{}, console \\ nil)
-  def page(nil, _catalog, _reads, _console), do: nil
-  def page(%{"exists" => false}, _catalog, _reads, _console), do: nil
+  def page(status, catalog, reads \\ %{})
+  def page(nil, _catalog, _reads), do: nil
+  def page(%{"exists" => false}, _catalog, _reads), do: nil
 
-  def page(status, catalog, reads, console) do
+  def page(status, catalog, reads) do
     project = status["project"] || %{}
     port = get_in(status, ["ports", "app"])
     up = Cartridges.app_up?(status)
@@ -84,8 +83,7 @@ defmodule ConsoleWeb.Record do
       up: up,
       birth: birth(project, status),
       cartridges: cartridges(status, catalog, port, up, reads),
-      deployments: deployments(status, project),
-      console: console_row(console)
+      deployments: deployments(status, project)
     }
   end
 
@@ -463,41 +461,6 @@ defmodule ConsoleWeb.Record do
       _ ->
         %{}
     end
-  end
-
-  # The console: the workbench's own container, a docker run outside the compose.
-  defp console_row(nil), do: nil
-
-  defp console_row(card) do
-    port =
-      card.ports
-      |> Enum.find_value(fn p ->
-        case String.split(p, "→") do
-          [host, "4000"] -> host
-          _ -> nil
-        end
-      end)
-
-    mount =
-      Enum.find_value(
-        card.env,
-        &(String.starts_with?(&1, "WORKSPACE_MOUNT_PATH=") &&
-            String.replace_prefix(&1, "WORKSPACE_MOUNT_PATH=", ""))
-      )
-
-    state = card.state || ""
-
-    %{
-      label: "console",
-      path: "localhost:#{port}",
-      kind: "console",
-      port: nil,
-      href: port && "http://localhost:#{port}",
-      why: nil,
-      read: {state, if(state == "running", do: "good", else: "bad")},
-      image: card.image,
-      mount: mount
-    }
   end
 
   @doc "The addresses of a plan the console can call: every open route."

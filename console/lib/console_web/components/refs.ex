@@ -38,8 +38,8 @@ defmodule ConsoleWeb.Refs do
   goes beside as a mention, never inside. `why` is the reason there is
   nothing to press, and it takes the href with it. `kind` is the layer
   the square before the label says — `"route"` (the project's, on the
-  app's port), `"port"` (the compose's), `"console"` (the workbench's
-  own). `port` writes a route on its port, `:4001/dev/mailbox`, the port
+  app's port), `"port"` (the compose's). `port` writes a route on its
+  port, `:4001/dev/mailbox`, the port
   dimmed. `read` is what the address answered when the console called
   it, `{text, chip class}`, attached inside the border; nil when nothing
   called it.
@@ -50,7 +50,7 @@ defmodule ConsoleWeb.Refs do
   attr :who, :string, default: nil
   attr :who_installed, :boolean, default: true
   attr :why, :string, default: nil
-  attr :kind, :string, default: "route", values: ~w(route port console)
+  attr :kind, :string, default: "route", values: ~w(route port)
   attr :port, :any, default: nil
   attr :read, :any, default: nil
 

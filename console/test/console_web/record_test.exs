@@ -265,9 +265,6 @@ defmodule ConsoleWeb.RecordTest do
     assert %{deploy: "prod", in_sync: false, stray: ["grafana"], status: "down"} = prod
     assert Enum.all?(prod.services, &(&1.why == "the deployment is down" and is_nil(&1.read)))
     assert %{deploy: "scaled", baked: false, status: nil, services: []} = scaled
-
-    # No console container: the console runs by hand.
-    assert page.console == nil
   end
 
   test "with nothing up every route is shut by that, and nothing is called" do

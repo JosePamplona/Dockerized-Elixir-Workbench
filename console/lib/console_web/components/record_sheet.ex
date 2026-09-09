@@ -3,8 +3,7 @@ defmodule ConsoleWeb.RecordSheet do
   The Record paper drawn: the project's name, its birth in two tables
   and the command between them, the cartridges it carries on the
   shelf's own row with their parameters and addresses, and the
-  deployments with the console first. The plan is `ConsoleWeb.Record`;
-  this only lays it out.
+  deployments. The plan is `ConsoleWeb.Record`; this only lays it out.
   """
   use Phoenix.Component
   import ConsoleWeb.Refs
@@ -106,27 +105,6 @@ defmodule ConsoleWeb.RecordSheet do
             </tr>
           </thead>
           <tbody>
-            <tr :if={@record.console} class="own">
-              <td
-                class="k"
-                title="not a deployment of the project: the workbench's own container, mounted on this workspace"
-              >
-                console
-              </td>
-              <td></td>
-              <td></td>
-              <td>
-                <.chip class="good">up</.chip>
-              </td>
-              <td>
-                <span class="pairs">
-                  <.address
-                    a={@record.console}
-                    title={"the workbench's console, this page — #{@record.console.image}, mounted on #{@record.console.mount}"}
-                  />
-                </span>
-              </td>
-            </tr>
             <tr :for={d <- @record.deployments}>
               <td class="k">{d.deploy}</td>
               <td>

@@ -1237,7 +1237,7 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
 .record .go svg{width:15px;height:15px;display:block}
 .record .go[aria-busy="true"]{color:var(--accent);cursor:progress}
 .record .go[aria-busy="true"] svg{animation:fetch-turn 1s linear infinite}
-/* Deployments: the console first, under its own rule. */
+/* Deployments: one row per compose file. */
 /* Columns as wide as their content and packed to the left, not spread
    across the pane: the reader's eye goes down one edge. */
 .record table.rows.deps{width:auto;max-width:100%;justify-self:start;border-collapse:collapse;font-family:var(--mono);font-size:12.5px}
@@ -1247,9 +1247,6 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
 .record table.rows.deps td.k{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px;width:90px}
 .record table.rows.deps td.sync{white-space:normal}
 .record table.rows.deps .drift{display:inline-flex;flex-wrap:wrap;gap:6px;vertical-align:middle;margin-left:8px}
-.record table.rows.deps tr.own td{border-top:0;border-bottom:1px solid var(--line);padding-bottom:12px}
-.record table.rows.deps tr.own td.k{color:var(--muted)}
-.record table.rows.deps tr.own + tr td{border-top:0;padding-top:12px}
 
 /* --- figures: a hint on hover, a viewer on click --------------------------- */
 .fig{position:relative;margin:0 0 1.2em}

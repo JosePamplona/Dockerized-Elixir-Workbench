@@ -100,7 +100,9 @@ defmodule ConsoleWeb.RecordSheet do
               <th title="the deployment's compose file, baked into the workspace, out of sync with the project, or not baked yet">
                 file
               </th>
-              <th title="whether the file says what the cartridges ask for now">in sync</th>
+              <th title="what the file declares that no cartridge asks for any more (+), and what a cartridge asks for that the file lacks (−); nothing when the file says what the cartridges ask">
+                sync differences
+              </th>
               <th>status</th>
               <th title="the services the compose file declares; with the deployment up, what docker compose ps says of each">
                 services
@@ -125,15 +127,7 @@ defmodule ConsoleWeb.RecordSheet do
                 <.chip :if={d.baked && d.in_sync != false} class="good">baked</.chip>
               </td>
               <td class="sync">
-                <span :if={d.baked} class="fact" title={sync_title(d)}>
-                  <input
-                    type="checkbox"
-                    checked={d.in_sync == true}
-                    aria-readonly="true"
-                    tabindex="-1"
-                  />
-                </span>
-                <span :if={d.stray != [] or d.missing != []} class="drift">
+                <span :if={d.stray != [] or d.missing != []} class="drift" title={sync_title(d)}>
                   <.chip
                     :for={s <- d.stray}
                     class="warn"

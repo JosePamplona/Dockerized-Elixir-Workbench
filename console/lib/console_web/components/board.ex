@@ -219,7 +219,7 @@ defmodule ConsoleWeb.Board do
     """
   end
 
-  # The three deployments as the Record draws them — baked, in sync, up —
+  # The three deployments as the Record draws them — baked, up —
   # with the row's one action beside. The services go in Services & Doors:
   # a port face does not fit in a sixth column of a 380px rail.
   defp deployments(assigns) do
@@ -234,7 +234,6 @@ defmodule ConsoleWeb.Board do
           <th title="the deployment's compose file: baked, out of sync with the project, or not baked yet">
             file
           </th>
-          <th class="sync" title="whether the file says what the cartridges ask for now">in sync</th>
           <th>status</th>
           <th></th>
         </tr>
@@ -253,11 +252,6 @@ defmodule ConsoleWeb.Board do
                 out of sync
               </.chip>
               <.chip :if={d.baked && d.in_sync != false} class="good">baked</.chip>
-            </td>
-            <td class="sync">
-              <span :if={d.baked && is_boolean(d.in_sync)} class="fact" title={sync_title(d)}>
-                <input type="checkbox" checked={d.in_sync} aria-readonly="true" tabindex="-1" />
-              </span>
             </td>
             <td>
               <.chip :if={d.status == "up"} class="good">running</.chip>
@@ -293,23 +287,6 @@ defmodule ConsoleWeb.Board do
       </table>
     </section>
     """
-  end
-
-  defp sync_title(%{in_sync: true}),
-    do: "every service the cartridges ask for is in the file, and nothing else"
-
-  defp sync_title(d) do
-    Enum.join(
-      Enum.reject(
-        [
-          d.stray != [] &&
-            "declares " <> Enum.join(d.stray, ", ") <> ", which no cartridge asks for any more",
-          d.missing != [] && "lacks " <> Enum.join(d.missing, ", ")
-        ],
-        &(!&1)
-      ),
-      " · "
-    ) <> " — bake writes it again"
   end
 
   # Bake: the file written again for the project as it is now — `bake`

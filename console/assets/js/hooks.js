@@ -84,12 +84,18 @@ export const Ground = {
   },
 }
 
-// --- how tall a job's output is allowed to be. A grip under each pane,
-// made like the rail's: it moves a variable, one per job, kept in this
-// browser under the job's id; config.conf never hears about it. The
+// --- how tall an output pane is allowed to be. A grip under each pane,
+// made like the rail's: it moves a variable, one per pane, kept in this
+// browser under the pane's name; config.conf never hears about it. The
 // variable and not a height, because `.out` reads it with the default
-// in the fallback — a job that was never dragged has nothing written
+// in the fallback — a pane that was never dragged has nothing written
 // on it, and a double-click takes it back to that.
+// A pane is whatever wears `data-tall`: a job's row in the jobs tray
+// and a box's runs, named by the job's id; the compose file under the
+// Record's deployments, named once. The hook rides the list, or the
+// pane itself. What is kept for a name that has left the list is
+// dropped, except for names that are not jobs — the compose box comes
+// and goes with the paper, and keeps its height.
 // The browser's own `resize` did this first: its grip sits in the
 // corner where the scrollbar ends, and that corner is the browser's to
 // paint — a white square on a terminal ground, and only ever when the
@@ -97,62 +103,68 @@ export const Ground = {
 const JOB_OUT_KEY = "wb-console-job-out", JOB_OUT_MIN = 80, JOB_OUT_DEFAULT = 220
 export const JobOut = {
   mounted() {
-    // What each job's own grip was left at, by job id. A job that was
+    // What each pane's own grip was left at, by name. A pane that was
     // never dragged is not in here at all and takes the default from
     // the stylesheet — which is also what a double-click gives back.
     let tall = {}
     try { tall = JSON.parse(store.get(JOB_OUT_KEY) || "{}") || {} } catch (_) { tall = {} }
 
+    const panes = () => {
+      const all = [...this.el.querySelectorAll("[data-tall]")]
+      return this.el.matches("[data-tall]") ? [this.el, ...all] : all
+    }
     const cap = () => Math.max(JOB_OUT_MIN, Math.round(innerHeight * 0.8))
-    const height = job => parseInt(getComputedStyle(job.querySelector(".out")).maxHeight, 10) || JOB_OUT_DEFAULT
-    const label = (job, h) => {
-      const g = job.querySelector(".ograb")
+    const height = pane => parseInt(getComputedStyle(pane.querySelector(".out")).maxHeight, 10) || JOB_OUT_DEFAULT
+    const label = (pane, h) => {
+      const g = pane.querySelector(".ograb")
       if (!g) return
       g.setAttribute("aria-valuenow", String(h))
       g.setAttribute("aria-valuemin", String(JOB_OUT_MIN))
       g.setAttribute("aria-valuemax", String(cap()))
-      g.title = `${h}px — drag, or arrow keys; double-click for ${JOB_OUT_DEFAULT}`
+      g.title = `${h}px — drag, or arrow keys; double-click for the default`
     }
-    const set = (job, px) => {
+    const set = (pane, px) => {
       const h = Math.round(Math.min(cap(), Math.max(JOB_OUT_MIN, px)))
-      tall[job.dataset.id] = h
-      job.style.setProperty("--job-out", h + "px")
-      label(job, h)
+      tall[pane.dataset.tall] = h
+      pane.style.setProperty("--job-out", h + "px")
+      label(pane, h)
       return h
     }
-    const forget = job => {
-      delete tall[job.dataset.id]
-      job.style.removeProperty("--job-out")
-      label(job, height(job))
+    const forget = pane => {
+      delete tall[pane.dataset.tall]
+      pane.style.removeProperty("--job-out")
+      label(pane, height(pane))
     }
     const keep = () => store.set(JOB_OUT_KEY, JSON.stringify(tall))
 
     // A patch wipes the inline variable, so it is written again — and
-    // this is also where a job that has left the list is forgotten.
+    // this is also where a job that has left the list is forgotten. A
+    // job's name is its id, a number; a named pane keeps its height.
     this.paint = () => {
       const live = {}
-      for (const job of this.el.querySelectorAll(".job[data-id]")) {
-        const id = job.dataset.id
-        if (id in tall) {
-          live[id] = tall[id]
-          job.style.setProperty("--job-out", tall[id] + "px")
+      for (const name in tall) if (!/^\d+$/.test(name)) live[name] = tall[name]
+      for (const pane of panes()) {
+        const name = pane.dataset.tall
+        if (name in tall) {
+          live[name] = tall[name]
+          pane.style.setProperty("--job-out", tall[name] + "px")
         }
-        label(job, height(job))
+        label(pane, height(pane))
       }
       tall = live
     }
     this.paint()
 
-    // Delegated: every open job carries a grip, and each moves its own.
+    // Delegated: every open pane carries a grip, and each moves its own.
     this.el.addEventListener("pointerdown", ev => {
       const grip = ev.target.closest(".ograb")
       if (!grip) return
-      const job = grip.closest(".job")
+      const pane = grip.closest("[data-tall]")
       ev.preventDefault()
       grip.setPointerCapture(ev.pointerId)
       grip.classList.add("dragging")
-      const from = height(job) - ev.clientY
-      const move = e => set(job, e.clientY + from)
+      const from = height(pane) - ev.clientY
+      const move = e => set(pane, e.clientY + from)
       const up = () => {
         grip.classList.remove("dragging")
         grip.removeEventListener("pointermove", move)
@@ -168,24 +180,24 @@ export const JobOut = {
     this.el.addEventListener("dblclick", ev => {
       const grip = ev.target.closest(".ograb")
       if (!grip) return
-      forget(grip.closest(".job")); keep()
+      forget(grip.closest("[data-tall]")); keep()
     })
 
     this.el.addEventListener("keydown", ev => {
       const grip = ev.target.closest(".ograb")
       if (!grip) return
-      const job = grip.closest(".job"), step = ev.shiftKey ? 48 : 16
-      if (ev.key === "ArrowUp") set(job, height(job) - step)
-      else if (ev.key === "ArrowDown") set(job, height(job) + step)
-      else if (ev.key === "Home") forget(job)
+      const pane = grip.closest("[data-tall]"), step = ev.shiftKey ? 48 : 16
+      if (ev.key === "ArrowUp") set(pane, height(pane) - step)
+      else if (ev.key === "ArrowDown") set(pane, height(pane) + step)
+      else if (ev.key === "Home") forget(pane)
       else return
       ev.preventDefault(); keep()
     })
 
     // A narrower window lowers the ceiling; what was over it comes down.
     this.resize = () => {
-      for (const job of this.el.querySelectorAll(".job[data-id]")) {
-        if (job.dataset.id in tall) set(job, tall[job.dataset.id])
+      for (const pane of panes()) {
+        if (pane.dataset.tall in tall) set(pane, tall[pane.dataset.tall])
       }
     }
     addEventListener("resize", this.resize)

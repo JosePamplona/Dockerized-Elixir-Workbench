@@ -186,8 +186,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   remedy while not baked. The box shows the deployment that is up, or
   the first baked, unless the URL names one
   (`/project?paper=record&deploy=prod`); with none baked it is one
-  line saying so. A status arriving reads the files again, since a
-  bake may have rewritten one. In the same round the rail and the Record share
+  line saying so. The box is as tall as the reader leaves it, with the
+  jobs' own grip under it — the `JobOut` hook now rides any pane
+  wearing `data-tall`, and the compose box keeps its height across
+  papers where a job that has left the tray is forgotten. A status
+  arriving reads the files again, since a bake may have rewritten one. In the same round the rail and the Record share
   the deployment row — up, stopped or down; Up or Stop, Down and Bake —
   every sha the console shows is a `.commit-ref`, the rail's Cartridges
   wear the facts chips before the origin, and the rail's Services &

@@ -190,7 +190,8 @@ defmodule ConsoleWeb.Deployments do
   # The file under the table, in a code box with a strip that names it:
   # the file whose eye is pressed, read only — wb.sh alone writes the
   # workspace — and the secrets masked. With none baked the box is one
-  # line saying so, not gone. It read under Docker's Deploys until
+  # line saying so, not gone. The box is as tall as the reader left it:
+  # the jobs' grip under it, the JobOut hook, kept in this browser. It read under Docker's Deploys until
   # 2026-09-09; the files are the workspace's, so they read here.
   attr :composes, :list, required: true
   attr :deploy, :any, required: true
@@ -200,7 +201,7 @@ defmodule ConsoleWeb.Deployments do
     assigns = assign(assigns, chosen: chosen)
 
     ~H"""
-    <div class="fsheet">
+    <div class="fsheet" id="compose-sheet" phx-hook="JobOut" data-tall="compose">
       <div class="strip">
         <span class="label">the file</span>
         <span :if={@chosen} class="fname" title={"the #{@chosen.key} deployment's compose file"}>
@@ -211,7 +212,16 @@ defmodule ConsoleWeb.Deployments do
           none baked yet: Bake, or Up, writes the deployment's
         </span>
       </div>
-      <pre :if={@chosen} class="env yaml"><.yaml_line :for={line <- @chosen.lines} line={line} /></pre>
+      <pre :if={@chosen} class="env yaml out"><.yaml_line :for={line <- @chosen.lines} line={line} /></pre>
+      <div
+        :if={@chosen}
+        class="ograb"
+        role="separator"
+        aria-orientation="horizontal"
+        tabindex="0"
+        aria-label="How tall the file's box is — drag, or arrow keys; double-click for the default"
+      >
+      </div>
     </div>
     """
   end

@@ -92,7 +92,7 @@ defmodule ConsoleWeb.JobsScreen do
 
   def job_row(assigns) do
     ~H"""
-    <div class={["job", @open && "open"]} data-id={@j.id}>
+    <div class={["job", @open && "open"]} data-tall={@j.id}>
       <button
         class="fold jt"
         type="button"

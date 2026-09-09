@@ -8,7 +8,7 @@ defmodule ConsoleWeb.RecordSheet do
   use Phoenix.Component
   import ConsoleWeb.Refs
   import ConsoleWeb.Shelf, only: [front: 1]
-  import ConsoleWeb.Board, only: [bake_button: 1, deploy_button: 1]
+  import ConsoleWeb.Board, only: [bake_button: 1, deploy_button: 1, bell: 1]
 
   attr :record, :map, required: true
   attr :reads, :any, required: true
@@ -48,22 +48,22 @@ defmodule ConsoleWeb.RecordSheet do
               addresses
               <button
                 :if={@record.up}
-                class="go"
+                class="go knock"
                 type="button"
-                phx-click="doors_read"
+                phx-click="knock"
                 aria-busy={to_string(@reads == :asking)}
-                title="call every route again, and read what each answers"
+                title="knock: call every door once and read what each answers — the rail hears the same"
               >
-                <.reload /><span class="sr">Call every route again</span>
+                <.bell /><span class="sr">Knock on every door</span>
               </button>
               <button
                 :if={!@record.up}
-                class="go unlit"
+                class="go knock unlit"
                 type="button"
                 aria-disabled="true"
-                title="nothing is up: deploy, and every route is called once and answers in a chip"
+                title="nothing is up: deploy, and knock — every door is called once and answers in a chip"
               >
-                <.reload /><span class="sr">Call every route</span>
+                <.bell /><span class="sr">Knock on every door</span>
               </button>
             </span>
           </div>
@@ -343,19 +343,6 @@ defmodule ConsoleWeb.RecordSheet do
       port={@a.kind == "route" && @a.port}
       read={@a.read}
     />
-    """
-  end
-
-  defp reload(assigns) do
-    ~H"""
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path
-      d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4h-4"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2.2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    /></svg>
     """
   end
 

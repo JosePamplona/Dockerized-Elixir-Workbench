@@ -174,17 +174,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
-- **One reading of the doors, shared by the rail and the Record.** The
-  console calls every open route once when the page comes with
-  something up, when the Record comes in front, when a status arrives
-  with a deployment up — a job the reader ran — and when the reader
-  presses the reload, which now sits on the head of the rail's Services
-  & Doors as well as on the Record's addresses column: never on a clock.
-  What each answered goes on the door's face in both places. Deployments
-  in the rail gains a Bake button per row — `bake` for dev, `build
-  --deploy` for prod and scaled — and the rail opens with Services &
-  Doors, the workspace's own app link gone since the section's first
-  line is that port with its state.
+- **Knock: the doors are called only when the reader rings.** One
+  reading for the whole page, shared by the rail's Services & Doors and
+  the Record's addresses, and taken only when the reader presses the
+  bell on either — the square button of `.fetch`, wearing a bell now,
+  ringing while the knock is out. Never on a mount, a status or a
+  clock: every call lands in the app's logs, and a line the reader did
+  not cause is noise there (an automatic knock lasted a day). A status
+  arriving wipes what was heard, since a job changed the world. What
+  each door answered goes on its face in both places. Deployments in
+  the rail and on the Record gain Bake, Stop and Down beside Up — Stop
+  keeps the containers, Down removes them and is lit only while there
+  are some — and the rail opens with Services & Doors, the workspace's
+  own app link gone since the section's first line is that port.
 - **The rail's Inserted is Cartridges, Doors is Services & Doors, and
   Deployments says in sync.** *Cartridges*: the mention, then the
   origin, then the edition, the Record's order. *Deployments* gains the

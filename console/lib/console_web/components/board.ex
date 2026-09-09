@@ -158,22 +158,22 @@ defmodule ConsoleWeb.Board do
       <.head key="doors" name="Services & Doors" label={@sum} folded={@folded}>
         <button
           :if={@up}
-          class="go"
+          class="go knock"
           type="button"
-          phx-click="doors_read"
+          phx-click="knock"
           aria-busy={to_string(@reads == :asking)}
-          title="call every door again, and read what each answers — the Record reads the same"
+          title="knock: call every door once and read what each answers — the Record hears the same"
         >
-          <.reload /><span class="sr">Call every door again</span>
+          <.bell /><span class="sr">Knock on every door</span>
         </button>
         <button
           :if={!@up}
-          class="go unlit"
+          class="go knock unlit"
           type="button"
           aria-disabled="true"
-          title="nothing is up: deploy, and every door is called once and answers in a chip"
+          title="nothing is up: deploy, and knock — every door is called once and answers in a chip"
         >
-          <.reload /><span class="sr">Call every door</span>
+          <.bell /><span class="sr">Knock on every door</span>
         </button>
       </.head>
       <div class="urls">
@@ -205,10 +205,11 @@ defmodule ConsoleWeb.Board do
     """
   end
 
-  defp reload(assigns) do
+  # The bell: a knock on every door, the reader's own act.
+  def bell(assigns) do
     ~H"""
     <svg viewBox="0 0 24 24" aria-hidden="true"><path
-      d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4h-4"
+      d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20a2 2 0 0 0 4 0"
       fill="none"
       stroke="currentColor"
       stroke-width="2.2"

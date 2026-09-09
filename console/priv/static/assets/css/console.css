@@ -240,7 +240,9 @@ section h2:has(.go):has(.fold:hover)::after,section h2:has(.go):has(.fold:focus-
 section h2 .go:hover{color:var(--ink);background:var(--surface)}
 section h2 .go svg{width:15px;height:15px;display:block}
 section h2 .go[aria-busy="true"]{color:var(--accent);cursor:progress}
-section h2 .go[aria-busy="true"] svg{animation:fetch-turn 1s linear infinite}
+section h2 .go[aria-busy="true"] svg{animation:knock-ring .6s ease-in-out infinite;transform-origin:50% 20%}
+@keyframes knock-ring{0%,100%{transform:rotate(0)}25%{transform:rotate(-14deg)}75%{transform:rotate(14deg)}}
+@media (prefers-reduced-motion: reduce){section h2 .go[aria-busy="true"] svg,.record .go[aria-busy="true"] svg{animation:none}}
 /* The head of a section in the rail is the control that folds it: the
    heading stays a heading and the button inside it takes the whole line,
    which is the accordion a screen reader expects (aria-expanded on the
@@ -1257,7 +1259,7 @@ span.fact input{accent-color:var(--accent);width:14px;height:14px;margin:0;verti
 .record .go:hover{color:var(--ink);background:var(--surface)}
 .record .go svg{width:15px;height:15px;display:block}
 .record .go[aria-busy="true"]{color:var(--accent);cursor:progress}
-.record .go[aria-busy="true"] svg{animation:fetch-turn 1s linear infinite}
+.record .go[aria-busy="true"] svg{animation:knock-ring .6s ease-in-out infinite;transform-origin:50% 20%}
 /* Deployments: one row per compose file. */
 /* Columns as wide as their content and packed to the left, not spread
    across the pane: the reader's eye goes down one edge. */

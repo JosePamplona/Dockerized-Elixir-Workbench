@@ -53,12 +53,11 @@ defmodule ConsoleWeb.Deploy do
     pending = pending(assigns.jobs, :new)
     deleting = pending(assigns.jobs, :delete)
     project? = assigns.status && assigns.status["exists"] == true
-    # What the project in this workspace was actually made with, off its
-    # own Dockerfile.local. The card's rows say what the *next* creation
-    # would use, which is config.conf and nothing else; this is the other
-    # half of the sentence, and it only appears when it says something —
-    # the installer always does, because config.conf usually leaves it
-    # open, and the stack only when the two have come apart, which is
+    # The card's rows say what the *next* creation would use, which is
+    # config.conf and nothing else: intention. What the project here is
+    # has a paper of its own, the Record, and the card only links to it.
+    # One crossing stays: the stack the project was built on, off its own
+    # Dockerfile.local, and only when the two have come apart — which is
     # exactly when creating again would move the project off it.
     born = project? && Console.Project.born(assigns.status["workspace"])
 
@@ -82,6 +81,14 @@ defmodule ConsoleWeb.Deploy do
         <.chip :if={@project?} class="bad" title="creating overwrites every file in it">
           a project exists here
         </.chip>
+        <.link
+          :if={@project?}
+          class="lk"
+          patch="/project?paper=record"
+          title="the Record: what this project is — its birth, its cartridges, its deployments"
+        >
+          what it is
+        </.link>
       </h3>
       <form class="form" id="new-project" phx-change="new_form" phx-submit="new_submit">
         <.given label="project name" value={@conf["PROJECT_NAME"]} />
@@ -93,9 +100,8 @@ defmodule ConsoleWeb.Deploy do
         />
         <.given
           label="installer"
-          value={installer(@conf, @born)}
+          value={installer(@conf)}
           muted="the newest phx_new that runs on this stack"
-          title={installer_title(@conf, @born)}
         />
         <div class="frow">
           <label>phx.new</label>
@@ -239,24 +245,13 @@ defmodule ConsoleWeb.Deploy do
     """
   end
 
-  # The installer, as one version whenever there is one to name: config
-  # names it, or the project in this workspace was born with it and its
-  # own Dockerfile still says so. Only when neither knows does the row
-  # fall back to the sentence, which is what a sentence is for.
-  defp installer(%{"PHX_NEW_VERSION" => v}, _born) when v not in [nil, ""], do: "phx_new #{v}"
-  defp installer(_conf, %{"PHX_NEW" => v}) when v not in [nil, ""], do: "phx_new #{v}"
-  defp installer(_conf, _born), do: nil
-
-  # Which of the two it is goes in the title, since the version alone
-  # cannot say: it is this project's, and creating another would go and
-  # ask hex again.
-  defp installer_title(%{"PHX_NEW_VERSION" => v}, _born) when v not in [nil, ""], do: nil
-
-  defp installer_title(_conf, %{"PHX_NEW" => v}) when v not in [nil, ""],
-    do:
-      "the installer this project was born with, stamped in its own Dockerfile.local — config.conf names none, so creating again takes the newest phx_new that runs on this stack"
-
-  defp installer_title(_conf, _born), do: nil
+  # The installer, as one version when config names one; the sentence
+  # otherwise, which is what a sentence is for. What this project was
+  # born with is the Record's to say, not this card's: the card is
+  # intention, and it used to answer with the project's own stamp here,
+  # which was the state slipping into the form.
+  defp installer(%{"PHX_NEW_VERSION" => v}) when v not in [nil, ""], do: "phx_new #{v}"
+  defp installer(_conf), do: nil
 
   # The stack, only when the two have come apart — the one thing on this
   # card the reader has to be told rather than left to notice, because

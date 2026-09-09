@@ -544,6 +544,9 @@ pre .ln{display:block}
    project's also has to hold a chip out at its right edge. */
 .newcard h3,.deployment h3{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:18px}
 .newcard h3{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:10px}
+/* The card is intention; what the project is has its paper, and the card only points at it. */
+.newcard h3 .lk{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:12px;color:var(--muted);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px;margin-left:auto}
+.newcard h3 .lk:hover{color:var(--ink);text-decoration-color:var(--ink)}
 .newcard .form{display:grid;gap:12px}
 .newcard .frow{display:grid;grid-template-columns:130px minmax(0,1fr);gap:10px;align-items:center}
 .newcard .frow label{font-family:var(--mono);font-size:12.5px}

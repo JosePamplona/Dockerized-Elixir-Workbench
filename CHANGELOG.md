@@ -175,6 +175,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **The Project card on Deploy is intention again.** Its rows say what
+  the next `new` would use, off config.conf and nothing else: the
+  installer row no longer answers with the stamp of the project born
+  here, which was the state slipping into the form. What this project
+  is has its paper now, and the card links to it — "what it is", the
+  Record. One crossing stays, because it is about creating: the warn on
+  the stack row when the project was built on another one, since
+  creating again would move it.
 - **Git's two documents are papers of the Project tab.** The repository
   is the project's, so Pending and History follow Record, .env, README
   and CHANGELOG on the Project ribbon, and the Git tab goes; the top row

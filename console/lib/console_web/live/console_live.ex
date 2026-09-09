@@ -183,15 +183,27 @@ defmodule ConsoleWeb.ConsoleLive do
 
     socket
     |> assign(ppaper: paper, ppage: Project.render(ws, paper))
-    |> assign(
-      pdeploy:
-        if(paper == "record" and params["deploy"] in ~w(dev prod scaled), do: params["deploy"]),
-      pcomposes:
-        if(paper == "record", do: Console.Docker.composes(socket.assigns.status), else: [])
-    )
+    |> take_compose(paper, params["deploy"])
   end
 
   defp take_paper(socket, _params), do: socket
+
+  # The compose file open under the Record's deployments: the one the
+  # URL names when it is baked; else the deployment that is up, else
+  # the first baked; nil when none is, and the ribbon says so.
+  defp take_compose(socket, "record", named) do
+    status = socket.assigns.status
+    composes = Console.Docker.composes(status)
+    assign(socket, pcomposes: composes, pdeploy: compose_open(composes, status, named))
+  end
+
+  defp take_compose(socket, _paper, _named), do: assign(socket, pcomposes: [], pdeploy: nil)
+
+  defp compose_open(composes, status, named) do
+    baked = for c <- composes, c.lines, do: c.key
+
+    Enum.find([named, status && status["deployment"] | baked], &(&1 in baked))
+  end
 
   # A knock: every open route called once, and what each answered kept
   # for the whole page — the rail's Services & Doors and the Record's
@@ -259,12 +271,7 @@ defmodule ConsoleWeb.ConsoleLive do
       |> reread_paper(moved?)
       |> reask_diff(moved?)
       |> assign(preads: %{})
-      |> then(
-        &if(&1.assigns.ppaper == "record",
-          do: assign(&1, pcomposes: Console.Docker.composes(status)),
-          else: &1
-        )
-      )
+      |> then(&take_compose(&1, &1.assigns.ppaper, &1.assigns.pdeploy))
 
     {:noreply, socket}
   end

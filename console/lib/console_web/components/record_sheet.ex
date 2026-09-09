@@ -9,6 +9,7 @@ defmodule ConsoleWeb.RecordSheet do
   import ConsoleWeb.Refs
   import ConsoleWeb.Shelf, only: [front: 1]
   import ConsoleWeb.Board, only: [bake_button: 1, deploy_button: 1, bell: 1]
+  import ConsoleWeb.Ribbon, only: [ribbon: 1]
 
   attr :record, :map, required: true
   attr :reads, :any, required: true
@@ -19,7 +20,7 @@ defmodule ConsoleWeb.RecordSheet do
     default: [],
     doc: "the three compose files as Console.Docker.composes/1 reads them"
 
-  attr :deploy, :any, default: nil, doc: "which file is open under the table, or nil"
+  attr :deploy, :any, default: nil, doc: "which file is open under the table: none baked, nil"
 
   def record_sheet(assigns) do
     ~H"""
@@ -103,7 +104,6 @@ defmodule ConsoleWeb.RecordSheet do
           <thead>
             <tr>
               <th></th>
-              <th title="the compose file the deployment is baked into">name</th>
               <th title="the deployment's compose file, baked into the workspace, out of sync with the project, or not baked yet">
                 file
               </th>
@@ -120,7 +120,6 @@ defmodule ConsoleWeb.RecordSheet do
           <tbody>
             <tr :for={d <- @record.deployments}>
               <td class="k">{d.deploy}</td>
-              <td class="fname"><span class={["argv", !d.baked && "dflt"]}>{d.file}</span></td>
               <td class="file">
                 <.chip :if={!d.baked} class="off" title={"up --deploy #{d.deploy} bakes it"}>
                   not baked
@@ -200,11 +199,13 @@ defmodule ConsoleWeb.RecordSheet do
     """
   end
 
-  # The compose file itself, read under the table: one of the three,
-  # picked on the toolbar and named in the URL; none open until picked,
-  # so the paper stays a paper. Read only — wb.sh alone writes the
-  # workspace — and the secrets masked. It read under Docker's Deploys
-  # until 2026-09-09; the files are the workspace's, so they read here.
+  # The compose file itself, read under the table: the three as a
+  # ribbon, the deployment the tab and the file its sublabel, one open
+  # at a time — the deployment that is up, or the first baked, unless
+  # the URL names one — and not baked unlit, with the remedy. Read only:
+  # wb.sh alone writes the workspace, and the secrets are masked. It
+  # read under Docker's Deploys until 2026-09-09; the files are the
+  # workspace's, so they read here.
   attr :composes, :list, required: true
   attr :deploy, :any, required: true
 
@@ -213,29 +214,30 @@ defmodule ConsoleWeb.RecordSheet do
     assigns = assign(assigns, chosen: chosen)
 
     ~H"""
-    <div class="toolbar cfile">
-      <span class="label">the file</span>
-      <%= for c <- @composes do %>
-        <.link
-          :if={c.lines}
-          class="btn"
-          patch={"/project?paper=record" <> if(@deploy == c.key, do: "", else: "&deploy=#{c.key}")}
-          aria-pressed={to_string(@deploy == c.key)}
-          title={"#{c.file}#{if @deploy == c.key, do: " — close", else: ""}"}
-        >{c.key}</.link>
-        <button
-          :if={is_nil(c.lines)}
-          class="btn unlit"
-          type="button"
-          aria-disabled="true"
-          title={"not baked: no #{c.file} in this workspace — Bake, or Up"}
-        >{c.key}</button>
-      <% end %>
-      <span :if={@chosen && @chosen.lines} class="note">
-        {@chosen.file} · read only: wb.sh alone writes the workspace · secrets masked
+    <div class="cfile">
+      <.ribbon
+        label="The compose file being read"
+        selected={@deploy}
+        docked
+        items={
+          for c <- @composes,
+              do: %{
+                key: c.key,
+                label: c.key,
+                small: c.file,
+                why: is_nil(c.lines) && "not baked: no #{c.file} in this workspace — Bake, or Up",
+                href: "/project?paper=record&deploy=#{c.key}"
+              }
+        }
+      />
+      <span :if={@chosen} class="note">
+        read only: wb.sh alone writes the workspace · secrets masked
+      </span>
+      <span :if={is_nil(@chosen)} class="note">
+        no compose file baked yet: Bake, or Up, writes the deployment's
       </span>
     </div>
-    <pre :if={@chosen && @chosen.lines} class="env yaml"><.yaml_line :for={line <- @chosen.lines} line={line} /></pre>
+    <pre :if={@chosen} class="env yaml"><.yaml_line :for={line <- @chosen.lines} line={line} /></pre>
     """
   end
 

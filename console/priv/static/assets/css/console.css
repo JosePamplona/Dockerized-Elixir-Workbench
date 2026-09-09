@@ -1268,16 +1268,18 @@ span.fact input{accent-color:var(--accent);width:14px;height:14px;margin:0;verti
    slack, and the actions sit on the right edge: the row reads from the
    name to the button, the way the rail's does. */
 .record table.rows.deps{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px}
-.record table.rows.deps td.k,.record table.rows.deps td.fname,.record table.rows.deps td.file,.record table.rows.deps td.st,.record table.rows.deps th.narrow{width:1%;white-space:nowrap}
+.record table.rows.deps td.k,.record table.rows.deps td.file,.record table.rows.deps td.st,.record table.rows.deps th.narrow{width:1%;white-space:nowrap}
 .record table.rows.deps th{text-align:left;font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);padding:0 18px 6px 0;border-bottom:1px solid var(--line)}
 .record table.rows.deps td{padding:7px 18px 7px 0;border-top:1px solid var(--line);vertical-align:top}
 .record table.rows.deps tbody tr:first-child td{border-top:0}
 .record table.rows.deps td.k{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px;width:90px}
 .record table.rows.deps td.sync{white-space:normal}
-.record table.rows.deps td.fname .argv{white-space:nowrap}
 .record table.rows.deps td.act{width:1%;white-space:nowrap;text-align:right;padding-right:0}
-/* The compose file under the deployments: the Docker screen's toolbar and its YAML sheet. */
-.record .toolbar.cfile{margin-top:14px}
+/* The compose file under the deployments: a ribbon of the three, the file its tab's sublabel, and the YAML sheet. */
+.record .cfile{margin-top:18px;display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px}
+.record .cfile .dtabs.docked{padding-left:0;padding-right:0;background:transparent}
+.record .cfile .dtab small{font-size:11px}
+.record .cfile .note{padding-bottom:6px}
 .record pre.env.yaml{margin-top:10px;max-height:60vh}
 .record table.rows.deps td.act .btn+.btn{margin-left:6px}
 .record table.rows.deps .drift{display:inline-flex;flex-wrap:wrap;gap:6px;vertical-align:middle}

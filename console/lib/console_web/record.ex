@@ -161,9 +161,12 @@ defmodule ConsoleWeb.Record do
 
     flags =
       Enum.map(flags, fn f ->
+        moot = moot(f.name, born_phx)
+
         f
         |> Map.put(:installed, f.cartridge && Cartridges.installed?(status, f.cartridge))
-        |> Map.put(:moot, moot(f.name, born_phx))
+        |> Map.put(:moot, moot)
+        |> then(&if(moot, do: %{&1 | used: false, arg: nil, default: nil, now: nil}, else: &1))
       end)
 
     %{

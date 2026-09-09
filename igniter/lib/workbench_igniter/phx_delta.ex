@@ -127,14 +127,25 @@ defmodule WorkbenchIgniter.PhxDelta do
     end
   end
 
-  @doc "The `phx.new` flags that generate a project of this shape."
+  @doc """
+  The `phx.new` flags that generate a project of this shape. A flag
+  another flag makes moot is left out, as phx.new's own generator binds
+  them (`Phx.New.Generator.put_binding/1`): no `--database` and no
+  `--binary-id` without Ecto, no `--no-live` without HTML views, where
+  `live = html && live` already.
+  """
   def flags(facts) do
-    off = for cap <- @capabilities, not Map.fetch!(facts, cap), do: "--no-#{cap}"
+    off =
+      for cap <- @capabilities,
+          not Map.fetch!(facts, cap),
+          not (cap == :live and not facts.html),
+          do: "--no-#{cap}"
 
     ["--app", to_string(facts.app), "--module", inspect(facts.module)] ++
-      ["--database", facts.database, "--adapter", facts.adapter] ++
+      if(facts.ecto, do: ["--database", facts.database], else: []) ++
+      ["--adapter", facts.adapter] ++
       off ++
-      if(facts.binary_id, do: ["--binary-id"], else: []) ++
+      if(facts.ecto and facts.binary_id, do: ["--binary-id"], else: []) ++
       if(Map.get(facts, :agents_md, true), do: [], else: ["--no-agents-md"])
   end
 

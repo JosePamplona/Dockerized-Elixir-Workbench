@@ -193,10 +193,10 @@ defmodule ConsoleWeb.RecordTest do
     refute Enum.any?(page.birth.flags, & &1.moot)
     no_ecto = put_in(@status, ["project", "birth", "phx", "ecto"], false)
 
-    assert Record.page(no_ecto, @catalog).birth.flags
-           |> Enum.filter(& &1.moot)
-           |> Enum.map(& &1.name) ==
-             ["database", "binary-id"]
+    moot = Record.page(no_ecto, @catalog).birth.flags |> Enum.filter(& &1.moot)
+    assert Enum.map(moot, & &1.name) == ["database", "binary-id"]
+    # Moot: not given, and nothing to say.
+    assert Enum.all?(moot, &(&1.used == false and is_nil(&1.arg)))
 
     no_html = put_in(@status, ["project", "birth", "phx", "html"], false)
 

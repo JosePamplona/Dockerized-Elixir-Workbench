@@ -68,8 +68,9 @@ defmodule WorkbenchIgniter.PhxDeltaTest do
         binary_id: true
       }
 
+      # Without Ecto the database and the id type are moot, and stay out.
       assert PhxDelta.flags(facts) ==
-               ~w(--app test --module Test --database sqlite3 --adapter cowboy --no-ecto --no-mailer --no-tailwind --no-live --no-dashboard --binary-id)
+               ~w(--app test --module Test --adapter cowboy --no-ecto --no-mailer --no-tailwind --no-live --no-dashboard)
     end
   end
 

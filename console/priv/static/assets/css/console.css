@@ -1238,13 +1238,15 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
 .record .go[aria-busy="true"]{color:var(--accent);cursor:progress}
 .record .go[aria-busy="true"] svg{animation:fetch-turn 1s linear infinite}
 /* Deployments: the console first, under its own rule. */
-.record table.rows.deps{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px}
+/* Columns as wide as their content and packed to the left, not spread
+   across the pane: the reader's eye goes down one edge. */
+.record table.rows.deps{width:auto;max-width:100%;justify-self:start;border-collapse:collapse;font-family:var(--mono);font-size:12.5px}
 .record table.rows.deps th{text-align:left;font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);padding:0 18px 6px 0;border-bottom:1px solid var(--line)}
 .record table.rows.deps td{padding:7px 18px 7px 0;border-top:1px solid var(--line);vertical-align:top}
 .record table.rows.deps tbody tr:first-child td{border-top:0}
 .record table.rows.deps td.k{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px;width:90px}
-.record table.rows.deps td.sync{white-space:nowrap}
-.record table.rows.deps .drift{display:inline-flex;gap:6px;vertical-align:middle;margin-left:8px}
+.record table.rows.deps td.sync{white-space:normal}
+.record table.rows.deps .drift{display:inline-flex;flex-wrap:wrap;gap:6px;vertical-align:middle;margin-left:8px}
 .record table.rows.deps tr.own td{border-top:0;border-bottom:1px solid var(--line);padding-bottom:12px}
 .record table.rows.deps tr.own td.k{color:var(--muted)}
 .record table.rows.deps tr.own + tr td{border-top:0;padding-top:12px}

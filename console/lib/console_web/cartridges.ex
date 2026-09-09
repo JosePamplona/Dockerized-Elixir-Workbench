@@ -24,6 +24,31 @@ defmodule ConsoleWeb.Cartridges do
   def insert(status, name),
     do: Enum.find(get_in(status, ["git", "inserts"]) || [], &(&1["feature"] == name))
 
+  @doc """
+  What a container is doing, as a chip's words and class, off what
+  `docker compose ps` says: `healthy`, `running` without a healthcheck,
+  good; `starting`, a warn that pulses; `unhealthy`, bad. Exited with
+  code 0 is an absence — a Stop, a `migrate` that did its job — and
+  wears `.off`; exited otherwise is bad, with the code on the chip, so
+  the number says what to look at. The title is Docker's own line.
+  """
+  def container_reading(c) do
+    health = if(c["Health"] in [nil, ""], do: nil, else: c["Health"])
+    state = c["State"] || ""
+    code = c["ExitCode"]
+
+    cond do
+      health == "healthy" -> {"healthy", "good"}
+      health == "starting" -> {"starting", "warn busy"}
+      health == "unhealthy" -> {"unhealthy", "bad"}
+      state == "running" -> {"running", "good"}
+      state == "exited" and code in [0, nil] -> {"exited", "off"}
+      state == "exited" -> {"exited #{code}", "bad"}
+      state in ["created", "paused", "restarting"] -> {state, "warn"}
+      true -> {state, "bad"}
+    end
+  end
+
   @doc "Whether the app is up: an app container running, whichever deployment."
   def app_up?(nil), do: false
   def app_up?(status), do: status["deployment"] != nil

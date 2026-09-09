@@ -351,18 +351,7 @@ defmodule ConsoleWeb.Record do
     }
   end
 
-  defp container_read(c) do
-    state = String.downcase(blank(c["Health"]) || c["State"] || "")
-
-    {state,
-     if(state in ~w(healthy running),
-       do: "good",
-       else: if(state == "starting", do: "warn", else: "bad")
-     )}
-  end
-
-  defp blank(""), do: nil
-  defp blank(v), do: v
+  defp container_read(c), do: Cartridges.container_reading(c)
 
   defp read(_reads, nil), do: nil
   defp read(:asking, _href), do: {"asking…", "busy off"}

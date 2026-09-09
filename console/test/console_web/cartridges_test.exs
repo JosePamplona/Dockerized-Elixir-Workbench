@@ -30,4 +30,23 @@ defmodule ConsoleWeb.CartridgesTest do
       refute Cartridges.holds?(@status, @ash, %{"when" => %{"cartridge" => "graphql"}})
     end
   end
+
+  test "container_reading/1: exited with 0 is an absence, exited otherwise says its code" do
+    assert Cartridges.container_reading(%{"State" => "running", "Health" => "healthy"}) ==
+             {"healthy", "good"}
+
+    assert Cartridges.container_reading(%{"State" => "running", "Health" => ""}) ==
+             {"running", "good"}
+
+    assert Cartridges.container_reading(%{"State" => "running", "Health" => "starting"}) ==
+             {"starting", "warn busy"}
+
+    assert Cartridges.container_reading(%{"State" => "exited", "Health" => "", "ExitCode" => 0}) ==
+             {"exited", "off"}
+
+    assert Cartridges.container_reading(%{"State" => "exited", "Health" => "", "ExitCode" => 137}) ==
+             {"exited 137", "bad"}
+
+    assert Cartridges.container_reading(%{"State" => "dead"}) == {"dead", "bad"}
+  end
 end

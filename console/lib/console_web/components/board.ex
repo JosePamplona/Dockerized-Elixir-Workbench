@@ -446,8 +446,8 @@ defmodule ConsoleWeb.Board do
             {c["Service"]}<span class="hint">{short_image(c["Image"])}</span>
           </td>
           <td class="st">
-            <.chip class={container_class(c)}>
-              {if c["Health"] not in [nil, ""], do: c["Health"], else: c["State"]}
+            <.chip class={elem(Cartridges.container_reading(c), 1)} title={c["Status"]}>
+              {elem(Cartridges.container_reading(c), 0)}
             </.chip>
           </td>
           <td class="act">
@@ -510,14 +510,6 @@ defmodule ConsoleWeb.Board do
   # that says something — and the whole reference is in the cell's title.
   defp short_image(nil), do: ""
   defp short_image(image), do: image |> String.split("/") |> List.last()
-
-  defp container_class(c) do
-    cond do
-      c["Health"] == "healthy" or (c["Health"] in [nil, ""] and c["State"] == "running") -> "good"
-      c["State"] == "running" or c["Health"] == "starting" -> "warn busy"
-      true -> "bad"
-    end
-  end
 
   defp git(assigns) do
     ~H"""

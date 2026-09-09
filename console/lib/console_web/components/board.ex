@@ -220,6 +220,7 @@ defmodule ConsoleWeb.Board do
               <.chip :if={d.status == "down"} class="off">down</.chip>
             </td>
             <td class="act">
+              <.bake_button name={d.deploy} status={@status} busy={@busy} baked={d.baked} />
               <.deploy_button
                 :if={@status["deployment"] == d.deploy}
                 verb="down"
@@ -257,6 +258,51 @@ defmodule ConsoleWeb.Board do
       ),
       " · "
     ) <> " — bake writes it again"
+  end
+
+  # Bake: the file written again for the project as it is now — `bake`
+  # for dev, which keeps its ports; `build --deploy` for prod and scaled,
+  # which is where wb.sh bakes those two, and builds the release image
+  # they share on the way. Always there: a file in sync can be baked
+  # again, and one not baked yet is what this makes.
+  defp bake_button(assigns) do
+    verb = if assigns.name == "dev", do: "bake", else: "build"
+    cmd = ConsoleWeb.Deploy.cmdline(verb, assigns.name, "")
+
+    why =
+      cond do
+        assigns.status["exists"] != true -> "the workspace is empty: Deploy → Project creates one"
+        assigns.busy -> "a job is running"
+        true -> nil
+      end
+
+    title =
+      why ||
+        cmd <>
+          cond do
+            assigns.name == "dev" ->
+              " — writes docker-compose.yml again for the project as it is now, keeping its ports"
+
+            assigns.baked ->
+              " — writes the #{assigns.name} compose again and builds the release image"
+
+            true ->
+              " — writes the #{assigns.name} compose and builds the release image"
+          end
+
+    assigns = assign(assigns, why: why, title: title, cmd: cmd)
+
+    ~H"""
+    <button
+      class={["btn mini", @why && "unlit"]}
+      aria-disabled={@why && "true"}
+      title={@title}
+      phx-click={!@why && "run"}
+      phx-value-args={String.replace_prefix(@cmd, "./wb.sh ", "")}
+    >
+      Bake
+    </button>
+    """
   end
 
   # The row's one action, in the row's own words. Only two things stop

@@ -232,4 +232,29 @@ defmodule WorkbenchIgniter.ComposeTest do
       assert File.read!(path) == File.read!(Path.join(@fixtures, "dev-db.yml"))
     end
   end
+
+  describe "service_names/2" do
+    test "the pod: the database and its helpers by engine, the extras by name" do
+      assert Compose.service_names(:dev, ~w(postgres pgadmin)) ==
+               %{names: ~w(network app database pgadmin), optional: [], replicas: false}
+
+      assert Compose.service_names(:prod, ~w(postgres k6 prometheus grafana)) ==
+               %{
+                 names: ~w(network app migrate database k6 prometheus grafana),
+                 optional: [],
+                 replicas: false
+               }
+
+      assert Compose.service_names(:prod, ~w(mssql)).names ==
+               ~w(network app migrate database_init database)
+
+      assert Compose.service_names(:prod, ~w(sqlite)).names == ~w(network app migrate data_init)
+      assert Compose.service_names(:dev, []).names == ~w(network app)
+    end
+
+    test "the scaled deployment: replicas for app, the balancer optional, no pgAdmin" do
+      assert Compose.service_names(:scaled, ~w(postgres pgadmin grafana)) ==
+               %{names: ~w(migrate database grafana), optional: ["balancer"], replicas: true}
+    end
+  end
 end

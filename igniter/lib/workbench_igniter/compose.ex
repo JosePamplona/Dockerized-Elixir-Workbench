@@ -218,6 +218,53 @@ defmodule WorkbenchIgniter.Compose do
 
   @databases ~w(postgres mysql mssql sqlite)
 
+  @doc """
+  The services a deployment's file declares for what the project asks —
+  off the same conditions the templates render by, so the answer and
+  the file cannot disagree. `names` must all be in the file; `optional`
+  may be (the balancer, which `--no-balancer` leaves out); `replicas`
+  says the scaled file's `app1`…`appN` stand where the pod's `app` is.
+  What `WorkbenchIgniter.Deployments` compares each baked file against.
+  """
+  @spec service_names(Plan.deploy(), [String.t()]) :: %{
+          names: [String.t()],
+          optional: [String.t()],
+          replicas: boolean()
+        }
+  def service_names(deploy, services) when deploy in [:dev, :prod, :scaled] do
+    engine = Enum.find(services, &(&1 in @databases))
+    server = engine in ~w(postgres mysql mssql)
+    sqlite = engine == "sqlite"
+    init = if(engine == "mssql", do: ["database_init"], else: [])
+
+    case deploy do
+      :scaled ->
+        # No pod, no pgAdmin: the scaled template renders neither.
+        %{
+          names:
+            if(server, do: ["migrate"] ++ init ++ ["database"], else: []) ++
+              for(s <- ~w(k6 prometheus grafana), s in services, do: s),
+          optional: ["balancer"],
+          replicas: true
+        }
+
+      deploy ->
+        dev = deploy == :dev
+
+        %{
+          names:
+            ["network", "app"] ++
+              if(not dev and (server or sqlite), do: ["migrate"], else: []) ++
+              init ++
+              if(sqlite and not dev, do: ["data_init"], else: []) ++
+              if(server, do: ["database"], else: []) ++
+              for(s <- ~w(pgadmin k6 prometheus grafana), s in services, do: s),
+          optional: [],
+          replicas: false
+        }
+    end
+  end
+
   # What the deployment's template reads and has no default for, and
   # the two shapes no file can take: two databases, or replicas on a file.
   defp check(%Plan{} = plan) do

@@ -18,7 +18,8 @@ defmodule Mix.Tasks.Workbench.Status do
 
   ## Options
 
-  * `--json` - One JSON object, `{"app": ..., "phx": {...}, "cartridges": [...], "services": [...]}`
+  * `--json` - One JSON object, `{"app": ..., "phx": {...}, "cartridges": [...],
+    "services": [...], "birth": {...} | null, "deployments": {...}}`
     — `services` are the compose services the installed cartridges ask
     the workspace for (`postgres`, `pgadmin`, `grafana`…), what `mix workbench.compose`
     bakes in; `phx` is the project's shape in phx.new's terms: each capability,
@@ -28,9 +29,18 @@ defmodule Mix.Tasks.Workbench.Status do
     `mix.exs` for a project generated outside the workbench), and which
     installer is at hand (`installer`). The base cartridges refuse when
     those two differ, so a console can say it before anyone presses
-    Insert.
+    Insert. `birth` is the same shape read off the first commit
+    (`WorkbenchIgniter.Birth`): the sha, date and subject, `phx` as
+    generation left it, and Dockerfile.local's stamps then — what the
+    project was made with, never inferred; null for a project not born
+    in a workspace. `deployments` is each compose file beside the project
+    (`WorkbenchIgniter.Deployments`): baked, the services it declares,
+    and whether it is in sync with what the cartridges ask for now, with
+    what is stray or missing when it is not.
   """
 
+  alias WorkbenchIgniter.Birth
+  alias WorkbenchIgniter.Deployments
   alias WorkbenchIgniter.Features
 
   @impl Mix.Task
@@ -42,7 +52,15 @@ defmodule Mix.Tasks.Workbench.Status do
     # that reads the source.
     Application.ensure_all_started(:rewrite)
 
-    %{app: app, phx: phx, cartridges: cartridges, services: services} = answer = read()
+    %{
+      app: app,
+      phx: phx,
+      cartridges: cartridges,
+      services: services,
+      birth: birth,
+      deployments: deployments
+    } =
+      answer = read()
 
     if opts[:json] do
       IO.puts(Jason.encode!(answer, pretty: true))
@@ -52,7 +70,9 @@ defmodule Mix.Tasks.Workbench.Status do
       IO.puts("Cartridges of #{app}: #{length(installed)} installed, #{length(missing)} not.")
       IO.puts("As phx.new would generate it today: mix phx.new . #{Enum.join(phx.flags, " ")}")
       IO.puts(generator_line(phx.generator))
+      IO.puts(birth_line(birth))
       IO.puts("Services: " <> if(services == [], do: "none", else: Enum.join(services, ", ")))
+      IO.puts("Deployments: " <> deployments_line(deployments))
       IO.puts("")
 
       for {title, list} <- [{"Installed", installed}, {"Not installed", missing}],
@@ -79,7 +99,43 @@ defmodule Mix.Tasks.Workbench.Status do
       |> Map.put(:flags, WorkbenchIgniter.PhxDelta.flags(facts))
       |> Map.put(:generator, generator)
 
-    %{app: app, phx: phx, cartridges: cartridges, services: services}
+    birth =
+      case Birth.read() do
+        nil -> nil
+        b -> put_in(b, [:phx, :module], inspect(b.phx.module))
+      end
+
+    %{
+      app: app,
+      phx: phx,
+      cartridges: cartridges,
+      services: services,
+      birth: birth,
+      deployments: Deployments.read(File.cwd!(), services)
+    }
+  end
+
+  defp birth_line(nil),
+    do: "Born: no first commit to read — not a project born in a workspace."
+
+  defp birth_line(%{sha: sha, date: date, phx: phx}),
+    do: "Born #{String.slice(sha, 0, 7)} (#{date}): mix phx.new . #{Enum.join(phx.flags, " ")}"
+
+  defp deployments_line(deployments) do
+    Enum.map_join([:dev, :prod, :scaled], " · ", fn deploy ->
+      case deployments[deploy] do
+        %{baked: false} ->
+          "#{deploy} not baked"
+
+        %{in_sync: true} ->
+          "#{deploy} baked, in sync"
+
+        %{stray: stray, missing: missing} ->
+          "#{deploy} baked, out of sync (" <>
+            Enum.join(Enum.map(stray, &("+" <> &1)) ++ Enum.map(missing, &("-" <> &1)), " ") <>
+            ")"
+      end
+    end)
   end
 
   defp indent(text), do: text |> String.split("\n") |> Enum.map_join("\n", &("  " <> &1))

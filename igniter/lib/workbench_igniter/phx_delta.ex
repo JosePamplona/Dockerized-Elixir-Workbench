@@ -45,9 +45,51 @@ defmodule WorkbenchIgniter.PhxDelta do
     app = Igniter.Project.Application.app_name(igniter)
     {config, igniter} = read(igniter, "config/config.exs")
 
-    facts = %{
+    facts =
+      shape(
+        app,
+        Igniter.Project.Module.module_name_prefix(igniter),
+        dep,
+        config || "",
+        Igniter.exists?(igniter, "AGENTS.md")
+      )
+
+    {facts, igniter}
+  end
+
+  @doc """
+  The same shape, read off the files as text — `mix.exs`,
+  `config/config.exs` and whether `AGENTS.md` exists — for a project
+  that is not on disk as it stands: the first commit, as `git show`
+  hands it over (`WorkbenchIgniter.Birth`). The marks are the ones
+  `facts/1` reads; only the reader differs (a dependency here is the
+  `{:name` that opens its tuple in `deps/0`).
+  """
+  @spec facts_of(String.t(), String.t() | nil, boolean()) :: map()
+  def facts_of(mix, config, agents_md?) do
+    deps = ~r/\{:([a-z0-9_]+)\b/ |> Regex.scan(mix) |> MapSet.new(&Enum.at(&1, 1))
+    dep = &MapSet.member?(deps, Atom.to_string(&1))
+
+    app =
+      case Regex.run(~r/\bapp:\s*:([a-z0-9_]+)/, mix) do
+        [_, name] -> String.to_atom(name)
+        _ -> nil
+      end
+
+    module =
+      case Regex.run(~r/defmodule\s+([A-Z][\w.]*)\.MixProject\b/, mix) do
+        [_, name] -> Module.concat([name])
+        _ -> nil
+      end
+
+    shape(app, module, dep, config || "", agents_md?)
+  end
+
+  # The marks themselves, given a way to ask for a dependency.
+  defp shape(app, module, dep, config, agents_md?) do
+    %{
       app: app,
-      module: Igniter.Project.Module.module_name_prefix(igniter),
+      module: module,
       ecto: dep.(:ecto_sql),
       database:
         cond do
@@ -65,18 +107,15 @@ defmodule WorkbenchIgniter.PhxDelta do
       # --no-live keeps the phoenix_live_view dependency, and the
       # endpoint's /live socket is on with the dashboard too; what only
       # live brings is its own configuration.
-      live:
-        dep.(:phoenix_live_view) and Regex.match?(~r/^config :phoenix_live_view\b/m, config || ""),
+      live: dep.(:phoenix_live_view) and Regex.match?(~r/^config :phoenix_live_view\b/m, config),
       dashboard: dep.(:phoenix_live_dashboard),
-      binary_id: Regex.match?(~r/binary_id:\s*true/, config || ""),
+      binary_id: Regex.match?(~r/binary_id:\s*true/, config),
       # --no-agents-md leaves no mark but the file's absence; without
       # this both generations would carry AGENTS.md and the first
       # capability that changes it would create it in a project that
       # opted out.
-      agents_md: Igniter.exists?(igniter, "AGENTS.md")
+      agents_md: agents_md?
     }
-
-    {facts, igniter}
   end
 
   defp read(igniter, path) do

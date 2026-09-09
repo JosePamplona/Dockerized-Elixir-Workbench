@@ -16,6 +16,23 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **`mix workbench.status` publishes the birth and the deployments.** Two
+  more facts the Record paper reads, both from what the project already
+  has. `birth`, off the first commit and never inferred
+  (`WorkbenchIgniter.Birth`): the sha, date and subject, phx.new's shape
+  as generation left it — the same marks `PhxDelta.facts/1` reads today,
+  now also readable off text, `facts_of/3`, for the files `git show`
+  hands over — and Dockerfile.local's four stamps then; null for a
+  project not born in a workspace. `deployments`
+  (`WorkbenchIgniter.Deployments`): each compose file beside the
+  project, baked or not, the services it declares, and whether it is in
+  sync with what the cartridges ask for now — the names
+  `Compose.service_names/2` renders for those asks, off the templates'
+  own conditions — with what is stray or missing when it is not. Asked
+  of test_001 it says what nobody had seen: the prod file still declares
+  prometheus and grafana after monitoring's revert, which `compose_behind`
+  cannot see because it bakes and compares the dev file alone. The text
+  report says both in a line each.
 - **A decision page for the Project tab's Record paper.**
   `console/el-estado-del-proyecto.html`, drawn on `_workspaces/test_001`
   as it stood on 2026-09-08, settles where a project's state is read and

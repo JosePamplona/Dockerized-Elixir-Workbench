@@ -7,6 +7,20 @@ defmodule WorkbenchIgniter.PhxDeltaTest do
 
   alias WorkbenchIgniter.PhxDelta
 
+  describe "facts_of/3" do
+    test "reads the same marks off the text that facts/1 reads through Igniter" do
+      igniter = phx_test_project()
+      {facts, igniter} = PhxDelta.facts(igniter)
+
+      text = fn path ->
+        igniter = Igniter.include_existing_file(igniter, path)
+        igniter.rewrite |> Rewrite.source!(path) |> Rewrite.Source.get(:content)
+      end
+
+      assert PhxDelta.facts_of(text.("mix.exs"), text.("config/config.exs"), false) == facts
+    end
+  end
+
   describe "facts/1" do
     test "reads a default phx.new project's shape off the project" do
       {facts, _} = PhxDelta.facts(phx_test_project())

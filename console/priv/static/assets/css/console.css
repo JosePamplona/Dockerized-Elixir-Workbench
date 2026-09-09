@@ -235,8 +235,8 @@ section h2 .go{margin-left:4px;display:inline-flex;align-items:center;justify-co
 section h2:has(.go) .fold{width:auto;flex:none}
 section h2:has(.go) .fold::after{display:none}
 section h2:has(.go)::after{content:"▸";flex:none;width:.8em;margin-left:auto;color:var(--soft);font-family:var(--mono);font-size:max(1.25em,17px);line-height:1;letter-spacing:0;text-align:right;pointer-events:none}
-section h2:has(.fold[aria-expanded="true"])::after{content:"▾"}
-section h2:has(.fold:hover)::after,section h2:has(.fold:focus-visible)::after{color:var(--ink)}
+section h2:has(.go):has(.fold[aria-expanded="true"])::after{content:"▾"}
+section h2:has(.go):has(.fold:hover)::after,section h2:has(.go):has(.fold:focus-visible)::after{color:var(--ink)}
 section h2 .go:hover{color:var(--ink);background:var(--surface)}
 section h2 .go svg{width:15px;height:15px;display:block}
 section h2 .go[aria-busy="true"]{color:var(--accent);cursor:progress}

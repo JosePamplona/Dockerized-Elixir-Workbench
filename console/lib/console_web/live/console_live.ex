@@ -166,6 +166,7 @@ defmodule ConsoleWeb.ConsoleLive do
          |> assign(tab: tab)
          |> Hand.take(params)
          |> take_paper(params)
+         |> take_compose(params["deploy"])
          |> Drawer.take(params)
          |> Docker.take(params)
          |> Git.take(params)
@@ -181,23 +182,21 @@ defmodule ConsoleWeb.ConsoleLive do
     paper =
       if params["paper"] in carried, do: params["paper"], else: List.first(carried) || "readme"
 
-    socket
-    |> assign(ppaper: paper, ppage: Project.render(ws, paper))
-    |> take_compose(paper, params["deploy"])
+    assign(socket, ppaper: paper, ppage: Project.render(ws, paper))
   end
 
   defp take_paper(socket, _params), do: socket
 
-  # The compose file open under the Record's deployments: the one the
-  # URL names when it is baked; else the deployment that is up, else
-  # the first baked; nil when none is, and the ribbon says so.
-  defp take_compose(socket, "record", named) do
+  # The compose file open under the Deploy tab's deployments: the one
+  # the URL names when it is baked; else the deployment that is up,
+  # else the first baked; nil when none is, and the sheet says so.
+  defp take_compose(%{assigns: %{tab: "deploy"}} = socket, named) do
     status = socket.assigns.status
     composes = Console.Docker.composes(status)
     assign(socket, pcomposes: composes, pdeploy: compose_open(composes, status, named))
   end
 
-  defp take_compose(socket, _paper, _named), do: assign(socket, pcomposes: [], pdeploy: nil)
+  defp take_compose(socket, _named), do: assign(socket, pcomposes: [], pdeploy: nil)
 
   defp compose_open(composes, status, named) do
     baked = for c <- composes, c.lines, do: c.key
@@ -271,7 +270,8 @@ defmodule ConsoleWeb.ConsoleLive do
       |> reread_paper(moved?)
       |> reask_diff(moved?)
       |> assign(preads: %{})
-      |> then(&take_compose(&1, &1.assigns.ppaper, &1.assigns.pdeploy))
+      # And the compose files under Deploy: a bake may have rewritten one.
+      |> then(&take_compose(&1, &1.assigns.pdeploy))
 
     {:noreply, socket}
   end
@@ -893,6 +893,8 @@ defmodule ConsoleWeb.ConsoleLive do
               jobs={@jobs}
               pick={@pick}
               newp={@newp}
+              composes={@pcomposes}
+              deploy={@pdeploy}
             />
           </section>
 
@@ -923,8 +925,6 @@ defmodule ConsoleWeb.ConsoleLive do
               gt={@gt}
               jobs={@jobs}
               busy={@busy}
-              composes={@pcomposes}
-              deploy={@pdeploy}
             />
           </section>
 

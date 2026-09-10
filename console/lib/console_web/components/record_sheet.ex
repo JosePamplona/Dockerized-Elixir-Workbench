@@ -1,24 +1,21 @@
 defmodule ConsoleWeb.RecordSheet do
   @moduledoc """
   The Record paper drawn: the project's name, its birth in two tables
-  and the command between them, the cartridges it carries on the
-  shelf's own row with their parameters and addresses, and the
-  deployments as `ConsoleWeb.Deployments` draws them. The plan is
-  `ConsoleWeb.Record`; this only lays it out.
+  and the command between them, and the cartridges it carries on the
+  shelf's own row with their parameters and addresses. The plan is
+  `ConsoleWeb.Record`; this only lays it out. The deployments read on
+  the Deploy tab since 2026-09-09, `ConsoleWeb.Deployments`: what the
+  project is here, what is baked and running there.
   """
   use Phoenix.Component
   import ConsoleWeb.Refs
   import ConsoleWeb.Shelf, only: [front: 1]
   import ConsoleWeb.Board, only: [bell: 1]
-  import ConsoleWeb.Deployments, only: [deployments_sheet: 1]
 
   attr :record, :map, required: true
   attr :reads, :any, required: true
   attr :status, :map, default: nil
   attr :busy, :boolean, default: false, doc: "a deploy job is in flight"
-
-  attr :composes, :list, default: [], doc: "the compose files, for the deployments sheet"
-  attr :deploy, :any, default: nil, doc: "which compose file the deployments sheet shows"
 
   def record_sheet(assigns) do
     ~H"""
@@ -93,14 +90,6 @@ defmodule ConsoleWeb.RecordSheet do
           </div>
         </div>
       </section>
-
-      <.deployments_sheet
-        rows={@record.deployments}
-        status={@status}
-        busy={@busy}
-        composes={@composes}
-        deploy={@deploy}
-      />
     </div>
     """
   end

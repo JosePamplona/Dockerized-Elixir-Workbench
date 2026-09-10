@@ -4,14 +4,16 @@ defmodule ConsoleWeb.Deployments do
   baked or not, in sync or with its drift, up, stopped or down, its
   services as ports, and Up or Stop, Down and Bake — and under it the
   file itself, the one whose eye is pressed, in a code box that wears
-  its name. The plan is `ConsoleWeb.Record.deployments/1`; the Record
-  paper places this, and the rail draws its own short row off the same
-  plan in `ConsoleWeb.Board`.
+  its name. The plan is `ConsoleWeb.Record.deployments/1`; the Deploy
+  tab places this under its two cards (it was the Record paper's third
+  section until 2026-09-09: the Record says what the project is, this
+  says what is baked and running), and the rail draws its own short
+  row off the same plan in `ConsoleWeb.Board`.
 
   The eye is on every row: unlit with the remedy while the file is not
   baked, pressed on the one the box shows. It patches the URL
-  (`?deploy=prod`), so the box holds no state of its own and a status
-  arriving reads the files again under the same choice.
+  (`/deploy?deploy=prod`), so the box holds no state of its own and a
+  status arriving reads the files again under the same choice.
   """
   use Phoenix.Component
   import ConsoleWeb.Refs
@@ -157,7 +159,7 @@ defmodule ConsoleWeb.Deployments do
     <.link
       :if={@baked}
       class="go eye"
-      patch={"/project?paper=record&deploy=#{@deploy}"}
+      patch={"/deploy?deploy=#{@deploy}"}
       aria-pressed={to_string(@open)}
       title={"read #{@file} under the table"}
     >

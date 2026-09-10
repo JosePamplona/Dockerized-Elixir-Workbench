@@ -16,6 +16,23 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **The adminer cartridge**, à la carte beside pgadmin as healthcheck2
+  is beside healthcheck: Adminer on the workspace's database whatever
+  the adapter — Postgres, MySQL, MSSQL, SQLite — on its own port, the
+  first free one from 8080. The project owns the login it opens with,
+  `adminer/login.php`: one Adminer plugin fixing the server and the
+  driver off the adapter, filling the user and the database in, and
+  holding the password Adminer checks itself (`pass`; on MSSQL, sa's
+  own) — which Adminer 6's own rule makes necessary, since Postgres
+  trusts 127.0.0.1 inside the pod, MySQL's root has no password and
+  SQLite none at all. Where the database is and which one to open are
+  the deployment's, handed over by the compose as `WORKBENCH_SERVER`
+  and `WORKBENCH_DATABASE`; on SQLite the container mounts the file and
+  runs as its owner. `ADMINER_IMAGE_VERSION` in `config.conf`,
+  `--adminer-port` and `--adminer-version` on `mix workbench.compose`,
+  the container in the console's lists and the Record's ports. The
+  login was measured through the image on all four servers (the
+  cartridge's DESIGN.md).
 - **The Record paper, first on the Project tab.** What the project is,
   drawn off the status and nothing else, in three tenses. *Birth*: the
   toolchain and installer stamped in Dockerfile.local, the `mix phx.new`
@@ -195,6 +212,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   every sha the console shows is a `.commit-ref`, the rail's Cartridges
   wear the facts chips before the origin, and the rail's Services &
   Doors lists one address a line.
+- **The deployments read on the Deploy tab, under its two cards.** The
+  table — each compose file baked or not, in sync or drifted, up,
+  stopped or down, its services, and Stop, Down and Bake on its row —
+  and the file's box under it leave the Record for the Deploy tab,
+  where the reader is when the question is what is baked and running;
+  the Record keeps what the project *is*, its birth and its
+  cartridges. The Deployment card keeps what the table has not — the
+  target with its replicas and balancer, Up and Build of it — and
+  loses Stop and Down, which are a deployment's and sit on its row: two
+  Up buttons for dev ten lines apart was the cost of moving the table
+  whole. The open file is `/deploy?deploy=prod` now, read when the tab
+  is taken and again when a status arrives.
 - **A service's web face is a door.** pgAdmin and Grafana publish a port
   on the host, and the status already names it (`ports.pgadmin`,
   `ports.grafana`): the cartridge's row now wears it as a door, `PGADMIN

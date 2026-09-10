@@ -1,14 +1,18 @@
 defmodule ConsoleWeb.Deploy do
   @moduledoc """
   The Deploy screen: the Project card — where a project is created,
-  and the one that is here deleted — and the Deployment card. Every
-  button is a `wb.sh` line handed to the `run` event; the two that
-  cannot be taken back come back as a pending job, and the card that
-  asked shows the question.
+  and the one that is here deleted — the Deployment card, where a
+  target is picked and brought up, and under them the deployments as
+  they are, `ConsoleWeb.Deployments`: each compose file baked or not,
+  in sync or drifted, up, stopped or down, with Stop, Down and Bake on
+  its row and the file itself in a box. Every button is a `wb.sh` line
+  handed to the `run` event; the two that cannot be taken back come
+  back as a pending job, and the card that asked shows the question.
   """
   use Phoenix.Component
   import ConsoleWeb.Refs
-  alias ConsoleWeb.Cartridges
+  import ConsoleWeb.Deployments, only: [deployments_sheet: 1]
+  alias ConsoleWeb.{Cartridges, Record}
 
   @targets %{
     "dev" =>
@@ -30,11 +34,21 @@ defmodule ConsoleWeb.Deploy do
   attr :jobs, :list, default: []
   attr :pick, :map, required: true, doc: "target, replicas, balancer"
   attr :newp, :map, required: true, doc: "out: names left out, gen: the flags"
+  attr :composes, :list, default: [], doc: "the compose files, for the deployments sheet"
+  attr :deploy, :any, default: nil, doc: "which compose file the deployments sheet shows"
 
   def deploy(assigns) do
     ~H"""
     <.new_card status={@status} catalog={@catalog} config={@config} jobs={@jobs} newp={@newp} />
     <.deployment status={@status} catalog={@catalog} jobs={@jobs} pick={@pick} />
+    <.deployments_sheet
+      :if={@status && @status["exists"] == true}
+      rows={Record.deployments(@status)}
+      status={@status}
+      busy={busy?(@jobs, [:up, :stop, :down, :build])}
+      composes={@composes}
+      deploy={@deploy}
+    />
     """
   end
 
@@ -85,7 +99,7 @@ defmodule ConsoleWeb.Deploy do
           :if={@project?}
           class="lk"
           patch="/project?paper=record"
-          title="the Record: what this project is — its birth, its cartridges, its deployments"
+          title="the Record: what this project is — its birth, its cartridges"
         >
           what it is
         </.link>
@@ -418,39 +432,10 @@ defmodule ConsoleWeb.Deploy do
             phx-click="run"
             phx-value-args={"build --deploy #{@pickname}#{@extra}"}
           >Build {@pickname}</button>
-          <span class="sep"></span>
-          <button
-            class="btn"
-            disabled={@busy or @alive == 0}
-            title={
-              if @alive == 0,
-                do: "nothing is running",
-                else:
-                  "stops the #{@alive} running container#{if @alive == 1, do: "", else: "s"}, keeping them"
-            }
-            phx-click="run"
-            phx-value-args={
-              String.replace_prefix(cmdline("stop", @running || "dev", ""), "./wb.sh ", "")
-            }
-          >Stop</button>
-          <button
-            class="btn"
-            disabled={@busy or @left == 0}
-            title={
-              if @left == 0,
-                do: "there are no containers to remove",
-                else:
-                  "removes the #{@left} container#{if @left == 1, do: "", else: "s"} of the project, running or not"
-            }
-            phx-click="run"
-            phx-value-args={
-              String.replace_prefix(cmdline("down", @running || "dev", ""), "./wb.sh ", "")
-            }
-          >Down</button>
           <span class="note">{cond do
             @noproject -> "the workspace is empty: create a project first"
-            @running -> "on #{@running}"
-            @left > 0 -> "on what is left of the project"
+            @running -> "#{@running} is up: its row under the card stops it, or takes it down"
+            @left > 0 -> "what is left of the project comes down from its row under the card"
             true -> "nothing is up"
           end}</span>
         </div>

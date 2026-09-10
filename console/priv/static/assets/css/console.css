@@ -1262,7 +1262,8 @@ span.fact input{accent-color:var(--accent);width:14px;height:14px;margin:0;verti
 /* The target's cell: the radio and the name on one line, what the
    deployment is under them in the reading face, scaled's options under
    that. Wide enough for two lines of the sentence, no wider. */
-.deployments table.rows.deps td.k{width:240px;white-space:normal;vertical-align:top;font-family:inherit;font-weight:400;letter-spacing:0;text-transform:none;font-size:inherit}
+.deployments table.rows.deps td.k{width:240px;white-space:normal;vertical-align:top;font-family:inherit;font-weight:400;letter-spacing:0;text-transform:none;font-size:inherit;padding-left:calc(var(--cell) + 4px)}
+.deployments table.rows.deps th:first-child{padding-left:calc(var(--cell) + 4px)}
 .deployments .pickt{display:inline-flex;gap:8px;align-items:center;cursor:pointer;font-family:var(--cond);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:13px}
 .deployments .pickt input{margin:0}
 .deployments .what{margin:4px 0 0;font-family:var(--serif);font-size:12.5px;line-height:1.45;color:var(--muted)}

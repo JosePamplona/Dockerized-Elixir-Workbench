@@ -202,7 +202,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   table, wearing its name — pressed on the one shown, unlit with the
   remedy while not baked. The box shows the deployment that is up, or
   the first baked, unless the URL names one
-  (`/project?paper=record&deploy=prod`); with none baked it is one
+  (`/deploy?compose=prod`); with none baked it is one
   line saying so. The box is as tall as the reader leaves it, with the
   jobs' own grip under it — the `JobOut` hook now rides any pane
   wearing `data-tall`, and the compose box keeps its height across
@@ -222,7 +222,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   target with its replicas and balancer, Up and Build of it — and
   loses Stop and Down, which are a deployment's and sit on its row: two
   Up buttons for dev ten lines apart was the cost of moving the table
-  whole. The open file is `/deploy?deploy=prod` now, read when the tab
+  whole. The open file is `/deploy?compose=prod` now, read when the tab
   is taken and again when a status arrives.
 - **A service's web face is a door.** pgAdmin and Grafana publish a port
   on the host, and the status already names it (`ports.pgadmin`,

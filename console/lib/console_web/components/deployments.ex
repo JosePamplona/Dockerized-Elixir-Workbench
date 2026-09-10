@@ -12,7 +12,7 @@ defmodule ConsoleWeb.Deployments do
 
   The eye is on every row: unlit with the remedy while the file is not
   baked, pressed on the one the box shows. It patches the URL
-  (`/deploy?deploy=prod`), so the box holds no state of its own and a
+  (`/deploy?compose=prod`), so the box holds no state of its own and a
   status arriving reads the files again under the same choice.
   """
   use Phoenix.Component
@@ -159,7 +159,7 @@ defmodule ConsoleWeb.Deployments do
     <.link
       :if={@baked}
       class="go eye"
-      patch={"/deploy?deploy=#{@deploy}"}
+      patch={"/deploy?compose=#{@deploy}"}
       aria-pressed={to_string(@open)}
       title={"read #{@file} under the table"}
     >

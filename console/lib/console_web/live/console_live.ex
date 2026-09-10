@@ -166,7 +166,7 @@ defmodule ConsoleWeb.ConsoleLive do
          |> assign(tab: tab)
          |> Hand.take(params)
          |> take_paper(params)
-         |> take_compose(params["deploy"])
+         |> take_compose(params["compose"])
          |> Drawer.take(params)
          |> Docker.take(params)
          |> Git.take(params)

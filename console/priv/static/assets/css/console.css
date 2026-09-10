@@ -405,6 +405,10 @@ table.rows tr.new{animation:seat 1.2s ease-out}
    the one touching its own caption. */
 .cluster .acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .note{font-size:13px;color:var(--muted);font-style:italic;margin:0}
+/* What comes off the project while a full status is in flight: the last
+   reading's, dimmed with the reason in the title — unlit, not asserted,
+   and not .unlit, which forbids the cursor over what is still pressable. */
+.stale{opacity:.45;transition:opacity .2s}
 
 /* --- tabs ---------------------------------------------------------------- */
 .tabs{flex:none;display:flex;gap:2px;padding:14px 28px 0;border-bottom:1px solid var(--line);background:var(--ground);flex-wrap:wrap;row-gap:0}

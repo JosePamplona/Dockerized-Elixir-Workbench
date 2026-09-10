@@ -35,9 +35,9 @@ defmodule ConsoleWeb.Board do
       <.workspace status={@status} rebind={@rebind} />
       <.services_doors status={@status} catalog={@catalog} folded={@folded} reads={@reads} />
       <.git status={@status} folded={@folded} />
-      <.deployments status={@status} busy={@busy} folded={@folded} />
+      <.deployments status={@status} busy={@busy} folded={@folded} stale={@reading == :full} />
       <.containers status={@status} folded={@folded} />
-      <.inserted status={@status} catalog={@catalog} folded={@folded} />
+      <.inserted status={@status} catalog={@catalog} folded={@folded} stale={@reading == :full} />
       <p :if={@error} class="note">{@error}</p>
     <% end %>
     """
@@ -222,8 +222,13 @@ defmodule ConsoleWeb.Board do
   # The three deployments as the Record draws them — baked, up —
   # with the row's one action beside. The services go in Services & Doors:
   # a port face does not fit in a sixth column of a 380px rail.
+  # What comes off the project — in sync or not, the cartridges in —
+  # is the last full reading's until the next lands: while one is in
+  # flight it is dimmed, with the reason, not asserted.
+  @stale_why "reading the project again: this is the last reading's, until the new one lands"
+
   defp deployments(assigns) do
-    assigns = assign(assigns, rows: Record.deployments(assigns.status))
+    assigns = assign(assigns, rows: Record.deployments(assigns.status), why: @stale_why)
 
     ~H"""
     <section class={folded?(@folded, "deployments") && "folded"}>
@@ -240,7 +245,7 @@ defmodule ConsoleWeb.Board do
         <%= for d <- @rows do %>
           <tr>
             <td class="k">{d.deploy}</td>
-            <td class="st">
+            <td class={["st", @stale && "stale"]} title={@stale && @why}>
               <.chip :if={!d.baked} class="off" title={"up --deploy #{d.deploy} bakes it"}>
                 not baked
               </.chip>
@@ -571,12 +576,12 @@ defmodule ConsoleWeb.Board do
         do: "none",
         else: "#{length(ins)} in · #{revertible} the workbench can eject"
 
-    assigns = assign(assigns, ins: ins, sum: sum)
+    assigns = assign(assigns, ins: ins, sum: sum, why: @stale_why)
 
     ~H"""
     <section class={folded?(@folded, "inserted") && "folded"}>
       <.head key="inserted" name="Cartridges" label={@sum} folded={@folded} />
-      <table class="rows" id="slots">
+      <table class={["rows", @stale && "stale"]} id="slots" title={@stale && @why}>
         <tr :if={@ins == []}>
           <td class="nothing">Nothing inserted yet: the shelf is in Cartridges.</td>
         </tr>

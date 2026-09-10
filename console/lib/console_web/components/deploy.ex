@@ -36,6 +36,7 @@ defmodule ConsoleWeb.Deploy do
   attr :newp, :map, required: true, doc: "out: names left out, gen: the flags"
   attr :composes, :list, default: [], doc: "the compose files, for the deployments sheet"
   attr :deploy, :any, default: nil, doc: "which compose file the deployments sheet shows"
+  attr :reading, :any, default: false, doc: "a status in flight: :fast, :full, or false"
 
   def deploy(assigns) do
     ~H"""
@@ -48,6 +49,7 @@ defmodule ConsoleWeb.Deploy do
       busy={busy?(@jobs, [:up, :stop, :down, :build])}
       composes={@composes}
       deploy={@deploy}
+      stale={@reading == :full}
     />
     """
   end

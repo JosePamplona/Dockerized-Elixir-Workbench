@@ -21,6 +21,7 @@ defmodule ConsoleWeb.ProjectScreen do
   attr :gt, :map, default: nil, doc: "the git papers' state, ConsoleWeb.ConsoleLive.Git"
   attr :jobs, :list, default: []
   attr :busy, :boolean, default: false, doc: "a deploy job is in flight"
+  attr :reading, :any, default: false, doc: "a status in flight: :fast, :full, or false"
 
   def project_screen(assigns) do
     ~H"""
@@ -61,6 +62,7 @@ defmodule ConsoleWeb.ProjectScreen do
         reads={@reads}
         status={@status}
         busy={@busy}
+        stale={@reading == :full}
       />
       <div :if={@page && @page[:git] && @gt} class="dkdoc git">
         <.git_pending :if={@page[:git] == "pending"} gt={@gt} status={@status} jobs={@jobs} />

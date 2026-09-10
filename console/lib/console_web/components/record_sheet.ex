@@ -17,6 +17,10 @@ defmodule ConsoleWeb.RecordSheet do
   attr :status, :map, default: nil
   attr :busy, :boolean, default: false, doc: "a deploy job is in flight"
 
+  attr :stale, :boolean,
+    default: false,
+    doc: "a full status is in flight: the cartridges are the last reading's"
+
   def record_sheet(assigns) do
     ~H"""
     <div class="record" id="p-record">
@@ -36,7 +40,12 @@ defmodule ConsoleWeb.RecordSheet do
         <h3 title="what the project carries, on the shelf's own row">
           Cartridges <span class="label">{length(@record.cartridges)} in</span>
         </h3>
-        <div class="list wide">
+        <div
+          class={["list wide", @stale && "stale"]}
+          title={
+            @stale && "reading the project again: this is the last reading's, until the new one lands"
+          }
+        >
           <div class="lrow head">
             <span></span>
             <span class="label">cartridge</span>

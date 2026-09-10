@@ -223,6 +223,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   Up buttons for dev ten lines apart was the cost of moving the table
   whole. The open file is `/deploy?compose=prod` now, read when the tab
   is taken and again when a status arrives.
+- **What comes off the project is dimmed while it is being read
+  again.** A full status boots Mix in a container and takes seconds;
+  a fast one lands meanwhile — the daemon's events ask for one — and
+  carries the project's facts as they were, so a row said *baked* for
+  the seconds between an insert and the reading that knew of it. The
+  facts that only a full reading changes — the compose file in sync or
+  not and its differences, on the Deploy tab and in the rail, the
+  cartridges in the rail and on the Record — wear `.stale` while one
+  is in flight: dimmed, with "reading the project again" in the title,
+  and pressable still, which is why it is not `.unlit`. Unlit, not
+  asserted.
 - **A service's web face is a door.** pgAdmin and Grafana publish a port
   on the host, and the status already names it (`ports.pgadmin`,
   `ports.grafana`): the cartridge's row now wears it as a door, `PGADMIN

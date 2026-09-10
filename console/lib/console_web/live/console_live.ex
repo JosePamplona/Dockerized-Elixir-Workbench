@@ -888,6 +888,7 @@ defmodule ConsoleWeb.ConsoleLive do
               newp={@newp}
               composes={@pcomposes}
               deploy={@pdeploy}
+              reading={@reading}
             />
           </section>
 
@@ -918,6 +919,7 @@ defmodule ConsoleWeb.ConsoleLive do
               gt={@gt}
               jobs={@jobs}
               busy={@busy}
+              reading={@reading}
             />
           </section>
 

@@ -20,6 +20,13 @@ defmodule ConsoleWeb.Deployments do
   import ConsoleWeb.Refs
   import ConsoleWeb.Board, only: [bake_button: 1, deploy_button: 1]
 
+  # What comes off the project — in sync or not, the drift — is the last
+  # full reading's until the next lands, and a fast status meanwhile
+  # carries it as it was. While a full one is in flight it is dimmed,
+  # with this on it: unlit, not asserted (a row said "baked" for the
+  # seconds between an insert and the reading that knew of it).
+  @stale_why "reading the project again: this is the last reading's, until the new one lands"
+
   attr :rows, :list, required: true, doc: "ConsoleWeb.Record.deployments/1"
   attr :status, :map, default: nil
   attr :busy, :boolean, default: false, doc: "a deploy job is in flight"
@@ -30,7 +37,13 @@ defmodule ConsoleWeb.Deployments do
 
   attr :deploy, :any, default: nil, doc: "the file the box shows; nil when none is baked"
 
+  attr :stale, :boolean,
+    default: false,
+    doc: "a full status is in flight: what comes off the project is the last reading's"
+
   def deployments_sheet(assigns) do
+    assigns = assign(assigns, why: @stale_why)
+
     ~H"""
     <section class="deployments">
       <h3 title="the compose files baked into the workspace, one per deployment: the topology each brings up">
@@ -59,19 +72,21 @@ defmodule ConsoleWeb.Deployments do
               <td class="k">{d.deploy}</td>
               <td class="file">
                 <.eye deploy={d.deploy} file={d.file} baked={d.baked} open={@deploy == d.deploy} />
-                <.chip :if={!d.baked} class="off" title={"up --deploy #{d.deploy} bakes it"}>
-                  not baked
-                </.chip>
-                <.chip
-                  :if={d.baked && d.in_sync == false}
-                  class="warn"
-                  title="the file no longer says what the cartridges ask for: bake writes it again"
-                >
-                  out of sync
-                </.chip>
-                <.chip :if={d.baked && d.in_sync != false} class="good">baked</.chip>
+                <span class={@stale && "stale"} title={@stale && @why}>
+                  <.chip :if={!d.baked} class="off" title={"up --deploy #{d.deploy} bakes it"}>
+                    not baked
+                  </.chip>
+                  <.chip
+                    :if={d.baked && d.in_sync == false}
+                    class="warn"
+                    title="the file no longer says what the cartridges ask for: bake writes it again"
+                  >
+                    out of sync
+                  </.chip>
+                  <.chip :if={d.baked && d.in_sync != false} class="good">baked</.chip>
+                </span>
               </td>
-              <td class="sync">
+              <td class={["sync", @stale && "stale"]} title={@stale && @why}>
                 <span :if={d.stray != [] or d.missing != []} class="drift" title={sync_title(d)}>
                   <.chip
                     :for={s <- d.stray}

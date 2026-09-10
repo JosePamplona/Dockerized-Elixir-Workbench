@@ -1,27 +1,19 @@
 defmodule ConsoleWeb.Deploy do
   @moduledoc """
   The Deploy screen: the Project card — where a project is created,
-  and the one that is here deleted — the Deployment card, where a
-  target is picked and brought up, and under them the deployments as
-  they are, `ConsoleWeb.Deployments`: each compose file baked or not,
-  in sync or drifted, up, stopped or down, with Stop, Down and Bake on
-  its row and the file itself in a box. Every button is a `wb.sh` line
-  handed to the `run` event; the two that cannot be taken back come
-  back as a pending job, and the card that asked shows the question.
+  and the one that is here deleted — and the Deployments card,
+  `ConsoleWeb.Deployments`: one row per deployment, picked on its row,
+  each compose file baked or not, in sync or drifted, up, stopped or
+  down, with Stop, Down and Bake on its row, the file itself in a box,
+  and Up and Build of the picked one under the table. Every button is a
+  `wb.sh` line handed to the `run` event; the two that cannot be taken
+  back come back as a pending job, and the card that asked shows the
+  question.
   """
   use Phoenix.Component
   import ConsoleWeb.Refs
   import ConsoleWeb.Deployments, only: [deployments_sheet: 1]
   alias ConsoleWeb.{Cartridges, Record}
-
-  @targets %{
-    "dev" =>
-      "The dev toolchain image with the source mounted. Recompiles on boot; iex -S mix on the container.",
-    "prod" =>
-      "The release image, built from the project's Dockerfile on each up. No source, no Mix. A one-shot migrate runs first, and the app waits for it.",
-    "scaled" =>
-      "N production replicas behind an nginx balancer, on a bridge network. A BEAM cluster if clustering is inserted."
-  }
 
   # Generation-only flags of phx.new. --database and --binary-id are
   # phx.new flags too, but only Ecto reads them: they are the ecto
@@ -39,9 +31,19 @@ defmodule ConsoleWeb.Deploy do
   attr :reading, :any, default: false, doc: "a status in flight: :fast, :full, or false"
 
   def deploy(assigns) do
+    running = assigns.status && assigns.status["deployment"]
+    pick = assigns.pick.target || running || "dev"
+
+    assigns =
+      assign(assigns,
+        running: running,
+        pickname: pick,
+        extra: if(pick == "scaled", do: scaled_extra(assigns.pick), else: ""),
+        clustering: assigns.status && Cartridges.installed?(assigns.status, "clustering")
+      )
+
     ~H"""
     <.new_card status={@status} catalog={@catalog} config={@config} jobs={@jobs} newp={@newp} />
-    <.deployment status={@status} catalog={@catalog} jobs={@jobs} pick={@pick} />
     <.deployments_sheet
       rows={Record.deployments(@status || %{})}
       status={@status}
@@ -49,6 +51,11 @@ defmodule ConsoleWeb.Deploy do
       composes={@composes}
       deploy={@deploy}
       stale={@reading == :full}
+      pick={@pick}
+      pickname={@pickname}
+      running={@running}
+      extra={@extra}
+      clustering={@clustering}
     />
     """
   end
@@ -334,116 +341,6 @@ defmodule ConsoleWeb.Deploy do
       v && v != o["default"] -> [flag, v]
       true -> []
     end
-  end
-
-  # --- the deployment card ---------------------------------------------------
-
-  defp deployment(assigns) do
-    running = assigns.status && assigns.status["deployment"]
-    pick = assigns.pick.target || running || "dev"
-    busy = busy?(assigns.jobs, [:up, :stop, :down, :build])
-    noproject = is_nil(assigns.status) or assigns.status["exists"] != true
-    extra = if pick == "scaled", do: scaled_extra(assigns.pick), else: ""
-    clustering = assigns.status && Cartridges.installed?(assigns.status, "clustering")
-    # Stop and Down used to be gated on `deployment`, which is only ever
-    # a name while an *app* container runs. So the moment the app was not
-    # running — it crashed, it failed to compile, or you had just pressed
-    # Stop — the workspace's other containers were still there and both
-    # buttons were dead: Stop was a one-way door. They ask the containers
-    # now, which is the thing they act on. Down takes what exists away
-    # (`compose down --remove-orphans`, and the three composes share the
-    # project name, so it reaches whatever deployment left them); Stop
-    # only has work while something still runs.
-    cs = (assigns.status && assigns.status["containers"]) || []
-    left = Enum.count(cs)
-    alive = Enum.count(cs, &(&1["State"] == "running"))
-
-    assigns =
-      assign(assigns,
-        running: running,
-        pickname: pick,
-        busy: busy,
-        noproject: noproject,
-        extra: extra,
-        clustering: clustering,
-        targets: @targets,
-        left: left,
-        alive: alive
-      )
-
-    ~H"""
-    <div class="targets">
-      <div class="deployment">
-        <h3>Deployment</h3>
-        <div class="now">
-          <.chip class={
-            cond do
-              @busy -> "warn busy"
-              @running -> "good"
-              @left > 0 -> "warn"
-              true -> "off"
-            end
-          }>
-            {cond do
-              @busy -> "working"
-              @running -> "#{@running} is running"
-              @left > 0 -> "#{@left} container#{if @left == 1, do: "", else: "s"} left"
-              true -> "nothing is up"
-            end}
-          </.chip>
-          <span class="note">{cond do
-            @running ->
-              "one deployment at a time: the composes share the project name, so Up replaces it"
-
-            @left > 0 ->
-              "no deployment is up, but the project's containers are still there: Down removes them"
-
-            true ->
-              "pick a target and bring it up"
-          end}</span>
-        </div>
-        <form class="pick" id="deploy-pick" phx-change="pick">
-          <label :for={name <- ~w(dev prod scaled)} class={name == @pickname && "on"}>
-            <div>
-              <input type="radio" name="target" value={name} checked={name == @pickname} />
-              <b>{name}</b>
-            </div>
-            <.chip :if={name == "scaled" and !@clustering} class="warn">
-              no clustering: replicas run isolated
-            </.chip>
-            <p>{@targets[name]}</p>
-            <div :if={name == "scaled"} class="opts">
-              --replicas <input type="number" name="replicas" min="1" value={@pick.replicas} />
-              <label><input type="checkbox" name="balancer" checked={@pick.balancer} /> balancer</label>
-            </div>
-          </label>
-        </form>
-        <div class="acts">
-          <button
-            class="btn primary"
-            disabled={@busy or @noproject or @running == @pickname}
-            phx-click="run"
-            phx-value-args={"up --deploy #{@pickname}#{@extra}"}
-          >{if @running && @running != @pickname,
-            do: "Replace #{@running} with #{@pickname}",
-            else: "Up #{@pickname}"}</button>
-          <button
-            class="btn"
-            disabled={@busy or @noproject}
-            phx-click="run"
-            phx-value-args={"build --deploy #{@pickname}#{@extra}"}
-          >Build {@pickname}</button>
-          <span class="note">{cond do
-            @noproject -> "the workspace is empty: create a project first"
-            @running -> "#{@running} is up: its row under the card stops it, or takes it down"
-            @left > 0 -> "what is left of the project comes down from its row under the card"
-            true -> "nothing is up"
-          end}</span>
-        </div>
-        <div class="cmd">./wb.sh up --deploy {@pickname}{@extra}</div>
-      </div>
-    </div>
-    """
   end
 
   @doc "`--replicas N --no-balancer`, only when they differ from what `up` assumes."

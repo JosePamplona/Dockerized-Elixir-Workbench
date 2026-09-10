@@ -1,10 +1,13 @@
 defmodule ConsoleWeb.Deployments do
   @moduledoc """
-  The deployments as a sheet: the table — one row per compose file,
-  baked or not, in sync or with its drift, up, stopped or down, its
-  services as ports, and Up or Stop, Down and Bake — and under a row
-  the file itself, when its eye is pressed, in a code box that wears
-  its name. The plan is `ConsoleWeb.Record.deployments/1`; the Deploy
+  The deployments as a sheet: the table — one row per deployment, the
+  radio that picks it and what it is, its compose file baked or not, in
+  sync or with its drift, up, stopped or down, its services as ports,
+  and Stop, Down and Bake — under a row the file itself, when its eye
+  is pressed, in a code box that wears its name, and under the table Up
+  and Build of the row picked, with the wb.sh line they are. It was two
+  cards until 2026-09-09, a picker of three boxes over a table of the
+  same three rows, and Up twice on one screen. The plan is `ConsoleWeb.Record.deployments/1`; the Deploy
   tab places this under its two cards (it was the Record paper's third
   section until 2026-09-09: the Record says what the project is, this
   says what is baked and running), and the rail draws its own short
@@ -27,6 +30,16 @@ defmodule ConsoleWeb.Deployments do
   # seconds between an insert and the reading that knew of it).
   @stale_why "reading the project again: this is the last reading's, until the new one lands"
 
+  # What each deployment is, under its name on the row.
+  @targets %{
+    "dev" =>
+      "The dev toolchain image with the source mounted. Recompiles on boot; iex -S mix on the container.",
+    "prod" =>
+      "The release image, built from the project's Dockerfile on each up. No source, no Mix. A one-shot migrate runs first, and the app waits for it.",
+    "scaled" =>
+      "N production replicas behind an nginx balancer, on a bridge network. A BEAM cluster if clustering is inserted."
+  }
+
   attr :rows, :list, required: true, doc: "ConsoleWeb.Record.deployments/1"
   attr :status, :map, default: nil
   attr :busy, :boolean, default: false, doc: "a deploy job is in flight"
@@ -41,6 +54,12 @@ defmodule ConsoleWeb.Deployments do
     default: false,
     doc: "a full status is in flight: what comes off the project is the last reading's"
 
+  attr :pick, :map, required: true, doc: "target, replicas, balancer — the reader's choice"
+  attr :pickname, :string, required: true, doc: "the deployment picked: the row with the radio on"
+  attr :running, :any, default: nil, doc: "the deployment that is up, if one"
+  attr :extra, :string, default: "", doc: "--replicas N --no-balancer, when they differ"
+  attr :clustering, :any, default: false, doc: "the clustering cartridge is in"
+
   def deployments_sheet(assigns) do
     # Without a project the three rows are there, not baked, every
     # button unlit with the same reason: the table is the tab's, not
@@ -50,6 +69,7 @@ defmodule ConsoleWeb.Deployments do
     assigns =
       assign(assigns,
         why: @stale_why,
+        targets: @targets,
         empty: empty,
         not_baked:
           if(empty,
@@ -60,135 +80,180 @@ defmodule ConsoleWeb.Deployments do
 
     ~H"""
     <section class="deployments">
-      <h3 title="the compose files baked into the workspace, one per deployment: the topology each brings up">
+      <h3 title="the compose files baked into the workspace, one per deployment: the topology each brings up — pick one on its row, and Up or Build it under the table">
         Deployments <span class="label">Topology</span>
       </h3>
-      <table class="rows deps">
-        <thead>
-          <tr>
-            <th></th>
-            <th title="the deployment's compose file, baked into the workspace, out of sync with the project, or not baked yet">
-              compose file
-            </th>
-            <th title="what the file declares that no cartridge asks for any more (+), and what a cartridge asks for that the file lacks (−); nothing when the file says what the cartridges ask">
-              differences
-            </th>
-            <th>status</th>
-            <th title="the services the compose file declares; with the deployment up, what docker compose ps says of each">
-              services
-            </th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <%= for d <- @rows do %>
+      <form id="deploy-pick" phx-change="pick">
+        <table class="rows deps">
+          <thead>
             <tr>
-              <td class="k">{d.deploy}</td>
-              <td class="file">
-                <.eye
-                  deploy={d.deploy}
-                  file={d.file}
-                  baked={d.baked}
-                  open={@deploy == d.deploy}
-                  why={
-                    !d.baked &&
-                      if(@empty,
-                        do: @not_baked,
-                        else: "not baked: no #{d.file} in this workspace — #{@not_baked}"
-                      )
-                  }
-                />
-                <span class={@stale && "stale"} title={@stale && @why}>
-                  <.chip :if={!d.baked} class="off" title={@not_baked}>
-                    not baked
+              <th title="the deployment: pick it here, and Up or Build it under the table">target</th>
+              <th title="the deployment's compose file, baked into the workspace, out of sync with the project, or not baked yet">
+                compose file
+              </th>
+              <th title="what the file declares that no cartridge asks for any more (+), and what a cartridge asks for that the file lacks (−); nothing when the file says what the cartridges ask">
+                differences
+              </th>
+              <th>status</th>
+              <th title="the services the compose file declares; with the deployment up, what docker compose ps says of each">
+                services
+              </th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <%= for d <- @rows do %>
+              <tr class={d.deploy == @pickname && "on"}>
+                <td class="k">
+                  <label class="pickt">
+                    <input
+                      type="radio"
+                      name="target"
+                      value={d.deploy}
+                      checked={d.deploy == @pickname}
+                    />
+                    <b>{d.deploy}</b>
+                  </label>
+                  <p class="what">{@targets[d.deploy]}</p>
+                  <.chip :if={d.deploy == "scaled" and !@clustering} class="warn">
+                    no clustering: replicas run isolated
                   </.chip>
-                  <.chip
-                    :if={d.baked && d.in_sync == false}
-                    class="warn"
-                    title="the file no longer says what the cartridges ask for: bake writes it again"
-                  >
-                    out of sync
-                  </.chip>
-                  <.chip :if={d.baked && d.in_sync != false} class="good">baked</.chip>
-                </span>
-              </td>
-              <td class={["sync", @stale && "stale"]} title={@stale && @why}>
-                <span :if={d.stray != [] or d.missing != []} class="drift" title={sync_title(d)}>
-                  <.chip
-                    :for={s <- d.stray}
-                    class="warn"
-                    title="declared in the file, but no cartridge asks for it any more"
-                  >
-                    +{s}
-                  </.chip>
-                  <.chip
-                    :for={m <- d.missing}
-                    class="warn"
-                    title="asked for by a cartridge, not in the file"
-                  >
-                    −{m}
-                  </.chip>
-                </span>
-              </td>
-              <td class="st">
-                <.chip :if={d.status == "up"} class="good">up</.chip>
-                <.chip
-                  :if={d.status == "stopped"}
-                  class="off"
-                  title="its containers are there, stopped: Up brings them back fast"
-                >
-                  stopped
-                </.chip>
-                <.chip :if={d.status == "down"} class="off" title="no containers: Up creates them">
-                  down
-                </.chip>
-              </td>
-              <td>
-                <span class="pairs">
-                  <.door_ref
-                    :for={a <- d.services}
-                    label={a.label}
-                    path={a.path}
-                    href={a.href}
-                    why={a.why}
-                    kind={a.kind}
-                    port={a.kind == "route" && a.port}
-                    read={a.read}
+                  <div :if={d.deploy == "scaled"} class="opts">
+                    --replicas <input type="number" name="replicas" min="1" value={@pick.replicas} />
+                    <label><input type="checkbox" name="balancer" checked={@pick.balancer} /> balancer</label>
+                  </div>
+                </td>
+                <td class="file">
+                  <.eye
+                    deploy={d.deploy}
+                    file={d.file}
+                    baked={d.baked}
+                    open={@deploy == d.deploy}
+                    why={
+                      !d.baked &&
+                        if(@empty,
+                          do: @not_baked,
+                          else: "not baked: no #{d.file} in this workspace — #{@not_baked}"
+                        )
+                    }
                   />
-                </span>
-              </td>
-              <td class="act">
-                <.deploy_button
-                  :if={d.status == "up"}
-                  verb="stop"
-                  name={d.deploy}
-                  status={@status}
-                  busy={@busy}
-                />
-                <.deploy_button
-                  :if={d.status != "up" and d.baked}
-                  verb="up"
-                  name={d.deploy}
-                  status={@status}
-                  busy={@busy}
-                />
-                <.deploy_button
-                  :if={d.baked}
-                  verb="down"
-                  name={d.deploy}
-                  status={@status}
-                  busy={@busy}
-                  present={d.present}
-                />
-                <.bake_button name={d.deploy} status={@status} busy={@busy} baked={d.baked} />
-              </td>
-            </tr>
-            <tr :if={@deploy == d.deploy} class="fbox">
-              <td colspan="6"><.file_sheet composes={@composes} deploy={d.deploy} /></td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
+                  <span class={@stale && "stale"} title={@stale && @why}>
+                    <.chip :if={!d.baked} class="off" title={@not_baked}>
+                      not baked
+                    </.chip>
+                    <.chip
+                      :if={d.baked && d.in_sync == false}
+                      class="warn"
+                      title="the file no longer says what the cartridges ask for: bake writes it again"
+                    >
+                      out of sync
+                    </.chip>
+                    <.chip :if={d.baked && d.in_sync != false} class="good">baked</.chip>
+                  </span>
+                </td>
+                <td class={["sync", @stale && "stale"]} title={@stale && @why}>
+                  <span :if={d.stray != [] or d.missing != []} class="drift" title={sync_title(d)}>
+                    <.chip
+                      :for={s <- d.stray}
+                      class="warn"
+                      title="declared in the file, but no cartridge asks for it any more"
+                    >
+                      +{s}
+                    </.chip>
+                    <.chip
+                      :for={m <- d.missing}
+                      class="warn"
+                      title="asked for by a cartridge, not in the file"
+                    >
+                      −{m}
+                    </.chip>
+                  </span>
+                </td>
+                <td class="st">
+                  <.chip :if={d.status == "up"} class="good">up</.chip>
+                  <.chip
+                    :if={d.status == "stopped"}
+                    class="off"
+                    title="its containers are there, stopped: Up brings them back fast"
+                  >
+                    stopped
+                  </.chip>
+                  <.chip :if={d.status == "down"} class="off" title="no containers: Up creates them">
+                    down
+                  </.chip>
+                </td>
+                <td>
+                  <span class="pairs">
+                    <.door_ref
+                      :for={a <- d.services}
+                      label={a.label}
+                      path={a.path}
+                      href={a.href}
+                      why={a.why}
+                      kind={a.kind}
+                      port={a.kind == "route" && a.port}
+                      read={a.read}
+                    />
+                  </span>
+                </td>
+                <td class="act">
+                  <.deploy_button
+                    :if={d.status == "up"}
+                    verb="stop"
+                    name={d.deploy}
+                    status={@status}
+                    busy={@busy}
+                  />
+                  <.deploy_button
+                    :if={d.baked}
+                    verb="down"
+                    name={d.deploy}
+                    status={@status}
+                    busy={@busy}
+                    present={d.present}
+                  />
+                  <.bake_button name={d.deploy} status={@status} busy={@busy} baked={d.baked} />
+                </td>
+              </tr>
+              <tr :if={@deploy == d.deploy} class="fbox">
+                <td colspan="6"><.file_sheet composes={@composes} deploy={d.deploy} /></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </form>
+      <div class="acts">
+        <button
+          class="btn primary"
+          type="button"
+          disabled={@busy or @empty or @running == @pickname}
+          phx-click="run"
+          phx-value-args={"up --deploy #{@pickname}#{@extra}"}
+        >{if @running && @running != @pickname,
+          do: "Replace #{@running} with #{@pickname}",
+          else: "Up #{@pickname}"}</button>
+        <button
+          class="btn"
+          type="button"
+          disabled={@busy or @empty}
+          phx-click="run"
+          phx-value-args={"build --deploy #{@pickname}#{@extra}"}
+        >Build {@pickname}</button>
+        <span class="note">{cond do
+          @empty ->
+            "the workspace is empty: create a project first"
+
+          @running == @pickname ->
+            "#{@running} is up: its row stops it, or takes it down"
+
+          @running ->
+            "one deployment at a time: the composes share the project name, so Up replaces #{@running}"
+
+          true ->
+            "nothing is up"
+        end}</span>
+      </div>
+      <div class="cmd">./wb.sh up --deploy {@pickname}{@extra}</div>
     </section>
     """
   end

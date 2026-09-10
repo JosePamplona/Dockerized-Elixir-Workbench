@@ -356,31 +356,6 @@ table.rows tr.new{animation:seat 1.2s ease-out}
 #deployments tr.hd th{text-align:left;font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);padding:0 10px 4px 0;border-bottom:1px solid var(--line)}
 #deployments tr.hd + tr td{border-top:0}
 
-.deployment{border:1px solid var(--line);background:var(--surface);border-radius:3px;padding:16px 18px;display:grid;gap:12px}
-.deployment .now{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:14px}
-.deployment .pick{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
-.deployment .pick label{display:grid;gap:6px;border:1px solid var(--line);border-radius:3px;padding:10px 12px;cursor:pointer;align-content:start}
-/* The card the deployment picker paints while rendering, and the one a
-   static block paints on its own: same look, and neither has to know
-   about the other's way of holding the answer. */
-.deployment .pick label.on{border-color:var(--accent);background:var(--accent-soft)}
-.deployment .pick label b{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:13px}
-/* A card goes down to 220px and everything in it has to live there. Grid
-   items are min-content wide by default, and the caveat is a chip — a
-   chip never wraps — so its 268px of unbreakable line was setting the
-   width of all four children and pushing them out through the card's own
-   edge. Here it wraps: it keeps its plate, its colour and its padding,
-   and only stops being one line. The min-width:0 is for whatever is put
-   in one of these cards next. */
-.deployment .pick label > *{min-width:0}
-.deployment .pick label > .chip{white-space:normal}
-.deployment .pick label p{margin:0;font-size:12.5px;color:var(--muted)}
-.deployment .pick .opts{display:flex;gap:8px 12px;align-items:center;flex-wrap:wrap;font-family:var(--mono);font-size:12px;min-width:0}
-.deployment .pick .opts label{display:inline-flex;gap:6px;align-items:center;border:0;padding:0;background:none;border-radius:0;cursor:pointer}
-.deployment .pick .opts input[type=number]{width:52px;font-family:var(--mono);font-size:12px;padding:2px 4px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px}
-.deployment .acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.deployment .acts .sep{width:1px;height:22px;background:var(--line);margin:0 4px}
-.deployment .cmd{font-family:var(--mono);font-size:12px;color:var(--muted)}
 .term .viewport{grid-template-rows:minmax(0,1fr) auto;min-height:0}
 .term .screen{padding:10px 14px;min-height:0}
 .term .screen .p{color:var(--accent)}
@@ -557,7 +532,6 @@ pre .ln{display:block}
 
 
 /* --- deploy -------------------------------------------------------------- */
-.targets{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
 .target{border:1px solid var(--line);background:var(--surface);border-radius:3px;padding:16px;display:grid;gap:12px;align-content:start}
 .target h3{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:18px;display:flex;justify-content:space-between;align-items:center;gap:10px}
 .target p{margin:0;font-size:13.5px;color:var(--muted)}
@@ -1283,7 +1257,23 @@ span.fact input{accent-color:var(--accent);width:14px;height:14px;margin:0;verti
 .deployments table.rows.deps th{text-align:left;font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);padding:0 18px 6px 0;border-bottom:1px solid var(--line)}
 .deployments table.rows.deps td{padding:7px 18px 7px 0;border-top:1px solid var(--line);vertical-align:top}
 .deployments table.rows.deps tbody tr:first-child td{border-top:0}
-.deployments table.rows.deps td.k{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px;width:90px}
+/* The target's cell: the radio and the name on one line, what the
+   deployment is under them in the reading face, scaled's options under
+   that. Wide enough for two lines of the sentence, no wider. */
+.deployments table.rows.deps td.k{width:240px;white-space:normal;vertical-align:top;font-family:inherit;font-weight:400;letter-spacing:0;text-transform:none;font-size:inherit;padding-left:10px}
+.deployments table.rows.deps th:first-child{padding-left:10px}
+.deployments .pickt{display:inline-flex;gap:8px;align-items:center;cursor:pointer;font-family:var(--cond);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:13px}
+.deployments .pickt input{margin:0}
+.deployments .what{margin:4px 0 0;font-family:var(--serif);font-size:12.5px;line-height:1.45;color:var(--muted)}
+.deployments td.k .chip{white-space:normal;margin-top:6px}
+.deployments .opts{display:flex;gap:8px 12px;align-items:center;flex-wrap:wrap;font-family:var(--mono);font-size:12px;min-width:0;margin-top:8px}
+.deployments .opts label{display:inline-flex;gap:6px;align-items:center;cursor:pointer}
+.deployments .opts input[type=number]{width:52px;font-family:var(--mono);font-size:12px;padding:2px 4px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px}
+/* The row picked wears the picker's old ground. */
+.deployments table.rows.deps tr.on td{background:var(--accent-soft)}
+.deployments table.rows.deps tr.on td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+.deployments .acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px}
+.deployments .cmd{font-family:var(--mono);font-size:12px;color:var(--muted)}
 .deployments table.rows.deps td.sync{white-space:normal}
 .deployments table.rows.deps td.act{width:1%;white-space:nowrap;text-align:right;padding-right:0}
 /* The eye before the file's chip: the row's own way to open the file in the box under. */

@@ -352,6 +352,7 @@ defmodule ConsoleWeb.Board do
     ~H"""
     <button
       class={["btn mini", @why && "unlit"]}
+      type="button"
       aria-disabled={@why && "true"}
       title={@title}
       phx-click={!@why && "run"}
@@ -416,6 +417,7 @@ defmodule ConsoleWeb.Board do
     ~H"""
     <button
       class={["btn mini", @why && "unlit"]}
+      type="button"
       aria-disabled={@why && "true"}
       title={@title}
       phx-click={!@why && "run"}

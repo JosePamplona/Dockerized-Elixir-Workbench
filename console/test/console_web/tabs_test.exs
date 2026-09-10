@@ -58,7 +58,7 @@ defmodule ConsoleWeb.TabsTest do
     [sheet] = Regex.run(~r{<section[^>]*class="deployments"[^>]*>.*?</section>}s, html)
 
     for deploy <- ~w(dev prod scaled) do
-      assert sheet =~ ~s(<td class="k">#{deploy}</td>)
+      assert sheet =~ ~s(name="target" value="#{deploy}")
     end
 
     # Three rows, none baked, and every eye and button unlit with the one reason.

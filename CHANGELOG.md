@@ -211,20 +211,22 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   every sha the console shows is a `.commit-ref`, the rail's Cartridges
   wear the facts chips before the origin, and the rail's Services &
   Doors lists one address a line.
-- **The deployments read on the Deploy tab, under its two cards.** The
-  table — each compose file baked or not, in sync or drifted, up,
-  stopped or down, its services, and Stop, Down and Bake on its row —
-  and the file's box under it leave the Record for the Deploy tab,
-  where the reader is when the question is what is baked and running;
-  the Record keeps what the project *is*, its birth and its
-  cartridges. The Deployment card keeps what the table has not — the
-  target with its replicas and balancer, Up and Build of it — and
-  loses Stop and Down, which are a deployment's and sit on its row: two
-  Up buttons for dev ten lines apart was the cost of moving the table
-  whole. The open file is `/deploy?compose=prod` now, read when the tab
-  is taken and again when a status arrives. The table is the tab's,
-  not the project's: with the workspace empty its three rows are
-  there, not baked, every eye and button unlit with the one reason.
+- **The deployments read on the Deploy tab, one card that picks and
+  shows.** The table — each compose file baked or not, in sync or
+  drifted, up, stopped or down, its services, and Stop, Down and Bake
+  on its row — and the file's box under a row leave the Record for the
+  Deploy tab, where the reader is when the question is what is baked
+  and running; the Record keeps what the project *is*, its birth and
+  its cartridges. There it folds the Deployment card into itself: the
+  three boxes of the picker were the table's three rows again, so the
+  row carries the radio, what the deployment is under its name, and
+  scaled's replicas and balancer; Up and Build of the row picked sit
+  under the table with the `wb.sh` line they are, and the "nothing is
+  up" chip goes, the status column says it row by row. The open file
+  is `/deploy?compose=prod`, read when the tab is taken and again when
+  a status arrives. The table is the tab's, not the project's: with
+  the workspace empty its three rows are there, not baked, every eye
+  and button unlit with the one reason.
 - **What comes off the project is dimmed while it is being read
   again.** A full status boots Mix in a container and takes seconds;
   a fast one lands meanwhile — the daemon's events ask for one — and

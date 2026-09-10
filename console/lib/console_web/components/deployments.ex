@@ -42,7 +42,21 @@ defmodule ConsoleWeb.Deployments do
     doc: "a full status is in flight: what comes off the project is the last reading's"
 
   def deployments_sheet(assigns) do
-    assigns = assign(assigns, why: @stale_why)
+    # Without a project the three rows are there, not baked, every
+    # button unlit with the same reason: the table is the tab's, not
+    # the project's.
+    empty = is_nil(assigns.status) or assigns.status["exists"] != true
+
+    assigns =
+      assign(assigns,
+        why: @stale_why,
+        empty: empty,
+        not_baked:
+          if(empty,
+            do: "the workspace is empty: Deploy → Project creates one",
+            else: "Bake, or Up, writes it"
+          )
+      )
 
     ~H"""
     <section class="deployments">
@@ -71,9 +85,21 @@ defmodule ConsoleWeb.Deployments do
             <tr>
               <td class="k">{d.deploy}</td>
               <td class="file">
-                <.eye deploy={d.deploy} file={d.file} baked={d.baked} open={@deploy == d.deploy} />
+                <.eye
+                  deploy={d.deploy}
+                  file={d.file}
+                  baked={d.baked}
+                  open={@deploy == d.deploy}
+                  why={
+                    !d.baked &&
+                      if(@empty,
+                        do: @not_baked,
+                        else: "not baked: no #{d.file} in this workspace — #{@not_baked}"
+                      )
+                  }
+                />
                 <span class={@stale && "stale"} title={@stale && @why}>
-                  <.chip :if={!d.baked} class="off" title={"up --deploy #{d.deploy} bakes it"}>
+                  <.chip :if={!d.baked} class="off" title={@not_baked}>
                     not baked
                   </.chip>
                   <.chip
@@ -171,6 +197,7 @@ defmodule ConsoleWeb.Deployments do
   attr :file, :string, required: true
   attr :baked, :boolean, required: true
   attr :open, :boolean, required: true
+  attr :why, :any, default: nil, doc: "unlit, with the reason, while the file is not baked"
 
   # The eye: read this file in a box under its row; pressed again, it
   # closes. The square icon button the knock bell wears, with an eye.
@@ -190,7 +217,7 @@ defmodule ConsoleWeb.Deployments do
       class="go eye unlit"
       type="button"
       aria-disabled="true"
-      title={"not baked: no #{@file} in this workspace — Bake, or Up"}
+      title={@why}
     >
       <.eye_mark /><span class="sr">Read {@file}</span>
     </button>

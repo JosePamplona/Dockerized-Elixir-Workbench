@@ -51,6 +51,23 @@ defmodule ConsoleWeb.TabsTest do
     assert logs_tab(html) =~ ~s(class="live")
   end
 
+  test "the deployments table is the Deploy tab's, there before any project is", %{conn: conn} do
+    arrives(%{"exists" => false, "workspace" => "/w", "containers" => []})
+    {:ok, _view, html} = live(conn, "/deploy")
+
+    [sheet] = Regex.run(~r{<section[^>]*class="deployments"[^>]*>.*?</section>}s, html)
+
+    for deploy <- ~w(dev prod scaled) do
+      assert sheet =~ ~s(<td class="k">#{deploy}</td>)
+    end
+
+    # Three rows, none baked, and every eye and button unlit with the one reason.
+    assert length(Regex.scan(~r/>\s*not baked\s*</, sheet)) == 3
+    assert length(Regex.scan(~r/class="go eye unlit"/, sheet)) == 3
+    assert sheet =~ "the workspace is empty: Deploy → Project creates one"
+    refute sheet =~ ~s(class="go eye")
+  end
+
   test "the Docker screen is lit before any project is, and opens on its containers", %{
     conn: conn
   } do

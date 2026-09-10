@@ -222,7 +222,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   loses Stop and Down, which are a deployment's and sit on its row: two
   Up buttons for dev ten lines apart was the cost of moving the table
   whole. The open file is `/deploy?compose=prod` now, read when the tab
-  is taken and again when a status arrives.
+  is taken and again when a status arrives. The table is the tab's,
+  not the project's: with the workspace empty its three rows are
+  there, not baked, every eye and button unlit with the one reason.
 - **What comes off the project is dimmed while it is being read
   again.** A full status boots Mix in a container and takes seconds;
   a fast one lands meanwhile — the daemon's events ask for one — and

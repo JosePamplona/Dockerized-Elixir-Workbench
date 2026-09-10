@@ -228,7 +228,16 @@ defmodule ConsoleWeb.Board do
   @stale_why "reading the project again: this is the last reading's, until the new one lands"
 
   defp deployments(assigns) do
-    assigns = assign(assigns, rows: Record.deployments(assigns.status), why: @stale_why)
+    assigns =
+      assign(assigns,
+        rows: Record.deployments(assigns.status),
+        why: @stale_why,
+        not_baked:
+          if(assigns.status["exists"] == true,
+            do: "Bake, or Up, writes it",
+            else: "the workspace is empty: Deploy → Project creates one"
+          )
+      )
 
     ~H"""
     <section class={folded?(@folded, "deployments") && "folded"}>
@@ -246,7 +255,7 @@ defmodule ConsoleWeb.Board do
           <tr>
             <td class="k">{d.deploy}</td>
             <td class={["st", @stale && "stale"]} title={@stale && @why}>
-              <.chip :if={!d.baked} class="off" title={"up --deploy #{d.deploy} bakes it"}>
+              <.chip :if={!d.baked} class="off" title={@not_baked}>
                 not baked
               </.chip>
               <.chip

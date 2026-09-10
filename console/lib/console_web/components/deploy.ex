@@ -43,8 +43,7 @@ defmodule ConsoleWeb.Deploy do
     <.new_card status={@status} catalog={@catalog} config={@config} jobs={@jobs} newp={@newp} />
     <.deployment status={@status} catalog={@catalog} jobs={@jobs} pick={@pick} />
     <.deployments_sheet
-      :if={@status && @status["exists"] == true}
-      rows={Record.deployments(@status)}
+      rows={Record.deployments(@status || %{})}
       status={@status}
       busy={busy?(@jobs, [:up, :stop, :down, :build])}
       composes={@composes}

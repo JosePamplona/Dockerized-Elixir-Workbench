@@ -36,7 +36,7 @@ defmodule ConsoleWeb.Record do
     "database" => ":5432",
     "prometheus" => ":9090",
     "grafana" => ":3000",
-    "pgadmin" => ":80",
+    "pgadmin" => ":5050",
     "balancer" => ":80"
   }
 
@@ -253,7 +253,7 @@ defmodule ConsoleWeb.Record do
       addresses(status, c, e, get_in(status, ["ports", "app"]), Cartridges.app_up?(status), reads)
 
   defp addresses(status, c, e, port, up, reads) do
-    services(c, e, status) ++
+    services(c, e, status, reads) ++
       for(d <- get_in(e, ["console", "doors"]) || [], do: route(status, c, d, port, up, reads))
   end
 
@@ -321,8 +321,16 @@ defmodule ConsoleWeb.Record do
 
   # The ports of the services a cartridge asks the workspace for, as
   # `docker compose ps` sees them now; the engine's service is `database`.
-  defp services(c, e, status) do
-    for name <- (e["services_of"] || []) ++ services_of(c), do: port_of(status, name)
+  # A service whose port the compose publishes on the host — pgAdmin,
+  # Grafana: a web face, in the status as `ports` — is a door instead:
+  # the reader opens it, and the knock reads what it answers.
+  defp services(c, e, status, reads) do
+    for name <- (e["services_of"] || []) ++ services_of(c) do
+      case get_in(status, ["ports", name]) do
+        port when is_integer(port) -> door_of(status, name, port, reads)
+        _ -> port_of(status, name)
+      end
+    end
   end
 
   # What `services/1` of the cartridge answers is not in the catalog per
@@ -348,6 +356,32 @@ defmodule ConsoleWeb.Record do
       href: nil,
       why: if(up, do: nil, else: "the deployment is down"),
       read: container && container_read(container)
+    }
+  end
+
+  # A service's web face on the host's port: open while its container
+  # runs, and read like a route — pgAdmin and Grafana answer a redirect
+  # at the root, which is an answer.
+  defp door_of(status, service, port, reads) do
+    container = Enum.find(status["containers"] || [], &(&1["Service"] == service))
+
+    why =
+      cond do
+        is_nil(container) -> "the deployment is down"
+        container["State"] != "running" -> "the #{service} container is #{container["State"]}"
+        true -> nil
+      end
+
+    href = if is_nil(why), do: "http://localhost:#{port}/"
+
+    %{
+      label: service,
+      path: "/",
+      kind: "route",
+      port: port,
+      href: href,
+      why: why,
+      read: read(reads, href)
     }
   end
 

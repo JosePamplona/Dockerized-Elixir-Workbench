@@ -195,6 +195,21 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   every sha the console shows is a `.commit-ref`, the rail's Cartridges
   wear the facts chips before the origin, and the rail's Services &
   Doors lists one address a line.
+- **A service's web face is a door.** pgAdmin and Grafana publish a port
+  on the host, and the status already names it (`ports.pgadmin`,
+  `ports.grafana`): the cartridge's row now wears it as a door, `PGADMIN
+  :5050/`, opened by the reader and read by the knock like any route —
+  the root answers a redirect, which is an answer — and shut with the
+  reason while its container is not running. Nothing is asked of the
+  cartridge: the compose service it already brings says it all. The
+  layer's rule is restated with it (`assets/design/README.md`): violet
+  is an address the reader opens and the knock reads by HTTP, whoever
+  offers it; blue is a service's port, read off `docker compose ps` —
+  what the face does, not who offers it. So the same pgAdmin is a
+  violet door on its cartridge's row and a blue port on its
+  deployment's. On the way the Record's table of inside ports said
+  pgAdmin `:80`, the image's default; the compose has it listen on
+  5050.
 - **Knock: the doors are called only when the reader rings.** One
   reading for the whole page, shared by the rail's Services & Doors and
   the Record's addresses, and taken only when the reader presses the

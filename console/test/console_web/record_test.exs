@@ -273,6 +273,64 @@ defmodule ConsoleWeb.RecordTest do
     assert %{deploy: "scaled", baked: false, status: nil, services: []} = scaled
   end
 
+  test "a service's port published on the host is a door: opened, and knocked" do
+    # pgAdmin in, its container up, the compose publishing 5050.
+    status =
+      @status
+      |> put_in(["ports", "pgadmin"], 5050)
+      |> update_in(
+        ["containers"],
+        &[
+          %{
+            "Service" => "pgadmin",
+            "State" => "running",
+            "Health" => "",
+            "Image" => "dpage/pgadmin4"
+          }
+          | &1
+        ]
+      )
+      |> update_in(
+        ["project", "cartridges"],
+        &[%{"name" => "pgadmin", "installed" => true, "base" => false, "state" => %{}} | &1]
+      )
+
+    page = Record.page(status, @catalog, %{"http://localhost:5050/" => {"302", "good"}})
+    pg = Enum.find(page.cartridges, &(&1.c["name"] == "pgadmin"))
+
+    assert [
+             %{
+               label: "pgadmin",
+               path: "/",
+               kind: "route",
+               port: 5050,
+               href: "http://localhost:5050/",
+               read: {"302", "good"}
+             }
+           ] =
+             pg.addresses
+
+    assert "http://localhost:5050/" in Record.hrefs(page)
+
+    # Its container stopped: the door is shut by that, and not called.
+    stopped =
+      update_in(status, ["containers"], fn cs ->
+        for c <- cs, do: if(c["Service"] == "pgadmin", do: Map.put(c, "State", "exited"), else: c)
+      end)
+
+    assert [%{why: "the pgadmin container is exited", href: nil}] =
+             Enum.find(Record.page(stopped, @catalog).cartridges, &(&1.c["name"] == "pgadmin")).addresses
+
+    # Not published — the status says no port — it is the service's port, read off docker compose ps.
+    unpublished = put_in(status, ["ports", "pgadmin"], nil)
+
+    assert [%{label: "pgadmin", path: ":5050", kind: "port", read: {"running", "good"}}] =
+             Enum.find(
+               Record.page(unpublished, @catalog).cartridges,
+               &(&1.c["name"] == "pgadmin")
+             ).addresses
+  end
+
   test "with nothing up every route is shut by that, and nothing is called" do
     page = Record.page(Map.put(@status, "deployment", nil), @catalog)
     assert Enum.all?(page.cartridges, fn row -> Enum.all?(row.addresses, &(&1.why != nil)) end)

@@ -60,10 +60,10 @@ one: a bordered box is a door you press.
   (inserted: good dot), `.unknown` (no such cartridge: dashed, struck,
   no link). It never wears the gold. A printed back plate uses the bare
   form — a plate knows no project.
-* **`.door-ref`** — an address: a route the project offers on the app's
-  port (`/dev/docs`, `/dev/mailbox`, healthcheck2's `{path}/live`) or a
-  port the compose publishes for a service (`localhost:4001`,
-  `database:5432`). One order wherever it is read: the label first, in
+* **`.door-ref`** — an address: a route the reader opens in the browser
+  (`/dev/docs`, `/dev/mailbox`, healthcheck2's `{path}/live` on the app's
+  port; pgAdmin's `/` on the port the compose publishes for it) or a
+  port of a service (`localhost:4001`, `database:5432`). One order wherever it is read: the label first, in
   the house's lettering because it is a name, then the address in mono
   because it is read off the machine. Who opened it is never inside it —
   that is a mention, so it goes beside as a `.cart-ref` and opens that
@@ -76,10 +76,15 @@ one: a bordered box is a door you press.
   Two things ride on it, both decided on 2026-09-08 over the Record paper
   (`console/el-estado-del-proyecto.html`). **The layer**, as the 8px
   square the logs' service filter already uses, before the label: violet
-  (`addr-route`) for a route the project offers, blue (`addr-port`) for a
-  port the compose publishes. A route is written
-  on its port, `:4001/dev/mailbox` with the port dimmed, because it rides
-  on one; a port is written whole. **The reading**, what answered when
+  (`addr-route`) for a route — an address the reader opens, and the
+  knock reads by HTTP, whether the project offers it on the app's port
+  or a service offers it on its own (pgAdmin, Grafana); blue
+  (`addr-port`) for a port — a service's, read off `docker compose ps`.
+  The split is what the face does, not who offers it (settled
+  2026-09-09): the same pgAdmin is a violet door on its cartridge's row
+  and a blue port on its deployment's. A route is written on its port,
+  `:4001/dev/mailbox` with the port dimmed, because it rides on one; a
+  port is written whole. **The reading**, what answered when
   it was called, attached *inside* the border at the right edge — the
   chip's plate and voice behind the box's own 1px line, so a reading in a
   wrapping row can never drift to the wrong door. A route answers an

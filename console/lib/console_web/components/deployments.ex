@@ -32,18 +32,18 @@ defmodule ConsoleWeb.Deployments do
   def deployments_sheet(assigns) do
     ~H"""
     <section class="deployments">
-      <h3 title="the Docker Compose files baked into the workspace, one per deployment">
-        Deployments <span class="label">Docker Compose</span>
+      <h3 title="the compose files baked into the workspace, one per deployment: the topology each brings up">
+        Deployments <span class="label">Topology</span>
       </h3>
       <table class="rows deps">
         <thead>
           <tr>
             <th></th>
             <th title="the deployment's compose file, baked into the workspace, out of sync with the project, or not baked yet">
-              file
+              compose file
             </th>
             <th title="what the file declares that no cartridge asks for any more (+), and what a cartridge asks for that the file lacks (−); nothing when the file says what the cartridges ask">
-              sync differences
+              differences
             </th>
             <th>status</th>
             <th title="the services the compose file declares; with the deployment up, what docker compose ps says of each">

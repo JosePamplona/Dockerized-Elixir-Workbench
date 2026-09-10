@@ -227,12 +227,12 @@ defmodule ConsoleWeb.Board do
 
     ~H"""
     <section class={folded?(@folded, "deployments") && "folded"}>
-      <.head key="deployments" name="Deployments" label="docker compose" folded={@folded} />
+      <.head key="deployments" name="Deployments" label="topology" folded={@folded} />
       <table class="rows" id="deployments">
         <tr class="hd">
           <th></th>
           <th title="the deployment's compose file: baked, out of sync with the project, or not baked yet">
-            file
+            compose file
           </th>
           <th>status</th>
           <th></th>

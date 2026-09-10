@@ -124,31 +124,33 @@ defmodule ConsoleWeb.Deployments do
                   </div>
                 </td>
                 <td class="file">
-                  <.eye
-                    deploy={d.deploy}
-                    file={d.file}
-                    baked={d.baked}
-                    open={@deploy == d.deploy}
-                    why={
-                      !d.baked &&
-                        if(@empty,
-                          do: @not_baked,
-                          else: "not baked: no #{d.file} in this workspace — #{@not_baked}"
-                        )
-                    }
-                  />
-                  <span class={@stale && "stale"} title={@stale && @why}>
-                    <.chip :if={!d.baked} class="off" title={@not_baked}>
-                      not baked
-                    </.chip>
-                    <.chip
-                      :if={d.baked && d.in_sync == false}
-                      class="warn"
-                      title="the file no longer says what the cartridges ask for: bake writes it again"
-                    >
-                      out of sync
-                    </.chip>
-                    <.chip :if={d.baked && d.in_sync != false} class="good">baked</.chip>
+                  <span class="fl">
+                    <.eye
+                      deploy={d.deploy}
+                      file={d.file}
+                      baked={d.baked}
+                      open={@deploy == d.deploy}
+                      why={
+                        !d.baked &&
+                          if(@empty,
+                            do: @not_baked,
+                            else: "not baked: no #{d.file} in this workspace — #{@not_baked}"
+                          )
+                      }
+                    />
+                    <span class={@stale && "stale"} title={@stale && @why}>
+                      <.chip :if={!d.baked} class="off" title={@not_baked}>
+                        not baked
+                      </.chip>
+                      <.chip
+                        :if={d.baked && d.in_sync == false}
+                        class="warn"
+                        title="the file no longer says what the cartridges ask for: bake writes it again"
+                      >
+                        out of sync
+                      </.chip>
+                      <.chip :if={d.baked && d.in_sync != false} class="good">baked</.chip>
+                    </span>
                   </span>
                 </td>
                 <td class={["sync", @stale && "stale"]} title={@stale && @why}>

@@ -1254,14 +1254,15 @@ span.fact input{accent-color:var(--accent);width:14px;height:14px;margin:0;verti
    name to the button, the way the rail's does. */
 .deployments table.rows.deps{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px}
 .deployments table.rows.deps td.k,.deployments table.rows.deps td.file,.deployments table.rows.deps td.st,.deployments table.rows.deps th.narrow{width:1%;white-space:nowrap}
-.deployments table.rows.deps th{text-align:left;font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);padding:0 18px 6px 0;border-bottom:1px solid var(--line)}
-.deployments table.rows.deps td{padding:7px 18px 7px 0;border-top:1px solid var(--line);vertical-align:top}
+/* One air for the cells: --cell on every side of a cell, and between what sits side by side in one, the eye and the file's chip. */
+.deployments table.rows.deps{--cell:8px}
+.deployments table.rows.deps th{text-align:left;font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);padding:0 var(--cell) 6px;border-bottom:1px solid var(--line)}
+.deployments table.rows.deps td{padding:var(--cell);border-top:1px solid var(--line);vertical-align:top}
 .deployments table.rows.deps tbody tr:first-child td{border-top:0}
 /* The target's cell: the radio and the name on one line, what the
    deployment is under them in the reading face, scaled's options under
    that. Wide enough for two lines of the sentence, no wider. */
-.deployments table.rows.deps td.k{width:240px;white-space:normal;vertical-align:top;font-family:inherit;font-weight:400;letter-spacing:0;text-transform:none;font-size:inherit;padding-left:10px}
-.deployments table.rows.deps th:first-child{padding-left:10px}
+.deployments table.rows.deps td.k{width:240px;white-space:normal;vertical-align:top;font-family:inherit;font-weight:400;letter-spacing:0;text-transform:none;font-size:inherit}
 .deployments .pickt{display:inline-flex;gap:8px;align-items:center;cursor:pointer;font-family:var(--cond);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:13px}
 .deployments .pickt input{margin:0}
 .deployments .what{margin:4px 0 0;font-family:var(--serif);font-size:12.5px;line-height:1.45;color:var(--muted)}
@@ -1274,12 +1275,12 @@ span.fact input{accent-color:var(--accent);width:14px;height:14px;margin:0;verti
 /* The foot is the Project card's: the command line taking the width, the buttons at its right. */
 .deployments .foot{margin-top:6px}
 .deployments table.rows.deps td.sync{white-space:normal}
-.deployments table.rows.deps td.act{width:1%;white-space:nowrap;text-align:right;padding-right:0}
+.deployments table.rows.deps td.act{width:1%;white-space:nowrap;text-align:right}
 /* The eye before the file's chip: the row's own way to open the file in the box under. */
-.deployments table.rows.deps td.file .go{vertical-align:middle;margin-right:8px}
+.deployments table.rows.deps td.file .fl{display:inline-flex;align-items:center;gap:var(--cell)}
 .deployments table.rows.deps td.file .go[aria-pressed="true"]{color:var(--ink);background:var(--ground);border-color:var(--ink)}
 /* The file under the deployments: a strip that names it, then the YAML sheet. */
-.deployments table.rows.deps tr.fbox td{padding:0 0 14px;border-top:0}
+.deployments table.rows.deps tr.fbox td{padding:0 var(--cell) 14px;border-top:0}
 .deployments .fsheet{margin-top:4px}
 .deployments .fsheet .strip{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;padding:0 0 6px 2px}
 .deployments .fsheet .strip .label{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted)}

@@ -198,12 +198,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   already the file's summary; the files are the workspace's, not the
   daemon's, and Docker keeps its five documents. The table and the
   file are one sheet, `ConsoleWeb.Deployments`: an eye on every row
-  before the file's chip opens that file in a code box under the
-  table, wearing its name — pressed on the one shown, unlit with the
-  remedy while not baked. The box shows the deployment that is up, or
-  the first baked, unless the URL names one
-  (`/deploy?compose=prod`); with none baked it is one
-  line saying so. The box is as tall as the reader leaves it, with the
+  before the file's chip opens that file in a code box under its row,
+  wearing its name — pressed on the one open, and pressed again it
+  closes; unlit with the remedy while not baked. One box at a time
+  and none until the reader asks, named in the URL
+  (`/deploy?compose=prod`). The box is as tall as the reader leaves it, with the
   jobs' own grip under it — the `JobOut` hook now rides any pane
   wearing `data-tall`, and the compose box keeps its height across
   papers where a job that has left the tray is forgotten. A status

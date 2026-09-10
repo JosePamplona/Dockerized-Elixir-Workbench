@@ -1286,11 +1286,12 @@ span.fact input{accent-color:var(--accent);width:14px;height:14px;margin:0;verti
 .deployments table.rows.deps td.file .go{vertical-align:middle;margin-right:8px}
 .deployments table.rows.deps td.file .go[aria-pressed="true"]{color:var(--ink);background:var(--ground);border-color:var(--ink)}
 /* The file under the deployments: a strip that names it, then the YAML sheet. */
-.deployments .fsheet{margin-top:18px}
+.deployments table.rows.deps tr.fbox td{padding:0 0 14px;border-top:0}
+.deployments .fsheet{margin-top:4px}
 .deployments .fsheet .strip{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;padding:0 0 6px 2px}
 .deployments .fsheet .strip .label{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted)}
 .deployments .fsheet .strip .fname{font-family:var(--mono);font-size:12.5px;color:var(--ink)}
-.deployments .fsheet .strip .note{margin-left:auto}
+.deployments .fsheet .strip .note{margin-left:auto;font-family:var(--serif)}
 /* The box's cap is the reader's, as a job's: the grip under it moves --job-out, 60vh until dragged. */
 .deployments .fsheet pre.env.yaml{margin:0;max-height:var(--job-out,60vh)}
 .deployments .fsheet .ograb{margin:-4px 0 0}

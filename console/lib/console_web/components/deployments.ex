@@ -2,8 +2,8 @@ defmodule ConsoleWeb.Deployments do
   @moduledoc """
   The deployments as a sheet: the table — one row per compose file,
   baked or not, in sync or with its drift, up, stopped or down, its
-  services as ports, and Up or Stop, Down and Bake — and under it the
-  file itself, the one whose eye is pressed, in a code box that wears
+  services as ports, and Up or Stop, Down and Bake — and under a row
+  the file itself, when its eye is pressed, in a code box that wears
   its name. The plan is `ConsoleWeb.Record.deployments/1`; the Deploy
   tab places this under its two cards (it was the Record paper's third
   section until 2026-09-09: the Record says what the project is, this
@@ -11,9 +11,10 @@ defmodule ConsoleWeb.Deployments do
   row off the same plan in `ConsoleWeb.Board`.
 
   The eye is on every row: unlit with the remedy while the file is not
-  baked, pressed on the one the box shows. It patches the URL
-  (`/deploy?compose=prod`), so the box holds no state of its own and a
-  status arriving reads the files again under the same choice.
+  baked, pressed on the one whose box is open under its row — one at a
+  time, none until pressed, and pressed again it closes. It patches the
+  URL (`/deploy?compose=prod`), so the box holds no state of its own
+  and a status arriving reads the files again under the same choice.
   """
   use Phoenix.Component
   import ConsoleWeb.Refs
@@ -53,96 +54,100 @@ defmodule ConsoleWeb.Deployments do
           </tr>
         </thead>
         <tbody>
-          <tr :for={d <- @rows}>
-            <td class="k">{d.deploy}</td>
-            <td class="file">
-              <.eye deploy={d.deploy} file={d.file} baked={d.baked} open={@deploy == d.deploy} />
-              <.chip :if={!d.baked} class="off" title={"up --deploy #{d.deploy} bakes it"}>
-                not baked
-              </.chip>
-              <.chip
-                :if={d.baked && d.in_sync == false}
-                class="warn"
-                title="the file no longer says what the cartridges ask for: bake writes it again"
-              >
-                out of sync
-              </.chip>
-              <.chip :if={d.baked && d.in_sync != false} class="good">baked</.chip>
-            </td>
-            <td class="sync">
-              <span :if={d.stray != [] or d.missing != []} class="drift" title={sync_title(d)}>
-                <.chip
-                  :for={s <- d.stray}
-                  class="warn"
-                  title="declared in the file, but no cartridge asks for it any more"
-                >
-                  +{s}
+          <%= for d <- @rows do %>
+            <tr>
+              <td class="k">{d.deploy}</td>
+              <td class="file">
+                <.eye deploy={d.deploy} file={d.file} baked={d.baked} open={@deploy == d.deploy} />
+                <.chip :if={!d.baked} class="off" title={"up --deploy #{d.deploy} bakes it"}>
+                  not baked
                 </.chip>
                 <.chip
-                  :for={m <- d.missing}
+                  :if={d.baked && d.in_sync == false}
                   class="warn"
-                  title="asked for by a cartridge, not in the file"
+                  title="the file no longer says what the cartridges ask for: bake writes it again"
                 >
-                  −{m}
+                  out of sync
                 </.chip>
-              </span>
-            </td>
-            <td class="st">
-              <.chip :if={d.status == "up"} class="good">up</.chip>
-              <.chip
-                :if={d.status == "stopped"}
-                class="off"
-                title="its containers are there, stopped: Up brings them back fast"
-              >
-                stopped
-              </.chip>
-              <.chip :if={d.status == "down"} class="off" title="no containers: Up creates them">
-                down
-              </.chip>
-            </td>
-            <td>
-              <span class="pairs">
-                <.door_ref
-                  :for={a <- d.services}
-                  label={a.label}
-                  path={a.path}
-                  href={a.href}
-                  why={a.why}
-                  kind={a.kind}
-                  port={a.kind == "route" && a.port}
-                  read={a.read}
+                <.chip :if={d.baked && d.in_sync != false} class="good">baked</.chip>
+              </td>
+              <td class="sync">
+                <span :if={d.stray != [] or d.missing != []} class="drift" title={sync_title(d)}>
+                  <.chip
+                    :for={s <- d.stray}
+                    class="warn"
+                    title="declared in the file, but no cartridge asks for it any more"
+                  >
+                    +{s}
+                  </.chip>
+                  <.chip
+                    :for={m <- d.missing}
+                    class="warn"
+                    title="asked for by a cartridge, not in the file"
+                  >
+                    −{m}
+                  </.chip>
+                </span>
+              </td>
+              <td class="st">
+                <.chip :if={d.status == "up"} class="good">up</.chip>
+                <.chip
+                  :if={d.status == "stopped"}
+                  class="off"
+                  title="its containers are there, stopped: Up brings them back fast"
+                >
+                  stopped
+                </.chip>
+                <.chip :if={d.status == "down"} class="off" title="no containers: Up creates them">
+                  down
+                </.chip>
+              </td>
+              <td>
+                <span class="pairs">
+                  <.door_ref
+                    :for={a <- d.services}
+                    label={a.label}
+                    path={a.path}
+                    href={a.href}
+                    why={a.why}
+                    kind={a.kind}
+                    port={a.kind == "route" && a.port}
+                    read={a.read}
+                  />
+                </span>
+              </td>
+              <td class="act">
+                <.deploy_button
+                  :if={d.status == "up"}
+                  verb="stop"
+                  name={d.deploy}
+                  status={@status}
+                  busy={@busy}
                 />
-              </span>
-            </td>
-            <td class="act">
-              <.deploy_button
-                :if={d.status == "up"}
-                verb="stop"
-                name={d.deploy}
-                status={@status}
-                busy={@busy}
-              />
-              <.deploy_button
-                :if={d.status != "up" and d.baked}
-                verb="up"
-                name={d.deploy}
-                status={@status}
-                busy={@busy}
-              />
-              <.deploy_button
-                :if={d.baked}
-                verb="down"
-                name={d.deploy}
-                status={@status}
-                busy={@busy}
-                present={d.present}
-              />
-              <.bake_button name={d.deploy} status={@status} busy={@busy} baked={d.baked} />
-            </td>
-          </tr>
+                <.deploy_button
+                  :if={d.status != "up" and d.baked}
+                  verb="up"
+                  name={d.deploy}
+                  status={@status}
+                  busy={@busy}
+                />
+                <.deploy_button
+                  :if={d.baked}
+                  verb="down"
+                  name={d.deploy}
+                  status={@status}
+                  busy={@busy}
+                  present={d.present}
+                />
+                <.bake_button name={d.deploy} status={@status} busy={@busy} baked={d.baked} />
+              </td>
+            </tr>
+            <tr :if={@deploy == d.deploy} class="fbox">
+              <td colspan="6"><.file_sheet composes={@composes} deploy={d.deploy} /></td>
+            </tr>
+          <% end %>
         </tbody>
       </table>
-      <.file_sheet composes={@composes} deploy={@deploy} />
     </section>
     """
   end
@@ -152,16 +157,16 @@ defmodule ConsoleWeb.Deployments do
   attr :baked, :boolean, required: true
   attr :open, :boolean, required: true
 
-  # The eye: read this file in the box under the table. The square
-  # icon button the knock bell wears, with an eye.
+  # The eye: read this file in a box under its row; pressed again, it
+  # closes. The square icon button the knock bell wears, with an eye.
   defp eye(assigns) do
     ~H"""
     <.link
       :if={@baked}
       class="go eye"
-      patch={"/deploy?compose=#{@deploy}"}
+      patch={if @open, do: "/deploy", else: "/deploy?compose=#{@deploy}"}
       aria-pressed={to_string(@open)}
-      title={"read #{@file} under the table"}
+      title={if @open, do: "close #{@file}", else: "read #{@file} under its row"}
     >
       <.eye_mark /><span class="sr">Read {@file}</span>
     </.link>
@@ -189,12 +194,13 @@ defmodule ConsoleWeb.Deployments do
     """
   end
 
-  # The file under the table, in a code box with a strip that names it:
-  # the file whose eye is pressed, read only — wb.sh alone writes the
-  # workspace — and the secrets masked. With none baked the box is one
-  # line saying so, not gone. The box is as tall as the reader left it:
-  # the jobs' grip under it, the JobOut hook, kept in this browser. It read under Docker's Deploys until
-  # 2026-09-09; the files are the workspace's, so they read here.
+  # The file under its row, in a code box with a strip that names it:
+  # the file whose eye is pressed, one at a time and none until pressed,
+  # read only — wb.sh alone writes the workspace — and the secrets
+  # masked. The box is as tall as the reader left it: the jobs' grip
+  # under it, the JobOut hook, kept in this browser. It read under
+  # Docker's Deploys until 2026-09-09; the files are the workspace's,
+  # so they read here.
   attr :composes, :list, required: true
   attr :deploy, :any, required: true
 
@@ -210,9 +216,6 @@ defmodule ConsoleWeb.Deployments do
           {@chosen.file}
         </span>
         <span :if={@chosen} class="note">read only: wb.sh alone writes the workspace · secrets masked</span>
-        <span :if={is_nil(@chosen)} class="note">
-          none baked yet: Bake, or Up, writes the deployment's
-        </span>
       </div>
       <pre :if={@chosen} class="env yaml out"><.yaml_line :for={line <- @chosen.lines} line={line} /></pre>
       <div

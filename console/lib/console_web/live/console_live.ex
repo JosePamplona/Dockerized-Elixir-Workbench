@@ -187,22 +187,15 @@ defmodule ConsoleWeb.ConsoleLive do
 
   defp take_paper(socket, _params), do: socket
 
-  # The compose file open under the Deploy tab's deployments: the one
-  # the URL names when it is baked; else the deployment that is up,
-  # else the first baked; nil when none is, and the sheet says so.
+  # The compose file open under its row on the Deploy tab: the one the
+  # URL names, when it is baked; none otherwise — the reader opens one.
   defp take_compose(%{assigns: %{tab: "deploy"}} = socket, named) do
-    status = socket.assigns.status
-    composes = Console.Docker.composes(status)
-    assign(socket, pcomposes: composes, pdeploy: compose_open(composes, status, named))
+    composes = Console.Docker.composes(socket.assigns.status)
+    open = Enum.find_value(composes, &(&1.key == named and &1.lines != nil and &1.key))
+    assign(socket, pcomposes: composes, pdeploy: open)
   end
 
   defp take_compose(socket, _named), do: assign(socket, pcomposes: [], pdeploy: nil)
-
-  defp compose_open(composes, status, named) do
-    baked = for c <- composes, c.lines, do: c.key
-
-    Enum.find([named, status && status["deployment"] | baked], &(&1 in baked))
-  end
 
   # A knock: every open route called once, and what each answered kept
   # for the whole page — the rail's Services & Doors and the Record's

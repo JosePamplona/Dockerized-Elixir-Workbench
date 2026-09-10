@@ -227,6 +227,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   a status arrives. The table is the tab's, not the project's: with
   the workspace empty its three rows are there, not baked, every eye
   and button unlit with the one reason.
+- **`bake --deploy prod|scaled` bakes that file alone.** The prod and
+  scaled composes were written only on the way to their own `up` or
+  `build`, so the console's Bake button on those rows had to send
+  `build --deploy`, and built the release image to rewrite a YAML.
+  `bake` takes `--deploy` now, with `--replicas` and `--no-balancer`
+  for scaled, writes that file for the project as it is now — its
+  ports kept — and commits it as it commits the dev file; a file that
+  already says what the project asks for is left alone. The image the
+  file names stays `build --deploy`'s, or up's. The three Bake buttons
+  send `bake` and say the same thing. A prod or scaled file an `up`
+  left untracked has to be committed before, as any bake asks.
 - **What comes off the project is dimmed while it is being read
   again.** A full status boots Mix in a container and takes seconds;
   a fast one lands meanwhile — the daemon's events ask for one — and

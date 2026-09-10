@@ -312,19 +312,23 @@ defmodule ConsoleWeb.Board do
     """
   end
 
-  # Bake: the file written again for the project as it is now — `bake`
-  # for dev, which keeps its ports; `build --deploy` for prod and scaled,
-  # which is where wb.sh bakes those two, and builds the release image
-  # they share on the way. Always there: a file in sync can be baked
-  # again, and one not baked yet is what this makes.
+  # Bake: the file written again for the project as it is now, keeping
+  # its ports, as one commit — `bake` for dev, `bake --deploy` for prod
+  # and scaled (it was `build --deploy` for those two until 2026-09-10,
+  # the only road wb.sh had to their files, and it built the release
+  # image on the way). Always there: a file in sync can be baked again,
+  # and one not baked yet is what this makes.
   attr :name, :string, required: true
   attr :status, :map, required: true
   attr :busy, :boolean, default: false
   attr :baked, :boolean, default: false
 
+  attr :extra, :string,
+    default: "",
+    doc: "scaled's --replicas and --no-balancer, when they differ"
+
   def bake_button(assigns) do
-    verb = if assigns.name == "dev", do: "bake", else: "build"
-    cmd = ConsoleWeb.Deploy.cmdline(verb, assigns.name, "")
+    cmd = ConsoleWeb.Deploy.cmdline("bake", assigns.name, assigns.extra)
 
     why =
       cond do
@@ -336,16 +340,11 @@ defmodule ConsoleWeb.Board do
     title =
       why ||
         cmd <>
-          cond do
-            assigns.name == "dev" ->
-              " — writes docker-compose.yml again for the project as it is now, keeping its ports"
-
-            assigns.baked ->
-              " — writes the #{assigns.name} compose again and builds the release image"
-
-            true ->
-              " — writes the #{assigns.name} compose and builds the release image"
-          end
+          " — writes the #{assigns.name} compose #{if assigns.baked, do: "again ", else: ""}for the project as it is now, keeping its ports, as one commit" <>
+          if(assigns.name == "dev",
+            do: "; the toolchain Dockerfile too, when the seed moved",
+            else: ""
+          )
 
     assigns = assign(assigns, why: why, title: title, cmd: cmd)
 

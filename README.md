@@ -195,6 +195,7 @@ Every insert is **one commit** in the workspace (`Insert FEATURE …`, signed as
 ./wb.sh eject FEATURE       # Reverts the cartridge's commit; refuses if its files changed since
 ./wb.sh commit [MESSAGE]    # Commits pending changes — `add` needs a clean tree
 ./wb.sh bake                # Bakes docker-compose.yml again for the project as it is now (one commit)
+./wb.sh bake --deploy prod  # The prod (or scaled) compose alone, the image left to build or up (one commit)
 ```
 
 **mailer**, **gettext**, **ecto**, **esbuild**, **tailwind**, **html**, **live** and **dashboard** are *base cartridges*: what `phx.new` decides at generation time (its `--no-*` flags), added afterwards as `phx.new` itself would have generated it — the difference between the project generated with and without the flag, at the toolchain's Phoenix. A project born with them shows them inserted; one left out at creation (`./wb.sh new --no-live`) is a box on the shelf, to insert later. `ecto` takes `--database postgres|mysql|mssql|sqlite3` and `--binary-id` (`phx.new`'s flags that only Ecto reads); after inserting it, `./wb.sh bake` puts the Postgres into the compose and `./wb.sh setup` creates the database. `live` builds on `html` and says so (`requires` in the catalog): it refuses until html is in.

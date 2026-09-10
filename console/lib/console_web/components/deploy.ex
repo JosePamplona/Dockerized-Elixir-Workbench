@@ -52,6 +52,7 @@ defmodule ConsoleWeb.Deploy do
       deploy={@deploy}
       stale={@reading == :full}
       pick={@pick}
+      scaled_extra={scaled_extra(@pick)}
       pickname={@pickname}
       running={@running}
       extra={@extra}
@@ -351,13 +352,13 @@ defmodule ConsoleWeb.Deploy do
 
   @doc """
   The command a deploy verb becomes. dev is the default deployment, so
-  only the others name themselves; only the verbs that bring something
-  up carry its options. Written once: the rail's buttons put this in
+  only the others name themselves; only the verbs that bake a file —
+  up, build, bake — carry its options. Written once: the rail's buttons put this in
   their title, and a title that drifts from the command is worse than none.
   """
   def cmdline(verb, name, extra) do
     "./wb.sh #{verb}" <>
       if(name == "dev" and verb not in ["up", "build"], do: "", else: " --deploy #{name}") <>
-      if(verb in ["up", "build"], do: extra, else: "")
+      if(verb in ["up", "build", "bake"], do: extra, else: "")
   end
 end

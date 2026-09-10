@@ -1691,8 +1691,9 @@
       "keeping its ports, as one commit. What 'add ecto' asks for next." \
       "The toolchain Dockerfile is baked again too when the seed moved," \
       "keeping the project's own Phoenix installer, and its image rebuilt." \
-      "Needs a clean tree. The prod and scaled composes are baked at" \
-      "their own deployment."
+      "Needs a clean tree. --deploy prod|scaled bakes that file instead" \
+      "(--replicas N and --no-balancer shape the scaled one), as one" \
+      "commit too; the release image it names is 'build --deploy', or up's."
 
     print_command "commit [MESSAGE | --message-file PATH]"
     section_content \
@@ -2381,39 +2382,71 @@ if [ $# -gt 0 ]; then
     esac
 
   elif [[ "$1" == "bake" ]]; then
+    shift
     if [[ "$EXISTING_PROJECT" == true ]]; then
+      parse_deploy_args "$@"
+      [ ${#DEPLOY_REST[@]} -eq 0 ] || \
+        args_error "bake takes --deploy, --replicas and --balancer only; nothing goes on to docker compose."
       require_clean_workspace bake
-      # A workspace baked before the volumes moved over _build and deps
-      # has neither directory yet.
-      ensure_build_volumes
-      # The workspace keeps its ports; the compose is where they live.
-      compose_ports
 
-      # The toolchain Dockerfile too: the seed may have moved since this
-      # project was born — where Mix compiles, what the image carries —
-      # and the workspace keeps the copy its image is built from. The
-      # Phoenix installer stays the one stamped in it: that is the
-      # project's generator, not config.conf's next choice.
-      PHX_STAMPED=$(sed -n 's/^ARG PHX_NEW="\(.*\)"/\1/p' "$WORKSPACE_PATH/$LOCAL_DOCKERFILE" 2>/dev/null)
-      PHX_NEW_KEPT="$PHX_NEW_VERSION"; PHX_NEW_VERSION="${PHX_STAMPED:-$PHX_NEW_VERSION}"
-      create_local_dockerfile
-      PHX_NEW_VERSION="$PHX_NEW_KEPT"
-      if ! cmp -s "$SCRIPTS_DIR/$LOCAL_DOCKERFILE" "$WORKSPACE_PATH/$LOCAL_DOCKERFILE"; then
-        cp "$SCRIPTS_DIR/$LOCAL_DOCKERFILE" "$WORKSPACE_PATH/$LOCAL_DOCKERFILE" && \
-        docker build \
-          --build-arg UID="$(id -u)" \
-          --build-arg GID="$(id -g)" \
-          --file "$WORKSPACE_PATH/$LOCAL_DOCKERFILE" --tag "$TOOLCHAIN_IMAGE" "$SCRIPTS_DIR" && \
-        docker tag "$TOOLCHAIN_IMAGE" "$LOCAL_IMAGE" && \
-        echo "$LOCAL_DOCKERFILE baked again, and the image with it."
-      fi
+      # --deploy prod|scaled: that file alone, written again for the
+      # project as it is now — its ports kept, the services its
+      # cartridges ask for — and committed, as the dev file is below.
+      # The release image the file names is not built here: that is
+      # 'build --deploy', or up's. Until 2026-09-10 the two were baked
+      # only on the way to their own up or build, and the console's Bake
+      # button had to build the image to rewrite a YAML.
+      if [[ "$DEPLOY_ARG" == "prod" ]]; then
+        bake_prod_compose && \
+        if workspace_dirty; then
+          workspace_commit "Bake $PROD_COMPOSE_FILE" && \
+          echo "The prod compose says what the project asks for now: the next up --deploy prod brings it up."
+        else
+          echo "$PROD_COMPOSE_FILE is already what the project asks for: nothing to bake."
+        fi
 
-      bake_compose "$LOCAL_IMAGE" "$LOCAL_DOCKERFILE" "$COMPOSE_FILE" && \
-      if workspace_dirty; then
-        workspace_commit "Bake $COMPOSE_FILE" && \
-        echo "The compose says what the project asks for now: the next up brings it up."
+      elif [[ "$DEPLOY_ARG" == "scaled" ]]; then
+        bake_scaled_compose && \
+        if workspace_dirty; then
+          workspace_commit "Bake $SCALED_COMPOSE_FILE" && \
+          echo "The scaled compose says what the project asks for now: the next up --deploy scaled brings it up."
+        else
+          echo "$SCALED_COMPOSE_FILE is already what the project asks for: nothing to bake."
+        fi
+
       else
-        echo "$COMPOSE_FILE is already what the project asks for: nothing to bake."
+        # A workspace baked before the volumes moved over _build and deps
+        # has neither directory yet.
+        ensure_build_volumes
+        # The workspace keeps its ports; the compose is where they live.
+        compose_ports
+
+        # The toolchain Dockerfile too: the seed may have moved since this
+        # project was born — where Mix compiles, what the image carries —
+        # and the workspace keeps the copy its image is built from. The
+        # Phoenix installer stays the one stamped in it: that is the
+        # project's generator, not config.conf's next choice.
+        PHX_STAMPED=$(sed -n 's/^ARG PHX_NEW="\(.*\)"/\1/p' "$WORKSPACE_PATH/$LOCAL_DOCKERFILE" 2>/dev/null)
+        PHX_NEW_KEPT="$PHX_NEW_VERSION"; PHX_NEW_VERSION="${PHX_STAMPED:-$PHX_NEW_VERSION}"
+        create_local_dockerfile
+        PHX_NEW_VERSION="$PHX_NEW_KEPT"
+        if ! cmp -s "$SCRIPTS_DIR/$LOCAL_DOCKERFILE" "$WORKSPACE_PATH/$LOCAL_DOCKERFILE"; then
+          cp "$SCRIPTS_DIR/$LOCAL_DOCKERFILE" "$WORKSPACE_PATH/$LOCAL_DOCKERFILE" && \
+          docker build \
+            --build-arg UID="$(id -u)" \
+            --build-arg GID="$(id -g)" \
+            --file "$WORKSPACE_PATH/$LOCAL_DOCKERFILE" --tag "$TOOLCHAIN_IMAGE" "$SCRIPTS_DIR" && \
+          docker tag "$TOOLCHAIN_IMAGE" "$LOCAL_IMAGE" && \
+          echo "$LOCAL_DOCKERFILE baked again, and the image with it."
+        fi
+
+        bake_compose "$LOCAL_IMAGE" "$LOCAL_DOCKERFILE" "$COMPOSE_FILE" && \
+        if workspace_dirty; then
+          workspace_commit "Bake $COMPOSE_FILE" && \
+          echo "The compose says what the project asks for now: the next up brings it up."
+        else
+          echo "$COMPOSE_FILE is already what the project asks for: nothing to bake."
+        fi
       fi
     else terminate "There is no project."; fi
 

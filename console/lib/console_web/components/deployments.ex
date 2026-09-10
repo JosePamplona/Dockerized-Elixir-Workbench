@@ -58,6 +58,11 @@ defmodule ConsoleWeb.Deployments do
   attr :pickname, :string, required: true, doc: "the deployment picked: the row with the radio on"
   attr :running, :any, default: nil, doc: "the deployment that is up, if one"
   attr :extra, :string, default: "", doc: "--replicas N --no-balancer, when they differ"
+
+  attr :scaled_extra, :string,
+    default: "",
+    doc: "the same for the scaled row's Bake, whichever row is picked"
+
   attr :clustering, :any, default: false, doc: "the clustering cartridge is in"
 
   def deployments_sheet(assigns) do
@@ -214,7 +219,13 @@ defmodule ConsoleWeb.Deployments do
                     busy={@busy}
                     present={d.present}
                   />
-                  <.bake_button name={d.deploy} status={@status} busy={@busy} baked={d.baked} />
+                  <.bake_button
+                    name={d.deploy}
+                    status={@status}
+                    busy={@busy}
+                    baked={d.baked}
+                    extra={(d.deploy == "scaled" && @scaled_extra) || ""}
+                  />
                 </td>
               </tr>
               <tr :if={@deploy == d.deploy} class="fbox">

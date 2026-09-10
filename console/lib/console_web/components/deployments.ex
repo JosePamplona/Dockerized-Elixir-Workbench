@@ -222,7 +222,23 @@ defmodule ConsoleWeb.Deployments do
           </tbody>
         </table>
       </form>
-      <div class="acts">
+      <div class="foot">
+        <div class="cmds">
+          <div class="cmd">./wb.sh up --deploy {@pickname}{@extra}</div>
+          <span class="note">{cond do
+            @empty ->
+              "the workspace is empty: create a project first"
+
+            @running == @pickname ->
+              "#{@running} is up: its row stops it, or takes it down"
+
+            @running ->
+              "one deployment at a time: the composes share the project name, so Up replaces #{@running}"
+
+            true ->
+              "nothing is up"
+          end}</span>
+        </div>
         <button
           class="btn primary"
           type="button"
@@ -239,21 +255,7 @@ defmodule ConsoleWeb.Deployments do
           phx-click="run"
           phx-value-args={"build --deploy #{@pickname}#{@extra}"}
         >Build {@pickname}</button>
-        <span class="note">{cond do
-          @empty ->
-            "the workspace is empty: create a project first"
-
-          @running == @pickname ->
-            "#{@running} is up: its row stops it, or takes it down"
-
-          @running ->
-            "one deployment at a time: the composes share the project name, so Up replaces #{@running}"
-
-          true ->
-            "nothing is up"
-        end}</span>
       </div>
-      <div class="cmd">./wb.sh up --deploy {@pickname}{@extra}</div>
     </section>
     """
   end

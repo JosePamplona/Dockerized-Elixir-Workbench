@@ -570,9 +570,9 @@ pre .ln{display:block}
 .newcard .frow .ro a{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:11px;color:var(--accent)}
 .newcard .flags{display:flex;flex-wrap:wrap;gap:6px 14px;font-family:var(--mono);font-size:12.5px}
 .newcard .flags label{display:inline-flex;gap:6px;align-items:center}
-.newcard .foot{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-.newcard .foot .cmds{flex:1;min-width:240px;display:grid;gap:3px}
-.newcard .foot .cmd{min-width:0}
+.newcard .foot,.deployments .foot{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.newcard .foot .cmds,.deployments .foot .cmds{flex:1;min-width:240px;display:grid;gap:3px}
+.newcard .foot .cmd,.deployments .foot .cmd{min-width:0}
 .confirm{font-family:var(--serif);font-size:13.5px;color:var(--bad);display:none;gap:8px;align-items:center}
 .confirm.on{display:inline-flex}
 
@@ -1270,10 +1270,9 @@ span.fact input{accent-color:var(--accent);width:14px;height:14px;margin:0;verti
 .deployments .opts label{display:inline-flex;gap:6px;align-items:center;cursor:pointer}
 .deployments .opts input[type=number]{width:52px;font-family:var(--mono);font-size:12px;padding:2px 4px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px}
 /* The row picked wears the picker's old ground. */
-.deployments table.rows.deps tr.on td{background:var(--accent-soft)}
-.deployments table.rows.deps tr.on td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
-.deployments .acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px}
-.deployments .cmd{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.deployments table.rows.deps tr.on td.k{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+/* The foot is the Project card's: the command line taking the width, the buttons at its right. */
+.deployments .foot{margin-top:6px}
 .deployments table.rows.deps td.sync{white-space:normal}
 .deployments table.rows.deps td.act{width:1%;white-space:nowrap;text-align:right;padding-right:0}
 /* The eye before the file's chip: the row's own way to open the file in the box under. */

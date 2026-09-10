@@ -209,7 +209,7 @@ defmodule ConsoleWeb.DockerScreen do
               <span class="hint">{c.image |> String.split("/") |> List.last()}</span>
             </td>
             <td>
-              <.chip class={container_class(c)}>{c.health || c.state}</.chip>
+              <.chip class={elem(reading(c), 1)}>{elem(reading(c), 0)}</.chip>
             </td>
             <td class="dim">{since(c)}</td>
             <td class="num dim" title={"restart policy: #{c.policy}"}>{c.restarts}</td>
@@ -355,14 +355,19 @@ defmodule ConsoleWeb.DockerScreen do
     """
   end
 
-  defp container_class(c) do
-    cond do
-      c.health == "healthy" or (is_nil(c.health) and c.state == "running") -> "good"
-      c.state == "running" or c.health == "starting" -> "warn busy"
-      c.state == "exited" and c.exit == 0 -> "off"
-      true -> "bad"
-    end
-  end
+  # The container's face, as the rail's Containers reads it: one word
+  # and one colour for the same state everywhere — healthy or running
+  # good, starting busy, unhealthy bad, exited 0 an absence, exited
+  # otherwise with its code, created, paused and restarting a warning.
+  # This screen had a reading of its own that called a running
+  # unhealthy container busy and an exit code nothing.
+  defp reading(c),
+    do:
+      ConsoleWeb.Cartridges.container_reading(%{
+        "State" => c.state,
+        "Health" => c.health,
+        "ExitCode" => c.exit
+      })
 
   # `Up 39 minutes (healthy)` says the health twice; `Exited (1) 36 hours ago` says it once.
   defp since(%{state: "running", status: s}),
@@ -380,9 +385,7 @@ defmodule ConsoleWeb.DockerScreen do
     <div class="ficha" id={"card-" <> @card.name}>
       <header>
         <h3>{@card.name}</h3>
-        <.chip class={container_class(%{health: @card.health, state: @card.state, exit: @card.exit})}>
-          {@card.health || @card.state}
-        </.chip>
+        <.chip class={elem(reading(@card), 1)}>{elem(reading(@card), 0)}</.chip>
         <span class="note">{@card.image}<span :if={@card.started}> · started {stamp(@card.started)}</span><span :if={
           @card.finished
         }> · ended {stamp(@card.finished)} with {@card.exit}</span>

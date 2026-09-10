@@ -322,7 +322,7 @@ defmodule ConsoleWeb.Deployments do
     ~H"""
     <div class="fsheet" id="compose-sheet" phx-hook="JobOut" data-tall="compose">
       <div class="strip">
-        <span class="label">the file</span>
+        <span class="label">filename</span>
         <span :if={@chosen} class="fname" title={"the #{@chosen.key} deployment's compose file"}>
           {@chosen.file}
         </span>

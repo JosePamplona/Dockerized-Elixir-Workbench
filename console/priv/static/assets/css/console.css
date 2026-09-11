@@ -1403,6 +1403,11 @@ header.band ::selection{background:color-mix(in srgb,var(--board-ink) 15%,transp
 .git table.commits .sj{margin-right:8px}
 .git table.commits .hint{display:block;white-space:pre-wrap;max-width:70ch}
 .git table.commits tr[phx-click]{cursor:pointer}
+/* The picked commit's diff under its row: the cell wraps, and .fit gives
+   the diff the table's width without lending it its own — a long diff line
+   scrolls in its box instead of widening the log's columns. */
+.git table.commits tr.fbox td{padding:4px 8px 14px;white-space:normal}
+.git table.commits tr.fbox .fit{width:0;min-width:100%}
 /* The pane under the row: it scrolls, the row does not — the shape of
    the Project's booklet, without the booklet's two columns. */
 /* A column and not a grid: a grid of a fixed height sizes its rows to

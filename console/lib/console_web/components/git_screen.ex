@@ -4,7 +4,7 @@ defmodule ConsoleWeb.GitScreen do
   what a commit would take, file by file on the sheet the box's Files
   screen draws, with the commit's title and body above it; and
   *History*, the log with the cartridge inserts marked, each commit
-  opening its diff on the same sheet (`/project?paper=history&commit=SHA`,
+  opening its diff under its own row (`/project?paper=history&commit=SHA`,
   where a `.commit-ref` lands). The rail said `dirty` and offered a
   commit it could not name; this is where it is named and seen. They
   were a tab of their own, Git, until 2026-09-09: the repository is the
@@ -149,22 +149,38 @@ defmodule ConsoleWeb.GitScreen do
         <tr>
           <th></th><th>commit</th><th class="dim">when</th><th class="dim">who</th>
         </tr>
-        <tr :for={c <- @gt.log} class={picked?(@gt.pick, c.sha) && "on"}>
-          <td><.commit_ref sha={c.sha} subject={c.subject} date={c.date} /></td>
-          <td class="wrap">
-            <span class="sj">{c.subject}</span><.cart_ref
-              :if={c.insert}
-              name={c.insert}
-              installed={true}
-            /><span :if={c.body != ""} class="hint">{c.body}</span>
-          </td>
-          <td class="dim">{String.slice(c.date, 0, 10)}</td>
-          <td class="dim">{c.author}</td>
-        </tr>
+        <%= for c <- @gt.log do %>
+          <tr class={picked?(@gt.pick, c.sha) && "on"}>
+            <td><.commit_ref sha={c.sha} subject={c.subject} date={c.date} /></td>
+            <td class="wrap">
+              <span class="sj">{c.subject}</span><.cart_ref
+                :if={c.insert}
+                name={c.insert}
+                installed={true}
+              /><span :if={c.body != ""} class="hint">{c.body}</span>
+            </td>
+            <td class="dim">{String.slice(c.date, 0, 10)}</td>
+            <td class="dim">{c.author}</td>
+          </tr>
+          <tr :if={picked?(@gt.pick, c.sha)} class="fbox">
+            <td colspan="4"><div class="fit"><.commit_diff gt={@gt} status={@status} /></div></td>
+          </tr>
+        <% end %>
       </table>
     </div>
-    <p :if={@gt.pick && is_nil(@gt.files)} class="note">Reading {String.slice(@gt.pick, 0, 7)}…</p>
-    <div :if={@gt.pick && is_list(@gt.files)} class="impl">
+    """
+  end
+
+  attr :gt, :map, required: true
+  attr :status, :map, default: nil
+
+  # The picked commit's diff, under its own row as the Deployments' compose
+  # file reads under its: picked far up a long log it read under the whole
+  # table, off the screen and away from the row that asked for it.
+  defp commit_diff(assigns) do
+    ~H"""
+    <p :if={is_nil(@gt.files)} class="note">Reading {String.slice(@gt.pick, 0, 7)}…</p>
+    <div :if={is_list(@gt.files)} class="impl">
       <span class="label">{String.slice(@gt.pick, 0, 7)} · {files_word(@gt.files)}</span>
       <div :if={@gt.files == []} class="note">Nothing in this commit but its message.</div>
       <div :if={@gt.files != []} class={["files", length(@gt.files) > 12 && "many"]}>

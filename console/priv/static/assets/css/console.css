@@ -230,8 +230,13 @@ section h2 .label{font-weight:500;letter-spacing:.1em}
 /* A control on a head, after the summary: the reload of Services & Doors —
    .fetch's .go, standing alone. The fold stops stretching so the control
    can follow its label, and the caret moves to the head's own edge, still
-   drawn from the fold's aria-expanded (through :has), never typed. */
-section h2 .go{margin-left:4px;display:inline-flex;align-items:center;justify-content:center;width:2em;height:2em;font-size:11px;padding:0;border:1px solid var(--line);border-radius:2px;background:var(--surface-2);color:var(--muted);cursor:pointer;align-self:center}
+   drawn from the fold's aria-expanded (through :has), never typed. The
+   caret on the head is not the fold's, so the fold lays a hit area over
+   the whole head — caret and empty stretch included — and the control
+   sits above it: without it the caret of Services & Doors was dead. */
+section h2:has(.go){position:relative}
+section h2:has(.go) .fold::before{content:"";position:absolute;inset:0}
+section h2 .go{position:relative;z-index:1;margin-left:4px;display:inline-flex;align-items:center;justify-content:center;width:2em;height:2em;font-size:11px;padding:0;border:1px solid var(--line);border-radius:2px;background:var(--surface-2);color:var(--muted);cursor:pointer;align-self:center}
 section h2:has(.go) .fold{width:auto;flex:none}
 section h2:has(.go) .fold::after{display:none}
 section h2:has(.go)::after{content:"▸";flex:none;width:.8em;margin-left:auto;color:var(--soft);font-family:var(--mono);font-size:max(1.25em,17px);line-height:1;letter-spacing:0;text-align:right;pointer-events:none}

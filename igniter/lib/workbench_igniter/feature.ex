@@ -10,6 +10,8 @@ defmodule WorkbenchIgniter.Feature do
   * `pending?/0` - documented, but its installer is not done yet.
   * `installed?/1` - whether the target project already carries it, read
     off the same mark the installer's guard reads.
+  * `state/1` - what the project carries of its options, read off the
+    project; required of every cartridge with options.
   * `members/1` - for a *collection* cartridge: the cartridges it
     inserts, in order, with the argv each one gets.
 
@@ -108,11 +110,26 @@ defmodule WorkbenchIgniter.Feature do
 
   @doc """
   What the project carries of the cartridge's options, read off the
-  project — for an `:adds` cartridge, so a form can show what is in
-  and offer the rest. Keys are option names; values are what was found
-  (a value, a list, or `true` for a piece whose detail is not readable
-  from the project). Empty by default. Same shape as `installed?/1`:
-  the returned igniter must not be discarded.
+  project. Required of every cartridge whose `info/2` declares a
+  schema: the answer has exactly the schema's keys, one value per
+  option, and only a cartridge without options keeps the `%{}` default.
+
+  Each value is what was found, read off a mark the project has for
+  its own sake — the route in its router, the key in its mix.exs, the
+  file the installer wrote — never off a record kept for the workbench:
+  a string, a list, `true`/`false` for a boolean. `nil` says the option
+  leaves no mark the project keeps: a one-shot action (`--build` runs
+  the suite once, its output is gitignored) or a flag the installer
+  no longer reads. Say which, beside the read; do not guess a value.
+
+  Four readers depend on the answer, so its silence is never neutral:
+  `mix workbench.status` carries it, the console's Inserted list shows
+  it as the line the cartridge went in with, a door's `{option}` path
+  is filled from it (and falls back to the default when it is `nil`),
+  and `services/1` and `console/0`'s `{:with, value}` condition read
+  it. Same shape as `installed?/1`: the returned igniter must not be
+  discarded. The catalog test installs every cartridge with non-default
+  values and checks the answer against the schema.
   """
   @callback state(igniter :: Igniter.t()) :: {map(), Igniter.t()}
 
@@ -179,7 +196,9 @@ defmodule WorkbenchIgniter.Feature do
           embed_assets: 1,
           dep_installed?: 2,
           file_installed?: 2,
-          marker_installed?: 3
+          marker_installed?: 3,
+          file_content: 2,
+          mix_project_value: 2
         ]
 
       @impl WorkbenchIgniter.Feature
@@ -404,6 +423,50 @@ defmodule WorkbenchIgniter.Feature do
   end
 
   @doc """
+  The content of a file of the project, for `state/1` to read a mark
+  off: `{content, igniter}`, `nil` when the file is not there. The
+  file joins the igniter's rewrite, as `installed?/1`'s checks do, so
+  the returned igniter must not be discarded.
+  """
+  @spec file_content(Igniter.t(), Path.t()) :: {String.t() | nil, Igniter.t()}
+  def file_content(igniter, path) do
+    if Igniter.exists?(igniter, path) do
+      igniter = Igniter.include_existing_file(igniter, path)
+      {igniter.rewrite |> Rewrite.source!(path) |> Rewrite.Source.get(:content), igniter}
+    else
+      {nil, igniter}
+    end
+  end
+
+  @doc """
+  The literal a key of `mix.exs`'s `project/0` keyword holds — `:version`,
+  `:name`, `:source_url` — as `{value, igniter}`; `nil` when the key is
+  not there or its value is not a plain literal (a call, a variable).
+  """
+  @spec mix_project_value(Igniter.t(), atom()) :: {term() | nil, Igniter.t()}
+  def mix_project_value(igniter, key) do
+    igniter = Igniter.include_existing_file(igniter, "mix.exs")
+
+    zipper =
+      igniter.rewrite
+      |> Rewrite.source!("mix.exs")
+      |> Rewrite.Source.get(:quoted)
+      |> Sourceror.Zipper.zip()
+
+    value =
+      with {:ok, zipper} <- Igniter.Code.Function.move_to_def(zipper, :project, 0),
+           {:ok, zipper} <- Igniter.Code.Keyword.get_key(zipper, key),
+           {:__block__, _, [literal]} when is_binary(literal) or is_number(literal) <-
+             zipper.node do
+        literal
+      else
+        _ -> nil
+      end
+
+    {value, igniter}
+  end
+
+  @doc """
   `installed?/1` for a cartridge whose mark is a dependency in `mix.exs`.
   """
   @spec dep_installed?(Igniter.t(), atom()) :: {boolean(), Igniter.t()}
@@ -425,12 +488,9 @@ defmodule WorkbenchIgniter.Feature do
   """
   @spec marker_installed?(Igniter.t(), Path.t(), String.t()) :: {boolean(), Igniter.t()}
   def marker_installed?(igniter, path, marker) do
-    if Igniter.exists?(igniter, path) do
-      igniter = Igniter.include_existing_file(igniter, path)
-      content = igniter.rewrite |> Rewrite.source!(path) |> Rewrite.Source.get(:content)
-      {String.contains?(content, marker), igniter}
-    else
-      {false, igniter}
+    case file_content(igniter, path) do
+      {nil, igniter} -> {false, igniter}
+      {content, igniter} -> {String.contains?(content, marker), igniter}
     end
   end
 

@@ -112,6 +112,43 @@ defmodule WorkbenchIgniter.Features.Coveralls do
   @impl true
   def installed?(igniter), do: file_installed?(igniter, "coveralls.json")
 
+  # What the project carries, read off what the install wrote: the
+  # minimum and the skipped open_api folder off coveralls.json, the
+  # `mix cover` task --exdoc plants, and the theme by matching the
+  # planted report template against the cartridge's own — `nil` once
+  # the project has edited it. --build leaves no mark: it runs the
+  # suite once, and `cover/` is gitignored.
+  @impl true
+  def state(igniter) do
+    app_name = Igniter.Project.Application.app_name(igniter)
+    {json, igniter} = file_content(igniter, "coveralls.json")
+    {report, igniter} = file_content(igniter, "#{@template_path}/coverage.html.eex")
+    {cover_task?, igniter} = file_installed?(igniter, "lib/mix/tasks/cover.ex")
+
+    minimum =
+      case json && Regex.run(~r/"minimum_coverage":\s*([\d.]+)/, json) do
+        [_, minimum] -> minimum
+        _ -> nil
+      end
+
+    interface =
+      cond do
+        is_nil(json) -> nil
+        String.contains?(json, "#{app_name}_web/open_api") -> "rest"
+        true -> "graphql"
+      end
+
+    theme = report && Enum.find(@themes, &(asset("template/#{&1}/coverage.html.eex") == report))
+
+    {%{
+       minimum_coverage: minimum,
+       interface: interface,
+       exdoc: cover_task?,
+       theme: theme,
+       build: nil
+     }, igniter}
+  end
+
   @doc "Installer body, run by the mix task shell as its `igniter/1`."
   def install(igniter) do
     # Whether the project has html — the components folder to leave out

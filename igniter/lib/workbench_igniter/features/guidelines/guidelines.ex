@@ -53,6 +53,12 @@ defmodule WorkbenchIgniter.Features.Guidelines do
   @impl true
   def installed?(igniter), do: file_installed?(igniter, @page)
 
+  # --url leaves no mark the project keeps: the page is the download,
+  # and only a failed one names its URL in the placeholder — which is
+  # not the option, so it is not read either.
+  @impl true
+  def state(igniter), do: {%{url: nil}, igniter}
+
   @doc "Installer body, run by the mix task shell as its `igniter/1`."
   def install(igniter) do
     url = igniter.args.options[:url]

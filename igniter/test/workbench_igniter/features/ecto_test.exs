@@ -77,6 +77,24 @@ defmodule WorkbenchIgniter.Features.EctoTest do
     refute plain["config/config.exs"] =~ "binary_id: true"
   end
 
+  test "reports both of its options as the project carries them" do
+    with_id =
+      no_ecto_project()
+      |> Igniter.compose_task("workbench.install.ecto", ~w(--database mysql --binary-id))
+      |> apply_igniter!()
+
+    assert {%{database: "mysql", binary_id: true}, _} =
+             WorkbenchIgniter.Features.Ecto.state(with_id)
+
+    plain =
+      no_ecto_project()
+      |> Igniter.compose_task("workbench.install.ecto", [])
+      |> apply_igniter!()
+
+    assert {%{database: "postgres", binary_id: false}, _} =
+             WorkbenchIgniter.Features.Ecto.state(plain)
+  end
+
   test "rejects a database phx.new does not know" do
     igniter =
       no_ecto_project() |> Igniter.compose_task("workbench.install.ecto", ~w(--database oracle))

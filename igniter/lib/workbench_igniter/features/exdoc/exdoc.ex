@@ -75,6 +75,37 @@ defmodule WorkbenchIgniter.Features.Exdoc do
   defp controller_module(igniter),
     do: Module.concat(Igniter.Libs.Phoenix.web_module(igniter), ExDocController)
 
+  # What the project carries, read off what the install wrote: the name
+  # and source_url of mix.exs, the `cover` action --coveralls adds to
+  # the controller, the token page --auth0 plants. Two options leave no
+  # mark the project keeps: --version stamps the `doc/` dummies only
+  # (gitignored, overwritten by `mix docs`; the project's version is
+  # versioning's), and --build runs `mix docs` once.
+  @impl true
+  def state(igniter) do
+    {name, igniter} = mix_project_value(igniter, :name)
+    {repo_url, igniter} = mix_project_value(igniter, :source_url)
+    {token?, igniter} = file_installed?(igniter, "assets/exdoc/token.md")
+
+    {cover?, igniter} =
+      case Igniter.Project.Module.find_module(igniter, controller_module(igniter)) do
+        {:ok, {igniter, source, _zipper}} ->
+          {String.contains?(Rewrite.Source.get(source, :content), "def cover("), igniter}
+
+        {:error, igniter} ->
+          {false, igniter}
+      end
+
+    {%{
+       project_name: name,
+       version: nil,
+       repo_url: repo_url,
+       coveralls: cover?,
+       auth0: token?,
+       build: nil
+     }, igniter}
+  end
+
   @doc "Installer body, run by the mix task shell as its `igniter/1`."
   def install(igniter) do
     # Whether the project has Ecto — the database page and diagram — is

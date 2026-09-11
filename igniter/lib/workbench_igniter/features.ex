@@ -52,6 +52,7 @@ defmodule WorkbenchIgniter.Features do
     Features.Specdd,
     # Services of the workspace, declared for the compose (scripts/PLAN.md).
     Features.Pgadmin,
+    Features.Adminer,
     Features.K6,
     Features.Monitoring,
     # The base cartridges: capabilities phx.new decides at generation
@@ -93,6 +94,12 @@ defmodule WorkbenchIgniter.Features do
       version: version(feature.version()),
       rerun: feature.rerun(),
       requires: feature.requires(),
+      # The cartridges its installer inserts along, off the `composes`
+      # its `info/2` declares to Igniter (healthcheck brings mock in for
+      # its tests): the other way a cartridge stands on another, and
+      # the one `requires` does not say. `workbench.dependents` reads
+      # both. A collection's members are its recipe, not this.
+      composes: composes(info) -- Enum.map(members, & &1.name),
       afterwards: feature.afterwards(),
       console: console(feature.console()),
       # A base cartridge: a phx.new capability, in a default project
@@ -156,6 +163,14 @@ defmodule WorkbenchIgniter.Features do
       end)
 
     {lists |> List.flatten() |> Enum.uniq(), igniter}
+  end
+
+  defp composes(nil), do: []
+
+  defp composes(info) do
+    for task <- info.composes || [],
+        feature = Enum.find(catalog(), &(&1.task() == task)),
+        do: feature.name()
   end
 
   defp version(nil), do: nil

@@ -120,23 +120,26 @@ release templates with the distributed-node exports DNSCluster needs,
 plus `DNS_CLUSTER_QUERY` in the environment files. Installed by hand
 with `wb.sh add clustering`.
 
-[pgadmin](pgadmin/), [k6](k6/) and [monitoring](monitoring/) bring the
-workspace a **service**: a container the compose carries because the
+[pgadmin](pgadmin/), [adminer](adminer/), [k6](k6/) and
+[monitoring](monitoring/) bring the workspace a **service**: a container the compose carries because the
 project asked for it. A cartridge says so with `services/1` — the names
 `mix workbench.compose` renders (`postgres`, `mysql`, `mssql` or
-`sqlite`, declared by ecto off its adapter; `pgadmin`; `k6`;
+`sqlite`, declared by ecto off its adapter; `pgadmin`; `adminer`; `k6`;
 `prometheus` and `grafana`) — and what the installer writes is the file
-the service opens with: pgAdmin's `pgadmin/servers.json`, k6's
-`k6/smoke.js`, Prometheus's `monitoring/prometheus.yml` and Grafana's
-`monitoring/grafana/datasource.yml`. For the first two the file is the
-mark too; monitoring writes Elixir as well — PromEx, whose module is
+the service opens with: pgAdmin's `pgadmin/servers.json`, Adminer's
+`adminer/login.php`, k6's `k6/smoke.js`, Prometheus's
+`monitoring/prometheus.yml` and Grafana's
+`monitoring/grafana/datasource.yml`. For the first three the file is
+the mark too; monitoring writes Elixir as well — PromEx, whose module is
 its mark — so that what the containers read has something to read.
 What is the topology's (where the app is, where Prometheus is) the
 compose hands over, so the files serve every deployment. The compose is
 baked from what the project carries (`./wb.sh bake` after the insert),
 never the other way round; see `scripts/PLAN.md`. pgadmin is a
 chiefs_setup pick, beside psql_extras, and refuses off Postgres as it
-does; k6 and monitoring are inserted by hand.
+does; adminer is its à-la-carte counterpart on every adapter — two
+boxes for one need, as healthcheck2 is beside healthcheck — and k6 and
+monitoring are inserted by hand.
 
 [healthcheck2](healthcheck2/) is the vanilla counterpart of
 `healthcheck`: liveness and readiness probes as the first plug of the
@@ -249,8 +252,17 @@ which cartridges have one and why.
   in the task's `@moduledoc`), and so is the help beside a form field.
 * `rerun/0` - what a second run does: `:noop` (the guard skips it) or
   `:adds` (every option a piece the installer adds when missing).
-* `state/1` - what the project carries of an `:adds` cartridge's
-  options, read off the project. `mix workbench.status` carries it.
+* `state/1` - what the project carries of its options, read off the
+  project: exactly the schema's keys, each with what was found (a
+  string, a list, `true`/`false`), or `nil` for an option that leaves
+  no mark the project keeps (a one-shot `--build`, a flag the installer
+  no longer reads — say which, beside the read). Required of every
+  cartridge with options: `mix workbench.status` carries it, the
+  console's Inserted list, its doors' `{option}` paths and
+  `services/1` read it, and the catalog test installs every cartridge
+  with non-default values and checks the answer against its schema.
+  It reads marks the project has for its own sake, never a record kept
+  for the workbench.
 
 Derived by `use WorkbenchIgniter.Feature`, not declared: `name/0` (the
 directory), `version/0` (the first CHANGELOG.md entry) and `summary/0`

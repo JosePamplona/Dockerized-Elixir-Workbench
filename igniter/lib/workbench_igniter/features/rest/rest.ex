@@ -87,6 +87,33 @@ defmodule WorkbenchIgniter.Features.Rest do
   defp open_api_spec(igniter),
     do: Module.concat([Igniter.Libs.Phoenix.web_module(igniter), OpenApi, Spec])
 
+  # What the project carries, read off the spec module the mark is: the
+  # title of its `%Info{}`, the bearer scheme --auth0 adds, and the tags
+  # --openai and --health add (`@tag_conversation`, `@tag_health`).
+  @impl true
+  def state(igniter) do
+    case Igniter.Project.Module.find_module(igniter, open_api_spec(igniter)) do
+      {:ok, {igniter, source, _zipper}} ->
+        spec = Rewrite.Source.get(source, :content)
+
+        title =
+          case Regex.run(~r/title:\s*"([^"]*)"/, spec) do
+            [_, title] -> title
+            nil -> nil
+          end
+
+        {%{
+           project_name: title,
+           auth0: String.contains?(spec, "%SecurityScheme{"),
+           openai: String.contains?(spec, ~s|name: "Conversation Operations"|),
+           health: String.contains?(spec, ~s|name: "Development Operations"|)
+         }, igniter}
+
+      {:error, igniter} ->
+        {%{project_name: nil, auth0: false, openai: false, health: false}, igniter}
+    end
+  end
+
   @doc "Installer body, run by the mix task shell as its `igniter/1`."
   def install(igniter) do
     opts =

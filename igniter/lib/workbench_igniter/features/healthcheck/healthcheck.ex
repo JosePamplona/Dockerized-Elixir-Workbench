@@ -54,6 +54,44 @@ defmodule WorkbenchIgniter.Features.Healthcheck do
   defp controller_module(igniter),
     do: Module.concat(Igniter.Libs.Phoenix.web_module(igniter), HealthcheckController)
 
+  # What the project carries, read back off what the install wrote: the
+  # endpoint is the router scope that routes the controller, and the
+  # OpenApiSpex variant is there when its schema module is. Without
+  # this the cartridge answered the default `%{}`, and the console had
+  # nothing to say of `--endpoint /health3 --open-api`.
+  @impl true
+  def state(igniter) do
+    app_name = Igniter.Project.Application.app_name(igniter)
+    router = "lib/#{app_name}_web/router.ex"
+    web_module = Igniter.Libs.Phoenix.web_module(igniter)
+
+    {endpoint, igniter} =
+      if Igniter.exists?(igniter, router) do
+        igniter = Igniter.include_existing_file(igniter, router)
+        content = igniter.rewrite |> Rewrite.source!(router) |> Rewrite.Source.get(:content)
+
+        case Regex.run(
+               ~r/scope\s*\(?\s*"([^"]+)"[^\n]*\bdo\b(?:(?!\bscope\b).)*?HealthcheckController/s,
+               content
+             ) do
+          [_, path] -> {path, igniter}
+          nil -> {nil, igniter}
+        end
+      else
+        {nil, igniter}
+      end
+
+    {open_api?, igniter} =
+      Igniter.Project.Module.module_exists(
+        igniter,
+        Module.concat([web_module, OpenApi, Schemas, Healthcheck])
+      )
+
+    state = %{endpoint: endpoint, open_api: open_api?}
+
+    {state, igniter}
+  end
+
   @doc "Installer body, run by the mix task shell as its `igniter/1`."
   def install(igniter) do
     endpoint = igniter.args.options[:endpoint]

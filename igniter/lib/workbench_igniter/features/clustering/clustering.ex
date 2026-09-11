@@ -188,4 +188,23 @@ defmodule WorkbenchIgniter.Features.Clustering do
   # It is what wb.sh reads too, before baking the scaled compose.
   @impl true
   def installed?(igniter), do: marker_installed?(igniter, @env_sh, @marker)
+
+  # What the project carries: the query, off the `.env` line the install
+  # appended — or `.env.sample`'s, the one git keeps, when `.env` is not
+  # there.
+  @impl true
+  def state(igniter) do
+    {env, igniter} = file_content(igniter, ".env")
+    {sample, igniter} = file_content(igniter, ".env.sample")
+
+    query =
+      Enum.find_value([env, sample], fn content ->
+        case content && Regex.run(~r/^DNS_CLUSTER_QUERY="?([^"\n]*)"?$/m, content) do
+          [_, query] -> query
+          _ -> nil
+        end
+      end)
+
+    {%{dns_query: query}, igniter}
+  end
 end

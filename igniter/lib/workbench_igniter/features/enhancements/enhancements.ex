@@ -80,6 +80,62 @@ defmodule WorkbenchIgniter.Features.Enhancements do
   @impl true
   def installed?(igniter), do: file_installed?(igniter, "lib/mix/tasks/version.ex")
 
+  # What the project carries, read off what the install wrote — and
+  # each option only where it wrote something, since the groups follow
+  # the project (the Ecto group needs ecto, the REST group `rest`):
+  # the key and timestamp types and --exdoc's `@before_compile` off
+  # `MyApp.Schema`; --interface off the error view, which renders
+  # `%{error: …}` where phx.new's renders `%{errors: %{detail: …}}`;
+  # --auth0 and --openai off the tables in the DbSchema model or the
+  # sections of the Postman collection, --health off the collection
+  # alone; --project-name off the model's page or the collection. Where
+  # none of those files is there the option left no mark: `nil`.
+  # --stripe leaves none anywhere: its diagrams are the auth0 ones.
+  @impl true
+  def state(igniter) do
+    app_name = Igniter.Project.Application.app_name(igniter)
+    {schema, igniter} = file_content(igniter, "lib/#{app_name}/schema.ex")
+    {error_json, igniter} = file_content(igniter, "lib/#{app_name}_web/controllers/error_json.ex")
+    {dbs, igniter} = file_content(igniter, "assets/db_schema/database.dbs")
+    {model_page, igniter} = file_content(igniter, "assets/exdoc/database.md")
+    {postman, igniter} = file_content(igniter, "#{app_name}.postman_collection.json")
+
+    has? = fn content, text -> content && String.contains?(content, text) end
+    # true/false where a file could carry the mark, nil where none is there.
+    either = fn {a, mark_a}, {b, mark_b} ->
+      if a || b, do: has?.(a, mark_a) || has?.(b, mark_b) || false
+    end
+
+    {%{
+       project_name:
+         capture(model_page, ~r/\A#\s*([^\n]*?)(?: - Entity-Relationship Diagram)?\s*$/m) ||
+           capture(postman, ~r/"name":\s*"([^"]*)"/),
+       id_type: schema && id_type_option(capture(schema, ~r/@primary_key \{:id, ([\w.:]+),/)),
+       timestamps: capture(schema, ~r/@timestamps_opts \[type: :(\w+)\]/),
+       interface: error_json && if(has?.(error_json, "%{error: message}"), do: "rest"),
+       exdoc: schema && String.contains?(schema, "@before_compile"),
+       auth0: either.({dbs, ~s|<table name="users"|}, {postman, "User Operations"}),
+       openai:
+         either.({dbs, ~s|<table name="conversations"|}, {postman, "Conversation Operations"}),
+       stripe: nil,
+       health: postman && String.contains?(postman, "Development Operations")
+     }, igniter}
+  end
+
+  defp capture(nil, _regex), do: nil
+
+  defp capture(content, regex) do
+    case Regex.run(regex, content) do
+      [_, value] -> value
+      nil -> nil
+    end
+  end
+
+  # The option the schema's key type came from: the inverse of id_type/1.
+  defp id_type_option("Ecto.UUID"), do: "uuid"
+  defp id_type_option(":" <> other), do: other
+  defp id_type_option(_other), do: nil
+
   @doc "Installer body, run by the mix task shell as its `igniter/1`."
   def install(igniter) do
     opts =

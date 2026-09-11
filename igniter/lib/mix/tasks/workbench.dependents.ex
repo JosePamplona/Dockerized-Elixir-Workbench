@@ -9,8 +9,10 @@ defmodule Mix.Tasks.Workbench.Dependents do
       mix workbench.dependents NAME [--json]
 
   What would be left standing on nothing if NAME came out: every
-  cartridge this project carries that declares NAME in its `requires`,
-  and everything that builds on *those* in turn. One name per line, in
+  cartridge this project carries that declares NAME in its `requires`
+  or brings it in itself (`composes`: healthcheck's installer inserts
+  mock, whose library its tests use), and everything that builds on
+  *those* in turn. One name per line, in
   the order they have to be ejected in — each one before anything it
   stands on — and nothing at all when the cartridge can go on its own.
 
@@ -21,7 +23,7 @@ defmodule Mix.Tasks.Workbench.Dependents do
   on it standing on nothing.
 
   Both halves of the answer come from the project, not from a list kept
-  here: `requires` off each cartridge's own manifest, and installed off
+  here: `requires` and `composes` off each cartridge's own manifest, and installed off
   its `installed?/1` — the same mark its installer's guard reads. A
   cartridge inserted by hand, or one `phx.new` generated at birth,
   counts exactly like one the workbench committed: what matters is that
@@ -59,17 +61,20 @@ defmodule Mix.Tasks.Workbench.Dependents do
       Mix.raise("No cartridge named #{name}. The catalog: mix workbench.catalog")
     end
 
-    names =
-      cartridges
-      |> Enum.filter(& &1.installed)
-      |> dependents(name)
+    names = dependents(cartridges, name)
 
     if opts[:json],
       do: IO.puts(Jason.encode!(names)),
       else: Enum.each(names, &IO.puts/1)
   end
 
-  defp dependents(installed, name) do
+  @doc """
+  The names the task prints, off `WorkbenchIgniter.Features.status/1`'s
+  cartridges: the installed ones standing on NAME, in eject order.
+  """
+  @spec dependents([map()], String.t()) :: [String.t()]
+  def dependents(cartridges, name) do
+    installed = Enum.filter(cartridges, & &1.installed)
     reached = reach(installed, [name], MapSet.new([name])) |> MapSet.delete(name)
 
     installed
@@ -84,7 +89,7 @@ defmodule Mix.Tasks.Workbench.Dependents do
     next =
       installed
       |> Enum.filter(fn c ->
-        not MapSet.member?(seen, c.name) and Enum.any?(frontier, &(&1 in (c.requires || [])))
+        not MapSet.member?(seen, c.name) and Enum.any?(frontier, &(&1 in stands_on(c)))
       end)
       |> Enum.map(& &1.name)
 
@@ -92,6 +97,10 @@ defmodule Mix.Tasks.Workbench.Dependents do
       do: seen,
       else: reach(installed, next, MapSet.union(seen, MapSet.new(next)))
   end
+
+  # What a cartridge stands on: what must be in before it, and what its
+  # installer brought in with it.
+  defp stands_on(c), do: (c.requires || []) ++ (c.composes || [])
 
   # Outermost first: a cartridge can only come out once nothing left in
   # the set stands on it. Levels are not enough — two cartridges can be
@@ -103,7 +112,7 @@ defmodule Mix.Tasks.Workbench.Dependents do
 
   defp eject_order(rest, acc) do
     {out, keep} =
-      Enum.split_with(rest, fn c -> not Enum.any?(rest, &(c.name in (&1.requires || []))) end)
+      Enum.split_with(rest, fn c -> not Enum.any?(rest, &(c.name in stands_on(&1))) end)
 
     # Manifests that require each other in a ring leave nothing free to
     # take first. Emitting what is left beats spinning: the order is no

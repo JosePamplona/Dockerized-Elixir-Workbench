@@ -16,6 +16,25 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **A conformance suite for the cartridge contract**, beside the
+  catalog test that already installs every cartridge and checks its
+  mark lights for it alone. Every cartridge with options is inserted
+  with values none of which is the default and asked what the project
+  carries: `state/1` must answer with exactly the schema's keys and say
+  each value back, or `nil` for an option that leaves no mark, listed
+  in the suite with its reason (`--build` runs once and its output is
+  gitignored; exdoc's `--version` stamps the gitignored `doc/` dummies
+  only; guidelines' `--url` is kept nowhere once the page is
+  downloaded; auth0's and openai's `--project-name` are read by no
+  template; enhancements' `--stripe` plants the auth0 diagrams). A
+  cartridge with options and no run in the suite does not compile it.
+  The composition side: the installer's source is scanned for every
+  `compose_task("workbench.install.…")`, which must be declared, and
+  what lights up beside a cartridge must be accounted for by its
+  `requires` and `composes` — the hand-kept list of who brings whom
+  is gone. And `mix workbench.dependents` has a test at last, on an
+  in-memory project, through its walk made public
+  (`Mix.Tasks.Workbench.Dependents.dependents/2`).
 - **The adminer cartridge**, à la carte beside pgadmin as healthcheck2
   is beside healthcheck: Adminer on the workspace's database whatever
   the adapter — Postgres, MySQL, MSSQL, SQLite — on its own port, the
@@ -191,6 +210,44 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **`state/1` is what the project carries of a cartridge's options,
+  and every cartridge with options answers it.** The contract called
+  it optional — "for an `:adds` cartridge", `%{}` by default — while
+  four readers depended on it: the status, the console's Inserted
+  list, a door's `{option}` path and `services/1`. A silence read as
+  an answer, and eight cartridges with options were silent: rest,
+  coveralls, exdoc, guidelines, enhancements, auth0, openai and
+  clustering. The contract (`WorkbenchIgniter.Feature`, the features
+  README) says now: required of every cartridge whose `info/2`
+  declares a schema, exactly the schema's keys, each with what was
+  found — a string, a list, `true`/`false` — or `nil` for an option
+  that leaves no mark the project keeps, said beside the read. Every
+  read is off a mark the project has for its own sake, never a record
+  kept for the workbench: rest reads the title, the bearer scheme and
+  the tags off its `OpenApi.Spec`; coveralls the minimum and the
+  skipped folder off `coveralls.json`, the `mix cover` task, and the
+  theme by matching the planted report template against its own;
+  exdoc the name and `source_url` off `mix.exs`, the `cover` action,
+  the token page; enhancements the key and timestamp types and
+  `@before_compile` off `MyApp.Schema`, the interface off the error
+  view's shape, auth0 and openai off the model's tables or the Postman
+  collection's sections, health off the collection; auth0 and openai
+  `rest` off their controller; clustering the query off `.env`, or
+  `.env.sample` when `.env` is not there. healthcheck says `open_api:
+  false` now instead of leaving the key out, and versioning reads its
+  version through the new `WorkbenchIgniter.Feature.mix_project_value/2`,
+  which exdoc shares; `file_content/2` is the other helper the reads
+  share. Two options turn out to be dead — auth0's and openai's
+  `--project-name`, read by no template — and are reported as such
+  rather than removed: that is phase 2's.
+- **What a cartridge composes is in its manifest: `composes`.**
+  healthcheck, coveralls and enhancements insert mock from inside their
+  installer, and nothing outside the installer knew: the catalog entry
+  carries `composes` now, read off the `composes` each installer's
+  `info/2` already declares to Igniter (the collection's members are
+  its recipe, not this), and `mix workbench.status --json` prints it.
+  It is not `requires`: that says what must be in first and the
+  installer refuses without, this says what the cartridge brings along.
 - **The compose files read under the Record's deployments, not under
   Docker.** Docker's *Deploys* document — the three files as a YAML
   sheet with the secrets masked, one picked on a toolbar — moves whole
@@ -473,6 +530,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **`wb.sh eject mock` left healthcheck's tests without their
+  library, and said nothing.** `mix workbench.dependents` read
+  `requires` alone, and the three cartridges that compose mock declare
+  no requirement on it; eject reverted the commit and no one was named.
+  The walk reads `requires` and `composes` both now, in the reach and
+  in the eject order: a cartridge that brought another in stands on it
+  as much as one that required it.
 - **The version and the help's name, empty when wb.sh is called by a
   relative path from elsewhere.** Two readers open the script's own file
   to answer — the version off line 3, the name off line 2 — and they

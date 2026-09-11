@@ -60,6 +60,21 @@ defmodule WorkbenchIgniter.Features.Auth0 do
   defp accounts_module(igniter),
     do: Module.concat(Igniter.Project.Module.module_name_prefix(igniter), Accounts)
 
+  # What the project carries: `rest` when the user controller is there.
+  # The other values install nothing of their own, so nothing tells
+  # `graphql` from `none`: `nil`. --project-name leaves no mark either —
+  # no template of this cartridge reads it.
+  @impl true
+  def state(igniter) do
+    {rest?, igniter} =
+      Igniter.Project.Module.module_exists(
+        igniter,
+        Module.concat(Igniter.Libs.Phoenix.web_module(igniter), UserController)
+      )
+
+    {%{project_name: nil, interface: if(rest?, do: "rest")}, igniter}
+  end
+
   @doc "Installer body, run by the mix task shell as its `igniter/1`."
   def install(igniter) do
     opts =

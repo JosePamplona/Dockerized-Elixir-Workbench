@@ -60,6 +60,21 @@ defmodule WorkbenchIgniter.Features.Openai do
   defp assistant_module(igniter),
     do: Module.concat(Igniter.Project.Module.module_name_prefix(igniter), Assistant)
 
+  # What the project carries: `rest` when the conversation controller is
+  # there. The other values install nothing of their own, so nothing
+  # tells `graphql` from `none`: `nil`. --project-name leaves no mark
+  # either — no template of this cartridge reads it.
+  @impl true
+  def state(igniter) do
+    {rest?, igniter} =
+      Igniter.Project.Module.module_exists(
+        igniter,
+        Module.concat(Igniter.Libs.Phoenix.web_module(igniter), ConversationController)
+      )
+
+    {%{project_name: nil, interface: if(rest?, do: "rest")}, igniter}
+  end
+
   @doc "Installer body, run by the mix task shell as its `igniter/1`."
   def install(igniter) do
     opts =

@@ -25,7 +25,7 @@ defmodule WorkbenchIgniter.CatalogTest do
   @cartridges ~w(chiefs_setup ansi toolchain versioning
                  osmon psql_extras credo mock exdebug rest graphql
                  coveralls exdoc guidelines enhancements auth0 openai healthcheck stripe
-                 githooks exmachina clustering healthcheck2 ash specdd pgadmin k6 monitoring
+                 githooks exmachina clustering healthcheck2 ash specdd pgadmin adminer k6 monitoring
                  mailer gettext ecto esbuild tailwind html live dashboard)
   # The chiefs_setup recipe with its default choices, in insertion order.
   @picks ~w(ansi toolchain versioning osmon psql_extras pgadmin credo mock exdebug rest
@@ -273,9 +273,16 @@ defmodule WorkbenchIgniter.CatalogTest do
           |> Enum.map(& &1.name)
 
         assert @feature.name() in installed
+        others = (installed -- [@feature.name()]) -- @in_by_default
 
-        assert (installed -- [@feature.name()]) -- @in_by_default ==
-                 others_installed(@feature.name())
+        # Nothing lights up that the manifest does not account for;
+        # what it does account for may stay out (coveralls composes
+        # mock with --exdoc alone).
+        assert others -- others_installed(@feature.name()) == [],
+               "#{@feature.name()} inserted #{inspect(others)}, more than it declares"
+
+        if @feature.name() == "chiefs_setup",
+          do: assert(others == others_installed("chiefs_setup"))
       end
     end
 
@@ -294,16 +301,201 @@ defmodule WorkbenchIgniter.CatalogTest do
     defp args("workbench.install.guidelines"), do: ["--url", "http://localhost:1/guide.md"]
     defp args(_task), do: []
 
-    # What else lights up beside the cartridge, in catalog order: the
-    # prerequisites composed above, the cartridges an installer composes
-    # itself (mock rides along with healthcheck and enhancements), and
-    # — for the collection — every member of its recipe.
-    defp others_installed(name) when name in ~w(healthcheck enhancements), do: ["mock"]
-    defp others_installed("auth0"), do: ["mock", "enhancements"]
-    defp others_installed("openai"), do: ["mock", "enhancements", "auth0"]
-    defp others_installed("guidelines"), do: ["exdoc"]
-    # The status lists them in catalog order, which is not the recipe's.
+    # What may light up beside the cartridge, in catalog order, and all
+    # of it off the manifest: what it requires (composed above as
+    # prerequisites), what its installer composes (mock rides along
+    # with healthcheck, coveralls and enhancements), and what those
+    # stand on in turn. A cartridge that inserts more than it declares
+    # fails above. The collection is the exception: every member of its
+    # recipe, which the status lists in catalog order, not the recipe's.
     defp others_installed("chiefs_setup"), do: Enum.filter(@cartridges, &(&1 in @picks))
-    defp others_installed(_name), do: []
+    defp others_installed(name), do: Enum.filter(@cartridges, &(&1 in stands_on(name)))
+
+    defp stands_on(name) do
+      entry = Features.entry(Features.named(name))
+      direct = entry.requires ++ entry.composes
+      Enum.uniq(direct ++ Enum.flat_map(direct, &stands_on/1))
+    end
+  end
+
+  describe "state/1" do
+    # Every cartridge with options, inserted with values none of which
+    # is the default, then asked what the project carries: the answer
+    # has the schema's keys, and says each value back — or `nil` for an
+    # option that leaves no mark the project keeps, with the reason
+    # here. The argv of each run and what state/1 must answer; a second
+    # run reads the marks the first one's choices leave out. A cartridge
+    # with options and no run here does not compile the suite. ash's
+    # mark is put by the install it queues (its own test covers the
+    # read); ecto is in from birth, and its test reads it off phx.new's
+    # project.
+    @runs %{
+      "chiefs_setup" => [{~w(--interface graphql), %{interface: "graphql"}}],
+      "toolchain" => [
+        {~w(--elixir 1.18.4 --erlang 27.3), %{elixir: "1.18.4", erlang: "27.3"}}
+      ],
+      "versioning" => [{~w(--version 1.2.3), %{version: "1.2.3"}}],
+      "rest" => [
+        {~w(--project-name Probe --auth0 --openai --health),
+         %{project_name: "Probe", auth0: true, openai: true, health: true}}
+      ],
+      "coveralls" => [
+        # --build runs the suite once; cover/ is gitignored.
+        {~w(--minimum-coverage 90 --interface graphql --exdoc --theme custom --build),
+         %{minimum_coverage: "90", interface: "graphql", exdoc: true, theme: "custom", build: nil}}
+      ],
+      "exdoc" => [
+        # --version stamps the gitignored doc/ dummies only; --build runs mix docs once.
+        {~w(--project-name Probe --version 9.9.9 --repo-url https://example.com/acme/probe
+            --coveralls --auth0 --build),
+         %{
+           project_name: "Probe",
+           version: nil,
+           repo_url: "https://example.com/acme/probe",
+           coveralls: true,
+           auth0: true,
+           build: nil
+         }}
+      ],
+      # The page is the download; the URL is kept nowhere.
+      "guidelines" => [{~w(--url http://localhost:1/guide.md), %{url: nil}}],
+      "enhancements" => [
+        # graphql: the REST group is not written, so --interface and
+        # --health leave nothing to read; --stripe never does (its
+        # diagrams are auth0's).
+        {~w(--project-name Probe --id-type binary_id --timestamps utc_datetime_usec
+            --interface graphql --exdoc --auth0 --openai --stripe --health),
+         %{
+           project_name: "Probe",
+           id_type: "binary_id",
+           timestamps: "utc_datetime_usec",
+           interface: nil,
+           exdoc: true,
+           auth0: true,
+           openai: true,
+           stripe: nil,
+           health: nil
+         }},
+        # rest: the error view and the Postman collection carry the rest.
+        {~w(--project-name Probe --interface rest --auth0 --health),
+         %{
+           project_name: "Probe",
+           id_type: "uuid",
+           timestamps: "naive_datetime_usec",
+           interface: "rest",
+           exdoc: false,
+           auth0: true,
+           openai: false,
+           stripe: nil,
+           health: true
+         }}
+      ],
+      # --project-name is read by no template of auth0 or openai; graphql
+      # installs nothing none does not, so only rest is readable.
+      "auth0" => [
+        {~w(--project-name Probe --interface graphql), %{project_name: nil, interface: nil}},
+        {~w(--interface rest), %{project_name: nil, interface: "rest"}}
+      ],
+      "openai" => [
+        {~w(--project-name Probe --interface graphql), %{project_name: nil, interface: nil}},
+        {~w(--interface rest), %{project_name: nil, interface: "rest"}}
+      ],
+      "healthcheck" => [
+        {~w(--endpoint /health3 --open-api), %{endpoint: "/health3", open_api: true}}
+      ],
+      "clustering" => [{~w(--dns-query probe.internal), %{dns_query: "probe.internal"}}],
+      "healthcheck2" => [{~w(--path /alive), %{path: "/alive"}}]
+    }
+
+    for feature <- Features.catalog(),
+        not feature.pending?(),
+        feature not in [Features.Ash, Features.Ecto],
+        (feature.info([], nil).schema || []) != [] do
+      @feature feature
+
+      for {{argv, expected}, n} <- Enum.with_index(Map.fetch!(@runs, feature.name()), 1) do
+        @argv argv
+        @expected expected
+        @n n
+        test "#{feature.name()} says back what it was inserted with (run #{n})" do
+          %{schema: schema, defaults: defaults} = @feature.info([], nil)
+
+          # The first run asks for no default: an option answered with
+          # its default would not show the read.
+          if @n == 1 do
+            for {key, default} <- defaults || [], not is_nil(@expected[key]) do
+              refute @expected[key] == default,
+                     "#{@feature.name()}'s run asks --#{key} for its default"
+            end
+          end
+
+          igniter =
+            Enum.reduce(
+              prereqs(@feature.name()) ++ [{@feature.task(), @argv}],
+              phx_test_project(),
+              fn
+                {task, argv}, igniter -> Igniter.compose_task(igniter, task, argv)
+                task, igniter -> Igniter.compose_task(igniter, task, args(task))
+              end
+            )
+
+          {state, _igniter} = igniter |> apply_igniter!() |> @feature.state()
+
+          assert Enum.sort(Map.keys(state)) == Enum.sort(Keyword.keys(schema)),
+                 "#{@feature.name()}'s state/1 does not answer for its schema"
+
+          assert state == @expected
+        end
+      end
+    end
+
+    test "is the catalog's answer for what is not installed: nothing" do
+      {status, _} = Features.status(phx_test_project())
+      assert %{installed: false, state: %{}} = Enum.find(status, &(&1.name == "rest"))
+    end
+  end
+
+  describe "composes" do
+    test "names, off the installer's info, the cartridges it inserts along" do
+      assert %{composes: ["mock"]} = Features.entry(Features.Healthcheck)
+      assert %{composes: ["mock"]} = Features.entry(Features.Coveralls)
+      assert %{composes: ["mock"]} = Features.entry(Features.Enhancements)
+      assert %{composes: []} = Features.entry(Features.Credo)
+      assert %{composes: []} = Features.entry(Features.Stripe)
+    end
+
+    # The installer's source is the check: every workbench task it
+    # composes by name is in the declaration, and nothing else is.
+    test "every compose_task of an installer is declared" do
+      # The collection composes its members' tasks by name: its recipe
+      # is `members/1`, checked above.
+      for feature <- Features.catalog(),
+          not feature.pending?(),
+          feature != Features.ChiefsSetup do
+        composed =
+          feature.__info__(:compile)[:source]
+          |> File.read!()
+          |> then(&Regex.scan(~r/compose_task\(\s*"workbench\.install\.(\w+)"/, &1))
+          |> Enum.map(fn [_, name] -> name end)
+          |> Enum.sort()
+
+        assert composed == Enum.sort(Features.entry(feature).composes),
+               "#{feature.name()} composes #{inspect(composed)} and declares " <>
+                 inspect(Features.entry(feature).composes)
+      end
+    end
+
+    # What eject asks: a cartridge that brought another in stands on it
+    # as much as one that required it.
+    test "mix workbench.dependents sees what a cartridge composes" do
+      {status, _} =
+        phx_test_project()
+        |> Igniter.compose_task("workbench.install.healthcheck", [])
+        |> apply_igniter!()
+        |> Features.status()
+
+      assert Mix.Tasks.Workbench.Dependents.dependents(status, "mock") == ["healthcheck"]
+      assert Mix.Tasks.Workbench.Dependents.dependents(status, "healthcheck") == []
+    end
   end
 end

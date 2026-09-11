@@ -51,4 +51,23 @@ defmodule WorkbenchIgniter.ConsoleTest do
     assert {%{path: "/probe"}, _} = Features.Healthcheck2.state(igniter)
     assert {%{}, _} = Features.Healthcheck2.state(phx_test_project())
   end
+
+  test "healthcheck reports the endpoint it was inserted with, and its OpenAPI variant" do
+    igniter =
+      phx_test_project()
+      |> Igniter.compose_task("workbench.install.healthcheck", ~w(--endpoint /health3 --open-api))
+      |> apply_igniter!()
+
+    assert {%{endpoint: "/health3", open_api: true}, _} = Features.Healthcheck.state(igniter)
+
+    igniter =
+      phx_test_project()
+      |> Igniter.compose_task("workbench.install.healthcheck", [])
+      |> apply_igniter!()
+
+    assert {state, _} = Features.Healthcheck.state(igniter)
+    assert state == %{endpoint: "/health", open_api: false}
+
+    assert {%{}, _} = Features.Healthcheck.state(phx_test_project())
+  end
 end

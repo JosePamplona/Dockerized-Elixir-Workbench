@@ -49,25 +49,8 @@ defmodule WorkbenchIgniter.Features.Versioning do
   @doc "What the project carries: the version `mix.exs` declares."
   @impl true
   def state(igniter) do
-    zipper =
-      igniter
-      |> Igniter.include_existing_file("mix.exs")
-      |> then(& &1.rewrite)
-      |> Rewrite.source!("mix.exs")
-      |> Rewrite.Source.get(:quoted)
-      |> Sourceror.Zipper.zip()
-
-    version =
-      with {:ok, zipper} <- Igniter.Code.Function.move_to_def(zipper, :project, 0),
-           {:ok, zipper} <- Igniter.Code.Keyword.get_key(zipper, :version),
-           {:__block__, _, [version]} when is_binary(version) <- zipper.node do
-        version
-      else
-        _ -> nil
-      end
-
-    {if(version, do: %{version: version}, else: %{}),
-     Igniter.include_existing_file(igniter, "mix.exs")}
+    {version, igniter} = mix_project_value(igniter, :version)
+    {%{version: version}, igniter}
   end
 
   @doc "Installer body, run by the mix task shell as its `igniter/1`."

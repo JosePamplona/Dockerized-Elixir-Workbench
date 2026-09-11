@@ -84,9 +84,13 @@ defmodule WorkbenchIgniter.Features.Ecto do
   # the same reading the status makes of the project's shape; postgres
   # when no other driver says otherwise.
   @impl true
+  # Both options, as the project carries them: the database off the
+  # adapter, and `binary_id` off the generators entry. It reported the
+  # database alone until 2026-09-10, so a project born with
+  # `--binary-id` read as if it had not been.
   def state(igniter) do
     {facts, igniter} = WorkbenchIgniter.PhxDelta.facts(igniter)
-    {%{database: facts.database}, igniter}
+    {%{database: facts.database, binary_id: facts.binary_id}, igniter}
   end
 
   # The server the adapter needs, in the workspace: one of the three, by

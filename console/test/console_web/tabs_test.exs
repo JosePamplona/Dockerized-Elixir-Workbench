@@ -51,6 +51,189 @@ defmodule ConsoleWeb.TabsTest do
     assert logs_tab(html) =~ ~s(class="live")
   end
 
+  test "the tray's fold is the last job's on the Jobs screen, and back", %{conn: conn} do
+    arrives(status([]))
+    # A job that waits for a word runs nothing: it is the last job for as long as this takes.
+    id = Console.Jobs.run({:delete, nil}, ["delete"], confirm: true)
+    # The queue is one for every test: the question must not outlive this one.
+    on_exit(fn -> Console.Jobs.cancel(id) end)
+    {:ok, view, _html} = live(conn, "/deploy")
+
+    # Opened in the tray, then put away: arriving at Jobs, the job is unfolded.
+    render_click(view, "tray_fold", %{})
+    render_click(view, "tray_hide", %{})
+    html = render_patch(view, "/jobs")
+    assert html =~ ~r{class="job open" data-tall="#{id}"}
+
+    # Folded there, the tray is folded on the way back.
+    render_click(view, "fold", %{"id" => id})
+    html = render_patch(view, "/deploy")
+    assert html =~ ~r{<button[^>]*class="bar"[^>]*aria-expanded="false"}
+    html = render_patch(view, "/jobs")
+    refute html =~ ~r{class="job open" data-tall="#{id}"}
+  end
+
+  test "each stack row of the Project card says on its own when the project was born on another",
+       %{conn: conn} do
+    conf = Console.Config.values(Console.Workbench.config())
+
+    ws = Path.join(System.tmp_dir!(), "claude_probe_born_#{System.unique_integer([:positive])}")
+    File.mkdir_p!(ws)
+    on_exit(fn -> File.rm_rf!(ws) end)
+
+    # Born on another elixir; the erlang and the debian config names are
+    # the ones it was born on.
+    File.write!(Path.join(ws, "Dockerfile.local"), """
+    ARG ELIXIR="0.0.1"
+    ARG    OTP="#{conf["ERLANG_VERSION"]}"
+    ARG DEBIAN="#{conf["DEBIAN_VERSION"]}"
+    """)
+
+    arrives(%{"exists" => true, "workspace" => ws, "containers" => []})
+    {:ok, _view, html} = live(conn, "/deploy")
+
+    [card] = Regex.run(~r{<div[^>]*class="newcard".*?</form>}s, html)
+    # The whole card, so the count below sees every stack row.
+    assert card =~ "base cartridges"
+    assert card =~ "born on 0.0.1"
+    # One row moved, one chip: the erlang and the debian rows are quiet.
+    assert length(Regex.scan(~r/born on /, card)) == 1
+    # The reading of the workspace is on the workspace's own row.
+    assert card =~ ~r{workspace</label>.*?existing project}s
+  end
+
+  test "the delete is the tab's last box, and no longer the Create foot's neighbour",
+       %{conn: conn} do
+    arrives(%{
+      "exists" => true,
+      "workspace" => "/w",
+      "compose_project" => "lorem_ipsum",
+      "containers" => []
+    })
+
+    {:ok, _view, html} = live(conn, "/deploy")
+
+    [card] = Regex.run(~r{<div[^>]*class="newcard".*?</form>}s, html)
+    [danger] = Regex.run(~r{<section[^>]*class="danger".*?</section>}s, html)
+    [foot] = Regex.run(~r{<div class="foot">.*?</button>\s*</div>}s, html)
+
+    # The card creates and says so; what it cannot undo is not in its foot.
+    assert card =~ "New Project"
+    assert foot =~ "Create project"
+    refute foot =~ "Delete the project"
+
+    # The box says the line and everything it takes, before the button.
+    assert danger =~ "Delete the project"
+    assert danger =~ "./wb.sh delete"
+    assert danger =~ "lorem_ipsum"
+    assert danger =~ ~s(phx-value-args="delete")
+    refute danger =~ "unlit"
+  end
+
+  test "with the workspace empty the delete is unlit, with its reason", %{conn: conn} do
+    arrives(%{"exists" => false, "workspace" => "/w", "containers" => []})
+    {:ok, _view, html} = live(conn, "/deploy")
+    [danger] = Regex.run(~r{<section[^>]*class="danger".*?</section>}s, html)
+
+    assert danger =~ "unlit"
+    assert danger =~ "the workspace is empty: nothing to delete"
+  end
+
+  test "the picker's line is written from what travelled, not from the button" do
+    alias ConsoleWeb.Deploy
+
+    # The row picked and its options, as the form sends them.
+    pick = %{target: "scaled", replicas: 6, balancer: false}
+    assert Deploy.line("up", pick) == "./wb.sh up --deploy scaled --replicas 6 --no-balancer"
+
+    # Only scaled carries them, and dev names nothing: it is the default.
+    assert Deploy.line("up", %{target: "dev", replicas: 6, balancer: false}) ==
+             "./wb.sh up --deploy dev"
+
+    assert Deploy.line("up", %{target: "prod", replicas: 6, balancer: false}) ==
+             "./wb.sh up --deploy prod"
+
+    # A row's own Bake, whichever row is picked.
+    assert Deploy.line("bake dev", pick) == "./wb.sh bake"
+
+    assert Deploy.line("bake scaled", pick) ==
+             "./wb.sh bake --deploy scaled --replicas 6 --no-balancer"
+
+    # Nothing else runs anything — build had a button until 2026-09-10.
+    assert Deploy.line("build", pick) == nil
+    assert Deploy.line("delete", pick) == nil
+    assert Deploy.line(nil, pick) == nil
+  end
+
+  test "the picker's buttons send the picker, and carry no line of their own", %{conn: conn} do
+    arrives(%{"exists" => true, "workspace" => "/w", "containers" => [], "baked" => %{}})
+    {:ok, _view, html} = live(conn, "/deploy")
+
+    [sheet] = Regex.run(~r{<section[^>]*class="deployments".*?</section>}s, html)
+
+    assert sheet =~ ~s(<form id="deploy-pick" phx-change="pick" phx-submit="deploy_run">)
+
+    [up] = Regex.run(~r{<button[^>]*value="up"[^>]*>[^<]*Up[^<]*</button>}s, sheet)
+    assert up =~ ~s(type="submit")
+    assert up =~ ~s(form="deploy-pick")
+    assert up =~ ~s(name="do")
+    refute up =~ "phx-value-args"
+
+    # Up is the foot's one verb: Build did nothing up does not do.
+    refute sheet =~ ~s(value="build")
+
+    # Each row's Bake says which row it is, and travels the same way.
+    for deploy <- ~w(dev prod scaled) do
+      assert sheet =~ ~s(value="bake #{deploy}")
+    end
+  end
+
+  test "the rail's Deployments head says what there is, as its neighbours do", %{conn: conn} do
+    head = fn html ->
+      [h] =
+        Regex.run(~r{Deployments<span class="label">([^<]*)</span>}, html,
+          capture: :all_but_first
+        )
+
+      String.trim(h)
+    end
+
+    arrives(%{"exists" => false, "workspace" => "/w", "containers" => []})
+    {:ok, _view, html} = live(conn, "/deploy")
+    assert head.(html) == "none baked"
+
+    arrives(%{
+      "exists" => true,
+      "workspace" => "/w",
+      "containers" => [],
+      "baked" => %{"dev" => true, "prod" => true},
+      "deployment" => "prod"
+    })
+
+    {:ok, _view, html} = live(conn, "/deploy")
+    assert head.(html) == "2 baked · prod up"
+
+    arrives(%{
+      "exists" => true,
+      "workspace" => "/w",
+      "containers" => [],
+      "baked" => %{"dev" => true}
+    })
+
+    {:ok, _view, html} = live(conn, "/deploy")
+    assert head.(html) == "1 baked · nothing up"
+  end
+
+  test "the rail says nothing where it has nothing: the head already said it", %{conn: conn} do
+    arrives(%{"exists" => false, "workspace" => "/w", "containers" => []})
+    {:ok, _view, html} = live(conn, "/deploy")
+
+    refute html =~ "Nothing answers yet"
+    refute html =~ "The workspace is empty: Deploy → Project."
+    refute html =~ "phx.new initialises the repository"
+    refute html =~ "Nothing inserted yet"
+  end
+
   test "the deployments table is the Deploy tab's, there before any project is", %{conn: conn} do
     arrives(%{"exists" => false, "workspace" => "/w", "containers" => []})
     {:ok, _view, html} = live(conn, "/deploy")

@@ -99,11 +99,13 @@ defmodule ConsoleWeb.ConsoleLive do
         view: "covers",
         jobs: Jobs.list(),
         open_jobs: MapSet.new(),
+        tray_open: false,
+        tray_hidden: false,
         stop_ask: nil,
         stoppable: Jobs.stoppable?(),
         now: DateTime.utc_now(),
         error: Bench.error(:status) || Bench.error(:catalog),
-        filter: "all",
+        filter: nil,
         reading: (is_nil(status) or Bench.reading?(:status)) && :full,
         pick: %{target: nil, replicas: 4, balancer: true},
         newp: %{out: MapSet.new(), gen: %{}},
@@ -170,9 +172,25 @@ defmodule ConsoleWeb.ConsoleLive do
          |> Drawer.take(params)
          |> Docker.take(params)
          |> Git.take(params)
-         |> take_shelf(params)}
+         |> take_shelf(params)
+         |> sync_last_fold()}
     end
   end
+
+  # The tray and the Jobs screen read the same last job: arriving at Jobs,
+  # its row is unfolded or folded as the tray was left — put away or not.
+  defp sync_last_fold(%{assigns: %{tab: "jobs", jobs: [last | _]}} = socket) do
+    open = socket.assigns.open_jobs
+
+    open =
+      if socket.assigns.tray_open,
+        do: MapSet.put(open, last.id),
+        else: MapSet.delete(open, last.id)
+
+    assign(socket, open_jobs: open)
+  end
+
+  defp sync_last_fold(socket), do: socket
 
   # The project's paper, from the query on /project.
   defp take_paper(%{assigns: %{tab: "project"}} = socket, params) do
@@ -293,10 +311,15 @@ defmodule ConsoleWeb.ConsoleLive do
 
   @impl true
   def handle_info({:job, job}, socket) do
+    known = Enum.any?(socket.assigns.jobs, &(&1.id == job.id))
+
     jobs =
-      if Enum.any?(socket.assigns.jobs, &(&1.id == job.id)),
+      if known,
         do: Enum.map(socket.assigns.jobs, &if(&1.id == job.id, do: job, else: &1)),
         else: [job | socket.assigns.jobs]
+
+    # A new job brings the tray back if the reader had put it away.
+    socket = if known, do: socket, else: assign(socket, tray_hidden: false)
 
     # A job you just asked for is a job you are watching: it comes unfolded.
     open =
@@ -612,13 +635,32 @@ defmodule ConsoleWeb.ConsoleLive do
     end
   end
 
+  # Folding the last job folds the tray too: they are one fold of one job.
   def handle_event("fold", %{"id" => id}, socket) do
     open = socket.assigns.open_jobs
     open = if MapSet.member?(open, id), do: MapSet.delete(open, id), else: MapSet.put(open, id)
-    {:noreply, assign(socket, open_jobs: open)}
+    last = List.first(socket.assigns.jobs)
+
+    tray_open =
+      if last && last.id == id,
+        do: MapSet.member?(open, id),
+        else: socket.assigns.tray_open
+
+    {:noreply, assign(socket, open_jobs: open, tray_open: tray_open)}
   end
 
-  def handle_event("fold_all", _, socket), do: {:noreply, assign(socket, open_jobs: MapSet.new())}
+  def handle_event("fold_all", _, socket),
+    do: {:noreply, assign(socket, open_jobs: MapSet.new(), tray_open: false)}
+
+  # The tray's fold is the last job's, whichever that is: kept while the
+  # tray is put away, and what the Jobs screen opens that job to. The rest
+  # of the list stays folded as the reader left it.
+  def handle_event("tray_fold", _, socket),
+    do: {:noreply, assign(socket, tray_open: !socket.assigns.tray_open)}
+
+  # Put away until the next job; its fold is kept.
+  def handle_event("tray_hide", _, socket),
+    do: {:noreply, assign(socket, tray_hidden: true)}
 
   # Clear done: what is running or waiting stays in view; the rest is
   # only this reader's view of the list, the queue keeps its history.
@@ -629,20 +671,20 @@ defmodule ConsoleWeb.ConsoleLive do
          jobs: Enum.filter(socket.assigns.jobs, &(&1.state in [:running, :queued, :pending]))
        )}
 
-  def handle_event("pick", params, socket) do
-    pick = %{
-      target: params["target"] || socket.assigns.pick.target,
-      replicas:
-        (params["replicas"] || "4")
-        |> Integer.parse()
-        |> then(fn
-          {n, _} -> max(n, 1)
-          :error -> 4
-        end),
-      balancer: params["balancer"] == "on"
-    }
+  def handle_event("pick", params, socket),
+    do: {:noreply, assign(socket, pick: pick_from(params, socket.assigns.pick))}
 
-    {:noreply, assign(socket, pick: pick)}
+  # The picker sent, and with it the verb of the button pressed: Up and
+  # Build of the row picked, Bake of a row's own file. The line is
+  # written HERE, out of what travelled — never off the button, which
+  # was rendered with the form as it was and can be a change behind it.
+  def handle_event("deploy_run", params, socket) do
+    pick = pick_from(params, socket.assigns.pick)
+    socket = assign(socket, pick: pick)
+    line = Deploy.line(params["do"], pick)
+
+    {:noreply,
+     if(line, do: run(socket, String.replace_prefix(line, "./wb.sh ", "")), else: socket)}
   end
 
   def handle_event("new_form", params, socket),
@@ -657,6 +699,23 @@ defmodule ConsoleWeb.ConsoleLive do
     newp = newp_from(params, socket.assigns.catalog)
     cmd = Deploy.new_command(socket.assigns.catalog, newp)
     {:noreply, socket |> assign(newp: newp) |> run(String.replace_prefix(cmd, "./wb.sh ", ""))}
+  end
+
+  # The picker as the reader left it: the target, the replicas, the
+  # balancer. A change writes it, and a submit reads it again — the two
+  # events carry the same fields.
+  defp pick_from(params, pick) do
+    %{
+      target: params["target"] || pick.target,
+      replicas:
+        (params["replicas"] || "4")
+        |> Integer.parse()
+        |> then(fn
+          {n, _} -> max(n, 1)
+          :error -> 4
+        end),
+      balancer: params["balancer"] == "on"
+    }
   end
 
   # The card's form as state: the base cartridges left out, the flags.
@@ -936,11 +995,25 @@ defmodule ConsoleWeb.ConsoleLive do
           </section>
 
           <section class={["panel", "fill", @tab == "shelf" && "on"]} id="panel-shelf" role="tabpanel">
-            <.shelf catalog={@catalog} status={@status} filter={@filter} view={@view} tab={@tab} />
+            <.shelf
+              catalog={@catalog}
+              status={@status}
+              filter={@filter || ConsoleWeb.Shelf.first_doc(@status, @catalog)}
+              view={@view}
+              tab={@tab}
+              reads={@preads}
+            />
           </section>
         </div>
 
-        <.tray jobs={@jobs} tab={@tab} />
+        <.tray
+          jobs={@jobs}
+          tab={@tab}
+          open={@tray_open}
+          hidden={@tray_hidden}
+          asking={@stop_ask}
+          stoppable={@stoppable}
+        />
       </main>
     </div>
 

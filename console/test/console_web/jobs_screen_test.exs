@@ -24,6 +24,7 @@ defmodule ConsoleWeb.JobsScreenTest do
   defp job(id, state, opts \\ []) do
     %Console.Jobs{
       id: id,
+      n: 7,
       kind: {:add, "phoenix"},
       args: ["add", "phoenix"],
       cmdline: "./wb.sh --yes add phoenix",
@@ -32,6 +33,64 @@ defmodule ConsoleWeb.JobsScreenTest do
       started_at: DateTime.utc_now(),
       finished_at: DateTime.utc_now()
     }
+  end
+
+  defp tray(jobs, opts \\ []) do
+    render_component(&ConsoleWeb.JobsScreen.tray/1,
+      jobs: jobs,
+      tab: "deploy",
+      open: Keyword.get(opts, :open, false),
+      asking: opts[:asking],
+      stoppable: Keyword.get(opts, :stoppable, true)
+    )
+  end
+
+  test "the tray's bar is the fold, and the square beside it puts it away" do
+    html = tray([job("a", :done, exit: 0)])
+    assert html =~ ~s(phx-click="tray_fold")
+    # The chip is the last job's own, as its row wears it.
+    assert html =~ ~s(class="chip good">exit 0</span>)
+
+    assert tray([job("a", :failed, exit: 2), job("b", :done, exit: 0)]) =~
+             ~s(class="chip bad">exit 2)
+
+    assert html =~ ~s(aria-expanded="false")
+    assert html =~ ~s(phx-click="tray_hide")
+    refute html =~ ~s(href="/jobs")
+    # Folded, the output is not rendered at all: the tray is a bar.
+    refute html =~ ~s(id="tray-out")
+  end
+
+  test "the tray is on every screen but Jobs, once anything has run, until put away" do
+    alias ConsoleWeb.JobsScreen
+    jobs = [job("a", :done, exit: 0)]
+
+    for tab <- ~w(deploy shelf project docker cluster),
+        do: assert(JobsScreen.tray_shown?(tab, jobs))
+
+    refute JobsScreen.tray_shown?("jobs", jobs)
+    refute JobsScreen.tray_shown?("deploy", [])
+    refute JobsScreen.tray_shown?("deploy", jobs, true)
+  end
+
+  test "open, the tray reads the last job under the bar, with the grip above it" do
+    html = tray([job("a", :failed, exit: 2), job("b", :done, exit: 0)], open: true)
+    assert html =~ ~s(id="tray-out")
+    assert html =~ ~s(aria-expanded="true")
+    # The last job is the first of the list, and its lines pane is the
+    # tray's own: the Jobs screen shows the same job under `jl-`.
+    assert html =~ ~s(id="tr-a")
+    refute html =~ ~s(id="tr-b")
+    # Its words about itself come with it.
+    assert html =~ "run it again"
+    # The bar is pinned to the foot, so the edge that moves is the top.
+    assert html =~ ~s(data-grip="up")
+  end
+
+  test "with nothing run yet the bar folds nothing" do
+    html = tray([])
+    refute html =~ ~s(phx-click="tray_fold")
+    refute html =~ ~s(id="tray-out")
   end
 
   test "a failed job offers to run again" do
@@ -47,6 +106,11 @@ defmodule ConsoleWeb.JobsScreenTest do
     assert html =~ ~s(phx-hook="JobLines")
     assert html =~ ~s(phx-update="ignore")
     assert html =~ ~s(data-job="d")
+  end
+
+  test "a job wears its number, on its row and on the tray's bar" do
+    assert screen([job("a", :done, exit: 0)]) =~ ~s(>#7</span>)
+    assert tray([job("a", :done, exit: 0)]) =~ ~s(>#7</span>)
   end
 
   test "a job that ended well offers nothing" do

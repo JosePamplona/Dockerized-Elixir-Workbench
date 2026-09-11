@@ -31,6 +31,14 @@ defmodule Console.JobsTest do
     :ok
   end
 
+  test "jobs are numbered from 1 in the order asked, whatever their ids" do
+    a = Jobs.run({:delete, nil}, ["delete"], confirm: true)
+    b = Jobs.run({:delete, nil}, ["delete"], confirm: true)
+    on_exit(fn -> Jobs.cancel(a) && Jobs.cancel(b) end)
+    [%{id: ^b, n: nb}, %{id: ^a, n: na} | _] = Jobs.list()
+    assert is_integer(na) and nb == na + 1
+  end
+
   test "the lines go out in batches as HTML, before the exit, and stay for whoever asks later" do
     Jobs.subscribe()
     id = Jobs.run({:mix, nil}, ["one", "two", "three"])

@@ -587,11 +587,29 @@ pre .ln{display:block}
 .confirm.on{display:inline-flex}
 
 /* --- the jobs tray -------------------------------------------------------- */
-.tray{flex:none;border-top:1px solid var(--line);background:var(--surface)}
-.tray .bar{display:flex;align-items:center;gap:14px;padding:8px 28px;cursor:pointer}
-.tray .bar h4{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.12em;font-size:13px}
+/* The tray: the bar pinned to the window's foot, and the last job's
+   output unfurling upward from it — the screen above is flex:1 and
+   gives the height, so nothing is covered. The bar is the fold, the
+   caret beside it the one link, and the output takes the row above
+   them both while keeping its place in the source after the control
+   that opens it. */
+.tray{flex:none;border-top:1px solid var(--line);background:var(--surface);display:grid;grid-template-columns:minmax(0,1fr) auto}
+.tray .bar{grid-row:2;grid-column:1;display:flex;align-items:center;gap:14px;padding:8px 28px;cursor:pointer;width:100%;font:inherit;color:inherit;text-align:left;background:none;border:0}
+/* The box sits to the bar as a job's output sits to its row on the Jobs
+   screen: the row's 7px under the line, and the row's 8px over the box
+   — the block's own padding went double with the bar's. */
+.tray>.job{grid-row:1;grid-column:1/-1;cursor:auto;padding-top:0;padding-bottom:0}
+.tray.open .bar{padding-top:7px}
+/* Above the box and not under it, and its line on the box's own edge:
+   the bar it belongs to is at the foot. */
+.tray>.job .ograb{margin:0 0 -8px}
+.tray>.job .ograb::after{top:auto;bottom:-1px}
+.tray>.job .ograb.dragging::after{bottom:-2px;height:3px}
+/* The one control beside the bar: a square that puts the tray away, the
+   shape of the knock on a head. */
+.tray .hide{grid-row:2;grid-column:2;align-self:center;margin-right:28px;display:inline-flex;align-items:center;justify-content:center;width:2em;height:2em;font-size:11px;line-height:1;padding:0;border:1px solid var(--line);border-radius:2px;background:var(--surface-2);color:var(--muted);cursor:pointer}
+.tray .hide:hover{color:var(--ink);background:var(--surface)}
 .tray .bar .last{font-family:var(--mono);font-size:12px;color:var(--muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tray .bar .caret{font-family:var(--mono);color:var(--muted)}
 .tray.ping .bar{background:var(--accent-soft)}
 .tray .bar{transition:background .5s}
 /* The meta line hides when there are no jobs, and a hidden grid child
@@ -613,7 +631,10 @@ pre .ln{display:block}
    is no longer a click target: reading a job's lines used to close it.
    It spans the row and carries the row's own columns, which leaves the
    grid above it for the mock, whose jobs are built by its own script. */
-.job .jt{grid-column:1/-1;display:grid;grid-template-columns:auto 1fr auto auto;column-gap:14px;align-items:center}
+.job .jt{grid-column:1/-1;display:grid;grid-template-columns:auto auto 1fr auto auto;column-gap:14px;align-items:center}
+/* The job's number, first on its row and on the tray's bar: the reader's
+   count, `#7`, beside the chip. */
+.job .n,.tray .bar .n{font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:3ch}
 .job .jt ~ .out{cursor:auto}
 .job .cmdline{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .job .dur{color:var(--muted);font-variant-numeric:tabular-nums}
@@ -643,6 +664,9 @@ pre .ln{display:block}
 .ograb.dragging::after{opacity:1;top:1px;height:3px}
 .ograb:focus-visible{outline:none}
 .job .ograb{grid-column:1/-1;margin:-11px 0 0}
+/* Open, the row ends as close under the box as its line sits over it:
+   the 7px gap, with the grip riding on the box's edge inside it. */
+.lines .job.open{padding-bottom:0}
 .out .dim{color:var(--term-dim)}.out .add{color:var(--ansi-green)}.out .upd{color:var(--ansi-yellow)}.out .ok{color:var(--accent);font-weight:500}.out .err{color:var(--ansi-red)}
 
 /* --- the box in hand (drawer) ----------------------------------------- */

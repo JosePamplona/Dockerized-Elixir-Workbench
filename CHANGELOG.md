@@ -33,6 +33,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   long one shows four and the count, the whole list in the title) —
   and the addresses it would open, shut, `not inserted` for the
   reason. The summary rides on the name's title.
+- **Every job wears its number**, `#7`, first on its row and on the
+  tray's bar: this console's jobs from 1, in the order asked. The id
+  names the job in the DOM and the queue; the number is what the
+  reader counts by.
 - **A conformance suite for the cartridge contract**, beside the
   catalog test that already installs every cartridge and checks its
   mark lights for it alone. Every cartridge with options is inserted
@@ -227,6 +231,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **The jobs tray is on every screen but Jobs**, once anything has run
+  — it kept to the screens that start jobs, and a job's answer went
+  unseen on the others — and the bar's link to Jobs is a square that
+  puts the tray away until the next job. Its fold is the last job's:
+  kept while the tray is put away, and what the Jobs screen opens that
+  job to on arrival; folding the last job there folds the tray. The
+  chip on the bar is the job's own, as its row wears it (`exit 0`,
+  `exit 2`, `running`), no longer a count of the list, and the bar's
+  title is gone. The box sits to the bar as a job's output sits to its
+  row, 7px, and a row on the Jobs screen ends as close under its box.
 - **A flag in ink, what follows it dimmed.** The installation
   parameters read `--endpoint` with `/health` dimmed after it — on the
   shelf the type or the values in its place — and the Birth table's
@@ -601,6 +615,23 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   workspace is the healthy state, the same green as *baked* and *up*,
   and the danger of overwriting it belongs to the Create button, which
   asks before it does it.
+- **The jobs tray reads the job, not only names it.** Its bar is now a
+  fold: pressed, the last job's output unfurls *upward* from it — the
+  tray is `flex:none` under a screen that is `flex:1`, so the screen
+  gives the height and scrolls, and the bar stays pinned to the
+  window's foot where it was pressed. Nothing is covered, and the
+  table you are about to act on is still under your eyes when the
+  answer to the last press comes back; `→ jobs` beside the bar is
+  still the way to the whole list. It is the same output the Jobs
+  screen shows — `job_out/1`, lifted out of `job_row/1` so a job reads
+  the same wherever it is met, with its own words about itself under
+  the last line: run it again, drop it, stop it. The tray keeps its
+  own fold, and reads whichever job is last, so the Jobs screen's list
+  stays folded as its reader left it. The pane has the jobs' grip, at
+  its top and not under it, since the edge that moves is the one away
+  from the bar: `data-grip="up"` turns the drag and the arrow keys
+  over for it, and the tray's height is remembered by name across
+  papers, as the compose box's is.
 - **One button for every line of `wb.sh`, and the line is written where
   it can be right.** `ConsoleWeb.Refs.job_button/1` is the single shape
   behind Bake, Down, Stop, Up, Build, Create, Delete and the Docker
@@ -777,6 +808,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   Insert commit alone, and a cartridge in from birth has none; they
   read what the project reports first (`state/1`), then the commit,
   then the default — the rule the Inserted list already had.
+- **The output's grip moved nothing until the hand had crossed the
+  box.** A drag started from the box's cap (`max-height`), which a
+  short output never reaches — past its foot in the tray, past its
+  head on the Jobs screen. It starts from the box as drawn.
 - **`wb.sh eject mock` left healthcheck's tests without their
   library, and said nothing.** `mix workbench.dependents` read
   `requires` alone, and the three cartridges that compose mock declare

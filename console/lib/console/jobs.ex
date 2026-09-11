@@ -45,7 +45,10 @@ defmodule Console.Jobs do
   @batch_ms 50
   @grace_ms 5_000
 
-  defstruct [:id, :kind, :args, :cmdline, :state, :exit, :started_at, :finished_at]
+  # `id` names the job — the DOM, the topic, the queue; `n` is what the
+  # reader counts by: this console's jobs from 1, in the order asked. The
+  # id is the BEAM's unique integer, which skips and goes to letters.
+  defstruct [:id, :n, :kind, :args, :cmdline, :state, :exit, :started_at, :finished_at]
 
   def start_link(opts), do: GenServer.start_link(__MODULE__, opts, name: __MODULE__)
 
@@ -91,6 +94,7 @@ defmodule Console.Jobs do
     {:ok,
      %{
        jobs: [],
+       next: 1,
        queue: :queue.new(),
        running: nil,
        port: nil,
@@ -107,13 +111,14 @@ defmodule Console.Jobs do
   def handle_call({:run, kind, args, opts}, _from, state) do
     job = %__MODULE__{
       id: System.unique_integer([:positive, :monotonic]) |> Integer.to_string(36),
+      n: state.next,
       kind: kind,
       args: args,
       cmdline: Enum.join(["./wb.sh", "--yes" | args], " "),
       state: if(opts[:confirm], do: :pending, else: :queued)
     }
 
-    state = %{state | jobs: [job | state.jobs]}
+    state = %{state | jobs: [job | state.jobs], next: state.next + 1}
     broadcast(job)
 
     if job.state == :queued,

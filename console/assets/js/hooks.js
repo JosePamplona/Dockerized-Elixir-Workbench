@@ -115,6 +115,11 @@ export const JobOut = {
     }
     const cap = () => Math.max(JOB_OUT_MIN, Math.round(innerHeight * 0.8))
     const height = pane => parseInt(getComputedStyle(pane.querySelector(".out")).maxHeight, 10) || JOB_OUT_DEFAULT
+    // Where a drag starts from: the box as drawn, not its cap. The cap
+    // is a ceiling a short output never reaches, and a drag that began
+    // there moved nothing until the hand had crossed the whole box —
+    // past its foot in the tray, past its head on the Jobs screen.
+    const drawn = pane => pane.querySelector(".out").getBoundingClientRect().height || height(pane)
     const label = (pane, h) => {
       const g = pane.querySelector(".ograb")
       if (!g) return
@@ -163,8 +168,11 @@ export const JobOut = {
       ev.preventDefault()
       grip.setPointerCapture(ev.pointerId)
       grip.classList.add("dragging")
-      const from = height(pane) - ev.clientY
-      const move = e => set(pane, e.clientY + from)
+      // A pane whose grip is above it grows the other way: the edge
+      // under the hand is its top, so up is taller (the tray).
+      const upward = pane.dataset.grip === "up"
+      const from = upward ? drawn(pane) + ev.clientY : drawn(pane) - ev.clientY
+      const move = e => set(pane, upward ? from - e.clientY : e.clientY + from)
       const up = () => {
         grip.classList.remove("dragging")
         grip.removeEventListener("pointermove", move)
@@ -187,8 +195,9 @@ export const JobOut = {
       const grip = ev.target.closest(".ograb")
       if (!grip) return
       const pane = grip.closest("[data-tall]"), step = ev.shiftKey ? 48 : 16
-      if (ev.key === "ArrowUp") set(pane, height(pane) - step)
-      else if (ev.key === "ArrowDown") set(pane, height(pane) + step)
+      const up = pane.dataset.grip === "up" ? 1 : -1
+      if (ev.key === "ArrowUp") set(pane, drawn(pane) + up * step)
+      else if (ev.key === "ArrowDown") set(pane, drawn(pane) - up * step)
       else if (ev.key === "Home") forget(pane)
       else return
       ev.preventDefault(); keep()

@@ -48,7 +48,7 @@ defmodule Console.ProjectTest do
        %{dir: dir} do
     File.write!(Path.join(dir, "README.md"), "# Lorem\n")
     status = %{"exists" => true, "workspace" => dir, "git" => %{"repo" => true}}
-    assert Project.carried(status) == ~w(record readme pending history)
+    assert Project.carried(status) == ~w(record history pending readme)
     assert Project.carried(put_in(status, ["git", "repo"], false)) == ~w(record readme)
     assert Project.carried(%{"exists" => false, "workspace" => dir}) == []
     assert Project.carried(nil) == []

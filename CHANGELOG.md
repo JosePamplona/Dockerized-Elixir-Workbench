@@ -210,6 +210,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **The rail's Containers section drops its note** — *No deployment is
+  up and these are still here: Deploy → Down removes them* — written
+  when the Deployments section could only say `down`. It reads
+  `stopped` on the deployment whose containers are there, with Up and
+  Down lit, and the note only offered the destructive one.
 - **`state/1` is what the project carries of a cartridge's options,
   and every cartridge with options answers it.** The contract called
   it optional — "for an `:adds` cartridge", `%{}` by default — while
@@ -527,9 +532,139 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   project once more. `prune --build` and `delete` remove the new volume.
   The resident stays, and `console/PLAN.md` says why `:erpc` does not
   replace it.
+- **A deployment's row keeps its three buttons, in the order the row
+  is read.** Bake, Down and Stop — Bake answers the compose file's
+  column, Down and Stop answer the status column, so the group no
+  longer has to be read backwards to pair each button with its motive;
+  the rail's short row does the same, with Up and Stop sharing one
+  slot, the state saying which. A verb the row cannot do now is unlit
+  with its reason instead of gone: *not baked: Bake writes its compose
+  file first*, *not up: nothing to stop*, *nothing to take down: no
+  containers of this deployment*. The three slots hold still down the
+  table, and a row says what it could do, not only what it can. Three
+  buttons in a line is what the row wants, not what it needs: the cell
+  asks for the line and settles for less, so as the sheet narrows they
+  stack on their own — a column doing what a table column does — and
+  the width goes to the services column, which was the one paying for
+  them. Narrower than that the sheet measures itself, not the window
+  (the grip moves the split under a still window): the target column
+  gives a line of prose, the addresses close up and shorten to an
+  ellipsis — the whole one is in the title, as always — and last the
+  reading drops under the service's name; each address is only as wide
+  as what it says, a floor of nine ems having made a short service
+  (*migrate*) as wide as a long one for nothing. Stacked, the buttons are
+  eight pixels apart, the same air they have side by side — the
+  buttons' own margin, since an inline-block gives the line its margin
+  box, and not a taller line, which would have padded the whole cell.
+  Nothing is cut and nothing paints over the buttons, as the addresses
+  did before.
+- **The Project card reads in the Record's order, and the workspace
+  wears its own reading.** The chip that says whether a project is in
+  the workspace — the one that also warns that creating overwrites
+  every file in it — leaves the card's heading for the workspace's own
+  row, where its subject is. The stack, one line of three versions,
+  becomes three rows — elixir, erlang, debian — so the card reads row
+  for row like the Record's Birth table, and so the row that has moved
+  since birth is the row that says so: `born on 1.17.3` sits on the
+  elixir row alone, where it used to speak for the three. The installer
+  says `phx.new 1.8.13`, the Record's own words for it, not the hex
+  package's `phx_new`, and the flags row is `mix phx.new`, which is the
+  command the Record prints above the one it reconstructs. Each row
+  ends in a cog — the eye's own square icon button — where it used to
+  say "change in config" in words, six times down one card. The
+  workspace's own chip is two words, `empty` or `existing project`, on the
+  row that names the path — the path is the subject, so the chip need
+  not repeat it — and the second is `good`, not `bad`: a project in the
+  workspace is the healthy state, the same green as *baked* and *up*,
+  and the danger of overwriting it belongs to the Create button, which
+  asks before it does it.
+- **One button for every line of `wb.sh`, and the line is written where
+  it can be right.** `ConsoleWeb.Refs.job_button/1` is the single shape
+  behind Bake, Down, Stop, Up, Build, Create, Delete and the Docker
+  screen's removals — the unlit with its reason, the command in the
+  title, the click that sends it — where five hand-rolled copies had
+  already drifted apart (the deploy buttons put the command in their
+  title, the prunes put a sentence). `bake_button/1`, `deploy_button/1`
+  and `prune_button/1` keep what is theirs, which is deciding *why* a
+  button cannot be pressed, and hand the rest over.
+
+  With it, the hazard Create was cured of in its day is cured for the
+  rest. A button whose line is composed out of a form — the deployment
+  picked, `--replicas`, `--no-balancer` — was rendered with that form
+  as it was, so a change and a click in the same instant ran the line
+  as it stood BEFORE the change: `--replicas 6` typed, `--replicas 4`
+  run. Those buttons now submit the picker (`phx-submit="deploy_run"`)
+  with `name`/`value` saying which was pressed, and the line is written
+  on the server out of what travelled — `ConsoleWeb.Deploy.line/2`,
+  which is a pure function and has its own test. What is rendered on
+  the button is only what it *says*. The ones whose line is only itself
+  — Stop, Down, Delete, a prune — still travel on the click, and an
+  unlit submit is rendered as a plain button so the form cannot leave
+  by it either.
+- **Build leaves the deployments' foot**, which keeps one verb: Up.
+  It did nothing Up does not — `up --deploy prod` rebuilds the release
+  image on each deploy, so all Build added was *not* deploying — and
+  that case, real but rare, is the one that wants a flag the button
+  could not send: `--no-cache` and the rest go to `docker compose
+  build`. It lives in the CLI, where Tab completes it from the
+  catalog, and in `wb.sh help`. `ConsoleWeb.Deploy.line/2` no longer
+  answers for it: a verb no button sends writes no line.
+- **Git goes last on the rail**, under Cartridges: what has happened to
+  the project, after what the project is — the workspace, what answers,
+  what is baked and up, what is in it. It sat second, where it landed
+  when Git stopped being a tab of its own.
+- **The rail says what each section has, and nothing where it has
+  nothing.** On the Deploy tab the same head drops its word instead:
+  the table under it says what there is row by row, so *Topology*
+  named only the section. On the rail, where the section is folded
+  shut half the time, Deployments' head said *topology* — what the section is,
+  not what it holds — so it was the one head a reader had to open to
+  learn anything. It reads like its neighbours now: `none baked`,
+  `2 baked · prod up`, `1 baked · nothing up`, beside `3 services · 2
+  doors`, `3 of 4 running`, `clean` and `8 in`. And with every head
+  saying it, the four paragraphs that said it again under an empty
+  section go: *Nothing answers yet…*, *The workspace is empty: Deploy
+  → Project.*, *phx.new initialises the repository…*, *Nothing
+  inserted yet…*. An empty rail is now a column of heads with their
+  readings, and the sentence each of those paragraphs taught is still
+  where it is acted on — the Deploy tab's own unlit reasons say it
+  where the button is.
+- **Delete has a box of its own again, and the first card is named for
+  what it does.** The card that creates is *New Project* — it says what
+  the *next* creation would use, config.conf and nothing else, so
+  naming it after the project that is already there was always a
+  little off — and its foot keeps one button, Create. What cannot be
+  taken back goes to *Danger zone*, the tab's last box, under
+  Deployments, in the foot the other two boxes have: the line it is,
+  `./wb.sh delete`, taking the width, the button at its right as Up
+  and Create sit at theirs, and under the line what that line takes —
+  every file of the project in the workspace, its containers, its
+  images and its volumes, the database's data with them, and it asks
+  first. The button is a primary in the bad colour, filled and the
+  size of Create and Up: what it does is a verb of this tab like the
+  other two, and hiding it in an outline would only make it look
+  optional. It is centred on the line, not on the line and the note
+  together, so a longer note never moves it. Delete had such a box until it was retired for being a
+  heading over one button that said only what the confirmation says;
+  this one says the scope of the damage before a hand is near it,
+  which neither the button nor the confirmation does. It is still
+  unlit with its reason on an empty workspace, and it still never runs
+  on the first press.
+- **The deployments table's third column is `sync diff`**, not
+  `differences`: what it holds is the drift between the compose file
+  and what the cartridges ask for, which is the same word the row's
+  chip uses when the two have come apart.
+- **The project's papers in the order they are asked for**: Record,
+  History, Pending, .env, README, CHANGELOG. Pending and History were
+  at the tail, where they landed when Git stopped being a tab of its
+  own; what has happened to the project belongs beside what it is.
 
 ### Fixed
 
+- **A container that exited read `unhealthy`.** Docker keeps a stopped
+  container's last health, and the reading put health before state:
+  an app that crashed wore `unhealthy` beside its `Exited (1)`. Health
+  counts while the container runs; a stopped one reads its exit code.
 - **`wb.sh eject mock` left healthcheck's tests without their
   library, and said nothing.** `mix workbench.dependents` read
   `requires` alone, and the three cartridges that compose mock declare

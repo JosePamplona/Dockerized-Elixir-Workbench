@@ -37,10 +37,13 @@ defmodule ConsoleWeb.Cartridges do
     state = c["State"] || ""
     code = c["ExitCode"]
 
+    # Health is read only while the container runs: Docker stops probing
+    # a stopped one and keeps the last answer, so an app that crashed
+    # reads `unhealthy` next to its `Exited (1)`.
     cond do
-      health == "healthy" -> {"healthy", "good"}
-      health == "starting" -> {"starting", "warn busy"}
-      health == "unhealthy" -> {"unhealthy", "bad"}
+      state == "running" and health == "healthy" -> {"healthy", "good"}
+      state == "running" and health == "starting" -> {"starting", "warn busy"}
+      state == "running" and health == "unhealthy" -> {"unhealthy", "bad"}
       state == "running" -> {"running", "good"}
       state == "exited" and code in [0, nil] -> {"exited", "off"}
       state == "exited" -> {"exited #{code}", "bad"}

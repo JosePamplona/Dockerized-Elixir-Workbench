@@ -144,7 +144,7 @@ defmodule ConsoleWeb.Terminal do
     # The services beside the app, in the order the compose declares them.
     beside =
       for c <- cs,
-          c["Service"] in ~w(database pgadmin prometheus grafana),
+          c["Service"] in ~w(database pgadmin adminer prometheus grafana),
           c["State"] == "running" do
         %{
           name: c["Service"],
@@ -155,6 +155,7 @@ defmodule ConsoleWeb.Terminal do
             case c["Service"] do
               "database" -> "the workspace's database"
               "pgadmin" -> "the pgAdmin container"
+              "adminer" -> "the Adminer container"
               "prometheus" -> "the Prometheus container"
               "grafana" -> "the Grafana container"
             end
@@ -167,12 +168,15 @@ defmodule ConsoleWeb.Terminal do
   @doc """
   What a session on this target can be. The database's first shell is
   `psql` and not bash, because the reason to open the database is the
-  database and not its filesystem; pgAdmin's and Grafana's images are
-  Alpine and Prometheus's busybox, each carrying `sh` alone, which is
-  why their one shell is not a choice.
+  database and not its filesystem; pgAdmin's, Adminer's and Grafana's
+  images are Alpine and Prometheus's busybox, each carrying `sh` alone,
+  which is why their one shell is not a choice.
   """
   def shells(%{kind: :database}), do: [{"psql", "psql"}, {"bash", "bash"}]
-  def shells(%{kind: kind}) when kind in [:pgadmin, :prometheus, :grafana], do: [{"sh", "sh"}]
+
+  def shells(%{kind: kind}) when kind in [:pgadmin, :adminer, :prometheus, :grafana],
+    do: [{"sh", "sh"}]
+
   def shells(%{release: true}), do: [{"bash", "bash"}, {"rpc", "bin/app rpc"}]
   def shells(_), do: [{"bash", "bash"}, {"iex", "iex -S mix"}]
 
@@ -186,13 +190,26 @@ defmodule ConsoleWeb.Terminal do
     app = get_in(status, ["project", "app"]) || "app"
 
     cond do
-      shell == "iex" -> "iex> "
-      shell == "rpc" -> "#{app} rpc> "
-      shell == "psql" -> "postgres=# "
-      target.kind in [:pgadmin, :prometheus, :grafana] -> "#{target.kind}@#{target.name}:/$ "
-      target.kind == :database -> "postgres@#{target.name}:/$ "
-      target.release -> "nobody@#{target.name}:/app$ "
-      true -> "elixir@#{target.name}:/app/src$ "
+      shell == "iex" ->
+        "iex> "
+
+      shell == "rpc" ->
+        "#{app} rpc> "
+
+      shell == "psql" ->
+        "postgres=# "
+
+      target.kind in [:pgadmin, :adminer, :prometheus, :grafana] ->
+        "#{target.kind}@#{target.name}:/$ "
+
+      target.kind == :database ->
+        "postgres@#{target.name}:/$ "
+
+      target.release ->
+        "nobody@#{target.name}:/app$ "
+
+      true ->
+        "elixir@#{target.name}:/app/src$ "
     end
   end
 

@@ -47,6 +47,13 @@ defmodule ConsoleWeb.CartridgesTest do
     assert Cartridges.container_reading(%{"State" => "exited", "Health" => "", "ExitCode" => 137}) ==
              {"exited 137", "bad"}
 
+    # Docker keeps a stopped container's last health: a crash reads its code, not `unhealthy`.
+    assert Cartridges.container_reading(%{
+             "State" => "exited",
+             "Health" => "unhealthy",
+             "ExitCode" => 1
+           }) == {"exited 1", "bad"}
+
     assert Cartridges.container_reading(%{"State" => "dead"}) == {"dead", "bad"}
   end
 end

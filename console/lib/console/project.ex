@@ -15,13 +15,17 @@ defmodule Console.Project do
 
   alias Console.Papers
 
+  # The ribbon's order, and so the first paper taken: what the project
+  # is, then what has happened to it, then what it holds — the git two
+  # moved up beside the Record on 2026-09-10, from the tail where they
+  # landed when Git stopped being a tab of its own.
   @papers [
     {"record", "Record", nil},
+    {"history", "History", nil},
+    {"pending", "Pending", nil},
     {"env", ".env", ".env"},
     {"readme", "README", "README.md"},
-    {"changelog", "CHANGELOG", "CHANGELOG.md"},
-    {"pending", "Pending", nil},
-    {"history", "History", nil}
+    {"changelog", "CHANGELOG", "CHANGELOG.md"}
   ]
 
   def papers, do: @papers

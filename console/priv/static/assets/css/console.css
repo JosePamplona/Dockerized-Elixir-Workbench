@@ -49,6 +49,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-v
 .btn[aria-pressed="true"]{border-color:var(--ink);background:var(--surface-2)}
 .btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent;box-shadow:0 2px 0 rgba(0,0,0,.25)}
 .btn.danger{color:var(--bad);border-color:var(--bad)}
+.btn.primary.danger{background:var(--bad);color:var(--surface);border-color:transparent}
 
 /* --- the band --------------------------------------------------------- */
 header.band{
@@ -573,11 +574,15 @@ pre .ln{display:block}
 .newcard .bases label.sub.out{color:var(--muted)}
 .newcard .frow .ro{font-family:var(--mono);font-size:12.5px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .newcard .frow .ro a{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:11px;color:var(--accent)}
+/* The cog is a square icon button, the eye's own face: the row's link
+   colour is not its. */
+.newcard .frow .ro a.go{color:var(--muted)}
+.newcard .frow .ro a.go:hover{color:var(--ink)}
 .newcard .flags{display:flex;flex-wrap:wrap;gap:6px 14px;font-family:var(--mono);font-size:12.5px}
 .newcard .flags label{display:inline-flex;gap:6px;align-items:center}
-.newcard .foot,.deployments .foot{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.newcard .foot,.deployments .foot,section.danger .foot,.install .foot{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .newcard .foot .cmds,.deployments .foot .cmds{flex:1;min-width:240px;display:grid;gap:3px}
-.newcard .foot .cmd,.deployments .foot .cmd{min-width:0}
+.newcard .foot .cmd,.deployments .foot .cmd,section.danger .foot .cmd,.install .foot .cmd{min-width:0}
 .confirm{font-family:var(--serif);font-size:13.5px;color:var(--bad);display:none;gap:8px;align-items:center}
 .confirm.on{display:inline-flex}
 
@@ -894,7 +899,6 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
 .git .row{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
 .git .row>:last-child{min-width:0;text-align:right;overflow-wrap:anywhere}
 .git .row .k{flex:none;font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px;color:var(--muted)}
-.go.done{background:var(--surface);color:var(--ink);border:1px solid var(--ink);box-shadow:none}
 .log{font-family:var(--code-face,var(--mono));font-size:var(--code-size,12px);line-height:var(--code-leading,1.55);background:var(--term);color:var(--term-ink);border-radius:3px;padding:12px 14px;min-height:120px;max-height:260px;overflow:auto;white-space:pre-wrap;border:1px solid var(--term-line)}
 .log .dim{color:var(--term-dim)}.log .add{color:var(--ansi-green)}.log .upd{color:var(--ansi-yellow)}.log .ok{color:var(--accent);font-weight:500}
 /* What an empty window says is the window's, not the stylesheet's: the
@@ -1250,6 +1254,28 @@ span.fact input{accent-color:var(--accent);width:14px;height:14px;margin:0;verti
 .record .go svg,.deployments .go svg{width:15px;height:15px;display:block}
 .record .go[aria-busy="true"]{color:var(--accent);cursor:progress}
 .record .go[aria-busy="true"] svg{animation:knock-ring .6s ease-in-out infinite;transform-origin:50% 20%}
+/* Danger: the tab's last box, and the only one in it is the verb that
+   cannot be taken back. Its ground is the card's, its rule is the bad
+   colour, and its note says what goes before the hand is near it —
+   the shape the Docker screen gives its own removals. The delete had
+   a foot beside Create until 2026-09-10, ten pixels from it.
+   Every selector here says `section`: the button in the box wears
+   `danger` too — it is a `.btn.danger` — so a bare `.danger` puts the
+   box's own padding and border on the button, which is how it came out
+   16px tall and half again the size of Create. */
+section.danger{border:1px solid var(--line);border-top:2px solid var(--bad);background:var(--surface);border-radius:3px;padding:16px 18px;display:grid;gap:12px;margin-top:14px}
+section.danger h3{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:18px;color:var(--bad);display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+/* The foot's shape here is the other two's — the line taking the
+   width, the button at its right — but with a second row for the note,
+   which is the line's and not the button's: the button holds the
+   line's row and is centred on it, so a note of any length leaves it
+   where it is. The note is the Docker screen's own, italic and quiet,
+   so the box's one loud thing is the button. */
+section.danger .foot{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:10px;row-gap:5px}
+section.danger .foot .cmd{grid-area:1/1}
+section.danger .foot .note{grid-area:2/1;padding:0 2px}
+section.danger .foot>.btn,section.danger .foot>.confirm{grid-area:1/2}
+
 /* Deployments: the Deploy tab's third card, under the Deployment card —
    one row per compose file, and the file itself in a box under the
    table. It was the Record's third section until 2026-09-09. */
@@ -1284,7 +1310,43 @@ span.fact input{accent-color:var(--accent);width:14px;height:14px;margin:0;verti
 /* The foot is the Project card's: the command line taking the width, the buttons at its right. */
 .deployments .foot{margin-top:6px}
 .deployments table.rows.deps td.sync{white-space:normal}
-.deployments table.rows.deps td.act{width:1%;white-space:nowrap;text-align:right}
+/* Services is the column that gives: with the three buttons always
+   there, the addresses would push past the row and paint over them.
+   Their path shortens with an ellipsis — the whole one is in the
+   title — and the label and the reading stay. */
+.deployments table.rows.deps td .pairs{min-width:0;grid-template-columns:minmax(0,max-content)}
+.deployments table.rows.deps td .pairs .pair,.deployments table.rows.deps td .pairs .door-ref{max-width:100%}
+.deployments table.rows.deps td .pairs .door-ref{overflow:hidden}
+.deployments table.rows.deps td .pairs .door-ref>span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+/* The name of the service and its reading are whole or not at all: the
+   address is the one that gives way. */
+.deployments table.rows.deps td .pairs .door-ref>b,.deployments table.rows.deps td .pairs .door-ref .read{flex:none}
+/* The buttons stack when the row runs out of width: three of them in a
+   line is what the row wants, not what it needs, and services is the
+   column that was paying for it. Nothing measures anything — the cell
+   asks for the three in a line and settles for less, which is what a
+   table column does on its own once the line is allowed to break. They
+   keep the right edge as they fold. */
+.deployments table.rows.deps td.act{white-space:normal;text-align:right}
+/* The air between them is the buttons' own margin, on the line the
+   rail's own table gives them: an inline-block hands the line its
+   margin box, so this is the gap the reader sees between two stacked
+   buttons and nothing else. */
+.deployments table.rows.deps td.act .btn.mini{margin-block:4px}
+.deployments{container-type:inline-size}
+/* Narrow: the target column gives first — its prose only takes another
+   line — and the addresses close up, so the name of the service and
+   its reading stay whole. The address itself shortens to an ellipsis;
+   the whole one is in the title, as it always was. */
+@container (max-width:760px){.deployments table.rows.deps td.k{width:180px}
+.deployments table.rows.deps td .pairs .door-ref{min-width:0;gap:6px;padding-left:6px}
+.deployments table.rows.deps td .pairs .door-ref .read{padding:3px 6px}}
+/* Narrower than that the reading no longer fits beside the name: it
+   drops under it, plain, keeping its colour — the box would not hold
+   both, and neither the name nor the reading may be cut. */
+@container (max-width:660px){
+.deployments table.rows.deps td .pairs .door-ref{flex-wrap:wrap;padding:3px 6px}
+.deployments table.rows.deps td .pairs .door-ref .read{flex:1 0 100%;margin:1px 0 0;padding:0;border:0;background:none;border-radius:0}}
 /* The eye before the file's chip: the row's own way to open the file in the box under. */
 .deployments table.rows.deps td.file .fl{display:inline-flex;align-items:center;gap:var(--cell)}
 .deployments table.rows.deps td.file .go[aria-pressed="true"]{color:var(--ink);background:var(--ground);border-color:var(--ink)}

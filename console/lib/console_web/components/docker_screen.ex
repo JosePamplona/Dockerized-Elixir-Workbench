@@ -267,15 +267,18 @@ defmodule ConsoleWeb.DockerScreen do
   defp shell(assigns) do
     shellable =
       assigns.mine and not assigns.c.console? and
-        Regex.match?(~r/^(app\d*|database|pgadmin|prometheus|grafana)$/, assigns.c.service)
+        Regex.match?(
+          ~r/^(app\d*|database|pgadmin|adminer|prometheus|grafana)$/,
+          assigns.c.service
+        )
 
     down = assigns.c.state != "running"
     # The Terminal's own rule: psql on the database, sh on the Alpine and
-    # busybox images (pgAdmin, Grafana, Prometheus), bash elsewhere.
+    # busybox images (pgAdmin, Adminer, Grafana, Prometheus), bash elsewhere.
     shell =
       case assigns.c.service do
         "database" -> "psql"
-        s when s in ~w(pgadmin prometheus grafana) -> "sh"
+        s when s in ~w(pgadmin adminer prometheus grafana) -> "sh"
         _ -> "bash"
       end
 
@@ -573,14 +576,13 @@ defmodule ConsoleWeb.DockerScreen do
     assigns = assign(assigns, why: why)
 
     ~H"""
-    <button
-      class={["btn", @why && "unlit"]}
-      type="button"
-      aria-disabled={@why && "true"}
-      title={@why || "asks for your word first, in Jobs"}
-      phx-click={!@why && "dk_prune"}
+    <.job_button
+      label={@label}
+      why={@why}
+      event="dk_prune"
+      title="asks for your word first, in Jobs"
       phx-value-what={@what}
-    >{@label}</button>
+    />
     """
   end
 
@@ -691,7 +693,7 @@ defmodule ConsoleWeb.DockerScreen do
       </table>
     </div>
     <p :if={@dk.networks} class="note">
-      The workspace's app and the services beside it — database, pgadmin, prometheus, grafana — are not on any network of their own: they share the pod's — the
+      The workspace's app and the services beside it — database, pgadmin, adminer, prometheus, grafana — are not on any network of their own: they share the pod's — the
       <code>network</code>
       container's — and reach each other on localhost.
     </p>

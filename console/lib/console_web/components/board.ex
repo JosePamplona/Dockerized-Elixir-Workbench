@@ -1,5 +1,11 @@
 defmodule ConsoleWeb.Board do
-  @moduledoc "The rail: the configured workspace, as the status says it."
+  @moduledoc """
+  The rail: the configured workspace, as the status says it — the name
+  and the path, then what answers (Services & Doors), what is baked and
+  up (Deployments, Containers), what is in it (Cartridges), and last
+  Git, which is what has happened to it rather than what it is
+  (2026-09-10).
+  """
   use Phoenix.Component
   import ConsoleWeb.Refs
   alias ConsoleWeb.{Cartridges, Record, Terminal}
@@ -34,10 +40,10 @@ defmodule ConsoleWeb.Board do
     <%= if @status do %>
       <.workspace status={@status} rebind={@rebind} />
       <.services_doors status={@status} catalog={@catalog} folded={@folded} reads={@reads} />
-      <.git status={@status} folded={@folded} />
       <.deployments status={@status} busy={@busy} folded={@folded} stale={@reading == :full} />
       <.containers status={@status} folded={@folded} />
       <.inserted status={@status} catalog={@catalog} folded={@folded} stale={@reading == :full} />
+      <.git status={@status} folded={@folded} />
       <p :if={@error} class="note">{@error}</p>
     <% end %>
     """
@@ -177,9 +183,6 @@ defmodule ConsoleWeb.Board do
         </button>
       </.head>
       <div class="urls">
-        <p :if={@services == [] and @doors == []} class="nothing">
-          Nothing answers yet: deploy, and cartridges open doors here — docs, dashboard, mailbox, swagger…
-        </p>
         <.door_ref
           :for={a <- @services}
           label={a.label}
@@ -227,10 +230,27 @@ defmodule ConsoleWeb.Board do
   # flight it is dimmed, with the reason, not asserted.
   @stale_why "reading the project again: this is the last reading's, until the new one lands"
 
+  # Every head on the rail says what the section has — "3 services · 2
+  # doors", "3 of 4 running", "clean", "8 in". This one said "topology",
+  # which is what the section IS and not what it holds, so it was the
+  # one head a reader had to open to learn anything (2026-09-10).
+  defp deployments_sum(rows, up) do
+    baked = Enum.count(rows, & &1.baked)
+
+    cond do
+      baked == 0 -> "none baked"
+      up -> "#{baked} baked · #{up} up"
+      true -> "#{baked} baked · nothing up"
+    end
+  end
+
   defp deployments(assigns) do
+    rows = Record.deployments(assigns.status)
+
     assigns =
       assign(assigns,
-        rows: Record.deployments(assigns.status),
+        rows: rows,
+        sum: deployments_sum(rows, assigns.status["deployment"]),
         why: @stale_why,
         not_baked:
           if(assigns.status["exists"] == true,
@@ -241,7 +261,7 @@ defmodule ConsoleWeb.Board do
 
     ~H"""
     <section class={folded?(@folded, "deployments") && "folded"}>
-      <.head key="deployments" name="Deployments" label="topology" folded={@folded} />
+      <.head key="deployments" name="Deployments" label={@sum} folded={@folded} />
       <table class="rows" id="deployments">
         <tr class="hd">
           <th></th>
@@ -281,6 +301,15 @@ defmodule ConsoleWeb.Board do
               </.chip>
             </td>
             <td class="act">
+              <.bake_button name={d.deploy} status={@status} busy={@busy} baked={d.baked} />
+              <.deploy_button
+                verb="down"
+                name={d.deploy}
+                status={@status}
+                busy={@busy}
+                baked={d.baked}
+                present={d.present}
+              />
               <.deploy_button
                 :if={@status["deployment"] == d.deploy}
                 verb="stop"
@@ -289,21 +318,13 @@ defmodule ConsoleWeb.Board do
                 busy={@busy}
               />
               <.deploy_button
-                :if={@status["deployment"] != d.deploy and d.baked}
+                :if={@status["deployment"] != d.deploy}
                 verb="up"
                 name={d.deploy}
                 status={@status}
                 busy={@busy}
+                baked={d.baked}
               />
-              <.deploy_button
-                :if={d.baked}
-                verb="down"
-                name={d.deploy}
-                status={@status}
-                busy={@busy}
-                present={d.present}
-              />
-              <.bake_button name={d.deploy} status={@status} busy={@busy} baked={d.baked} />
             </td>
           </tr>
         <% end %>
@@ -327,6 +348,10 @@ defmodule ConsoleWeb.Board do
     default: "",
     doc: "scaled's --replicas and --no-balancer, when they differ"
 
+  attr :form, :string,
+    default: nil,
+    doc: "the picker it stands in, when it stands in one: pressed, it sends the form"
+
   def bake_button(assigns) do
     cmd = ConsoleWeb.Deploy.cmdline("bake", assigns.name, assigns.extra)
 
@@ -349,26 +374,31 @@ defmodule ConsoleWeb.Board do
     assigns = assign(assigns, why: why, title: title, cmd: cmd)
 
     ~H"""
-    <button
-      class={["btn mini", @why && "unlit"]}
-      type="button"
-      aria-disabled={@why && "true"}
+    <.job_button
+      label="Bake"
+      class="mini"
+      args={String.replace_prefix(@cmd, "./wb.sh ", "")}
       title={@title}
-      phx-click={!@why && "run"}
-      phx-value-args={String.replace_prefix(@cmd, "./wb.sh ", "")}
-    >
-      Bake
-    </button>
+      why={@why}
+      form={@form}
+      name={@form && "do"}
+      value={@form && "bake #{@name}"}
+    />
     """
   end
 
-  # The row's one action, in the row's own words. Only two things stop
-  # it — nothing to deploy into, a job in flight. Another deployment up
+  # The row's one action, in the row's own words. Another deployment up
   # is the ordinary case: Up replaces it, and the title says so. The
   # other way is Stop, not Down: the containers stay for a fast Up
   # again; `down`, which removes them, stays a command of the shell.
+  #
+  # A verb the row cannot do now is unlit with the reason, not hidden
+  # (2026-09-10): the three slots stay put down the table, and a row
+  # says what it could do, not only what it can. Up and Stop share one
+  # slot — the same question, and the row's state answers which.
   attr :verb, :string, required: true, values: ~w(up stop down)
   attr :present, :boolean, default: true, doc: "the deployment has containers: what down removes"
+  attr :baked, :boolean, default: true, doc: "its compose file is in the workspace"
   attr :name, :string, required: true
   attr :status, :map, required: true
   attr :busy, :boolean, default: false
@@ -385,8 +415,14 @@ defmodule ConsoleWeb.Board do
         assigns.busy ->
           "a job is running"
 
+        not assigns.baked ->
+          "not baked: Bake writes its compose file first"
+
         assigns.verb == "down" and not assigns.present ->
           "nothing to take down: no containers of this deployment"
+
+        assigns.verb == "stop" and running != assigns.name ->
+          "not up: nothing to stop"
 
         true ->
           nil
@@ -414,16 +450,13 @@ defmodule ConsoleWeb.Board do
     assigns = assign(assigns, why: why, title: title, cmd: cmd)
 
     ~H"""
-    <button
-      class={["btn mini", @why && "unlit"]}
-      type="button"
-      aria-disabled={@why && "true"}
+    <.job_button
+      label={%{"up" => "Up", "stop" => "Stop", "down" => "Down"}[@verb]}
+      class="mini"
+      args={String.replace_prefix(@cmd, "./wb.sh ", "")}
       title={@title}
-      phx-click={!@why && "run"}
-      phx-value-args={String.replace_prefix(@cmd, "./wb.sh ", "")}
-    >
-      {%{"up" => "Up", "stop" => "Stop", "down" => "Down"}[@verb]}
-    </button>
+      why={@why}
+    />
     """
   end
 
@@ -438,17 +471,11 @@ defmodule ConsoleWeb.Board do
     cs = assigns.status["containers"] || []
     running = Enum.count(cs, &(&1["State"] == "running"))
     targets = Map.new(Terminal.targets(assigns.status), &{&1.name, &1})
-    # Containers with no deployment above them: the app is gone and the
-    # rest of the project is still standing. The board says so rather
-    # than leaving three rows of `down` over a table of things that are
-    # not — and it says where the way out is.
-    left = cs != [] and is_nil(assigns.status["deployment"])
 
     assigns =
       assign(assigns,
         cs: cs,
         targets: targets,
-        left: left,
         sum: if(cs == [], do: "none", else: "#{running} of #{length(cs)} running")
       )
 
@@ -456,13 +483,6 @@ defmodule ConsoleWeb.Board do
     <section class={folded?(@folded, "containers") && "folded"}>
       <.head key="containers" name="Containers" label={@sum} folded={@folded} />
       <table class="rows acts" id="containers">
-        <tr :if={@cs == []}>
-          <td class="nothing">
-            {if @status["exists"],
-              do: "No containers: the project is down. Deploy → Up.",
-              else: "The workspace is empty: Deploy → Project."}
-          </td>
-        </tr>
         <tr :for={c <- @cs}>
           <td class="k" title={c["Image"]}>
             {c["Service"]}<span class="hint">{short_image(c["Image"])}</span>
@@ -484,9 +504,6 @@ defmodule ConsoleWeb.Board do
           </td>
         </tr>
       </table>
-      <p :if={@left} class="note">
-        No deployment is up and these are still here: Deploy → Down removes them.
-      </p>
     </section>
     """
   end
@@ -562,8 +579,6 @@ defmodule ConsoleWeb.Board do
             patch="/project?paper=pending"
             title="the Pending paper: what is pending, and the commit with a title"
           >Commit pending changes</.link>
-        <% else %>
-          <p class="nothing">phx.new initialises the repository; new makes the first commit.</p>
         <% end %>
       </div>
     </section>
@@ -592,9 +607,6 @@ defmodule ConsoleWeb.Board do
     <section class={folded?(@folded, "inserted") && "folded"}>
       <.head key="inserted" name="Cartridges" label={@sum} folded={@folded} />
       <table class={["rows", @stale && "stale"]} id="slots" title={@stale && @why}>
-        <tr :if={@ins == []}>
-          <td class="nothing">Nothing inserted yet: the shelf is in Cartridges.</td>
-        </tr>
         <%= for c <- @ins do %>
           <tr>
             <td>

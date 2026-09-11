@@ -1,14 +1,15 @@
 defmodule ConsoleWeb.Deploy do
   @moduledoc """
-  The Deploy screen: the Project card — where a project is created,
-  and the one that is here deleted — and the Deployments card,
+  The Deploy screen: the New Project card — where a project is created,
+  out of config.conf and nothing else — the Deployments card,
   `ConsoleWeb.Deployments`: one row per deployment, picked on its row,
   each compose file baked or not, in sync or drifted, up, stopped or
   down, with Stop, Down and Bake on its row, the file itself in a box,
-  and Up and Build of the picked one under the table. Every button is a
-  `wb.sh` line handed to the `run` event; the two that cannot be taken
-  back come back as a pending job, and the card that asked shows the
-  question.
+  and Up and Build of the picked one under the table, and last the
+  Danger box, whose only verb is the one that cannot be taken back.
+  Every button is a `wb.sh` line handed to the `run` event; the two
+  that cannot be taken back come back as a pending job, and the box
+  that asked shows the question.
   """
   use Phoenix.Component
   import ConsoleWeb.Refs
@@ -58,6 +59,61 @@ defmodule ConsoleWeb.Deploy do
       extra={@extra}
       clustering={@clustering}
     />
+    <.danger status={@status} jobs={@jobs} />
+    """
+  end
+
+  # The one verb that cannot be taken back, in a section of its own at
+  # the tab's foot — away from Create, which shares no ground with it,
+  # and away from the rows pressed every day. It had a box under
+  # "Workspace" once, beside the database errand, and when the errand
+  # went a heading over one button said only what the confirmation
+  # already says; it comes back (2026-09-10) with what the Docker
+  # screen gives its own removals — the line it is, and everything it
+  # takes with it, before the hand is anywhere near it.
+  attr :status, :map, default: nil
+  attr :jobs, :list, default: []
+
+  defp danger(assigns) do
+    project? = assigns.status && assigns.status["exists"] == true
+
+    assigns =
+      assign(assigns,
+        project?: project?,
+        deleting: pending(assigns.jobs, :delete),
+        name: (assigns.status || %{})["compose_project"]
+      )
+
+    ~H"""
+    <section class="danger">
+      <h3>Danger zone</h3>
+      <%!-- The foot of the two boxes above: the line it is, taking the
+            width, and the button at its right — Create's shape and Up's,
+            because this is the third of the three verbs the tab has. The
+            note goes under the line, in the line's own column, since what
+            it says is what that line takes with it; the button holds the
+            line's row and is centred on the line alone, so a note of any
+            length leaves it where it is. --%>
+      <div class="foot">
+        <div class="cmd">./wb.sh delete</div>
+        <p class="note">
+          every file of {@name || "the project"} in the workspace, its containers, its images and its volumes — the database's data with them · asks first
+        </p>
+        <.job_button
+          :if={!@deleting}
+          label="Delete the project"
+          class="primary danger"
+          args="delete"
+          why={!@project? && "the workspace is empty: nothing to delete"}
+        />
+        <span :if={@deleting} class="confirm on">Files, containers, images and volumes go.
+        <button class="btn primary danger" phx-click="confirm" phx-value-id={@deleting.id}>Yes, delete</button><button
+          class="btn"
+          phx-click="cancel"
+          phx-value-id={@deleting.id}
+        >Keep it</button></span>
+      </div>
+    </section>
     """
   end
 
@@ -74,7 +130,6 @@ defmodule ConsoleWeb.Deploy do
   defp new_card(assigns) do
     conf = Console.Config.values(assigns.config)
     pending = pending(assigns.jobs, :new)
-    deleting = pending(assigns.jobs, :delete)
     project? = assigns.status && assigns.status["exists"] == true
     # The card's rows say what the *next* creation would use, which is
     # config.conf and nothing else: intention. What the project here is
@@ -88,7 +143,6 @@ defmodule ConsoleWeb.Deploy do
       assign(assigns,
         conf: conf,
         pending: pending,
-        deleting: deleting,
         project?: project?,
         born: born,
         busy: busy?(assigns.jobs, [:new]),
@@ -99,11 +153,7 @@ defmodule ConsoleWeb.Deploy do
     ~H"""
     <div class="newcard">
       <h3>
-        Project
-        <.chip :if={!@project?}>the workspace is empty</.chip>
-        <.chip :if={@project?} class="bad" title="creating overwrites every file in it">
-          a project exists here
-        </.chip>
+        New Project
         <.link
           :if={@project?}
           class="lk"
@@ -115,19 +165,42 @@ defmodule ConsoleWeb.Deploy do
       </h3>
       <form class="form" id="new-project" phx-change="new_form" phx-submit="new_submit">
         <.given label="project name" value={@conf["PROJECT_NAME"]} />
-        <.given label="workspace" value={@conf["WORKSPACE_PATH"]} />
+        <.given label="workspace" value={@conf["WORKSPACE_PATH"]}>
+          <:mark>
+            <.chip
+              :if={!@project?}
+              class="off"
+              title="nothing to read and nothing to lose: Create makes one"
+            >
+              empty
+            </.chip>
+            <.chip :if={@project?} class="good" title="creating overwrites every file in it">
+              existing project
+            </.chip>
+          </:mark>
+        </.given>
         <.given
-          label="stack"
-          value={"elixir #{@conf["ELIXIR_VERSION"]} · erlang #{@conf["ERLANG_VERSION"]} · #{@conf["DEBIAN_VERSION"]}"}
-          warn={born_stack(@born, @conf)}
+          label="elixir"
+          value={@conf["ELIXIR_VERSION"]}
+          warn={born_arg(@born, "ELIXIR", "elixir", @conf["ELIXIR_VERSION"])}
+        />
+        <.given
+          label="erlang"
+          value={@conf["ERLANG_VERSION"]}
+          warn={born_arg(@born, "OTP", "erlang", @conf["ERLANG_VERSION"])}
+        />
+        <.given
+          label="debian"
+          value={@conf["DEBIAN_VERSION"]}
+          warn={born_arg(@born, "DEBIAN", "debian", @conf["DEBIAN_VERSION"])}
         />
         <.given
           label="installer"
           value={installer(@conf)}
-          muted="the newest phx_new that runs on this stack"
+          muted="the newest phx.new that runs on this stack"
         />
         <div class="frow">
-          <label>phx.new</label>
+          <label>mix phx.new</label>
           <div class="flags">
             <label :for={{k, values} <- gen_flags()}>
               --{k}
@@ -206,34 +279,14 @@ defmodule ConsoleWeb.Deploy do
           phx-click="cancel"
           phx-value-id={@pending.id}
         >Keep it</button></span>
-        <%!-- The form's submit, not a click carrying the command: the
-              command was rendered onto this button, and a change and a
-              click in the same instant sent the command as it was before
-              the change — a --database chosen, a bare `new` run. Submitted,
-              the form travels whole and the server builds the line from it. --%>
-        <button :if={!@pending} class="btn primary" type="submit" form="new-project" disabled={@busy}>
-          {if @busy, do: "Creating…", else: "Create project"}
-        </button>
-        <%!-- The reverse of Create, on the same card: what the one makes,
-              the other takes away — files, containers, images and volumes.
-              It had a box of its own under "Workspace", beside the database
-              errand; the errand went, and a heading over one button named
-              only what the confirmation already says. Unlit on an empty
-              workspace, never hidden. --%>
-        <button
-          :if={!@deleting}
-          class={["btn danger", !@project? && "unlit"]}
-          aria-disabled={!@project? && "true"}
-          title={!@project? && "the workspace is empty: nothing to delete"}
-          phx-click={@project? && "run"}
-          phx-value-args="delete"
-        >Delete the project</button>
-        <span :if={@deleting} class="confirm on">Files, containers, images and volumes go.
-        <button class="btn danger" phx-click="confirm" phx-value-id={@deleting.id}>Yes, delete</button><button
-          class="btn"
-          phx-click="cancel"
-          phx-value-id={@deleting.id}
-        >Keep it</button></span>
+        <.job_button
+          :if={!@pending}
+          label={if @busy, do: "Creating…", else: "Create project"}
+          class="primary"
+          form="new-project"
+          args={String.replace_prefix(@cmd, "./wb.sh ", "")}
+          why={@busy && "a job is running"}
+        />
       </div>
     </div>
     """
@@ -255,16 +308,38 @@ defmodule ConsoleWeb.Deploy do
     default: nil,
     doc: "[word, title]: the project here was made with something else"
 
+  slot :mark, doc: "a reading of this given itself, chipped after the value"
+
   defp given(assigns) do
     ~H"""
     <div class="frow">
       <label>{@label}</label>
       <span class="ro">
         <span :if={@value} title={@title}>{@value}</span><span :if={!@value} class="nothing">{@muted}</span>
+        {render_slot(@mark)}
         <.chip :if={@warn} class="warn" title={List.last(@warn)}>{List.first(@warn)}</.chip>
-        <.link patch="/deploy?wb=config" title="config.conf, in the workbench drawer">change in config</.link>
+        <.link
+          class="go cog"
+          patch="/deploy?wb=config"
+          title="change it in config.conf, in the workbench drawer"
+        >
+          <.cog_mark /><span class="sr">Change {@label} in config.conf</span>
+        </.link>
       </span>
     </div>
+    """
+  end
+
+  # The cog on every given: the row is read here and changed in one
+  # place, config.conf — the same square icon button the eye is, so a
+  # reader who has met one has met both. It said "change in config" in
+  # words on every row until 2026-09-10, six times down one card.
+  defp cog_mark(assigns) do
+    ~H"""
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill-rule="evenodd"><path
+      d="M 10.4 5.3 L 10.3 1.9 L 13.7 1.9 L 13.6 5.3 L 15.7 6.1 L 17.9 3.7 L 20.3 6.1 L 17.9 8.3 L 18.7 10.4 L 22.1 10.3 L 22.1 13.7 L 18.7 13.6 L 17.9 15.7 L 20.3 17.9 L 17.9 20.3 L 15.7 17.9 L 13.6 18.7 L 13.7 22.1 L 10.3 22.1 L 10.4 18.7 L 8.3 17.9 L 6.1 20.3 L 3.7 17.9 L 6.1 15.7 L 5.3 13.6 L 1.9 13.7 L 1.9 10.3 L 5.3 10.4 L 6.1 8.3 L 3.7 6.1 L 6.1 3.7 L 8.3 6.1 Z M 12 8.6 a 3.4 3.4 0 1 0 0 6.8 a 3.4 3.4 0 1 0 0 -6.8 Z"
+      fill="currentColor"
+    /></svg>
     """
   end
 
@@ -273,25 +348,31 @@ defmodule ConsoleWeb.Deploy do
   # born with is the Record's to say, not this card's: the card is
   # intention, and it used to answer with the project's own stamp here,
   # which was the state slipping into the form.
-  defp installer(%{"PHX_NEW_VERSION" => v}) when v not in [nil, ""], do: "phx_new #{v}"
+  defp installer(%{"PHX_NEW_VERSION" => v}) when v not in [nil, ""], do: "phx.new #{v}"
   defp installer(_conf), do: nil
 
-  # The stack, only when the two have come apart — the one thing on this
+  # The stack, only where the two have come apart — the one thing on this
   # card the reader has to be told rather than left to notice, because
   # creating again would move the project off the stack it was built on.
   # A chip and not a sentence: two versions in one row is a state, and
-  # the house has a face for a state.
-  defp born_stack(%{"ELIXIR" => e, "OTP" => o, "DEBIAN" => d}, conf)
-       when is_binary(e) and is_binary(o) and is_binary(d) do
-    if {e, o, d} == {conf["ELIXIR_VERSION"], conf["ERLANG_VERSION"], conf["DEBIAN_VERSION"]},
-      do: nil,
-      else: [
-        "born on elixir #{e}",
-        "this project was built on elixir #{e} · erlang #{o} · #{d}; config.conf now names another stack, and creating again would move it"
-      ]
+  # the house has a face for a state. One row each, as the Record's
+  # Birth reads them (2026-09-10): the row that moved is the row that
+  # says so, and the elixir it was born on no longer speaks for the
+  # three.
+  defp born_arg(born, key, label, now) when is_map(born) do
+    case born[key] do
+      b when is_binary(b) and b != now ->
+        [
+          "born on #{b}",
+          "this project was built on #{label} #{b}; config.conf now names #{now || "another"}, and creating again would move it"
+        ]
+
+      _ ->
+        nil
+    end
   end
 
-  defp born_stack(_, _), do: nil
+  defp born_arg(_, _, _, _), do: nil
 
   def gen_flags, do: @gen_flags
 
@@ -348,6 +429,31 @@ defmodule ConsoleWeb.Deploy do
   def scaled_extra(pick) do
     if(pick.replicas && pick.replicas != 4, do: " --replicas #{pick.replicas}", else: "") <>
       if(pick.balancer == false, do: " --no-balancer", else: "")
+  end
+
+  @doc """
+  The line the picker's own buttons become: the verb of the button
+  pressed, and the target and options as they travelled with the form.
+  `nil` for anything else, so a button nobody wrote runs nothing.
+
+  It lives here, and not on the button, because a button is rendered
+  with the picker as it was and can be a change behind it — the
+  hazard `ConsoleWeb.Refs.job_button/1` explains.
+  """
+  def line(verb, pick) do
+    extra = fn name -> if(name == "scaled", do: scaled_extra(pick), else: "") end
+
+    case String.split(verb || "", " ") do
+      ["bake", name] when name in ~w(dev prod scaled) ->
+        cmdline("bake", name, extra.(name))
+
+      ["up"] ->
+        name = pick.target || "dev"
+        cmdline("up", name, extra.(name))
+
+      _ ->
+        nil
+    end
   end
 
   @doc """

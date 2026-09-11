@@ -1,9 +1,10 @@
 defmodule ConsoleWeb.Refs do
   @moduledoc """
   The house's notation (assets/design, components.css) as components:
-  the mention of a cartridge, the door on the app's port, the chip, and
-  `unlit` — the one way the console says *not available*: never hidden,
-  marked, with the reason in the title. There is no probe: a health
+  the mention of a cartridge, the door on the app's port, the chip, the
+  button that asks the workbench to run a line, and `unlit` — the one
+  way the console says *not available*: never hidden, marked, with the
+  reason in the title. There is no probe: a health
   endpoint is a door the console calls like any other.
   """
   use Phoenix.Component
@@ -100,6 +101,76 @@ defmodule ConsoleWeb.Refs do
       patch={"/project?paper=history&commit=#{@sha}"}
       title={Enum.join(Enum.reject([@subject, @date], &is_nil/1), " · ") <> " — open in History, with its diff"}
     >{String.slice(@sha, 0, 7)}</.link>
+    """
+  end
+
+  @doc """
+  A button that asks the workbench for a line of `wb.sh` — the one
+  shape every such button has: Bake, Down, Stop, Up, Build, Create,
+  Delete, and the Docker screen's removals.
+
+  Two ways of sending it, and which one is right is decided by where
+  the line comes from. A line that is only itself — `stop`, `down`,
+  `delete`, a prune — travels on the click, written on the button.
+  A line composed out of a form — the target picked, `--replicas`,
+  the flags of `phx.new` — must not: the button is rendered with the
+  form as it was, and a change and a click in the same instant sent
+  the line as it was BEFORE the change (a `--database` chosen and a
+  bare `new` run, which is why Create became a submit in the first
+  place). Give it `form`, and it submits that form instead: the values
+  travel whole and the server writes the line from them, with `name`
+  and `value` saying which button was pressed. What is rendered on it
+  is then only what it SAYS — its title — and never what it does.
+
+  Unlit is the house's: marked, never hidden, the reason in the title,
+  and nothing to press — a submit that cannot be pressed is a plain
+  button, so the form cannot travel by it either.
+  """
+  attr :label, :string, required: true
+
+  attr :args, :string,
+    default: nil,
+    doc: "the line without its ./wb.sh: what a click sends, and what the title says"
+
+  attr :form, :string,
+    default: nil,
+    doc: "the form whose values compose the line; pressed, the button submits it"
+
+  attr :name, :string, default: nil, doc: "with a form: which button was pressed"
+  attr :value, :string, default: nil
+  attr :why, :any, default: nil, doc: "unlit, with the reason"
+  attr :class, :any, default: nil, doc: "primary, danger, mini — the button's weight"
+
+  attr :event, :string,
+    default: "run",
+    doc: "the click's event, for the verbs that are not wb.sh lines"
+
+  attr :title, :any, default: nil, doc: "what it says of itself; the line when it says nothing"
+  attr :rest, :global
+
+  def job_button(assigns) do
+    assigns =
+      assign(assigns,
+        say: assigns.why || assigns.title || (assigns.args && "./wb.sh " <> assigns.args),
+        # A reason can arrive as false as easily as nil — `!@project? &&
+        # "…"` writes false — so this asks whether there is one, not
+        # whether it is nil.
+        sends: !assigns.why
+      )
+
+    ~H"""
+    <button
+      class={["btn", @class, @why && "unlit"]}
+      type={if @form && @sends, do: "submit", else: "button"}
+      form={@form && @sends && @form}
+      name={@form && @sends && @name}
+      value={@form && @sends && @value}
+      aria-disabled={@why && "true"}
+      title={@say}
+      phx-click={is_nil(@form) && @sends && @event}
+      phx-value-args={is_nil(@form) && @sends && @args}
+      {@rest}
+    >{@label}</button>
     """
   end
 

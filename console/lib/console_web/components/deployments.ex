@@ -3,15 +3,25 @@ defmodule ConsoleWeb.Deployments do
   The deployments as a sheet: the table — one row per deployment, the
   radio that picks it and what it is, its compose file baked or not, in
   sync or with its drift, up, stopped or down, its services as ports,
-  and Stop, Down and Bake — under a row the file itself, when its eye
+  and Bake, Down and Stop — under a row the file itself, when its eye
   is pressed, in a code box that wears its name, and under the table Up
-  and Build of the row picked, with the wb.sh line they are. It was two
+  of the row picked, with the wb.sh line it is. It was two
   cards until 2026-09-09, a picker of three boxes over a table of the
   same three rows, and Up twice on one screen. The plan is `ConsoleWeb.Record.deployments/1`; the Deploy
   tab places this under its two cards (it was the Record paper's third
   section until 2026-09-09: the Record says what the project is, this
   says what is baked and running), and the rail draws its own short
   row off the same plan in `ConsoleWeb.Board`.
+
+  The row's three buttons keep their slots — Bake, Down, Stop, in the
+  order the columns before them are read: Bake answers the file, Down
+  and Stop answer the status. A verb the row cannot do now is unlit
+  with the reason, not hidden (2026-09-10, when the order turned and
+  Stop and Down stopped coming and going).
+
+  The head carries no word of its own: it said *Topology* until
+  2026-09-10, which named the section and not what it holds — and the
+  rows under it say what there is, line by line.
 
   The eye is on every row: unlit with the remedy while the file is not
   baked, pressed on the one whose box is open under its row — one at a
@@ -85,19 +95,19 @@ defmodule ConsoleWeb.Deployments do
 
     ~H"""
     <section class="deployments">
-      <h3 title="the compose files baked into the workspace, one per deployment: the topology each brings up — pick one on its row, and Up or Build it under the table">
-        Deployments <span class="label">Topology</span>
+      <h3 title="the compose files baked into the workspace, one per deployment: the topology each brings up — pick one on its row, and Up it under the table">
+        Deployments
       </h3>
-      <form id="deploy-pick" phx-change="pick">
+      <form id="deploy-pick" phx-change="pick" phx-submit="deploy_run">
         <table class="rows deps">
           <thead>
             <tr>
-              <th title="the deployment: pick it here, and Up or Build it under the table">target</th>
+              <th title="the deployment: pick it here, and Up it under the table">target</th>
               <th title="the deployment's compose file, baked into the workspace, out of sync with the project, or not baked yet">
                 compose file
               </th>
               <th title="what the file declares that no cartridge asks for any more (+), and what a cartridge asks for that the file lacks (−); nothing when the file says what the cartridges ask">
-                differences
+                sync diff
               </th>
               <th>status</th>
               <th title="the services the compose file declares; with the deployment up, what docker compose ps says of each">
@@ -204,27 +214,28 @@ defmodule ConsoleWeb.Deployments do
                   </span>
                 </td>
                 <td class="act">
-                  <.deploy_button
-                    :if={d.status == "up"}
-                    verb="stop"
-                    name={d.deploy}
-                    status={@status}
-                    busy={@busy}
-                  />
-                  <.deploy_button
-                    :if={d.baked}
-                    verb="down"
-                    name={d.deploy}
-                    status={@status}
-                    busy={@busy}
-                    present={d.present}
-                  />
                   <.bake_button
                     name={d.deploy}
                     status={@status}
                     busy={@busy}
                     baked={d.baked}
                     extra={(d.deploy == "scaled" && @scaled_extra) || ""}
+                    form="deploy-pick"
+                  />
+                  <.deploy_button
+                    verb="down"
+                    name={d.deploy}
+                    status={@status}
+                    busy={@busy}
+                    baked={d.baked}
+                    present={d.present}
+                  />
+                  <.deploy_button
+                    verb="stop"
+                    name={d.deploy}
+                    status={@status}
+                    busy={@busy}
+                    baked={d.baked}
                   />
                 </td>
               </tr>
@@ -239,35 +250,44 @@ defmodule ConsoleWeb.Deployments do
         <div class="cmds">
           <div class="cmd">./wb.sh up --deploy {@pickname}{@extra}</div>
         </div>
-        <button
-          class="btn primary"
-          type="button"
-          disabled={@busy or @empty or @running == @pickname}
-          title={
+        <%!-- The verb of the row picked: what it runs is composed out of
+              the picker above — the radio, --replicas, balancer — so it
+              sends that form and the server writes the line from what is
+              in it. What it carries is only what it says.
+
+              Build stood beside it until 2026-09-10 and does nothing Up
+              does not: `up --deploy prod` rebuilds the release image on
+              each deploy, so all Build added was *not deploying*. That
+              case is real and rare, and it is the one that wants a flag
+              the button cannot send — `--no-cache` and the rest go to
+              `docker compose build` — so it lives in the CLI, where Tab
+              completes it from the catalog. --%>
+        <.job_button
+          label={
+            if @running && @running != @pickname,
+              do: "Replace #{@running} with #{@pickname}",
+              else: "Up #{@pickname}"
+          }
+          class="primary"
+          form="deploy-pick"
+          name="do"
+          value="up"
+          args={"up --deploy #{@pickname}#{@extra}"}
+          why={
             cond do
+              @busy -> "a job is running"
               @empty -> "the workspace is empty: create a project first"
               @running == @pickname -> "#{@running} is up: its row stops it, or takes it down"
-              @running -> "one deployment at a time: the composes share the project name"
               true -> nil
             end
           }
-          phx-click="run"
-          phx-value-args={"up --deploy #{@pickname}#{@extra}"}
-        >{if @running && @running != @pickname,
-          do: "Replace #{@running} with #{@pickname}",
-          else: "Up #{@pickname}"}</button>
-        <button
-          class="btn"
-          type="button"
-          disabled={@busy or @empty}
           title={
-            if @empty,
-              do: "the workspace is empty: create a project first",
-              else: "build the #{@pickname} image without bringing it up"
+            if @running,
+              do:
+                "./wb.sh up --deploy #{@pickname}#{@extra} — one deployment at a time: #{@running} goes down",
+              else: nil
           }
-          phx-click="run"
-          phx-value-args={"build --deploy #{@pickname}#{@extra}"}
-        >Build {@pickname}</button>
+        />
       </div>
     </section>
     """

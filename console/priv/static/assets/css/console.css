@@ -351,7 +351,7 @@ table.rows tr.new{animation:seat 1.2s ease-out}
 #slots td.og{width:1%;white-space:nowrap;padding-left:10px}
 #slots td.og .chip+.chip{margin-left:6px}
 #slots td.og .commit-ref{margin-left:6px}
-.git .row .head{display:inline-flex;gap:8px;align-items:baseline;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.git .row .head .commit-ref{margin-right:8px}
 #deployments td.k{white-space:nowrap}
 #deployments tr.hd th{text-align:left;font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);padding:0 10px 4px 0;border-bottom:1px solid var(--line)}
 #deployments tr.hd + tr td{border-top:0}
@@ -883,9 +883,12 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
 /* Set, but not by the reader: this one the project already carries, so
    it steps out of the accent the house gives every other control. */
 .choices label.has input{accent-color:var(--muted)}
-.git{display:grid;gap:6px;font-family:var(--mono);font-size:12px}
-.git .row{display:flex;justify-content:space-between;gap:10px;align-items:center}
-.git .row .k{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px;color:var(--muted)}
+/* The rail's Git rows wrap their value under the right edge: a long commit
+   subject or signer must not widen the grid's track and scroll the rail. */
+.git{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;font-family:var(--mono);font-size:12px}
+.git .row{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.git .row>:last-child{min-width:0;text-align:right;overflow-wrap:anywhere}
+.git .row .k{flex:none;font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px;color:var(--muted)}
 .go.done{background:var(--surface);color:var(--ink);border:1px solid var(--ink);box-shadow:none}
 .log{font-family:var(--code-face,var(--mono));font-size:var(--code-size,12px);line-height:var(--code-leading,1.55);background:var(--term);color:var(--term-ink);border-radius:3px;padding:12px 14px;min-height:120px;max-height:260px;overflow:auto;white-space:pre-wrap;border:1px solid var(--term-line)}
 .log .dim{color:var(--term-dim)}.log .add{color:var(--ansi-green)}.log .upd{color:var(--ansi-yellow)}.log .ok{color:var(--accent);font-weight:500}

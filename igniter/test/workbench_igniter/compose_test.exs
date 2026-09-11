@@ -12,8 +12,8 @@ defmodule WorkbenchIgniter.ComposeTest do
 
   # The pod deployments, as `wb.sh bake` and `up --deploy prod` ask for them.
   @pod ~w(--app-name lorem_ipsum --uid 1000 --gid 1000 --app-port 4000 --pgadmin-port 5050
-          --grafana-port 3000 --postgres-version latest --pgadmin-version latest
-          --nginx-version alpine)
+          --adminer-port 8080 --grafana-port 3000 --postgres-version latest
+          --pgadmin-version latest --adminer-version 6 --nginx-version alpine)
   @dev ~w(--deploy dev --image lorem-ipsum:local --dockerfile Dockerfile.local) ++ @pod
   @prod ~w(--deploy prod --image lorem-ipsum:0.1.0-prod --dockerfile Dockerfile) ++ @pod
 
@@ -76,7 +76,17 @@ defmodule WorkbenchIgniter.ComposeTest do
     {"scaled-db-balancer-cluster-4-k6-monitoring.yml",
      @scaled ++ ~w(--services postgres,pgadmin,k6,prometheus,grafana --clustering) ++ @balancer},
     {"scaled-nodb-nobalancer-nocluster-4-monitoring.yml",
-     @scaled ++ ~w(--services prometheus,grafana --no-clustering) ++ @no_balancer}
+     @scaled ++ ~w(--services prometheus,grafana --no-clustering) ++ @no_balancer},
+    # The adminer cartridge: on every adapter, beside pgAdmin or alone;
+    # on SQLite it mounts the file and runs as its owner.
+    {"dev-db-adminer.yml", @dev ++ ~w(--services postgres,pgadmin,adminer)},
+    {"prod-postgres-adminer.yml", @prod ++ ~w(--services postgres,adminer)},
+    {"dev-mysql-adminer.yml", @dev ++ ~w(--services mysql,adminer --mysql-version 8)},
+    {"dev-mssql-adminer.yml", @dev ++ ~w(--services mssql,adminer --mssql-version 2022-latest)},
+    {"dev-sqlite-adminer.yml", @dev ++ ~w(--services sqlite,adminer)},
+    {"prod-sqlite-adminer.yml", @prod ++ ~w(--services sqlite,adminer)},
+    {"scaled-db-adminer-balancer-cluster-4.yml",
+     @scaled ++ ~w(--services postgres,adminer --clustering) ++ @balancer}
   ]
 
   describe "render/1 writes the fixture" do
@@ -114,6 +124,19 @@ defmodule WorkbenchIgniter.ComposeTest do
       assert {:error, "missing: --app-port, --uid, --gid"} =
                Compose.plan_from_argv(
                  ~w(--deploy dev --app-name x --image i --dockerfile d --services postgres)
+               )
+    end
+
+    test "asks for the adminer port with adminer, on the pod alone" do
+      assert {:error, "missing: --app-port, --uid, --gid, --adminer-port"} =
+               Compose.plan_from_argv(
+                 ~w(--deploy dev --app-name x --image i --dockerfile d --services postgres,adminer)
+               )
+
+      assert {:ok, _} =
+               Compose.plan_from_argv(
+                 ~w(--deploy scaled --app-name x --image i --dockerfile d --services postgres,adminer) ++
+                   @balancer
                )
     end
 
@@ -171,15 +194,16 @@ defmodule WorkbenchIgniter.ComposeTest do
       assert {["postgres"], _} = Compose.services(phx_test_project())
     end
 
-    test "with pgadmin, k6 and monitoring inserted, every service in catalog order" do
+    test "with pgadmin, adminer, k6 and monitoring inserted, every service in catalog order" do
       igniter =
         phx_test_project()
         |> Igniter.compose_task("workbench.install.pgadmin", [])
+        |> Igniter.compose_task("workbench.install.adminer", [])
         |> Igniter.compose_task("workbench.install.k6", [])
         |> Igniter.compose_task("workbench.install.monitoring", [])
         |> apply_igniter!()
 
-      assert {["pgadmin", "k6", "prometheus", "grafana", "postgres"], _} =
+      assert {["pgadmin", "adminer", "k6", "prometheus", "grafana", "postgres"], _} =
                Compose.services(igniter)
     end
 
@@ -238,6 +262,9 @@ defmodule WorkbenchIgniter.ComposeTest do
       assert Compose.service_names(:dev, ~w(postgres pgadmin)) ==
                %{names: ~w(network app database pgadmin), optional: [], replicas: false}
 
+      assert Compose.service_names(:dev, ~w(mysql adminer)).names ==
+               ~w(network app database adminer)
+
       assert Compose.service_names(:prod, ~w(postgres k6 prometheus grafana)) ==
                %{
                  names: ~w(network app migrate database k6 prometheus grafana),
@@ -252,8 +279,8 @@ defmodule WorkbenchIgniter.ComposeTest do
       assert Compose.service_names(:dev, []).names == ~w(network app)
     end
 
-    test "the scaled deployment: replicas for app, the balancer optional, no pgAdmin" do
-      assert Compose.service_names(:scaled, ~w(postgres pgadmin grafana)) ==
+    test "the scaled deployment: replicas for app, the balancer optional, no pgAdmin, no Adminer" do
+      assert Compose.service_names(:scaled, ~w(postgres pgadmin adminer grafana)) ==
                %{names: ~w(migrate database grafana), optional: ["balancer"], replicas: true}
     end
   end

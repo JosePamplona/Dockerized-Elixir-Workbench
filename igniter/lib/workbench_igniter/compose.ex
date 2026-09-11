@@ -12,7 +12,7 @@ defmodule WorkbenchIgniter.Compose do
   is in — and the **services**: what the project's cartridges ask the
   workspace for, by name — a database (`postgres`, `mysql`, `mssql`,
   or `sqlite`: no server, a volume for the file in a release), `pgadmin`,
-  `k6`, `prometheus` and `grafana` — declared by each cartridge's
+  `adminer`, `k6`, `prometheus` and `grafana` — declared by each cartridge's
   `services/1` and gathered by `Features.services/1`. One database at most; the servers take the
   credentials phx.new configures the project with
   (`WorkbenchIgniter.Features.Ecto.credentials/1`), so the compose and
@@ -44,10 +44,13 @@ defmodule WorkbenchIgniter.Compose do
             internal_port: pos_integer(),
             pgadmin_port: pos_integer() | nil,
             pgadmin_internal_port: pos_integer(),
+            adminer_port: pos_integer() | nil,
+            adminer_internal_port: pos_integer(),
             grafana_port: pos_integer() | nil,
             grafana_internal_port: pos_integer(),
             postgres_version: String.t(),
             pgadmin_version: String.t(),
+            adminer_version: String.t(),
             nginx_version: String.t(),
             k6_version: String.t(),
             mysql_version: String.t(),
@@ -71,10 +74,13 @@ defmodule WorkbenchIgniter.Compose do
               internal_port: 4000,
               pgadmin_port: nil,
               pgadmin_internal_port: 5050,
+              adminer_port: nil,
+              adminer_internal_port: 8080,
               grafana_port: nil,
               grafana_internal_port: 3000,
               postgres_version: "latest",
               pgadmin_version: "latest",
+              adminer_version: "6",
               nginx_version: "alpine",
               k6_version: "latest",
               mysql_version: "8",
@@ -109,10 +115,13 @@ defmodule WorkbenchIgniter.Compose do
     internal_port: :integer,
     pgadmin_port: :integer,
     pgadmin_internal_port: :integer,
+    adminer_port: :integer,
+    adminer_internal_port: :integer,
     grafana_port: :integer,
     grafana_internal_port: :integer,
     postgres_version: :string,
     pgadmin_version: :string,
+    adminer_version: :string,
     nginx_version: :string,
     k6_version: :string,
     mysql_version: :string,
@@ -239,7 +248,7 @@ defmodule WorkbenchIgniter.Compose do
 
     case deploy do
       :scaled ->
-        # No pod, no pgAdmin: the scaled template renders neither.
+        # No pod, no pgAdmin and no Adminer: the scaled template renders none of them.
         %{
           names:
             if(server, do: ["migrate"] ++ init ++ ["database"], else: []) ++
@@ -258,7 +267,7 @@ defmodule WorkbenchIgniter.Compose do
               init ++
               if(sqlite and not dev, do: ["data_init"], else: []) ++
               if(server, do: ["database"], else: []) ++
-              for(s <- ~w(pgadmin k6 prometheus grafana), s in services, do: s),
+              for(s <- ~w(pgadmin adminer k6 prometheus grafana), s in services, do: s),
           optional: [],
           replicas: false
         }
@@ -287,14 +296,15 @@ defmodule WorkbenchIgniter.Compose do
   end
 
   # The pod deployments need the app's port and the build identity; a
-  # port is asked for with the service that publishes it — pgAdmin's on
-  # the pod, Grafana's on every topology.
+  # port is asked for with the service that publishes it — pgAdmin's and
+  # Adminer's on the pod, Grafana's on every topology.
   defp required(%Plan{deploy: deploy, services: services}) do
     pod = deploy != :scaled
 
     [:app_name, :image, :dockerfile] ++
       if(pod, do: [:app_port, :uid, :gid], else: []) ++
       if(pod and "pgadmin" in services, do: [:pgadmin_port], else: []) ++
+      if(pod and "adminer" in services, do: [:adminer_port], else: []) ++
       if("grafana" in services, do: [:grafana_port], else: [])
   end
 
@@ -313,7 +323,8 @@ defmodule WorkbenchIgniter.Compose do
       server: server,
       sqlite: engine == "sqlite",
       db_user: credentials && credentials.user,
-      db_password: credentials && credentials.password
+      db_password: credentials && credentials.password,
+      db_port: credentials && credentials.port
     ]
   end
 
@@ -370,8 +381,11 @@ defmodule WorkbenchIgniter.Compose do
         internal_port: plan.internal_port,
         pgadmin_port: plan.pgadmin_port,
         pgadmin_internal_port: plan.pgadmin_internal_port,
+        adminer_port: plan.adminer_port,
+        adminer_internal_port: plan.adminer_internal_port,
         postgres_version: plan.postgres_version,
         pgadmin_version: plan.pgadmin_version,
+        adminer_version: plan.adminer_version,
         k6_version: plan.k6_version,
         mysql_version: plan.mysql_version,
         mssql_version: plan.mssql_version,
@@ -381,6 +395,7 @@ defmodule WorkbenchIgniter.Compose do
         grafana_internal_port: plan.grafana_internal_port,
         postgres: database[:engine] == "postgres",
         pgadmin: "pgadmin" in plan.services,
+        adminer: "adminer" in plan.services,
         k6: "k6" in plan.services,
         prometheus: "prometheus" in plan.services,
         grafana: "grafana" in plan.services,

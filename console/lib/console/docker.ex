@@ -22,7 +22,7 @@ defmodule Console.Docker do
   @console "workbench_console"
   @project "com.docker.compose.project"
   @service "com.docker.compose.service"
-  @house ~w(workbench workbench-console hexpm/elixir postgres mysql mcr.microsoft.com/mssql/server dpage/pgadmin4 registry.k8s.io/pause nginx grafana/k6 prom/prometheus grafana/grafana)
+  @house ~w(workbench workbench-console hexpm/elixir postgres mysql mcr.microsoft.com/mssql/server dpage/pgadmin4 adminer registry.k8s.io/pause nginx grafana/k6 prom/prometheus grafana/grafana)
 
   # --- containers -------------------------------------------------------------
 
@@ -114,11 +114,12 @@ defmodule Console.Docker do
   defp order("app" <> _), do: 0
   defp order("database"), do: 1
   defp order("pgadmin"), do: 2
-  defp order("prometheus"), do: 3
-  defp order("grafana"), do: 4
-  defp order("network"), do: 5
-  defp order("balancer"), do: 6
-  defp order("migrate"), do: 7
+  defp order("adminer"), do: 3
+  defp order("prometheus"), do: 4
+  defp order("grafana"), do: 5
+  defp order("network"), do: 6
+  defp order("balancer"), do: 7
+  defp order("migrate"), do: 8
   defp order(_), do: 9
 
   @doc "The compose project the status names, or nil without one."

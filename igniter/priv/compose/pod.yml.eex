@@ -37,7 +37,9 @@ services:
       - <%= @app_port %>:<%= @internal_port %><%= if @pgadmin do %>
       # pgAdmin port, with the pgadmin cartridge in. The database is not
       # published: it is only reachable from inside this workspace.
-      - <%= @pgadmin_port %>:<%= @pgadmin_internal_port %><% end %><%= if @grafana do %>
+      - <%= @pgadmin_port %>:<%= @pgadmin_internal_port %><% end %><%= if @adminer do %>
+      # Adminer port, with the adminer cartridge in.
+      - <%= @adminer_port %>:<%= @adminer_internal_port %><% end %><%= if @grafana do %>
       # Grafana port, with the monitoring cartridge in. Prometheus is not
       # published: Grafana reads it from inside this workspace.
       - <%= @grafana_port %>:<%= @grafana_internal_port %><% end %>
@@ -259,6 +261,34 @@ services:
     configs:
       - source: pgadmin_servers
         target: /pgadmin4/servers.json
+<% end %><%= if @adminer do %>
+  # Adminer, with the adminer cartridge in: one page on the workspace's
+  # database, whatever the adapter, on its own port beside the app's.
+  # The login it opens with is the project's own file (adminer/login.php,
+  # the directory mounted as the image's plugins-enabled/); where the
+  # database is and which one to open are this deployment's, so they are
+  # said here, and the file's own values stand for an Adminer run by hand.
+  adminer:
+    image: adminer:<%= @adminer_version %>
+    network_mode: "service:network"<%= if @server do %>
+    environment:
+      WORKBENCH_SERVER: 127.0.0.1:<%= @db_port %>
+      WORKBENCH_DATABASE: <%= @app_name %>_<%= if @dev, do: "dev", else: "prod" %>
+    depends_on:
+      - database<% end %><%= if @sqlite do %>
+    environment:
+      # The SQLite file, where this deployment keeps it.
+      WORKBENCH_DATABASE: <%= if @dev, do: "/app/src/#{@app_name}_dev.db", else: "/app/data/#{@app_name}_prod.db" %>
+    # The file's owner — the workspace's user on the source, nobody on the
+    # release's volume — so SQLite can write its journal beside the file.
+    user: "<%= if @dev, do: "#{@uid}:#{@gid}", else: "65534:65534" %>"<% end %><%= if @sqlite and not @dev do %>
+    depends_on:
+      data_init:
+        condition: service_completed_successfully<% end %>
+    volumes:
+      - ./adminer:/var/www/html/plugins-enabled:ro<%= if @sqlite and @dev do %>
+      - .:/app/src<% end %><%= if @sqlite and not @dev do %>
+      - data:/app/data<% end %>
 <% end %><%= if @k6 do %>
   # A load tool, not a service of the deployment: k6 runs to completion,
   # so it sits under a profile 'up' never starts — './wb.sh k6 [SCRIPT]'

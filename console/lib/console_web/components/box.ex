@@ -616,7 +616,7 @@ defmodule ConsoleWeb.Box do
         )
       )
 
-    argv = argv(assigns.box, assigns.args)
+    argv = line_argv(assigns.box, assigns.args, insert, locked)
 
     assigns =
       assign(assigns,
@@ -628,7 +628,14 @@ defmodule ConsoleWeb.Box do
         going: going,
         blockers: blockers,
         argv: argv,
-        inserted_args: (insert && insert["argv"]) || []
+        # What it went in with, for the fields to start from — the ones
+        # that are locked and the ones that can be run again (`rerun:
+        # adds`), which went back to their defaults and so forgot.
+        inserted_args: (insert && insert["argv"]) || [],
+        from_insert: insert != nil,
+        # Insertable while it is not in, and still while it is when
+        # inserting again adds to what is there (`rerun: adds`).
+        can_insert: !assigns.installed || assigns.box["rerun"] == "adds"
       )
 
     ~H"""
@@ -706,7 +713,7 @@ defmodule ConsoleWeb.Box do
                   type="checkbox"
                   id={"opt-#{o["name"]}"}
                   name={"opt[#{o["name"]}]"}
-                  checked={checked?(o, @args, @locked, @inserted_args)}
+                  checked={checked?(o, @args, @c["state"] || %{}, @from_insert, @inserted_args)}
                   disabled={@locked}
                 />
                 <input
@@ -714,7 +721,7 @@ defmodule ConsoleWeb.Box do
                   type="text"
                   id={"opt-#{o["name"]}"}
                   name={"opt[#{o["name"]}]"}
-                  value={text_value(o, @args, @locked, @inserted_args)}
+                  value={text_value(o, @args, @c["state"] || %{}, @from_insert, @inserted_args)}
                   placeholder={
                     if @locked && @insert == nil,
                       do: "inserted by hand: value unknown",
@@ -727,56 +734,89 @@ defmodule ConsoleWeb.Box do
             <% end %>
           <% end %>
         </div>
-        <div class="cmd">
-          ./wb.sh add {@box["name"]}{if @argv != [], do: " " <> Enum.join(@argv, " ")}
+        <%!-- One foot per verb, each with the line it is: a cartridge
+              that is not in can be inserted, one that is in can be
+              ejected, and the two that can be run again to add — `ash`
+              and the `chiefs_setup` collection — have both at once, one
+              under the other. A button that says `Already inserted` is
+              not an action that cannot run but a state wearing a
+              button's clothes; what is in is said by the mention's dot
+              and by these notes. Unlit stays for the verbs that ARE conceivable
+              here and cannot run now: a dirty tree, a cartridge missing,
+              nothing to revert. --%>
+        <div :if={@can_insert} class="foot">
+          <div class="cmd">
+            ./wb.sh add {@box["name"]}{if @argv != [], do: " " <> Enum.join(@argv, " ")}
+          </div>
+          <.job_button
+            label={
+              cond do
+                @box["pending"] ->
+                  "Not done yet"
+
+                @missing != [] ->
+                  "Insert #{hd(@missing)} first"
+
+                @left == :asking ->
+                  "Asking…"
+
+                is_list(@left) and @left == [] ->
+                  "Every pick is in"
+
+                is_list(@left) ->
+                  "Insert #{length(@left)} cartridge#{if length(@left) == 1, do: "", else: "s"}"
+
+                @installed ->
+                  "Add to cartridge"
+
+                true ->
+                  "Insert cartridge"
+              end
+            }
+            class="primary"
+            form="insert-form"
+            args={"add #{@box["name"]}#{if @argv != [], do: " " <> Enum.join(@argv, " ")}"}
+            why={
+              cond do
+                @box["pending"] -> "no installer yet: nothing to run"
+                not @clean -> "the tree has changes git does not have — commit first"
+                @missing != [] -> "#{hd(@missing)} has to go in first"
+                @left == :asking -> "reading what is in"
+                is_list(@left) and @left == [] -> "every cartridge of this box is in"
+                true -> nil
+              end
+            }
+          />
+          <span class="note">{insert_note(assigns)}</span>
         </div>
-        <div class="acts">
-          <button
-            class={["go", (@locked || (@left && @left == [])) && "done"]}
-            type="submit"
-            disabled={
-              @box["pending"] || @locked || not @clean || @missing != [] || (@left && @left == []) ||
-                @left == :asking
-            }
-          >
-            {cond do
-              @box["pending"] ->
-                "Not done yet"
-
-              @locked ->
-                "Already inserted"
-
-              @missing != [] ->
-                "Insert #{hd(@missing)} first"
-
-              @left == :asking ->
-                "Asking…"
-
-              is_list(@left) ->
-                if @left == [],
-                  do: "Every pick is in",
-                  else: "Insert #{length(@left)} cartridge#{if length(@left) == 1, do: "", else: "s"}"
-
-              @installed ->
-                "Add to cartridge"
-
-              true ->
-                "Insert cartridge"
-            end}
-          </button>
-          <button
-            :if={@installed}
-            class="eject"
-            type="button"
-            phx-click="eject"
+        <div :if={@installed} class="foot">
+          <div class="cmd">{eject_line(@box, @going)}</div>
+          <.job_button
+            label={if @box["collection"], do: "Eject #{length(@going)}", else: "Eject"}
+            class="danger"
+            event="eject"
             phx-value-name={@box["name"]}
-            disabled={
-              not @clean || @blockers != [] ||
-                if @box["collection"], do: @going == [], else: is_nil(@insert)
-            }
             title={eject_title(@box, @insert, @going, @blockers)}
-          >{if @box["collection"], do: "Eject #{length(@going)}", else: "Eject"}</button>
-          <span class="note">{install_note(assigns)}</span>
+            why={
+              cond do
+                not @clean ->
+                  "the tree has changes git does not have — commit first"
+
+                @blockers != [] ->
+                  Enum.join(@blockers, "; ") <> " — eject those first"
+
+                @box["collection"] && @going == [] ->
+                  "no cartridge of this box left a commit to revert"
+
+                !@box["collection"] && is_nil(@insert) ->
+                  eject_title(@box, @insert, @going, @blockers)
+
+                true ->
+                  nil
+              end
+            }
+          />
+          <span class="note">{eject_note(assigns)}</span>
         </div>
       </form>
       <%!-- The box's runs, each the row the Jobs screen draws: the same
@@ -843,7 +883,10 @@ defmodule ConsoleWeb.Box do
         disabled={@has || @group_locked || @locked || @need != []}
         title={@need != [] && "builds on #{Enum.join(@need, " && ")}, not in the project yet"}
       />
-      <span>{@c["value"]}<span :if={@has} class="in">in</span><span
+      <%!-- `in` marks what the project has where the reader can still
+            add beside it (rerun: adds); locked, everything checked is in,
+            and the word said nothing. --%>
+      <span>{@c["value"]}<span :if={@has && !@locked} class="in">in</span><span
         :if={!@has && @need != []}
         class="in need"
       >needs {Enum.join(@need, " + ")}</span><span
@@ -855,33 +898,44 @@ defmodule ConsoleWeb.Box do
     """
   end
 
-  defp checked?(o, args, locked, inserted) do
+  # What the reader has just said wins; then what the project reports of
+  # the cartridge (`state/1`) — a base cartridge in from birth has no
+  # Insert commit, and its --binary-id read unchecked with the project
+  # saying true; then what it went in with, whether the field is locked
+  # or open; then the default. The choices read the state already.
+  defp checked?(o, args, state, from_insert, inserted) do
     cond do
-      locked ->
+      Map.has_key?(args, o["name"]) ->
+        args[o["name"]] == "on"
+
+      is_boolean(state[o["name"]]) ->
+        state[o["name"]]
+
+      from_insert ->
         ("--" <> String.replace(o["name"], "_", "-")) in inserted ||
           (o["default"] == true &&
              ("--no-" <> String.replace(o["name"], "_", "-")) not in inserted)
-
-      Map.has_key?(args, o["name"]) ->
-        args[o["name"]] == "on"
 
       true ->
         o["default"] == true
     end
   end
 
-  defp text_value(o, args, locked, inserted) do
+  defp text_value(o, args, state, from_insert, inserted) do
     flag = "--" <> String.replace(o["name"], "_", "-")
 
     cond do
-      locked ->
+      Map.has_key?(args, o["name"]) ->
+        args[o["name"]]
+
+      state[o["name"]] not in [nil, "", []] ->
+        state[o["name"]] |> List.wrap() |> Enum.join(",")
+
+      from_insert ->
         case Enum.drop_while(inserted, &(&1 != flag)) do
           [_, v | _] -> v
           _ -> o["default"]
         end
-
-      Map.has_key?(args, o["name"]) ->
-        args[o["name"]]
 
       true ->
         o["default"]
@@ -890,6 +944,20 @@ defmodule ConsoleWeb.Box do
 
   @doc "The installer's argv from the form as filled."
   def argv(box, args), do: Enum.flat_map(box["options"] || [], &option_argv(&1, args))
+
+  @doc """
+  The options the box's line shows: what the open form says, and for a
+  cartridge that is in and cannot be run again, what it went in with —
+  its insert's own argv. The line read the form's live values in both
+  cases until 2026-09-10, and those are empty while the form is locked,
+  so the box said `add ecto` of a cartridge inserted with `--database
+  postgres`. With nothing to read — inserted by a hand that left no
+  commit, or born with the project — the line is the bare verb, which
+  is all that is known.
+  """
+  def line_argv(box, args, insert, locked)
+  def line_argv(_box, _args, %{"argv" => argv}, true), do: argv
+  def line_argv(box, args, _insert, _locked), do: argv(box, args)
 
   # One option's flags: nothing when the form says what the default says.
   defp option_argv(o, args) do
@@ -964,7 +1032,12 @@ defmodule ConsoleWeb.Box do
   end
 
   # What would be left standing on nothing: one level, not the transitive walk.
-  defp eject_blockers(box, status, going) do
+  @doc """
+  What stops an eject: the cartridges in the project that build on one
+  of those going, each named with what it builds on. The shelf's rows
+  ask the same before lighting their Eject.
+  """
+  def eject_blockers(box, status, going) do
     out = MapSet.new(going)
 
     for c <- Cartridges.installed(status),
@@ -995,40 +1068,49 @@ defmodule ConsoleWeb.Box do
     end
   end
 
-  defp install_note(a) do
+  # The line the eject is: a collection's is one revert per cartridge,
+  # newest first, and it was only ever in the button's title.
+  defp eject_line(%{"collection" => true}, going) when going != [],
+    do: Enum.map_join(going, " && ", &"./wb.sh eject #{&1["feature"]}")
+
+  defp eject_line(box, _going), do: "./wb.sh eject #{box["name"]}"
+
+  # A note each, for the verb it stands under.
+  defp insert_note(a) do
     cond do
-      not a.clean -> "the tree has changes git does not have — commit first"
-      a.blockers != [] -> Enum.join(a.blockers, "; ") <> ": eject those first"
-      is_list(a.left) -> collection_note(a)
-      true -> cartridge_note(a)
-    end
-  end
+      not a.clean ->
+        "the tree has changes git does not have — commit first"
 
-  # A collection's note: what its insert queues, what its eject takes out.
-  defp collection_note(%{left: left}) when left != [],
-    do: "one commit per cartridge — what is in already is skipped"
-
-  defp collection_note(%{going: going}) when going != [],
-    do:
-      "Eject takes its #{length(going)} cartridge#{if length(going) == 1, do: "", else: "s"} out, newest first — one revert each"
-
-  defp collection_note(_a),
-    do: "the box leaves no commit of its own, && none of its cartridges has one either"
-
-  # A plain cartridge's note: locked by its insert, rerunnable, or what it still needs.
-  defp cartridge_note(a) do
-    cond do
-      a.locked && a.insert ->
-        "inserted once, with these options (from its commit); eject to change them"
-
-      a.locked ->
-        elem(Cartridges.origin(a.status, a.c), 2)
+      is_list(a.left) and a.left != [] ->
+        "one commit per cartridge — what is in already is skipped"
 
       a.installed && a.box["rerun"] == "adds" ->
         "every option is a package: what is in stays, what you add is queued"
 
       !a.installed && a.missing != [] ->
         "builds on #{Enum.join(a.missing, " && ")}, not in the project yet"
+
+      true ->
+        ""
+    end
+  end
+
+  defp eject_note(a) do
+    cond do
+      a.blockers != [] ->
+        Enum.join(a.blockers, "; ") <> ": eject those first"
+
+      a.box["collection"] && a.going != [] ->
+        "takes its #{length(a.going)} cartridge#{if length(a.going) == 1, do: "", else: "s"} out, newest first — one revert each"
+
+      a.box["collection"] ->
+        "the box leaves no commit of its own, && none of its cartridges has one either"
+
+      a.locked && a.insert ->
+        "inserted once, with these options (from its commit); eject to change them"
+
+      a.locked ->
+        elem(Cartridges.origin(a.status, a.c), 2)
 
       true ->
         ""

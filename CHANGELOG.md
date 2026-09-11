@@ -16,6 +16,23 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **Insert and Eject on the shelf's rows.** The last column of the
+  Inserted list ejects the row's cartridge — the bare `eject NAME`,
+  unlit with the reason when the tree is dirty, when another cartridge
+  builds on it, when it came in from birth or by hand and left no
+  commit to revert, or when it is a collection, whose eject is its
+  box's — and On the shelf and Not done insert theirs: `add NAME` with
+  the defaults, the options being the box's to pick; unlit without an
+  installer, a project, a clean tree or a requirement. The rows are no
+  longer links, as the Inserted rows were not: the mention opens the
+  box.
+- **On the shelf and Not done read in the Inserted list's table**,
+  columns included: the parameters each cartridge takes with their
+  type — or their values, when the cartridge declares choices
+  (`postgres | mysql | mssql | sqlite3`; an open choice ends in `…`, a
+  long one shows four and the count, the whole list in the title) —
+  and the addresses it would open, shut, `not inserted` for the
+  reason. The summary rides on the name's title.
 - **A conformance suite for the cartridge contract**, beside the
   catalog test that already installs every cartridge and checks its
   mark lights for it alone. Every cartridge with options is inserted
@@ -210,6 +227,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **A flag in ink, what follows it dimmed.** The installation
+  parameters read `--endpoint` with `/health` dimmed after it — on the
+  shelf the type or the values in its place — and the Birth table's
+  arguments the same; a flag at its default is said in its title, no
+  longer by dimming the whole flag. The `in` mark beside a choice goes
+  when the box is locked: everything checked is in.
 - **The rail's Containers section drops its note** — *No deployment is
   up and these are still here: Deploy → Down removes them* — written
   when the Deployments section could only say `down`. It reads
@@ -601,6 +624,90 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   — Stop, Down, Delete, a prune — still travel on the click, and an
   unlit submit is rendered as a plain button so the form cannot leave
   by it either.
+- **The Inserted list says what a cartridge went in with, even when
+  the cartridge does not.** Its *installation parameters* column is
+  drawn from what each cartridge reports of itself (`state/1`), and
+  `healthcheck` reported nothing — it had no `state/1`, so it answered
+  the default `%{}` and a project inserted with `--endpoint /health3
+  --open-api` showed an empty cell. Two fixes, one on each side.
+  `ecto` reported its database alone, so a project born with
+  `--binary-id` read as if it had not been; it reports `binary_id` too
+  now, off the generators entry `phx.new --binary-id` writes. And
+  `healthcheck` reads its state back off what its install wrote: the
+  endpoint is the router scope that routes `HealthcheckController`,
+  and the OpenApiSpex variant is there when its schema module is. And
+  the console, when a cartridge reports nothing, reads the parameters
+  off the cartridge's Insert commit (`ConsoleWeb.Record.params/3`),
+  marking the ones that say the default as the project's own reading
+  does. What the project reports wins; the commit is what is left to
+  read when it says nothing — a cartridge without `state/1`, or an
+  edition from before it had one. And the column now spaces its flags:
+  its rules stayed behind with the Birth table when the list moved to
+  the shelf, so two flags ran together (`--endpoint /health3--open-api`)
+  and broke in the middle of the second; they wrap between flags now,
+  never inside one.
+- **A cartridge's box keeps what it went in with, and its foot is the
+  console's own.** The Installation screen's line said `./wb.sh add
+  ecto` of a cartridge inserted with `--database postgres`: it was
+  written from the form's live values, and those are empty while the
+  form is locked. It reads the insert's own argv there
+  (`ConsoleWeb.Box.line_argv/4`), the form's values while the form is
+  open, and the bare verb when there is nothing to read — a cartridge
+  born with the project, or inserted by a hand that left no commit.
+  The fields start from the insert too, and not only when they are
+  locked: `ash` and `chiefs_setup` can be run again to add, so their
+  form stayed open and went back to its defaults, forgetting what the
+  cartridge went in with. What the reader has just said still wins.
+
+  Each verb has its own foot, and only when it is a verb at all:
+  Insert while the cartridge is not in — and still while it is, for the
+  two that add on a second run, `ash` and the `chiefs_setup`
+  collection, which is why a box can have both feet, one under the
+  other — and Eject once it is in. A button reading *Already inserted*
+  was a state wearing a button's clothes, not an action that cannot
+  run: what is in is said by the mention's dot and by the note. Unlit
+  is for the verbs that ARE conceivable and cannot run now — a dirty
+  tree, a cartridge that has to go in first, no commit to revert.
+  Eject gains the line it never showed, which for a collection is the
+  chain of reverts in the order they have to happen
+  (`./wb.sh eject a && ./wb.sh eject b`), until now only in a title.
+
+  Insert and Eject are `ConsoleWeb.Refs.job_button/1` now, like every
+  other button that asks for a line: unlit with the reason in the
+  title where they were flatly `disabled` and the reason lived only in
+  the sentence beside them. Insert sends the form, since the options
+  are in it; Eject is a click, since it takes none. The two shapes
+  they had of their own — the big accent `.go` and the outlined
+  `.eject` — go with them: the button that does the thing is a
+  `.btn.primary` here as it is on Deploy, and the one that undoes it a
+  `.btn.danger`.
+- **The cartridges the project carries move to the Cartridges tab, and
+  the shelf reads one state at a time.** The ribbon was *all /
+  collections / base / with a box* — a question the box already
+  answers, since what a cartridge is rides on it as a fact (`base`,
+  `inserts 4`, `not done`) in both views. It is the state now:
+  **Inserted · On the shelf · Not done**, each with its count, and the
+  three planks that said the same thing under one another go with it.
+
+  *Inserted* is the state with more to say, and its list is the Record
+  paper's second section, moved whole: a row per cartridge with where
+  it came from, its edition, the parameters it was installed with, the
+  addresses it opens and the bell that calls them all once — columns
+  that only exist for a cartridge that is in. Not a column changed;
+  what changed is that they are read where cartridges are read, and by
+  a shelf that already knew which were in. In the covers view the
+  boxes are the boxes, wherever they stand. A row of that list is not
+  a link, though every other row of the shelf is: the mention is a
+  button that opens the box and the addresses are doors, and an `<a>`
+  around all of it closes itself at the first door inside — which
+  hoisted the addresses out and dropped them under the row, full
+  width.
+
+  The tab opens on what the project carries, and on the shelf itself
+  when there is no project (`ConsoleWeb.Shelf.first_doc/2`). The Record
+  paper keeps what the project IS — its name and its birth — having now
+  given a section to each place its reader already was: the
+  deployments to Deploy, these to Cartridges.
 - **Build leaves the deployments' foot**, which keeps one verb: Up.
   It did nothing Up does not — `up --deploy prod` rebuilds the release
   image on each deploy, so all Build added was *not* deploying — and
@@ -665,6 +772,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   container's last health, and the reading put health before state:
   an app that crashed wore `unhealthy` beside its `Exited (1)`. Health
   counts while the container runs; a stopped one reads its exit code.
+- **A base cartridge's box showed its fields empty** — `--binary-id`
+  unchecked with the project saying true. The locked fields read the
+  Insert commit alone, and a cartridge in from birth has none; they
+  read what the project reports first (`state/1`), then the commit,
+  then the default — the rule the Inserted list already had.
 - **`wb.sh eject mock` left healthcheck's tests without their
   library, and said nothing.** `mix workbench.dependents` read
   `requires` alone, and the three cartridges that compose mock declare

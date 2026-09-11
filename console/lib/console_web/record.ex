@@ -37,6 +37,7 @@ defmodule ConsoleWeb.Record do
     "prometheus" => ":9090",
     "grafana" => ":3000",
     "pgadmin" => ":5050",
+    "adminer" => ":8080",
     "balancer" => ":80"
   }
 
@@ -222,6 +223,24 @@ defmodule ConsoleWeb.Record do
 
   # --- cartridges -------------------------------------------------------------------
 
+  @doc """
+  What the project carries, a row each: the catalog entry behind it,
+  where it came from, its facts, the parameters it was installed with
+  and the addresses it opens. The shelf's *Inserted* list draws these
+  (it was the Record paper's second section until 2026-09-10, where
+  only a project could read them; the shelf already knows which are
+  in).
+  """
+  def cartridges(status, catalog, reads \\ %{}),
+    do:
+      cartridges(
+        status,
+        catalog,
+        get_in(status, ["ports", "app"]),
+        Cartridges.app_up?(status),
+        reads
+      )
+
   defp cartridges(status, catalog, port, up, reads) do
     installed = Cartridges.installed(status)
     entry = fn c -> Enum.find(catalog, &(&1["name"] == c["name"])) || c end
@@ -236,7 +255,7 @@ defmodule ConsoleWeb.Record do
         entry: e,
         origin: Cartridges.origin(status, c),
         facts: Cartridges.facts(e),
-        params: params(c, if(e["options"], do: e, else: c)),
+        params: params(c, if(e["options"], do: e, else: c), Cartridges.insert(status, c["name"])),
         addresses: addresses(status, c, e, port, up, reads)
       }
     end)
@@ -263,10 +282,22 @@ defmodule ConsoleWeb.Record do
   parameter the project reports is on the line; one that equals its
   default is marked. A boolean is its flag when on and nothing when off.
   """
-  def params(c, e) do
+  def params(c, e, insert \\ nil) do
     options = Map.new(e["options"] || [], &{&1["name"], &1})
 
-    for {key, value} <- c["state"] || %{}, value not in [nil, [], ""], reduce: [] do
+    # A cartridge that reports nothing of itself — no `state/1`, or an
+    # edition from before it had one — still went in with a line, and its
+    # Insert commit keeps it: `Insert healthcheck --endpoint /health3
+    # --open-api`. What the project reports wins; the commit is what is
+    # left to read when it reports nothing (2026-09-10).
+    case {c["state"] || %{}, insert} do
+      {state, %{"argv" => [_ | _] = argv}} when state == %{} -> argv_params(argv, options)
+      {state, _} -> state_params(state, options)
+    end
+  end
+
+  defp state_params(state, options) do
+    for {key, value} <- state, value not in [nil, [], ""], reduce: [] do
       acc ->
         o = options[key] || %{}
         flag = "--" <> String.replace(key, "_", "-")
@@ -286,6 +317,21 @@ defmodule ConsoleWeb.Record do
         end
     end
   end
+
+  # The Insert commit's words as the column's pairs: a flag with the
+  # value that follows it, or a flag alone; marked when it says the
+  # default, as the project's own reading is.
+  defp argv_params([], _options), do: []
+
+  defp argv_params(["--" <> _ = flag, "--" <> _ = next | rest], options),
+    do: argv_params([flag], options) ++ argv_params([next | rest], options)
+
+  defp argv_params(["--" <> name = flag, value | rest], options) do
+    o = options[String.replace(name, "-", "_")] || %{}
+    [{flag <> " " <> value, value == to_string(o["default"])} | argv_params(rest, options)]
+  end
+
+  defp argv_params([flag | rest], options), do: [{flag, false} | argv_params(rest, options)]
 
   # A route the cartridge opens on the app's port: shut by its condition,
   # or by the app being down, or open with its address and what it answered.
@@ -340,9 +386,89 @@ defmodule ConsoleWeb.Record do
        when db in ~w(postgres mysql mssql), do: ["database"]
 
   defp services_of(%{"name" => "pgadmin"}), do: ["pgadmin"]
+  defp services_of(%{"name" => "adminer"}), do: ["adminer"]
   defp services_of(%{"name" => "k6"}), do: ["k6"]
   defp services_of(%{"name" => "monitoring"}), do: ["prometheus", "grafana"]
   defp services_of(_), do: []
+
+  @doc """
+  What a cartridge that is not in would take and open, off its catalog
+  entry: its parameters as `[{flag, type, title}]` — the title says its
+  doc, its default and its choices — and its addresses as the Inserted
+  row draws them, every one shut: a door is read, never hidden, and
+  this one is not in yet. The database ecto asks for hangs on the engine
+  picked at insert, so it is not among them.
+  """
+  def offered(e) do
+    shut = fn label, path, kind ->
+      %{
+        label: label,
+        path: path,
+        kind: kind,
+        port: nil,
+        href: nil,
+        why: "not inserted",
+        read: nil
+      }
+    end
+
+    %{
+      params:
+        for o <- e["options"] || [] do
+          {"--" <> String.replace(o["name"], "_", "-"), offered_type(o), offered_title(o)}
+        end,
+      addresses:
+        for(
+          name <- (e["services_of"] || []) ++ services_of(e),
+          do: shut.(name, @inside[name] || "", "port")
+        ) ++
+          for(
+            d <- get_in(e, ["console", "doors"]) || [],
+            do: shut.(d["label"], Cartridges.fill_path(d["path"], e), "route")
+          )
+    }
+  end
+
+  # What follows the flag: its values when the cartridge declares them in
+  # `choices/0` — the enum the OptionParser type cannot say — else the
+  # type. An open choice takes other values too, so it ends in `…`; a
+  # long one (ash's --with, dozens by group) shows four and the count,
+  # the whole list in the title.
+  @shown 4
+  defp offered_type(o) do
+    case Enum.flat_map(o["choices"] || [], &choice_values/1) do
+      [] ->
+        o["type"]
+
+      values ->
+        {shown, rest} = Enum.split(values, @shown)
+
+        Enum.join(shown, " | ") <>
+          if(rest != [], do: " +#{length(rest)}", else: "") <>
+          if(o["open"], do: " …", else: "")
+    end
+  end
+
+  defp offered_title(o) do
+    choices = Enum.flat_map(o["choices"] || [], &choice_values/1)
+
+    [
+      o["doc"],
+      o["default"] not in [nil, "", []] && "default #{default_text(o["default"])}",
+      choices != [] &&
+        "#{if o["open"], do: "one of, or another", else: "one of"} #{Enum.join(choices, ", ")}"
+    ]
+    |> Enum.filter(& &1)
+    |> Enum.join(" · ")
+  end
+
+  # A choice is a value, or a section of them.
+  defp choice_values(%{"value" => v}), do: [to_string(v)]
+  defp choice_values(%{"values" => vs}), do: Enum.flat_map(vs, &choice_values/1)
+  defp choice_values(_), do: []
+
+  defp default_text(list) when is_list(list), do: Enum.join(list, ",")
+  defp default_text(v), do: to_string(v)
 
   defp port_of(status, service) do
     container = Enum.find(status["containers"] || [], &(&1["Service"] == service))

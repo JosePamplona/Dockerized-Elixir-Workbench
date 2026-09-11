@@ -1,16 +1,15 @@
 defmodule ConsoleWeb.RecordSheet do
   @moduledoc """
-  The Record paper drawn: the project's name, its birth in two tables
-  and the command between them, and the cartridges it carries on the
-  shelf's own row with their parameters and addresses. The plan is
-  `ConsoleWeb.Record`; this only lays it out. The deployments read on
-  the Deploy tab since 2026-09-09, `ConsoleWeb.Deployments`: what the
-  project is here, what is baked and running there.
+  The Record paper drawn: the project's name and its birth, in two
+  tables with the command between them. The plan is `ConsoleWeb.Record`;
+  this only lays it out. The paper had two more sections and gave both
+  away, each to where its reader already was: the deployments to the
+  Deploy tab (2026-09-09, `ConsoleWeb.Deployments`) and the cartridges
+  it carries to the shelf's *Inserted* (2026-09-10, `ConsoleWeb.Shelf`).
+  What is left is what the project IS, which is what it was born as.
   """
   use Phoenix.Component
   import ConsoleWeb.Refs
-  import ConsoleWeb.Shelf, only: [front: 1]
-  import ConsoleWeb.Board, only: [bell: 1]
 
   attr :record, :map, required: true
   attr :reads, :any, required: true
@@ -34,70 +33,6 @@ defmodule ConsoleWeb.RecordSheet do
         <p class="nothing">
           No first commit to read: this project was not born in a workspace, or its repository has no history.
         </p>
-      </section>
-
-      <section>
-        <h3 title="what the project carries, on the shelf's own row">
-          Cartridges <span class="label">{length(@record.cartridges)} in</span>
-        </h3>
-        <div
-          class={["list wide", @stale && "stale"]}
-          title={
-            @stale && "reading the project again: this is the last reading's, until the new one lands"
-          }
-        >
-          <div class="lrow head">
-            <span></span>
-            <span class="label">cartridge</span>
-            <span class="label">origin</span>
-            <span class="label">edition</span>
-            <span class="label">installation parameters</span>
-            <span
-              class="label addr"
-              title="the ports the compose publishes for the cartridge's services, and the routes the project offers on the app's port"
-            >
-              addresses
-              <button
-                :if={@record.up}
-                class="go knock"
-                type="button"
-                phx-click="knock"
-                aria-busy={to_string(@reads == :asking)}
-                title="knock: call every door once and read what each answers — the rail hears the same"
-              >
-                <.bell /><span class="sr">Knock on every door</span>
-              </button>
-              <button
-                :if={!@record.up}
-                class="go knock unlit"
-                type="button"
-                aria-disabled="true"
-                title="nothing is up: deploy, and knock — every door is called once and answers in a chip"
-              >
-                <.bell /><span class="sr">Knock on every door</span>
-              </button>
-            </span>
-          </div>
-          <div :for={row <- @record.cartridges} class="lrow in">
-            <span class="th"><img src={"/covers/#{front(row.entry)}"} alt="" draggable="false" /></span>
-            <span class="nm"><.cart_ref name={row.c["name"]} installed={true} /></span>
-            <span class="fx">
-              <.chip :for={f <- row.facts}>{f}</.chip>
-              <.chip class={elem(row.origin, 1)} title={elem(row.origin, 2)}>
-                {elem(row.origin, 0)}
-              </.chip>
-            </span>
-            <span class="vr" title={version_title(row.entry)}>{version(row.entry)}</span>
-            <span class="col argv">
-              <span
-                :for={{flag, default?} <- row.params}
-                class={default? && "dflt"}
-                title={default? && "the default"}
-              >{flag}</span>
-            </span>
-            <span class="col"><span class="pairs"><.address :for={a <- row.addresses} a={a} /></span></span>
-          </div>
-        </div>
       </section>
     </div>
     """
@@ -221,7 +156,7 @@ defmodule ConsoleWeb.RecordSheet do
             <td>
               <span
                 :if={f.arg}
-                class={["argv", f.default && "dflt"]}
+                class="argv val"
                 title={
                   f.default && "phx.new's default — written or left to fall, the tree reads the same"
                 }
@@ -242,27 +177,4 @@ defmodule ConsoleWeb.RecordSheet do
     </section>
     """
   end
-
-  attr :a, :map, required: true
-  attr :title, :string, default: nil
-
-  # One address, the house's face: the layer, the reading, the route's port.
-  defp address(assigns) do
-    ~H"""
-    <.door_ref
-      label={@a.label}
-      path={@a.path}
-      href={@a.href}
-      why={@a.why}
-      kind={@a.kind}
-      port={@a.kind == "route" && @a.port}
-      read={@a.read}
-    />
-    """
-  end
-
-  defp version(%{"version" => %{"version" => v}}), do: "v" <> v
-  defp version(_), do: "—"
-  defp version_title(%{"version" => %{"date" => d}}), do: "#{d} in its CHANGELOG"
-  defp version_title(_), do: "no CHANGELOG to read a version from"
 end

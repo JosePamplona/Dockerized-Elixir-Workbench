@@ -1,69 +1,87 @@
 defmodule ConsoleWeb.Shelf do
   @moduledoc """
-  The shelf: every cartridge as a box on a plank, or as a row. The
-  planks are a view, not a taxonomy — there is one kind of cartridge —
-  so they group by the box's *state*: in the project, on the shelf,
-  not done yet. What a box does rides on the box as a fact.
+  The shelf: every cartridge as a box on a plank, or as a row. There is
+  one kind of cartridge, so the only division is the box's *state*, and
+  since 2026-09-10 that state is the ribbon and not three planks at
+  once: inserted, on the shelf, not done — one at a time. The ribbon
+  read *all / collections / base / with a box* until then, which asked
+  a question the box already answers: what a cartridge is rides on it
+  as a fact (`base`, `inserts 4`, `not done`), in both views.
+
+  *Inserted* is the one state with more to say, and its list is what
+  the Record paper's second section was: a row per cartridge with where
+  it came from, its edition, the parameters it was installed with and
+  the addresses it opens — columns that only exist for a cartridge that
+  is in. It moved here because this is where cartridges are read, and
+  because the shelf already knows which are in.
   """
   use Phoenix.Component
   import ConsoleWeb.Refs
   import ConsoleWeb.Ribbon, only: [ribbon: 1]
-  alias ConsoleWeb.Cartridges
+  import ConsoleWeb.Board, only: [bell: 1]
+  alias ConsoleWeb.{Box, Cartridges, Record}
 
   @docs [
-    {"all", "All"},
-    {"collection", "Collections"},
-    {"base", "Base"},
-    {"covered", "With a box"}
+    {"in", "Inserted"},
+    {"shelf", "On the shelf"},
+    {"pending", "Not done"}
   ]
   def docs, do: @docs
   def doc_names, do: Enum.map(@docs, &elem(&1, 0))
 
-  # How many of the catalog each reading of the shelf holds.
-  defp count(catalog, "all"), do: length(catalog)
-  defp count(catalog, "collection"), do: Enum.count(catalog, & &1["collection"])
-  defp count(catalog, "base"), do: Enum.count(catalog, & &1["base"])
-  defp count(catalog, "covered"), do: Enum.count(catalog, & &1["covers"]["front"])
+  @doc """
+  The state to open on: what the project carries, when it carries
+  anything. Without a project there is nothing inserted to read, so the
+  shelf opens on itself.
+  """
+  def first_doc(status, catalog) do
+    if Enum.any?(catalog, &Cartridges.installed?(status, &1["name"])), do: "in", else: "shelf"
+  end
+
+  # Which of the catalog each state holds. A cartridge that is in is in,
+  # whatever else it is; of the rest, the ones with no installer yet are
+  # not done, and the others are on the shelf.
+  defp state(status, e) do
+    cond do
+      Cartridges.installed?(status, e["name"]) -> "in"
+      e["pending"] -> "pending"
+      true -> "shelf"
+    end
+  end
+
+  defp of_state(catalog, status, doc), do: Enum.filter(catalog, &(state(status, &1) == doc))
 
   attr :catalog, :list, required: true
   attr :status, :map, default: nil
   attr :filter, :string, required: true
   attr :view, :string, required: true
   attr :tab, :string, default: "shelf"
+  attr :reads, :any, default: %{}, doc: "what the doors answered when called, by href"
 
   def shelf(assigns) do
-    visible =
-      Enum.filter(assigns.catalog, fn e ->
-        case assigns.filter do
-          "collection" -> e["collection"]
-          "base" -> e["base"]
-          "covered" -> e["covers"]["front"] != nil
-          _ -> true
-        end
-      end)
-
     installed? = &Cartridges.installed?(assigns.status, &1["name"])
-
-    groups = [
-      {"In the project", Enum.filter(visible, installed?)},
-      {"On the shelf — pick one to insert",
-       Enum.filter(visible, &(!installed?.(&1) and !&1["pending"]))},
-      {"Not done yet", Enum.filter(visible, &(!installed?.(&1) and &1["pending"]))}
-    ]
-
-    with_box = Enum.count(assigns.catalog, & &1["covers"]["front"])
+    visible = of_state(assigns.catalog, assigns.status, assigns.filter)
 
     assigns =
       assign(assigns,
-        groups: groups,
-        with_box: with_box,
+        visible: visible,
+        # The inserted read as the Record's rows — with what they were
+        # installed with and what they open — and only in the list view:
+        # the boxes are the boxes wherever they stand.
+        rows:
+          if(assigns.filter == "in" and assigns.view == "list",
+            do: Record.cartridges(assigns.status || %{}, assigns.catalog, assigns.reads),
+            else: []
+          ),
+        up: Cartridges.app_up?(assigns.status || %{}),
+        with_box: Enum.count(assigns.catalog, & &1["covers"]["front"]),
         in_count: Enum.count(assigns.catalog, installed?)
       )
 
     ~H"""
     <div class="pdocs shelfp">
       <.ribbon
-        label="The shelf: all of it, or one kind"
+        label="The shelf: what is in, what is on it, what is not done"
         selected={@filter}
         docked
         items={
@@ -71,7 +89,7 @@ defmodule ConsoleWeb.Shelf do
               do: %{
                 key: key,
                 label: label,
-                small: "#{count(@catalog, key)}",
+                small: "#{length(of_state(@catalog, @status, key))}",
                 href: "/#{@tab}?doc=#{key}"
               }
         }
@@ -106,23 +124,226 @@ defmodule ConsoleWeb.Shelf do
           </div>
         </div>
         <div id="shelf">
-          <%= for {label, list} <- @groups, list != [] do %>
-            <div class="row">
-              <span class="label">{label}</span>
-              <div :if={@view == "list"} class="list">
-                <.list_row :for={e <- list} e={e} status={@status} tab={@tab} />
+          <div class="row">
+            <.inserted
+              :if={@rows != []}
+              rows={@rows}
+              up={@up}
+              reads={@reads}
+              tab={@tab}
+              status={@status}
+            />
+            <%!-- On the shelf and Not done read in Inserted's table, its
+                  columns included: the parameters the cartridge takes, with
+                  their type, and the addresses it would open, shut. The
+                  summary rides on the name's title. No bell: nothing of
+                  these is in, so there is no door to call. --%>
+            <div :if={@rows == [] and @view == "list"} class="list wide">
+              <div :if={@visible != []} class="lrow head">
+                <span></span>
+                <span class="label">cartridge</span>
+                <span class="label">facts</span>
+                <span class="label">edition</span>
+                <span class="label">installation parameters</span>
+                <span
+                  class="label"
+                  title="the services it would ask for and the routes it would open on the app's port, once inserted"
+                >
+                  addresses
+                </span>
+                <span></span>
               </div>
-              <div :if={@view != "list"} class="boxes">
-                <.box_el :for={e <- list} e={e} status={@status} tab={@tab} />
-              </div>
-              <div :if={@view != "list"} class="plank"></div>
+              <.list_row :for={e <- @visible} e={e} status={@status} tab={@tab} />
             </div>
-          <% end %>
+            <div :if={@view != "list"} class="boxes">
+              <.box_el :for={e <- @visible} e={e} status={@status} tab={@tab} />
+            </div>
+            <div :if={@view != "list"} class="plank"></div>
+          </div>
         </div>
       </div>
     </div>
     """
   end
+
+  @doc """
+  What the project carries, in full: the cover, the mention, its facts
+  and where it came from, its edition, the parameters it was installed
+  with, and the addresses it opens — with the bell that calls them all
+  once. The Record paper held this until 2026-09-10; only the reading
+  moved, not a column.
+  """
+  attr :rows, :list, required: true
+  attr :up, :boolean, default: false
+  attr :reads, :any, default: %{}
+  attr :tab, :string, default: "shelf"
+  attr :status, :map, default: nil
+
+  def inserted(assigns) do
+    ~H"""
+    <div class="list wide">
+      <div class="lrow head">
+        <span></span>
+        <span class="label">cartridge</span>
+        <span class="label">origin</span>
+        <span class="label">edition</span>
+        <span class="label">installation parameters</span>
+        <span
+          class="label addr"
+          title="the ports the compose publishes for the cartridge's services, and the routes the project offers on the app's port"
+        >
+          addresses
+          <button
+            :if={@up}
+            class="go knock"
+            type="button"
+            phx-click="knock"
+            aria-busy={to_string(@reads == :asking)}
+            title="knock: call every door once and read what each answers — the rail hears the same"
+          >
+            <.bell /><span class="sr">Knock on every door</span>
+          </button>
+          <button
+            :if={!@up}
+            class="go knock unlit"
+            type="button"
+            aria-disabled="true"
+            title="nothing is up: deploy, and knock — every door is called once and answers in a chip"
+          >
+            <.bell /><span class="sr">Knock on every door</span>
+          </button>
+        </span>
+        <span></span>
+      </div>
+      <%!-- A row here is not a link, as it is on the plain list: the
+            mention opens the box (`cart_ref` is a button of its own) and
+            the addresses in the last cell are doors. An <a> around all of
+            that closes itself at the first door inside it, and the rest
+            of the row — the addresses — is hoisted out and lands under
+            it, full width. --%>
+      <div :for={row <- @rows} class="lrow in">
+        <span class="th"><img src={"/covers/#{front(row.entry)}"} alt="" draggable="false" /></span>
+        <span class="nm"><.cart_ref name={row.c["name"]} installed={true} /></span>
+        <span class="fx">
+          <.chip :for={f <- row.facts}>{f}</.chip>
+          <.chip class={elem(row.origin, 1)} title={elem(row.origin, 2)}>
+            {elem(row.origin, 0)}
+          </.chip>
+        </span>
+        <span class="vr" title={version_title(row.entry)}>{version(row.entry)}</span>
+        <span class="col argv">
+          <span
+            :for={
+              {{flag, value}, default?} <-
+                Enum.map(row.params, &{split_flag(elem(&1, 0)), elem(&1, 1)})
+            }
+            title={default? && "the default"}
+          >{flag} <i :if={value} class="val">{value}</i></span>
+        </span>
+        <span class="col"><span class="pairs"><.address :for={a <- row.addresses} a={a} /></span></span>
+        <%!-- The box's Eject, as a bare line: `eject NAME` travels on the
+              click and the server parses it, the way every line that is
+              only itself does. Unlit with the reason when the box's own
+              would be — and a collection's, whose eject is its members',
+              is the box's alone. --%>
+        <span class="act">
+          <.job_button
+            label="Eject"
+            class="danger mini"
+            args={"eject #{row.c["name"]}"}
+            title={eject_title(@status, row.c["name"])}
+            why={eject_why(@status, row)}
+          />
+        </span>
+      </div>
+    </div>
+    """
+  end
+
+  defp eject_why(status, row) do
+    name = row.c["name"]
+
+    cond do
+      get_in(status, ["git", "clean"]) == false ->
+        "the tree has changes git does not have — commit first"
+
+      row.entry["collection"] ->
+        "a collection leaves no commit of its own: its box ejects its cartridges, one revert each"
+
+      is_nil(Cartridges.insert(status, name)) ->
+        "in from birth, or by hand: no commit to revert"
+
+      true ->
+        case Box.eject_blockers(row.entry, status, [name]) do
+          [] -> nil
+          blockers -> Enum.join(blockers, "; ") <> " — eject those first"
+        end
+    end
+  end
+
+  defp eject_title(status, name) do
+    case Cartridges.insert(status, name) do
+      %{"sha" => sha, "subject" => subject} ->
+        "git revert #{String.slice(sha, 0, 7)} — #{subject}"
+
+      _ ->
+        nil
+    end
+  end
+
+  # The box's Insert with its form untouched: `add NAME`, the defaults.
+  # Options are picked in the box; this is the row's way in for the
+  # cartridge that needs none picked.
+  defp insert_why(status, e) do
+    missing = Enum.reject(e["requires"] || [], &Cartridges.installed?(status, &1))
+
+    cond do
+      e["pending"] ->
+        "no installer yet: nothing to run"
+
+      !(status && status["exists"]) ->
+        "this workspace has no project — Deploy → Project creates one"
+
+      get_in(status, ["git", "clean"]) == false ->
+        "the tree has changes git does not have — commit first"
+
+      missing != [] ->
+        "builds on #{Enum.join(missing, " and ")}, not in the project yet"
+
+      true ->
+        nil
+    end
+  end
+
+  attr :a, :map, required: true
+
+  defp address(assigns) do
+    ~H"""
+    <.door_ref
+      label={@a.label}
+      path={@a.path}
+      href={@a.href}
+      why={@a.why}
+      kind={@a.kind}
+      port={@a.kind == "route" && @a.port}
+      read={@a.read}
+    />
+    """
+  end
+
+  # `--endpoint /health` as the flag and what follows it: the flag reads
+  # in ink, its value dimmed — the same notation as a flag and its type.
+  defp split_flag(flag) do
+    case String.split(flag, " ", parts: 2) do
+      [f, v] -> {f, v}
+      [f] -> {f, nil}
+    end
+  end
+
+  defp version(%{"version" => %{"version" => v}}), do: "v" <> v
+  defp version(_), do: "—"
+  defp version_title(%{"version" => %{"date" => d}}), do: "#{d} in its CHANGELOG"
+  defp version_title(_), do: "no CHANGELOG to read a version from"
 
   @doc "The cover a box shows: its front, or the placeholder for a box without one."
   def front(e),
@@ -174,16 +395,25 @@ defmodule ConsoleWeb.Shelf do
     origin = if installed and c, do: Cartridges.origin(assigns.status, c)
 
     assigns =
-      assign(assigns, installed: installed, origin: origin, facts: Cartridges.facts(assigns.e))
+      assign(assigns,
+        installed: installed,
+        origin: origin,
+        facts: Cartridges.facts(assigns.e),
+        offered: Record.offered(assigns.e)
+      )
 
     ~H"""
-    <.link
-      class={["lrow", @installed && "in", @e["pending"] && "pending"]}
-      patch={"/#{@tab}?box=#{@e["name"]}"}
-      aria-label={"#{title(@e)}: pick up the box"}
-    >
+    <%!-- Not a link, as the Inserted rows are not: the row carries a
+          button, and an <a> around a button closes at it. The mention
+          opens the box. --%>
+    <div class={["lrow", @installed && "in", @e["pending"] && "pending"]}>
       <span class="th"><img src={"/covers/#{front(@e)}"} alt="" draggable="false" /></span>
-      <span class="nm"><span class={["cart-ref", @installed && "in"]}>{@e["name"]}</span></span>
+      <span
+        class="nm"
+        title={
+          @e["summary"] || "Documented in the generated project, but its installer is not done yet."
+        }
+      ><.cart_ref name={@e["name"]} installed={@installed} /></span>
       <span class="fx">
         <.chip :for={f <- @facts}>{f}</.chip>
         <.chip :if={@origin} class={elem(@origin, 1)} title={elem(@origin, 2)}>
@@ -198,9 +428,21 @@ defmodule ConsoleWeb.Shelf do
             else: "no CHANGELOG to read a version from"
         }
       >{if @e["version"], do: "v#{@e["version"]["version"]}", else: "—"}</span>
-      <span class="sm">{@e["summary"] ||
-        "Documented in the generated project, but its installer is not done yet."}</span>
-    </.link>
+      <span class="col argv">
+        <span :for={{flag, type, title} <- @offered.params} title={title != "" && title}>
+          {flag} <i class="val">{type}</i>
+        </span>
+      </span>
+      <span class="col"><span class="pairs"><.address :for={a <- @offered.addresses} a={a} /></span></span>
+      <span class="act">
+        <.job_button
+          label="Insert"
+          class="primary mini"
+          args={"add #{@e["name"]}"}
+          why={insert_why(@status, @e)}
+        />
+      </span>
+    </div>
     """
   end
 end

@@ -248,7 +248,7 @@ section h2 .go svg{width:15px;height:15px;display:block}
 section h2 .go[aria-busy="true"]{color:var(--accent);cursor:progress}
 section h2 .go[aria-busy="true"] svg{animation:knock-ring .6s ease-in-out infinite;transform-origin:50% 20%}
 @keyframes knock-ring{0%,100%{transform:rotate(0)}25%{transform:rotate(-14deg)}75%{transform:rotate(14deg)}}
-@media (prefers-reduced-motion: reduce){section h2 .go[aria-busy="true"] svg,.record .go[aria-busy="true"] svg{animation:none}}
+@media (prefers-reduced-motion: reduce){section h2 .go[aria-busy="true"] svg,.record .go[aria-busy="true"] svg,.shelfp .go[aria-busy="true"] svg{animation:none}}
 /* The head of a section in the rail is the control that folds it: the
    heading stays a heading and the button inside it takes the whole line,
    which is the accordion a screen reader expects (aria-expanded on the
@@ -871,8 +871,12 @@ form.insert .label{margin-bottom:-4px}
 .cmd::before{content:"$ ";color:var(--muted)}
 .go{justify-self:start;font-family:var(--cond);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:13px;background:var(--accent);color:var(--accent-ink);padding:9px 16px;border-radius:2px;box-shadow:0 2px 0 rgba(0,0,0,.25)}
 .go[disabled]{box-shadow:none}
-form.insert .acts{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-form.insert .eject{font-family:var(--cond);font-weight:600;letter-spacing:.12em;text-transform:uppercase;font-size:12px;color:var(--bad);border:1px solid var(--bad);padding:8px 12px;border-radius:2px;background:var(--surface)}
+/* The box's two feet: the same shape as every other foot in the
+   console — the line taking the width, the button at its right — and
+   the note under the line, as the Danger zone's is. */
+.install .foot{margin-top:12px}
+.install .foot .cmd{flex:1;min-width:240px}
+.install .foot .note{flex-basis:100%;margin:0}
 form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
 /* Specs — the box's own facts, a table where the need above is prose.
    Same panel as .need, without its accent edge: that one is the voice
@@ -1209,7 +1213,10 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
 .record .nothing{margin:0;font-family:var(--serif);font-style:italic;font-size:13.5px;color:var(--muted);padding:0}
 .record .argv{font-family:var(--mono);font-size:12px;white-space:normal}
 .record .argv>span{white-space:normal;margin-right:6px}
-.record .argv .dflt,.record .argv.dflt{color:var(--muted)}
+/* A flag in ink, what follows it dimmed — its value, or its type on the
+   shelf. Whether the value is the default is said in the title, no longer
+   by dimming the whole flag. */
+.argv .val,.argv.val{font-style:normal;color:var(--muted)}
 .pairs{display:grid;justify-items:start;gap:6px}
 /* Birth: the two tables share their three columns; the flags table has five. */
 .record table.rows.shape{width:100%;table-layout:fixed;border-collapse:collapse;font-family:var(--mono);font-size:12.5px}
@@ -1236,23 +1243,41 @@ span.fact input{accent-color:var(--accent);width:14px;height:14px;margin:0;verti
 .record .cmdblock{display:grid;gap:8px;margin:14px 0 22px}
 .record .cmdblock .thead{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);padding-bottom:6px;border-bottom:1px solid var(--line)}
 .record .cmd{margin:0;font-family:var(--mono);font-size:12px;line-height:1.6;background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:10px 14px;white-space:pre-wrap;overflow-wrap:anywhere}
-/* Cartridges: the shelf's .lrow, four cells of its own and three of the paper's. */
-.record .list{display:grid}
-.record .lrow{display:grid;grid-template-columns:24px minmax(110px,128px) minmax(0,142px) 46px minmax(0,.9fr) minmax(0,2fr);gap:14px;align-items:center;width:100%;text-align:left;padding:7px 6px;border-top:1px solid var(--line);color:var(--ink)}
-.record .list .lrow:first-child{border-top:0}
-.record .lrow:not(.head):hover{background:var(--surface-2)}
-.record .lrow .th{width:24px;height:34px;border-radius:2px;overflow:hidden;display:block;background:var(--board)}
-.record .lrow .th img{width:100%;height:100%;object-fit:cover;display:block}
-.record .lrow .fx{display:flex;gap:6px;flex-wrap:wrap}
-.record .lrow .vr{font-family:var(--mono);font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
-.record .lrow .col{min-width:0;font-family:var(--mono);font-size:12.5px}
-.record .lrow.head{padding-top:0;padding-bottom:6px;align-items:end}
-.record .lrow.head .label{font-size:10px;letter-spacing:.1em}
-.record .lrow.head .label.addr{display:inline-flex;align-items:center;gap:8px}
-.record .go,.deployments .go{display:inline-flex;align-items:center;justify-content:center;width:2em;height:2em;font-size:11px;padding:0;border:1px solid var(--line);border-radius:2px;background:var(--surface-2);color:var(--muted);cursor:pointer}
-.record .go:hover,.deployments .go:hover{color:var(--ink);background:var(--surface)}
-.record .go svg,.deployments .go svg{width:15px;height:15px;display:block}
-.record .go[aria-busy="true"]{color:var(--accent);cursor:progress}
+/* The inserted, in full: the shelf's .lrow with four cells of its own.
+   Keyed on `.wide` and not on the paper it used to live in — it is the
+   shelf's Inserted list since 2026-09-10, and the plain list beside it
+   keeps the three-cell row. */
+.list.wide{display:grid}
+.list.wide .lrow{display:grid;grid-template-columns:24px minmax(110px,128px) minmax(0,142px) 46px minmax(0,1.3fr) minmax(0,2fr) auto;gap:14px;align-items:center;width:100%;text-align:left;padding:7px 6px;border-top:1px solid var(--line);color:var(--ink)}
+.list.wide .lrow:first-child{border-top:0}
+.list.wide .lrow:not(.head):hover{background:var(--surface-2)}
+.list.wide .lrow .th{width:24px;height:34px;border-radius:2px;overflow:hidden;display:block;background:var(--board)}
+.list.wide .lrow .th img{width:100%;height:100%;object-fit:cover;display:block}
+.list.wide .lrow .fx{display:flex;gap:6px;flex-wrap:wrap}
+.list.wide .lrow .vr{font-family:var(--mono);font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.list.wide .lrow .col{min-width:0;font-family:var(--mono);font-size:12.5px}
+/* The row's verb, last: Eject on what is in, Insert on what is not. */
+.list.wide .lrow .act{justify-self:end}
+.list.wide .lrow .act .btn.mini{padding:2px 8px;font-size:11px}
+/* The installation parameters, one flag with its value to a piece: they
+   wrap between flags and never inside one. The Record's .argv rules
+   stayed with the Birth table when this list moved to the shelf, so
+   two flags ran together — `--endpoint /health3--open-api` — and broke
+   in the middle of the second. A piece with a value may wrap after its
+   flag and inside the value, though — the flag is one token and never
+   breaks: a choice list, ash's `a | b | c | d +30 …`, ran past the
+   column nowrap, and the value alone allowed to wrap broke `postgres`
+   in two, the space before it being the flag's. */
+.list.wide .lrow .argv{display:flex;flex-wrap:wrap;gap:2px 10px;font-size:12px}
+.list.wide .lrow .argv>span{white-space:nowrap;min-width:0}
+.list.wide .lrow .argv>span:has(.val){white-space:normal;overflow-wrap:break-word}
+.list.wide .lrow.head{padding-top:0;padding-bottom:6px;align-items:end}
+.list.wide .lrow.head .label{font-size:10px;letter-spacing:.1em}
+.list.wide .lrow.head .label.addr{display:inline-flex;align-items:center;gap:8px}
+.record .go,.deployments .go,.newcard .go,.shelfp .go{display:inline-flex;align-items:center;justify-content:center;width:2em;height:2em;font-size:11px;padding:0;border:1px solid var(--line);border-radius:2px;background:var(--surface-2);color:var(--muted);cursor:pointer}
+.record .go:hover,.deployments .go:hover,.newcard .go:hover,.shelfp .go:hover{color:var(--ink);background:var(--surface)}
+.record .go svg,.deployments .go svg,.newcard .go svg,.shelfp .go svg{width:15px;height:15px;display:block}
+.record .go[aria-busy="true"],.shelfp .go[aria-busy="true"]{color:var(--accent);cursor:progress}
 .record .go[aria-busy="true"] svg{animation:knock-ring .6s ease-in-out infinite;transform-origin:50% 20%}
 /* Danger: the tab's last box, and the only one in it is the verb that
    cannot be taken back. Its ground is the card's, its rule is the bad

@@ -808,6 +808,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   Insert commit alone, and a cartridge in from birth has none; they
   read what the project reports first (`state/1`), then the commit,
   then the default — the rule the Inserted list already had.
+- **The page scrolled under a long screen, and the header went off
+  with it** (Deploy). A `.sr` label (`position:absolute`) deep in the
+  screen was placed against `.app` rather than the box that scrolls,
+  and its 1px past the foot gave the whole page a scrollbar. The
+  scroll boxes — the screen's and the rail's — are `position:relative`
+  now, so what they hold is placed in them.
 - **The output's grip moved nothing until the hand had crossed the
   box.** A drag started from the box's cap (`max-height`), which a
   short output never reaches — past its foot in the tray, past its

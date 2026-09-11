@@ -175,7 +175,7 @@ body.rail-right .app{grid-template-columns:minmax(0,1fr) var(--rail)}
 body.rail-right .console{order:2;border-right:0;border-left:1px solid var(--line)}
 body.rail-off .app{grid-template-columns:minmax(0,1fr)}
 body.rail-off .console{display:none}
-.console{border-right:1px solid var(--line);background:var(--surface);padding:22px 22px 40px;display:flex;flex-direction:column;gap:22px;overflow:auto;min-height:0;scrollbar-gutter:stable}
+.console{border-right:1px solid var(--line);background:var(--surface);padding:22px 22px 40px;display:flex;flex-direction:column;gap:22px;overflow:auto;min-height:0;scrollbar-gutter:stable;position:relative}
 /* The screen holds two things that do not scroll together: everything
    the reader reads, and the jobs bar under it. The bar used to ride the
    scroller as a sticky footer, which put its bottom edge exactly on the
@@ -193,7 +193,11 @@ body.rail-off .console{display:none}
    of the content between them. A row that must not move is a row of the
    frame, not an element of the document. */
 .screen{min-width:0;display:flex;flex-direction:column;height:100%;overflow:hidden;min-height:0}
-.scroller{flex:1;min-height:0;min-width:0;overflow:auto;display:flex;flex-direction:column}
+/* A box that scrolls is also the box its absolutes are placed in: a .sr
+   label (position:absolute) deep in a long screen was placed against
+   .app instead, past its foot, and the whole page grew a scrollbar the
+   header went off by (Deploy, 2026-09-11). The rail the same. */
+.scroller{flex:1;min-height:0;min-width:0;overflow:auto;display:flex;flex-direction:column;position:relative}
 /* Sits on the seam, wider than it looks: a 9px target over a 1px line,
    so it can be caught without aiming. It shows only under the pointer or
    the keyboard — a handle that is always drawn would be a third border

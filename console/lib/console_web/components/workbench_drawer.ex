@@ -1,8 +1,8 @@
 defmodule ConsoleWeb.WorkbenchDrawer do
   @moduledoc """
   The workbench's own drawer: config.conf as the form it already is,
-  its manual, its changelog, and Console — how this page is arranged,
-  kept in the browser. The values of the form are saved through
+  its manual, its changelog, and Interface — how this page is arranged
+  and what it is set in, kept in the browser. The values of the form are saved through
   `wb.sh config set`, as a job.
   """
   use Phoenix.Component
@@ -665,128 +665,228 @@ defmodule ConsoleWeb.WorkbenchDrawer do
         x[part] == v and Enum.all?([:e, :o, :d] -- [part], &(x[&1] == cur[&1]))
       end)
 
-  # --- Console: the frame and the ground, kept in this browser -------------------
+  # --- Interface: the controls on the left, the console in miniature on the right ---
+  # Everything here is kept in this browser: the frame as classes on
+  # <body> (band-bottom, rail-right, rail-off), the ground as data-theme
+  # on the root, the faces and the colours as custom properties on the
+  # root — hooks.js Frame reads and writes them. The miniature on the
+  # right is a fifth of the console drawn from those same classes and
+  # properties, so what is set on the left lands on the right where it
+  # will land on the screen: the band moves, the rail changes side, the
+  # terminal is set in the code face, the sheet in the files' face and
+  # the language's colours. Its terminal is real lines — a warning of
+  # Elixir's compiler as a terminal colours it, a Phoenix boot, a
+  # request, an error of Bandit's, all off logs of 2026-09-11 — and its
+  # sheet is the Files sheet's own drawing of the tab's sample. Decided
+  # on 2026-09-12 among four compositions on the real content: the one
+  # that shows the most, at the cost of a second drawing of the frame
+  # that has to follow the first. The one before was a column of seven
+  # rows, 1647px in a pane of 695.
+  @sheet_paths %{
+    elixir: "lib/arcade/room.ex",
+    html: "lib/arcade_web/live/room_live.html.heex",
+    css: "assets/css/app.css",
+    ts: "assets/js/app.ts",
+    json: "priv/static/manifest.json",
+    markdown: "README.md",
+    godot: "scripts/player.gd"
+  }
+  # The miniature's terminal: {level, cont?, time, html}. The times are
+  # the lines' own, as the Logs screen formats them.
+  @log_lines [
+    {"warn", false, "21:16:30.416",
+     ~s(    <span class="ansi-fg-3">warning:</span> variable "valid?" is unused \(if the variable is not meant to be used, prefix it with an underscore\))},
+    {"warn", true, "", "  3 │     valid? = length(room.players) &lt; 8"},
+    {"warn", true, "", ~s(    │ <span class="ansi-fg-3">    ~~~~~~</span>)},
+    {"warn", true, "", "    └─ lib/arcade/room.ex:3:5: Arcade.Room.join/2"},
+    {"info", false, "17:00:49.002",
+     "[info] Running ConsoleWeb.Endpoint with Bandit 1.12.5 at 0.0.0.0:4000 (http)"},
+    {"info", false, "17:07:17.401", "[info] GET /deploy"},
+    {"debug", false, "17:07:17.409", "[debug] Processing with ConsoleWeb.ConsoleLive.__live__/0"},
+    {"info", false, "17:07:17.426", "[info] Sent 200 in 24ms"},
+    {"error", false, "17:52:13.680", "[error] ** (Bandit.HTTPError) Read timeout"}
+  ]
 
   defp ui(assigns) do
+    assigns = assign(assigns, sheet_paths: @sheet_paths, log_lines: @log_lines)
+
     ~H"""
     <div class="ui" id="wb-ui" phx-hook="Frame" phx-update="ignore">
-      <p class="lede">
-        How this console is arranged, the ground it is read on, and the face its code is set in. Kept in this browser, not in <code>config.conf</code>: it is what you are looking at, not what the workbench builds.
-      </p>
-      <div class="row">
-        <button
-          class="frame"
-          type="button"
-          data-frame="band-bottom"
-          data-axis="band"
-          aria-label="The band: top or bottom"
-        ></button><b>The band</b><p class="help" data-help="band-bottom"></p>
-      </div>
-      <div class="row">
-        <button
-          class="frame"
-          type="button"
-          data-frame="rail-right"
-          data-axis="rail"
-          aria-label="The rail: left or right"
-        ></button><b>The rail's side</b><p class="help" data-help="rail-right"></p>
-      </div>
-      <div class="row">
-        <button
-          class="frame"
-          type="button"
-          data-frame="rail-off"
-          data-axis="off"
-          aria-label="The rail: shown or hidden"
-        ></button><b>The rail</b><p class="help" data-help="rail-off"></p>
-      </div>
-      <div class="row">
-        <button class="ground" type="button" id="theme" aria-label="The ground: light or dark">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle
-            cx="12"
-            cy="12"
-            r="9"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          /><path d="M12 3a9 9 0 010 18z" fill="currentColor" /></svg>
-        </button>
-        <b>The ground</b><p class="help" id="help-theme"></p>
-      </div>
-      <div class="row">
-        <span class="glyph" aria-hidden="true">Aa</span>
-        <b>The code</b>
-        <p class="help">
-          What runs: the terminals, the jobs' output, the logs, Docker's events.
-          <span id="help-code"></span>
+      <div class="ctl">
+        <p class="lede">
+          Kept in this browser, not in <code>config.conf</code>: it is what you are looking at, not what the workbench builds. What you set here you see there.
         </p>
-        <p class="help picks">
-          <label>face <select id="code-face" aria-label="The code face"></select></label><label>size
-          <select id="code-size" aria-label="The code size"></select></label><label>leading
-          <select id="code-leading" aria-label="The code leading, as a ratio of the size"></select></label>
-        </p>
-        <%!-- The sample is set in the same properties the surfaces read,
-              so it changes with the selects and nothing has to repaint it:
-              a log line with a bold name, a line of code with the pairs a
-              face can confuse, and the glyphs ligatures like to join. --%>
-        <pre class="sample" aria-label="A sample in the chosen face and size"><span class="dim">app-1  | 02:04:44.962 [info] Running <b>GalacticArcadeWeb.Endpoint</b> with Bandit 1.12.5 at :::4000 (http)</span>
-    &#123;:ok, pid&#125; = Task.start(fn -&gt; Repo.all(from u in User, where: u.age &gt;= 18) end)
-    0O 1lI| ~r/[a-z]+/ != &lt;= -&gt; |&gt; =&gt; &amp;&amp; :: "quoted" 'single' `tick`</pre>
-      </div>
-      <div class="row">
-        <span class="glyph files" aria-hidden="true">Aa</span>
-        <b>The files</b>
-        <p class="help">
-          What is read: the Files sheet, the diffs, <code>.env</code>
-          and <code>config.conf</code>, the papers' code blocks. <span id="help-file"></span>
-        </p>
-        <p class="help picks">
-          <label>face <select id="file-face" aria-label="The files' face"></select></label><label>size
-          <select id="file-size" aria-label="The files' size"></select></label><label>leading
-          <select id="file-leading" aria-label="The files' leading, as a ratio of the size"></select></label>
-        </p>
-        <pre class="sample files" aria-label="A sample in the chosen face and size"><span class="dim">@@ -12,7 +12,8 @@ defmodule GalacticArcadeWeb.Router do</span>
-       pipe_through :browser
-    <span class="del">-    get "/", PageController, :home</span>
-    <span class="add">+    get "/", PageController, :home, as: :root</span>
-    <span class="add">+    get "/about", PageController, :about</span>
-       live "/rooms/:id", RoomLive, :show</pre>
-      </div>
-      <div class="row colours">
-        <span class="glyph files" aria-hidden="true">#</span>
-        <b>The colours</b>
-        <p class="help">
-          What a file's tokens are set in, on the Files sheet: the rules of <code>console/elixir_color_theme.jsonc</code>, One Dark as VS Code reads
-          it and One Light on the light ground, a palette a ground and a language — Elixir, HTML and its templates, CSS, TypeScript and JavaScript, JSON, Markdown, Godot.
-          This one is <span id="colours-ground"></span>.
-        </p>
-        <p class="help picks">
-          <label>language
-          <select id="colours-lang" aria-label="The language whose colours these are"></select></label>
-        </p>
-        <p class="swatches" id="swatches" aria-label="The colours"></p>
-        <pre
-          :for={lang <- Console.Highlight.languages()}
-          class="sample src"
-          data-lang={lang}
-          hidden={lang != :elixir}
-          aria-label={"A sample of #{lang} in the chosen colours"}
-        >{Phoenix.HTML.raw(Console.Highlight.sample(lang))}</pre>
-        <div class="jsonc">
-          <textarea
-            id="jsonc"
-            aria-label="A VS Code colour theme, as jsonc"
-            placeholder={
-              ~s(Paste a VS Code jsonc here — editor.tokenColorCustomizations with its textMateRules, or a theme's tokenColors — and apply it; or read this palette back as one.)
-            }
-            spellcheck="false"
-          ></textarea>
-          <p class="acts">
-            <button class="btn" type="button" id="jsonc-apply">Apply the jsonc</button>
-            <button class="btn" type="button" id="jsonc-show">Read mine as jsonc</button>
-            <button class="btn" type="button" id="jsonc-reset">Back to the house's</button>
-            <span class="word" id="jsonc-word"></span>
+        <section>
+          <h5>The frame</h5>
+          <div class="segs">
+            <div class="one">
+              <span class="lbl">the band</span>
+              <div
+                class="seg"
+                role="group"
+                aria-label="The band: on top or at the bottom"
+                data-axis="band"
+              >
+                <button type="button" data-pick="top" aria-pressed="false">Top</button><button
+                  type="button"
+                  data-pick="bottom"
+                  aria-pressed="false"
+                >Bottom</button>
+              </div>
+            </div>
+            <div class="one">
+              <span class="lbl">the rail</span>
+              <div
+                class="seg"
+                role="group"
+                aria-label="The rail: on the left, on the right, or hidden"
+                data-axis="rail"
+              >
+                <button type="button" data-pick="left" aria-pressed="false">Left</button><button
+                  type="button"
+                  data-pick="right"
+                  aria-pressed="false"
+                >Right</button><button type="button" data-pick="hidden" aria-pressed="false">Hidden</button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section>
+          <h5>The ground</h5>
+          <div
+            class="cards"
+            role="group"
+            aria-label="The ground: light, dark, or whatever this machine says"
+          >
+            <button type="button" class="card" data-ground="light" aria-pressed="false">
+              <span class="thumb light"><i class="b"></i><i class="rl"></i><i class="t t1"></i><i class="t t2"></i><i class="t t3"></i><i class="tm"></i></span>Light
+            </button>
+            <button type="button" class="card" data-ground="dark" aria-pressed="false">
+              <span class="thumb dark"><i class="b"></i><i class="rl"></i><i class="t t1"></i><i class="t t2"></i><i class="t t3"></i><i class="tm"></i></span>Dark
+            </button>
+            <button
+              type="button"
+              class="card"
+              data-ground="system"
+              aria-pressed="false"
+              title="Whatever this machine says"
+            >
+              <span class="thumb system"><i class="b"></i><i class="rl"></i><i class="t t1"></i><i class="t t2"></i><i class="t t3"></i><i class="tm"></i></span>System
+            </button>
+          </div>
+        </section>
+        <section>
+          <h5>The code</h5>
+          <p class="hint">
+            What runs: the terminals, the jobs' output, the logs, Docker's events.
+            <span id="help-code"></span>
           </p>
+          <div class="picks">
+            <label>face <select id="code-face" aria-label="The code face"></select></label>
+            <label>size <select id="code-size" aria-label="The code size"></select></label>
+            <label>leading
+            <select id="code-leading" aria-label="The code leading, as a ratio of the size"></select></label>
+          </div>
+        </section>
+        <section>
+          <h5>The files</h5>
+          <p class="hint">
+            What is read: the Files sheet, the diffs, <code>.env</code>
+            and <code>config.conf</code>, the papers' code blocks. <span id="help-file"></span>
+          </p>
+          <div class="picks">
+            <label>face <select id="file-face" aria-label="The files' face"></select></label>
+            <label>size <select id="file-size" aria-label="The files' size"></select></label>
+            <label>leading
+            <select id="file-leading" aria-label="The files' leading, as a ratio of the size"></select></label>
+          </div>
+        </section>
+        <section class="colours">
+          <h5>The colours</h5>
+          <p class="hint">
+            What a file's tokens are set in, on the Files sheet: the rules of <code>console/elixir_color_theme.jsonc</code>, One Dark as VS Code reads
+            it and One Light on the light ground, a palette a ground and a language. This one is <span id="colours-ground"></span>.
+          </p>
+          <div class="picks">
+            <label>language
+            <select id="colours-lang" aria-label="The language whose colours these are"></select></label>
+          </div>
+          <div class="roles" id="swatches" aria-label="The colours"></div>
+          <p class="acts">
+            <button class="btn" type="button" id="jsonc-reset">Back to the house's</button>
+          </p>
+          <details class="disc">
+            <summary class="fold" aria-expanded="false">
+              As a VS Code theme <small>jsonc · paste one in, or read this palette back as one</small>
+            </summary>
+            <div class="jsonc">
+              <textarea
+                id="jsonc"
+                aria-label="A VS Code colour theme, as jsonc"
+                placeholder={
+                  ~s(Paste a VS Code jsonc here — editor.tokenColorCustomizations with its textMateRules, or a theme's tokenColors — and apply it; or read this palette back as one.)
+                }
+                spellcheck="false"
+              ></textarea>
+              <p class="acts">
+                <button class="btn" type="button" id="jsonc-apply">Apply the jsonc</button>
+                <button class="btn" type="button" id="jsonc-show">Read mine as jsonc</button>
+                <span class="word" id="jsonc-word"></span>
+              </p>
+            </div>
+          </details>
+        </section>
+      </div>
+      <div
+        class="mini"
+        id="mini"
+        aria-label="The console, at a fifth: click the band or the rail to move them"
+      >
+        <div class="mband" title="The band — click to move it">
+          <span class="tab" aria-selected="true">Deploy</span><span class="tab">Jobs</span><span class="tab">Logs</span><span class="tab">Terminal</span><span class="tab">Cartridges</span><span class="tab">Project</span><span class="tab">Docker</span>
+        </div>
+        <div class="mrow">
+          <div class="mrail" title="The rail — click to change its side">
+            <span class="lbl">Workspace</span><i class="w"></i><i></i><i class="n"></i><i class="w"></i><i class="n"></i>
+          </div>
+          <div class="mmain">
+            <div class="mtabs">
+              <span class="tab" aria-selected="true">Terminal</span><span class="tab">Files</span>
+            </div>
+            <div class="lines" aria-label="Lines of a log, as the Logs screen draws them">
+              <div
+                :for={{level, cont, ts, html} <- @log_lines}
+                class={["ln", level, cont && "cont"]}
+                style="--svc:var(--svc-app)"
+              >
+                <span class="t">{ts}</span><span class="s">app</span><span class="m">{Phoenix.HTML.raw(
+                  html
+                )}</span>
+              </div>
+            </div>
+            <div class="impl" aria-label="A file, as the Files sheet draws it">
+              <div class="files">
+                <div
+                  :for={lang <- Console.Highlight.languages()}
+                  class="f open sample"
+                  data-lang={lang}
+                  hidden={lang != :elixir}
+                >
+                  <div class="fh">
+                    <span class="ft"><span class="p">{@sheet_paths[lang]}</span></span>
+                  </div>
+                  <pre
+                    class="src"
+                    data-lang={lang}
+                    aria-label={"A sample of #{lang} in the chosen colours"}
+                  ><div class="rows"><div
+                    :for={{line, i} <- Enum.with_index(Console.Highlight.sample_lines(lang), 1)}
+                    class="dl"
+                  ><span class="gut">{i}</span><span class="gut">{i}</span><span class="sg"> </span><span class="cd">{Phoenix.HTML.raw(line)}</span></div></div></pre>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

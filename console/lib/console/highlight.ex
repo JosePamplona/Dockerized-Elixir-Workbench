@@ -268,6 +268,17 @@ defmodule Console.Highlight do
   end
 
   @doc """
+  The same sample one line at a time — one HTML string a line, every
+  span closed on its own line — for the sheet the Interface tab draws
+  it on, which numbers the lines the way the Files sheet does.
+  """
+  @spec sample_lines(atom()) :: [String.t()]
+  def sample_lines(lang \\ :elixir) do
+    {lexer, source} = Map.fetch!(@samples, lang)
+    lexer |> lex(String.trim_trailing(source, "\n")) |> token_lines()
+  end
+
+  @doc """
   The file one line at a time, for a sheet that shows a patch: the
   treatment, and — for a lexer or plain — one HTML string per line,
   every span closed on its own line. Makeup's newlines sit inside the
@@ -301,7 +312,8 @@ defmodule Console.Highlight do
       Enum.reduce(tokens, {[], []}, fn {type, _meta, value}, {lines, current} ->
         class = Utils.css_class_for_token_type(type)
 
-        case value |> IO.chardata_to_string() |> String.split("\n") do
+        # A lexer may hand a lone codepoint as the value; chardata wants a list.
+        case value |> List.wrap() |> IO.chardata_to_string() |> String.split("\n") do
           [only] ->
             {lines, [span(class, only) | current]}
 

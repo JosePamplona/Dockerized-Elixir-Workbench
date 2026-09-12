@@ -140,18 +140,7 @@ header.band .right .cell{border-left:1px solid rgba(255,255,255,.2)}
 header.band .right .cell + .cell{margin-left:-18px}
 header.band .right .cell:last-child{margin-right:-28px}
 header.band .mock{border:1px solid rgba(255,255,255,.35);padding:3px 8px;border-radius:2px;letter-spacing:.08em;text-transform:uppercase;font-family:var(--cond);font-weight:600;font-size:11px}
-/* Each of these draws the frame it makes — a band, a rail, a screen — so
-   the control is a small map of the page rather than an arrow to decode.
-   Unscoped: what the parts describe is the icon, not where it hangs, and
-   these hang in the workbench's User Interface screen now. They take the
-   ink of whatever holds them. */
-.frame{flex:none;padding:0;background:none;border:0;color:inherit;cursor:pointer;display:flex;align-items:center}
-.frame svg{width:26px;height:19px;display:block}
-.frame .r{fill:currentColor;opacity:.9}
-.frame .o{fill:none;stroke:currentColor;stroke-width:1.4;opacity:.55}
-.frame .f{fill:currentColor;opacity:.3}
-.frame .g{fill:currentColor;opacity:.22}
-.frame .d{fill:none;stroke:currentColor;stroke-width:1.2;stroke-dasharray:2.2 2;opacity:.8}
+/* The frame's pictograms hang in the Interface tab's segments now: .ui .seg. */
 
 /* --- layout ------------------------------------------------------------ */
 /* The board and the screen scroll on their own, under the band: the page never does. */
@@ -800,7 +789,9 @@ pre .ln{display:block}
    the papers and the UI pane did, the Installation and Files screens
    and the box's two faces did not: past the drawer's height they were
    clipped, options and runs out of reach on a short window. */
-.drawer > .booklet,.drawer > .ui,.drawer > .install,.drawer > .body{min-height:0;overflow:auto}
+.drawer > .booklet,.drawer > .install,.drawer > .body{min-height:0;overflow:auto}
+/* The Interface pane does not scroll as a whole: its controls column does, and the miniature fills the height. */
+.drawer > .ui{min-height:0;overflow:hidden}
 .booklet[hidden]{display:none}
 .booklet.notoc{grid-template-columns:minmax(0,1fr)}
 .booklet .toc{position:sticky;top:0;align-self:start;display:grid;gap:6px;font-family:var(--cond);font-weight:600;letter-spacing:.06em;font-size:12.5px;text-transform:uppercase;border-left:1px solid var(--line);padding-left:12px}
@@ -1133,43 +1124,91 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
    measure (860px less the air) is on what it holds, as on Config — a
    max-width on the scroller had its bar standing in the middle of the
    drawer. */
-.ui{display:grid;gap:22px;padding:26px 32px 60px;align-content:start;scrollbar-gutter:stable}
-.ui>*{max-width:796px}
-.ui .lede{margin:0;font-size:13.5px;color:var(--muted);max-width:60ch}
-.ui .row{display:grid;grid-template-columns:34px minmax(0,1fr);gap:4px 16px;align-items:center}
-.ui .row button{grid-row:1/3;justify-self:center;color:var(--ink)}
-.ui .row b{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:13px}
-.ui .row .help{margin:0;font-size:12.5px;color:var(--muted)}
-.ui .ground{padding:0;background:none;border:0;cursor:pointer;display:flex;align-items:center}
-.ui .ground svg{width:19px;height:19px;display:block}
-.ui .row .glyph{grid-row:1/5;justify-self:center;font-family:var(--code-face,var(--mono));font-size:15px;line-height:1;color:var(--ink)}
-.ui .row .glyph.files{font-family:var(--file-face,var(--mono))}
-.ui .picks{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;color:var(--ink)}
-.ui .picks label{display:inline-flex;gap:6px;align-items:center;font-family:var(--mono);font-size:12.5px}
-.ui select{font-family:var(--mono);font-size:12px;padding:3px 6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px}
-.ui .sample{margin:4px 0 0;padding:10px 14px;background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;font-family:var(--code-face,var(--mono));font-size:var(--code-size,12px);line-height:var(--code-leading,1.5);overflow-x:auto;white-space:pre}
-.ui .sample .dim{color:var(--term-dim)}
-.ui .sample b{font:inherit;font-weight:700;text-transform:none;letter-spacing:0;color:var(--term-ink)}
-.ui .sample.files{font-family:var(--file-face,var(--mono));font-size:var(--file-size,12.5px);line-height:var(--file-leading,1.5)}
-.ui .sample .add{color:var(--ansi-green)}.ui .sample .del{color:var(--ansi-red)}
-/* The colours: twelve swatches, each the rule of the jsonc it stands
-   for, and a sample of source set in them — a `.src`, so it reads the
-   same properties the Files sheet does and changes as they do. Under
-   them a jsonc goes in and out: paste VS Code's, or read this one back. */
-.ui .sample.src{color:var(--t-base);font-family:var(--file-face,var(--mono));font-size:var(--file-size,12.5px);line-height:var(--file-leading,1.5)}
-.ui .swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:6px 14px;margin:2px 0 0}
-.ui .swatches label{display:inline-flex;gap:8px;align-items:center;font-family:var(--mono);font-size:12px;color:var(--ink);cursor:pointer}
-.ui .swatches input[type=color]{width:22px;height:22px;padding:0;border:1px solid var(--line);border-radius:2px;background:none;cursor:pointer}
-.ui .swatches input[type=color]::-webkit-color-swatch-wrapper{padding:0}
-.ui .swatches input[type=color]::-webkit-color-swatch{border:0;border-radius:1px}
-.ui .swatches small{color:var(--muted)}
-/* This row is one taller than the others: swatches, sample, and the jsonc under them. */
-.ui .row.colours .glyph{grid-row:1/6}
-.ui .row .jsonc{grid-column:2;display:grid;gap:8px;margin-top:6px}
+/* --- Interface: the controls on the left, the console in miniature on the right.
+   The grid is the one the drawer's .body already reserves, 320px and
+   the rest; the column scrolls, the miniature does not. The frame's
+   pictograms are drawn by hooks.js (pict), one per position, so every
+   position is in view and the one in force is pressed; the ground is
+   three cards with a thumbnail, light, dark, and the machine's; the
+   miniature reads the same body classes and root properties the screen
+   does, so a change on the left lands on the right where it will land. */
+.ui{display:grid;grid-template-columns:320px minmax(0,1fr);gap:32px;padding:26px 28px 28px;height:100%;min-height:0}
+.ui .ctl{overflow:auto;min-height:0;display:grid;gap:18px;align-content:start;padding-right:6px;scrollbar-gutter:stable}
+.ui .lede{margin:0;font-size:13px;color:var(--muted)}
+.ui section{display:grid;gap:10px}
+.ui h5{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:13px;padding-bottom:5px;border-bottom:1px solid var(--line)}
+.ui .hint{margin:0;font-size:12px;color:var(--muted)}
+.ui .acts{margin:0;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ui .segs{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:flex-start}
+.ui .segs .one{display:grid;gap:5px}
+.ui .segs .lbl{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.ui .seg{display:inline-flex;border:1px solid var(--line);border-radius:3px;overflow:hidden;background:var(--surface)}
+.ui .seg button{display:inline-flex;flex-direction:column;align-items:center;gap:4px;padding:6px 11px 5px;border:0;border-left:1px solid var(--line);background:none;color:var(--muted);cursor:pointer;font-family:var(--cond);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;line-height:1}
+.ui .seg button:first-child{border-left:0}
+.ui .seg button[aria-pressed="true"]{background:var(--surface-2);color:var(--ink);box-shadow:inset 0 -2px 0 var(--accent)}
+.ui .seg svg{width:26px;height:19px;display:block}
+.ui .seg .r{fill:currentColor;opacity:.9}
+.ui .seg .o{fill:none;stroke:currentColor;stroke-width:1.4;opacity:.55}
+.ui .seg .f{fill:currentColor;opacity:.3}
+.ui .seg .d{fill:none;stroke:currentColor;stroke-width:1.2;stroke-dasharray:2.2 2;opacity:.8}
+.ui .cards{display:flex;gap:10px;flex-wrap:wrap}
+.ui .card{display:grid;gap:6px;justify-items:center;padding:6px 6px 5px;border:1px solid var(--line);border-radius:3px;background:none;cursor:pointer;font-family:var(--cond);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:var(--muted);line-height:1}
+.ui .card[aria-pressed="true"]{border-color:var(--accent);color:var(--ink);box-shadow:0 0 0 1px var(--accent)}
+/* The thumbnails are the two grounds' own colours, not the current tokens: a card says what it would give. */
+.ui .thumb{width:76px;height:48px;border-radius:2px;position:relative;overflow:hidden;border:1px solid rgba(0,0,0,.18)}
+.ui .thumb i{position:absolute;display:block;border-radius:1px}
+.ui .thumb.light{background:#F2EDF3}.ui .thumb.dark{background:#160F1B}
+.ui .thumb .b{left:0;right:0;top:0;height:9px;background:#4B275F}
+.ui .thumb .rl{left:0;top:9px;bottom:0;width:20px}
+.ui .thumb.light .rl{background:#FBF8FC;border-right:1px solid #D6CBDA}.ui .thumb.dark .rl{background:#22182A;border-right:1px solid #3B2D46}
+.ui .thumb .t{left:26px;height:3px;background:currentColor;opacity:.35}
+.ui .thumb.light .t{color:#1D1424}.ui .thumb.dark .t{color:#EFE7F2}
+.ui .thumb .t1{top:15px;width:34px}.ui .thumb .t2{top:22px;width:24px}.ui .thumb .t3{top:29px;width:40px}
+.ui .thumb .tm{left:26px;right:6px;top:36px;bottom:5px;border-radius:2px}
+.ui .thumb.light .tm{background:#FDFBFE;border:1px solid #D6CBDA}.ui .thumb.dark .tm{background:#120B17;border:1px solid #2B1F33}
+.ui .thumb.system{background:linear-gradient(90deg,#F2EDF3 50%,#160F1B 50%)}
+.ui .thumb.system .rl{background:#FBF8FC;border-right:1px solid #D6CBDA}
+.ui .thumb.system .t{background:linear-gradient(90deg,#1D1424 12px,#EFE7F2 12px);opacity:.35}
+.ui .thumb.system .tm{background:linear-gradient(90deg,#FDFBFE 12px,#120B17 12px);border:1px solid #6B5C76}
+.ui .picks{display:grid;gap:6px}
+.ui .picks label{display:grid;grid-template-columns:64px 1fr;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;color:var(--ink)}
+.ui select{font-family:var(--mono);font-size:12px;padding:3px 6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;width:100%;min-width:0}
+.ui .roles{display:grid;grid-template-columns:1fr 1fr;gap:5px 10px}
+.ui .roles label{display:inline-flex;gap:8px;align-items:center;font-family:var(--mono);font-size:12px;color:var(--ink);cursor:pointer;min-width:0}
+.ui .roles input[type=color]{width:22px;height:22px;flex:none;padding:0;border:1px solid var(--line);border-radius:2px;background:none;cursor:pointer}
+.ui .roles input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+.ui .roles input[type=color]::-webkit-color-swatch{border:0;border-radius:1px}
+.ui .roles small{color:var(--muted)}
+/* The jsonc behind the house's fold: the line says the tool is there, the box comes when asked. */
+.ui details.disc summary.fold{display:flex;align-items:center;gap:8px;list-style:none;font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:11.5px;color:var(--muted)}
+.ui details.disc summary.fold::marker,.ui details.disc summary.fold::-webkit-details-marker{display:none;content:""}
+.ui details.disc summary.fold small{font-family:var(--mono);font-size:11px;letter-spacing:0;text-transform:none}
+.ui details.disc:not([open])>.jsonc{display:none}
+.ui .jsonc{display:grid;gap:8px;margin-top:10px}
 .ui .jsonc textarea{width:100%;min-height:96px;resize:vertical;font-family:var(--mono);font-size:11.5px;line-height:1.45;padding:8px 10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;white-space:pre-wrap;overflow:auto}
-.ui .jsonc .acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .ui .jsonc .word{font-family:var(--mono);font-size:12px;color:var(--muted)}
 .ui .jsonc .word.bad{color:var(--bad)}
+/* --- the miniature: the band, the rail, the screen with a terminal and a sheet --- */
+.ui .mini{display:flex;flex-direction:column;border:1px solid var(--line);background:var(--ground);min-height:0;overflow:hidden;border-radius:3px}
+.ui .mini.bottom{flex-direction:column-reverse}
+.ui .mband{flex:none;display:flex;gap:2px;padding:6px 12px 0;background:var(--board);color:var(--board-ink);cursor:pointer}
+.ui .mband .tab{font-size:11px;padding:4px 8px 6px;color:var(--board-ink);opacity:.7;pointer-events:none}
+.ui .mband .tab[aria-selected="true"]{opacity:1;border-bottom-color:var(--accent)}
+.ui .mrow{display:flex;flex:1;min-height:0}
+.ui .mini.right .mrow{flex-direction:row-reverse}
+.ui .mini.off .mrail{display:none}
+.ui .mrail{width:112px;flex:none;background:var(--surface);border-right:1px solid var(--line);padding:10px;display:grid;gap:8px;align-content:start;cursor:pointer}
+.ui .mini.right .mrail{border-right:0;border-left:1px solid var(--line)}
+.ui .mrail .lbl{font-family:var(--cond);font-weight:600;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.ui .mrail i{display:block;height:6px;border-radius:2px;background:var(--ink);opacity:.18}
+.ui .mrail i.w{width:70%}.ui .mrail i.n{width:45%}
+.ui .mmain{flex:1;min-width:0;min-height:0;display:grid;grid-template-rows:auto minmax(0,1fr) minmax(0,1fr);gap:8px;padding:10px}
+.ui .mtabs{display:flex;gap:2px;border-bottom:1px solid var(--line);padding:0 4px}
+.ui .mtabs .tab{font-size:11px;padding:4px 8px 6px}
+.ui .mini .lines{min-height:0;background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px}
+.ui .mini .impl{min-height:0;overflow:auto;align-content:start}
+.ui .mini .impl .src{max-height:none;border-top:0}
+.ui .mini .impl .fh{cursor:default}
 .cfg .row select option.dim{color:var(--soft)}
 .cfg .row input[type=text],.cfg .row select{font-family:var(--mono);font-size:13px;padding:6px 8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;width:100%;max-width:520px}
 /* The stack field is a .fetch: the house's pair keeps the field's width,

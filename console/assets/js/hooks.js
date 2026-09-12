@@ -481,24 +481,25 @@ export const ShelfView = {
 // --- the frame: where the band sits, which side the rail is on, whether it is there.
 // Three independent switches, each one class on <body>, each drawn by the
 // button that flips it — the icon is a map of the page.
-const FRAME = {
-  "band-bottom": { on: "The band is at the bottom — click to put it back on top", off: "The band is on top — click to move it to the bottom" },
-  "rail-right": { on: "The rail is on the right — click to move it to the left", off: "The rail is on the left — click to move it to the right" },
-  "rail-off": { on: "The rail is hidden — click to bring it back", off: "The rail is shown — click to hide it" },
-}
-function frameIcon(btn, axis) {
-  const b = document.body, bottom = b.classList.contains("band-bottom"), right = b.classList.contains("rail-right"), off = b.classList.contains("rail-off")
-  const top = bottom ? 5 : 5.5, hgt = 9.5, rx = right ? 17 : 1.5
+// The pictogram of one frame: the band, the rail, the screen, with the
+// axis being chosen drawn full and the rest faint. A segment of the
+// control shows the frame it would set, so every position is in view
+// and the one in force is the pressed one — no ghost, no sentence.
+function pict(state, axis) {
+  const { bottom, right, off } = state, top = bottom ? 5 : 5.5, hgt = 9.5, rx = right ? 17 : 1.5
   const bar = (y, c) => `<rect class="${c}" x="1" y="${y}" width="24" height="3" rx="1"/>`
   const col = (x, c) => `<rect class="${c}" x="${x}" y="${top}" width="7.5" height="${hgt}" rx="1"/>`
-  let band = bar(bottom ? 15 : 1, axis === "band" ? "r" : "f")
-  if (axis === "band") band += bar(bottom ? 1 : 15, "g")
-  let rail = ""
-  if (axis === "rail") rail = (off ? "" : col(rx, "r")) + col(right ? 1.5 : 17, "g")
-  else if (axis === "off") rail = off ? col(rx, "d") : col(rx, "r")
-  else if (!off) rail = col(rx, "f")
+  const band = bar(bottom ? 15 : 1, axis === "band" ? "r" : "f")
+  const rail = axis === "rail" ? col(rx, off ? "d" : "r") : (off ? "" : col(rx, "f"))
   const scr = `<rect class="o" x="${off ? 1.5 : (right ? 1.5 : 10)}" y="${top}" width="${off ? 23 : 14.5}" height="${hgt}" rx="1"/>`
-  btn.innerHTML = `<svg viewBox="0 0 26 19" aria-hidden="true">${band}${rail}${scr}</svg>`
+  return `<svg viewBox="0 0 26 19" aria-hidden="true">${band}${rail}${scr}</svg>`
+}
+const FRAME_CLASSES = ["band-bottom", "rail-right", "rail-off"]
+// What each segment sets: the band's two, the rail's three — hidden is
+// a position of the rail, not a setting of its own, and it keeps the side.
+const PICKS = {
+  top: { bottom: false }, bottom: { bottom: true },
+  left: { right: false, off: false }, right: { right: true, off: false }, hidden: { off: true },
 }
 // --- the code and the files: the face, size and leading of two kinds of
 // surface, chosen in the drawer and kept in this browser. `code` is what
@@ -708,7 +709,7 @@ function bindColours(el) {
   const draw = () => {
     const g = ground()
     langSel.value = lang
-    for (const pre of el.querySelectorAll(".sample.src[data-lang]")) pre.hidden = pre.dataset.lang !== lang
+    for (const s of el.querySelectorAll(".sample[data-lang]")) s.hidden = s.dataset.lang !== lang
     if (which) which.textContent = `the ${g} ground's, for ${LANGS[lang].name} — ${HOUSE[g]} underneath`
     if (reset) reset.textContent = `Back to ${HOUSE[g]}`
     swatches.replaceChildren(...LANGS[lang].roles.map(role => {
@@ -737,27 +738,44 @@ function bindColours(el) {
 
 export const Frame = {
   mounted() {
+    const el = this.el, body = document.body, mini = el.querySelector("#mini")
+    const state = () => ({ bottom: body.classList.contains("band-bottom"), right: body.classList.contains("rail-right"), off: body.classList.contains("rail-off") })
     const paint = () => {
-      for (const btn of this.el.querySelectorAll("button.frame")) {
-        const cls = btn.dataset.frame, on = document.body.classList.contains(cls)
-        btn.setAttribute("aria-pressed", String(on))
-        btn.title = FRAME[cls][on ? "on" : "off"]
-        const help = this.el.querySelector(`[data-help="${cls}"]`); if (help) help.textContent = btn.title
-        frameIcon(btn, btn.dataset.axis)
+      const s = state()
+      for (const b of el.querySelectorAll(".seg button[data-pick]")) {
+        const want = PICKS[b.dataset.pick], on = Object.entries(want).every(([k, v]) => s[k] === v) && (b.dataset.pick !== "left" && b.dataset.pick !== "right" || !s.off)
+        b.setAttribute("aria-pressed", String(on))
+        if (!b.querySelector("svg")) b.insertAdjacentHTML("afterbegin", pict({ ...s, ...want }, b.closest(".seg").dataset.axis))
       }
-      const t = ground(), say = t === "dark" ? "Dark ground — click for light" : "Light ground — click for dark"
-      const g = this.el.querySelector("#theme"); if (g) { g.setAttribute("aria-pressed", String(t === "dark")); g.title = say }
-      const h = this.el.querySelector("#help-theme"); if (h) h.textContent = say
+      if (mini) { mini.classList.toggle("bottom", s.bottom); mini.classList.toggle("right", s.right); mini.classList.toggle("off", s.off) }
+      const chosen = store.get(THEME_KEY) || "system"
+      for (const c of el.querySelectorAll(".card[data-ground]")) c.setAttribute("aria-pressed", String(c.dataset.ground === chosen))
     }
-    for (const btn of this.el.querySelectorAll("button.frame")) btn.addEventListener("click", () => {
-      document.body.classList.toggle(btn.dataset.frame)
-      store.set("wb-console-frame", JSON.stringify(Object.keys(FRAME).filter(c => document.body.classList.contains(c))))
+    const setFrame = want => {
+      const s = { ...state(), ...want }
+      body.classList.toggle("band-bottom", s.bottom); body.classList.toggle("rail-right", s.right); body.classList.toggle("rail-off", s.off)
+      store.set("wb-console-frame", JSON.stringify(FRAME_CLASSES.filter(c => body.classList.contains(c))))
       paint(); dispatchEvent(new Event("resize"))
+    }
+    for (const b of el.querySelectorAll(".seg button[data-pick]")) b.addEventListener("click", () => setFrame(PICKS[b.dataset.pick]))
+    // The miniature is a control too: the band moves, the rail changes side.
+    mini?.querySelector(".mband")?.addEventListener("click", () => setFrame({ bottom: !state().bottom }))
+    mini?.querySelector(".mrail")?.addEventListener("click", () => setFrame({ right: !state().right }))
+    // The ground: light, dark, or the machine's — which is no choice kept, the way the page boots.
+    for (const c of el.querySelectorAll(".card[data-ground]")) c.addEventListener("click", () => {
+      const g = c.dataset.ground
+      if (g === "system") { try { localStorage.removeItem(THEME_KEY) } catch (e) {} document.documentElement.removeAttribute("data-theme") }
+      else { document.documentElement.setAttribute("data-theme", g); store.set(THEME_KEY, g) }
+      paint(); document.getElementById("ground-toggle")?.dispatchEvent(new Event("repaint"))
     })
-    this.el.querySelector("#theme")?.addEventListener("click", () => { const t = ground() === "dark" ? "light" : "dark"; document.documentElement.setAttribute("data-theme", t); store.set(THEME_KEY, t); paint(); document.getElementById("ground-toggle")?.dispatchEvent(new Event("repaint")) })
-    for (const g of Object.keys(GROUPS)) bindPicks(this.el, g)
-    bindColours(this.el)
+    onGround(paint)
+    // The jsonc's fold: the house's caret is drawn from aria-expanded.
+    for (const d of el.querySelectorAll("details.disc")) d.addEventListener("toggle", () => d.querySelector("summary.fold")?.setAttribute("aria-expanded", String(d.open)))
+    for (const g of Object.keys(GROUPS)) bindPicks(el, g)
+    bindColours(el)
     paint()
+    // The miniature's terminal follows its end, as the Logs screen does.
+    const lines = mini?.querySelector(".lines"); if (lines) lines.scrollTop = lines.scrollHeight
   },
 }
 

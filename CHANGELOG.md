@@ -231,6 +231,36 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **The Interface tab is the controls on the left and the console in
+  miniature on the right.** It was a column of seven rows, 1647px tall
+  in a pane of 695 — two screens and a half for four things: the frame,
+  the ground, the type, the colours. Now the column is 320px, the grid
+  the drawer's body already reserves, and scrolls on its own; beside it
+  a fifth of the console — the band, the rail, a terminal and a sheet —
+  drawn from the same body classes and root properties the screen
+  reads, so what is set on the left lands on the right where it will
+  land on the screen. The frame's three toggles, each a sentence to
+  read before clicking, are two segmented controls with a pictogram per
+  position, the band's two and the rail's three — hidden is a position
+  of the rail, not a setting of its own — the way DevTools docks its
+  panel; the miniature's band and rail are controls too. The ground is
+  three cards with a thumbnail, Light, Dark and System, and the third
+  puts back the state the console boots in, which once a choice was
+  made could not be had again. The type's two profiles keep their
+  picks; their samples are now the miniature's terminal, real lines —
+  a warning of Elixir's compiler as a terminal colours it, a Phoenix
+  boot, a request, an error of Bandit's — drawn as the Logs screen
+  draws them, and the miniature's sheet, the Files sheet's own drawing
+  of the tab's sample, gutters and all: the old sample was a `pre` with
+  three colours that looked like no surface of the console. The
+  colours' twelve roles read in two columns under their language, and
+  the jsonc box — 96px and three buttons always in view for what is
+  done once — folds behind the house's `.fold`. Decided on 2026-09-12
+  among four compositions drawn on the real content: the sibling
+  Config's row grammar, three docked tabs, this, and a booklet with an
+  index; this one shows the most, at the cost of a second drawing of
+  the frame that has to follow the first.
+
 - **The jobs tray is on every screen but Jobs**, once anything has run
   — it kept to the screens that start jobs, and a job's answer went
   unseen on the others — and the bar's link to Jobs is a square that
@@ -798,6 +828,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   own; what has happened to the project belongs beside what it is.
 
 ### Fixed
+
+- **A lexer that hands a lone codepoint as a token's value no longer
+  throws the line cutter.** `Console.Highlight.token_lines/1` took the
+  value for chardata; the Files sheet caught it and fell back to plain
+  text for the whole file, and the Interface tab's sheet, which does
+  not catch, went down with the drawer. The value is wrapped first.
 
 - **A container that exited read `unhealthy`.** Docker keeps a stopped
   container's last health, and the reading put health before state:

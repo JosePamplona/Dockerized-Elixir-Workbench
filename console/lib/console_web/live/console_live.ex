@@ -377,6 +377,12 @@ defmodule ConsoleWeb.ConsoleLive do
   def handle_info({:logs, :restarted}, socket),
     do: {:noreply, push_event(socket, "logs_restarted", %{})}
 
+  # The terminal's sessions that run, for the tab's dot: they live in
+  # Console.Terminals and outlive the page, so the dot reads the same
+  # from every screen and after a reload.
+  defp live_sessions(%{sessions: sessions}),
+    do: Enum.count(sessions, fn {_, s} -> s.state == :live end)
+
   # A container still starting will be healthy without any job saying
   # so: ask again in a moment, the fast way.
   defp poll_if_starting(status) do
@@ -914,6 +920,16 @@ defmodule ConsoleWeb.ConsoleLive do
                 title="the project's containers are running: lines are coming"
               ></span>
               <span :if={t == "logs"} id="logs-badge" class="badge bad" hidden phx-update="ignore"></span>
+              <span
+                :if={t == "terminal" and live_sessions(@term) > 0}
+                class="live"
+                title={
+                  case live_sessions(@term) do
+                    1 -> "a session is open"
+                    n -> "#{n} sessions are open"
+                  end
+                }
+              ></span>
               <span :if={t == "shelf" and @status} class="badge">{length(
                 Cartridges.installed(@status)
               )} in</span>

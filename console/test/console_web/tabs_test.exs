@@ -1,8 +1,8 @@
 defmodule ConsoleWeb.TabsTest do
   @moduledoc """
   The row of screens, and the pulses on it. A pulse means the same thing
-  on both tabs that have one: something is happening on that screen right
-  now — a job running, a container writing lines.
+  on every tab that has one: something is happening on that screen right
+  now — a job running, a container writing lines, a terminal session open.
   """
   # The bench is one process for the whole console: these drive it.
   use ConsoleWeb.ConnCase
@@ -49,6 +49,53 @@ defmodule ConsoleWeb.TabsTest do
     arrives(status([running("database")]))
     {:ok, _view, html} = live(conn, "/deploy")
     assert logs_tab(html) =~ ~s(class="live")
+  end
+
+  defp terminal_tab(html) do
+    [tab] = Regex.run(~r{<a[^>]*>\s*Terminal.*?</a>}s, html)
+    tab
+  end
+
+  # A session is a process of the console's, not the page's: the pulse
+  # reads from any screen, on a page opened after the session, and goes
+  # when the session does — closed, or its process ended.
+  test "the Terminal pulse follows the sessions that run", %{conn: conn} do
+    arrives(status([running("app")]))
+    target = %{name: "app", kind: :app, release: false, oneoff: false, title: "t"}
+    Console.Terminals.subscribe()
+
+    {:ok, _view, html} = live(conn, "/deploy")
+    refute terminal_tab(html) =~ ~s(class="live")
+
+    {:ok, _} =
+      Console.Terminals.open({"app", "bash"},
+        exe: System.find_executable("sh"),
+        argv: ["-c", "cat"],
+        target: target,
+        shell: "bash"
+      )
+
+    assert_receive {:terminal, {"app", "bash"}, :live}
+    {:ok, view, html} = live(conn, "/deploy")
+    assert terminal_tab(html) =~ ~s(class="live")
+    assert terminal_tab(html) =~ "a session is open"
+
+    Console.Terminals.close({"app", "bash"})
+    assert_receive {:terminal, {"app", "bash"}, :closed}
+    refute terminal_tab(render(view)) =~ ~s(class="live")
+
+    # A process that ends on its own is no longer a session that runs.
+    {:ok, _} =
+      Console.Terminals.open({"app", "bash"},
+        exe: System.find_executable("sh"),
+        argv: ["-c", "exit 0"],
+        target: target,
+        shell: "bash"
+      )
+
+    assert_receive {:terminal, {"app", "bash"}, {:ended, 0}}, 2000
+    refute terminal_tab(render(view)) =~ ~s(class="live")
+    Console.Terminals.close({"app", "bash"})
   end
 
   test "the tray's fold is the last job's on the Jobs screen, and back", %{conn: conn} do

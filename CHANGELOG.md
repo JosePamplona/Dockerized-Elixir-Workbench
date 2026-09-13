@@ -250,7 +250,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   until Open a session replaces it or Discard forgets it, and a
   container that left the status keeps its button while a session on it
   is there. Ctrl+L forgets the trail, so coming back reads the same. The
-  meta line counts the others open (2026-09-12).
+  meta line counts the others open, and the Terminal tab pulses while
+  any session runs, from every screen (2026-09-12).
 - **The Project tab's papers are Birth, History and Changes.** The
   first was Record, a name for the three sections it once held: the
   deployments went to Deploy and the cartridges to the shelf, and what
@@ -337,7 +338,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   the other side, its mark showing the side it would go to. A file's
   row on the Files sheet carries its caret at the far end, past the
   counts, as a job's row does, and folds wherever it is pressed but on
-  a cartridge's mention.
+  a cartridge's mention. And a changed line tints its number plates too, a
+  shade deeper than the line, as GitHub does, so the ruler shows where
+  the changes are when the code has scrolled off to the right.
 
 - **The Jobs screen lists its jobs in the framed list a box's Runs
   are.** The rows were one component already — the same chip, number,

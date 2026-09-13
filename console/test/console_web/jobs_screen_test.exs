@@ -82,7 +82,7 @@ defmodule ConsoleWeb.JobsScreenTest do
     assert html =~ ~s(id="tr-a")
     refute html =~ ~s(id="tr-b")
     # Its words about itself come with it.
-    assert html =~ "run it again"
+    assert html =~ "Run it again"
     # The bar is pinned to the foot, so the edge that moves is the top.
     assert html =~ ~s(data-grip="up")
   end
@@ -95,7 +95,7 @@ defmodule ConsoleWeb.JobsScreenTest do
 
   test "a failed job offers to run again" do
     html = screen([job("a", :failed, exit: 2)])
-    assert html =~ "run it again"
+    assert html =~ "Run it again"
     assert html =~ ~s(phx-click="retry")
     assert html =~ ~s(phx-value-id="a")
   end
@@ -113,14 +113,31 @@ defmodule ConsoleWeb.JobsScreenTest do
     assert tray([job("a", :done, exit: 0)]) =~ ~s(>#7</span>)
   end
 
-  test "a job that ended well offers nothing" do
-    refute screen([job("b", :done, exit: 0)]) =~ "run it again"
+  test "a job that ended well offers nothing, and wears no strip" do
+    html = screen([job("b", :done, exit: 0)])
+    refute html =~ "Run it again"
+    refute html =~ ~s(class="toolbar controls")
+  end
+
+  # The verbs are buttons in a strip under the pane, inside the frame:
+  # in sight when the output is long, where a line under the last one
+  # scrolled away with it.
+  test "the verbs are the strip's, under the pane" do
+    html = screen([job("a", :failed, exit: 2)])
+    assert html =~ ~r/<div[^>]*class="out">\s*<div class="pane">/
+
+    assert html =~
+             ~r/<div class="toolbar controls"[^>]*>\s*<span class="say">it stopped here<\/span>/
+
+    assert html =~ ~r/<button[^>]*class="btn"[^>]*phx-click="retry"[^>]*>Run it again<\/button>/
+    # The one link left is the header's fold, not a job's verb.
+    refute html =~ ~r/class="out">.*class="lk"/s
   end
 
   test "a job waiting for a word keeps its own words" do
     html = screen([job("c", :pending)])
-    refute html =~ "run it again"
-    assert html =~ "run it</button>"
+    refute html =~ "Run it again"
+    assert html =~ "Run it</button>"
   end
 
   test "a queued job can be dropped, and says nothing has happened" do
@@ -150,7 +167,7 @@ defmodule ConsoleWeb.JobsScreenTest do
   test "a stopped job is not a failed one, and offers to run again" do
     html = screen([job("h", :stopped, exit: 143)])
     assert html =~ "stopped on your word"
-    assert html =~ "run it again"
+    assert html =~ "Run it again"
     assert html =~ ">stopped</"
     refute html =~ "exit 143"
   end

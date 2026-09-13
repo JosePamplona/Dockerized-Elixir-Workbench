@@ -387,7 +387,7 @@ table.rows tr.new{animation:seat 1.2s ease-out}
 .term .controls:not(.top){grid-row:4}
 /* Two rows now, the meta line and the box — .logs still says three for the Jobs screen, whose command line stays above. */
 .logs.logsp,.logs.term{grid-template-rows:auto minmax(0,1fr)}
-.viewport .toolbar.controls{padding:8px 14px;border-top:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.viewport .toolbar.controls,.out .toolbar.controls{padding:8px 14px;border-top:1px solid var(--line);background:var(--surface);color:var(--ink);white-space:normal}
 .logsp .newpill{bottom:calc(14px + 47px)}
 .term .screen{padding:10px 14px;min-height:0}
 .term .screen .p{color:var(--accent)}
@@ -678,7 +678,12 @@ pre .ln{display:block}
 .job .dur{color:var(--muted);font-variant-numeric:tabular-nums}
 /* The leading is rounded to a pixel: the drawer's ratio times a bitmap
    size is 19.5px, and the lines took turns at 19 and 20. */
-.job .out{grid-column:1/-1;display:none;font-family:var(--code-face,var(--mono));font-size:var(--code-size,12px);background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:10px 14px;white-space:pre-wrap;line-height:round(calc(var(--code-size,12px) * var(--code-leading,1.55)),1px);max-height:var(--job-out,220px);overflow:auto}
+/* The box is a frame: the pane inside scrolls under the reader's cap, and the
+   strip of controls under the pane stays in sight — the Logs and Terminal
+   boxes' own strip, in a job's frame (2026-09-12). */
+.job .out{grid-column:1/-1;display:none;font-family:var(--code-face,var(--mono));font-size:var(--code-size,12px);background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;white-space:pre-wrap;line-height:round(calc(var(--code-size,12px) * var(--code-leading,1.55)),1px);overflow:hidden}
+.job .out .pane{padding:10px 14px;max-height:var(--job-out,220px);overflow:auto}
+.out .toolbar.controls .say{flex:1;min-width:0;font-family:var(--serif);font-style:italic;font-size:13px;line-height:1.4;color:var(--muted)}
 .job.open .out{display:block}
 /* A job's output is capped so a long one does not push the list out of
    reach, and the cap is the reader's: the row under the pane is a grip,
@@ -1557,7 +1562,7 @@ img{-webkit-user-drag:none;user-drag:none}
 .job .out ::selection,.log ::selection,.impl .src ::selection,.cfg pre.raw ::selection,
 .viewport ::selection,.term ::selection{background:color-mix(in srgb,var(--term-ink) 15%,transparent)}
 header.band ::selection{background:color-mix(in srgb,var(--board-ink) 15%,transparent)}
-.job .out,.log,.impl .src,.cfg pre.raw,.viewport{scrollbar-color:var(--term-scroll) transparent}
+.job .out .pane,.log,.impl .src,.cfg pre.raw,.viewport{scrollbar-color:var(--term-scroll) transparent}
 /* And the same panes, for the same reason, give an empty place the ink
    that is quiet on THEIR ground: --muted is the house's, and the house's
    ground is not what these are on. The two ::before are here because a
@@ -1582,7 +1587,7 @@ header.band ::selection{background:color-mix(in srgb,var(--board-ink) 15%,transp
 /* A template puts a newline between one line's div and the next, and a
    pre-wrap container would print each as a blank line: the container
    breaks normally, each line keeps its own spaces. */
-.job .out,.log{white-space:normal}.job .out>div,.log>div{white-space:pre-wrap}
+.job .out,.log{white-space:normal}.job .out .pane>div,.log>div{white-space:pre-wrap}
 /* The caret of a file row is drawn, not typed: the fold is a class the button toggles. */
 .impl .src .shot.drawing{display:none}.impl .src.drawn .shot.drawing{display:block}
 /* The template puts newlines between a pre's children; the rows keep their own spaces. */

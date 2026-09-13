@@ -234,6 +234,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **A job's verbs are buttons in a strip under its output**, inside
+  the frame, the strip the Logs and Terminal boxes have: Run it and
+  Drop it while it waits for a word, Drop it while it waits its turn,
+  Stop it while it runs — and, asked, Stop it beside Let it finish —
+  Run it again when it stopped or failed. They were a line of prose
+  with underlined links under the last line of output, inside the pane
+  that scrolls under the reader's cap, so on a long job Stop it was at
+  the foot of hundreds of lines. The strip stays in sight; its few
+  words say where the job stands, the reason at length rides on the
+  button, and a job that ended well wears no strip. The same in the
+  three places a job is read: the Jobs screen, a cartridge's box, the
+  tray (2026-09-12).
 - **Every terminal session is its own process, and the buttons switch
   between them.** A session is one per container and shell — `app ·
   bash`, `app · iex`, `database · psql` — under `Console.Terminals`, a

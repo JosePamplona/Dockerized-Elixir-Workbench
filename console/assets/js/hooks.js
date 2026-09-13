@@ -114,12 +114,13 @@ export const JobOut = {
       return this.el.matches("[data-tall]") ? [this.el, ...all] : all
     }
     const cap = () => Math.max(JOB_OUT_MIN, Math.round(innerHeight * 0.8))
-    const height = pane => parseInt(getComputedStyle(pane.querySelector(".out")).maxHeight, 10) || JOB_OUT_DEFAULT
+    // The cap is the pane's inside the box: the strip of controls under it is the box's own height, not the reader's.
+    const height = pane => parseInt(getComputedStyle(pane.querySelector(".out .pane")).maxHeight, 10) || JOB_OUT_DEFAULT
     // Where a drag starts from: the box as drawn, not its cap. The cap
     // is a ceiling a short output never reaches, and a drag that began
     // there moved nothing until the hand had crossed the whole box —
     // past its foot in the tray, past its head on the Jobs screen.
-    const drawn = pane => pane.querySelector(".out").getBoundingClientRect().height || height(pane)
+    const drawn = pane => pane.querySelector(".out .pane").getBoundingClientRect().height || height(pane)
     const label = (pane, h) => {
       const g = pane.querySelector(".ograb")
       if (!g) return
@@ -230,7 +231,7 @@ export const JobLines = {
       if (from > this.have) return backlog()
       const rest = lines.slice(this.have - from)
       if (!rest.length) return
-      const box = el.closest(".out") || el
+      const box = el.closest(".pane") || el.closest(".out") || el
       const atEnd = box.scrollHeight - box.scrollTop - box.clientHeight < 24
       const frag = document.createDocumentFragment()
       for (const html of rest) { const d = document.createElement("div"); d.innerHTML = html; frag.appendChild(d) }

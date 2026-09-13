@@ -136,9 +136,14 @@ defmodule ConsoleWeb.JobsScreen do
   end
 
   @doc """
-  A job's output, and its own words about itself under the last line —
-  what it can still be asked, and why it stopped. Wherever a job is
-  read it is read this way: the Jobs screen under its row, a
+  A job's output, and what it can still be asked: the lines in a pane
+  with the reader's cap, and under them, inside the frame, the strip of
+  controls the Logs and the Terminal boxes have — a verb is a button,
+  and it stays in sight when the output is long, where a line under the
+  last one scrolled away with it (2026-09-12). The strip says in a few
+  words where the job stands; the reason at length rides on the button.
+  A job that ended well has nothing to offer, and no strip. Wherever a
+  job is read it is read this way: the Jobs screen under its row, a
   cartridge's box under its insert, the tray under its bar.
   """
   attr :j, :map, required: true
@@ -147,39 +152,83 @@ defmodule ConsoleWeb.JobsScreen do
   attr :prefix, :string, default: "jl-"
 
   def job_out(assigns) do
+    assigns = assign(assigns, say: say(assigns.j, assigns.asking, assigns.stoppable))
+
     ~H"""
     <div class="out">
-      <div class="dim">$ {@j.cmdline}</div>
-      <.job_lines id={@prefix <> @j.id} job={@j.id} />
-      <div :if={@j.state == :pending} class="dim">
-        waiting for your word: confirm it where it was asked, or here —
-        <button class="lk" phx-click="confirm" phx-value-id={@j.id}>run it</button>
-        · <button class="lk" phx-click="cancel" phx-value-id={@j.id}>drop it</button>
+      <div class="pane">
+        <div class="dim">$ {@j.cmdline}</div>
+        <.job_lines id={@prefix <> @j.id} job={@j.id} />
       </div>
-      <div :if={@j.state == :queued} class="dim">
-        waiting its turn behind what is running — <button
-          class="lk"
+      <div :if={@say} class="toolbar controls" aria-label="What the job can still be asked">
+        <span class="say">{@say}</span>
+        <button
+          :if={@j.state == :pending}
+          class="btn primary"
+          type="button"
+          phx-click="confirm"
+          phx-value-id={@j.id}
+          title="run it now, as it was asked"
+        >Run it</button>
+        <button
+          :if={@j.state in [:pending, :queued]}
+          class="btn"
+          type="button"
           phx-click="cancel"
           phx-value-id={@j.id}
-        >drop it</button>, nothing of it has happened yet
-      </div>
-      <div :if={@j.state == :running and @stoppable and @asking != @j.id} class="dim">
-        <button class="lk" phx-click="stop_ask" phx-value-id={@j.id}>stop it</button>
-      </div>
-      <div :if={@j.state == :running and @asking == @j.id} class="dim">
-        stop it where it is? what it has already done stays done, and a verb left half-way leaves no commit to revert —
-        <button class="lk" phx-click="stop" phx-value-id={@j.id}>stop it</button>
-        · <button class="lk" phx-click="stop_keep">let it finish</button>
-      </div>
-      <div :if={@j.state == :stopped} class="dim">
-        stopped on your word — <button class="lk" phx-click="retry" phx-value-id={@j.id}>run it again</button>, the same line, as a new job
-      </div>
-      <div :if={@j.state == :failed} class="dim">
-        it stopped here — <button class="lk" phx-click="retry" phx-value-id={@j.id}>run it again</button>, the same line, as a new job
+          title="forget it: nothing of it has happened yet"
+        >Drop it</button>
+        <button
+          :if={@j.state == :running and @asking != @j.id}
+          class="btn"
+          type="button"
+          phx-click="stop_ask"
+          phx-value-id={@j.id}
+          title="stop it where it is — it asks first"
+        >Stop it</button>
+        <button
+          :if={@j.state == :running and @asking == @j.id}
+          class="btn primary"
+          type="button"
+          phx-click="stop"
+          phx-value-id={@j.id}
+          title="what it has already done stays done, and a verb left half-way leaves no commit to revert"
+        >Stop it</button>
+        <button
+          :if={@j.state == :running and @asking == @j.id}
+          class="btn"
+          type="button"
+          phx-click="stop_keep"
+        >Let it finish</button>
+        <button
+          :if={@j.state in [:stopped, :failed]}
+          class="btn"
+          type="button"
+          phx-click="retry"
+          phx-value-id={@j.id}
+          title="the same line, as a new job"
+        >Run it again</button>
       </div>
     </div>
     """
   end
+
+  # Where the job stands, in the strip's few words — nil when it has
+  # nothing to offer: it ended well, or it runs where nothing can be
+  # signalled.
+  defp say(%{state: :pending}, _, _),
+    do: "waiting for your word: confirm it where it was asked, or here"
+
+  defp say(%{state: :queued}, _, _),
+    do: "waiting its turn behind what is running · nothing of it has happened yet"
+
+  defp say(%{state: :running, id: id}, id, _),
+    do: "stop it where it is? what it has already done stays done"
+
+  defp say(%{state: :running}, _, true), do: "running"
+  defp say(%{state: :stopped}, _, _), do: "stopped on your word"
+  defp say(%{state: :failed}, _, _), do: "it stopped here"
+  defp say(_, _, _), do: nil
 
   @doc """
   Where a job's lines land: the hook fills it — the backlog when it

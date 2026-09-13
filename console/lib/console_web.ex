@@ -81,6 +81,7 @@ defmodule ConsoleWeb do
       import Phoenix.HTML
       # Core UI components
       import ConsoleWeb.CoreComponents
+      import ConsoleWeb.Square, only: [square: 1, mark: 1, logo: 1]
 
       # Common modules used in templates
       alias ConsoleWeb.Layouts

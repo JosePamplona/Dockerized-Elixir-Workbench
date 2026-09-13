@@ -267,16 +267,52 @@ defmodule Console.Highlight do
     inner_html(lexer, source)
   end
 
+  # One line of each sample changed — the number the sample is about,
+  # a little bigger — so the Interface tab's sheet shows a removal and
+  # an addition in every language, as the Files sheet colours them.
+  @sample_edits %{
+    elixir: {6, "  @max 12"},
+    html: {3, ~s(  <li :for={p <- @players} :if={p.age >= 18} data-max="12">)},
+    css: {3, "  margin: 0 12px;"},
+    json: {3, ~s(  "port": 4001,)},
+    ts: {4, "  max: number = 12;"},
+    markdown: {6, "- twelve at most"},
+    godot: {4, "@export var speed: float = 240.0"}
+  }
+
   @doc """
-  The same sample one line at a time — one HTML string a line, every
-  span closed on its own line — for the sheet the Interface tab draws
-  it on, which numbers the lines the way the Files sheet does.
+  The sample as a patch, for the sheet the Interface tab draws it on:
+  the rows the Files sheet draws (`Console.Diffs`: `{class, old number,
+  new number, sign, html}`, nil for a number a row has not) — one hunk, every line context but the one that changed,
+  which is a removal and then an addition. Both faces are lexed whole,
+  as the Files sheet lexes them, so a token that spans lines keeps its
+  colour on either side of the change.
   """
-  @spec sample_lines(atom()) :: [String.t()]
-  def sample_lines(lang \\ :elixir) do
+  @spec sample_diff(atom()) :: [
+          {atom(), pos_integer() | String.t(), pos_integer() | String.t(), String.t(), String.t()}
+        ]
+  def sample_diff(lang \\ :elixir) do
     {lexer, source} = Map.fetch!(@samples, lang)
-    lexer |> lex(String.trim_trailing(source, "\n")) |> token_lines()
+    {k, new_line} = Map.fetch!(@sample_edits, lang)
+    old = lines_of(lexer, source)
+
+    new =
+      lines_of(
+        lexer,
+        source |> String.split("\n") |> List.replace_at(k - 1, new_line) |> Enum.join("\n")
+      )
+
+    n = length(old)
+
+    [{:hunk, nil, nil, "", escape("@@ -1,#{n} +1,#{n} @@")}] ++
+      Enum.flat_map(Enum.with_index(old, 1), fn
+        {line, ^k} -> [{:del, k, nil, "−", line}, {:add, nil, k, "+", Enum.at(new, k - 1)}]
+        {line, i} -> [{:ctx, i, i, " ", line}]
+      end)
   end
+
+  defp lines_of(lexer, source),
+    do: lexer |> lex(String.trim_trailing(source, "\n")) |> token_lines()
 
   @doc """
   The file one line at a time, for a sheet that shows a patch: the

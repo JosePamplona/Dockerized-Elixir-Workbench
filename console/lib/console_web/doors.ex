@@ -1,8 +1,8 @@
 defmodule ConsoleWeb.Doors do
   @moduledoc """
   The console calling the project's doors: every open route, once, and
-  what each answered — the reading the Record paper attaches to its
-  addresses. The plan of the doors was a paper of its own until the
+  what each answered — the reading the Record (today the Birth paper,
+  and the Deploy tab's rows) attaches to its addresses. The plan of the doors was a paper of its own until the
   Record took it over (2026-09-08); what is left here is the call.
   """
 

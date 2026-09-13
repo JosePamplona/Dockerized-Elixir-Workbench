@@ -94,12 +94,20 @@ defmodule ConsoleWeb.Refs do
   attr :subject, :string, default: nil
   attr :date, :string, default: nil
 
+  attr :open, :boolean,
+    default: false,
+    doc: "its diff is open under it, on History: the mention then folds it, and says so"
+
   def commit_ref(assigns) do
     ~H"""
     <.link
       class="commit-ref"
-      patch={"/project?paper=history&commit=#{@sha}"}
-      title={Enum.join(Enum.reject([@subject, @date], &is_nil/1), " · ") <> " — open in History, with its diff"}
+      patch={if @open, do: "/project?paper=history", else: "/project?paper=history&commit=#{@sha}"}
+      aria-pressed={@open && "true"}
+      title={
+        Enum.join(Enum.reject([@subject, @date], &is_nil/1), " · ") <>
+          if(@open, do: " — its diff is open under it; press again to fold it", else: " — open in History, with its diff")
+      }
     >{String.slice(@sha, 0, 7)}</.link>
     """
   end

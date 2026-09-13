@@ -174,6 +174,25 @@ one: a bordered box is a door you press.
   reading as a list with nothing in it — the old code kept a failure as
   an empty list, so an offline console said *no published image for this
   combination (of the 0 usable)*, which is not what had happened.
+* **`.sq`** — the square icon button: the knock's bell, the eye on a
+  compose file, the cog on a given, the reload of a `.fetch`, the `×`
+  that puts a bar or the rail away. One drawing in the middle, from the
+  sprite (`icons/*.svg`, one file a drawing, gathered by the build into
+  `console/priv/static/images/icons.svg`), taking the ink of whatever
+  holds it; a hairline and the second surface; and **always a name for
+  the screen reader**, since there is no word on its face — the
+  component (`ConsoleWeb.Square`) refuses to draw one without. It is
+  the height of a field — 2.5em of the field's type, which the reload
+  of a `.fetch` had first and every square has now, in whole pixels so
+  the mark sits centred — so the square on a heading, on a row, in a
+  corner and beside a field is the same square. `.small` is the second
+  size, a line's, 2em of 11px: the jobs bar at the window's foot and the
+  cogs on the rows of a card, where a field-height square would be
+  taller than the line it sits on. The drawing is never a character:
+  a `×` set in the body face weighed what the face decided, and beside
+  a drawn arrow it showed. Where a square stands — a heading's end, a
+  corner, a table cell — belongs to the console's own CSS; what a square
+  is, here.
 * **`.fold`** — the control that opens and closes something: a section of
   the rail, a file in a diff, a job in the tray. Two rules, and they are
   the whole component. The caret **leads** — first on the line, before

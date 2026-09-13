@@ -13,90 +13,113 @@ defmodule ConsoleWeb.Terminal do
   attr :term, :map, required: true
 
   def terminal(assigns) do
-    targets = targets(assigns.status)
-    target = Enum.find(targets, &(&1.name == assigns.term.target)) || List.first(targets)
-    shells = shells(target)
-
-    shell =
-      if Enum.any?(shells, &(elem(&1, 0) == assigns.term.shell)),
-        do: assigns.term.shell,
-        else: default_shell(target)
+    {targets, target, shell} = resolve(assigns.status, assigns.term)
+    sessions = assigns.term.sessions
+    state = get_in(sessions, [{target.name, shell}, :state])
 
     assigns =
       assign(assigns,
         targets: targets,
         target: target,
-        shells: shells,
+        shells: shells(target),
         shell: shell,
+        state: state,
+        open: state == :live,
+        live: Enum.count(sessions, fn {_, s} -> s.state == :live end),
         cmd: command(assigns.status, target, shell)
       )
 
     ~H"""
-    <div class="logs term" id="term" phx-hook="Term" data-open={to_string(@term.open)}>
-      <div class="toolbar">
-        <span style="display:inline-flex;gap:6px;flex-wrap:wrap">
+    <div
+      class="logs term"
+      id="term"
+      phx-hook="Term"
+      data-open={to_string(@open)}
+      data-key={"#{@target.name} #{@shell}"}
+    >
+      <div class="logmeta">
+        <span>{@cmd}</span><span>{cond do
+          @open ->
+            "session on #{@target.name} · #{@shell}#{others(@live - 1)}"
+
+          match?({:ended, _}, @state) ->
+            "session ended (exit #{elem(@state, 1)}) on #{@target.name} · #{@shell}#{others(@live)}"
+
+          is_nil(@status) ->
+            "reading the workspace…"
+
+          true ->
+            "no session#{others(@live)} · docker exec -i, line by line, no tty"
+        end}</span>
+      </div>
+      <div class="viewport">
+        <%!-- The containers on top, alone: where a session opens. Each one
+              wears its sessions — live, or ended with its trail — and none
+              is dark while another has one: a session is its own process,
+              and the row switches the screen between them (2026-09-12). --%>
+        <div class="toolbar controls top" aria-label="Where a session opens">
           <button
             :for={t <- @targets}
             class="btn svc"
             type="button"
             style={"--svc:#{svc_color(t)}"}
             aria-pressed={to_string(t.name == @target.name)}
-            disabled={@term.open and t.name != @target.name}
-            title={t.title}
+            data-session={mark(@term.sessions, t.name)}
+            title={t.title <> sessions_on(@term.sessions, t.name)}
             phx-click="term_pick"
             phx-value-target={t.name}
           >{t.name}</button>
-        </span>
-        <span class="sep"></span>
-        <span style="display:inline-flex;gap:6px;flex-wrap:wrap">
-          <button
-            :for={{v, label} <- @shells}
-            class="btn"
-            type="button"
-            aria-pressed={to_string(@shell == v)}
-            disabled={@term.open and @shell != v}
-            title={label}
-            phx-click="term_pick"
-            phx-value-shell={v}
-          >{label}</button>
-        </span>
-        <span class="sep"></span>
-        <button :if={@term.open} class="btn" type="button" phx-click="term_close">Close session</button>
-        <button
-          :if={!@term.open}
-          class="btn primary"
-          type="button"
-          phx-click="term_start"
-          disabled={is_nil(@status)}
-          title={
-            if is_nil(@status),
-              do:
-                "reading the workspace — a session needs to know what runs, and where the source is",
-              else: nil
-          }
-        >Open a session</button>
-      </div>
-      <div class="logmeta">
-        <span>{@cmd}</span><span>{cond do
-          @term.open -> "session on #{@target.name} · #{@shell}"
-          is_nil(@status) -> "reading the workspace…"
-          true -> "no session · docker exec -i, line by line, no tty"
-        end}</span>
-      </div>
-      <div class="viewport">
-        <div class="lines screen" id="term-screen" phx-update="ignore">
-          <span class="nothing">No session. Open one: bash or iex on the app when it runs, or on a one-off toolchain container with the source.</span>
         </div>
-        <form :if={@term.open} class="in" phx-submit="term_line">
+        <div class="lines screen" id="term-screen" phx-update="ignore"></div>
+        <form :if={@open} class="in" phx-submit="term_line">
           <span class="p">{prompt(@target, @shell, @status)}</span><input
             type="text"
             name="line"
             id="term-input"
+            data-key={"#{@target.name} #{@shell}"}
             autocomplete="off"
             spellcheck="false"
             placeholder="↑↓ history · Ctrl+L clears"
           />
         </form>
+        <%!-- The rest of the controls under the command line: with what,
+              and the opening (2026-09-12). --%>
+        <div class="toolbar controls">
+          <span style="display:inline-flex;gap:6px;flex-wrap:wrap">
+            <button
+              :for={{v, label} <- @shells}
+              class="btn"
+              type="button"
+              aria-pressed={to_string(@shell == v)}
+              data-session={mark(@term.sessions, @target.name, v)}
+              title={label <> sessions_on(@term.sessions, @target.name, v)}
+              phx-click="term_pick"
+              phx-value-shell={v}
+            >{label}</button>
+          </span>
+          <span class="sep"></span>
+          <button :if={@open} class="btn" type="button" phx-click="term_close">Close session</button>
+          <button
+            :if={!@open and match?({:ended, _}, @state)}
+            class="btn"
+            type="button"
+            phx-click="term_close"
+            title="forget this session's trail"
+          >Discard</button>
+          <button
+            :if={!@open}
+            class="btn primary"
+            type="button"
+            phx-click="term_start"
+            disabled={is_nil(@status)}
+            title={
+              if is_nil(@status),
+                do:
+                  "reading the workspace — a session needs to know what runs, and where the source is",
+                else: nil
+            }
+          >Open a session</button>
+        </div>
       </div>
     </div>
     """
@@ -164,6 +187,70 @@ defmodule ConsoleWeb.Terminal do
 
     apps ++ beside
   end
+
+  @doc """
+  The targets with the sessions' own: a session on a container that has
+  since left the status — the one-off toolchain once the app runs, a
+  replica stopped — is still a process with a screen, and its button
+  stays until it is closed or discarded.
+  """
+  def targets(status, sessions) do
+    known = targets(status)
+    names = MapSet.new(known, & &1.name)
+
+    extra =
+      for {{name, _}, %{target: t}} <- Enum.sort(sessions),
+          name not in names,
+          uniq: true,
+          do: %{t | title: t.title <> " — no longer in the status"}
+
+    known ++ extra
+  end
+
+  @doc """
+  What the page looks at, resolved: the targets, the one picked or the
+  first, and the shell picked when that target offers it, else its
+  first. The component and the page's events read the same answer.
+  """
+  def resolve(status, term) do
+    targets = targets(status, term.sessions || %{})
+    target = Enum.find(targets, &(&1.name == term.target)) || List.first(targets)
+
+    shell =
+      if Enum.any?(shells(target), &(elem(&1, 0) == term.shell)),
+        do: term.shell,
+        else: default_shell(target)
+
+    {targets, target, shell}
+  end
+
+  # The mark a button wears: `live` when a session runs there, `ended`
+  # when one is over with its trail, nothing otherwise. A target's mark
+  # reads across its shells; a live one wins.
+  defp mark(sessions, name, shell \\ nil) do
+    states =
+      for {{n, s}, %{state: st}} <- sessions, n == name, is_nil(shell) or s == shell, do: st
+
+    cond do
+      :live in states -> "live"
+      states != [] -> "ended"
+      true -> nil
+    end
+  end
+
+  defp sessions_on(sessions, name, shell \\ nil) do
+    for {{n, s}, %{state: st}} <- Enum.sort(sessions), n == name, is_nil(shell) or s == shell do
+      case st do
+        :live -> " · #{s} open"
+        {:ended, code} -> " · #{s} ended (exit #{code})"
+      end
+    end
+    |> Enum.join()
+  end
+
+  defp others(0), do: ""
+  defp others(1), do: " · 1 other open"
+  defp others(n), do: " · #{n} others open"
 
   @doc """
   What a session on this target can be. The database's first shell is

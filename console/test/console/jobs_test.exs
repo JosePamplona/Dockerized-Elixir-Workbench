@@ -59,6 +59,25 @@ defmodule Console.JobsTest do
     assert {0, []} = Jobs.lines("nobody")
   end
 
+  test "a line cut by the port is joined, a line of frames keeps its last, a stray byte goes" do
+    state = %{port: :p, tail: "", out: %{}, running: "j", flush: nil, pending: []}
+    data = fn eol, chunk -> {:p, {:data, {eol, chunk}}} end
+
+    # mix's spinner: frames over \r, cut at 4096 in the middle of `⠂` (E2 A0 82).
+    {:noreply, s} =
+      Jobs.handle_info(data.(:noeol, "compiling ⠀\rcompiling ⠁\rcompiling \xE2\xA0"), state)
+
+    assert s.pending == []
+    {:noreply, s} = Jobs.handle_info(data.(:eol, "\x82"), s)
+    assert s.pending == ["compiling ⠂"]
+    assert s.tail == ""
+
+    {:noreply, s} = Jobs.handle_info(data.(:eol, "caf\xE9 done\r"), %{state | flush: s.flush})
+    assert s.pending == ["caf done"]
+    assert Enum.all?(s.pending, &String.valid?/1)
+    if s.flush, do: Process.cancel_timer(s.flush)
+  end
+
   test "a job asked with confirm: true waits as pending and can be cancelled" do
     Jobs.subscribe()
     id = Jobs.run({:delete, nil}, ["delete"], confirm: true)

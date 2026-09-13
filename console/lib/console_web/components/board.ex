@@ -8,6 +8,7 @@ defmodule ConsoleWeb.Board do
   """
   use Phoenix.Component
   import ConsoleWeb.Refs
+  import ConsoleWeb.Square, only: [square: 1]
   alias ConsoleWeb.{Cartridges, Record, Terminal}
 
   attr :status, :map, default: nil
@@ -68,17 +69,26 @@ defmodule ConsoleWeb.Board do
 
   defp head(assigns) do
     ~H"""
-    <h2>
-      <button
-        class="fold"
-        type="button"
+    <%!-- The fold is a small square at the head's edge, its chevron
+          turned by aria-expanded, and the control a screen reader gets.
+          The head itself carries the same phx-click for the pointer, so
+          the name and the empty stretch fold too: LiveView fires only
+          the binding closest to the click, so the knock's square and the
+          fold's keep their own. It was the name as a .fold with a caret,
+          and then a hit layer over the head, until 2026-09-12 — the
+          layer sat over the bell whatever its z-index said. --%>
+    <h2 phx-click="fold_section" phx-value-key={@key}>
+      <span class="name">{@name}<span :if={@label} class="label">{@label}</span></span>
+      {render_slot(@inner_block)}
+      <.square
+        mark="chevron"
+        size="small"
+        class="foldsq"
+        label={"#{@name}: fold, or open"}
         aria-expanded={to_string(not folded?(@folded, @key))}
         phx-click="fold_section"
         phx-value-key={@key}
-      >
-        {@name}<span :if={@label} class="label">{@label}</span>
-      </button>
-      {render_slot(@inner_block)}
+      />
     </h2>
     """
   end
@@ -162,25 +172,25 @@ defmodule ConsoleWeb.Board do
     ~H"""
     <section class={folded?(@folded, "doors") && "folded"}>
       <.head key="doors" name="Services & Doors" label={@sum} folded={@folded}>
-        <button
+        <.square
           :if={@up}
-          class="go knock"
-          type="button"
+          mark="bell"
+          size="small"
+          label="Knock on every door"
+          class="knock"
           phx-click="knock"
           aria-busy={to_string(@reads == :asking)}
           title="knock: call every door once and read what each answers — the Record hears the same"
-        >
-          <.bell /><span class="sr">Knock on every door</span>
-        </button>
-        <button
+        />
+        <.square
           :if={!@up}
-          class="go knock unlit"
-          type="button"
+          mark="bell"
+          size="small"
+          label="Knock on every door"
+          class="knock unlit"
           aria-disabled="true"
           title="nothing is up: deploy, and knock — every door is called once and answers in a chip"
-        >
-          <.bell /><span class="sr">Knock on every door</span>
-        </button>
+        />
       </.head>
       <div class="urls">
         <.door_ref
@@ -205,20 +215,6 @@ defmodule ConsoleWeb.Board do
         />
       </div>
     </section>
-    """
-  end
-
-  # The bell: a knock on every door, the reader's own act.
-  def bell(assigns) do
-    ~H"""
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path
-      d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20a2 2 0 0 0 4 0"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2.2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    /></svg>
     """
   end
 
@@ -383,6 +379,65 @@ defmodule ConsoleWeb.Board do
       form={@form}
       name={@form && "do"}
       value={@form && "bake #{@name}"}
+    />
+    """
+  end
+
+  # Build: the row's image, built without deploying — the dev image off
+  # the project's Dockerfile.local, which `up` never rebuilds (the next
+  # up recreates the containers with it), or the release image prod and
+  # scaled share, which `up --deploy` builds again on its own way up.
+  # Built here, nothing goes down: a build that fails leaves the
+  # deployment that is up as it was. It stood in the foot beside Up
+  # until 2026-09-10 and went to the CLI; back on 2026-09-11, on the
+  # row, beside Bake — the file, then the image, then the status. The
+  # flags `docker compose build` takes, --no-cache and the rest, stay
+  # the CLI's: a button sends the line it says and nothing more.
+  attr :name, :string, required: true
+  attr :status, :map, required: true
+  attr :busy, :boolean, default: false
+
+  attr :extra, :string,
+    default: "",
+    doc: "scaled's --replicas and --no-balancer, when they differ"
+
+  attr :form, :string,
+    default: nil,
+    doc: "the picker it stands in, when it stands in one: pressed, it sends the form"
+
+  def build_button(assigns) do
+    cmd = ConsoleWeb.Deploy.cmdline("build", assigns.name, assigns.extra)
+
+    why =
+      cond do
+        assigns.status["exists"] != true -> "the workspace is empty: Deploy → Project creates one"
+        assigns.busy -> "a job is running"
+        true -> nil
+      end
+
+    title =
+      why ||
+        cmd <>
+          if(assigns.name == "dev",
+            do:
+              " — builds the dev image again from the project's Dockerfile.local, without deploying: the next Up recreates the containers with it",
+            else:
+              " — builds the release image #{if assigns.name == "scaled", do: "every replica shares", else: "the prod deployment runs"}, without deploying; nothing goes down, and the file is baked on the way"
+          ) <>
+          " · --no-cache and the other docker compose build flags are the CLI's"
+
+    assigns = assign(assigns, why: why, title: title, cmd: cmd)
+
+    ~H"""
+    <.job_button
+      label="Build"
+      class="mini"
+      args={String.replace_prefix(@cmd, "./wb.sh ", "")}
+      title={@title}
+      why={@why}
+      form={@form}
+      name={@form && "do"}
+      value={@form && "build #{@name}"}
     />
     """
   end
@@ -577,8 +632,8 @@ defmodule ConsoleWeb.Board do
             :if={not @status["git"]["clean"]}
             class="btn"
             patch="/project?paper=pending"
-            title="the Pending paper: what is pending, and the commit with a title"
-          >Commit pending changes</.link>
+            title="the Changes paper: what a commit would take, and the commit with a title"
+          >Commit changes</.link>
         <% end %>
       </div>
     </section>

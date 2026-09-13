@@ -13,7 +13,7 @@ defmodule ConsoleWeb.ConsoleLive do
   """
   use ConsoleWeb, :live_view
 
-  alias Console.{Bench, Events, Jobs, Logs, Project, Verbs, Workbench}
+  alias Console.{Bench, Events, Jobs, Logs, Project, Terminals, Verbs, Workbench}
   alias ConsoleWeb.{Box, Cartridges, Deploy, DockerScreen, GitScreen}
   alias ConsoleWeb.ConsoleLive.{Docker, Drawer, Git, Hand, Term}
   alias ConsoleWeb.Doors
@@ -45,10 +45,6 @@ defmodule ConsoleWeb.ConsoleLive do
   # @external_resource recompiles this module when that file changes.
   # Inline and never an <img>: it is `fill="currentColor"`, and an SVG
   # loaded as an image is its own document, where that falls to black.
-  @mark_path Path.join(__DIR__, "../../../priv/static/images/logo.svg")
-  @external_resource @mark_path
-  @mark File.read!(@mark_path) |> String.trim()
-  defp mark, do: Phoenix.HTML.raw(@mark)
 
   @impl true
   def mount(_params, _session, socket) do
@@ -95,7 +91,7 @@ defmodule ConsoleWeb.ConsoleLive do
         installers_asking: Bench.reading?(:installers),
         installers_error: Bench.error(:installers),
         probes: %{},
-        term: %{target: nil, shell: "bash", open: false, port: nil},
+        term: Term.initial(),
         view: "covers",
         jobs: Jobs.list(),
         open_jobs: MapSet.new(),
@@ -126,6 +122,7 @@ defmodule ConsoleWeb.ConsoleLive do
     Logs.subscribe()
     Bench.subscribe()
     Events.subscribe()
+    Terminals.subscribe()
   end
 
   defp listen(false), do: :ok
@@ -361,17 +358,17 @@ defmodule ConsoleWeb.ConsoleLive do
 
   def handle_info(:poll, socket), do: {:noreply, read_status(socket, :fast)}
 
-  # What the daemon says on its own, and the two streams open as Ports —
-  # the stats and the terminal's session — each told apart by the port
-  # its screen holds.
+  # What the daemon says on its own, and the stats' stream open as a
+  # Port, told apart by the port its screen holds.
   def handle_info({:event, _} = msg, socket), do: Docker.info(msg, socket)
 
   def handle_info({port, _} = msg, %{assigns: %{dk: %{port: port}}} = socket) when is_port(port),
     do: Docker.info(msg, socket)
 
-  def handle_info({port, _} = msg, %{assigns: %{term: %{port: port}}} = socket)
-      when is_port(port),
-      do: Term.info(msg, socket)
+  # The terminal's sessions: a line of the one this page looks at, and
+  # the state of every one, for the marks.
+  def handle_info({:term, _, _} = msg, socket), do: Term.info(msg, socket)
+  def handle_info({:terminal, _, _} = msg, socket), do: Term.info(msg, socket)
 
   # A line of the logs goes to the client, which keeps and filters them;
   # a stream started over tells the client to fetch the buffer again.
@@ -820,7 +817,7 @@ defmodule ConsoleWeb.ConsoleLive do
           patch={~p"/deploy"}
           aria-label="Deploy — the console’s first screen"
           title="Deploy — the console's first screen"
-        >{mark()}</.link>
+        ><.logo /></.link>
         <h1>
           Dockerized Elixir Workbench
           <small>Console <span :if={@version} class="v">v{@version}</span></small>
@@ -836,10 +833,7 @@ defmodule ConsoleWeb.ConsoleLive do
           phx-update="ignore"
           aria-label="The ground: light or dark"
         >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2" />
-            <path d="M12 3a9 9 0 010 18z" fill="currentColor" />
-          </svg>
+          <.mark name="ground" />
         </button>
         <.link
           class="cell"
@@ -847,21 +841,25 @@ defmodule ConsoleWeb.ConsoleLive do
           aria-label="The workbench: its config, its manual, its changelog"
           title="The workbench: its config, its manual, its changelog"
         >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M 10.21 6.06 L 10.26 2.86 L 13.74 2.86 L 13.79 6.06 A 6.20 6.20 0 0 1 16.24 7.48 L 16.24 7.48 L 19.04 5.92 L 20.78 8.94 L 18.04 10.58 A 6.20 6.20 0 0 1 18.04 13.42 L 18.04 13.42 L 20.78 15.06 L 19.04 18.08 L 16.24 16.52 A 6.20 6.20 0 0 1 13.79 17.94 L 13.79 17.94 L 13.74 21.14 L 10.26 21.14 L 10.21 17.94 A 6.20 6.20 0 0 1 7.76 16.52 L 7.76 16.52 L 4.96 18.08 L 3.22 15.06 L 5.96 13.42 A 6.20 6.20 0 0 1 5.96 10.58 L 5.96 10.58 L 3.22 8.94 L 4.96 5.92 L 7.76 7.48 A 6.20 6.20 0 0 1 10.21 6.06 Z M 16 12 A 4 4 0 1 1 8 12 A 4 4 0 1 1 16 12 Z"
-              fill="currentColor"
-              fill-rule="evenodd"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linejoin="round"
-            />
-          </svg>
+          <.mark name="workbench" />
         </.link>
       </div>
     </header>
 
     <div class="app" id="app" phx-hook="Rail">
+      <%!-- The rail's toggle, the way hexdocs folds its sidebar: in the
+            rail's corner while the rail shows, in the screen's corner
+            while it is away, the same square either way, pressed while
+            the rail shows. It is the Interface tab's Hidden, kept the
+            same way; the Rail hook works it. --%>
+      <.square mark="rail" label="The rail's side" id="rail-side" title="move the rail to the right" />
+      <.square
+        mark="rail"
+        label="The rail"
+        id="rail-toggle"
+        aria-pressed="true"
+        title="put the rail away"
+      />
       <div
         class="grip"
         id="rail-grip"

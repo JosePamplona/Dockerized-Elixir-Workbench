@@ -610,8 +610,8 @@
 \    path = "#{System.get_env("WORKBENCH_PATH", "/app/workbench")}/igniter"\
 \
 \    if File.exists?(path) do\
-\      [{:workbench_igniter, path: path, only: [:dev, :test], runtime: false}],\
-\    else
+\      [{:workbench_igniter, path: path, only: [:dev, :test], runtime: false}]\
+\    else\
 \      []\
 \    end\
 \  end\

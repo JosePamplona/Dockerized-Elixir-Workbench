@@ -134,6 +134,24 @@ defmodule Console.Diffs do
     }
   end
 
+  @doc """
+  How wide the sheet's line-number columns are for these rows: the
+  digits of the widest number, never fewer than two. Each row is its
+  own flex line, so the width has to be one per file — the last
+  number's, the way GitHub and GitLab size a gutter — for the numbers
+  to sit in one column.
+  """
+  @spec gutter([tuple()]) :: pos_integer()
+  def gutter(rows) do
+    rows
+    |> Enum.flat_map(fn {_, o, n, _, _} -> [o, n] end)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.max(fn -> 1 end)
+    |> Integer.digits()
+    |> length()
+    |> max(2)
+  end
+
   # The file's lines as added rows, coloured.
   defp born_rows(path, text) do
     # A file ending in a newline is cut into one line more than it

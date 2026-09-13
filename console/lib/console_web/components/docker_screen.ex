@@ -214,12 +214,19 @@ defmodule ConsoleWeb.DockerScreen do
             <td class="dim">{since(c)}</td>
             <td class="num dim" title={"restart policy: #{c.policy}"}>{c.restarts}</td>
             <td class="ports">
+              <%!-- The port's square wears its service's colour, as the Logs
+                    pills and the events do: one colour for one service
+                    everywhere. --%>
               <%= for p <- c.ports, [host, inside] = String.split(p, "→") do %>
-                <div class="port">
+                <div
+                  class="port"
+                  style={service_color(c.service) && "--addr-port:#{service_color(c.service)}"}
+                >
                   <.door_ref
                     label={inside}
                     path={"localhost:#{host}"}
                     href={"http://localhost:#{host}"}
+                    kind="port"
                   />
                 </div>
               <% end %>
@@ -768,4 +775,13 @@ defmodule ConsoleWeb.DockerScreen do
 
   defp svc_color(%{type: "container", service: "app" <> _}), do: "var(--svc-app)"
   defp svc_color(_), do: "var(--term-dim)"
+
+  # A service's colour off the tokens, for its ports' squares; one
+  # without a colour of its own keeps the port's blue — nil, and no
+  # style: `--addr-port: var(--addr-port)` is a cycle, and paints nothing.
+  defp service_color(s) when s in ~w(database pgadmin adminer network balancer migrate),
+    do: "var(--svc-#{s})"
+
+  defp service_color("app" <> _), do: "var(--svc-app)"
+  defp service_color(_), do: nil
 end

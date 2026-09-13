@@ -253,31 +253,38 @@ defmodule ConsoleWeb.Box do
   def file(assigns) do
     by = Map.get(assigns.f, :by, [])
 
+    id = "f-#{assigns.i}"
+
+    # The fold: the button that is the path carries it and the aria-expanded
+    # the caret is drawn from; the row carries it too, so the counts and the
+    # caret at its far end fold as well — LiveView fires the binding closest
+    # to the click, so the path's stays the path's.
+    toggle =
+      Phoenix.LiveView.JS.toggle_attribute({"hidden", "hidden"}, to: "##{id}-b")
+      |> Phoenix.LiveView.JS.toggle_class("open", to: "##{id}")
+      |> Phoenix.LiveView.JS.toggle_attribute({"aria-expanded", "true", "false"},
+        to: "##{id} .ft"
+      )
+
     assigns =
       assign(assigns,
         by: by,
         shown: Enum.take(by, 3),
         rest: max(length(by) - 3, 0),
-        id: "f-#{assigns.i}"
+        id: id,
+        toggle: toggle
       )
 
     ~H"""
     <div class="f" id={@id}>
-      <div class="fh">
-        <button
-          class="ft fold"
-          type="button"
-          aria-expanded="false"
-          phx-click={
-            Phoenix.LiveView.JS.toggle_attribute({"hidden", "hidden"}, to: "##{@id}-b")
-            |> Phoenix.LiveView.JS.toggle_class("open", to: "##{@id}")
-            |> Phoenix.LiveView.JS.toggle_attribute({"aria-expanded", "true", "false"})
-          }
-        >
+      <div class="fh" phx-click={@toggle}>
+        <button class="ft fold" type="button" aria-expanded="false" phx-click={@toggle}>
           <span class="p">{@f.path}</span>
         </button>
         <span :if={@f.born || @f.gone} class="mark">{if @f.born, do: "new", else: "gone"}</span>
-        <span :if={@shown != []} class="refs">
+        <%!-- A mention's click is its own: the empty binding stops it here, so
+              the row does not fold under a cartridge the reader is opening. --%>
+        <span :if={@shown != []} class="refs" phx-click={%Phoenix.LiveView.JS{}}>
           <.cart_ref :for={n <- @shown} name={n} installed={true} />
           <span :if={@rest > 0} class="more" title={"and " <> Enum.join(Enum.drop(@by, 3), ", ")}>+{@rest}</span>
         </span>
@@ -301,6 +308,7 @@ defmodule ConsoleWeb.Box do
           class="src"
           id={"#{@id}-src"}
           data-lang={Console.Highlight.lang(@f.path)}
+          style={"--gut:#{Console.Diffs.gutter(@f.rows)}ch"}
         >
           <div :if={String.downcase(Path.extname(@f.path)) == ".svg" && not @f.gone} class="switch">
             <button type="button" class="on" aria-pressed="true" phx-click={Phoenix.LiveView.JS.remove_class("drawn", to: "##{@id}-src") |> Phoenix.LiveView.JS.add_class("on", to: "##{@id}-src .switch button:first-child") |> Phoenix.LiveView.JS.remove_class("on", to: "##{@id}-src .switch button:last-child")}>code</button>
@@ -328,12 +336,19 @@ defmodule ConsoleWeb.Box do
       @cls == :hunk && "hunk",
       @cls == :meta && "meta"
     ]}>
-      <span class="gut">{@o}</span><span class="gut">{@n}</span><span class="sg">{@sign}</span><span class="cd">{Phoenix.HTML.raw(
-        @html
-      )}</span>
+      <span class="gut" style={"--d:#{digits(@o)}"}>{@o}</span><span
+        class="gut"
+        style={"--d:#{digits(@n)}"}
+      >{@n}</span><span class="sg">{@sign}</span><span class="cd">{Phoenix.HTML.raw(@html)}</span>
     </div>
     """
   end
+
+  # How many digits a line number has, for the sheet to centre it on a
+  # whole pixel: a bitmap face's digit is an odd number of pixels wide,
+  # so half the leftover of a cell is a half pixel every other count.
+  defp digits(nil), do: 0
+  defp digits(n), do: n |> Integer.digits() |> length()
 
   # --- Box: the face, the need, the specs -------------------------------------
 
@@ -830,7 +845,7 @@ defmodule ConsoleWeb.Box do
         <p :if={@jobs == []} class="nothing">
           Nothing has run for this box yet: an insert's output lands here, and in the jobs tray.
         </p>
-        <div :if={@jobs != []} class="lines inbox" id={"runs-" <> @box["name"]} phx-hook="JobOut">
+        <div :if={@jobs != []} class="lines jobs-list" id={"runs-" <> @box["name"]} phx-hook="JobOut">
           <ConsoleWeb.JobsScreen.job_row
             :for={j <- @jobs}
             j={j}

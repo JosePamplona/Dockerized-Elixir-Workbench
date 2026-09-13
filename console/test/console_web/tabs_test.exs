@@ -159,7 +159,13 @@ defmodule ConsoleWeb.TabsTest do
     assert Deploy.line("bake scaled", pick) ==
              "./wb.sh bake --deploy scaled --replicas 6 --no-balancer"
 
-    # Nothing else runs anything — build had a button until 2026-09-10.
+    # A row's own Build, the same way: dev names itself, as up does.
+    assert Deploy.line("build dev", pick) == "./wb.sh build --deploy dev"
+
+    assert Deploy.line("build scaled", pick) ==
+             "./wb.sh build --deploy scaled --replicas 6 --no-balancer"
+
+    # Nothing else runs anything — the foot's bare build went on 2026-09-10.
     assert Deploy.line("build", pick) == nil
     assert Deploy.line("delete", pick) == nil
     assert Deploy.line(nil, pick) == nil
@@ -179,12 +185,13 @@ defmodule ConsoleWeb.TabsTest do
     assert up =~ ~s(name="do")
     refute up =~ "phx-value-args"
 
-    # Up is the foot's one verb: Build did nothing up does not do.
+    # Up is the foot's one verb: Build is each row's since 2026-09-11.
     refute sheet =~ ~s(value="build")
 
-    # Each row's Bake says which row it is, and travels the same way.
+    # Each row's Bake and Build say which row it is, and travel the same way.
     for deploy <- ~w(dev prod scaled) do
       assert sheet =~ ~s(value="bake #{deploy}")
+      assert sheet =~ ~s(value="build #{deploy}")
     end
   end
 
@@ -246,9 +253,9 @@ defmodule ConsoleWeb.TabsTest do
 
     # Three rows, none baked, and every eye and button unlit with the one reason.
     assert length(Regex.scan(~r/>\s*not baked\s*</, sheet)) == 3
-    assert length(Regex.scan(~r/class="go eye unlit"/, sheet)) == 3
+    assert length(Regex.scan(~r/class="sq eye unlit"/, sheet)) == 3
     assert sheet =~ "the workspace is empty: Deploy → Project creates one"
-    refute sheet =~ ~s(class="go eye")
+    refute sheet =~ ~s(class="sq eye")
   end
 
   test "the Docker screen is lit before any project is, and opens on its containers", %{
@@ -269,7 +276,7 @@ defmodule ConsoleWeb.TabsTest do
     {:ok, _view, html} = live(conn, "/project")
     refute Regex.match?(~r{<(a|button)[^>]*>\s*Git\s*</(a|button)>}s, html)
 
-    for paper <- ["Pending", "History"] do
+    for paper <- ["Changes", "History"] do
       [tab] = Regex.run(~r{<button[^>]*>\s*#{paper}.*?</button>}s, html)
       assert tab =~ ~s(aria-disabled="true") and tab =~ "no repository"
     end

@@ -1,0 +1,261 @@
+defmodule Console.Terminals do
+  @moduledoc """
+  The terminal's sessions, each its own process: one per container and
+  shell — `app · bash`, `app · iex`, `database · psql` — under a
+  supervisor of this console's, not the page's. A session outlives the
+  page that opened it: reload, change tab, lose the socket, and the
+  `iex -S mix` is still there with its screen, since the process holds
+  the last lines it wrote and hands them back to whoever attaches.
+
+  A session is keyed by `{target, shell}`. It is live while the process
+  in the container runs; when that one ends the session stays, ended,
+  with its trail and the exit code, until the reader opens on the same
+  key again or discards it. What the reader can see of every session at
+  once — live, ended — goes out on PubSub, so every page marks its
+  buttons; the lines go only to the processes attached to that session.
+  """
+  use Supervisor
+
+  alias Console.Terminals.Session
+
+  @topic "terminals"
+
+  def start_link(opts), do: Supervisor.start_link(__MODULE__, opts, name: __MODULE__)
+
+  @impl true
+  def init(_) do
+    Supervisor.init(
+      [
+        {Registry, keys: :unique, name: Console.Terminals.Registry},
+        {DynamicSupervisor, name: Console.Terminals.Supervisor, strategy: :one_for_one}
+      ],
+      strategy: :one_for_all
+    )
+  end
+
+  @doc "Every page listens: `{:terminal, key, :live | {:ended, code} | :closed}`."
+  def subscribe, do: Phoenix.PubSub.subscribe(Console.PubSub, @topic)
+
+  @doc false
+  def broadcast(key, state),
+    do: Phoenix.PubSub.broadcast(Console.PubSub, @topic, {:terminal, key, state})
+
+  @doc """
+  Opens a session on `key`, replacing whatever the key held — an ended
+  one and its trail, or a live one, closed first. `opts`: `:exe` and
+  `:argv` for the Port, `:target` and `:shell` as the Terminal component
+  knows them, `:app` for rpc, `:head` for the dim first line.
+  """
+  def open(key, opts) do
+    close(key)
+
+    DynamicSupervisor.start_child(
+      Console.Terminals.Supervisor,
+      {Session, Keyword.put(opts, :key, key)}
+    )
+  end
+
+  @doc "Ends the session on `key`, live or ended, and forgets its trail."
+  def close(key) do
+    case whereis(key) do
+      nil -> :ok
+      pid -> GenServer.stop(pid, :normal)
+    end
+  end
+
+  @doc """
+  Attaches the calling process to the session on `key`: from now on it
+  receives `{:term, key, {:line, html, cls}}` for each line, and gets
+  back the lines so far and the session's state, in one step, so no
+  line falls between the trail and the first message.
+  """
+  def attach(key) do
+    case whereis(key) do
+      nil -> :none
+      pid -> GenServer.call(pid, {:attach, self()})
+    end
+  end
+
+  def detach(key) do
+    case whereis(key) do
+      nil -> :ok
+      pid -> GenServer.cast(pid, {:detach, self()})
+    end
+  end
+
+  @doc "A line of the reader's, echoed on the screen and handed to the process."
+  def send_line(key, line, echo) do
+    case whereis(key) do
+      nil -> :none
+      pid -> GenServer.cast(pid, {:line, line, echo})
+    end
+  end
+
+  @doc "Forgets the trail, as Ctrl+L cleared the screen."
+  def clear(key) do
+    case whereis(key) do
+      nil -> :ok
+      pid -> GenServer.cast(pid, :clear)
+    end
+  end
+
+  @doc """
+  What there is: `%{key => %{state: :live | {:ended, code}, target: t, shell: s}}`,
+  the target as the Terminal component built it — so a session on a
+  container that has since left the status still knows where it is.
+  """
+  def list do
+    Console.Terminals.Registry
+    |> Registry.select([{{:"$1", :_, :"$2"}, [], [{{:"$1", :"$2"}}]}])
+    |> Map.new()
+  end
+
+  def whereis(key) do
+    case Registry.lookup(Console.Terminals.Registry, key) do
+      [{pid, _}] -> pid
+      [] -> nil
+    end
+  end
+end
+
+defmodule Console.Terminals.Session do
+  @moduledoc """
+  One session: the Port to the process in the container, the last
+  lines of its screen already turned into HTML, and who is watching.
+  """
+  use GenServer, restart: :temporary
+
+  alias Console.Terminals
+
+  @limit 2000
+
+  def start_link(opts) do
+    key = Keyword.fetch!(opts, :key)
+
+    GenServer.start_link(__MODULE__, opts,
+      name: {:via, Registry, {Console.Terminals.Registry, key, meta(opts, :live)}}
+    )
+  end
+
+  defp meta(opts, state),
+    do: %{
+      state: state,
+      target: Keyword.fetch!(opts, :target),
+      shell: Keyword.fetch!(opts, :shell)
+    }
+
+  @impl true
+  def init(opts) do
+    key = Keyword.fetch!(opts, :key)
+    exe = Keyword.get(opts, :exe) || System.find_executable("docker")
+
+    port =
+      Port.open({:spawn_executable, exe}, [
+        :binary,
+        :exit_status,
+        :stderr_to_stdout,
+        {:line, 8192},
+        args: Keyword.fetch!(opts, :argv)
+      ])
+
+    state = %{
+      key: key,
+      port: port,
+      shell: Keyword.fetch!(opts, :shell),
+      release: Keyword.fetch!(opts, :target).release,
+      app: Keyword.get(opts, :app, "app"),
+      lines: [],
+      count: 0,
+      state: :live,
+      watchers: %{}
+    }
+
+    Terminals.broadcast(key, :live)
+    {:ok, put(state, Keyword.get(opts, :head, ""), "dim")}
+  end
+
+  @impl true
+  def handle_call({:attach, pid}, _from, state) do
+    watchers =
+      case state.watchers do
+        %{^pid => _} -> state.watchers
+        w -> Map.put(w, pid, Process.monitor(pid))
+      end
+
+    {:reply, {:ok, %{lines: Enum.reverse(state.lines), state: state.state}},
+     %{state | watchers: watchers}}
+  end
+
+  @impl true
+  def handle_cast({:detach, pid}, state), do: {:noreply, forget(state, pid)}
+
+  def handle_cast({:line, line, echo}, state) do
+    state = put(state, echo, "p")
+
+    if state.port do
+      # rpc: each line is one expression handed to the release, through the bash that is open.
+      text =
+        if state.shell == "rpc" and state.release,
+          do: "/app/bin/#{state.app} rpc \"$(cat <<'EOF_WB'\n#{line}\nEOF_WB\n)\"\n",
+          else: line <> "\n"
+
+      Port.command(state.port, text)
+    end
+
+    {:noreply, state}
+  end
+
+  def handle_cast(:clear, state), do: {:noreply, %{state | lines: [], count: 0}}
+
+  @impl true
+  def handle_info({port, {:data, {_, line}}}, %{port: port} = state),
+    do: {:noreply, put(state, Console.ANSI.to_html(line), nil)}
+
+  def handle_info({port, {:exit_status, code}}, %{port: port} = state) do
+    Registry.update_value(Console.Terminals.Registry, state.key, &%{&1 | state: {:ended, code}})
+    Terminals.broadcast(state.key, {:ended, code})
+
+    {:noreply,
+     %{state | port: nil, state: {:ended, code}}
+     |> put("— session ended (exit #{code})", "dim")}
+  end
+
+  def handle_info({:DOWN, _, :process, pid, _}, state), do: {:noreply, forget(state, pid)}
+
+  # The name goes first, by hand: the Registry would drop it on its own
+  # a moment after the process dies, and the page that closed asks the
+  # list, or opens on the same key, before that moment.
+  @impl true
+  def terminate(_reason, state) do
+    Registry.unregister(Console.Terminals.Registry, state.key)
+    if state.port, do: try_close(state.port)
+    Terminals.broadcast(state.key, :closed)
+  end
+
+  defp try_close(port) do
+    Port.close(port)
+  rescue
+    _ -> :ok
+  end
+
+  # A line on the screen: kept, capped, and told to whoever watches.
+  defp put(state, html, cls) do
+    for {pid, _} <- state.watchers, do: send(pid, {:term, state.key, {:line, html, cls}})
+    lines = [{html, cls} | state.lines]
+
+    if state.count >= @limit,
+      do: %{state | lines: Enum.take(lines, @limit)},
+      else: %{state | lines: lines, count: state.count + 1}
+  end
+
+  defp forget(state, pid) do
+    case Map.pop(state.watchers, pid) do
+      {nil, _} ->
+        state
+
+      {ref, w} ->
+        Process.demonitor(ref, [:flush])
+        %{state | watchers: w}
+    end
+  end
+end

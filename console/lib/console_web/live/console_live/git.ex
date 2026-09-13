@@ -2,7 +2,7 @@ defmodule ConsoleWeb.ConsoleLive.Git do
   @moduledoc """
   The git papers' state, off the page: which of the two the URL names
   and which commit, the tree and the log read off the workspace, and
-  the commit the reader writes. Pending and History are papers of the
+  the commit the reader writes. Changes and History are papers of the
   Project tab: `/project?paper=history&commit=SHA` is where a
   `.commit-ref` lands — the Record's birth, the rail's HEAD, an
   insert's chip, a row of History itself — the commit picked and its
@@ -44,7 +44,7 @@ defmodule ConsoleWeb.ConsoleLive.Git do
 
   def read(socket, _again), do: socket
 
-  # The working tree, for the Pending document.
+  # The working tree, for the Changes paper.
   defp ask_pending(socket, %{doc: "pending"} = gt, ws, again) do
     if again or is_nil(gt.pending),
       do: start_async(socket, {:gt, :pending}, fn -> Git.pending(ws) end),

@@ -1,9 +1,8 @@
 defmodule ConsoleWeb.ProjectScreen do
   @moduledoc """
-  The project's own papers: Record — what the project is, drawn off the
-  status, with every address it answers to and what each answered when
-  the console called — then the .env with its secrets masked, README,
-  CHANGELOG, and the workspace's git as Pending and History.
+  The project's own papers: Birth — what the project is, which is what
+  it was born as, drawn off the status — then the .env with its secrets masked, README,
+  CHANGELOG, and the workspace's git as Changes and History.
   """
   use Phoenix.Component
   import ConsoleWeb.Ribbon, only: [ribbon: 1]
@@ -76,7 +75,7 @@ defmodule ConsoleWeb.ProjectScreen do
   end
 
   # The ribbon's sublabel: the file a paper is; for the drawn ones what
-  # they are read off — Record the first commit, Pending the tree,
+  # they are read off — Birth the first commit, Changes the tree,
   # History the HEAD.
   defp small("record", _file, true, birth, _gt, _status),
     do: if(birth, do: String.slice(birth, 0, 7), else: "—")

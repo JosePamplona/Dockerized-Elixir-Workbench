@@ -13,6 +13,7 @@ defmodule ConsoleWeb.Deploy do
   """
   use Phoenix.Component
   import ConsoleWeb.Refs
+  import ConsoleWeb.Square, only: [square: 1]
   import ConsoleWeb.Deployments, only: [deployments_sheet: 1]
   alias ConsoleWeb.{Cartridges, Record}
 
@@ -318,30 +319,23 @@ defmodule ConsoleWeb.Deploy do
         <span :if={@value} title={@title}>{@value}</span><span :if={!@value} class="nothing">{@muted}</span>
         {render_slot(@mark)}
         <.chip :if={@warn} class="warn" title={List.last(@warn)}>{List.first(@warn)}</.chip>
-        <.link
-          class="go cog"
+        <.square
+          mark="cog"
+          size="small"
+          label={"Change #{@label} in config.conf"}
+          class="cog"
           patch="/deploy?wb=config"
           title="change it in config.conf, in the workbench drawer"
-        >
-          <.cog_mark /><span class="sr">Change {@label} in config.conf</span>
-        </.link>
+        />
       </span>
     </div>
     """
   end
 
   # The cog on every given: the row is read here and changed in one
-  # place, config.conf — the same square icon button the eye is, so a
-  # reader who has met one has met both. It said "change in config" in
-  # words on every row until 2026-09-10, six times down one card.
-  defp cog_mark(assigns) do
-    ~H"""
-    <svg viewBox="0 0 24 24" aria-hidden="true" fill-rule="evenodd"><path
-      d="M 10.4 5.3 L 10.3 1.9 L 13.7 1.9 L 13.6 5.3 L 15.7 6.1 L 17.9 3.7 L 20.3 6.1 L 17.9 8.3 L 18.7 10.4 L 22.1 10.3 L 22.1 13.7 L 18.7 13.6 L 17.9 15.7 L 20.3 17.9 L 17.9 20.3 L 15.7 17.9 L 13.6 18.7 L 13.7 22.1 L 10.3 22.1 L 10.4 18.7 L 8.3 17.9 L 6.1 20.3 L 3.7 17.9 L 6.1 15.7 L 5.3 13.6 L 1.9 13.7 L 1.9 10.3 L 5.3 10.4 L 6.1 8.3 L 3.7 6.1 L 6.1 3.7 L 8.3 6.1 Z M 12 8.6 a 3.4 3.4 0 1 0 0 6.8 a 3.4 3.4 0 1 0 0 -6.8 Z"
-      fill="currentColor"
-    /></svg>
-    """
-  end
+  # place, config.conf — the same square the eye is, so a reader who has
+  # met one has met both. It said "change in config" in words on every
+  # row until 2026-09-10, six times down one card.
 
   # The installer, as one version when config names one; the sentence
   # otherwise, which is what a sentence is for. What this project was
@@ -444,8 +438,8 @@ defmodule ConsoleWeb.Deploy do
     extra = fn name -> if(name == "scaled", do: scaled_extra(pick), else: "") end
 
     case String.split(verb || "", " ") do
-      ["bake", name] when name in ~w(dev prod scaled) ->
-        cmdline("bake", name, extra.(name))
+      [verb, name] when verb in ~w(bake build) and name in ~w(dev prod scaled) ->
+        cmdline(verb, name, extra.(name))
 
       ["up"] ->
         name = pick.target || "dev"

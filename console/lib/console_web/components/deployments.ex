@@ -3,7 +3,7 @@ defmodule ConsoleWeb.Deployments do
   The deployments as a sheet: the table — one row per deployment, the
   radio that picks it and what it is, its compose file baked or not, in
   sync or with its drift, up, stopped or down, its services as ports,
-  and Bake, Down and Stop — under a row the file itself, when its eye
+  and Bake, Build, Down and Stop — under a row the file itself, when its eye
   is pressed, in a code box that wears its name, and under the table Up
   of the row picked, with the wb.sh line it is. It was two
   cards until 2026-09-09, a picker of three boxes over a table of the
@@ -13,11 +13,14 @@ defmodule ConsoleWeb.Deployments do
   says what is baked and running), and the rail draws its own short
   row off the same plan in `ConsoleWeb.Board`.
 
-  The row's three buttons keep their slots — Bake, Down, Stop, in the
-  order the columns before them are read: Bake answers the file, Down
-  and Stop answer the status. A verb the row cannot do now is unlit
-  with the reason, not hidden (2026-09-10, when the order turned and
-  Stop and Down stopped coming and going).
+  The row's four buttons keep their slots — Bake, Build, Down, Stop,
+  in the order the columns before them are read: Bake answers the
+  file, Build the image the file names, Down and Stop answer the
+  status. A verb the row cannot do now is unlit with the reason, not
+  hidden (2026-09-10, when the order turned and Stop and Down stopped
+  coming and going). Build was the foot's until 2026-09-10 and the
+  CLI's the day after; since 2026-09-11 it is the row's, the image
+  built with nothing going down (`ConsoleWeb.Board.build_button/1`).
 
   The head carries no word of its own: it said *Topology* until
   2026-09-10, which named the section and not what it holds — and the
@@ -31,7 +34,8 @@ defmodule ConsoleWeb.Deployments do
   """
   use Phoenix.Component
   import ConsoleWeb.Refs
-  import ConsoleWeb.Board, only: [bake_button: 1, deploy_button: 1]
+  import ConsoleWeb.Square, only: [square: 1]
+  import ConsoleWeb.Board, only: [bake_button: 1, build_button: 1, deploy_button: 1]
 
   # What comes off the project — in sync or not, the drift — is the last
   # full reading's until the next lands, and a fast status meanwhile
@@ -222,6 +226,13 @@ defmodule ConsoleWeb.Deployments do
                     extra={(d.deploy == "scaled" && @scaled_extra) || ""}
                     form="deploy-pick"
                   />
+                  <.build_button
+                    name={d.deploy}
+                    status={@status}
+                    busy={@busy}
+                    extra={(d.deploy == "scaled" && @scaled_extra) || ""}
+                    form="deploy-pick"
+                  />
                   <.deploy_button
                     verb="down"
                     name={d.deploy}
@@ -255,13 +266,11 @@ defmodule ConsoleWeb.Deployments do
               sends that form and the server writes the line from what is
               in it. What it carries is only what it says.
 
-              Build stood beside it until 2026-09-10 and does nothing Up
-              does not: `up --deploy prod` rebuilds the release image on
-              each deploy, so all Build added was *not deploying*. That
-              case is real and rare, and it is the one that wants a flag
-              the button cannot send — `--no-cache` and the rest go to
-              `docker compose build` — so it lives in the CLI, where Tab
-              completes it from the catalog. --%>
+              Build stood beside it until 2026-09-10, when it went to the
+              CLI, and since 2026-09-11 it is each row's, beside Bake:
+              the image built with nothing going down. The flags
+              `docker compose build` takes — `--no-cache` and the rest —
+              stay the CLI's, where Tab completes them from the catalog. --%>
         <.job_button
           label={
             if @running && @running != @pickname,
@@ -303,36 +312,23 @@ defmodule ConsoleWeb.Deployments do
   # closes. The square icon button the knock bell wears, with an eye.
   defp eye(assigns) do
     ~H"""
-    <.link
+    <.square
       :if={@baked}
-      class="go eye"
+      mark="eye"
+      label={"Read #{@file}"}
+      class="eye"
       patch={if @open, do: "/deploy", else: "/deploy?compose=#{@deploy}"}
       aria-pressed={to_string(@open)}
       title={if @open, do: "close #{@file}", else: "read #{@file} under its row"}
-    >
-      <.eye_mark /><span class="sr">Read {@file}</span>
-    </.link>
-    <button
+    />
+    <.square
       :if={!@baked}
-      class="go eye unlit"
-      type="button"
+      mark="eye"
+      label={"Read #{@file}"}
+      class="eye unlit"
       aria-disabled="true"
       title={@why}
-    >
-      <.eye_mark /><span class="sr">Read {@file}</span>
-    </button>
-    """
-  end
-
-  defp eye_mark(assigns) do
-    ~H"""
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path
-      d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12z"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2.2"
-      stroke-linejoin="round"
-    /><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2.2" /></svg>
+    />
     """
   end
 

@@ -8,6 +8,7 @@ defmodule ConsoleWeb.WorkbenchDrawer do
   use Phoenix.Component
   import ConsoleWeb.Refs
   import ConsoleWeb.Ribbon, only: [ribbon: 1]
+  import ConsoleWeb.Square, only: [square: 1, mark: 1, logo: 1]
 
   # The drawer's top row is categories, the way the cartridge's is: what
   # the workbench is set by, what this browser is set by, and what the
@@ -393,9 +394,9 @@ defmodule ConsoleWeb.WorkbenchDrawer do
               </option>
             </optgroup>
           </select>
-          <button
-            class="go"
-            type="button"
+          <.square
+            mark="reload"
+            label="Ask Docker Hub for the usable images"
             phx-click="stacks_ask"
             disabled={@asking}
             aria-busy={to_string(@asking)}
@@ -406,17 +407,7 @@ defmodule ConsoleWeb.WorkbenchDrawer do
                 else:
                   "ask Docker Hub for the usable images — five pages of its API, seconds, over your own connection"
             }
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path
-              d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4h-4"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            /></svg>
-            <span class="sr">Ask Docker Hub for the usable images</span>
-          </button>
+          />
         </div>
         <.chip class={state_class(@state)} title={state_why(@state, @cur)}>
           {state_word(@state)}
@@ -553,9 +544,9 @@ defmodule ConsoleWeb.WorkbenchDrawer do
               </option>
             </optgroup>
           </select>
-          <button
-            class="go"
-            type="button"
+          <.square
+            mark="reload"
+            label="Ask hex for the phx_new releases"
             phx-click="installers_ask"
             disabled={@asking}
             aria-busy={to_string(@asking)}
@@ -566,17 +557,7 @@ defmodule ConsoleWeb.WorkbenchDrawer do
                 else:
                   "ask hex for the phx_new releases — one call for the list and one per release, under a second"
             }
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path
-              d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4h-4"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            /></svg>
-            <span class="sr">Ask hex for the phx_new releases</span>
-          </button>
+          />
         </div>
         <.chip
           :if={@stray}
@@ -677,7 +658,8 @@ defmodule ConsoleWeb.WorkbenchDrawer do
   # the language's colours. Its terminal is real lines — a warning of
   # Elixir's compiler as a terminal colours it, a Phoenix boot, a
   # request, an error of Bandit's, all off logs of 2026-09-11 — and its
-  # sheet is the Files sheet's own drawing of the tab's sample. Decided
+  # sheet is the Files sheet's own drawing of the tab's sample with one
+  # line changed, a removal and an addition, so its colours show. Decided
   # on 2026-09-12 among four compositions on the real content: the one
   # that shows the most, at the cost of a second drawing of the frame
   # that has to follow the first. The one before was a column of seven
@@ -691,24 +673,46 @@ defmodule ConsoleWeb.WorkbenchDrawer do
     markdown: "README.md",
     godot: "scripts/player.gd"
   }
-  # The miniature's terminal: {level, cont?, time, html}. The times are
-  # the lines' own, as the Logs screen formats them.
+  # The miniature's terminal: {service, level, cont?, time, html}. The
+  # times are the lines' own, as the Logs screen formats them; the
+  # services are the compose project's, and each line wears its colour
+  # the way the Logs screen gives it (hooks.js svcColor: the six named
+  # ones, and the network's for any other).
   @log_lines [
-    {"warn", false, "21:16:30.416",
-     ~s(    <span class="ansi-fg-3">warning:</span> variable "valid?" is unused \(if the variable is not meant to be used, prefix it with an underscore\))},
-    {"warn", true, "", "  3 │     valid? = length(room.players) &lt; 8"},
-    {"warn", true, "", ~s(    │ <span class="ansi-fg-3">    ~~~~~~</span>)},
-    {"warn", true, "", "    └─ lib/arcade/room.ex:3:5: Arcade.Room.join/2"},
-    {"info", false, "17:00:49.002",
+    {"database", "info", false, "11:04:38.442",
+     "UTC [1] LOG:  database system is ready to accept connections"},
+    {"pgadmin", "info", false, "11:04:38.687",
+     "postfix/postlog: starting the Postfix mail system"},
+    {"app", "warn", false, "21:16:30.416",
+     ~s(<span class="ansi-fg-3">warning:</span> variable "valid?" is unused \(if the variable is not meant to be used, prefix it with an underscore\))},
+    {"app", "warn", true, "21:16:30.416", "  3 │     valid? = length(room.players) &lt; 8"},
+    {"app", "warn", true, "21:16:30.416", ~s(    │ <span class="ansi-fg-3">    ~~~~~~</span>)},
+    {"app", "warn", true, "21:16:30.416", "    └─ lib/arcade/room.ex:3:5: Arcade.Room.join/2"},
+    {"app", "info", false, "17:00:49.002",
      "[info] Running ConsoleWeb.Endpoint with Bandit 1.12.5 at 0.0.0.0:4000 (http)"},
-    {"info", false, "17:07:17.401", "[info] GET /deploy"},
-    {"debug", false, "17:07:17.409", "[debug] Processing with ConsoleWeb.ConsoleLive.__live__/0"},
-    {"info", false, "17:07:17.426", "[info] Sent 200 in 24ms"},
-    {"error", false, "17:52:13.680", "[error] ** (Bandit.HTTPError) Read timeout"}
+    {"app", "info", false, "17:07:17.401", "[info] GET /deploy"},
+    {"app", "debug", false, "17:07:17.409",
+     "[debug] Processing with ConsoleWeb.ConsoleLive.__live__/0"},
+    {"app", "info", false, "17:07:17.426", "[info] Sent 200 in 24ms"},
+    {"app", "error", false, "17:52:13.680", "[error] ** (Bandit.HTTPError) Read timeout"}
   ]
+  @svc_colours ~w(app database pgadmin network balancer migrate)
+
+  # The digits of a line number, as ConsoleWeb.Box counts them for the sheet.
+  defp digits(nil), do: 0
+  defp digits(n), do: n |> Integer.digits() |> length()
+
+  # The colour a service's lines wear: hooks.js svcColor, on the server.
+  defp svc_var(service) do
+    base = String.replace(service, ~r/\d+$/, "")
+    "--svc:var(--svc-#{if base in @svc_colours, do: base, else: "network"})"
+  end
 
   defp ui(assigns) do
-    assigns = assign(assigns, sheet_paths: @sheet_paths, log_lines: @log_lines)
+    services = @log_lines |> Enum.map(&elem(&1, 0)) |> Enum.uniq()
+
+    assigns =
+      assign(assigns, sheet_paths: @sheet_paths, log_lines: @log_lines, services: services)
 
     ~H"""
     <div class="ui" id="wb-ui" phx-hook="Frame" phx-update="ignore">
@@ -776,7 +780,7 @@ defmodule ConsoleWeb.WorkbenchDrawer do
           </div>
         </section>
         <section>
-          <h5>The code</h5>
+          <h5>Terminal</h5>
           <p class="hint">
             What runs: the terminals, the jobs' output, the logs, Docker's events.
             <span id="help-code"></span>
@@ -789,7 +793,7 @@ defmodule ConsoleWeb.WorkbenchDrawer do
           </div>
         </section>
         <section>
-          <h5>The files</h5>
+          <h5>Code Files</h5>
           <p class="hint">
             What is read: the Files sheet, the diffs, <code>.env</code>
             and <code>config.conf</code>, the papers' code blocks. <span id="help-file"></span>
@@ -802,7 +806,7 @@ defmodule ConsoleWeb.WorkbenchDrawer do
           </div>
         </section>
         <section class="colours">
-          <h5>The colours</h5>
+          <h5>Language Syntax</h5>
           <p class="hint">
             What a file's tokens are set in, on the Files sheet: the rules of <code>console/elixir_color_theme.jsonc</code>, One Dark as VS Code reads
             it and One Light on the light ground, a palette a ground and a language. This one is <span id="colours-ground"></span>.
@@ -842,8 +846,12 @@ defmodule ConsoleWeb.WorkbenchDrawer do
         id="mini"
         aria-label="The console, at a fifth: click the band or the rail to move them"
       >
+        <%!-- The band, at a fifth: the mark, the name, the state, the
+              clock and the two cells, drawn as the band draws them. --%>
         <div class="mband" title="The band — click to move it">
-          <span class="tab" aria-selected="true">Deploy</span><span class="tab">Jobs</span><span class="tab">Logs</span><span class="tab">Terminal</span><span class="tab">Cartridges</span><span class="tab">Project</span><span class="tab">Docker</span>
+          <span class="mark"><.logo /><b>Dockerized Elixir Workbench</b></span>
+          <span class="state"><i class="dot"></i>idle</span>
+          <span class="right"><span class="clock">12:00</span><.mark name="ground" /><.mark name="workbench" /></span>
         </div>
         <div class="mrow">
           <div class="mrail" title="The rail — click to change its side">
@@ -851,18 +859,51 @@ defmodule ConsoleWeb.WorkbenchDrawer do
           </div>
           <div class="mmain">
             <div class="mtabs">
-              <span class="tab" aria-selected="true">Terminal</span><span class="tab">Files</span>
+              <span class="tab">Deploy</span><span class="tab">Jobs</span><span
+                class="tab"
+                aria-selected="true"
+              >Logs</span><span class="tab">Terminal</span><span class="tab">Cartridges</span><span class="tab">Project</span><span class="tab">Docker</span>
             </div>
-            <div class="lines" aria-label="Lines of a log, as the Logs screen draws them">
+            <%!-- The Logs screen's service chips, the markup its hook builds
+                  (renderChips): pressed, the service's lines show. And its
+                  Timestamps button, which folds the time column away. --%>
+            <div class="toolbar" role="group" aria-label="The services whose lines show">
+              <button
+                :for={s <- @services}
+                class="btn svc"
+                type="button"
+                data-svc={s}
+                aria-pressed="true"
+                style={svc_var(s)}
+              >{s}</button>
+              <span class="sep"></span>
+              <button class="btn" type="button" data-ts aria-pressed="true">Timestamps</button>
+            </div>
+            <div
+              class="lines"
+              aria-label="Lines of a log, as the Logs screen draws them"
+              style={"--svc-w:#{@services |> Enum.map(&String.length/1) |> Enum.max()}ch"}
+            >
               <div
-                :for={{level, cont, ts, html} <- @log_lines}
+                :for={{service, level, cont, ts, html} <- @log_lines}
                 class={["ln", level, cont && "cont"]}
-                style="--svc:var(--svc-app)"
+                data-svc={service}
+                style={svc_var(service)}
               >
-                <span class="t">{ts}</span><span class="s">app</span><span class="m">{Phoenix.HTML.raw(
+                <span class="t">{ts}</span><span class="s">{service}</span><span class="m">{Phoenix.HTML.raw(
                   html
                 )}</span>
               </div>
+            </div>
+            <%!-- The Jobs screen's grip (.ograb), between the two panes:
+                  drag, and the terminal takes the height the sheet gives up. --%>
+            <div
+              class="ograb"
+              role="separator"
+              aria-orientation="horizontal"
+              tabindex="0"
+              aria-label="How the screen is split between the terminal and the sheet — drag, or arrow keys; double-click for halves"
+            >
             </div>
             <div class="impl" aria-label="A file, as the Files sheet draws it">
               <div class="files">
@@ -874,15 +915,17 @@ defmodule ConsoleWeb.WorkbenchDrawer do
                 >
                   <div class="fh">
                     <span class="ft"><span class="p">{@sheet_paths[lang]}</span></span>
+                    <span class="n"><span class="a">+1</span><span class="r"> −1</span></span>
                   </div>
                   <pre
                     class="src"
                     data-lang={lang}
-                    aria-label={"A sample of #{lang} in the chosen colours"}
+                    aria-label={"A sample of #{lang} in the chosen colours, one line changed"}
+                    style={"--gut:#{Console.Diffs.gutter(Console.Highlight.sample_diff(lang))}ch"}
                   ><div class="rows"><div
-                    :for={{line, i} <- Enum.with_index(Console.Highlight.sample_lines(lang), 1)}
-                    class="dl"
-                  ><span class="gut">{i}</span><span class="gut">{i}</span><span class="sg"> </span><span class="cd">{Phoenix.HTML.raw(line)}</span></div></div></pre>
+                    :for={{cls, o, n, sign, html} <- Console.Highlight.sample_diff(lang)}
+                    class={["dl", cls != :ctx && cls]}
+                  ><span class="gut" style={"--d:#{digits(o)}"}>{o}</span><span class="gut" style={"--d:#{digits(n)}"}>{n}</span><span class="sg">{sign}</span><span class="cd">{Phoenix.HTML.raw(html)}</span></div></div></pre>
                 </div>
               </div>
             </div>

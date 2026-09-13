@@ -21,11 +21,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   unlit with the reason when the tree is dirty, when another cartridge
   builds on it, when it came in from birth or by hand and left no
   commit to revert, or when it is a collection, whose eject is its
-  box's — and On the shelf and Not done insert theirs: `add NAME` with
-  the defaults, the options being the box's to pick; unlit without an
-  installer, a project, a clean tree or a requirement. The rows are no
-  longer links, as the Inserted rows were not: the mention opens the
-  box.
+  box's — and On the shelf and Not done lead to theirs: the row's
+  Insert opens the box on its Installation screen, where the options
+  are picked and the box's own Insert says what it runs, or why it
+  cannot. It sent the bare `add NAME` for a day (2026-09-10), unlit with
+  the reason; a verb with options to pick is pressed where they are,
+  and the screen reads for every box, the one without an installer
+  included. The rows are no longer links, as the Inserted rows were
+  not: the mention opens the box.
 - **On the shelf and Not done read in the Inserted list's table**,
   columns included: the parameters each cartridge takes with their
   type — or their values, when the cartridge declares choices
@@ -231,6 +234,35 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **Every terminal session is its own process, and the buttons switch
+  between them.** A session is one per container and shell — `app ·
+  bash`, `app · iex`, `database · psql` — under `Console.Terminals`, a
+  supervisor of the console's and not the page's: it holds the Port
+  and the last 2000 lines of its screen, so reloading the page, changing
+  tab or losing the socket leaves the `iex -S mix` where it was. The
+  container and shell buttons are never dark while a session runs; each
+  wears its sessions — a full dot where the process runs, a hollow one
+  where it ended with its trail — and pressing one switches the screen
+  to what that session has, its own ↑↓ history with it. A container
+  pressed opens on the shell with a session there, else on its first
+  shell, so the database opens on psql again. When the process in the
+  container ends the session stays with its trail and the exit code
+  until Open a session replaces it or Discard forgets it, and a
+  container that left the status keeps its button while a session on it
+  is there. Ctrl+L forgets the trail, so coming back reads the same. The
+  meta line counts the others open (2026-09-12).
+- **The Project tab's papers are Birth, History and Changes.** The
+  first was Record, a name for the three sections it once held: the
+  deployments went to Deploy and the cartridges to the shelf, and what
+  was left was the birth, so the paper is called that and its one
+  heading reads as a line, *Born 2026-09-08 07:44 at 1a0546c*. The
+  third was Pending, a word the jobs tray already uses for a job that
+  waits to be confirmed; Changes is what a commit would take, the term
+  every git client uses, and the sublabel still says *clean* or how
+  many files. History keeps its name: Git left the label on 2026-09-09
+  because the repository is the project's, and the HEAD in the
+  sublabel says whose history it is. The rail's button follows,
+  *Commit changes*; the keys in the URL do not move.
 - **The Interface tab is the controls on the left and the console in
   miniature on the right.** It was a column of seven rows, 1647px tall
   in a pane of 695 — two screens and a half for four things: the frame,
@@ -260,6 +292,97 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   Config's row grammar, three docked tabs, this, and a booklet with an
   index; this one shows the most, at the cost of a second drawing of
   the frame that has to follow the first.
+
+- **The square icon button is one component, and its drawings are
+  files.** Six squares sat in five rules of the console's CSS — the
+  knock's bell on the rail and the shelf, the eye on a compose file,
+  the cog on a given, the reload of a fetch, the `×` of the jobs bar
+  and the rail's toggle — four with a drawing inline and two with a
+  character set in the body face, and `.go` named both the squares and
+  the golden GO. Now `ConsoleWeb.Square` draws every one: a mark from
+  a sprite, `console/priv/static/images/icons.svg`, that
+  `assets/design/build.py` gathers from one file a drawing under
+  `assets/design/icons/`, and a name for the screen reader that the
+  component will not go without. What a square is — `.sq`, 2em of its
+  neighbour's type — is the house's, in `components.css` and
+  the design README; where each stands stays the console's. Its size
+  is the field's height, 2.5em of the field's type in whole pixels,
+  which the reload had and every square has now, so the mark sits
+  centred; a section head with a bell is as tall as the bell and
+  centres on it. A second size, small, is a line's, 2em of 11px: the
+  jobs bar's `×`, the cogs on New Project's rows, the two knocks, and
+  the folds of the rail's sections, which were a caret on the head and
+  are a small square at its edge now, the caret drawn from its
+  `aria-expanded` and turned when folded; the head still folds where
+  it is pressed, since it carries the same click itself — LiveView
+  fires only the binding closest to the click, so the knock's bell
+  keeps its own. (A hit layer over the head did this for an hour and
+  sat over the bell whatever its z-index said.) The `×`
+  is a drawing now, at the weight the other marks have.
+
+- **On History, the commit whose diff is open folds it when pressed
+  again.** The mention led to the same address twice, so a second press
+  did nothing; open, it now leads to History without a commit, wears
+  `aria-pressed`, and its title says so.
+
+- **The terminal's and the Logs screen's controls are inside their
+  box.** What to open a session on, with what, and the opening sit in a
+  strip under the terminal's command line; the services, the level,
+  the search, Following, Timestamps and Clear in a strip under the
+  lines of Logs; the services alone in a strip on top of each box,
+  Logs' chips and the terminal's containers. The row above each box is gone, and so are the two
+  boxes' words for being empty. On the Files sheet the file's row no
+  longer draws a line under itself: the row's ground is the edge. And
+  the rail's toggle has a neighbour, a square that moves the rail to
+  the other side, its mark showing the side it would go to. A file's
+  row on the Files sheet carries its caret at the far end, past the
+  counts, as a job's row does, and folds wherever it is pressed but on
+  a cartridge's mention.
+
+- **The Jobs screen lists its jobs in the framed list a box's Runs
+  are.** The rows were one component already — the same chip, number,
+  fold, grip and words at the foot — but the box framed them, a
+  hairline and a rounded corner hugging the rows, and the Jobs screen
+  ran the same rows unframed across its viewport, 28px in from either
+  side, a table without an end. The frame is `.jobs-list` now, in both
+  places, flush with the command line and the count above it; the
+  viewport keeps the pane's air above and below. And on the
+  Files sheet the line numbers' plate is the file row's own ground,
+  so ruler and row read as one furniture around the text.
+
+- **The rail's air is 22px on both sides.** Its right padding gives
+  back the gutter the rail keeps for its scrollbar, measured by the
+  Rail hook, so the content no longer stood 37px from the right edge
+  and 22 from the left; the rail's toggle and the section heads' squares
+  share that edge. And the danger zone on Deploy wears its red on the
+  left edge, as the house marks a block, not along the top.
+
+- **The Logs screen's service column is as wide as the longest service
+  name**, in the face's own characters — it was 72px whatever the
+  names, so every message stood a hand's width from a short one — and
+  the Interface tab's miniature draws the same column: its terminal now
+  carries lines of the database and of pgadmin beside the app's, each
+  in its service's colour, with the Logs screen's own service chips
+  above them, pressed to show, and its Timestamps button, as on the
+  screen; its band is the band — the mark, the name, the state, the
+  clock, the two cells — and its tabs are the screens' (2026-09-12), and between its terminal and its sheet the Jobs screen's
+  grip, which splits the screen between the two and keeps the split
+  in this browser; and its sheet shows
+  every language's sample as a patch, one line changed — a removal and
+  an addition, the Files sheet's colours — with the hunk and the count
+  on the file's row, as the sheet has them. And the sheet's two
+  number columns, on the Files sheet and in the miniature alike, are
+  as wide as the file's widest line number — they were 3.4em for any
+  file, a plate three digits wide beside a file of twelve lines — and
+  never narrower than two digits, the way GitHub sizes a gutter; the
+  number sits centred in its plate, a size smaller than the code, and
+  the plates run to the sheet's edges, with no air above the first
+  line or under the last. The tab's sections read Terminal, Code
+  Files and Language Syntax (2026-09-12). And the rail has a toggle in
+  its corner, the way hexdocs folds its sidebar: the same square puts
+  the rail away and, from the screen's corner, brings it back — the
+  tab's Hidden, kept the same way, and the two agree whichever was
+  pressed.
 
 - **The jobs tray is on every screen but Jobs**, once anything has run
   — it kept to the screens that start jobs, and a job's answer went
@@ -769,14 +892,20 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   paper keeps what the project IS — its name and its birth — having now
   given a section to each place its reader already was: the
   deployments to Deploy, these to Cartridges.
-- **Build leaves the deployments' foot**, which keeps one verb: Up.
-  It did nothing Up does not — `up --deploy prod` rebuilds the release
-  image on each deploy, so all Build added was *not* deploying — and
-  that case, real but rare, is the one that wants a flag the button
-  could not send: `--no-cache` and the rest go to `docker compose
-  build`. It lives in the CLI, where Tab completes it from the
-  catalog, and in `wb.sh help`. `ConsoleWeb.Deploy.line/2` no longer
-  answers for it: a verb no button sends writes no line.
+- **Build leaves the deployments' foot for each row**, beside Bake:
+  the file, then the image the file names, then the status. The foot
+  keeps one verb, Up. In the foot Build read as Up without the deploy,
+  and on 2026-09-10 it went to the CLI on that reading; the row says
+  what it is for. The dev image `up` never rebuilds — Build is the road
+  to a new one off the project's Dockerfile.local, and the next Up
+  recreates the containers with it — and the release image prod and
+  scaled share builds here with nothing going down, where `up --deploy`
+  replaces the deployment on its way: a build that fails leaves what is
+  up as it was. The button sends the line it says, `build --deploy
+  NAME` with scaled's replicas and balancer as the picker has them;
+  `--no-cache` and the rest of what `docker compose build` takes stay
+  the CLI's, where Tab completes them from the catalog. Unlit with the
+  reason while the workspace is empty or a job runs, as Bake is.
 - **Git goes last on the rail**, under Cartridges: what has happened to
   the project, after what the project is — the workspace, what answers,
   what is baked and up, what is in it. It sat second, where it landed
@@ -828,6 +957,28 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   own; what has happened to the project belongs beside what it is.
 
 ### Fixed
+
+- **A line's text sits centred in its line by its capitals**, on the
+  Files sheet, the Logs screen and the Interface tab's miniature. A
+  line box is the font's ascent and descent with the leading split
+  above and below, and a face's descent is room most lines never use:
+  in Fira Code a line of code sat three pixels high in a twenty-two
+  pixel row, plainest on a row with a ground — an added line, an
+  error. The line box is trimmed to cap height and baseline
+  (`text-box: trim-both cap alphabetic`) and the leading given back as
+  equal padding, so the capitals are centred in every face and the
+  descenders hang below; the row keeps its height, leading times size,
+  and the line numbers are centred the same way. Every width, air and
+  line height that places the text is rounded to whole pixels
+  (`round()`, as the drawer already rounds its own width), because a
+  bitmap face — Tamzen, the VGA — blurs the moment its glyphs land on
+  a fraction, and a `ch` or an `em` is a fraction more often than not:
+  each row is exactly the rounded leading tall, and a line number is
+  centred by arithmetic, the cell's leftover halved and rounded for its
+  own count of digits, since `text-align` put a number one digit short
+  of the widest on a half pixel — a bitmap digit is an odd number of
+  pixels wide. A browser without
+  `text-box` keeps the old line box.
 
 - **A lexer that hands a lone codepoint as a token's value no longer
   throws the line cutter.** `Console.Highlight.token_lines/1` took the

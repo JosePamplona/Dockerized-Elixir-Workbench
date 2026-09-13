@@ -21,7 +21,14 @@ defmodule ConsoleWeb.JobButtonTest do
   end
 
   test "in a form it carries nothing but its name: the line is written from what travels" do
-    html = button(args: "up --deploy scaled --replicas 4", form: "deploy-pick", name: "do", value: "up")
+    html =
+      button(
+        args: "up --deploy scaled --replicas 4",
+        form: "deploy-pick",
+        name: "do",
+        value: "up"
+      )
+
     assert html =~ ~s(type="submit")
     assert html =~ ~s(form="deploy-pick")
     assert html =~ ~s(name="do")
@@ -54,7 +61,14 @@ defmodule ConsoleWeb.JobButtonTest do
   end
 
   test "the verbs that are not wb.sh lines bring their own event and values" do
-    html = button(label: "Remove the untagged", event: "dk_prune", title: "asks first", "phx-value-what": "images")
+    html =
+      button(
+        label: "Remove the untagged",
+        event: "dk_prune",
+        title: "asks first",
+        "phx-value-what": "images"
+      )
+
     assert html =~ ~s(phx-click="dk_prune")
     assert html =~ ~s(phx-value-what="images")
     assert html =~ ~s(title="asks first")

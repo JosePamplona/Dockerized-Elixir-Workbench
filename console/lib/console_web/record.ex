@@ -1,6 +1,7 @@
 defmodule ConsoleWeb.Record do
   @moduledoc """
-  The Record paper's plan: what the project is, read off the status and
+  The Birth paper's plan (the ribbon called it Record until 2026-09-12,
+  and the module keeps that name): what the project is, read off the status and
   nothing else — its birth, the cartridges it carries with the
   addresses they open, and its deployments with the services each runs.
 

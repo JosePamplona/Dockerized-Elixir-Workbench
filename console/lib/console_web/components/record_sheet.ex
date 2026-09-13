@@ -1,7 +1,8 @@
 defmodule ConsoleWeb.RecordSheet do
   @moduledoc """
-  The Record paper drawn: the project's name and its birth, in two
-  tables with the command between them. The plan is `ConsoleWeb.Record`;
+  The Birth paper drawn (the ribbon called it Record until 2026-09-12,
+  when the name had outgrown what was left): the project's name and its
+  birth, in two tables with the command between them. The plan is `ConsoleWeb.Record`;
   this only lays it out. The paper had two more sections and gave both
   away, each to where its reader already was: the deployments to the
   Deploy tab (2026-09-09, `ConsoleWeb.Deployments`) and the cartridges
@@ -29,7 +30,6 @@ defmodule ConsoleWeb.RecordSheet do
 
       <.birth :if={@record.birth} birth={@record.birth} />
       <section :if={!@record.birth}>
-        <h3>Birth</h3>
         <p class="nothing">
           No first commit to read: this project was not born in a workspace, or its repository has no history.
         </p>
@@ -44,7 +44,7 @@ defmodule ConsoleWeb.RecordSheet do
     ~H"""
     <section>
       <h3 title="how the project was made, read off the files as its first commit left them">
-        Birth
+        Born
         <span class="label">
           {String.slice(@birth.date, 0, 16)} at
           <.commit_ref sha={@birth.sha} subject={@birth.subject} date={@birth.date} />

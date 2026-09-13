@@ -12,6 +12,7 @@ defmodule Console.Application do
       {DNSCluster, query: Application.get_env(:console, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Console.PubSub},
       Console.Jobs,
+      Console.Terminals,
       Console.Logs,
       Console.Events,
       Console.Resident,

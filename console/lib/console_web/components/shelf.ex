@@ -18,7 +18,7 @@ defmodule ConsoleWeb.Shelf do
   use Phoenix.Component
   import ConsoleWeb.Refs
   import ConsoleWeb.Ribbon, only: [ribbon: 1]
-  import ConsoleWeb.Board, only: [bell: 1]
+  import ConsoleWeb.Square, only: [square: 1]
   alias ConsoleWeb.{Box, Cartridges, Record}
 
   @docs [
@@ -138,22 +138,21 @@ defmodule ConsoleWeb.Shelf do
                   their type, and the addresses it would open, shut. The
                   summary rides on the name's title. No bell: nothing of
                   these is in, so there is no door to call. --%>
-            <div :if={@rows == [] and @view == "list"} class="list wide">
-              <div :if={@visible != []} class="lrow head">
-                <span></span>
-                <span class="label">cartridge</span>
-                <span class="label">facts</span>
-                <span class="label">edition</span>
-                <span class="label">installation parameters</span>
-                <span
-                  class="label"
-                  title="the services it would ask for and the routes it would open on the app's port, once inserted"
-                >
-                  addresses
-                </span>
-                <span></span>
-              </div>
-              <.list_row :for={e <- @visible} e={e} status={@status} tab={@tab} />
+            <div :if={@rows == [] and @view == "list" and @visible != []} class="tbl">
+              <table class="wide carts">
+                <tr>
+                  <th></th>
+                  <th>cartridge</th>
+                  <th>facts</th>
+                  <th>edition</th>
+                  <th>installation parameters</th>
+                  <th title="the services it would ask for and the routes it would open on the app's port, once inserted">
+                    addresses
+                  </th>
+                  <th></th>
+                </tr>
+                <.list_row :for={e <- @visible} e={e} status={@status} tab={@tab} />
+              </table>
             </div>
             <div :if={@view != "list"} class="boxes">
               <.box_el :for={e <- @visible} e={e} status={@status} tab={@tab} />
@@ -181,81 +180,87 @@ defmodule ConsoleWeb.Shelf do
 
   def inserted(assigns) do
     ~H"""
-    <div class="list wide">
-      <div class="lrow head">
-        <span></span>
-        <span class="label">cartridge</span>
-        <span class="label">origin</span>
-        <span class="label">edition</span>
-        <span class="label">installation parameters</span>
-        <span
-          class="label addr"
-          title="the ports the compose publishes for the cartridge's services, and the routes the project offers on the app's port"
-        >
-          addresses
-          <button
-            :if={@up}
-            class="go knock"
-            type="button"
-            phx-click="knock"
-            aria-busy={to_string(@reads == :asking)}
-            title="knock: call every door once and read what each answers — the rail hears the same"
-          >
-            <.bell /><span class="sr">Knock on every door</span>
-          </button>
-          <button
-            :if={!@up}
-            class="go knock unlit"
-            type="button"
-            aria-disabled="true"
-            title="nothing is up: deploy, and knock — every door is called once and answers in a chip"
-          >
-            <.bell /><span class="sr">Knock on every door</span>
-          </button>
-        </span>
-        <span></span>
-      </div>
-      <%!-- A row here is not a link, as it is on the plain list: the
-            mention opens the box (`cart_ref` is a button of its own) and
-            the addresses in the last cell are doors. An <a> around all of
-            that closes itself at the first door inside it, and the rest
-            of the row — the addresses — is hoisted out and lands under
-            it, full width. --%>
-      <div :for={row <- @rows} class="lrow in">
-        <span class="th"><img src={"/covers/#{front(row.entry)}"} alt="" draggable="false" /></span>
-        <span class="nm"><.cart_ref name={row.c["name"]} installed={true} /></span>
-        <span class="fx">
-          <.chip :for={f <- row.facts}>{f}</.chip>
-          <.chip class={elem(row.origin, 1)} title={elem(row.origin, 2)}>
-            {elem(row.origin, 0)}
-          </.chip>
-        </span>
-        <span class="vr" title={version_title(row.entry)}>{version(row.entry)}</span>
-        <span class="col argv">
-          <span
-            :for={
-              {{flag, value}, default?} <-
-                Enum.map(row.params, &{split_flag(elem(&1, 0)), elem(&1, 1)})
-            }
-            title={default? && "the default"}
-          >{flag} <i :if={value} class="val">{value}</i></span>
-        </span>
-        <span class="col"><span class="pairs"><.address :for={a <- row.addresses} a={a} /></span></span>
-        <%!-- The box's Eject, as a bare line: `eject NAME` travels on the
-              click and the server parses it, the way every line that is
-              only itself does. Unlit with the reason when the box's own
-              would be — and a collection's, whose eject is its members',
-              is the box's alone. --%>
-        <span class="act">
-          <.job_button
-            label="Eject"
-            class="danger mini"
-            args={"eject #{row.c["name"]}"}
-            title={eject_title(@status, row.c["name"])}
-            why={eject_why(@status, row)}
-          />
-        </span>
-      </div>
+    <%!-- A table, as the Docker screen's containers are: the rows were a
+          grid of their own while each was a link that opened the box —
+          an <a> cannot wrap a <tr> — and they are not links now: the
+          mention opens the box, the doors and the verb are the row's
+          own controls (2026-09-11). --%>
+    <div class="tbl">
+      <table class="wide carts">
+        <tr>
+          <th></th>
+          <th>cartridge</th>
+          <th>origin</th>
+          <th>edition</th>
+          <th>installation parameters</th>
+          <th title="the ports the compose publishes for the cartridge's services, and the routes the project offers on the app's port">
+            <span class="addr">
+              addresses
+              <.square
+                :if={@up}
+                mark="bell"
+                size="small"
+                label="Knock on every door"
+                class="knock"
+                phx-click="knock"
+                aria-busy={to_string(@reads == :asking)}
+                title="knock: call every door once and read what each answers — the rail hears the same"
+              />
+              <.square
+                :if={!@up}
+                mark="bell"
+                size="small"
+                label="Knock on every door"
+                class="knock unlit"
+                aria-disabled="true"
+                title="nothing is up: deploy, and knock — every door is called once and answers in a chip"
+              />
+            </span>
+          </th>
+          <th></th>
+        </tr>
+        <tr :for={row <- @rows} class="in">
+          <td class="th"><img src={"/covers/#{front(row.entry)}"} alt="" draggable="false" /></td>
+          <td><.cart_ref name={row.c["name"]} installed={true} /></td>
+          <td>
+            <span class="fx">
+              <.chip :for={f <- row.facts}>{f}</.chip>
+              <.chip class={elem(row.origin, 1)} title={elem(row.origin, 2)}>
+                {elem(row.origin, 0)}
+              </.chip>
+            </span>
+          </td>
+          <td class="vr" title={version_title(row.entry)}>{version(row.entry)}</td>
+          <td class="wrap">
+            <span class="argv">
+              <span
+                :for={
+                  {{flag, value}, default?} <-
+                    Enum.map(row.params, &{split_flag(elem(&1, 0)), elem(&1, 1)})
+                }
+                title={default? && "the default"}
+              >{flag} <i :if={value} class="val">{value}</i></span>
+            </span>
+          </td>
+          <td class="wrap">
+            <span class="pairs"><.address :for={a <- row.addresses} a={a} /></span>
+          </td>
+          <%!-- The box's Eject, as a bare line: `eject NAME` travels on the
+                click and the server parses it, the way every line that is
+                only itself does. Unlit with the reason when the box's own
+                would be — and a collection's, whose eject is its members',
+                is the box's alone. --%>
+          <td class="act">
+            <.job_button
+              label="Eject"
+              class="danger"
+              args={"eject #{row.c["name"]}"}
+              title={eject_title(@status, row.c["name"])}
+              why={eject_why(@status, row)}
+            />
+          </td>
+        </tr>
+      </table>
     </div>
     """
   end
@@ -287,30 +292,6 @@ defmodule ConsoleWeb.Shelf do
         "git revert #{String.slice(sha, 0, 7)} — #{subject}"
 
       _ ->
-        nil
-    end
-  end
-
-  # The box's Insert with its form untouched: `add NAME`, the defaults.
-  # Options are picked in the box; this is the row's way in for the
-  # cartridge that needs none picked.
-  defp insert_why(status, e) do
-    missing = Enum.reject(e["requires"] || [], &Cartridges.installed?(status, &1))
-
-    cond do
-      e["pending"] ->
-        "no installer yet: nothing to run"
-
-      !(status && status["exists"]) ->
-        "this workspace has no project — Deploy → Project creates one"
-
-      get_in(status, ["git", "clean"]) == false ->
-        "the tree has changes git does not have — commit first"
-
-      missing != [] ->
-        "builds on #{Enum.join(missing, " and ")}, not in the project yet"
-
-      true ->
         nil
     end
   end
@@ -403,46 +384,59 @@ defmodule ConsoleWeb.Shelf do
       )
 
     ~H"""
-    <%!-- Not a link, as the Inserted rows are not: the row carries a
-          button, and an <a> around a button closes at it. The mention
-          opens the box. --%>
-    <div class={["lrow", @installed && "in", @e["pending"] && "pending"]}>
-      <span class="th"><img src={"/covers/#{front(@e)}"} alt="" draggable="false" /></span>
-      <span
-        class="nm"
-        title={
-          @e["summary"] || "Documented in the generated project, but its installer is not done yet."
-        }
-      ><.cart_ref name={@e["name"]} installed={@installed} /></span>
-      <span class="fx">
-        <.chip :for={f <- @facts}>{f}</.chip>
-        <.chip :if={@origin} class={elem(@origin, 1)} title={elem(@origin, 2)}>
-          {elem(@origin, 0)}
-        </.chip>
-      </span>
-      <span
+    <%!-- A row of the Inserted table's shape, for a cartridge that is not
+          in: the mention opens the box. --%>
+    <tr class={[@installed && "in", @e["pending"] && "pending"]}>
+      <td class="th"><img src={"/covers/#{front(@e)}"} alt="" draggable="false" /></td>
+      <td title={
+        @e["summary"] || "Documented in the generated project, but its installer is not done yet."
+      }>
+        <.cart_ref name={@e["name"]} installed={@installed} />
+      </td>
+      <td>
+        <span class="fx">
+          <.chip :for={f <- @facts}>{f}</.chip>
+          <.chip :if={@origin} class={elem(@origin, 1)} title={elem(@origin, 2)}>
+            {elem(@origin, 0)}
+          </.chip>
+        </span>
+      </td>
+      <td
         class="vr"
         title={
           if @e["version"],
             do: "#{@e["version"]["date"]} in its CHANGELOG",
             else: "no CHANGELOG to read a version from"
         }
-      >{if @e["version"], do: "v#{@e["version"]["version"]}", else: "—"}</span>
-      <span class="col argv">
-        <span :for={{flag, type, title} <- @offered.params} title={title != "" && title}>
-          {flag} <i class="val">{type}</i>
+      >
+        {if @e["version"], do: "v#{@e["version"]["version"]}", else: "—"}
+      </td>
+      <td class="wrap">
+        <span class="argv">
+          <span :for={{flag, type, title} <- @offered.params} title={title != "" && title}>
+            {flag} <i class="val">{type}</i>
+          </span>
         </span>
-      </span>
-      <span class="col"><span class="pairs"><.address :for={a <- @offered.addresses} a={a} /></span></span>
-      <span class="act">
-        <.job_button
-          label="Insert"
-          class="primary mini"
-          args={"add #{@e["name"]}"}
-          why={insert_why(@status, @e)}
-        />
-      </span>
-    </div>
+      </td>
+      <td class="wrap">
+        <span class="pairs"><.address :for={a <- @offered.addresses} a={a} /></span>
+      </td>
+      <%!-- Insert leads to the box's Installation screen, where the
+            options are picked and the box's own Insert says what it runs,
+            or why it cannot: the row sent the bare `add NAME` for a day
+            (2026-09-10), and a verb with options to pick is pressed where
+            they are. Never unlit: the screen reads for every box, and it
+            is the screen that says "no installer yet". --%>
+      <td class="act">
+        <.link
+          class="btn primary"
+          patch={"/#{@tab}?box=#{@e["name"]}&screen=install"}
+          title={"#{title(@e)}: how it goes in — pick its options there, and insert it"}
+        >
+          Insert
+        </.link>
+      </td>
+    </tr>
     """
   end
 end

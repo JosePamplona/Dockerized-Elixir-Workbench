@@ -301,13 +301,43 @@ export const Rail = {
     })
     this.resize = this.again
     addEventListener("resize", this.resize)
+    // The rail's toggle, the way hexdocs folds its sidebar: the Interface
+    // tab's Hidden, kept the same way, and painted from the body so the
+    // two agree whichever one was pressed.
+    const toggle = document.getElementById("rail-toggle"), rail = document.getElementById("rail")
+    // The gutter the rail keeps for its scrollbar, which its right padding
+    // gives back so the air reads 22px on both sides. Written on the app,
+    // which LiveView patches: `updated` writes it again.
+    const gutter = () => {
+      if (!rail) return
+      const cs = getComputedStyle(rail)
+      const g = rail.offsetWidth - rail.clientWidth - parseFloat(cs.borderLeftWidth) - parseFloat(cs.borderRightWidth)
+      this.el.style.setProperty("--rail-gutter", Math.max(0, g) + "px")
+    }
+    const side = document.getElementById("rail-side")
+    const paintToggle = () => {
+      gutter()
+      const off = document.body.classList.contains("rail-off"), right = document.body.classList.contains("rail-right")
+      if (toggle) { toggle.setAttribute("aria-pressed", String(!off)); toggle.title = off ? "bring the rail back" : "put the rail away" }
+      if (side) side.title = right ? "move the rail to the left" : "move the rail to the right"
+    }
+    const keepFrame = () => store.set("wb-console-frame", JSON.stringify(FRAME_CLASSES.filter(c => document.body.classList.contains(c))))
+    // Its side, beside it: the Interface tab's Left and Right, kept the same way.
+    side?.addEventListener("click", () => { document.body.classList.toggle("rail-right"); keepFrame(); paintToggle(); dispatchEvent(new Event("resize")) })
+    toggle?.addEventListener("click", () => {
+      document.body.classList.toggle("rail-off")
+      store.set("wb-console-frame", JSON.stringify(FRAME_CLASSES.filter(c => document.body.classList.contains(c))))
+      paintToggle(); dispatchEvent(new Event("resize"))
+    })
+    this.paintToggle = paintToggle; addEventListener("resize", paintToggle)
     const saved = store.get(RAIL_KEY)
     setRail(saved ? +saved : RAIL_DEFAULT)
     // The frame the reader chose — the band's side, the rail's — as classes on <body>.
     try { for (const cls of JSON.parse(store.get("wb-console-frame") || "[]")) document.body.classList.add(cls) } catch (e) {}
+    paintToggle()
   },
-  updated() { this.again && this.again() },
-  destroyed() { removeEventListener("resize", this.resize) },
+  updated() { this.again && this.again(); this.paintToggle && this.paintToggle() },
+  destroyed() { removeEventListener("resize", this.resize); removeEventListener("resize", this.paintToggle) },
 }
 
 let toastTimer = null
@@ -362,6 +392,8 @@ export const Logs = {
     const setFollow = on => { logs.follow = on; $("#follow").setAttribute("aria-pressed", String(on)); $("#follow").textContent = on ? "Following" : "Paused"; if (on) scrollToEnd(); renderBadge() }
     const renderChips = () => {
       const chips = $("#svc-chips"); chips.replaceChildren()
+      // The service column is the longest name wide, so every message starts in one column and the gap after the longest is the grid's.
+      const names = Object.keys(logs.services); box.style.setProperty("--svc-w", `${Math.max(1, ...names.map(s => s.length))}ch`)
       for (const s of Object.keys(logs.services)) {
         const b = h("button", "btn svc", s); b.type = "button"; b.style.setProperty("--svc", svcColor(s)); b.setAttribute("aria-pressed", String(logs.services[s] !== false))
         b.addEventListener("click", () => { logs.services[s] = !(logs.services[s] !== false); b.setAttribute("aria-pressed", String(logs.services[s])); rerender() })
@@ -373,7 +405,8 @@ export const Logs = {
       box.classList.toggle("no-svc", Object.keys(logs.services).filter(s => logs.services[s] !== false).length === 1)
       const vis = logs.all.filter(passes)
       for (const l of vis) box.append(lineEl(l))
-      if (!vis.length) box.append(h("div", "nothing", logs.all.length ? "Nothing matches: every line is filtered out." : "No lines yet: the stream is attached and waiting for the containers to write one."))
+      // An empty box says nothing; only a filter that leaves nothing says so.
+      if (!vis.length && logs.all.length) box.append(h("div", "nothing", "Nothing matches: every line is filtered out."))
       if (logs.follow) scrollToEnd()
       renderCount()
     }
@@ -519,8 +552,8 @@ const LEADINGS = [1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.8, 2]
 const FACES = {
   house: { name: "The house's — IBM Plex Mono", sizes: SIZES, family: () => null },
   fira: { name: "Fira Code", sizes: SIZES, family: () => '"Fira Code"', note: "Ligatures on. SIL Open Font License." },
-  vga: { name: "Flexi IBM VGA", sizes: [14, 16, 18, 20, 24, 32], family: () => '"Flexi IBM VGA True"', note: "The PC's text mode, by VileR. CC BY-SA 4.0." },
-  tamzen: { name: "Tamzen", sizes: [9, 12, 13, 14, 15, 16, 20], family: s => `"Tamzen${{ 9: 5, 12: 6, 13: 7, 14: 7, 15: 8, 16: 8, 20: 10 }[s]}x${s}"`, note: "A bitmap face by Scott Fial: one drawing per size, so the sizes are its own." },
+  vga: { name: "Flexi IBM VGA", sizes: [14, 16, 18, 20, 24, 32], family: () => '"Flexi IBM VGA True"', note: "The PC's text mode, by VileR. CC BY-SA 4.0.", bitmap: true },
+  tamzen: { name: "Tamzen", sizes: [9, 12, 13, 14, 15, 16, 20], family: s => `"Tamzen${{ 9: 5, 12: 6, 13: 7, 14: 7, 15: 8, 16: 8, 20: 10 }[s]}x${s}"`, note: "A bitmap face by Scott Fial: one drawing per size, so the sizes are its own.", bitmap: true },
 }
 const usual = f => f.sizes[Math.floor(f.sizes.length / 2)]
 const choiceOf = group => { try { const c = JSON.parse(store.get(GROUPS[group]) || "{}"); return { face: c.face in FACES ? c.face : "house", size: c.size || null, leading: LEADINGS.includes(c.leading) ? c.leading : null } } catch (e) { return { face: "house", size: null, leading: null } } }
@@ -531,6 +564,8 @@ function applyChoice(group, { face, size, leading }) {
   if (family) root.setProperty(`--${group}-face`, family); else root.removeProperty(`--${group}-face`)
   if (s) root.setProperty(`--${group}-size`, `${s}px`); else root.removeProperty(`--${group}-size`)
   if (leading) root.setProperty(`--${group}-leading`, String(leading)); else root.removeProperty(`--${group}-leading`)
+  // A bitmap face has one drawing per size: the sheet's line numbers, drawn smaller than the code in a vector face, keep the code's size in it or they blur.
+  if (f.bitmap) root.setProperty(`--${group}-ruler`, "1"); else root.removeProperty(`--${group}-ruler`)
   return { face, size: s, leading: leading || null }
 }
 for (const g of Object.keys(GROUPS)) applyChoice(g, choiceOf(g))
@@ -769,38 +804,91 @@ export const Frame = {
       paint(); document.getElementById("ground-toggle")?.dispatchEvent(new Event("repaint"))
     })
     onGround(paint)
+    this.repaint = paint; addEventListener("resize", paint)
     // The jsonc's fold: the house's caret is drawn from aria-expanded.
     for (const d of el.querySelectorAll("details.disc")) d.addEventListener("toggle", () => d.querySelector("summary.fold")?.setAttribute("aria-expanded", String(d.open)))
     for (const g of Object.keys(GROUPS)) bindPicks(el, g)
     bindColours(el)
     paint()
+    // The miniature's service chips do what the Logs screen's do: pressed, the service's lines show.
+    // (Logs hides the service column when one service alone shows: the name says nothing then.)
+    for (const chip of el.querySelectorAll(".mini .toolbar .svc[data-svc]")) chip.addEventListener("click", () => {
+      const on = chip.getAttribute("aria-pressed") !== "true"; chip.setAttribute("aria-pressed", String(on))
+      for (const ln of el.querySelectorAll(`.mini .ln[data-svc="${chip.dataset.svc}"]`)) ln.hidden = !on
+      const showing = [...el.querySelectorAll(".mini .toolbar .svc[data-svc]")].filter(c => c.getAttribute("aria-pressed") === "true").length
+      el.querySelector(".mini .lines")?.classList.toggle("no-svc", showing === 1)
+    })
+    // And its Timestamps button: the Logs screen's, folding the time column away.
+    el.querySelector(".mini .toolbar [data-ts]")?.addEventListener("click", ev => {
+      const on = ev.currentTarget.getAttribute("aria-pressed") !== "true"; ev.currentTarget.setAttribute("aria-pressed", String(on))
+      el.querySelector(".mini .lines")?.classList.toggle("no-ts", !on)
+    })
+    // The grip between the terminal and the sheet: the Jobs screen's, in
+    // the miniature. The terminal's height is the choice, kept in this
+    // browser; the sheet takes what is left. Halves until anyone drags.
+    const grip = el.querySelector(".mini .ograb"), mmain = el.querySelector(".mini .mmain"), term = el.querySelector(".mini .lines"), sheet = el.querySelector(".mini .impl")
+    if (grip && mmain && term && sheet) {
+      const MIN = 72, KEY = "wb-console-mini-term"
+      const cap = () => term.getBoundingClientRect().height + sheet.getBoundingClientRect().height - MIN
+      const label = h => { grip.setAttribute("aria-valuenow", String(Math.round(h))); grip.setAttribute("aria-valuemin", String(MIN)); grip.setAttribute("aria-valuemax", String(Math.round(cap()))) }
+      const set = px => { const h = Math.round(Math.min(cap(), Math.max(MIN, px))); mmain.style.setProperty("--term-h", h + "px"); label(h); return h }
+      const forget = () => { mmain.style.removeProperty("--term-h"); label(term.getBoundingClientRect().height) }
+      const keep = () => { const v = mmain.style.getPropertyValue("--term-h"); v ? store.set(KEY, v) : (() => { try { localStorage.removeItem(KEY) } catch (e) {} })() }
+      const saved = parseInt(store.get(KEY) || "", 10); if (saved) set(saved); else label(term.getBoundingClientRect().height)
+      grip.addEventListener("pointerdown", ev => {
+        ev.preventDefault(); grip.setPointerCapture(ev.pointerId); grip.classList.add("dragging")
+        const from = term.getBoundingClientRect().height - ev.clientY
+        const move = e => set(e.clientY + from)
+        const up = () => { grip.classList.remove("dragging"); grip.removeEventListener("pointermove", move); grip.removeEventListener("pointerup", up); grip.removeEventListener("pointercancel", up); keep() }
+        grip.addEventListener("pointermove", move); grip.addEventListener("pointerup", up); grip.addEventListener("pointercancel", up)
+      })
+      grip.addEventListener("dblclick", () => { forget(); keep() })
+      grip.addEventListener("keydown", ev => {
+        const step = ev.shiftKey ? 48 : 16, h = term.getBoundingClientRect().height
+        if (ev.key === "ArrowUp") set(h - step); else if (ev.key === "ArrowDown") set(h + step); else if (ev.key === "Home") forget(); else return
+        ev.preventDefault(); keep()
+      })
+    }
     // The miniature's terminal follows its end, as the Logs screen does.
     const lines = mini?.querySelector(".lines"); if (lines) lines.scrollTop = lines.scrollHeight
   },
+  destroyed() { removeEventListener("resize", this.repaint) },
 }
 
 // --- the terminal: the server pushes the session's lines, the input keeps its history.
 export const Term = {
   mounted() {
-    const screen = this.el.querySelector("#term-screen"), history = new History()
-    const line = (html, cls) => { const d = document.createElement("div"); if (cls) d.className = cls; d.innerHTML = html; screen.append(d); while (screen.children.length > 2000) screen.firstChild.remove(); screen.scrollTop = screen.scrollHeight }
-    this.handleEvent("term_out", ({ line: html, dim, prompt, clear }) => { if (clear) screen.replaceChildren(); line(html, dim ? "dim" : prompt ? "p" : "") })
+    // One screen, many sessions: each session is its own process on the
+    // server and keeps its trail; the hook shows the one the screen's key
+    // names, and keeps a history per key so ↑ in psql never brings bash.
+    const screen = this.el.querySelector("#term-screen"), histories = {}
+    const history = () => { const k = this.el.dataset.key || ""; return histories[k] ||= new History() }
+    const line = (html, cls) => { const d = document.createElement("div"); if (cls) d.className = cls; d.innerHTML = html; screen.append(d); while (screen.children.length > 2000) screen.firstChild.remove() }
+    const bottom = () => { screen.scrollTop = screen.scrollHeight }
+    this.handleEvent("term_out", ({ line: html, cls }) => { line(html, cls); bottom() })
+    this.handleEvent("term_screen", ({ lines }) => { screen.replaceChildren(); for (const l of lines) line(l.line, l.cls); bottom() })
     const bind = () => {
       const input = this.el.querySelector("#term-input"); if (!input || input.dataset.bound) return
       input.dataset.bound = "1"
       input.addEventListener("keydown", ev => {
-        if (ev.key === "Enter") { history.push(input.value); setTimeout(() => { input.value = "" }, 0) }
-        else if (ev.key === "ArrowUp") { ev.preventDefault(); input.value = history.next() }
-        else if (ev.key === "ArrowDown") { ev.preventDefault(); input.value = history.prev() }
-        else if (ev.key === "l" && ev.ctrlKey) { ev.preventDefault(); screen.replaceChildren() }
+        if (ev.key === "Enter") { history().push(input.value); setTimeout(() => { input.value = "" }, 0) }
+        else if (ev.key === "ArrowUp") { ev.preventDefault(); input.value = history().next() }
+        else if (ev.key === "ArrowDown") { ev.preventDefault(); input.value = history().prev() }
+        else if (ev.key === "l" && ev.ctrlKey) { ev.preventDefault(); screen.replaceChildren(); this.pushEvent("term_clear", {}) }
         else if (ev.key === "PageUp") { ev.preventDefault(); screen.scrollTop -= screen.clientHeight * 0.8 }
         else if (ev.key === "PageDown") { ev.preventDefault(); screen.scrollTop += screen.clientHeight * 0.8 }
       })
       input.focus()
     }
     bind(); this.bind = bind
+    // The screen asks for its session's trail once here, and again
+    // whenever the key changes: a pick, or a status that moved it.
+    this.key = this.el.dataset.key; this.pushEvent("term_look", {})
   },
-  updated() { this.bind() },
+  updated() {
+    this.bind()
+    if (this.el.dataset.key !== this.key) { this.key = this.el.dataset.key; this.pushEvent("term_look", {}) }
+  },
 }
 
 // --- the figure viewer: fit, zoom about the cursor, pan. A figure is an <img>

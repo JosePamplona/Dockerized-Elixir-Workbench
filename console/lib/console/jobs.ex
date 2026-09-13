@@ -99,6 +99,7 @@ defmodule Console.Jobs do
        running: nil,
        port: nil,
        out: %{},
+       tail: "",
        pending: [],
        flush: nil,
        stopping: nil,
@@ -175,9 +176,22 @@ defmodule Console.Jobs do
   def handle_call(:busy?, _from, state),
     do: {:reply, state.running != nil or not :queue.is_empty(state.queue), state}
 
+  # The port cuts a line at 4096 bytes, in the middle of a character as
+  # easily as not, and mix's spinner writes one line of frames with \r
+  # and no newline for as long as it compiles. The pieces are joined
+  # until the newline; of a line of frames, what a terminal shows — the
+  # last — is kept; and a byte no character claims is dropped rather
+  # than handed to the socket, which refused the whole page for one
+  # (ash, 2026-09-11: `invalid byte 0xE2`, the third of a braille dot).
   @impl true
-  def handle_info({port, {:data, {_eol, line}}}, %{port: port} = state),
-    do: {:noreply, take(state, line)}
+  def handle_info({port, {:data, {eol, chunk}}}, %{port: port} = state) do
+    tail = last_frame(state.tail <> chunk)
+
+    case eol do
+      :eol -> {:noreply, take(%{state | tail: ""}, scrub(tail))}
+      :noeol -> {:noreply, %{state | tail: tail}}
+    end
+  end
 
   def handle_info(:flush, state), do: {:noreply, flush(%{state | flush: nil})}
 
@@ -199,6 +213,9 @@ defmodule Console.Jobs do
         true -> :failed
       end
 
+    # A last line with no newline after it is a line still.
+    state = if state.tail == "", do: state, else: take(%{state | tail: ""}, scrub(state.tail))
+
     state =
       state
       |> flush()
@@ -209,6 +226,18 @@ defmodule Console.Jobs do
   end
 
   def handle_info(_, state), do: {:noreply, state}
+
+  # Of a line drawn over itself with \r, the frame that is left on the
+  # screen; a CRLF is a newline.
+  defp last_frame(line),
+    do: line |> String.trim_trailing("\r") |> String.split("\r") |> List.last()
+
+  # The line with every byte that is not UTF-8 taken out.
+  defp scrub(line) do
+    if String.valid?(line),
+      do: line,
+      else: line |> String.chunk(:valid) |> Enum.filter(&String.valid?/1) |> Enum.join()
+  end
 
   # A line is kept, newest first, and waits for the batch; the first
   # line of a batch sets its clock.

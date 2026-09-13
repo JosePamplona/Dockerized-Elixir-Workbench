@@ -97,7 +97,7 @@ defmodule ConsoleWeb.TerminalTest do
   # path is nil — docker would refuse `-v :/app/src`. The button waits.
   test "before the status, the session cannot be opened, and the reason is on the button" do
     import Phoenix.LiveViewTest
-    term = %{open: false, target: nil, shell: nil, port: nil}
+    term = %{target: nil, shell: nil, sessions: %{}, attached: nil}
     html = render_component(&Terminal.terminal/1, status: nil, term: term)
     assert html =~ ~r/<button[^>]*phx-click="term_start"[^>]*disabled/
     assert html =~ "reading the workspace"
@@ -116,5 +116,65 @@ defmodule ConsoleWeb.TerminalTest do
     assert Terminal.shells(replica) == [{"bash", "bash"}, {"rpc", "bin/app rpc"}]
     assert {_, argv} = Terminal.argv(s, replica, "bash")
     refute "-w" in argv
+  end
+
+  # A session is its own process and keeps its screen: the buttons are
+  # never dark while one runs, they wear it — and a container that left
+  # the status stays in the row while its session is there.
+  test "the buttons wear their sessions, and the row keeps a session's container" do
+    import Phoenix.LiveViewTest
+    s = status([c("app", "lorem-ipsum:local"), c("database", "postgres:latest")])
+    [app, db] = Terminal.targets(s)
+
+    toolchain = %{
+      name: "toolchain",
+      kind: :toolchain,
+      release: false,
+      oneoff: true,
+      title: "one-off"
+    }
+
+    sessions = %{
+      {"app", "iex"} => %{state: :live, target: app, shell: "iex"},
+      {"database", "psql"} => %{state: {:ended, 0}, target: db, shell: "psql"},
+      {"toolchain", "bash"} => %{state: :live, target: toolchain, shell: "bash"}
+    }
+
+    term = %{target: "app", shell: "bash", sessions: sessions, attached: nil}
+    html = render_component(&Terminal.terminal/1, status: s, term: term)
+
+    # The container's mark reads across its shells; the shell's is its own.
+    assert html =~ ~r/<button[^>]*data-session="live"[^>]*>app</
+    assert html =~ ~r/<button[^>]*data-session="ended"[^>]*>database</
+    assert html =~ ~r/<button[^>]*data-session="live"[^>]*>toolchain</
+    assert html =~ ~r/<button[^>]*data-session="live"[^>]*>iex -S mix</
+    refute html =~ ~r/<button[^>]*data-session[^>]*>bash</
+    refute html =~ ~r/<button[^>]*phx-click="term_pick"[^>]*disabled/
+    # app · bash has no session: the screen offers to open one, and says who else is open.
+    assert html =~ "Open a session"
+    assert html =~ "no session · 2 others open"
+
+    # On an ended session the trail can be discarded, or a new one opened over it.
+    term = %{term | target: "database", shell: "psql"}
+    html = render_component(&Terminal.terminal/1, status: s, term: term)
+    assert html =~ "session ended (exit 0) on database · psql · 2 others open"
+    assert html =~ "Discard"
+    assert html =~ "Open a session"
+    refute html =~ "Close session"
+
+    # On a live one, the input with its key, and the closing.
+    term = %{term | target: "app", shell: "iex"}
+    html = render_component(&Terminal.terminal/1, status: s, term: term)
+    assert html =~ ~r/<input[^>]*data-key="app iex"/
+    assert html =~ "Close session"
+    assert html =~ "session on app · iex · 1 other open"
+  end
+
+  test "resolve: the target picked or the first, the shell when the target offers it" do
+    s = status([c("app", "lorem-ipsum:local"), c("database", "postgres:latest")])
+    term = %{target: "database", shell: "iex", sessions: %{}, attached: nil}
+    assert {_, %{name: "database"}, "psql"} = Terminal.resolve(s, term)
+    assert {_, %{name: "app"}, "iex"} = Terminal.resolve(s, %{term | target: "nope"})
+    assert {_, %{name: "app"}, "bash"} = Terminal.resolve(s, %{term | target: nil, shell: "psql"})
   end
 end

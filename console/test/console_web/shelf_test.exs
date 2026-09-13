@@ -75,36 +75,36 @@ defmodule ConsoleWeb.ShelfTest do
     assert html =~ "installation parameters"
     assert html =~ "addresses"
     assert html =~ "Knock on every door"
-    assert html =~ "list wide"
+    assert html =~ ~s(<table class="wide carts">)
   end
 
-  test "a row of the Inserted list is not a link: the doors in it are" do
+  test "a row of the Inserted table is not a link: the doors and the verb in it are" do
     html = shelf(catalog(), status(["ecto"]), filter: "in", view: "list")
-    # An <a> around the row closes itself at the first door inside it,
-    # and the addresses land under the row instead of in their column.
-    assert html =~ ~s(<div class="lrow in">)
+    assert html =~ ~s(<tr class="in">)
     refute html =~ ~r{<a[^>]*class="lrow}
   end
 
   test "On the shelf and Not done, in list, read in Inserted's table, with an Insert each" do
     for filter <- ["shelf", "pending"] do
       html = shelf(catalog(), status(["ecto"]), filter: filter, view: "list")
-      assert html =~ "list wide"
-      assert html =~ ~s(<div class="lrow head">)
+      assert html =~ ~s(<table class="wide carts">)
+      assert html =~ "<th>facts</th>"
       assert html =~ "installation parameters"
       assert html =~ "addresses"
       refute html =~ "Knock on every door"
-      # A row carries a button now, so it is not a link: the mention opens the box.
+      # A row carries a verb now, so it is not a link: the mention opens the box.
       refute html =~ ~r{<a[^>]*class="lrow}
-      assert html =~ ">Insert</button>"
+      assert html =~ ~r{<a[^>]*class="btn primary"[^>]*>\s*Insert\s*</a>}
+      # Insert runs nothing here: it leads to the box's Installation screen.
+      refute html =~ ~s(phx-value-args="add )
     end
 
     html = shelf(catalog(), status(["ecto"]), filter: "shelf", view: "list")
-    assert html =~ ~s(phx-value-args="add adminer")
+    assert html =~ ~s(href="/shelf?box=adminer&amp;screen=install")
 
+    # A box without an installer leads there too: the screen says so.
     html = shelf(catalog(), status(["ecto"]), filter: "pending", view: "list")
-    assert html =~ "no installer yet"
-    refute html =~ ~s(phx-value-args="add k6")
+    assert html =~ ~s(href="/shelf?box=k6&amp;screen=install")
   end
 
   test "an Inserted row ejects by its commit, and is unlit without one" do

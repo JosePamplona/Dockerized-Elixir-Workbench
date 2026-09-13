@@ -1,6 +1,6 @@
 defmodule ConsoleWeb.GitScreen do
   @moduledoc """
-  The workspace's git as two papers of the Project tab — *Pending*,
+  The workspace's git as two papers of the Project tab — *Changes*,
   what a commit would take, file by file on the sheet the box's Files
   screen draws, with the commit's title and body above it; and
   *History*, the log with the cartridge inserts marked, each commit
@@ -20,7 +20,7 @@ defmodule ConsoleWeb.GitScreen do
   import ConsoleWeb.Refs
   import ConsoleWeb.Box, only: [file: 1]
 
-  @docs [{"pending", "Pending"}, {"history", "History"}]
+  @docs [{"pending", "Changes"}, {"history", "History"}]
   def docs, do: @docs
   def doc_names, do: Enum.map(@docs, &elem(&1, 0))
 
@@ -30,7 +30,7 @@ defmodule ConsoleWeb.GitScreen do
   @doc "The title the form opens with: the one `wb.sh commit` uses when nobody names the commit."
   def default_title, do: "Workbench: commit pending changes"
 
-  @doc "The ribbon's sublabel for a paper: Pending's tree, History's HEAD."
+  @doc "The ribbon's sublabel for a paper: Changes' tree, History's HEAD."
   def doc_sum("history", _gt, status) do
     case status && get_in(status, ["git", "head"]) do
       head when is_binary(head) -> head |> String.split(" ") |> List.first()
@@ -50,13 +50,13 @@ defmodule ConsoleWeb.GitScreen do
 
   def doc_sum(_, _, _), do: nil
 
-  # --- Pending --------------------------------------------------------------------
+  # --- Changes --------------------------------------------------------------------
 
   attr :gt, :map, required: true
   attr :status, :map, default: nil
   attr :jobs, :list, required: true
 
-  @doc "Pending: what a commit would take, and the commit."
+  @doc "Changes: what a commit would take, and the commit."
   def git_pending(assigns) do
     busy =
       Enum.any?(
@@ -151,7 +151,14 @@ defmodule ConsoleWeb.GitScreen do
         </tr>
         <%= for c <- @gt.log do %>
           <tr class={picked?(@gt.pick, c.sha) && "on"}>
-            <td><.commit_ref sha={c.sha} subject={c.subject} date={c.date} /></td>
+            <td>
+              <.commit_ref
+                sha={c.sha}
+                subject={c.subject}
+                date={c.date}
+                open={picked?(@gt.pick, c.sha)}
+              />
+            </td>
             <td class="wrap">
               <span class="sj">{c.subject}</span><.cart_ref
                 :if={c.insert}
@@ -163,7 +170,9 @@ defmodule ConsoleWeb.GitScreen do
             <td class="dim">{c.author}</td>
           </tr>
           <tr :if={picked?(@gt.pick, c.sha)} class="fbox">
-            <td colspan="4"><div class="fit"><.commit_diff gt={@gt} status={@status} /></div></td>
+            <td colspan="4">
+              <div class="fit"><.commit_diff gt={@gt} status={@status} /></div>
+            </td>
           </tr>
         <% end %>
       </table>

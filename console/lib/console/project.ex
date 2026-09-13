@@ -1,13 +1,13 @@
 defmodule Console.Project do
   @moduledoc """
-  The project's own papers, off the workspace: Record, `.env`,
-  README.md, CHANGELOG.md, and its git as Pending and History. The
+  The project's own papers, off the workspace: Birth, `.env`,
+  README.md, CHANGELOG.md, and its git as Changes and History. The
   `.env` travels masked — a secret, a token, a password, a key, and the
   credentials inside a URL are replaced before the text leaves this
-  module, so no page ever carries them. Three are no file: Record is
+  module, so no page ever carries them. Three are no file: Birth is
   composed off the status by `ConsoleWeb.Record` — what the project is,
-  first on the ribbon whenever there is a project to draw it for — and
-  Pending and History are the workspace's git, read by
+  which is what it was born as, first on the ribbon whenever there is a
+  project to draw it for — and Changes and History are the workspace's git, read by
   `ConsoleWeb.ConsoleLive.Git`, there whenever there is a repository.
   Git was a tab of its own until 2026-09-09: the repository is the
   project's, so its papers are the project's too.
@@ -20,9 +20,9 @@ defmodule Console.Project do
   # moved up beside the Record on 2026-09-10, from the tail where they
   # landed when Git stopped being a tab of its own.
   @papers [
-    {"record", "Record", nil},
+    {"record", "Birth", nil},
     {"history", "History", nil},
-    {"pending", "Pending", nil},
+    {"pending", "Changes", nil},
     {"env", ".env", ".env"},
     {"readme", "README", "README.md"},
     {"changelog", "CHANGELOG", "CHANGELOG.md"}
@@ -54,7 +54,7 @@ defmodule Console.Project do
 
   @doc """
   Which of the six the workspace has, off the status: the files it
-  holds, Record whenever there is a project, Pending and History
+  holds, Birth whenever there is a project, Changes and History
   whenever there is a repository. Nothing without a status.
   """
   def carried(nil), do: []

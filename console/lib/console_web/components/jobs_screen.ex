@@ -28,6 +28,7 @@ defmodule ConsoleWeb.JobsScreen do
   """
   use Phoenix.Component
   import ConsoleWeb.Refs
+  import ConsoleWeb.Square, only: [square: 1]
 
   attr :jobs, :list, required: true
   attr :open, :any, required: true, doc: "the ids unfolded"
@@ -69,8 +70,13 @@ defmodule ConsoleWeb.JobsScreen do
           else: "collapse all"}</button></span>
         <span :if={@unfolded == 0}>click a job to unfold its output</span>
       </div>
+      <%!-- The list of jobs is the framed list a box's Runs are: one way to
+            meet a pile of jobs, wherever it is met (2026-09-12). --%>
       <div class="viewport light">
-        <div class="lines" id="jobs" phx-hook="JobOut">
+        <p :if={@jobs == []} class="nothing">
+          No jobs yet. Every command the console runs is a job — its output, its exit code, how long it took. Insert a cartridge, deploy, or type one above.
+        </p>
+        <div :if={@jobs != []} class="lines jobs-list" id="jobs" phx-hook="JobOut">
           <.job_row
             :for={j <- @jobs}
             j={j}
@@ -269,14 +275,13 @@ defmodule ConsoleWeb.JobsScreen do
       <%!-- Put away, not folded: the bar goes until the next job starts.
             It was a link to Jobs until 2026-09-11, which the tab bar
             already is. --%>
-      <button
-        class="hide"
-        type="button"
+      <.square
+        mark="x"
+        size="small"
+        label="Put the jobs bar away"
         phx-click="tray_hide"
         title="put the bar away — the next job brings it back; every job is on the Jobs tab"
-      >
-        ×<span class="sr">Put the jobs bar away</span>
-      </button>
+      />
       <%!-- The grip is at the TOP here, and not under the output as it
             is everywhere else: the bar is pinned to the window's foot,
             so the edge that moves is the other one. `data-grip="up"`

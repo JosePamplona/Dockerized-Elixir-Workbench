@@ -16,6 +16,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **The diff's colours are the reader's.** A Diff section on the
+  Interface tab, under the syntax palette, in two groups, Added and
+  Removed, of two swatches each: the code's ground, and the colour of
+  its line number, which the sign wears too. Four a ground, kept in
+  this browser as the palettes are (`wb-console-diff`) and applied as
+  `--diff-<key>` on the root, which the Files sheet's diffs and the
+  tab's own sample read. The code wears its ground at 66%, the
+  terminal showing through, and the number's plate wears it whole,
+  where the plate wore the line's wash at half strength and the sign
+  the house's good or bad. The dark ground's four are set: code
+  `#00212d` and line number `#529fc7` for an added line, `#3f0600` and
+  `#db5a5a` for a removed one; the light ground keeps the two numbers
+  and washes the code pale, `#c0eeff` and `#ffd6d2`.
 - **Ctrl+C interrupts in the Terminal tab.** With nothing selected, the
   key stops what the session runs: under bash, sh or rpc every process
   the shell started gets SIGINT and the shell stays, as a terminal

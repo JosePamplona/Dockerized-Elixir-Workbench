@@ -736,6 +736,50 @@ function coloursFromRules(rules) {
   return out
 }
 const asJsonc = () => JSON.stringify({ "editor.tokenColorCustomizations": { textMateRules: Object.entries(LANGS).flatMap(([l, lang]) => lang.roles.map(role => ({ scope: role.scopes.length === 1 ? role.scopes[0] : role.scopes, settings: { ...(role.style ? { fontStyle: role.style } : {}), foreground: shownColour(l, role.key) } }))) } }, null, 2)
+// --- the diff's four: the ground of an added line and of a removed one,
+// and the colour of the number and the sign on each — properties on the root the
+// Files sheet's diffs read (`--diff-<key>`, console.css), kept in this
+// browser a ground each, like the palettes, and shown in the tab's
+// sample, which has one line of each.
+const DIFF_KEY = "wb-console-diff"
+// Two groups, added and removed, of two: the code line's ground, and
+// the colour of the line number — which the sign wears too.
+const DIFF_ROLES = [
+  { key: "add-bg", group: "add", name: "code" }, { key: "add-num", group: "add", name: "line number" },
+  { key: "del-bg", group: "del", name: "code" }, { key: "del-num", group: "del", name: "line number" },
+]
+const DIFF_GROUPS = { add: "added", del: "removed" }
+const cleanDiff = d => Object.fromEntries(DIFF_ROLES.filter(r => HEX.test((d || {})[r.key] || "")).map(r => [r.key, d[r.key].toLowerCase()]))
+const diffOf = () => { try { const d = JSON.parse(store.get(DIFF_KEY) || "{}"); return { dark: cleanDiff(d.dark), light: cleanDiff(d.light) } } catch (e) { return { dark: {}, light: {} } } }
+function applyDiff(all) {
+  const root = document.documentElement.style, g = all[ground()] || {}
+  for (const r of DIFF_ROLES) { const v = g[r.key]; if (v) root.setProperty(`--diff-${r.key}`, v); else root.removeProperty(`--diff-${r.key}`) }
+}
+applyDiff(diffOf())
+onGround(() => applyDiff(diffOf()))
+const shownDiff = key => getComputedStyle(document.documentElement).getPropertyValue(`--diff-${key}`).trim().toLowerCase()
+function bindDiff(el) {
+  const groups = [...el.querySelectorAll("#diff-swatches [data-diff]")], reset = el.querySelector("#diff-reset"), which = el.querySelector("#diff-ground")
+  if (!groups.length) return
+  let all = diffOf()
+  const mine = () => all[ground()] || {}
+  const set = d => { all = { ...all, [ground()]: d }; applyDiff(all) }
+  const draw = () => {
+    const g = ground()
+    if (which) which.textContent = `the ${g} ground's`
+    for (const box of groups) box.replaceChildren(...DIFF_ROLES.filter(r => r.group === box.dataset.diff).map(role => {
+      const label = document.createElement("label"), input = document.createElement("input"), name = document.createElement("span"), own = document.createElement("small")
+      input.type = "color"; input.value = shownDiff(role.key); input.setAttribute("aria-label", `${DIFF_GROUPS[role.group]} ${role.name}, the colour`)
+      input.addEventListener("input", () => { set({ ...mine(), [role.key]: input.value.toLowerCase() }); own.textContent = "·" })
+      input.addEventListener("change", () => store.set(DIFF_KEY, JSON.stringify(all)))
+      name.textContent = role.name; own.textContent = mine()[role.key] ? "·" : ""; own.title = "set by you"
+      label.append(input, name, own); return label
+    }))
+  }
+  reset?.addEventListener("click", () => { set({}); store.set(DIFF_KEY, JSON.stringify(all)); draw() })
+  onGround(() => { all = diffOf(); draw() })
+  draw()
+}
 function bindColours(el) {
   const swatches = el.querySelector("#swatches"), area = el.querySelector("#jsonc"), word = el.querySelector("#jsonc-word"), reset = el.querySelector("#jsonc-reset"), which = el.querySelector("#colours-ground"), langSel = el.querySelector("#colours-lang")
   if (!swatches || !area || !langSel) return
@@ -814,6 +858,7 @@ export const Frame = {
     for (const d of el.querySelectorAll("details.disc")) d.addEventListener("toggle", () => d.querySelector("summary.fold")?.setAttribute("aria-expanded", String(d.open)))
     for (const g of Object.keys(GROUPS)) bindPicks(el, g)
     bindColours(el)
+    bindDiff(el)
     paint()
     // The miniature's service chips do what the Logs screen's do: pressed, the service's lines show.
     // (Logs hides the service column when one service alone shows: the name says nothing then.)

@@ -840,6 +840,19 @@ defmodule ConsoleWeb.WorkbenchDrawer do
             </div>
           </details>
         </section>
+        <section class="colours">
+          <h5>Diff</h5>
+          <p class="hint">
+            What a changed line wears on the Files sheet: the code's ground, and the colour of its line number and sign, for an added line and for a removed one. A palette a ground; this one is <span id="diff-ground"></span>.
+          </p>
+          <div class="groups" id="diff-swatches">
+            <div class="group"><h6>Added</h6><div class="roles" data-diff="add" aria-label="An added line's colours"></div></div>
+            <div class="group"><h6>Removed</h6><div class="roles" data-diff="del" aria-label="A removed line's colours"></div></div>
+          </div>
+          <p class="acts">
+            <button class="btn" type="button" id="diff-reset">Back to the house's</button>
+          </p>
+        </section>
       </div>
       <div
         class="mini"

@@ -1051,6 +1051,16 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
 :root[data-theme="dark"]{--t-base:#abb2bf;--t-punct:#828997;--t-comment:#5c6370;--t-atom:#56b6c2;
       --t-const:#61afef;--t-func:#60acea;--t-kw:#c678dd;--t-op:#d19a66;
       --t-mod:#e5c07b;--t-str:#98c379;--t-interp:#e06c75;--t-regex:#be5046}
+/* The diff's own four, a ground each and the reader's from the
+   Interface tab (hooks.js applyDiff, `--diff-<key>` on the root): the
+   ground of an added line and of a removed one, and the colour of the
+   line's number and sign on each. Both grounds' are as set on
+   2026-09-15: the numbers the same two on paper as on the dark
+   terminal, the grounds a pale wash of each. Hex, since the tab's
+   swatch is an <input type=color>. */
+:root{--diff-add-bg:#c0eeff;--diff-add-num:#529fc7;--diff-del-bg:#ffd6d2;--diff-del-num:#db5a5a}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--diff-add-bg:#00212d;--diff-add-num:#529fc7;--diff-del-bg:#3f0600;--diff-del-num:#db5a5a}}
+:root[data-theme="dark"]{--diff-add-bg:#00212d;--diff-add-num:#529fc7;--diff-del-bg:#3f0600;--diff-del-num:#db5a5a}
 :root{--t-elixir-base:var(--t-base);--t-elixir-punct:var(--t-punct);--t-elixir-comment:var(--t-comment);--t-elixir-atom:var(--t-atom);--t-elixir-const:var(--t-const);--t-elixir-func:var(--t-func);--t-elixir-kw:var(--t-kw);--t-elixir-op:var(--t-op);--t-elixir-mod:var(--t-mod);--t-elixir-str:var(--t-str);--t-elixir-interp:var(--t-interp);--t-elixir-regex:var(--t-regex);--t-html-base:var(--t-base);--t-html-punct:var(--t-punct);--t-html-comment:var(--t-comment);--t-html-atom:var(--t-atom);--t-html-const:var(--t-const);--t-html-func:var(--t-func);--t-html-kw:var(--t-kw);--t-html-op:var(--t-op);--t-html-mod:var(--t-mod);--t-html-str:var(--t-str);--t-html-interp:var(--t-interp);--t-html-regex:var(--t-regex);--t-css-base:var(--t-base);--t-css-punct:var(--t-punct);--t-css-comment:var(--t-comment);--t-css-atom:var(--t-atom);--t-css-const:var(--t-const);--t-css-func:var(--t-func);--t-css-kw:var(--t-kw);--t-css-op:var(--t-op);--t-css-mod:var(--t-mod);--t-css-str:var(--t-str);--t-css-interp:var(--t-interp);--t-css-regex:var(--t-regex);--t-ts-base:var(--t-base);--t-ts-punct:var(--t-punct);--t-ts-comment:var(--t-comment);--t-ts-atom:var(--t-atom);--t-ts-const:var(--t-const);--t-ts-func:var(--t-func);--t-ts-kw:var(--t-kw);--t-ts-op:var(--t-op);--t-ts-mod:var(--t-mod);--t-ts-str:var(--t-str);--t-ts-interp:var(--t-interp);--t-ts-regex:var(--t-regex);--t-json-base:var(--t-base);--t-json-punct:var(--t-punct);--t-json-comment:var(--t-comment);--t-json-atom:var(--t-atom);--t-json-const:var(--t-const);--t-json-func:var(--t-func);--t-json-kw:var(--t-kw);--t-json-op:var(--t-op);--t-json-mod:var(--t-mod);--t-json-str:var(--t-str);--t-json-interp:var(--t-interp);--t-json-regex:var(--t-regex);--t-markdown-base:var(--t-base);--t-markdown-punct:var(--t-punct);--t-markdown-comment:var(--t-comment);--t-markdown-atom:var(--t-atom);--t-markdown-const:var(--t-const);--t-markdown-func:var(--t-func);--t-markdown-kw:var(--t-kw);--t-markdown-op:var(--t-op);--t-markdown-mod:var(--t-mod);--t-markdown-str:var(--t-str);--t-markdown-interp:var(--t-interp);--t-markdown-regex:var(--t-regex);--t-godot-base:var(--t-base);--t-godot-punct:var(--t-punct);--t-godot-comment:var(--t-comment);--t-godot-atom:var(--t-atom);--t-godot-const:var(--t-const);--t-godot-func:var(--t-func);--t-godot-kw:var(--t-kw);--t-godot-op:var(--t-op);--t-godot-mod:var(--t-mod);--t-godot-str:var(--t-str);--t-godot-interp:var(--t-interp);--t-godot-regex:var(--t-regex)}
 .src[data-lang="elixir"]{--t-base:var(--t-elixir-base);--t-punct:var(--t-elixir-punct);--t-comment:var(--t-elixir-comment);--t-atom:var(--t-elixir-atom);--t-const:var(--t-elixir-const);--t-func:var(--t-elixir-func);--t-kw:var(--t-elixir-kw);--t-op:var(--t-elixir-op);--t-mod:var(--t-elixir-mod);--t-str:var(--t-elixir-str);--t-interp:var(--t-elixir-interp);--t-regex:var(--t-elixir-regex)}
 .src[data-lang="html"]{--t-base:var(--t-html-base);--t-punct:var(--t-html-punct);--t-comment:var(--t-html-comment);--t-atom:var(--t-html-atom);--t-const:var(--t-html-const);--t-func:var(--t-html-func);--t-kw:var(--t-html-kw);--t-op:var(--t-html-op);--t-mod:var(--t-html-mod);--t-str:var(--t-html-str);--t-interp:var(--t-html-interp);--t-regex:var(--t-html-regex)}
@@ -1138,13 +1148,14 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
 }
 .impl .dl .sg{flex:none;--w:round(up,1.6em,1px);width:var(--w);padding-left:round(calc((var(--w) - 1ch) / 2),1px);text-align:left;color:var(--term-dim);user-select:none}
 .impl .dl .cd{flex:none;padding-right:16px}
-.impl .dl.add{background:rgba(46,139,87,.20)}
-.impl .dl.add .sg{color:var(--good)}
-.impl .dl.del{background:rgba(192,57,43,.20)}
-.impl .dl.del .sg{color:var(--bad)}
-/* A changed line tints its numbers too, the way GitHub does: the ruler shows where the changes are when the code has scrolled off to the right. The same 20% the line wears — the plate's own ground is darker than the terminal's, so the plate comes out a shade deeper than the line without more colour; 34% on top of that was too much. This turns the 2026-09-10 rule above around, the change began at the sign, on 2026-09-12. */
-.impl .dl.add .gut{background:rgba(46,139,87,.10)}
-.impl .dl.del .gut{background:rgba(192,57,43,.10)}
+/* The line wears its ground at 66%, so the terminal shows through it; the plate, below, wears it whole. */
+.impl .dl.add{background:color-mix(in srgb, var(--diff-add-bg) 66%, transparent)}
+.impl .dl.add .sg{color:var(--diff-add-num)}
+.impl .dl.del{background:color-mix(in srgb, var(--diff-del-bg) 66%, transparent)}
+.impl .dl.del .sg{color:var(--diff-del-num)}
+/* A changed line colours its numbers too, the way GitHub does: the ruler shows where the changes are when the code has scrolled off to the right. The plate takes the line's ground whole, and the number and the sign one colour, the four the reader sets on the Interface tab; until 2026-09-15 the plate wore the line's wash at half strength over its own ground and the sign the house's good or bad. This turns the 2026-09-10 rule above around, the change began at the sign, on 2026-09-12. */
+.impl .dl.add .gut{background:var(--diff-add-bg);color:var(--diff-add-num)}
+.impl .dl.del .gut{background:var(--diff-del-bg);color:var(--diff-del-num)}
 .impl .dl.hunk{color:var(--soft);background:var(--term-tint)}
 .impl .dl.meta{color:var(--term-dim)}
 .impl .shot{margin:0;padding:16px;background:var(--term);display:flex;justify-content:center}
@@ -1258,6 +1269,9 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
 .ui .picks{display:grid;gap:6px}
 .ui .picks label{display:grid;grid-template-columns:64px 1fr;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;color:var(--ink)}
 .ui select{font-family:var(--mono);font-size:12px;padding:3px 6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;width:100%;min-width:0}
+.ui .groups{display:grid;gap:10px}
+.ui .group{display:grid;gap:6px}
+.ui .group h6{margin:0;font-family:var(--cond);font-weight:600;text-transform:uppercase;letter-spacing:.08em;font-size:11px;color:var(--muted)}
 .ui .roles{display:grid;grid-template-columns:1fr 1fr;gap:5px 10px}
 .ui .roles label{display:inline-flex;gap:8px;align-items:center;font-family:var(--mono);font-size:12px;color:var(--ink);cursor:pointer;min-width:0}
 .ui .roles input[type=color]{width:22px;height:22px;flex:none;padding:0;border:1px solid var(--line);border-radius:2px;background:none;cursor:pointer}

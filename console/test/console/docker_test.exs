@@ -68,8 +68,8 @@ defmodule Console.DockerTest do
     },
     %{
       "ID" => "6a7e63393583",
-      "Repository" => "workbench",
-      "Tag" => "1.20.4-29.0.6-phx1.8.13",
+      "Repository" => "dockerized-elixir-workbench",
+      "Tag" => "ex1.20.4-erl29.0.6-phx1.8.13",
       "Size" => "570MB",
       "CreatedSince" => "37 hours ago",
       "CreatedAt" => "2026-09-04 00:00:00"
@@ -122,7 +122,11 @@ defmodule Console.DockerTest do
 
     assert ["e2af995615d0", "6a7e63393583"] = Enum.map(mine, & &1.id)
 
-    assert ["awesome-virtus:local", "some-test:local", "workbench:1.20.4-29.0.6-phx1.8.13"] =
+    assert [
+             "awesome-virtus:local",
+             "dockerized-elixir-workbench:ex1.20.4-erl29.0.6-phx1.8.13",
+             "some-test:local"
+           ] =
              List.last(mine).names
 
     %{images: all} = Docker.group_images(@rows, "some-test", "daemon")

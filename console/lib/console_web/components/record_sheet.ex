@@ -106,7 +106,7 @@ defmodule ConsoleWeb.RecordSheet do
               <.chip
                 :if={!@birth.installer.in_sync}
                 class="warn"
-                title={"the phx_new at hand in the toolchain is #{@birth.installer.at_hand}, not the #{@birth.installer.born} that generated the project: the base cartridges will refuse until ./wb.sh build rebuilds the toolchain from Dockerfile.local"}
+                title={"the phx_new at hand in the toolchain is #{@birth.installer.at_hand}, not the #{@birth.installer.born} that generated the project: the base cartridges will refuse until ./wb.sh console build rebuilds the workbench's image with the stamped installer"}
               >
                 installer now {@birth.installer.at_hand}
               </.chip>

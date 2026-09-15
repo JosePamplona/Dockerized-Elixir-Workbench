@@ -1,0 +1,99 @@
+# The workbench's image (dockerized-elixir-workbench:exELIXIR-erlOTP-
+# phxVERSION): where the workbench does its own work on a workspace —
+# 'new' generates the project here, 'add' and 'expand' run the
+# cartridges, git commits, the catalog is read — and where the console
+# runs, which carries wb.sh inside and drives the host's Docker through
+# its socket. One per stack and Phoenix installer, shared by every
+# workspace of that pair. The project's app never runs on it: that is
+# the workspace's own Dockerfile.local, baked from
+# scripts/Dockerfile.seed.local.
+#
+# Built straight from this file, with the stack and the installer as
+# build arguments: wb.sh passes them from config.conf and the workspace's
+# stamp, so there is nothing to bake and no version written here to go
+# stale. They have no defaults on purpose. Built by hand, pass all four:
+#
+#   docker build --file Dockerfile.workbench \
+#     --build-arg ELIXIR=1.19.6 --build-arg OTP=28.5.0.6 \
+#     --build-arg DEBIAN=trixie-20260824-slim --build-arg PHX_NEW=1.8.13 .
+#
+# Without the stack, FROM names no image and the build stops there.
+# Its first steps are the project seed's, word for word and in the same
+# order, so Docker builds them once and both images share those layers:
+# keep the two in step.
+ARG ELIXIR
+ARG    OTP
+ARG DEBIAN
+
+ARG TOOLCHAIN_IMAGE="hexpm/elixir:${ELIXIR}-erlang-${OTP}-debian-${DEBIAN}"
+
+FROM ${TOOLCHAIN_IMAGE} AS toolchain
+
+# --- The project seed's steps, shared --------------------------------------
+
+RUN apt-get update -y && \
+    apt-get install -y build-essential git inotify-tools && \
+    apt-get clean && \
+    rm -f /var/lib/apt/lists/*_*
+
+ARG UID=1000
+ARG GID=1000
+RUN groupadd --gid ${GID} elixir && \
+    useradd --uid ${UID} --gid ${GID} --create-home elixir
+
+WORKDIR /app
+RUN mkdir -p /app/src/_build /app/src/deps && \
+    chown -R elixir:elixir /app
+
+USER elixir
+
+RUN mix local.hex --force && \
+    mix local.rebar --force
+
+# --- The workbench's own ---------------------------------------------------
+
+USER root
+
+# `mix phx.new` runs `git init` in the fresh project; without a default
+# branch configured, git names it `master` and prints a hint block.
+RUN git config --system init.defaultBranch main
+
+# The Docker CLI with its buildx and compose plugins, for the console:
+# it drives the host's Docker through the socket './wb.sh console'
+# mounts. They come from Docker's own apt repository for this Debian,
+# the CLI without the daemon: the client negotiates its API with
+# whatever engine answers the socket, so nothing here need match the
+# host's versions.
+RUN apt-get update -y && \
+    apt-get install -y ca-certificates curl && \
+    install -m 0755 -d /etc/apt/keyrings && \
+    curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc && \
+    . /etc/os-release && \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc]" \
+      "https://download.docker.com/linux/debian ${VERSION_CODENAME} stable" \
+      > /etc/apt/sources.list.d/docker.list && \
+    apt-get update -y && \
+    apt-get install -y docker-ce-cli docker-buildx-plugin docker-compose-plugin && \
+    apt-get clean && \
+    rm -f /var/lib/apt/lists/*_*
+
+# The same arrangement as /app/src's, for the two other sources that
+# compile here into volumes of their own: the workbench's package
+# (/app/igniter, 'wb.sh catalog') and the console (/app/console, whose
+# source is mounted at the workbench's host path, so './wb.sh console'
+# points Mix at these two with MIX_BUILD_ROOT and MIX_DEPS_PATH).
+RUN mkdir -p /app/igniter/_build /app/igniter/deps /app/console/build /app/console/deps && \
+    chown -R elixir:elixir /app/igniter /app/console
+
+USER elixir
+
+# The Phoenix installer: it generates the project and, later, the delta
+# every base cartridge takes, which refuses a phx.new other than the one
+# that made the project. Same version, same generator, same delta —
+# hence one image per installer. Refused when missing: an empty version
+# would install whatever phx_new hex has newest, and say nothing.
+ARG PHX_NEW
+RUN test -n "${PHX_NEW}" || { echo "PHX_NEW is required: --build-arg PHX_NEW=VERSION" >&2; exit 1; } && \
+    mix archive.install hex phx_new ${PHX_NEW} --force
+
+# No command of its own: the console and every one-off run name theirs.

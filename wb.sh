@@ -58,8 +58,11 @@
     SCRIPTS_DIR="scripts"
 
     # Script files - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    # Dev toolchain dockerfile: baked from the seed into scripts/ on each
-    # `new`, then copied into the workspace under the same name.
+    # The project's dev dockerfile is LOCAL_DOCKERFILE, baked from its seed
+    # into scripts/ on each `new`, then copied into the workspace under
+    # the same name. The workbench's image is built straight from
+    # WORKBENCH_DOCKERFILE, with the stack and the installer as build
+    # arguments.
     PROD_DOCKERFILE="Dockerfile"
     PROD_COMPOSE_FILE="docker-compose.prod.yml"
     SCALED_COMPOSE_FILE="docker-compose.scaled.yml"
@@ -68,6 +71,7 @@
     DEFAULT_REPLICAS=4
     LOCAL_DOCKERFILE="Dockerfile.local"
     LOCAL_DOCKERFILE_SEED="Dockerfile.seed.local"
+    WORKBENCH_DOCKERFILE="Dockerfile.workbench"
     COMPOSE_FILE="docker-compose.yml"
     # The entrypoint script runs from the mounted workbench (workdir /app).
     CONTAINER_ENTRYPOINT=(bash workbench/scripts/entrypoint.sh)
@@ -108,9 +112,9 @@
   # Docker ---------------------------------------------------------------------
 
     APP_NAME=$( echo "$LOWER_CASE" | tr ' ' '-' )
-    # The workspace's own dev image name. Standalone it is built from the
-    # project's Dockerfile.local; with the workbench present, `new` seeds
-    # it as an alias (docker tag) of the shared toolchain image.
+    # The workspace's own dev image name, the app's: built from the
+    # project's Dockerfile.local by its compose, with the workbench or
+    # without. The workbench's own runs never use it (WORKBENCH_IMAGE).
     LOCAL_IMAGE="$APP_NAME:local"
     # The installer setting (config.conf), kept apart from the version
     # resolved below: the setting says what the NEXT project is generated
@@ -148,13 +152,31 @@
           "$WORKSPACE_PATH/$LOCAL_DOCKERFILE" 2> /dev/null | head -n 1
       )
     fi
-    # Bare toolchain image, shared by every workspace of the same stack
-    # and installer: another installer is another image, and a workspace
-    # keeps the one that made its project. A workspace made before the
-    # stamp names no installer, and keeps the bare tag it was built with.
+    # The workbench's image, where its own work on a workspace runs —
+    # generation, cartridges, git, the catalog — and the console: shared
+    # by every workspace of the same stack and installer. Another
+    # installer is another image, and a workspace keeps the one that made
+    # its project. With no project to name one — an empty workspace, or
+    # one made before the stamp — the image is the installer config.conf
+    # names, or else the newest one this daemon already has for the
+    # stack: the one the console runs on, and the catalog is read with,
+    # before 'new' decides. None built yet, the tag names no installer
+    # and nothing answers to it: 'console' and 'new' resolve one first.
+    IMAGE_REPOSITORY="dockerized-elixir-workbench"
+    IMAGE_STACK="ex${ELIXIR_VERSION}-erl${ERLANG_VERSION}"
     if [ -n "$PHX_NEW_VERSION" ]
-    then TOOLCHAIN_IMAGE="workbench:${ELIXIR_VERSION}-${ERLANG_VERSION}-phx${PHX_NEW_VERSION}"
-    else TOOLCHAIN_IMAGE="workbench:${ELIXIR_VERSION}-${ERLANG_VERSION}"
+    then WORKBENCH_IMAGE="$IMAGE_REPOSITORY:$IMAGE_STACK-phx$PHX_NEW_VERSION"
+    elif [ -n "$PHX_NEW_SETTING" ]
+    then WORKBENCH_IMAGE="$IMAGE_REPOSITORY:$IMAGE_STACK-phx$PHX_NEW_SETTING"
+    else
+      WORKBENCH_IMAGE=$(
+        docker images --format '{{.Tag}}' "$IMAGE_REPOSITORY" 2> /dev/null | \
+          sed -n "s/^$IMAGE_STACK-phx//p" | sort -V | tail -n 1
+      )
+      if [ -n "$WORKBENCH_IMAGE" ]
+      then WORKBENCH_IMAGE="$IMAGE_REPOSITORY:$IMAGE_STACK-phx$WORKBENCH_IMAGE"
+      else WORKBENCH_IMAGE="$IMAGE_REPOSITORY:$IMAGE_STACK"
+      fi
     fi
     # Ports the services bind INSIDE the containers; the host ports are
     # chosen per workspace and mapped to these in its compose file.
@@ -182,7 +204,7 @@
     BUILD_VOLUMES=(--volume "$WORKBENCH_BUILD_VOLUME:/app/src/_build" --volume "${ELIXIR_PROJECT_NAME}_deps:/app/src/deps")
     WORKBENCH_VOLUME="$WORKBENCH_PATH:/app/workbench:ro"
     # Where the workspace is on THIS side, when this side is the
-    # toolchain. './wb.sh console' runs the console on the toolchain
+    # toolchain. './wb.sh console' runs the console on the workbench's
     # image and mounts the workspace in it at /app/src — the path the
     # one-off containers and the app service mount it at — with the
     # workbench's build volume and the shared deps over its _build and
@@ -620,7 +642,7 @@
 
   # bake_compose <IMAGE> <DOCKERFILE> <TARGET_FILE>
     # Writes a compose file of the pod topology into the workspace —
-    # the dev file with the dev toolchain image and dockerfile, the prod
+    # the dev file with the app's dev image and dockerfile, the prod
     # file with the release's — off `mix workbench.compose` in the
     # igniter package (scripts/PLAN.md), run on the project: this side
     # decides the ports and the images and hands them over; which
@@ -709,7 +731,7 @@
     # And the two directories they cover, when the workspace is there:
     # a mount point Docker has to create itself, inside a bind mount,
     # lands on the host owned by root. Made here they belong to this
-    # user — and the toolchain image carries the same two, which is
+    # user — and both images carry the same two, which is
     # where a fresh volume takes its ownership from.
   ensure_build_volumes() {
     local volume
@@ -837,7 +859,7 @@
     # project (workspace_igniter), git that writes (workspace_git), and
     # the entrypoint's new and add (entrypoint_run). Each has two ways:
     # here, when this side is the toolchain — the console's container,
-    # see WORKSPACE_MOUNT — or a container on the toolchain image with
+    # see WORKSPACE_MOUNT — or a container on the workbench's image with
     # the same mounts otherwise. The command is the same either way; only
     # the runner branches, so nothing about a verb knows or cares where
     # it ran. What stays in a container regardless: whatever needs the
@@ -849,16 +871,20 @@
   # toolchain_here
     # Whether this very process runs in the toolchain, with the workspace
     # config.conf names mounted at WORKSPACE_MOUNT and its volumes over
-    # it — all three checks, see WORKSPACE_MOUNT.
+    # it — see WORKSPACE_MOUNT — and on the image this run asks for: a
+    # 'new' that resolves another installer than the console's image
+    # carries generates in a container of that image, never here with
+    # the wrong phx_new.
   toolchain_here() {
     [ -n "$WORKSPACE_MOUNT" ] && \
     [[ "${WORKSPACE_MOUNT_PATH:-}" == "$WORKSPACE_PATH" ]] && \
-    [[ "${WORKSPACE_MOUNT_PROJECT:-}" == "$ELIXIR_PROJECT_NAME" ]]
+    [[ "${WORKSPACE_MOUNT_PROJECT:-}" == "$ELIXIR_PROJECT_NAME" ]] && \
+    [[ "${WORKSPACE_MOUNT_IMAGE:-}" == "$WORKBENCH_IMAGE" ]]
   }
 
   # toolchain_env [NAME=VALUE...] <COMMAND...>
     # COMMAND run here, in this container's toolchain, the way a fresh
-    # toolchain container would run it: the console's own two Mix
+    # workbench container would run it: the console's own two Mix
     # variables dropped — set in its image so its build lives under
     # /app/console, inherited they would send the project's there —
     # the workbench named to the project's mix.exs (the package is a
@@ -870,10 +896,8 @@
 
   # entrypoint_run [-T] <NAME> [ARGS...]
     # scripts/entrypoint.sh ARGS on the workspace, with the toolchain and
-    # the workbench. Here when this is the toolchain; else through the
-    # workspace's compose (app service: the dev image, the volumes) when
-    # it has one, and on a bare toolchain container before it does —
-    # 'new' runs before the compose exists. -T asks for no terminal, as
+    # the workbench. Here when this is the toolchain; else in a container
+    # of the workbench's image, with the workspace's volumes. -T asks for no terminal, as
     # compose spells it, for a run whose output is read. NAME is the
     # entrypoint's own command (new, add, expand…), and names the
     # container after it and this process: two at once — the console
@@ -884,14 +908,13 @@
     local name="$1"
     if toolchain_here; then
       entrypoint_here "$@"
-    elif [ -f "$WORKSPACE_PATH/$COMPOSE_FILE" ]; then
-      # On the workspace's own dev image — the one its Dockerfile.local
-      # built, installer stamped — and never as the compose's `app`:
+    else
+      # On the workbench's image, the installer stamped in the workspace
+      # (or the one 'new' resolved), and never as the compose's `app`:
       # `add` and `expand` compile the project and ask nothing of the
       # database or the .env, and the app service would put them in the
-      # app's build. This used to be a compose one-off, which also waited
-      # for the database to be healthy.
-      ensure_build_volumes
+      # app's build.
+      ensure_build_volumes && ensure_workbench_image || return 1
       docker run \
         "${tty_flags[@]}" \
         "${COLOR_ENV[@]/#/--env=}" \
@@ -900,18 +923,7 @@
         --volume "$SOURCE_CODE_VOLUME" \
         --volume "$WORKBENCH_VOLUME" \
         "${BUILD_VOLUMES[@]}" \
-        "$LOCAL_IMAGE" "${CONTAINER_ENTRYPOINT[@]}" "$@"
-    else
-      ensure_build_volumes
-      docker run \
-        "${tty_flags[@]}" \
-        "${COLOR_ENV[@]/#/--env=}" \
-        --name "${APP_NAME}_workbench_${name}_$$" \
-        --rm \
-        --volume "$SOURCE_CODE_VOLUME" \
-        --volume "$WORKBENCH_VOLUME" \
-        "${BUILD_VOLUMES[@]}" \
-        "$TOOLCHAIN_IMAGE" "${CONTAINER_ENTRYPOINT[@]}" "$@"
+        "$WORKBENCH_IMAGE" "${CONTAINER_ENTRYPOINT[@]}" "$@"
     fi
   }
 
@@ -956,7 +968,7 @@
       # shellcheck disable=SC1010  # 'do' is mix's own task here, not the keyword
       (cd "$WORKSPACE_MOUNT" && toolchain_env mix do deps.get + deps.compile + "$@")
     else
-      ensure_build_volumes
+      ensure_build_volumes && ensure_workbench_image || return 1
       docker run \
         "${DOCKER_TTY_FLAGS[@]}" \
         "${COLOR_ENV[@]/#/--env=}" \
@@ -966,7 +978,7 @@
         --volume "$WORKBENCH_VOLUME" \
         "${BUILD_VOLUMES[@]}" \
         --workdir /app/src \
-        "$LOCAL_IMAGE" sh -c \
+        "$WORKBENCH_IMAGE" sh -c \
           'exec mix do deps.get + deps.compile + "$@"' \
           mix "$@"
     fi
@@ -991,15 +1003,13 @@
 
   # package_igniter <TASK> [ARGS...]
     # A mix task of the igniter package run on the package itself, in the
-    # toolchain image, with no project under it. The catalog belongs to
+    # workbench's image, with no project under it. The catalog belongs to
     # the workbench and not to the workspace: it has to answer when the
     # workspace is empty, which is when the New project card needs it.
     # Its build goes under its own root so it never collides with a
     # host's build of the same package.
   package_igniter() {
-    docker image inspect "$TOOLCHAIN_IMAGE" > /dev/null 2>&1 || terminate \
-      "No toolchain image $TOOLCHAIN_IMAGE yet, and the catalog is read" \
-      "with it. Create a project first: ./$(basename "$0") new"
+    ensure_workbench_image || terminate "The workbench image did not build, and the catalog is read with it."
     docker run \
       --rm \
       "${COLOR_ENV[@]/#/--env=}" \
@@ -1009,7 +1019,7 @@
       --volume workbench_package_build:/app/igniter/_build \
       --volume workbench_package_deps:/app/igniter/deps \
       --workdir /app/igniter \
-      "$TOOLCHAIN_IMAGE" sh -c \
+      "$WORKBENCH_IMAGE" sh -c \
         'mix do deps.get + compile > /dev/null 2>&1; exec mix "$@"' \
         mix "$@"
   }
@@ -1052,12 +1062,12 @@
     # Runs git on the workspace with the toolchain — where the project's
     # git hooks can run mix, and as the workspace's own user — signing as
     # GIT_NAME <GIT_EMAIL>: here when this is the toolchain, from a
-    # toolchain container otherwise.
+    # workbench container otherwise.
   # git_read <ARGS...>
     # A read-only git query on the workspace: with a git on this side
     # (the console container has one; a host may) it runs here — a
     # container start costs seconds and 'status' asks three times —
-    # and in the toolchain container otherwise. What writes (init, add,
+    # and in the workbench container otherwise. What writes (init, add,
     # commit, revert) stays workspace_git: the project's hooks run
     # there, where mix is.
   git_read() {
@@ -1072,13 +1082,14 @@
       toolchain_env "${GIT_COLOR_ENV[@]}" "${GIT_IDENTITY_ENV[@]}" \
         git -C "$WORKSPACE_MOUNT" "$@"
     else
+      ensure_workbench_image || return 1
       docker run \
         --rm \
         "${GIT_COLOR_ENV[@]/#/--env=}" \
         "${GIT_IDENTITY_ENV[@]/#/--env=}" \
         --volume "$SOURCE_CODE_VOLUME" \
         --workdir /app/src \
-        "$LOCAL_IMAGE" git "$@"
+        "$WORKBENCH_IMAGE" git "$@"
     fi
   }
 
@@ -1692,10 +1703,10 @@
       "workspace and drives this script — as a container, with Docker's" \
       "socket and the workbench mounted, on the first free port from 4100," \
       "published on 127.0.0.1 only: it runs this script with --yes." \
-      "- up (default): build the image if missing — and the toolchain" \
-      "  it stands on, when the daemon has none — and start it." \
+      "- up (default): build the workbench image if missing — the" \
+      "  toolchain every workspace of the stack shares — and start it." \
       "- down, logs: stop it, follow its output." \
-      "- build: build the image again (the Docker CLI in it follows the host)."
+      "- build: build the workbench image again, from the seed as it is."
 
     print_command "bake"
     section_content \
@@ -1711,7 +1722,7 @@
 
     print_command "commit [MESSAGE | --message-file PATH]"
     section_content \
-      "Commit everything the workspace has, from the toolchain container" \
+      "Commit everything the workspace has, from the workbench container" \
       "(the project's git hooks can run mix there), signed as the" \
       "GIT_IDENTITY of config.conf: 'user' takes the host's git identity" \
       "when there is one, 'workbench' signs as the workbench." \
@@ -1900,10 +1911,10 @@
     # The Phoenix installer, in order of authority: PHX_NEW_VERSION as
     # it stands (--phx-new for one run, the workspace's stamp), the
     # setting in config.conf, hex for everyone else — and with it the
-    # toolchain image's tag, which carries the installer. Shared by
+    # workbench image's tag, which carries the installer. Shared by
     # 'new', which stamps the answer into the workspace, and by
-    # 'console', which builds the toolchain its image stands on when
-    # the daemon has none.
+    # 'console', which builds the image it runs on when the daemon has
+    # none.
   resolve_installer() {
     PHX_NEW_NAMED=""
     if [ -n "$PHX_NEW_VERSION" ]
@@ -1945,23 +1956,43 @@
       fi
     fi
 
-    TOOLCHAIN_IMAGE="workbench:${ELIXIR_VERSION}-${ERLANG_VERSION}-phx${PHX_NEW_VERSION}"
+    WORKBENCH_IMAGE="$IMAGE_REPOSITORY:$IMAGE_STACK-phx$PHX_NEW_VERSION"
   }
 
-  # build_toolchain
-    # The toolchain image, off the baked scripts/Dockerfile.local: the
-    # stack, the installer, git, and the UID/GID of this user.
-  build_toolchain() {
+  # build_workbench_image
+    # The workbench's image, off scripts/Dockerfile.workbench: the stack
+    # and the installer as build arguments, and the UID/GID of this user.
+  build_workbench_image() {
     ( cd "$SCRIPTS_DIR" && \
       docker build \
+        --build-arg ELIXIR="$ELIXIR_VERSION" \
+        --build-arg OTP="$ERLANG_VERSION" \
+        --build-arg DEBIAN="$DEBIAN_VERSION" \
+        --build-arg PHX_NEW="$PHX_NEW_VERSION" \
         --build-arg UID="$(id -u)" \
         --build-arg GID="$(id -g)" \
-        --file "$LOCAL_DOCKERFILE" --tag "$TOOLCHAIN_IMAGE" . )
+        --file "$WORKBENCH_DOCKERFILE" --tag "$WORKBENCH_IMAGE" . )
+  }
+
+  # ensure_workbench_image
+    # The workbench's image, built when the daemon has none — with the
+    # workspace's installer, or the one 'new' would pick, so the project
+    # to come finds it built and builds nothing twice. Every run of the
+    # workbench in a container of its own asks for it first: on a daemon
+    # pruned clean the image comes back on the first command that needs
+    # it. What it says goes to stderr, out of the way of the readers'
+    # JSON.
+  ensure_workbench_image() {
+    docker image inspect "$WORKBENCH_IMAGE" > /dev/null 2>&1 && return
+    {
+      echo "No workbench image $WORKBENCH_IMAGE yet: building it first (minutes)."
+      resolve_installer && build_workbench_image
+    } >&2
   }
 
   # create_project <SETUP_COMMAND> [PHOENIX_NEW_OPTIONS...]
     # Body of the 'new' command: prepares the workspace, builds the
-    # toolchain image, generates the Phoenix project, registers the
+    # workbench's image if missing, generates the Phoenix project, registers the
     # igniter package and runs SETUP_COMMAND (the 'workbench_setup'
     # entrypoint branch) with the SETUP_FLAGS its builder left. Finally
     # bakes the workspace's own dockerfile and compose file.
@@ -1970,19 +2001,16 @@
 
     prepare_workspace && \
     ensure_build_volumes && \
-    build_toolchain && \
-    docker tag "$TOOLCHAIN_IMAGE" "$LOCAL_IMAGE" && \
+    ensure_workbench_image && \
     entrypoint_run new "$ELIXIR_PROJECT_NAME" "$@" && \
     register_igniter_package && \
     entrypoint_run "$setup_command" "${SETUP_FLAGS[@]}" && \
-    # The project keeps its own baked copy of the toolchain dockerfile,
-    # so a standalone clone (no workbench) can rebuild the same dev
-    # image: the compose build points at it.
+    # The project keeps its own baked dev dockerfile, the app's image:
+    # the compose build points at it, and its first up builds it —
+    # sharing the workbench image's first layers, so in seconds.
     cp "$SCRIPTS_DIR/$LOCAL_DOCKERFILE" "$WORKSPACE_PATH/$LOCAL_DOCKERFILE" && \
     # The workspace owns its orchestration: compose with real values.
-    # Its build points to the project-owned Dockerfile.local — and must
-    # stay there: its app service also runs the workbench one-off
-    # commands (add, mix), which need the toolchain. The
+    # Its build points to the project-owned Dockerfile.local. The
     # production deployment never touches this file: 'up --deploy prod'
     # bakes docker-compose.prod.yml from the same seed with the
     # production Dockerfile.
@@ -2278,7 +2306,7 @@ if [ $# -gt 0 ]; then
     # The workspace is mounted a second time, at /app/src with its build
     # and deps volumes over it — the arrangement the app service and
     # every one-off container have — and WORKSPACE_MOUNT says so: the
-    # image is the toolchain, so wb.sh run in here does its mix and git
+    # image is the workbench's, so wb.sh run in here does its mix and git
     # in this container instead of starting another (toolchain_here),
     # and the resident (the project's own BEAM, beside the console)
     # compiles from the app's own source path into the app's own
@@ -2293,45 +2321,14 @@ if [ $# -gt 0 ]; then
     # that is where the app's port answers from inside this container,
     # for the probes the console calls itself; the doors the browser
     # opens stay on localhost.
-    CONSOLE_IMAGE="workbench-console:${ELIXIR_VERSION}-${ERLANG_VERSION}"
     CONSOLE_NAME="workbench_console"
     CONSOLE_DIR="$WORKBENCH_PATH/console"
 
-    # ensure_toolchain
-      # The toolchain image the console's is built on, built here when
-      # the daemon has none — with the installer 'new' would pick, so
-      # the project to come finds it built and builds nothing twice. It
-      # used to send the reader to 'new' instead: on a daemon pruned
-      # clean the console could not start until a project existed,
-      # which put the first act behind the very screen that offers it.
-      # A toolchain built before the installer was part of the tag
-      # (workbench:ELIXIR-OTP) still serves.
-    ensure_toolchain() {
-      docker image inspect "$TOOLCHAIN_IMAGE" > /dev/null 2>&1 && return
-      LEGACY_TOOLCHAIN="workbench:${ELIXIR_VERSION}-${ERLANG_VERSION}"
-      docker image inspect "$LEGACY_TOOLCHAIN" > /dev/null 2>&1 && \
-        { TOOLCHAIN_IMAGE="$LEGACY_TOOLCHAIN"; return; }
-      echo "No toolchain image yet: the console's is built on it, so it comes first (minutes)."
-      resolve_installer && \
-      create_local_dockerfile && \
-      build_toolchain
-    }
-
-    console_build() {
-      docker build \
-        --build-arg "TOOLCHAIN=$TOOLCHAIN_IMAGE" \
-        --tag "$CONSOLE_IMAGE" "$CONSOLE_DIR"
-    }
-
     case "$1" in
       ""|up)
-        # The console's image is built on the toolchain's; built once,
-        # the console serves an empty workspace too, where 'new' is the
-        # first act.
-        docker image inspect "$CONSOLE_IMAGE" > /dev/null 2>&1 || {
-          # shellcheck disable=SC2015  # terminate is wanted when either step fails
-          ensure_toolchain && console_build || terminate "The console image did not build."
-        }
+        # The console runs on the workbench's image; built once, it serves
+        # an empty workspace too, where 'new' is the first act.
+        ensure_workbench_image || terminate "The workbench image did not build."
         # From inside the console — the job its page runs to bind it to
         # the workspace config.conf names now — this container cannot
         # replace itself: removing it would end the job that asked. A
@@ -2347,7 +2344,7 @@ if [ $# -gt 0 ]; then
             --volume "$WORKBENCH_PATH:$WORKBENCH_PATH" \
             --workdir "$WORKBENCH_PATH" \
             --env HOME=/home/elixir \
-            "$CONSOLE_IMAGE" sh -c "sleep 2; ./$(basename "$0") console" > /dev/null && \
+            "$WORKBENCH_IMAGE" sh -c "sleep 2; ./$(basename "$0") console" > /dev/null && \
           echo "The console starts again in a moment, for ${B}$WORKSPACE_PATH${R}," \
             "on the same address: this page reconnects on its own."
           exit 0
@@ -2360,7 +2357,7 @@ if [ $# -gt 0 ]; then
         # The socket's group as the container sees it — not the host's:
         # under Docker Desktop the mounted socket is the VM's, root-owned.
         SOCKET_GID=$(docker run --rm --volume /var/run/docker.sock:/var/run/docker.sock \
-          "$CONSOLE_IMAGE" stat -c %g /var/run/docker.sock)
+          "$WORKBENCH_IMAGE" stat -c %g /var/run/docker.sock)
         # The workspace's directory and its two mount points made here,
         # as this user: a bind mount's missing target lands root-owned.
         mkdir -p "$WORKSPACE_PATH" && ensure_build_volumes && \
@@ -2378,6 +2375,9 @@ if [ $# -gt 0 ]; then
           --env WORKSPACE_MOUNT=/app/src \
           --env "WORKSPACE_MOUNT_PATH=$WORKSPACE_PATH" \
           --env "WORKSPACE_MOUNT_PROJECT=$ELIXIR_PROJECT_NAME" \
+          --env "WORKSPACE_MOUNT_IMAGE=$WORKBENCH_IMAGE" \
+          --env MIX_BUILD_ROOT=/app/console/build \
+          --env MIX_DEPS_PATH=/app/console/deps \
           --env "WORKBENCH_PATH=$WORKBENCH_PATH" \
           --add-host host.docker.internal:host-gateway \
           --env APP_HOST=host.docker.internal \
@@ -2387,12 +2387,15 @@ if [ $# -gt 0 ]; then
           --env "WORKBENCH_PATH=$WORKBENCH_PATH" \
           --env PORT=4000 \
           --publish "127.0.0.1:$CONSOLE_PORT:4000" \
-          "$CONSOLE_IMAGE" > /dev/null && \
+          "$WORKBENCH_IMAGE" sh -c "mix deps.get && mix phx.server" > /dev/null && \
         echo "The console is coming up on ${B}http://localhost:$CONSOLE_PORT${R}" \
           "(first run compiles it: ./$(basename "$0") console logs)." ;;
       down)  docker rm -f "$CONSOLE_NAME" > /dev/null 2>&1 && echo "Console down." || echo "The console was not up." ;;
       logs)  docker logs --follow "$CONSOLE_NAME" ;;
-      build) ensure_toolchain && console_build ;;
+      build)
+        # The image again, from the seed as it is now: the installer the
+        # workspace was made with, or the one 'new' would pick.
+        resolve_installer && build_workbench_image ;;
       *)     args_error invalid ;;
     esac
 
@@ -2436,9 +2439,9 @@ if [ $# -gt 0 ]; then
         # The workspace keeps its ports; the compose is where they live.
         compose_ports
 
-        # The toolchain Dockerfile too: the seed may have moved since this
+        # The dev Dockerfile too: the seed may have moved since this
         # project was born — where Mix compiles, what the image carries —
-        # and the workspace keeps the copy its image is built from. The
+        # and the workspace keeps the copy its app's image is built from. The
         # Phoenix installer stays the one stamped in it: that is the
         # project's generator, not config.conf's next choice.
         PHX_STAMPED=$(sed -n 's/^ARG PHX_NEW="\(.*\)"/\1/p' "$WORKSPACE_PATH/$LOCAL_DOCKERFILE" 2>/dev/null)
@@ -2450,8 +2453,7 @@ if [ $# -gt 0 ]; then
           docker build \
             --build-arg UID="$(id -u)" \
             --build-arg GID="$(id -g)" \
-            --file "$WORKSPACE_PATH/$LOCAL_DOCKERFILE" --tag "$TOOLCHAIN_IMAGE" "$SCRIPTS_DIR" && \
-          docker tag "$TOOLCHAIN_IMAGE" "$LOCAL_IMAGE" && \
+            --file "$WORKSPACE_PATH/$LOCAL_DOCKERFILE" --tag "$LOCAL_IMAGE" "$SCRIPTS_DIR" && \
           echo "$LOCAL_DOCKERFILE baked again, and the image with it."
         fi
 

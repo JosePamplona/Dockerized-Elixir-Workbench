@@ -41,12 +41,11 @@ services:
   app:
     image: lorem-ipsum:0.1.0-prod
     build:
-      # Baked by the workbench: Dockerfile.local (dev toolchain) in
-      # docker-compose.yml — whose app service also runs the workbench
-      # one-off commands (add, mix), which need the toolchain —
-      # and the production Dockerfile in docker-compose.prod.yml, baked
-      # by 'up --env prod'. Do not point docker-compose.yml at the
-      # production Dockerfile.
+      # Baked by the workbench: Dockerfile.local (the app's dev image)
+      # in docker-compose.yml, and the production Dockerfile in
+      # docker-compose.prod.yml, baked by 'up --env prod'. Do not point
+      # docker-compose.yml at the production Dockerfile. The workbench's
+      # own runs (add, mix, git) use an image of their own, not this one.
       dockerfile: Dockerfile
     # The image starts itself (CMD). Defaults per dockerfile —
     #   Dockerfile.local: sh -c 'cd /app/src && mix setup && exec mix phx.server'

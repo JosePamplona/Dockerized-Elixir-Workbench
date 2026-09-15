@@ -60,7 +60,7 @@ The task is `mix workbench.compose`, in the igniter package: `--deploy
 dev|prod|scaled`, `--replicas N`, `--no-balancer`, the YAML on standard
 output. `wb.sh` stops knowing YAML: `bake` becomes a redirect of that
 task, through `workspace_igniter` with a project and `package_igniter`
-without one. Both run the package in the toolchain image, which `new`
+without one. Both run the package in the workbench's image, which `new`
 builds before it bakes, so the generator is at hand at every moment the
 script bakes today. The console loads the package as a dependency and
 can show the compose a bake would write, before writing it.

@@ -16,6 +16,20 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **Ctrl+C interrupts in the Terminal tab.** With nothing selected, the
+  key stops what the session runs: under bash, sh or rpc every process
+  the shell started gets SIGINT and the shell stays, as a terminal
+  signals its foreground job; iex opens the BEAM's BREAK menu, `c` to
+  go on and `a` to leave, and psql cancels its query. With text
+  selected, in the input or on the screen, Ctrl+C is still Copy, and
+  Ctrl+Shift+C and ⌘C always are. A session is a pipe, with no terminal
+  to turn the key into a signal: its command now prints the PID `exec`
+  hands it on a line the screen never shows, and the console signals
+  that PID with a second `docker exec` in the same container, finding
+  the processes under it through `/proc`, since the slim images carry
+  no `pkill`. The workbench's one-off container has a name for that. A
+  session opened before this has no PID to signal, and the key does
+  nothing there (2026-09-15).
 - **Insert and Eject on the shelf's rows.** The last column of the
   Inserted list ejects the row's cartridge — the bare `eject NAME`,
   unlit with the reason when the tree is dirty, when another cartridge
@@ -234,6 +248,39 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **The workbench and the project have an image each, from a
+  Dockerfile each.** The workbench's is
+  `dockerized-elixir-workbench:exELIXIR-erlOTP-phxVERSION`, built
+  straight from `scripts/Dockerfile.workbench` with the stack and the
+  installer as build arguments: the toolchain, phx_new, and the Docker
+  CLI with buildx and compose. Everything the workbench does in a
+  container of its own runs there, `add`, `expand`, git and the
+  catalog included, and so does the console; its image is built on the
+  first command that needs it. The project's `Dockerfile.local` keeps
+  only what the app uses: no phx_new, no Docker CLI, no workbench
+  directories, no default-branch setting, and the `ARG PHX_NEW` line
+  stays as the record of its generator. Its compose builds it on the
+  first `up`, from the same first steps, so the two images share those
+  layers. There were two images before as well, `workbench:…` and
+  `workbench-console:…` built on it, and they read as two versions of
+  one thing: the second named neither its base nor its installer, and
+  the project's image was an alias of the first, carrying the
+  generator it never runs. `console/Dockerfile` is gone. With no
+  project to name an installer, the image is the one config.conf names
+  or the newest the daemon has for the stack. And wb.sh runs a command
+  in the console's own container only when it asks for the image the
+  console runs on: a `new` that resolves another phx_new, or a stack
+  changed in config.conf, goes to a container of its own image instead
+  of generating with the wrong one (2026-09-14). The Terminal tab's
+  one-off target, when nothing runs, is **workbench** and not
+  toolchain: a container of the workbench's image with the workbench
+  mounted and its build volumes over `_build` and `deps`, as wb.sh's
+  own runs have. It was a container of the app's dev image with the
+  source alone, so an `iex -S mix` there compiled through the bind
+  mount into the workspace's own directory, and since the dev image is
+  built on the first `up`, it had no image at all right after `new`.
+  The resident, away from the console's mount, runs on the same image
+  for the same reason (2026-09-15).
 - **A job's verbs are buttons in a strip under its output**, inside
   the frame, the strip the Logs and Terminal boxes have: Run it and
   Drop it while it waits for a word, Drop it while it waits its turn,
@@ -346,8 +393,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   Logs' chips and the terminal's containers. The row above each box is gone, and so are the two
   boxes' words for being empty. On the Files sheet the file's row no
   longer draws a line under itself: the row's ground is the edge. And
-  the rail's toggle has a neighbour, a square that moves the rail to
-  the other side, its mark showing the side it would go to. A file's
+  the rail's toggle is two squares, Left then Right always, each
+  drawing the frame it would set with the rail's column solid: the
+  other side moves the rail, the side it is on puts it away, and
+  either brings it back on its own side; the one in force is pressed. A file's
   row on the Files sheet carries its caret at the far end, past the
   counts, as a job's row does, and folds wherever it is pressed but on
   a cartridge's mention. And a changed line tints its number plates too, a

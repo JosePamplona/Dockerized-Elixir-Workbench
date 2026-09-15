@@ -56,6 +56,40 @@ defmodule Console.TerminalsTest do
     assert {"quiet", nil} in lines
   end
 
+  # Ctrl+C on a pipe: the command announces its PID, the session keeps
+  # that line off the screen and signals what runs under the shell, and
+  # the shell goes on. `env` stands in for `docker exec`, here on the host.
+  test "an interrupt stops what the shell runs, and the shell stays" do
+    key = {"probe", "bash"}
+    ["sh" | argv] = ConsoleWeb.Terminal.announced(["bash"])
+
+    {:ok, _} =
+      Terminals.open(key,
+        exe: System.find_executable("sh"),
+        argv: argv,
+        target: @target,
+        shell: "bash",
+        head: "h",
+        exec: [],
+        signal_exe: System.find_executable("env")
+      )
+
+    assert {:ok, _} = Terminals.attach(key)
+    Terminals.send_line(key, "sleep 30; echo rc=$?", "$ sleep 30")
+    assert_receive {:term, ^key, {:line, "$ sleep 30", "p"}}
+    Process.sleep(300)
+
+    Terminals.interrupt(key)
+    assert_receive {:term, ^key, {:line, "^C", "p"}}
+    assert_receive {:term, ^key, {:line, "rc=130", nil}}, 3000
+
+    Terminals.send_line(key, "echo alive", "$ echo alive")
+    assert_receive {:term, ^key, {:line, "alive", nil}}, 2000
+
+    {:ok, %{lines: lines}} = Terminals.attach(key)
+    refute Enum.any?(lines, fn {html, _} -> html =~ "wb-pid" end)
+  end
+
   test "when the process ends the session stays with its trail, and a close forgets it" do
     key = {"probe", "bash"}
 

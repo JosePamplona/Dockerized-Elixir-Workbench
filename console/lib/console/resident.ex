@@ -8,16 +8,15 @@ defmodule Console.Resident do
   `answer> ` line out.
 
   Where it runs: inside the console's own container, as a process
-  beside the console — the image is the toolchain, the same the
-  workspace's dev image is an alias of, and `./wb.sh console` mounts
+  beside the console — the image is the workbench's, and `./wb.sh console` mounts
   the workspace at `/app/src` with the app's volumes over it
   (`WORKSPACE_MOUNT`), so the resident compiles from the app's own
   source path into the app's own `_build` and finds what it compiled.
   That mount was made for the workspace config.conf named when the
   console started; named another since, the mount is not this
-  workspace's — the same three checks `wb.sh` makes, `toolchain_here` —
-  and the resident runs in one long-lived container on the workspace's
-  dev image instead, with its volumes, as it does on a host running the
+  workspace's — the same checks `wb.sh` makes, `toolchain_here` —
+  and the resident runs in one long-lived container on the workbench's
+  image instead, with its volumes, as it does on a host running the
   console by hand. Slower to start, and right.
 
   It is started on the first question, restarted when it dies, and
@@ -153,7 +152,7 @@ defmodule Console.Resident do
   defp follow_workspace(state), do: state
 
   # Here, when this container mounts this very workspace at /app/src;
-  # else a container on the workspace's dev image, with the two mounts
+  # else a container on the workbench's image, with the two mounts
   # the project's mix.exs expects and, over _build and deps, the
   # workbench's own build volume and the deps shared with the app — so
   # nothing compiles through the bind mount there either, and nothing
@@ -204,18 +203,21 @@ defmodule Console.Resident do
          "#{project.name}_deps:/app/src/deps",
          "-w",
          "/app/src",
-         project.image,
+         Workbench.image(ws),
          "mix" | mix
        ], []}
     end
   end
 
-  # The three things `./wb.sh console` says about its mount, against the
-  # workspace config.conf names now — as `toolchain_here` in wb.sh.
+  # What `./wb.sh console` says about its mount, against the workspace
+  # config.conf names now and the image it asks for — as `toolchain_here`
+  # in wb.sh: another stack or installer is another image, and this
+  # container's Elixir and phx_new are not that one's.
   defp mounted_here?(ws, project) do
     System.get_env("WORKSPACE_MOUNT") != nil and
       System.get_env("WORKSPACE_MOUNT_PATH") == ws and
-      System.get_env("WORKSPACE_MOUNT_PROJECT") == project.name
+      System.get_env("WORKSPACE_MOUNT_PROJECT") == project.name and
+      System.get_env("WORKSPACE_MOUNT_IMAGE") == Workbench.image(ws)
   end
 
   defp close(%{port: nil} = state), do: state

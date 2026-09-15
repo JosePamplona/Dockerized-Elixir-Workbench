@@ -201,26 +201,30 @@ body.rail-right .grip{left:auto;right:var(--rail);margin:0 -5px 0 0}
 .grip:focus-visible{outline:none}
 /* Nothing to drag when the rail is not there, or when the two stack. */
 body.rail-off .grip{display:none}
-/* The rail's toggle (#rail-toggle, ConsoleWeb.Square): in the rail's
-   top corner, 22px in from its edge as the rail's own padding is, on
+/* The rail's two squares (#rail-left, #rail-right, ConsoleWeb.Square),
+   Left then Right always, as the frames they draw: in the rail's top
+   corner, 22px in from its top and its edge as the rail's own padding is, on
    whichever side the rail is; and, with the rail away, in the screen's
    corner, where hexdocs leaves its sidebar button — the tab row steps
-   aside for it there. On the right, the outer corner both times. Its
-   edge is the section heads' edge: the rail's padding gives the
-   scrollbar gutter back, so only the rail's 1px border, on the left
-   rail's right side, is left to take off. */
-#rail-toggle{position:absolute;top:18px;left:calc(var(--rail) - 22px - 33px - 1px);z-index:3}
-/* Its side, beside it — to the left of the toggle, 8px off, where there is room: on the toggle's other side when the rail is away on the left. The mark shows the side it would go to. */
-#rail-side{position:absolute;top:18px;left:calc(var(--rail) - 22px - 33px - 1px - 8px - 33px);z-index:3}
-body:not(.rail-right) #rail-side svg{transform:scaleX(-1)}
-body.rail-right #rail-side{left:auto;right:calc(22px + 33px + 8px)}
-body.rail-off #rail-side{left:calc(22px + 33px + 8px);right:auto;top:12px}
-body.rail-off.rail-right #rail-side{left:auto;right:calc(22px + 33px + 8px)}
-/* In the screen's corner it centres on the tab row: 56px tall — 14 of air over tabs of 8 + line + 10 + a 3px rule — less the 33 of the square, halved. */
-body.rail-off #rail-toggle{left:22px;right:auto;top:12px}
-/* A rail on the right keeps its name in its inner corner, so the toggle takes the outer one — the window's, which is where it goes when the rail is away too — and its mark turns to put the column on the rail's side. */
-body.rail-right #rail-toggle{left:auto;right:22px}
-body.rail-right #rail-toggle svg{transform:scaleX(-1)}
+   aside for it there. The pair's edge is the section heads' edge: the
+   rail's padding gives the scrollbar gutter back, so only the rail's
+   1px border, on the left rail's right side, is left to take off. The
+   right square's mark is the left's turned over, so the solid column
+   sits on the side each would put the rail on; the one in force is
+   pressed. */
+#rail-left,#rail-right{position:absolute;top:22px;z-index:3}
+#rail-right svg{transform:scaleX(-1)}
+#rail-left[aria-pressed="true"],#rail-right[aria-pressed="true"]{color:var(--ink);background:var(--ground);border-color:var(--ink)}
+#rail-right{left:calc(var(--rail) - 22px - 33px - 1px)}
+#rail-left{left:calc(var(--rail) - 22px - 33px - 1px - 8px - 33px)}
+/* A rail on the right keeps its name in its inner corner, so the pair takes the outer one — the window's, which is where it goes when the rail is away too. */
+body.rail-right #rail-right{left:auto;right:22px}
+body.rail-right #rail-left{left:auto;right:calc(22px + 33px + 8px)}
+/* In the screen's corner it takes the screen's margin, 28px, as the tabs and the panels do, and centres on the tab row: 56px tall — 14 of air over tabs of 8 + line + 10 + a 3px rule — less the 33 of the square, halved. */
+body.rail-off #rail-left{left:28px;right:auto;top:12px}
+body.rail-off #rail-right{left:calc(28px + 33px + 8px);right:auto;top:12px}
+body.rail-off.rail-right #rail-left{left:auto;right:calc(28px + 33px + 8px)}
+body.rail-off.rail-right #rail-right{left:auto;right:28px}
 body.rail-off .tabs{padding-left:calc(28px + 33px + 8px + 33px + 12px)}
 body.rail-off.rail-right .tabs{padding-left:28px;padding-right:calc(28px + 33px + 8px + 33px + 12px)}
 @media (max-width:900px){.app{grid-template-columns:1fr}.console{border-right:0;border-bottom:1px solid var(--line)}.grip{display:none}}
@@ -1105,10 +1109,11 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
    before this — and it was quietly winning. */
 /* The numbers get a ground of their own — a plate over the terminal, in
    the idiom the rows beside them already use — so they read as the ruler
-   and not as part of the file. The gain is not only the tone: an added
-   line's green used to run all the way to the left edge, tinting numbers
-   that are no part of the change. Now the change begins where its sign
-   is, which is where it begins in the patch too. */
+   and not as part of the file. A changed line tints its plate too, a
+   shade deeper than the line (the rule below): from 2026-09-10 to
+   2026-09-12 the change began at the sign and the numbers stayed plain,
+   which kept them clean but hid where the changes were once the code
+   had scrolled off to the right. */
 /* The two number columns are as wide as the file's widest number (Console.Diffs.gutter, on the pre as --gut), never narrower than two digits: a short file's ruler is a short ruler. */
 /* The number sits centred in its plate, a size smaller than the code: a ruler, not a line of the file. The plate is the file row's own ground (surface-2), so ruler and row read as one furniture around the text. */
 /* Whole pixels throughout — the widths, the air, the line's height — because a bitmap face (Tamzen, the VGA) blurs the moment its glyphs land on a fraction, and a ch or an em is a fraction more often than not; round() is what the drawer already does to its own width. */
@@ -1137,6 +1142,9 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
 .impl .dl.add .sg{color:var(--good)}
 .impl .dl.del{background:rgba(192,57,43,.20)}
 .impl .dl.del .sg{color:var(--bad)}
+/* A changed line tints its numbers too, the way GitHub does: the ruler shows where the changes are when the code has scrolled off to the right. The same 20% the line wears — the plate's own ground is darker than the terminal's, so the plate comes out a shade deeper than the line without more colour; 34% on top of that was too much. This turns the 2026-09-10 rule above around, the change began at the sign, on 2026-09-12. */
+.impl .dl.add .gut{background:rgba(46,139,87,.10)}
+.impl .dl.del .gut{background:rgba(192,57,43,.10)}
 .impl .dl.hunk{color:var(--soft);background:var(--term-tint)}
 .impl .dl.meta{color:var(--term-dim)}
 .impl .shot{margin:0;padding:16px;background:var(--term);display:flex;justify-content:center}

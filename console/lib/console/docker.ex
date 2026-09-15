@@ -22,7 +22,7 @@ defmodule Console.Docker do
   @console "workbench_console"
   @project "com.docker.compose.project"
   @service "com.docker.compose.service"
-  @house ~w(workbench workbench-console hexpm/elixir postgres mysql mcr.microsoft.com/mssql/server dpage/pgadmin4 adminer registry.k8s.io/pause nginx grafana/k6 prom/prometheus grafana/grafana)
+  @house ~w(dockerized-elixir-workbench hexpm/elixir postgres mysql mcr.microsoft.com/mssql/server dpage/pgadmin4 adminer registry.k8s.io/pause nginx grafana/k6 prom/prometheus grafana/grafana)
 
   # --- containers -------------------------------------------------------------
 

@@ -44,9 +44,37 @@ defmodule ConsoleWeb.TerminalTest do
     assert Enum.map(Terminal.targets(s), & &1.name) == ~w(app database pgadmin)
   end
 
-  test "a stopped container is not a target, and with no app the toolchain stands in" do
+  test "the workbench's session runs on its image, with the workbench and the build volumes mounted" do
+    s = status([])
+    [workbench] = Terminal.targets(s)
+    {"lorem_ipsum", argv, ["exec", "-i", name]} = Terminal.argv(s, workbench, "iex")
+
+    assert ["run", "-i", "--rm" | _] = argv
+    assert "/w:/app/src" in argv
+    assert "lorem_ipsum_workbench_build:/app/src/_build" in argv
+    assert "lorem_ipsum_deps:/app/src/deps" in argv
+    assert Enum.any?(argv, &String.ends_with?(&1, ":/app/workbench:ro"))
+    assert Enum.any?(argv, &String.starts_with?(&1, "dockerized-elixir-workbench:"))
+    refute Enum.any?(argv, &String.ends_with?(&1, ":local"))
+    assert Enum.take(argv, -3) == ["iex", "-S", "mix"]
+    # Named, so Ctrl+C can reach it; the command announces its PID first.
+    assert ["--name", ^name] = Enum.drop_while(argv, &(&1 != "--name")) |> Enum.take(2)
+    assert ["sh", "-c", _, "sh", "iex", "-S", "mix"] = Enum.take(argv, -7)
+  end
+
+  test "a service's session is reached again through the compose, on the same service" do
+    s = status([c("app", "lorem-ipsum:local")])
+    [app] = Terminal.targets(s)
+    {_, argv, exec} = Terminal.argv(s, app, "bash")
+
+    assert ["compose", "--project-name", "lorem_ipsum", "exec", "-T" | _] = argv
+    assert exec == ["compose", "--project-name", "lorem_ipsum", "exec", "-T", "app"]
+    assert List.last(argv) == "bash"
+  end
+
+  test "a stopped container is not a target, and with no app the workbench stands in" do
     s = status([c("app", "lorem-ipsum:local", "exited"), c("database", "postgres:latest")])
-    assert Enum.map(Terminal.targets(s), & &1.name) == ~w(toolchain database)
+    assert Enum.map(Terminal.targets(s), & &1.name) == ~w(workbench database)
   end
 
   test "each target's shells, and the first is the one a row's button opens" do
@@ -77,20 +105,23 @@ defmodule ConsoleWeb.TerminalTest do
 
     [app, db, pga] = Terminal.targets(s)
 
-    assert {_, argv} = Terminal.argv(s, app, "bash")
+    assert {_, argv, _} = Terminal.argv(s, app, "bash")
 
     assert argv ==
              ~w(compose --project-name lorem_ipsum exec -T) ++
-               colour() ++ ~w(-w /app/src app bash)
+               colour() ++ ~w(-w /app/src app) ++ Terminal.announced(~w(bash))
 
-    assert {_, argv} = Terminal.argv(s, db, "psql")
+    assert {_, argv, _} = Terminal.argv(s, db, "psql")
 
     assert argv ==
              ~w(compose --project-name lorem_ipsum exec -T) ++
-               colour() ++ ~w(database psql -U postgres)
+               colour() ++ ["database" | Terminal.announced(~w(psql -U postgres))]
 
-    assert {_, argv} = Terminal.argv(s, pga, "sh")
-    assert argv == ~w(compose --project-name lorem_ipsum exec -T) ++ colour() ++ ~w(pgadmin sh)
+    assert {_, argv, _} = Terminal.argv(s, pga, "sh")
+
+    assert argv ==
+             ~w(compose --project-name lorem_ipsum exec -T) ++
+               colour() ++ ["pgadmin" | Terminal.announced(~w(sh))]
   end
 
   # Before the status is here the targets are a guess and the source's
@@ -114,7 +145,7 @@ defmodule ConsoleWeb.TerminalTest do
 
     assert replica.release
     assert Terminal.shells(replica) == [{"bash", "bash"}, {"rpc", "bin/app rpc"}]
-    assert {_, argv} = Terminal.argv(s, replica, "bash")
+    assert {_, argv, _} = Terminal.argv(s, replica, "bash")
     refute "-w" in argv
   end
 
@@ -126,9 +157,9 @@ defmodule ConsoleWeb.TerminalTest do
     s = status([c("app", "lorem-ipsum:local"), c("database", "postgres:latest")])
     [app, db] = Terminal.targets(s)
 
-    toolchain = %{
-      name: "toolchain",
-      kind: :toolchain,
+    workbench = %{
+      name: "workbench",
+      kind: :workbench,
       release: false,
       oneoff: true,
       title: "one-off"
@@ -137,7 +168,7 @@ defmodule ConsoleWeb.TerminalTest do
     sessions = %{
       {"app", "iex"} => %{state: :live, target: app, shell: "iex"},
       {"database", "psql"} => %{state: {:ended, 0}, target: db, shell: "psql"},
-      {"toolchain", "bash"} => %{state: :live, target: toolchain, shell: "bash"}
+      {"workbench", "bash"} => %{state: :live, target: workbench, shell: "bash"}
     }
 
     term = %{target: "app", shell: "bash", sessions: sessions, attached: nil}
@@ -146,7 +177,7 @@ defmodule ConsoleWeb.TerminalTest do
     # The container's mark reads across its shells; the shell's is its own.
     assert html =~ ~r/<button[^>]*data-session="live"[^>]*>app</
     assert html =~ ~r/<button[^>]*data-session="ended"[^>]*>database</
-    assert html =~ ~r/<button[^>]*data-session="live"[^>]*>toolchain</
+    assert html =~ ~r/<button[^>]*data-session="live"[^>]*>workbench</
     assert html =~ ~r/<button[^>]*data-session="live"[^>]*>iex -S mix</
     refute html =~ ~r/<button[^>]*data-session[^>]*>bash</
     refute html =~ ~r/<button[^>]*phx-click="term_pick"[^>]*disabled/

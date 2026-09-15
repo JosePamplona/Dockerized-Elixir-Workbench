@@ -1,9 +1,11 @@
-# Elixir toolchain image: a bare development environment with no project
-# code. The workbench builds it once per stack and Phoenix installer
-# (workbench:ELIXIR-OTP-phxVERSION) and every workspace of that stack
-# shares it; each project also keeps a baked copy of this
-# file as its own Dockerfile.local, so a standalone clone can rebuild the
-# same image without the workbench.
+# The project's development image: Elixir, the build tools and nothing
+# of the workbench. The workbench bakes this seed into the workspace as
+# its own Dockerfile.local, and the workspace's docker-compose.yml builds
+# the app's image from it (APP:local), so a standalone clone rebuilds the
+# same image without the workbench. The workbench's own work — the
+# generator, the cartridges, git, the console — runs on another image,
+# scripts/Dockerfile.workbench, which opens with this file's steps in
+# this order so Docker builds them once for both: keep the two in step.
 #
 # The source is bind-mounted at /app/src by the workspace's
 # docker-compose.yml — host edits hot-reload through Phoenix's code
@@ -37,15 +39,13 @@ ARG TOOLCHAIN_IMAGE="hexpm/elixir:${ELIXIR}-erlang-${OTP}-debian-${DEBIAN}"
 
 FROM ${TOOLCHAIN_IMAGE} AS toolchain
 
-# install build dependencies (inotify-tools powers Phoenix live reload)
+# Build dependencies: build-essential for the NIFs, git for the
+# dependencies Phoenix fetches from GitHub (heroicons, daisyUI),
+# inotify-tools for the live reload.
 RUN apt-get update -y && \
     apt-get install -y build-essential git inotify-tools && \
     apt-get clean && \
     rm -f /var/lib/apt/lists/*_*
-
-# `mix phx.new` runs `git init` in the fresh project; without a default
-# branch configured, git names it `master` and prints a hint block.
-RUN git config --system init.defaultBranch main
 
 # The image is always built locally, so it is born with the identity of
 # the building user (pass --build-arg UID/GID if yours is not the
@@ -62,26 +62,24 @@ RUN groupadd --gid ${GID} elixir && \
 # the image — the bind mount hides them the moment it lands, and Docker
 # still reads the image layer to seed an empty volume. A volume mounted
 # on a path the image does not have comes up root-owned, and this
-# container is not root. /app/igniter is the same arrangement for the
-# workbench's own package, which runs here too ('wb.sh catalog').
+# container is not root.
 WORKDIR /app
-RUN mkdir -p /app/src/_build /app/src/deps /app/igniter/_build /app/igniter/deps && \
+RUN mkdir -p /app/src/_build /app/src/deps && \
     chown -R elixir:elixir /app
 
 USER elixir
 
-# install hex + rebar and Phoenix (into the user's own home). The
-# installer is stamped here at creation — hex's newest, or the one
-# 'new --phx-new' named — and never moves after: it generates the
-# project and, later, the delta every base cartridge takes, which
-# refuses a phx.new other than the one that made the project. Same
-# version, same generator, same delta. The value is the workspace's
-# record of its own generator, and it is what makes this file enough
-# on its own: a clone with no workbench builds the same image from it.
-ARG PHX_NEW="%{phx_new_version}"
+# hex and rebar, into the user's own home.
 RUN mix local.hex --force && \
-    mix local.rebar --force && \
-    mix archive.install hex phx_new ${PHX_NEW} --force
+    mix local.rebar --force
+
+# The Phoenix installer that generated this project: hex's newest when
+# it was created, or the one 'new --phx-new' named. Nothing here
+# installs it — the app never generates anything — but the line is the
+# project's record of its own generator, and the workbench reads it
+# back: the base cartridges take their delta with that same phx_new.
+# Declared last, so it touches no step above.
+ARG PHX_NEW="%{phx_new_version}"
 
 # Self-initializing container: fetches dependencies, sets up the
 # database (idempotent) and starts the server — all from the mounted

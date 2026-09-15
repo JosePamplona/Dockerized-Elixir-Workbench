@@ -560,8 +560,8 @@ defmodule ConsoleWeb.DockerScreen do
         · asks first</span>
       </div>
       <p class="note">
-        An image with several names is one image: the app's <code>:local</code>
-        is the toolchain's, tagged for each workspace.
+        An image with several names is one image. The app's <code>:local</code>
+        and the workbench's own share their first layers on disk.
       </p>
     <% end %>
     """

@@ -3,18 +3,14 @@
 // in: history and Tab completion on the wb.sh line. Kept in this
 // browser (localStorage), never in config.conf.
 
+import { History } from "./history"
+
 const store = {
   get(k) { try { return localStorage.getItem(k) } catch (e) { return null } },
   set(k, v) { try { localStorage.setItem(k, v) } catch (e) {} },
 }
 
 // --- the wb.sh line: history and completion, as the Assistant Terminal does them
-class History {
-  constructor(limit = 100) { this.items = []; this.sel = -1; this.limit = limit }
-  push(msg) { this.sel = -1; if (!msg.trim()) return; if (this.items[0] !== msg) this.items.unshift(msg); while (this.items.length > this.limit) this.items.pop() }
-  next() { this.sel = Math.min(this.sel + 1, this.items.length - 1); return this.sel >= 0 ? this.items[this.sel] : "" }
-  prev() { this.sel = Math.max(this.sel - 1, -1); return this.sel >= 0 ? this.items[this.sel] : "" }
-}
 // Tab completes to the next divergence — the longest prefix every candidate shares.
 class Trie {
   constructor(words = []) { this.root = { children: {}, data: "", terminal: false }; for (const w of words) this.add(w) }
@@ -50,8 +46,8 @@ export const Cli = {
     const history = new History()
     this.el.addEventListener("keydown", ev => {
       if (ev.key === "Enter") { history.push(this.el.value); /* the form submits */ setTimeout(() => { this.el.value = "" }, 0) }
-      else if (ev.key === "ArrowUp") { ev.preventDefault(); this.el.value = history.next() }
-      else if (ev.key === "ArrowDown") { ev.preventDefault(); this.el.value = history.prev() }
+      else if (ev.key === "ArrowUp") { ev.preventDefault(); this.el.value = history.up(this.el.value) }
+      else if (ev.key === "ArrowDown") { ev.preventDefault(); this.el.value = history.down(this.el.value) }
       else if (ev.key === "Tab") {
         ev.preventDefault()
         this.el.value = completeLine(this.el.value, new Trie(cliWords(words, this.el.value)), msg => toast(msg, 6600))
@@ -302,10 +298,13 @@ export const Rail = {
     })
     this.resize = this.again
     addEventListener("resize", this.resize)
-    // The rail's toggle, the way hexdocs folds its sidebar: the Interface
-    // tab's Hidden, kept the same way, and painted from the body so the
-    // two agree whichever one was pressed.
-    const toggle = document.getElementById("rail-toggle"), rail = document.getElementById("rail")
+    // The rail's two squares, the way hexdocs folds its sidebar: Left
+    // and Right, each the frame it would set. Pressing the other side
+    // moves the rail; pressing the side it is on puts it away, and
+    // either brings it back on its own side. They are the Interface
+    // tab's Left, Right and Hidden, kept the same way, and painted from
+    // the body so the two agree whichever one was pressed.
+    const rail = document.getElementById("rail")
     // The gutter the rail keeps for its scrollbar, which its right padding
     // gives back so the air reads 22px on both sides. Written on the app,
     // which LiveView patches: `updated` writes it again.
@@ -315,21 +314,26 @@ export const Rail = {
       const g = rail.offsetWidth - rail.clientWidth - parseFloat(cs.borderLeftWidth) - parseFloat(cs.borderRightWidth)
       this.el.style.setProperty("--rail-gutter", Math.max(0, g) + "px")
     }
-    const side = document.getElementById("rail-side")
+    const squares = { left: document.getElementById("rail-left"), right: document.getElementById("rail-right") }
     const paintToggle = () => {
       gutter()
-      const off = document.body.classList.contains("rail-off"), right = document.body.classList.contains("rail-right")
-      if (toggle) { toggle.setAttribute("aria-pressed", String(!off)); toggle.title = off ? "bring the rail back" : "put the rail away" }
-      if (side) side.title = right ? "move the rail to the left" : "move the rail to the right"
+      const off = document.body.classList.contains("rail-off"), on = document.body.classList.contains("rail-right") ? "right" : "left"
+      for (const [side, sq] of Object.entries(squares)) {
+        if (!sq) continue
+        const pressed = !off && side === on
+        sq.setAttribute("aria-pressed", String(pressed))
+        sq.title = pressed ? "put the rail away" : off ? `bring the rail back, on the ${side}` : `move the rail to the ${side}`
+      }
     }
     const keepFrame = () => store.set("wb-console-frame", JSON.stringify(FRAME_CLASSES.filter(c => document.body.classList.contains(c))))
-    // Its side, beside it: the Interface tab's Left and Right, kept the same way.
-    side?.addEventListener("click", () => { document.body.classList.toggle("rail-right"); keepFrame(); paintToggle(); dispatchEvent(new Event("resize")) })
-    toggle?.addEventListener("click", () => {
-      document.body.classList.toggle("rail-off")
-      store.set("wb-console-frame", JSON.stringify(FRAME_CLASSES.filter(c => document.body.classList.contains(c))))
-      paintToggle(); dispatchEvent(new Event("resize"))
-    })
+    const put = side => {
+      const off = document.body.classList.contains("rail-off"), on = document.body.classList.contains("rail-right") ? "right" : "left"
+      if (!off && side === on) document.body.classList.add("rail-off")
+      else { document.body.classList.remove("rail-off"); document.body.classList.toggle("rail-right", side === "right") }
+      keepFrame(); paintToggle(); dispatchEvent(new Event("resize"))
+    }
+    squares.left?.addEventListener("click", () => put("left"))
+    squares.right?.addEventListener("click", () => put("right"))
     this.paintToggle = paintToggle; addEventListener("resize", paintToggle)
     const saved = store.get(RAIL_KEY)
     setRail(saved ? +saved : RAIL_DEFAULT)
@@ -869,12 +873,23 @@ export const Term = {
     this.handleEvent("term_out", ({ line: html, cls }) => { line(html, cls); bottom() })
     this.handleEvent("term_screen", ({ lines }) => { screen.replaceChildren(); for (const l of lines) line(l.line, l.cls); bottom() })
     const bind = () => {
-      const input = this.el.querySelector("#term-input"); if (!input || input.dataset.bound) return
-      input.dataset.bound = "1"
+      // The mark is a property, not a data- attribute: every patch drops
+      // attributes the server did not render, and a dropped mark bound one
+      // more listener per line sent — ↑ then stepped two, three lines at once.
+      const input = this.el.querySelector("#term-input"); if (!input || input.termBound) return
+      input.termBound = true
       input.addEventListener("keydown", ev => {
         if (ev.key === "Enter") { history().push(input.value); setTimeout(() => { input.value = "" }, 0) }
-        else if (ev.key === "ArrowUp") { ev.preventDefault(); input.value = history().next() }
-        else if (ev.key === "ArrowDown") { ev.preventDefault(); input.value = history().prev() }
+        else if (ev.key === "ArrowUp") { ev.preventDefault(); input.value = history().up(input.value) }
+        else if (ev.key === "ArrowDown") { ev.preventDefault(); input.value = history().down(input.value) }
+        // Ctrl+C is the browser's Copy while there is something to copy — a
+        // selection in the input or on the screen — and the session's
+        // interrupt when there is not, as the terminals in editors do.
+        // Ctrl+Shift+C, and ⌘C on a Mac, stay Copy always.
+        else if ((ev.key === "c" || ev.key === "C") && ev.ctrlKey && !ev.shiftKey && !ev.altKey && !ev.metaKey) {
+          const picked = input.selectionStart !== input.selectionEnd || String(document.getSelection() || "") !== ""
+          if (!picked) { ev.preventDefault(); this.pushEvent("term_interrupt", {}) }
+        }
         else if (ev.key === "l" && ev.ctrlKey) { ev.preventDefault(); screen.replaceChildren(); this.pushEvent("term_clear", {}) }
         else if (ev.key === "PageUp") { ev.preventDefault(); screen.scrollTop -= screen.clientHeight * 0.8 }
         else if (ev.key === "PageDown") { ev.preventDefault(); screen.scrollTop += screen.clientHeight * 0.8 }

@@ -44,7 +44,9 @@ defmodule Console.Terminals do
   Opens a session on `key`, replacing whatever the key held — an ended
   one and its trail, or a live one, closed first. `opts`: `:exe` and
   `:argv` for the Port, `:target` and `:shell` as the Terminal component
-  knows them, `:app` for rpc, `:head` for the dim first line.
+  knows them, `:app` for rpc, `:head` for the dim first line, `:exec`
+  for the docker arguments that run a command in the same container
+  (Ctrl+C), and `:signal_exe` to run them with something else than docker.
   """
   def open(key, opts) do
     close(key)
@@ -91,6 +93,14 @@ defmodule Console.Terminals do
     end
   end
 
+  @doc "Ctrl+C: interrupts what the session runs, as a terminal would."
+  def interrupt(key) do
+    case whereis(key) do
+      nil -> :none
+      pid -> GenServer.cast(pid, :interrupt)
+    end
+  end
+
   @doc "Forgets the trail, as Ctrl+L cleared the screen."
   def clear(key) do
     case whereis(key) do
@@ -122,12 +132,38 @@ defmodule Console.Terminals.Session do
   @moduledoc """
   One session: the Port to the process in the container, the last
   lines of its screen already turned into HTML, and who is watching.
+
+  Ctrl+C. The Port is a pipe, and a pipe has no terminal to turn the key
+  into SIGINT, so the session sends it: to the PID the command announced
+  (`ConsoleWeb.Terminal.announced/1`), through a second `docker exec` in
+  the same container. A shell — bash, sh, the rpc's bash — gets nothing
+  itself: every process under it does, the way a terminal signals the
+  foreground job and leaves the prompt. iex and psql are the process
+  itself, and each does with SIGINT what it does in a terminal: iex
+  opens the BEAM's BREAK menu (`c` continues, `a` leaves), psql cancels
+  the query that runs.
   """
   use GenServer, restart: :temporary
 
   alias Console.Terminals
 
   @limit 2000
+
+  # Every process under $1, found through /proc — the slim images carry
+  # no pkill — signalled at once.
+  @under ~S"""
+  list=$1; found=""
+  while [ -n "$list" ]; do
+    next=""
+    for f in /proc/[0-9]*/stat; do
+      s=$(cat "$f" 2>/dev/null) || continue
+      pid=${s%% *}; rest=${s##*) }; set -- $rest
+      for q in $list; do [ "$2" = "$q" ] && next="$next $pid"; done
+    done
+    found="$found$next"; list=$next
+  done
+  [ -z "$found" ] || kill -INT $found
+  """
 
   def start_link(opts) do
     key = Keyword.fetch!(opts, :key)
@@ -164,6 +200,9 @@ defmodule Console.Terminals.Session do
       shell: Keyword.fetch!(opts, :shell),
       release: Keyword.fetch!(opts, :target).release,
       app: Keyword.get(opts, :app, "app"),
+      exec: Keyword.get(opts, :exec, []),
+      signal_exe: Keyword.get(opts, :signal_exe) || System.find_executable("docker"),
+      pid: nil,
       lines: [],
       count: 0,
       state: :live,
@@ -207,7 +246,28 @@ defmodule Console.Terminals.Session do
 
   def handle_cast(:clear, state), do: {:noreply, %{state | lines: [], count: 0}}
 
+  def handle_cast(:interrupt, %{port: port, pid: pid} = state) when port != nil and pid != nil do
+    script = if state.shell in ~w(iex psql), do: ~S(kill -INT "$1"), else: @under
+    argv = state.exec ++ ["sh", "-c", script, "sh", pid]
+    exe = state.signal_exe
+    # A docker exec takes a moment, and the session keeps reading meanwhile.
+    Task.start(fn -> System.cmd(exe, argv, stderr_to_stdout: true) end)
+    {:noreply, put(state, "^C", "p")}
+  end
+
+  def handle_cast(:interrupt, state), do: {:noreply, state}
+
   @impl true
+  def handle_info(
+        {port, {:data, {_, "\e]wb-pid;" <> rest = line}}},
+        %{port: port, pid: nil} = state
+      ) do
+    case Integer.parse(String.trim_trailing(rest, "\a")) do
+      {pid, ""} -> {:noreply, %{state | pid: Integer.to_string(pid)}}
+      _ -> {:noreply, put(state, Console.ANSI.to_html(line), nil)}
+    end
+  end
+
   def handle_info({port, {:data, {_, line}}}, %{port: port} = state),
     do: {:noreply, put(state, Console.ANSI.to_html(line), nil)}
 

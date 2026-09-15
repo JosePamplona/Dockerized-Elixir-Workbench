@@ -1,7 +1,7 @@
 defmodule ConsoleWeb.Terminal do
   @moduledoc """
-  A shell on the app container, or on a one-off toolchain container with
-  the source when nothing runs — line-oriented: an input, a screen, the
+  A shell on the app container, or on a one-off container of the
+  workbench's image with the source when nothing runs — line-oriented: an input, a screen, the
   history and Tab in the client. `docker exec -i` and `docker run -i`
   on a Port; no tty. bash and `iex -S mix` both read lines that way;
   a release replica gets bash and `rpc` — `bin/<app> rpc` on each line,
@@ -79,7 +79,7 @@ defmodule ConsoleWeb.Terminal do
             data-key={"#{@target.name} #{@shell}"}
             autocomplete="off"
             spellcheck="false"
-            placeholder="↑↓ history · Ctrl+L clears"
+            placeholder="↑↓ history · Ctrl+C interrupts · Ctrl+L clears"
           />
         </form>
         <%!-- The rest of the controls under the command line: with what,
@@ -127,7 +127,9 @@ defmodule ConsoleWeb.Terminal do
 
   @doc """
   Where a session can open: every running app container, the database and
-  pgAdmin beside them, or a one-off toolchain container when nothing runs.
+  pgAdmin beside them, or a one-off container of the workbench's image
+  when nothing runs: the image `wb.sh` runs the project's mix on, which
+  exists from `new` on, before the app's own dev image is ever built.
 
   The workspace's other container is `network` — the pause image, ~700 kB
   that own the ports and sleep — and it is not here: it carries no shell
@@ -155,11 +157,12 @@ defmodule ConsoleWeb.Terminal do
       if apps == [],
         do: [
           %{
-            name: "toolchain",
-            kind: :toolchain,
+            name: "workbench",
+            kind: :workbench,
             release: false,
             oneoff: true,
-            title: "a one-off toolchain container with the source mounted — nothing runs"
+            title:
+              "a one-off container of the workbench's image, with the source and its build volumes — nothing runs"
           }
         ],
         else: apps
@@ -190,7 +193,7 @@ defmodule ConsoleWeb.Terminal do
 
   @doc """
   The targets with the sessions' own: a session on a container that has
-  since left the status — the one-off toolchain once the app runs, a
+  since left the status — the one-off workbench once the app runs, a
   replica stopped — is still a process with a screen, and its button
   stays until it is closed or discarded.
   """
@@ -270,7 +273,7 @@ defmodule ConsoleWeb.Terminal do
   @doc "The shell a target opens with when none is chosen: the first it offers."
   def default_shell(target), do: target |> shells() |> hd() |> elem(0)
 
-  defp svc_color(%{kind: :toolchain}), do: "var(--svc-network)"
+  defp svc_color(%{kind: :workbench}), do: "var(--svc-network)"
   defp svc_color(%{kind: kind}), do: "var(--svc-#{kind})"
 
   def prompt(target, shell, status) do
@@ -307,7 +310,7 @@ defmodule ConsoleWeb.Terminal do
         ""
 
       target.oneoff ->
-        "docker run -i --rm -v #{status["workspace"]}:/app/src -w /app/src #{image(status)} #{if shell == "iex", do: "iex -S mix", else: "bash"}"
+        "docker run -i --rm -v #{status["workspace"]}:/app/src -v …_build -v …deps -w /app/src #{image(status)} #{if shell == "iex", do: "iex -S mix", else: "bash"}"
 
       shell == "rpc" ->
         "docker compose -p #{status["compose_project"]} exec -T #{target.name} /app/bin/#{get_in(status, ["project", "app"]) || "app"} rpc …"
@@ -336,26 +339,45 @@ defmodule ConsoleWeb.Terminal do
     "GIT_CONFIG_VALUE_0=always"
   ]
 
-  @doc "The argv for the Port: docker, and what to run in the container."
+  @doc """
+  The argv for the Port — docker, and what to run in the container — and
+  how to run something else in that same container, for Ctrl+C:
+  `{app, argv, exec}`. The one-off gets a name of its own so it can be
+  reached; the rest are the compose's services. What runs is wrapped
+  (`announced/1`) so the session learns the PID it has in there.
+  """
   def argv(status, target, shell) do
     app = get_in(status, ["project", "app"]) || "app"
 
     if target.oneoff do
-      ["run", "-i", "--rm" | @colour] ++
-        [
-          "-v",
-          "#{status["workspace"]}:/app/src",
-          "-w",
-          "/app/src",
-          image(status),
-          if(shell == "iex", do: "iex", else: "bash")
-        ] ++ if(shell == "iex", do: ["-S", "mix"], else: [])
+      name =
+        "#{status["compose_project"] || "app"}_workbench_term_#{System.unique_integer([:positive])}"
+
+      cmd = if shell == "iex", do: ["iex", "-S", "mix"], else: ["bash"]
+
+      {app,
+       ["run", "-i", "--rm", "--name", name | @colour] ++
+         oneoff_mounts(status) ++ ["-w", "/app/src", image(status) | announced(cmd)],
+       ["exec", "-i", name]}
     else
-      ["compose", "--project-name", status["compose_project"], "exec", "-T" | @colour] ++
-        workdir_args(target) ++ [target.name] ++ run(shell)
+      compose = ["compose", "--project-name", status["compose_project"]]
+
+      {app,
+       compose ++
+         ["exec", "-T" | @colour] ++ workdir_args(target) ++ [target.name | announced(run(shell))],
+       compose ++ ["exec", "-T", target.name]}
     end
-    |> then(&{app, &1})
   end
+
+  @doc """
+  A command run through `sh`, which prints the PID it is about to hand
+  the command — `exec` keeps it — on a line the session reads and never
+  shows. A pipe has no terminal to turn Ctrl+C into a signal, so the
+  console signals by PID, and in a container the PID is only known from
+  inside.
+  """
+  def announced(cmd),
+    do: ["sh", "-c", ~S(printf '\033]wb-pid;%s\007\n' "$$"; exec "$@"), "sh" | cmd]
 
   # Only the dev app is entered where its source is mounted: a release
   # has none, and neither postgres nor pgAdmin has ever heard of /app/src.
@@ -370,6 +392,26 @@ defmodule ConsoleWeb.Terminal do
   defp run("sh"), do: ["sh"]
   defp run(_), do: ["bash"]
 
-  # The workspace's dev image: its compose project with dashes, :local.
-  defp image(status), do: String.replace(status["compose_project"] || "app", "_", "-") <> ":local"
+  # The mounts `wb.sh` gives its own runs on the project: the source, the
+  # workbench (the project's mix.exs takes its package from there), and
+  # over _build and deps the workbench's build volume and the deps the
+  # app shares — so nothing compiles through the bind mount, and nothing
+  # into the app's build.
+  defp oneoff_mounts(status) do
+    project = status["compose_project"] || "app"
+
+    [
+      "-v",
+      "#{status["workspace"]}:/app/src",
+      "-v",
+      "#{Console.Workbench.dir()}:/app/workbench:ro",
+      "-v",
+      "#{project}_workbench_build:/app/src/_build",
+      "-v",
+      "#{project}_deps:/app/src/deps"
+    ]
+  end
+
+  # The workbench's image for this workspace, as `wb.sh` names it.
+  defp image(status), do: Console.Workbench.image(status["workspace"])
 end

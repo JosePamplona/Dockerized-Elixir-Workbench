@@ -853,19 +853,15 @@ defmodule ConsoleWeb.ConsoleLive do
     </header>
 
     <div class="app" id="app" phx-hook="Rail">
-      <%!-- The rail's toggle, the way hexdocs folds its sidebar: in the
-            rail's corner while the rail shows, in the screen's corner
-            while it is away, the same square either way, pressed while
-            the rail shows. It is the Interface tab's Hidden, kept the
-            same way; the Rail hook works it. --%>
-      <.square mark="rail" label="The rail's side" id="rail-side" title="move the rail to the right" />
-      <.square
-        mark="rail"
-        label="The rail"
-        id="rail-toggle"
-        aria-pressed="true"
-        title="put the rail away"
-      />
+      <%!-- The rail's two squares, the way hexdocs folds its sidebar: in
+            the rail's corner while the rail shows, in the screen's corner
+            while it is away. Left puts the rail on the left, Right on the
+            right, and each draws the frame it would set, the column
+            solid; the one in force is pressed, and pressing it again
+            puts the rail away. They are the Interface tab's Left, Right
+            and Hidden, kept the same way; the Rail hook works them. --%>
+      <.square mark="rail" label="The rail on the left" id="rail-left" aria-pressed="true" title="put the rail away" />
+      <.square mark="rail" label="The rail on the right" id="rail-right" aria-pressed="false" title="move the rail to the right" />
       <div
         class="grip"
         id="rail-grip"

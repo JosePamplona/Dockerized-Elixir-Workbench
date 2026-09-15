@@ -57,6 +57,12 @@ defmodule ConsoleWeb.ConsoleLive.Term do
     {:noreply, socket}
   end
 
+  # Ctrl+C with nothing selected: the session interrupts what runs.
+  def event("term_interrupt", _, socket) do
+    Terminals.interrupt(key(socket))
+    {:noreply, socket}
+  end
+
   # Ctrl+L cleared the screen; the trail follows, so coming back reads the same.
   def event("term_clear", _, socket) do
     Terminals.clear(key(socket))
@@ -72,13 +78,14 @@ defmodule ConsoleWeb.ConsoleLive.Term do
   def start(socket) do
     status = socket.assigns.status
     {_targets, target, shell} = Terminal.resolve(status, socket.assigns.term)
-    {app, argv} = Terminal.argv(status, target, if(shell == "rpc", do: "bash", else: shell))
+    {app, argv, exec} = Terminal.argv(status, target, if(shell == "rpc", do: "bash", else: shell))
 
     head =
       Terminal.command(status, target, shell) <>
         "  → " <>
         if(target.oneoff,
-          do: "a one-off toolchain container with the source mounted (nothing runs)",
+          do:
+            "a one-off container of the workbench's image, with the source mounted (nothing runs)",
           else: "docker exec on " <> target.name
         )
 
@@ -88,6 +95,7 @@ defmodule ConsoleWeb.ConsoleLive.Term do
         target: target,
         shell: shell,
         app: app,
+        exec: exec,
         head: head
       )
 

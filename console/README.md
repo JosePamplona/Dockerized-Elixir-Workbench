@@ -10,13 +10,14 @@ the bottom, where every command lands with its output and exit code.
 ./wb.sh console          # builds its image if missing, starts it: http://localhost:4100 (first free port from 4100)
 ./wb.sh console logs     # follows its output (the first run compiles it)
 ./wb.sh console down
-./wb.sh console build    # the image again — the Docker CLI in it follows the host's
+./wb.sh console build    # the workbench image again, from the seed as it is now
 ```
 
 ## How it runs
 
-As a container (`console/Dockerfile`: the workbench's toolchain image
-plus the Docker CLI and the compose plugin), with two mounts: Docker's
+As a container on the workbench's image (`scripts/Dockerfile.workbench`:
+the Elixir toolchain, the Phoenix installer, and the Docker CLI with its
+buildx and compose plugins), with two mounts: Docker's
 socket, and the workbench itself **at the same absolute path as on the
 host** — the relative paths of `config.conf` and the composes' bind
 mounts then mean the same thing to the daemon whichever side asks. It

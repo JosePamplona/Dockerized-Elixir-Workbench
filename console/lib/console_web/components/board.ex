@@ -363,7 +363,7 @@ defmodule ConsoleWeb.Board do
         cmd <>
           " — writes the #{assigns.name} compose #{if assigns.baked, do: "again ", else: ""}for the project as it is now, keeping its ports, as one commit" <>
           if(assigns.name == "dev",
-            do: "; the toolchain Dockerfile too, when the seed moved",
+            do: "; the dev Dockerfile too, when the seed moved",
             else: ""
           )
 

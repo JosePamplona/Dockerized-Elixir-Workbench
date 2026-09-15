@@ -30,6 +30,23 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   no `pkill`. The workbench's one-off container has a name for that. A
   session opened before this has no PID to signal, and the key does
   nothing there (2026-09-15).
+- **A release plan.** `RELEASE_PLAN.md`, at the root, is the plan to
+  publish the workbench as a portfolio piece and the checklist of what
+  is left: land the branch on `main`, prune the shelf, the `ci`
+  cartridge, the README for the 90-second reviewer, the profile site,
+  the console in exhibition mode over a recorded workspace, and the
+  series. It retires with the release: what is still open then moves
+  to issues, and the file goes. Its Phase 0 (2026-09-15) is a
+  reference project, a multi-tenant SaaS on Ash in a domain of the
+  author's, whose script — each step, its need, the box that answers
+  it — the shelf is pruned against; it already names three cartridges
+  for after 1.0: a collection for the Ash line, stripe finished, and
+  `agents`. `DESIGN_PROCESS.md`, beside it, is the draft of the design
+  process that project is run through: one dated entry per finding,
+  the raw material of a design skill written after the first run. Its
+  first entry: a step opens with its terms, the shape of its
+  deliverable and one filled example, before any creative work — the
+  three senses of *domain* told apart, and the candidates table.
 - **Insert and Eject on the shelf's rows.** The last column of the
   Inserted list ejects the row's cartridge — the bare `eject NAME`,
   unlit with the reason when the tree is dirty, when another cartridge

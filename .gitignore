@@ -14,3 +14,6 @@
 
 # Superseded cover artwork: kept beside each cover, never in the repo.
 _archived/
+
+# Python bytecode (reference/diagrams/build.py imports assets/diagrams/build.py).
+__pycache__/

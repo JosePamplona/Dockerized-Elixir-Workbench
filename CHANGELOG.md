@@ -16,6 +16,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **The reference project's design, run once end to end.** Plant
+  maintenance, a light CMMS on Ash for the industry around Querétaro:
+  its papers are in `reference/` — the stories and the glossary in the
+  plant's Spanish, the events, the rules with their examples, five ADRs,
+  the three Ash domains with resources, actions and policies, and two
+  entity diagrams drawn with the workbench's script from a script of
+  the project's own. `SCRIPT.md`, at the root, is the crossing with the
+  shelf: twenty-four steps against the box that answers each, what is
+  domain code, what is missing, and the nine chapters of the series.
+  Its findings went to RELEASE_PLAN.md: no collection for the Ash
+  line, `ash --with ash_oban` for the reference, the shelf to say which
+  line a box is on. Every step's finding is in `DESIGN_PROCESS.md`,
+  the draft the design skill is written from (2026-09-15/16).
 - **The terminal's colours are the reader's.** Under the Interface
   tab's Terminal fold, beside its face: the terminal's ground,
   ink and dim, and the six ANSI colours a line wears — red an error's,

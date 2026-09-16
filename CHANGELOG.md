@@ -16,6 +16,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **The `project-design` skill.** How a project the workbench hosts is
+  designed before it is generated, from the business to the shelf:
+  the criteria that hold across the steps in its SKILL.md — every step
+  opens with its terms, its shape and one example; the author knows
+  the floor and is asked through scenarios; the glossary is the door
+  and the process a loop; the drawer of questions no story names;
+  ownership and language; where the workbench stops — and one brief per
+  step in `references/steps.md`. Written from `DESIGN_PROCESS.md`, the
+  draft of the first run, which retires with it (2026-09-16).
 - **The reference project's design, run once end to end.** Plant
   maintenance, a light CMMS on Ash for the industry around Querétaro:
   its papers are in `reference/` — the stories and the glossary in the

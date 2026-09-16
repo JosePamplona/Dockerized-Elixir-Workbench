@@ -22,7 +22,11 @@ defmodule Console.Docker do
   @console "workbench_console"
   @project "com.docker.compose.project"
   @service "com.docker.compose.service"
+  # The house's images: the workbench's own, `dew-STACK-phxVERSION`
+  # (`dockerized-elixir-workbench` was its name until 2026-09-15, and a
+  # daemon may still hold one), the stack's base, and the services'.
   @house ~w(dockerized-elixir-workbench hexpm/elixir postgres mysql mcr.microsoft.com/mssql/server dpage/pgadmin4 adminer registry.k8s.io/pause nginx grafana/k6 prom/prometheus grafana/grafana)
+  defp house?(repository), do: repository in @house or String.starts_with?(repository, "dew-")
 
   # --- containers -------------------------------------------------------------
 
@@ -254,7 +258,7 @@ defmodule Console.Docker do
           age: first["CreatedSince"],
           created: first["CreatedAt"],
           dangling: names == [],
-          mine?: Enum.any?(rs, &(&1["Repository"] in @house or &1["Repository"] == app))
+          mine?: Enum.any?(rs, &(house?(&1["Repository"]) or &1["Repository"] == app))
         }
       end)
 

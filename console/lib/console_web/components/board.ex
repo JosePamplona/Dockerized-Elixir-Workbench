@@ -42,7 +42,7 @@ defmodule ConsoleWeb.Board do
       <.workspace status={@status} rebind={@rebind} />
       <.services_doors status={@status} catalog={@catalog} folded={@folded} reads={@reads} />
       <.deployments status={@status} busy={@busy} folded={@folded} stale={@reading == :full} />
-      <.containers status={@status} folded={@folded} />
+      <.containers status={@status} busy={@busy} folded={@folded} />
       <.inserted status={@status} catalog={@catalog} folded={@folded} stale={@reading == :full} />
       <.git status={@status} folded={@folded} />
       <p :if={@error} class="note">{@error}</p>
@@ -521,7 +521,9 @@ defmodule ConsoleWeb.Board do
   # Docker Desktop stopped being the place to look. Nothing here starts,
   # stops or builds anything: a deployment goes up and down whole, and a
   # button that left half of one up would make the status say `dev` for
-  # something that is not dev.
+  # something that is not dev. The one act on a single container is the
+  # Docker screen's restart, here too since 2026-09-15: the same
+  # service, the same image, up again, and the deployment stays whole.
   defp containers(assigns) do
     cs = assigns.status["containers"] || []
     running = Enum.count(cs, &(&1["State"] == "running"))
@@ -556,6 +558,7 @@ defmodule ConsoleWeb.Board do
               phx-value-service={c["Service"]}
             >Logs</button>
             <.shell_button c={c} target={@targets[c["Service"]]} />
+            <.restart_button c={c} deployment={@status["deployment"]} busy={@busy} />
           </td>
         </tr>
       </table>
@@ -597,6 +600,55 @@ defmodule ConsoleWeb.Board do
   # The pause container owns the workspace's network namespace and its
   # ports, and sleeps: ~700 kB with no shell in them.
   defp shellable?(c), do: c["Service"] != "network"
+
+  # Restart, the Docker screen's one act on a single container, as the
+  # row's third button, in the style of the other two: `./wb.sh restart
+  # --deploy DEPLOY SERVICE`. Unlit, with the reason, while the container is not running
+  # (Up brings the deployment up whole), while a job on the deployment
+  # runs, and on the pause container, whose network namespace the others
+  # share: restarted alone it would come back with a new one and leave
+  # them on the old.
+  attr :c, :map, required: true
+  attr :deployment, :any, default: nil
+  attr :busy, :boolean, default: false
+
+  defp restart_button(assigns) do
+    why =
+      cond do
+        assigns.c["Service"] == "network" ->
+          "the pause container holds the pod's network: restarted alone, the others would be left on the old one"
+
+        assigns.c["State"] != "running" ->
+          "#{assigns.c["Service"]} is not running: Deploy → Up brings the deployment up whole"
+
+        assigns.busy ->
+          "a job on the deployment is running"
+
+        true ->
+          nil
+      end
+
+    assigns =
+      assign(assigns,
+        why: why,
+        cmd: "./wb.sh restart --deploy #{assigns.deployment || "dev"} #{assigns.c["Service"]}"
+      )
+
+    ~H"""
+    <button
+      class={["btn mini", @why && "unlit"]}
+      type="button"
+      aria-disabled={@why && "true"}
+      title={
+        @why || @cmd <> " — the same service, the same image, up again; the deployment stays whole"
+      }
+      phx-click={!@why && "dk_restart"}
+      phx-value-service={@c["Service"]}
+    >
+      Restart
+    </button>
+    """
+  end
 
   # The image without its registry and namespace: `registry.k8s.io/pause`
   # and `dpage/pgadmin4` are where it was fetched from, and the column is

@@ -71,45 +71,50 @@ defmodule Console.Workbench do
   defp capture(text, regex),
     do: regex |> Regex.run(text, capture: :all_but_first) |> then(&(&1 && hd(&1)))
 
-  @repository "dockerized-elixir-workbench"
+  @repository "dew"
 
   @doc """
   The workbench's image for a workspace, named the way `wb.sh` names it:
-  `dockerized-elixir-workbench:exELIXIR-erlOTP-phxVERSION`. The stack is
-  config.conf's; the installer is the one stamped in the workspace's
-  `Dockerfile.local`, else the one config.conf names, else the newest
-  this daemon already has for the stack. Where the workbench's own runs
-  go — a terminal with nothing running, the resident away from its
-  mount — and never the app's dev image, which carries no generator.
+  `dew-exELIXIR-erlOTP-phxVERSION:WORKBENCH` — the stack and the
+  installer in the repository, the workbench's version as the tag. The
+  stack is config.conf's; the installer is the one stamped in the
+  workspace's `Dockerfile.local`, else the one config.conf names, else
+  the newest this daemon already has for the stack at this version.
+  Where the workbench's own runs go — a terminal with nothing running,
+  the resident away from its mount — and never the app's dev image,
+  which carries no generator.
   """
   def image(ws \\ workspace()) do
     conf = Console.Config.values(config())
-    image_tag(conf, Console.Project.born(ws), fn -> local_tags() end)
+    version = version()
+    image_tag(conf, Console.Project.born(ws), version, fn -> local_repositories(version) end)
   end
 
   @doc """
   `image/1` without the files and the daemon: config.conf's values, the
-  workspace's stamp (`Console.Project.born/1`), and a function that lists
-  the tags the daemon has, asked only when neither names an installer.
+  workspace's stamp (`Console.Project.born/1`), the workbench's version,
+  and a function that lists the workbench repositories the daemon has at
+  that version, asked only when neither names an installer.
   """
-  def image_tag(conf, born, tags) do
+  def image_tag(conf, born, version, repositories) do
     stack = "ex#{conf["ELIXIR_VERSION"]}-erl#{conf["ERLANG_VERSION"]}"
 
     phx =
       present((born || %{})["PHX_NEW"]) || present(conf["PHX_NEW_VERSION"]) ||
-        newest(stack, tags.())
+        newest(stack, repositories.())
 
-    "#{@repository}:#{stack}" <> if(phx, do: "-phx#{phx}", else: "")
+    "#{@repository}-#{stack}" <>
+      if(phx, do: "-phx#{phx}", else: "") <> if(version, do: ":#{version}", else: "")
   end
 
   defp present(v) when v in [nil, ""], do: nil
   defp present(v), do: v
 
-  # The newest installer among the daemon's tags for this stack.
-  defp newest(stack, tags) do
-    prefix = "#{stack}-phx"
+  # The newest installer among the daemon's workbench repositories for this stack.
+  defp newest(stack, repositories) do
+    prefix = "#{@repository}-#{stack}-phx"
 
-    tags
+    repositories
     |> Enum.filter(&String.starts_with?(&1, prefix))
     |> Enum.map(&String.replace_prefix(&1, prefix, ""))
     |> Enum.max_by(&version_key/1, fn -> nil end)
@@ -127,9 +132,16 @@ defmodule Console.Workbench do
           end))
       )
 
-  defp local_tags do
+  # The workbench repositories the daemon has at this version, every stack.
+  defp local_repositories(version) do
     with docker when is_binary(docker) <- System.find_executable("docker"),
-         {out, 0} <- System.cmd(docker, ["images", "--format", "{{.Tag}}", @repository]) do
+         {out, 0} <-
+           System.cmd(docker, [
+             "images",
+             "--format",
+             "{{.Repository}}",
+             "#{@repository}-*" <> if(version, do: ":#{version}", else: "")
+           ]) do
       String.split(out, "\n", trim: true)
     else
       _ -> []

@@ -29,6 +29,10 @@ defmodule ConsoleWeb.Box do
   attr :face, :string, default: "front"
   attr :tab, :string, default: "shelf"
 
+  attr :back, :string,
+    default: nil,
+    doc: "the screen's own place, where Put back goes; the bare tab when not given"
+
   attr :diff, :any,
     default: nil,
     doc: "what the cartridge wrote (Console.Diffs), :loading, || nil"
@@ -51,7 +55,7 @@ defmodule ConsoleWeb.Box do
         <div class="who">
           <h3>{@box["name"]}</h3>
         </div>
-        <.link class="btn" patch={"/#{@tab}"}>Put back</.link>
+        <.link class="btn" patch={@back || "/#{@tab}"}>Put back</.link>
         <.ribbon
           label="The box && what comes inside it"
           selected={@screen}
@@ -62,7 +66,10 @@ defmodule ConsoleWeb.Box do
                   label: label,
                   why: screen_unlit(key, @box, @installed, @papers),
                   href:
-                    "/#{@tab}?box=#{@box["name"]}&screen=#{key}#{if key == "manual", do: "&paper=#{@paper}"}"
+                    ConsoleWeb.Refs.over(
+                      @back || "/#{@tab}",
+                      "box=#{@box["name"]}&screen=#{key}#{if key == "manual", do: "&paper=#{@paper}"}"
+                    )
                 }
           }
         />
@@ -91,6 +98,7 @@ defmodule ConsoleWeb.Box do
         paper={@paper}
         page={@page}
         tab={@tab}
+        back={@back}
       />
       <.sheet
         :if={@screen == "box"}
@@ -1148,7 +1156,11 @@ defmodule ConsoleWeb.Box do
                 label: label,
                 small: if(key in @papers, do: file, else: "—"),
                 why: key not in @papers && "this box carries no #{file}",
-                href: "/#{@tab}?box=#{@box["name"]}&screen=manual&paper=#{key}"
+                href:
+                  ConsoleWeb.Refs.over(
+                    @back || "/#{@tab}",
+                    "box=#{@box["name"]}&screen=manual&paper=#{key}"
+                  )
               }
         }
       />

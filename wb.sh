@@ -154,28 +154,34 @@
     fi
     # The workbench's image, where its own work on a workspace runs —
     # generation, cartridges, git, the catalog — and the console: shared
-    # by every workspace of the same stack and installer. Another
-    # installer is another image, and a workspace keeps the one that made
-    # its project. With no project to name one — an empty workspace, or
-    # one made before the stamp — the image is the installer config.conf
-    # names, or else the newest one this daemon already has for the
-    # stack: the one the console runs on, and the catalog is read with,
-    # before 'new' decides. None built yet, the tag names no installer
-    # and nothing answers to it: 'console' and 'new' resolve one first.
-    IMAGE_REPOSITORY="dockerized-elixir-workbench"
+    # by every workspace of the same stack and installer. Named
+    # dew-exELIXIR-erlOTP-phxVERSION:WORKBENCH (since 2026-09-15): the
+    # stack and the installer name the repository, so 'docker images'
+    # lists one line per pair, and the workbench's own version is the
+    # tag, so a new workbench builds its own and an old one keeps what
+    # it ran on. Another installer is another image, and a workspace
+    # keeps the one that made its project. With no project to name one
+    # — an empty workspace, or one made before the stamp — the image is
+    # the installer config.conf names, or else the newest one this
+    # daemon already has for the stack at this version: the one the
+    # console runs on, and the catalog is read with, before 'new'
+    # decides. None built yet, the name carries no installer and nothing
+    # answers to it: 'console' and 'new' resolve one first.
+    IMAGE_REPOSITORY="dew"
     IMAGE_STACK="ex${ELIXIR_VERSION}-erl${ERLANG_VERSION}"
+    IMAGE_TAG="$WORKBENCH_VERSION"
     if [ -n "$PHX_NEW_VERSION" ]
-    then WORKBENCH_IMAGE="$IMAGE_REPOSITORY:$IMAGE_STACK-phx$PHX_NEW_VERSION"
+    then WORKBENCH_IMAGE="$IMAGE_REPOSITORY-$IMAGE_STACK-phx$PHX_NEW_VERSION:$IMAGE_TAG"
     elif [ -n "$PHX_NEW_SETTING" ]
-    then WORKBENCH_IMAGE="$IMAGE_REPOSITORY:$IMAGE_STACK-phx$PHX_NEW_SETTING"
+    then WORKBENCH_IMAGE="$IMAGE_REPOSITORY-$IMAGE_STACK-phx$PHX_NEW_SETTING:$IMAGE_TAG"
     else
       WORKBENCH_IMAGE=$(
-        docker images --format '{{.Tag}}' "$IMAGE_REPOSITORY" 2> /dev/null | \
-          sed -n "s/^$IMAGE_STACK-phx//p" | sort -V | tail -n 1
+        docker images --format '{{.Repository}}' "$IMAGE_REPOSITORY-$IMAGE_STACK-phx*:$IMAGE_TAG" 2> /dev/null | \
+          sed -n "s/^$IMAGE_REPOSITORY-$IMAGE_STACK-phx//p" | sort -V | tail -n 1
       )
       if [ -n "$WORKBENCH_IMAGE" ]
-      then WORKBENCH_IMAGE="$IMAGE_REPOSITORY:$IMAGE_STACK-phx$WORKBENCH_IMAGE"
-      else WORKBENCH_IMAGE="$IMAGE_REPOSITORY:$IMAGE_STACK"
+      then WORKBENCH_IMAGE="$IMAGE_REPOSITORY-$IMAGE_STACK-phx$WORKBENCH_IMAGE:$IMAGE_TAG"
+      else WORKBENCH_IMAGE="$IMAGE_REPOSITORY-$IMAGE_STACK:$IMAGE_TAG"
       fi
     fi
     # Ports the services bind INSIDE the containers; the host ports are
@@ -251,12 +257,23 @@
 
   # Format codes -------------------------------------------------------------
 
-    # Colors
-    C1="\x1B[38;5;1m" # Dark-red
-    C2="\x1B[4;34m"   # Blue underline
-    # Format
-    B="\x1B[1m" # Bold
-    R="\x1B[0m" # Reset
+    # Colour when a terminal will read it — stdout a tty, NO_COLOR unset
+    # (no-color.org), TERM not dumb — or when WB_ANSI=always asks for it
+    # anyway, as the console's jobs do (its page turns the codes into
+    # spans). Piped, redirected or captured, the output is plain text:
+    # 'help | less' and a script reading 'status' get no codes. Until
+    # 2026-09-16 the codes went out whatever read them.
+    if { [ -t 1 ] && [ -z "${NO_COLOR:-}" ] && [ "${TERM:-}" != "dumb" ]; } || [ "${WB_ANSI:-}" == "always" ]
+    then
+      # Colors
+      C1="\x1B[38;5;1m" # Dark-red
+      C2="\x1B[4;34m"   # Blue underline
+      # Format
+      B="\x1B[1m" # Bold
+      R="\x1B[0m" # Reset
+    else
+      C1=""; C2=""; B=""; R=""
+    fi
 
     Li=$C2 # Link color
 
@@ -1564,11 +1581,19 @@
     # Prints help
   help() {
     section() { echo "${B}$1${R}"; }
-    print_command() { echo "  ${B}$1${R}"; }
     section_content() {
       for arg in "$@"
       do
         echo "  $arg"
+      done
+      echo
+    }
+    # A command: its line, and its body indented under it, as a man page does.
+    print_command() { echo "  ${B}$1${R}"; }
+    command_content() {
+      for arg in "$@"
+      do
+        echo "      $arg"
       done
       echo
     }
@@ -1583,305 +1608,193 @@
     section_content \
       "$WORKBENCH_VERSION"
 
-    section "SYNTAXIS"
+    section "SYNOPSIS"
     section_content \
-      "./$script_name [-y, --yes] [COMMAND]" \
-      "- --yes: Answer every confirmation ('new' over an existing project," \
-      "  'delete'), for scripts and tools driving the workbench."
+      "./$script_name [-y | --yes] COMMAND [ARGS...]" \
+      "  -y, --yes   Answer yes to every confirmation ('new' over a project," \
+      "              'delete', 'prune'), for scripts and tools driving the workbench."
 
     section "DESCRIPTION"
     section_content \
-      "This is a script for creating ${B}Elixir${R} (${Li}https://elixir-lang.org${R}) projects" \
-      "with the ${B}Phoenix${R} (${Li}https://www.phoenixframework.org${R}) framework and" \
-      "deploying them on 'localhost' using a specific service architecture with" \
-      "Docker containers. It eliminates the need to install anything other than" \
-      "${B}Docker Desktop${R} (${Li}https://www.docker.com/products/docker-desktop${R}) in order" \
-      "to create, develop and deploy the project as 'dev' or 'prod' enviroment." \
-      "" \
-      "The workbench stays permanently in this directory. Projects are" \
-      "generated into the ${B}WORKSPACE_PATH${R} directory (config.conf), each one" \
-      "owning its docker-compose.yml with its name, ports and images baked" \
-      "in — several workspaces can run simultaneously without conflicts." \
-      "The Elixir configuration is delegated to the ${B}workbench_igniter${R}" \
-      "package (igniter/): 'new' runs 'mix workbench.setup' inside the" \
-      "container, which only makes a stock phx.new project bootable here." \
-      "Features are cartridges, added one commit each with the 'add'" \
-      "command — 'add chiefs_setup' inserts the workbench's own picks." \
+      "Create ${B}Phoenix${R} projects and run them on localhost in Docker, with" \
+      "nothing installed on the host but Docker. The workbench stays in this" \
+      "directory; each project lives in its own workspace (${B}WORKSPACE_PATH${R} in" \
+      "config.conf) with its own compose files, so several can run at once." \
+      "Features are cartridges: 'add' inserts one as one commit, 'eject'" \
+      "reverts it. See README.md and CHANGELOG.md for the reasons." \
       "" \
       "Current workspace: $WORKSPACE_PATH"
 
     section "COMMANDS"
     print_command "login [USER] [TOKEN]"
-    section_content \
-      "Login account in order to download private images." \
-      "- USER:  Github username. " \
-      "- TOKEN: Authentication token (classic). "
+    command_content \
+      "Log Docker in to ghcr.io with a GitHub token, for private images." \
+      "  USER    GitHub user name." \
+      "  TOKEN   A classic personal access token."
 
-    print_command "new [OPTIONS]"
-    section_content \
-      "Create a new ${B}vanilla${R} project in the workspace: 'mix phx.new'" \
-      "plus only what this workbench needs to run it. Step by step:" \
-      "  1. 'mix phx.new' generates the stock project." \
-      "  2. The workbench_igniter package is registered in its mix.exs." \
-      "  3. 'mix workbench.setup' binds the dev endpoint to 0.0.0.0 (the" \
-      "     published port never reaches loopback), writes .env and" \
-      "     .env.sample (the compose env_file) and lists .env in .gitignore." \
-      "  4. 'mix phx.gen.release --docker' adds the production Dockerfile," \
-      "     .dockerignore and rel/overlays, which phx.new does not generate" \
-      "     but 'up --deploy prod' needs. Distributed releases are not set up:" \
-      "     that is the 'clustering' feature." \
-      "  5. The workspace gets its Dockerfile.local and docker-compose.yml." \
-      "  6. The first commit, 'New project: …', signed as GIT_IDENTITY says:" \
-      "     the baseline every inserted cartridge is a commit on top of." \
-      "The Elixir project keeps its phx.new configuration untouched: install" \
-      "the workbench features with the 'add' command — 'add chiefs_setup'" \
-      "inserts the workbench's own picks, one commit each." \
-      "- OPTIONS: It can accept all option flags from the task 'mix phx.new'" \
-      "  (${Li}https://hexdocs.pm/phoenix/Mix.Tasks.Phx.New.html${R})." \
-      "- --phx-new VERSION: the Phoenix installer to generate with, for" \
-      "  this run. PHX_NEW_VERSION (config.conf) holds a standing choice;" \
-      "  empty — the ordinary case — hex decides, and what it decides is" \
-      "  the newest release that runs on this stack, said out loud when" \
-      "  that is not hex's newest. A named version is refused if hex does" \
-      "  not have it — a typo has no requirement to weigh — and otherwise" \
-      "  weighed against the stack: phx_new declares on hex the Elixir it" \
-      "  runs on, and a stack that does not meet it is refused here, not" \
-      "  halfway into the image. Whichever way it is decided, the version" \
-      "  is stamped into the workspace's own Dockerfile.local and config" \
-      "  is never written: the generator the base cartridges take their" \
-      "  delta with is the project's, for good, not a default that moves."
+    print_command "new [--phx-new VERSION] [PHX_NEW_OPTIONS...]"
+    command_content \
+      "Generate a Phoenix project in the workspace and make its first commit:" \
+      "stock phx.new plus what the workbench needs to run it (mix" \
+      "workbench.setup, phx.gen.release --docker, the workspace's" \
+      "Dockerfile.local and compose). Features come later, with 'add'." \
+      "  --phx-new VERSION   Phoenix installer to use (default: the newest hex" \
+      "                      has for this stack; PHX_NEW_VERSION in config.conf" \
+      "                      sets a standing one)." \
+      "  PHX_NEW_OPTIONS     Any flag of 'mix phx.new'."
 
-    print_command "add [FEATURE] [OPTIONS]"
-    section_content \
-      "Install a workbench feature on the existing project, one commit" \
-      "per inserted cartridge ('Insert FEATURE …'), so 'eject' can revert" \
-      "each alone. Needs a clean tree: commit pending changes first." \
-      "A collection (chiefs_setup) is expanded first and each missing" \
-      "member is inserted as its own commit." \
-      "- FEATURE: One of: chiefs_setup, ansi, toolchain, versioning," \
-      "  healthcheck, rest, graphql, coveralls, exdoc, guidelines," \
-      "  enhancements, auth0, openai, credo, githooks, exmachina, mock," \
-      "  exdebug, psql_extras, osmon, clustering, healthcheck2, ash," \
-      "  mailer, gettext, ecto, esbuild, tailwind, html, live, dashboard." \
-      "- OPTIONS: Flags for the 'mix workbench.install.FEATURE' task."
+    print_command "add FEATURE [OPTIONS...]"
+    command_content \
+      "Insert a cartridge as one commit ('Insert FEATURE …'). A collection" \
+      "inserts each missing member as its own commit. Needs a clean tree." \
+      "  FEATURE   A cartridge of the catalog ('catalog' lists them)." \
+      "  OPTIONS   Flags of its 'mix workbench.install.FEATURE' task."
 
-    print_command "eject [FEATURE]"
-    section_content \
-      "Take a cartridge out: reverts its 'Insert FEATURE' commit (the" \
-      "latest one). Needs a clean tree, and refuses when the cartridge's" \
-      "files changed since — that is no longer the cartridge's alone." \
-      "It also refuses while something the project carries builds on it" \
-      "('mix workbench.dependents FEATURE'), naming them in the order to" \
-      "take them out: inserting names what to put in first, and this is" \
-      "the same rule read backwards."
+    print_command "eject FEATURE"
+    command_content \
+      "Revert a cartridge's insert commit. Refused when its files changed" \
+      "since, or while another cartridge builds on it. Needs a clean tree."
 
     print_command "stacks [--json | -n N | use TAG]"
-    section_content \
-      "The usable technology stacks, asked of Docker Hub itself: the" \
-      "recent hexpm/elixir -debian-*-slim images. config.conf keeps no" \
-      "list — this is the list." \
-      "- (nothing): the recent ones, the configured one marked." \
-      "- --json: every usable tag, one array, for tools." \
-      "- use TAG: check the image exists and write the three versions" \
-      "  into config.conf."
+    command_content \
+      "List the usable stacks: the recent hexpm/elixir debian-slim images on" \
+      "Docker Hub, the configured one marked." \
+      "  -n N      The N most recent (default: 12)." \
+      "  --json    Every usable tag, as one JSON array." \
+      "  use TAG   Write TAG's three versions into config.conf."
 
     print_command "engine [native | desktop | toggle | NAME]"
-    section_content \
-      "Which Docker the script talks to — the CLI's context, kept per" \
-      "user across terminals. On Linux there are two: the native engine" \
-      "('native', context 'default') and Docker Desktop's VM ('desktop')," \
-      "and the VM falls under a compile through its file sharing, so the" \
-      "workbench wants the native one there. Nothing is shared between" \
-      "them: images, volumes and containers built on one are not on the" \
-      "other." \
-      "- (nothing): the current one, and the list." \
-      "- toggle: the other one."
+    command_content \
+      "Show or switch the Docker context the workbench uses. On Linux 'native'" \
+      "is the host's engine and 'desktop' Docker Desktop's VM; they share no" \
+      "images, volumes or containers." \
+      "  (none)    The current context, and the list." \
+      "  toggle    Switch to the other one." \
+      "  NAME      Switch to that context."
 
-    print_command "console [up|down|logs|build]"
-    section_content \
-      "The workbench's console: a Phoenix LiveView page that shows the" \
-      "workspace and drives this script — as a container, with Docker's" \
-      "socket and the workbench mounted, on the first free port from 4100," \
-      "published on 127.0.0.1 only: it runs this script with --yes." \
-      "- up (default): build the workbench image if missing — the" \
-      "  toolchain every workspace of the stack shares — and start it." \
-      "- down, logs: stop it, follow its output." \
-      "- build: build the workbench image again, from the seed as it is."
+    print_command "console [up | down | logs | build]"
+    command_content \
+      "Run the console, a LiveView page that shows the workspace and drives" \
+      "this script, as a container on 127.0.0.1, first free port from 4100." \
+      "  up      Start it, building the workbench image if missing (default)." \
+      "  down    Stop it." \
+      "  logs    Follow its output." \
+      "  build   Build the workbench image again."
 
-    print_command "bake"
-    section_content \
-      "Bake the workspace's compose again, for the project as it is now" \
-      "— with the services its cartridges ask for: a database with ecto," \
-      "pgAdmin, Adminer, k6, Prometheus and Grafana with theirs, none without —" \
-      "keeping its ports, as one commit. What 'add ecto' asks for next." \
-      "The toolchain Dockerfile is baked again too when the seed moved," \
-      "keeping the project's own Phoenix installer, and its image rebuilt." \
-      "Needs a clean tree. --deploy prod|scaled bakes that file instead" \
-      "(--replicas N and --no-balancer shape the scaled one), as one" \
-      "commit too; the release image it names is 'build --deploy', or up's."
+    print_command "bake [--deploy TARGET] [--replicas N] [--no-balancer]"
+    command_content \
+      "Write the workspace's compose file again for the project as it is," \
+      "with the services its cartridges ask for, keeping its ports, as one" \
+      "commit. Dockerfile.local is baked again when the seed moved. Needs a" \
+      "clean tree." \
+      "  --deploy TARGET   Deployment to bake: dev, prod, scaled (default: dev)." \
+      "  --replicas N      Replicas of the scaled deployment (default: 4)." \
+      "  --no-balancer     No nginx front in the scaled deployment."
 
     print_command "commit [MESSAGE | --message-file PATH]"
-    section_content \
-      "Commit everything the workspace has, from the workbench container" \
-      "(the project's git hooks can run mix there), signed as the" \
-      "GIT_IDENTITY of config.conf: 'user' takes the host's git identity" \
-      "when there is one, 'workbench' signs as the workbench." \
-      "- MESSAGE: Default: 'Workbench: commit pending changes'." \
-      "- --message-file: The message off a file, title and body: how the" \
-      "  console's Git screen hands over what the reader wrote."
+    command_content \
+      "Commit everything in the workspace, from the workbench container," \
+      "signed as GIT_IDENTITY (config.conf) says." \
+      "  MESSAGE               The message (default: 'Workbench: commit" \
+      "                        pending changes')." \
+      "  --message-file PATH   Read title and body from PATH."
 
     print_command "catalog [--json]"
-    section_content \
-      "List every cartridge the workbench has: name, version, how it is" \
-      "enabled and what it installs — with the options of its installer" \
-      "and which of its box covers exist, in the JSON form. Read by the" \
-      "igniter package ('mix workbench.catalog'): through the project" \
-      "when there is one, off the package itself when the workspace is" \
-      "empty — the catalog is the workbench's, not the workspace's." \
-      "- --json: One JSON array, for tools."
+    command_content \
+      "List the workbench's cartridges: name, version, how each is enabled," \
+      "what it installs." \
+      "  --json   One JSON array, with each installer's options and covers."
 
-    print_command "config set KEY=VALUE [KEY=VALUE …]"
-    section_content \
-      "Write values into config.conf in place — comments and order stay." \
-      "A key the file does not export is refused. The one writer of the" \
-      "file besides 'stacks use': the console saves its form through it."
+    print_command "config set KEY=VALUE [KEY=VALUE...]"
+    command_content \
+      "Write values into config.conf in place, keeping comments and order." \
+      "A key the file does not export is refused."
 
-    print_command "expand [--json] CARTRIDGE [OPTIONS]"
-    section_content \
-      "What 'add CARTRIDGE OPTIONS' would insert, without inserting it:" \
-      "the cartridge itself, or — for a collection — the members its" \
-      "options choose, minus what the project already carries. One" \
-      "'NAME [ARGV]' per line, in the order 'add' runs them." \
-      "- --json: One JSON array of {name, argv}, for tools."
+    print_command "expand [--json] CARTRIDGE [OPTIONS...]"
+    command_content \
+      "Print what 'add CARTRIDGE OPTIONS' would insert, one 'NAME [ARGV]' per" \
+      "line in insert order, without inserting it." \
+      "  --json   One JSON array of {name, argv}."
 
     print_command "status [--json [--fast]]"
-    section_content \
-      "Where the workspace stands: its ports, which deployments were" \
-      "baked and which is up, its containers with their addresses, its" \
-      "git, and which cartridges the project carries ('mix" \
-      "workbench.status': each cartridge answers off the same mark its" \
-      "installer checks, so this and 'add' never disagree)." \
-      "- --json: One JSON object, for tools. Answers on an empty" \
-      "  workspace too, with 'exists' false." \
-      "- --fast: the same without asking the cartridges, which boots" \
-      "  Mix in a container: tenths of a second instead of seconds," \
-      "  'project' null."
+    command_content \
+      "Report the workspace: ports, deployments baked and up, containers and" \
+      "their addresses, git, and the cartridges the project carries." \
+      "  --json   One JSON object; 'exists' false on an empty workspace." \
+      "  --fast   Skip asking the cartridges (no Mix boot; 'project' null)."
 
     print_command "up [--deploy TARGET] [--replicas N] [--no-balancer]"
-    section_content \
-      "Deploy the application on localhost, detached: the terminal stays" \
-      "free and the containers keep running ('logs' follows their output)." \
-      "- TARGET: Deployment to bring up (Defalut: dev)." \
-      "  ${B}prod${R} deploys the release image on the dev compose's pod layout." \
-      "  A one-shot 'migrate' service runs the migrations first and the" \
-      "  app waits for it — the release phase of every platform, under" \
-      "  Compose's name for it." \
-      "  ${B}scaled${R} deploys production replicas behind an nginx balancer:" \
-      "  each one gets its own IP and host port, and they all share the" \
-      "  'app' network alias. It replaces the pod network layout of the" \
-      "  dev compose, so the database is reached by name, not on" \
-      "  localhost. Meant for seeing a replicated deployment work, not" \
-      "  for developing." \
-      "  With the 'clustering' feature installed the replicas also form a" \
-      "  real BEAM cluster: Docker's DNS answers that shared alias with" \
-      "  every address, which is what DNSCluster queries to connect them." \
-      "  Without it they run isolated, which is a valid deployment for a" \
-      "  stateless application — the command warns and carries on." \
-      "- N: Replicas of the scaled deployment (Default: $DEFAULT_REPLICAS)." \
-      "- --no-balancer: Skip the nginx front and publish only the" \
-      "  per-replica ports. Both options are baked into the compose file," \
-      "  so 'logs', 'ps', 'stop' and 'down' never need them."
+    command_content \
+      "Bring a deployment up, detached." \
+      "  --deploy TARGET   dev (default); prod, the release image with the" \
+      "                    migrations run first; scaled, N release replicas" \
+      "                    behind nginx, a BEAM cluster with the 'clustering'" \
+      "                    cartridge in." \
+      "  --replicas N      Replicas of the scaled deployment (default: 4)." \
+      "  --no-balancer     Publish the replicas' ports, no nginx front."
 
-    print_command "build [--deploy TARGET] [OPTIONS]"
-    section_content \
-      "(Re)build the workspace's app image without deploying it: the" \
-      "dev image from the project's Dockerfile.local, or the production" \
-      "release image ('up --deploy prod' also rebuilds it on each deploy)." \
-      "- TARGET: Deployment whose image to build (Defalut: dev). 'scaled'" \
-      "  builds the same production image every replica shares, and takes" \
-      "  the same --replicas and --no-balancer as 'up'. Whether that image is" \
-      "  distributed is baked in by the 'clustering' feature, so" \
-      "  installing it afterwards means building again." \
-      "- OPTIONS: Flags for 'docker compose build', e.g. --no-cache."
+    print_command "build [--deploy TARGET] [OPTIONS...]"
+    command_content \
+      "Build a deployment's app image without deploying it." \
+      "  --deploy TARGET   dev (default), prod or scaled." \
+      "  OPTIONS           Flags of 'docker compose build', e.g. --no-cache."
 
     print_command "k6 [--deploy TARGET] [SCRIPT] [K6_OPTIONS...]"
-    section_content \
-      "Run a k6 load test against the deployment that is up, with the" \
-      "k6 cartridge's tool (./$(basename "$0") add k6): the scripts live in the" \
-      "project's k6/ directory and reach the app through BASE_URL, set" \
-      "by the compose for each topology. With the monitoring cartridge" \
-      "in, the results go to Prometheus too, for Grafana to draw." \
-      "- TARGET: Deployment to test (Default: dev)." \
-      "- SCRIPT: A file under k6/ (Default: smoke.js)." \
-      "- K6_OPTIONS: Passed to 'k6 run', e.g. --vus 20 --duration 1m."
+    command_content \
+      "Run a k6 script from the project's k6/ against the deployment that is" \
+      "up. Needs the k6 cartridge." \
+      "  --deploy TARGET   Deployment to test (default: dev)." \
+      "  SCRIPT            A file under k6/ (default: smoke.js)." \
+      "  K6_OPTIONS        Passed to 'k6 run', e.g. --vus 20 --duration 1m."
 
     print_command "logs [--deploy TARGET] [SERVICE...]"
-    section_content \
-      "Follow the workspace containers logs (Ctrl+C detaches, the" \
-      "containers keep running)." \
-      "- TARGET: Deployment whose logs to read (Defalut: dev)." \
-      "- SERVICE: Restrict to some services (app, database, pgadmin, adminer," \
-      "  prometheus, grafana; migrate too with '--deploy prod'; app1..appN," \
-      "  balancer and migrate with '--deploy scaled')."
+    command_content \
+      "Follow the containers' logs; Ctrl+C detaches, they keep running." \
+      "  --deploy TARGET   Deployment (default: dev)." \
+      "  SERVICE           Only these services."
 
     print_command "stop | down | ps | restart [--deploy TARGET] [SERVICE...]"
-    section_content \
-      "Stop, remove, list or restart the workspace containers ('stop'" \
-      "keeps them for a fast restart with 'up'; 'down' removes them;" \
-      "'restart' brings the named services up again, the deployment" \
-      "left whole)." \
-      "- TARGET: Deployment to act on (Defalut: dev)." \
-      "- SERVICE: Restrict to some services (app, database, pgadmin, adminer," \
-      "  prometheus, grafana; migrate too with '--deploy prod'; app1..appN," \
-      "  balancer and migrate with '--deploy scaled')."
+    command_content \
+      "Stop the containers (kept, for a fast 'up'), remove them, list them," \
+      "or restart the named services." \
+      "  --deploy TARGET   Deployment (default: dev)." \
+      "  SERVICE           Only these services."
 
     print_command "prune [--images | --build]"
-    section_content \
-      "Remove what no live workspace uses — never this workspace's" \
-      "deployment, never the console: the stopped containers of other" \
-      "compose projects with their anonymous volumes, and the networks" \
-      "and named volumes of those projects that nothing mounts (a" \
-      "database's data goes with them). Always asks first." \
-      "- --images: Instead, remove the untagged images every prod bake" \
-      "  leaves behind." \
-      "- --build: Instead, remove this workspace's two build volumes, so" \
-      "  the next 'up' compiles from scratch. Refused while the app" \
-      "  mounts them: bring the deployment down first."
+    command_content \
+      "Remove what no live workspace uses: other compose projects' stopped" \
+      "containers with their anonymous volumes, and their unmounted networks" \
+      "and named volumes. Never this deployment, never the console. Asks first." \
+      "  --images   Instead, remove the untagged images prod bakes leave." \
+      "  --build    Instead, remove this workspace's build volumes; refused" \
+      "             while the app mounts them."
 
     print_command "iex | bash [--deploy TARGET] [SERVICE]"
-    section_content \
-      "Open an IEx shell (or a plain shell) on a running container of the" \
-      "workspace; exiting does not stop the application." \
-      "- TARGET: Deployment to attach to (Defalut: dev). Outside" \
-      "  dev the container runs the release, which carries no Mix, so" \
-      "  'iex' opens its remote shell ('bin/<app> remote') instead." \
-      "- SERVICE: Service to attach to (Defalut: app). The scaled" \
-      "  deployment names its replicas app1..appN."
+    command_content \
+      "Open IEx, or a shell, on a running container. Outside dev, 'iex' is" \
+      "the release's remote shell." \
+      "  --deploy TARGET   Deployment (default: dev)." \
+      "  SERVICE           Container (default: app; app1..appN when scaled)."
 
     print_command "mix [ARGS...]"
-    section_content \
-      "Run a mix task: on the running app container when the system is" \
-      "up (fast), or on a one-off container otherwise. The database" \
-      "needs no command of its own: the dev image creates and migrates" \
-      "it on boot, the release deployments migrate before the app" \
-      "starts — and a dev reset with the seeds is 'mix ecto.reset'." \
-      "- ARGS: The task and its options, e.g.: cover, docs, test," \
-      "  ecto.reset."
+    command_content \
+      "Run a mix task on the running app container, or on a one-off" \
+      "container when nothing is up." \
+      "  ARGS   The task and its options, e.g. test, docs, ecto.reset."
 
     print_command "delete"
-    section_content \
-      "Deletes the workspace project files and its Docker compose project."
+    command_content \
+      "Delete the workspace's project files and its compose project. Asks first."
 
     print_command "demo [--deploy TARGET]"
-    section_content \
-      "Runs consecutively new, up, logs & delete commands: the logs" \
-      "block the demo while the application is tried out, and Ctrl+C" \
-      "moves on to the teardown." \
-      "- TARGET: Deployment to run end to end (Defalut: dev)."
+    command_content \
+      "Run new, up, logs and delete in a row; Ctrl+C on the logs moves on to" \
+      "the teardown." \
+      "  --deploy TARGET   Deployment to demo (default: dev)."
 
     print_command "help"
-    section_content \
-      "Displays the help section for the workbench script."
+    command_content \
+      "Print this help."
 
     section "LICENSE"
     section_content \
@@ -1956,7 +1869,7 @@
       fi
     fi
 
-    WORKBENCH_IMAGE="$IMAGE_REPOSITORY:$IMAGE_STACK-phx$PHX_NEW_VERSION"
+    WORKBENCH_IMAGE="$IMAGE_REPOSITORY-$IMAGE_STACK-phx$PHX_NEW_VERSION:$IMAGE_TAG"
   }
 
   # build_workbench_image

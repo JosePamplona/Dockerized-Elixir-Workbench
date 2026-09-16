@@ -151,7 +151,8 @@ header.band .mock{border:1px solid rgba(255,255,255,.35);padding:3px 8px;border-
 /* The rail's width: the stylesheet's default, and whatever the reader
    dragged it to — which the Rail hook writes on :root, outside anything
    LiveView patches, so a fold or a status does not take it back. */
-.app{--rail:var(--rail-set,380px);position:relative;display:grid;grid-template-columns:var(--rail) minmax(0,1fr);height:100%;min-height:0}
+/* --sqw is the rail's two squares' size (ConsoleWeb.Square small, 22px; normal is 33px): the pair and the tab row's padding read it. */
+.app{--rail:var(--rail-set,380px);--sqw:22px;position:relative;display:grid;grid-template-columns:var(--rail) minmax(0,1fr);height:100%;min-height:0}
 /* The frame has three axes, and each is one class on <body>. The band is
    a grid row, so moving it is the row order; the rail is a grid column,
    so hiding it is one template and swapping sides is another plus the
@@ -164,7 +165,7 @@ body.rail-right .app{grid-template-columns:minmax(0,1fr) var(--rail)}
 body.rail-right .console{order:2;border-right:0;border-left:1px solid var(--line)}
 body.rail-off .app{grid-template-columns:minmax(0,1fr)}
 body.rail-off .console{display:none}
-/* The right padding gives the scrollbar's gutter back (--rail-gutter, measured by the Rail hook), so the air the eye sees is 22px on both sides. */
+/* The right padding gives the scrollbar's gutter back (--rail-gutter on the root, measured by the Rail hook), so the air the eye sees is 22px on both sides. */
 .console{border-right:1px solid var(--line);background:var(--surface);padding:22px calc(22px - var(--rail-gutter,0px)) 40px 22px;display:flex;flex-direction:column;gap:22px;overflow:auto;min-height:0;scrollbar-gutter:stable;position:relative}
 /* The screen holds two things that do not scroll together: everything
    the reader reads, and the jobs bar under it. The bar used to ride the
@@ -201,32 +202,33 @@ body.rail-right .grip{left:auto;right:var(--rail);margin:0 -5px 0 0}
 .grip:focus-visible{outline:none}
 /* Nothing to drag when the rail is not there, or when the two stack. */
 body.rail-off .grip{display:none}
-/* The rail's two squares (#rail-left, #rail-right, ConsoleWeb.Square),
-   Left then Right always, as the frames they draw: in the rail's top
-   corner, 22px in from its top and its edge as the rail's own padding is, on
-   whichever side the rail is; and, with the rail away, in the screen's
-   corner, where hexdocs leaves its sidebar button — the tab row steps
-   aside for it there. The pair's edge is the section heads' edge: the
-   rail's padding gives the scrollbar gutter back, so only the rail's
-   1px border, on the left rail's right side, is left to take off. The
-   right square's mark is the left's turned over, so the solid column
-   sits on the side each would put the rail on; the one in force is
-   pressed. */
-#rail-left,#rail-right{position:absolute;top:22px;z-index:3}
+/* The rail's two squares (#rail-left, #rail-right, ConsoleWeb.Square,
+   in one .railsq), Left then Right always, as the frames they draw:
+   in the rail's top corner, 22px in from its top and its edge as the
+   rail's own padding is, on whichever side the rail is; and, with the
+   rail away, in the screen's corner, where hexdocs leaves its sidebar
+   button — the tab row steps aside for it there. The pair's edge is
+   the section heads' edge: the rail's padding gives the scrollbar
+   gutter back, so only the rail's 1px border, on the left rail's right
+   side, is left to take off. The right square's mark is the left's
+   turned over, so the solid column sits on the side each would put the
+   rail on; the one in force is pressed. The pair floats over the rail,
+   which scrolls under it: one wide soft shadow in the rail's own
+   ground fades what passes beneath, and the pair's own ground fills
+   the gap between the two so nothing shows through it; two shadows,
+   one a square, laid the second's over the first. In the screen's
+   corner nothing scrolls under the pair, and it casts none. */
+.railsq{position:absolute;top:22px;z-index:3;display:flex;gap:8px;border-radius:2px;background:var(--surface);box-shadow:0 0 14px 10px var(--surface)}
 #rail-right svg{transform:scaleX(-1)}
 #rail-left[aria-pressed="true"],#rail-right[aria-pressed="true"]{color:var(--ink);background:var(--ground);border-color:var(--ink)}
-#rail-right{left:calc(var(--rail) - 22px - 33px - 1px)}
-#rail-left{left:calc(var(--rail) - 22px - 33px - 1px - 8px - 33px)}
+.railsq{left:calc(var(--rail) - 22px - var(--sqw) - 1px - 8px - var(--sqw))}
 /* A rail on the right keeps its name in its inner corner, so the pair takes the outer one — the window's, which is where it goes when the rail is away too. */
-body.rail-right #rail-right{left:auto;right:22px}
-body.rail-right #rail-left{left:auto;right:calc(22px + 33px + 8px)}
-/* In the screen's corner it takes the screen's margin, 28px, as the tabs and the panels do, and centres on the tab row: 56px tall — 14 of air over tabs of 8 + line + 10 + a 3px rule — less the 33 of the square, halved. */
-body.rail-off #rail-left{left:28px;right:auto;top:12px}
-body.rail-off #rail-right{left:calc(28px + 33px + 8px);right:auto;top:12px}
-body.rail-off.rail-right #rail-left{left:auto;right:calc(28px + 33px + 8px)}
-body.rail-off.rail-right #rail-right{left:auto;right:28px}
-body.rail-off .tabs{padding-left:calc(28px + 33px + 8px + 33px + 12px)}
-body.rail-off.rail-right .tabs{padding-left:28px;padding-right:calc(28px + 33px + 8px + 33px + 12px)}
+body.rail-right .railsq{left:auto;right:22px}
+/* In the screen's corner it takes the screen's margin, 28px, as the tabs and the panels do, and keeps the rail's 22px from the top: that puts its centre at 33, half a pixel from the tabs' line of text (14 of air, 8 of the tab's own, half a 21px line), which is where a computed top landed too, less simply. */
+body.rail-off .railsq{left:28px;right:auto;background:none;box-shadow:none}
+body.rail-off.rail-right .railsq{left:auto;right:28px}
+body.rail-off .tabs{padding-left:calc(28px + var(--sqw) + 8px + var(--sqw) + 12px)}
+body.rail-off.rail-right .tabs{padding-left:28px;padding-right:calc(28px + var(--sqw) + 8px + var(--sqw) + 12px)}
 @media (max-width:900px){.app{grid-template-columns:1fr}.console{border-right:0;border-bottom:1px solid var(--line)}.grip{display:none}}
 
 /* --- a docked row ------------------------------------------------------- */
@@ -275,6 +277,8 @@ section h2 .sq[aria-busy="true"] svg,.record .sq[aria-busy="true"] svg,.shelfp .
    `4 of 4 running`, `2 open by cartridges`. The rail keeps its table of
    contents when it puts the tables away. */
 .console section.folded > :not(h2){display:none}
+/* An open section ends with a little air under its last row, before the next head; a folded one is its head alone. The same on the Interface tab's groups. */
+.console section:not(.folded){padding-bottom:10px}
 /* Folded, the head is the section: the space it kept for what came after
    it goes with it. Said on .folded and not on the head itself, so the
    mock — which reads this stylesheet and has no fold — keeps its own. */
@@ -317,19 +321,27 @@ table.rows td.st{width:var(--st);white-space:nowrap}
    four columns left the image at 34px, wrapped into a stack of letters.
    So the image goes under the name, on the line .hint already draws for
    a second fact, and the name column takes whatever the state and the
-   actions leave. The widest action pair is Logs + a shell's name. */
+   actions leave. The actions are Logs, a shell's name and Restart, on one line. */
 #containers{--st:103px}
 /* The console's Containers table carries an action column that the mock's
    does not, so what the fourth column costs is scoped to `.acts` and the
    mock, which reads this same stylesheet, keeps the three it has. */
-#containers.acts{--act:96px;table-layout:fixed}
+/* The columns size themselves (auto layout): the state to its chip, the
+   actions to Logs, the shell's name and Restart on one line, and the name
+   takes what is left — width:100% with max-width:0 is how a table cell is
+   told to take the leftover and no more — cut with an ellipsis, whole in
+   the cell's title. Fixed columns held the name to a share that left the
+   actions crowded on two lines (2026-09-15). */
+#containers.acts{table-layout:auto}
+#containers.acts td.k{width:100%;max-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#containers.acts td.st{width:auto}
+#containers.acts td.act{width:auto}
 /* Two actions, not one, so the column reads down from its left edge and
    not from its right: `Logs` is on every row and always at the same x,
    the shell follows it at the same x too — and the row that has no shell
    (the pause container) leaves the tail empty instead of sliding its one
    button across to where nothing else is. */
 #containers.acts td.act{text-align:left;padding-left:8px}
-#containers.acts td.k{width:auto}
 /* The image on one line, cut where the column ends and whole in the
    cell's title: `overflow-wrap:anywhere`, which the table wants for the
    long values it carries elsewhere, broke `registry.k8s.io/pause:3.10`
@@ -561,15 +573,15 @@ table.carts td .pairs{grid-template-columns:max-content}
    env, a compose — and there it is a line, not the log's grid: the grid
    was putting 12px of column gap after every key. */
 pre .ln{display:block}
-.ln:hover{background:var(--term-tint)}
+.ln:hover{background:color-mix(in srgb, var(--line-highlight) 5%, transparent)}
 /* The time is always twelve characters, HH:MM:SS.mmm, and the column is that many, rounded, as the service's is: the message then starts on a whole pixel, which a bitmap face needs. */
 /* Rounded up: a column that rounds down by a fraction wraps what it was measured for. */
 .ln .t{color:var(--term-dim);font-variant-numeric:tabular-nums;width:round(up,12ch,1px)}
 /* Each line is its own grid, so the service needs a set width for the messages to start in one column. It is the longest name's, in the face's own characters — the Logs hook sets --svc-w on its lines as services appear, the Interface tab's miniature from the names it draws — and 72px until anyone says. */
 .ln .s{color:var(--svc);width:round(up,var(--svc-w,72px),1px);overflow:hidden;text-overflow:ellipsis}
 .ln.debug .m{color:var(--term-dim)}
-.ln.warn{border-left-color:var(--warn)}.ln.warn .m{color:var(--ansi-yellow)}
-.ln.error{border-left-color:var(--bad);background:rgba(224,108,95,.08)}.ln.error .m{color:var(--ansi-red)}
+.ln.warn{border-left-color:var(--warn);background:color-mix(in srgb, var(--line-warning) 8%, transparent)}.ln.warn .m{color:var(--ansi-yellow)}
+.ln.error{border-left-color:var(--bad);background:color-mix(in srgb, var(--line-error) 8%, transparent)}.ln.error .m{color:var(--ansi-red)}
 .ln.cont .s,.ln.cont .t{visibility:hidden}
 .ln.hit .m mark{background:var(--accent);color:var(--accent-ink);padding:0 2px}
 .lines.no-ts .ln{grid-template-columns:auto minmax(0,1fr)}.lines.no-ts .t{display:none}
@@ -1058,6 +1070,16 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
    2026-09-15: the numbers the same two on paper as on the dark
    terminal, the grounds a pale wash of each. Hex, since the tab's
    swatch is an <input type=color>. */
+/* The lines' grounds, the Terminal fold's third set: the wash under a
+   line of error and one of warning on the Logs screen, and the tint of
+   the line under the pointer, which the diff's hunk head wears too.
+   Hex, for the swatch; the sheet lays each at its share — 8% the
+   washes, 5% the tint — so a solid colour stays a wash. The light
+   ground's are the house's bad and the ANSI yellow over the ink; the
+   dark ground's the same two over white. */
+:root{--line-error:#e06c5f;--line-warning:#b7791f;--line-highlight:#1d1424}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--line-error:#e06c5f;--line-warning:#e3b25c;--line-highlight:#ffffff}}
+:root[data-theme="dark"]{--line-error:#e06c5f;--line-warning:#e3b25c;--line-highlight:#ffffff}
 :root{--diff-add-bg:#c0eeff;--diff-add-num:#529fc7;--diff-del-bg:#ffd6d2;--diff-del-num:#db5a5a}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--diff-add-bg:#00212d;--diff-add-num:#529fc7;--diff-del-bg:#3f0600;--diff-del-num:#db5a5a}}
 :root[data-theme="dark"]{--diff-add-bg:#00212d;--diff-add-num:#529fc7;--diff-del-bg:#3f0600;--diff-del-num:#db5a5a}
@@ -1156,7 +1178,7 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
 /* A changed line colours its numbers too, the way GitHub does: the ruler shows where the changes are when the code has scrolled off to the right. The plate takes the line's ground whole, and the number and the sign one colour, the four the reader sets on the Interface tab; until 2026-09-15 the plate wore the line's wash at half strength over its own ground and the sign the house's good or bad. This turns the 2026-09-10 rule above around, the change began at the sign, on 2026-09-12. */
 .impl .dl.add .gut{background:var(--diff-add-bg);color:var(--diff-add-num)}
 .impl .dl.del .gut{background:var(--diff-del-bg);color:var(--diff-del-num)}
-.impl .dl.hunk{color:var(--soft);background:var(--term-tint)}
+.impl .dl.hunk{color:var(--soft);background:color-mix(in srgb, var(--line-highlight) 5%, transparent)}
 .impl .dl.meta{color:var(--term-dim)}
 .impl .shot{margin:0;padding:16px;background:var(--term);display:flex;justify-content:center}
 .impl .shot svg, .impl .shot img{max-width:100%;max-height:420px;height:auto}
@@ -1228,10 +1250,21 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
    three cards with a thumbnail, light, dark, and the machine's; the
    miniature reads the same body classes and root properties the screen
    does, so a change on the left lands on the right where it will land. */
-.ui{display:grid;grid-template-columns:320px minmax(0,1fr);gap:32px;padding:26px 28px 28px;height:100%;min-height:0}
+/* The gap between the controls and the miniature is the pane's own side margin, 28px, read from the controls' scrollbar, which is the column's edge. */
+.ui{display:grid;grid-template-columns:320px minmax(0,1fr);gap:28px;padding:26px 28px 28px;height:100%;min-height:0}
 .ui .ctl{overflow:auto;min-height:0;display:grid;gap:18px;align-content:start;padding-right:6px;scrollbar-gutter:stable}
 .ui .lede{margin:0;font-size:13px;color:var(--muted)}
 .ui section{display:grid;gap:10px}
+/* The four groups, folded as the rail's sections are: the head is the rail's h2 at the tab's size, the chevron square at its end, and a folded group keeps only its head. The head sits close over its first section, 8px, so the group reads as one thing; the sections inside keep 18 between them, and the groups 28 (the column's gap and the open group's padding below). */
+.ui .group{display:grid;gap:0}
+.ui .group > .ghead{margin-bottom:8px}
+.ui .group > section + section{margin-top:18px}
+.ui .group > .ghead{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:15px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
+.ui .group > .ghead .sq.foldsq{margin-left:auto}
+.ui .group > .ghead .sq.foldsq svg{transition:transform .12s}
+.ui .group > .ghead .sq.foldsq[aria-expanded="false"] svg{transform:rotate(-90deg)}
+.ui .group.folded > :not(.ghead){display:none}
+.ui .group:not(.folded){padding-bottom:10px}
 .ui h5{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:13px;padding-bottom:5px;border-bottom:1px solid var(--line)}
 .ui .hint{margin:0;font-size:12px;color:var(--muted)}
 .ui .acts{margin:0;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -1270,8 +1303,8 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
 .ui .picks label{display:grid;grid-template-columns:64px 1fr;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;color:var(--ink)}
 .ui select{font-family:var(--mono);font-size:12px;padding:3px 6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;width:100%;min-width:0}
 .ui .groups{display:grid;gap:10px}
-.ui .group{display:grid;gap:6px}
-.ui .group h6{margin:0;font-family:var(--cond);font-weight:600;text-transform:uppercase;letter-spacing:.08em;font-size:11px;color:var(--muted)}
+.ui .set{display:grid;gap:6px}
+.ui .set h6{margin:0;font-family:var(--cond);font-weight:600;text-transform:uppercase;letter-spacing:.08em;font-size:11px;color:var(--muted)}
 .ui .roles{display:grid;grid-template-columns:1fr 1fr;gap:5px 10px}
 .ui .roles label{display:inline-flex;gap:8px;align-items:center;font-family:var(--mono);font-size:12px;color:var(--ink);cursor:pointer;min-width:0}
 .ui .roles input[type=color]{width:22px;height:22px;flex:none;padding:0;border:1px solid var(--line);border-radius:2px;background:none;cursor:pointer}
@@ -1283,7 +1316,7 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
 .ui details.disc summary.fold::marker,.ui details.disc summary.fold::-webkit-details-marker{display:none;content:""}
 .ui details.disc summary.fold small{font-family:var(--mono);font-size:11px;letter-spacing:0;text-transform:none}
 .ui details.disc:not([open])>.jsonc{display:none}
-.ui .jsonc{display:grid;gap:8px;margin-top:10px}
+.ui .jsonc{display:grid;gap:8px}
 .ui .jsonc textarea{width:100%;min-height:96px;resize:vertical;font-family:var(--mono);font-size:11.5px;line-height:1.45;padding:8px 10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;white-space:pre-wrap;overflow:auto}
 .ui .jsonc .word{font-family:var(--mono);font-size:12px;color:var(--muted)}
 .ui .jsonc .word.bad{color:var(--bad)}

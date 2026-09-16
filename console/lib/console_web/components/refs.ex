@@ -9,6 +9,29 @@ defmodule ConsoleWeb.Refs do
   """
   use Phoenix.Component
 
+  @doc """
+  A drawer's query over the screen's own place: `over("/project?paper=history",
+  "box=k6")` is `/project?paper=history&box=k6`. A key the query names is
+  the drawer's — `paper` is the box's manual's, or the workbench's — and
+  the screen's own value of it is left out, kept on the page instead
+  (`ConsoleLive.take_paper`), so the URL names it once.
+  """
+  def over(back, query) do
+    [path | rest] = String.split(back, "?", parts: 2)
+    names = for kv <- String.split(query, "&"), do: kv |> String.split("=", parts: 2) |> hd()
+
+    kept =
+      case rest do
+        [own] ->
+          String.split(own, "&") |> Enum.reject(&(hd(String.split(&1, "=", parts: 2)) in names))
+
+        [] ->
+          []
+      end
+
+    path <> "?" <> Enum.join(kept ++ [query], "&")
+  end
+
   @doc "A mention of a cartridge: its state as a dot, its name, a door to its box."
   attr :name, :string, required: true
   attr :installed, :boolean, default: false

@@ -306,13 +306,17 @@ export const Rail = {
     // the body so the two agree whichever one was pressed.
     const rail = document.getElementById("rail")
     // The gutter the rail keeps for its scrollbar, which its right padding
-    // gives back so the air reads 22px on both sides. Written on the app,
-    // which LiveView patches: `updated` writes it again.
+    // gives back so the air reads 22px on both sides. Written on the
+    // root, as the width is, and never on the app: LiveView patches the
+    // app, and a patch drops the inline style the server never wrote —
+    // the rail's air grew 15px on every compose file opened under its
+    // row, until 2026-09-15 — and `updated` is not to be counted on to
+    // write it again.
     const gutter = () => {
       if (!rail) return
       const cs = getComputedStyle(rail)
       const g = rail.offsetWidth - rail.clientWidth - parseFloat(cs.borderLeftWidth) - parseFloat(cs.borderRightWidth)
-      this.el.style.setProperty("--rail-gutter", Math.max(0, g) + "px")
+      document.documentElement.style.setProperty("--rail-gutter", Math.max(0, g) + "px")
     }
     const squares = { left: document.getElementById("rail-left"), right: document.getElementById("rail-right") }
     const paintToggle = () => {
@@ -558,7 +562,7 @@ const FACES = {
   house: { name: "The house's — IBM Plex Mono", sizes: SIZES, family: () => null },
   fira: { name: "Fira Code", sizes: SIZES, family: () => '"Fira Code"', note: "Ligatures on. SIL Open Font License." },
   vga: { name: "Flexi IBM VGA", sizes: [14, 16, 18, 20, 24, 32], family: () => '"Flexi IBM VGA True"', note: "The PC's text mode, by VileR. CC BY-SA 4.0.", bitmap: true },
-  tamzen: { name: "Tamzen", sizes: [9, 12, 13, 14, 15, 16, 20], family: s => `"Tamzen${{ 9: 5, 12: 6, 13: 7, 14: 7, 15: 8, 16: 8, 20: 10 }[s]}x${s}"`, note: "A bitmap face by Scott Fial: one drawing per size, so the sizes are its own.", bitmap: true },
+  tamzen: { name: "Tamzen", sizes: [9, 12, 13, 14, 15, 16, 20], family: s => `"Tamzen${{ 9: 5, 12: 6, 13: 7, 14: 7, 15: 8, 16: 8, 20: 10 }[s]}x${s}"`, note: "A bitmap face by Scott Fial, one drawing a size.", bitmap: true },
 }
 const usual = f => f.sizes[Math.floor(f.sizes.length / 2)]
 const choiceOf = group => { try { const c = JSON.parse(store.get(GROUPS[group]) || "{}"); return { face: c.face in FACES ? c.face : "house", size: c.size || null, leading: LEADINGS.includes(c.leading) ? c.leading : null } } catch (e) { return { face: "house", size: null, leading: null } } }
@@ -586,7 +590,7 @@ function bindPicks(el, group) {
     faceSel.replaceChildren(...Object.entries(FACES).map(([k, v]) => opt(k, v.name, k === choice.face)))
     sizeSel.replaceChildren(opt("", choice.face === "house" ? "as drawn" : "its usual", !choice.size), ...f.sizes.map(n => opt(n, `${n} px`, n === choice.size)))
     leadSel.replaceChildren(opt("", "as drawn", !choice.leading), ...LEADINGS.map(n => opt(n, n.toFixed(1), n === choice.leading)))
-    if (note) note.textContent = f.note || "IBM Plex Mono, the house's code face, at each surface's own size."
+    if (note) note.textContent = f.note || "IBM Plex Mono, the house's."
   }
   const keep = () => { choice = applyChoice(group, choice); store.set(GROUPS[group], JSON.stringify(choice)); draw() }
   faceSel.addEventListener("change", () => { choice = { ...choice, face: faceSel.value, size: null }; keep() })
@@ -712,16 +716,22 @@ const onGround = f => { new MutationObserver(f).observe(document.documentElement
 onGround(() => applyColours(coloursOf()))
 // The colour a language's role shows now: the reader's, or the stylesheet's.
 const shownColour = (lang, key) => getComputedStyle(document.documentElement).getPropertyValue(`--t-${lang}-${key}`).trim().toLowerCase()
-// A jsonc is JSON with comments and trailing commas; VS Code's settings
+// A jsonc is JSON with comments and trailing commas. VS Code's settings
 // carry the rules under editor.tokenColorCustomizations.textMateRules, a
-// theme file under tokenColors, and a bare array is taken as the rules.
+// theme file under tokenColors, and a bare array is taken as the rules;
+// the diff's four and the terminal's nine sit under
+// workbench.colorCustomizations (a theme's `colors`) by VS Code's names,
+// and the overlay under dew.interface,
+// which is this console's own.
 function parseJsonc(text) {
   const bare = text.replace(/("(?:[^"\\]|\\.)*")|\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, (m, str) => str || "").replace(/,(\s*[}\]])/g, "$1")
-  const doc = JSON.parse(bare)
-  const rules = Array.isArray(doc) ? doc : doc.tokenColors || (doc["editor.tokenColorCustomizations"] || doc).textMateRules
-  if (!Array.isArray(rules)) throw new Error("no textMateRules, no tokenColors")
-  return rules
+  return JSON.parse(bare)
 }
+const rulesOf = doc => { const r = Array.isArray(doc) ? doc : doc.tokenColors || (doc["editor.tokenColorCustomizations"] || doc).textMateRules; return Array.isArray(r) ? r : [] }
+// A VS Code colour may carry alpha, #rrggbbaa: the swatch takes six.
+const hex6 = v => typeof v === "string" && /^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(v) ? v.slice(0, 7).toLowerCase() : null
+const setOfDoc = (spec, doc) => { const c = (!Array.isArray(doc) && (doc["workbench.colorCustomizations"] || doc.colors)) || {}; return Object.fromEntries(spec.roles.flatMap(r => { const v = hex6(c[r.vs]); return v ? [[r.key, v]] : [] })) }
+const interfaceOfDoc = doc => { const i = (!Array.isArray(doc) && doc["dew.interface"]) || {}; return { band: ["top", "bottom"].includes(i.band) ? i.band : null, rail: ["left", "right", "hidden"].includes(i.rail) ? i.rail : null, ground: ["light", "dark", "system"].includes(i.ground) ? i.ground : null } }
 // A rule's scope covers a role's when it is the same, or a parent of it.
 const covers = (rule, scope) => scope === rule || scope.startsWith(rule + ".")
 // The rules, sorted into languages: `{elixir: {kw: "#..."}, json: {...}}`.
@@ -735,54 +745,88 @@ function coloursFromRules(rules) {
   }
   return out
 }
-const asJsonc = () => JSON.stringify({ "editor.tokenColorCustomizations": { textMateRules: Object.entries(LANGS).flatMap(([l, lang]) => lang.roles.map(role => ({ scope: role.scopes.length === 1 ? role.scopes[0] : role.scopes, settings: { ...(role.style ? { fontStyle: role.style } : {}), foreground: shownColour(l, role.key) } }))) } }, null, 2)
-// --- the diff's four: the ground of an added line and of a removed one,
-// and the colour of the number and the sign on each — properties on the root the
-// Files sheet's diffs read (`--diff-<key>`, console.css), kept in this
-// browser a ground each, like the palettes, and shown in the tab's
-// sample, which has one line of each.
-const DIFF_KEY = "wb-console-diff"
-// Two groups, added and removed, of two: the code line's ground, and
-// the colour of the line number — which the sign wears too.
-const DIFF_ROLES = [
-  { key: "add-bg", group: "add", name: "code" }, { key: "add-num", group: "add", name: "line number" },
-  { key: "del-bg", group: "del", name: "code" }, { key: "del-num", group: "del", name: "line number" },
-]
-const DIFF_GROUPS = { add: "added", del: "removed" }
-const cleanDiff = d => Object.fromEntries(DIFF_ROLES.filter(r => HEX.test((d || {})[r.key] || "")).map(r => [r.key, d[r.key].toLowerCase()]))
-const diffOf = () => { try { const d = JSON.parse(store.get(DIFF_KEY) || "{}"); return { dark: cleanDiff(d.dark), light: cleanDiff(d.light) } } catch (e) { return { dark: {}, light: {} } } }
-function applyDiff(all) {
-  const root = document.documentElement.style, g = all[ground()] || {}
-  for (const r of DIFF_ROLES) { const v = g[r.key]; if (v) root.setProperty(`--diff-${r.key}`, v); else root.removeProperty(`--diff-${r.key}`) }
+const asJsonc = frame => JSON.stringify({
+  "dew.interface": frame,
+  "workbench.colorCustomizations": Object.fromEntries(Object.values(SETS).flatMap(spec => spec.roles.map(r => [r.vs, shownProp(r.prop)]))),
+  "editor.tokenColorCustomizations": { textMateRules: Object.entries(LANGS).flatMap(([l, lang]) => lang.roles.map(role => ({ scope: role.scopes.length === 1 ? role.scopes[0] : role.scopes, settings: { ...(role.style ? { fontStyle: role.style } : {}), foreground: shownColour(l, role.key) } }))) },
+}, null, 2)
+// --- sets of colours on the root, a ground each, kept in this browser
+// like the palettes: the diff's four — the ground of an added line and
+// of a removed one, and the colour of the number and the sign on each
+// (`--diff-<key>`, console.css), shown in the tab's sample, which has
+// one line of each — and the terminal's nine — its ground, ink and
+// dim, the six ANSI colours a line wears, and the lines' grounds (tokens.css, on the root:
+// a value set here on the root's own style wins over the sheet's), red
+// an error's and yellow a warning's on the Logs screen and in a job's
+// output, shown in the miniature's terminal. Each role names the
+// property it writes and the VS Code colour it is, for the file.
+const SETS = {
+  diff: {
+    key: "wb-console-diff", root: "#diff-swatches", data: "diff", reset: "#diff-reset", which: "#diff-ground", word: "the diff's",
+    groups: { add: "added", del: "removed" },
+    roles: [
+      { key: "add-bg", group: "add", name: "code", prop: "--diff-add-bg", vs: "diffEditor.insertedLineBackground" },
+      { key: "add-num", group: "add", name: "line number", prop: "--diff-add-num", vs: "editorGutter.addedBackground" },
+      { key: "del-bg", group: "del", name: "code", prop: "--diff-del-bg", vs: "diffEditor.removedLineBackground" },
+      { key: "del-num", group: "del", name: "line number", prop: "--diff-del-num", vs: "editorGutter.deletedBackground" },
+    ],
+  },
+  term: {
+    key: "wb-console-term", root: "#term-swatches", data: "term", reset: "#term-reset", which: "#term-ground", word: "the terminal's",
+    groups: { term: "the terminal", ansi: "ANSI", lines: "lines" },
+    roles: [
+      { key: "term", group: "term", name: "ground", prop: "--term", vs: "terminal.background" },
+      { key: "term-ink", group: "term", name: "ink", prop: "--term-ink", vs: "terminal.foreground" },
+      { key: "term-dim", group: "term", name: "dim", prop: "--term-dim", vs: "terminal.ansiBrightBlack" },
+      { key: "red", group: "ansi", name: "red · errors", prop: "--ansi-red", vs: "terminal.ansiRed" },
+      { key: "green", group: "ansi", name: "green", prop: "--ansi-green", vs: "terminal.ansiGreen" },
+      { key: "yellow", group: "ansi", name: "yellow · warnings", prop: "--ansi-yellow", vs: "terminal.ansiYellow" },
+      { key: "blue", group: "ansi", name: "blue", prop: "--ansi-blue", vs: "terminal.ansiBlue" },
+      { key: "magenta", group: "ansi", name: "magenta", prop: "--ansi-magenta", vs: "terminal.ansiMagenta" },
+      { key: "cyan", group: "ansi", name: "cyan", prop: "--ansi-cyan", vs: "terminal.ansiCyan" },
+      // The lines' grounds: washes the sheet lays at 8%, the tint at 5%
+      // (console.css); VS Code has a name for the tint alone.
+      { key: "line-error", group: "lines", name: "error", prop: "--line-error", vs: "dew.terminal.errorLine" },
+      { key: "line-warning", group: "lines", name: "warning", prop: "--line-warning", vs: "dew.terminal.warningLine" },
+      { key: "line-highlight", group: "lines", name: "highlight", prop: "--line-highlight", vs: "editor.lineHighlightBackground" },
+    ],
+  },
 }
-applyDiff(diffOf())
-onGround(() => applyDiff(diffOf()))
-const shownDiff = key => getComputedStyle(document.documentElement).getPropertyValue(`--diff-${key}`).trim().toLowerCase()
-function bindDiff(el) {
-  const groups = [...el.querySelectorAll("#diff-swatches [data-diff]")], reset = el.querySelector("#diff-reset"), which = el.querySelector("#diff-ground")
-  if (!groups.length) return
-  let all = diffOf()
+const cleanSet = (spec, d) => Object.fromEntries(spec.roles.filter(r => HEX.test((d || {})[r.key] || "")).map(r => [r.key, d[r.key].toLowerCase()]))
+const setOf = spec => { try { const d = JSON.parse(store.get(spec.key) || "{}"); return { dark: cleanSet(spec, d.dark), light: cleanSet(spec, d.light) } } catch (e) { return { dark: {}, light: {} } } }
+function applySet(spec, all) {
+  const root = document.documentElement.style, g = all[ground()] || {}
+  for (const r of spec.roles) { const v = g[r.key]; if (v) root.setProperty(r.prop, v); else root.removeProperty(r.prop) }
+}
+for (const spec of Object.values(SETS)) { applySet(spec, setOf(spec)); onGround(() => applySet(spec, setOf(spec))) }
+// The colour a property shows now: the reader's, or the stylesheet's.
+const shownProp = prop => getComputedStyle(document.documentElement).getPropertyValue(prop).trim().toLowerCase()
+function bindSet(el, spec) {
+  const groups = [...el.querySelectorAll(`${spec.root} [data-${spec.data}]`)], reset = el.querySelector(spec.reset), which = el.querySelector(spec.which)
+  if (!groups.length) return {}
+  let all = setOf(spec)
   const mine = () => all[ground()] || {}
-  const set = d => { all = { ...all, [ground()]: d }; applyDiff(all) }
+  const set = d => { all = { ...all, [ground()]: d }; applySet(spec, all) }
   const draw = () => {
     const g = ground()
     if (which) which.textContent = `the ${g} ground's`
-    for (const box of groups) box.replaceChildren(...DIFF_ROLES.filter(r => r.group === box.dataset.diff).map(role => {
+    for (const box of groups) box.replaceChildren(...spec.roles.filter(r => r.group === box.dataset[spec.data]).map(role => {
       const label = document.createElement("label"), input = document.createElement("input"), name = document.createElement("span"), own = document.createElement("small")
-      input.type = "color"; input.value = shownDiff(role.key); input.setAttribute("aria-label", `${DIFF_GROUPS[role.group]} ${role.name}, the colour`)
+      input.type = "color"; input.value = shownProp(role.prop); input.setAttribute("aria-label", `${spec.groups[role.group]} ${role.name}, the colour`)
       input.addEventListener("input", () => { set({ ...mine(), [role.key]: input.value.toLowerCase() }); own.textContent = "·" })
-      input.addEventListener("change", () => store.set(DIFF_KEY, JSON.stringify(all)))
+      input.addEventListener("change", () => store.set(spec.key, JSON.stringify(all)))
       name.textContent = role.name; own.textContent = mine()[role.key] ? "·" : ""; own.title = "set by you"
       label.append(input, name, own); return label
     }))
   }
-  reset?.addEventListener("click", () => { set({}); store.set(DIFF_KEY, JSON.stringify(all)); draw() })
-  onGround(() => { all = diffOf(); draw() })
+  reset?.addEventListener("click", () => { set({}); store.set(spec.key, JSON.stringify(all)); draw() })
+  onGround(() => { all = setOf(spec); draw() })
   draw()
+  return { take: d => { set({ ...mine(), ...d }); store.set(spec.key, JSON.stringify(all)); draw() } }
 }
 function bindColours(el) {
-  const swatches = el.querySelector("#swatches"), area = el.querySelector("#jsonc"), word = el.querySelector("#jsonc-word"), reset = el.querySelector("#jsonc-reset"), which = el.querySelector("#colours-ground"), langSel = el.querySelector("#colours-lang")
-  if (!swatches || !area || !langSel) return
+  const swatches = el.querySelector("#swatches"), word = el.querySelector("#jsonc-word"), reset = el.querySelector("#jsonc-reset"), which = el.querySelector("#colours-ground"), langSel = el.querySelector("#colours-lang")
+  if (!swatches || !langSel) return {}
   let all = coloursOf(), lang = "elixir"
   const mine = () => (all[ground()] || {})[lang] || {}
   const say = (text, bad) => { if (word) { word.textContent = text; word.classList.toggle("bad", !!bad) } }
@@ -794,8 +838,8 @@ function bindColours(el) {
     const g = ground()
     langSel.value = lang
     for (const s of el.querySelectorAll(".sample[data-lang]")) s.hidden = s.dataset.lang !== lang
-    if (which) which.textContent = `the ${g} ground's, for ${LANGS[lang].name} — ${HOUSE[g]} underneath`
-    if (reset) reset.textContent = `Back to ${HOUSE[g]}`
+    if (which) which.textContent = `${LANGS[lang].name} on the ${g} ground, ${HOUSE[g]} underneath`
+    if (reset) reset.title = `${HOUSE[g]}, as it came`
     swatches.replaceChildren(...LANGS[lang].roles.map(role => {
       const label = document.createElement("label"), input = document.createElement("input"), name = document.createElement("span"), own = document.createElement("small")
       input.type = "color"; input.value = shownColour(lang, role.key); input.setAttribute("aria-label", `${role.name}, the colour`)
@@ -806,18 +850,33 @@ function bindColours(el) {
     }))
   }
   langSel.addEventListener("change", () => { lang = langSel.value in LANGS ? langSel.value : "elixir"; say(""); draw() })
-  el.querySelector("#jsonc-apply")?.addEventListener("click", () => {
-    try {
-      const found = coloursFromRules(parseJsonc(area.value))
-      const n = Object.values(found).reduce((a, c) => a + Object.keys(c).length, 0)
-      if (!n) return say("no rule of it covers any role of any language", true)
-      merge(found); keep(); say(`${n} rules taken, for the ${ground()} ground: ${Object.keys(found).map(l => `${Object.keys(found[l]).length} ${l}`).join(", ")}`)
-    } catch (e) { say(`not read: ${e.message}`, true) }
-  })
-  el.querySelector("#jsonc-show")?.addEventListener("click", () => { area.value = asJsonc(); say(`the ${ground()} ground's palettes, every language, as VS Code reads them — copy them out`); area.focus(); area.select() })
   reset?.addEventListener("click", () => { set({}); keep(); say(`${HOUSE[ground()]} for ${LANGS[lang].name}, as it came`) })
   onGround(() => { all = coloursOf(); draw() })
   draw()
+  // What a file brings: the rules found, merged into this ground's palettes.
+  return { take: found => { merge(found); keep() } }
+}
+// The interface as a file: read out, or pasted in and applied to this
+// ground — the ground itself first, when the file names one, so the
+// colours land where the file meant them.
+function bindFile(el, { colours, sets, frame }) {
+  const area = el.querySelector("#jsonc"), word = el.querySelector("#jsonc-word")
+  if (!area) return
+  const say = (text, bad) => { if (word) { word.textContent = text; word.classList.toggle("bad", !!bad) } }
+  el.querySelector("#jsonc-apply")?.addEventListener("click", () => {
+    try {
+      const doc = parseJsonc(area.value)
+      const iface = interfaceOfDoc(doc), found = coloursFromRules(rulesOf(doc))
+      const taken = Object.entries(SETS).map(([k, spec]) => [k, spec, setOfDoc(spec, doc)]).filter(([, , d]) => Object.keys(d).length)
+      const n = Object.values(found).reduce((a, c) => a + Object.keys(c).length, 0), ni = Object.values(iface).filter(Boolean).length
+      if (!n && !taken.length && !ni) return say("nothing of it is this interface's: no rule, no colour of the diff's or the terminal's, no overlay", true)
+      if (ni) frame.set(iface)
+      if (n) colours.take(found)
+      for (const [k, , d] of taken) sets[k].take(d)
+      say([ni && "the overlay", n && `${n} rule${n === 1 ? "" : "s"} (${Object.keys(found).map(l => `${Object.keys(found[l]).length} ${l}`).join(", ")})`, ...taken.map(([, spec, d]) => `${spec.word} ${Object.keys(d).length}`)].filter(Boolean).join(", ") + ` — taken, for the ${ground()} ground`)
+    } catch (e) { say(`not read: ${e.message}`, true) }
+  })
+  el.querySelector("#jsonc-show")?.addEventListener("click", () => { area.value = asJsonc(frame.get()); say(`this interface on the ${ground()} ground — the overlay, the diff's four, the terminal's nine, every language's palette — copy it out`); area.focus(); area.select() })
 }
 
 export const Frame = {
@@ -846,19 +905,44 @@ export const Frame = {
     mini?.querySelector(".mband")?.addEventListener("click", () => setFrame({ bottom: !state().bottom }))
     mini?.querySelector(".mrail")?.addEventListener("click", () => setFrame({ right: !state().right }))
     // The ground: light, dark, or the machine's — which is no choice kept, the way the page boots.
-    for (const c of el.querySelectorAll(".card[data-ground]")) c.addEventListener("click", () => {
-      const g = c.dataset.ground
+    const setGround = g => {
       if (g === "system") { try { localStorage.removeItem(THEME_KEY) } catch (e) {} document.documentElement.removeAttribute("data-theme") }
       else { document.documentElement.setAttribute("data-theme", g); store.set(THEME_KEY, g) }
       paint(); document.getElementById("ground-toggle")?.dispatchEvent(new Event("repaint"))
-    })
+    }
+    for (const c of el.querySelectorAll(".card[data-ground]")) c.addEventListener("click", () => setGround(c.dataset.ground))
+    // The overlay as words, for the file: the band's side, the rail's, the ground chosen.
+    const frame = {
+      get: () => { const s = state(); return { band: s.bottom ? "bottom" : "top", rail: s.off ? "hidden" : s.right ? "right" : "left", ground: store.get(THEME_KEY) || "system" } },
+      set: ({ band, rail, ground: g }) => {
+        if (g) setGround(g)
+        const want = { ...(band ? PICKS[band] : {}), ...(rail ? PICKS[rail] : {}) }
+        if (Object.keys(want).length) setFrame(want)
+      },
+    }
     onGround(paint)
     this.repaint = paint; addEventListener("resize", paint)
     // The jsonc's fold: the house's caret is drawn from aria-expanded.
     for (const d of el.querySelectorAll("details.disc")) d.addEventListener("toggle", () => d.querySelector("summary.fold")?.setAttribute("aria-expanded", String(d.open)))
     for (const g of Object.keys(GROUPS)) bindPicks(el, g)
-    bindColours(el)
-    bindDiff(el)
+    bindFile(el, { colours: bindColours(el), sets: Object.fromEntries(Object.entries(SETS).map(([k, spec]) => [k, bindSet(el, spec)])), frame })
+    // The three groups fold as the rail's sections do, the fold kept here.
+    const UI_FOLDS = "wb-console-ui-folds"
+    let folds = new Set()
+    try { folds = new Set(JSON.parse(store.get(UI_FOLDS) || "[]")) } catch (e) {}
+    const paintFolds = () => {
+      for (const g of el.querySelectorAll(".group[data-fold]")) {
+        const off = folds.has(g.dataset.fold)
+        g.classList.toggle("folded", off)
+        g.querySelector(".ghead .foldsq")?.setAttribute("aria-expanded", String(!off))
+      }
+    }
+    for (const h of el.querySelectorAll(".group[data-fold] > .ghead")) h.addEventListener("click", () => {
+      const k = h.parentElement.dataset.fold
+      folds.has(k) ? folds.delete(k) : folds.add(k)
+      store.set(UI_FOLDS, JSON.stringify([...folds])); paintFolds()
+    })
+    paintFolds()
     paint()
     // The miniature's service chips do what the Logs screen's do: pressed, the service's lines show.
     // (Logs hides the service column when one service alone shows: the name says nothing then.)

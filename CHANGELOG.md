@@ -16,8 +16,53 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
-- **The diff's colours are the reader's.** A Diff section on the
-  Interface tab, under the syntax palette, in two groups, Added and
+- **The terminal's colours are the reader's.** Under the Interface
+  tab's Terminal fold, beside its face: the terminal's ground,
+  ink and dim, and the six ANSI colours a line wears — red an error's,
+  yellow a warning's — and the lines' grounds, the wash under a line
+  of error and one of warning on Logs and the tint of the line under
+  the pointer (the diff's hunk head wears it too), each a hex the sheet
+  lays at its share: twelve swatches a ground, kept in this browser
+  (`wb-console-term`) and written on the root over `tokens.css`, so
+  every terminal surface takes them: the jobs' output, the logs, the
+  Terminal screen, Docker's events, and the miniature's terminal, where
+  the change shows. They travel in the interface's file under
+  `workbench.colorCustomizations` by VS Code's own names
+  (`terminal.background`, `terminal.ansiRed`,
+  `editor.lineHighlightBackground`, …; the two washes under
+  `dew.terminal.errorLine` and `dew.terminal.warningLine`, which are
+  this console's), so a VS Code theme pasted in dresses the terminal
+  too.
+- **The interface as a file.** The jsonc that was the syntax
+  palette's, under Language Syntax, is the whole interface's now, in a
+  section of its own under the three folds: the overlay under
+  `dew.interface` (the band's side, the rail's, the ground), the
+  diff's four and the terminal's nine under
+  `workbench.colorCustomizations` by VS Code's names for them, and
+  every language's palette under
+  `editor.tokenColorCustomizations` as before. Read mine reads it out
+  for this ground; Apply takes what a pasted one has — this file's, or
+  a VS Code theme's `tokenColors` and `colors` — the ground first, so
+  the colours land where the file meant them.
+- **The Interface tab folds in three, one a surface.** Its controls
+  sit under three heads that fold as the rail's sections do, the
+  chevron square at the end of each: Overlay, the frame and the
+  ground; Terminal, its face and its colours; Files, the files' face,
+  the syntax palette and the diff's four. Which are folded is kept in
+  this browser (`wb-console-ui-folds`).
+
+- **Restart on the rail's containers.** A third button on each
+  container's row, beside Logs and the shell — the row's columns size
+  themselves now, the name taking what the chip and the three buttons
+  leave — the Docker screen's one act on a single container brought
+  to the rail: `./wb.sh restart --deploy
+  DEPLOY SERVICE`, the same service and image up again with the
+  deployment whole. Unlit with the reason while the container is not
+  running, while a job on the deployment runs — a restart counts as
+  one now, for the Deploy tab's buttons too — and on the pause
+  container, whose network namespace the others share.
+- **The diff's colours are the reader's.** A Diff section under the
+  Interface tab's Files fold, after the syntax palette, in two groups, Added and
   Removed, of two swatches each: the code's ground, and the colour of
   its line number, which the sign wears too. Four a ground, kept in
   this browser as the palettes are (`wb-console-diff`) and applied as
@@ -278,12 +323,29 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **`./wb.sh help` reads like a CLI's.** One line of summary a
+  command, in the imperative, and its options in an aligned list with
+  their defaults; the reasons and the history went where they were
+  already, the README and this file. Every command and option is
+  still there, in 170 lines where there were 284, and the entries
+  written first — `login`, `demo`, `delete`, `help` — read in the
+  same voice as the rest, each body indented under its command as a
+  man page does. The headings are the usual ones (SYNOPSIS for
+  SYNTAXIS), and 'Defalut' is spelled at last. And the script's colour
+  codes go out only when a terminal reads them — stdout a tty,
+  `NO_COLOR` unset, `TERM` not dumb — or when `WB_ANSI=always` asks,
+  as the console's jobs do; `help | less` and a script capturing
+  `status` get plain text.
 - **The workbench and the project have an image each, from a
   Dockerfile each.** The workbench's is
-  `dockerized-elixir-workbench:exELIXIR-erlOTP-phxVERSION`, built
-  straight from `scripts/Dockerfile.workbench` with the stack and the
-  installer as build arguments: the toolchain, phx_new, and the Docker
-  CLI with buildx and compose. Everything the workbench does in a
+  `dew-exELIXIR-erlOTP-phxVERSION:WORKBENCH` — the stack and the
+  installer name the repository, so `docker images` lists one line per
+  pair, and the workbench's own version is the tag, so a new workbench
+  builds its own and an old one keeps what it ran on (it was
+  `dockerized-elixir-workbench:exELIXIR-erlOTP-phxVERSION` until
+  2026-09-15) — built straight from `scripts/Dockerfile.workbench` with
+  the stack and the installer as build arguments: the toolchain,
+  phx_new, and the Docker CLI with buildx and compose. Everything the workbench does in a
   container of its own runs there, `add`, `expand`, git and the
   catalog included, and so does the console; its image is built on the
   first command that needs it. The project's `Dockerfile.local` keeps
@@ -1052,6 +1114,34 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **Opening a compose file on Deploy no longer widens the rail's right
+  air.** The rail's scrollbar gutter, measured by the Rail hook and
+  given back by the rail's right padding, was written on the app's
+  inline style, which every LiveView patch of the page dropped: 15px
+  more air on the right after a compose file opened under its row, or
+  a status arrived. It is written on the root now, as the rail's width
+  is, where no patch reaches.
+- **Opening a compose file on Deploy no longer presses the rail's Left
+  square.** The two squares' pressed state and title are the Rail
+  hook's, painted from the frame kept in this browser, but the
+  template wrote them too, and every patch of the page — a compose
+  file opened under its row, a status arriving — put the template's
+  back until the hook's next repaint: Left pressed with the rail
+  hidden. Invisible until the pressed state had a look (2026-09-15);
+  the squares are `phx-update="ignore"` now, so a patch leaves their
+  attributes alone.
+- **A cartridge pressed on History opens its box over History.** A
+  box, and the workbench drawer, open over the screen the reader is
+  on, and the screen keeps its place under them: on Project, the paper
+  and the commit open on it, which the drawer's links carry along
+  (`/project?paper=history&commit=SHA&box=k6`) and which Put back,
+  Close and the scrim come back to. Before, opening a box went to the
+  bare tab, so pressing a cartridge's mention on History landed on the
+  Record paper with the box over it, and closing the box left the
+  reader there. A key the drawer's own query names — `paper`, the
+  box's manual's and the workbench's — is left out of the URL for the
+  screen and kept on the page instead, so the URL names it once
+  (`Refs.over/2`).
 - **A line's text sits centred in its line by its capitals**, on the
   Files sheet, the Logs screen and the Interface tab's miniature. A
   line box is the font's ascent and descent with the leading split

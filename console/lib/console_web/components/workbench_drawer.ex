@@ -47,6 +47,11 @@ defmodule ConsoleWeb.WorkbenchDrawer do
   def tabs, do: @tabs
 
   attr :tab, :string, required: true, doc: "the screen under the drawer"
+
+  attr :back, :string,
+    default: nil,
+    doc: "the screen's own place, where Close goes; the bare tab when not given"
+
   attr :wb, :string, required: true
   attr :paper, :string, default: "readme", doc: "which of the workbench's papers, under Manual"
   attr :version, :string, default: nil
@@ -70,7 +75,7 @@ defmodule ConsoleWeb.WorkbenchDrawer do
           Dockerized Elixir Workbench
           <.chip :if={@version}>v{@version}</.chip>
         </h3>
-        <.link class="btn" patch={"/#{@tab}"}>Close</.link>
+        <.link class="btn" patch={@back || "/#{@tab}"}>Close</.link>
         <.ribbon
           label="The workbench: what sets it, what draws it, what it says"
           selected={@wb}
@@ -79,7 +84,11 @@ defmodule ConsoleWeb.WorkbenchDrawer do
                 do: %{
                   key: key,
                   label: label,
-                  href: "/#{@tab}?wb=#{key}#{if key == "manual", do: "&paper=#{@paper}"}"
+                  href:
+                    ConsoleWeb.Refs.over(
+                      @back || "/#{@tab}",
+                      "wb=#{key}#{if key == "manual", do: "&paper=#{@paper}"}"
+                    )
                 }
           }
         />
@@ -104,7 +113,12 @@ defmodule ConsoleWeb.WorkbenchDrawer do
           docked
           items={
             for {key, label, file} <- Console.Papers.workbench_papers(),
-                do: %{key: key, label: label, small: file, href: "/#{@tab}?wb=manual&paper=#{key}"}
+                do: %{
+                  key: key,
+                  label: label,
+                  small: file,
+                  href: ConsoleWeb.Refs.over(@back || "/#{@tab}", "wb=manual&paper=#{key}")
+                }
           }
         />
         <div
@@ -647,6 +661,11 @@ defmodule ConsoleWeb.WorkbenchDrawer do
       end)
 
   # --- Interface: the controls on the left, the console in miniature on the right ---
+  # The controls fold in three groups, one a surface, as the rail's
+  # sections do — Overlay (the frame and the ground), Terminal (its
+  # face, and its ground, ink, dim and the six ANSI), Files (the files'
+  # face, the syntax palette and the diff's four) — the
+  # fold kept in this browser by the Frame hook (2026-09-15).
   # Everything here is kept in this browser: the frame as classes on
   # <body> (band-bottom, rail-right, rail-off), the ground as data-theme
   # on the root, the faces and the colours as custom properties on the
@@ -718,140 +737,213 @@ defmodule ConsoleWeb.WorkbenchDrawer do
     <div class="ui" id="wb-ui" phx-hook="Frame" phx-update="ignore">
       <div class="ctl">
         <p class="lede">
-          Kept in this browser, not in <code>config.conf</code>: it is what you are looking at, not what the workbench builds. What you set here you see there.
+          Kept in this browser. Nothing here touches <code>config.conf</code>.
         </p>
-        <section>
-          <h5>The frame</h5>
-          <div class="segs">
-            <div class="one">
-              <span class="lbl">the band</span>
-              <div
-                class="seg"
-                role="group"
-                aria-label="The band: on top or at the bottom"
-                data-axis="band"
-              >
-                <button type="button" data-pick="top" aria-pressed="false">Top</button><button
-                  type="button"
-                  data-pick="bottom"
-                  aria-pressed="false"
-                >Bottom</button>
+        <section class="group" data-fold="overlay">
+          <h4 class="ghead">
+            <span class="name">Overlay</span>
+            <.square
+              mark="chevron"
+              size="small"
+              class="foldsq"
+              label="Overlay: fold, or open"
+              aria-expanded="true"
+            />
+          </h4>
+          <section>
+            <h5>The frame</h5>
+            <div class="segs">
+              <div class="one">
+                <span class="lbl">the band</span>
+                <div
+                  class="seg"
+                  role="group"
+                  aria-label="The band: on top or at the bottom"
+                  data-axis="band"
+                >
+                  <button type="button" data-pick="top" aria-pressed="false">Top</button><button
+                    type="button"
+                    data-pick="bottom"
+                    aria-pressed="false"
+                  >Bottom</button>
+                </div>
+              </div>
+              <div class="one">
+                <span class="lbl">the rail</span>
+                <div
+                  class="seg"
+                  role="group"
+                  aria-label="The rail: on the left, on the right, or hidden"
+                  data-axis="rail"
+                >
+                  <button type="button" data-pick="left" aria-pressed="false">Left</button><button
+                    type="button"
+                    data-pick="right"
+                    aria-pressed="false"
+                  >Right</button><button type="button" data-pick="hidden" aria-pressed="false">Hidden</button>
+                </div>
               </div>
             </div>
-            <div class="one">
-              <span class="lbl">the rail</span>
-              <div
-                class="seg"
-                role="group"
-                aria-label="The rail: on the left, on the right, or hidden"
-                data-axis="rail"
-              >
-                <button type="button" data-pick="left" aria-pressed="false">Left</button><button
-                  type="button"
-                  data-pick="right"
-                  aria-pressed="false"
-                >Right</button><button type="button" data-pick="hidden" aria-pressed="false">Hidden</button>
-              </div>
-            </div>
-          </div>
-        </section>
-        <section>
-          <h5>The ground</h5>
-          <div
-            class="cards"
-            role="group"
-            aria-label="The ground: light, dark, or whatever this machine says"
-          >
-            <button type="button" class="card" data-ground="light" aria-pressed="false">
-              <span class="thumb light"><i class="b"></i><i class="rl"></i><i class="t t1"></i><i class="t t2"></i><i class="t t3"></i><i class="tm"></i></span>Light
-            </button>
-            <button type="button" class="card" data-ground="dark" aria-pressed="false">
-              <span class="thumb dark"><i class="b"></i><i class="rl"></i><i class="t t1"></i><i class="t t2"></i><i class="t t3"></i><i class="tm"></i></span>Dark
-            </button>
-            <button
-              type="button"
-              class="card"
-              data-ground="system"
-              aria-pressed="false"
-              title="Whatever this machine says"
+          </section>
+          <section>
+            <h5>The ground</h5>
+            <div
+              class="cards"
+              role="group"
+              aria-label="The ground: light, dark, or whatever this machine says"
             >
-              <span class="thumb system"><i class="b"></i><i class="rl"></i><i class="t t1"></i><i class="t t2"></i><i class="t t3"></i><i class="tm"></i></span>System
-            </button>
-          </div>
-        </section>
-        <section>
-          <h5>Terminal</h5>
-          <p class="hint">
-            What runs: the terminals, the jobs' output, the logs, Docker's events.
-            <span id="help-code"></span>
-          </p>
-          <div class="picks">
-            <label>face <select id="code-face" aria-label="The code face"></select></label>
-            <label>size <select id="code-size" aria-label="The code size"></select></label>
-            <label>leading
-            <select id="code-leading" aria-label="The code leading, as a ratio of the size"></select></label>
-          </div>
-        </section>
-        <section>
-          <h5>Code Files</h5>
-          <p class="hint">
-            What is read: the Files sheet, the diffs, <code>.env</code>
-            and <code>config.conf</code>, the papers' code blocks. <span id="help-file"></span>
-          </p>
-          <div class="picks">
-            <label>face <select id="file-face" aria-label="The files' face"></select></label>
-            <label>size <select id="file-size" aria-label="The files' size"></select></label>
-            <label>leading
-            <select id="file-leading" aria-label="The files' leading, as a ratio of the size"></select></label>
-          </div>
-        </section>
-        <section class="colours">
-          <h5>Language Syntax</h5>
-          <p class="hint">
-            What a file's tokens are set in, on the Files sheet: the rules of <code>console/elixir_color_theme.jsonc</code>, One Dark as VS Code reads
-            it and One Light on the light ground, a palette a ground and a language. This one is <span id="colours-ground"></span>.
-          </p>
-          <div class="picks">
-            <label>language
-            <select id="colours-lang" aria-label="The language whose colours these are"></select></label>
-          </div>
-          <div class="roles" id="swatches" aria-label="The colours"></div>
-          <p class="acts">
-            <button class="btn" type="button" id="jsonc-reset">Back to the house's</button>
-          </p>
-          <details class="disc">
-            <summary class="fold" aria-expanded="false">
-              As a VS Code theme <small>jsonc · paste one in, or read this palette back as one</small>
-            </summary>
-            <div class="jsonc">
-              <textarea
-                id="jsonc"
-                aria-label="A VS Code colour theme, as jsonc"
-                placeholder={
-                  ~s(Paste a VS Code jsonc here — editor.tokenColorCustomizations with its textMateRules, or a theme's tokenColors — and apply it; or read this palette back as one.)
-                }
-                spellcheck="false"
-              ></textarea>
-              <p class="acts">
-                <button class="btn" type="button" id="jsonc-apply">Apply the jsonc</button>
-                <button class="btn" type="button" id="jsonc-show">Read mine as jsonc</button>
-                <span class="word" id="jsonc-word"></span>
-              </p>
+              <button type="button" class="card" data-ground="light" aria-pressed="false">
+                <span class="thumb light"><i class="b"></i><i class="rl"></i><i class="t t1"></i><i class="t t2"></i><i class="t t3"></i><i class="tm"></i></span>Light
+              </button>
+              <button type="button" class="card" data-ground="dark" aria-pressed="false">
+                <span class="thumb dark"><i class="b"></i><i class="rl"></i><i class="t t1"></i><i class="t t2"></i><i class="t t3"></i><i class="tm"></i></span>Dark
+              </button>
+              <button
+                type="button"
+                class="card"
+                data-ground="system"
+                aria-pressed="false"
+                title="Whatever this machine says"
+              >
+                <span class="thumb system"><i class="b"></i><i class="rl"></i><i class="t t1"></i><i class="t t2"></i><i class="t t3"></i><i class="tm"></i></span>System
+              </button>
             </div>
-          </details>
+          </section>
         </section>
-        <section class="colours">
-          <h5>Diff</h5>
+        <section class="group" data-fold="terminal">
+          <h4 class="ghead">
+            <span class="name">Terminal</span>
+            <.square
+              mark="chevron"
+              size="small"
+              class="foldsq"
+              label="Terminal: fold, or open"
+              aria-expanded="true"
+            />
+          </h4>
+          <section>
+            <h5>Face</h5>
+            <p class="hint">
+              The terminals, the jobs' output, the logs, Docker's events. <span id="help-code"></span>
+            </p>
+            <div class="picks">
+              <label>face <select id="code-face" aria-label="The code face"></select></label>
+              <label>size <select id="code-size" aria-label="The code size"></select></label>
+              <label>leading
+              <select id="code-leading" aria-label="The code leading, as a ratio of the size"></select></label>
+            </div>
+          </section>
+          <section class="colours">
+            <h5>Colours</h5>
+            <p class="hint">
+              Its ground, ink and dim; the six ANSI colours, red for errors and yellow for warnings; and the lines' grounds: error, warning, and the one under the pointer. A set a ground, this one <span id="term-ground"></span>.
+            </p>
+            <div class="groups" id="term-swatches">
+              <div class="set">
+                <h6>The terminal</h6><div
+                  class="roles"
+                  data-term="term"
+                  aria-label="The terminal's colours"
+                >
+                </div>
+              </div>
+              <div class="set">
+                <h6>ANSI</h6><div class="roles" data-term="ansi" aria-label="The six ANSI colours">
+                </div>
+              </div>
+              <div class="set">
+                <h6>Lines</h6><div class="roles" data-term="lines" aria-label="The lines' grounds">
+                </div>
+              </div>
+            </div>
+            <p class="acts">
+              <button class="btn" type="button" id="term-reset">Back to default</button>
+            </p>
+          </section>
+        </section>
+        <section class="group" data-fold="files">
+          <h4 class="ghead">
+            <span class="name">Files</span>
+            <.square
+              mark="chevron"
+              size="small"
+              class="foldsq"
+              label="Files: fold, or open"
+              aria-expanded="true"
+            />
+          </h4>
+          <section>
+            <h5>Face</h5>
+            <p class="hint">
+              The Files sheet, the diffs, <code>.env</code>, <code>config.conf</code>, the papers' code.
+              <span id="help-file"></span>
+            </p>
+            <div class="picks">
+              <label>face <select id="file-face" aria-label="The files' face"></select></label>
+              <label>size <select id="file-size" aria-label="The files' size"></select></label>
+              <label>leading
+              <select id="file-leading" aria-label="The files' leading, as a ratio of the size"></select></label>
+            </div>
+          </section>
+          <section class="colours">
+            <h5>Language Syntax</h5>
+            <p class="hint">
+              A palette a ground and a language, this one <span id="colours-ground"></span>.
+            </p>
+            <div class="picks">
+              <label>language
+              <select id="colours-lang" aria-label="The language whose colours these are"></select></label>
+            </div>
+            <div class="roles" id="swatches" aria-label="The colours"></div>
+            <p class="acts">
+              <button class="btn" type="button" id="jsonc-reset">Back to default</button>
+            </p>
+          </section>
+          <section class="colours">
+            <h5>Diff</h5>
+            <p class="hint">
+              An added line and a removed one: the code's ground, and its number and sign. A set a ground, this one <span id="diff-ground"></span>.
+            </p>
+            <div class="groups" id="diff-swatches">
+              <div class="set">
+                <h6>Added</h6><div class="roles" data-diff="add" aria-label="An added line's colours">
+                </div>
+              </div>
+              <div class="set">
+                <h6>Removed</h6><div
+                  class="roles"
+                  data-diff="del"
+                  aria-label="A removed line's colours"
+                >
+                </div>
+              </div>
+            </div>
+            <p class="acts">
+              <button class="btn" type="button" id="diff-reset">Back to default</button>
+            </p>
+          </section>
+        </section>
+        <%!-- The interface as one file, outside the folds: what the three
+              groups set, read out to keep or carry, or pasted in and
+              applied — a VS Code theme pastes in too, for what it has. --%>
+        <section class="file">
+          <h5>As a file</h5>
           <p class="hint">
-            What a changed line wears on the Files sheet: the code's ground, and the colour of its line number and sign, for an added line and for a removed one. A palette a ground; this one is <span id="diff-ground"></span>.
+            This interface as jsonc, with VS Code's keys where it has them. Read yours out; paste one in, or a VS Code theme, and apply it.
           </p>
-          <div class="groups" id="diff-swatches">
-            <div class="group"><h6>Added</h6><div class="roles" data-diff="add" aria-label="An added line's colours"></div></div>
-            <div class="group"><h6>Removed</h6><div class="roles" data-diff="del" aria-label="A removed line's colours"></div></div>
+          <div class="jsonc">
+            <textarea
+              id="jsonc"
+              aria-label="The interface as jsonc"
+              placeholder={~s(A jsonc: this interface's, or a VS Code theme's.)}
+              spellcheck="false"
+            ></textarea>
+            <p class="acts">
+              <button class="btn" type="button" id="jsonc-apply">Apply the jsonc</button>
+              <button class="btn" type="button" id="jsonc-show">Read mine as jsonc</button>
+              <span class="word" id="jsonc-word"></span>
+            </p>
           </div>
-          <p class="acts">
-            <button class="btn" type="button" id="diff-reset">Back to the house's</button>
-          </p>
         </section>
       </div>
       <div

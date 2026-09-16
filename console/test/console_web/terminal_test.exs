@@ -54,7 +54,7 @@ defmodule ConsoleWeb.TerminalTest do
     assert "lorem_ipsum_workbench_build:/app/src/_build" in argv
     assert "lorem_ipsum_deps:/app/src/deps" in argv
     assert Enum.any?(argv, &String.ends_with?(&1, ":/app/workbench:ro"))
-    assert Enum.any?(argv, &String.starts_with?(&1, "dockerized-elixir-workbench:"))
+    assert Enum.any?(argv, &String.starts_with?(&1, "dew-ex"))
     refute Enum.any?(argv, &String.ends_with?(&1, ":local"))
     assert Enum.take(argv, -3) == ["iex", "-S", "mix"]
     # Named, so Ctrl+C can reach it; the command announces its PID first.

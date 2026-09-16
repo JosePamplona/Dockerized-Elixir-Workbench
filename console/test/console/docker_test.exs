@@ -68,8 +68,8 @@ defmodule Console.DockerTest do
     },
     %{
       "ID" => "6a7e63393583",
-      "Repository" => "dockerized-elixir-workbench",
-      "Tag" => "ex1.20.4-erl29.0.6-phx1.8.13",
+      "Repository" => "dew-ex1.20.4-erl29.0.6-phx1.8.13",
+      "Tag" => "0.11.0",
       "Size" => "570MB",
       "CreatedSince" => "37 hours ago",
       "CreatedAt" => "2026-09-04 00:00:00"
@@ -124,7 +124,7 @@ defmodule Console.DockerTest do
 
     assert [
              "awesome-virtus:local",
-             "dockerized-elixir-workbench:ex1.20.4-erl29.0.6-phx1.8.13",
+             "dew-ex1.20.4-erl29.0.6-phx1.8.13:0.11.0",
              "some-test:local"
            ] =
              List.last(mine).names

@@ -1,5 +1,6 @@
-# The workbench's image (dockerized-elixir-workbench:exELIXIR-erlOTP-
-# phxVERSION): where the workbench does its own work on a workspace —
+# The workbench's image (dew-exELIXIR-erlOTP-phxVERSION:WORKBENCH — the
+# stack and the installer name it, the workbench's version tags it):
+# where the workbench does its own work on a workspace —
 # 'new' generates the project here, 'add' and 'expand' run the
 # cartridges, git commits, the catalog is read — and where the console
 # runs, which carries wb.sh inside and drives the host's Docker through

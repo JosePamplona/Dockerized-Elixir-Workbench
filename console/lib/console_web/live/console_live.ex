@@ -14,7 +14,7 @@ defmodule ConsoleWeb.ConsoleLive do
   use ConsoleWeb, :live_view
 
   alias Console.{Bench, Events, Jobs, Logs, Project, Terminals, Verbs, Workbench}
-  alias ConsoleWeb.{Box, Cartridges, Deploy, DockerScreen, GitScreen}
+  alias ConsoleWeb.{Box, Cartridges, Deploy, DockerScreen, GitScreen, Refs}
   alias ConsoleWeb.ConsoleLive.{Docker, Drawer, Git, Hand, Term}
   alias ConsoleWeb.Doors
   alias ConsoleWeb.Record
@@ -75,6 +75,7 @@ defmodule ConsoleWeb.ConsoleLive do
         diff: nil,
         face: "front",
         ppaper: "record",
+        back: "/deploy",
         pdeploy: nil,
         pcomposes: [],
         ppage: nil,
@@ -170,9 +171,29 @@ defmodule ConsoleWeb.ConsoleLive do
          |> Docker.take(params)
          |> Git.take(params)
          |> take_shelf(params)
-         |> sync_last_fold()}
+         |> sync_last_fold()
+         |> keep_back()}
     end
   end
+
+  # The screen's own place, as a path: the tab, and on Project the paper
+  # and the commit open on it. A box or the workbench drawer opening
+  # over the screen carries it along in the URL, and Put back and Close
+  # come back to it — where before both went to the bare tab, and
+  # pressing a cartridge on History left History (2026-09-15).
+  defp keep_back(socket),
+    do: assign(socket, back: "/#{socket.assigns.tab}#{screen_query(socket)}")
+
+  defp screen_query(%{assigns: %{tab: "project", ppaper: paper, gt: gt}}) do
+    "?paper=#{paper}" <>
+      if(gt.pick && paper in ["pending", "history"], do: "&commit=#{gt.pick}", else: "")
+  end
+
+  defp screen_query(_socket), do: ""
+
+  # Whether `paper` in the URL is a manual's — the box's, or the
+  # workbench's — and not the project's, which stays as it was then.
+  defp manual?(params), do: params["screen"] == "manual" or params["wb"] == "manual"
 
   # The tray and the Jobs screen read the same last job: arriving at Jobs,
   # its row is unfolded or folded as the tray was left — put away or not.
@@ -189,15 +210,18 @@ defmodule ConsoleWeb.ConsoleLive do
 
   defp sync_last_fold(socket), do: socket
 
-  # The project's paper, from the query on /project.
+  # The project's paper, from the query on /project — or, with a manual
+  # open over the screen, the one already open, since `paper` in that
+  # URL is the box's manual's or the workbench's.
   defp take_paper(%{assigns: %{tab: "project"}} = socket, params) do
     ws = socket.assigns.status && socket.assigns.status["workspace"]
     carried = Project.carried(socket.assigns.status)
+    named = if manual?(params), do: socket.assigns.ppaper, else: params["paper"]
+    paper = if named in carried, do: named, else: List.first(carried) || "readme"
 
-    paper =
-      if params["paper"] in carried, do: params["paper"], else: List.first(carried) || "readme"
-
-    assign(socket, ppaper: paper, ppage: Project.render(ws, paper))
+    if manual?(params) and paper == socket.assigns.ppaper,
+      do: socket,
+      else: assign(socket, ppaper: paper, ppage: Project.render(ws, paper))
   end
 
   defp take_paper(socket, _params), do: socket
@@ -493,18 +517,18 @@ defmodule ConsoleWeb.ConsoleLive do
   def handle_event("filter", %{"filter" => f}, socket), do: {:noreply, assign(socket, filter: f)}
 
   def handle_event("open", %{"name" => name}, socket),
-    do: {:noreply, push_patch(socket, to: "/#{socket.assigns.tab}?box=#{name}")}
+    do: {:noreply, push_patch(socket, to: Refs.over(socket.assigns.back, "box=#{name}"))}
 
+  # The scrim: the drawer closes onto the box under it, or the box onto the screen.
   def handle_event("close", _, socket),
     do:
       {:noreply,
        push_patch(socket,
          to:
-           "/#{socket.assigns.tab}" <>
-             if(socket.assigns.wb && socket.assigns.box,
-               do: "?box=#{socket.assigns.box["name"]}",
-               else: ""
-             )
+           if(socket.assigns.wb && socket.assigns.box,
+             do: Refs.over(socket.assigns.back, "box=#{socket.assigns.box["name"]}"),
+             else: socket.assigns.back
+           )
        )}
 
   def handle_event("goto", %{"href" => href}, socket),
@@ -813,7 +837,10 @@ defmodule ConsoleWeb.ConsoleLive do
   @impl true
   def render(assigns) do
     assigns =
-      assign(assigns, tabs: @tabs, busy: Deploy.busy?(assigns.jobs, [:up, :stop, :down, :build]))
+      assign(assigns,
+        tabs: @tabs,
+        busy: Deploy.busy?(assigns.jobs, [:up, :stop, :down, :build, :restart])
+      )
 
     ~H"""
     <header class="band">
@@ -843,7 +870,7 @@ defmodule ConsoleWeb.ConsoleLive do
         </button>
         <.link
           class="cell"
-          patch={"/#{@tab}?wb=config"}
+          patch={Refs.over(@back, "wb=config")}
           aria-label="The workbench: its config, its manual, its changelog"
           title="The workbench: its config, its manual, its changelog"
         >
@@ -859,9 +886,32 @@ defmodule ConsoleWeb.ConsoleLive do
             right, and each draws the frame it would set, the column
             solid; the one in force is pressed, and pressing it again
             puts the rail away. They are the Interface tab's Left, Right
-            and Hidden, kept the same way; the Rail hook works them. --%>
-      <.square mark="rail" label="The rail on the left" id="rail-left" aria-pressed="true" title="put the rail away" />
-      <.square mark="rail" label="The rail on the right" id="rail-right" aria-pressed="false" title="move the rail to the right" />
+            and Hidden, kept the same way; the Rail hook works them, and
+            their pressed state and title are its alone: the server does
+            not know the frame, so a patch of the page must not write
+            them back (phx-update="ignore" on the pair — until 2026-09-15
+            every patch pressed Left again, seen once the state had a
+            look). The pair is one element so that it casts one shadow:
+            two squares each with its own laid the second's over the
+            first. --%>
+      <div class="railsq" id="rail-squares" phx-update="ignore">
+        <.square
+          mark="rail"
+          size="small"
+          label="The rail on the left"
+          id="rail-left"
+          aria-pressed="true"
+          title="put the rail away"
+        />
+        <.square
+          mark="rail"
+          size="small"
+          label="The rail on the right"
+          id="rail-right"
+          aria-pressed="false"
+          title="move the rail to the right"
+        />
+      </div>
       <div
         class="grip"
         id="rail-grip"
@@ -1031,6 +1081,7 @@ defmodule ConsoleWeb.ConsoleLive do
     <.workbench_drawer
       :if={@wb}
       tab={@tab}
+      back={@back}
       wb={@wb}
       paper={@wbpaper}
       version={@version}
@@ -1059,6 +1110,7 @@ defmodule ConsoleWeb.ConsoleLive do
       recipe={@recipe}
       face={@face}
       tab={@tab}
+      back={@back}
       jobs={box_jobs(@jobs, @box)}
       open={@open_jobs}
       now={@now}

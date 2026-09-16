@@ -47,7 +47,7 @@ The workbench's service colours, which its logs already use to tell services apa
 | `series-2` | `#6FA8DC` | `#6FA8DC` | the database |
 | `series-3` | `#5FBFA6` | `#5FBFA6` | pgAdmin |
 | `series-4` | `#E0955A` | `#E0955A` | the balancer |
-| `series-5` | `#9A8FA3` | `#9A8FA3` | the network container |
+| `series-5` | `#9A8FA3` | `#9A8FA3` | the pod container |
 
 Fills sit at `0.18` opacity light, `0.22` dark; strokes use the full color. **Don't backfill these tokens to non-chart types.**
 

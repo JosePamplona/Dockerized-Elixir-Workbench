@@ -131,7 +131,7 @@ defmodule ConsoleWeb.Terminal do
   when nothing runs: the image `wb.sh` runs the project's mix on, which
   exists from `new` on, before the app's own dev image is ever built.
 
-  The workspace's other container is `network` — the pause image, ~700 kB
+  The workspace's other container is `pod` — the pause image, ~700 kB
   that own the ports and sleep — and it is not here: it carries no shell
   at all. That is the one case the house's rule hides rather than marks:
   `.unlit` is for what the reader could have, and this is not applicable
@@ -273,7 +273,7 @@ defmodule ConsoleWeb.Terminal do
   @doc "The shell a target opens with when none is chosen: the first it offers."
   def default_shell(target), do: target |> shells() |> hd() |> elem(0)
 
-  defp svc_color(%{kind: :workbench}), do: "var(--svc-network)"
+  defp svc_color(%{kind: :workbench}), do: "var(--svc-pod)"
   defp svc_color(%{kind: kind}), do: "var(--svc-#{kind})"
 
   def prompt(target, shell, status) do

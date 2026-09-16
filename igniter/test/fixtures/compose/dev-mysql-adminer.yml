@@ -30,7 +30,7 @@ services:
   # everything exited, the status says down, and Up raises it whole.
   # What this gives up: a database that crashes is not restarted on its
   # own — the console's events feed says so, and Restart is a click.
-  network:
+  pod:
     image: registry.k8s.io/pause:3.10
     ports:
       # Application port (host:container).
@@ -64,7 +64,7 @@ services:
     # the BEAM's ports leave behind — the esbuild and tailwind watchers
     # of a dev server — and forwards the signals of a stop.
     init: true
-    network_mode: "service:network"
+    network_mode: "service:pod"
     env_file:
       - ./.env
     volumes:
@@ -91,7 +91,7 @@ services:
 
   database:
     image: mysql:8
-    network_mode: "service:network"
+    network_mode: "service:pod"
     environment:
       # phx.new's own dev credentials for MySQL: root, no password.
       MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
@@ -102,7 +102,7 @@ services:
       # dev on its own).
       MYSQL_DATABASE: lorem_ipsum_prod
     depends_on:
-      - network
+      - pod
     healthcheck:
       # 127.0.0.1 forces TCP: the image's init runs a temporary server
       # that answers only on the unix socket, so with -h localhost a
@@ -125,7 +125,7 @@ services:
   # said here, and the file's own values stand for an Adminer run by hand.
   adminer:
     image: adminer:6
-    network_mode: "service:network"
+    network_mode: "service:pod"
     environment:
       WORKBENCH_SERVER: 127.0.0.1:3306
       WORKBENCH_DATABASE: lorem_ipsum_dev

@@ -333,11 +333,31 @@
   first_free_port() {
     local port=$1 baked
     baked=$(baked_ports)
-    while (exec 3<>"/dev/tcp/127.0.0.1/$port") 2>/dev/null || grep -qx "$port" <<< "$baked"; do
-      exec 3>&- 3<&-
+    while port_held "$port" || grep -qx "$port" <<< "$baked"; do
       port=$((port + 1))
     done
     echo "$port"
+  }
+
+  # in_console
+    # Whether this process runs in the console's container: 'console'
+    # gives it WORKSPACE_MOUNT_PATH, and nothing else does.
+  in_console() { [ -n "${WORKSPACE_MOUNT_PATH:-}" ]; }
+
+  # port_held <PORT>
+    # Whether host port PORT is taken. From the host, a connect to its
+    # loopback says so, whoever holds it. From the console's container
+    # the loopback is the container's own — the console itself listens
+    # on 4000 there, which is why every project made from it was given
+    # 4001 until 2026-09-16 — so there the answer is Docker's: the host
+    # ports its containers publish, read over the socket the console
+    # mounts. A host process holding a port stays unseen from a
+    # container; 'up' from the host still sees it.
+  port_held() {
+    if in_console
+    then docker ps --format '{{.Ports}}' 2>/dev/null | grep -qE "[:]$1->"
+    else (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null
+    fi
   }
 
   # baked_ports
@@ -355,6 +375,22 @@
     done | sort -un
   }
 
+  # refuse_old_pod <COMPOSE_FILE>
+    # The pod's service is 'pod' since 2026-09-16; it was 'network'. A
+    # deployment that was up when its file was baked again still has
+    # the old container, and it holds the ports the new 'pod' would
+    # publish: compose would fail on them after building. Said here,
+    # with the way out — down, then up.
+  refuse_old_pod() {
+    grep -q '^  pod:' "$1" 2>/dev/null || return 0
+    [ -z "$(docker ps -a -q --filter "label=com.docker.compose.project=$(compose_project_name)" \
+      --filter "label=com.docker.compose.service=network" 2>/dev/null)" ] && return 0
+    terminate \
+      "This deployment's containers were made when the pod's service was named 'network';" \
+      "$(basename "$1") names it 'pod' now, and the old container holds its ports." \
+      "Bring the deployment down first (./$(basename "$0") down), then up again."
+  }
+
   # check_ports <COMPOSE_FILE>
     # Before an up: every host port the file publishes must be free, or
     # already ours — the deployment that is up being raised again. One
@@ -367,8 +403,7 @@
     # A process substitution, not a pipe into the loop: terminate must
     # end this shell, and in a pipeline it would only end the loop's.
     while read -r port; do
-      (exec 3<>"/dev/tcp/127.0.0.1/$port") 2>/dev/null || continue
-      exec 3>&- 3<&-
+      port_held "$port" || continue
       holder=$(docker ps --format '{{.Label "com.docker.compose.project"}} {{.Ports}}' 2>/dev/null | \
         grep -E "[:]$port->" | cut -d' ' -f1 | head -n 1)
       [[ "$holder" == "$mine" ]] && continue
@@ -2476,6 +2511,7 @@ if [ $# -gt 0 ]; then
 
       elif [[ "$DEPLOY_ARG" == "prod" ]]; then
         bake_prod_compose && \
+        refuse_old_pod "$WORKSPACE_PATH/$PROD_COMPOSE_FILE" && \
         check_ports "$WORKSPACE_PATH/$PROD_COMPOSE_FILE" && \
         docker compose \
           --file "$WORKSPACE_PATH/$PROD_COMPOSE_FILE" \
@@ -2483,6 +2519,7 @@ if [ $# -gt 0 ]; then
         deployed_message
 
       else
+        refuse_old_pod "$WORKSPACE_PATH/$COMPOSE_FILE" && \
         check_ports "$WORKSPACE_PATH/$COMPOSE_FILE" && \
         workspace_compose "$COMPOSE_COMMAND" --detach --remove-orphans && \
         deployed_message

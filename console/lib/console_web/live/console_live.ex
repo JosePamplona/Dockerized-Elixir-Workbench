@@ -33,8 +33,8 @@ defmodule ConsoleWeb.ConsoleLive do
     {"jobs", "Jobs"},
     {"logs", "Logs"},
     {"terminal", "Terminal"},
-    {"shelf", "Cartridges"},
     {"project", "Project"},
+    {"shelf", "Cartridges"},
     {"cluster", "Cluster"},
     # Last, and never unlit: the daemon is there before any project is.
     {"docker", "Docker"}

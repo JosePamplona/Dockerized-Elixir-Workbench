@@ -262,7 +262,7 @@ defmodule WorkbenchIgniter.Compose do
 
         %{
           names:
-            ["network", "app"] ++
+            ["pod", "app"] ++
               if(not dev and (server or sqlite), do: ["migrate"], else: []) ++
               init ++
               if(sqlite and not dev, do: ["data_init"], else: []) ++

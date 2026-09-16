@@ -187,7 +187,7 @@ reads one JSON and not two trees.
 `workbench.setup` is vanilla: a stock `phx.new` project plus *only* what
 the dockerized workspace requires to boot it (6 options, `composes:
 []`). The endpoint must bind `0.0.0.0` because the compose pod pattern
-(`network_mode: "service:network"`) delivers the published port on the
+(`network_mode: "service:pod"`) delivers the published port on the
 namespace interface and never on loopback; `.env` must exist because the
 workspace compose declares `env_file: ./.env`. Everything else is a
 workbench opinion, and is left to the `add` command. `./wb.sh new` is

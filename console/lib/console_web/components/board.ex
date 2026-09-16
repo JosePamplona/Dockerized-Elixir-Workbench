@@ -161,12 +161,19 @@ defmodule ConsoleWeb.Board do
 
     assigns =
       assign(assigns,
-        services: deployment.services,
+        # A row is a door on the host: a port the compose publishes, or a
+        # route. A port inside the pod (`database :5432`), the pod itself,
+        # the one-shot `migrate`, are on Containers and on the Deployments
+        # sheet, which is the whole map, solid and hollow; the rail is the
+        # bell. Since 2026-09-16; the inside ports had a hollow row here.
+        services: Enum.filter(deployment.services, &(&1.kind == "port")),
         deployment: up || "dev",
         up: up != nil,
         doors: doors,
         sum:
-          "#{length(deployment.services)} service#{if length(deployment.services) == 1, do: "", else: "s"} · #{length(doors)} door#{if length(doors) == 1, do: "", else: "s"}"
+          (fn n ->
+             "#{n} service#{if n == 1, do: "", else: "s"} · #{length(doors)} door#{if length(doors) == 1, do: "", else: "s"}"
+           end).(Enum.count(deployment.services, &(&1.kind == "port")))
       )
 
     ~H"""
@@ -569,7 +576,7 @@ defmodule ConsoleWeb.Board do
   # A shell, on the containers that can hold one. Which is the house's
   # rule read carefully in both directions: a container that is down
   # stays here, unlit, because bringing it up is something the reader can
-  # do — but `network` is the pause image and carries no shell at all, so
+  # do — but `pod` is the pause image and carries no shell at all, so
   # it is not marked, it is absent. Hiding is for what is not applicable
   # and never will be, and that is this and nothing else on the board.
   defp shell_button(assigns) do
@@ -599,7 +606,7 @@ defmodule ConsoleWeb.Board do
 
   # The pause container owns the workspace's network namespace and its
   # ports, and sleeps: ~700 kB with no shell in them.
-  defp shellable?(c), do: c["Service"] != "network"
+  defp shellable?(c), do: c["Service"] != "pod"
 
   # Restart, the Docker screen's one act on a single container, as the
   # row's third button, in the style of the other two: `./wb.sh restart
@@ -615,7 +622,7 @@ defmodule ConsoleWeb.Board do
   defp restart_button(assigns) do
     why =
       cond do
-        assigns.c["Service"] == "network" ->
+        assigns.c["Service"] == "pod" ->
           "the pause container holds the pod's network: restarted alone, the others would be left on the old one"
 
         assigns.c["State"] != "running" ->

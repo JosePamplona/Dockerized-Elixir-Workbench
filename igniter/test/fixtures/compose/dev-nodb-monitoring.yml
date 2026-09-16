@@ -30,7 +30,7 @@ services:
   # everything exited, the status says down, and Up raises it whole.
   # What this gives up: a database that crashes is not restarted on its
   # own — the console's events feed says so, and Restart is a click.
-  network:
+  pod:
     image: registry.k8s.io/pause:3.10
     ports:
       # Application port (host:container).
@@ -65,7 +65,7 @@ services:
     # the BEAM's ports leave behind — the esbuild and tailwind watchers
     # of a dev server — and forwards the signals of a stop.
     init: true
-    network_mode: "service:network"
+    network_mode: "service:pod"
     env_file:
       - ./.env
     volumes:
@@ -100,9 +100,9 @@ services:
   # query is Grafana's Explore.
   prometheus:
     image: prom/prometheus:latest
-    network_mode: "service:network"
+    network_mode: "service:pod"
     depends_on:
-      - network
+      - pod
     configs:
       - source: prometheus_conf
         target: /etc/prometheus/prometheus.yml
@@ -117,7 +117,7 @@ services:
   # with are the image's defaults, named here.
   grafana:
     image: grafana/grafana:latest
-    network_mode: "service:network"
+    network_mode: "service:pod"
     environment:
       GF_SERVER_HTTP_PORT: 3000
       GF_SECURITY_ADMIN_USER: admin

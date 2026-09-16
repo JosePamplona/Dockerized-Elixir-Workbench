@@ -325,10 +325,15 @@ defmodule ConsoleWeb.DockerScreen do
             elem(&1.kind, 0) in [:up, :stop, :down, :build, :restart])
       )
 
+    # The console restarts itself: `docker restart` on its own container
+    # keeps the image, the mounts, the env and the port, and this page
+    # reconnects when it is back. A new image or another workspace is
+    # a recreate — ./wb.sh console, from the host — and the console says
+    # so where it applies (rebind). Since 2026-09-16; it was refused.
     why =
       cond do
         assigns.c.console? ->
-          "the console: ./wb.sh console starts it again, from the host"
+          nil
 
         not assigns.mine ->
           "of another workspace: this console drives only its own"
@@ -346,7 +351,17 @@ defmodule ConsoleWeb.DockerScreen do
     assigns =
       assign(assigns,
         why: why,
-        cmd: "./wb.sh restart --deploy #{assigns.deployment || "dev"} #{assigns.c.service}"
+        title:
+          cond do
+            why ->
+              why
+
+            assigns.c.console? ->
+              "docker restart #{assigns.c.name} — the console restarts itself, and this page reconnects in seconds; a new image or another workspace wants ./wb.sh console, from the host"
+
+            true ->
+              "./wb.sh restart --deploy #{assigns.deployment || "dev"} #{assigns.c.service} — the same service, the same image, up again; the deployment stays whole"
+          end
       )
 
     ~H"""
@@ -354,10 +369,8 @@ defmodule ConsoleWeb.DockerScreen do
       class={["btn mini", @why && "unlit"]}
       type="button"
       aria-disabled={@why && "true"}
-      title={
-        @why || @cmd <> " — the same service, the same image, up again; the deployment stays whole"
-      }
-      phx-click={!@why && "dk_restart"}
+      title={@title}
+      phx-click={!@why && if(@c.console?, do: "dk_restart_console", else: "dk_restart")}
       phx-value-service={@c.service}
     >
       Restart

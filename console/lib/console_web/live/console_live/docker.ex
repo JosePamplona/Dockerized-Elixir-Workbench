@@ -154,6 +154,15 @@ defmodule ConsoleWeb.ConsoleLive.Docker do
     {:noreply, socket}
   end
 
+  # The console restarting itself: not a job, since the job would die
+  # with the console before it could report; a `docker restart` sent to
+  # the daemon from a process of its own, which carries it out whether
+  # or not this one lives to see it. The page reconnects on its own.
+  def event("dk_restart_console", _, socket) do
+    spawn(fn -> Console.Docker.restart_console() end)
+    {:noreply, socket}
+  end
+
   # Always confirmed: the console runs wb.sh under --yes and asks itself.
   def event("dk_prune", %{"what" => what}, socket) when what in ["", "images", "build"] do
     Jobs.run({:prune, nil}, ["prune" | if(what == "", do: [], else: ["--" <> what])],

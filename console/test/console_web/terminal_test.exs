@@ -38,7 +38,7 @@ defmodule ConsoleWeb.TerminalTest do
         c("app", "lorem-ipsum:local"),
         c("database", "postgres:latest"),
         c("pgadmin", "dpage/pgadmin4:latest"),
-        c("network", "registry.k8s.io/pause:3.10")
+        c("pod", "registry.k8s.io/pause:3.10")
       ])
 
     assert Enum.map(Terminal.targets(s), & &1.name) == ~w(app database pgadmin)

@@ -30,7 +30,7 @@ services:
   # everything exited, the status says down, and Up raises it whole.
   # What this gives up: a database that crashes is not restarted on its
   # own — the console's events feed says so, and Restart is a click.
-  network:
+  pod:
     image: registry.k8s.io/pause:3.10
     ports:
       # Application port (host:container).
@@ -54,7 +54,7 @@ services:
     # the BEAM's ports leave behind — the esbuild and tailwind watchers
     # of a dev server — and forwards the signals of a stop.
     init: true
-    network_mode: "service:network"
+    network_mode: "service:pod"
     env_file:
       - ./.env
     depends_on:
@@ -83,7 +83,7 @@ services:
     build:
       dockerfile: Dockerfile
     command: /app/bin/migrate
-    network_mode: "service:network"
+    network_mode: "service:pod"
     env_file:
       - ./.env
     depends_on:
@@ -98,7 +98,7 @@ services:
   # service: 'mix setup' creates the database on its own.
   database_init:
     image: mcr.microsoft.com/mssql/server:2022-latest
-    network_mode: "service:network"
+    network_mode: "service:pod"
     command: ["/opt/mssql-tools18/bin/sqlcmd", "-C", "-S", "localhost", "-U", "sa", "-P", "some!Password", "-b", "-Q", "IF DB_ID('lorem_ipsum_prod') IS NULL CREATE DATABASE [lorem_ipsum_prod]"]
     depends_on:
       database:
@@ -106,7 +106,7 @@ services:
 
   database:
     image: mcr.microsoft.com/mssql/server:2022-latest
-    network_mode: "service:network"
+    network_mode: "service:pod"
     environment:
       # Microsoft's licence, accepted by running the image at all.
       ACCEPT_EULA: "Y"
@@ -118,7 +118,7 @@ services:
     volumes:
       - /var/opt/mssql
     depends_on:
-      - network
+      - pod
     healthcheck:
       # mssql-tools18 is where the 2022 image ships sqlcmd; -C trusts
       # the server's own certificate, -b fails the command on an error.

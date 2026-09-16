@@ -715,7 +715,7 @@ defmodule ConsoleWeb.WorkbenchDrawer do
     {"app", "info", false, "17:07:17.426", "[info] Sent 200 in 24ms"},
     {"app", "error", false, "17:52:13.680", "[error] ** (Bandit.HTTPError) Read timeout"}
   ]
-  @svc_colours ~w(app database pgadmin network balancer migrate)
+  @svc_colours ~w(app database pgadmin pod balancer migrate)
 
   # The digits of a line number, as ConsoleWeb.Box counts them for the sheet.
   defp digits(nil), do: 0
@@ -724,7 +724,7 @@ defmodule ConsoleWeb.WorkbenchDrawer do
   # The colour a service's lines wear: hooks.js svcColor, on the server.
   defp svc_var(service) do
     base = String.replace(service, ~r/\d+$/, "")
-    "--svc:var(--svc-#{if base in @svc_colours, do: base, else: "network"})"
+    "--svc:var(--svc-#{if base in @svc_colours, do: base, else: "pod"})"
   end
 
   defp ui(assigns) do
@@ -967,7 +967,7 @@ defmodule ConsoleWeb.WorkbenchDrawer do
               <span class="tab">Deploy</span><span class="tab">Jobs</span><span
                 class="tab"
                 aria-selected="true"
-              >Logs</span><span class="tab">Terminal</span><span class="tab">Cartridges</span><span class="tab">Project</span><span class="tab">Docker</span>
+              >Logs</span><span class="tab">Terminal</span><span class="tab">Project</span><span class="tab">Cartridges</span><span class="tab">Docker</span>
             </div>
             <%!-- The Logs screen's service chips, the markup its hook builds
                   (renderChips): pressed, the service's lines show. And its

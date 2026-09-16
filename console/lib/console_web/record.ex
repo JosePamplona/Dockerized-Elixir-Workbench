@@ -478,7 +478,7 @@ defmodule ConsoleWeb.Record do
     %{
       label: service,
       path: @inside[service] || "",
-      kind: "port",
+      kind: "inside",
       port: nil,
       href: nil,
       why: if(up, do: nil, else: "the deployment is down"),
@@ -537,7 +537,11 @@ defmodule ConsoleWeb.Record do
       d = reported[deploy] || %{}
       baked = d["baked"] == true or get_in(status, ["baked", deploy]) == true
       up = up_one == deploy
-      published = if(baked and ws, do: published(Path.join(ws, @files[deploy])), else: %{})
+      services = d["services"] || []
+
+      published =
+        if(baked and ws, do: published(Path.join(ws, @files[deploy])), else: %{})
+        |> claimed(services)
 
       present = Enum.any?(status["containers"] || [], &(of_deployment(&1) == deploy))
 
@@ -560,7 +564,7 @@ defmodule ConsoleWeb.Record do
             true -> "down"
           end,
         services:
-          for name <- d["services"] || [] do
+          for name <- services do
             container =
               if(up, do: Enum.find(status["containers"] || [], &(&1["Service"] == name)))
 
@@ -587,11 +591,12 @@ defmodule ConsoleWeb.Record do
                     else: @inside[name] || ""
                   )
 
+                # Not published: a port inside the pod, no door on the host.
                 [
                   %{
                     label: name,
                     path: path,
-                    kind: "port",
+                    kind: "inside",
                     port: nil,
                     href: nil,
                     why: why,
@@ -616,7 +621,29 @@ defmodule ConsoleWeb.Record do
     end
   end
 
-  # The ports each service publishes, off the compose file: `- 4001:4000` under `ports:`.
+  # A published port belongs to the service that listens on it, not to
+  # the one that declares it: in the pod the `pod` container owns
+  # the network namespace and so publishes every port — `- 4001:4000`
+  # under its `ports:` — while `app` is what answers on 4000. The reader
+  # wants the door on `app`; the pod stays in sight on Containers and
+  # on the Docker screen, which is Docker's own view. The rule holds
+  # whatever the topology: with a network a container, publisher and
+  # listener are one. A port no service claims stays with its publisher.
+  defp claimed(published, services) do
+    Enum.reduce(published, %{}, fn {publisher, pairs}, acc ->
+      Enum.reduce(pairs, acc, fn {host, inside}, acc ->
+        owner =
+          Enum.find(services, publisher, fn name ->
+            name != publisher and @inside[name] == ":" <> inside
+          end)
+
+        Map.update(acc, owner, [host], &(&1 ++ [host]))
+      end)
+    end)
+  end
+
+  # The ports each service publishes, off the compose file: `- 4001:4000`
+  # under `ports:`, as `{host, container}` pairs.
   defp published(path) do
     case File.read(path) do
       {:ok, text} ->
@@ -634,7 +661,13 @@ defmodule ConsoleWeb.Record do
               {svc, true, acc}
 
             bind ->
-              {svc, true, Map.update(acc, svc, [Enum.at(bind, 1)], &(&1 ++ [Enum.at(bind, 1)]))}
+              {svc, true,
+               Map.update(
+                 acc,
+                 svc,
+                 [{Enum.at(bind, 1), Enum.at(bind, 2)}],
+                 &(&1 ++ [{Enum.at(bind, 1), Enum.at(bind, 2)}])
+               )}
 
             inside and not Regex.match?(~r/^\s+#/, line) ->
               {svc, false, acc}

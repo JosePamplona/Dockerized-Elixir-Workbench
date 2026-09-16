@@ -360,8 +360,8 @@ export function toast(text, ms = 2200) {
 // --- the logs: the server pushes lines, the hook keeps and filters them ------
 // Two thousand lines and a search box: filtering on the server would
 // re-render them all across the socket on every keystroke.
-const SVC_COLORS = ["app", "database", "pgadmin", "network", "balancer", "migrate"]
-const svcColor = s => { const base = s.replace(/\d+$/, ""); return SVC_COLORS.includes(base) ? `var(--svc-${base})` : "var(--svc-network)" }
+const SVC_COLORS = ["app", "database", "pgadmin", "pod", "balancer", "migrate"]
+const svcColor = s => { const base = s.replace(/\d+$/, ""); return SVC_COLORS.includes(base) ? `var(--svc-${base})` : "var(--svc-pod)" }
 function levelOf(text) {
   if (/^\s*\[error\]|ERROR:|FATAL:|\*\* \(|CRITICAL|\berror\b.*\bfailed\b/i.test(text)) return "error"
   if (/^\s*\[warning\]|WARNING:|warning:|HINT:/.test(text)) return "warn"

@@ -20,6 +20,15 @@ defmodule Console.Docker do
   alias Console.Project
 
   @console "workbench_console"
+
+  @doc "`docker restart` on the console's own container; returns when the daemon has, if this process is still here."
+  def restart_console do
+    case System.find_executable("docker") do
+      nil -> {:error, :no_docker}
+      docker -> System.cmd(docker, ["restart", @console], stderr_to_stdout: true)
+    end
+  end
+
   @project "com.docker.compose.project"
   @service "com.docker.compose.service"
   # The house's images: the workbench's own, `dew-STACK-phxVERSION`
@@ -121,7 +130,7 @@ defmodule Console.Docker do
   defp order("adminer"), do: 3
   defp order("prometheus"), do: 4
   defp order("grafana"), do: 5
-  defp order("network"), do: 6
+  defp order("pod"), do: 6
   defp order("balancer"), do: 7
   defp order("migrate"), do: 8
   defp order(_), do: 9

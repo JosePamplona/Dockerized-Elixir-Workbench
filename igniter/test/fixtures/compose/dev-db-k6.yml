@@ -30,7 +30,7 @@ services:
   # everything exited, the status says down, and Up raises it whole.
   # What this gives up: a database that crashes is not restarted on its
   # own — the console's events feed says so, and Restart is a click.
-  network:
+  pod:
     image: registry.k8s.io/pause:3.10
     ports:
       # Application port (host:container).
@@ -65,7 +65,7 @@ services:
     # the BEAM's ports leave behind — the esbuild and tailwind watchers
     # of a dev server — and forwards the signals of a stop.
     init: true
-    network_mode: "service:network"
+    network_mode: "service:pod"
     env_file:
       - ./.env
     volumes:
@@ -92,7 +92,7 @@ services:
 
   database:
     image: postgres:latest
-    network_mode: "service:network"
+    network_mode: "service:pod"
     environment:
       POSTGRES_PASSWORD: postgres
       POSTGRES_USER: postgres
@@ -104,7 +104,7 @@ services:
       # dev, so the database has to be there from the first init.
       POSTGRES_DB: lorem_ipsum_prod
     depends_on:
-      - network
+      - pod
     healthcheck:
       # -h forces TCP: without it pg_isready asks the unix socket, which
       # the image's init already answers on its temporary server — so a
@@ -119,7 +119,7 @@ services:
 
   pgadmin:
     image: dpage/pgadmin4:latest
-    network_mode: "service:network"
+    network_mode: "service:pod"
     # `exec` on the last step, as the app's CMD: without it this shell
     # stayed PID 1 and every stop of pgadmin waited the 10 s of grace
     # and ended in SIGKILL (`die exit 137`, seen on the events feed).
@@ -149,7 +149,7 @@ services:
   k6:
     image: grafana/k6:latest
     profiles: [tools]
-    network_mode: "service:network"
+    network_mode: "service:pod"
     environment:
       BASE_URL: http://localhost:4000
     volumes:

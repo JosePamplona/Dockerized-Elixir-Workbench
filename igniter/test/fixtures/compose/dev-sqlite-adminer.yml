@@ -30,7 +30,7 @@ services:
   # everything exited, the status says down, and Up raises it whole.
   # What this gives up: a database that crashes is not restarted on its
   # own — the console's events feed says so, and Restart is a click.
-  network:
+  pod:
     image: registry.k8s.io/pause:3.10
     ports:
       # Application port (host:container).
@@ -64,7 +64,7 @@ services:
     # the BEAM's ports leave behind — the esbuild and tailwind watchers
     # of a dev server — and forwards the signals of a stop.
     init: true
-    network_mode: "service:network"
+    network_mode: "service:pod"
     env_file:
       - ./.env
     volumes:
@@ -94,7 +94,7 @@ services:
   # said here, and the file's own values stand for an Adminer run by hand.
   adminer:
     image: adminer:6
-    network_mode: "service:network"
+    network_mode: "service:pod"
     environment:
       # The SQLite file, where this deployment keeps it.
       WORKBENCH_DATABASE: /app/src/lorem_ipsum_dev.db

@@ -30,7 +30,7 @@ services:
   # everything exited, the status says down, and Up raises it whole.
   # What this gives up: a database that crashes is not restarted on its
   # own — the console's events feed says so, and Restart is a click.
-  network:
+  pod:
     image: registry.k8s.io/pause:3.10
     ports:
       # Application port (host:container).
@@ -64,7 +64,7 @@ services:
     # the BEAM's ports leave behind — the esbuild and tailwind watchers
     # of a dev server — and forwards the signals of a stop.
     init: true
-    network_mode: "service:network"
+    network_mode: "service:pod"
     env_file:
       - ./.env
     volumes:
@@ -91,7 +91,7 @@ services:
 
   database:
     image: mcr.microsoft.com/mssql/server:2022-latest
-    network_mode: "service:network"
+    network_mode: "service:pod"
     environment:
       # Microsoft's licence, accepted by running the image at all.
       ACCEPT_EULA: "Y"
@@ -103,7 +103,7 @@ services:
     volumes:
       - /var/opt/mssql
     depends_on:
-      - network
+      - pod
     healthcheck:
       # mssql-tools18 is where the 2022 image ships sqlcmd; -C trusts
       # the server's own certificate, -b fails the command on an error.
@@ -124,7 +124,7 @@ services:
   # said here, and the file's own values stand for an Adminer run by hand.
   adminer:
     image: adminer:6
-    network_mode: "service:network"
+    network_mode: "service:pod"
     environment:
       WORKBENCH_SERVER: 127.0.0.1:1433
       WORKBENCH_DATABASE: lorem_ipsum_dev

@@ -33,9 +33,9 @@ defmodule WorkbenchIgniter.DeploymentsTest do
     read = Deployments.read(dir, ~w(postgres pgadmin))
 
     assert %{baked: true, in_sync: true, stray: [], missing: []} = read.dev
-    assert read.dev.services == ~w(network app database pgadmin)
+    assert read.dev.services == ~w(pod app database pgadmin)
     assert %{baked: true, in_sync: true} = read.prod
-    assert read.prod.services == ~w(network app migrate database pgadmin)
+    assert read.prod.services == ~w(pod app migrate database pgadmin)
     # The scaled file has no pgAdmin to render and its replicas stand for app.
     assert %{baked: true, in_sync: true, stray: [], missing: []} = read.scaled
     assert read.scaled.services == ~w(app1 app2 app3 app4 balancer migrate database)

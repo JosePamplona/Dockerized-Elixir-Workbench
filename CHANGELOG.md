@@ -16,6 +16,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **The console restarts itself.** Restart on its own row of the
+  Docker screen was refused ("./wb.sh console starts it again, from
+  the host"); it runs `docker restart workbench_console` now, sent to
+  the daemon from a process of its own so it is carried out whether
+  the console lives to see it, and the page reconnects when it is
+  back. The container keeps its image, mounts, env and port: a new
+  image or another workspace is still `./wb.sh console` from the host,
+  as the console says where it applies.
 - **The `project-design` skill.** How a project the workbench hosts is
   designed before it is generated, from the business to the shelf:
   the criteria that hold across the steps in its SKILL.md — every step
@@ -345,6 +353,40 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **The pod's service is `pod`.** The pause container that owns the
+  workspace's network namespace was the service `network`, the word
+  Compose and Docker use for a network: `network_mode: service:network`
+  read as a riddle, and a `network` row on the console read as a
+  network. It is `pod` now, in the compose template, its fixtures, the
+  console (the container's order, its shell-less row, its restart's
+  reason, the colour its log lines wear, `svc-pod` in the tokens) and
+  the igniter's README. A workspace baked before keeps `network` in its
+  files until its next `bake`; a deployment that is up then must come
+  down before the next `up`, since its old container holds the ports
+  the new `pod` publishes — `up` says so and refuses, rather than
+  failing on the ports after the build.
+- **The door on the host is the app's.** A port the compose publishes
+  belongs to the service that listens on it, not to the one that
+  declares it: in the pod the `network` container owns the network
+  namespace and so declares every port, and Services & Doors and the
+  Record's deployments said `network localhost:4000` with `app` inside.
+  Now `app` wears `localhost:4000`, and Services & Doors lists only the
+  doors on the host — the ports the compose publishes and the routes;
+  a port inside the pod (`database :5432`), the pod itself and the
+  one-shot `migrate` are on Containers and on the Deployments sheet,
+  the whole map, where an inside port wears the hollow square. The
+  Docker screen keeps Docker's own view. A port no service claims
+  stays with its publisher.
+- **A port inside the pod wears a hollow square.** On Services &
+  Doors and the Record's addresses, a service the compose publishes on
+  the host (`localhost:4001`) keeps its solid blue square, and one
+  whose port lives inside the pod only (`:5432`) wears the same blue as
+  an outline: the layer kept, the opening not. It was one solid square
+  for both, told apart only by which could be pressed. A third kind of
+  address, `inside`, beside `route` and `port`.
+- **Project before Cartridges in the tab row.** The two swap places:
+  Deploy, Jobs, Logs, Terminal, Project, Cartridges, Cluster, Docker,
+  in the miniature of the Interface tab too.
 - **`./wb.sh help` reads like a CLI's.** One line of summary a
   command, in the imperative, and its options in an aligned list with
   their defaults; the reasons and the history went where they were
@@ -1136,6 +1178,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **A project made from the console gets port 4000.** `new` asks
+  for the first free host port from 4000 by connecting to the
+  loopback, and run inside the console's container that loopback is
+  the container's own, where the console itself listens on 4000: every
+  project made from the console was given 4001, and `up` from the
+  console would have refused a workspace baked on 4000 as held by a
+  host process. In the console the answer is Docker's now — the host
+  ports its containers publish, over the socket the console mounts —
+  and on the host the loopback's, as before (`port_held`).
 - **Opening a compose file on Deploy no longer widens the rail's right
   air.** The rail's scrollbar gutter, measured by the Rail hook and
   given back by the rail's right padding, was written on the app's

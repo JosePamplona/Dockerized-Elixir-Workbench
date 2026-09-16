@@ -156,7 +156,7 @@ The workbench's service colours, which its logs already use to tell services apa
 | `series-2` | `{role("svc-database","light")}` | `{role("svc-database","light")}` | the database |
 | `series-3` | `{role("svc-pgadmin","light")}` | `{role("svc-pgadmin","light")}` | pgAdmin |
 | `series-4` | `{role("svc-balancer","light")}` | `{role("svc-balancer","light")}` | the balancer |
-| `series-5` | `{role("svc-network","light")}` | `{role("svc-network","light")}` | the network container |
+| `series-5` | `{role("svc-pod","light")}` | `{role("svc-pod","light")}` | the pod container |
 
 Fills sit at `0.18` opacity light, `0.22` dark; strokes use the full color. **Don't backfill these tokens to non-chart types.**
 
@@ -277,7 +277,9 @@ def components_css():
      The layer, as an 8px square before the label — the mark the logs'
      service filter already uses, meaning "which layer answers here":
        .door-route  (default) violet, addr-route: a route the project offers
-       .door-port   blue, addr-port: a port the compose publishes
+       .door-port   blue, addr-port: a port the compose publishes on the host
+       .door-inside the same blue, hollow: a port inside the pod, no door on
+                    the host (database:5432) — the layer kept, the opening not
      (prefixed, because `.console` is the LiveView console's own root.)
      A route is written on its port — <span><em>:4001</em>/dev/mailbox</span>,
      the port dimmed — because it rides on one; a port is written whole.
@@ -505,6 +507,7 @@ def components_css():
 /* The layer square: the logs' 8px service swatch, saying which layer answers. */
 .door-ref::before{content:"";width:8px;height:8px;border-radius:2px;flex:none;background:var(--addr-route)}
 .door-ref.door-port::before{background:var(--addr-port)}
+.door-ref.door-inside::before{background:none;box-shadow:inset 0 0 0 2px var(--addr-port)}
 /* The reading, attached inside the border: the chip's plate behind the box's own line. */
 .door-ref:has(.read){padding-right:0}
 .door-ref .read{display:inline-flex;align-items:center;gap:5px;align-self:stretch;margin:-3px 0 -3px 1px;padding:3px 8px;border-left:1px solid var(--line);border-radius:0 2px 2px 0;font-family:var(--mono);font-style:normal;font-weight:500;font-size:11px;background:var(--surface-2);color:var(--muted)}

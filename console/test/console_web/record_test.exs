@@ -27,7 +27,7 @@ defmodule ConsoleWeb.RecordTest do
         "Health" => "healthy",
         "Image" => "postgres:latest"
       },
-      %{"Service" => "network", "State" => "running", "Health" => "", "Image" => "pause"}
+      %{"Service" => "pod", "State" => "running", "Health" => "", "Image" => "pause"}
     ],
     "git" => %{
       "repo" => true,
@@ -102,14 +102,14 @@ defmodule ConsoleWeb.RecordTest do
           "in_sync" => true,
           "stray" => [],
           "missing" => [],
-          "services" => ~w(network app database)
+          "services" => ~w(pod app database)
         },
         "prod" => %{
           "baked" => true,
           "in_sync" => false,
           "stray" => ["grafana"],
           "missing" => [],
-          "services" => ~w(network app migrate database grafana)
+          "services" => ~w(pod app migrate database grafana)
         },
         "scaled" => %{
           "baked" => false,
@@ -240,7 +240,7 @@ defmodule ConsoleWeb.RecordTest do
     assert elem(ecto.origin, 0) == "from birth"
     assert ecto.params == [{"--database postgres", true}]
     # The database's port, with what docker compose ps says of its container.
-    assert [%{label: "database", path: ":5432", kind: "port", read: {"healthy", "good"}}] =
+    assert [%{label: "database", path: ":5432", kind: "inside", read: {"healthy", "good"}}] =
              ecto.addresses
 
     assert Record.hrefs(page) == [
@@ -257,13 +257,43 @@ defmodule ConsoleWeb.RecordTest do
     assert %{deploy: "dev", baked: true, in_sync: true, status: "up", present: true} = dev
 
     assert Enum.map(dev.services, &{&1.label, &1.path, &1.read}) == [
-             {"network", "", {"running", "good"}},
+             {"pod", "", {"running", "good"}},
              {"app", ":4000", {"healthy", "good"}},
              {"database", ":5432", {"healthy", "good"}}
            ]
 
     assert %{deploy: "prod", in_sync: false, stray: ["grafana"], status: "down", present: false} =
              prod
+
+    # A published port goes to the service that listens on it: the pod
+    # container declares 4001:4000 and 5433:5432, app and the
+    # database wear them; one no service claims stays with its publisher.
+    ws = Path.join(System.tmp_dir!(), "record_test_#{System.unique_integer([:positive])}")
+    File.mkdir_p!(ws)
+
+    File.write!(Path.join(ws, "docker-compose.yml"), """
+    services:
+      pod:
+        image: pause
+        ports:
+          - 4001:4000
+          - 5433:5432
+          - 9999:7777
+      app:
+        network_mode: service:pod
+      database:
+        network_mode: service:pod
+    """)
+
+    [dev | _] = Record.deployments(Map.put(@status, "workspace", ws))
+
+    assert Enum.map(dev.services, &{&1.label, &1.path, &1.kind, &1.href}) == [
+             {"pod", "localhost:9999", "port", "http://localhost:9999"},
+             {"app", "localhost:4001", "port", "http://localhost:4001"},
+             {"database", "localhost:5433", "port", "http://localhost:5433"}
+           ]
+
+    File.rm_rf!(ws)
 
     # Stopped: the containers are there, none running — dev after a Stop.
     stopped = Map.put(@status, "deployment", nil)
@@ -324,7 +354,7 @@ defmodule ConsoleWeb.RecordTest do
     # Not published — the status says no port — it is the service's port, read off docker compose ps.
     unpublished = put_in(status, ["ports", "pgadmin"], nil)
 
-    assert [%{label: "pgadmin", path: ":5050", kind: "port", read: {"running", "good"}}] =
+    assert [%{label: "pgadmin", path: ":5050", kind: "inside", read: {"running", "good"}}] =
              Enum.find(
                Record.page(unpublished, @catalog).cartridges,
                &(&1.c["name"] == "pgadmin")

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Temas de terminal — cinco candidatos y la casa</title>
+<style>
+:root{--ink:#1D1424;--muted:#6B5C76;--line:#D6CBDA;--surface:#FBF8FC;--ground:#F2EDF3;--accent:#9A7A3E;--good:#2E8B57;--bad:#C0392B;--warn:#B7791F}
+body{margin:0;padding:32px 28px 80px;background:var(--ground);color:var(--ink);font:15px/1.55 "Source Serif 4",Georgia,serif}
+h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;text-transform:uppercase;letter-spacing:.08em;margin:0 0 10px}
+h1{font-size:28px}h2{font-size:20px;margin-top:40px}h3{font-size:15px;color:var(--muted);margin-top:18px}
+p{max-width:72ch}.lede{color:var(--muted)}
+code,.mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:12.5px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:18px 22px;margin-top:22px}
+.card .src{color:var(--muted);font-size:13px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px}
+@media (max-width:900px){.pair{grid-template-columns:1fr}}
+.term{border-radius:3px;padding:10px 14px;font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:12px;line-height:1.55;white-space:pre;overflow-x:auto}
+.term .t{opacity:.6}.term .d{opacity:.6}.term b{font-weight:600}
+.none{border:1px dashed var(--line);border-radius:3px;padding:14px;color:var(--muted);font-size:13px;display:flex;align-items:center}
+.sw{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin-top:8px}
+.sw div{border-radius:3px;padding:6px 6px 4px;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10.5px;line-height:1.3}
+.sw div small{display:block;opacity:.85}
+.sw div.low{outline:2px solid var(--bad);outline-offset:-2px}
+table{border-collapse:collapse;width:100%;margin-top:12px;font-size:13.5px;background:var(--surface)}
+th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-family:"Barlow Condensed","Arial Narrow",sans-serif;text-transform:uppercase;letter-spacing:.08em;font-size:12px;color:var(--muted)}
+td.num{text-align:right;font-family:"IBM Plex Mono",monospace;font-size:12.5px}
+.ok{color:var(--good)}.no{color:var(--bad)}.mid{color:var(--warn)}
+.verdict{border-left:4px solid var(--accent);padding:12px 18px;background:var(--surface);margin-top:18px}
+.legend{font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+<h1>Temas de terminal: cinco candidatos y la casa</h1>
+<p class="lede">Una página para decidir el tema por defecto del terminal de la consola: los cinco temas más portados a terminales hoy, Catppuccin, Tokyo Night, Gruvbox, Nord y Dracula, contra la paleta propia de la casa, derivada de los tonos del diseño. Cada uno con sus dieciséis colores ANSI y las mismas líneas de muestra que dibuja la miniatura de la pestaña Interface. Se retira cuando se decida; el CHANGELOG guarda la decisión.</p>
+
+<h2>Los criterios</h2>
+<p>La consola tiene dos suelos, papel y oscuro, y cada línea de log lleva su color: rojo un error, amarillo un aviso, verde un contenedor sano. Lo que se mide:</p>
+<ul>
+<li><b>Contraste sobre el suelo de la casa.</b> Los grounds del terminal son de la consola (<code>#120B17</code> oscuro, <code>#FDFBFE</code> papel); un tema entra con sus dieciséis colores y su tinta, no con su fondo. Cada color se mide contra ese suelo; el texto pide <b>4,5:1</b>, y un color por debajo lleva marco rojo.</li>
+<li><b>Versión clara oficial.</b> Sin ella, el tema solo puede ser el oscuro y el claro sigue siendo otra cosa.</li>
+<li><b>Armonía con la consola,</b> que es morada con acento dorado: un tema de base fría y violeta casa mejor que uno cálido.</li>
+<li><b>Popularidad,</b> por ports oficiales a terminales, editores y herramientas.</li>
+</ul>
+<p class="legend">Los números de contraste se calculan aquí, en la página, con la fórmula de WCAG 2; los valores de cada tema vienen de su fuente oficial, anotada en cada tarjeta.</p>
+
+<div id="cards"></div>
+
+<h2>Resumen</h2>
+<div id="summary"></div>
+
+<h2>Veredicto</h2>
+<div class="verdict">
+<p><b>Por los números:</b> en oscuro Catppuccin Mocha tiene el mínimo más alto sobre el suelo de la casa (8,4:1), Tokyo Night le sigue (7,3), Dracula lee bien (6,2), Nord roza el mínimo (4,7, su rojo) y Gruvbox no lo alcanza en su fila normal (3,5). En papel ninguno de los cinco llega: Latte y Gruvbox Light caen a 2,5 y 2,4 en el amarillo, el de los avisos; Tokyo Night Day se queda en 3,8; Nord y Dracula no tienen versión clara.</p>
+<p><b>Decisión (2026-09-16): Nord.</b> Por gusto y por armonía: la paleta más sobria de las cinco, fría y sin estridencia, que se sienta en la consola sin competir con ella. Su rojo queda en 4,7:1 sobre el suelo oscuro, justo por encima del mínimo, y es lo que Nord es. Como no tiene versión clara, la casa la deriva: los tonos de Nord llevados al papel a 6:1 la fila normal y 4,5:1 la bright, con los grises de Polar Night y Snow Storm para tinta, negro y blanco; la tarjeta de Nord la muestra. Los dos juegos siguen en la pestaña Interface, y cualquiera de esta página se pega entero desde «As a file».</p>
+</div>
+
+<script>
+const THEMES = {"La casa": {"dark": {"bg": "#120B17", "fg": "#D9CFDF", "black": "#2C2036", "red": "#DE6154", "green": "#3F9A5D", "yellow": "#B67E1F", "blue": "#4B8BD5", "magenta": "#AC6FD2", "cyan": "#309696", "white": "#D9CFDF", "bright-black": "#8B7C96", "bright-red": "#F19B91", "bright-green": "#4FC777", "bright-yellow": "#E9A32C", "bright-blue": "#85B5EB", "bright-magenta": "#CD9FE9", "bright-cyan": "#2EC4C4", "bright-white": "#EFE7F2"}, "light": {"bg": "#FDFBFE", "fg": "#2B2133", "black": "#2B2133", "red": "#B03628", "green": "#256F3D", "yellow": "#815916", "blue": "#366497", "magenta": "#8148A5", "cyan": "#186C6C", "white": "#D6CBDA", "bright-black": "#8F819A", "bright-red": "#DE2F1B", "bright-green": "#1D8640", "bright-yellow": "#A0690C", "bright-blue": "#2F75C7", "bright-magenta": "#9D53CC", "bright-cyan": "#108282", "bright-white": "#EBE3EE"}, "src": "assets/design/palette.py"}, "Catppuccin": {"dark": {"bg": "#1e1e2e", "fg": "#cdd6f4", "black": "#45475a", "red": "#f38ba8", "green": "#a6e3a1", "yellow": "#f9e2af", "blue": "#89b4fa", "magenta": "#f5c2e7", "cyan": "#94e2d5", "white": "#bac2de", "bright-black": "#585b70", "bright-red": "#f38ba8", "bright-green": "#a6e3a1", "bright-yellow": "#f9e2af", "bright-blue": "#89b4fa", "bright-magenta": "#f5c2e7", "bright-cyan": "#94e2d5", "bright-white": "#a6adc8"}, "light": {"bg": "#eff1f5", "fg": "#4c4f69", "black": "#bcc0cc", "red": "#d20f39", "green": "#40a02b", "yellow": "#df8e1d", "blue": "#1e66f5", "magenta": "#ea76cb", "cyan": "#179299", "white": "#5c5f77", "bright-black": "#acb0be", "bright-red": "#d20f39", "bright-green": "#40a02b", "bright-yellow": "#df8e1d", "bright-blue": "#1e66f5", "bright-magenta": "#ea76cb", "bright-cyan": "#179299", "bright-white": "#6c6f85"}, "src": "https://catppuccin.com/palette (Mocha, Latte; el port de Alacritty para el mapa ANSI)"}, "Tokyo Night": {"dark": {"bg": "#1a1b26", "fg": "#c0caf5", "black": "#15161e", "red": "#f7768e", "green": "#9ece6a", "yellow": "#e0af68", "blue": "#7aa2f7", "magenta": "#bb9af7", "cyan": "#7dcfff", "white": "#a9b1d6", "bright-black": "#414868", "bright-red": "#ff899d", "bright-green": "#9fe044", "bright-yellow": "#faba4a", "bright-blue": "#8db0ff", "bright-magenta": "#c7a9ff", "bright-cyan": "#a4daff", "bright-white": "#c0caf5"}, "light": {"bg": "#e1e2e7", "fg": "#3760bf", "black": "#b4b5b9", "red": "#f52a65", "green": "#587539", "yellow": "#8c6c3e", "blue": "#2e7de9", "magenta": "#9854f1", "cyan": "#007197", "white": "#6172b0", "bright-black": "#a1a6c5", "bright-red": "#ff4774", "bright-green": "#5c8524", "bright-yellow": "#a27629", "bright-blue": "#358aff", "bright-magenta": "#a463ff", "bright-cyan": "#007ea8", "bright-white": "#3760bf"}, "src": "github.com/folke/tokyonight.nvim (extras/alacritty: Night, Day)"}, "Gruvbox": {"dark": {"bg": "#282828", "fg": "#ebdbb2", "black": "#282828", "red": "#cc241d", "green": "#98971a", "yellow": "#d79921", "blue": "#458588", "magenta": "#b16286", "cyan": "#689d6a", "white": "#a89984", "bright-black": "#928374", "bright-red": "#fb4934", "bright-green": "#b8bb26", "bright-yellow": "#fabd2f", "bright-blue": "#83a598", "bright-magenta": "#d3869b", "bright-cyan": "#8ec07c", "bright-white": "#ebdbb2"}, "light": {"bg": "#fbf1c7", "fg": "#3c3836", "black": "#fbf1c7", "red": "#cc241d", "green": "#98971a", "yellow": "#d79921", "blue": "#458588", "magenta": "#b16286", "cyan": "#689d6a", "white": "#7c6f64", "bright-black": "#928374", "bright-red": "#9d0006", "bright-green": "#79740e", "bright-yellow": "#b57614", "bright-blue": "#076678", "bright-magenta": "#8f3f71", "bright-cyan": "#427b58", "bright-white": "#3c3836"}, "src": "github.com/morhetz/gruvbox (colors/gruvbox.vim; el mapa ANSI de gruvbox-contrib)"}, "Nord": {"dark": {"bg": "#2e3440", "fg": "#d8dee9", "black": "#3b4252", "red": "#bf616a", "green": "#a3be8c", "yellow": "#ebcb8b", "blue": "#81a1c1", "magenta": "#b48ead", "cyan": "#88c0d0", "white": "#e5e9f0", "bright-black": "#4c566a", "bright-red": "#bf616a", "bright-green": "#a3be8c", "bright-yellow": "#ebcb8b", "bright-blue": "#81a1c1", "bright-magenta": "#b48ead", "bright-cyan": "#8fbcbb", "bright-white": "#eceff4"}, "light": {"bg": "#ECEFF4", "fg": "#2E3440", "black": "#2E3440", "bright-black": "#4C566A", "white": "#D8DEE9", "bright-white": "#ECEFF4", "red": "#A2424B", "bright-red": "#BA555E", "green": "#4A6B2E", "bright-green": "#588037", "yellow": "#7E5C16", "bright-yellow": "#976E1A", "blue": "#3C648D", "bright-blue": "#4878A8", "magenta": "#964087", "bright-magenta": "#B34FA1", "cyan": "#306979", "bright-cyan": "#397D91"}, "src": "nordtheme.com/docs/colors-and-palettes (el mapa ANSI de sus ports de terminal); la versión clara es de la casa, derivada de los tonos de Nord (assets/design/palette.py, nord_light), porque Nord no tiene una"}, "Dracula": {"dark": {"bg": "#282a36", "fg": "#f8f8f2", "black": "#21222c", "red": "#ff5555", "green": "#50fa7b", "yellow": "#f1fa8c", "blue": "#bd93f9", "magenta": "#ff79c6", "cyan": "#8be9fd", "white": "#f8f8f2", "bright-black": "#6272a4", "bright-red": "#ff6e6e", "bright-green": "#69ff94", "bright-yellow": "#ffffa5", "bright-blue": "#d6acff", "bright-magenta": "#ff92df", "bright-cyan": "#a4ffff", "bright-white": "#ffffff"}, "light": null, "src": "spec.draculatheme.com"}};
+const HOUSE = {dark:"#120B17", light:"#FDFBFE"};
+const ORDER = ["black","red","green","yellow","blue","magenta","cyan","white","bright-black","bright-red","bright-green","bright-yellow","bright-blue","bright-magenta","bright-cyan","bright-white"];
+const CHROMA = ["red","green","yellow","blue","magenta","cyan"];
+function lum(h){ const c=h.replace("#",""); const [r,g,b]=[0,2,4].map(i=>parseInt(c.substr(i,2),16)/255).map(x=>x<=0.03928?x/12.92:Math.pow((x+0.055)/1.055,2.4)); return 0.2126*r+0.7152*g+0.0722*b }
+function cr(a,b){ const la=lum(a), lb=lum(b); return (Math.max(la,lb)+0.05)/(Math.min(la,lb)+0.05) }
+function sample(p, ground){
+  const c = k => p[k];
+  return `<div class="term" style="background:${ground};color:${p.fg}">`+
+`<span class="t">21:16:30.416</span> <span style="color:${c("magenta")}">app</span>       <span style="color:${c("yellow")}">warning:</span> variable "valid?" is unused
+<span class="t">17:00:49.002</span> <span style="color:${c("magenta")}">app</span>       [info] Running ConsoleWeb.Endpoint with Bandit 1.12.5 at <span style="color:${c("blue")}">0.0.0.0:4000</span>
+<span class="t">17:07:17.401</span> <span style="color:${c("magenta")}">app</span>       [info] <b>GET</b> /deploy · Sent <span style="color:${c("green")}">200</span> in 24ms
+<span class="t">17:07:17.409</span> <span style="color:${c("magenta")}">app</span>       <span class="d">[debug] Processing with ConsoleWeb.ConsoleLive.__live__/0</span>
+<span class="t">11:04:38.442</span> <span style="color:${c("cyan")}">database</span>  LOG:  database system is ready to accept connections
+<span class="t">17:52:13.680</span> <span style="color:${c("magenta")}">app</span>       <span style="color:${c("red")}">[error] ** (Bandit.HTTPError) Read timeout</span>
+ <span style="color:${c("bright-green")}">✔</span> Container app  <span style="color:${c("bright-green")}">Healthy</span>   <span style="color:${c("bright-black")}">2.1s</span>   <span style="color:${c("bright-yellow")}">⚠</span> <span style="color:${c("bright-red")}">✘</span> <span style="color:${c("bright-blue")}">bright</span> <span style="color:${c("bright-magenta")}">row</span> <span style="color:${c("bright-cyan")}">here</span> <span style="color:${c("black")}">black</span> <span style="color:${c("white")}">white</span> <span style="color:${c("bright-white")}">bright white</span>`+
+`</div>`;
+}
+function swatches(p, ground){
+  return `<div class="sw">`+ORDER.map(k=>{ const v=p[k], k2=cr(v,ground), low=CHROMA.includes(k.replace("bright-",""))&&k2<4.5; const ink = lum(v)>0.3?"#1D1424":"#F5EEF7"; return `<div class="${low?"low":""}" style="background:${v};color:${ink}">${k}<small>${v} · ${k2.toFixed(1)}:1</small></div>` }).join("")+`</div>`;
+}
+function minOf(p, ground, bright){ return Math.min(...CHROMA.map(k=>cr(p[(bright?"bright-":"")+k], ground))) }
+const cards=document.getElementById("cards"), rows=[];
+for (const [name, t] of Object.entries(THEMES)) {
+  let html=`<div class="card"><h2 style="margin-top:0">${name}</h2><p class="src">Fuente: ${t.src}. Fondo propio: ${t.dark?t.dark.bg:"—"}${t.light?" / "+t.light.bg:""}.</p><div class="pair">`;
+  for (const g of ["dark","light"]) {
+    const p=t[g];
+    if (!p) { html+=`<div class="none">Sin versión ${g==="dark"?"oscura":"clara"} oficial.</div>`; continue }
+    html+=`<div><h3>${g==="dark"?"Sobre el suelo oscuro de la casa":"Sobre el papel de la casa"} · mínimo normal ${minOf(p,HOUSE[g],false).toFixed(1)}:1 · bright ${minOf(p,HOUSE[g],true).toFixed(1)}:1</h3>${sample(p,HOUSE[g])}${swatches(p,HOUSE[g])}</div>`;
+  }
+  html+=`</div></div>`; cards.insertAdjacentHTML("beforeend", html);
+  rows.push({name, dn:t.dark?minOf(t.dark,HOUSE.dark,false):null, db:t.dark?minOf(t.dark,HOUSE.dark,true):null, ln:t.light?minOf(t.light,HOUSE.light,false):null, lb:t.light?minOf(t.light,HOUSE.light,true):null});
+}
+const cls=v=>v==null?"":(v>=4.5?"ok":(v>=3?"mid":"no"));
+document.getElementById("summary").innerHTML=`<table><tr><th>tema</th><th>oscuro · normal (mín.)</th><th>oscuro · bright (mín.)</th><th>claro · normal (mín.)</th><th>claro · bright (mín.)</th><th>versión clara</th></tr>`+
+rows.map(r=>`<tr><td>${r.name}</td><td class="num ${cls(r.dn)}">${r.dn?r.dn.toFixed(1)+":1":"—"}</td><td class="num ${cls(r.db)}">${r.db?r.db.toFixed(1)+":1":"—"}</td><td class="num ${cls(r.ln)}">${r.ln?r.ln.toFixed(1)+":1":"—"}</td><td class="num ${cls(r.lb)}">${r.lb?r.lb.toFixed(1)+":1":"—"}</td><td>${r.ln?"sí":"no"}</td></tr>`).join("")+`</table><p class="legend">Mínimo entre los seis cromáticos (rojo, verde, amarillo, azul, magenta, cian) de cada fila, sobre el suelo de la casa. Verde ≥ 4,5:1, ámbar entre 3 y 4,5, rojo por debajo.</p>`;
+</script>
+</body>
+</html>

@@ -239,19 +239,97 @@ defmodule Console.Docker do
 
   # --- images -----------------------------------------------------------------
 
-  @doc "The images in scope, grouped by ID, and the untagged ones counted."
+  @doc """
+  Where an image's name has a page: Docker Hub for a name with no
+  registry — `postgres:16` is an official image, `hub.docker.com/_/postgres`;
+  `hexpm/elixir:…` a repository, `hub.docker.com/r/hexpm/elixir` — and
+  Microsoft's registry for `mcr.microsoft.com/…`. Nil for a local image
+  (`lorem-ipsum:local`, the workbench's own) and for a registry with no
+  page to send the reader to (`registry.k8s.io/pause`).
+  """
+  def repo_url(name) do
+    repo = name |> String.split("@") |> hd() |> strip_tag()
+
+    case String.split(repo, "/") do
+      ["mcr.microsoft.com" | path] ->
+        "https://mcr.microsoft.com/en-us/artifact/mar/#{Enum.join(path, "/")}/about"
+
+      [first | _] = parts ->
+        cond do
+          String.contains?(first, ".") or String.contains?(first, ":") or first == "localhost" ->
+            nil
+
+          length(parts) == 1 and hub_official?(first) ->
+            "https://hub.docker.com/_/#{first}"
+
+          length(parts) == 2 ->
+            "https://hub.docker.com/r/#{repo}"
+
+          true ->
+            nil
+        end
+    end
+  end
+
+  # The tag comes off the last segment alone: a registry's port is not a tag.
+  defp strip_tag(repo) do
+    repo
+    |> String.split("/")
+    |> List.update_at(-1, &(&1 |> String.split(":") |> hd()))
+    |> Enum.join("/")
+  end
+
+  # A one-word name is Docker Hub's official image when it is one the
+  # house pulls; a one-word name of a local build (`workbench`,
+  # `lorem-ipsum`) is not on the Hub, and a link would land on nothing.
+  @hub_official ~w(postgres mysql adminer nginx)
+  defp hub_official?(name), do: name in @hub_official
+
+  @doc "The images in scope, grouped by ID, the untagged ones counted, and who uses each."
   def images(status, scope) do
     case docker(["image", "ls", "--format", "{{json .}}"]) do
-      {out, 0} -> group_images(decode_lines(out), app_repo(status), scope)
+      {out, 0} -> group_images(decode_lines(out), app_repo(status), scope, image_users())
       _ -> %{images: [], dangling: 0, dangling_size: nil}
+    end
+  end
+
+  # The containers on each image, by the image's short ID: what `prune
+  # IMAGE` would refuse, said on the row before it is asked. `docker ps`
+  # prints the reference a container was made with, not its image's ID,
+  # so the IDs come off inspect.
+  defp image_users do
+    with {ids, 0} <- docker(["ps", "--all", "--quiet"]),
+         ids when ids != [] <- String.split(ids, "\n", trim: true),
+         {out, 0} <- docker(["container", "inspect", "--format", "{{.Image}}\t{{.Name}}" | ids]) do
+      out
+      |> String.split("\n", trim: true)
+      |> Enum.reduce(%{}, fn line, acc ->
+        case String.split(line, "\t", parts: 2) do
+          [image, name] ->
+            short = image |> String.replace_prefix("sha256:", "") |> String.slice(0, 12)
+
+            Map.update(
+              acc,
+              short,
+              [String.trim_leading(name, "/")],
+              &(&1 ++ [String.trim_leading(name, "/")])
+            )
+
+          _ ->
+            acc
+        end
+      end)
+    else
+      _ -> %{}
     end
   end
 
   @doc """
   `image ls` rows into images: one per ID with every name it wears,
-  the untagged apart, this workspace's — the app's, the house's — first.
+  the untagged apart, this workspace's — the app's, the house's — first;
+  `users` is the containers on each ID, the row's `used_by`.
   """
-  def group_images(rows, app, scope) do
+  def group_images(rows, app, scope, users \\ %{}) do
     grouped =
       rows
       |> Enum.group_by(& &1["ID"])
@@ -267,6 +345,7 @@ defmodule Console.Docker do
           age: first["CreatedSince"],
           created: first["CreatedAt"],
           dangling: names == [],
+          used_by: Enum.sort(users[id] || []),
           mine?: Enum.any?(rs, &(house?(&1["Repository"]) or &1["Repository"] == app))
         }
       end)

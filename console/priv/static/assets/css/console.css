@@ -1637,9 +1637,12 @@ header.band ::selection{background:color-mix(in srgb,var(--board-ink) 15%,transp
 /* The workbench's own colours, as it prints them: bold for a name, dark red
    for an error, blue underline for a link. Console.ANSI turns the escapes
    into these; the palette is the terminal ground's. */
-.ansi-b{font-weight:600}.ansi-d{color:var(--term-dim)}.ansi-u{text-decoration:underline}
-.ansi-fg-1,.ansi-fg-9{color:var(--ansi-red)}.ansi-fg-2,.ansi-fg-10{color:var(--ansi-green)}.ansi-fg-3,.ansi-fg-11{color:var(--ansi-yellow)}
-.ansi-fg-4,.ansi-fg-12{color:var(--ansi-blue)}.ansi-fg-5,.ansi-fg-13{color:var(--ansi-magenta)}.ansi-fg-6,.ansi-fg-14{color:var(--ansi-cyan)}
+/* Sixteen colours, one token each (2026-09-16; the bright row wore the normal row's, and black and white had none). Dim is opacity, not a colour: a dim red stays red, as a terminal draws it. */
+.ansi-b{font-weight:600}.ansi-d{opacity:.6}.ansi-u{text-decoration:underline}
+.ansi-fg-0{color:var(--ansi-black)}.ansi-fg-1{color:var(--ansi-red)}.ansi-fg-2{color:var(--ansi-green)}.ansi-fg-3{color:var(--ansi-yellow)}
+.ansi-fg-4{color:var(--ansi-blue)}.ansi-fg-5{color:var(--ansi-magenta)}.ansi-fg-6{color:var(--ansi-cyan)}.ansi-fg-7{color:var(--ansi-white)}
+.ansi-fg-8{color:var(--ansi-bright-black)}.ansi-fg-9{color:var(--ansi-bright-red)}.ansi-fg-10{color:var(--ansi-bright-green)}.ansi-fg-11{color:var(--ansi-bright-yellow)}
+.ansi-fg-12{color:var(--ansi-bright-blue)}.ansi-fg-13{color:var(--ansi-bright-magenta)}.ansi-fg-14{color:var(--ansi-bright-cyan)}.ansi-fg-15{color:var(--ansi-bright-white)}
 .out .lk{background:none;border:0;padding:0;color:inherit;text-decoration:underline;cursor:pointer;font:inherit}
 /* A template puts a newline between one line's div and the next, and a
    pre-wrap container would print each as a blank line: the container
@@ -1703,7 +1706,11 @@ header.band ::selection{background:color-mix(in srgb,var(--board-ink) 15%,transp
    cells, dim, so the values stand in a line of their own. */
 .code-box .ln{display:block;white-space:pre-wrap}
 .code-box .k{display:inline-block;min-width:9ch;color:var(--term-dim)}
-.docker .toolbar .code-box.daemon{flex-basis:100%;min-width:0;margin-top:2px}
+/* The daemon's box is a viewport like the Logs screen's: the lines, and the controls in a strip under them. Inside it the code box keeps its type and its ink and loses its own frame, which the viewport draws. `build cache` is the widest key. */
+.docker .viewport.daemon{grid-template-rows:auto auto;flex:none}
+.docker .viewport.daemon .code-box{border:0;border-radius:0}
+.docker .viewport.daemon .code-box .k{min-width:13ch}
+.docker .viewport.daemon .nothing{margin:0;padding:8px 14px}
 .dtab .badge{font-family:var(--mono);font-size:10.5px;padding:1px 6px;border-radius:999px;background:var(--surface-2);color:var(--muted);letter-spacing:0}
 .dtab .badge.bad{background:var(--bad);color:#fff}
 /* A table wider than the rail's: it scrolls inside its own box, never the page. */
@@ -1714,6 +1721,9 @@ table.wide td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align
 table.wide td.k{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px}
 table.wide td.k.mono{font-family:var(--mono);font-weight:400;letter-spacing:0;text-transform:none}
 table.wide td.k .nm{display:block}
+/* A name that is a link to its registry's page reads as the name, and says so under the pointer. */
+table.wide td.k a.nm{color:inherit;text-decoration:none}
+table.wide td.k a.nm:hover,table.wide td.k a.nm:focus-visible{text-decoration:underline;outline:none}
 table.wide td .hint{display:block;font-size:11px;color:var(--muted);margin-top:3px;font-family:var(--mono);font-weight:400;letter-spacing:0;text-transform:none}
 /* Whose it is, when it is not this workspace's: the project, beside the name. */
 table.wide td .of{font-family:var(--mono);font-weight:400;letter-spacing:0;text-transform:none;font-size:11px;color:var(--soft);margin-left:8px}
@@ -1731,6 +1741,8 @@ table.wide td.wrap{white-space:normal}
    read down like the list it is, centred in its row. */
 table.wide td.ports .port+.port{margin-top:4px}
 table.wide td.ports .door-ref{white-space:nowrap}
+/* No layer square on a container's ports: this table is Docker's view, every port a published one, and the service is the row's first column — the square wore the service's colour here until 2026-09-16, the rail's shape with another meaning. */
+table.wide td.ports .door-ref::before{display:none}
 /* The actions read down from their left edge, as the rail's do: Logs at
    the same x on every row, Restart after it, and the shell in its own
    column — a row with fewer buttons leaves the tail empty instead of
@@ -1770,7 +1782,9 @@ table.wide tr.dead td.k,table.wide tr.theirs td.k{color:var(--muted)}
    pane is a column, and the one block that grows takes the rest of it,
    so there is one scroll and not the pane's on top of the block's. */
 .pdocs .dkdoc>pre.env{flex:1;min-height:0}
+/* The events' feed takes the document's height; the daemon's box, a viewport too since 2026-09-16, keeps its own — under this same selector it was given the feed's share and cut off. */
 .pdocs .dkdoc>.viewport{flex:1;min-height:160px}
+.pdocs .dkdoc>.viewport.daemon{flex:none;min-height:0}
 /* The 60px under a document is for its last paragraph not to sit on the
    edge; a block that ends where the pane ends does not want it. */
 .pdocs .dkdoc:has(>pre.env,>.viewport){padding-bottom:22px}

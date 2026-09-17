@@ -16,6 +16,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **Remove on the Docker screen's images and volumes.** Each row of
+  Images and of Volumes has a Remove, `./wb.sh prune NAME…` — every
+  name an image wears, a volume's — confirmed in Jobs like the other
+  prunes; unlit, naming them, while a container uses or mounts it —
+  the console's own on the workbench's image and build volume — since
+  docker would refuse it too, and while a removal is already asked. A
+  volume's title and confirmation say what an image's need not: its
+  data goes with it and does not come back; that is the way to start a
+  project's database clean without deleting the project, after a
+  `down`, since a stopped container still mounts it. `prune NAME…` is
+  the verb, refused on the same ground from the terminal, and an
+  image's row knows its users off `container inspect`.
 - **The console restarts itself.** Restart on its own row of the
   Docker screen was refused ("./wb.sh console starts it again, from
   the host"); it runs `docker restart workbench_console` now, sent to
@@ -355,6 +367,42 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **The terminal's sixteen are Nord's, and a Nord light of the
+  house's making on paper.** `Console.ANSI` told the sixteen colours
+  apart already; the sheet painted the bright row with the normal
+  row's and gave black and white nothing. Each has its token now, a
+  ground each. Nord was chosen among the five most ported terminal
+  themes on `console/temas-de-terminal.html` — Catppuccin, Tokyo
+  Night, Gruvbox, Nord, Dracula, against the house's own, each with
+  its contrasts on the console's grounds — for its sobriety and its
+  fit with the console; its red reads 4.7:1 on the dark ground, just
+  over the line. Nord has no light, so the house derives one: Nord's
+  hues deepened on paper to 6:1 the normal row and 4.5:1 the bright,
+  with a floor on saturation so the muted hues do not turn to mud,
+  and Polar Night and Snow Storm for ink, black and white
+  (`assets/design/palette.py`, `nord_light`). Dim (SGR 2) is opacity
+  now, so a dim red stays red. The- **The Docker screen's controls are the daemon's box's,** in a strip
+  under its lines, the way the Logs screen and a job's output carry
+  theirs: This workspace, The daemon and, on Containers, Stats, one
+  framed box over every document. And on Images a name links to its
+  page at the registry where there is one: Docker Hub's official
+  images (`postgres:16`) and repositories (`hexpm/elixir`), Microsoft's
+  registry for SQL Server; a local image, the workbench's own, or a
+  registry with no page stay names.
+- **The disk is in the daemon's box.** The four rows of `docker system
+  df` — images, containers, volumes, build cache, each with its count,
+  size, how many are in use and what is reclaimable — were a table
+  under Volumes; they are four lines of the daemon's box now, over
+  every document of the Docker screen, after the storage line that
+  names the root. Measured once per visit, saying so until it lands —
+  seconds, tens of them on a daemon with a hundred volumes — and again
+  after a job of the verbs that move the disk: up, build, bake, new,
+  delete, prune, a removal, an insert or eject, mix.
+- **A container's ports on the Docker screen wear no square.** The
+  address kept the rail's shape but its square was painted in the
+  service's colour, the same mark with another meaning; the table is
+  Docker's view, every port a published one, and the service is the
+  row's first column. The square goes, the address stays.
 - **The pod's service is `pod`.** The pause container that owns the
   workspace's network namespace was the service `network`, the word
   Compose and Docker use for a network: `network_mode: service:network`
@@ -1208,6 +1256,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   in wb.sh alike; and the terminal's lines keep their leading spaces
   (`white-space: pre-wrap`), which the page folded before.
 
+- **The containers table's since column no longer repeats the state.**
+  It showed `Exited (0) 7 minutes ago`, the state word and the exit code
+  the state column already carries, because only a running container's
+  `Up 4 hours (healthy)` was trimmed. Every status is now trimmed the
+  same way — the state word, its parenthesis, the health — to its time:
+  `4 hours`, `7 minutes ago`, `5 seconds ago`, nothing for a container
+  that never ran. The `ago` stays: how long it has been up and how long
+  since it stopped are different times (2026-09-16).
 - **A project made from the console gets port 4000.** `new` asks
   for the first free host port from 4000 by connecting to the
   loopback, and run inside the console's container that loopback is
@@ -1385,6 +1441,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Removed
 
+- **The Docker screen's three prune buttons** — the untagged images,
+  this workspace's build volumes, what other workspaces left. What each
+  removed is said in a note beside its table, with the `./wb.sh prune`
+  line that does it from the terminal; the untagged count and their
+  size stay on the note. Removing by the row is what the screen does
+  now, and the three sweeps are the terminal's.
 - **`probes:` leaves the cartridge manifest.** `console/0` had two kinds
   of address — the *doors* a cartridge opens on the app's port, and the
   *probes* "the console polls and shows on the board", which nothing

@@ -755,7 +755,7 @@ const asJsonc = frame => JSON.stringify({
 // of a removed one, and the colour of the number and the sign on each
 // (`--diff-<key>`, console.css), shown in the tab's sample, which has
 // one line of each — and the terminal's nine — its ground, ink and
-// dim, the six ANSI colours a line wears, and the lines' grounds (tokens.css, on the root:
+// dim, the sixteen ANSI colours a line wears, and the lines' grounds (tokens.css, on the root:
 // a value set here on the root's own style wins over the sheet's), red
 // an error's and yellow a warning's on the Logs screen and in a job's
 // output, shown in the miniature's terminal. Each role names the
@@ -773,17 +773,28 @@ const SETS = {
   },
   term: {
     key: "wb-console-term", root: "#term-swatches", data: "term", reset: "#term-reset", which: "#term-ground", word: "the terminal's",
-    groups: { term: "the terminal", ansi: "ANSI", lines: "lines" },
+    groups: { term: "the terminal", ansi: "ANSI", bright: "ANSI bright", lines: "lines" },
     roles: [
       { key: "term", group: "term", name: "ground", prop: "--term", vs: "terminal.background" },
       { key: "term-ink", group: "term", name: "ink", prop: "--term-ink", vs: "terminal.foreground" },
-      { key: "term-dim", group: "term", name: "dim", prop: "--term-dim", vs: "terminal.ansiBrightBlack" },
+      // Dim is the terminal's own — timestamps, comments — and VS Code has no name for it.
+      { key: "term-dim", group: "term", name: "dim", prop: "--term-dim", vs: "dew.terminal.dim" },
+      { key: "black", group: "ansi", name: "black", prop: "--ansi-black", vs: "terminal.ansiBlack" },
       { key: "red", group: "ansi", name: "red · errors", prop: "--ansi-red", vs: "terminal.ansiRed" },
       { key: "green", group: "ansi", name: "green", prop: "--ansi-green", vs: "terminal.ansiGreen" },
       { key: "yellow", group: "ansi", name: "yellow · warnings", prop: "--ansi-yellow", vs: "terminal.ansiYellow" },
       { key: "blue", group: "ansi", name: "blue", prop: "--ansi-blue", vs: "terminal.ansiBlue" },
       { key: "magenta", group: "ansi", name: "magenta", prop: "--ansi-magenta", vs: "terminal.ansiMagenta" },
       { key: "cyan", group: "ansi", name: "cyan", prop: "--ansi-cyan", vs: "terminal.ansiCyan" },
+      { key: "white", group: "ansi", name: "white", prop: "--ansi-white", vs: "terminal.ansiWhite" },
+      { key: "bright-black", group: "bright", name: "black", prop: "--ansi-bright-black", vs: "terminal.ansiBrightBlack" },
+      { key: "bright-red", group: "bright", name: "red", prop: "--ansi-bright-red", vs: "terminal.ansiBrightRed" },
+      { key: "bright-green", group: "bright", name: "green", prop: "--ansi-bright-green", vs: "terminal.ansiBrightGreen" },
+      { key: "bright-yellow", group: "bright", name: "yellow", prop: "--ansi-bright-yellow", vs: "terminal.ansiBrightYellow" },
+      { key: "bright-blue", group: "bright", name: "blue", prop: "--ansi-bright-blue", vs: "terminal.ansiBrightBlue" },
+      { key: "bright-magenta", group: "bright", name: "magenta", prop: "--ansi-bright-magenta", vs: "terminal.ansiBrightMagenta" },
+      { key: "bright-cyan", group: "bright", name: "cyan", prop: "--ansi-bright-cyan", vs: "terminal.ansiBrightCyan" },
+      { key: "bright-white", group: "bright", name: "white", prop: "--ansi-bright-white", vs: "terminal.ansiBrightWhite" },
       // The lines' grounds: washes the sheet lays at 8%, the tint at 5%
       // (console.css); VS Code has a name for the tint alone.
       { key: "line-error", group: "lines", name: "error", prop: "--line-error", vs: "dew.terminal.errorLine" },

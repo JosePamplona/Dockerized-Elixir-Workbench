@@ -87,6 +87,8 @@ defmodule Console.Verbs do
   def confirm?({:delete, _}, _project?), do: true
   # Prune removes what other workspaces left: always asked, whatever it is about.
   def confirm?({:prune, _}, _project?), do: true
+  # An image or a volume removed by name is a prune too: asked, whatever it is.
+  def confirm?({:remove, _}, _project?), do: true
   def confirm?({:new, _}, project?), do: project?
   def confirm?(_, _), do: false
 
@@ -106,7 +108,8 @@ defmodule Console.Verbs do
   @spec reread(kind()) :: :fast | :full | :all | :config | :none
   def reread({:config, _}), do: :config
 
-  def reread({verb, _}) when verb in [:stop, :down, :restart, :prune, :demo, :mix], do: :fast
+  def reread({verb, _}) when verb in [:stop, :down, :restart, :prune, :remove, :demo, :mix],
+    do: :fast
 
   def reread({verb, _}) when verb in [:up, :build, :insert, :eject, :commit, :bake], do: :full
   def reread({verb, _}) when verb in [:new, :delete], do: :all

@@ -131,6 +131,32 @@ defmodule Console.DockerTest do
 
     %{images: all} = Docker.group_images(@rows, "some-test", "daemon")
     assert ["e2af995615d0", "6a7e63393583", "d662b7dab1a0"] = Enum.map(all, & &1.id)
+
+    # Who uses each image, by ID: what Remove is unlit for.
+    %{images: [first, second | _]} =
+      Docker.group_images(@rows, "some-test", "daemon", %{
+        "6a7e63393583" => ["workbench_console", "lorem-app-1"]
+      })
+
+    assert first.used_by == []
+    assert second.used_by == ["lorem-app-1", "workbench_console"]
+  end
+
+  test "an image's name links to its registry's page where there is one" do
+    assert Docker.repo_url("postgres:16") == "https://hub.docker.com/_/postgres"
+
+    assert Docker.repo_url("hexpm/elixir:1.19.6-erlang-28.5.0.6-debian-bookworm-20260824-slim") ==
+             "https://hub.docker.com/r/hexpm/elixir"
+
+    assert Docker.repo_url("dpage/pgadmin4:latest") == "https://hub.docker.com/r/dpage/pgadmin4"
+
+    assert Docker.repo_url("mcr.microsoft.com/mssql/server:2022-latest") ==
+             "https://mcr.microsoft.com/en-us/artifact/mar/mssql/server/about"
+
+    assert Docker.repo_url("lorem-ipsum:local") == nil
+    assert Docker.repo_url("dew-ex1.19.6-erl28.5.0.6-phx1.8.13:0.11.0") == nil
+    assert Docker.repo_url("registry.k8s.io/pause:3.10") == nil
+    assert Docker.repo_url("localhost:5000/thing:1") == nil
   end
 
   test "the composes' secrets are masked, YAML punctuation included" do

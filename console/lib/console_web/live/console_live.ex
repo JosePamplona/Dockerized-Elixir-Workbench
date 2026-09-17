@@ -362,7 +362,9 @@ defmodule ConsoleWeb.ConsoleLive do
     # could have changed — the fast status after an up or a down, the
     # cartridges too after an insert, everything after new or delete.
     socket =
-      if job.state in [:done, :failed], do: reread(socket, Verbs.reread(job.kind)), else: socket
+      if job.state in [:done, :failed],
+        do: socket |> Docker.forget_disk(job.kind) |> reread(Verbs.reread(job.kind)),
+        else: socket
 
     {:noreply, socket}
   end

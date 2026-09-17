@@ -836,7 +836,7 @@ defmodule ConsoleWeb.WorkbenchDrawer do
           <section class="colours">
             <h5>Colours</h5>
             <p class="hint">
-              Its ground, ink and dim; the six ANSI colours, red for errors and yellow for warnings; and the lines' grounds: error, warning, and the one under the pointer. A set a ground, this one <span id="term-ground"></span>.
+              Its ground, ink and dim; the sixteen ANSI colours, normal and bright, red for errors and yellow for warnings; and the lines' grounds: error, warning, and the one under the pointer. A set a ground, this one <span id="term-ground"></span>.
             </p>
             <div class="groups" id="term-swatches">
               <div class="set">
@@ -848,7 +848,15 @@ defmodule ConsoleWeb.WorkbenchDrawer do
                 </div>
               </div>
               <div class="set">
-                <h6>ANSI</h6><div class="roles" data-term="ansi" aria-label="The six ANSI colours">
+                <h6>ANSI</h6><div class="roles" data-term="ansi" aria-label="The eight ANSI colours">
+                </div>
+              </div>
+              <div class="set">
+                <h6>ANSI bright</h6><div
+                  class="roles"
+                  data-term="bright"
+                  aria-label="The eight bright ANSI colours"
+                >
                 </div>
               </div>
               <div class="set">

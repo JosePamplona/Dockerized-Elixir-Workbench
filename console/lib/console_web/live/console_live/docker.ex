@@ -43,11 +43,31 @@ defmodule ConsoleWeb.ConsoleLive.Docker do
 
   def read(socket), do: socket
 
-  # The daemon's line, once.
-  defp ask_daemon(socket, %{daemon: nil}),
-    do: start_async(socket, {:dk, :daemon}, fn -> Docker.daemon() end)
+  # The daemon's line, once; and the disk it holds, measured once per
+  # visit and again after a job, which is when it changes — `system df`
+  # takes seconds, and the line says so until it lands.
+  defp ask_daemon(socket, dk) do
+    socket =
+      if is_nil(dk.daemon),
+        do: start_async(socket, {:dk, :daemon}, fn -> Docker.daemon() end),
+        else: socket
 
-  defp ask_daemon(socket, _dk), do: socket
+    if is_nil(dk.df),
+      do: start_async(socket, {:dk, :df}, fn -> Docker.df() end),
+      else: socket
+  end
+
+  # The verbs after which the disk is not what it was: what builds,
+  # pulls, writes a volume or removes. `system df` is seconds — 28 on a
+  # daemon with a hundred volumes and a build cache — so a stop, a
+  # restart or a commit does not ask for it again.
+  @disk_verbs [:up, :build, :bake, :new, :delete, :prune, :remove, :insert, :eject, :mix, :demo]
+
+  @doc "A job ended: after the verbs that move the disk, it is measured again on the next read."
+  def forget_disk(%{assigns: %{dk: dk}} = socket, {verb, _}) when verb in @disk_verbs,
+    do: assign(socket, dk: %{dk | df: nil})
+
+  def forget_disk(socket, _kind), do: socket
 
   # The readings of the document in front.
   defp ask_doc(socket, dk, status) do
@@ -62,13 +82,12 @@ defmodule ConsoleWeb.ConsoleLive.Docker do
       "images" ->
         start_async(socket, {:dk, :images}, fn -> Docker.images(status, scope) end)
 
-      # The list is milliseconds; the two measurements are seconds, and
-      # land on their own when they land.
+      # The list is milliseconds; the measurement is seconds, and lands
+      # on its own when it lands.
       "volumes" ->
         socket
         |> start_async({:dk, :volumes}, fn -> Docker.volumes(status, scope) end)
         |> start_async({:dk, :sizes}, fn -> Docker.volume_sizes() end)
-        |> start_async({:dk, :df}, fn -> Docker.df() end)
 
       "networks" ->
         start_async(socket, {:dk, :networks}, fn -> Docker.networks(status, scope) end)
@@ -163,12 +182,10 @@ defmodule ConsoleWeb.ConsoleLive.Docker do
     {:noreply, socket}
   end
 
-  # Always confirmed: the console runs wb.sh under --yes and asks itself.
-  def event("dk_prune", %{"what" => what}, socket) when what in ["", "images", "build"] do
-    Jobs.run({:prune, nil}, ["prune" | if(what == "", do: [], else: ["--" <> what])],
-      confirm: true
-    )
-
+  # An image by every name it wears, or a volume, through prune: confirmed like the rest.
+  def event("dk_remove", %{"names" => names}, socket) when is_binary(names) and names != "" do
+    names = String.split(names)
+    Jobs.run({:remove, hd(names)}, ["prune" | names], confirm: true)
     {:noreply, socket}
   end
 

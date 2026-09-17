@@ -133,42 +133,76 @@ defmodule ConsoleWeb.DockerScreen do
 
   defp toolbar(assigns) do
     ~H"""
-    <div class="toolbar">
-      <span class="label">Scope</span>
-      <button
-        class="btn"
-        type="button"
-        phx-click="dk_scope"
-        phx-value-scope="workspace"
-        aria-pressed={to_string(@dk.scope == "workspace")}
-        title="this workspace's compose project, and the console"
-      >This workspace</button>
-      <button
-        class="btn"
-        type="button"
-        phx-click="dk_scope"
-        phx-value-scope="daemon"
-        aria-pressed={to_string(@dk.scope == "daemon")}
-        title="everything on the daemon: the leftovers of the workspaces before this one included"
-      >The daemon</button>
-      <%= if @stats do %>
-        <span class="sep"></span>
+    <%!-- The daemon's box, with its controls in a strip under it, the way
+          the Logs screen and a job's output carry theirs (2026-09-16):
+          the lines the daemon says of itself and of its disk, and beneath
+          them the scope and, on Containers, Stats. --%>
+    <div class="viewport daemon">
+      <code :if={@dk.daemon} class="code-box daemon"><span
+        :for={{k, v} <- daemon_lines(@dk)}
+        class="ln"
+      ><span class="k">{k}</span>{v}</span></code>
+      <p :if={!@dk.daemon} class="nothing">Reading the daemon…</p>
+      <div class="toolbar controls">
+        <span class="label">Scope</span>
         <button
           class="btn"
           type="button"
-          phx-click="dk_stats"
-          aria-pressed={to_string(@dk.stats)}
-          title="docker stats, streamed only while this document is open"
-        >Stats</button>
-      <% end %>
-      {render_slot(@inner_block)}
-      <code :if={@dk.daemon} class="code-box daemon"><span
-        :for={{k, v} <- @dk.daemon}
-        class="ln"
-      ><span class="k">{k}</span>{v}</span></code>
+          phx-click="dk_scope"
+          phx-value-scope="workspace"
+          aria-pressed={to_string(@dk.scope == "workspace")}
+          title="this workspace's compose project, and the console"
+        >This workspace</button>
+        <button
+          class="btn"
+          type="button"
+          phx-click="dk_scope"
+          phx-value-scope="daemon"
+          aria-pressed={to_string(@dk.scope == "daemon")}
+          title="everything on the daemon: the leftovers of the workspaces before this one included"
+        >The daemon</button>
+        <%= if @stats do %>
+          <span class="sep"></span>
+          <button
+            class="btn"
+            type="button"
+            phx-click="dk_stats"
+            aria-pressed={to_string(@dk.stats)}
+            title="docker stats, streamed only while this document is open"
+          >Stats</button>
+        <% end %>
+        {render_slot(@inner_block)}
+      </div>
     </div>
     """
   end
+
+  # The daemon's lines with the disk's after `storage`, where the root
+  # is named: one a kind — images, containers, volumes, build cache —
+  # with the count, the size, how many are in use and what is
+  # reclaimable, as `system df` says; one line saying it is being
+  # measured until it is. It was a table under Volumes until 2026-09-16,
+  # and the disk is the daemon's, not the volumes'.
+  defp daemon_lines(%{daemon: daemon, df: df}) do
+    Enum.flat_map(daemon, fn
+      {"storage", _} = kv -> [kv | disk_lines(df)]
+      kv -> [kv]
+    end)
+  end
+
+  defp disk_lines(nil), do: [{"disk", "measuring: docker system df takes seconds…"}]
+
+  defp disk_lines(df),
+    do:
+      for(
+        r <- df,
+        do:
+          {disk_kind(r.type),
+           "#{r.total} · #{r.size} · #{r.active} in use · #{r.reclaimable} reclaimable"}
+      )
+
+  defp disk_kind("Local Volumes"), do: "volumes"
+  defp disk_kind(type), do: String.downcase(type)
 
   # --- Containers -----------------------------------------------------------------
 
@@ -218,10 +252,7 @@ defmodule ConsoleWeb.DockerScreen do
                     pills and the events do: one colour for one service
                     everywhere. --%>
               <%= for p <- c.ports, [host, inside] = String.split(p, "→") do %>
-                <div
-                  class="port"
-                  style={service_color(c.service) && "--addr-port:#{service_color(c.service)}"}
-                >
+                <div class="port">
                   <.door_ref
                     label={inside}
                     path={"localhost:#{host}"}
@@ -347,11 +378,22 @@ defmodule ConsoleWeb.DockerScreen do
         "ExitCode" => c.exit
       })
 
-  # `Up 39 minutes (healthy)` says the health twice; `Exited (1) 36 hours ago` says it once.
-  defp since(%{state: "running", status: s}),
-    do: Regex.replace(~r/^Up /, Regex.replace(~r/ \(.*\)$/, s || "", ""), "")
-
-  defp since(%{status: s}), do: s
+  @doc """
+  The since column: Docker's status line with only its time left.
+  Docker writes every status the same way — a state word, a parenthesis
+  when there is one, the time: `Up 4 hours (healthy)`, `Exited (0) 7
+  minutes ago`, `Restarting (1) 5 seconds ago`, `Created` — and the
+  state and the exit code are the state column's already, the health
+  its dot's. So the word and both parentheses go: `4 hours`, `7 minutes
+  ago`, `5 seconds ago`, nothing for a container that never ran. The
+  `ago` stays: how long it has been up and how long since it stopped
+  are different times, and the word is what tells them apart.
+  """
+  def since(%{status: s}),
+    do:
+      (s || "")
+      |> String.replace(~r/^\S+( \(\d+\))? ?/, "")
+      |> String.replace(~r/ ?\([^)]*\)$/, "")
 
   # --- the card -------------------------------------------------------------------
 
@@ -504,59 +546,96 @@ defmodule ConsoleWeb.DockerScreen do
       <div class="tbl">
         <table class="wide">
           <tr>
-            <th>image</th><th class="dim">id</th><th class="num">size</th><th class="dim">created</th>
+            <th>image</th><th class="dim">id</th><th class="num">size</th><th class="dim">created</th><th>
+            </th>
           </tr>
           <tr :for={i <- @dk.images.images} class={!i.mine? && "theirs"}>
-            <td class="k mono"><span :for={n <- i.names} class="nm">{n}</span></td>
+            <td class="k mono">
+              <%!-- A name links to its repository where the registry has a
+                    page for it — Docker Hub's two shapes, Microsoft's —
+                    and stays a name for a local image or a registry
+                    with no page (Console.Docker.repo_url/1). --%>
+              <%= for n <- i.names do %>
+                <a
+                  :if={Console.Docker.repo_url(n)}
+                  class="nm"
+                  href={Console.Docker.repo_url(n)}
+                  target="_blank"
+                  rel="noopener"
+                  title="the image's page at its registry"
+                >{n}</a>
+                <span :if={!Console.Docker.repo_url(n)} class="nm">{n}</span>
+              <% end %>
+            </td>
             <td class="dim">{i.id}</td>
             <td class="num">{i.size}</td>
             <td class="dim">{i.age}</td>
+            <td class="act">
+              <.remove_button names={i.names} used_by={i.used_by} word="used by" jobs={@jobs} />
+            </td>
           </tr>
         </table>
       </div>
       <p :if={@dk.images.images == []} class="note">No images in this scope.</p>
-      <div class="acts">
-        <.prune_button
-          what="images"
-          label={"Remove the #{@dk.images.dangling} untagged"}
-          off={@dk.images.dangling == 0 && "no untagged images: nothing to remove"}
-          jobs={@jobs}
-        />
-        <span class="note">wb.sh prune --images · the layers a prod bake leaves behind<span :if={
-          @dk.images.dangling > 0
-        }> · {@dk.images.dangling_size}</span>
-        · asks first</span>
-      </div>
+      <p :if={@dk.images.dangling > 0} class="note">
+        {@dk.images.dangling} untagged image{if @dk.images.dangling == 1, do: "", else: "s"}, {@dk.images.dangling_size}: the layers a prod bake leaves behind.
+        <code>./wb.sh prune --images</code>
+        removes them.
+      </p>
       <p class="note">
-        An image with several names is one image. The app's <code>:local</code>
+        An image with several names is one image, and Remove takes every name: the layers go with the last. The app's
+        <code>:local</code>
         and the workbench's own share their first layers on disk.
       </p>
     <% end %>
     """
   end
 
-  attr :what, :string, required: true
-  attr :label, :string, required: true
-  attr :off, :any, default: nil
+  # Remove, on an image's or a volume's row: `./wb.sh prune NAME…`,
+  # every name an image wears, confirmed in Jobs. Unlit while a
+  # container uses it — the console's own among them, on the
+  # workbench's image and its build volume — naming the containers,
+  # since docker would refuse it too; and while a removal is already
+  # asked. A volume's title says what the image's need not: the data
+  # does not come back. Since 2026-09-16.
+  attr :names, :list, required: true
+  attr :used_by, :list, required: true
+  attr :word, :string, required: true, doc: "how the users hold it: used by, mounted by"
   attr :jobs, :list, required: true
 
-  defp prune_button(assigns) do
+  defp remove_button(assigns) do
     busy =
       Enum.any?(
         assigns.jobs,
-        &(&1.state in [:running, :queued, :pending] and elem(&1.kind, 0) == :prune)
+        &(&1.state in [:running, :queued, :pending] and elem(&1.kind, 0) in [:prune, :remove])
       )
 
-    why = assigns.off || (busy && "a prune is already asked")
-    assigns = assign(assigns, why: why)
+    why =
+      cond do
+        assigns.used_by != [] -> "#{assigns.word} #{Enum.join(assigns.used_by, ", ")}"
+        busy -> "a removal is already asked"
+        true -> nil
+      end
+
+    assigns =
+      assign(assigns,
+        why: why,
+        line: Enum.join(assigns.names, " "),
+        data:
+          if(assigns.word == "mounted by",
+            do: "its data goes with it, and does not come back; ",
+            else: ""
+          )
+      )
 
     ~H"""
     <.job_button
-      label={@label}
+      label="Remove"
+      class="mini"
       why={@why}
-      event="dk_prune"
-      title="asks for your word first, in Jobs"
-      phx-value-what={@what}
+      event="dk_remove"
+      title={"./wb.sh prune #{@line} — #{@data}asks for your word first, in Jobs"}
+      phx-value-names={@line}
     />
     """
   end
@@ -568,11 +647,8 @@ defmodule ConsoleWeb.DockerScreen do
   attr :jobs, :list, required: true
 
   defp volumes_doc(assigns) do
-    up = assigns.status && assigns.status["deployment"]
-
     assigns =
       assign(assigns,
-        up: up,
         project: assigns.status && assigns.status["exists"] && assigns.status["compose_project"]
       )
 
@@ -583,7 +659,8 @@ defmodule ConsoleWeb.DockerScreen do
       <div class="tbl">
         <table class="wide">
           <tr>
-            <th>volume</th><th class="num">size</th><th>mounted by</th><th class="dim">project</th>
+            <th>volume</th><th class="num">size</th><th>mounted by</th><th class="dim">project</th><th>
+            </th>
           </tr>
           <tr :for={v <- @dk.volumes} class={!v.mine? && "theirs"}>
             <td class="k mono">
@@ -600,45 +677,21 @@ defmodule ConsoleWeb.DockerScreen do
             </td>
             <td>{if v.used_by == [], do: "nobody", else: Enum.join(v.used_by, ", ")}</td>
             <td class="dim">{v.project || "—"}</td>
+            <td class="act">
+              <.remove_button names={[v.name]} used_by={v.used_by} word="mounted by" jobs={@jobs} />
+            </td>
           </tr>
         </table>
       </div>
       <p :if={@dk.volumes == []} class="note">No volumes in this scope.</p>
-      <div class="acts">
-        <.prune_button
-          what="build"
-          label="Remove the build volumes"
-          off={
-            cond do
-              is_nil(@project) -> "this workspace has no project: no build volumes"
-              @up -> "#{@up} is up and the app mounts them: Deploy → Down first"
-              true -> nil
-            end
-          }
-          jobs={@jobs}
-        />
-        <span class="note">wb.sh prune --build · {(@project || "the workspace") <> "_build and _deps"} · the next up compiles from scratch · asks first</span>
-      </div>
-      <h3 class="cap">Disk</h3>
-      <p :if={is_nil(@dk.df)} class="note">Measuring the disk: docker system df takes seconds…</p>
-      <div :if={@dk.df} class="tbl">
-        <table class="wide">
-          <tr>
-            <th></th><th class="num">total</th><th></th><th class="num">takes</th><th class="num">
-              reclaimable
-            </th>
-          </tr>
-          <tr :for={r <- @dk.df}>
-            <td class="k">{r.type}</td><td class="num">{r.total}</td><td class="dim">
-              {r.active} in use
-            </td><td class="num">{r.size}</td><td class="num">{r.reclaimable}</td>
-          </tr>
-        </table>
-      </div>
-      <div class="acts">
-        <.prune_button what="" label="Remove what other workspaces left" jobs={@jobs} />
-        <span class="note">wb.sh prune · the stopped containers, networks and volumes of the other workspaces of this workbench, a dead database's data included · never this workspace's deployment, the console, nor anything else on the daemon · asks first</span>
-      </div>
+      <p :if={@project} class="note">
+        <code>./wb.sh prune --build</code>
+        removes {@project}_build and {@project}_deps, the build volumes: the next up compiles from scratch.
+      </p>
+      <p class="note">
+        <code>./wb.sh prune</code>
+        removes what the other workspaces of this workbench left: their stopped containers, networks and volumes, a dead database's data included; never this workspace's deployment, the console, nor anything else on the daemon.
+      </p>
     <% end %>
     """
   end
@@ -743,13 +796,4 @@ defmodule ConsoleWeb.DockerScreen do
 
   defp svc_color(%{type: "container", service: "app" <> _}), do: "var(--svc-app)"
   defp svc_color(_), do: "var(--term-dim)"
-
-  # A service's colour off the tokens, for its ports' squares; one
-  # without a colour of its own keeps the port's blue — nil, and no
-  # style: `--addr-port: var(--addr-port)` is a cycle, and paints nothing.
-  defp service_color(s) when s in ~w(database pgadmin adminer network balancer migrate),
-    do: "var(--svc-#{s})"
-
-  defp service_color("app" <> _), do: "var(--svc-app)"
-  defp service_color(_), do: nil
 end

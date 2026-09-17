@@ -835,9 +835,16 @@
     # wb.sh labelled them included — of which docker keeps whatever a
     # running container still uses; '--images' is the untagged images
     # a prod bake leaves behind; '--build' is this workspace's two
-    # build volumes, which docker refuses while the app mounts them.
-    # Every shape is confirmed: the console runs it under --yes and
-    # asks for the reader's word itself.
+    # build volumes, which docker refuses while the app mounts them;
+    # and a fourth, since 2026-09-16, is images or volumes by name —
+    # an old stack of the workbench, a base another project pulled, a
+    # database's volume to start it clean — refused while a container
+    # uses one, named, since docker would refuse it too. A name that is
+    # one of several on an image only comes off, the layers go with the
+    # last, and an image comes back on the next build; a volume's data
+    # does not come back. Every shape is confirmed:
+    # the console runs it under --yes and asks for the reader's word
+    # itself.
   prune_workbench() {
     local here="" p v projects="" containers="" networks="" volumes=""
     [[ "$EXISTING_PROJECT" == true ]] && here=$(compose_project_name)
@@ -891,7 +898,35 @@
           [ -n "$volumes" ] && docker volume rm $volumes 2>/dev/null
           true
         } ;;
-      *) args_error invalid ;;
+      --*) args_error invalid ;;
+      *)
+        local name users images="" vols=""
+        for name in "$@"; do
+          if docker volume inspect "$name" > /dev/null 2>&1; then
+            users=$(docker ps --all --filter "volume=$name" --format '{{.Names}}' 2>/dev/null | xargs)
+            [ -z "$users" ] || terminate \
+              "Volume $name is mounted by $users: take those containers down first, or leave the volume."
+            vols="${vols:+$vols }$name"
+          elif docker image inspect "$name" > /dev/null 2>&1; then
+            users=$(docker ps --all --filter "ancestor=$name" --format '{{.Names}}' 2>/dev/null | xargs)
+            [ -z "$users" ] || terminate \
+              "Image $name is used by $users: remove those containers first, or leave the image."
+            images="${images:+$images }$name"
+          else terminate "No image or volume named $name."; fi
+        done
+        # The words for each kind, apart: an apostrophe inside ${x:+…}
+        # under double quotes opens a quote to bash.
+        local note=""
+        [ -n "$vols" ] && note="A volume's data goes with it, and does not come back."
+        [ -n "$images" ] && note="${note:+$note }A name that is one of several on an image only comes off, and the layers go with the last; a base image comes back on the next build that needs it, minutes."
+        confirm "This action will remove $*." "$note" && \
+        {
+          # shellcheck disable=SC2086  # word splitting intended: one name per word
+          [ -n "$images" ] && docker image rm $images
+          # shellcheck disable=SC2086
+          [ -n "$vols" ] && docker volume rm $vols
+          true
+        } ;;
     esac
   }
 
@@ -1796,14 +1831,16 @@
       "  --deploy TARGET   Deployment (default: dev)." \
       "  SERVICE           Only these services."
 
-    print_command "prune [--images | --build]"
+    print_command "prune [--images | --build | NAME...]"
     command_content \
       "Remove what no live workspace uses: other compose projects' stopped" \
       "containers with their anonymous volumes, and their unmounted networks" \
       "and named volumes. Never this deployment, never the console. Asks first." \
       "  --images   Instead, remove the untagged images prod bakes leave." \
       "  --build    Instead, remove this workspace's build volumes; refused" \
-      "             while the app mounts them."
+      "             while the app mounts them." \
+      "  NAME       Instead, remove these images or volumes by name; refused" \
+      "             while a container uses one. A volume's data does not come back."
 
     print_command "iex | bash [--deploy TARGET] [SERVICE]"
     command_content \

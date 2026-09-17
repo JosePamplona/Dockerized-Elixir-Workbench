@@ -593,6 +593,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **Stop stands before Down on a deployment's row.** Bake, Build, Stop,
+  Down: the one that keeps the containers before the one that removes
+  them. Down stood first since the order turned on 2026-09-10.
+
 - **The terminal's sixteen are Nord's, and a Nord light of the
   house's making on paper.** `Console.ANSI` told the sixteen colours
   apart already; the sheet painted the bright row with the normal
@@ -1461,6 +1465,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   prefix now, and the project's state reads it back as such — the
   console fills the cartridge's doors from it (`/live`). Found by the
   tests below, which call the plug.
+- **A flag moot at birth speaks again once its cartridge came in.** On
+  a project born minimal (`--no-ecto --no-html`) with the base
+  cartridges added afterwards, the Record's `--database`,
+  `--binary-id` and `--no-live` rows stayed unlit with nothing to say:
+  the birth's shape alone decided what was moot, and the row's `now`
+  was thrown away with it. It holds only while what makes it moot is
+  still out: with Ecto in, `--database` reads not given and `now
+  postgres` — the birth's reading carries phx.new's default database
+  under `--no-ecto`, which was no database, so today's is the news —
+  and `--binary-id` lights, with `now in` when the ids are binary;
+  with the HTML views in, `--no-live` reads not given and `now in`
+  when LiveView came with them.
+
 - **A formatted project takes the dashboard.** phx.new's router opens
   its dev routes with a blank line after `do`; the formatter — the
   `precommit` alias phx.new itself gives the project — takes it out,

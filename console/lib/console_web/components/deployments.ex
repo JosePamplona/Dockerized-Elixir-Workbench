@@ -3,7 +3,7 @@ defmodule ConsoleWeb.Deployments do
   The deployments as a sheet: the table — one row per deployment, the
   radio that picks it and what it is, its compose file baked or not, in
   sync or with its drift, up, stopped or down, its services as ports,
-  and Bake, Build, Down and Stop — under a row the file itself, when its eye
+  and Bake, Build, Stop and Down — under a row the file itself, when its eye
   is pressed, in a code box that wears its name, and under the table Up
   of the row picked, with the wb.sh line it is. It was two
   cards until 2026-09-09, a picker of three boxes over a table of the
@@ -13,10 +13,12 @@ defmodule ConsoleWeb.Deployments do
   says what is baked and running), and the rail draws its own short
   row off the same plan in `ConsoleWeb.Board`.
 
-  The row's four buttons keep their slots — Bake, Build, Down, Stop,
+  The row's four buttons keep their slots — Bake, Build, Stop, Down,
   in the order the columns before them are read: Bake answers the
-  file, Build the image the file names, Down and Stop answer the
-  status. A verb the row cannot do now is unlit with the reason, not
+  file, Build the image the file names, Stop and Down answer the
+  status, the one that keeps the containers before the one that
+  removes them (2026-09-17; Down stood first until then). A verb the
+  row cannot do now is unlit with the reason, not
   hidden (2026-09-10, when the order turned and Stop and Down stopped
   coming and going). Build was the foot's until 2026-09-10 and the
   CLI's the day after; since 2026-09-11 it is the row's, the image
@@ -234,19 +236,19 @@ defmodule ConsoleWeb.Deployments do
                     form="deploy-pick"
                   />
                   <.deploy_button
+                    verb="stop"
+                    name={d.deploy}
+                    status={@status}
+                    busy={@busy}
+                    baked={d.baked}
+                  />
+                  <.deploy_button
                     verb="down"
                     name={d.deploy}
                     status={@status}
                     busy={@busy}
                     baked={d.baked}
                     present={d.present}
-                  />
-                  <.deploy_button
-                    verb="stop"
-                    name={d.deploy}
-                    status={@status}
-                    busy={@busy}
-                    baked={d.baked}
                   />
                 </td>
               </tr>

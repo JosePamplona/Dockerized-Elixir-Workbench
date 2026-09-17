@@ -193,14 +193,21 @@ defmodule ConsoleWeb.RecordTest do
     # A flag another flag makes moot is marked, with the reason: the
     # database and the ids without Ecto, --no-live without HTML views.
     refute Enum.any?(page.birth.flags, & &1.moot)
-    no_ecto = put_in(@status, ["project", "birth", "phx", "ecto"], false)
+
+    no_ecto =
+      @status
+      |> put_in(["project", "birth", "phx", "ecto"], false)
+      |> put_in(["project", "phx", "ecto"], false)
 
     moot = Record.page(no_ecto, @catalog).birth.flags |> Enum.filter(& &1.moot)
     assert Enum.map(moot, & &1.name) == ["database", "binary-id"]
     # Moot: not given, and nothing to say.
-    assert Enum.all?(moot, &(&1.used == false and is_nil(&1.arg)))
+    assert Enum.all?(moot, &(&1.used == false and is_nil(&1.arg) and is_nil(&1.now)))
 
-    no_html = put_in(@status, ["project", "birth", "phx", "html"], false)
+    no_html =
+      @status
+      |> put_in(["project", "birth", "phx", "html"], false)
+      |> put_in(["project", "phx", "html"], false)
 
     assert Record.page(no_html, @catalog).birth.flags
            |> Enum.filter(& &1.moot)
@@ -210,6 +217,37 @@ defmodule ConsoleWeb.RecordTest do
     # The toolchain's phx_new moved past the generator: said, with the remedy in the sheet.
     assert %{born: "1.8.13", at_hand: "1.8.14", in_sync: false} = page.birth.installer
     assert page.birth.moved == 1
+  end
+
+  # Born minimal, the base cartridges added afterwards: what made a flag
+  # moot came in, and its row speaks again — not given, and what it is now.
+  test "a flag moot at birth says what it is now once its cartridge came in" do
+    born_minimal =
+      @status
+      |> update_in(["project", "birth", "phx"], fn phx ->
+        # phx.new's reading under --no-ecto --no-html: the default database, no ids, no live.
+        Map.merge(phx, %{"ecto" => false, "binary_id" => false, "html" => false, "live" => false})
+      end)
+
+    flags = Record.page(born_minimal, @catalog).birth.flags
+    row = fn name -> Enum.find(flags, &(&1.name == name)) end
+
+    refute Enum.any?(flags, & &1.moot)
+    # The born "postgres" was the default of a database that was not there: today's is the news.
+    assert %{used: false, arg: nil, now: "postgres"} = row.("database")
+    assert %{used: false, now: "in"} = row.("binary-id")
+    assert %{used: false, now: "in"} = row.("no-live")
+    assert %{used: true, now: "in"} = row.("no-ecto")
+
+    # Ecto came in with integer ids, the views without LiveView: nothing moved on those two.
+    plain =
+      born_minimal
+      |> put_in(["project", "phx", "binary_id"], false)
+      |> put_in(["project", "phx", "live"], false)
+
+    flags = Record.page(plain, @catalog).birth.flags
+    assert %{used: false, now: nil, moot: nil} = Enum.find(flags, &(&1.name == "binary-id"))
+    assert %{used: false, now: nil, moot: nil} = Enum.find(flags, &(&1.name == "no-live"))
   end
 
   test "the cartridges: the shelf's row, the parameters as flags, every address with its reading" do

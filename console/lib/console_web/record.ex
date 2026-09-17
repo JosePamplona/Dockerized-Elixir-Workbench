@@ -155,12 +155,26 @@ defmodule ConsoleWeb.Record do
 
     flags =
       Enum.map(flags, fn f ->
-        moot = moot(f.name, born_phx)
+        f = Map.put(f, :installed, f.cartridge && Cartridges.installed?(status, f.cartridge))
 
-        f
-        |> Map.put(:installed, f.cartridge && Cartridges.installed?(status, f.cartridge))
-        |> Map.put(:moot, moot)
-        |> then(&if(moot, do: %{&1 | used: false, arg: nil, default: nil, now: nil}, else: &1))
+        case moot(f.name, born_phx, now_phx) do
+          nil ->
+            Map.put(f, :moot, nil)
+
+          # What made it moot has come in since — Ecto, the HTML views, a
+          # base cartridge each: the flag was still not given, and the row
+          # says what the fact is now against a birth that had none. The
+          # birth's reading carries phx.new's default database under
+          # --no-ecto, which is no database: today's is the news.
+          :since ->
+            now = if f.name == "database", do: now_phx["database"], else: f.now
+
+            %{f | used: false, arg: nil, default: nil, now: now && to_string(now)}
+            |> Map.put(:moot, nil)
+
+          why ->
+            %{f | used: false, arg: nil, default: nil, now: nil} |> Map.put(:moot, why)
+        end
       end)
 
     %{
@@ -189,15 +203,26 @@ defmodule ConsoleWeb.Record do
   # A flag another flag makes moot, as phx.new's own generator binds them
   # (Phx.New.Generator.put_binding/1): the database and the id type only
   # exist with Ecto, and `live = html && live` — without HTML views there
-  # is no LiveView to leave out. Marked, never hidden, with the reason.
-  defp moot(name, %{"ecto" => false}) when name in ["database", "binary-id"],
-    do: "only with Ecto: --no-ecto leaves the database out, so this flag has nothing to say"
+  # is no LiveView to leave out. Marked, never hidden, with the reason —
+  # while it holds: a project born minimal takes Ecto and the HTML views
+  # as base cartridges afterwards, and from then on the flag has
+  # something to say again (`:since`). Until 2026-09-17 the birth alone
+  # decided, and those rows stayed unlit, their `now` thrown away, on a
+  # project that had a database and LiveView.
+  defp moot(name, %{"ecto" => false}, now) when name in ["database", "binary-id"] do
+    if now["ecto"] == true,
+      do: :since,
+      else: "only with Ecto: --no-ecto leaves the database out, so this flag has nothing to say"
+  end
 
-  defp moot("no-live", %{"html" => false}),
-    do:
-      "only with HTML views: --no-html already leaves LiveView out (live = html && live in phx.new)"
+  defp moot("no-live", %{"html" => false}, now) do
+    if now["html"] == true,
+      do: :since,
+      else:
+        "only with HTML views: --no-html already leaves LiveView out (live = html && live in phx.new)"
+  end
 
-  defp moot(_name, _born), do: nil
+  defp moot(_name, _born, _now), do: nil
 
   defp flag(name, used, arg, cartridge, now \\ nil, default \\ nil),
     do: %{

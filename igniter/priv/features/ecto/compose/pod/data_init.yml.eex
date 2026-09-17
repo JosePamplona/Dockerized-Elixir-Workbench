@@ -1,0 +1,13 @@
+  # A place for the file, before the migration: the release runs as
+  # nobody, and a named volume mounted where the image has no directory
+  # comes up owned by root. This one-shot, as root on the same image,
+  # hands /app/data to nobody once; the migrator waits for it, and the
+  # volume keeps the ownership from then on.
+  data_init:
+    image: <%= @image %>
+    build:
+      dockerfile: <%= @dockerfile %>
+    user: root
+    command: ["sh", "-c", "chown nobody /app/data"]
+    volumes:
+      - data:/app/data

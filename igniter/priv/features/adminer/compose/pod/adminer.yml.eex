@@ -1,0 +1,27 @@
+  # Adminer, with the adminer cartridge in: one page on the workspace's
+  # database, whatever the adapter, on its own port beside the app's.
+  # The login it opens with is the project's own file (adminer/login.php,
+  # the directory mounted as the image's plugins-enabled/); where the
+  # database is and which one to open are this deployment's, so they are
+  # said here, and the file's own values stand for an Adminer run by hand.
+  adminer:
+    image: adminer:<%= @version.("adminer", "6") %>
+    network_mode: "service:pod"<%= if @server do %>
+    environment:
+      WORKBENCH_SERVER: 127.0.0.1:<%= @db_port %>
+      WORKBENCH_DATABASE: <%= @app_name %>_<%= if @dev, do: "dev", else: "prod" %>
+    depends_on:
+      - database<% end %><%= if @sqlite do %>
+    environment:
+      # The SQLite file, where this deployment keeps it.
+      WORKBENCH_DATABASE: <%= if @dev, do: "/app/src/#{@app_name}_dev.db", else: "/app/data/#{@app_name}_prod.db" %>
+    # The file's owner — the workspace's user on the source, nobody on the
+    # release's volume — so SQLite can write its journal beside the file.
+    user: "<%= if @dev, do: "#{@uid}:#{@gid}", else: "65534:65534" %>"<% end %><%= if @sqlite and not @dev do %>
+    depends_on:
+      data_init:
+        condition: service_completed_successfully<% end %>
+    volumes:
+      - ./adminer:/var/www/html/plugins-enabled:ro<%= if @sqlite and @dev do %>
+      - .:/app/src<% end %><%= if @sqlite and not @dev do %>
+      - data:/app/data<% end %>

@@ -60,13 +60,13 @@ defmodule WorkbenchIgniter.Features.OpenaiTest do
       assert files["lib/test_web/open_api/schemas/conversation.ex"]
       assert files["lib/test_web/open_api/schemas/message.ex"]
 
-      assert router =~ ~s|get("/conversation", ConversationController, :list_conversations)|
+      assert router =~ ~s|get "/conversation", ConversationController, :list_conversations|
 
       assert router =~
-               ~s|post("/conversation/:id", ConversationController, :continue_conversation)|
+               ~s|post "/conversation/:id", ConversationController, :continue_conversation|
 
       assert router =~
-               ~s|delete("/conversation/:id", ConversationController, :delete_conversation)|
+               ~s|delete "/conversation/:id", ConversationController, :delete_conversation|
     end
 
     test "plants the unit tests and fixtures" do

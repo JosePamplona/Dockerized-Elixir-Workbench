@@ -1,0 +1,17 @@
+  # A load tool, not a service of the deployment: k6 runs to completion,
+  # so it sits under a profile 'up' never starts — './wb.sh k6 [SCRIPT]
+  # --deploy scaled' runs it. On this network it aims at the balancer
+  # when there is one, and at the `app` alias otherwise — the name every
+  # replica answers to, so Docker's DNS spreads the users over them.
+  k6:
+    image: grafana/k6:<%= @version.("k6", "latest") %>
+    profiles: [tools]
+    environment:
+      BASE_URL: <%= if @balancer, do: "http://balancer", else: "http://app:#{@internal_port}" %><%= if @prometheus do %>
+      # Its results go to Prometheus as well, as metrics of its own
+      # (k6_*), for Grafana to draw beside the app's: the remote write
+      # the prometheus service below accepts because of this.
+      K6_OUT: experimental-prometheus-rw
+      K6_PROMETHEUS_RW_SERVER_URL: http://prometheus:9090/api/v1/write<% end %>
+    volumes:
+      - ./k6:/scripts:ro

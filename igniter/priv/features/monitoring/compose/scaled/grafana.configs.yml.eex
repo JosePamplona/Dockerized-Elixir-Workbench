@@ -1,0 +1,4 @@
+  # The datasource Grafana provisions at start, the project's own;
+  # PROMETHEUS_URL above fills it.
+  grafana_datasource:
+    file: ./monitoring/grafana/datasource.yml

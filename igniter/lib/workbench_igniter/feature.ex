@@ -177,12 +177,39 @@ defmodule WorkbenchIgniter.Feature do
   The compose services the cartridge needs the workspace to run, by
   name, given what the project carries of it (`state/1`): the workbench
   bakes them into the workspace's compose (`mix workbench.compose`,
-  scripts/PLAN.md). The names the renderer knows today are the databases
-  (`"postgres"`, `"mysql"`, `"mssql"`, `"sqlite"`), `"pgadmin"`, `"k6"`,
-  `"prometheus"` and `"grafana"`. A cartridge that needs no container
-  says nothing — the default.
+  scripts/PLAN.md). A name is the cartridge's own — what it is in a
+  compose file is said by the same cartridge, in `compose/1` — and it
+  is also what the status reports and what a neighbour asks about
+  (`"prometheus"`, for k6). A cartridge that needs no container says
+  nothing — the default. Asked with `:any` instead of a state, it
+  answers every name it may ever ask by (ecto: one per engine), which
+  is how the workbench knows the images of the house without a project.
   """
-  @callback services(state :: map()) :: [String.t()]
+  @callback services(state :: map() | :any) :: [String.t()]
+
+  @doc """
+  What the cartridge's services are, in a compose file: for each name
+  of `services/1` that `context.services` asks for, what it contributes
+  to the file being rendered (`WorkbenchIgniter.ComposeFile.Service`) —
+  its block, the ports it publishes, what the app waits for, mounts and
+  is told because of it, its volumes and configs. The definition is the
+  cartridge's own, whole: its fragments live under
+  `priv/features/<name>/compose/` (`embed_compose/0`), and nothing about
+  the service is written anywhere else.
+
+  `context` is what the file is rendered from
+  (`WorkbenchIgniter.Compose.context/2`): the deployment (`deploy`,
+  `dev`, `topology`), the project (`app_name`, `image`, `dockerfile`,
+  `uid`, `gid`, `internal_port`), the topology's own (`replicas`,
+  `balancer`, `clustering`), `version` — the image tag handed over for
+  a name, or the default the cartridge gives —, `host_ports` and
+  `services`, every name asked for, so a service can see its
+  neighbours: k6 writes to Prometheus when it is there, Adminer asks
+  ecto which database the project has. A set of services no file can
+  be made of is refused with `{:error, reason}`. Nothing by default.
+  """
+  @callback compose(context :: map()) ::
+              [WorkbenchIgniter.ComposeFile.Service.t()] | {:error, String.t()}
 
   defmacro __using__(_opts) do
     quote do
@@ -194,6 +221,7 @@ defmodule WorkbenchIgniter.Feature do
           embed_templates: 1,
           embed_assets: 0,
           embed_assets: 1,
+          embed_compose: 0,
           dep_installed?: 2,
           file_installed?: 2,
           marker_installed?: 3,
@@ -231,8 +259,12 @@ defmodule WorkbenchIgniter.Feature do
       @impl WorkbenchIgniter.Feature
       def services(_state), do: []
 
+      @impl WorkbenchIgniter.Feature
+      def compose(_context), do: []
+
       defoverridable requires: 0,
                      services: 1,
+                     compose: 1,
                      afterwards: 0,
                      console: 0,
                      pending?: 0,
@@ -315,6 +347,47 @@ defmodule WorkbenchIgniter.Feature do
             |> Code.eval_quoted(assigns: assigns)
 
           rendered
+        end
+      end
+    end
+  end
+
+  @doc """
+  Embeds every `priv/features/<feature>/compose/**/*.eex` file of the
+  calling cartridge as clauses of a local `compose_fragment/2`: the YAML
+  its services contribute to a compose file (`compose/1`), by topology —
+  `pod/<service>.yml.eex`, `scaled/<service>.yml.eex`, and
+  `<service>.configs.yml.eex` for its top-level entries.
+
+  Unlike `embed_templates/0` nothing is trimmed: a fragment is YAML as
+  it goes into the file, its control tags placed so that a branch that
+  is out leaves no line behind (at the end of the line before, and at
+  the end of the branch's last line). The file's final newline is not
+  part of the fragment. `context` is `compose/1`'s, read as `@key`.
+
+      embed_compose()
+      compose_fragment("pod/pgadmin.yml.eex", context)
+  """
+  defmacro embed_compose do
+    # bind_quoted, as the two above: it is what lets the clauses below
+    # unquote the paths found when the cartridge compiles.
+    quote bind_quoted: [dir: "compose"] do
+      base = WorkbenchIgniter.Feature.priv_dir(__ENV__.file, dir)
+      paths = Path.wildcard(Path.join(base, "**/*.eex"))
+
+      if paths == [] do
+        raise ArgumentError, "no .eex fragments found under #{base}"
+      end
+
+      for path <- paths do
+        @external_resource path
+        def compose_fragment(unquote(Path.relative_to(path, base)), context) do
+          {rendered, _binding} =
+            unquote(File.read!(path))
+            |> EEx.compile_string()
+            |> Code.eval_quoted(assigns: Map.to_list(context))
+
+          String.trim_trailing(rendered, "\n")
         end
       end
     end

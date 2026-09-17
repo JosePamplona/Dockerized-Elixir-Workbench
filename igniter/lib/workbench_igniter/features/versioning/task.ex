@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.Workbench.Install.Versioning do
-  use Igniter.Mix.Task
+  use WorkbenchIgniter.Task
 
   alias WorkbenchIgniter.Features.Versioning
 

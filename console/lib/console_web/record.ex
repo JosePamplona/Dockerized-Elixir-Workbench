@@ -32,15 +32,9 @@ defmodule ConsoleWeb.Record do
     "prod" => "docker-compose.prod.yml",
     "scaled" => "docker-compose.scaled.yml"
   }
-  @inside %{
-    "app" => ":4000",
-    "database" => ":5432",
-    "prometheus" => ":9090",
-    "grafana" => ":3000",
-    "pgadmin" => ":5050",
-    "adminer" => ":8080",
-    "balancer" => ":80"
-  }
+  # What the skeleton of a compose file has of its own, and listens on;
+  # a cartridge's service says its own port (`compose`, in the status).
+  @skeleton %{"app" => ":4000", "balancer" => ":80"}
 
   @doc "phx.new's own words for each flag, as `mix help phx.new` prints them."
   @docs %{
@@ -273,7 +267,7 @@ defmodule ConsoleWeb.Record do
       addresses(status, c, e, get_in(status, ["ports", "app"]), Cartridges.app_up?(status), reads)
 
   defp addresses(status, c, e, port, up, reads) do
-    services(c, e, status, reads) ++
+    services(c, status, reads) ++
       for(d <- get_in(e, ["console", "doors"]) || [], do: route(status, c, d, port, up, reads))
   end
 
@@ -366,31 +360,29 @@ defmodule ConsoleWeb.Record do
     }
   end
 
-  # The ports of the services a cartridge asks the workspace for, as
-  # `docker compose ps` sees them now; the engine's service is `database`.
-  # A service whose port the compose publishes on the host — pgAdmin,
-  # Grafana: a web face, in the status as `ports` — is a door instead:
-  # the reader opens it, and the knock reads what it answers.
-  defp services(c, e, status, reads) do
-    for name <- (e["services_of"] || []) ++ services_of(c) do
-      case get_in(status, ["ports", name]) do
-        port when is_integer(port) -> door_of(status, name, port, reads)
-        _ -> port_of(status, name)
-      end
+  # The services a cartridge brings to the workspace, as `docker compose
+  # ps` sees them now — what they are is the cartridge's to say, in the
+  # status (`compose`: each by name, with the port it listens on and the
+  # ones the host publishes). One the compose publishes on the host —
+  # pgAdmin, Grafana: a web face — is a door: the reader opens it, and
+  # the knock reads what it answers. The rest are ports inside.
+  defp services(c, status, reads) do
+    # As the dev deployment has them: a release's one-shots are not
+    # something the project has running beside it.
+    for b <- c["compose"] || [], "dev" in (b["deploys"] || ["dev"]) do
+      host =
+        Enum.find_value(b["published"] || [], fn internal ->
+          get_in(status, ["ports", "published", to_string(internal)])
+        end)
+
+      if is_integer(host),
+        do: door_of(status, b["service"], host, reads),
+        else: port_of(status, b["service"], listens(b))
     end
   end
 
-  # What `services/1` of the cartridge answers is not in the catalog per
-  # cartridge; the status carries the project's asks as a whole, so the
-  # one cartridge that asks for a database is read off its state.
-  defp services_of(%{"name" => "ecto", "state" => %{"database" => db}})
-       when db in ~w(postgres mysql mssql), do: ["database"]
-
-  defp services_of(%{"name" => "pgadmin"}), do: ["pgadmin"]
-  defp services_of(%{"name" => "adminer"}), do: ["adminer"]
-  defp services_of(%{"name" => "k6"}), do: ["k6"]
-  defp services_of(%{"name" => "monitoring"}), do: ["prometheus", "grafana"]
-  defp services_of(_), do: []
+  defp listens(%{"listens" => port}) when is_integer(port), do: ":#{port}"
+  defp listens(_), do: ""
 
   @doc """
   What a cartridge that is not in would take and open, off its catalog
@@ -420,8 +412,9 @@ defmodule ConsoleWeb.Record do
         end,
       addresses:
         for(
-          name <- (e["services_of"] || []) ++ services_of(e),
-          do: shut.(name, @inside[name] || "", "port")
+          b <- e["compose"] || [],
+          "dev" in (b["deploys"] || ["dev"]),
+          do: shut.(b["service"], listens(b), "port")
         ) ++
           for(
             d <- get_in(e, ["console", "doors"]) || [],
@@ -471,13 +464,13 @@ defmodule ConsoleWeb.Record do
   defp default_text(list) when is_list(list), do: Enum.join(list, ",")
   defp default_text(v), do: to_string(v)
 
-  defp port_of(status, service) do
+  defp port_of(status, service, listens) do
     container = Enum.find(status["containers"] || [], &(&1["Service"] == service))
     up = Cartridges.app_up?(status)
 
     %{
       label: service,
-      path: @inside[service] || "",
+      path: listens,
       kind: "inside",
       port: nil,
       href: nil,
@@ -533,6 +526,15 @@ defmodule ConsoleWeb.Record do
     up_one = status["deployment"]
     reported = project["deployments"] || %{}
 
+    # What each service listens on: the skeleton's two, and what every
+    # cartridge of the project says of its own.
+    inside =
+      for c <- project["cartridges"] || [],
+          b <- c["compose"] || [],
+          is_integer(b["listens"]),
+          into: @skeleton,
+          do: {b["service"], ":#{b["listens"]}"}
+
     for deploy <- @deploys do
       d = reported[deploy] || %{}
       baked = d["baked"] == true or get_in(status, ["baked", deploy]) == true
@@ -541,7 +543,7 @@ defmodule ConsoleWeb.Record do
 
       published =
         if(baked and ws, do: published(Path.join(ws, @files[deploy])), else: %{})
-        |> claimed(services)
+        |> claimed(services, inside)
 
       present = Enum.any?(status["containers"] || [], &(of_deployment(&1) == deploy))
 
@@ -586,9 +588,9 @@ defmodule ConsoleWeb.Record do
 
               _ ->
                 path =
-                  if(deploy == "scaled" and @inside[name],
-                    do: name <> @inside[name],
-                    else: @inside[name] || ""
+                  if(deploy == "scaled" and inside[name],
+                    do: name <> inside[name],
+                    else: inside[name] || ""
                   )
 
                 # Not published: a port inside the pod, no door on the host.
@@ -629,12 +631,12 @@ defmodule ConsoleWeb.Record do
   # on the Docker screen, which is Docker's own view. The rule holds
   # whatever the topology: with a network a container, publisher and
   # listener are one. A port no service claims stays with its publisher.
-  defp claimed(published, services) do
+  defp claimed(published, services, inside) do
     Enum.reduce(published, %{}, fn {publisher, pairs}, acc ->
-      Enum.reduce(pairs, acc, fn {host, inside}, acc ->
+      Enum.reduce(pairs, acc, fn {host, port}, acc ->
         owner =
           Enum.find(services, publisher, fn name ->
-            name != publisher and @inside[name] == ":" <> inside
+            name != publisher and inside[name] == ":" <> port
           end)
 
         Map.update(acc, owner, [host], &(&1 ++ [host]))
@@ -643,40 +645,18 @@ defmodule ConsoleWeb.Record do
   end
 
   # The ports each service publishes, off the compose file: `- 4001:4000`
-  # under `ports:`, as `{host, container}` pairs.
+  # under `ports:`, as `{host, container}` pairs — read where every
+  # reading of that file lives (`WorkbenchIgniter.ComposeFile`), as the
+  # strings the doors are told in.
   defp published(path) do
     case File.read(path) do
       {:ok, text} ->
         text
-        |> String.split("\n")
-        |> Enum.reduce({nil, false, %{}}, fn line, {svc, inside, acc} ->
-          service = Regex.run(~r/^  ([a-z0-9_-]+):\s*$/, line)
-          bind = inside && Regex.run(~r/^\s+- (\d+):(\d+)/, line)
-
-          cond do
-            service ->
-              {Enum.at(service, 1), false, acc}
-
-            Regex.match?(~r/^\s+ports:/, line) ->
-              {svc, true, acc}
-
-            bind ->
-              {svc, true,
-               Map.update(
-                 acc,
-                 svc,
-                 [{Enum.at(bind, 1), Enum.at(bind, 2)}],
-                 &(&1 ++ [{Enum.at(bind, 1), Enum.at(bind, 2)}])
-               )}
-
-            inside and not Regex.match?(~r/^\s+#/, line) ->
-              {svc, false, acc}
-
-            true ->
-              {svc, inside, acc}
-          end
+        |> WorkbenchIgniter.ComposeFile.published()
+        |> Map.new(fn {service, pairs} ->
+          {service,
+           Enum.map(pairs, fn {host, inside} -> {to_string(host), to_string(inside)} end)}
         end)
-        |> elem(2)
 
       _ ->
         %{}

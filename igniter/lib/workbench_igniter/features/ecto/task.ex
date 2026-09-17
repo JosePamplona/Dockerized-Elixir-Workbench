@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.Workbench.Install.Ecto do
-  use Igniter.Mix.Task
+  use WorkbenchIgniter.Task
 
   alias WorkbenchIgniter.Features.Ecto
 
@@ -32,9 +32,9 @@ defmodule Mix.Tasks.Workbench.Install.Ecto do
   ## After inserting
 
   The workspace's compose was baked for the project as it was: without
-  a database service. `./wb.sh bake` bakes it again from the seed, with
-  the Postgres the project now expects, and `./wb.sh setup` creates the
-  database.
+  a database service. `./wb.sh add` bakes it again in the insert's own
+  commit, with the server the project now expects, and `./wb.sh setup`
+  creates the database.
   """
 
   @impl Igniter.Mix.Task

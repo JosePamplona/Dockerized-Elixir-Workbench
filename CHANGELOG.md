@@ -16,6 +16,232 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **healthcheck2's option is tested by what the plug answers.** There
+  is no phx.new to measure this cartridge against, so the rod is what
+  it is for: the plug the installer writes is compiled and called
+  (`Plug.Test`), under a name of its own per test. Every way of
+  spelling `--path` — none, `/status/`, `status`, `/api/v1/healthz`,
+  `//up//`, `/` — answers 200 at `<prefix>/live` and `<prefix>/ready`,
+  with `no-store`, and nowhere else: not a deeper path, not another
+  prefix, not the default's once it moved, not a POST. Readiness is
+  the repo's answer — 503 when the query fails, raises or the pool is
+  gone, never a raise — and liveness looks at nothing. The repo checked
+  is the project's own on a project born with Ecto, none on one born
+  without (phx.new's own `--no-ecto`, not a file removed by hand). And
+  whoever reads the prefix back reads the same one: the project's
+  state, the plug's own words, the test the project is given — which
+  is parsed, on every shape and prefix. A second insert with another
+  prefix leaves the first.
+- **Every option of ecto is measured with phx.new's own flag.** A
+  cartridge's tests looked for the strings someone thought of looking
+  for (`binary_id: true` in `config.exs`, `:ecto_sqlite3` in `mix.exs`);
+  now `add ecto --database mysql --binary-id` onto a project without
+  Ecto is compared, whole and file by file, with the project phx.new
+  makes with `--database mysql --binary-id` — the four databases, with
+  and without binary ids, onto a project with everything else and onto
+  a bare one, and no option at all against phx.new's defaults. And what
+  an option means to the workbench, which phx.new knows nothing of, per
+  database: what the project reports (`state/1`), the service it asks
+  the workspace for, what that service is (image, port, its own client
+  as the first shell), the `.env` line with the credentials the compose
+  gives the server, the dev compose with the app waiting for it —
+  SQLite asking for no server but a volume in a release, and
+  `--binary-id` changing nothing of it. The rod is shared now
+  (`WorkbenchIgniter.Grown`, in the test helper): born, add, grow and
+  what may differ, said once for every cartridge that is to be
+  measured this way.
+- **Born bare and grown is born whole, as a test.** The experiment made
+  by hand on 2026-09-17 — `./wb.sh new` with every `--no-*`, the eight
+  base cartridges added one by one, against a plain `./wb.sh new` —
+  which found a production Dockerfile without assets, a release
+  without `bin/migrate` and a compose without its database, runs with
+  the igniter's suite now (`grown_vs_born_test.exs`, seconds, no
+  Docker): phx.new's own generator makes both projects, the installers
+  run as `wb.sh add` runs them, each applied before the next, and the
+  trees are compared file by file — then the project's shape, the
+  services it asks for and the dev and prod composes. The eight go in
+  in 13 440 orders (live and the dashboard build on html), so four
+  layers, each at its price: a **covering set** worked out when the
+  test compiles — every three cartridges in every order they can go
+  in, since a conflict is born where cartridges write into one stretch
+  of a file — with the orders that failed once pinned beside it; **five
+  orders drawn by the run's seed**, so every run looks somewhere new
+  and a failure prints the order to pin; **one step from a shape** —
+  phx.new makes any subset outright, a cartridge goes onto it, against
+  the next subset born: sixty of the 560 steps by the seed; and
+  **all of them**, the whole tree of orders walked on every core with
+  a shared beginning grown once, and the 560 steps, behind a tag —
+  `mix test --only exhaustive`, before a release or after touching
+  `PhxDelta`. What
+  may differ is written down in the test and nowhere else: the secrets
+  phx.new draws, how a file ends, the order of `mix.exs`'s lists and of
+  `.gitignore`'s patterns, and the environment files a birth gets from
+  `workbench.setup`. The igniter's test environment has
+  `phoenix_live_view` and `ecto_sql` now: without what a grown
+  project's `.formatter.exs` names, Igniter could not read that file,
+  fell back on the default formatter and wrote `plug(:accepts)` — nine
+  tests had been asserting that artefact, and assert what a real
+  project gets.
+- **`WorkbenchIgniter.ComposeFile`: the compose files have a module of
+  their own**, as `mix.exs` has `MixFile` — the first step of giving
+  each service back to the cartridge that needs it. Today a service is
+  a name in its cartridge (`services/1`) and everything else somewhere
+  else: its block in two central templates, its port and version in
+  `Compose.Plan`, a flag of its own in three bakes of `wb.sh`, a
+  variable in `config.conf`. The module holds both halves of working
+  on that file as text (Igniter has nothing for YAML, and a parse and
+  an emit would lose the comments a baked compose explains itself
+  with). **Read**: `services/1`, the names a file declares
+  (`Deployments.declared/1` delegates to it); `published/1`, the ports
+  each service publishes, which the console's Record had a parser of
+  its own for and now asks here; `host_port/2`, the host port a file
+  publishes a container's port on. **Written**: `ComposeFile.Service`,
+  what one service contributes — its block, the ports it publishes
+  with their comments and defaults, what the app waits for because of
+  it, its top-level volumes and configs, the deployments it enters —
+  `slots/3`, which gathers the contributions of a deployment's services
+  into the text of each slot of a skeleton, and `host_ports/3`, which
+  keeps each port where the file already has it and asks the host for a
+  free one only for the new.
+- **A service is defined in the cartridge that needs it, whole.** A new
+  callback, `compose/1`, beside `services/1`: for the names the
+  cartridge asks for, what each is in the file being rendered — a
+  `ComposeFile.Service`. The YAML lives with the cartridge, under
+  `priv/features/<name>/compose/pod/` and `scaled/` (`embed_compose/0`,
+  which trims nothing: a fragment is the file's text). **ecto** owns the
+  three servers, the release's one-shots (`migrate`, MSSQL's
+  `database_init`, SQLite's `data_init`), what the app waits for, the
+  data volume and the `DATABASE_URL` of the bridge network; **pgadmin**
+  and **adminer** their block, their port on the pod and pgAdmin's
+  config; **k6** its block on both topologies; **monitoring** Prometheus
+  and Grafana, their configs, Grafana's port and what the app owes it
+  (the wait, `GRAFANA_HOST`). A fragment reads the whole context
+  (`Compose.context/1`), so a service sees its neighbours: k6 writes to
+  Prometheus when it is there, Adminer opens the engine the project has.
+  The two templates under `priv/compose/` are skeletons now — the pod
+  and the app, the replicas and the balancer — with seven slots
+  (`ports`, `services`, `app_waits`, `app_volumes`, `app_environment`,
+  `volumes`, `configs`); `position` orders the services in the file.
+  `Compose.service_names/2` is read off the same contributions instead
+  of a list of names kept beside the templates. Not one byte of any
+  compose changed: the 40 golden files pass as they were, and a bake of
+  a workspace born whole said "nothing to bake".
+- **No service is named outside its cartridge any more: ports and
+  versions are generic.** `mix workbench.compose` lost its eighteen
+  per-service flags (`--pgadmin-port`, `--grafana-internal-port`,
+  `--postgres-version`…) for two, as many times as there are:
+  `--port NAME=PORT` and `--version NAME=TAG` — the cartridge has the
+  default tag, in its fragment, and the port its service listens on.
+  A port lives in the file that publishes it: `--keep-ports-of FILE`
+  keeps the ones the deployment's file already has, so a bake moves
+  nothing, and one that comes from nowhere is a **need** — the task
+  writes nothing, prints `need> NAME DEFAULT` and exits 3 — because
+  free is a question for the host. `wb.sh` answers it in one place,
+  `compose_render`, which the three bakes go through: the first free
+  port from the cartridge's default on, then the task again. Its
+  `version_flags` hands over every `NAME_IMAGE_VERSION` that
+  `config.conf` sets, so that file reads as before. Gone from the
+  script: the three `*_INTERNAL_PORT`, `workspace_pgadmin_port` and
+  its two siblings, the ports of `compose_ports` and of `new`. The
+  status's `ports` is `{"app": N, "published": {"5050": 5051}}`, by the
+  port each service listens on, and the report for a person labels a
+  door with the file's own word for it — a cartridge opens the comment
+  over a port with what it is (`# pgAdmin port, …`). What
+  `WorkbenchIgniter.Compose` knew of databases went to **ecto**: one at
+  most, none on SQLite for replicas (`compose/1` may refuse a set of
+  services, with its reason), and `Ecto.database/1`, which Adminer asks
+  to say where the database is. `ComposeFile.Service` has `listens`, the
+  port a service answers on inside; `Compose.brought/2` says, per
+  cartridge, the services it brings with that port and the ones
+  published — in the catalog (`compose`, whatever the state) and in the
+  status (as the project has them: ecto's `database` on 3306 for MySQL).
+  The console's Record reads them there: its table of internal ports,
+  which said `:5432` of any database, and its list of which cartridge
+  has which service are gone. Verified on a copy of a workspace:
+  pgAdmin inserted and baked took 5050 through the need; moved to 5077
+  by hand in the file, it stayed there through the next bake, which
+  gave Adminer 8080. The 40 golden files still pass byte for byte.
+- **One module per project file Igniter has nothing for.** Beside
+  `MixFile` and `ComposeFile`: `WorkbenchIgniter.EnvFile` (`entry/4`, a
+  cartridge's variables into `.env` and `.env.sample`, the secret and
+  its blanked-out line), `WorkbenchIgniter.IgnoreFile` (`entry/3`,
+  `merge/3` — the set merge that ended the `.gitignore` conflicts — and
+  `ignore_file?/1`) and `WorkbenchIgniter.Dockerfile` (`stack/1`, the
+  stack read back off the production Dockerfile, and `binding/2`, as
+  each Phoenix's template names it), over `WorkbenchIgniter.TextFile`,
+  the append-once the first two share. They were `env_entry/4` and
+  `gitignore_entry/3` in the package's root module, and `merge_set/3`,
+  `docker_of/1` and a private binding inside `PhxDelta`, which is back
+  to what it is about: asking phx.new what a capability is. No
+  delegates left behind; the cartridges call the modules. Each has its
+  own test file now. No behaviour changed.
+- **A cartridge's commit carries the services it brings, and its
+  eject takes them away.** The old script wrote the compose in the same
+  act as the project, knowing what it had; since the cartridges, an
+  insert committed and the compose waited for a `bake` nobody
+  remembered (a project grown cartridge by cartridge came out without
+  its `database`, 2026-09-17). `wb.sh add` now renders the workspace's
+  compose files again — dev, and prod and scaled when they are baked,
+  the scaled one with the replicas and the balancer it has — after the
+  installer and before the commit: one commit is the whole cartridge.
+  `eject` stages the revert, renders them again for the project without
+  the cartridge, and commits the two as one `Revert "Insert …"`. A
+  compose is a derived file, so it is never reverted as text: a
+  cartridge inserted since wrote its block right beside, and the revert
+  conflicted — a conflict on the workbench's own composes alone is
+  settled by keeping the file and rendering it. **A compose the reader
+  edited is left alone**: `compose_is_ours` asks git, and no container,
+  whether the last commit that touched the file is the workbench's
+  (`New project:`, `Bake`, `Insert`, `Revert "Insert`); one that is not
+  is named in a note at the end, when it is behind, with the way out —
+  `bake` writes it again, keeping its ports and nothing else of the
+  edit, and the file is the workbench's from then on. A render that
+  fails leaves the file as it was and does not undo the cartridge. The
+  scaled bake keeps its ports too now, as the other two did, while it
+  is asked for the same shape: a bake moves nothing, and a deployment
+  that is up is not handed ports it does not hold. The cartridges'
+  after-insert words no longer send the reader to `bake`. Verified on a
+  copy of a workspace: pgAdmin and Adminer each in one commit with the
+  compose; pgAdmin ejected from between them, the conflict settled by
+  the render; a hand-edited compose left alone by `add k6`, then taken
+  back by `bake`; k6 ejected from the dev and the scaled file at once.
+- **The console knows no cartridge's service by name: a service says
+  what it is, and a colour is a role's.** What was left in the console
+  was not presentation but knowledge kept by name — which containers
+  take a session and with what, their order, their colour, which
+  images are the house's — and a service from a cartridge nobody here
+  has seen would have had none of it. `ComposeFile.Service` carries it
+  now: a `title`, the `shells` a session can be (a label and the
+  command; none for k6, which runs to completion) and a `role`, one
+  word of the vocabulary the clouds sort their own services by
+  (`ComposeFile.roles/0`: compute, database, cache, storage, messaging,
+  search, network, observability, identity, devtools, job). The image
+  is not declared: it is read off the service's own block
+  (`ComposeFile.image/1`). `Compose.brought/2` hands all of it over,
+  per cartridge, across the three deployments (`deploys`), and
+  `Compose.images/0` is every image the house may run — the skeletons'
+  and each cartridge's, whichever name a project asks by
+  (`services(:any)`: ecto answers one per engine). In the console,
+  `ConsoleWeb.Services` is the one place that answers: the terminal's
+  targets, shells and argv, the order of Docker's containers, the
+  house's images and their Hub links, and the colour of a service in
+  logs, events and sessions. **A prompt is derived, never declared**:
+  for `sh` and `bash`, the user and the directory the container's
+  image says (`homes`, new in `wb.sh status --json`, off `docker
+  inspect`; no user is root, as `docker exec` has it); for anything
+  else, the command's name (`psql> `). The `svc-*` tokens are by role —
+  `svc-compute`, `svc-database`, `svc-devtools`, `svc-observability`,
+  `svc-network`, `svc-job`, and the balancer's own — several roles on
+  one token until one needs telling apart, the plainest for a role or
+  a container the console has not heard of; the logs' hook reads the
+  answer off the page (`#svc-colors`) instead of a list of its own.
+  Fixed on the way: a MySQL or MSSQL project was offered `psql` and
+  shown `postgres=#` (ecto now says `mysql`, `sqlcmd`); Prometheus and
+  Grafana asked for colour tokens that did not exist; the events
+  still matched the pod by its old name; every `*_IMAGE_VERSION` but
+  two was labelled "new" in the config drawer, where all take effect
+  at every bake. The console names three services still, on purpose:
+  the skeleton's `app`, `pod` and `balancer`, which are no cartridge's.
 - **Remove on the Docker screen's images and volumes.** Each row of
   Images and of Volumes has a Remove, `./wb.sh prune NAME…` — every
   name an image wears, a volume's — confirmed in Jobs like the other
@@ -1228,6 +1454,83 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **`add healthcheck2 --path /` answers at `/live` and `/ready`.** The
+  prefix was normalised to `"/"` and the plug appended `/live` to it:
+  the probes sat at `//live`, which no request asks for, and every
+  orchestrator would have seen the app dead. The root is the empty
+  prefix now, and the project's state reads it back as such — the
+  console fills the cartridge's doors from it (`/live`). Found by the
+  tests below, which call the plug.
+- **A formatted project takes the dashboard.** phx.new's router opens
+  its dev routes with a blank line after `do`; the formatter — the
+  `precommit` alias phx.new itself gives the project — takes it out,
+  right where the dashboard writes, and `add dashboard` conflicted on a
+  file nobody had edited. The three sides of an Elixir file are now
+  merged in the one layout every formatter configuration agrees on — no
+  blank line after a line that opens a block (`PhxDelta`) — so they
+  differ by what was written, not by how it was laid out. The
+  project's own formatter is not asked: after html it wants LiveView's
+  plugin, which may not be loaded where the installer runs. Found by
+  the test below, on its first run.
+- **A base cartridge no longer trips on `.gitignore`.** `add esbuild`
+  stopped with an issue on every project: phx.new appends esbuild's
+  patterns at the end of `.gitignore`, the workbench had appended
+  `.env` there at birth, and a three-way merge cannot order two appends
+  after the same line. `.gitignore` is merged as what it is, a set of
+  patterns: the capability's lines go in once, at the end, past the
+  project's own; what it takes away goes; never a conflict
+  (`PhxDelta.merge_set/3`). And an insert with issues is a failed
+  insert now: Igniter showed them, wrote nothing and returned zero,
+  and `add` took the zero for an insert that landed, committing what
+  was on disk — `Insert esbuild` with nothing in it but the
+  `.gitignore.phx-new` aside. Every installer's task ends with a
+  failure on issues (`WorkbenchIgniter.Task`), `add` undoes the
+  half-insert as for any failure and keeps the `.phx-new` aside for
+  the reader, saying so. A project that got the empty commit: `eject
+  esbuild` reverts it, and `add esbuild` again does the rest.
+- **`mix.exs` is no longer merged as text: a base cartridge applies
+  what it holds.** At birth the workbench writes its own dependency on
+  the project's `deps:` line, `deps: deps() ++ workbench_dep()`, and
+  phx.new's html puts `compilers:` on the line right after it: a
+  change beside an insertion is a conflict to a three-way merge, so
+  `add html` failed on every project. A dependency the project added
+  where a cartridge's go did the same. `WorkbenchIgniter.MixFile` now
+  reads phx.new's two generations as code — the keywords `def project`
+  returns, the list `defp deps` ends in, the keywords of `defp
+  aliases` — says what the capability adds or changes, and puts each
+  in with Igniter: a keyword or alias where the project keeps it, a
+  dependency appended after the project's own, written as phx.new
+  writes it (`runtime: Mix.env() == :dev` stays an expression). A
+  keyword the project itself changed from what phx.new had is the
+  project's: an issue names it and nothing is overwritten. A
+  dependency the project already has, in any version, stays. The
+  edit of birth stays where it was: Igniter reads the project's
+  dependencies off the literal list in `defp deps`, and a `] ++
+  workbench_dep()` there would hide every dependency from every
+  cartridge.
+- **A base cartridge brings its share of what `phx.gen.release` wrote
+  at birth.** The workbench runs `mix phx.gen.release --docker` right
+  after phx.new, and that generator decides once, off what is there:
+  `lib/<app>/release.ex` and `rel/overlays/bin/migrate` only with Ecto
+  in the dependencies, the `Dockerfile`'s assets steps (`mix
+  assets.setup`, `COPY assets`, `mix assets.deploy`) only with an
+  `assets/` directory. A project born bare and grown cartridge by
+  cartridge (test_01, 2026-09-17) ended up with a production image
+  without CSS or JS and a migrate service (`command: /app/bin/migrate`
+  in the pod and scaled composes) with nothing to run, where the same
+  project born whole (test_02) had both. `PhxDelta.generate/2` now
+  gives each generation, base and theirs, the release's files too,
+  rendered from Phoenix's own `phx.gen.release` templates with the
+  generator's binding — the stack read back off the project's
+  `Dockerfile` `ARG` lines (`docker_of/1`), so no build server is asked
+  — and the delta carries them: ecto creates the `Release` module and
+  `bin/migrate`, executable once written (`mix workbench.executable`,
+  queued by the cartridge); the first bundler, esbuild or tailwind,
+  puts the assets steps into the Dockerfile, the second finds them
+  there. A Dockerfile that is not the generator's is left alone. Both
+  Dockerfile bindings, Phoenix 1.8.13's `debian`-`debian_vsn`-slim and
+  1.8.14's whole `debian_vsn`, are served. `phoenix` is a test
+  dependency of the igniter now, for the templates.
 - **iex on a dev deployment attaches to the node that serves the
   port.** `./wb.sh iex` and the console's `app · iex` ran `iex -S mix`
   on the app container: a second VM, with a Swoosh mailbox, a Repo and

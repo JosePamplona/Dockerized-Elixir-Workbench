@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.Workbench.Install.Esbuild do
-  use Igniter.Mix.Task
+  use WorkbenchIgniter.Task
 
   alias WorkbenchIgniter.Features.Esbuild
 

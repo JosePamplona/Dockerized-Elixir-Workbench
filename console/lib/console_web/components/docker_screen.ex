@@ -721,8 +721,8 @@ defmodule ConsoleWeb.DockerScreen do
       </table>
     </div>
     <p :if={@dk.networks} class="note">
-      The workspace's app and the services beside it — database, pgadmin, adminer, prometheus, grafana — are not on any network of their own: they share the pod's — the
-      <code>network</code>
+      The workspace's app and the services its cartridges bring beside it are not on any network of their own: they share the pod's — the
+      <code>pod</code>
       container's — and reach each other on localhost.
     </p>
     """
@@ -759,7 +759,7 @@ defmodule ConsoleWeb.DockerScreen do
       <div class="lines" id="dk-events">
         <div :for={e <- @events} class={["ln", event_class(e)]}>
           <span class="t">{clock(e.ts && DateTime.to_iso8601(e.ts))}</span>
-          <span class="s" style={"--svc:" <> svc_color(e)}>{who(e)}</span>
+          <span class="s" style={"--svc:" <> svc_color(@status, e)}>{who(e)}</span>
           <span class="m">{e.type} {e.action}<span :if={e.detail}>: {e.detail}</span><span :if={
             e.exit
           }> · exit {e.exit}</span><span :if={e.signal}> · signal {e.signal}</span><span :if={
@@ -790,10 +790,11 @@ defmodule ConsoleWeb.DockerScreen do
   defp who(%{type: "container", name: n}) when is_binary(n), do: n
   defp who(_), do: "daemon"
 
-  defp svc_color(%{type: "container", service: s})
-       when s in ~w(app database pgadmin prometheus grafana network balancer migrate),
-       do: "var(--svc-#{s})"
+  # A container of a compose service wears its role's colour, asked of
+  # who knows what the service is (ConsoleWeb.Services); the daemon's
+  # own lines, and a container of no service, go dim.
+  defp svc_color(status, %{type: "container", service: s}) when is_binary(s),
+    do: ConsoleWeb.Services.color(status, s)
 
-  defp svc_color(%{type: "container", service: "app" <> _}), do: "var(--svc-app)"
-  defp svc_color(_), do: "var(--term-dim)"
+  defp svc_color(_status, _), do: "var(--term-dim)"
 end

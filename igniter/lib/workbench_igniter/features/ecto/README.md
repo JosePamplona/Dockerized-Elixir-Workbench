@@ -32,7 +32,10 @@ configuration in every environment (`DATABASE_URL` read in
 `runtime.exs`), `priv/repo/migrations` and `seeds.exs`,
 `test/support/data_case.ex`, `ecto_repos` in `config.exs`. Files the
 project already changed are merged three ways; a conflict is reported
-with `phx.new`'s version of the file beside it.
+with `phx.new`'s version of the file beside it. And what
+`phx.gen.release` writes at birth only when Ecto is in: `MyApp.Release`
+(`lib/my_app/release.ex`) and `rel/overlays/bin/migrate`, the script
+the release's compose runs before the app.
 
 On top of the delta, the one thing `phx.new` leaves to the environment:
 `DATABASE_URL` (or `DATABASE_PATH` for SQLite) in `.env` and

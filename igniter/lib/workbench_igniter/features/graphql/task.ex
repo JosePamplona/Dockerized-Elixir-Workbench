@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.Workbench.Install.Graphql do
-  use Igniter.Mix.Task
+  use WorkbenchIgniter.Task
 
   alias WorkbenchIgniter.Features.Graphql
 

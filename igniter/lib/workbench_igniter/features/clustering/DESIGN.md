@@ -508,7 +508,7 @@ Three writes, three guards, one mark:
   default template already contains that export *commented out*
   (§2.4): a substring test on the export would find the comment and
   skip a file that needs the block.
-* `.env` / `.env.sample`: `WorkbenchIgniter.env_entry/4` appends only
+* `.env` / `.env.sample`: `WorkbenchIgniter.EnvFile.entry/4` appends only
   when the first `KEY=` of the body — `DNS_CLUSTER_QUERY` — is not in
   the file.
 
@@ -738,8 +738,8 @@ Read in full on 2026-08-30 unless marked otherwise.
     <https://hexdocs.pm/libcluster/Cluster.Strategy.Kubernetes.DNS.html>.
     **Summary only**.
 20. `igniter/lib/workbench_igniter/features/clustering/clustering.ex`
-    and `task.ex`; `WorkbenchIgniter.env_entry/4`
-    (`igniter/lib/workbench_igniter.ex`);
+    and `task.ex`; `WorkbenchIgniter.EnvFile.entry/4`
+    (`igniter/lib/workbench_igniter/env_file.ex`);
     `WorkbenchIgniter.Feature.marker_installed?/3`
     (`igniter/lib/workbench_igniter/feature.ex`);
     `igniter/test/workbench_igniter/features/clustering_test.exs`.

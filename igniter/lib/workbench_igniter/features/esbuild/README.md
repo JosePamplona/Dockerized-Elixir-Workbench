@@ -30,7 +30,10 @@ test` in the `assets.setup`/`assets.build`/`assets.deploy` aliases,
 `assets/js/app.js`, `assets/tsconfig.json` and `assets/vendor/topbar.js`
 (without esbuild, phx.new serves a plain script instead), and the
 `phx-click` JS hooks the core components and layouts carry only with a
-bundler.
+bundler. And, when the project had no `assets/` directory before, the
+assets steps of the production `Dockerfile` (`mix assets.setup`, `COPY
+assets`, `mix assets.deploy`) that `phx.gen.release --docker` writes at
+birth only for a project that has one.
 
 Files the project already changed are merged three ways; a conflict is
 reported with `phx.new`'s version of the file beside it.

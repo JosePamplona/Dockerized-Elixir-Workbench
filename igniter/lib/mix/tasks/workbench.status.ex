@@ -22,7 +22,10 @@ defmodule Mix.Tasks.Workbench.Status do
     "services": [...], "birth": {...} | null, "deployments": {...}}`
     — `services` are the compose services the installed cartridges ask
     the workspace for (`postgres`, `pgadmin`, `grafana`…), what `mix workbench.compose`
-    bakes in; `phx` is the project's shape in phx.new's terms: each capability,
+    bakes in, and each installed cartridge carries `compose`: the services
+    it brings, by their name in the file, with the port each `listens` on
+    and the ones `published` on the host (`WorkbenchIgniter.Compose.brought/2`);
+    `phx` is the project's shape in phx.new's terms: each capability,
     the database, the adapter, the flags that would generate it today,
     and `generator`: which `phx.new` made the project (`project`), where
     that is recorded (`source`: the workspace's `Dockerfile.local`, or
@@ -91,6 +94,23 @@ defmodule Mix.Tasks.Workbench.Status do
     app = Mix.Project.config()[:app]
     {cartridges, igniter} = Features.status(Igniter.new())
     {services, igniter} = Features.services(igniter)
+
+    # What each installed cartridge brings to the compose, asked of the
+    # cartridge (`compose/1`): nobody downstream knows a service by name.
+    cartridges =
+      Enum.map(cartridges, fn cartridge ->
+        feature = Enum.find(Features.catalog(), &(&1.name() == cartridge.name))
+
+        Map.put(
+          cartridge,
+          :compose,
+          if(cartridge.installed,
+            do: WorkbenchIgniter.Compose.brought(feature, services),
+            else: []
+          )
+        )
+      end)
+
     {facts, igniter} = WorkbenchIgniter.PhxDelta.facts(igniter)
     {generator, _igniter} = WorkbenchIgniter.PhxDelta.generator(igniter)
 

@@ -39,10 +39,10 @@ defmodule WorkbenchIgniter.Features.GraphqlTest do
       |> Igniter.compose_task("workbench.install.graphql", [])
       |> assert_has_patch("lib/test_web/router.ex", """
       + | scope "/graphiql" do
-      + | pipe_through(:api)
+      + | pipe_through :api
       """)
       |> assert_has_patch("lib/test_web/router.ex", """
-      + | forward("/", Absinthe.Plug.GraphiQL, schema: TestWeb.Graphql.Schema, json_codec: Jason)
+      + | forward "/", Absinthe.Plug.GraphiQL, schema: TestWeb.Graphql.Schema, json_codec: Jason
       """)
     end
 

@@ -13,7 +13,7 @@ defmodule Mix.Tasks.Workbench.Compose do
   workspace mounted, since the `deps.get` and `deps.compile` before the
   task write to standard output too. Everything that shapes the file
   arrives as an option — the host ports because they are chosen on the
-  host, the images and versions because `config.conf` names them —
+  host, the image tags because `config.conf` names them —
   except the services, which the task asks the project for when
   `--services` is not given: what the installed cartridges declare
   (`WorkbenchIgniter.Features.services/1`). With `--services` the task
@@ -29,23 +29,25 @@ defmodule Mix.Tasks.Workbench.Compose do
   * `--image IMAGE`, `--dockerfile FILE` - the app's image and what
     builds it: the dev image and `Dockerfile.local`, or the release.
   * `--uid N`, `--gid N` - the build identity the dev image is born with.
-  * `--app-port N`, `--pgadmin-port N`, `--adminer-port N`,
-    `--grafana-port N` - host ports; the container side is
-    `--internal-port` (4000), `--pgadmin-internal-port` (5050),
-    `--adminer-internal-port` (8080) and `--grafana-internal-port`
-    (3000). The app's, pgAdmin's and Adminer's are the pod's; Grafana
-    publishes its own on the scaled network too.
-  * `--postgres-version V`, `--mysql-version V`, `--mssql-version V`,
-    `--pgadmin-version V`, `--adminer-version V`, `--nginx-version V`,
-    `--k6-version V`,
-    `--prometheus-version V`, `--grafana-version V` - the service
-    images' tags.
+  * `--app-port N` - the app's host port; the container side is
+    `--internal-port` (4000).
+  * `--port NAME=PORT`, as many as there are - the host port of a port
+    a service publishes, by the name its cartridge gives it (`pgadmin`,
+    `adminer`, `grafana`). `--keep-ports-of FILE` keeps the ones FILE
+    already publishes — the deployment's file as it stands — so a bake
+    moves nothing. A port that comes from neither is a **need**: the
+    task writes no file, prints one `need> NAME DEFAULT` line for each
+    and exits with 3, for the script to choose a free port from the
+    default on — ports are chosen on the host — and ask again.
+  * `--version NAME=TAG`, as many as there are - a service's image tag,
+    by its name (`postgres`, `mysql`, `mssql`, `pgadmin`, `adminer`,
+    `k6`, `prometheus`, `grafana`, and the balancer's `nginx`). The
+    cartridge has the default.
   * `--services LIST` - what the workspace runs beside the app, by
-    name, separated by commas: a database — `postgres`, `mysql`,
-    `mssql`, or `sqlite`, which is no server but a volume for the file
-    in a release — and `pgadmin`, `adminer`, `k6`, `prometheus`,
-    `grafana`. `""`
-    or `none` for no service at all. Absent, the project is asked. One
+    the names the cartridges ask by, separated by commas: a database —
+    `postgres`, `mysql`, `mssql`, or `sqlite`, which is no server but a
+    volume for the file in a release — and `pgadmin`, `adminer`, `k6`,
+    `prometheus`, `grafana`. `""` or `none` for no service at all. Absent, the project is asked. One
     database at most, and never `sqlite` on the scaled deployment:
     replicas cannot share a file. Without a database there is nothing
     to migrate; with `grafana`, the app waits for it.
@@ -65,8 +67,15 @@ defmodule Mix.Tasks.Workbench.Compose do
     {opts, _, _} = OptionParser.parse(argv, switches: [out: :string])
 
     case Compose.plan_from_argv(argv) do
-      {:ok, plan} -> write(Compose.render(plan), opts[:out])
-      {:error, why} -> Mix.raise("workbench.compose: " <> why)
+      {:ok, plan} ->
+        write(Compose.render(plan), opts[:out])
+
+      {:needs, needs} ->
+        for {name, default} <- needs, do: IO.puts("need> #{name} #{default}")
+        exit({:shutdown, 3})
+
+      {:error, why} ->
+        Mix.raise("workbench.compose: " <> why)
     end
   end
 

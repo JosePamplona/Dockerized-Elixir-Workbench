@@ -1,0 +1,22 @@
+  # One-shot migration (rel/overlays/bin/migrate, from phx.gen.release),
+  # so the replicas do not race each other running it on boot. The<%= if @engine == "postgres" do %>
+  # database itself is created by the postgres image from POSTGRES_DB.<% end %><%= if @engine == "mysql" do %>
+  # database itself is created by the mysql image from MYSQL_DATABASE.<% end %><%= if @engine == "mssql" do %>
+  # database itself is created by database_init below: the mssql image
+  # has no variable that creates one, so a one-shot does, once the
+  # server is healthy, and the migrator waits for it instead.<% end %>
+  migrate:
+    image: <%= @image %>
+    build:
+      context: .
+      dockerfile: <%= @dockerfile %>
+    command: /app/bin/migrate
+    env_file:
+      - ./.env
+    environment:
+      DATABASE_URL: ecto://<%= @db_user %>:<%= @db_password %>@database/<%= @app_name %>_prod
+    depends_on:<%= if @engine == "mssql" do %>
+      database_init:
+        condition: service_completed_successfully<% else %>
+      database:
+        condition: service_healthy<% end %>

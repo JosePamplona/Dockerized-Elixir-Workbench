@@ -11,7 +11,7 @@ defmodule ConsoleWeb.RecordTest do
     "exists" => true,
     "workspace" => "/nowhere/test_x",
     "compose_project" => "lorem_ipsum",
-    "ports" => %{"app" => 4001, "pgadmin" => nil, "grafana" => nil},
+    "ports" => %{"app" => 4001, "published" => %{}},
     "baked" => %{"dev" => true, "prod" => true, "scaled" => false},
     "deployment" => "dev",
     "containers" => [
@@ -125,6 +125,8 @@ defmodule ConsoleWeb.RecordTest do
           "installed" => true,
           "base" => true,
           "state" => %{"database" => "postgres"},
+          # What the cartridge brings to the compose, as the status says it.
+          "compose" => [%{"service" => "database", "listens" => 5432, "published" => []}],
           "options" => [
             %{"name" => "database", "type" => "string", "default" => "postgres"},
             %{"name" => "binary_id", "type" => "boolean", "default" => false}
@@ -307,7 +309,7 @@ defmodule ConsoleWeb.RecordTest do
     # pgAdmin in, its container up, the compose publishing 5050.
     status =
       @status
-      |> put_in(["ports", "pgadmin"], 5050)
+      |> put_in(["ports", "published"], %{"5050" => 5050})
       |> update_in(
         ["containers"],
         &[
@@ -322,7 +324,16 @@ defmodule ConsoleWeb.RecordTest do
       )
       |> update_in(
         ["project", "cartridges"],
-        &[%{"name" => "pgadmin", "installed" => true, "base" => false, "state" => %{}} | &1]
+        &[
+          %{
+            "name" => "pgadmin",
+            "installed" => true,
+            "base" => false,
+            "state" => %{},
+            "compose" => [%{"service" => "pgadmin", "listens" => 5050, "published" => [5050]}]
+          }
+          | &1
+        ]
       )
 
     page = Record.page(status, @catalog, %{"http://localhost:5050/" => {"302", "good"}})
@@ -352,7 +363,7 @@ defmodule ConsoleWeb.RecordTest do
              Enum.find(Record.page(stopped, @catalog).cartridges, &(&1.c["name"] == "pgadmin")).addresses
 
     # Not published — the status says no port — it is the service's port, read off docker compose ps.
-    unpublished = put_in(status, ["ports", "pgadmin"], nil)
+    unpublished = put_in(status, ["ports", "published"], %{})
 
     assert [%{label: "pgadmin", path: ":5050", kind: "inside", read: {"running", "good"}}] =
              Enum.find(

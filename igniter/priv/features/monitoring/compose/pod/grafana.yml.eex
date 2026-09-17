@@ -1,0 +1,35 @@
+  # Grafana, on the Prometheus above: its datasource is provisioned off
+  # the project's monitoring/grafana/datasource.yml, and its dashboards
+  # are the ones PromEx uploads when the app starts — which is why the
+  # app waits for this container to be healthy. Anonymous, as admin, so
+  # the door opens without a sign-in; the credentials the app uploads
+  # with are the image's defaults, named here.
+  grafana:
+    image: grafana/grafana:<%= @version.("grafana", "latest") %>
+    network_mode: "service:pod"
+    environment:
+      GF_SERVER_HTTP_PORT: <%= @listens %>
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      # Where the datasource file points: Prometheus, in the pod.
+      PROMETHEUS_URL: http://localhost:9090
+    depends_on:
+      - prometheus
+    healthcheck:
+      # busybox's wget, which the Alpine image carries.
+      test: wget -q --spider http://localhost:<%= @listens %>/api/health
+      interval: 10s
+      timeout: 5s
+      # The first start on a fresh volume runs Grafana's migrations —
+      # eight hundred of them — and a failure in this period does not
+      # count: four and a half minutes on a busy host, beside the app
+      # compiling (seen 2026-09-08, twice), where thirty seconds gave up
+      # on it. The retries after it are five minutes more.
+      retries: 30
+      start_period: 300s
+    configs:
+      - source: grafana_datasource
+        target: /etc/grafana/provisioning/datasources/datasource.yml

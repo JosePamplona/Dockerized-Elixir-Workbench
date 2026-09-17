@@ -881,6 +881,10 @@ defmodule ConsoleWeb.ConsoleLive do
       </div>
     </header>
 
+    <%!-- What colour each service is drawn in, for the hooks that paint in
+         the browser (the logs): a role's, asked of ConsoleWeb.Services. --%>
+    <div id="svc-colors" hidden data-colors={Jason.encode!(ConsoleWeb.Services.colors(@status))}>
+    </div>
     <div class="app" id="app" phx-hook="Rail">
       <%!-- The rail's two squares, the way hexdocs folds its sidebar: in
             the rail's corner while the rail shows, in the screen's corner

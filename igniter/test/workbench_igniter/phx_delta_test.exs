@@ -93,12 +93,51 @@ defmodule WorkbenchIgniter.PhxDeltaTest do
     end
   end
 
+  describe "generate/2: the release's files, as phx.gen.release --docker writes them at birth" do
+    @flags ~w(--app test --module Test --database postgres --adapter bandit)
+    @docker WorkbenchIgniter.TestProject.docker()
+
+    test "with Ecto: the scripts, the Release module and bin/migrate" do
+      files = PhxDelta.generate(@flags)
+
+      assert files["rel/overlays/bin/server"] =~ "PHX_SERVER=true exec ./test start"
+      assert files["rel/overlays/bin/migrate"] =~ "exec ./test eval Test.Release.migrate"
+      assert files["rel/overlays/bin/migrate.bat"] =~ "Test.Release.migrate"
+      assert files["lib/test/release.ex"] =~ "defmodule Test.Release do"
+      assert files["lib/test/release.ex"] =~ "@app :test"
+      # No stack given: no Dockerfile, the project's is its own.
+      refute Map.has_key?(files, "Dockerfile")
+    end
+
+    test "without Ecto, no migration; without assets, no assets steps in the Dockerfile" do
+      files =
+        PhxDelta.generate(@flags ++ ~w(--no-ecto --no-esbuild --no-tailwind --no-html), @docker)
+
+      assert Map.has_key?(files, "rel/overlays/bin/server")
+      refute Map.has_key?(files, "rel/overlays/bin/migrate")
+      refute Map.has_key?(files, "lib/test/release.ex")
+
+      assert files["Dockerfile"] =~
+               "ARG ELIXIR_VERSION=1.19.6\nARG OTP_VERSION=28.5.0.6\nARG DEBIAN_VERSION=trixie-20260824-slim"
+
+      refute files["Dockerfile"] =~ "assets"
+      assert files[".dockerignore"] =~ "_build"
+
+      with_assets = PhxDelta.generate(@flags, @docker)
+      assert with_assets["Dockerfile"] =~ "RUN mix assets.setup"
+
+      assert with_assets["Dockerfile"] =~
+               "COPY assets assets\n\n# compile assets\nRUN mix assets.deploy"
+    end
+  end
+
   describe "the delta" do
     test "of a mailer: what phx.new generates for it, and only that" do
       {facts, _} = PhxDelta.facts(phx_test_project())
       %{created: created, changed: changed} = PhxDelta.delta(%{facts | mailer: false}, :mailer)
 
       assert Map.keys(created) == ["lib/test/mailer.ex"]
+      refute Map.has_key?(changed, "Dockerfile")
       assert created["lib/test/mailer.ex"] =~ "use Swoosh.Mailer, otp_app: :test"
       assert "mix.exs" in Map.keys(changed)
       assert "config/config.exs" in Map.keys(changed)

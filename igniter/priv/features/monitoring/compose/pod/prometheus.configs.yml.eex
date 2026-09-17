@@ -1,0 +1,8 @@
+  # Prometheus's configuration, the project's own (monitoring/
+  # prometheus.yml), and the targets of its job — the topology's, so
+  # written here: the app, on localhost inside the pod.
+  prometheus_conf:
+    file: ./monitoring/prometheus.yml
+  prometheus_targets:
+    content: |
+      - targets: ["localhost:<%= @internal_port %>"]

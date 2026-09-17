@@ -1,0 +1,27 @@
+  # One-shot migration (rel/overlays/bin/migrate, from phx.gen.release):
+  # the release phase every platform has under its own name — Heroku's
+  # release phase, Fly's release_command, a Kubernetes Job. The same
+  # image as the app, one command, run to completion before the app
+  # starts: in docker-compose.prod.yml the app's depends_on waits on
+  # this service instead of on the database (a migration that completed
+  # implies a healthy one). The dev compose has no such service: the
+  # dev image migrates itself on boot ('mix setup' in its CMD).
+  migrate:
+    image: <%= @image %>
+    build:
+      dockerfile: <%= @dockerfile %>
+    command: /app/bin/migrate
+    network_mode: "service:pod"
+    env_file:
+      - ./.env<%= if @sqlite do %>
+    volumes:
+      - data:/app/data
+    depends_on:
+      data_init:
+        condition: service_completed_successfully<% end %><%= if @engine == "mssql" do %>
+    depends_on:
+      database_init:
+        condition: service_completed_successfully<% end %><%= if @engine in ["postgres", "mysql"] do %>
+    depends_on:
+      database:
+        condition: service_healthy<% end %>

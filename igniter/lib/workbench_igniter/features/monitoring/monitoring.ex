@@ -10,7 +10,8 @@ defmodule WorkbenchIgniter.Features.Monitoring do
   `PromEx.Plug` before `Plug.Telemetry` in the endpoint, which serves
   `/metrics` on the app's port. The workspace side is two containers
   this cartridge *declares* (`services/1`: `"prometheus"`, `"grafana"`)
-  and `mix workbench.compose` renders at the next `./wb.sh bake`, each
+  and defines (`compose/1`), baked into the compose in the insert's own
+  commit, each
   opening with a file the project owns: `monitoring/prometheus.yml`, the
   scrape configuration, and `monitoring/grafana/datasource.yml`, the
   provisioned datasource. What is the topology's — where the app is for
@@ -27,6 +28,7 @@ defmodule WorkbenchIgniter.Features.Monitoring do
 
   embed_templates()
   embed_assets()
+  embed_compose()
 
   @prometheus "monitoring/prometheus.yml"
   @datasource "monitoring/grafana/datasource.yml"
@@ -57,11 +59,79 @@ defmodule WorkbenchIgniter.Features.Monitoring do
   defp prom_ex_module(igniter),
     do: Module.concat(Igniter.Project.Module.module_name_prefix(igniter), PromEx)
 
-  # The two containers: rendered by workbench.compose, Prometheus on the
+  # The two containers, by name: Prometheus on the
   # app's /metrics and Grafana on Prometheus, Grafana's port published
   # beside the app's.
   @impl true
   def services(_state), do: ["prometheus", "grafana"]
+
+  # The two containers, whole, on either topology. Prometheus: its block
+  # (which opens its receiver when k6 is a neighbour) and its configs —
+  # the project's file and the targets, which are the topology's.
+  # Grafana: its block, its port — in the pod's slot, or in its own block
+  # on the bridge network — its datasource config, and what the app
+  # owes it: the app uploads its dashboards there on start, so it waits
+  # for Grafana to be healthy, and on the bridge network is told where
+  # it is.
+  @impl true
+  def compose(%{services: services, topology: topology} = context) do
+    alias WorkbenchIgniter.ComposeFile.Service
+
+    # Grafana's port is said to it (GF_SERVER_HTTP_PORT); Prometheus's is its image's.
+    context = Map.merge(context, %{k6: "k6" in services, listens: 3000})
+
+    if("prometheus" in services,
+      do: [
+        %Service{
+          name: "prometheus",
+          position: 50,
+          title: "the Prometheus container",
+          role: "observability",
+          # busybox: `sh` is the shell it has.
+          shells: [%{label: "sh", command: ["sh"]}],
+          listens: 9090,
+          body: compose_fragment("#{topology}/prometheus.yml.eex", context),
+          configs: compose_fragment("#{topology}/prometheus.configs.yml.eex", context)
+        }
+      ],
+      else: []
+    ) ++
+      if("grafana" in services,
+        do: [
+          %Service{
+            name: "grafana",
+            position: 60,
+            title: "the Grafana container",
+            role: "observability",
+            # An Alpine image: `sh` is the shell it has.
+            shells: [%{label: "sh", command: ["sh"]}],
+            listens: 3000,
+            ports: [
+              %{
+                name: :grafana,
+                internal: 3000,
+                default: 3000,
+                comment: [
+                  "Grafana port, with the monitoring cartridge in. Prometheus is not",
+                  "published: Grafana reads it from inside this workspace."
+                ]
+              }
+            ],
+            body: compose_fragment("#{topology}/grafana.yml.eex", context),
+            configs: compose_fragment("#{topology}/grafana.configs.yml.eex", context),
+            app_waits: [{"grafana", "service_healthy"}],
+            app_environment:
+              if(topology == "scaled",
+                do:
+                  "    # Where the dashboards go on start (config/runtime.exs): Grafana by\n" <>
+                    "    # its name here, where the pod had it on localhost.\n" <>
+                    "    GRAFANA_HOST: http://grafana:3000"
+              )
+          }
+        ],
+        else: []
+      )
+  end
 
   # The metrics, a door on the app's port; Grafana is the workbench's
   # own door, off the port the compose published for it.
@@ -71,7 +141,7 @@ defmodule WorkbenchIgniter.Features.Monitoring do
   @impl true
   def afterwards,
     do:
-      "./wb.sh bake puts Prometheus and Grafana into the workspace's compose; the next up brings them up, and Grafana opens with the dashboards."
+      "Prometheus and Grafana are in the workspace's compose, in this same commit; the next up brings them up, and Grafana opens with the dashboards."
 
   @doc "Installer body, run by the mix task shell as its `igniter/1`."
   def install(igniter) do

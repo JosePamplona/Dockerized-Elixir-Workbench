@@ -34,10 +34,19 @@ defmodule ConsoleWeb.WorkbenchDrawer do
     "ERLANG_VERSION" => "new",
     "DEBIAN_VERSION" => "new",
     "GIT_IDENTITY" => "every commit",
-    "POSTGRES_IMAGE_VERSION" => "every bake",
-    "PGADMIN_IMAGE_VERSION" => "every bake",
     "NGINX_IMAGE_VERSION" => "scaled deploy"
   }
+  # A service's image tag, whichever service: `NAME_IMAGE_VERSION` is
+  # handed to the bake as `--version name=TAG` (wb.sh version_flags),
+  # and the cartridge that brings `name` takes it.
+  defp effect(key) do
+    cond do
+      Map.has_key?(@effect, key) -> @effect[key]
+      String.ends_with?(key, "_IMAGE_VERSION") -> "every bake"
+      true -> "new"
+    end
+  end
+
   @stack_parts [
     {"ELIXIR_VERSION", :e, "the Elixir of the image"},
     {"ERLANG_VERSION", :o, "the Erlang/OTP of the image"},
@@ -276,7 +285,7 @@ defmodule ConsoleWeb.WorkbenchDrawer do
   defp field(assigns) do
     f = assigns.f
     v = Map.get(assigns.edits, f.key, f.value)
-    effect = Map.get(@effect, f.key, "new")
+    effect = effect(f.key)
 
     choices =
       if f.key == "WORKSPACE_PATH",
@@ -715,7 +724,15 @@ defmodule ConsoleWeb.WorkbenchDrawer do
     {"app", "info", false, "17:07:17.426", "[info] Sent 200 in 24ms"},
     {"app", "error", false, "17:52:13.680", "[error] ** (Bandit.HTTPError) Read timeout"}
   ]
-  @svc_colours ~w(app database pgadmin pod balancer migrate)
+  # The sample's services, by the role each would say: the preview is
+  # coloured as the logs are, by role (ConsoleWeb.Services).
+  @sample_roles %{
+    "app" => "compute",
+    "database" => "database",
+    "pgadmin" => "devtools",
+    "balancer" => "balancer",
+    "migrate" => "job"
+  }
 
   # The digits of a line number, as ConsoleWeb.Box counts them for the sheet.
   defp digits(nil), do: 0
@@ -724,7 +741,7 @@ defmodule ConsoleWeb.WorkbenchDrawer do
   # The colour a service's lines wear: hooks.js svcColor, on the server.
   defp svc_var(service) do
     base = String.replace(service, ~r/\d+$/, "")
-    "--svc:var(--svc-#{if base in @svc_colours, do: base, else: "pod"})"
+    "--svc:var(--svc-#{Map.get(@sample_roles, base, "network")})"
   end
 
   defp ui(assigns) do

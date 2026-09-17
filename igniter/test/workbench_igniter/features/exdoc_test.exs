@@ -49,8 +49,8 @@ defmodule WorkbenchIgniter.Features.ExdocTest do
       assert router =~ "pipeline :exdoc do"
       # The standard `doc/` output dir, served relative to the VM cwd.
       assert router =~ ~s|from: "doc"|
-      assert router =~ ~s|get("/docs/", ExDocController, :index)|
-      assert router =~ ~s|get("/docs/*path", ExDocController, :handle)|
+      assert router =~ ~s|get "/docs/", ExDocController, :index|
+      assert router =~ ~s|get "/docs/*path", ExDocController, :handle|
       # Without --coveralls there is no cover route or action.
       refute router =~ ":cover"
       refute files["lib/test_web/controllers/exdoc_controller.ex"] =~ "def cover"
@@ -93,7 +93,7 @@ defmodule WorkbenchIgniter.Features.ExdocTest do
       files = igniter.assigns[:test_files]
 
       assert files["lib/test_web/router.ex"] =~
-               ~s|get("/docs/cover", ExDocController, :cover)|
+               ~s|get "/docs/cover", ExDocController, :cover|
 
       assert files["lib/test_web/controllers/exdoc_controller.ex"] =~ "def cover"
       # The TESTING.md placeholder lands at the project

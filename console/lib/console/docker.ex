@@ -33,9 +33,15 @@ defmodule Console.Docker do
   @service "com.docker.compose.service"
   # The house's images: the workbench's own, `dew-STACK-phxVERSION`
   # (`dockerized-elixir-workbench` was its name until 2026-09-15, and a
-  # daemon may still hold one), the stack's base, and the services'.
-  @house ~w(dockerized-elixir-workbench hexpm/elixir postgres mysql mcr.microsoft.com/mssql/server dpage/pgadmin4 adminer registry.k8s.io/pause nginx grafana/k6 prom/prometheus grafana/grafana)
-  defp house?(repository), do: repository in @house or String.starts_with?(repository, "dew-")
+  # daemon may still hold one), the stack's base — and the services',
+  # which no list here names: every image a compose the workbench bakes
+  # may run, off the skeletons and the catalog's cartridges
+  # (WorkbenchIgniter.Compose.images/0).
+  @house ~w(dockerized-elixir-workbench hexpm/elixir)
+  defp house?(repository),
+    do:
+      repository in @house or String.starts_with?(repository, "dew-") or
+        repository in ConsoleWeb.Services.images()
 
   # --- containers -------------------------------------------------------------
 
@@ -46,8 +52,8 @@ defmodule Console.Docker do
     all_containers()
     |> Enum.filter(&(scope == "daemon" or mine?(&1, mine)))
     |> Enum.sort_by(
-      &{if(mine?(&1, mine), do: 0, else: 1), if(&1.console?, do: 1, else: 0), order(&1.service),
-       &1.project || "", &1.name}
+      &{if(mine?(&1, mine), do: 0, else: 1), if(&1.console?, do: 1, else: 0),
+       ConsoleWeb.Services.position(status, &1.service), &1.project || "", &1.name}
     )
   end
 
@@ -122,18 +128,6 @@ defmodule Console.Docker do
 
   @doc "Whether a container is this workspace's: of its compose project, or the console itself."
   def mine?(c, project), do: c.console? or (not is_nil(project) and c.project == project)
-
-  # The compose's own order, then the console, then whatever else.
-  defp order("app" <> _), do: 0
-  defp order("database"), do: 1
-  defp order("pgadmin"), do: 2
-  defp order("adminer"), do: 3
-  defp order("prometheus"), do: 4
-  defp order("grafana"), do: 5
-  defp order("pod"), do: 6
-  defp order("balancer"), do: 7
-  defp order("migrate"), do: 8
-  defp order(_), do: 9
 
   @doc "The compose project the status names, or nil without one."
   def project(nil), do: nil
@@ -282,8 +276,7 @@ defmodule Console.Docker do
   # A one-word name is Docker Hub's official image when it is one the
   # house pulls; a one-word name of a local build (`workbench`,
   # `lorem-ipsum`) is not on the Hub, and a link would land on nothing.
-  @hub_official ~w(postgres mysql adminer nginx)
-  defp hub_official?(name), do: name in @hub_official
+  defp hub_official?(name), do: name in ConsoleWeb.Services.images()
 
   @doc "The images in scope, grouped by ID, the untagged ones counted, and who uses each."
   def images(status, scope) do

@@ -33,7 +33,11 @@ tailwind watcher in `dev.exs`, `tailwind test` in the
 `assets.setup`/`assets.build`/`assets.deploy` aliases,
 `assets/css/app.css` and `assets/vendor/heroicons.js`, and the
 Tailwind classes of the root layout and the home page (without it
-phx.new ships a plain stylesheet).
+phx.new ships a plain stylesheet). And, when the project had no
+`assets/` directory before, the assets steps of the production
+`Dockerfile` (`mix assets.setup`, `COPY assets`, `mix assets.deploy`)
+that `phx.gen.release --docker` writes at birth only for a project that
+has one.
 
 Files the project already changed are merged three ways; a conflict is
 reported with `phx.new`'s version of the file beside it.

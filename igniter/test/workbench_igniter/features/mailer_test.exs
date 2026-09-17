@@ -50,7 +50,33 @@ defmodule WorkbenchIgniter.Features.MailerTest do
   end
 
   test "reports a conflict and leaves the file alone, phx.new's version beside it" do
-    # The project rewrote the very lines the mailer changes: the deps list.
+    # The project rewrote the very line the mailer writes after in dev.exs.
+    igniter =
+      no_mailer_project()
+      |> Igniter.update_file("config/dev.exs", fn source ->
+        Rewrite.Source.update(
+          source,
+          :content,
+          &String.replace(
+            &1,
+            "enable_expensive_runtime_checks: true",
+            "enable_expensive_runtime_checks: false"
+          )
+        )
+      end)
+      |> apply_igniter!()
+      |> Igniter.compose_task("workbench.install.mailer", [])
+
+    assert Enum.any?(igniter.issues, &(&1 =~ "config/dev.exs: the mailer lines conflict"))
+
+    assert_creates(igniter, "config/dev.exs.phx-new", fn content ->
+      assert content =~ "config :swoosh, :api_client, false"
+    end)
+  end
+
+  test "mix.exs is not merged as text: the mailer's dependencies go in after the project's own" do
+    # A dependency of the project's own where phx.new writes the
+    # mailer's was a conflict until 2026-09-16; now it is a neighbour.
     igniter =
       no_mailer_project()
       |> Igniter.update_file("mix.exs", fn source ->
@@ -59,16 +85,23 @@ defmodule WorkbenchIgniter.Features.MailerTest do
           :content,
           &String.replace(
             &1,
-            ~r/defp deps do.*?\n  end/s,
-            "defp deps do\n    [{:jason, \"~> 1.2\"}]\n  end"
+            ~s|{:bandit, "~> 1.5"}|,
+            ~s|{:bandit, "~> 1.5"},\n      {:my_dep, "~> 1.0"}|
           )
         )
       end)
       |> apply_igniter!()
       |> Igniter.compose_task("workbench.install.mailer", [])
 
-    assert Enum.any?(igniter.issues, &(&1 =~ "mix.exs: the mailer lines conflict"))
-    assert_creates(igniter, "mix.exs.phx-new", fn content -> assert content =~ ":swoosh" end)
+    assert igniter.issues == []
+    refute Igniter.exists?(igniter, "mix.exs.phx-new")
+
+    assert_has_patch(igniter, "mix.exs", """
+       - |      {:my_dep, "~> 1.0"}
+       + |      {:my_dep, "~> 1.0"},
+       + |      {:swoosh, "~> 1.16"},
+       + |      {:req, "~> 0.5"}
+    """)
   end
 
   test "puts the new file where phx.new would, even when the app name carries digits" do

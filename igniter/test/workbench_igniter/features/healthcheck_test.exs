@@ -52,9 +52,9 @@ defmodule WorkbenchIgniter.Features.HealthcheckTest do
         "lib/test_web/router.ex",
         """
         + | scope "/health", TestWeb do
-        + | pipe_through(:api)
+        + | pipe_through :api
         + |
-        + | get("/", HealthcheckController, :health)
+        + | get "/", HealthcheckController, :health
         + | end
         """
       )

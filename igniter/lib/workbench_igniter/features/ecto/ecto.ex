@@ -21,12 +21,16 @@ defmodule WorkbenchIgniter.Features.Ecto do
   say, off the adapter it reads; `connection/2` is the one table of
   those credentials, the compose and `.env` both written from it.
   Inserting Ecto into a project whose compose was baked without a
-  database is what `./wb.sh bake` is for, and `wb.sh add ecto` says so.
+  database bakes it again, in the insert's own commit (`wb.sh add`).
 
   Inserted once: changing the database of a project with data is a
   migration, not a flag. The mark is the `ecto_sql` dependency.
   """
   use WorkbenchIgniter.Feature
+
+  alias WorkbenchIgniter.ComposeFile.Service
+
+  embed_compose()
 
   # phx.new's own words for each, from `mix help phx.new`.
   @databases [
@@ -64,7 +68,7 @@ defmodule WorkbenchIgniter.Features.Ecto do
   @impl true
   def afterwards,
     do:
-      "./wb.sh bake puts the database into the workspace's compose, then ./wb.sh setup creates it."
+      "The database is in the workspace's compose, in this same commit; ./wb.sh setup creates it."
 
   @impl true
   def option_docs do
@@ -99,11 +103,203 @@ defmodule WorkbenchIgniter.Features.Ecto do
   # needs a place for its file that outlives the container — a data
   # volume — so it is a service the project asks the workspace for too.
   @impl true
+  def services(:any), do: ~w(postgres mysql mssql sqlite)
   def services(%{database: "postgres"}), do: ["postgres"]
   def services(%{database: "mysql"}), do: ["mysql"]
   def services(%{database: "mssql"}), do: ["mssql"]
   def services(%{database: "sqlite3"}), do: ["sqlite"]
   def services(_state), do: []
+
+  # What a database is in a compose file, all of it here: the server by
+  # engine; in a release the one-shot `migrate` the app waits for (the
+  # dev image migrates itself on boot), with what has to be there before
+  # it — the database MSSQL's image cannot create by a variable
+  # (`database_init`), a place nobody can write in for the SQLite file
+  # (`data_init`) — and, on the bridge network, where the database is
+  # now that it is not on localhost. The first in the file (position 10):
+  # what administers a database comes after it.
+  # The names `services/1` asks by: one per engine.
+  @engines ~w(postgres mysql mssql sqlite)
+
+  @impl true
+  def compose(%{services: services, deploy: deploy} = context) do
+    case Enum.filter(services, &(&1 in @engines)) do
+      [] ->
+        []
+
+      [_, _ | _] = engines ->
+        {:error, "one database at most, got " <> Enum.join(engines, " and ")}
+
+      ["sqlite"] when deploy == :scaled ->
+        {:error, "a scaled deployment cannot run on SQLite: the replicas cannot share a file"}
+
+      [_engine] ->
+        database = database(services)
+        compose(context.topology, database, Map.merge(context, database))
+    end
+  end
+
+  # The bridge network: the database is not on localhost any more.
+  defp compose("scaled", database, context) do
+    url = "ecto://#{database.db_user}:#{database.db_password}@database/#{context.app_name}_prod"
+
+    [
+      %Service{
+        name: "migrate",
+        deploys: [:scaled],
+        position: 10,
+        title: "the one-shot migration",
+        role: "job",
+        body: compose_fragment("scaled/migrate.yml.eex", context),
+        app_waits: [{"migrate", "service_completed_successfully"}],
+        app_environment: "    DATABASE_URL: #{url}"
+      }
+    ] ++
+      if(database.engine == "mssql",
+        do: [one_shot("database_init", "scaled/database_init.yml.eex", [:scaled], context)],
+        else: []
+      ) ++
+      [
+        %Service{
+          name: "database",
+          deploys: [:scaled],
+          position: 10,
+          title: "the workspace's database",
+          role: "database",
+          shells: shells(database),
+          listens: database.db_port,
+          body: compose_fragment("scaled/#{database.engine}.yml.eex", context)
+        }
+      ]
+  end
+
+  defp compose("pod", database, context) do
+    release = [:prod]
+
+    [
+      %Service{
+        name: "migrate",
+        deploys: release,
+        position: 10,
+        title: "the one-shot migration",
+        role: "job",
+        body: compose_fragment("pod/migrate.yml.eex", context),
+        app_waits: [{"migrate", "service_completed_successfully"}]
+      }
+    ] ++
+      if(database.engine == "mssql",
+        do: [one_shot("database_init", "pod/database_init.yml.eex", release, context)],
+        else: []
+      ) ++
+      if(database.sqlite,
+        do: [
+          %Service{
+            name: "data_init",
+            deploys: release,
+            position: 10,
+            title: "the one-shot that hands the data volume to the release",
+            role: "job",
+            body: compose_fragment("pod/data_init.yml.eex", context),
+            app_volumes:
+              "      # The SQLite file, on a volume that outlives the container: the\n" <>
+                "      # release opens it where DATABASE_PATH (.env) says, /app/data.\n" <>
+                "      - data:/app/data",
+            volumes:
+              "  # The SQLite file of the release: 'delete' drops it with the project.\n  data:"
+          }
+        ],
+        else: []
+      ) ++
+      if(database.server,
+        do: [
+          %Service{
+            name: "database",
+            deploys: [:dev, :prod],
+            position: 10,
+            title: "the workspace's database",
+            role: "database",
+            shells: shells(database),
+            listens: database.db_port,
+            body: compose_fragment("pod/#{database.engine}.yml.eex", context),
+            # In dev the app waits for the server itself; in a release, for
+            # the migrator, and a migration that completed implies a healthy one.
+            app_waits: if(context.dev, do: [{"database", "service_healthy"}], else: [])
+          }
+        ],
+        else: []
+      )
+  end
+
+  @doc """
+  The database among the services a project asks for, as a compose
+  fragment reads it: the `engine`, whether it is a `server` (a
+  container with a healthcheck) or the `sqlite` file, and the
+  credentials the server is configured with (`credentials/1`). What
+  this cartridge's own fragments take, and what a neighbour asks —
+  Adminer, to say where the database is.
+  """
+  @spec database([String.t()]) :: %{
+          engine: String.t() | nil,
+          server: boolean(),
+          sqlite: boolean(),
+          db_user: String.t() | nil,
+          db_password: String.t() | nil,
+          db_port: pos_integer() | nil
+        }
+  def database(services) do
+    engine = Enum.find(services, &(&1 in @engines))
+    server = engine in ~w(postgres mysql mssql)
+    credentials = if server, do: credentials(engine), else: nil
+
+    %{
+      engine: engine,
+      server: server,
+      sqlite: engine == "sqlite",
+      db_user: credentials && credentials.user,
+      db_password: credentials && credentials.password,
+      db_port: credentials && credentials.port
+    }
+  end
+
+  # What a session on the database can be: its own client first —
+  # the reason to open the database is the database, not its
+  # filesystem — with the user the compose configures the server with,
+  # then the shell its image has.
+  defp shells(%{engine: "postgres", db_user: user}),
+    do: [%{label: "psql", command: ["psql", "-U", user]}, %{label: "bash", command: ["bash"]}]
+
+  defp shells(%{engine: "mysql", db_user: user}),
+    do: [%{label: "mysql", command: ["mysql", "-u", user]}, %{label: "bash", command: ["bash"]}]
+
+  defp shells(%{engine: "mssql", db_user: user, db_password: password}) do
+    [
+      %{
+        label: "sqlcmd",
+        command: [
+          "/opt/mssql-tools18/bin/sqlcmd",
+          "-C",
+          "-S",
+          "localhost",
+          "-U",
+          user,
+          "-P",
+          password
+        ]
+      },
+      %{label: "bash", command: ["bash"]}
+    ]
+  end
+
+  defp one_shot(name, fragment, deploys, context) do
+    %Service{
+      name: name,
+      deploys: deploys,
+      position: 10,
+      title: "the one-shot that creates the database",
+      role: "job",
+      body: compose_fragment(fragment, context)
+    }
+  end
 
   @doc """
   phx.new's dev credentials for a server adapter — `user`, `password`,
@@ -160,7 +356,7 @@ defmodule WorkbenchIgniter.Features.Ecto do
   # What the release reads to find the database: `connection/2`, with a
   # word on where it points.
   defp env_entry(igniter, app, "sqlite3") do
-    WorkbenchIgniter.env_entry(
+    WorkbenchIgniter.EnvFile.entry(
       igniter,
       "Path of the SQLite file the release opens (:prod): the workspace's data volume, mounted there.",
       connection("sqlite3", app)
@@ -168,7 +364,7 @@ defmodule WorkbenchIgniter.Features.Ecto do
   end
 
   defp env_entry(igniter, app, database) do
-    WorkbenchIgniter.env_entry(
+    WorkbenchIgniter.EnvFile.entry(
       igniter,
       "Database connection for the release (:prod): the workspace's #{server(database)}, on localhost inside the pod.",
       connection(database, app)

@@ -1,0 +1,23 @@
+  pgadmin:
+    image: dpage/pgadmin4:<%= @version.("pgadmin", "latest") %>
+    network_mode: "service:pod"
+    # `exec` on the last step, as the app's CMD: without it this shell
+    # stayed PID 1 and every stop of pgadmin waited the 10 s of grace
+    # and ended in SIGKILL (`die exit 137`, seen on the events feed).
+    entrypoint: >
+      /bin/sh -c "
+      echo 'localhost:5432:*:postgres:postgres' > /var/lib/pgadmin/pgpass;
+      chmod 600 /var/lib/pgadmin/pgpass;
+      exec /entrypoint.sh
+      "
+    environment:
+      PGADMIN_DEFAULT_EMAIL: pgadmin4@pgadmin.org
+      PGADMIN_DEFAULT_PASSWORD: pass
+      PGADMIN_LISTEN_PORT: <%= @listens %>
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    depends_on:
+      - database
+    configs:
+      - source: pgadmin_servers
+        target: /pgadmin4/servers.json

@@ -186,7 +186,7 @@ to the one option that is not a dependency.
 `phx.new` reads `DATABASE_URL` in `runtime.exs` and writes it nowhere
 (§2.1); `workbench.setup2` writes it in `.env` for a project born with
 Ecto (§2.3). The cartridge does the same, through
-`WorkbenchIgniter.env_entry/3` — a comment and the line, appended to
+`WorkbenchIgniter.EnvFile.entry/3` — a comment and the line, appended to
 `.env` and `.env.sample` when the key is absent — with three bodies:
 
 * `postgres`: `ecto://postgres:postgres@localhost:5432/<app>_prod`,
@@ -199,7 +199,7 @@ Ecto (§2.3). The cartridge does the same, through
   that reads as one, because a value that looked right for a server
   the workspace does not run would be worse.
 
-Not a secret, so `.env.sample` gets the same text (`env_entry/3`,
+Not a secret, so `.env.sample` gets the same text (`EnvFile.entry/3`,
 mailer paper reference 13). What the cartridge does *not* write is the
 compose: `bake_compose` derives the database service from the project
 (§2.3), the seed is `wb.sh`'s, and a cartridge editing
@@ -342,6 +342,6 @@ Read in full on 2026-08-30 unless marked otherwise.
    (served from <https://phoenix.hexdocs.pm/deployment.html>).
    **Summary only**; quoted for `DATABASE_URL` and `ecto.migrate`.
 10. `igniter/lib/workbench_igniter/features/ecto/ecto.ex`, `task.ex`;
-    `WorkbenchIgniter.env_entry/4` (`igniter/lib/workbench_igniter.ex`);
+    `WorkbenchIgniter.EnvFile.entry/4` (`igniter/lib/workbench_igniter/env_file.ex`);
     `igniter/test/workbench_igniter/features/ecto_test.exs`; the
     [mailer paper](../mailer/DESIGN.md) for the engine.

@@ -1,0 +1,24 @@
+  # Prometheus, with the monitoring cartridge in: every few seconds it
+  # scrapes the app's /metrics (PromEx.Plug in the endpoint) and keeps
+  # what it read. Its configuration is the project's own,
+  # monitoring/prometheus.yml; the targets of its one job are this
+  # file's, in the targets file below, because they are the topology's
+  # — the app on localhost here, one line per replica on the scaled
+  # network. Not published: Grafana reads it from inside the pod, and a
+  # query is Grafana's Explore.
+  prometheus:
+    image: prom/prometheus:<%= @version.("prometheus", "latest") %>
+    network_mode: "service:pod"<%= if @k6 do %>
+    # The image's own command, plus the receiver k6 writes its results
+    # to (./wb.sh k6, with the monitoring cartridge in).
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-remote-write-receiver<% end %>
+    depends_on:
+      - pod
+    configs:
+      - source: prometheus_conf
+        target: /etc/prometheus/prometheus.yml
+      - source: prometheus_targets
+        target: /etc/prometheus/targets.yml

@@ -48,7 +48,7 @@ defmodule WorkbenchIgniter.Features.Healthcheck2 do
   def option_docs do
     [
       path:
-        "Prefix of the two probe routes. Defaults to `/health` (`/health/live` and `/health/ready`)."
+        "Prefix of the two probe routes. Defaults to `/health` (`/health/live` and `/health/ready`); `/` for none (`/live` and `/ready`)."
     ]
   end
 
@@ -84,7 +84,8 @@ defmodule WorkbenchIgniter.Features.Healthcheck2 do
       igniter = Igniter.include_existing_file(igniter, path)
       content = igniter.rewrite |> Rewrite.source!(path) |> Rewrite.Source.get(:content)
 
-      case Regex.run(~r/Keyword\.get\(opts, :path, "([^"]+)"\)/, content) do
+      # `[^"]*`: the root is the empty prefix.
+      case Regex.run(~r/Keyword\.get\(opts, :path, "([^"]*)"\)/, content) do
         [_, prefix] -> {%{path: prefix}, igniter}
         nil -> {%{}, igniter}
       end
@@ -163,9 +164,15 @@ defmodule WorkbenchIgniter.Features.Healthcheck2 do
     """
   end
 
-  # "/health/", "health" -> "/health"; the plug appends "/live" and "/ready".
+  # "/health/", "health" -> "/health"; the plug appends "/live" and
+  # "/ready". The root — "/" — is no prefix at all: the probes are
+  # "/live" and "/ready", where "/" <> "" had them at "//live", which
+  # no request ever asks for (2026-09-17, found by calling the plug).
   defp normalize_path(path) do
-    "/" <> (path |> String.trim("/") |> String.trim())
+    case path |> String.trim() |> String.trim("/") do
+      "" -> ""
+      prefix -> "/" <> prefix
+    end
   end
 
   # The plug goes before the first `plug` call of the endpoint (Plug.Static

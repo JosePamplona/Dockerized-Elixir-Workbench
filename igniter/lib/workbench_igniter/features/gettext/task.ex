@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.Workbench.Install.Gettext do
-  use Igniter.Mix.Task
+  use WorkbenchIgniter.Task
 
   alias WorkbenchIgniter.Features.Gettext
 

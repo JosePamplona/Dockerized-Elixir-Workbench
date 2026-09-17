@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.Workbench.Install.Auth0 do
-  use Igniter.Mix.Task
+  use WorkbenchIgniter.Task
 
   alias WorkbenchIgniter.Features.Auth0
 

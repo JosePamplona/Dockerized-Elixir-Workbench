@@ -1,0 +1,17 @@
+  # Prometheus, with the monitoring cartridge in, as in the dev compose:
+  # the project's monitoring/prometheus.yml, and the targets of its job
+  # written here for this topology — one line per replica, by name, so
+  # each one is an instance of its own on the dashboards.
+  prometheus:
+    image: prom/prometheus:<%= @version.("prometheus", "latest") %><%= if @k6 do %>
+    # The image's own command, plus the receiver k6 writes its results
+    # to (./wb.sh k6 --deploy scaled, with the monitoring cartridge in).
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-remote-write-receiver<% end %>
+    configs:
+      - source: prometheus_conf
+        target: /etc/prometheus/prometheus.yml
+      - source: prometheus_targets
+        target: /etc/prometheus/targets.yml

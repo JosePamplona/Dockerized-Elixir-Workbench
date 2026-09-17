@@ -41,18 +41,18 @@ defmodule WorkbenchIgniter.Features.RestTest do
       |> Igniter.compose_task("workbench.install.rest", [])
       |> assert_has_patch("lib/test_web/router.ex", """
       + | pipeline :open_api_spec do
-      + | plug(OpenApiSpex.Plug.PutApiSpec, module: TestWeb.OpenApi.Spec)
+      + | plug OpenApiSpex.Plug.PutApiSpec, module: TestWeb.OpenApi.Spec
       + | end
       """)
       |> assert_has_patch("lib/test_web/router.ex", """
       + | scope "/api/v1", TestWeb do
-      + | pipe_through(:api)
+      + | pipe_through :api
       """)
       |> assert_has_patch("lib/test_web/router.ex", """
-      + | get("/swagger", OpenApiSpex.Plug.SwaggerUI, path: "/dev/openapi")
+      + | get "/swagger", OpenApiSpex.Plug.SwaggerUI, path: "/dev/openapi"
       """)
       |> assert_has_patch("lib/test_web/router.ex", """
-      + | get("/openapi", OpenApiSpex.Plug.RenderSpec, [])
+      + | get "/openapi", OpenApiSpex.Plug.RenderSpec, []
       """)
     end
 

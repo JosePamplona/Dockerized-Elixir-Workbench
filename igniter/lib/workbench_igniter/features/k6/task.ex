@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.Workbench.Install.K6 do
-  use Igniter.Mix.Task
+  use WorkbenchIgniter.Task
 
   alias WorkbenchIgniter.Features.K6
 
@@ -9,9 +9,9 @@ defmodule Mix.Tasks.Workbench.Install.K6 do
   #{@shortdoc}
 
   Writes `#{K6.script_file()}` — five virtual users asking the root page
-  for fifteen seconds — and declares the `k6` container the next
-  `./wb.sh bake` renders into the compose, under a profile `up` never
-  starts. `./wb.sh k6 [SCRIPT]` runs it. Idempotent — re-running it is
+  for fifteen seconds — and declares the `k6` container, which
+  `./wb.sh add` bakes into the compose in the same commit, under a
+  profile `up` never starts. `./wb.sh k6 [SCRIPT]` runs it. Idempotent — re-running it is
   a no-op.
 
   ## Example

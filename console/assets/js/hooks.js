@@ -360,8 +360,15 @@ export function toast(text, ms = 2200) {
 // --- the logs: the server pushes lines, the hook keeps and filters them ------
 // Two thousand lines and a search box: filtering on the server would
 // re-render them all across the socket on every keystroke.
-const SVC_COLORS = ["app", "database", "pgadmin", "pod", "balancer", "migrate"]
-const svcColor = s => { const base = s.replace(/\d+$/, ""); return SVC_COLORS.includes(base) ? `var(--svc-${base})` : "var(--svc-pod)" }
+// A service's colour is its role's, and what a service is its cartridge
+// says: the server knows (ConsoleWeb.Services) and leaves the answer on
+// #svc-colors, by name. A service it has not heard of wears the plainest.
+const svcColor = s => {
+  const base = /^app\d+$/.test(s) ? "app" : s
+  let known = {}
+  try { known = JSON.parse(document.getElementById("svc-colors")?.dataset.colors || "{}") } catch (_) {}
+  return known[base] || "var(--svc-network)"
+}
 function levelOf(text) {
   if (/^\s*\[error\]|ERROR:|FATAL:|\*\* \(|CRITICAL|\berror\b.*\bfailed\b/i.test(text)) return "error"
   if (/^\s*\[warning\]|WARNING:|warning:|HINT:/.test(text)) return "warn"

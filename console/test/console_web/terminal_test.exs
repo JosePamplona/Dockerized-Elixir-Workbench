@@ -9,7 +9,47 @@ defmodule ConsoleWeb.TerminalTest do
     %{
       "compose_project" => "lorem_ipsum",
       "workspace" => "/w",
-      "project" => %{"app" => "lorem_ipsum"},
+      # What each cartridge says its services are (`compose`, off the
+      # igniter's Compose.brought/2): the terminal knows none by name.
+      "project" => %{
+        "app" => "lorem_ipsum",
+        "cartridges" => [
+          %{
+            "name" => "ecto",
+            "compose" => [
+              %{
+                "service" => "database",
+                "title" => "the workspace's database",
+                "role" => "database",
+                "position" => 10,
+                "shells" => [
+                  %{"label" => "psql", "command" => ~w(psql -U postgres)},
+                  %{"label" => "bash", "command" => ["bash"]}
+                ]
+              },
+              %{"service" => "migrate", "role" => "job", "position" => 10, "shells" => []}
+            ]
+          },
+          %{
+            "name" => "pgadmin",
+            "compose" => [
+              %{
+                "service" => "pgadmin",
+                "title" => "the pgAdmin container",
+                "role" => "devtools",
+                "position" => 20,
+                "shells" => [%{"label" => "sh", "command" => ["sh"]}]
+              }
+            ]
+          }
+        ]
+      },
+      # Who and where a session is, as each container's image declares.
+      "homes" => %{
+        "app" => %{"user" => "elixir", "workdir" => "/app"},
+        "database" => %{"user" => "", "workdir" => ""},
+        "pgadmin" => %{"user" => "pgadmin", "workdir" => "/pgadmin4"}
+      },
       "containers" => containers
     }
   end
@@ -133,6 +173,34 @@ defmodule ConsoleWeb.TerminalTest do
     assert argv ==
              ~w(compose --project-name lorem_ipsum exec -T) ++
                colour() ++ ["pgadmin" | Terminal.announced(~w(sh))]
+  end
+
+  test "a prompt is derived: who and where the container says a session is, or the command's name" do
+    s =
+      status([
+        c("app", "lorem-ipsum:local"),
+        c("database", "postgres:latest"),
+        c("pgadmin", "dpage/pgadmin4:latest"),
+        c("cache", "redis:7")
+      ])
+
+    [app, db, pga] = Terminal.targets(s)
+
+    # The dev app is entered where its source is mounted, whatever its image's directory.
+    assert Terminal.prompt(app, "bash", s) == "elixir@app:/app/src$ "
+    assert Terminal.prompt(app, "iex", s) == "iex> "
+    # docker exec on an image with no user is root, at the root.
+    assert Terminal.prompt(db, "bash", s) == "root@database:/# "
+    assert Terminal.prompt(db, "psql", s) == "psql> "
+    assert Terminal.prompt(pga, "sh", s) == "pgadmin@pgadmin:/pgadmin4$ "
+
+    # A container no cartridge brought offers no session, and wears the plainest colour.
+    refute "cache" in Enum.map(Terminal.targets(s), & &1.name)
+    assert ConsoleWeb.Services.color(s, "cache") == "var(--svc-network)"
+    assert ConsoleWeb.Services.color(s, "database") == "var(--svc-database)"
+    assert ConsoleWeb.Services.color(s, "migrate") == "var(--svc-job)"
+    assert ConsoleWeb.Services.color(s, "app3") == "var(--svc-compute)"
+    assert ConsoleWeb.Services.color(s, "balancer") == "var(--svc-balancer)"
   end
 
   # Before the status is here the targets are a guess and the source's

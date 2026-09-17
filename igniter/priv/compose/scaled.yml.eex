@@ -35,20 +35,17 @@ x-app: &app
     context: .
     dockerfile: <%= @dockerfile %>
   env_file:
-    - ./.env<%= if @clustering or @server or @grafana do %>
+    - ./.env<%= if @clustering or @slots.app_environment do %>
   environment:
     # Overrides what .env declares: the pod's localhost database is gone,
     # and the name every replica answers to is the shared network alias.<%= if @clustering do %>
-    DNS_CLUSTER_QUERY: app<% end %><%= if @server do %>
-    DATABASE_URL: ecto://<%= @db_user %>:<%= @db_password %>@database/<%= @app_name %>_prod<% end %><%= if @grafana do %>
-    # Where the dashboards go on start (config/runtime.exs): Grafana by
-    # its name here, where the pod had it on localhost.
-    GRAFANA_HOST: http://grafana:<%= @grafana_internal_port %><% end %><% end %>
+    DNS_CLUSTER_QUERY: app<% end %><%= if @slots.app_environment do %>
+<%= @slots.app_environment %><% end %><% end %>
   networks:
     default:
       aliases:
-        - app<%= if @app_waits != [] do %>
-  depends_on:<%= for {service, condition} <- @app_waits do %>
+        - app<%= if @slots.app_waits != [] do %>
+  depends_on:<%= for {service, condition} <- @slots.app_waits do %>
     <%= service %>:
       condition: <%= condition %><% end %><% end %>
 
@@ -62,7 +59,7 @@ services:<%= for {n, port} <- @replicas do %>
   # host port each, so a specific node can still be addressed — which is
   # how cross-node behaviour is demonstrated.
   balancer:
-    image: nginx:<%= @nginx_version %>
+    image: nginx:<%= @version.("nginx", "alpine") %>
     ports:
       - <%= @balancer_port %>:80
     depends_on:<%= for {n, _port} <- @replicas do %>
@@ -71,174 +68,11 @@ services:<%= for {n, port} <- @replicas do %>
     configs:
       - source: balancer_conf
         target: /etc/nginx/conf.d/default.conf
-<% end %><%= if @server do %>
-  # One-shot migration (rel/overlays/bin/migrate, from phx.gen.release),
-  # so the replicas do not race each other running it on boot. The<%= if @engine == "postgres" do %>
-  # database itself is created by the postgres image from POSTGRES_DB.<% end %><%= if @engine == "mysql" do %>
-  # database itself is created by the mysql image from MYSQL_DATABASE.<% end %><%= if @engine == "mssql" do %>
-  # database itself is created by database_init below: the mssql image
-  # has no variable that creates one, so a one-shot does, once the
-  # server is healthy, and the migrator waits for it instead.<% end %>
-  migrate:
-    image: <%= @image %>
-    build:
-      context: .
-      dockerfile: <%= @dockerfile %>
-    command: /app/bin/migrate
-    env_file:
-      - ./.env
-    environment:
-      DATABASE_URL: ecto://<%= @db_user %>:<%= @db_password %>@database/<%= @app_name %>_prod
-    depends_on:<%= if @engine == "mssql" do %>
-      database_init:
-        condition: service_completed_successfully
-
-  database_init:
-    image: mcr.microsoft.com/mssql/server:<%= @mssql_version %>
-    command: ["/opt/mssql-tools18/bin/sqlcmd", "-C", "-S", "database", "-U", "sa", "-P", "some!Password", "-b", "-Q", "IF DB_ID('<%= @app_name %>_prod') IS NULL CREATE DATABASE [<%= @app_name %>_prod]"]
-    depends_on:<% end %>
-      database:
-        condition: service_healthy
-
-  # No `restart:`, as in the dev compose: the deployment is the unit,
-  # across a reboot too.<%= if @engine == "postgres" do %>
-  database:
-    image: postgres:<%= @postgres_version %>
-    environment:
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_USER: postgres
-      POSTGRES_DB: <%= @app_name %>_prod
-    healthcheck:
-      # -h forces TCP, as in the dev seed: the init's temporary server
-      # answers the unix socket before the real one listens.
-      test: pg_isready -q -h localhost -d <%= @app_name %>_prod -U postgres
-      timeout: 45s
-      interval: 10s
-      retries: 10
-      # Its init is quick, but it is an init: the same allowance, shorter.
-      start_period: 30s<% end %><%= if @engine == "mysql" do %>
-  database:
-    image: mysql:<%= @mysql_version %>
-    environment:
-      # phx.new's own dev credentials for MySQL: root, no password.
-      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
-      MYSQL_DATABASE: <%= @app_name %>_prod
-    healthcheck:
-      # 127.0.0.1 forces TCP, as in the dev compose: the init's temporary
-      # server answers the unix socket before the real one listens.
-      test: mysqladmin ping -h 127.0.0.1 --silent
-      timeout: 45s
-      interval: 10s
-      retries: 10
-      # The first start on a fresh volume initialises the data directory,
-      # runs a temporary server and shuts it down before the real one
-      # listens: a minute or more on a busy host, and a failure in this
-      # period does not count — compose used to give up on it.
-      start_period: 90s<% end %><%= if @engine == "mssql" do %>
-  database:
-    image: mcr.microsoft.com/mssql/server:<%= @mssql_version %>
-    environment:
-      # Microsoft's licence, accepted by running the image at all.
-      ACCEPT_EULA: "Y"
-      # phx.new's own dev credentials for MSSQL.
-      MSSQL_SA_PASSWORD: some!Password
-    # The image declares no volume of its own: an anonymous one, as the
-    # dev compose has it.
-    volumes:
-      - /var/opt/mssql
-    healthcheck:
-      # mssql-tools18 is where the 2022 image ships sqlcmd; -C trusts
-      # the server's own certificate, -b fails the command on an error.
-      test: /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P some!Password -Q "SELECT 1" -b
-      timeout: 45s
-      interval: 10s
-      retries: 10
-      # The first start on a fresh volume takes SQL Server minutes —
-      # system databases, tempdb — and a failure in this period does not
-      # count, or compose gave up on it before it answered (seen 2026-09-07).
-      start_period: 180s<% end %>
-<% end %><%= if @k6 do %>
-  # A load tool, not a service of the deployment: k6 runs to completion,
-  # so it sits under a profile 'up' never starts — './wb.sh k6 [SCRIPT]
-  # --deploy scaled' runs it. On this network it aims at the balancer
-  # when there is one, and at the `app` alias otherwise — the name every
-  # replica answers to, so Docker's DNS spreads the users over them.
-  k6:
-    image: grafana/k6:<%= @k6_version %>
-    profiles: [tools]
-    environment:
-      BASE_URL: <%= if @balancer, do: "http://balancer", else: "http://app:#{@internal_port}" %><%= if @prometheus do %>
-      # Its results go to Prometheus as well, as metrics of its own
-      # (k6_*), for Grafana to draw beside the app's: the remote write
-      # the prometheus service below accepts because of this.
-      K6_OUT: experimental-prometheus-rw
-      K6_PROMETHEUS_RW_SERVER_URL: http://prometheus:9090/api/v1/write<% end %>
-    volumes:
-      - ./k6:/scripts:ro
-<% end %><%= if @prometheus do %>
-  # Prometheus, with the monitoring cartridge in, as in the dev compose:
-  # the project's monitoring/prometheus.yml, and the targets of its job
-  # written here for this topology — one line per replica, by name, so
-  # each one is an instance of its own on the dashboards.
-  prometheus:
-    image: prom/prometheus:<%= @prometheus_version %><%= if @k6 do %>
-    # The image's own command, plus the receiver k6 writes its results
-    # to (./wb.sh k6 --deploy scaled, with the monitoring cartridge in).
-    command:
-      - --config.file=/etc/prometheus/prometheus.yml
-      - --storage.tsdb.path=/prometheus
-      - --web.enable-remote-write-receiver<% end %>
-    configs:
-      - source: prometheus_conf
-        target: /etc/prometheus/prometheus.yml
-      - source: prometheus_targets
-        target: /etc/prometheus/targets.yml
-<% end %><%= if @grafana do %>
-  # Grafana, on the Prometheus above, as in the dev compose; published
-  # on its own port, since nothing else here is on the host's side.
-  grafana:
-    image: grafana/grafana:<%= @grafana_version %>
-    ports:
-      - <%= @grafana_port %>:<%= @grafana_internal_port %>
-    environment:
-      GF_SERVER_HTTP_PORT: <%= @grafana_internal_port %>
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin
-      GF_AUTH_ANONYMOUS_ENABLED: "true"
-      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
-      GF_AUTH_DISABLE_LOGIN_FORM: "true"
-      # Where the datasource file points: Prometheus, by its name.
-      PROMETHEUS_URL: http://prometheus:9090
-    depends_on:
-      - prometheus
-    healthcheck:
-      test: wget -q --spider http://localhost:<%= @grafana_internal_port %>/api/health
-      interval: 10s
-      timeout: 5s
-      # The first start on a fresh volume runs Grafana's migrations —
-      # eight hundred of them — and a failure in this period does not
-      # count: four and a half minutes on a busy host, beside the app
-      # compiling (seen 2026-09-08, twice), where thirty seconds gave up
-      # on it. The retries after it are five minutes more.
-      retries: 30
-      start_period: 300s
-    configs:
-      - source: grafana_datasource
-        target: /etc/grafana/provisioning/datasources/datasource.yml
-<% end %><%= if @balancer or @prometheus or @grafana do %>
-configs:<%= if @prometheus do %>
-  # Prometheus's configuration, the project's own, and the targets of
-  # its job for this topology: every replica, by its service name.
-  prometheus_conf:
-    file: ./monitoring/prometheus.yml
-  prometheus_targets:
-    content: |
-      - targets:<%= for {n, _port} <- @replicas do %>
-          - app<%= n %>:<%= @internal_port %><% end %><% end %><%= if @grafana do %>
-  # The datasource Grafana provisions at start, the project's own;
-  # PROMETHEUS_URL above fills it.
-  grafana_datasource:
-    file: ./monitoring/grafana/datasource.yml<% end %><%= if @balancer do %>
+<% end %><%= if @slots.services do %>
+<%= @slots.services %>
+<% end %><%= if @balancer or @slots.configs do %>
+configs:<%= if @slots.configs do %>
+<%= @slots.configs %><% end %><%= if @balancer do %>
   # $$ escapes compose's own interpolation: nginx must see a single $.
   balancer_conf:
     content: |

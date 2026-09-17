@@ -15,16 +15,25 @@ defmodule WorkbenchIgniter.PhxDelta do
   1. `facts/1` reads the project's shape off the project itself — which
      capabilities it has, its database driver, its HTTP adapter — as
      the `phx.new` flags that would generate it today.
-  2. Two projects are generated with phx.new's own generator
-     (Igniter's in-memory `phx.new`): **base**, with those flags, and
-     **theirs**, with the capability's flag turned on.
+  2. Two projects are generated with phx.new's own generator: **base**,
+     with those flags, and **theirs**, with the capability's flag turned
+     on. Each is then given what `phx.gen.release --docker` writes at
+     birth (`scripts/entrypoint.sh`), from Phoenix's own templates:
+     that generator decides once, off what is there — `release.ex` and
+     `bin/migrate` when Ecto is in, the assets steps of the `Dockerfile`
+     when `assets/` exists — and a capability that brings one of those
+     brings its share of them too (`release/3`).
   3. Files theirs has and base lacks are created. Files that differ
      between the two are merged three ways onto the project's own —
      `git merge-file` with base, ours, theirs — so the project's edits
      survive and only the capability's lines come in. A conflict is
      reported as an issue and the file left alone, with phx.new's
      version of it beside it (`<path>.phx-new`) to merge by hand —
-     never resolved silently.
+     never resolved silently. Two files are not merged as text:
+     `.gitignore`, a set of patterns whose order means nothing, is
+     merged as a set (`WorkbenchIgniter.IgnoreFile.merge/3`), the capability's lines appended
+     once; `mix.exs` is applied as operations on its keywords,
+     dependencies and aliases (`WorkbenchIgniter.MixFile`).
 
   Nothing about Swoosh, Ecto or LiveView is written here or in the
   cartridges that use this: each one names its flag and its mark.
@@ -44,6 +53,7 @@ defmodule WorkbenchIgniter.PhxDelta do
     dep = &Igniter.Project.Deps.has_dep?(igniter, &1)
     app = Igniter.Project.Application.app_name(igniter)
     {config, igniter} = read(igniter, "config/config.exs")
+    {dockerfile, igniter} = read(igniter, "Dockerfile")
 
     facts =
       shape(
@@ -54,7 +64,7 @@ defmodule WorkbenchIgniter.PhxDelta do
         Igniter.exists?(igniter, "AGENTS.md")
       )
 
-    {facts, igniter}
+    {Map.put(facts, :docker, WorkbenchIgniter.Dockerfile.stack(dockerfile)), igniter}
   end
 
   @doc """
@@ -82,7 +92,7 @@ defmodule WorkbenchIgniter.PhxDelta do
         _ -> nil
       end
 
-    shape(app, module, dep, config || "", agents_md?)
+    shape(app, module, dep, config || "", agents_md?) |> Map.put(:docker, nil)
   end
 
   # The marks themselves, given a way to ask for a dependency.
@@ -171,7 +181,7 @@ defmodule WorkbenchIgniter.PhxDelta do
     agents_md: :boolean
   ]
 
-  def generate(flags) do
+  def generate(flags, docker \\ nil) do
     # phx.new's own generator, on a scratch directory, exactly as
     # `mix phx.new` runs it (minus git, deps and the prompts): the files
     # come out as phx.new writes them, which is what the project got.
@@ -191,15 +201,76 @@ defmodule WorkbenchIgniter.PhxDelta do
       |> Phx.New.Generator.put_binding()
       |> Phx.New.Single.generate()
 
-      dir
-      |> Path.join("**")
-      |> Path.wildcard(match_dot: true)
-      |> Enum.reject(&File.dir?/1)
-      |> Map.new(&{Path.relative_to(&1, dir), File.read!(&1)})
+      files =
+        dir
+        |> Path.join("**")
+        |> Path.wildcard(match_dot: true)
+        |> Enum.reject(&File.dir?/1)
+        |> Map.new(&{Path.relative_to(&1, dir), File.read!(&1)})
+
+      Map.merge(files, release(opts, files, docker))
     after
       Mix.shell(shell)
       File.rm_rf!(dir)
     end
+  end
+
+  @release_templates "priv/templates/phx.gen.release"
+
+  # The files `bin/migrate` and `bin/server` of the release; theirs run
+  # the release, so they are executable, as phx.gen.release leaves them.
+  @executables ~w(rel/overlays/bin/server rel/overlays/bin/server.bat rel/overlays/bin/migrate rel/overlays/bin/migrate.bat)
+
+  @doc """
+  What `mix phx.gen.release --docker` adds to a project phx.new
+  generated with `opts` — the workbench runs it at birth, right after
+  phx.new — rendered from Phoenix's own templates with the generator's
+  own binding: the release scripts; with Ecto (phx.new's default, off
+  with `--no-ecto`) the `Release` module and `bin/migrate`; with
+  `docker`, the stack `WorkbenchIgniter.Dockerfile.stack/1` read, the `Dockerfile` and
+  `.dockerignore`, whose assets steps are there when the generation has
+  an `assets/` directory. Without `docker` no Dockerfile: the project's
+  is not the generator's, and stays its own.
+  """
+  @spec release(keyword(), %{String.t() => String.t()}, map() | nil) ::
+          %{String.t() => String.t()}
+  def release(opts, files, docker) do
+    app = String.to_atom(opts[:app])
+    ecto? = opts[:ecto] != false
+
+    binding = [
+      app_namespace: opts[:module],
+      otp_app: app,
+      assets_dir_exists?:
+        Enum.any?(files, fn {path, _} -> String.starts_with?(path, "assets/") end)
+    ]
+
+    dir = Application.app_dir(:phoenix, @release_templates)
+
+    templates =
+      [
+        {"rel/server.sh.eex", "rel/overlays/bin/server"},
+        {"rel/server.bat.eex", "rel/overlays/bin/server.bat"}
+      ] ++
+        if(ecto?,
+          do: [
+            {"rel/migrate.sh.eex", "rel/overlays/bin/migrate"},
+            {"rel/migrate.bat.eex", "rel/overlays/bin/migrate.bat"},
+            {"release.ex.eex", "lib/#{app}/release.ex"}
+          ],
+          else: []
+        ) ++
+        if(docker,
+          do: [{"Dockerfile.eex", "Dockerfile"}, {"dockerignore.eex", ".dockerignore"}],
+          else: []
+        )
+
+    binding =
+      binding ++ WorkbenchIgniter.Dockerfile.binding(docker, Path.join(dir, "Dockerfile.eex"))
+
+    Map.new(templates, fn {template, path} ->
+      {path, EEx.eval_file(Path.join(dir, template), binding)}
+    end)
   end
 
   @doc """
@@ -209,10 +280,14 @@ defmodule WorkbenchIgniter.PhxDelta do
   (ecto's `database`).
   """
   def delta(facts, capability, overrides \\ %{}) when capability in @capabilities do
-    base = generate(flags(facts))
+    docker = Map.get(facts, :docker)
+    base = generate(flags(facts), docker)
 
     theirs =
-      equalize_secrets(generate(flags(Map.merge(%{facts | capability => true}, overrides))), base)
+      equalize_secrets(
+        generate(flags(Map.merge(%{facts | capability => true}, overrides)), docker),
+        base
+      )
 
     created =
       for {path, content} <- theirs, not Map.has_key?(base, path), into: %{}, do: {path, content}
@@ -448,6 +523,15 @@ defmodule WorkbenchIgniter.PhxDelta do
         Igniter.create_new_file(igniter, path, content, on_exists: :skip)
       end)
 
+    # Igniter writes every file alike; the release's scripts run the
+    # release and must be executable, as phx.gen.release leaves them —
+    # set once the files are written (a queued task runs then).
+    igniter =
+      case Enum.filter(@executables, &Map.has_key?(created, &1)) do
+        [] -> igniter
+        paths -> Igniter.add_task(igniter, "workbench.executable", paths)
+      end
+
     # A file the capability takes away goes only while it is, byte for
     # byte, what phx.new put there: a placeholder nobody touched. One
     # the project edited or replaced is the project's, and stays.
@@ -458,8 +542,19 @@ defmodule WorkbenchIgniter.PhxDelta do
 
     Enum.reduce(changed, igniter, fn {path, {base, theirs}}, igniter ->
       case ours do
-        %{^path => own} -> merge_into(igniter, path, own, base, theirs, capability)
-        _ -> Igniter.create_new_file(igniter, path, theirs)
+        # mix.exs is applied as operations on what it holds, not merged
+        # as text (WorkbenchIgniter.MixFile): anything beside where
+        # phx.new writes — the workbench's dependency of birth on the
+        # `deps:` line, a dependency of the project's own — was a
+        # conflict to the merge, on every project (2026-09-16).
+        %{^path => _} when path == "mix.exs" ->
+          WorkbenchIgniter.MixFile.apply(igniter, base, theirs, capability)
+
+        %{^path => own} ->
+          merge_into(igniter, path, own, base, theirs, capability)
+
+        _ ->
+          Igniter.create_new_file(igniter, path, theirs)
       end
     end)
   end
@@ -469,8 +564,14 @@ defmodule WorkbenchIgniter.PhxDelta do
   # base and theirs take them, so a salt line never reads as an edit of ours.
   defp merge_into(igniter, path, ours, base, theirs, capability) do
     secrets = secrets(ours)
+    {ours, base, theirs} = {laid_out(path, ours), laid_out(path, base), laid_out(path, theirs)}
 
-    case merge3(ours, splice(base, secrets), splice(theirs, secrets)) do
+    merged =
+      if WorkbenchIgniter.IgnoreFile.ignore_file?(path),
+        do: WorkbenchIgniter.IgnoreFile.merge(ours, base, theirs),
+        else: merge3(ours, splice(base, secrets), splice(theirs, secrets))
+
+    case merged do
       {:ok, merged} ->
         Igniter.update_file(
           igniter,
@@ -493,6 +594,25 @@ defmodule WorkbenchIgniter.PhxDelta do
             "it with the #{capability} — merge the difference by hand and delete it."
         )
     end
+  end
+
+  # phx.new's templates are not what the formatter would leave: the
+  # router opens its dev routes with a blank line after `do`, which the
+  # formatter takes out. A project that has been formatted — by Igniter,
+  # which formats what it writes, or by the `precommit` alias phx.new
+  # itself gives it — then differs from base right where dashboard
+  # writes, and the merge conflicted (2026-09-17, found by growing a
+  # bare project against one born whole). The project's formatter is
+  # not to be asked: after html it wants LiveView's plugin, which may
+  # not be loaded where this runs. So the three sides of an Elixir file
+  # are merged in the one layout every formatter configuration agrees
+  # on — no blank line after a line that opens a block — and differ by
+  # what was written, not by how it was laid out. What the merge writes
+  # is what `mix format` would have left.
+  defp laid_out(path, text) do
+    if Path.extname(path) in [".ex", ".exs"],
+      do: Regex.replace(~r/^([ \t]*[a-z_@].*\sdo)\n(?:[ \t]*\n)+/m, text, "\\1\n"),
+      else: text
   end
 
   defp drop_placeholder(igniter, path, placeholder) do

@@ -290,7 +290,7 @@ defmodule WorkbenchIgniter.Features.Coveralls do
         asset("cover_test.exs"),
         on_exists: :skip
       )
-      |> WorkbenchIgniter.gitignore_entry(
+      |> WorkbenchIgniter.IgnoreFile.entry(
         "Generated test suite report (mix cover).",
         "/TESTING.md"
       )

@@ -1,0 +1,8 @@
+  # Prometheus's configuration, the project's own, and the targets of
+  # its job for this topology: every replica, by its service name.
+  prometheus_conf:
+    file: ./monitoring/prometheus.yml
+  prometheus_targets:
+    content: |
+      - targets:<%= for {n, _port} <- @replicas do %>
+          - app<%= n %>:<%= @internal_port %><% end %>

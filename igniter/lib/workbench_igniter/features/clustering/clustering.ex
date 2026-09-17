@@ -87,7 +87,7 @@ defmodule WorkbenchIgniter.Features.Clustering do
     igniter
     |> release_templates()
     |> distributed_env_sh()
-    |> WorkbenchIgniter.env_entry(
+    |> WorkbenchIgniter.EnvFile.entry(
       "Cluster discovery, queried by DNSCluster (:prod only).",
       ~s|DNS_CLUSTER_QUERY="#{dns_query}"|
     )

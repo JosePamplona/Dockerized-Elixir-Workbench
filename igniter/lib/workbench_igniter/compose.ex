@@ -7,20 +7,25 @@ defmodule WorkbenchIgniter.Compose do
   network namespace, reaching each other on `localhost`), the scaled
   deployment a **bridge** network with one IP per replica. The rest is
   what the script knows and the templates cannot: the project's name,
-  the image and the Dockerfile, the host ports (chosen on the host, so
-  handed over), the service versions, whether the clustering cartridge
-  is in — and the **services**: what the project's cartridges ask the
-  workspace for, by name — a database (`postgres`, `mysql`, `mssql`,
-  or `sqlite`: no server, a volume for the file in a release), `pgadmin`,
-  `adminer`, `k6`, `prometheus` and `grafana` — declared by each cartridge's
-  `services/1` and gathered by `Features.services/1`. One database at most; the servers take the
-  credentials phx.new configures the project with
-  (`WorkbenchIgniter.Features.Ecto.credentials/1`), so the compose and
-  the project agree without a line of configuration.
+  the image and the Dockerfile, the app's host port, whether the
+  clustering cartridge is in — and the **services**: what the project's
+  cartridges ask the workspace for, by name, asked for by each
+  cartridge's `services/1` (gathered by `Features.services/1`) and
+  defined by the same cartridge's `compose/1`. Nothing about a service
+  is written here, nor named: a service's image tag arrives as
+  `--version NAME=TAG` (the cartridge has the default), and a port it
+  publishes as `--port NAME=PORT` — or is kept where the file already
+  has it (`--keep-ports-of FILE`): a port is chosen once, on the host,
+  and the file is where it lives. One the plan has from neither is a
+  **need** (`{:needs, …}`), named with the default its cartridge
+  declares, for the host to find a free one from.
   They arrive as `--services`, or, when the flag is absent, are read off
-  the project the task runs in. `render/1` writes the YAML the two
-  templates under `priv/compose/` describe; `mix workbench.compose` is
-  the shell around it that `wb.sh bake` runs into the workspace.
+  the project the task runs in. `render/1` writes the topology's
+  skeleton — the two templates under `priv/compose/`: the pod and the
+  app, or the replicas and the balancer — with the cartridges'
+  contributions set into its slots (`WorkbenchIgniter.ComposeFile`);
+  `mix workbench.compose` is the shell around it that `wb.sh bake` runs
+  into the workspace.
 
   The templates carry the prose of the files they write: a compose the
   reader opens should say why it is shaped as it is. Their control tags
@@ -38,25 +43,13 @@ defmodule WorkbenchIgniter.Compose do
             app_name: String.t(),
             image: String.t(),
             dockerfile: String.t(),
-            uid: pos_integer() | nil,
-            gid: pos_integer() | nil,
-            app_port: pos_integer() | nil,
+            uid: non_neg_integer() | nil,
+            gid: non_neg_integer() | nil,
+            app_port: non_neg_integer() | nil,
             internal_port: pos_integer(),
-            pgadmin_port: pos_integer() | nil,
-            pgadmin_internal_port: pos_integer(),
-            adminer_port: pos_integer() | nil,
-            adminer_internal_port: pos_integer(),
-            grafana_port: pos_integer() | nil,
-            grafana_internal_port: pos_integer(),
-            postgres_version: String.t(),
-            pgadmin_version: String.t(),
-            adminer_version: String.t(),
-            nginx_version: String.t(),
-            k6_version: String.t(),
-            mysql_version: String.t(),
-            mssql_version: String.t(),
-            prometheus_version: String.t(),
-            grafana_version: String.t(),
+            ports: %{atom() => non_neg_integer()},
+            versions: %{String.t() => String.t()},
+            keep: String.t() | nil,
             services: [String.t()],
             clustering: boolean(),
             replicas: pos_integer(),
@@ -72,27 +65,17 @@ defmodule WorkbenchIgniter.Compose do
               gid: nil,
               app_port: nil,
               internal_port: 4000,
-              pgadmin_port: nil,
-              pgadmin_internal_port: 5050,
-              adminer_port: nil,
-              adminer_internal_port: 8080,
-              grafana_port: nil,
-              grafana_internal_port: 3000,
-              postgres_version: "latest",
-              pgadmin_version: "latest",
-              adminer_version: "6",
-              nginx_version: "alpine",
-              k6_version: "latest",
-              mysql_version: "8",
-              mssql_version: "2022-latest",
-              prometheus_version: "latest",
-              grafana_version: "latest",
+              ports: %{},
+              versions: %{},
+              keep: nil,
               services: [],
               clustering: false,
               replicas: 4,
               replica_ports: [],
               balancer_port: nil
   end
+
+  alias WorkbenchIgniter.ComposeFile
 
   require EEx
 
@@ -113,21 +96,9 @@ defmodule WorkbenchIgniter.Compose do
     gid: :integer,
     app_port: :integer,
     internal_port: :integer,
-    pgadmin_port: :integer,
-    pgadmin_internal_port: :integer,
-    adminer_port: :integer,
-    adminer_internal_port: :integer,
-    grafana_port: :integer,
-    grafana_internal_port: :integer,
-    postgres_version: :string,
-    pgadmin_version: :string,
-    adminer_version: :string,
-    nginx_version: :string,
-    k6_version: :string,
-    mysql_version: :string,
-    mssql_version: :string,
-    prometheus_version: :string,
-    grafana_version: :string,
+    port: [:string, :keep],
+    version: [:string, :keep],
+    keep_ports_of: :string,
     services: :string,
     clustering: :boolean,
     replicas: :integer,
@@ -137,8 +108,12 @@ defmodule WorkbenchIgniter.Compose do
     out: :string
   ]
 
+  @typedoc "A port a service publishes that the plan has no host port for, with its cartridge's default."
+  @type need :: {name :: atom(), default :: pos_integer()}
+
   @doc """
-  The plan a `mix workbench.compose` argv describes, or why it does not.
+  The plan a `mix workbench.compose` argv describes, or why it does not
+  — or, as `{:needs, needs}`, the ports the host still has to choose.
 
   The services come from `--services` when it is there — names
   separated by commas, `""` or `none` for no service at all — and from
@@ -146,7 +121,8 @@ defmodule WorkbenchIgniter.Compose do
   through `services/1`. `--out` is the task's, not the plan's, and is
   accepted here so one argv serves both.
   """
-  @spec plan_from_argv([String.t()], (-> [String.t()])) :: {:ok, Plan.t()} | {:error, String.t()}
+  @spec plan_from_argv([String.t()], (-> [String.t()])) ::
+          {:ok, Plan.t()} | {:needs, [need()]} | {:error, String.t()}
   def plan_from_argv(argv, read_services \\ &project_services/0) do
     case OptionParser.parse(argv, strict: @switches) do
       {opts, [], []} -> build(opts, read_services)
@@ -173,16 +149,63 @@ defmodule WorkbenchIgniter.Compose do
 
   defp build(opts, read_services) do
     with {:ok, deploy} <- deploy(opts[:deploy]),
-         {:ok, ports} <- replica_ports(deploy, opts) do
+         {:ok, replica_ports} <- replica_ports(deploy, opts),
+         {:ok, ports} <- pairs(opts, :port, &port/1),
+         {:ok, versions} <- pairs(opts, :version, &{:ok, &1}) do
+      dropped = [
+        :deploy,
+        :replica_ports,
+        :balancer,
+        :services,
+        :out,
+        :port,
+        :version,
+        :keep_ports_of
+      ]
+
       plan =
-        struct(Plan, Keyword.drop(opts, [:deploy, :replica_ports, :balancer, :services, :out]))
+        struct(Plan, Keyword.drop(opts, dropped))
         |> Map.put(:deploy, deploy)
-        |> Map.put(:replica_ports, ports)
+        |> Map.put(:replica_ports, replica_ports)
+        |> Map.put(:ports, Map.new(ports, fn {name, port} -> {String.to_atom(name), port} end))
+        |> Map.put(:versions, Map.new(versions))
+        |> Map.put(:keep, kept(opts[:keep_ports_of]))
         |> Map.put(:services, services_of(opts, read_services))
         # `--no-balancer` is the one way to leave it out; a port means it is in.
         |> Map.update!(:balancer_port, &if(opts[:balancer] == false, do: nil, else: &1))
 
       check(plan)
+    end
+  end
+
+  # `--port NAME=PORT` and `--version NAME=TAG`, as many as there are.
+  defp pairs(opts, key, value) do
+    opts
+    |> Keyword.get_values(key)
+    |> Enum.reduce_while({:ok, []}, fn pair, {:ok, acc} ->
+      with [name, raw] when name != "" <- String.split(pair, "=", parts: 2),
+           {:ok, parsed} <- value.(raw) do
+        {:cont, {:ok, acc ++ [{name, parsed}]}}
+      else
+        _ -> {:halt, {:error, "--#{key} takes NAME=VALUE, got #{inspect(pair)}"}}
+      end
+    end)
+  end
+
+  defp port(raw) do
+    case Integer.parse(raw) do
+      {port, ""} when port > 0 -> {:ok, port}
+      _ -> :error
+    end
+  end
+
+  # The file whose ports are kept, as it stands; none the first time.
+  defp kept(nil), do: nil
+
+  defp kept(path) do
+    case File.read(path) do
+      {:ok, text} -> text
+      _ -> nil
     end
   end
 
@@ -225,15 +248,15 @@ defmodule WorkbenchIgniter.Compose do
 
   defp replica_ports(_deploy, _opts), do: {:ok, []}
 
-  @databases ~w(postgres mysql mssql sqlite)
-
   @doc """
   The services a deployment's file declares for what the project asks —
-  off the same conditions the templates render by, so the answer and
-  the file cannot disagree. `names` must all be in the file; `optional`
-  may be (the balancer, which `--no-balancer` leaves out); `replicas`
-  says the scaled file's `app1`…`appN` stand where the pod's `app` is.
-  What `WorkbenchIgniter.Deployments` compares each baked file against.
+  read off the same contributions the file is rendered from
+  (`Features.compose/1`), so the answer and the file cannot disagree.
+  `names` must all be in the file; `optional` may be (the balancer,
+  which `--no-balancer` leaves out); `replicas` says the scaled file's
+  `app1`…`appN` stand where the pod's `app` is. What
+  `WorkbenchIgniter.Deployments` compares each baked file against.
+  A set of services no file can be made of declares nothing.
   """
   @spec service_names(Plan.deploy(), [String.t()]) :: %{
           names: [String.t()],
@@ -241,182 +264,211 @@ defmodule WorkbenchIgniter.Compose do
           replicas: boolean()
         }
   def service_names(deploy, services) when deploy in [:dev, :prod, :scaled] do
-    engine = Enum.find(services, &(&1 in @databases))
-    server = engine in ~w(postgres mysql mssql)
-    sqlite = engine == "sqlite"
-    init = if(engine == "mssql", do: ["database_init"], else: [])
+    # The names do not depend on the values; any plan of this shape says them.
+    plan = %Plan{
+      deploy: deploy,
+      services: services,
+      app_name: "app",
+      image: "app",
+      dockerfile: "Dockerfile",
+      uid: 0,
+      gid: 0,
+      app_port: 0
+    }
 
-    case deploy do
-      :scaled ->
-        # No pod, no pgAdmin and no Adminer: the scaled template renders none of them.
-        %{
-          names:
-            if(server, do: ["migrate"] ++ init ++ ["database"], else: []) ++
-              for(s <- ~w(k6 prometheus grafana), s in services, do: s),
-          optional: ["balancer"],
-          replicas: true
-        }
+    contributed =
+      case contributions(plan, %{}) do
+        {:ok, services} ->
+          Enum.flat_map(services, &ComposeFile.services("services:\n" <> &1.body))
 
-      deploy ->
-        dev = deploy == :dev
+        {:error, _} ->
+          []
+      end
 
-        %{
-          names:
-            ["pod", "app"] ++
-              if(not dev and (server or sqlite), do: ["migrate"], else: []) ++
-              init ++
-              if(sqlite and not dev, do: ["data_init"], else: []) ++
-              if(server, do: ["database"], else: []) ++
-              for(s <- ~w(pgadmin adminer k6 prometheus grafana), s in services, do: s),
-          optional: [],
-          replicas: false
-        }
+    if deploy == :scaled,
+      do: %{names: contributed, optional: ["balancer"], replicas: true},
+      else: %{names: ["pod", "app"] ++ contributed, optional: [], replicas: false}
+  end
+
+  @doc """
+  The compose services one cartridge brings to a project that asks for
+  `services`, across the three deployments: each by its name in the
+  file, once, with the `deploys` it enters, the port it `listens` on
+  inside (`nil` for one that answers nowhere), the ones of its own the
+  host `published`es, and what it is to whoever draws it — `title`,
+  `role`, `image`, `shells`, `position` (`WorkbenchIgniter.ComposeFile`).
+  What the catalog and the status carry per cartridge, so that nothing
+  downstream knows a service by name.
+  """
+  @spec brought(module(), [String.t()]) :: [map()]
+  def brought(feature, services) do
+    for deploy <- [:dev, :prod, :scaled],
+        service <- contributed(feature, deploy, services),
+        deploy in service.deploys,
+        reduce: [] do
+      acc ->
+        case Enum.find_index(acc, &(&1.service == service.name)) do
+          nil -> acc ++ [face(service, deploy)]
+          i -> List.update_at(acc, i, &%{&1 | deploys: &1.deploys ++ [Atom.to_string(deploy)]})
+        end
     end
   end
 
-  # What the deployment's template reads and has no default for, and
-  # the two shapes no file can take: two databases, or replicas on a file.
+  @doc """
+  The images of the house: every repository a compose the workbench
+  bakes may run — the skeletons' own (the pod's pause, the balancer's
+  nginx) and what each cartridge's services run, whichever of its names
+  a project asks by (`services(:any)`). Without tags, sorted. What tells
+  a daemon's images apart as the workbench's, with no list kept by hand.
+  """
+  @spec images() :: [String.t()]
+  def images do
+    skeleton =
+      for file <- [@pod, @scaled],
+          [_, repository] <- Regex.scan(~r/^ +image: ([a-z0-9][^\s:<]*)/m, File.read!(file)),
+          do: repository
+
+    brought =
+      for feature <- WorkbenchIgniter.Features.catalog(),
+          names = feature.services(:any),
+          asked <- [names | Enum.map(names, &[&1])],
+          %{image: image} when is_binary(image) <- brought(feature, asked),
+          do: image
+
+    Enum.sort(Enum.uniq(skeleton ++ brought))
+  end
+
+  defp contributed(feature, deploy, services) do
+    plan = %Plan{
+      deploy: deploy,
+      services: services,
+      app_name: "app",
+      image: "app",
+      dockerfile: "Dockerfile",
+      uid: 0,
+      gid: 0,
+      app_port: 0
+    }
+
+    case feature.compose(context(plan)) do
+      {:error, _} -> []
+      contributed -> contributed
+    end
+  end
+
+  defp face(service, deploy) do
+    %{
+      service: service.name,
+      deploys: [Atom.to_string(deploy)],
+      listens: service.listens,
+      published: Enum.map(service.ports, & &1.internal),
+      title: service.title,
+      role: service.role,
+      # The app's own image, for a one-shot on it, is nobody's to link.
+      image: if(ComposeFile.image(service) == "app", do: nil, else: ComposeFile.image(service)),
+      shells: service.shells,
+      position: service.position
+    }
+  end
+
+  # What the deployment's skeleton reads and has no default for; then
+  # what the cartridges refuse (two databases, replicas on a file); then
+  # the ports their services publish, each given, kept, or needed.
   defp check(%Plan{} = plan) do
     missing = Enum.filter(required(plan), &is_nil(Map.get(plan, &1)))
-    databases = Enum.filter(plan.services, &(&1 in @databases))
 
-    cond do
-      missing != [] ->
-        {:error, "missing: " <> Enum.map_join(missing, ", ", &"--#{flag(&1)}")}
-
-      length(databases) > 1 ->
-        {:error, "one database at most, got " <> Enum.join(databases, " and ")}
-
-      plan.deploy == :scaled and "sqlite" in databases ->
-        {:error, "a scaled deployment cannot run on SQLite: the replicas cannot share a file"}
-
-      true ->
-        {:ok, plan}
+    with [] <- missing,
+         {:ok, services} <- contributions(plan, %{}) do
+      case needs(plan, services) do
+        [] -> {:ok, plan}
+        needs -> {:needs, needs}
+      end
+    else
+      [_ | _] -> {:error, "missing: " <> Enum.map_join(missing, ", ", &"--#{flag(&1)}")}
+      {:error, reason} -> {:error, reason}
     end
   end
 
-  # The pod deployments need the app's port and the build identity; a
-  # port is asked for with the service that publishes it — pgAdmin's and
-  # Adminer's on the pod, Grafana's on every topology.
-  defp required(%Plan{deploy: deploy, services: services}) do
-    pod = deploy != :scaled
-
+  # The pod deployments need the app's port and the build identity.
+  defp required(%Plan{deploy: deploy}) do
     [:app_name, :image, :dockerfile] ++
-      if(pod, do: [:app_port, :uid, :gid], else: []) ++
-      if(pod and "pgadmin" in services, do: [:pgadmin_port], else: []) ++
-      if(pod and "adminer" in services, do: [:adminer_port], else: []) ++
-      if("grafana" in services, do: [:grafana_port], else: [])
+      if(deploy != :scaled, do: [:app_port, :uid, :gid], else: [])
   end
 
   defp flag(key), do: key |> Atom.to_string() |> String.replace("_", "-")
 
-  # The database the plan carries, as the templates read it: the engine,
-  # whether it is a server (a container with a healthcheck) or the file,
-  # and the credentials the server is configured with.
-  defp database(%Plan{services: services}) do
-    engine = Enum.find(services, &(&1 in @databases))
-    server = engine in ~w(postgres mysql mssql)
-    credentials = if server, do: WorkbenchIgniter.Features.Ecto.credentials(engine), else: nil
+  defp needs(plan, services) do
+    resolved = host_ports(plan, services)
 
-    [
-      engine: engine,
-      server: server,
-      sqlite: engine == "sqlite",
-      db_user: credentials && credentials.user,
-      db_password: credentials && credentials.password,
-      db_port: credentials && credentials.port
-    ]
+    for s <- services,
+        port <- s.ports,
+        not Map.has_key?(resolved, port.name),
+        do: {port.name, port.default}
   end
 
-  @doc "The compose file the plan describes, as text."
+  # A port handed over wins; else the one the kept file publishes it on.
+  defp host_ports(plan, services) do
+    for s <- services,
+        port <- s.ports,
+        host =
+          plan.ports[port.name] || (plan.keep && ComposeFile.host_port(plan.keep, port.internal)),
+        into: %{},
+        do: {port.name, host}
+  end
+
+  @doc """
+  What a file is rendered from, as the skeletons and the cartridges'
+  fragments read it (`@key`): the deployment (`deploy`, `dev`, and the
+  `topology`, `"pod"` or `"scaled"`), the project (`app_name`, `image`,
+  `dockerfile`, `uid`, `gid`, `internal_port`), the topology's own
+  (`replicas`, `balancer`, `clustering`), every service asked for
+  (`services`, by which a service sees its neighbours), the host ports
+  resolved so far (`host_ports`) and `version`, which answers a
+  service's image tag given its name and the cartridge's default.
+  """
+  @spec context(Plan.t(), %{atom() => pos_integer()}) :: map()
+  def context(%Plan{} = plan, host_ports \\ %{}) do
+    versions = plan.versions
+
+    plan
+    |> Map.from_struct()
+    |> Map.drop([:ports, :versions, :keep])
+    |> Map.merge(%{
+      dev: plan.deploy == :dev,
+      topology: if(plan.deploy == :scaled, do: "scaled", else: "pod"),
+      replicas: Enum.with_index(plan.replica_ports, fn port, i -> {i + 1, port} end),
+      balancer: plan.balancer_port != nil,
+      host_ports: host_ports,
+      version: fn name, default -> Map.get(versions, name, default) end
+    })
+  end
+
+  # What the cartridges' services contribute to this plan's file, in
+  # the file's order — or what one of them refuses.
+  defp contributions(%Plan{} = plan, host_ports) do
+    with {:ok, services} <- WorkbenchIgniter.Features.compose(context(plan, host_ports)) do
+      {:ok, services |> Enum.filter(&(plan.deploy in &1.deploys)) |> Enum.sort_by(& &1.position)}
+    end
+  end
+
+  @doc """
+  The compose file the plan describes, as text: the topology's skeleton
+  (`priv/compose/`) with what each cartridge's services contribute
+  (`compose/1`) set into its slots by `WorkbenchIgniter.ComposeFile`.
+  A plan `plan_from_argv/2` answered `:ok` for renders; another raises.
+  """
   @spec render(Plan.t()) :: String.t()
-  def render(%Plan{deploy: :scaled} = plan) do
-    scaled(
-      [
-        app_name: plan.app_name,
-        image: plan.image,
-        dockerfile: plan.dockerfile,
-        internal_port: plan.internal_port,
-        postgres_version: plan.postgres_version,
-        nginx_version: plan.nginx_version,
-        k6_version: plan.k6_version,
-        mysql_version: plan.mysql_version,
-        mssql_version: plan.mssql_version,
-        prometheus_version: plan.prometheus_version,
-        grafana_version: plan.grafana_version,
-        grafana_port: plan.grafana_port,
-        grafana_internal_port: plan.grafana_internal_port,
-        k6: "k6" in plan.services,
-        prometheus: "prometheus" in plan.services,
-        grafana: "grafana" in plan.services,
-        # What every replica waits for: the migration, and Grafana when
-        # the app uploads its dashboards there on start.
-        app_waits:
-          if(database(plan)[:server],
-            do: [{"migrate", "service_completed_successfully"}],
-            else: []
-          ) ++
-            if("grafana" in plan.services, do: [{"grafana", "service_healthy"}], else: []),
-        clustering: plan.clustering,
-        replicas: Enum.with_index(plan.replica_ports, fn port, i -> {i + 1, port} end),
-        balancer: plan.balancer_port != nil,
-        balancer_port: plan.balancer_port
-      ] ++ database(plan)
-    )
-  end
-
-  def render(%Plan{deploy: deploy} = plan) do
-    dev = deploy == :dev
-    database = database(plan)
-    server = database[:server]
-
-    pod(
-      [
-        app_name: plan.app_name,
-        image: plan.image,
-        dockerfile: plan.dockerfile,
-        uid: plan.uid,
-        gid: plan.gid,
-        app_port: plan.app_port,
-        internal_port: plan.internal_port,
-        pgadmin_port: plan.pgadmin_port,
-        pgadmin_internal_port: plan.pgadmin_internal_port,
-        adminer_port: plan.adminer_port,
-        adminer_internal_port: plan.adminer_internal_port,
-        postgres_version: plan.postgres_version,
-        pgadmin_version: plan.pgadmin_version,
-        adminer_version: plan.adminer_version,
-        k6_version: plan.k6_version,
-        mysql_version: plan.mysql_version,
-        mssql_version: plan.mssql_version,
-        prometheus_version: plan.prometheus_version,
-        grafana_version: plan.grafana_version,
-        grafana_port: plan.grafana_port,
-        grafana_internal_port: plan.grafana_internal_port,
-        postgres: database[:engine] == "postgres",
-        pgadmin: "pgadmin" in plan.services,
-        adminer: "adminer" in plan.services,
-        k6: "k6" in plan.services,
-        prometheus: "prometheus" in plan.services,
-        grafana: "grafana" in plan.services,
-        dev: dev,
-        # The release migrates as a deployment step, before the app — on a
-        # server or on the SQLite file; the dev image migrates itself on
-        # boot, so its file has no migrator. The app waits for the migrator
-        # in a release, and for the server in dev; for nothing on a file —
-        # and for Grafana, when it uploads its dashboards there on start.
-        migrate: not dev and (server or database[:sqlite]),
-        app_waits:
-          if(dev,
-            do: if(server, do: [{"database", "service_healthy"}], else: []),
-            else:
-              if(server or database[:sqlite],
-                do: [{"migrate", "service_completed_successfully"}],
-                else: []
-              )
-          ) ++
-            if("grafana" in plan.services, do: [{"grafana", "service_healthy"}], else: [])
-      ] ++ database
-    )
+  def render(%Plan{} = plan) do
+    # Twice: the asks say which ports there are, and a service on the
+    # bridge network writes its own into its block.
+    with {:ok, asked} <- contributions(plan, %{}),
+         host_ports = host_ports(plan, asked),
+         {:ok, services} <- contributions(plan, host_ports),
+         {:ok, slots} <- ComposeFile.slots(services, plan.deploy, host_ports) do
+      assigns = plan |> context(host_ports) |> Map.put(:slots, slots) |> Map.to_list()
+      if plan.deploy == :scaled, do: scaled(assigns), else: pod(assigns)
+    else
+      {:error, reason} -> raise ArgumentError, reason
+    end
   end
 end

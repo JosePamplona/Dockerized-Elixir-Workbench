@@ -186,10 +186,9 @@
     fi
     # Ports the services bind INSIDE the containers; the host ports are
     # chosen per workspace and mapped to these in its compose file.
+    # The app's alone: what a cartridge's service listens on is the
+    # cartridge's to say (its compose/1), and nothing here names one.
     APP_INTERNAL_PORT="4000"
-    PGADMIN_INTERNAL_PORT="5050"
-    ADMINER_INTERNAL_PORT="8080"
-    GRAFANA_INTERNAL_PORT="3000"
     SOURCE_CODE_VOLUME="$WORKSPACE_PATH:/app/src"
     # Where Mix compiles. Two sides compile the workspace, and never
     # into the same directory: the app service into the compose's
@@ -675,6 +674,11 @@
     # mix.exs. The dependency is conditional on the mounted workbench
     # (/app/workbench, overridable with WORKBENCH_PATH), so the project
     # stays self-contained whenever the workbench is absent.
+    # The dependency goes on the `deps:` line, never as `] ++ …` on the
+    # list: Igniter reads the project's dependencies off the literal
+    # list in `defp deps`, and so does every cartridge. A base cartridge
+    # never merges mix.exs as text (WorkbenchIgniter.MixFile applies its
+    # change by the tree), so what sits beside this edit is free.
   register_igniter_package() {
     local file_path="$WORKSPACE_PATH/$MIX_FILE"
 
@@ -706,10 +710,12 @@
     # stdout carries deps.get's lines too; to a temporary first, so a
     # task that fails leaves the file as it was.
   bake_compose() {
-    local image="$1" dockerfile="$2" file_path="$WORKSPACE_PATH/$3" deploy
+    local image="$1" dockerfile="$2" deploy
     if [[ "$dockerfile" == "$LOCAL_DOCKERFILE" ]]; then deploy=dev; else deploy=prod; fi
 
-    if workspace_igniter workbench.compose \
+    # The ports are kept where the deployment's own file has them: the
+    # check beside the dev file (compose_behind) keeps the dev file's.
+    compose_render "$3" "${3%.check}" \
       --deploy "$deploy" \
       --app-name "$ELIXIR_PROJECT_NAME" \
       --image "$image" \
@@ -717,41 +723,69 @@
       --uid "$(id -u)" \
       --gid "$(id -g)" \
       --app-port "$APP_PORT" \
-      --internal-port "$APP_INTERNAL_PORT" \
-      --pgadmin-port "$PGADMIN_PORT" \
-      --pgadmin-internal-port "$PGADMIN_INTERNAL_PORT" \
-      --adminer-port "$ADMINER_PORT" \
-      --adminer-internal-port "$ADMINER_INTERNAL_PORT" \
-      --grafana-port "$GRAFANA_PORT" \
-      --grafana-internal-port "$GRAFANA_INTERNAL_PORT" \
-      --postgres-version "$POSTGRES_IMAGE_VERSION" \
-      --pgadmin-version "$PGADMIN_IMAGE_VERSION" \
-      --adminer-version "${ADMINER_IMAGE_VERSION:-6}" \
-      --nginx-version "$NGINX_IMAGE_VERSION" \
-      --mysql-version "${MYSQL_IMAGE_VERSION:-8}" \
-      --mssql-version "${MSSQL_IMAGE_VERSION:-2022-latest}" \
-      --k6-version "${K6_IMAGE_VERSION:-latest}" \
-      --prometheus-version "${PROMETHEUS_IMAGE_VERSION:-latest}" \
-      --grafana-version "${GRAFANA_IMAGE_VERSION:-latest}" \
-      --out "/app/src/$3.baking" > /dev/null
+      --internal-port "$APP_INTERNAL_PORT"
+  }
+
+  # compose_render <FILE> <KEPT_FILE> [OPTIONS...]
+    # One of the workspace's compose files, off 'mix workbench.compose',
+    # written whole or not at all. No service is named here: what the
+    # project's cartridges ask for is theirs to define, and the script
+    # hands over only what is the host's to know — the image tags
+    # config.conf names (version_flags) and the host ports.
+    # A port lives in the file that publishes it, so KEPT_FILE's are
+    # kept (--keep-ports-of) and a bake moves nothing. One no file has
+    # yet comes back as a need — 'need> NAME DEFAULT', exit 3, nothing
+    # written — and is chosen here, the first free from the cartridge's
+    # default on, because free is a question for the host; then the
+    # task is asked again with it.
+  compose_render() {
+    local file="$1" kept="$2"; shift 2
+    local file_path="$WORKSPACE_PATH/$file" answer name default port chosen=" " versions=() ports=()
+    mapfile -t versions < <(version_flags)
+
+    if answer=$(workspace_igniter workbench.compose "$@" "${versions[@]}" \
+      --keep-ports-of "/app/src/$kept" --out "/app/src/$file.baking" 2>&1)
+    then mv "$file_path.baking" "$file_path"; return 0; fi
+
+    rm -f "$file_path.baking"
+    grep -q '^need> ' <<< "$answer" || { echo "$answer" | tail -n 5 >&2; return 1; }
+
+    while read -r _ name default; do
+      port=$(first_free_port "$default")
+      while [[ "$chosen" == *" $port "* ]]; do port=$(first_free_port $((port + 1))); done
+      chosen+="$port "
+      ports+=( --port "$name=$port" )
+    done < <(grep '^need> ' <<< "$answer" | tr -d '\r')
+
+    if workspace_igniter workbench.compose "$@" "${versions[@]}" "${ports[@]}" \
+      --keep-ports-of "/app/src/$kept" --out "/app/src/$file.baking" > /dev/null
     then mv "$file_path.baking" "$file_path"
     else rm -f "$file_path.baking"; return 1
     fi
   }
 
+  # version_flags
+    # '--version NAME=TAG' for every NAME_IMAGE_VERSION config.conf (or
+    # the environment) sets: POSTGRES_IMAGE_VERSION="16" is postgres=16.
+    # One word per line. A name no cartridge asks about is ignored over
+    # there; one left unset takes its cartridge's default.
+  version_flags() {
+    local var name
+    for var in $(compgen -v | grep '_IMAGE_VERSION$'); do
+      [ -n "${!var}" ] || continue
+      name=${var%_IMAGE_VERSION}
+      printf '%s\n' --version "${name,,}=${!var}"
+    done
+  }
+
   # compose_ports
-    # The workspace's published ports, read back off its dev compose —
-    # the file is where they live, so a bake moves nothing — and chosen
-    # fresh, the first free ones, only when the file has none yet.
+    # The app's published port, read back off the dev compose — the
+    # file is where it lives, so a bake moves nothing — and chosen
+    # fresh, the first free one, only when the file has none yet. The
+    # services' ports are kept the same way, by compose_render.
   compose_ports() {
     APP_PORT=$(workspace_app_port)
-    PGADMIN_PORT=$(workspace_pgadmin_port)
-    ADMINER_PORT=$(workspace_adminer_port)
-    GRAFANA_PORT=$(workspace_grafana_port)
-    [ -n "$APP_PORT" ]     || APP_PORT=$(first_free_port 4000)
-    [ -n "$PGADMIN_PORT" ] || PGADMIN_PORT=$(first_free_port 5050)
-    [ -n "$ADMINER_PORT" ] || ADMINER_PORT=$(first_free_port 8080)
-    [ -n "$GRAFANA_PORT" ] || GRAFANA_PORT=$(first_free_port 3000)
+    [ -n "$APP_PORT" ] || APP_PORT=$(first_free_port 4000)
   }
 
   # compose_behind
@@ -767,6 +801,78 @@
     then behind=0; fi
     rm -f "$WORKSPACE_PATH/$check"
     return $behind
+  }
+
+  # compose_is_ours <COMPOSE_FILE>
+    # Whether a compose file is still as the workbench wrote it: the
+    # last commit that touched it is one of the workbench's own — the
+    # project's birth, a bake, an insert, an eject. One the reader
+    # edited and committed wears another subject, and is then the
+    # reader's: nothing here writes over it unasked. The tree is clean
+    # wherever this is asked ('add' and 'eject' require it), so the
+    # file is what its last commit left. Asked of git and of nothing
+    # else: no container runs for the answer.
+  compose_is_ours() {
+    local subject
+    subject=$(git_read log -n 1 --format=%s -- "$1" 2>/dev/null)
+    case "$subject" in
+      "New project: "*|"Bake "*|"Insert "*|"Revert \"Insert "*) return 0 ;;
+      *) return 1 ;;
+    esac
+  }
+
+  # rebake_composes
+    # Every compose file the workspace has, written again for the
+    # project as it is now, uncommitted: the step that makes a
+    # cartridge's commit carry the services it brings — and its eject
+    # take them away. A compose is a derived file: it is never patched
+    # nor reverted, it is rendered again from what the project carries.
+    # A file the reader made their own (compose_is_ours) is left alone
+    # and named in COMPOSES_LEFT; one whose render fails is left as it
+    # was, and named there too — the cartridge landed, and a compose
+    # that is behind is something 'bake' mends later.
+    # The scaled file is rendered with what it has: as many replicas,
+    # the balancer or none.
+  rebake_composes() {
+    local file
+    COMPOSES_LEFT=()
+    ensure_build_volumes
+
+    file="$COMPOSE_FILE"
+    if compose_is_ours "$file"; then
+      compose_ports
+      bake_compose "$LOCAL_IMAGE" "$LOCAL_DOCKERFILE" "$file" || COMPOSES_LEFT+=( "$file" )
+    else COMPOSES_LEFT+=( "$file" ); fi
+
+    file="$PROD_COMPOSE_FILE"
+    if [ -f "$WORKSPACE_PATH/$file" ]; then
+      if compose_is_ours "$file"
+      then bake_prod_compose || COMPOSES_LEFT+=( "$file" )
+      else COMPOSES_LEFT+=( "$file" ); fi
+    fi
+
+    file="$SCALED_COMPOSE_FILE"
+    if [ -f "$WORKSPACE_PATH/$file" ]; then
+      if compose_is_ours "$file"; then
+        REPLICAS=$(grep -c '^  app[0-9][0-9]*:$' "$WORKSPACE_PATH/$file")
+        if grep -q '^  balancer:$' "$WORKSPACE_PATH/$file"; then BALANCER=true; else BALANCER=false; fi
+        bake_scaled_compose || COMPOSES_LEFT+=( "$file" )
+      else COMPOSES_LEFT+=( "$file" ); fi
+    fi
+    return 0
+  }
+
+  # composes_left_note
+    # What rebake_composes left alone, said once at the end — and only
+    # when it matters: a file of the reader's own that still says what
+    # the project asks for needs no word.
+  composes_left_note() {
+    [ ${#COMPOSES_LEFT[@]} -gt 0 ] || return 0
+    if [[ " ${COMPOSES_LEFT[*]} " != *" $COMPOSE_FILE "* ]] || compose_behind; then
+      echo "${B}Note${R} ${COMPOSES_LEFT[*]} was left as it is — edited by hand, or its render failed —" \
+        "and may be behind what the project asks for now. ./$(basename "$0") bake [--deploy TARGET]" \
+        "writes it again: its ports are kept, any other edit of yours is not."
+    fi
   }
 
   # ensure_build_volumes
@@ -938,9 +1044,30 @@
     sed -n "s/^ *- \([0-9]*\):$2\$/\1/p" "$WORKSPACE_PATH/$1" 2>/dev/null | head -n 1
   }
   workspace_app_port()     { workspace_port "$COMPOSE_FILE" "$APP_INTERNAL_PORT"; }
-  workspace_pgadmin_port() { workspace_port "$COMPOSE_FILE" "$PGADMIN_INTERNAL_PORT"; }
-  workspace_adminer_port() { workspace_port "$COMPOSE_FILE" "$ADMINER_INTERNAL_PORT"; }
-  workspace_grafana_port() { workspace_port "$COMPOSE_FILE" "$GRAFANA_INTERNAL_PORT"; }
+
+  # workspace_published
+    # Every port the dev compose publishes beside the app's, one
+    # 'INTERNAL HOST' per line: whose each is, the status of the
+    # project says (each cartridge's 'compose', by the port it listens on).
+  workspace_published() {
+    sed -n 's/^ *- \([0-9]*\):\([0-9]*\)$/\2 \1/p' "$WORKSPACE_PATH/$COMPOSE_FILE" 2>/dev/null | \
+      grep -v "^$APP_INTERNAL_PORT "
+  }
+
+  # workspace_doors
+    # The same ports for a person, 'LABEL HOST' per line. The label is
+    # the file's own: a cartridge opens the comment over a port it
+    # publishes with what the port is — '# pgAdmin port, with…'.
+  workspace_doors() {
+    awk '
+      /^ *# [A-Za-z0-9]+ port/ { label = $2 }
+      /^ *- [0-9]+:[0-9]+$/ {
+        split($2, pair, ":")
+        if (label != "" && label != "Application") print label, pair[1]
+        label = ""
+      }
+    ' "$WORKSPACE_PATH/$COMPOSE_FILE" 2>/dev/null
+  }
 
   # Where the toolchain runs -------------------------------------------------
     # Four runners below need the toolchain and nothing else: mix on the
@@ -1216,10 +1343,17 @@
   undo_failed_insert() {
     workspace_dirty || return 0
 
+    # A '<file>.phx-new' a base cartridge left beside a file it could not
+    # merge stays: it is the one thing the reader needs because of the
+    # failure. The tree stays dirty with it, so the next 'add' waits
+    # until it is merged by hand and deleted, as the issue asks.
     workspace_git checkout -- . > /dev/null 2>&1 && \
-    workspace_git clean -fdq && \
+    workspace_git clean -fdq -e '*.phx-new' && \
     echo "Undid what ${B}$1${R} had written before it failed:" \
       "the workspace is back at $(git_read log --format='%h %s' -n 1)."
+    local aside
+    aside=$(workspace_git ls-files --others --exclude-standard -- '*.phx-new' 2>/dev/null | xargs)
+    [ -z "$aside" ] || echo "Left for you to merge by hand and delete: $aside"
   }
 
   # require_clean_workspace <ACTION>
@@ -1321,6 +1455,24 @@
     )"
   }
 
+  # workspace_homes
+    # Who a session on each container is, and where it lands: the user
+    # and the working directory its image declares, as one JSON object
+    # keyed by service — '{"database": {"user": "", "workdir": "/"}}'.
+    # What a prompt is made of, asked of the container instead of
+    # written down per service; an empty user is root's, as docker
+    # exec has it.
+  workspace_homes() {
+    local ids
+    mapfile -t ids < <(docker compose --project-name "$(compose_project_name)" ps --quiet 2>/dev/null)
+    [ ${#ids[@]} -gt 0 ] || { printf '{}'; return; }
+    printf '{%s}' "$(
+      docker inspect --format \
+        '"{{index .Config.Labels "com.docker.compose.service"}}": {"user": {{json .Config.User}}, "workdir": {{json .Config.WorkingDir}}}' \
+        "${ids[@]}" 2>/dev/null | paste -sd, -
+    )"
+  }
+
   # status_json [--fast]
     # The workspace as one JSON object: whether it holds a project, where
     # it is, its ports, which deployments were baked, which one is up,
@@ -1334,26 +1486,27 @@
     # Without a project it still answers, with 'exists' false, so the
     # console can draw the empty workspace instead of an error.
   status_json() {
-    local port pgadmin adminer grafana project
+    local port published project
     if [ "$EXISTING_PROJECT" != true ]; then
       printf '{\n'
       printf '  "exists": false,\n'
       printf '  "workspace": %s,\n' "$(json_string "$WORKSPACE_PATH")"
       printf '  "compose_project": null,\n'
-      printf '  "ports": {"app": null, "pgadmin": null, "adminer": null, "grafana": null},\n'
+      printf '  "ports": {"app": null, "published": {}},\n'
       printf '  "baked": {"dev": false, "prod": false, "scaled": false},\n'
       printf '  "deployment": null,\n'
       printf '  "containers": [],\n'
       printf '  "addresses": {},\n'
+      printf '  "homes": {},\n'
       printf '  "git": %s,\n' "$(git_json)"
       printf '  "project": null\n'
       printf '}\n'
       return
     fi
     port=$(workspace_app_port)
-    pgadmin=$(workspace_pgadmin_port)
-    adminer=$(workspace_adminer_port)
-    grafana=$(workspace_grafana_port)
+    # The services' ports by the port each listens on, '"5050": 5051':
+    # which service that is, 'project' says.
+    published=$(workspace_published | awk '{printf "%s\"%s\": %s", (NR > 1 ? ", " : ""), $1, $2}')
     if [[ "$1" == "--fast" ]]
     then project=""
     else project=$(reader_igniter workbench.status --json 2>/dev/null | json_answer); fi
@@ -1366,7 +1519,7 @@
     printf '  "exists": true,\n'
     printf '  "workspace": %s,\n' "$(json_string "$WORKSPACE_PATH")"
     printf '  "compose_project": %s,\n' "$(json_string "$(compose_project_name)")"
-    printf '  "ports": {"app": %s, "pgadmin": %s, "adminer": %s, "grafana": %s},\n' "${port:-null}" "${pgadmin:-null}" "${adminer:-null}" "${grafana:-null}"
+    printf '  "ports": {"app": %s, "published": {%s}},\n' "${port:-null}" "$published"
     printf '  "baked": {\n'
     printf '    "dev": true,\n'
     printf '    "prod": %s,\n' "$([ -f "$WORKSPACE_PATH/$PROD_COMPOSE_FILE" ] && echo true || echo false)"
@@ -1375,6 +1528,7 @@
     printf '  "deployment": %s,\n' "$(d=$(workspace_deployment); [ -n "$d" ] && json_string "$d" || echo null)"
     printf '  "containers": %s,\n' "$(workspace_containers | json_array)"
     printf '  "addresses": %s,\n' "$(workspace_addresses)"
+    printf '  "homes": %s,\n' "$(workspace_homes)"
     printf '  "git": %s,\n' "$(git_json)"
     printf '  "project": %s\n' "${project:-null}"
     printf '}\n'
@@ -1408,19 +1562,16 @@
   # status_report
     # The same, for a person.
   status_report() {
-    local port pgadmin adminer grafana containers
+    local port label door containers
     port=$(workspace_app_port)
-    pgadmin=$(workspace_pgadmin_port)
-    adminer=$(workspace_adminer_port)
-    grafana=$(workspace_grafana_port)
     containers=$(workspace_containers '{{.Service}} {{.State}}{{if .Health}}/{{.Health}}{{end}} ({{.Image}})')
 
     echo "${B}Workspace${R}  $WORKSPACE_PATH"
     echo "${B}Project${R}    $(compose_project_name)"
     echo "  app      ${Li}http://localhost:$port${R}"
-    [ -n "$pgadmin" ] && echo "  pgAdmin  ${Li}http://localhost:$pgadmin${R}"
-    [ -n "$adminer" ] && echo "  Adminer  ${Li}http://localhost:$adminer${R}"
-    [ -n "$grafana" ] && echo "  Grafana  ${Li}http://localhost:$grafana${R}"
+    while read -r label door; do
+      [ -n "$door" ] && echo "  $(printf '%-8s' "$label") ${Li}http://localhost:$door${R}"
+    done < <(workspace_doors)
     echo
     echo "${B}Deployments${R}  (baked compose files; up with: ./$(basename "$0") up --deploy TARGET)"
     for target in dev prod scaled; do
@@ -1457,14 +1608,8 @@
     # Dockerfile runs as nobody).
   bake_prod_compose() {
     APP_PORT=$(workspace_app_port)
-    # Its own pgAdmin, Adminer and Grafana ports, kept across bakes; the first
-    # free ones the first time.
-    PGADMIN_PORT=$(workspace_port "$PROD_COMPOSE_FILE" "$PGADMIN_INTERNAL_PORT")
-    [ -n "$PGADMIN_PORT" ] || PGADMIN_PORT=$(first_free_port 5050)
-    ADMINER_PORT=$(workspace_port "$PROD_COMPOSE_FILE" "$ADMINER_INTERNAL_PORT")
-    [ -n "$ADMINER_PORT" ] || ADMINER_PORT=$(first_free_port 8080)
-    GRAFANA_PORT=$(workspace_port "$PROD_COMPOSE_FILE" "$GRAFANA_INTERNAL_PORT")
-    [ -n "$GRAFANA_PORT" ] || GRAFANA_PORT=$(first_free_port 3000)
+    # Its services' ports are its own, kept across bakes by
+    # compose_render; the first free ones the first time.
     APP_VERSION=$(
       sed -n 's/^.*version: "\(.*\)".*/\1/p' "$WORKSPACE_PATH/$MIX_FILE" | \
       head -n 1
@@ -1511,29 +1656,39 @@
     # Writes the workspace's scaled compose file, off workbench.compose
     # as bake_compose does: the production image replicated REPLICAS
     # times on a bridge network, each replica with its own host port.
-    # The ports are chosen here and left in the REPLICA_PORTS array;
-    # Grafana's, with the monitoring cartridge in, is kept across bakes
-    # as the prod file keeps its own.
+    # The replicas' ports are chosen here and left in the REPLICA_PORTS
+    # array; a service's — one that publishes on this network too — is
+    # kept across bakes as the prod file keeps its own.
   bake_scaled_compose() {
-    local file_path="$WORKSPACE_PATH/$SCALED_COMPOSE_FILE"
     local port=4000
     local i=1
     local balancer_flag clustering_flag replica_ports
-
-    GRAFANA_PORT=$(workspace_port "$SCALED_COMPOSE_FILE" "$GRAFANA_INTERNAL_PORT")
-    [ -n "$GRAFANA_PORT" ] || GRAFANA_PORT=$(first_free_port 3000)
 
     APP_VERSION=$(
       sed -n 's/^.*version: "\(.*\)".*/\1/p' "$WORKSPACE_PATH/$MIX_FILE" | \
       head -n 1
     )
 
+    # The file keeps its ports, as the other two do, while it is asked
+    # for the same shape — as many replicas, the balancer or none: a
+    # bake moves nothing, and a deployment that is up is not given
+    # ports it does not hold. Another shape is other ports, chosen below.
+    local kept_replicas=() kept_balancer=""
+    if [ -f "$WORKSPACE_PATH/$SCALED_COMPOSE_FILE" ]; then
+      mapfile -t kept_replicas < <(sed -n "s/^ *- \([0-9]*\):$APP_INTERNAL_PORT\$/\1/p" "$WORKSPACE_PATH/$SCALED_COMPOSE_FILE")
+      kept_balancer=$(sed -n 's/^ *- \([0-9]*\):80$/\1/p' "$WORKSPACE_PATH/$SCALED_COMPOSE_FILE" | head -n 1)
+    fi
+    if [ "${#kept_replicas[@]}" -ne "$REPLICAS" ] || \
+       { [[ "$BALANCER" == true ]] && [ -z "$kept_balancer" ]; } || \
+       { [[ "$BALANCER" != true ]] && [ -n "$kept_balancer" ]; }
+    then kept_replicas=(); kept_balancer=""; fi
+
     # The balancer takes the first free port: it is the deployment's single
     # entry point. Every replica publishes its own too, so a specific
     # node can still be addressed — which is how the cross-node
     # behaviour is demonstrated.
     if [[ "$BALANCER" == true ]]; then
-      BALANCER_PORT=$(first_free_port $port)
+      BALANCER_PORT=${kept_balancer:-$(first_free_port $port)}
       port=$((BALANCER_PORT + 1))
       balancer_flag=(--balancer-port "$BALANCER_PORT")
     else
@@ -1541,12 +1696,16 @@
     fi
 
     REPLICA_PORTS=()
-    while [ "$i" -le "$REPLICAS" ]; do
-      port=$(first_free_port $port)
-      REPLICA_PORTS+=( "$port" )
-      port=$((port + 1))
-      i=$((i + 1))
-    done
+    if [ "${#kept_replicas[@]}" -gt 0 ]; then
+      REPLICA_PORTS=( "${kept_replicas[@]}" )
+    else
+      while [ "$i" -le "$REPLICAS" ]; do
+        port=$(first_free_port $port)
+        REPLICA_PORTS+=( "$port" )
+        port=$((port + 1))
+        i=$((i + 1))
+      done
+    fi
     replica_ports=$(IFS=,; echo "${REPLICA_PORTS[*]}")
 
     # Without the clustering feature the release is not distributed, so
@@ -1556,29 +1715,16 @@
     # :ignore).
     if clustering_installed; then clustering_flag=--clustering; else clustering_flag=--no-clustering; fi
 
-    if workspace_igniter workbench.compose \
+    compose_render "$SCALED_COMPOSE_FILE" "$SCALED_COMPOSE_FILE" \
       --deploy scaled \
       --app-name "$ELIXIR_PROJECT_NAME" \
       --image "$APP_NAME:$APP_VERSION-prod" \
       --dockerfile "$PROD_DOCKERFILE" \
       --internal-port "$APP_INTERNAL_PORT" \
-      --postgres-version "$POSTGRES_IMAGE_VERSION" \
-      --nginx-version "$NGINX_IMAGE_VERSION" \
-      --mysql-version "${MYSQL_IMAGE_VERSION:-8}" \
-      --mssql-version "${MSSQL_IMAGE_VERSION:-2022-latest}" \
-      --k6-version "${K6_IMAGE_VERSION:-latest}" \
-      --prometheus-version "${PROMETHEUS_IMAGE_VERSION:-latest}" \
-      --grafana-version "${GRAFANA_IMAGE_VERSION:-latest}" \
-      --grafana-port "$GRAFANA_PORT" \
-      --grafana-internal-port "$GRAFANA_INTERNAL_PORT" \
       --replicas "$REPLICAS" \
       --replica-ports "$replica_ports" \
       "${balancer_flag[@]}" \
-      "$clustering_flag" \
-      --out "/app/src/$SCALED_COMPOSE_FILE.baking" > /dev/null
-    then mv "$file_path.baking" "$file_path"
-    else rm -f "$file_path.baking"; return 1
-    fi
+      "$clustering_flag"
   }
 
   # clustering_installed
@@ -1716,15 +1862,17 @@
 
     print_command "add FEATURE [OPTIONS...]"
     command_content \
-      "Insert a cartridge as one commit ('Insert FEATURE …'). A collection" \
+      "Insert a cartridge as one commit ('Insert FEATURE …'), the services it" \
+      "brings baked into the compose files in that same commit. A collection" \
       "inserts each missing member as its own commit. Needs a clean tree." \
       "  FEATURE   A cartridge of the catalog ('catalog' lists them)." \
       "  OPTIONS   Flags of its 'mix workbench.install.FEATURE' task."
 
     print_command "eject FEATURE"
     command_content \
-      "Revert a cartridge's insert commit. Refused when its files changed" \
-      "since, or while another cartridge builds on it. Needs a clean tree."
+      "Revert a cartridge's insert commit, and bake the compose files again" \
+      "without it, as one commit. Refused when its files changed since, or" \
+      "while another cartridge builds on it. Needs a clean tree."
 
     print_command "stacks [--json | -n N | use TAG]"
     command_content \
@@ -1756,8 +1904,9 @@
     command_content \
       "Write the workspace's compose file again for the project as it is," \
       "with the services its cartridges ask for, keeping its ports, as one" \
-      "commit. Dockerfile.local is baked again when the seed moved. Needs a" \
-      "clean tree." \
+      "commit. 'add' and 'eject' do it on their own; this is for a compose you" \
+      "edited by hand (which they leave alone) or a config.conf that changed." \
+      "Dockerfile.local is baked again when the seed moved. Needs a clean tree." \
       "  --deploy TARGET   Deployment to bake: dev, prod, scaled (default: dev)." \
       "  --replicas N      Replicas of the scaled deployment (default: 4)." \
       "  --no-balancer     No nginx front in the scaled deployment."
@@ -2056,9 +2205,6 @@ if [ $# -gt 0 ]; then
 
     # Host ports for this workspace: first available ones.
     APP_PORT=$(first_free_port 4000)
-    PGADMIN_PORT=$(first_free_port 5050)
-    ADMINER_PORT=$(first_free_port 8080)
-    GRAFANA_PORT=$(first_free_port 3000)
 
     # The vanilla creation: config.conf only names the project, the
     # workspace and the stack versions, since they shape the project
@@ -2099,16 +2245,17 @@ if [ $# -gt 0 ]; then
           # for the reader to commit by hand.
           while IFS= read -r INSERT <&3; do
             # shellcheck disable=SC2086  # word splitting intended: $INSERT is 'NAME [ARGV]', one word per option
+            # The services the cartridge brings go into its commit too:
+            # the composes are rendered again before it (rebake_composes),
+            # so one commit is the whole cartridge and one revert takes
+            # all of it away.
             if entrypoint_run add $INSERT
-            then workspace_commit "Insert $INSERT" || exit 1
+            then rebake_composes; workspace_commit "Insert $INSERT" || exit 1
             else undo_failed_insert "$INSERT"; exit 1
             fi
           done 3<<< "$PLAN"
 
-          if compose_behind; then
-            echo "The compose is behind what the project asks for now:" \
-              "./$(basename "$0") bake bakes it again, and the next up brings it up."
-          fi
+          composes_left_note
         fi
 
       else args_error "Missing feature name. Try: ./$(basename "$0") add healthcheck"; fi
@@ -2163,15 +2310,42 @@ if [ $# -gt 0 ]; then
       fi
 
       echo "Reverting $(workspace_git log --format='%h %s' -n 1 "$SHA")"
-      if workspace_git revert --no-edit "$SHA" > /dev/null; then
+      # The revert is staged, not committed: the composes are then
+      # rendered again for the project without the cartridge, and the
+      # two make one commit. A compose is never reverted as text — a
+      # cartridge inserted since wrote its block right beside this
+      # one's, and the revert would conflict on a file that can simply
+      # be written again: a conflict on the workbench's own composes is
+      # settled by keeping the file and rendering it, and any other
+      # conflict is the reader's to settle, as before.
+      OURS=()
+      for f in "$COMPOSE_FILE" "$PROD_COMPOSE_FILE" "$SCALED_COMPOSE_FILE"; do
+        compose_is_ours "$f" && OURS+=( "$f" )
+      done
+
+      if ! workspace_git revert --no-commit "$SHA" > /dev/null 2>&1; then
+        UNMERGED=$(git_read diff --name-only --diff-filter=U 2>/dev/null)
+        FOREIGN=$(grep -vxF -f <(printf '%s\n' "${OURS[@]}") <<< "$UNMERGED")
+        if [ -n "$UNMERGED" ] && [ -z "$FOREIGN" ]; then
+          # shellcheck disable=SC2086  # word splitting intended: file names, none with spaces
+          workspace_git checkout --ours -- $UNMERGED > /dev/null 2>&1 && workspace_git add -- $UNMERGED
+        else
+          workspace_git revert --abort 2>/dev/null || workspace_git reset -q --hard HEAD
+          terminate \
+            "The revert does not apply: files the cartridge wrote changed since" \
+            "it was inserted, so they are no longer the cartridge's alone." \
+            "Revert it by hand in the workspace, or undo those changes first."
+        fi
+      fi
+
+      rebake_composes
+      if workspace_git add -A && workspace_git commit -q --no-edit --cleanup=strip; then
         echo "Ejected ${B}$FEATURE${R}: $(workspace_git log --format='%h %s' -n 1)" \
           "(as $GIT_NAME <$GIT_EMAIL>)."
+        composes_left_note
       else
-        workspace_git revert --abort 2>/dev/null
-        terminate \
-          "The revert does not apply: files the cartridge wrote changed since" \
-          "it was inserted, so they are no longer the cartridge's alone." \
-          "Revert it by hand in the workspace, or undo those changes first."
+        workspace_git revert --abort 2>/dev/null || workspace_git reset -q --hard HEAD
+        terminate "The eject could not be committed; the workspace is back where it was."
       fi
 
     else terminate "There is no project."; fi

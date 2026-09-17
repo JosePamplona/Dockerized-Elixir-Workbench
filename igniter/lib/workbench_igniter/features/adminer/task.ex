@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.Workbench.Install.Adminer do
-  use Igniter.Mix.Task
+  use WorkbenchIgniter.Task
 
   alias WorkbenchIgniter.Features.Adminer
 
@@ -11,7 +11,8 @@ defmodule Mix.Tasks.Workbench.Install.Adminer do
   Writes `#{Adminer.login_file()}` — the login Adminer opens with: the
   workspace's database with its driver and user off the project's
   adapter, and the password Adminer checks itself — and declares the
-  `adminer` container the next `./wb.sh bake` renders into the compose.
+  `adminer` container, which `./wb.sh add` bakes into the compose in the
+  same commit.
   Builds on ecto, on any of its adapters. Idempotent — re-running it is
   a no-op.
 

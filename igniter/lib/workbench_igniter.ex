@@ -98,61 +98,6 @@ defmodule WorkbenchIgniter do
   end
 
   @doc """
-  Appends a gitignore entry (comment + pattern) to the project `.gitignore`,
-  creating the file when the project has none. A no-op when the pattern is
-  already listed.
-  """
-  @spec gitignore_entry(Igniter.t(), String.t(), String.t()) :: Igniter.t()
-  def gitignore_entry(igniter, comment, pattern),
-    do: append_entry(igniter, ".gitignore", "# #{comment}\n#{pattern}\n", pattern)
-
-  @doc """
-  Appends an entry (comment + lines) to the project `.env` and
-  `.env.sample`, creating the files when the project has none. A no-op
-  when the first variable of `body` is already declared.
-
-  The counterpart of `gitignore_entry/3` for the environment files: it
-  lets a cartridge own its own variables instead of parking them,
-  commented out, in the setup template. Both files receive
-  the very same text unless `sample_body` is given — `.env.sample` is
-  meant to be committed, so a secret goes in `body` for `.env` and its
-  blanked-out line (`KEY=""`) in `sample_body`, the same key first.
-  """
-  @spec env_entry(Igniter.t(), String.t(), String.t(), String.t() | nil) :: Igniter.t()
-  def env_entry(igniter, comment, body, sample_body \\ nil) do
-    # The first `KEY=` of the body marks the entry as already present.
-    marker = body |> String.split("=", parts: 2) |> hd() |> String.trim()
-
-    [{".env", body}, {".env.sample", sample_body || body}]
-    |> Enum.reduce(igniter, fn {path, body}, igniter ->
-      entry = "# #{comment}\n" <> String.trim_trailing(body, "\n") <> "\n"
-      append_entry(igniter, path, entry, marker)
-    end)
-  end
-
-  # The entry goes at the end of the file, once: a file that already
-  # carries the marker is left as it is, and a project without the file
-  # gets it with the entry alone.
-  defp append_entry(igniter, path, entry, marker) do
-    if Igniter.exists?(igniter, path) do
-      igniter
-      |> Igniter.include_existing_file(path)
-      |> Igniter.update_file(
-        path,
-        &Rewrite.Source.update(&1, :content, fn content -> appended(content, marker, entry) end)
-      )
-    else
-      Igniter.create_new_file(igniter, path, entry)
-    end
-  end
-
-  defp appended(content, marker, entry) do
-    if String.contains?(content, marker),
-      do: content,
-      else: String.trim_trailing(content, "\n") <> "\n\n" <> entry
-  end
-
-  @doc """
   Returns `count` consecutive migration timestamps guaranteed to be greater
   than any migration already present — in the patch set (installers composed
   in the same run) or on disk. Same-second collisions would otherwise break

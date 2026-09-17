@@ -6,12 +6,15 @@ defmodule WorkbenchIgniter.Features.Adminer do
   workspace's database with its driver and user, filling the login form
   in, and holding the password Adminer checks itself.
 
-  The container is not written here. This cartridge *declares* it
-  (`services/1`, `"adminer"`), and `mix workbench.compose` renders it into
-  the workspace's dev and prod files at the next `./wb.sh bake`, with the
-  project's `adminer/` mounted as the image's `plugins-enabled/`. What the
-  installer writes is the login file, which is also the mark: the compose
-  is baked from what the project carries, never the other way round.
+  The container is this cartridge's too: it asks for it by name
+  (`services/1`, `"adminer"`) and says what it is (`compose/1`, off
+  `priv/features/adminer/compose/`) — its block, with the project's
+  `adminer/` mounted as the image's `plugins-enabled/`, and its port on
+  the pod. `mix workbench.compose` sets that into the workspace's dev and
+  prod files in the insert's own commit (`wb.sh add` bakes before it
+  commits). What the installer writes is the
+  login file, which is also the mark: the compose is baked from what the
+  project carries, never the other way round.
 
   It builds on **ecto** (`requires`), on every adapter ecto has: the
   driver and the user in the file are read off the project's facts
@@ -27,6 +30,7 @@ defmodule WorkbenchIgniter.Features.Adminer do
   use WorkbenchIgniter.Feature
 
   embed_templates()
+  embed_compose()
 
   @login "adminer/login.php"
 
@@ -61,14 +65,54 @@ defmodule WorkbenchIgniter.Features.Adminer do
   @impl true
   def requires, do: ["ecto"]
 
-  # The container: rendered by workbench.compose, on the pod's network
+  # The container, by name: on the pod's network
   # with the database, its port published beside the app's.
   @impl true
   def services(_state), do: ["adminer"]
 
+  # The container, whole: its block — which says where the database is
+  # and which one to open, so it reads the database off the context —
+  # and its port on the pod, by default 8080. On the pod only.
+  @impl true
+  def compose(%{topology: "pod", services: services} = context) do
+    if "adminer" in services do
+      [
+        %WorkbenchIgniter.ComposeFile.Service{
+          name: "adminer",
+          deploys: [:dev, :prod],
+          position: 30,
+          title: "the Adminer container",
+          role: "devtools",
+          # An Alpine image: `sh` is the shell it has.
+          shells: [%{label: "sh", command: ["sh"]}],
+          # The image's own port.
+          listens: 8080,
+          ports: [
+            %{
+              name: :adminer,
+              internal: 8080,
+              default: 8080,
+              comment: ["Adminer port, with the adminer cartridge in."]
+            }
+          ],
+          # Where the database is, asked of who knows: ecto.
+          body:
+            compose_fragment(
+              "pod/adminer.yml.eex",
+              Map.merge(context, WorkbenchIgniter.Features.Ecto.database(services))
+            )
+        }
+      ]
+    else
+      []
+    end
+  end
+
+  def compose(_context), do: []
+
   @impl true
   def afterwards,
-    do: "./wb.sh bake puts Adminer into the workspace's compose; the next up brings it up."
+    do: "Adminer is in the workspace's compose, in this same commit; the next up brings it up."
 
   @doc "Installer body, run by the mix task shell as its `igniter/1`."
   def install(igniter) do

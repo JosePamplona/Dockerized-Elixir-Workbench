@@ -12,6 +12,7 @@ defmodule WorkbenchIgniter.Features.K6 do
   use WorkbenchIgniter.Feature
 
   embed_assets()
+  embed_compose()
 
   @script "k6/smoke.js"
 
@@ -38,9 +39,35 @@ defmodule WorkbenchIgniter.Features.K6 do
   @impl true
   def services(_state), do: ["k6"]
 
+  # The container, whole, on either topology: no port, nothing the app
+  # waits for. Its block looks at its neighbours — Prometheus, to write
+  # its results there; the balancer, to aim at it.
+  @impl true
+  def compose(%{services: services, topology: topology} = context) do
+    if "k6" in services do
+      [
+        %WorkbenchIgniter.ComposeFile.Service{
+          name: "k6",
+          position: 40,
+          title: "the k6 load tool",
+          role: "devtools",
+          # Runs to completion under a profile: there is no container to enter.
+          shells: [],
+          body:
+            compose_fragment(
+              "#{topology}/k6.yml.eex",
+              Map.put(context, :prometheus, "prometheus" in services)
+            )
+        }
+      ]
+    else
+      []
+    end
+  end
+
   @impl true
   def afterwards,
-    do: "./wb.sh bake puts k6 into the workspace's compose; ./wb.sh k6 runs the smoke test."
+    do: "k6 is in the workspace's compose, in this same commit; ./wb.sh k6 runs the smoke test."
 
   @doc "Installer body, run by the mix task shell as its `igniter/1`."
   def install(igniter) do

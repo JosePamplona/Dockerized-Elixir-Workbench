@@ -102,6 +102,11 @@ defmodule WorkbenchIgniter.Features do
       composes: composes(info) -- Enum.map(members, & &1.name),
       afterwards: feature.afterwards(),
       console: console(feature.console()),
+      # The compose services it brings whatever the project carries of
+      # it — each with the port it listens on and the ones it publishes
+      # (`Compose.brought/2`). The ones that hang on its state (ecto's
+      # database, by engine) are in the status of a project that has it.
+      compose: WorkbenchIgniter.Compose.brought(feature, feature.services(%{})),
       # A base cartridge: a phx.new capability, in a default project
       # from birth and left out with its --no-* flag.
       base: String.to_atom(feature.name()) in WorkbenchIgniter.PhxDelta.capabilities(),
@@ -163,6 +168,25 @@ defmodule WorkbenchIgniter.Features do
       end)
 
     {lists |> List.flatten() |> Enum.uniq(), igniter}
+  end
+
+  @doc """
+  What the cartridges' services contribute to a compose file rendered
+  from `context` (`WorkbenchIgniter.Compose.context/1`): every
+  cartridge's `compose/1`, in catalog order. Each cartridge answers for
+  the names of its own that `context.services` asks for; a name no
+  cartridge answers for contributes nothing. A cartridge may refuse the
+  set instead — two databases — and its reason is the answer.
+  """
+  @spec compose(map()) ::
+          {:ok, [WorkbenchIgniter.ComposeFile.Service.t()]} | {:error, String.t()}
+  def compose(context) do
+    Enum.reduce_while(catalog(), {:ok, []}, fn feature, {:ok, acc} ->
+      case feature.compose(context) do
+        {:error, reason} -> {:halt, {:error, reason}}
+        services -> {:cont, {:ok, acc ++ services}}
+      end
+    end)
   end
 
   defp composes(nil), do: []

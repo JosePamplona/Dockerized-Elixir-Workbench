@@ -72,28 +72,7 @@ defmodule WorkbenchIgniter.Deployments do
     end
   end
 
-  @doc "The service names a compose file declares, in the file's order."
+  @doc "The service names a compose file declares (`WorkbenchIgniter.ComposeFile.services/1`)."
   @spec declared(String.t()) :: [String.t()]
-  def declared(text) do
-    text
-    |> String.split("\n")
-    |> Enum.reduce({false, []}, fn line, {inside, acc} ->
-      cond do
-        line == "services:" ->
-          {true, acc}
-
-        # Another top-level key ends the block; an anchor (x-app: &app) never opened it.
-        line != "" and not String.starts_with?(line, " ") ->
-          {false, acc}
-
-        inside and Regex.match?(~r/^  [a-z0-9_-]+:\s*$/, line) ->
-          {true, [String.trim(line, ":") |> String.trim() | acc]}
-
-        true ->
-          {inside, acc}
-      end
-    end)
-    |> elem(1)
-    |> Enum.reverse()
-  end
+  defdelegate declared(text), to: WorkbenchIgniter.ComposeFile, as: :services
 end

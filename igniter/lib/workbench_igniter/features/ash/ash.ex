@@ -210,7 +210,7 @@ defmodule WorkbenchIgniter.Features.Ash do
   @impl true
   def afterwards,
     do:
-      "With a database data layer on a project born without Ecto, ./wb.sh bake puts the database into the workspace's compose, then ./wb.sh setup creates it."
+      "With a database data layer on a project born without Ecto, the database goes into the workspace's compose in the insert's own commit; ./wb.sh setup creates it."
 
   # The installer's options, one line each: the task's "## Options"
   # section and the help a form shows are rendered from here.
@@ -404,7 +404,7 @@ defmodule WorkbenchIgniter.Features.Ash do
   defp token_signing_secret(igniter, []), do: igniter
 
   defp token_signing_secret(igniter, _strategies) do
-    WorkbenchIgniter.env_entry(
+    WorkbenchIgniter.EnvFile.entry(
       igniter,
       "Signs AshAuthentication's tokens (:prod; dev has its own in config/dev.exs). Generate with: mix phx.gen.secret",
       ~s|TOKEN_SIGNING_SECRET="#{WorkbenchIgniter.secret_key_base()}"|,

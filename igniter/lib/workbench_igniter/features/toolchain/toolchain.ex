@@ -82,7 +82,7 @@ defmodule WorkbenchIgniter.Features.Toolchain do
       {false, igniter} ->
         igniter
         |> Igniter.create_new_file(".tool-versions", tool_versions(opts))
-        |> WorkbenchIgniter.gitignore_entry(@gitignore_comment, @gitignore_entry)
+        |> WorkbenchIgniter.IgnoreFile.entry(@gitignore_comment, @gitignore_entry)
     end
   end
 

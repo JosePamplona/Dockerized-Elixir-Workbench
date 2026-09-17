@@ -14,6 +14,8 @@ defmodule ConsoleWeb.Terminal do
   """
   use Phoenix.Component
 
+  alias ConsoleWeb.Services
+
   attr :status, :map, default: nil
   attr :term, :map, required: true
 
@@ -67,7 +69,7 @@ defmodule ConsoleWeb.Terminal do
             :for={t <- @targets}
             class="btn svc"
             type="button"
-            style={"--svc:#{svc_color(t)}"}
+            style={"--svc:#{svc_color(@status, t)}"}
             aria-pressed={to_string(t.name == @target.name)}
             data-session={mark(@term.sessions, t.name)}
             title={t.title <> sessions_on(@term.sessions, t.name)}
@@ -172,24 +174,21 @@ defmodule ConsoleWeb.Terminal do
         ],
         else: apps
 
-    # The services beside the app, in the order the compose declares them.
+    # The services beside the app that can be entered, in the compose's
+    # own order: which, with what, and under which name, their
+    # cartridges say (ConsoleWeb.Services).
     beside =
-      for c <- cs,
-          c["Service"] in ~w(database pgadmin adminer prometheus grafana),
-          c["State"] == "running" do
+      for c <- Enum.sort_by(cs, &Services.position(status, &1["Service"])),
+          c["State"] == "running",
+          shells = Services.shells(status, c["Service"]),
+          shells != [] do
         %{
           name: c["Service"],
-          kind: String.to_existing_atom(c["Service"]),
+          kind: :service,
+          shells: shells,
           release: false,
           oneoff: false,
-          title:
-            case c["Service"] do
-              "database" -> "the workspace's database"
-              "pgadmin" -> "the pgAdmin container"
-              "adminer" -> "the Adminer container"
-              "prometheus" -> "the Prometheus container"
-              "grafana" -> "the Grafana container"
-            end
+          title: Services.get(status, c["Service"])["title"] || "the #{c["Service"]} container"
         }
       end
 
@@ -261,16 +260,13 @@ defmodule ConsoleWeb.Terminal do
   defp others(n), do: " · #{n} others open"
 
   @doc """
-  What a session on this target can be. The database's first shell is
-  `psql` and not bash, because the reason to open the database is the
-  database and not its filesystem; pgAdmin's, Adminer's and Grafana's
-  images are Alpine and Prometheus's busybox, each carrying `sh` alone,
-  which is why their one shell is not a choice.
+  What a session on this target can be. A cartridge's service offers
+  what its cartridge says — the database its own client before bash,
+  because the reason to open the database is the database and not its
+  filesystem; an Alpine or busybox image `sh` alone, which is why its
+  one shell is not a choice. The app's are the console's own to know.
   """
-  def shells(%{kind: :database}), do: [{"psql", "psql"}, {"bash", "bash"}]
-
-  def shells(%{kind: kind}) when kind in [:pgadmin, :adminer, :prometheus, :grafana],
-    do: [{"sh", "sh"}]
+  def shells(%{kind: :service, shells: shells}), do: for({label, _} <- shells, do: {label, label})
 
   def shells(%{release: true}), do: [{"bash", "bash"}, {"rpc", "bin/app rpc"}]
   def shells(%{oneoff: true}), do: [{"bash", "bash"}, {"iex", "iex -S mix"}]
@@ -279,8 +275,8 @@ defmodule ConsoleWeb.Terminal do
   @doc "The shell a target opens with when none is chosen: the first it offers."
   def default_shell(target), do: target |> shells() |> hd() |> elem(0)
 
-  defp svc_color(%{kind: :workbench}), do: "var(--svc-pod)"
-  defp svc_color(%{kind: kind}), do: "var(--svc-#{kind})"
+  defp svc_color(_status, %{kind: :workbench}), do: "var(--svc-network)"
+  defp svc_color(status, %{name: name}), do: Services.color(status, name)
 
   def prompt(target, shell, status) do
     app = get_in(status, ["project", "app"]) || "app"
@@ -292,20 +288,13 @@ defmodule ConsoleWeb.Terminal do
       shell == "rpc" ->
         "#{app} rpc> "
 
-      shell == "psql" ->
-        "postgres=# "
-
-      target.kind in [:pgadmin, :adminer, :prometheus, :grafana] ->
-        "#{target.kind}@#{target.name}:/$ "
-
-      target.kind == :database ->
-        "postgres@#{target.name}:/$ "
-
-      target.release ->
-        "nobody@#{target.name}:/app$ "
-
-      true ->
+      target.oneoff ->
         "elixir@#{target.name}:/app/src$ "
+
+      # Who and where a session is, the container says (the status's
+      # `homes`); the dev app is entered where its source is mounted.
+      true ->
+        Services.prompt(status, target.name, shell, List.last(workdir_args(target)))
     end
   end
 
@@ -324,7 +313,7 @@ defmodule ConsoleWeb.Terminal do
       true ->
         app = get_in(status, ["project", "app"]) || "app"
 
-        "docker compose -p #{status["compose_project"]} exec -T #{workdir(target)}#{target.name} #{Enum.join(run(shell, app), " ")}"
+        "docker compose -p #{status["compose_project"]} exec -T #{workdir(target)}#{target.name} #{Enum.join(run(shell, app, target), " ")}"
     end
   end
 
@@ -373,7 +362,7 @@ defmodule ConsoleWeb.Terminal do
       {app,
        compose ++
          ["exec", "-T" | @colour] ++
-         workdir_args(target) ++ [target.name | announced(coloured(run(shell, app), app))],
+         workdir_args(target) ++ [target.name | announced(coloured(run(shell, app, target), app))],
        compose ++ ["exec", "-T", target.name]}
     end
   end
@@ -414,13 +403,15 @@ defmodule ConsoleWeb.Terminal do
 
   # What each shell is, as a command line. iex attaches to the app's
   # node, `<app>@<hostname>`: a short name without a host is completed
-  # with the container's own, which is where the server is. `psql`
-  # takes the user the compose gives postgres; the rest are the shell
-  # and nothing else.
-  defp run("iex", app), do: ["iex", "--remsh", app]
-  defp run("psql", _), do: ["psql", "-U", "postgres"]
-  defp run("sh", _), do: ["sh"]
-  defp run(_, _), do: ["bash"]
+  # with the container's own, which is where the server is. A
+  # cartridge's service runs what its cartridge says the shell is
+  # (psql with the user the compose gives postgres); the rest are bash.
+  defp run("iex", app, _target), do: ["iex", "--remsh", app]
+
+  defp run(shell, _app, %{kind: :service, shells: shells}),
+    do: Enum.find_value(shells, ["sh"], fn {label, argv} -> label == shell && argv end)
+
+  defp run(_, _, _), do: ["bash"]
 
   # The mounts `wb.sh` gives its own runs on the project: the source, the
   # workbench (the project's mix.exs takes its package from there), and

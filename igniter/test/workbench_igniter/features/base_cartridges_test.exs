@@ -27,6 +27,39 @@ defmodule WorkbenchIgniter.Features.BaseCartridgesTest do
     end
   end
 
+  test "the first bundler brings the Dockerfile's assets steps, as phx.gen.release would have" do
+    # Born without assets/, the Dockerfile has no assets steps: the
+    # generator decided off the directory (test_01, 2026-09-17).
+    bare = project(~w(--no-html --no-esbuild --no-tailwind))
+    refute files(bare)["Dockerfile"] =~ "assets"
+
+    igniter = bare |> Igniter.compose_task("workbench.install.esbuild", [])
+    assert igniter.issues == []
+
+    igniter
+    |> assert_has_patch("Dockerfile", """
+    + | RUN mix assets.setup
+    """)
+    |> assert_has_patch("Dockerfile", """
+    + | RUN mix assets.deploy
+    """)
+
+    # The second bundler finds them there.
+    both = igniter |> apply_igniter!() |> Igniter.compose_task("workbench.install.tailwind", [])
+    assert both.issues == []
+    assert_unchanged(both, "Dockerfile")
+
+    # A Dockerfile that is not phx.gen.release's is left alone.
+    own =
+      WorkbenchIgniter.TestProject.new(~w(--no-html --no-esbuild --no-tailwind), %{
+        "Dockerfile" => "FROM elixir:1.19\n"
+      })
+      |> Igniter.compose_task("workbench.install.esbuild", [])
+
+    assert own.issues == []
+    assert_unchanged(own, "Dockerfile")
+  end
+
   test "esbuild: the dependency, its config and the watcher" do
     igniter = project(~w(--no-esbuild)) |> Igniter.compose_task("workbench.install.esbuild", [])
     assert igniter.issues == []

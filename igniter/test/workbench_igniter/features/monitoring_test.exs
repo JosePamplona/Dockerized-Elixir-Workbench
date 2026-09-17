@@ -82,7 +82,7 @@ defmodule WorkbenchIgniter.Features.MonitoringTest do
         | TestWeb.Telemetry,
       """)
       |> assert_has_patch("lib/test_web/endpoint.ex", """
-      + | plug(PromEx.Plug, prom_ex_module: Test.PromEx)
+      + | plug PromEx.Plug, prom_ex_module: Test.PromEx
         | plug(Plug.Telemetry, event_prefix: [:phoenix, :endpoint])
       """)
     end

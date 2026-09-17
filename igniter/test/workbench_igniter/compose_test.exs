@@ -11,17 +11,17 @@ defmodule WorkbenchIgniter.ComposeTest do
   @fixtures Path.expand("../fixtures/compose", __DIR__)
 
   # The pod deployments, as `wb.sh bake` and `up --deploy prod` ask for them.
-  @pod ~w(--app-name lorem_ipsum --uid 1000 --gid 1000 --app-port 4000 --pgadmin-port 5050
-          --adminer-port 8080 --grafana-port 3000 --postgres-version latest
-          --pgadmin-version latest --adminer-version 6 --nginx-version alpine)
+  @pod ~w(--app-name lorem_ipsum --uid 1000 --gid 1000 --app-port 4000 --port pgadmin=5050
+          --port adminer=8080 --port grafana=3000 --version postgres=latest
+          --version pgadmin=latest --version adminer=6 --version nginx=alpine)
   @dev ~w(--deploy dev --image lorem-ipsum:local --dockerfile Dockerfile.local) ++ @pod
   @prod ~w(--deploy prod --image lorem-ipsum:0.1.0-prod --dockerfile Dockerfile) ++ @pod
 
   # The scaled deployment, as `up --deploy scaled` asks for it: the
   # balancer takes the first port and the replicas the ones after.
   @scaled ~w(--deploy scaled --app-name lorem_ipsum --image lorem-ipsum:0.1.0-prod
-             --dockerfile Dockerfile --postgres-version latest --nginx-version alpine
-             --grafana-port 3000)
+             --dockerfile Dockerfile --version postgres=latest --version nginx=alpine
+             --port grafana=3000)
   @balancer ~w(--balancer-port 4000 --replica-ports 4001,4002,4003,4004)
   @no_balancer ~w(--no-balancer --replica-ports 4000,4001,4002,4003)
 
@@ -58,14 +58,14 @@ defmodule WorkbenchIgniter.ComposeTest do
      @scaled ++ ~w(--services none --clustering) ++ @no_balancer},
     {"scaled-nodb-nobalancer-nocluster-4.yml",
      @scaled ++ ~w(--services none --no-clustering) ++ @no_balancer},
-    {"dev-mysql.yml", @dev ++ ~w(--services mysql --mysql-version 8)},
-    {"prod-mysql.yml", @prod ++ ~w(--services mysql --mysql-version 8)},
+    {"dev-mysql.yml", @dev ++ ~w(--services mysql --version mysql=8)},
+    {"prod-mysql.yml", @prod ++ ~w(--services mysql --version mysql=8)},
     {"scaled-mysql-balancer-cluster-4.yml",
-     @scaled ++ ~w(--services mysql --mysql-version 8 --clustering) ++ @balancer},
-    {"dev-mssql.yml", @dev ++ ~w(--services mssql --mssql-version 2022-latest)},
-    {"prod-mssql.yml", @prod ++ ~w(--services mssql --mssql-version 2022-latest)},
+     @scaled ++ ~w(--services mysql --version mysql=8 --clustering) ++ @balancer},
+    {"dev-mssql.yml", @dev ++ ~w(--services mssql --version mssql=2022-latest)},
+    {"prod-mssql.yml", @prod ++ ~w(--services mssql --version mssql=2022-latest)},
     {"scaled-mssql-balancer-cluster-4.yml",
-     @scaled ++ ~w(--services mssql --mssql-version 2022-latest --clustering) ++ @balancer},
+     @scaled ++ ~w(--services mssql --version mssql=2022-latest --clustering) ++ @balancer},
     {"dev-sqlite.yml", @dev ++ ~w(--services sqlite)},
     {"prod-sqlite.yml", @prod ++ ~w(--services sqlite)},
     # The monitoring cartridge's two services; with k6, its results go to Prometheus.
@@ -81,8 +81,8 @@ defmodule WorkbenchIgniter.ComposeTest do
     # on SQLite it mounts the file and runs as its owner.
     {"dev-db-adminer.yml", @dev ++ ~w(--services postgres,pgadmin,adminer)},
     {"prod-postgres-adminer.yml", @prod ++ ~w(--services postgres,adminer)},
-    {"dev-mysql-adminer.yml", @dev ++ ~w(--services mysql,adminer --mysql-version 8)},
-    {"dev-mssql-adminer.yml", @dev ++ ~w(--services mssql,adminer --mssql-version 2022-latest)},
+    {"dev-mysql-adminer.yml", @dev ++ ~w(--services mysql,adminer --version mysql=8)},
+    {"dev-mssql-adminer.yml", @dev ++ ~w(--services mssql,adminer --version mssql=2022-latest)},
     {"dev-sqlite-adminer.yml", @dev ++ ~w(--services sqlite,adminer)},
     {"prod-sqlite-adminer.yml", @prod ++ ~w(--services sqlite,adminer)},
     {"scaled-db-adminer-balancer-cluster-4.yml",
@@ -95,6 +95,87 @@ defmodule WorkbenchIgniter.ComposeTest do
         {:ok, plan} = Compose.plan_from_argv(unquote(argv))
         assert Compose.render(plan) == File.read!(Path.join(@fixtures, unquote(fixture)))
       end
+    end
+  end
+
+  describe "brought/2: what a cartridge brings, for whoever draws it" do
+    @asked ~w(mysql pgadmin adminer k6 prometheus grafana)
+
+    defp brought(feature, services \\ @asked) do
+      for b <- Compose.brought(feature, services), into: %{}, do: {b.service, b}
+    end
+
+    test "each service once, by name: where it enters, what it listens on and publishes" do
+      assert %{
+               "database" => %{deploys: ~w(dev prod scaled), listens: 3306, published: []},
+               "migrate" => %{deploys: ~w(prod scaled), listens: nil}
+             } = brought(Features.Ecto)
+
+      assert %{"pgadmin" => %{deploys: ~w(dev prod), listens: 5050, published: [5050]}} =
+               brought(Features.Pgadmin)
+
+      assert %{
+               "prometheus" => %{listens: 9090, published: []},
+               "grafana" => %{deploys: ~w(dev prod scaled), listens: 3000, published: [3000]}
+             } = brought(Features.Monitoring)
+
+      # A cartridge that asks for no container brings none; SQLite runs no server.
+      assert Compose.brought(Features.Mailer, @asked) == []
+      assert Map.keys(brought(Features.Ecto, ["sqlite"])) == ~w(data_init migrate)
+    end
+
+    test "and what it is: a title, a role, the image off its own block, the sessions it offers" do
+      assert %{
+               title: "the workspace's database",
+               role: "database",
+               image: "mysql",
+               shells: [%{label: "mysql", command: ["mysql", "-u", "root"]}, %{label: "bash"}]
+             } = brought(Features.Ecto)["database"]
+
+      assert %{
+               shells: [%{label: "psql", command: ["psql", "-U", "postgres"]} | _],
+               image: "postgres"
+             } =
+               brought(Features.Ecto, ["postgres"])["database"]
+
+      assert %{image: "mcr.microsoft.com/mssql/server", shells: [%{label: "sqlcmd"} | _]} =
+               brought(Features.Ecto, ["mssql"])["database"]
+
+      # A one-shot on the app's own image: a job, nobody's image to link, no session.
+      assert %{role: "job", image: nil, shells: []} = brought(Features.Ecto)["migrate"]
+
+      assert %{role: "devtools", image: "dpage/pgadmin4", shells: [%{label: "sh"}]} =
+               brought(Features.Pgadmin)["pgadmin"]
+
+      # k6 runs to completion: there is no container to enter.
+      assert %{role: "devtools", image: "grafana/k6", shells: []} = brought(Features.K6)["k6"]
+
+      assert %{role: "observability", image: "prom/prometheus"} =
+               brought(Features.Monitoring)["prometheus"]
+    end
+
+    test "every role a cartridge gives is one of the vocabulary's" do
+      for feature <- Features.catalog(),
+          engine <- ~w(postgres mysql mssql sqlite),
+          b <- Compose.brought(feature, [engine | tl(@asked)]) do
+        assert b.role in WorkbenchIgniter.ComposeFile.roles(),
+               "#{feature.name()}: #{b.service} is #{b.role}"
+
+        assert is_binary(b.title), "#{feature.name()}: #{b.service} has no title"
+      end
+    end
+
+    test "images/0: the house's, off the skeletons and every cartridge, whichever engine" do
+      assert Compose.images() ==
+               ~w(adminer dpage/pgadmin4 grafana/grafana grafana/k6 mcr.microsoft.com/mssql/server
+                  mysql nginx postgres prom/prometheus registry.k8s.io/pause)
+    end
+
+    test "the catalog carries it per cartridge, off what it asks whatever its state" do
+      entry = &Features.entry(&1).compose
+      assert [%{service: "adminer", listens: 8080, published: [8080]}] = entry.(Features.Adminer)
+      # ecto's database hangs on the engine the project has: the status says it.
+      assert entry.(Features.Ecto) == []
     end
   end
 
@@ -113,44 +194,92 @@ defmodule WorkbenchIgniter.ComposeTest do
                Compose.plan_from_argv(@scaled ++ ~w(--balancer-port 4000 --replica-ports 1,2,3))
     end
 
-    test "names what a deployment needs" do
-      assert {:error, "missing: --app-port, --uid, --gid, --pgadmin-port"} =
+    test "names what a deployment needs of the script" do
+      assert {:error, "missing: --app-port, --uid, --gid"} =
                Compose.plan_from_argv(
                  ~w(--deploy dev --app-name x --image i --dockerfile d --services postgres,pgadmin)
                )
     end
 
-    test "asks for the pgadmin port only with pgadmin" do
-      assert {:error, "missing: --app-port, --uid, --gid"} =
+    @bare ~w(--app-name x --image i --dockerfile d --app-port 4000 --uid 1 --gid 1)
+
+    test "a port nobody chose is a need, named with its cartridge's default" do
+      assert {:needs, [pgadmin: 5050]} =
+               Compose.plan_from_argv(~w(--deploy dev --services postgres,pgadmin) ++ @bare)
+
+      assert {:ok, _} = Compose.plan_from_argv(~w(--deploy dev --services postgres) ++ @bare)
+
+      assert {:needs, [pgadmin: 5050, adminer: 8080, grafana: 3000]} =
                Compose.plan_from_argv(
-                 ~w(--deploy dev --app-name x --image i --dockerfile d --services postgres)
+                 ~w(--deploy dev --services postgres,pgadmin,adminer,prometheus,grafana) ++ @bare
+               )
+
+      # Handed over, the need is met.
+      assert {:needs, [adminer: 8080]} =
+               Compose.plan_from_argv(
+                 ~w(--deploy dev --services postgres,pgadmin,adminer --port pgadmin=5051) ++ @bare
                )
     end
 
-    test "asks for the adminer port with adminer, on the pod alone" do
-      assert {:error, "missing: --app-port, --uid, --gid, --adminer-port"} =
-               Compose.plan_from_argv(
-                 ~w(--deploy dev --app-name x --image i --dockerfile d --services postgres,adminer)
-               )
-
+    test "pgAdmin and Adminer ask for a port on the pod alone; Grafana on every deployment" do
       assert {:ok, _} =
                Compose.plan_from_argv(
-                 ~w(--deploy scaled --app-name x --image i --dockerfile d --services postgres,adminer) ++
+                 ~w(--deploy scaled --app-name x --image i --dockerfile d --services postgres,pgadmin,adminer) ++
                    @balancer
                )
-    end
 
-    test "asks for the grafana port with grafana, on every deployment" do
-      assert {:error, "missing: --app-port, --uid, --gid, --grafana-port"} =
-               Compose.plan_from_argv(
-                 ~w(--deploy dev --app-name x --image i --dockerfile d --services prometheus,grafana)
-               )
-
-      assert {:error, "missing: --grafana-port"} =
+      assert {:needs, [grafana: 3000]} =
                Compose.plan_from_argv(
                  ~w(--deploy scaled --app-name x --image i --dockerfile d --services grafana) ++
                    @balancer
                )
+    end
+
+    @tag :tmp_dir
+    test "a port stays where the file already has it; one handed over wins", %{tmp_dir: dir} do
+      kept = Path.join(dir, "docker-compose.yml")
+
+      File.write!(
+        kept,
+        "services:\n  pod:\n    ports:\n      - 4000:4000\n      # pgAdmin\n      - 5077:5050\n"
+      )
+
+      argv = ~w(--deploy dev --services postgres,pgadmin,adminer --keep-ports-of #{kept}) ++ @bare
+      assert {:needs, [adminer: 8080]} = Compose.plan_from_argv(argv)
+
+      assert {:ok, plan} = Compose.plan_from_argv(argv ++ ~w(--port adminer=8081))
+      assert Compose.render(plan) =~ "      - 5077:5050\n"
+      assert Compose.render(plan) =~ "      - 8081:8080\n"
+
+      assert {:ok, plan} =
+               Compose.plan_from_argv(argv ++ ~w(--port adminer=8081 --port pgadmin=5050))
+
+      assert Compose.render(plan) =~ "      - 5050:5050\n"
+
+      # No file yet: nothing kept, everything needed.
+      assert {:needs, [pgadmin: 5050]} =
+               Compose.plan_from_argv(
+                 ~w(--deploy dev --services postgres,pgadmin --keep-ports-of #{dir}/none.yml) ++
+                   @bare
+               )
+    end
+
+    test "a version handed over is the image's tag; the cartridge has the default" do
+      {:ok, plan} =
+        Compose.plan_from_argv(
+          ~w(--deploy dev --services postgres --version postgres=16) ++ @bare
+        )
+
+      assert Compose.render(plan) =~ "    image: postgres:16\n"
+
+      {:ok, plan} = Compose.plan_from_argv(~w(--deploy dev --services mysql) ++ @bare)
+      assert Compose.render(plan) =~ "    image: mysql:8\n"
+
+      assert {:error, "--version takes NAME=VALUE, got \"postgres\""} =
+               Compose.plan_from_argv(~w(--deploy dev --version postgres) ++ @bare)
+
+      assert {:error, "--port takes NAME=VALUE, got \"pgadmin=x\""} =
+               Compose.plan_from_argv(~w(--deploy dev --port pgadmin=x) ++ @bare)
     end
 
     test "asks the project for the services when --services is not given" do
@@ -174,8 +303,8 @@ defmodule WorkbenchIgniter.ComposeTest do
     end
 
     test "refuses what it does not know" do
-      assert {:error, "unknown or malformed option --port"} =
-               Compose.plan_from_argv(~w(--deploy dev --port 1))
+      assert {:error, "unknown or malformed option --pgadmin-port"} =
+               Compose.plan_from_argv(~w(--deploy dev --pgadmin-port 1))
     end
 
     test "one database at most" do

@@ -80,7 +80,7 @@ defmodule Mix.Tasks.Workbench.Setup do
     igniter
     |> bind_dev_endpoint(app_name, endpoint)
     |> create_env_files(app_name, opts)
-    |> WorkbenchIgniter.gitignore_entry(
+    |> WorkbenchIgniter.IgnoreFile.entry(
       "Secrets required to configure the application.",
       ".env"
     )

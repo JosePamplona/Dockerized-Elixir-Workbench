@@ -61,11 +61,12 @@ defmodule WorkbenchIgniter.Features.Auth0Test do
       router = installed()["lib/test_web/router.ex"]
 
       assert router =~ "pipeline :auth do"
-      assert router =~ "plug(Auth0Jwks.Plug.ValidateToken, no_halt: true)"
+      assert router =~ "plug Auth0Jwks.Plug.ValidateToken, no_halt: true"
       assert router =~ "user_from_claim: &Test.Accounts.user_from_claim/2"
-      assert router =~ "pipe_through([:api, :auth])"
-      refute router =~ "pipe_through(:api)\n"
-      assert router =~ ~s|get("/user", UserController, :get)|
+      assert router =~ "pipe_through [:api, :auth]"
+      # A scope, not phx.new's commented sample of one.
+      refute router =~ ~r/^\s+pipe_through :api$/m
+      assert router =~ ~s|get "/user", UserController, :get|
     end
 
     test "rest interface: user controller, view and OpenAPI schema with tests" do

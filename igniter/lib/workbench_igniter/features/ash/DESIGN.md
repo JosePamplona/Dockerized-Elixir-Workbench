@@ -249,7 +249,7 @@ The workbench's prod compose reads `.env`; without the variable
 `./wb.sh up -e prod` boots into that raise. So with `--auth` the
 cartridge appends the entry — a generated 64-character secret in
 `.env`, a blank one in `.env.sample`, which is committed — through
-`WorkbenchIgniter.env_entry/4`, which grew a fourth argument for
+`WorkbenchIgniter.EnvFile.entry/4`, which grew a fourth argument for
 exactly this (its doc used to forbid secrets because both files got
 the same text). Written in the cartridge's own patch set, before the
 queued command, and keyed on the variable name so a re-run appends

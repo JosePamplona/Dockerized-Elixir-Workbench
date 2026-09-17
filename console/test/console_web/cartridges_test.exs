@@ -56,4 +56,29 @@ defmodule ConsoleWeb.CartridgesTest do
 
     assert Cartridges.container_reading(%{"State" => "dead"}) == {"dead", "bad"}
   end
+
+  describe "fill_path/2: a door's path, with what the project carries" do
+    @door "{path}/live"
+    @options [%{"name" => "path", "default" => "/health"}]
+
+    test "the state's value; the option's default for a cartridge that is not in" do
+      assert Cartridges.fill_path(@door, %{
+               "state" => %{"path" => "/status"},
+               "options" => @options
+             }) ==
+               "/status/live"
+
+      assert Cartridges.fill_path(@door, %{"state" => %{}, "options" => @options}) ==
+               "/health/live"
+    end
+
+    test "an empty value is a value: healthcheck2 at the root opens /live, not the default's" do
+      assert Cartridges.fill_path(@door, %{"state" => %{"path" => ""}, "options" => @options}) ==
+               "/live"
+    end
+
+    test "a placeholder nobody fills leaves nothing behind" do
+      assert Cartridges.fill_path("/x{gone}", %{}) == "/x"
+    end
+  end
 end

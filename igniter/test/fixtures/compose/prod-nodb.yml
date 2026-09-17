@@ -46,7 +46,7 @@ services:
       # own runs (add, mix, git) use an image of their own, not this one.
       dockerfile: Dockerfile
     # The image starts itself (CMD). Defaults per dockerfile —
-    #   Dockerfile.local: sh -c 'cd /app/src && mix setup && exec mix phx.server'
+    #   Dockerfile.local: sh -c 'cd /app/src && mix setup && exec elixir --sname lorem_ipsum -S mix phx.server'
     #   Dockerfile (prod): /app/bin/server
     # Uncomment to override:
     # command:

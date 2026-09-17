@@ -652,6 +652,7 @@
     sed -i "s/%{erlang_version}/$ERLANG_VERSION/" "$file_path"
     sed -i "s/%{debian_version}/$DEBIAN_VERSION/" "$file_path"
     sed -i "s/%{phx_new_version}/$PHX_NEW_VERSION/" "$file_path"
+    sed -i "s/%{app_name}/$ELIXIR_PROJECT_NAME/" "$file_path"
   }
 
   # prepare_workspace
@@ -1806,8 +1807,9 @@
 
     print_command "iex | bash [--deploy TARGET] [SERVICE]"
     command_content \
-      "Open IEx, or a shell, on a running container. Outside dev, 'iex' is" \
-      "the release's remote shell." \
+      "Open IEx, or a shell, on a running container. 'iex' attaches to the" \
+      "node that serves the app: dev's with --remsh, a release's with its" \
+      "remote shell. For a VM of its own, open bash and 'iex -S mix' there." \
       "  --deploy TARGET   Deployment (default: dev)." \
       "  SERVICE           Container (default: app; app1..appN when scaled)."
 
@@ -2610,25 +2612,36 @@ if [ $# -gt 0 ]; then
         "The $SERVICE container of the $DEPLOY_ARG deployment is not running." \
         "Start it with: ./$(basename "$0") up --deploy $DEPLOY_ARG"
 
-      # The release remote shell stops the node it is attached to when its
-      # input reaches EOF, so a redirected or piped stdin would take the
-      # application down instead of just detaching. Only dev is safe: its
-      # 'iex -S mix' runs its own VM inside the container.
-      if [[ "$SESSION_KIND" == "iex" ]] && [ "$DEPLOY_ARG" != "dev" ] && [ ! -t 0 ]
-      then terminate \
-        "'iex --deploy $DEPLOY_ARG' opens the release remote shell, which stops" \
+      # A remote shell stops the node it is attached to when its input
+      # reaches EOF — the release's 'remote' and dev's 'iex --remsh'
+      # alike, measured 2026-09-16 — so a redirected or piped stdin
+      # would take the application down instead of just detaching.
+      if [[ "$SESSION_KIND" == "iex" ]] && [ ! -t 0 ]
+      then
+        if [[ "$DEPLOY_ARG" == "dev" ]]
+        then rpc_hint="exec -T $SERVICE elixir --sname wb_rpc --rpc-eval $ELIXIR_PROJECT_NAME 'EXPRESSION'"
+        else rpc_hint="exec -T $SERVICE /app/bin/$ELIXIR_PROJECT_NAME rpc 'EXPRESSION'"; fi
+        terminate \
+        "'iex' attaches to the running node with a remote shell, which stops" \
         "the node when its input reaches EOF: it needs an interactive" \
         "terminal. To evaluate one expression without attaching, use:" \
         "  docker compose --file $COMPOSE_TARGET \\" \
-        "    exec -T $SERVICE /app/bin/$ELIXIR_PROJECT_NAME rpc 'EXPRESSION'"
+        "    $rpc_hint"
       fi
 
       # Only the dev image carries Mix and the mounted source; prod and
-      # scaled run the release, whose shell is 'bin/<app> remote'.
+      # scaled run the release, whose shell is 'bin/<app> remote'. Dev's
+      # server boots as the named node '<app>@<container>' (its
+      # Dockerfile.local's CMD), and '--remsh <app>' finds it on the
+      # container's own hostname: iex on the VM that serves the port,
+      # never a second one.
       if [[ "$DEPLOY_ARG" == "dev" ]]
       then
+        # IEx colours its results on the node that evaluates them — the
+        # app's, booted with no terminal, so its IEx has colours off —
+        # and is told to colour first, by an rpc that leaves no VM behind.
         if [[ "$SESSION_KIND" == "iex" ]]
-        then SESSION_COMMAND=(iex -S mix)
+        then SESSION_COMMAND=(sh -c "elixir --sname \"wb_cfg_\$\$\" --rpc-eval $ELIXIR_PROJECT_NAME 'IEx.configure(colors: [enabled: true])' >/dev/null 2>&1; exec iex --remsh $ELIXIR_PROJECT_NAME")
         else SESSION_COMMAND=(bash); fi
         WORKDIR_FLAGS=( --workdir /app/src )
       else

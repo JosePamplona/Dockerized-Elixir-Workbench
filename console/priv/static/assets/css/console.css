@@ -408,6 +408,8 @@ table.rows tr.new{animation:seat 1.2s ease-out}
 .term .screen{padding:10px 14px;min-height:0}
 .term .screen .p{color:var(--accent)}
 .term .screen .dim{color:var(--term-dim)}
+/* A result's indentation is the terminal's to keep: the browser would fold the leading spaces of `  1 => ...` otherwise. */
+.term .screen>div{white-space:pre-wrap;word-break:break-word}
 /* A button with a session: a dot after the name, full when the process runs, hollow when it ended with its trail. A container's reads across its shells. */
 .term .controls .btn[data-session]{display:inline-flex;align-items:center;gap:6px}
 .term .controls .btn[data-session]::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--good);box-shadow:0 0 0 1px var(--good)}
@@ -1737,7 +1739,6 @@ table.wide td.act{text-align:left;width:1%}
 table.wide td.act .btn.mini{padding:2px 8px;font-size:11px;vertical-align:middle}
 /* The shell is a column of its own, last: it opens a session on another
    screen, where Logs and Restart act from this one. */
-table.wide td.act.shell{padding-left:14px}
 table.wide tr[phx-click]{cursor:pointer}
 table.wide tr.on td{background:var(--accent-soft)}
 /* Another workspace's, or gone: quieter. Not `.other` — that name is the

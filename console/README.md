@@ -96,11 +96,17 @@ visits while it is up may open its socket.
 
 Line-oriented, as the mock drew it: `docker exec -i` (or `docker run
 -i` on a one-off toolchain container with the source, when nothing
-runs) on a `Port` owned by the page, no tty. bash and `iex -S mix`
-both read lines that way — verified: `iex` on a piped stdin answers
-with its prompt and the value. A release replica gets bash and `rpc`,
-one `bin/<app> rpc` per line, because its remote shell stops the node
-when its input ends. History and Ctrl+L live in the client.
+runs) on a `Port` owned by the page, no tty. bash and iex both read
+lines that way — verified: `iex` on a piped stdin answers with its
+prompt and the value. On the app container iex is `iex --remsh <app>`,
+attached to the named node the dev image boots (`--sname <app>` in its
+CMD), so what is evaluated there — a `deliver`, a query — happens on
+the VM that serves the port; the one-off, where nothing runs, gets
+`iex -S mix`. A release replica gets bash and `rpc`, one `bin/<app>
+rpc` per line, because its remote shell stops the node when its input
+ends; so does the remsh, which is why closing an iex session sends it
+SIGTERM and waits for it before the port, its stdin, is closed.
+History and Ctrl+L live in the client.
 
 ## Not verified yet
 

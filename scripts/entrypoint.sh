@@ -40,7 +40,12 @@ if [ $# -gt 0 ]; then echo "[$HOSTNAME]$0($#): $*"; fi
   # default_cmd()
     # Default command to initialize the server. `exec`, as the image's
     # CMD does: the BEAM takes PID 1 and with it the SIGTERM of a stop.
-  default_cmd() { exec mix phx.server; }
+    # Named as the CMD names it, so an iex --remsh finds this one too:
+    # the app's name, read off mix.exs when the workbench did not say.
+  default_cmd() {
+    local app="${ELIXIR_PROJECT_NAME:-$(sed -n 's/^ *app: :\([a-z0-9_]*\),.*/\1/p' mix.exs | head -1)}"
+    exec elixir --sname "${app:-app}" -S mix phx.server
+  }
 
 # SCRIPT -----------------------------------------------------------------------
 

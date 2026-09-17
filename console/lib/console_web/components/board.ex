@@ -9,7 +9,7 @@ defmodule ConsoleWeb.Board do
   use Phoenix.Component
   import ConsoleWeb.Refs
   import ConsoleWeb.Square, only: [square: 1]
-  alias ConsoleWeb.{Cartridges, Record, Terminal}
+  alias ConsoleWeb.{Cartridges, Record}
 
   attr :status, :map, default: nil
 
@@ -522,10 +522,12 @@ defmodule ConsoleWeb.Board do
     """
   end
 
-  # Each container's two ways in. Neither is a new power: the Logs screen
-  # and the Terminal already do both, and this is the row saying which of
-  # them is about *this* container — which is what was missing the day
-  # Docker Desktop stopped being the place to look. Nothing here starts,
+  # Each container's way in, its log lines. No new power: the Logs
+  # screen already does it, and this is the row saying which of them is
+  # about *this* container — which is what was missing the day Docker
+  # Desktop stopped being the place to look. A shell is opened from the
+  # Terminal, whose row of containers this one no longer doubles
+  # (2026-09-16). Nothing here starts,
   # stops or builds anything: a deployment goes up and down whole, and a
   # button that left half of one up would make the status say `dev` for
   # something that is not dev. The one act on a single container is the
@@ -534,12 +536,10 @@ defmodule ConsoleWeb.Board do
   defp containers(assigns) do
     cs = assigns.status["containers"] || []
     running = Enum.count(cs, &(&1["State"] == "running"))
-    targets = Map.new(Terminal.targets(assigns.status), &{&1.name, &1})
 
     assigns =
       assign(assigns,
         cs: cs,
-        targets: targets,
         sum: if(cs == [], do: "none", else: "#{running} of #{length(cs)} running")
       )
 
@@ -564,7 +564,6 @@ defmodule ConsoleWeb.Board do
               phx-click="logs_of"
               phx-value-service={c["Service"]}
             >Logs</button>
-            <.shell_button c={c} target={@targets[c["Service"]]} />
             <.restart_button c={c} deployment={@status["deployment"]} busy={@busy} />
           </td>
         </tr>
@@ -573,43 +572,8 @@ defmodule ConsoleWeb.Board do
     """
   end
 
-  # A shell, on the containers that can hold one. Which is the house's
-  # rule read carefully in both directions: a container that is down
-  # stays here, unlit, because bringing it up is something the reader can
-  # do — but `pod` is the pause image and carries no shell at all, so
-  # it is not marked, it is absent. Hiding is for what is not applicable
-  # and never will be, and that is this and nothing else on the board.
-  defp shell_button(assigns) do
-    down = assigns.c["State"] != "running"
-    shell = if assigns.target, do: Terminal.default_shell(assigns.target)
-    assigns = assign(assigns, down: down, shell: shell)
-
-    ~H"""
-    <button
-      :if={shellable?(@c)}
-      class={["btn mini", @down && "unlit"]}
-      type="button"
-      aria-disabled={@down && "true"}
-      title={
-        if @down,
-          do: "#{@c["Service"]} is not running: a session needs a container",
-          else: "a #{@shell} session on #{@c["Service"]}, in the Terminal"
-      }
-      phx-click={!@down && "term_open"}
-      phx-value-target={@c["Service"]}
-      phx-value-shell={@shell}
-    >
-      {@shell || "shell"}
-    </button>
-    """
-  end
-
-  # The pause container owns the workspace's network namespace and its
-  # ports, and sleeps: ~700 kB with no shell in them.
-  defp shellable?(c), do: c["Service"] != "pod"
-
   # Restart, the Docker screen's one act on a single container, as the
-  # row's third button, in the style of the other two: `./wb.sh restart
+  # row's second button, in the style of Logs: `./wb.sh restart
   # --deploy DEPLOY SERVICE`. Unlit, with the reason, while the container is not running
   # (Up brings the deployment up whole), while a job on the deployment
   # runs, and on the pause container, whose network namespace the others

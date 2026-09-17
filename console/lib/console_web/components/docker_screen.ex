@@ -192,7 +192,7 @@ defmodule ConsoleWeb.DockerScreen do
         <tr>
           <th>service</th><th>state</th><th>since</th><th class="dim num">restarts</th><th title="published on the host by the container that owns the network namespace — the pod's, for the workspace; a port may not answer to a browser">
             ports
-          </th><th class="num">cpu</th><th class="num">memory</th><th></th><th></th>
+          </th><th class="num">cpu</th><th class="num">memory</th><th></th>
         </tr>
         <%= for c <- @dk.rows do %>
           <% mine = Console.Docker.mine?(c, @project) %>
@@ -257,57 +257,12 @@ defmodule ConsoleWeb.DockerScreen do
               >Logs</button>
               <.restart c={c} mine={mine} deployment={@deployment} jobs={@jobs} />
             </td>
-            <td class="act shell"><.shell c={c} mine={mine} /></td>
           </tr>
         <% end %>
       </table>
     </div>
     <.card :if={@dk.card} card={@dk.card} live={@dk.live[@dk.card.name]} />
     <p :if={@dk.pick && is_nil(@dk.card)} class="note">Reading {@dk.pick}…</p>
-    """
-  end
-
-  # A shell on the containers that can hold one — the same rule as the board's.
-  attr :c, :map, required: true
-  attr :mine, :boolean, required: true
-
-  defp shell(assigns) do
-    shellable =
-      assigns.mine and not assigns.c.console? and
-        Regex.match?(
-          ~r/^(app\d*|database|pgadmin|adminer|prometheus|grafana)$/,
-          assigns.c.service
-        )
-
-    down = assigns.c.state != "running"
-    # The Terminal's own rule: psql on the database, sh on the Alpine and
-    # busybox images (pgAdmin, Adminer, Grafana, Prometheus), bash elsewhere.
-    shell =
-      case assigns.c.service do
-        "database" -> "psql"
-        s when s in ~w(pgadmin adminer prometheus grafana) -> "sh"
-        _ -> "bash"
-      end
-
-    assigns = assign(assigns, shellable: shellable, down: down, shell: shell)
-
-    ~H"""
-    <button
-      :if={@shellable}
-      class={["btn mini", @down && "unlit"]}
-      type="button"
-      aria-disabled={@down && "true"}
-      title={
-        if @down,
-          do: "#{@c.service} is not running: a session needs a container",
-          else: "a #{@shell} session on #{@c.service}, in the Terminal"
-      }
-      phx-click={!@down && "term_open"}
-      phx-value-target={@c.service}
-      phx-value-shell={@shell}
-    >
-      {@shell}
-    </button>
     """
   end
 

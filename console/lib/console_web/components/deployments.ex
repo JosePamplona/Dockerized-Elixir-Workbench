@@ -47,7 +47,7 @@ defmodule ConsoleWeb.Deployments do
   # What each deployment is, under its name on the row.
   @targets %{
     "dev" =>
-      "The dev toolchain image with the source mounted. Recompiles on boot; iex -S mix on the container.",
+      "The dev toolchain image with the source mounted. Recompiles on boot; iex attaches to its node.",
     "prod" =>
       "The release image, built from the project's Dockerfile on each up. No source, no Mix. A one-shot migrate runs first, and the app waits for it.",
     "scaled" =>

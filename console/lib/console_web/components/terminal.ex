@@ -3,9 +3,14 @@ defmodule ConsoleWeb.Terminal do
   A shell on the app container, or on a one-off container of the
   workbench's image with the source when nothing runs — line-oriented: an input, a screen, the
   history and Tab in the client. `docker exec -i` and `docker run -i`
-  on a Port; no tty. bash and `iex -S mix` both read lines that way;
-  a release replica gets bash and `rpc` — `bin/<app> rpc` on each line,
-  since its remote shell stops the node when its input ends.
+  on a Port; no tty. bash reads lines that way, and so does iex: on the
+  app container `iex --remsh <app>`, attached to the named node that
+  serves the port (its Dockerfile.local's CMD boots it so), never a
+  second VM with a mailbox and a Repo of its own; on the one-off, where
+  nothing runs, `iex -S mix`. A release replica gets bash and `rpc` —
+  `bin/<app> rpc` on each line, since its remote shell stops the node
+  when its input ends; the remsh does the same, which is why a session
+  on it is closed by a signal (see `Console.Terminals.Session`).
   """
   use Phoenix.Component
 
@@ -268,7 +273,8 @@ defmodule ConsoleWeb.Terminal do
     do: [{"sh", "sh"}]
 
   def shells(%{release: true}), do: [{"bash", "bash"}, {"rpc", "bin/app rpc"}]
-  def shells(_), do: [{"bash", "bash"}, {"iex", "iex -S mix"}]
+  def shells(%{oneoff: true}), do: [{"bash", "bash"}, {"iex", "iex -S mix"}]
+  def shells(_), do: [{"bash", "bash"}, {"iex", "iex --remsh"}]
 
   @doc "The shell a target opens with when none is chosen: the first it offers."
   def default_shell(target), do: target |> shells() |> hd() |> elem(0)
@@ -316,7 +322,9 @@ defmodule ConsoleWeb.Terminal do
         "docker compose -p #{status["compose_project"]} exec -T #{target.name} /app/bin/#{get_in(status, ["project", "app"]) || "app"} rpc …"
 
       true ->
-        "docker compose -p #{status["compose_project"]} exec -T #{workdir(target)}#{target.name} #{Enum.join(run(shell), " ")}"
+        app = get_in(status, ["project", "app"]) || "app"
+
+        "docker compose -p #{status["compose_project"]} exec -T #{workdir(target)}#{target.name} #{Enum.join(run(shell, app), " ")}"
     end
   end
 
@@ -364,7 +372,8 @@ defmodule ConsoleWeb.Terminal do
 
       {app,
        compose ++
-         ["exec", "-T" | @colour] ++ workdir_args(target) ++ [target.name | announced(run(shell))],
+         ["exec", "-T" | @colour] ++
+         workdir_args(target) ++ [target.name | announced(coloured(run(shell, app), app))],
        compose ++ ["exec", "-T", target.name]}
     end
   end
@@ -385,12 +394,33 @@ defmodule ConsoleWeb.Terminal do
   defp workdir_args(_), do: []
   defp workdir(target), do: if(workdir_args(target) == [], do: "", else: "-w /app/src ")
 
-  # What each shell is, as a command line. `psql` takes the user the
-  # compose gives postgres; the rest are the shell and nothing else.
-  defp run("iex"), do: ["iex", "-S", "mix"]
-  defp run("psql"), do: ["psql", "-U", "postgres"]
-  defp run("sh"), do: ["sh"]
-  defp run(_), do: ["bash"]
+  # IEx colours its results where it evaluates them, which for a remsh
+  # is the app's node — booted with no terminal, so its IEx has them
+  # off, whatever the env of this exec says to the local one. Before
+  # attaching, the app's node is told to colour, IEx's own setting and
+  # nothing else on it (not `ansi_enabled`, which would colour its
+  # Logger lines too), through an rpc that leaves no VM behind. Then
+  # `exec` hands the announced PID to iex.
+  defp coloured(["iex" | _] = cmd, app) do
+    [
+      "sh",
+      "-c",
+      ~s|elixir --sname "wb_cfg_$$" --rpc-eval #{app} 'IEx.configure(colors: [enabled: true])' >/dev/null 2>&1; exec "$@"|,
+      "sh" | cmd
+    ]
+  end
+
+  defp coloured(cmd, _app), do: cmd
+
+  # What each shell is, as a command line. iex attaches to the app's
+  # node, `<app>@<hostname>`: a short name without a host is completed
+  # with the container's own, which is where the server is. `psql`
+  # takes the user the compose gives postgres; the rest are the shell
+  # and nothing else.
+  defp run("iex", app), do: ["iex", "--remsh", app]
+  defp run("psql", _), do: ["psql", "-U", "postgres"]
+  defp run("sh", _), do: ["sh"]
+  defp run(_, _), do: ["bash"]
 
   # The mounts `wb.sh` gives its own runs on the project: the source, the
   # workbench (the project's mix.exs takes its package from there), and

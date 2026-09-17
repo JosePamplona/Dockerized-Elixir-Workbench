@@ -81,10 +81,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   the syntax palette and the diff's four. Which are folded is kept in
   this browser (`wb-console-ui-folds`).
 
-- **Restart on the rail's containers.** A third button on each
-  container's row, beside Logs and the shell — the row's columns size
-  themselves now, the name taking what the chip and the three buttons
-  leave — the Docker screen's one act on a single container brought
+- **Restart on the rail's containers.** A second button on each
+  container's row, beside Logs — the shell's went (2026-09-16: the
+  Terminal is where a session is opened, the rail says what runs) and
+  the row's columns size themselves now, the name taking what the
+  chip and the two buttons leave — the Docker screen's one act on a
+  single container brought
   to the rail: `./wb.sh restart --deploy
   DEPLOY SERVICE`, the same service and image up again with the
   deployment whole. Unlit with the reason while the container is not
@@ -1177,6 +1179,34 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   own; what has happened to the project belongs beside what it is.
 
 ### Fixed
+
+- **iex on a dev deployment attaches to the node that serves the
+  port.** `./wb.sh iex` and the console's `app · iex` ran `iex -S mix`
+  on the app container: a second VM, with a Swoosh mailbox, a Repo and
+  a PubSub of its own, so a `deliver` from it never reached
+  `/dev/mailbox` and nothing evaluated there touched the server. The
+  dev image's CMD now boots the server as the named node
+  `<app>@<container>` (`elixir --sname <app> -S mix phx.server`, baked
+  from `Dockerfile.seed.local` with the app's name, mirrored in the
+  compose's comment and the workbench entrypoint's default), and both
+  attach with `iex --remsh <app>` — the short name, completed with the
+  container's own hostname — as the release's `remote` already did. An
+  existing workspace takes it with `./wb.sh build` and `up`, since the
+  CMD is the image's. A remote shell that reads EOF stops the node it
+  is attached to (measured 2026-09-16 on the remsh, as wb.sh already
+  knew of the release's), so wb.sh refuses `iex` without a terminal in
+  dev too, with `elixir --sname wb_rpc --rpc-eval <app> 'EXPR'` as the
+  one-expression way, and the console closes an iex session by
+  SIGTERM to the iex it announced, waiting for it to leave before the
+  port — its stdin — is closed: killed so, the local VM shuts down and
+  the server stays. The one-off terminal, where nothing runs, keeps
+  `iex -S mix`; `bash` and `iex -S mix` there is still the way to a VM
+  of one's own. IEx colours its results on the node that evaluates
+  them, so a remsh came plain: the app's node is told to colour —
+  `IEx.configure`, its own setting, not `ansi_enabled` and the Logger
+  lines with it — by an rpc before iex attaches, in the console and
+  in wb.sh alike; and the terminal's lines keep their leading spaces
+  (`white-space: pre-wrap`), which the page folded before.
 
 - **A project made from the console gets port 4000.** `new` asks
   for the first free host port from 4000 by connecting to the

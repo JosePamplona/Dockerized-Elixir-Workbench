@@ -90,6 +90,39 @@ defmodule Console.TerminalsTest do
     refute Enum.any?(lines, fn {html, _} -> html =~ "wb-pid" end)
   end
 
+  # A remote shell that reads EOF stops the node it is on: an iex is
+  # sent SIGTERM and waited for before its port — its stdin — is closed.
+  # `env` stands in for `docker exec`, here on the host.
+  test "closing an iex signals it first, and takes its input away only once it has left" do
+    key = {"probe", "iex"}
+    mark = Path.join(System.tmp_dir!(), "wb_term_#{System.unique_integer([:positive])}")
+
+    ["sh" | argv] =
+      ConsoleWeb.Terminal.announced([
+        "sh",
+        "-c",
+        "trap 'echo term > #{mark}; exit 0' TERM; while :; do sleep 1; done"
+      ])
+
+    {:ok, _} =
+      Terminals.open(key,
+        exe: System.find_executable("sh"),
+        argv: argv,
+        target: @target,
+        shell: "iex",
+        head: "h",
+        exec: [],
+        signal_exe: System.find_executable("env")
+      )
+
+    assert {:ok, _} = Terminals.attach(key)
+    Process.sleep(300)
+    Terminals.close(key)
+    assert_receive {:terminal, ^key, :closed}
+    assert File.read!(mark) == "term\n"
+    File.rm(mark)
+  end
+
   test "when the process ends the session stays with its trail, and a close forgets it" do
     key = {"probe", "bash"}
 

@@ -70,6 +70,14 @@ defmodule ConsoleWeb.TerminalTest do
     assert ["compose", "--project-name", "lorem_ipsum", "exec", "-T" | _] = argv
     assert exec == ["compose", "--project-name", "lorem_ipsum", "exec", "-T", "app"]
     assert List.last(argv) == "bash"
+
+    # iex attaches to the app's node by its short name; the container completes the host.
+    {"lorem_ipsum", argv, _} = Terminal.argv(s, app, "iex")
+    assert ["sh", "-c", colours, "sh", "iex", "--remsh", "lorem_ipsum"] = Enum.take(argv, -7)
+    # The app's node is told to colour IEx's results before iex attaches, by an rpc.
+    assert colours =~ "--rpc-eval lorem_ipsum 'IEx.configure(colors: [enabled: true])'"
+    assert String.ends_with?(colours, ~S(exec "$@"))
+    assert Terminal.command(s, app, "iex") =~ "exec -T -w /app/src app iex --remsh lorem_ipsum"
   end
 
   test "a stopped container is not a target, and with no app the workbench stands in" do
@@ -87,7 +95,10 @@ defmodule ConsoleWeb.TerminalTest do
 
     [app, db, pga] = Terminal.targets(s)
 
-    assert Terminal.shells(app) == [{"bash", "bash"}, {"iex", "iex -S mix"}]
+    # iex on the app attaches to the node that serves the port; only the
+    # one-off, where nothing runs, boots a VM of its own.
+    assert Terminal.shells(app) == [{"bash", "bash"}, {"iex", "iex --remsh"}]
+    assert Terminal.shells(%{app | oneoff: true}) == [{"bash", "bash"}, {"iex", "iex -S mix"}]
     # The reason to open the database is the database, not its filesystem.
     assert Terminal.default_shell(db) == "psql"
     # Alpine: sh is not a choice, it is the only one.
@@ -178,7 +189,7 @@ defmodule ConsoleWeb.TerminalTest do
     assert html =~ ~r/<button[^>]*data-session="live"[^>]*>app</
     assert html =~ ~r/<button[^>]*data-session="ended"[^>]*>database</
     assert html =~ ~r/<button[^>]*data-session="live"[^>]*>workbench</
-    assert html =~ ~r/<button[^>]*data-session="live"[^>]*>iex -S mix</
+    assert html =~ ~r/<button[^>]*data-session="live"[^>]*>iex --remsh</
     refute html =~ ~r/<button[^>]*data-session[^>]*>bash</
     refute html =~ ~r/<button[^>]*phx-click="term_pick"[^>]*disabled/
     # app · bash has no session: the screen offers to open one, and says who else is open.

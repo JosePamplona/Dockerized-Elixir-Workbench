@@ -4,8 +4,8 @@ defmodule Console.Terminals do
   shell — `app · bash`, `app · iex`, `database · psql` — under a
   supervisor of this console's, not the page's. A session outlives the
   page that opened it: reload, change tab, lose the socket, and the
-  `iex -S mix` is still there with its screen, since the process holds
-  the last lines it wrote and hands them back to whoever attaches.
+  iex is still there with its screen, since the process holds the last
+  lines it wrote and hands them back to whoever attaches.
 
   A session is keyed by `{target, shell}`. It is live while the process
   in the container runs; when that one ends the session stays, ended,
@@ -285,12 +285,34 @@ defmodule Console.Terminals.Session do
   # The name goes first, by hand: the Registry would drop it on its own
   # a moment after the process dies, and the page that closed asks the
   # list, or opens on the same key, before that moment.
+  #
+  # An iex is told to leave before its input is taken away. Closing the
+  # port is an EOF on stdin, and a remote shell that reads EOF stops
+  # the node it is attached to — the app's server, for `iex --remsh` —
+  # while one killed by SIGTERM shuts its own VM down and leaves the
+  # node it was on alone (both measured 2026-09-16). So the session
+  # signals the iex it announced and waits for it to end, up to a
+  # moment, and only then closes the port.
   @impl true
   def terminate(_reason, state) do
     Registry.unregister(Console.Terminals.Registry, state.key)
+    if state.port, do: leave(state)
     if state.port, do: try_close(state.port)
     Terminals.broadcast(state.key, :closed)
   end
+
+  defp leave(%{shell: "iex", pid: pid, port: port} = state) when pid != nil do
+    argv = state.exec ++ ["sh", "-c", ~S(kill -TERM "$1"), "sh", pid]
+    System.cmd(state.signal_exe, argv, stderr_to_stdout: true)
+
+    receive do
+      {^port, {:exit_status, _}} -> :ok
+    after
+      3000 -> :ok
+    end
+  end
+
+  defp leave(_), do: :ok
 
   defp try_close(port) do
     Port.close(port)

@@ -54,7 +54,7 @@ services:
         UID: 1000
         GID: 1000
     # The image starts itself (CMD). Defaults per dockerfile —
-    #   Dockerfile.local: sh -c 'cd /app/src && mix setup && exec mix phx.server'
+    #   Dockerfile.local: sh -c 'cd /app/src && mix setup && exec elixir --sname lorem_ipsum -S mix phx.server'
     #   Dockerfile (prod): /app/bin/server
     # Uncomment to override:
     # command:

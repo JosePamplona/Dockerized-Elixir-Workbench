@@ -175,27 +175,29 @@ out, so a default `phx.new` project shows them as inserted already.
 | [ecto](ecto/) | `--no-ecto`, `--database` | `wb.sh add ecto [--database DB]`, then `wb.sh bake` |
 | [esbuild](esbuild/) | `--no-esbuild` | `wb.sh add esbuild` |
 | [tailwind](tailwind/) | `--no-tailwind` | `wb.sh add tailwind` |
-| [html](html/) | `--no-html` | `wb.sh add html` |
-| [live](live/) | `--no-live` | `wb.sh add live` — builds on html (`requires`) |
+| [html](html/) | `--no-html`, `--no-live` | `wb.sh add html [--no-live]` — LiveView is its option, as in the generator; run again to add it |
 | [dashboard](dashboard/) | `--no-dashboard` | `wb.sh add dashboard` |
 
 That is every capability `phx.new` can leave out; what remains of its
 flags — `--umbrella`, `--app`, `--module`, `--adapter`, `--binary-id`,
 `--no-agents-md` — shapes the generation itself and stays a `new2`
-matter. Each of the eight has a `DESIGN.md`; the engine's argument —
+matter. Each of the seven has a `DESIGN.md`; the engine's argument —
 why the generator and not a port of it, why `git merge-file`, what a
 delta cannot do — is in [mailer's](mailer/DESIGN.md), and the other
-seven refer to it. A cartridge that builds on another says so with `requires/0`
-(live on html, as `phx.new` generates it only with html), and when the
+six refer to it. A cartridge that builds on another says so with `requires/0`
+(dashboard needs nothing; ash's `--auth password` needs html with
+LiveView), and when the
 name is not enough it names the **state** the other has to be in —
 `{"ecto", database: "postgres"}` for pgadmin and psql_extras, which
-serve Postgres and nothing else. The state is asked of the required
+serve Postgres and nothing else, `{"html", live: true}` for what needs
+LiveView. The state is asked of the required
 cartridge's own `state/1`, off the project as it is, never off what an
 insert was asked; one resolver reads both (`missing_requirements/2`)
 and one refusal (`refuse/3`) says what is lacking and how to get it:
-"live builds on html, not in the project yet. Insert that first:
+"dashboard builds on html, not in the project yet. Insert that first:
 ./wb.sh add html"; "pgadmin builds on ecto with database postgres, and
-this project's database is mysql". The catalog carries the names as
+this project's database is mysql"; and for a state a second run can
+add, the remedy is that run, `./wb.sh add html --live`. The catalog carries the names as
 `requires` and the states as `conditions`, and the console's box says
 both under Needs. A single value can say it too — `{value, doc,
 requires}` in `choices/0` (ash's `--auth password` on live and mailer)

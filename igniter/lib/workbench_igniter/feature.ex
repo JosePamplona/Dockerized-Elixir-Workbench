@@ -513,7 +513,7 @@ defmodule WorkbenchIgniter.Feature do
   """
   @spec refuse(Igniter.t(), module(), [shortfall()]) :: Igniter.t()
   def refuse(igniter, feature, shortfalls),
-    do: Igniter.add_issue(igniter, "#{feature.name()} builds on " <> sentence(shortfalls))
+    do: Igniter.add_issue(igniter, "#{feature.name()} builds on " <> lacking(shortfalls))
 
   @doc "A requirement or a shortfall, said: `ecto`, `ecto with database postgres`, `html with live`."
   @spec describe(requirement() | shortfall()) :: String.t()
@@ -523,9 +523,14 @@ defmodule WorkbenchIgniter.Feature do
   def describe({:absent, name, state}), do: describe({name, state})
   def describe({:short, name, state, _key, _found}), do: describe({name, state})
 
-  @doc "The `wb.sh add` line that brings a requirement in, its state as the installer's switches."
+  @doc """
+  The `wb.sh add` line that brings a requirement in, its state as the
+  installer's switches — the same line for what is in but short of the
+  state, since a second run adds the piece (`rerun: :adds`).
+  """
   @spec remedy(shortfall() | requirement()) :: String.t()
   def remedy({:absent, name, state}), do: remedy({name, state})
+  def remedy({:short, name, state, _key, _found}), do: remedy({name, state})
   def remedy(name) when is_binary(name), do: "./wb.sh add #{name}"
 
   def remedy({name, state}),
@@ -540,22 +545,45 @@ defmodule WorkbenchIgniter.Feature do
   defp switch({key, value}), do: "--#{flag(key)} #{value}"
   defp flag(key), do: key |> to_string() |> String.replace("_", "-")
 
-  # "X and Y, not in the project yet. Insert that first: ./wb.sh add X"
-  # for what is absent; ", and this project's KEY is FOUND" for what is
-  # in and short of the state asked; both when both.
-  defp sentence(shortfalls) do
+  @doc """
+  What is lacking, said after "NAME builds on": "html, not in the
+  project yet. Insert that first: ./wb.sh add html"; "ecto with
+  database postgres, and this project's database is mysql."; and, with
+  both kinds, "html with live and mailer: this project's live is off,
+  and mailer is not in yet. Insert that first: ./wb.sh add html --live,
+  then ./wb.sh add mailer".
+  """
+  @spec lacking([shortfall()]) :: String.t()
+  def lacking(shortfalls) do
     absent = for {:absent, _, _} = s <- shortfalls, do: s
     short = for {:short, _, _, _, _} = s <- shortfalls, do: s
+    named = Enum.map_join(shortfalls, " and ", &describe/1)
 
-    Enum.map_join(shortfalls, " and ", &describe/1) <>
-      Enum.map_join(short, "", fn {:short, _, _, key, found} ->
-        ", and this project's #{key} is #{found(found)}"
-      end) <>
-      case absent do
-        [] -> "."
-        [first | _] -> ", not in the project yet. Insert that first: #{remedy(first)}"
-      end
+    case {absent, short} do
+      {_, []} ->
+        named <> ", not in the project yet. Insert that first: " <> remedies(absent)
+
+      {[], _} ->
+        named <> ", and this project's " <> found_all(short) <> "."
+
+      _ ->
+        named <>
+          ": this project's " <>
+          found_all(short) <>
+          ", and " <>
+          Enum.map_join(absent, " and ", &describe/1) <>
+          " is not in yet. Insert that first: " <> remedies(short ++ absent)
+    end
   end
+
+  defp found_all(short),
+    do:
+      Enum.map_join(short, " and ", fn {:short, _, _, key, found} ->
+        "#{key} is #{found(found)}"
+      end)
+
+  defp remedies(shortfalls),
+    do: shortfalls |> Enum.map(&remedy/1) |> Enum.uniq() |> Enum.join(", then ")
 
   defp found(nil), do: "not set"
   defp found(false), do: "off"

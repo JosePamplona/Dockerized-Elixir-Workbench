@@ -126,12 +126,14 @@ reads is the `ash` dependency.
 Some choices build on cartridges the site takes for granted, because
 it assumes a default `phx.new` project: every `--auth` strategy but
 `api_key` installs `ash_authentication_phoenix`, whose LiveViews need
-**live** (and so html); `password`, `magic_link` and `otp` generate
-senders that deliver with the project's Mailer, so they need **mailer**
-too; and `ash_admin`, `live_debugger`, `cinder`, `mishka_chelekom` and
-`ash_oban` (it brings `oban_web`) need **live**. The cartridge says so
-beside each value in the catalog (`requires`) and refuses, naming what
-to insert first, while it is not in the project. `--data-layer
+**html with LiveView** (`{"html", live: true}`); `password`,
+`magic_link` and `otp` generate senders that deliver with the project's
+Mailer, so they need **mailer** too; and `ash_admin`, `live_debugger`,
+`cinder`, `mishka_chelekom` and `ash_oban` (it brings `oban_web`) need
+LiveView the same way. The cartridge says so beside each value in the
+catalog (`requires`, with the state in `conditions`) and refuses,
+naming what to insert first — `./wb.sh add html --live` on a project
+born `--no-live` — while the project lacks it. `--data-layer
 postgres` needs no Ecto cartridge — `ash_postgres` sets the repo up
 itself — but a project born `--no-ecto` then has a database its compose
 lacks: `./wb.sh add` says so and `./wb.sh bake` puts it in.

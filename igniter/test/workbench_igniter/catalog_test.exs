@@ -26,12 +26,12 @@ defmodule WorkbenchIgniter.CatalogTest do
                  osmon psql_extras credo mock exdebug rest graphql
                  coveralls exdoc guidelines enhancements auth0 openai healthcheck stripe
                  githooks exmachina clustering healthcheck2 ash specdd pgadmin adminer k6 monitoring
-                 mailer gettext ecto esbuild tailwind html live dashboard)
+                 mailer gettext ecto esbuild tailwind html dashboard)
   # The chiefs_setup recipe with its default choices, in insertion order.
   @picks ~w(ansi toolchain versioning osmon psql_extras pgadmin credo mock exdebug rest
             coveralls exdoc enhancements healthcheck)
   # Base cartridges a default phx.new project already carries.
-  @in_by_default ~w(mailer gettext ecto esbuild tailwind html live dashboard)
+  @in_by_default ~w(mailer gettext ecto esbuild tailwind html dashboard)
 
   describe "the catalog" do
     test "names every cartridge, in shelf order" do
@@ -412,7 +412,7 @@ defmodule WorkbenchIgniter.CatalogTest do
 
     for feature <- Features.catalog(),
         not feature.pending?(),
-        feature not in [Features.Ash, Features.Ecto],
+        feature not in [Features.Ash, Features.Ecto, Features.Html],
         (feature.info([], nil).schema || []) != [] do
       @feature feature
 

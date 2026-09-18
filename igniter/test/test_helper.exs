@@ -64,7 +64,16 @@ defmodule WorkbenchIgniter.Grown do
 
   @doc "A cartridge added with its options, and applied: `{:ok, igniter}`, or `{:error, why}` with its issues."
   def add(igniter, cartridge, argv \\ []) do
-    igniter = Igniter.compose_task(igniter, "workbench.install.#{cartridge}", argv)
+    # live is html's option: as a step of an order, "html" goes in
+    # without it and "live" is html run again, which adds it.
+    {task, argv} =
+      case cartridge do
+        "html" -> {"html", ["--no-live" | argv]}
+        "live" -> {"html", argv}
+        other -> {other, argv}
+      end
+
+    igniter = Igniter.compose_task(igniter, "workbench.install.#{task}", argv)
 
     case igniter.issues do
       [] -> {:ok, Igniter.Test.apply_igniter!(igniter)}

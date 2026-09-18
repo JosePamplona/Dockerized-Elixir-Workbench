@@ -133,7 +133,7 @@ rather than read back off a cover.
 | esbuild | *proposals written, choice pending* — recommended 4, console, which with ecto's and exdebug would be the third; 2, home computer, named as the yield | heroic | — |
 | tailwind | *proposals written, choice pending* — recommended 2, home computer (live's too; the CD-ROM entry named as fallback) | comic | — |
 | html | *proposals written, choice pending* — recommended 3, editorial (mailer's too; the carton named as fallback) | hospitable | — |
-| live | *proposals written, choice pending* — recommended 2, home computer | attentive — the mechanism moves the page as you act; added for this cartridge | — |
+| live | *retired 2026-09-18*: LiveView is html's `--live` option now, not a box; the proposals stay in `live/` for html's cover to draw on (its recommended era was 2, home computer) | attentive — added for this cartridge | — |
 | dashboard | *proposals written, choice pending* — recommended 1, early carton | candid — the mechanism shows what is happening while it happens, and leaves the judgement to you; added for this cartridge | — |
 
 When `NEED.md` joined the cartridge anatomy (2026-08-30) the five

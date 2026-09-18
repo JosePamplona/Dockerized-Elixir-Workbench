@@ -5,7 +5,7 @@ date; quotations are verbatim from the file or page as read then. The
 mechanism as installed is in the [README](README.md); the engine is
 argued in the [mailer paper](../mailer/DESIGN.md) §2.3–§2.7 and
 §3.1–§3.5. This paper holds what html decides for itself: that it is
-html alone, and what that leaves for live.*
+html alone, and why LiveView is its option.*
 
 ## Abstract
 
@@ -20,8 +20,9 @@ by `phx.new`'s own rule, LiveView with it. The cartridge brings the
 delta back for html and html only: `phx.new`'s `live` binding is
 `html && live`, and a project without html is generated with
 `--no-live` whatever it asked, so the html delta is taken against a
-base whose live is off and leaves live off. That is what makes `live`
-a cartridge of its own that `requires` this one. The mark is
+base whose live is off and leaves live off; LiveView is then a second
+delta on top, and since 2026-09-18 the cartridge's own `--live` option
+(§3.4) rather than a cartridge of its own. The mark is
 `phoenix_html`. On a project without a bundler the delta brings
 `phx.new`'s static placeholders for `app.js` and `app.css`, as
 `phx.new --no-assets` would.
@@ -158,6 +159,43 @@ the pipelines and takes the placeholders away while they are still
 pipeline is a project's to rename; `lib/<app>_web/components/` is a
 directory a project can create for a JSON API's components.
 
+### 3.4 LiveView is an option, not a box (2026-09-18)
+
+`--no-live` was a base cartridge, `live`, with `requires ["html"]` and
+a paper of its own (in git until the merge, `features/live/`). Two
+facts of the generator decided otherwise. `put_binding/1`: `live =
+html && Keyword.get(opts, :live, true)` — live is a condition inside
+html's templates (`config.exs`, `endpoint.ex`, `app.js`,
+`core_components.ex`, `layouts.ex`, `root.html.heex`, `AGENTS.md`),
+and nothing under `@live` in `mix.exs`: no file is live's, no
+dependency is live's; and `mix help phx.new` names `--no-live` a
+flag "automatically disabled if `--no-html` is given". A decision
+that only exists inside another's is that other's option, which is
+the rule the collections follow for theirs. The alternatives:
+
+* **Keep the box.** Its `requires ["html"]` was the mechanism's first
+  case, and it worked; but a box whose every file is another box's
+  said, on the shelf, that LiveView was a capability, and a reader
+  inserting html then had to know to insert live.
+* **The option, off by default.** `phx.new` ships LiveView on; an
+  option off by default would make `wb.sh add html` give less than
+  `phx.new` gives, and the born and the grown project would differ.
+* **The option, on by default, `--no-live` to leave it out.** Chosen:
+  the same words as `phx.new`, the same default. `rerun: :adds` makes
+  a second run on a project born `--no-live` add it, which is what the
+  box did, so the grown-versus-born test keeps its orders ("live" is
+  html run again). The mark stays LiveView's configuration block, read
+  by `facts/1`; `state/1` reports it as `live`. The cost: LiveView is
+  no longer ejected alone — an eject is a box's, and this is the base
+  cartridges' open question, undoing a delta the way it was done.
+
+Two things moved with it. The notice on a project without esbuild
+(the live paper's §3.3): the `LiveSocket` cannot be brought into an
+`app.js` that does not exist. And ash's requirements: `--auth
+password` and `--with ash_admin` require `{"html", live: true}`, the
+state-bearing requirement, whose refusal reads "builds on html with
+live" and whose remedy is `./wb.sh add html --live`.
+
 ## 4. Evaluation
 
 **Unit tests** (`features/base_cartridges_test.exs`, run 2026-08-30 in
@@ -189,6 +227,16 @@ LiveView), and the project's `mix test` — figures in the mailer paper
 after the insert.
 
 ## 5. Limitations and open questions
+
+* **LiveView's mark can be forged** (§3.4): a `config :phoenix_live_view`
+  line written by hand for `debug_heex_annotations` reads as live.
+  `phx.new` puts that option in `dev.exs`, not `config.exs`, so the
+  case is unlikely and not handled.
+* **`--no-live` is `phx.new`'s comment-out, not an absence**: a
+  project that deleted the commented lines from `app.js` instead of
+  leaving them will see the live delta re-add them as a conflict,
+  since ours and theirs both changed the segment.
+* **No eject of LiveView alone** (§3.4).
 
 * **The placeholders on a project without a bundler** (§3.2) are
   what `phx.new --no-assets` gives and what `mix help phx.new` does

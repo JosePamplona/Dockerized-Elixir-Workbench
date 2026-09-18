@@ -612,6 +612,22 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **LiveView is html's option, not a box.** The `live` cartridge is
+  gone into html as `--live`, on by default as in `phx.new`: `wb.sh add
+  html` brings both, `--no-live` leaves LiveView out, and html run again
+  on a project born `--no-live` adds it (`rerun: :adds`). In the
+  generator live is `html && live`, a condition inside html's templates
+  with no file and no dependency of its own — a decision that only
+  exists inside another's is that other's option. `state/1` reads it
+  back off LiveView's configuration, the block that was the box's mark;
+  the esbuild notice moved with it; ash's `--auth` strategies and
+  `--with ash_admin` require `{"html", live: true}`, and the refusal's
+  remedy is `./wb.sh add html --live`. The shelf has seven base
+  cartridges; the console's new-project card offers `--no-live` as
+  html's switch, the way it offers ecto's `--database`, and the box's
+  form can turn a switch that is on by default off. Cost, written in
+  html's paper: LiveView is no longer ejected alone (html v0.2.0,
+  2026-09-18).
 - **Both images carry node and npm.** `ash --api typescript` failed
   inside the workbench's container with `:enoent` on `npm`: ash_typescript's
   installer, handed `--framework react`, hooks `npm install` into the

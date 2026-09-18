@@ -238,7 +238,12 @@ defmodule ConsoleWeb.Deploy do
                 />
                 <.cart_ref name={e["name"]} />
               </label>
-              <span :if={e["name"] == "ecto" and e["options"] != []} class="subs">
+              <%!-- A base cartridge's own phx.new flags: ecto's database and
+                    ids, html's live. A switch is labelled with its flag and
+                    checked when on, whatever its default; one on by default
+                    carries an "off" before its box, since a form sends nothing
+                    for an unchecked one, and the command says --no-live. --%>
+              <span :if={e["options"] != []} class="subs">
                 <%= for o <- e["options"] do %>
                   <% flag = "--" <> String.replace(o["name"], "_", "-") %>
                   <label class={["sub", out && "out"]}>
@@ -256,10 +261,16 @@ defmodule ConsoleWeb.Deploy do
                       </select>
                     <% else %>
                       <input
+                        :if={o["default"] == true}
+                        type="hidden"
+                        name={"gen[#{o["name"]}]"}
+                        value="off"
+                      />
+                      <input
                         type="checkbox"
                         name={"gen[#{o["name"]}]"}
                         disabled={out}
-                        checked={@newp.gen[o["name"]] == "on"}
+                        checked={switch_on?(o, @newp.gen[o["name"]])}
                         title={o["doc"]}
                       /> {flag}
                     <% end %>
@@ -394,30 +405,44 @@ defmodule ConsoleWeb.Deploy do
           base_out?(catalog, newp, e["name"]),
           do: "--no-#{e["name"]}"
 
-    Enum.join(["./wb.sh", "new"] ++ gen ++ outs ++ ecto_flags(catalog, newp), " ")
+    Enum.join(["./wb.sh", "new"] ++ gen ++ outs ++ base_flags(catalog, newp), " ")
   end
 
-  # Ecto's own flags — the database, binary ids — while Ecto is in.
-  defp ecto_flags(catalog, newp) do
-    case Enum.find(catalog, &(&1["name"] == "ecto")) do
-      nil -> []
-      e -> if base_out?(catalog, newp, "ecto"), do: [], else: option_flags(e, newp)
-    end
+  # The base cartridges' own flags — ecto's database and ids, html's
+  # --no-live — for each one that is in.
+  defp base_flags(catalog, newp) do
+    for e <- Cartridges.base(catalog),
+        not base_out?(catalog, newp, e["name"]),
+        flag <- option_flags(e, newp),
+        do: flag
   end
 
   defp option_flags(e, newp),
     do: Enum.flat_map(e["options"] || [], &option_flag(&1, newp.gen[&1["name"]]))
 
-  # One option as set on the card, against its default.
+  # One option as set on the card, against its default: a switch off by
+  # default gives --flag when on, one on by default --no-flag when off.
   defp option_flag(o, v) do
-    flag = "--" <> String.replace(o["name"], "_", "-")
+    name = String.replace(o["name"], "_", "-")
 
     cond do
-      o["type"] == "boolean" -> if v == "on", do: [flag], else: []
-      v && v != o["default"] -> [flag, v]
-      true -> []
+      o["type"] == "boolean" and o["default"] == true ->
+        if v == "off", do: ["--no-#{name}"], else: []
+
+      o["type"] == "boolean" ->
+        if v == "on", do: ["--#{name}"], else: []
+
+      v && v != o["default"] ->
+        ["--#{name}", v]
+
+      true ->
+        []
     end
   end
+
+  # Whether a switch reads as on: as the card set it, else its default.
+  defp switch_on?(o, nil), do: o["default"] == true
+  defp switch_on?(_o, v), do: v == "on"
 
   @doc "`--replicas N --no-balancer`, only when they differ from what `up` assumes."
   def scaled_extra(pick) do

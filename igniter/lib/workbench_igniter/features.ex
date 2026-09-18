@@ -63,7 +63,6 @@ defmodule WorkbenchIgniter.Features do
     Features.Esbuild,
     Features.Tailwind,
     Features.Html,
-    Features.Live,
     Features.Dashboard
   ]
 
@@ -283,9 +282,23 @@ defmodule WorkbenchIgniter.Features do
 
   defp choice_list(values), do: Enum.map(values, &choice_value/1)
 
-  defp choice_value({value, doc, requires}), do: %{value: value, doc: doc, requires: requires}
-  defp choice_value({value, doc}), do: %{value: value, doc: doc, requires: []}
-  defp choice_value(value), do: %{value: value, doc: nil, requires: []}
+  # A value's requirements as the cartridge's: the names as `requires`,
+  # the states as `conditions` (ash's `--auth password` on html with live).
+  defp choice_value({value, doc, requires}) do
+    %{
+      value: value,
+      doc: doc,
+      requires: Enum.map(requires, &requirement_name/1),
+      conditions:
+        for({name, state} <- requires, state != [], into: %{}, do: {name, Map.new(state)})
+    }
+  end
+
+  defp choice_value({value, doc}), do: %{value: value, doc: doc, requires: [], conditions: %{}}
+  defp choice_value(value), do: %{value: value, doc: nil, requires: [], conditions: %{}}
+
+  defp requirement_name({name, _state}), do: name
+  defp requirement_name(name) when is_binary(name), do: name
 
   @doc """
   The registered cartridge named `name`, or `nil`. The name is the one

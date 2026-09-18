@@ -39,10 +39,10 @@ defmodule WorkbenchIgniter.RequirementsTest do
 
   describe "the one refusal" do
     test "absent: not in yet, and the line that brings it" do
-      [issue] = Feature.refuse(test_project(), Features.Live, [{:absent, "html", []}]).issues
+      [issue] = Feature.refuse(test_project(), Features.Dashboard, [{:absent, "html", []}]).issues
 
       assert issue ==
-               "live builds on html, not in the project yet. Insert that first: ./wb.sh add html"
+               "dashboard builds on html, not in the project yet. Insert that first: ./wb.sh add html"
     end
 
     test "short: in, and not as asked" do
@@ -62,9 +62,15 @@ defmodule WorkbenchIgniter.RequirementsTest do
           {:absent, "html", []}
         ]).issues
 
-      assert issue =~ "pgadmin builds on ecto with database postgres and html"
-      assert issue =~ "this project's database is not set"
-      assert issue =~ "Insert that first: ./wb.sh add html"
+      assert issue ==
+               "pgadmin builds on ecto with database postgres and html: this project's " <>
+                 "database is not set, and html is not in yet. Insert that first: " <>
+                 "./wb.sh add ecto --database postgres, then ./wb.sh add html"
+    end
+
+    test "a short state is remedied by running the cartridge again with the switch" do
+      assert Feature.remedy({:short, "html", [live: true], :live, false}) ==
+               "./wb.sh add html --live"
     end
   end
 
@@ -94,7 +100,7 @@ defmodule WorkbenchIgniter.RequirementsTest do
       assert %{requires: ["ecto"], conditions: %{"ecto" => %{database: "postgres"}}} =
                Features.entry(Features.Pgadmin)
 
-      assert %{requires: ["html"], conditions: %{}} = Features.entry(Features.Live)
+      assert %{requires: [], conditions: %{}} = Features.entry(Features.Html)
     end
   end
 end

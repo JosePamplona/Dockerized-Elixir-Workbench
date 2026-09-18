@@ -529,11 +529,10 @@ defmodule ConsoleWeb.Box do
         /><span :if={condition(@box, r) != %{}} class="by">with {Cartridges.state_said(
           condition(@box, r)
         )}</span></span>
-        <span :for={{why, names} <- @asked} class="why"><.cart_ref
-          :for={n <- names}
+        <span :for={{why, names, conds} <- @asked} class="why"><span :for={n <- names} class="need"><.cart_ref
           name={n}
-          installed={Cartridges.installed?(@status, n)}
-        /><span class="by">by {why}</span></span>
+          installed={Cartridges.satisfies?(@status, n, conds[n] || %{})}
+        /><span :if={conds[n]} class="by">with {Cartridges.state_said(conds[n])}</span></span><span class="by">by {why}</span></span>
       </span>
       <span :if={@box["collection"]} class="k">Inserts</span>
       <span :if={@box["collection"]} class="v">
@@ -604,14 +603,14 @@ defmodule ConsoleWeb.Box do
   defp members(%{box: %{"collection" => true}, recipe: recipe}) when is_list(recipe), do: recipe
   defp members(%{box: box}), do: box["members"] || []
 
-  @doc "What each chosen value builds on: [{\"--flag value\", [names]}]."
+  @doc "What each chosen value builds on: [{\"--flag value\", [names], conditions}]."
   def value_requires(box, args, _status) do
     for o <- box["options"] || [],
         o["choices"],
         v <- List.wrap(args[o["name"]] || []),
         c = Enum.find(choices(o), &(&1["value"] == v)),
         (c["requires"] || []) != [] do
-      {"--#{String.replace(o["name"], "_", "-")} #{v}", c["requires"]}
+      {"--#{String.replace(o["name"], "_", "-")} #{v}", c["requires"], c["conditions"] || %{}}
     end
   end
 
@@ -732,6 +731,16 @@ defmodule ConsoleWeb.Box do
             <% else %>
               <div class="field">
                 <label for={"opt-#{o["name"]}"}>{flag}</label>
+                <%!-- A form sends nothing for an unchecked box: the "off"
+                      before it is what says a switch was turned off, which
+                      matters for one on by default (html's --live). --%>
+                <input
+                  :if={o["type"] == "boolean"}
+                  type="hidden"
+                  name={"opt[#{o["name"]}]"}
+                  value="off"
+                  disabled={@locked}
+                />
                 <input
                   :if={o["type"] == "boolean"}
                   type="checkbox"
@@ -882,7 +891,13 @@ defmodule ConsoleWeb.Box do
   defp choice(assigns) do
     o = assigns.o
     c = assigns.c
-    need = Enum.reject(c["requires"] || [], &Cartridges.installed?(assigns.status, &1))
+
+    need =
+      Enum.reject(
+        c["requires"] || [],
+        &Cartridges.satisfies?(assigns.status, &1, get_in(c, ["conditions", &1]) || %{})
+      )
+
     st = assigns.c_state[o["name"]]
     has = st == c["value"] || (is_list(st) && c["value"] in st)
     group_locked = st == true
@@ -1032,10 +1047,17 @@ defmodule ConsoleWeb.Box do
   # Everything the insert as asked builds on && the project lacks, each
   # said with the state it asks for ("ecto with database postgres").
   defp missing(box, args, status) do
-    ((box["requires"] || []) ++ Enum.flat_map(value_requires(box, args, status), &elem(&1, 1)))
+    own = for n <- box["requires"] || [], do: {n, condition(box, n)}
+
+    asked =
+      for {_why, names, conds} <- value_requires(box, args, status),
+          n <- names,
+          do: {n, conds[n] || %{}}
+
+    (own ++ asked)
     |> Enum.uniq()
-    |> Enum.reject(&Cartridges.satisfies?(status, &1, condition(box, &1)))
-    |> Enum.map(&Cartridges.requirement(&1, condition(box, &1)))
+    |> Enum.reject(fn {n, cond} -> Cartridges.satisfies?(status, n, cond) end)
+    |> Enum.map(fn {n, cond} -> Cartridges.requirement(n, cond) end)
   end
 
   # The state a requirement of the box asks for, off the catalog's `conditions`.

@@ -36,22 +36,23 @@ defmodule WorkbenchIgniter.Features.AshTest do
     test "the catalog says it beside the value" do
       auth = Enum.find(WorkbenchIgniter.Features.entry(Ash).options, &(&1.name == :auth))
       by = Map.new(auth.choices, &{&1.value, &1.requires})
-      assert by["password"] == ["live", "mailer"]
-      assert by["magic_link"] == ["live", "mailer"]
-      assert by["github"] == ["live"]
+      assert by["password"] == ["html", "mailer"]
+      assert by["magic_link"] == ["html", "mailer"]
+      assert by["github"] == ["html"]
       assert by["api_key"] == []
 
       with_ = Enum.find(WorkbenchIgniter.Features.entry(Ash).options, &(&1.name == :with))
       values = Enum.flat_map(with_.choices, & &1.values)
-      assert Enum.find(values, &(&1.value == "ash_admin")).requires == ["live"]
+      assert Enum.find(values, &(&1.value == "ash_admin")).requires == ["html"]
       assert Enum.find(values, &(&1.value == "ash_money")).requires == []
     end
 
     test "refuses a strategy that needs live and a mailer the project lacks, naming them" do
       igniter = install(~w(--auth password), bare(~w(--no-live --no-mailer)))
       assert [issue] = igniter.issues
-      assert issue =~ "--auth password builds on live and mailer"
-      assert issue =~ "./wb.sh add live"
+      assert issue =~ "--auth password builds on html with live and mailer"
+      assert issue =~ "this project's live is off, and mailer is not in yet"
+      assert issue =~ "./wb.sh add html --live, then ./wb.sh add mailer"
       assert igniter.tasks == []
     end
 

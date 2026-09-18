@@ -180,13 +180,14 @@ defmodule WorkbenchIgniter.Features.Ash do
       end
 
     requires =
-      if(name == "api_key", do: [], else: ["live"]) ++
+      if(name == "api_key", do: [], else: [{"html", live: true}]) ++
         if(name in @sends_email, do: ["mailer"], else: [])
 
     {name, doc, requires}
   end
 
-  defp with_doc(pkg), do: {pkg, @tooltips[pkg], if(pkg in @needs_live, do: ["live"], else: [])}
+  defp with_doc(pkg),
+    do: {pkg, @tooltips[pkg], if(pkg in @needs_live, do: [{"html", live: true}], else: [])}
 
   # The values the options take: the two the installer checks, closed,
   # each with the package it stands for; the two it hands down, open,
@@ -309,9 +310,7 @@ defmodule WorkbenchIgniter.Features.Ash do
           Igniter.add_issue(
             igniter,
             "--#{key |> to_string() |> String.replace("_", "-")} #{value} builds on " <>
-              "#{Enum.map_join(shortfalls, " and ", &WorkbenchIgniter.Feature.describe/1)}, " <>
-              "not in the project yet. Insert that first: " <>
-              WorkbenchIgniter.Feature.remedy(hd(shortfalls))
+              WorkbenchIgniter.Feature.lacking(shortfalls)
           )
         end)
     end

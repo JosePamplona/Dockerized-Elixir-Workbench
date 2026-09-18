@@ -16,7 +16,6 @@ defmodule WorkbenchIgniter.Features.BaseCartridgesTest do
           {Features.Esbuild, "--no-esbuild"},
           {Features.Tailwind, "--no-tailwind"},
           {Features.Html, "--no-html"},
-          {Features.Live, "--no-live"},
           {Features.Dashboard, "--no-dashboard"}
         ] do
       assert {false, _} = feature.installed?(project([flag])),
@@ -86,25 +85,41 @@ defmodule WorkbenchIgniter.Features.BaseCartridgesTest do
     assert files["lib/test_web/router.ex"] =~ "pipeline :browser"
     assert files["lib/test_web/components/core_components.ex"]
     assert files["lib/test_web/controllers/page_controller.ex"]
-    # html alone: phx.new generates live only on top of it, on request
-    refute files["config/config.exs"] =~ "config :phoenix_live_view"
+    # html and live, as phx.new generates them by default
+    assert files["config/config.exs"] =~ "config :phoenix_live_view"
   end
 
-  test "live: its configuration, the socket in app.js and the JS commands" do
-    igniter = project(~w(--no-live)) |> Igniter.compose_task("workbench.install.live", [])
+  test "html --no-live: html alone, as phx.new --no-live generates it" do
+    igniter =
+      project(~w(--no-html)) |> Igniter.compose_task("workbench.install.html", ~w(--no-live))
+
+    assert igniter.issues == []
+    files = files(igniter)
+    assert files["lib/test_web/router.ex"] =~ "pipeline :browser"
+    refute files["config/config.exs"] =~ "config :phoenix_live_view"
+    assert {%{live: false}, _} = Features.Html.state(apply_igniter!(igniter))
+  end
+
+  test "live on a --no-live project: html run again adds its configuration, the socket and the JS commands" do
+    igniter = project(~w(--no-live)) |> Igniter.compose_task("workbench.install.html", [])
     assert igniter.issues == []
     files = files(igniter)
     assert files["config/config.exs"] =~ "config :phoenix_live_view"
     assert files["assets/js/app.js"] =~ ~r/^const liveSocket = new LiveSocket/m
     assert files["lib/test_web/components/core_components.ex"] =~ "alias Phoenix.LiveView.JS"
+    assert {%{live: true}, _} = Features.Html.state(apply_igniter!(igniter))
   end
 
-  test "live builds on html: refuses on a --no-html project, naming it" do
-    igniter = project(~w(--no-html)) |> Igniter.compose_task("workbench.install.live", [])
-    assert [issue] = igniter.issues
-    assert issue =~ "live builds on html"
-    assert issue =~ "./wb.sh add html"
-    assert Features.entry(Features.Live).requires == ["html"]
+  test "html --no-live on a project with both is a no-op, and the catalog says live is html's" do
+    phx_test_project()
+    |> Igniter.compose_task("workbench.install.html", ~w(--no-live))
+    |> assert_unchanged()
+
+    entry = Features.entry(Features.Html)
+    assert entry.requires == []
+    assert entry.rerun == :adds
+    assert [%{name: :live, type: :boolean, default: true}] = entry.options
+    refute Enum.any?(Features.catalog(), &(&1.name() == "live"))
   end
 
   test "dashboard: the dependency, the route, and the socket it rides on" do
@@ -139,11 +154,11 @@ defmodule WorkbenchIgniter.Features.BaseCartridgesTest do
   test "live after html and esbuild were inserted: AGENTS.md and app.js, no conflict" do
     igniter =
       project(~w(--no-html --no-esbuild))
-      |> Igniter.compose_task("workbench.install.html", [])
+      |> Igniter.compose_task("workbench.install.html", ~w(--no-live))
       |> apply_igniter!()
       |> Igniter.compose_task("workbench.install.esbuild", [])
       |> apply_igniter!()
-      |> Igniter.compose_task("workbench.install.live", [])
+      |> Igniter.compose_task("workbench.install.html", [])
 
     assert igniter.issues == []
     files = files(igniter)
@@ -203,12 +218,12 @@ defmodule WorkbenchIgniter.Features.BaseCartridgesTest do
     assert Enum.any?(tailwind.notices, &(&1 =~ "phoenix-colocated"))
 
     live =
-      project(~w(--no-live --no-esbuild)) |> Igniter.compose_task("workbench.install.live", [])
+      project(~w(--no-live --no-esbuild)) |> Igniter.compose_task("workbench.install.html", [])
 
     assert live.issues == []
     assert Enum.any?(live.notices, &(&1 =~ "assets/js/app.js"))
 
-    quiet = project(~w(--no-live)) |> Igniter.compose_task("workbench.install.live", [])
+    quiet = project(~w(--no-live)) |> Igniter.compose_task("workbench.install.html", [])
     refute Enum.any?(quiet.notices, &(&1 =~ "assets/js/app.js"))
   end
 
@@ -231,7 +246,7 @@ defmodule WorkbenchIgniter.Features.BaseCartridgesTest do
   end
 
   test "each is a no-op with a notice when in" do
-    for task <- ~w(esbuild tailwind html live dashboard) do
+    for task <- ~w(esbuild tailwind html dashboard) do
       phx_test_project()
       |> Igniter.compose_task("workbench.install.#{task}", [])
       |> assert_unchanged()

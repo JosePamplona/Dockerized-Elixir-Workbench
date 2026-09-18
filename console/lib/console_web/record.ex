@@ -104,6 +104,16 @@ defmodule ConsoleWeb.Record do
         }
       end
 
+    cap_flag = fn cap ->
+      flag(
+        "no-#{cap}",
+        born_phx[cap] == false,
+        nil,
+        cartridge_of(cap),
+        moved(born_phx[cap], now_phx[cap])
+      )
+    end
+
     flags =
       [
         flag("app", true, born_phx["app"], nil),
@@ -116,6 +126,8 @@ defmodule ConsoleWeb.Record do
           moved(born_phx["adapter"], now_phx["adapter"]),
           "bandit"
         ),
+        # Ecto's own flag first, then the two that only mean something with it.
+        cap_flag.("ecto"),
         flag(
           "database",
           true,
@@ -132,17 +144,7 @@ defmodule ConsoleWeb.Record do
           moved(born_phx["binary_id"], now_phx["binary_id"])
         )
       ] ++
-        for(
-          cap <- @caps,
-          do:
-            flag(
-              "no-#{cap}",
-              born_phx[cap] == false,
-              nil,
-              cap,
-              moved(born_phx[cap], now_phx[cap])
-            )
-        ) ++
+        Enum.map(@caps -- ["ecto"], cap_flag) ++
         [
           flag(
             "no-agents-md",
@@ -223,6 +225,13 @@ defmodule ConsoleWeb.Record do
   end
 
   defp moot(_name, _born, _now), do: nil
+
+  # The cartridge a capability's flag points at: its own, but for
+  # LiveView, which is html's `--live` since 2026-09-18 (the `live`
+  # cartridge went into html; the row named a box that is no longer on
+  # the shelf), as the database and the ids are ecto's.
+  defp cartridge_of("live"), do: "html"
+  defp cartridge_of(cap), do: cap
 
   defp flag(name, used, arg, cartridge, now \\ nil, default \\ nil),
     do: %{

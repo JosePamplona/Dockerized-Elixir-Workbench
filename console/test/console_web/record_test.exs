@@ -190,6 +190,13 @@ defmodule ConsoleWeb.RecordTest do
     assert %{cartridge: "esbuild", installed: false} =
              Enum.find(page.birth.flags, &(&1.name == "no-esbuild"))
 
+    # The rows in reading order: Ecto's flag before the two that only mean something with it.
+    assert Enum.map(page.birth.flags, & &1.name) |> Enum.take(6) ==
+             ~w(app module adapter no-ecto database binary-id)
+
+    # LiveView is html's --live: the row points at html, not at a box that is gone.
+    assert %{cartridge: "html"} = Enum.find(page.birth.flags, &(&1.name == "no-live"))
+
     # A flag another flag makes moot is marked, with the reason: the
     # database and the ids without Ecto, --no-live without HTML views.
     refute Enum.any?(page.birth.flags, & &1.moot)

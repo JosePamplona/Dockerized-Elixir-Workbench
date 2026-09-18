@@ -612,6 +612,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **`--no-ecto` stands before `--database` on the Record's flags.** Ecto's
+  own flag first, then the two that only mean something with it.
+
 - **LiveView is html's option, not a box.** The `live` cartridge is
   gone into html as `--live`, on by default as in `phx.new`: `wb.sh add
   html` brings both, `--no-live` leaves LiveView out, and html run again
@@ -1531,6 +1534,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   own; what has happened to the project belongs beside what it is.
 
 ### Fixed
+
+- **The Record's `--no-live` row points at html.** It named the
+  `live` cartridge, gone into html as `--live` on 2026-09-18, so the
+  row wore an unknown box's name and never read as inserted. The
+  capability's cartridge is html now, as the database's and the ids'
+  is ecto.
 
 - **Auth0's mark is its dependency, not the Accounts context.** The
   cartridge read as inserted off `MyApp.Accounts`, the first module its

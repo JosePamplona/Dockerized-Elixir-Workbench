@@ -66,7 +66,7 @@ the workbench only makes Phoenix projects.
 | ash-hq.org | Option | Packages |
 | --- | --- | --- |
 | Data layer: Postgres / SQLite / CSV | `--data-layer postgres,sqlite,csv` (several, as the site's checkboxes; default `postgres`; `none` alone for no data layer) | `ash_postgres`, `ash_sqlite`, `ash_csv` |
-| Web: JSON:API, GraphQL, TypeScript | `--api json_api,graphql,typescript` | `ash_json_api`, `ash_graphql`, `ash_typescript` (handed `--framework react`, as the site does) |
+| Web: JSON:API, GraphQL, TypeScript | `--api json_api,graphql,typescript` | `ash_json_api`, `ash_graphql`, `ash_typescript` (handed `--framework react`, as the site does; its installer hooks `npm install` into `assets.setup`, which the workbench's and the project's images carry node and npm for) |
 | Authentication: Password, Magic Link, API Keys, OAuth2 | `--auth password,magic_link,api_key,oauth2,…` | `ash_authentication`, `ash_authentication_phoenix`, with `--auth-strategy <list>`; API keys alone bring `ash_authentication` only, as on the site |
 | Advanced Options | `--with pkg,pkg` | any package with an installer |
 | — | `--example` | `ash.install --example`: the guide's example resources |

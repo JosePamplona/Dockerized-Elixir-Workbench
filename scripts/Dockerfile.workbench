@@ -33,7 +33,7 @@ FROM ${TOOLCHAIN_IMAGE} AS toolchain
 # --- The project seed's steps, shared --------------------------------------
 
 RUN apt-get update -y && \
-    apt-get install -y build-essential git inotify-tools && \
+    apt-get install -y build-essential git inotify-tools nodejs npm && \
     apt-get clean && \
     rm -f /var/lib/apt/lists/*_*
 

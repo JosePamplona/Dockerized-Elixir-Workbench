@@ -593,6 +593,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **Both images carry node and npm.** `ash --api typescript` failed
+  inside the workbench's container with `:enoent` on `npm`: ash_typescript's
+  installer, handed `--framework react`, hooks `npm install` into the
+  project's `assets.setup`, and neither image had node. Debian's
+  `nodejs` and `npm` join the shared first step of the project seed and
+  the workbench's Dockerfile — the one apt line both open with, so the
+  layer stays shared — rather than the workbench's alone, because
+  `mix setup` runs `assets.setup` at every boot of the app's container
+  too. The workbench image is rebuilt when missing, so an existing one
+  is removed to take it; a workspace takes the seed on its next `bake`
+  and `up`. The production Dockerfile is Phoenix's own and still knows
+  no node: a project on TypeScript adds it there itself (2026-09-17).
 - **`mix version` is versioning's, on request.** The task lived in
   enhancements, where it was a lodger and, worse, its mark: it moved to
   versioning as `--task`, since the version is that cartridge's

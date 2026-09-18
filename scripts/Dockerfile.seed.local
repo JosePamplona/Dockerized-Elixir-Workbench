@@ -41,9 +41,13 @@ FROM ${TOOLCHAIN_IMAGE} AS toolchain
 
 # Build dependencies: build-essential for the NIFs, git for the
 # dependencies Phoenix fetches from GitHub (heroicons, daisyUI),
-# inotify-tools for the live reload.
+# inotify-tools for the live reload, and Debian's nodejs and npm for
+# the JavaScript dependencies a project takes on beyond the esbuild and
+# tailwind binaries Phoenix ships as Elixir packages — ash_typescript's
+# installer, for one, hooks `npm install` into `assets.setup`, which
+# `mix setup` runs at every boot of this container.
 RUN apt-get update -y && \
-    apt-get install -y build-essential git inotify-tools && \
+    apt-get install -y build-essential git inotify-tools nodejs npm && \
     apt-get clean && \
     rm -f /var/lib/apt/lists/*_*
 

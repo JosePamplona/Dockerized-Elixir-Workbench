@@ -46,7 +46,9 @@ openai's conversations and stripe's subscriptions both require it.
   controller, JSON view and OpenAPI schema.
 * Unit tests and `AccountsFixtures`.
 
-**Idempotency**: if `MyApp.Accounts` already exists, notice and no-op.
+**Idempotency**: the mark is the `auth0_jwks` dependency; with it in,
+notice and no-op. An `MyApp.Accounts` that is there without it — Ash's
+domain, the project's own — is refused, not overwritten.
 
 ## Contents
 

@@ -115,6 +115,26 @@ defmodule WorkbenchIgniter.Features.Auth0Test do
       |> assert_unchanged()
       |> assert_has_notice(&(&1 =~ "already installed"))
     end
+
+    # The mark is the dependency, not the Accounts context: Ash's
+    # authentication writes one of those too, and read as the mark it
+    # made Auth0 look inserted. An Accounts that is not Auth0's is
+    # refused, since the templates would overwrite it.
+    test "an Accounts context of another's does not read as installed, and is not overwritten" do
+      with_accounts =
+        phx_test_project()
+        |> Igniter.compose_task("workbench.install.enhancements", [])
+        |> Igniter.create_new_file("lib/test/accounts.ex", "defmodule Test.Accounts do\nend\n")
+        |> apply_igniter!()
+
+      assert {false, _} = WorkbenchIgniter.Features.Auth0.installed?(with_accounts)
+
+      igniter = Igniter.compose_task(with_accounts, "workbench.install.auth0", [])
+      assert [issue] = igniter.issues
+      assert issue =~ "Test.Accounts already exists and is not Auth0's"
+
+      refute Igniter.Project.Deps.has_dep?(igniter, :auth0_jwks)
+    end
   end
 
   describe "requires enhancements" do

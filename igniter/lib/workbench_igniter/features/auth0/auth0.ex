@@ -52,10 +52,13 @@ defmodule WorkbenchIgniter.Features.Auth0 do
       ]
     ]
 
-  # The mark: the Accounts context, the first module the installer creates.
+  # The mark: the `auth0_jwks` dependency, which only this cartridge
+  # adds. It was the Accounts context until 2026-09-18, the first module
+  # the installer creates — and the one Ash writes too, with its
+  # authentication: with Ash in, Auth0 read as inserted and its
+  # installer skipped itself.
   @impl true
-  def installed?(igniter),
-    do: Igniter.Project.Module.module_exists(igniter, accounts_module(igniter))
+  def installed?(igniter), do: dep_installed?(igniter, :auth0_jwks)
 
   defp accounts_module(igniter),
     do: Module.concat(Igniter.Project.Module.module_name_prefix(igniter), Accounts)
@@ -89,21 +92,28 @@ defmodule WorkbenchIgniter.Features.Auth0 do
       {[], igniter} ->
         case installed?(igniter) do
           {true, igniter} ->
-            Igniter.add_notice(
-              igniter,
-              "#{inspect(accounts)} already exists: Auth0 is already installed, skipping."
-            )
+            Igniter.add_notice(igniter, "Auth0 is already installed, skipping.")
 
           {false, igniter} ->
-            install(igniter, app_module, opts)
+            # An Accounts context that is not this cartridge's — Ash's
+            # domain, the project's own — would be overwritten by the
+            # templates: refused, naming it, rather than planted over.
+            case Igniter.Project.Module.module_exists(igniter, accounts) do
+              {true, igniter} ->
+                Igniter.add_issue(
+                  igniter,
+                  "#{inspect(accounts)} already exists and is not Auth0's " <>
+                    "(Ash's authentication writes one): auth0 would overwrite it. " <>
+                    "Not inserted."
+                )
+
+              {false, igniter} ->
+                install(igniter, app_module, opts)
+            end
         end
 
       {missing, igniter} ->
-        Igniter.add_issue(
-          igniter,
-          "#{name()} builds on #{Enum.join(missing, " and ")}, not in the project yet. " <>
-            "Insert that first: ./wb.sh add #{hd(missing)}"
-        )
+        WorkbenchIgniter.Feature.refuse(igniter, __MODULE__, missing)
     end
   end
 

@@ -16,6 +16,25 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **A requirement can name the state it needs.** `requires/0` took
+  names, and a cartridge that needed more — pgadmin and psql_extras, on
+  Postgres and nothing else — checked it by hand after the names, each
+  with its own refusal. Now a requirement is a name or `{name, state}`:
+  `{"ecto", database: "postgres"}`, read off the required cartridge's
+  own `state/1`, the project as it is, born with it or inserted, never
+  what an insert was asked. One resolver (`missing_requirements/2`)
+  reads names and states alike and says what is absent and what is in
+  but short; one refusal (`Feature.refuse/3`) writes the issue every
+  cartridge used to write for itself, seven copies gone: "live builds
+  on html, not in the project yet. Insert that first: ./wb.sh add
+  html"; "pgadmin builds on ecto with database postgres, and this
+  project's database is mysql". The remedy carries the state as the
+  installer's switches. The catalog carries the names as `requires`,
+  as before, and the states as `conditions`; the console's box says
+  both under Needs and unlights Insert for a state the project lacks.
+  The road to live as an option of html, and to a dependency on
+  "html with live", is this (pgadmin v0.1.1, psql_extras v0.1.1,
+  2026-09-18).
 - **healthcheck2's option is tested by what the plug answers.** There
   is no phx.new to measure this cartridge against, so the rod is what
   it is for: the plug the installer writes is compiled and called
@@ -1496,6 +1515,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   own; what has happened to the project belongs beside what it is.
 
 ### Fixed
+
+- **Auth0's mark is its dependency, not the Accounts context.** The
+  cartridge read as inserted off `MyApp.Accounts`, the first module its
+  installer creates — and the domain Ash writes with its
+  authentication, so with Ash in the catalog showed Auth0 inserted and
+  `add auth0` skipped itself with «already exists». The mark is
+  `auth0_jwks` in `mix.exs` now, which only Auth0 adds, as Ash's is
+  `ash`. And an Accounts that is there without it — Ash's, the
+  project's own — is refused, naming it, since the templates would
+  have planted over it (`on_exists: :overwrite`) once the mark no
+  longer stopped them.
 
 - **`add healthcheck2 --path /` answers at `/live` and `/ready`.** The
   prefix was normalised to `"/"` and the plug appended `/live` to it:

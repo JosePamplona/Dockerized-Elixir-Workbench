@@ -51,8 +51,6 @@ defmodule WorkbenchIgniter.Features.EnhancementsTest do
     test "base testing files and ConnCase MockHelper import" do
       files = installed([])
 
-      assert files["lib/mix/tasks/version.ex"] =~ "defmodule Mix.Tasks.Version do"
-      assert files["test/mix/tasks/version_test.exs"]
       assert files["test/test/application_test.exs"] =~ "defmodule Test.ApplicationTest do"
       assert files["test/test_web/telemetry_test.exs"]
       assert files["test/test_web/controllers/page_controller_test.exs"]

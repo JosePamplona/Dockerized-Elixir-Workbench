@@ -1,7 +1,7 @@
 # Cartridge: enhancements
 
-Workbench base enhancements: shared schema and helper, `mix db` and
-`mix version` tasks, and the base test suite.
+Workbench base enhancements: shared schema and helper, the `mix db`
+task, and the base test suite.
 
 * **Task**: `mix workbench.install.enhancements`
 * **Inserted by**: `wb.sh add enhancements`; a chiefs_setup pick,
@@ -27,9 +27,9 @@ one reinventing them.
 Concretely, it seeds three kinds of groundwork. Shared building blocks: a
 base schema that fixes project-wide defaults (primary key and timestamp
 types) so every future table is consistent, plus a helper with the small
-functions every codebase ends up needing. Developer commands: `mix
-version` to print the app version, and `mix db` to regenerate the
-database documentation and diagrams that the ExDoc site publishes. And
+functions every codebase ends up needing. A developer command: `mix db`
+to regenerate the database documentation and diagrams that the ExDoc
+site publishes. And
 API polish: an error view that renders validation errors in a clean,
 uniform JSON shape, plus a ready-to-import Postman collection for the
 project's endpoints.
@@ -58,7 +58,6 @@ here.
 * **REST group** (`--interface rest`): enhanced `error_json.ex` (changeset
   error rendering) and the Postman collection for the enabled features
   combo (auth0/openai/health).
-* The `mix version` task + test.
 * **Base testing**: composes `workbench.install.mock`;
   application/telemetry tests and (conditional)
   page/dashboard/mailbox tests (each when the project has html, the
@@ -66,8 +65,9 @@ here.
   (`rest`); `MyApp.Fixtures` and
   `MyApp.MockHelper`, imported into `ConnCase`.
 
-**Idempotency**: if `lib/mix/tasks/version.ex` already exists, notice and
-no-op.
+**Idempotency**: if `test/support/fixtures.ex` already exists, notice
+and no-op. (The mark was the `mix version` task until v1.0.0, when the
+task moved to versioning.)
 
 ## Contents
 
@@ -75,7 +75,7 @@ no-op.
 | --- | --- |
 | `enhancements.ex` | Manifest + logic |
 | `task.ex` | `Mix.Tasks.Workbench.Install.Enhancements` shell |
-| `templates/*.eex` (16) | Helper/Schema, db/version tasks, error_json, base tests, fixtures, mock_helper |
+| `templates/*.eex` (14) | Helper/Schema, the db task, error_json, base tests, fixtures, mock_helper |
 
 | `assets/db_schema/<combo>/` | DbSchema diagram sources (verbatim), one set per auth0/openai/stripe combo |
 | `assets/postman/<combo>.postman_collection.json` | Postman collections (verbatim), one per auth0/openai/health combo |

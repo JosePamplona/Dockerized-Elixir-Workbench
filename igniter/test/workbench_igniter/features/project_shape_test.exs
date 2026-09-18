@@ -22,7 +22,7 @@ defmodule WorkbenchIgniter.Features.ProjectShapeTest do
     refute files["mix.exs"] =~ "ecto_enum"
     refute files["test/test_web/controllers/mailbox_controller_test.exs"]
     assert files["test/test_web/controllers/dashboard_controller_test.exs"]
-    assert files["lib/mix/tasks/version.ex"]
+    assert files["test/support/fixtures.ex"]
 
     with_ =
       project([])

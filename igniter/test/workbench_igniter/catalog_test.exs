@@ -334,7 +334,10 @@ defmodule WorkbenchIgniter.CatalogTest do
       "toolchain" => [
         {~w(--elixir 1.18.4 --erlang 27.3), %{elixir: "1.18.4", erlang: "27.3"}}
       ],
-      "versioning" => [{~w(--version 1.2.3), %{version: "1.2.3"}}],
+      "versioning" => [
+        {~w(--version 1.2.3 --task --readme-badge),
+         %{version: "1.2.3", task: true, readme_badge: true}}
+      ],
       "rest" => [
         {~w(--project-name Probe --auth0 --openai --health),
          %{project_name: "Probe", auth0: true, openai: true, health: true}}

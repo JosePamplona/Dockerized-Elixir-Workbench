@@ -11,6 +11,22 @@ Backfilled at the version below, its first: the cartridge shipped
 before a changelog was part of the anatomy, and gets one on its next
 change, as the features index says.
 
+## v1.0.0 - (2026-09-17)
+
+### Removed
+
+- The `mix version` task and its test: they are versioning's now
+  (`--task`), rewritten there for a stock project. The version is that
+  cartridge's decision and the task is its tool; here it was a lodger.
+  A project that carries the task from this cartridge keeps it — the
+  file is the project's — and versioning's `--task` notices it and
+  skips. Major because the mark moved with it.
+
+### Changed
+
+- The mark is `test/support/fixtures.ex`, the one file every shape of
+  the install writes; it was the task file.
+
 ## v0.1.0 - (2026-08-30)
 
 ### Added

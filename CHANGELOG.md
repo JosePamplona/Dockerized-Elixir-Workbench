@@ -593,6 +593,20 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **`mix version` is versioning's, on request.** The task lived in
+  enhancements, where it was a lodger and, worse, its mark: it moved to
+  versioning as `--task`, since the version is that cartridge's
+  decision and the task is the decision's tool, and was rewritten for a
+  stock project — it writes the number into `mix.exs`, closes the
+  changelog's `Unreleased` as that version under the commented
+  template line, and updates the README badge only when there is one;
+  it used to fail on any README without the badge the retired setup's
+  template put there. `--readme-badge` puts that badge under the
+  README's title. Both are pieces (`rerun: :adds`) and off by default,
+  so a chiefs_setup project no longer gets the task: a recipe may not
+  pass a member's switch, a limit to revisit. enhancements' mark is
+  `test/support/fixtures.ex` now, the one file every shape of it
+  writes (versioning v0.2.0, enhancements v1.0.0, 2026-09-17).
 - **Stop stands before Down on a deployment's row.** Bake, Build, Stop,
   Down: the one that keeps the containers before the one that removes
   them. Down stood first since the order turned on 2026-09-10.

@@ -17,7 +17,6 @@ defmodule Mix.Tasks.Workbench.Install.Enhancements do
     the DbSchema diagram sources under `assets/db_schema/`
   * REST group (`--interface rest`): enhanced `error_json.ex` view with
     changeset rendering, and a Postman collection for the enabled features
-  * the `mix version` task
   * base unit testing: application/telemetry/page/dashboard/mailbox and
     error view tests, `MyApp.Fixtures`, `MyApp.MockHelper` (imported into
     `ConnCase`)

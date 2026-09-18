@@ -1,6 +1,6 @@
 defmodule WorkbenchIgniter.Features.Enhancements do
   @moduledoc """
-  Workbench project enhancements: base schema, helpers, db/version mix
+  Workbench project enhancements: base schema, helpers, the db mix
   tasks and the extended test suite. A chiefs_setup pick, inserted after
   the trivial dep-only group.
 
@@ -76,9 +76,10 @@ defmodule WorkbenchIgniter.Features.Enhancements do
     }
   end
 
-  # The mark: the version mix task, the first file the installer writes.
+  # The mark: `MyApp.Fixtures`, the one file every shape of the install
+  # writes — the Ecto and REST groups follow the project, the tests too.
   @impl true
-  def installed?(igniter), do: file_installed?(igniter, "lib/mix/tasks/version.ex")
+  def installed?(igniter), do: file_installed?(igniter, "test/support/fixtures.ex")
 
   # What the project carries, read off what the install wrote — and
   # each option only where it wrote something, since the groups follow
@@ -147,7 +148,7 @@ defmodule WorkbenchIgniter.Features.Enhancements do
       {true, igniter} ->
         Igniter.add_notice(
           igniter,
-          "lib/mix/tasks/version.ex already exists: enhancements are already installed, skipping."
+          "test/support/fixtures.ex already exists: enhancements are already installed, skipping."
         )
 
       {false, igniter} ->
@@ -192,7 +193,6 @@ defmodule WorkbenchIgniter.Features.Enhancements do
     |> Igniter.Project.IgniterConfig.dont_move_file_pattern(~r"/controllers/")
     |> ecto_group(dirs, assigns, opts)
     |> rest_group(dirs, assigns, opts)
-    |> version_task(assigns)
     |> unit_testing(dirs, app_module, assigns, opts)
   end
 
@@ -336,14 +336,6 @@ defmodule WorkbenchIgniter.Features.Enhancements do
           on_exists: :overwrite
         )
     end
-  end
-
-  # --- mix version ------------------------------------------------------------
-
-  defp version_task(igniter, assigns) do
-    igniter
-    |> plant("version_task.eex", "lib/mix/tasks/version.ex", assigns)
-    |> plant("version_task_test.eex", "test/mix/tasks/version_test.exs", assigns)
   end
 
   # --- Base unit testing ------------------------------------------------------

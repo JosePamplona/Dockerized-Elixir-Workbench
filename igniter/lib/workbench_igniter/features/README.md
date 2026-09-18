@@ -47,7 +47,7 @@ time or not at all:
 | --- | --- | --- |
 | [ansi](ansi/) | logs come out coloured through Docker | `config :elixir, ansi_enabled: true` |
 | [toolchain](toolchain/) | the host knows which Elixir this is | `.tool-versions` (off the running toolchain) + `/.elixir_ls/` in `.gitignore` |
-| [versioning](versioning/) | the project's version is a decision | `version:` in `mix.exs` + `CHANGELOG.md` |
+| [versioning](versioning/) | the project's version is a decision | `version:` in `mix.exs` + `CHANGELOG.md`; `mix version` and the README badge on request |
 
 The rest of what setup configured did not become boxes, because it
 already had owners: the generators and migration types are the config

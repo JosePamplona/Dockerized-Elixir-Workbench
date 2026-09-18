@@ -619,6 +619,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   pass a member's switch, a limit to revisit. enhancements' mark is
   `test/support/fixtures.ex` now, the one file every shape of it
   writes (versioning v0.2.0, enhancements v1.0.0, 2026-09-17).
+- **An eject that does not apply says where, and who wrote there.**
+  `eject ecto` on a project that took seven cartridges after it said
+  only that files had changed since. Now, before the revert is
+  abandoned, it names each file in conflict with the lines the markers
+  enclose and who wrote there after the insert — the cartridges that
+  came later, newest first, which is the order to eject them in, or a
+  commit of the reader's own by its subject. On that project:
+  `.formatter.exs` by html; `AGENTS.md` by live, tailwind, html;
+  `mix.exs` and `mix.lock` by six. Not one of them an edit by hand —
+  a cartridge appends where the one before it ended, and git's revert
+  cannot tell that apart from an edit. Ejecting what came after first
+  is the way for now; a base cartridge undone as it was done, the
+  delta the other way round, is the next.
 - **Stop stands before Down on a deployment's row.** Bake, Build, Stop,
   Down: the one that keeps the containers before the one that removes
   them. Down stood first since the order turned on 2026-09-10.

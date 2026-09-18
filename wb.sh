@@ -821,6 +821,25 @@
     esac
   }
 
+  # revert_conflicts <SHA> <FILE...>
+    # What a revert that did not apply left in FILEs, for a person: one
+    # line per file with the lines the markers enclose, and who wrote
+    # there after SHA — the inserts that came later, by cartridge, newest
+    # first, and any other commit by its subject. Read while the markers
+    # are still in the tree, from the host's git.
+  revert_conflicts() {
+    local sha="$1" file ranges since; shift
+    for file in "$@"; do
+      ranges=$(awk '/^<<<<<<< /{s=NR} /^>>>>>>> /{printf "%s%d-%d", (n++ ? ", " : ""), s, NR}' "$WORKSPACE_PATH/$file")
+      since=$(
+        git_read log --format=%s "$sha..HEAD" -- "$file" 2>/dev/null | \
+        awk '/^Insert /{print $2; next} {print "\"" $0 "\""}' | \
+        awk '!seen[$0]++' | paste -sd, - | sed 's/,/, /g'
+      )
+      echo "  $file: lines $ranges — written since by ${since:-nobody git knows}"
+    done
+  }
+
   # rebake_composes
     # Every compose file the workspace has, written again for the
     # project as it is now, uncommitted: the step that makes a
@@ -2330,11 +2349,17 @@ if [ $# -gt 0 ]; then
           # shellcheck disable=SC2086  # word splitting intended: file names, none with spaces
           workspace_git checkout --ours -- $UNMERGED > /dev/null 2>&1 && workspace_git add -- $UNMERGED
         else
+          # Said before the revert is abandoned, while the markers are
+          # in the files: which files, where, and who wrote there since
+          # — a cartridge inserted after this one, which is the usual
+          # case and whose eject first clears the way, or a commit of
+          # the reader's own.
+          REPORT=$'\n'"$(revert_conflicts "$SHA" $UNMERGED)"$'\n'"Newest first: the order to eject them in."$'\n'
           workspace_git revert --abort 2>/dev/null || workspace_git reset -q --hard HEAD
           terminate \
-            "The revert does not apply: files the cartridge wrote changed since" \
-            "it was inserted, so they are no longer the cartridge's alone." \
-            "Revert it by hand in the workspace, or undo those changes first."
+            "The revert does not apply: files the cartridge wrote were written" \
+            "again since it was inserted, so they are no longer the cartridge's alone.${REPORT}Eject" \
+            "what came after it first, or revert it by hand in the workspace."
         fi
       fi
 

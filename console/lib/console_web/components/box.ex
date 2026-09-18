@@ -523,11 +523,12 @@ defmodule ConsoleWeb.Box do
       </span>
       <span :if={@box["requires"] != [] || @asked != []} class="k">Needs</span>
       <span :if={@box["requires"] != [] || @asked != []} class="v">
-        <.cart_ref
-          :for={r <- @box["requires"]}
+        <span :for={r <- @box["requires"]} class="need"><.cart_ref
           name={r}
-          installed={Cartridges.installed?(@status, r)}
-        />
+          installed={Cartridges.satisfies?(@status, r, condition(@box, r))}
+        /><span :if={condition(@box, r) != %{}} class="by">with {Cartridges.state_said(
+          condition(@box, r)
+        )}</span></span>
         <span :for={{why, names} <- @asked} class="why"><.cart_ref
           :for={n <- names}
           name={n}
@@ -1028,12 +1029,17 @@ defmodule ConsoleWeb.Box do
       else: [flag, if(v =~ ~r/\s/, do: inspect(v), else: v)]
   end
 
-  # Everything the insert as asked builds on && the project lacks.
+  # Everything the insert as asked builds on && the project lacks, each
+  # said with the state it asks for ("ecto with database postgres").
   defp missing(box, args, status) do
     ((box["requires"] || []) ++ Enum.flat_map(value_requires(box, args, status), &elem(&1, 1)))
     |> Enum.uniq()
-    |> Enum.reject(&Cartridges.installed?(status, &1))
+    |> Enum.reject(&Cartridges.satisfies?(status, &1, condition(box, &1)))
+    |> Enum.map(&Cartridges.requirement(&1, condition(box, &1)))
   end
+
+  # The state a requirement of the box asks for, off the catalog's `conditions`.
+  defp condition(box, name), do: get_in(box, ["conditions", name]) || %{}
 
   defp members_left(%{recipe: :asking}), do: :asking
   defp members_left(%{recipe: recipe}) when is_list(recipe), do: recipe

@@ -305,12 +305,13 @@ defmodule WorkbenchIgniter.Features.Ash do
         end
 
       {missing, igniter} ->
-        Enum.reduce(missing, igniter, fn {key, value, names}, igniter ->
+        Enum.reduce(missing, igniter, fn {key, value, shortfalls}, igniter ->
           Igniter.add_issue(
             igniter,
             "--#{key |> to_string() |> String.replace("_", "-")} #{value} builds on " <>
-              "#{Enum.join(names, " and ")}, not in the project yet. " <>
-              "Insert that first: ./wb.sh add #{hd(names)}"
+              "#{Enum.map_join(shortfalls, " and ", &WorkbenchIgniter.Feature.describe/1)}, " <>
+              "not in the project yet. Insert that first: " <>
+              WorkbenchIgniter.Feature.remedy(hd(shortfalls))
           )
         end)
     end

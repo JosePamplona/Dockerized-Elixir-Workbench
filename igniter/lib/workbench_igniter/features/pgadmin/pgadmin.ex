@@ -50,7 +50,7 @@ defmodule WorkbenchIgniter.Features.Pgadmin do
   def installed?(igniter), do: file_installed?(igniter, @servers)
 
   @impl true
-  def requires, do: ["ecto"]
+  def requires, do: [{"ecto", database: "postgres"}]
 
   # The container, by name: on the pod's network
   # with the database, its port published beside the app's.
@@ -100,35 +100,14 @@ defmodule WorkbenchIgniter.Features.Pgadmin do
     do: "pgAdmin is in the workspace's compose, in this same commit; the next up brings it up."
 
   @doc "Installer body, run by the mix task shell as its `igniter/1`."
+  # Which driver the project uses is a fact about the project, asked of
+  # the project through ecto's own `state/1` — never the option ecto was
+  # inserted with: the requirement says `database: "postgres"`, and the
+  # refusal names what the project has instead.
   def install(igniter) do
     case WorkbenchIgniter.Feature.missing_requirements(igniter, __MODULE__) do
-      {[], igniter} -> on_postgres(igniter)
-      {missing, igniter} -> refuse(igniter, missing)
-    end
-  end
-
-  defp refuse(igniter, missing) do
-    Igniter.add_issue(
-      igniter,
-      "#{name()} builds on #{Enum.join(missing, " and ")}, not in the project yet. " <>
-        "Insert that first: ./wb.sh add #{hd(missing)}"
-    )
-  end
-
-  # Which driver the project uses is a fact about the project, asked of
-  # the project — the same source `installed?/1` reads elsewhere, never
-  # the option ecto was inserted with.
-  defp on_postgres(igniter) do
-    {facts, igniter} = WorkbenchIgniter.PhxDelta.facts(igniter)
-
-    if facts.database == "postgres" do
-      write_servers(igniter)
-    else
-      Igniter.add_issue(
-        igniter,
-        "#{name()} administers Postgres, and this project's database is #{facts.database}. " <>
-          "There is no server here for it to open, so there is nothing to install."
-      )
+      {[], igniter} -> write_servers(igniter)
+      {missing, igniter} -> WorkbenchIgniter.Feature.refuse(igniter, __MODULE__, missing)
     end
   end
 

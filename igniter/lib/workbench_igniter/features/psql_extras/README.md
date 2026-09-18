@@ -4,6 +4,8 @@ Postgres observability queries (`ecto_psql_extras`).
 
 * **Task**: `mix workbench.install.psql_extras`
 * **Inserted by**: `wb.sh add psql_extras`; a chiefs_setup pick (the trivial dep-only group).
+* **Requires**: `{"ecto", database: "postgres"}` — ecto, on Postgres,
+  read off the project; the refusal says what the project has instead.
 
 ## Description
 

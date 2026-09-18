@@ -63,7 +63,7 @@ defmodule WorkbenchIgniter.Features.PgadminTest do
     end
 
     test "builds on ecto" do
-      assert Pgadmin.requires() == ["ecto"]
+      assert Pgadmin.requires() == [{"ecto", database: "postgres"}]
     end
   end
 end

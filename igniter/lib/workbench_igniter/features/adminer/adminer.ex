@@ -118,16 +118,8 @@ defmodule WorkbenchIgniter.Features.Adminer do
   def install(igniter) do
     case WorkbenchIgniter.Feature.missing_requirements(igniter, __MODULE__) do
       {[], igniter} -> write_login(igniter)
-      {missing, igniter} -> refuse(igniter, missing)
+      {missing, igniter} -> WorkbenchIgniter.Feature.refuse(igniter, __MODULE__, missing)
     end
-  end
-
-  defp refuse(igniter, missing) do
-    Igniter.add_issue(
-      igniter,
-      "#{name()} builds on #{Enum.join(missing, " and ")}, not in the project yet. " <>
-        "Insert that first: ./wb.sh add #{hd(missing)}"
-    )
   end
 
   # Which adapter the project uses is a fact about the project, asked of

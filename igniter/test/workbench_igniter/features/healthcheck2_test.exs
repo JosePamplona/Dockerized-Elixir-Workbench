@@ -212,7 +212,9 @@ defmodule WorkbenchIgniter.Features.Healthcheck2Test do
       # Nothing to check: ready like live.
       assert call(without, :get, "/health/ready").status == 200
       refute grown.assigns[:test_files]["test/test_web/plugs/health_test.exs"] =~ "DownRepo"
-      assert grown.assigns[:test_files]["lib/test_web/plugs/health.ex"] =~ ~r/has no\s+repo to check/
+
+      assert grown.assigns[:test_files]["lib/test_web/plugs/health.ex"] =~
+               ~r/has no\s+repo to check/
     end
 
     test "the test it gives the project is Elixir, on every shape and prefix" do

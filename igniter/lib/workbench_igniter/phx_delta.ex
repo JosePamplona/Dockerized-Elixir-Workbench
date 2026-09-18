@@ -354,11 +354,7 @@ defmodule WorkbenchIgniter.PhxDelta do
         end
 
       {missing, igniter} ->
-        Igniter.add_issue(
-          igniter,
-          "#{feature.name()} builds on #{Enum.join(missing, " and ")}, not in the project yet. " <>
-            "Insert that first: ./wb.sh add #{hd(missing)}"
-        )
+        WorkbenchIgniter.Feature.refuse(igniter, feature, missing)
     end
   end
 

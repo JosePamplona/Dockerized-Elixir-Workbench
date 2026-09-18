@@ -4,7 +4,9 @@ pgAdmin in the workspace, open on the project's Postgres.
 
 * **Task**: `mix workbench.install.pgadmin`
 * **Inserted by**: `wb.sh add pgadmin`; a chiefs_setup pick (beside psql_extras). Then `./wb.sh bake`.
-* **Requires**: ecto, on Postgres.
+* **Requires**: `{"ecto", database: "postgres"}` — ecto, in the state
+  the requirement names; the refusal says what the project has instead
+  ("this project's database is mysql").
 
 ## Description
 

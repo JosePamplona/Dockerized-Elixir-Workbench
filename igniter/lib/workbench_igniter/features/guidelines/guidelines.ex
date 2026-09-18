@@ -68,17 +68,9 @@ defmodule WorkbenchIgniter.Features.Guidelines do
     else
       case WorkbenchIgniter.Feature.missing_requirements(igniter, __MODULE__) do
         {[], igniter} -> insert(igniter, url)
-        {missing, igniter} -> refuse(igniter, missing)
+        {missing, igniter} -> WorkbenchIgniter.Feature.refuse(igniter, __MODULE__, missing)
       end
     end
-  end
-
-  defp refuse(igniter, missing) do
-    Igniter.add_issue(
-      igniter,
-      "#{name()} builds on #{Enum.join(missing, " and ")}, not in the project yet. " <>
-        "Insert that first: ./wb.sh add #{hd(missing)}"
-    )
   end
 
   defp insert(igniter, url) do

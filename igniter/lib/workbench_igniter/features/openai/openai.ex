@@ -99,11 +99,7 @@ defmodule WorkbenchIgniter.Features.Openai do
         end
 
       {missing, igniter} ->
-        Igniter.add_issue(
-          igniter,
-          "#{name()} builds on #{Enum.join(missing, " and ")}, not in the project yet. " <>
-            "Insert that first: ./wb.sh add #{hd(missing)}"
-        )
+        WorkbenchIgniter.Feature.refuse(igniter, __MODULE__, missing)
     end
   end
 

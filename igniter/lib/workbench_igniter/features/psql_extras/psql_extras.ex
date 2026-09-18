@@ -40,40 +40,20 @@ defmodule WorkbenchIgniter.Features.PsqlExtras do
   def installed?(igniter), do: dep_installed?(igniter, elem(@dep, 0))
 
   @impl true
-  def requires, do: ["ecto"]
+  def requires, do: [{"ecto", database: "postgres"}]
 
   @doc "Installer body, run by the mix task shell as its `igniter/1`."
+  # Which driver the project uses is a fact about the project, asked of
+  # the project through ecto's own `state/1` — never the option ecto was
+  # inserted with: the requirement says `database: "postgres"`, and the
+  # refusal names what the project has instead. `--database` was ecto's
+  # option and nobody keeps what it was set to: the deps say it now,
+  # which is also what makes this right on a project that changed its
+  # mind since.
   def install(igniter) do
     case WorkbenchIgniter.Feature.missing_requirements(igniter, __MODULE__) do
-      {[], igniter} -> on_postgres(igniter)
-      {missing, igniter} -> refuse(igniter, missing)
-    end
-  end
-
-  defp refuse(igniter, missing) do
-    Igniter.add_issue(
-      igniter,
-      "#{name()} builds on #{Enum.join(missing, " and ")}, not in the project yet. " <>
-        "Insert that first: ./wb.sh add #{hd(missing)}"
-    )
-  end
-
-  # Which driver the project uses is a fact about the project, so it is
-  # asked of the project. `--database` was ecto's option and nobody keeps
-  # what it was set to: the deps say it now, which is also what makes this
-  # right on a project that changed its mind since.
-  defp on_postgres(igniter) do
-    {facts, igniter} = WorkbenchIgniter.PhxDelta.facts(igniter)
-
-    if facts.database == "postgres" do
-      Igniter.Project.Deps.add_dep(igniter, @dep, on_exists: :skip)
-    else
-      Igniter.add_issue(
-        igniter,
-        "#{name()} is Postgres's own observability, and this project's database is " <>
-          "#{facts.database}. The queries #{elem(@dep, 0)} adds would have no server to " <>
-          "ask, so there is nothing to install."
-      )
+      {[], igniter} -> Igniter.Project.Deps.add_dep(igniter, @dep, on_exists: :skip)
+      {missing, igniter} -> WorkbenchIgniter.Feature.refuse(igniter, __MODULE__, missing)
     end
   end
 end

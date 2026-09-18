@@ -93,7 +93,10 @@ defmodule WorkbenchIgniter.Features do
       need: need(feature.need()),
       version: version(feature.version()),
       rerun: feature.rerun(),
-      requires: feature.requires(),
+      requires: WorkbenchIgniter.Feature.requires_names(feature),
+      # The state a requirement asks for, by name (pgadmin: ecto with
+      # database postgres); `%{}` when the names are enough.
+      conditions: WorkbenchIgniter.Feature.conditions(feature),
       # The cartridges its installer inserts along, off the `composes`
       # its `info/2` declares to Igniter (healthcheck brings mock in for
       # its tests): the other way a cartridge stands on another, and

@@ -14,6 +14,36 @@ defmodule ConsoleWeb.Cartridges do
 
   def installed?(status, name), do: Enum.any?(installed(status), &(&1["name"] == name))
 
+  @doc """
+  Whether the project carries a cartridge in the state a requirement
+  asks (the catalog's `conditions`: `%{"database" => "postgres"}`),
+  read off the state the status reports for it; a requirement without
+  a state is met by the cartridge being in.
+  """
+  def satisfies?(status, name, condition) when map_size(condition) == 0,
+    do: installed?(status, name)
+
+  def satisfies?(status, name, condition) do
+    case carried(status, name) do
+      %{"installed" => true} = c ->
+        Enum.all?(condition, fn {key, value} -> get_in(c, ["state", key]) == value end)
+
+      _ ->
+        false
+    end
+  end
+
+  @doc "A requirement said, with its state: `ecto with database postgres`."
+  def requirement(name, condition) when map_size(condition) == 0, do: name
+  def requirement(name, condition), do: "#{name} with #{state_said(condition)}"
+
+  @doc "A required state said on its own: `database postgres`, `live`, `no binary_id`."
+  def state_said(condition), do: Enum.map_join(condition, " and ", &said/1)
+
+  defp said({key, true}), do: key
+  defp said({key, false}), do: "no #{key}"
+  defp said({key, value}), do: "#{key} #{value}"
+
   @doc "The status's entry for a cartridge, installed or not."
   def carried(status, name),
     do: Enum.find(get_in(status, ["project", "cartridges"]) || [], &(&1["name"] == name))

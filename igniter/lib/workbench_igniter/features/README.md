@@ -186,11 +186,20 @@ matter. Each of the eight has a `DESIGN.md`; the engine's argument —
 why the generator and not a port of it, why `git merge-file`, what a
 delta cannot do — is in [mailer's](mailer/DESIGN.md), and the other
 seven refer to it. A cartridge that builds on another says so with `requires/0`
-(live on html, as `phx.new` generates it only with html): the installer
-refuses with an issue naming what to insert first, and the catalog
-carries the list. A single value can say it too — `{value, doc,
+(live on html, as `phx.new` generates it only with html), and when the
+name is not enough it names the **state** the other has to be in —
+`{"ecto", database: "postgres"}` for pgadmin and psql_extras, which
+serve Postgres and nothing else. The state is asked of the required
+cartridge's own `state/1`, off the project as it is, never off what an
+insert was asked; one resolver reads both (`missing_requirements/2`)
+and one refusal (`refuse/3`) says what is lacking and how to get it:
+"live builds on html, not in the project yet. Insert that first:
+./wb.sh add html"; "pgadmin builds on ecto with database postgres, and
+this project's database is mysql". The catalog carries the names as
+`requires` and the states as `conditions`, and the console's box says
+both under Needs. A single value can say it too — `{value, doc,
 requires}` in `choices/0` (ash's `--auth password` on live and mailer)
-— with the same refusal and the list beside the value. And a cartridge
+— with the same resolver and refusal, and the list beside the value. And a cartridge
 with a step after the insert says it with `afterwards/0` (ecto: `./wb.sh
 bake`, then `setup`); the catalog carries it, and marks the base
 cartridges as `base`.

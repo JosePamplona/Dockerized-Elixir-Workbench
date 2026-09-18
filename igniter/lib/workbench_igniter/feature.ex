@@ -134,14 +134,29 @@ defmodule WorkbenchIgniter.Feature do
   @callback state(igniter :: Igniter.t()) :: {map(), Igniter.t()}
 
   @doc """
-  The cartridges that must be in the project before this one — by
-  name, as the catalog names them — because what it installs builds on
-  what they install (live on html: `phx.new` itself generates live only
-  with html). The installer refuses with an issue naming the missing
-  ones (`missing_requirements/2`); the catalog carries the list as
-  `requires`. Empty by default.
+  What must be in the project before this cartridge, because what it
+  installs builds on it: cartridges by name, as the catalog names them
+  (live on html: `phx.new` itself generates live only with html), and,
+  when the name is not enough, the **state** the cartridge has to be
+  in — `{"ecto", database: "postgres"}` for pgadmin, which administers
+  Postgres and nothing else. The state is asked of the required
+  cartridge's own `state/1`, which reads the project as it is, born
+  with it or inserted, so the requirement holds on a project that
+  changed its mind since and never depends on what an insert was
+  asked. The installer refuses with an issue that names what is
+  missing and how to get it (`missing_requirements/2`, `refuse/3`);
+  the catalog carries the names as `requires` and the states as
+  `conditions`. Empty by default.
   """
-  @callback requires() :: [String.t()]
+  @callback requires() :: [requirement()]
+  @type requirement :: String.t() | {String.t(), keyword()}
+  @typedoc """
+  What a requirement lacks in the project: the cartridge is not in
+  (`:absent`, with the state it was asked for), or it is in and one key
+  of its state is not what was asked (`:short`, with what was found).
+  """
+  @type shortfall ::
+          {:absent, String.t(), keyword()} | {:short, String.t(), keyword(), atom(), term()}
 
   @doc """
   What follows the insert, when something does — one sentence with the
@@ -442,22 +457,24 @@ defmodule WorkbenchIgniter.Feature do
   end
 
   @doc """
-  Which of the cartridges `feature.requires/0` names are not in the
-  project, in that order — asked of each one's own `installed?/1`.
+  What `feature.requires/0` asks for and the project lacks, in that
+  order: each requirement asked of the required cartridge's own
+  `installed?/1`, and, when it names a state, of its `state/1`.
   Returns the igniter too, as the checks include files in it.
   """
-  @spec missing_requirements(Igniter.t(), module()) :: {[String.t()], Igniter.t()}
+  @spec missing_requirements(Igniter.t(), module()) :: {[shortfall()], Igniter.t()}
   def missing_requirements(igniter, feature),
-    do: missing_names(igniter, feature, feature.requires())
+    do: shortfalls(igniter, feature, feature.requires())
 
   @doc """
-  What the chosen option values build on and is not in the project:
-  `{option, value, missing}` per chosen value whose `{value, doc,
-  requires}` entry in `choices/0` names a cartridge the project lacks.
-  `opts` are the installer's parsed options (a value or a list per key).
+  What the chosen option values build on and the project lacks:
+  `{option, value, shortfalls}` per chosen value whose `{value, doc,
+  requires}` entry in `choices/0` names a requirement the project does
+  not meet. `opts` are the installer's parsed options (a value or a
+  list per key).
   """
   @spec missing_option_requirements(Igniter.t(), module(), keyword()) ::
-          {[{atom(), String.t(), [String.t()]}], Igniter.t()}
+          {[{atom(), String.t(), [shortfall()]}], Igniter.t()}
   def missing_option_requirements(igniter, feature, opts) do
     needs =
       for {key, choice} <- feature.choices(),
@@ -467,12 +484,86 @@ defmodule WorkbenchIgniter.Feature do
           do: {key, value, requires}
 
     Enum.reduce(needs, {[], igniter}, fn {key, value, requires}, {missing, igniter} ->
-      case missing_names(igniter, feature, requires) do
+      case shortfalls(igniter, feature, requires) do
         {[], igniter} -> {missing, igniter}
         {gone, igniter} -> {missing ++ [{key, value, gone}], igniter}
       end
     end)
   end
+
+  @doc "The names `requires/0` asks for, without their states."
+  @spec requires_names(module()) :: [String.t()]
+  def requires_names(feature), do: Enum.map(feature.requires(), &requirement_name/1)
+
+  @doc ~S|The states `requires/0` asks for, by name: `%{"ecto" => %{database: "postgres"}}`.|
+  @spec conditions(module()) :: %{String.t() => map()}
+  def conditions(feature) do
+    for {name, state} <- feature.requires(), state != [], into: %{}, do: {name, Map.new(state)}
+  end
+
+  @doc """
+  The one issue that refuses an insert for what it lacks: what the
+  cartridge builds on, what is not in and how to insert it, what is in
+  and not as asked. Every cartridge's refusal reads the same way.
+
+      pgadmin builds on ecto with database postgres, and this project's
+      database is mysql.
+      live builds on html, not in the project yet. Insert that first:
+      ./wb.sh add html
+  """
+  @spec refuse(Igniter.t(), module(), [shortfall()]) :: Igniter.t()
+  def refuse(igniter, feature, shortfalls),
+    do: Igniter.add_issue(igniter, "#{feature.name()} builds on " <> sentence(shortfalls))
+
+  @doc "A requirement or a shortfall, said: `ecto`, `ecto with database postgres`, `html with live`."
+  @spec describe(requirement() | shortfall()) :: String.t()
+  def describe(name) when is_binary(name), do: name
+  def describe({name, []}), do: name
+  def describe({name, state}), do: "#{name} with #{Enum.map_join(state, " and ", &said/1)}"
+  def describe({:absent, name, state}), do: describe({name, state})
+  def describe({:short, name, state, _key, _found}), do: describe({name, state})
+
+  @doc "The `wb.sh add` line that brings a requirement in, its state as the installer's switches."
+  @spec remedy(shortfall() | requirement()) :: String.t()
+  def remedy({:absent, name, state}), do: remedy({name, state})
+  def remedy(name) when is_binary(name), do: "./wb.sh add #{name}"
+
+  def remedy({name, state}),
+    do: Enum.join(["./wb.sh add #{name}" | Enum.map(state, &switch/1)], " ")
+
+  defp said({key, true}), do: to_string(key)
+  defp said({key, false}), do: "no #{key}"
+  defp said({key, value}), do: "#{key} #{value}"
+
+  defp switch({key, true}), do: "--#{flag(key)}"
+  defp switch({key, false}), do: "--no-#{flag(key)}"
+  defp switch({key, value}), do: "--#{flag(key)} #{value}"
+  defp flag(key), do: key |> to_string() |> String.replace("_", "-")
+
+  # "X and Y, not in the project yet. Insert that first: ./wb.sh add X"
+  # for what is absent; ", and this project's KEY is FOUND" for what is
+  # in and short of the state asked; both when both.
+  defp sentence(shortfalls) do
+    absent = for {:absent, _, _} = s <- shortfalls, do: s
+    short = for {:short, _, _, _, _} = s <- shortfalls, do: s
+
+    Enum.map_join(shortfalls, " and ", &describe/1) <>
+      Enum.map_join(short, "", fn {:short, _, _, key, found} ->
+        ", and this project's #{key} is #{found(found)}"
+      end) <>
+      case absent do
+        [] -> "."
+        [first | _] -> ", not in the project yet. Insert that first: #{remedy(first)}"
+      end
+  end
+
+  defp found(nil), do: "not set"
+  defp found(false), do: "off"
+  defp found(true), do: "on"
+  defp found(value), do: to_string(value)
+
+  defp requirement_name({name, _state}), do: name
+  defp requirement_name(name) when is_binary(name), do: name
 
   defp value_requirements({:open, values}), do: value_requirements(values)
 
@@ -482,18 +573,37 @@ defmodule WorkbenchIgniter.Feature do
   defp value_requirements(values),
     do: for({value, _doc, requires} <- values, do: {value, requires})
 
-  defp missing_names(igniter, feature, names) do
-    Enum.reduce(names, {[], igniter}, fn name, {missing, igniter} ->
+  defp shortfalls(igniter, feature, requirements) do
+    Enum.reduce(requirements, {[], igniter}, fn requirement, {missing, igniter} ->
+      {name, state} = normalize(requirement)
+
       required =
         Enum.find(WorkbenchIgniter.Features.catalog(), &(&1.name() == name)) ||
           raise ArgumentError, "#{feature.name()} requires an unknown cartridge: #{name}"
 
       case required.installed?(igniter) do
-        {true, igniter} -> {missing, igniter}
-        {false, igniter} -> {missing ++ [name], igniter}
+        {false, igniter} -> {missing ++ [{:absent, name, state}], igniter}
+        {true, igniter} when state == [] -> {missing, igniter}
+        {true, igniter} -> short_of(igniter, required, name, state, missing)
       end
     end)
   end
+
+  # The keys of the state asked that the cartridge's own state does not
+  # meet, each a `:short` with what was found.
+  defp short_of(igniter, required, name, state, missing) do
+    {has, igniter} = required.state(igniter)
+
+    short =
+      for {key, expected} <- state,
+          Map.get(has, key) != expected,
+          do: {:short, name, state, key, Map.get(has, key)}
+
+    {missing ++ short, igniter}
+  end
+
+  defp normalize({name, state}) when is_binary(name) and is_list(state), do: {name, state}
+  defp normalize(name) when is_binary(name), do: {name, []}
 
   @doc """
   The content of a file of the project, for `state/1` to read a mark

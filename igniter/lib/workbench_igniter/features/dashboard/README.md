@@ -44,9 +44,13 @@ it — nothing is touched and a notice says so.
 
 | File | Role |
 | --- | --- |
-| `dashboard.ex` | Manifest + logic: the flag, the mark |
-| `task.ex` | `Mix.Tasks.Workbench.Install.Dashboard` shell |
-| `CHANGELOG.md` | The cartridge's own version history |
-| `DESIGN.md` | Why it requires neither html nor live, with sources; the engine is in [mailer's](../mailer/DESIGN.md) |
-
-Cartridge test: `test/workbench_igniter/features/base_cartridges_test.exs`.
+| `📁 lib/workbench_igniter/features/dashboard/` | The cartridge: its code and its papers |
+| `├── 📄 dashboard.ex` | The mark and the `--no-dashboard` delta |
+| `├── 📄 task.ex` | The Mix task `wb.sh add` runs |
+| `├── 📄 README.md` | What it installs, and how it runs |
+| `├── 📄 NEED.md` | The need, the line the shelf shows |
+| `├── 📄 CHANGELOG.md` | Its versions, apart from the workbench's |
+| `└── 📄 DESIGN.md` | Why it needs neither html nor live |
+|  |  |
+| `📁 test/workbench_igniter/features/` |  |
+| `└── 📄 base_cartridges_test.exs` | Shared with the other base cartridges |

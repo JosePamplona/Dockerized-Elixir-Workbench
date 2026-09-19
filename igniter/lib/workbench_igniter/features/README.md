@@ -66,7 +66,13 @@ Every cartridge is a directory `features/<feature>/` holding:
 
 * `<feature>.ex` — manifest (`WorkbenchIgniter.Feature`) + install logic.
 * `task.ex` — the `Mix.Tasks.Workbench.Install.<Feature>` shell.
-* `README.md` — what it installs, options, contents.
+* `README.md` — what it installs, options, contents. **Contents** is a
+  table drawn as a tree of the cartridge's own files — its directory,
+  its `priv/`, its test, each a root after an empty row: the branch in code in the first
+  column (`├── 📄 task.ex`, 📁 for a directory, 📄 for a file, the
+  indentation in no-break spaces, U+00A0, so no renderer folds it),
+  the role in the second, kept to one line so the branches run on
+  unbroken ([ecto](ecto/README.md#contents) is the model).
 * `CHANGELOG.md` — the cartridge's own version history (Keep a
   Changelog, semver over what it *installs*), independent of the
   workbench release that ships it. Cartridges written before it was

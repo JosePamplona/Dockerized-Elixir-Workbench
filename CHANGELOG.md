@@ -680,6 +680,21 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **A cartridge's Contents is a tree of its files.** The table at the
+  foot of a cartridge's README draws the cartridge's own files as a
+  tree — its directory, its `priv/`, its test, each a root after an
+  empty row, 📁 for a directory and 📄 for a file — with each file's
+  role beside it, kept to one line. Files the old tables left out
+  (`NEED.md`, `CHANGELOG.md`, ecto's compose blocks, the shared
+  `base_cartridges_test.exs`) are in it. Drawn in version_manager,
+  versioning, dashboard_extras and the seven base cartridges; the rule
+  is in the features README's anatomy. The console reads such a table
+  as a tree (`Console.Papers.mark_trees/1`): the branch keeps its
+  spaces and loses its code chip, and the rows close up so `│` runs on
+  from one to the next. **The paper fills its column**: the Markdown
+  block no longer stops at 68ch, and reaches the index — text, tables
+  and code at one width.
+
 - **A box's needs are the cartridges alone, and what is in says it by
   its box.** The mentions under the specs' Needs and a value that builds
   on what the project lacks both wore the `need` class — the one the

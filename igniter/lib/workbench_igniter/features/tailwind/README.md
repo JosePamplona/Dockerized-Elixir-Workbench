@@ -67,9 +67,13 @@ it — nothing is touched and a notice says so.
 
 | File | Role |
 | --- | --- |
-| `tailwind.ex` | Manifest + logic: the flag, the mark |
-| `task.ex` | `Mix.Tasks.Workbench.Install.Tailwind` shell |
-| `CHANGELOG.md` | The cartridge's own version history |
-| `DESIGN.md` | Why it is shaped like this, with sources; the engine is in [mailer's](../mailer/DESIGN.md) |
-
-Cartridge test: `test/workbench_igniter/features/base_cartridges_test.exs`.
+| `📁 lib/workbench_igniter/features/tailwind/` | The cartridge: its code and its papers |
+| `├── 📄 tailwind.ex` | The mark and the `--no-tailwind` delta |
+| `├── 📄 task.ex` | The Mix task `wb.sh add` runs |
+| `├── 📄 README.md` | What it installs, and how it runs |
+| `├── 📄 NEED.md` | The need, the line the shelf shows |
+| `├── 📄 CHANGELOG.md` | Its versions, apart from the workbench's |
+| `└── 📄 DESIGN.md` | Why it is shaped so; the engine: mailer's |
+|  |  |
+| `📁 test/workbench_igniter/features/` |  |
+| `└── 📄 base_cartridges_test.exs` | Shared with the other base cartridges |

@@ -152,7 +152,18 @@ defmodule Console.Papers do
       render: [unsafe: false]
     )
     |> outside_images()
+    |> mark_trees()
   end
+
+  @doc """
+  A table drawn as a file tree — a cartridge's Contents, one file per
+  row, its branch (`├── 📄 task.ex`) in code in the first cell — is
+  told apart by what the cell opens with, and its cells get `tree`:
+  the stylesheet keeps their spaces, drops the code's chip and closes
+  the rows up, so the branches read as one drawing down the column.
+  """
+  def mark_trees(html),
+    do: String.replace(html, ~r/<td>(<code>\x{00A0}*(?:📁|📄|│|├|└))/u, ~s(<td class="tree">\\1))
 
   @doc """
   An image from another origin never loads here — the policy's

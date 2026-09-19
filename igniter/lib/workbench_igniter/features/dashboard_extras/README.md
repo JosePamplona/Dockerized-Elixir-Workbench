@@ -100,10 +100,13 @@ in the project, **ecto stats** (`/dev/dashboard/ecto_stats`).
 
 | File | Role |
 | --- | --- |
-| `dashboard_extras.ex` | Manifest + logic: the extras by database, the mark, the doors |
-| `task.ex` | `Mix.Tasks.Workbench.Install.DashboardExtras` shell |
-| `NEED.md` | The need it answers |
-| `CHANGELOG.md` | The cartridge's own version history |
-| `DESIGN.md` | Why one box and not two, why shaped and not refused, why every environment; with sources and what was measured |
-
-Cartridge test: `test/workbench_igniter/features/dashboard_extras_test.exs`.
+| `📁 lib/workbench_igniter/features/dashboard_extras/` | The cartridge: its code and its papers |
+| `├── 📄 dashboard_extras.ex` | The extras for the project's database |
+| `├── 📄 task.ex` | The Mix task `wb.sh add` runs |
+| `├── 📄 README.md` | What it installs, and how it runs |
+| `├── 📄 NEED.md` | The need, the line the shelf shows |
+| `├── 📄 CHANGELOG.md` | Its versions, apart from the workbench's |
+| `└── 📄 DESIGN.md` | Why one box, and why every environment |
+|  |  |
+| `📁 test/workbench_igniter/features/` |  |
+| `└── 📄 dashboard_extras_test.exs` | The extras on each database |

@@ -872,7 +872,7 @@ pre .ln{display:block}
 .md{scroll-margin-top:var(--fixed-above)}
 .md h1,.md h2,.md h3{scroll-margin-top:calc(var(--fixed-above) + 6px)}
 @media (max-width:640px){.booklet{grid-template-columns:1fr}.booklet .toc{display:none}}
-.md{font-family:var(--serif);font-size:15.5px;line-height:1.6;max-width:68ch;min-width:0}
+.md{font-family:var(--serif);font-size:15.5px;line-height:1.6;min-width:0}
 .md>*:first-child{margin-top:0}
 .md h1,.md h2,.md h3,.md h4{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.06em;line-height:1.1;text-wrap:balance;margin:1.6em 0 .5em}
 .md h1{font-size:28px;margin-top:0}.md h2{font-size:21px;padding-top:.6em;border-top:1px solid var(--line)}.md h3{font-size:16px}.md h4{font-size:14px;color:var(--muted)}
@@ -887,6 +887,12 @@ pre .ln{display:block}
 .md table{border-collapse:collapse;font-size:13.5px;margin:0 0 1.2em;display:block;overflow-x:auto;max-width:100%}
 .md th,.md td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
 .md th{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px;background:var(--surface-2)}
+/* A file tree in a table (Console.Papers.mark_trees/1): the branch keeps its spaces and loses its chip, and the rows close up so │ runs on from one to the next. */
+.md table:has(td.tree) td{padding-block:0;border-block:0;line-height:1.3}
+.md table:has(td.tree) tr:last-child td{border-bottom:1px solid var(--line)}
+.md td.tree{white-space:pre}
+.md table:has(td.tree) td:empty{height:1em}
+.md td.tree code{background:none;padding:0;white-space:pre;font-size:12.5px}
 .md hr{border:0;border-top:1px solid var(--line);margin:1.5em 0}
 .md img{max-width:100%}
 /* A shields.io badge drawn from its address (Console.Shields, through Console.Papers.outside_images/1): the service's own SVG in an <img>, at its own size — never stretched by the booklet's measure. Any other outside image is a link wearing its alt. */

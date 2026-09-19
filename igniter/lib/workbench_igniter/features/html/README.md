@@ -94,9 +94,13 @@ LiveView out.
 
 | File | Role |
 | --- | --- |
-| `html.ex` | Manifest + logic: the flag, the mark, the `--live` option and its mark |
-| `task.ex` | `Mix.Tasks.Workbench.Install.Html` shell |
-| `CHANGELOG.md` | The cartridge's own version history |
-| `DESIGN.md` | Why html alone and why LiveView is its option and not a box, with sources; the engine is in [mailer's](../mailer/DESIGN.md) |
-
-Cartridge test: `test/workbench_igniter/features/base_cartridges_test.exs`.
+| `📁 lib/workbench_igniter/features/html/` | The cartridge: its code and its papers |
+| `├── 📄 html.ex` | The delta, and LiveView as its option |
+| `├── 📄 task.ex` | The Mix task `wb.sh add` runs |
+| `├── 📄 README.md` | What it installs, and how it runs |
+| `├── 📄 NEED.md` | The need, the line the shelf shows |
+| `├── 📄 CHANGELOG.md` | Its versions, apart from the workbench's |
+| `└── 📄 DESIGN.md` | Why LiveView is an option, not a box |
+|  |  |
+| `📁 test/workbench_igniter/features/` |  |
+| `└── 📄 base_cartridges_test.exs` | Shared with the other base cartridges |

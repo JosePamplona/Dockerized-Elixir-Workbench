@@ -85,9 +85,28 @@ project carries it — nothing is touched and a notice says so.
 
 | File | Role |
 | --- | --- |
-| `ecto.ex` | Manifest + logic: the flag, the mark, `--database`, the delta, the `.env` entry |
-| `task.ex` | `Mix.Tasks.Workbench.Install.Ecto` shell |
-| `CHANGELOG.md` | The cartridge's own version history |
-| `DESIGN.md` | Why the options, the `.env` entry and the `bake` afterwards, with sources; the engine is in [mailer's](../mailer/DESIGN.md) |
-
-Cartridge test: `test/workbench_igniter/features/ecto_test.exs`.
+| `📁 lib/workbench_igniter/features/ecto/` | The cartridge: its code and its papers |
+| `├── 📄 ecto.ex` | The delta, `--database`, the `.env` entry |
+| `├── 📄 task.ex` | The Mix task `wb.sh add` runs |
+| `├── 📄 README.md` | What it installs, and how it runs |
+| `├── 📄 NEED.md` | The need, the line the shelf shows |
+| `├── 📄 CHANGELOG.md` | Its versions, apart from the workbench's |
+| `└── 📄 DESIGN.md` | Why the options, `.env` and the `bake` |
+|  |  |
+| `📁 priv/features/ecto/compose/` | The database's containers |
+| `├── 📁 pod/` | One host: dev and prod |
+| `│   ├── 📄 postgres.yml.eex` | The Postgres server |
+| `│   ├── 📄 mysql.yml.eex` | The MySQL server |
+| `│   ├── 📄 mssql.yml.eex` | The SQL Server server |
+| `│   ├── 📄 database_init.yml.eex` | Creates the database on SQL Server |
+| `│   ├── 📄 data_init.yml.eex` | SQLite's volume, handed to the release |
+| `│   └── 📄 migrate.yml.eex` | The one-shot migration, before the app |
+| `└── 📁 scaled/` | Replicas: no SQLite |
+| `    ├── 📄 postgres.yml.eex` | The Postgres server |
+| `    ├── 📄 mysql.yml.eex` | The MySQL server |
+| `    ├── 📄 mssql.yml.eex` | The SQL Server server |
+| `    ├── 📄 database_init.yml.eex` | Creates the database on SQL Server |
+| `    └── 📄 migrate.yml.eex` | One migration, not one per replica |
+|  |  |
+| `📁 test/workbench_igniter/features/` |  |
+| `└── 📄 ecto_test.exs` | Its flags, and every `--database` |

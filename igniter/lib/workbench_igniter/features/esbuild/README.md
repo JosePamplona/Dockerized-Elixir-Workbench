@@ -58,9 +58,13 @@ it — nothing is touched and a notice says so.
 
 | File | Role |
 | --- | --- |
-| `esbuild.ex` | Manifest + logic: the flag, the mark |
-| `task.ex` | `Mix.Tasks.Workbench.Install.Esbuild` shell |
-| `CHANGELOG.md` | The cartridge's own version history |
-| `DESIGN.md` | Why it is shaped like this, with sources; the engine is in [mailer's](../mailer/DESIGN.md) |
-
-Cartridge test: `test/workbench_igniter/features/base_cartridges_test.exs`.
+| `📁 lib/workbench_igniter/features/esbuild/` | The cartridge: its code and its papers |
+| `├── 📄 esbuild.ex` | The mark and the `--no-esbuild` delta |
+| `├── 📄 task.ex` | The Mix task `wb.sh add` runs |
+| `├── 📄 README.md` | What it installs, and how it runs |
+| `├── 📄 NEED.md` | The need, the line the shelf shows |
+| `├── 📄 CHANGELOG.md` | Its versions, apart from the workbench's |
+| `└── 📄 DESIGN.md` | Why it is shaped so; the engine: mailer's |
+|  |  |
+| `📁 test/workbench_igniter/features/` |  |
+| `└── 📄 base_cartridges_test.exs` | Shared with the other base cartridges |

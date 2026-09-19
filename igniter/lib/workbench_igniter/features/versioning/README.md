@@ -122,11 +122,18 @@ file) cannot be read: the insert says so and asks for `--init-version`.
 
 | File | Role |
 | --- | --- |
-| `versioning.ex` | Manifest + logic (`info/2`, `install/1`, `state/1`) |
-| `task.ex` | `Mix.Tasks.Workbench.Install.Versioning` shell |
-| `DESIGN.md` | Why the project's own version, why by hand, what is left out |
-| `priv/features/versioning/templates/changelog.eex` | The changelog it opens |
-| `priv/features/versioning/templates/version_task.eex` | The `mix version` task (`--mix-task`) |
-| `priv/features/versioning/templates/version_task_test.eex` | Its test, run in a directory of its own |
-
-Cartridge test: `test/workbench_igniter/features/versioning_test.exs`.
+| `📁 lib/workbench_igniter/features/versioning/` | The cartridge: its code and its papers |
+| `├── 📄 versioning.ex` | The changelog, the task, the badge |
+| `├── 📄 task.ex` | The Mix task `wb.sh add` runs |
+| `├── 📄 README.md` | What it installs, and how it runs |
+| `├── 📄 NEED.md` | The need, the line the shelf shows |
+| `├── 📄 CHANGELOG.md` | Its versions, apart from the workbench's |
+| `└── 📄 DESIGN.md` | Why by hand, and what is left out |
+|  |  |
+| `📁 priv/features/versioning/templates/` | What it writes into the project |
+| `├── 📄 changelog.eex` | The changelog it opens |
+| `├── 📄 version_task.eex` | The `mix version` task (`--mix-task`) |
+| `└── 📄 version_task_test.eex` | The task's own test |
+|  |  |
+| `📁 test/workbench_igniter/features/` |  |
+| `└── 📄 versioning_test.exs` | The install, its options, the mark |

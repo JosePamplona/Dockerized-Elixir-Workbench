@@ -92,8 +92,13 @@ the state.
 
 | File | Role |
 | --- | --- |
-| `version_manager.ex` | Manifest + logic (`info/2`, `install/1`, `state/1`) |
-| `task.ex` | `Mix.Tasks.Workbench.Install.VersionManager` shell |
-| `DESIGN.md` | Why one box, which file, and why `-otp-NN` |
-
-Cartridge test: `test/workbench_igniter/features/version_manager_test.exs`.
+| `📁 lib/workbench_igniter/features/version_manager/` | The cartridge: its code and its papers |
+| `├── 📄 version_manager.ex` | The file, asdf's or mise's, and its mark |
+| `├── 📄 task.ex` | The Mix task `wb.sh add` runs |
+| `├── 📄 README.md` | What it installs, and how it runs |
+| `├── 📄 NEED.md` | The need, the line the shelf shows |
+| `├── 📄 CHANGELOG.md` | Its versions, apart from the workbench's |
+| `└── 📄 DESIGN.md` | Why one box, which file, why `-otp-NN` |
+|  |  |
+| `📁 test/workbench_igniter/features/` |  |
+| `└── 📄 version_manager_test.exs` | Each manager's file, and the mark |

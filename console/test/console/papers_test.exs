@@ -53,6 +53,12 @@ defmodule Console.PapersTest do
     assert html =~ "<table>" and html =~ "<code>x</code>"
   end
 
+  test "a table drawn as a file tree marks its branch cells, and no other table's" do
+    html = Papers.to_html("| File | Role |\n|---|---|\n| `├──\u00a0📄\u00a0task.ex` | shell |\n| `x` | y |")
+    assert html =~ ~s(<td class="tree"><code>├──)
+    assert html =~ "<td><code>x</code>"
+  end
+
   test "reads a cartridge's papers off the workbench and rewrites what they point to" do
     assert "readme" in Papers.carried("healthcheck2")
     page = Papers.render("clustering", "design")

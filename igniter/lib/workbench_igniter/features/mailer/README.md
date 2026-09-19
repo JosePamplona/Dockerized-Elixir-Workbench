@@ -58,15 +58,20 @@ every default `phx.new` project: the mark is read off the project.
 
 | File | Role |
 | --- | --- |
-| `mailer.ex` | Manifest + logic: the flag, the mark, the delta |
-| `task.ex` | `Mix.Tasks.Workbench.Install.Mailer` shell |
-| `CHANGELOG.md` | The cartridge's own version history |
-| `DESIGN.md` | Why it asks `phx.new` instead of writing the mailer itself — and the engine every base cartridge runs on — with sources |
+| `📁 lib/workbench_igniter/features/mailer/` | The cartridge: its code and its papers |
+| `├── 📄 mailer.ex` | The mark and the `--no-mailer` delta |
+| `├── 📄 task.ex` | The Mix task `wb.sh add` runs |
+| `├── 📄 README.md` | What it installs, and how it runs |
+| `├── 📄 NEED.md` | The need, the line the shelf shows |
+| `├── 📄 CHANGELOG.md` | Its versions, apart from the workbench's |
+| `└── 📄 DESIGN.md` | Why the delta, and the engine behind it |
+|  |  |
+| `📁 test/workbench_igniter/` |  |
+| `├── 📁 features/` |  |
+| `│   └── 📄 mailer_test.exs` | The mark, the delta on a project |
+| `└── 📄 phx_delta_test.exs` | The engine every base cartridge runs on |
 
 No `priv/features/mailer/`: nothing of its own to write.
-
-Cartridge test: `test/workbench_igniter/features/mailer_test.exs`; the
-engine's, `test/workbench_igniter/phx_delta_test.exs`.
 
 ## Design
 

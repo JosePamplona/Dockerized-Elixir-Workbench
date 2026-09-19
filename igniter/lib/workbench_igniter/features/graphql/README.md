@@ -3,8 +3,7 @@
 GraphQL API with Absinthe, served at `/graphiql`.
 
 * **Task**: `mix workbench.install.graphql`
-* **Inserted by**: `wb.sh add graphql`; the chiefs_setup pick when its
-  `--interface` says `graphql`. Mutually exclusive with `rest`.
+* **Inserted by**: `wb.sh add graphql`. Mutually exclusive with `rest`.
 * **Origin**: in app.sh this feature was a "Coming soon" stub; here it is
   a new implementation, not a port.
 

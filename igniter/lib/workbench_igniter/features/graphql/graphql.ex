@@ -1,7 +1,6 @@
 defmodule WorkbenchIgniter.Features.Graphql do
   @moduledoc """
-  GraphQL API with Absinthe. Mutually exclusive with REST: chiefs_setup
-  inserts one of the two, as its `--interface` choice says.
+  GraphQL API with Absinthe. Mutually exclusive with REST.
 
   Full feature cartridge: manifest, install logic and the EEx templates it
   renders live in this directory, and the

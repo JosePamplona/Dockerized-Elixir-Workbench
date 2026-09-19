@@ -10,7 +10,7 @@ defmodule Mix.Tasks.Workbench.Install.Enhancements do
 
   Igniter port of the module-creating part of the workbench
   `implement_enhancements` feature (the dependency-only part lives in
-  the trivial dep-only cartridges — fellow chiefs_setup picks):
+  the dep-only cartridges):
 
   * Ecto group (unless `--no-ecto`): `MyApp.Helper` and `MyApp.Schema`
     (with `ecto_enum` and `html_entities` deps), the `mix db` task, and

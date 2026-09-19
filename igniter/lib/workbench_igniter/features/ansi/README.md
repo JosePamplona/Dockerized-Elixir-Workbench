@@ -3,7 +3,7 @@
 Coloured logs from inside the container.
 
 * **Task**: `mix workbench.install.ansi`
-* **Inserted by**: `wb.sh add ansi`; a chiefs_setup pick.
+* **Inserted by**: `wb.sh add ansi`
 
 ## Description
 

@@ -10,10 +10,10 @@ Install it on demand with
 mix workbench.install.ash --data-layer postgres --api json_api --auth password,magic_link
 ```
 
-It wants a vanilla project: a stock `phx.new` project plus Ash. The
-chiefs_setup picks bring their own Ecto schemas and generators
-(enhancements) — and auth0 its `users` table — that Ash would fight
-with: see [DESIGN.md](DESIGN.md), §3.5.
+It wants a vanilla project: a stock `phx.new` project plus Ash.
+enhancements brings its own Ecto schemas and generators, and auth0 its
+`users` table, that Ash would fight with: see [DESIGN.md](DESIGN.md),
+§3.5.
 
 ## What it installs
 

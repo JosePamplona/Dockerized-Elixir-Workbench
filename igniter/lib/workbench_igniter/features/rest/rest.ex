@@ -1,8 +1,7 @@
 defmodule WorkbenchIgniter.Features.Rest do
   @moduledoc """
   REST API with OpenApiSpex documentation. Mutually exclusive with
-  GraphQL: chiefs_setup inserts one of the two, as its `--interface`
-  choice says (rest is the default).
+  GraphQL.
 
   Full feature cartridge: manifest, install logic and the EEx templates it
   renders live in this directory, and the `Mix.Tasks.Workbench.Install.Rest`
@@ -10,7 +9,7 @@ defmodule WorkbenchIgniter.Features.Rest do
 
   Ordering: inserted before healthcheck, so healthcheck autodetects the
   `OpenApi.Spec` module in the patch set and generates its
-  OpenApiSpex-documented variant (chiefs_setup keeps that order).
+  OpenApiSpex-documented variant.
   """
   use WorkbenchIgniter.Feature
 

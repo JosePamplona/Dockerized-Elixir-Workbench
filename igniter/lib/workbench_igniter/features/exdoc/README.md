@@ -4,11 +4,10 @@ ExDoc documentation site served by the app itself at `/dev/docs`, with
 per-feature extra pages (coverage, auth token, database diagram).
 
 * **Task**: `mix workbench.install.exdoc`
-* **Inserted by**: `wb.sh add exdoc`; a chiefs_setup pick.
+* **Inserted by**: `wb.sh add exdoc`
 * **Options**: `--project-name` `--repo-url` `[--coveralls --auth0]`
   `[--build]` — whether the project has Ecto (the database page and
-  diagram) is read off the project, not asked. As a chiefs_setup pick
-  it receives `--coveralls`.
+  diagram) is read off the project, not asked.
 
 ## Description
 

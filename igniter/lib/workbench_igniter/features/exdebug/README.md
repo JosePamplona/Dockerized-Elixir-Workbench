@@ -3,12 +3,12 @@
 ExDebug inspection helpers.
 
 * **Task**: `mix workbench.install.exdebug`
-* **Inserted by**: `wb.sh add exdebug`; a chiefs_setup pick (the trivial dep-only group).
+* **Inserted by**: `wb.sh add exdebug`
 
 ## Description
 
-Utilities to inspect values comfortably while developing. Part of the
-trivial dep-only group (a chiefs_setup pick).
+Utilities to inspect values comfortably while developing. A dep-only
+cartridge.
 
 ## What it installs
 

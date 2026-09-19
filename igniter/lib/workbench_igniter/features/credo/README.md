@@ -3,12 +3,12 @@
 Credo static code analysis.
 
 * **Task**: `mix workbench.install.credo`
-* **Inserted by**: `wb.sh add credo`; a chiefs_setup pick (the trivial dep-only group).
+* **Inserted by**: `wb.sh add credo`
 
 ## Description
 
 An automated reviewer that flags style and code-quality issues before
-they reach production. Part of the trivial dep-only group (a chiefs_setup pick).
+they reach production. A dep-only cartridge.
 
 ## What it installs
 

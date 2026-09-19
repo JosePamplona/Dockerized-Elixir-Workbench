@@ -676,6 +676,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   releases were dated by UTC's day, and are by the developer's now. A
   chiefs_setup project is born at `0.1.0` now, not `0.0.0` (versioning
   v0.3.0, 2026-09-18).
+- **A cartridge does not name the collection that picks it.** Twenty
+  READMEs and ten moduledocs said "a chiefs_setup pick", "not a
+  chiefs_setup pick", or the argv the collection hands them. The
+  knowledge runs one way: the collection names its members and their
+  argv (`members/1`, its README), and the shelf's README says who picks
+  what; a box says what it is, what it needs (an account, a URL) and
+  what it excludes (rest and graphql), which is its own. ash's README
+  names the two boxes it fights with, enhancements and auth0, instead
+  of "the chiefs_setup picks". The CHANGELOGs keep theirs: history.
 - **`--no-ecto` stands before `--database` on the Record's flags.** Ecto's
   own flag first, then the two that only mean something with it.
 

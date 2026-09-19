@@ -3,7 +3,7 @@
 Adminer in the workspace, open on the project's database, whatever the adapter.
 
 * **Task**: `mix workbench.install.adminer`
-* **Inserted by**: `wb.sh add adminer` — à la carte, not a chiefs_setup pick (that is pgadmin). Then `./wb.sh bake`.
+* **Inserted by**: `wb.sh add adminer`. Then `./wb.sh bake`.
 * **Requires**: ecto, on any of its adapters.
 
 ## Description

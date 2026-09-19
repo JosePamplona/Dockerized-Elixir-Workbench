@@ -1,8 +1,7 @@
 defmodule WorkbenchIgniter.Features.Enhancements do
   @moduledoc """
   Workbench project enhancements: base schema, helpers, the db mix
-  tasks and the extended test suite. A chiefs_setup pick, inserted after
-  the trivial dep-only group.
+  tasks and the extended test suite.
 
   Full feature cartridge: manifest, install logic and the EEx templates it
   renders live in this directory; the

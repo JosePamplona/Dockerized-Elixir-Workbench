@@ -1,7 +1,6 @@
 defmodule WorkbenchIgniter.Features.Credo do
   @moduledoc """
-  Credo static code analysis — part of the trivial dep-only group (a
-  chiefs_setup pick).
+  Credo static code analysis — a dep-only cartridge.
   """
   use WorkbenchIgniter.Feature
 

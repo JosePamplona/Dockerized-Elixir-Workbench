@@ -3,8 +3,8 @@
 The team's coding conventions as a page of the project's own docs.
 
 * **Task**: `mix workbench.install.guidelines`
-* **Inserted by**: `wb.sh add guidelines --url URL` — not a chiefs_setup
-  pick: the URL is the team's, and there is no sensible default.
+* **Inserted by**: `wb.sh add guidelines --url URL`. The URL is the
+  team's, and there is no sensible default.
 * **Requires**: [exdoc](../exdoc/) — it owns the site and the `docs:`
   block this appends to.
 

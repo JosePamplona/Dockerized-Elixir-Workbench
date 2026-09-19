@@ -4,10 +4,9 @@ defmodule WorkbenchIgniter.Features.Healthcheck2 do
 
   Installed on demand with `mix workbench.install.healthcheck2`
   (`wb.sh add healthcheck2`). It is the vanilla counterpart of
-  `healthcheck` (the chiefs_setup pick):
-  where that one is a controller behind the router, with a JSON body
-  that grows in dev and a Swagger entry, this one is what an orchestrator
-  consumes and nothing more.
+  `healthcheck`: where that one is a controller behind the router, with
+  a JSON body that grows in dev and a Swagger entry, this one is what an
+  orchestrator consumes and nothing more.
 
   ## Why a plug, and why first
 

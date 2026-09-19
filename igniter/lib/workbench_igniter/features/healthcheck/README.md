@@ -3,7 +3,7 @@
 Healthcheck endpoint with controller, tests and router scope.
 
 * **Task**: `mix workbench.install.healthcheck`
-* **Inserted by**: `wb.sh add healthcheck`; a chiefs_setup pick.
+* **Inserted by**: `wb.sh add healthcheck`
 * **Ordering**: inserted last, after `rest`, so the autodetection finds
   `MyAppWeb.OpenApi.Spec` in the patch set and generates the
   OpenApiSpex-documented variant.

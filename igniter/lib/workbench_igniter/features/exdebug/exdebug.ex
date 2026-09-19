@@ -1,6 +1,6 @@
 defmodule WorkbenchIgniter.Features.Exdebug do
   @moduledoc """
-  ExDebug helper — part of the trivial dep-only group (a chiefs_setup pick).
+  ExDebug helper — a dep-only cartridge.
   """
   use WorkbenchIgniter.Feature
 

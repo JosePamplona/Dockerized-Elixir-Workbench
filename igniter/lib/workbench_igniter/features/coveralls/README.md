@@ -4,10 +4,10 @@ Test coverage with ExCoveralls, the workbench HTML report and the
 `mix cover` task.
 
 * **Task**: `mix workbench.install.coveralls`
-* **Inserted by**: `wb.sh add coveralls`; a chiefs_setup pick.
+* **Inserted by**: `wb.sh add coveralls`
 * **Options**: `--interface <i>` `[--theme <t>]` `[--exdoc]` `[--build]` — whether
   the project has html (the components folder to leave out) is read off
-  the project. As a chiefs_setup pick it receives `--exdoc`.
+  the project.
 
 ## Description
 

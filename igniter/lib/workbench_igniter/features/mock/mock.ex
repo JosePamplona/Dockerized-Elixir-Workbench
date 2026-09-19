@@ -1,8 +1,7 @@
 defmodule WorkbenchIgniter.Features.Mock do
   @moduledoc """
-  Mock library for tests — part of the trivial dep-only group (a
-  chiefs_setup pick). Also composed directly by features whose generated
-  tests use it (healthcheck, coveralls).
+  Mock library for tests — a dep-only cartridge. Also composed directly
+  by features whose generated tests use it (healthcheck, coveralls).
   """
   use WorkbenchIgniter.Feature
 

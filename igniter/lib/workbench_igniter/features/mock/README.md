@@ -3,14 +3,14 @@
 Mock library for tests.
 
 * **Task**: `mix workbench.install.mock`
-* **Inserted by**: `wb.sh add mock`; a chiefs_setup pick (the trivial
-  dep-only group) — also composed directly by `healthcheck`, `coveralls`
-  and `enhancements`, whose generated tests use it.
+* **Inserted by**: `wb.sh add mock` — also composed directly by
+  `healthcheck`, `coveralls` and `enhancements`, whose generated tests
+  use it.
 
 ## Description
 
 Lets tests simulate external pieces (APIs, services) without depending
-on the real thing. Part of the trivial dep-only group (a chiefs_setup pick).
+on the real thing. A dep-only cartridge.
 
 ## Pending: migration to Mox
 

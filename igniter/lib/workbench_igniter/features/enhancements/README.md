@@ -4,9 +4,7 @@ Workbench base enhancements: shared schema and helper, the `mix db`
 task, and the base test suite.
 
 * **Task**: `mix workbench.install.enhancements`
-* **Inserted by**: `wb.sh add enhancements`; a chiefs_setup pick,
-  inserted after the trivial dep group (osmon, psql_extras, credo, mock,
-  exdebug — see `../README.md`).
+* **Inserted by**: `wb.sh add enhancements`
 * **Ordering**: before `auth0`, whose User schema uses the `MyApp.Schema`
   this feature generates (`auth0` refuses until this is in).
 * **Options**: `--project-name` `--interface`
@@ -14,7 +12,6 @@ task, and the base test suite.
   `[--exdoc --auth0 --openai --stripe --health]` name the fellow
   cartridges that shape what it plants — what the project has of Ecto,
   html, the mailer and the dashboard is read off the project, not asked.
-  As a chiefs_setup pick it receives `--interface --exdoc --health`.
 
 ## Description
 

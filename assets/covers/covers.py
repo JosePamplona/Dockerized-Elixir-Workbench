@@ -435,6 +435,24 @@ BADGE_HEIGHT = 0.054
 BADGE_POINT = 0.026
 BADGE_FONT = "Liberation-Sans-Narrow-Bold"
 INK = "#F2ECF7"
+# `--badge-style engraved`: for an art whose lettering is set rather than
+# drawn — the base cartridges' collegiate crest — the badge is its caps,
+# letterspaced between two thin rules, with no box: a bookplate's label.
+# The ink is the crest's title gold read off the hero, a shade darker
+# to hold on the parchment; `--badge-ink`
+# gives another.
+ENGRAVED_FONT = "P052-Roman"
+ENGRAVED_INK = "#6E5634"
+ENGRAVED_POINT = 0.032
+# `--title`: the cartridge's name typeset under a shared art's own
+# lockup — the base cartridges share one crest, and the name is what
+# tells the seven apart. Engraved, centred on the window, its centre at
+# `--title-y` of the window's height; the size a fraction of its width.
+TITLE_Y = 0.875
+TITLE_POINT = 0.052
+# The rules' length, the same on every box so the shelf lines up
+# whatever the name's length: a little wider than the crest's PHOENIX.
+TITLE_RULE = 0.46
 LOCKUP_FIT = "0.80,0.16"
 # `--mark NAME=FILE`: the tools a box installs, by their own marks — the
 # projects' files, never generated — each on a pale square with rounded
@@ -480,6 +498,23 @@ def place_at_corner(base, layer, corner, inset_x, inset_y):
     paste(base, layer, (x, y))
 
 
+def engraved_badge(text, fnt, ink, min_width=0):
+    """Letterspaced caps between two hairline rules, on a clear field;
+    the rules at least `min_width` pixels long."""
+    x0, y0, x1, y1 = fnt.getbbox(text)
+    kerning = (y1 - y0) * 0.30
+    text_w = (x1 - x0) + kerning * max(0, len(text) - 1)
+    text_h = y1 - y0
+    gap, stroke = round(text_h * 0.55), max(1, round(text_h * 0.07))
+    w, h = max(min_width, round(text_w + text_h * 0.8)), round(text_h + 2 * (gap + stroke))
+    badge = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    d = ImageDraw.Draw(badge)
+    d.rectangle((0, 0, w - 1, stroke - 1), fill=rgba(ink))
+    d.rectangle((0, h - stroke, w - 1, h - 1), fill=rgba(ink))
+    draw_line(d, ((w - text_w) / 2 - x0, stroke + gap - y0), text, fnt, rgba(ink), kerning)
+    return badge
+
+
 def marks_strip(marks, window_width):
     """A row of marks, each fitted to a rounded square with its name
     under it: `marks` is [(name, path)]. Returns the strip, shadows
@@ -521,7 +556,8 @@ def marks_strip(marks, window_width):
 
 
 def stamp(art, output, face="cover", corner="br", size=SEAL_SIZE, placement="straddle",
-          margin=SEAL_MARGIN, badge="", badge_corner="", marks=(), lockup="", lockup_fit=LOCKUP_FIT,
+          margin=SEAL_MARGIN, badge="", badge_corner="", badge_style="box", badge_ink="",
+          title="", title_y=TITLE_Y, title_point=TITLE_POINT, marks=(), lockup="", lockup_fit=LOCKUP_FIT,
           quiet=False):
     """Overlay, seal, lockup and badge onto `art`, written to `output`.
 
@@ -604,6 +640,17 @@ def stamp(art, output, face="cover", corner="br", size=SEAL_SIZE, placement="str
         paste(image, lk, (l_centre_x - lk.width / 2, image.height - lk.height - l_inset_y))
         locking = f" lockup {lockup_width}px wide, bottom {l_inset_y}px up,"
 
+    # The title, centred on the window at the height asked for.
+    titling = ""
+    if title:
+        tb = engraved_badge(title, font(ENGRAVED_FONT, px(window_width, title_point)), badge_ink or ENGRAVED_INK,
+                            min_width=px(window_width, TITLE_RULE))
+        w_top = px(f_top, scale)
+        w_height = image.height - w_top - px(f_bottom, scale)
+        t_centre_x = (image.width + px(f_left, scale) - px(f_right, scale)) / 2
+        paste(image, tb, (t_centre_x - tb.width / 2, w_top + w_height * title_y - tb.height / 2))
+        titling = f' title "{title}" at {title_y},'
+
     # The marks, a row centred on the window along its top.
     marking = ""
     if marks:
@@ -621,11 +668,17 @@ def stamp(art, output, face="cover", corner="br", size=SEAL_SIZE, placement="str
             badge_corner = "br" if corner == "bl" else "bl"
         if badge_corner not in ("bl", "br", "tl", "tr"):
             die(f"Unknown badge corner '{badge_corner}'. Use bl, br, tl or tr.")
-        bh = px(window_width, BADGE_HEIGHT)
-        fnt = font(BADGE_FONT, px(window_width, BADGE_POINT))
-        text_w = fnt.getlength(badge)
-        box = outlined_box((round(text_w + bh * 0.8), bh), rgba("#1a1020"), rgba(INK), 2)
-        centred(box, badge, fnt, rgba(INK))
+        if badge_style == "engraved":
+            fnt = font(ENGRAVED_FONT, px(window_width, ENGRAVED_POINT))
+            box = engraved_badge(badge, fnt, badge_ink or ENGRAVED_INK)
+        elif badge_style == "box":
+            bh = px(window_width, BADGE_HEIGHT)
+            fnt = font(BADGE_FONT, px(window_width, BADGE_POINT))
+            text_w = fnt.getlength(badge)
+            box = outlined_box((round(text_w + bh * 0.8), bh), rgba("#1a1020"), rgba(badge_ink or INK), 2)
+            centred(box, badge, fnt, rgba(badge_ink or INK))
+        else:
+            die(f"Unknown badge style '{badge_style}'. Use box or engraved.")
         b_x, b_y = corner_insets(badge_corner, m_top, m_right, m_bottom, m_left)
         fb_x, fb_y = corner_insets(badge_corner, f_top, f_right, f_bottom, f_left)
         place_at_corner(image, box, badge_corner,
@@ -636,7 +689,7 @@ def stamp(art, output, face="cover", corner="br", size=SEAL_SIZE, placement="str
     image.convert("RGB").save(output, quality=QUALITY)
     if not quiet:
         print(f"Stamped {B}{os.path.basename(output)}{R}: {fitting} seal {seal_width}px wide "
-              f"({size} of the {window_width}px window), {placing}, corner {corner},{locking}{marking}{badging}")
+              f"({size} of the {window_width}px window), {placing}, corner {corner},{locking}{titling}{marking}{badging}")
 
 
 def mark_arg(feature, value):
@@ -652,6 +705,8 @@ def cmd_stamp(args):
     output = args.output or os.path.join(COVERS_DIR, args.feature, "sealed", f"{args.face}.jpg")
     stamp(art, output, face=args.face, corner=args.corner, size=args.size, placement=args.placement,
           margin=args.margin, badge=args.badge, badge_corner=args.badge_corner,
+          badge_style=args.badge_style, badge_ink=args.badge_ink,
+          title=args.title, title_y=args.title_y, title_point=args.title_point,
           marks=[mark_arg(args.feature, m) for m in args.mark], lockup=args.lockup,
           lockup_fit=args.lockup_fit)
 
@@ -767,7 +822,7 @@ def cmd_back(args):
     plate's width, measured off the plate that came back and kept in
     <feature>/back/layout.env."""
     feature_dir = os.path.join(COVERS_DIR, args.feature)
-    plate_p = os.path.join(feature_dir, "art", "back.jpg")
+    plate_p = os.path.join(COVERS_DIR, args.plate or args.feature, "art", "back.jpg")
     back_dir = os.path.join(feature_dir, "back")
     copy_p = os.path.join(back_dir, "copy.md")
     output = args.output or os.path.join(feature_dir, "sealed", "back.jpg")
@@ -973,6 +1028,11 @@ def main():
     p.add_argument("-m", "--margin", default=SEAL_MARGIN, help=f"inset from the window's edges: T,R,B,L, X,Y or F, in fractions of the window's width (default: {SEAL_MARGIN})")
     p.add_argument("-b", "--badge", default="", help="typeset the unit badge")
     p.add_argument("--badge-corner", default="", help="bl | br | tl | tr (default: bottom left, or bottom right if the seal is there)")
+    p.add_argument("--badge-style", default="box", help="box | engraved (default: box): the outlined box of condensed caps, or letterspaced serif caps between two rules")
+    p.add_argument("--badge-ink", default="", help=f"the badge's ink, hex (default: {INK} boxed, {ENGRAVED_INK} engraved)")
+    p.add_argument("-t", "--title", default="", help="typeset this name, engraved, centred on the window: for an art shared by several cartridges")
+    p.add_argument("--title-y", type=float, default=TITLE_Y, help=f"the title's centre, as a fraction of the window's height (default: {TITLE_Y})")
+    p.add_argument("--title-point", type=float, default=TITLE_POINT, help=f"the title's size, as a fraction of the window's width (default: {TITLE_POINT})")
     p.add_argument("--mark", action="append", default=[], metavar="NAME=FILE", help="a tool's own mark, FILE relative to the feature's directory, on a rounded square with NAME under it; repeat it, in order, for a row centred along the top of the window")
     p.add_argument("-l", "--lockup", default="", help="composite this title lockup PNG, centred on the window's width")
     p.add_argument("--lockup-fit", default=LOCKUP_FIT, help=f"its width, and the inset of its bottom edge from the window's bottom, as fractions of the window's width (default: {LOCKUP_FIT})")
@@ -980,6 +1040,7 @@ def main():
 
     p = sub.add_parser("back", help="compose the back from its plate, copy and screenshots, and seal it")
     p.add_argument("feature")
+    p.add_argument("-p", "--plate", default="", help="take the plate from this feature's art/back.jpg: for a plate shared by several cartridges")
     p.add_argument("-o", "--output", default="", help="write here instead of FEATURE/sealed/back.jpg")
 
     args = parser.parse_args()

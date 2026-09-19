@@ -1,0 +1,50 @@
+Manual plate — drawn from the hero, not from an era block. The
+reference image sent with this text is art/hero.jpg, the front of the
+same box; the plate is the back of that box, in the same printing.
+One plate serves the seven base cartridges: each back is composed on
+it by `covers.py back` with its own copy and screenshots.
+
+--- change 1, with art/hero.jpg as the reference ---
+
+Draw the back face of the box whose front is this picture, bound in
+the violet leather of the shield on the front: the same fine pebbled
+grain, the same deep violet, lit softly at the centre and darkening
+evenly toward the edges, with the same burnished gold tooling.
+
+Flat cover illustration filling the entire image edge to edge, all of
+it in one plane: the four edges of the image are the four edges of the
+illustration, and the illustration is all there is — not a product
+photograph, not a box or a board: no bevel, no lip, no rim of light, no
+edge, no shadow, no surface behind it, no margin of any colour around
+it. Proportions 5:7 portrait. Every position below is measured from
+the edges of the image. Elixir violet (#4B275F) is the dominant colour
+of the illustration.
+
+This face carries no subject: no shield, no bird, no figure, no
+picture of anything. The face is the violet leather, even across the
+whole face, and a single fine gold-tooled fillet runs round it: its
+top side at three hundredths of the height, its bottom side at ninety
+hundredths of the height, its sides three hundredths of the width in
+from each edge, meeting in plain square corners. Nothing on the face
+is lettered: no title, no caption, no signature, no placeholder text,
+no glyphs, no words of any kind anywhere on the face.
+
+Across the middle of the face the leather continues, bare, and one
+seal is blind-embossed into it as a watermark, centred on the width,
+its centre at fifty-eight hundredths of the height, two fifths of the
+width wide: a circle made of two laurel branches meeting at the top
+and at the bottom, and inside the circle one firebird in outline, the
+bird of the front with the same silhouette, and nothing else — pressed
+into the leather with no gold, a step darker than the leather around
+it, barely visible, the one mark on this face. It carries no
+lettering.
+
+Across the bottom edge, over the full width, from ninety-two
+hundredths of the height to the bottom edge, a band of the same
+leather a step darker than the face, with nothing printed on it; the
+fillet's bottom side sits above it.
+
+Every mark on the face is printed material or tooling, and the marks
+named above are all of them.
+Accent: the front's — the bronze gold of the title; nothing else on
+this face has a colour of its own.

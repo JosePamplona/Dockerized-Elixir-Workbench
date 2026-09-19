@@ -29,8 +29,7 @@ defmodule WorkbenchIgniter.Features do
     Features.Toolchain,
     Features.Versioning,
     # Trivial dep-only group.
-    Features.Osmon,
-    Features.PsqlExtras,
+    Features.DashboardExtras,
     Features.Credo,
     Features.Mock,
     Features.Exdebug,

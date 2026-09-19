@@ -29,8 +29,8 @@ member only names the *fellow members* that ride along (exdoc's
 retired opinionated line — the house's settings ([ansi](ansi/) →
 [version_manager](version_manager/) → [toolchain](toolchain/) →
 [versioning](versioning/)), the trivial dep
-group ([osmon](osmon/) → [psql_extras](psql_extras/) →
-[credo](credo/) → [mock](mock/) → [exdebug](exdebug/)),
+group ([dashboard_extras](dashboard_extras/) → [credo](credo/) →
+[mock](mock/) → [exdebug](exdebug/)),
 [rest](rest/) | [graphql](graphql/) (its `--interface` choice),
 [coveralls](coveralls/), [exdoc](exdoc/), [enhancements](enhancements/)
 and [healthcheck](healthcheck/) — in the order their marks build on
@@ -108,8 +108,7 @@ Dep-only cartridges have no `priv/features/<feature>/` directory:
 | [credo](credo/) | `{:credo, "~> 1.7", only: [:dev, :test], runtime: false}` | chiefs_setup |
 | [mock](mock/) | `{:mock, "~> 0.3", only: :test}` | chiefs_setup (also composed by healthcheck, coveralls and enhancements) |
 | [exdebug](exdebug/) | `{:ex_debug, "~> 1.0"}` | chiefs_setup |
-| [psql_extras](psql_extras/) | `{:ecto_psql_extras, "~> 0.8", only: :dev}` | chiefs_setup |
-| [osmon](osmon/) | `:os_mon` in `extra_applications` (no dep) | chiefs_setup |
+| [dashboard_extras](dashboard_extras/) | `:os_mon` in `extra_applications`, and the extras of the project's database: `ecto_psql_extras`, `ecto_mysql_extras` or `ecto_sqlite3_extras` (none on SQL Server or without a database) | chiefs_setup |
 | [githooks](githooks/) | `{:git_hooks, "~> 0.7", only: :dev, runtime: false}` | no one (`wb.sh add githooks`) |
 | [exmachina](exmachina/) | `{:ex_machina, "~> 2.8", only: :test}` | no one (`wb.sh add exmachina`) |
 | [stripe](stripe/) | — (pending; requires auth0) | no one |
@@ -138,8 +137,7 @@ What is the topology's (where the app is, where Prometheus is) the
 compose hands over, so the files serve every deployment. The compose is
 baked from what the project carries (`./wb.sh bake` after the insert),
 never the other way round; see `scripts/PLAN.md`. pgadmin is a
-chiefs_setup pick, beside psql_extras, and refuses off Postgres as it
-does; adminer is its à-la-carte counterpart on every adapter — two
+chiefs_setup pick and refuses off Postgres; adminer is its à-la-carte counterpart on every adapter — two
 boxes for one need, as healthcheck2 is beside healthcheck — and k6 and
 monitoring are inserted by hand.
 
@@ -190,8 +188,8 @@ six refer to it. A cartridge that builds on another says so with `requires/0`
 (dashboard needs nothing; ash's `--auth password` needs html with
 LiveView), and when the
 name is not enough it names the **state** the other has to be in —
-`{"ecto", database: "postgres"}` for pgadmin and psql_extras, which
-serve Postgres and nothing else, `{"html", live: true}` for what needs
+`{"ecto", database: "postgres"}` for pgadmin, which
+serves Postgres and nothing else, `{"html", live: true}` for what needs
 LiveView. The state is asked of the required
 cartridge's own `state/1`, off the project as it is, never off what an
 insert was asked; one resolver reads both (`missing_requirements/2`)
@@ -203,14 +201,19 @@ add, the remedy is that run, `./wb.sh add html --live`. The catalog carries the 
 `requires` and the states as `conditions`, and the console's box says
 both under Needs. A single value can say it too — `{value, doc,
 requires}` in `choices/0` (ash's `--auth password` on live and mailer)
-— with the same resolver and refusal, and the list beside the value. And a cartridge
+— with the same resolver and refusal, and the list beside the value. A state
+can also *shape* a box instead of gating it, when it selects among
+equivalents: [dashboard_extras](dashboard_extras/) reads ecto's
+`state/1` for the database and installs that server's extras —
+none without a database — where a requirement could only refuse. And a cartridge
 with a step after the insert says it with `afterwards/0` (ecto: `./wb.sh
 bake`, then `setup`); the catalog carries it, and marks the base
 cartridges as `base`.
 
 A cartridge can light the console up: `console/0` names the *doors* it
 opens on the app's port (exdoc `/dev/docs`, rest `/dev/swagger`, mailer
-`/dev/mailbox`, ash `/admin` when `ash_admin` is in, healthcheck2
+`/dev/mailbox`, ash `/admin` when `ash_admin` is in, dashboard_extras
+the two dashboard pages it lights, healthcheck2
 `{path}/live` and `{path}/ready`) and the *tabs* it turns on (clustering
 → Cluster). The catalog carries it as `console`; the console shows the
 doors of what is inserted and nothing of what is not. There is no

@@ -7,6 +7,17 @@ what the cartridge *installs* — here, the recipe: a changed pick or
 argv is a minor, a removed pick (a project counting on it stops getting
 it) is a major.
 
+## v0.4.0 - (2026-09-18)
+
+### Changed
+
+- `osmon` and `psql_extras` leave the recipe as one pick,
+  `dashboard_extras`, the box they merged into: `:os_mon` as before,
+  and the extras of the database the project is on instead of
+  Postgres's alone — so on MySQL or SQLite the collection no longer
+  stops at this pick, and gets its Ecto Stats page. The extras go in
+  every environment, not `only: :dev`. Fourteen picks.
+
 ## v0.3.0 - (2026-09-18)
 
 ### Added

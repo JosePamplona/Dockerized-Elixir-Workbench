@@ -36,7 +36,7 @@ the legacy `app.sh` and the earlier package editions lives in the git log.
 │   │       │   └── 📁 assets/{cover.ex.asset, ...}  #   .asset suffix: mix won't compile them
 │   │       ├── 📦 exdoc/                            # same, + text assets/; the binary PNG logo
 │   │       │                                        #   lives in priv/features/exdoc/
-│   │       ├── 📦 credo/, mock/, osmon/, ...        # dep-only cartridges: README + <f>.ex + task.ex
+│   │       ├── 📦 credo/, mock/, exdebug/, ...      # dep-only cartridges: README + <f>.ex + task.ex
 │   │       ├── 📦 chiefs_setup/                     # the collection: its installer inserts the picks
 │   │       ├── 📦 ansi/, version_manager/,          # the house's settings: one decision each
 │   │       │      toolchain/, versioning/

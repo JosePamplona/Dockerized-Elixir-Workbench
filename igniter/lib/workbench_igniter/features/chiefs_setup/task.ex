@@ -9,7 +9,7 @@ defmodule Mix.Tasks.Workbench.Install.ChiefsSetup do
   #{@shortdoc}
 
   The collection cartridge: its installer inserts other cartridges — the
-  trivial dep-only group (osmon, psql_extras, credo, mock, exdebug), the
+  trivial dep-only group (dashboard_extras, credo, mock, exdebug), the
   API interface `--interface` chooses (rest or graphql), coveralls,
   exdoc, enhancements and healthcheck — in the order their marks build
   on each other. Each member's own guard makes a re-run a no-op, so on a

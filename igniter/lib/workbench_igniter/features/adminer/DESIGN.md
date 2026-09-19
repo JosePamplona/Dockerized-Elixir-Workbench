@@ -209,7 +209,7 @@ not refuse on Postgres — a reader on Postgres may want the lighter
 one, or both, and what the reader could have is never hidden; the
 boundary is the NEED's *Not for*: going deep into Postgres is
 pgAdmin's. The collection therefore stays Postgres in practice
-(`wb.sh add chiefs_setup` on MySQL stops at psql_extras); that is the
+(`wb.sh add chiefs_setup` on MySQL stops at pgadmin); that is the
 collection's decision, not this box's.
 
 ### 3.3 One plugin file, the project's, fusing two of Adminer's
@@ -240,7 +240,7 @@ not publish.
 ### 3.4 What the file carries and what the compose hands over
 
 The driver and the user are the project's — read off the adapter, as
-pgadmin and psql_extras read it, off `PhxDelta.facts/1` and never off
+pgadmin reads it, off `PhxDelta.facts/1` and never off
 an option. Where the server is (`127.0.0.1:port`) and which database
 to open (`<app>_dev` or `<app>_prod`; on SQLite the file's path, which
 differs between the source mount and the release volume) are the

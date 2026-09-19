@@ -25,6 +25,38 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   no stamp. One link on the head, not one per row: every row points at
   the same page.
 
+- **dashboard_extras: LiveDashboard's two dark pages, one box.** The
+  third box of the shelf's migration (`SCRIPT.md`, the author's
+  selection: dashboard enhancements). osmon and psql_extras were one
+  need split by mechanism — an OTP application, a Hex dependency — and
+  the second was closed to every database but Postgres while
+  LiveDashboard had a library for three. The box lights OS Data
+  (`:os_mon` in `extra_applications`, always) and Ecto Stats by the
+  extras of the database the project is on, read off ecto's `state/1`:
+  `ecto_psql_extras`, `ecto_mysql_extras` or `ecto_sqlite3_extras`.
+  It is the state requirement read the other way: **shaped by the
+  state, not refused for it** — with no database, or on SQL Server
+  (which LiveDashboard has no stats for), it installs OS Data alone and
+  a notice says why, and a second run adds the extras once there is a
+  database (`rerun: :adds`). What it does require is `dashboard`:
+  without it no sentence on the box comes true. The extras lose
+  psql_extras' `only: :dev` — they go where `phx.new` puts the
+  dashboard itself, every environment, so a dashboard taken to
+  production is not dark there for a reason buried in a dependency's
+  options. Two console doors, `os data` and (with ecto) `ecto stats`.
+  What the research found, and the README says: `os_mon` does not only
+  answer, it watches, and on a machine past 80% of disk or memory the
+  app boots with `:alarm_handler` notices in the log; and the slowest
+  queries on Postgres (*Calls*, *Outliers*) need `pg_stat_statements`,
+  a server setting no dependency brings, so the NEED does not promise
+  them. Verified on a real `phx.new` project against Postgres: before,
+  OS Data greyed and Ecto Stats a card asking for a library; after,
+  both pages with data, 31 queries on the repo. MySQL's and SQLite's
+  extras verified as a patch and as a resolution beside LiveDashboard
+  0.8.7, not on a running project. chiefs_setup picks it in place of
+  the two, fourteen picks, and no longer stops there on MySQL
+  (dashboard_extras v0.1.0, chiefs_setup v0.4.0, 2026-09-18).
+
 - **version_manager: the host's pin is a box of its own.** The first
   box of the shelf's migration (`SCRIPT.md`, the author's selection:
   asdf/mise). toolchain held two capsules of knowledge — the
@@ -1969,6 +2001,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Removed
 
+- **The osmon and psql_extras boxes**, merged into dashboard_extras
+  (Added, above). A project that carries osmon's `:os_mon` reads as
+  carrying the new box, whose mark it is; one with psql_extras alone
+  reads as not, and inserting the box adds `:os_mon` and leaves the
+  dependency as the project has it.
 - **The Docker screen's three prune buttons** — the untagged images,
   this workspace's build volumes, what other workspaces left. What each
   removed is said in a note beside its table, with the `./wb.sh prune`

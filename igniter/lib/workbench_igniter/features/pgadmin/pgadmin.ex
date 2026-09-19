@@ -17,7 +17,7 @@ defmodule WorkbenchIgniter.Features.Pgadmin do
 
   It builds on **ecto** (`requires`), and it answers **only on Postgres**
   — pgAdmin administers that server and no other — so on a project whose
-  driver is another one it refuses, as psql_extras does, off the
+  driver is another one it refuses, off the
   project's facts (`PhxDelta.facts/1`) and never off an option.
   """
   use WorkbenchIgniter.Feature

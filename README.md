@@ -176,7 +176,7 @@ Workbench features can be installed on the existing project at any time:
 ./wb.sh add [FEATURE] [OPTIONS]
 ```
 
-`[FEATURE]` is one of: **chiefs_setup**, **ansi**, **version_manager**, **toolchain**, **versioning**, **healthcheck**, **rest**, **graphql**, **coveralls**, **exdoc**, **guidelines**, **enhancements**, **auth0**, **openai**, **credo**, **githooks**, **exmachina**, **mock**, **exdebug**, **psql_extras**, **pgadmin**, **adminer**, **k6**, **monitoring**, **osmon**, **clustering**, **healthcheck2**, **ash**, **mailer**, **gettext**, **ecto**, **esbuild**, **tailwind**, **html**, **dashboard**. `[OPTIONS]` are the flags of the corresponding `mix workbench.install.FEATURE` task.
+`[FEATURE]` is one of: **chiefs_setup**, **ansi**, **version_manager**, **toolchain**, **versioning**, **healthcheck**, **rest**, **graphql**, **coveralls**, **exdoc**, **guidelines**, **enhancements**, **auth0**, **openai**, **credo**, **githooks**, **exmachina**, **mock**, **exdebug**, **dashboard_extras**, **pgadmin**, **adminer**, **k6**, **monitoring**, **clustering**, **healthcheck2**, **ash**, **mailer**, **gettext**, **ecto**, **esbuild**, **tailwind**, **html**, **dashboard**. `[OPTIONS]` are the flags of the corresponding `mix workbench.install.FEATURE` task.
 
 **chiefs_setup** is a *collection*: a cartridge whose installer inserts other cartridges — the workbench's picks (the house's settings, the dep-only quintet, REST or GraphQL as its `--interface` says, coveralls, exdoc, enhancements and healthcheck). Adding it inserts each missing member as its own commit, so `eject` still reverts one cartridge alone; the collection leaves no commit of its own.
 

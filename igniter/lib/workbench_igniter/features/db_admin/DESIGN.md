@@ -633,6 +633,18 @@ image was one patch behind); pgAdmin's sources, not re-read.
   credentials, and keeps an administrator (`cbadmin` / `pass`) for its
   own settings. What is changed in its UI lives in the container and
   goes with it.
+* CloudBeaver's page remembers its tree in the browser, and every
+  workspace serves it from the same origin (`localhost:8978`) under the
+  same connection id (`workbench-<app>`): a tab left open from the
+  project that held the port before asks for nodes the new server does
+  not have — seen 2026-09-19 on a workspace remade from Postgres onto
+  MySQL, *Navigator node
+  `…/database/lorem_ipsum_dev_16389/schema/public_2200/table/users_16729`
+  not found*, a Postgres schema and its OIDs on a MySQL that has no
+  schemas. The server was right (`mysql:mysql8`, connected, its tree
+  Tables/Views/Indexes/Procedures/Triggers/Events); the page was the
+  stale part. Reload it after switching what is behind the port; the
+  container keeps no state of its own to clean.
 * CloudBeaver on SQLite is open: it takes the server's configuration
   file replaced and the container run as the file's owner with the root
   group (§3.4). If a later image gives `disabledDrivers` a variable, it

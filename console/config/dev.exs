@@ -15,6 +15,10 @@ config :console, ConsoleWeb.Endpoint,
   http: [ip: {0, 0, 0, 0}, port: String.to_integer(System.get_env("PORT") || "4000")],
   check_origin: ["//localhost", "//127.0.0.1"],
   code_reloader: true,
+  # The shelf is read in this BEAM off the workbench's package, a path
+  # dependency: reloaded with the console, or a cartridge edited while
+  # the console is up keeps the options it was compiled with.
+  reloadable_apps: [:console, :workbench_igniter],
   debug_errors: true,
   secret_key_base: "wxTY0splQ/Tx263CaVPTwythqPGkzx4CNjpsMrqwml5cth8XFB8xOTNHSmbuWVRz",
   watchers: [

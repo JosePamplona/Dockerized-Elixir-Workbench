@@ -287,17 +287,28 @@ defmodule Console.Bench do
 
   defp broadcast(msg), do: Phoenix.PubSub.broadcast(Console.PubSub, @topic, msg)
 
-  # The features directory and each cartridge's directory, by their
-  # modification times: a cartridge added, removed or rewritten moves one.
+  # The features directory, each cartridge's directory and the files in
+  # it, by their modification times: a cartridge added or removed moves
+  # a directory's, and one edited in place — its manifest, its
+  # changelog — moves only the file's.
   defp features_stamp do
     dir = Console.Papers.features_dir()
 
     case File.ls(dir) do
       {:ok, entries} ->
-        [dir | Enum.map(entries, &Path.join(dir, &1))] |> Enum.map(&mtime/1)
+        boxes = entries |> Enum.sort() |> Enum.map(&Path.join(dir, &1))
+        files = Enum.flat_map(boxes, &files_in/1)
+        Enum.map([dir | boxes ++ files], &{&1, mtime(&1)})
 
       _ ->
         nil
+    end
+  end
+
+  defp files_in(box) do
+    case File.ls(box) do
+      {:ok, names} -> names |> Enum.sort() |> Enum.map(&Path.join(box, &1))
+      _ -> []
     end
   end
 

@@ -1578,6 +1578,20 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   In the shared renderer, so a cartridge's papers and the workbench's
   own README read the same.
 
+- **A cartridge edited while the console is up shows its new options.**
+  The shelf is read in the console's own BEAM, off the workbench's
+  package as a path dependency, and the re-reading a changed features
+  directory sets off asked the same loaded modules again: versioning's
+  box went on offering `--version` two hours after it had become
+  `--init-version`, beside a README — read off the disk — that said the
+  new name. Two gaps: Phoenix's code reloader reloaded `:console` alone
+  (`reloadable_apps` now names `:workbench_igniter` too, in dev), and
+  the stamp watched the directories' modification times, which an edit
+  in place of a manifest does not move (it takes the files in each box
+  now). Checked on a console left running: an option added to a
+  manifest appeared on the next page, and went when it was taken out
+  (2026-09-18).
+
 - **The Record's `--no-live` row points at html.** It named the
   `live` cartridge, gone into html as `--live` on 2026-09-18, so the
   row wore an unknown box's name and never read as inserted. The

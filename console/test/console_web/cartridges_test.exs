@@ -31,6 +31,33 @@ defmodule ConsoleWeb.CartridgesTest do
     end
   end
 
+  describe "satisfies?/3: a requirement's state, off the status" do
+    @on_mysql %{
+      "project" => %{
+        "cartridges" => [
+          %{"name" => "ecto", "installed" => true, "state" => %{"database" => "mysql"}}
+        ]
+      }
+    }
+
+    test "a value is met by that value; a list, by any one of its values" do
+      assert Cartridges.satisfies?(@on_mysql, "ecto", %{})
+      assert Cartridges.satisfies?(@on_mysql, "ecto", %{"database" => "mysql"})
+      refute Cartridges.satisfies?(@on_mysql, "ecto", %{"database" => "postgres"})
+      assert Cartridges.satisfies?(@on_mysql, "ecto", %{"database" => ~w(postgres mysql mssql)})
+      refute Cartridges.satisfies?(@on_mysql, "ecto", %{"database" => ~w(postgres sqlite3)})
+      refute Cartridges.satisfies?(@status, "ecto", %{"database" => ~w(postgres mysql)})
+    end
+
+    test "and said: the values, the last after an or" do
+      assert Cartridges.requirement("ecto", %{"database" => "postgres"}) ==
+               "ecto with database postgres"
+
+      assert Cartridges.requirement("ecto", %{"database" => ~w(postgres mysql mssql)}) ==
+               "ecto with database postgres, mysql or mssql"
+    end
+  end
+
   test "container_reading/1: exited with 0 is an absence, exited otherwise says its code" do
     assert Cartridges.container_reading(%{"State" => "running", "Health" => "healthy"}) ==
              {"healthy", "good"}

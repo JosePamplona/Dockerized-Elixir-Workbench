@@ -306,13 +306,7 @@ defmodule WorkbenchIgniter.Features.Ash do
         end
 
       {missing, igniter} ->
-        Enum.reduce(missing, igniter, fn {key, value, shortfalls}, igniter ->
-          Igniter.add_issue(
-            igniter,
-            "--#{key |> to_string() |> String.replace("_", "-")} #{value} builds on " <>
-              WorkbenchIgniter.Feature.lacking(shortfalls)
-          )
-        end)
+        WorkbenchIgniter.Feature.refuse_values(igniter, missing)
     end
   end
 

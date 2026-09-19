@@ -289,6 +289,9 @@ line without naming a medium; the era renders it:
 * **Kindling** — the mechanism lights what was already built in and
   waiting dark, and brings nothing of its own into the room. Subtitles
   switch on (`LIGHTS ON`). Added for dashboard_extras.
+* **Lucid** — the mechanism lets you see what you had been handling
+  blind, laid out as it is, and leaves the hands to you. Subtitles
+  uncover (`SEE WHAT YOU KEEP`). Added for db_admin.
 
 Landmarks, not options — each one was a cartridge's need read as a
 stance, which is where a register comes from now (`NEED.md`). Add one when a cartridge wants a stance

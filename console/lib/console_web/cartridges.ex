@@ -26,12 +26,16 @@ defmodule ConsoleWeb.Cartridges do
   def satisfies?(status, name, condition) do
     case carried(status, name) do
       %{"installed" => true} = c ->
-        Enum.all?(condition, fn {key, value} -> get_in(c, ["state", key]) == value end)
+        Enum.all?(condition, fn {key, value} -> met?(get_in(c, ["state", key]), value) end)
 
       _ ->
         false
     end
   end
+
+  # A list asks for any one of its values (`database` postgres, mysql or mssql).
+  defp met?(found, expected) when is_list(expected), do: found in expected
+  defp met?(found, expected), do: found == expected
 
   @doc "A requirement said, with its state: `ecto with database postgres`."
   def requirement(name, condition) when map_size(condition) == 0, do: name
@@ -42,6 +46,11 @@ defmodule ConsoleWeb.Cartridges do
 
   defp said({key, true}), do: key
   defp said({key, false}), do: "no #{key}"
+  defp said({key, [value]}), do: "#{key} #{value}"
+
+  defp said({key, values}) when is_list(values),
+    do: "#{key} #{values |> Enum.drop(-1) |> Enum.join(", ")} or #{List.last(values)}"
+
   defp said({key, value}), do: "#{key} #{value}"
 
   @doc "The status's entry for a cartridge, installed or not."

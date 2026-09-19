@@ -25,10 +25,10 @@ defmodule WorkbenchIgniter.CatalogTest do
   @cartridges ~w(chiefs_setup ansi version_manager toolchain versioning
                  dashboard_extras credo mock exdebug rest graphql
                  coveralls exdoc guidelines enhancements auth0 openai healthcheck stripe
-                 githooks exmachina clustering healthcheck2 ash specdd pgadmin adminer k6 monitoring
+                 githooks exmachina clustering healthcheck2 ash specdd db_admin k6 monitoring
                  mailer gettext ecto esbuild tailwind html dashboard)
   # The chiefs_setup recipe with its default choices, in insertion order.
-  @picks ~w(ansi version_manager toolchain versioning dashboard_extras pgadmin credo mock
+  @picks ~w(ansi version_manager toolchain versioning dashboard_extras db_admin credo mock
             exdebug rest coveralls exdoc enhancements healthcheck)
   # Base cartridges a default phx.new project already carries.
   @in_by_default ~w(mailer gettext ecto esbuild tailwind html dashboard)
@@ -332,6 +332,10 @@ defmodule WorkbenchIgniter.CatalogTest do
     @runs %{
       "chiefs_setup" => [{~w(--interface graphql), %{interface: "graphql"}}],
       "version_manager" => [{~w(--manager mise), %{manager: "mise"}}],
+      # On Postgres the default is pgadmin; the answer is in the shelf's order.
+      "db_admin" => [
+        {~w(--admin cloudbeaver,adminer), %{admin: ~w(adminer cloudbeaver)}}
+      ],
       "versioning" => [
         {~w(--init-version 1.2.3 --mix-task --readme-badge),
          %{init_version: "1.2.3", mix_task: true, readme_badge: true}}

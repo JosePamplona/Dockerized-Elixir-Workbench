@@ -1,0 +1,22 @@
+{
+  "folders": {},
+  "connections": {
+    "workbench-<%= @app_name %>": {
+      "provider": "<%= @provider %>",
+      "driver": "<%= @driver %>",
+      "name": "<%= @app_name %>",
+      "save-password": true,
+      "configuration": {
+        "host": "${WORKBENCH_HOST}",
+        "port": "${WORKBENCH_PORT}",
+        "database": "${WORKBENCH_DATABASE}",
+        "configurationType": "MANUAL",
+        "auth-model": "native",
+        "auth-properties": {
+          "user": "<%= @username %>",
+          "password": "<%= @password %>"
+        }
+      }
+    }
+  }
+}

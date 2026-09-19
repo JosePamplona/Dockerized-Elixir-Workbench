@@ -7,6 +7,16 @@ what the cartridge *installs* — here, the recipe: a changed pick or
 argv is a minor, a removed pick (a project counting on it stops getting
 it) is a major.
 
+## v0.5.0 - (2026-09-18)
+
+### Changed
+
+- `pgadmin` leaves the recipe for `db_admin`, the box it merged into,
+  picked without `--admin`: the admin of the database the project is on
+  — pgAdmin on Postgres, as before; phpMyAdmin on MySQL; Adminer on SQL
+  Server and SQLite — so off Postgres the collection no longer stops at
+  this pick. Fourteen picks still.
+
 ## v0.4.0 - (2026-09-18)
 
 ### Changed

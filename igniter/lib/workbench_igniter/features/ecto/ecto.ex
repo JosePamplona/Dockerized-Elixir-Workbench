@@ -98,7 +98,7 @@ defmodule WorkbenchIgniter.Features.Ecto do
   end
 
   # The server the adapter needs, in the workspace: one of the three, by
-  # engine. pgAdmin is a cartridge of its own (pgadmin), no longer
+  # engine. pgAdmin is a cartridge's (db_admin), no longer
   # riding with the database. SQLite runs no server, but a release still
   # needs a place for its file that outlives the container — a data
   # volume — so it is a service the project asks the workspace for too.

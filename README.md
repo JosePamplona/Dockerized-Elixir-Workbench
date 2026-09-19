@@ -166,7 +166,7 @@ The **monitoring** cartridge puts [PromEx](https://hexdocs.pm/prom_ex) in the ap
 
 ### Services that are cartridges
 
-Some cartridges bring a container rather than Elixir code: **pgadmin** (pgAdmin over the project's Postgres, its `pgadmin/servers.json` in the workspace; requires ecto on postgres), **adminer** (Adminer over the project's database on any adapter, its `adminer/login.php` in the workspace; requires ecto), **k6**, and **monitoring** (Prometheus and Grafana, beside the PromEx it installs). Each declares the compose services it needs, and `./wb.sh bake` writes them in — `add` says so when the compose is behind — while the prod and scaled files pick them up on their next `up`. A vanilla `new` brings the database alone; `chiefs_setup` inserts pgadmin among its picks.
+Some cartridges bring a container rather than Elixir code: **db_admin** (a database admin in the browser, open on the project's database: `--admin pgadmin`, `phpmyadmin`, `adminer` or `cloudbeaver`, one or several, each with the file it opens with in the workspace; without `--admin`, the one for the project's database; requires ecto), **k6**, and **monitoring** (Prometheus and Grafana, beside the PromEx it installs). Each declares the compose services it needs, and `./wb.sh bake` writes them in — `add` says so when the compose is behind — while the prod and scaled files pick them up on their next `up`. A vanilla `new` brings the database alone; `chiefs_setup` inserts db_admin among its picks.
 
 ### Add features
 
@@ -176,7 +176,7 @@ Workbench features can be installed on the existing project at any time:
 ./wb.sh add [FEATURE] [OPTIONS]
 ```
 
-`[FEATURE]` is one of: **chiefs_setup**, **ansi**, **version_manager**, **toolchain**, **versioning**, **healthcheck**, **rest**, **graphql**, **coveralls**, **exdoc**, **guidelines**, **enhancements**, **auth0**, **openai**, **credo**, **githooks**, **exmachina**, **mock**, **exdebug**, **dashboard_extras**, **pgadmin**, **adminer**, **k6**, **monitoring**, **clustering**, **healthcheck2**, **ash**, **mailer**, **gettext**, **ecto**, **esbuild**, **tailwind**, **html**, **dashboard**. `[OPTIONS]` are the flags of the corresponding `mix workbench.install.FEATURE` task.
+`[FEATURE]` is one of: **chiefs_setup**, **ansi**, **version_manager**, **toolchain**, **versioning**, **healthcheck**, **rest**, **graphql**, **coveralls**, **exdoc**, **guidelines**, **enhancements**, **auth0**, **openai**, **credo**, **githooks**, **exmachina**, **mock**, **exdebug**, **dashboard_extras**, **db_admin**, **k6**, **monitoring**, **clustering**, **healthcheck2**, **ash**, **mailer**, **gettext**, **ecto**, **esbuild**, **tailwind**, **html**, **dashboard**. `[OPTIONS]` are the flags of the corresponding `mix workbench.install.FEATURE` task.
 
 **chiefs_setup** is a *collection*: a cartridge whose installer inserts other cartridges — the workbench's picks (the house's settings, the dep-only quintet, REST or GraphQL as its `--interface` says, coveralls, exdoc, enhancements and healthcheck). Adding it inserts each missing member as its own commit, so `eject` still reverts one cartridge alone; the collection leaves no commit of its own.
 

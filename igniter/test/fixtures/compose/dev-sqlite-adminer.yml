@@ -35,7 +35,7 @@ services:
     ports:
       # Application port (host:container).
       - 4000:4000
-      # Adminer port, with the adminer cartridge in.
+      # Adminer port, with db_admin's adminer in.
       - 8080:8080
 
   app:
@@ -86,7 +86,7 @@ services:
       # First compile & boot may take a while: not counted as failures.
       start_period: 120s
 
-  # Adminer, with the adminer cartridge in: one page on the workspace's
+  # Adminer, with db_admin's adminer in: one page on the workspace's
   # database, whatever the adapter, on its own port beside the app's.
   # The login it opens with is the project's own file (adminer/login.php,
   # the directory mounted as the image's plugins-enabled/); where the

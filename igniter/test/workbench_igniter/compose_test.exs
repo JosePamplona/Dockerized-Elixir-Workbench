@@ -12,7 +12,8 @@ defmodule WorkbenchIgniter.ComposeTest do
 
   # The pod deployments, as `wb.sh bake` and `up --deploy prod` ask for them.
   @pod ~w(--app-name lorem_ipsum --uid 1000 --gid 1000 --app-port 4000 --port pgadmin=5050
-          --port adminer=8080 --port grafana=3000 --version postgres=latest
+          --port adminer=8080 --port phpmyadmin=8081 --port cloudbeaver=8978
+          --port grafana=3000 --version postgres=latest
           --version pgadmin=latest --version adminer=6 --version nginx=alpine)
   @dev ~w(--deploy dev --image lorem-ipsum:local --dockerfile Dockerfile.local) ++ @pod
   @prod ~w(--deploy prod --image lorem-ipsum:0.1.0-prod --dockerfile Dockerfile) ++ @pod
@@ -77,7 +78,7 @@ defmodule WorkbenchIgniter.ComposeTest do
      @scaled ++ ~w(--services postgres,pgadmin,k6,prometheus,grafana --clustering) ++ @balancer},
     {"scaled-nodb-nobalancer-nocluster-4-monitoring.yml",
      @scaled ++ ~w(--services prometheus,grafana --no-clustering) ++ @no_balancer},
-    # The adminer cartridge: on every adapter, beside pgAdmin or alone;
+    # db_admin's admins. Adminer: on every adapter, beside pgAdmin or alone;
     # on SQLite it mounts the file and runs as its owner.
     {"dev-db-adminer.yml", @dev ++ ~w(--services postgres,pgadmin,adminer)},
     {"prod-postgres-adminer.yml", @prod ++ ~w(--services postgres,adminer)},
@@ -86,7 +87,13 @@ defmodule WorkbenchIgniter.ComposeTest do
     {"dev-sqlite-adminer.yml", @dev ++ ~w(--services sqlite,adminer)},
     {"prod-sqlite-adminer.yml", @prod ++ ~w(--services sqlite,adminer)},
     {"scaled-db-adminer-balancer-cluster-4.yml",
-     @scaled ++ ~w(--services postgres,adminer --clustering) ++ @balancer}
+     @scaled ++ ~w(--services postgres,adminer --clustering) ++ @balancer},
+    # phpMyAdmin on MySQL; CloudBeaver beside pgAdmin, and beside Adminer
+    # on SQL Server in a release, where the database to open is prod's.
+    {"dev-mysql-phpmyadmin.yml", @dev ++ ~w(--services mysql,phpmyadmin --version mysql=8)},
+    {"dev-db-cloudbeaver.yml", @dev ++ ~w(--services postgres,pgadmin,cloudbeaver)},
+    {"prod-mssql-adminer-cloudbeaver.yml",
+     @prod ++ ~w(--services mssql,adminer,cloudbeaver --version mssql=2022-latest)}
   ]
 
   describe "render/1 writes the fixture" do
@@ -112,7 +119,12 @@ defmodule WorkbenchIgniter.ComposeTest do
              } = brought(Features.Ecto)
 
       assert %{"pgadmin" => %{deploys: ~w(dev prod), listens: 5050, published: [5050]}} =
-               brought(Features.Pgadmin)
+               brought(Features.DbAdmin)
+
+      assert %{
+               "phpmyadmin" => %{deploys: ~w(dev prod), listens: 8081, published: [8081]},
+               "cloudbeaver" => %{listens: 8978, published: [8978]}
+             } = brought(Features.DbAdmin, ~w(mysql phpmyadmin cloudbeaver))
 
       assert %{
                "prometheus" => %{listens: 9090, published: []},
@@ -145,7 +157,10 @@ defmodule WorkbenchIgniter.ComposeTest do
       assert %{role: "job", image: nil, shells: []} = brought(Features.Ecto)["migrate"]
 
       assert %{role: "devtools", image: "dpage/pgadmin4", shells: [%{label: "sh"}]} =
-               brought(Features.Pgadmin)["pgadmin"]
+               brought(Features.DbAdmin)["pgadmin"]
+
+      assert %{role: "devtools", image: "dbeaver/cloudbeaver", shells: [%{label: "bash"}]} =
+               brought(Features.DbAdmin, ~w(postgres cloudbeaver))["cloudbeaver"]
 
       # k6 runs to completion: there is no container to enter.
       assert %{role: "devtools", image: "grafana/k6", shells: []} = brought(Features.K6)["k6"]
@@ -167,15 +182,18 @@ defmodule WorkbenchIgniter.ComposeTest do
 
     test "images/0: the house's, off the skeletons and every cartridge, whichever engine" do
       assert Compose.images() ==
-               ~w(adminer dpage/pgadmin4 grafana/grafana grafana/k6 mcr.microsoft.com/mssql/server
-                  mysql nginx postgres prom/prometheus registry.k8s.io/pause)
+               ~w(adminer dbeaver/cloudbeaver dpage/pgadmin4 grafana/grafana grafana/k6
+                  mcr.microsoft.com/mssql/server mysql nginx phpmyadmin postgres prom/prometheus
+                  registry.k8s.io/pause)
     end
 
     test "the catalog carries it per cartridge, off what it asks whatever its state" do
       entry = &Features.entry(&1).compose
-      assert [%{service: "adminer", listens: 8080, published: [8080]}] = entry.(Features.Adminer)
-      # ecto's database hangs on the engine the project has: the status says it.
+      assert [%{service: "k6"}] = entry.(Features.K6)
+      # ecto's database hangs on the engine the project has, and
+      # db_admin's containers on the admins it carries: the status says them.
       assert entry.(Features.Ecto) == []
+      assert entry.(Features.DbAdmin) == []
     end
   end
 
@@ -323,11 +341,10 @@ defmodule WorkbenchIgniter.ComposeTest do
       assert {["postgres"], _} = Compose.services(phx_test_project())
     end
 
-    test "with pgadmin, adminer, k6 and monitoring inserted, every service in catalog order" do
+    test "with db_admin's pgadmin and adminer, k6 and monitoring inserted, every service in catalog order" do
       igniter =
         phx_test_project()
-        |> Igniter.compose_task("workbench.install.pgadmin", [])
-        |> Igniter.compose_task("workbench.install.adminer", [])
+        |> Igniter.compose_task("workbench.install.db_admin", ~w(--admin pgadmin,adminer))
         |> Igniter.compose_task("workbench.install.k6", [])
         |> Igniter.compose_task("workbench.install.monitoring", [])
         |> apply_igniter!()

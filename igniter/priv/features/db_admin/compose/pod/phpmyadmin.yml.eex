@@ -1,0 +1,19 @@
+  # phpMyAdmin, with db_admin's phpmyadmin in: MySQL's own admin, on its
+  # own port beside the app's, already signed in. Who signs in is the
+  # project's own file (phpmyadmin/config.user.inc.php); where the
+  # server is belongs to this deployment, so it is said here.
+  phpmyadmin:
+    image: phpmyadmin:<%= @version.("phpmyadmin", "5") %>
+    network_mode: "service:pod"
+    environment:
+      # 127.0.0.1 and never localhost: the MySQL client reads localhost
+      # as its unix socket, whatever port comes after it.
+      PMA_HOST: 127.0.0.1
+      PMA_PORT: <%= @db_port %>
+      # The image's Apache listens on 80; the pod is one network
+      # namespace, so it gets a port of its own.
+      APACHE_PORT: <%= @listens %>
+    depends_on:
+      - database
+    volumes:
+      - ./phpmyadmin/config.user.inc.php:/etc/phpmyadmin/config.user.inc.php:ro

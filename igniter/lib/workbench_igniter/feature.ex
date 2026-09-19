@@ -138,8 +138,9 @@ defmodule WorkbenchIgniter.Feature do
   installs builds on it: cartridges by name, as the catalog names them
   (live on html: `phx.new` itself generates live only with html), and,
   when the name is not enough, the **state** the cartridge has to be
-  in — `{"ecto", database: "postgres"}` for pgadmin, which administers
-  Postgres and nothing else. The state is asked of the required
+  in — `{"ecto", database: "postgres"}` for what administers Postgres
+  and nothing else; a list of values asks for any one of them
+  (`database: ["postgres", "mysql", "mssql"]`). The state is asked of the required
   cartridge's own `state/1`, which reads the project as it is, born
   with it or inserted, so the requirement holds on a project that
   changed its mind since and never depends on what an insert was
@@ -506,8 +507,6 @@ defmodule WorkbenchIgniter.Feature do
   cartridge builds on, what is not in and how to insert it, what is in
   and not as asked. Every cartridge's refusal reads the same way.
 
-      pgadmin builds on ecto with database postgres, and this project's
-      database is mysql.
       live builds on html, not in the project yet. Insert that first:
       ./wb.sh add html
   """
@@ -515,7 +514,25 @@ defmodule WorkbenchIgniter.Feature do
   def refuse(igniter, feature, shortfalls),
     do: Igniter.add_issue(igniter, "#{feature.name()} builds on " <> lacking(shortfalls))
 
-  @doc "A requirement or a shortfall, said: `ecto`, `ecto with database postgres`, `html with live`."
+  @doc """
+  The same refusal for chosen values (`missing_option_requirements/3`),
+  one issue each, named by the switch:
+
+      --admin pgadmin builds on ecto with database postgres, and this
+      project's database is mysql.
+  """
+  @spec refuse_values(Igniter.t(), [{atom(), String.t(), [shortfall()]}]) :: Igniter.t()
+  def refuse_values(igniter, missing) do
+    Enum.reduce(missing, igniter, fn {key, value, shortfalls}, igniter ->
+      Igniter.add_issue(igniter, "--#{flag(key)} #{value} builds on " <> lacking(shortfalls))
+    end)
+  end
+
+  @doc """
+  A requirement or a shortfall, said: `ecto`, `ecto with database
+  postgres`, `html with live`, `ecto with database postgres, mysql or
+  mssql`.
+  """
   @spec describe(requirement() | shortfall()) :: String.t()
   def describe(name) when is_binary(name), do: name
   def describe({name, []}), do: name
@@ -538,10 +555,18 @@ defmodule WorkbenchIgniter.Feature do
 
   defp said({key, true}), do: to_string(key)
   defp said({key, false}), do: "no #{key}"
+  defp said({key, values}) when is_list(values), do: "#{key} #{any_of(values)}"
   defp said({key, value}), do: "#{key} #{value}"
+
+  defp any_of([value]), do: value
+
+  defp any_of(values),
+    do: "#{values |> Enum.drop(-1) |> Enum.join(", ")} or #{List.last(values)}"
 
   defp switch({key, true}), do: "--#{flag(key)}"
   defp switch({key, false}), do: "--no-#{flag(key)}"
+  # Any one of a list, as a usage line says it.
+  defp switch({key, values}) when is_list(values), do: "--#{flag(key)} #{Enum.join(values, "|")}"
   defp switch({key, value}), do: "--#{flag(key)} #{value}"
   defp flag(key), do: key |> to_string() |> String.replace("_", "-")
 
@@ -624,11 +649,15 @@ defmodule WorkbenchIgniter.Feature do
 
     short =
       for {key, expected} <- state,
-          Map.get(has, key) != expected,
+          not met?(Map.get(has, key), expected),
           do: {:short, name, state, key, Map.get(has, key)}
 
     {missing ++ short, igniter}
   end
+
+  # A list asks for any one of its values.
+  defp met?(found, expected) when is_list(expected), do: found in expected
+  defp met?(found, expected), do: found == expected
 
   defp normalize({name, state}) when is_binary(name) and is_list(state), do: {name, state}
   defp normalize(name) when is_binary(name), do: {name, []}

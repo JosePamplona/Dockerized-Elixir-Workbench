@@ -12,7 +12,7 @@ in, which the marks build on):
 | # | Pick | Argv it gets |
 | :-: | :-- | :-- |
 | 1–4 | ansi, version_manager, toolchain, versioning | — |
-| 5–9 | dashboard_extras, pgadmin, credo, mock, exdebug | — |
+| 5–9 | dashboard_extras, db_admin, credo, mock, exdebug | — |
 | 10 | rest `--health` **or** graphql | `--interface` decides |
 | 11 | coveralls | `--exdoc` |
 | 12 | exdoc | `--coveralls` |

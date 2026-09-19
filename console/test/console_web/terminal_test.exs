@@ -31,7 +31,7 @@ defmodule ConsoleWeb.TerminalTest do
             ]
           },
           %{
-            "name" => "pgadmin",
+            "name" => "db_admin",
             "compose" => [
               %{
                 "service" => "pgadmin",

@@ -436,6 +436,18 @@ BADGE_POINT = 0.026
 BADGE_FONT = "Liberation-Sans-Narrow-Bold"
 INK = "#F2ECF7"
 LOCKUP_FIT = "0.80,0.16"
+# `--mark NAME=FILE`: the tools a box installs, by their own marks — the
+# projects' files, never generated — each on a pale square with rounded
+# corners and its name under it, in a row centred along the top of the
+# window, where the hero keeps a calm band for them (db_admin's four
+# admins). Sizes are fractions of the window's width; the top, of its
+# height.
+MARK_SIDE = 0.115
+MARK_GAP = 0.035
+MARK_TOP = 0.06
+MARK_FIELD = "#F6F3EE"
+MARK_RULE = "#BEC4D0"
+MARK_POINT = 0.023
 
 
 def margins(spec):
@@ -468,8 +480,49 @@ def place_at_corner(base, layer, corner, inset_x, inset_y):
     paste(base, layer, (x, y))
 
 
+def marks_strip(marks, window_width):
+    """A row of marks, each fitted to a rounded square with its name
+    under it: `marks` is [(name, path)]. Returns the strip, shadows
+    included, on a clear field."""
+    side, gap = px(window_width, MARK_SIDE), px(window_width, MARK_GAP)
+    fnt = font(BADGE_FONT, px(window_width, MARK_POINT))
+    label_gap = round(side * 0.08)
+    x0, y0, x1, y1 = fnt.getbbox("Ag")
+    drop = max(2, round(side / 40))
+    w = len(marks) * side + (len(marks) - 1) * gap + drop * 2
+    h = side + label_gap + (y1 - y0) + drop * 3
+    strip = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    square = Image.new("RGBA", (side, side), (0, 0, 0, 0))
+    ImageDraw.Draw(square).rounded_rectangle((0, 0, side - 1, side - 1), radius=side // 5,
+                                             fill=rgba(MARK_FIELD), outline=rgba(MARK_RULE),
+                                             width=max(2, side // 40))
+    shadow = Image.new("RGBA", square.size, (0, 0, 0, 0))
+    shadow.putalpha(square.split()[3].point(lambda v: int(v * 0.6)))
+    shadow = shadow.filter(ImageFilter.GaussianBlur(drop * 2))
+    d = ImageDraw.Draw(strip)
+    for i, (name, path) in enumerate(marks):
+        if not os.path.isfile(path):
+            die(f"No mark at {path}")
+        x = i * (side + gap)
+        strip.alpha_composite(shadow, (x + drop, drop * 2))
+        strip.alpha_composite(square, (x, 0))
+        # The mark fitted by its trimmed outline, wider than tall: a
+        # mark with a word beside its symbol (Adminer's `<?`) keeps
+        # the height of the rest.
+        mark = Image.open(path).convert("RGBA")
+        mark = mark.crop(mark.getbbox() or (0, 0, mark.width, mark.height))
+        mark.thumbnail((round(side * 0.80), round(side * 0.66)), Image.LANCZOS)
+        strip.alpha_composite(mark, (x + (side - mark.width) // 2, (side - mark.height) // 2))
+        tw = fnt.getlength(name)
+        ty = side + label_gap - y0
+        d.text((x + (side - tw) / 2 + drop, ty + drop), name, font=fnt, fill=(0, 0, 0, 200))
+        d.text((x + (side - tw) / 2, ty), name, font=fnt, fill=rgba(INK))
+    return strip
+
+
 def stamp(art, output, face="cover", corner="br", size=SEAL_SIZE, placement="straddle",
-          margin=SEAL_MARGIN, badge="", badge_corner="", lockup="", lockup_fit=LOCKUP_FIT, quiet=False):
+          margin=SEAL_MARGIN, badge="", badge_corner="", marks=(), lockup="", lockup_fit=LOCKUP_FIT,
+          quiet=False):
     """Overlay, seal, lockup and badge onto `art`, written to `output`.
 
     The overlay and the seal are the two elements the generator must
@@ -551,6 +604,16 @@ def stamp(art, output, face="cover", corner="br", size=SEAL_SIZE, placement="str
         paste(image, lk, (l_centre_x - lk.width / 2, image.height - lk.height - l_inset_y))
         locking = f" lockup {lockup_width}px wide, bottom {l_inset_y}px up,"
 
+    # The marks, a row centred on the window along its top.
+    marking = ""
+    if marks:
+        ms = marks_strip(marks, window_width)
+        w_top = px(f_top, scale)
+        w_height = image.height - w_top - px(f_bottom, scale)
+        m_centre_x = (image.width + px(f_left, scale) - px(f_right, scale)) / 2
+        paste(image, ms, (m_centre_x - ms.width / 2, w_top + w_height * MARK_TOP))
+        marking = f" {len(marks)} marks along the top,"
+
     # The badge, in the corner asked for, or the bottom corner the seal left free.
     badging = ""
     if badge:
@@ -573,14 +636,23 @@ def stamp(art, output, face="cover", corner="br", size=SEAL_SIZE, placement="str
     image.convert("RGB").save(output, quality=QUALITY)
     if not quiet:
         print(f"Stamped {B}{os.path.basename(output)}{R}: {fitting} seal {seal_width}px wide "
-              f"({size} of the {window_width}px window), {placing}, corner {corner},{locking}{badging}")
+              f"({size} of the {window_width}px window), {placing}, corner {corner},{locking}{marking}{badging}")
+
+
+def mark_arg(feature, value):
+    """`NAME=FILE`, the file relative to the feature's directory."""
+    name, sep, path = value.partition("=")
+    if not sep or not name or not path:
+        die(f"--mark takes NAME=FILE, got '{value}'")
+    return name, os.path.join(COVERS_DIR, feature, path)
 
 
 def cmd_stamp(args):
     art = os.path.join(COVERS_DIR, args.feature, "art", f"{args.face}.jpg")
     output = args.output or os.path.join(COVERS_DIR, args.feature, "sealed", f"{args.face}.jpg")
     stamp(art, output, face=args.face, corner=args.corner, size=args.size, placement=args.placement,
-          margin=args.margin, badge=args.badge, badge_corner=args.badge_corner, lockup=args.lockup,
+          margin=args.margin, badge=args.badge, badge_corner=args.badge_corner,
+          marks=[mark_arg(args.feature, m) for m in args.mark], lockup=args.lockup,
           lockup_fit=args.lockup_fit)
 
 
@@ -901,6 +973,7 @@ def main():
     p.add_argument("-m", "--margin", default=SEAL_MARGIN, help=f"inset from the window's edges: T,R,B,L, X,Y or F, in fractions of the window's width (default: {SEAL_MARGIN})")
     p.add_argument("-b", "--badge", default="", help="typeset the unit badge")
     p.add_argument("--badge-corner", default="", help="bl | br | tl | tr (default: bottom left, or bottom right if the seal is there)")
+    p.add_argument("--mark", action="append", default=[], metavar="NAME=FILE", help="a tool's own mark, FILE relative to the feature's directory, on a rounded square with NAME under it; repeat it, in order, for a row centred along the top of the window")
     p.add_argument("-l", "--lockup", default="", help="composite this title lockup PNG, centred on the window's width")
     p.add_argument("--lockup-fit", default=LOCKUP_FIT, help=f"its width, and the inset of its bottom edge from the window's bottom, as fractions of the window's width (default: {LOCKUP_FIT})")
     p.add_argument("-o", "--output", default="", help="write here instead of FEATURE/sealed/FACE.jpg, for a trial run")

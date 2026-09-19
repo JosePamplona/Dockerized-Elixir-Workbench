@@ -1,0 +1,4 @@
+  # The servers pgAdmin opens with: db_admin's file, the
+  # project's own (pgadmin/servers.json), not a copy kept in here.
+  pgadmin_servers:
+    file: ./pgadmin/servers.json

@@ -1,0 +1,14 @@
+<?php
+// The login phpMyAdmin opens with: the workspace's MySQL, signed in.
+// Written by the workbench's db_admin cartridge; the phpMyAdmin
+// container includes it as /etc/phpmyadmin/config.user.inc.php, after
+// its own config.inc.php has made the server off the environment —
+// where the database is (PMA_HOST, PMA_PORT) is the deployment's, so
+// the compose says it. Who signs in is the project's, off its Ecto
+// adapter: phx.new's dev credentials for MySQL, root with no password.
+// `$i` is the image's: the server it has just configured. The image
+// sets AllowNoPassword for it already.
+$cfg['Servers'][$i]['auth_type'] = 'config';
+$cfg['Servers'][$i]['user'] = '<%= @username %>';
+$cfg['Servers'][$i]['password'] = '<%= @password %>';
+$cfg['Servers'][$i]['verbose'] = '<%= @app_name %>';

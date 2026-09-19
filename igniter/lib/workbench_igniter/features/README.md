@@ -127,25 +127,27 @@ release templates with the distributed-node exports DNSCluster needs,
 plus `DNS_CLUSTER_QUERY` in the environment files. Installed by hand
 with `wb.sh add clustering`.
 
-[pgadmin](pgadmin/), [adminer](adminer/), [k6](k6/) and
+[db_admin](db_admin/), [k6](k6/) and
 [monitoring](monitoring/) bring the workspace a **service**: a container the compose carries because the
 project asked for it. A cartridge says so with `services/1` — the names
 `mix workbench.compose` renders (`postgres`, `mysql`, `mssql` or
-`sqlite`, declared by ecto off its adapter; `pgadmin`; `adminer`; `k6`;
-`prometheus` and `grafana`) — and what the installer writes is the file
-the service opens with: pgAdmin's `pgadmin/servers.json`, Adminer's
-`adminer/login.php`, k6's `k6/smoke.js`, Prometheus's
-`monitoring/prometheus.yml` and Grafana's
-`monitoring/grafana/datasource.yml`. For the first three the file is
+`sqlite`, declared by ecto off its adapter; `pgadmin`, `phpmyadmin`,
+`adminer` or `cloudbeaver`, by db_admin off the admins the project
+carries; `k6`; `prometheus` and `grafana`) — and what the installer writes is the file
+the service opens with: pgAdmin's `pgadmin/servers.json`, phpMyAdmin's
+`phpmyadmin/config.user.inc.php`, Adminer's `adminer/login.php`,
+CloudBeaver's `cloudbeaver/data-sources.json`, k6's `k6/smoke.js`,
+Prometheus's `monitoring/prometheus.yml` and Grafana's
+`monitoring/grafana/datasource.yml`. For db_admin and k6 the file is
 the mark too; monitoring writes Elixir as well — PromEx, whose module is
 its mark — so that what the containers read has something to read.
 What is the topology's (where the app is, where Prometheus is) the
 compose hands over, so the files serve every deployment. The compose is
 baked from what the project carries (`./wb.sh bake` after the insert),
-never the other way round; see `scripts/PLAN.md`. pgadmin is a
-chiefs_setup pick and refuses off Postgres; adminer is its à-la-carte counterpart on every adapter — two
-boxes for one need, as healthcheck2 is beside healthcheck — and k6 and
-monitoring are inserted by hand.
+never the other way round; see `scripts/PLAN.md`. db_admin is a
+chiefs_setup pick, bare: the admin of the database the project is on.
+Each of its admins says which databases it serves, as a requirement on
+the option's value. k6 and monitoring are inserted by hand.
 
 [healthcheck2](healthcheck2/) is the vanilla counterpart of
 `healthcheck`: liveness and readiness probes as the first plug of the
@@ -194,24 +196,26 @@ six refer to it. A cartridge that builds on another says so with `requires/0`
 (dashboard needs nothing; ash's `--auth password` needs html with
 LiveView), and when the
 name is not enough it names the **state** the other has to be in —
-`{"ecto", database: "postgres"}` for pgadmin, which
+`{"ecto", database: "postgres"}` for db_admin's pgAdmin, which
 serves Postgres and nothing else, `{"html", live: true}` for what needs
-LiveView. The state is asked of the required
+LiveView; a list of values asks for any one of them (`database:
+["postgres", "mysql", "mssql"]`, CloudBeaver's). The state is asked of the required
 cartridge's own `state/1`, off the project as it is, never off what an
 insert was asked; one resolver reads both (`missing_requirements/2`)
 and one refusal (`refuse/3`) says what is lacking and how to get it:
 "dashboard builds on html, not in the project yet. Insert that first:
-./wb.sh add html"; "pgadmin builds on ecto with database postgres, and
-this project's database is mysql"; and for a state a second run can
+./wb.sh add html"; "--admin pgadmin builds on ecto with database
+postgres, and this project's database is mysql"; and for a state a second run can
 add, the remedy is that run, `./wb.sh add html --live`. The catalog carries the names as
 `requires` and the states as `conditions`, and the console's box says
 both under Needs. A single value can say it too — `{value, doc,
-requires}` in `choices/0` (ash's `--auth password` on live and mailer)
-— with the same resolver and refusal, and the list beside the value. A state
+requires}` in `choices/0` (ash's `--auth password` on live and mailer,
+each of db_admin's admins on its databases) — with the same resolver and refusal, and the list beside the value. A state
 can also *shape* a box instead of gating it, when it selects among
 equivalents: [dashboard_extras](dashboard_extras/) reads ecto's
 `state/1` for the database and installs that server's extras —
-none without a database — where a requirement could only refuse. And a cartridge
+none without a database — where a requirement could only refuse, and
+[db_admin](db_admin/) without `--admin` gives the database's own admin. And a cartridge
 with a step after the insert says it with `afterwards/0` (ecto: `./wb.sh
 bake`, then `setup`); the catalog carries it, and marks the base
 cartridges as `base`.

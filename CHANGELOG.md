@@ -25,6 +25,51 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   no stamp. One link on the head, not one per row: every row points at
   the same page.
 
+- **db_admin: the database admin in the browser, one box, four
+  admins.** The fourth box of the shelf's migration (`SCRIPT.md`, the
+  author's selection: db admin). pgadmin and adminer were one need —
+  look at the database without its shell client — split by mechanism,
+  the second written as the consolation for the first's refusal off
+  Postgres. The box takes the admin as its option, `--admin`, one or
+  several, a second run adding another (`rerun: :adds`), and brings two
+  more: **phpMyAdmin**, MySQL's own, and **CloudBeaver**, DBeaver in
+  the browser. Each admin declares which of ecto's databases it serves
+  as a requirement on its value — `pgadmin` on postgres, `phpmyadmin`
+  on mysql, `cloudbeaver` on postgres, mysql or mssql, `adminer` on any
+  — read off ecto's `state/1`, so the catalog carries it per value and
+  the console's form shows what the project's database does not serve
+  unlit, with the reason; asked for anyway, it refuses the run with
+  what the project has. For that a **requirement's state takes a list,
+  met by any one of its values** (`database: ["postgres", "mysql",
+  "mssql"]`), said as one ("ecto with database postgres, mysql or
+  mssql") in the resolver and in the console, and the refusal of a
+  chosen value is one function (`Feature.refuse_values/2`, ash's too).
+  Without `--admin` the box is shaped by the database, as
+  dashboard_extras is: the database's own admin where it has one,
+  Adminer on SQL Server and SQLite, which have none. Every admin is a
+  file the project owns — who signs in, on which driver, off the
+  adapter — and a container the compose carries, told where the
+  database is: phpMyAdmin's `config.user.inc.php` on the server its
+  image has just made, its Apache moved to 8081 since the pod is one
+  network namespace; CloudBeaver's `data-sources.json` mounted
+  read-only where the image keeps the seed of a fresh workspace —
+  because the server rewrites its live one — with three variables that
+  skip its setup wizard, the connection granted to whoever opens the
+  page, and its own switch for environment variables in a connection,
+  so the compose says host, port and database. Not on SQLite, a driver
+  its server ships disabled with no variable to enable it: the
+  requirement says so and the DESIGN keeps what it would take. The
+  project's files do not move, so a project that got pgAdmin or
+  Adminer from the old boxes reads as carrying this one. Measured
+  beside MySQL, Postgres and SQL Server in one network namespace, and
+  in a copy of a live workspace: pgAdmin from the old box read as
+  `admin: [pgadmin]`, phpMyAdmin refused on Postgres, Adminer and
+  CloudBeaver added in one commit with the compose, the three
+  answering. `PHPMYADMIN_IMAGE_VERSION` and `CLOUDBEAVER_IMAGE_VERSION`
+  join `config.conf`. chiefs_setup picks it bare in place of pgadmin,
+  and no longer stops there off Postgres (db_admin v0.1.0,
+  chiefs_setup v0.5.0, 2026-09-18).
+
 - **dashboard_extras: LiveDashboard's two dark pages, one box.** The
   third box of the shelf's migration (`SCRIPT.md`, the author's
   selection: dashboard enhancements). osmon and psql_extras were one
@@ -2029,6 +2074,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Removed
 
+- **The pgadmin and adminer boxes**, merged into db_admin (Added,
+  above). Their files in a project are the new box's marks, so nothing
+  is migrated: `wb.sh add pgadmin` is now `wb.sh add db_admin --admin
+  pgadmin`, or bare on Postgres.
 - **The osmon and psql_extras boxes**, merged into dashboard_extras
   (Added, above). A project that carries osmon's `:os_mon` reads as
   carrying the new box, whose mark it is; one with psql_extras alone

@@ -1,0 +1,28 @@
+  # CloudBeaver, with db_admin's cloudbeaver in: DBeaver in the browser,
+  # on its own port beside the app's, the workspace's database already a
+  # connection. The connection is the project's own file
+  # (cloudbeaver/data-sources.json), mounted where the image keeps the
+  # seed it copies into a fresh workspace; where the database is and
+  # which one to open are this deployment's, so they are said here and
+  # the file reads them (system variables resolving).
+  cloudbeaver:
+    image: dbeaver/cloudbeaver:<%= @version.("cloudbeaver", "latest") %>
+    network_mode: "service:pod"
+    environment:
+      # With these three the server configures itself and no setup
+      # wizard comes up. The administrator is for CloudBeaver's own
+      # settings; the connection needs no sign-in.
+      CB_SERVER_NAME: <%= @app_name %>
+      CB_ADMIN_NAME: cbadmin
+      CB_ADMIN_PASSWORD: pass
+      CLOUDBEAVER_WEB_SERVER_PORT: <%= @listens %>
+      # Whoever opens the page sees the seeded connection.
+      CLOUDBEAVER_APP_GRANT_CONNECTIONS_ACCESS_TO_ANONYMOUS_TEAM: "true"
+      CLOUDBEAVER_SYSTEM_VARIABLES_RESOLVING_ENABLED: "true"
+      WORKBENCH_HOST: 127.0.0.1
+      WORKBENCH_PORT: <%= @db_port %>
+      WORKBENCH_DATABASE: <%= @app_name %>_<%= if @dev, do: "dev", else: "prod" %>
+    depends_on:
+      - database
+    volumes:
+      - ./cloudbeaver/data-sources.json:/opt/cloudbeaver/conf/initial-data-sources.conf:ro

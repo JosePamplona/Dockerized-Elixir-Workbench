@@ -1,0 +1,69 @@
+<?php
+// The login Adminer opens with: the workspace's database, the user,
+// the database, and the password Adminer checks itself. Written by the
+// workbench's db_admin cartridge; the Adminer container reads it off
+// plugins-enabled/. The driver and the user are the project's, off its
+// Ecto adapter. Where the server is and which database to open are the
+// deployment's, so the compose hands them over as WORKBENCH_SERVER and
+// WORKBENCH_DATABASE; the values here are the dev pod's, for an Adminer
+// run by hand beside it.
+require_once('plugins/login-servers.php');
+
+// One plugin, two of Adminer's: the stock login-servers fixes the server
+// and the driver, and Adminer\Password holds a password Adminer verifies
+// and never sends on — the workspace's databases would not pass
+// Adminer's own rule otherwise ("Adminer does not support accessing a
+// database without a password", nor a server that accepts any: Postgres
+// trusts 127.0.0.1 inside the pod, MySQL's root has no password, SQLite
+// has none at all). They are one class because both answer
+// credentials(), and Adminer takes the first answer. This one also fills
+// the user and the database in, so the password is all there is to
+// type: `pass`, as pgAdmin's — on MSSQL, which checks its own, sa's.
+class WorkbenchLogin extends AdminerLoginServers {
+	private $username;
+	private $database;
+	private $password;
+
+	function __construct(array $servers, $username, $database, $password_hash) {
+		parent::__construct($servers);
+		$this->username = $username;
+		$this->database = $database;
+		$this->password = new Adminer\Password($password_hash);
+	}
+
+	function credentials() {
+		// Password's answer — the typed password, or nothing when it is
+		// ours and the server asks for none — on login-servers' server.
+		$credentials = $this->password->credentials();
+		$credentials[0] = Adminer\idx($this->servers[Adminer\SERVER], "server");
+		return $credentials;
+	}
+
+	function login($login, $password) {
+		if (parent::login($login, $password) === false) {
+			return false;
+		}
+		return $this->password->login($login, $password);
+	}
+
+	function loginFormField($name, $heading, $value) {
+		if ($name == 'username' || $name == 'db') {
+			$fill = ($name == 'username' ? $this->username : $this->database);
+			return $heading . preg_replace('~value=""~', 'value="' . Adminer\h($fill) . '"', $value, 1) . "\n";
+		}
+		return parent::loginFormField($name, $heading, $value);
+	}
+}
+
+return new WorkbenchLogin(
+	array('<%= @app_name %>' => array(
+		// 127.0.0.1 and never localhost: the MySQL client reads localhost
+		// as its unix socket, whatever port comes after it.
+		'server' => getenv('WORKBENCH_SERVER') ?: '<%= @server %>',
+		'driver' => '<%= @driver %>',
+	)),
+	'<%= @username %>',
+	getenv('WORKBENCH_DATABASE') ?: '<%= @database %>',
+	// password_hash('pass'), made once.
+	'$2y$12$QQo4vmaDW9uhr3xiIwn8n.fjvby3.zEYHaR1S6N5wyNPXAEm9UplS'
+);

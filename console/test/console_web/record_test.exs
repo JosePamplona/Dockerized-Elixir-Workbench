@@ -379,10 +379,10 @@ defmodule ConsoleWeb.RecordTest do
         ["project", "cartridges"],
         &[
           %{
-            "name" => "pgadmin",
+            "name" => "db_admin",
             "installed" => true,
             "base" => false,
-            "state" => %{},
+            "state" => %{"admin" => ["pgadmin"]},
             "compose" => [%{"service" => "pgadmin", "listens" => 5050, "published" => [5050]}]
           }
           | &1
@@ -390,7 +390,7 @@ defmodule ConsoleWeb.RecordTest do
       )
 
     page = Record.page(status, @catalog, %{"http://localhost:5050/" => {"302", "good"}})
-    pg = Enum.find(page.cartridges, &(&1.c["name"] == "pgadmin"))
+    pg = Enum.find(page.cartridges, &(&1.c["name"] == "db_admin"))
 
     assert [
              %{
@@ -413,7 +413,7 @@ defmodule ConsoleWeb.RecordTest do
       end)
 
     assert [%{why: "the pgadmin container is exited", href: nil}] =
-             Enum.find(Record.page(stopped, @catalog).cartridges, &(&1.c["name"] == "pgadmin")).addresses
+             Enum.find(Record.page(stopped, @catalog).cartridges, &(&1.c["name"] == "db_admin")).addresses
 
     # Not published — the status says no port — it is the service's port, read off docker compose ps.
     unpublished = put_in(status, ["ports", "published"], %{})
@@ -421,7 +421,7 @@ defmodule ConsoleWeb.RecordTest do
     assert [%{label: "pgadmin", path: ":5050", kind: "inside", read: {"running", "good"}}] =
              Enum.find(
                Record.page(unpublished, @catalog).cartridges,
-               &(&1.c["name"] == "pgadmin")
+               &(&1.c["name"] == "db_admin")
              ).addresses
   end
 

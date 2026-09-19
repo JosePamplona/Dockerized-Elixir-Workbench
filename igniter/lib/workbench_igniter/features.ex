@@ -51,8 +51,7 @@ defmodule WorkbenchIgniter.Features do
     Features.Ash,
     Features.Specdd,
     # Services of the workspace, declared for the compose (scripts/PLAN.md).
-    Features.Pgadmin,
-    Features.Adminer,
+    Features.DbAdmin,
     Features.K6,
     Features.Monitoring,
     # The base cartridges: capabilities phx.new decides at generation
@@ -93,8 +92,8 @@ defmodule WorkbenchIgniter.Features do
       version: version(feature.version()),
       rerun: feature.rerun(),
       requires: WorkbenchIgniter.Feature.requires_names(feature),
-      # The state a requirement asks for, by name (pgadmin: ecto with
-      # database postgres); `%{}` when the names are enough.
+      # The state a requirement asks for, by name (ecto with database
+      # postgres); `%{}` when the names are enough.
       conditions: WorkbenchIgniter.Feature.conditions(feature),
       # The cartridges its installer inserts along, off the `composes`
       # its `info/2` declares to Igniter (healthcheck brings mock in for

@@ -523,13 +523,13 @@ defmodule ConsoleWeb.Box do
       </span>
       <span :if={@box["requires"] != [] || @asked != []} class="k">Needs</span>
       <span :if={@box["requires"] != [] || @asked != []} class="v">
-        <span :for={r <- @box["requires"]} class="need"><.cart_ref
+        <span :for={r <- @box["requires"]} class="req"><.cart_ref
           name={r}
           installed={Cartridges.satisfies?(@status, r, condition(@box, r))}
         /><span :if={condition(@box, r) != %{}} class="by">with {Cartridges.state_said(
           condition(@box, r)
         )}</span></span>
-        <span :for={{why, names, conds} <- @asked} class="why"><span :for={n <- names} class="need"><.cart_ref
+        <span :for={{why, names, conds} <- @asked} class="why"><span :for={n <- names} class="req"><.cart_ref
           name={n}
           installed={Cartridges.satisfies?(@status, n, conds[n] || %{})}
         /><span :if={conds[n]} class="by">with {Cartridges.state_said(conds[n])}</span></span><span class="by">by {why}</span></span>
@@ -658,7 +658,10 @@ defmodule ConsoleWeb.Box do
         from_insert: insert != nil,
         # Insertable while it is not in, and still while it is when
         # inserting again adds to what is there (`rerun: adds`).
-        can_insert: !assigns.installed || assigns.box["rerun"] == "adds"
+        can_insert: !assigns.installed || assigns.box["rerun"] == "adds",
+        full:
+          assigns.installed && !assigns.box["collection"] &&
+            nothing_to_add?(assigns.box, assigns.c || %{}, assigns.status)
       )
 
     ~H"""
@@ -816,6 +819,7 @@ defmodule ConsoleWeb.Box do
                 @missing != [] -> "#{hd(@missing)} has to go in first"
                 @left == :asking -> "reading what is in"
                 is_list(@left) and @left == [] -> "every cartridge of this box is in"
+                @full -> "every value this project allows is in: nothing left to add"
                 true -> nil
               end
             }
@@ -892,14 +896,9 @@ defmodule ConsoleWeb.Box do
     o = assigns.o
     c = assigns.c
 
-    need =
-      Enum.reject(
-        c["requires"] || [],
-        &Cartridges.satisfies?(assigns.status, &1, get_in(c, ["conditions", &1]) || %{})
-      )
-
+    need = lacks(c, assigns.status)
     st = assigns.c_state[o["name"]]
-    has = st == c["value"] || (is_list(st) && c["value"] in st)
+    has = has?(o, c, assigns.c_state)
     group_locked = st == true
     chosen = c["value"] in List.wrap(assigns.args[o["name"]] || [])
 
@@ -913,21 +912,21 @@ defmodule ConsoleWeb.Box do
       )
 
     ~H"""
-    <label class={[@has && "has", @need != [] && "need"]}>
+    <label class={[@has && "has", @need != [] && "lacks"]}>
       <input
         type={if @o["multiple"], do: "checkbox", else: "radio"}
         name={if @o["multiple"], do: "opt[#{@o["name"]}][]", else: "opt[#{@o["name"]}]"}
         value={@c["value"]}
         checked={@has || @chosen}
         disabled={@has || @group_locked || @locked || @need != []}
-        title={@need != [] && "builds on #{Enum.join(@need, " && ")}, not in the project yet"}
+        title={@need != [] && "builds on #{Enum.join(@need, " and ")}, which this project lacks"}
       />
-      <%!-- `in` marks what the project has where the reader can still
-            add beside it (rerun: adds); locked, everything checked is in,
-            and the word said nothing. --%>
-      <span>{@c["value"]}<span :if={@has && !@locked} class="in">in</span><span
+      <%!-- What the project has is said by the box checked and shut, as
+            it is when the whole form is locked; a tag only says why a
+            box is shut that is not checked. --%>
+      <span>{@c["value"]}<span
         :if={!@has && @need != []}
-        class="in need"
+        class="in lacks"
       >needs {Enum.join(@need, " + ")}</span><span
         :if={!@has && @need == [] && @default}
         class="in def"
@@ -935,6 +934,37 @@ defmodule ConsoleWeb.Box do
       <span class="doc">{@c["doc"]}</span>
     </label>
     """
+  end
+
+  # What the value builds on and the project lacks, said with the
+  # state it asks: `ecto with database mysql` when ecto is in and on
+  # another database, not a bare `ecto` the project already has.
+  defp lacks(c, status) do
+    for name <- c["requires"] || [],
+        condition = get_in(c, ["conditions", name]) || %{},
+        not Cartridges.satisfies?(status, name, condition),
+        do: Cartridges.requirement(name, condition)
+  end
+
+  defp has?(o, c, state) do
+    st = state[o["name"]]
+    st == c["value"] || (is_list(st) && c["value"] in st)
+  end
+
+  # A cartridge that is in and adds on a second run has nothing left to
+  # add when every option is a closed list and each of its values is
+  # either in or builds on what the project lacks — db_admin with every
+  # admin its database allows. An open field or a switch can always say
+  # something new, so a box with one never counts as full.
+  defp nothing_to_add?(box, c, status) do
+    options = box["options"] || []
+    state = c["state"] || %{}
+
+    options != [] and
+      Enum.all?(options, fn o ->
+        o["choices"] && !o["open"] &&
+          Enum.all?(choices(o), &(has?(o, &1, state) or lacks(&1, status) != []))
+      end)
   end
 
   # What the reader has just said wins; then what the project reports of
@@ -1134,6 +1164,9 @@ defmodule ConsoleWeb.Box do
 
       is_list(a.left) and a.left != [] ->
         "one commit per cartridge — what is in already is skipped"
+
+      a.full ->
+        "every value this project allows is in: nothing left to add"
 
       a.installed && a.box["rerun"] == "adds" ->
         "every option is a package: what is in stays, what you add is queued"

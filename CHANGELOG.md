@@ -680,6 +680,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **A box's needs are the cartridges alone, and what is in says it by
+  its box.** The mentions under the specs' Needs and a value that builds
+  on what the project lacks both wore the `need` class — the one the
+  need paper's panel is drawn with — so each came framed in its accent
+  edge; they are `req` and `lacks` now, and the paper keeps its own. A
+  value the project has lost its `in` tag: a box checked and shut says
+  it, as it already did when the whole form is locked, and the only tag
+  left is the one that says why a shut box is not checked (`needs ecto
+  with database mysql`). A cartridge that adds on a second run (`rerun:
+  adds`) with nothing left to add — every value in, or out of the
+  project's reach, as db_admin with every admin its database serves —
+  has its Add unlit, and the note says why.
+
 - **The box's Manual comes before its Installation.** The drawer's row
   of screens read Box, Installation, Files, Manual — the papers last,
   after the form they explain. It reads Box, Manual, Installation,

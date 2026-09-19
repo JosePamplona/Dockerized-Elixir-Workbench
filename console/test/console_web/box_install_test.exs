@@ -100,4 +100,123 @@ defmodule ConsoleWeb.BoxInstallTest do
     # Born with the project, or inserted by a hand that left no commit.
     assert Box.line_argv(@box, %{}, nil, true) == []
   end
+
+  test "a value the project's database does not serve is unlit, and says the state it needs" do
+    box = %{
+      "name" => "db_admin",
+      "options" => [
+        %{
+          "name" => "admin",
+          "type" => "csv",
+          "multiple" => true,
+          "choices" => [
+            %{
+              "value" => "pgadmin",
+              "requires" => ["ecto"],
+              "conditions" => %{"ecto" => %{"database" => "postgres"}}
+            },
+            %{
+              "value" => "phpmyadmin",
+              "requires" => ["ecto"],
+              "conditions" => %{"ecto" => %{"database" => "mysql"}}
+            },
+            %{"value" => "adminer", "requires" => [], "conditions" => %{}}
+          ]
+        }
+      ]
+    }
+
+    status = %{
+      "exists" => true,
+      "git" => %{"repo" => true, "clean" => true},
+      "project" => %{
+        "cartridges" => [
+          %{"name" => "ecto", "installed" => true, "state" => %{"database" => "postgres"}}
+        ]
+      }
+    }
+
+    html = screen(box, status)
+    assert html =~ "needs ecto with database mysql"
+    refute html =~ "needs ecto with database postgres"
+    refute html =~ ~r/needs ecto</
+  end
+
+  @db_admin %{
+    "name" => "db_admin",
+    "rerun" => "adds",
+    "requires" => ["ecto"],
+    "options" => [
+      %{
+        "name" => "admin",
+        "type" => "csv",
+        "multiple" => true,
+        "choices" => [
+          %{
+            "value" => "pgadmin",
+            "requires" => ["ecto"],
+            "conditions" => %{"ecto" => %{"database" => "postgres"}}
+          },
+          %{
+            "value" => "phpmyadmin",
+            "requires" => ["ecto"],
+            "conditions" => %{"ecto" => %{"database" => "mysql"}}
+          },
+          %{"value" => "adminer", "requires" => [], "conditions" => %{}}
+        ]
+      }
+    ]
+  }
+
+  defp with_admins(admins) do
+    %{
+      "exists" => true,
+      "git" => %{"repo" => true, "clean" => true, "inserts" => []},
+      "project" => %{
+        "cartridges" => [
+          %{"name" => "ecto", "installed" => true, "state" => %{"database" => "postgres"}},
+          %{"name" => "db_admin", "installed" => true, "state" => %{"admin" => admins}}
+        ]
+      }
+    }
+  end
+
+  test "what is in is said by the box checked and shut, with no tag beside it" do
+    html = screen(@db_admin, with_admins(["pgadmin"]))
+    assert html =~ ~r{value="pgadmin"[^>]*checked[^>]*disabled}
+    refute html =~ ~s(class="in">in<)
+    # The one the database does not serve says why, in its own class —
+    # not the need paper's, whose panel it used to borrow.
+    assert html =~ ~s(class="lacks")
+    assert html =~ ~s(class="in lacks")
+    refute html =~ ~s(<label class="need")
+  end
+
+  test "rerunnable with a value still free: Add to cartridge, lit" do
+    html = screen(@db_admin, with_admins(["pgadmin"]))
+    assert html =~ "Add to cartridge"
+    refute html =~ "nothing left to add"
+  end
+
+  test "rerunnable with every value in or out of reach: the add is unlit, and says why" do
+    html = screen(@db_admin, with_admins(["pgadmin", "adminer"]))
+    assert html =~ "nothing left to add"
+    assert html =~ ~r{class="btn primary unlit"}
+  end
+
+  test "a need in the specs is the cartridge alone, not the need paper's panel" do
+    html =
+      render_component(&ConsoleWeb.Box.box/1,
+        box: @db_admin,
+        status: with_admins(["pgadmin"]),
+        catalog: [@db_admin],
+        screen: "box",
+        paper: "readme",
+        papers: [],
+        args: %{}
+      )
+
+    assert html =~ ~s(class="req")
+    refute html =~ ~s(<span class="need")
+  end
 end

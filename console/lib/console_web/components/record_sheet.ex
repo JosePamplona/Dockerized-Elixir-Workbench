@@ -138,7 +138,21 @@ defmodule ConsoleWeb.RecordSheet do
             </th>
             <th>flag</th>
             <th>args</th>
-            <th>in phx.new's words</th>
+            <th>
+              <a
+                class="src"
+                href={@birth.docs}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={
+                  "mix phx.new's options, as its documentation says them" <>
+                    if(@birth.installer.born,
+                      do: " — for the #{@birth.installer.born} that generated this project",
+                      else: ""
+                    )
+                }
+              >in phx.new's words</a>
+            </th>
             <th>cartridge</th>
           </tr>
         </thead>

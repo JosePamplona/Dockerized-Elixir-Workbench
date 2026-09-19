@@ -1449,6 +1449,9 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
 .record table.rows.flags col.f2{width:170px}
 .record table.rows.flags col.f4{width:130px}
 .record table.rows.flags td.used,.record table.rows.flags th.used{text-align:center;padding-right:0}
+/* The docs column's head is its source: phx.new's page on hexdocs. It wears the head's ink and says it is a link only under the hand, like an image's name on the Docker screen. */
+.record table.rows.flags th a.src{color:inherit;text-decoration:underline dotted;text-underline-offset:3px}
+.record table.rows.flags th a.src:hover,.record table.rows.flags th a.src:focus-visible{text-decoration:underline;outline:none}
 .record table.rows.flags td.doc{font-family:var(--serif);font-size:13.5px;line-height:1.45;color:var(--muted)}
 .record table.rows.flags td:last-child{color:inherit}
 /* A fact drawn as a checkbox, never a control: the reader cannot toggle it.

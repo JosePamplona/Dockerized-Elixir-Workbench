@@ -221,6 +221,14 @@ defmodule ConsoleWeb.RecordTest do
            |> Enum.map(& &1.name) ==
              ["no-live"]
 
+    # The docs column's source: phx.new's page at the version that generated the project.
+    assert page.birth.docs == "https://hexdocs.pm/phoenix/1.8.13/Mix.Tasks.Phx.New.html"
+
+    unstamped = update_in(@status, ["project", "birth", "dockerfile"], &Map.delete(&1, "PHX_NEW"))
+
+    assert Record.page(unstamped, @catalog).birth.docs ==
+             "https://hexdocs.pm/phoenix/Mix.Tasks.Phx.New.html"
+
     # The toolchain's phx_new moved past the generator: said, with the remedy in the sheet.
     assert %{born: "1.8.13", at_hand: "1.8.14", in_sync: false} = page.birth.installer
     assert page.birth.moved == 1

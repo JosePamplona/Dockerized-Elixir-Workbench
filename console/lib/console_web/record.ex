@@ -187,6 +187,7 @@ defmodule ConsoleWeb.Record do
       dockerfile: dockerfile,
       image:
         "hexpm/elixir:#{born_args["ELIXIR"]}-erlang-#{born_args["OTP"]}-debian-#{born_args["DEBIAN"]}",
+      docs: phx_new_docs(born_args["PHX_NEW"]),
       installer: %{
         born: born_args["PHX_NEW"],
         now: moved(born_args["PHX_NEW"], now_args["PHX_NEW"]),
@@ -225,6 +226,20 @@ defmodule ConsoleWeb.Record do
   end
 
   defp moot(_name, _born, _now), do: nil
+
+  # Where the flags' words come from: `mix phx.new`'s own page, which
+  # the docs column quotes. At the version that generated the project
+  # when the Dockerfile's stamp says it — phx_new and phoenix share a
+  # number, and hexdocs keeps a page per release, so the options read
+  # there are the ones this project had and not today's — and at the
+  # current page when it does not.
+  defp phx_new_docs(version) when is_binary(version) and version != "" do
+    if Regex.match?(~r/^\d+\.\d+\.\d+(-[\w.]+)?$/, version),
+      do: "https://hexdocs.pm/phoenix/#{version}/Mix.Tasks.Phx.New.html",
+      else: phx_new_docs(nil)
+  end
+
+  defp phx_new_docs(_version), do: "https://hexdocs.pm/phoenix/Mix.Tasks.Phx.New.html"
 
   # The cartridge a capability's flag points at: its own, but for
   # LiveView, which is html's `--live` since 2026-09-18 (the `live`

@@ -16,6 +16,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **The Record's flags cite their source.** The head of the «in
+  phx.new's words» column is a link to `mix phx.new`'s page on hexdocs,
+  which the column quotes — at the version that generated the project,
+  off the Dockerfile's `PHX_NEW` stamp (phx_new and phoenix share a
+  number, and hexdocs keeps a page per release), so the options read
+  there are the ones this project had; the current page when there is
+  no stamp. One link on the head, not one per row: every row points at
+  the same page.
+
 - **A requirement can name the state it needs.** `requires/0` took
   names, and a cartridge that needed more — pgadmin and psql_extras, on
   Postgres and nothing else — checked it by hand after the names, each

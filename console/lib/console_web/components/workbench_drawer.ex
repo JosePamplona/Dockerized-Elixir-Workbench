@@ -17,8 +17,8 @@ defmodule ConsoleWeb.WorkbenchDrawer do
   # two drawers are read the same way and the file names live where they
   # are all files.
   #
-  # In that order: the two you set, then the one you read — which also
-  # puts Manual last, where the box's drawer already has it. And the
+  # In that order: the two you set, then the one you read — the box's
+  # drawer reads before it installs, and has Manual second. And the
   # third is Interface and no longer Console: it lost the `this browser`
   # under it when the row became categories, and a tab called Console
   # inside the console named everything. Its key stays `ui`, which is

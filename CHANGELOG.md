@@ -621,6 +621,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **The box's Manual comes before its Installation.** The drawer's row
+  of screens read Box, Installation, Files, Manual — the papers last,
+  after the form they explain. It reads Box, Manual, Installation,
+  Files now: what the box is, what it says about itself, how it goes
+  in, what it wrote. Only the order of the row; the URLs and the
+  screens are the same.
+
 - **`--no-ecto` stands before `--database` on the Record's flags.** Ecto's
   own flag first, then the two that only mean something with it.
 

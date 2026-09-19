@@ -1,7 +1,7 @@
 defmodule ConsoleWeb.Box do
   @moduledoc """
   The box in hand: a drawer over the page with four screens — what the
-  box is, how it goes in, what it wrote, && the papers it carries.
+  box is, the papers it carries, how it goes in, && what it wrote.
   Which box && which screen live in the URL (`?box=rest&screen=manual
   &paper=design`), so the browser's back is the trail back.
   """
@@ -10,7 +10,7 @@ defmodule ConsoleWeb.Box do
   import ConsoleWeb.Ribbon, only: [ribbon: 1]
   alias ConsoleWeb.Cartridges
 
-  @screens [{"box", "Box"}, {"install", "Installation"}, {"files", "Files"}, {"manual", "Manual"}]
+  @screens [{"box", "Box"}, {"manual", "Manual"}, {"install", "Installation"}, {"files", "Files"}]
 
   attr :box, :map, required: true
   attr :status, :map, default: nil

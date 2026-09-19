@@ -3,23 +3,28 @@ defmodule Mix.Tasks.Workbench.Install.Versioning do
 
   alias WorkbenchIgniter.Features.Versioning
 
-  @shortdoc "Sets the project's initial version and opens its changelog; the mix version task and the README badge on request"
+  @shortdoc "Starts versioning in the project: a changelog opened at the version it is on; the mix version task and the README badge on request"
 
   @moduledoc """
   #{@shortdoc}
 
-  Writes the `version:` of `mix.exs` and creates a `CHANGELOG.md` opened
-  at it — Keep a Changelog, with an `Unreleased` section to write into
-  and a commented title line to uncomment when a release is cut. With
-  `--task`, a `mix version NEW` task that does the uncommenting for you,
-  writes the number into `mix.exs` and updates the README badge when
-  there is one; with `--readme-badge`, that badge under the README's
-  title.
+  Every Mix project has a `version:`, and without a record of what
+  changes between one number and the next it never moves. This creates
+  the record: a `CHANGELOG.md` opened at the version `mix.exs` has —
+  Keep a Changelog, with an `Unreleased` section to write into and a
+  commented title line to uncomment when a release is cut. `mix.exs` is
+  left as it is, so the project can be new or well under way; with
+  `--init-version` the history opens at the version asked for, and
+  `mix.exs` is written to say it.
 
-  `phx.new` writes `0.1.0` because a generator has to write something;
-  this makes the number a decision. Re-running it never moves the
-  version: the mark is the changelog, and an existing one is never
-  overwritten; the task and the badge are added when asked and missing.
+  With `--mix-task`, a `mix version NEW` task that does the uncommenting
+  for you, writes the number into `mix.exs` and updates the README
+  badge when there is one; with `--readme-badge`, that badge under the
+  README's title.
+
+  Re-running it never moves the version: the mark is the changelog, and
+  an existing one is never overwritten; the task and the badge are
+  added when asked and missing.
 
   ## Example
 

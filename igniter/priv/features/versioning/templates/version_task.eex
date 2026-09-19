@@ -8,8 +8,8 @@ defmodule Mix.Tasks.Version do
 
   Three files, each only where it carries a version:
 
-    * `mix.exs`: the `version:` of the project. Required; the task fails
-      when it cannot find one.
+    * `mix.exs`: the `version:` of the project, or the `@version` it
+      points at. Required; the task fails when it cannot find one.
     * `CHANGELOG.md`: the `Unreleased` section is closed as this version,
       dated today, by writing the release title right under the commented
       template line the workbench's changelog keeps for it. Skipped, with
@@ -17,7 +17,8 @@ defmodule Mix.Tasks.Version do
     * `README.md`: the version badge, when the README has one. Skipped
       silently otherwise.
 
-  Deciding the number is yours; this writes it.
+  Deciding the number is yours; this writes it — once `Version` parses
+  it, since Mix compiles no project whose version it cannot.
   """
 
   use Mix.Task
@@ -28,7 +29,8 @@ defmodule Mix.Tasks.Version do
 
   @doc false
   def run([new_version]) do
-    with :ok <- write_mix(new_version),
+    with {:ok, _} <- Version.parse(new_version),
+         :ok <- write_mix(new_version),
          changelog <- write_changelog(new_version),
          readme <- write_readme(new_version) do
       Mix.shell().info(
@@ -39,7 +41,13 @@ defmodule Mix.Tasks.Version do
         )
       )
     else
-      {:error, file} -> Mix.raise("#{file} carries no version this task can set.")
+      :error ->
+        Mix.raise(
+          "#{new_version} is not a version Mix accepts: MAJOR.MINOR.PATCH, as in 1.2.0 or 2.0.0-rc.1."
+        )
+
+      {:error, file} ->
+        Mix.raise("#{file} carries no version this task can set.")
     end
   end
 
@@ -47,10 +55,17 @@ defmodule Mix.Tasks.Version do
 
   # == mix.exs =================================================================
 
+  # The literal in `project/0`, or the `@version` attribute when that is
+  # what `version:` points at.
   defp write_mix(version) do
     content = File.read!(@mix_file)
 
-    case Regex.run(~r/version: "([^"]*)"/, content) do
+    declared =
+      if content =~ ~r/version:\s*@version\b/,
+        do: ~r/@version\s+"([^"]*)"/,
+        else: ~r/version:\s*"([^"]*)"/
+
+    case Regex.run(declared, content) do
       [line, current] ->
         File.write!(@mix_file, String.replace(content, line, String.replace(line, current, version)))
 
@@ -70,7 +85,7 @@ defmodule Mix.Tasks.Version do
     with true <- File.exists?(@changelog_file),
          content = File.read!(@changelog_file),
          [line] <- Regex.run(@template, content) do
-      title = "## v#{version} - (#{Date.utc_today()})"
+      title = "## v#{version} - (#{today()})"
       File.write!(@changelog_file, String.replace(content, line, "#{line}\n\n#{title}"))
       "  #{@changelog_file} (Unreleased closed as v#{version})"
     else
@@ -79,15 +94,22 @@ defmodule Mix.Tasks.Version do
     end
   end
 
+  # The date where the release is cut, not UTC's: in the evening west of
+  # Greenwich those are different days.
+  defp today, do: :calendar.local_time() |> elem(0) |> Date.from_erl!()
+
   # == README.md ===============================================================
 
-  @badge ~r/!\[v([^\]]*)\]\((https:\/\/img\.shields\.io\/badge\/version-)([^-]*)(-[^)]*\.svg)\)/
+  # shields.io splits label, message and colour on the dash, so one
+  # inside the version (`2.0.0-rc.1`) is written doubled.
+  @badge ~r/!\[v([^\]]*)\]\((https:\/\/img\.shields\.io\/badge\/version-)((?:[^-]|--)*)(-[^)]*\.svg)\)/
 
   defp write_readme(version) do
     with true <- File.exists?(@readme_file),
          content = File.read!(@readme_file),
          [line, _, url, _, tail] <- Regex.run(@badge, content) do
-      File.write!(@readme_file, String.replace(content, line, "![v#{version}](#{url}#{version}#{tail})"))
+      badge = "![v#{version}](#{url}#{String.replace(version, "-", "--")}#{tail})"
+      File.write!(@readme_file, String.replace(content, line, badge))
       "  #{@readme_file}"
     else
       _ -> []

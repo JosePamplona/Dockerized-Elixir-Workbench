@@ -282,6 +282,10 @@ line without naming a medium; the era renders it:
 * **Fitting** — the mechanism hands each one what was made for it, the
   moment they step in, and never the neighbour's. Subtitles assign
   (`TO EACH ITS OWN`). Added for version_manager.
+* **Inaugural** — the mechanism declares that the record begins here,
+  wherever here is, and keeps it from now on; it claims nothing about
+  what came before. Subtitles commence (`FROM HERE ON`). Added for
+  versioning.
 
 Landmarks, not options — each one was a cartridge's need read as a
 stance, which is where a register comes from now (`NEED.md`). Add one when a cartridge wants a stance

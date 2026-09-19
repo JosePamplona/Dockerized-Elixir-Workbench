@@ -1,0 +1,107 @@
+Mid-1990s PC game cover art. Dense oil-painted illustration in the
+fully-rendered style of the 256-colour era: deep chiaroscuro, heavy
+detail carried down into the shadows, dramatic single-source lighting,
+extruded fantasy lettering with a hard bevel, a glossy laminated finish.
+
+Flat cover illustration filling the entire image edge to edge, all of
+it in one plane: the four edges of the image are the four edges of the
+illustration, and the illustration is all there is — not a product
+photograph, not a box or a board: no bevel, no lip, no rim of light, no
+edge, no shadow, no surface behind it, no margin of any colour around
+it. Proportions 4:5 portrait. Every position below is measured from
+the edges of the image. The ground of the illustration, edge to edge,
+is one tone that reads clearly lighter or darker in value than Elixir
+violet (#4B275F).
+
+Hero illustration, dense oil painting: the great cabin of a wooden
+sailing ship at night, far out at sea. The ground of the painting,
+edge to edge, is the near-black brown of the unlit cabin: dark oak
+beams overhead from the top edge of the image down to a tenth of the
+height, dark panelled walls at both sides. Across the back wall of the
+cabin, one row of stern windows with small leaded panes, its top at a
+tenth of the height down and its foot at a third of the height down,
+its left end at a quarter of the width in and its right end at three
+quarters of the width: through the panes, a moonlit open sea under a
+night sky, the horizon a bare straight line at a fifth of the height
+down with nothing on it, and the ship's own wake running as one pale
+straight band from the foot of the windows back to the horizon at the
+centre of the width. One heavy oak table crosses the whole width of
+the image, its far edge at half the height down and its near edge at
+seven tenths of the height down. On the table at the right, at five
+sixths of the width and with its flame at two fifths of the height
+down, stands one brass lantern with a single candle flame: the single
+source of light in the painting, warm gold, everything falling off
+from it into brown shadow. The ship's master sits at the near side of
+the table at the left, seen from behind his right shoulder: a
+weathered, grey-bearded man in a dark salt-stained sea coat, his head
+turned in lost profile toward the lantern so its light rims his brow,
+cheekbone and beard, the top of his head at a third of the height down
+and his head's centre at a quarter of the width; his back and
+shoulder, dark against the light, fill the lower left of the image
+down to the bottom edge. His right arm reaches forward across the
+table, and the hand, at three fifths of the height down and at half
+the width, holds a white goose quill with its nib touching paper. Under
+the quill, lying open flat on the table and turned so that its pages
+read toward the viewer, one great logbook, half of the width of the
+image across, its centre at three fifths of the width and at three
+fifths of the height down: the book is open at its very first leaf —
+on the left, only the inside of the front cover board, lined with
+marbled paper; on the right, the whole thickness of the unused pages
+stacked under one fresh cream page. Around the pages the cover shows
+as a border of verdigris leather, the blue-green of weathered copper,
+with worn brass corners, and one verdigris ribbon marker runs out from
+the foot of the spine across the oak. At the head of the right-hand
+page, written large by hand in black iron-gall ink, upright capitals
+at foreground size, one word:
+
+    CHANGELOG
+
+and under it one single short line of small handwriting as a texture,
+the quill's nib resting at the end of that line; every ruled line
+below it on the page is empty. Beyond the book, on the far side of the
+table between the book and the lantern, one sea chart lies unrolled,
+held flat by a pair of brass dividers: one long inked course line
+crosses it from its far edge, plain and unmarked along all its length,
+and at its near end sits one small fresh cross in the same ink. Every
+rope-end, rivet, pane of glass and grain of the oak is detailed down
+into the shadows. The bottom fifth of the image is the dark front of
+the table's near side and the master's coat in deep shadow, low in
+detail, and the lockup sits on it.
+
+Title lockup across the lower part of the image, over that shadow:
+"VERSIONING" on one line, set large in extruded fantasy lettering with
+a hard bevel, gold catching the lantern's light, centred on the width
+and four fifths of the width wide; and beneath it, in smaller capitals
+of the same lettering, the subtitle "FROM HERE ON".
+
+In the top left corner of the image, a small rectangular flash in the
+era's lettering, reading "SEMVER" in white capitals at foreground size
+on a verdigris ground.
+
+At the right edge of the image, at three quarters of the height down,
+printed on the cover, one small white rectangle filled with vertical
+black bars of varying thickness, bars only, set square to the edge.
+
+The word on the page, the title, the subtitle and the flash are all
+the lettering in the image.
+
+The top right corner of the artwork is composed as a quiet area: low
+detail, no focal element, an even field of tone — the near-black brown
+of the beams and the panelled wall, beyond the reach of the lantern.
+
+Every mark on the face is printed illustration or type, and the marks
+named above are all of them.
+
+--- second turn, with the padded canvas from covers.py pad ---
+
+The flat grey border around this picture is blank. Paint it by
+continuing the picture outward into it on every side, to the edges —
+the dark oak beams of the cabin's ceiling continue above to the top
+edge, the deep shadow of the table's front and of the master's coat
+continues below to the bottom edge, and in the thin strip at each side
+the same things run on to the edge at the same heights: the beams, the
+dark panelled wall, the oak of the table top and the shadow under it,
+the master's dark coat at the left, and at the right, beside the small
+white block of bars, a narrow strip of the oak table. Keep the picture
+inside exactly as it is, and add nothing new: no figure, no object, no
+lettering.

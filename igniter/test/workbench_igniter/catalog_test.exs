@@ -333,8 +333,8 @@ defmodule WorkbenchIgniter.CatalogTest do
       "chiefs_setup" => [{~w(--interface graphql), %{interface: "graphql"}}],
       "version_manager" => [{~w(--manager mise), %{manager: "mise"}}],
       "versioning" => [
-        {~w(--version 1.2.3 --task --readme-badge),
-         %{version: "1.2.3", task: true, readme_badge: true}}
+        {~w(--init-version 1.2.3 --mix-task --readme-badge),
+         %{init_version: "1.2.3", mix_task: true, readme_badge: true}}
       ],
       "rest" => [
         {~w(--project-name Probe --auth0 --openai --health),

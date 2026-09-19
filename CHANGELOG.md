@@ -655,6 +655,27 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   in, what it wrote. Only the order of the row; the URLs and the
   screens are the same.
 
+- **versioning starts where the project is.** Its README said the
+  generator's `0.1.0` was nobody's decision and defaulted the project
+  to `0.0.0`; its DESIGN, written now with the sources, found that
+  `0.1.0` is the start SemVer's own FAQ recommends — and that on a
+  project already released the default took the number back. The box
+  is told again from the problem it solves — a project with a version
+  number and no versioning, new or two years in — and the option is
+  `--init-version`, defaulting to the version `mix.exs` has, which is
+  then left untouched; the rest (`--mix-task`, as `--task` is called
+  now, and `--readme-badge`) are amenities. `state/1` reads where the history opens off the
+  changelog's oldest title, and the opening entry no longer says
+  "Brand new project created." of a project that may not be. The same
+  research fixed three things: a version Mix would not compile is
+  refused by the installer and by the planted `mix version` before
+  anything is written; `version: @version` is read — by the shelf's
+  `mix_project_value/2`, so exdoc's `@source_url` reads too — and
+  written; and a pre-release's dash is doubled in the shields.io badge,
+  which it used to break. A probe in a real project found a fourth:
+  releases were dated by UTC's day, and are by the developer's now. A
+  chiefs_setup project is born at `0.1.0` now, not `0.0.0` (versioning
+  v0.3.0, 2026-09-18).
 - **`--no-ecto` stands before `--database` on the Record's flags.** Ecto's
   own flag first, then the two that only mean something with it.
 

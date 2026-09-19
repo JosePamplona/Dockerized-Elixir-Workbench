@@ -5,6 +5,51 @@ it. Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) applied to
 what the cartridge *installs*.
 
+## v0.3.0 - (2026-09-18)
+
+### Changed
+
+- `--version` is `--init-version`, and its default is the version
+  `mix.exs` has, not `0.0.0`: the history opens where the project is,
+  new or well under way, and `mix.exs` is left untouched unless another
+  version is asked for. `0.0.0` had been argued against `phx.new`'s
+  `0.1.0`, which is the start SemVer's own FAQ recommends; and on a
+  project already released it took the number back. DESIGN.md, new with
+  this version, has the sources.
+- `--task` is `--mix-task`: what it plants is a Mix task, and `task`
+  alone said no more than the installer it is an option of. `state/1`
+  answers `mix_task`.
+- `state/1` answers `init_version`: the oldest release title of the
+  changelog (the house's `## v1.2.3` or Keep a Changelog's
+  `## [1.2.3]`), where the history opens for as long as the file lives —
+  not `mix.exs`'s number, which moves with every release.
+- The changelog's opening entry: "This changelog: the project's notable
+  changes are recorded here from this version on." instead of "Brand
+  new project created.", which a project two years old is not.
+
+- The README badge is `lightgrey`, not `white`: shields.io's named
+  colour for the message half. `mix version` keeps whatever colour the
+  badge it finds has, so a project that carries the white one keeps it.
+
+### Fixed
+
+- A version Mix would not compile (`1.2`) is refused, by the installer
+  and by the planted `mix version`, before anything is written: a
+  `mix.exs` carrying one stops every Mix task, this installer included.
+- `version: @version` is read (the shelf's `mix_project_value/2` reads
+  a module attribute through to its literal) and written: by the
+  installer through Igniter, by `mix version` on the `@version "…"`
+  line. It was `nil` to the first and an error to the second.
+- A pre-release's dash is doubled in the badge's URL
+  (`version-2.0.0--rc.1-lightgrey.svg`), as shields.io asks, and `mix
+  version` reads the doubled form back. It produced a broken badge and
+  then could not find it.
+
+- Releases are dated by the developer's day, not UTC's: the changelog
+  the installer opens and the title `mix version` writes took
+  `Date.utc_today/0`, and an insert at 18:50 in UTC-6 came out dated the
+  next day. Found on the probe project (DESIGN.md, 4).
+
 ## v0.2.0 - (2026-09-17)
 
 ### Added

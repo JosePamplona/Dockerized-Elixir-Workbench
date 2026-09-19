@@ -653,29 +653,48 @@ defmodule WorkbenchIgniter.Feature do
   The literal a key of `mix.exs`'s `project/0` keyword holds — `:version`,
   `:name`, `:source_url` — as `{value, igniter}`; `nil` when the key is
   not there or its value is not a plain literal (a call, a variable).
+  A module attribute holding a literal is read through: `version:
+  @version` under `@version "1.2.3"`, as many a released project
+  writes it, answers `"1.2.3"`.
   """
   @spec mix_project_value(Igniter.t(), atom()) :: {term() | nil, Igniter.t()}
   def mix_project_value(igniter, key) do
     igniter = Igniter.include_existing_file(igniter, "mix.exs")
 
-    zipper =
+    module =
       igniter.rewrite
       |> Rewrite.source!("mix.exs")
       |> Rewrite.Source.get(:quoted)
       |> Sourceror.Zipper.zip()
 
     value =
-      with {:ok, zipper} <- Igniter.Code.Function.move_to_def(zipper, :project, 0),
-           {:ok, zipper} <- Igniter.Code.Keyword.get_key(zipper, key),
-           {:__block__, _, [literal]} when is_binary(literal) or is_number(literal) <-
-             zipper.node do
-        literal
+      with {:ok, zipper} <- Igniter.Code.Function.move_to_def(module, :project, 0),
+           {:ok, zipper} <- Igniter.Code.Keyword.get_key(zipper, key) do
+        literal(zipper.node) || attribute_literal(module, zipper.node)
       else
         _ -> nil
       end
 
     {value, igniter}
   end
+
+  defp literal({:__block__, _, [literal]}) when is_binary(literal) or is_number(literal),
+    do: literal
+
+  defp literal(_), do: nil
+
+  # `@name` as a value: the literal its definition, `@name "..."`, holds.
+  defp attribute_literal(module, {:@, _, [{name, _, context}]}) when is_atom(context) do
+    found =
+      Sourceror.Zipper.find(module, fn
+        {:@, _, [{^name, _, [value]}]} -> literal(value) != nil
+        _ -> false
+      end)
+
+    with %Sourceror.Zipper{node: {:@, _, [{_, _, [value]}]}} <- found, do: literal(value)
+  end
+
+  defp attribute_literal(_module, _node), do: nil
 
   @doc """
   `installed?/1` for a cartridge whose mark is a dependency in `mix.exs`.

@@ -8,6 +8,29 @@ for a mailer at the installer's version: a change in how the delta is
 taken or merged is a minor, a change that breaks a project already
 carrying it is a major.
 
+## v0.3.0 - (2026-09-19)
+
+### Updated
+
+- The engine (`WorkbenchIgniter.PhxDelta`) writes a file the project
+  has not moved from what `phx.new` wrote as `phx.new` writes it with
+  the capability, byte for byte, with the project's own secrets — not
+  merged. "Not moved" is judged by content: a project that only ran
+  `mix format` has not moved its files. A project grown untouched is
+  now the project born with the capability, byte for byte.
+  [DESIGN](DESIGN.md) §3.4.
+- The engine (`WorkbenchIgniter.PhxDelta`) applies the router's change
+  as operations on its pipelines, scopes and routes
+  (`WorkbenchIgniter.RouterFile`), not as a text merge: a project that
+  had appended a scope of its own at the router's end, or a route of
+  its own at the end of `/dev`, conflicted with the dev block and the
+  `forward "/mailbox"` mailer adds there; both now go after the
+  project's own. Each item is known by what it is, not by its line;
+  what the project changed stays as the project has it, with a notice;
+  and when the operations cannot turn `phx.new`'s base into its theirs,
+  the router is merged as text as before. [DESIGN](DESIGN.md) §3.4,
+  §4.6.
+
 ## v0.2.0 - (2026-08-30)
 
 ### Updated

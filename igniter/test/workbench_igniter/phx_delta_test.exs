@@ -261,4 +261,63 @@ defmodule WorkbenchIgniter.PhxDeltaTest do
       assert {:ok, _} = PhxDelta.generator_check(igniter)
     end
   end
+
+  describe "a file the project never moved is phx.new's own" do
+    import WorkbenchIgniter.Grown, only: [born: 1, add: 2]
+
+    @router "lib/test_web/router.ex"
+
+    defp content(igniter, path) do
+      case Rewrite.source(igniter.rewrite, path) do
+        {:ok, source} -> Rewrite.Source.get(source, :content)
+        _ -> igniter.assigns[:test_files][path]
+      end
+    end
+
+    defp with_router(igniter, fun),
+      do:
+        Igniter.assign(
+          igniter,
+          :test_files,
+          Map.update!(igniter.assigns[:test_files], @router, fun)
+        )
+
+    test "as phx.new writes it, byte for byte" do
+      {:ok, grown} = born(~w(gettext ecto esbuild tailwind html)) |> add("dashboard")
+
+      assert content(grown, @router) ==
+               content(born(~w(gettext ecto esbuild tailwind html dashboard)), @router)
+    end
+
+    # Formatted with no configuration, the router's calls take
+    # parentheses — `plug(:accepts, ["html"])`: its layout changes
+    # throughout, its content not at all.
+    test "a project that only ran the formatter has not moved it" do
+      formatted = &(&1 |> Code.format_string!() |> IO.iodata_to_binary())
+      assert formatted.(content(born(~w(html)), @router)) =~ "plug(:accepts"
+
+      {:ok, grown} =
+        born(~w(gettext ecto esbuild tailwind html)) |> with_router(formatted) |> add("dashboard")
+
+      assert content(grown, @router) ==
+               content(born(~w(gettext ecto esbuild tailwind html dashboard)), @router)
+    end
+
+    test "a project that moved it keeps what it wrote" do
+      {:ok, grown} =
+        born(~w(gettext ecto esbuild tailwind html))
+        |> with_router(
+          &String.replace(
+            &1,
+            ~s(get "/", PageController, :home\n),
+            ~s(get "/", PageController, :home\n    get "/about", PageController, :about\n)
+          )
+        )
+        |> add("dashboard")
+
+      router = content(grown, @router)
+      assert router =~ ~s(get "/about", PageController, :about)
+      assert router =~ ~s(live_dashboard "/dashboard", metrics: TestWeb.Telemetry)
+    end
+  end
 end

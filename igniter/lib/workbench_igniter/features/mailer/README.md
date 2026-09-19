@@ -38,10 +38,10 @@ own flags and with the mailer on, and the difference is merged in. With Phoenix 
 Nothing in the endpoint: the mailer is one module, seven files of
 configuration and one route.
 
-Files the project already changed are merged three ways — the
-project's edits stay, the mailer's lines come in; a conflict is
-reported as an issue with git's markers in the file, never resolved
-silently.
+Files the project already changed are merged three ways; a conflict is
+reported with `phx.new`'s version of the file beside it. The router is
+not merged as text: its routes, scopes and pipelines go in as
+operations, beside the project's own.
 
 ## Options
 

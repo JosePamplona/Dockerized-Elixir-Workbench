@@ -30,7 +30,6 @@ end
 # generator makes both; the installers run as `wb.sh add` runs them,
 # each applied before the next.
 defmodule WorkbenchIgniter.Grown do
-  alias WorkbenchIgniter.MixFile
   alias WorkbenchIgniter.PhxDelta
 
   @cartridges ~w(mailer gettext ecto esbuild tailwind html live dashboard)
@@ -92,12 +91,14 @@ defmodule WorkbenchIgniter.Grown do
 
   @doc """
   What differs between a project born and one grown: nothing, or words
-  for it. What may differ is said here and nowhere else: the secrets
-  phx.new draws on every run; how a file ends; for Elixir, a blank line
-  after a line that opens a block — phx.new's router has one the
-  formatter takes out, and a merge writes what `mix format` would leave
-  (PhxDelta); the order of `mix.exs`'s lists and of `.gitignore`'s
-  patterns, where order means nothing; and `not_phx_news/0`.
+  for it. Byte for byte — a file the project never moved is phx.new's
+  own, as phx.new writes it (PhxDelta) — save for what is said here and
+  nowhere else: the secrets phx.new draws on every run, and
+  `not_phx_news/0`. It used to let through how a file ends, a blank
+  line after `do`, and the order of `mix.exs`'s lists and of
+  `.gitignore`'s patterns: what a grown file differed by when every
+  file was merged; since an untouched file is phx.new's (2026-09-19),
+  none of them does.
   """
   def differences(born, grown) do
     {b, g} = {files(born), files(grown)}
@@ -111,35 +112,11 @@ defmodule WorkbenchIgniter.Grown do
 
   defp files(igniter), do: Map.drop(igniter.assigns[:test_files], @not_phx_news)
 
-  defp same?("mix.exs", born, grown), do: mix(born) == mix(grown)
-  defp same?(".gitignore", born, grown), do: patterns(born) == patterns(grown)
-  defp same?(path, born, grown), do: normal(path, born) == normal(path, grown)
+  defp same?(_path, born, grown), do: unsalted(born) == unsalted(grown)
 
   @secret ~r/((?:signing_salt|secret_key_base):\s*)"[^"]*"/
 
-  defp normal(path, content) do
-    content = Regex.replace(@secret, content, "\\1\"…\"")
-
-    content =
-      if Path.extname(path) in [".ex", ".exs"],
-        do: Regex.replace(~r/^([ \t]*[a-z_@].*\sdo)\n(?:[ \t]*\n)+/m, content, "\\1\n"),
-        else: content
-
-    String.trim_trailing(content) <> "\n"
-  end
-
-  # mix.exs as what it holds, in no order.
-  defp mix(content) do
-    read = MixFile.read(content)
-
-    code = fn list ->
-      list |> Enum.map(fn {k, v} -> {k, Macro.to_string(v)} end) |> Enum.sort()
-    end
-
-    %{project: code.(read.project), deps: code.(read.deps), aliases: code.(read.aliases)}
-  end
-
-  defp patterns(content), do: content |> String.split("\n", trim: true) |> Enum.sort()
+  defp unsalted(content), do: Regex.replace(@secret, content, "\\1\"…\"")
 end
 
 # `:exhaustive` walks every order the base cartridges can go in (grown_vs_born_test):

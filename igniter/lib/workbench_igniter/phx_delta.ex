@@ -23,8 +23,13 @@ defmodule WorkbenchIgniter.PhxDelta do
      `bin/migrate` when Ecto is in, the assets steps of the `Dockerfile`
      when `assets/` exists — and a capability that brings one of those
      brings its share of them too (`release/3`).
-  3. Files theirs has and base lacks are created. Files that differ
-     between the two are merged three ways onto the project's own —
+  3. Files theirs has and base lacks are created. A file that differs
+     between the two and that the project has not moved from base —
+     judged by content, its secrets aside — becomes theirs, as phx.new
+     writes it: a project grown untouched is the project born with the
+     capability, byte for byte. That is the guarantee; what follows is
+     for a file the project has moved. Such files are merged three
+     ways onto the project's own —
      `git merge-file` with base, ours, theirs — so the project's edits
      survive and only the capability's lines come in. A conflict is
      reported as an issue and the file left alone, with phx.new's
@@ -33,7 +38,10 @@ defmodule WorkbenchIgniter.PhxDelta do
      `.gitignore`, a set of patterns whose order means nothing, is
      merged as a set (`WorkbenchIgniter.IgnoreFile.merge/3`), the capability's lines appended
      once; `mix.exs` is applied as operations on its keywords,
-     dependencies and aliases (`WorkbenchIgniter.MixFile`).
+     dependencies and aliases (`WorkbenchIgniter.MixFile`); and the
+     router as operations on its pipelines, scopes and routes
+     (`WorkbenchIgniter.RouterFile`), falling back to the text merge
+     when those cannot say the change.
 
   Nothing about Swoosh, Ecto or LiveView is written here or in the
   cartridges that use this: each one names its flag and its mark.
@@ -538,21 +546,59 @@ defmodule WorkbenchIgniter.PhxDelta do
 
     Enum.reduce(changed, igniter, fn {path, {base, theirs}}, igniter ->
       case ours do
-        # mix.exs is applied as operations on what it holds, not merged
-        # as text (WorkbenchIgniter.MixFile): anything beside where
-        # phx.new writes — the workbench's dependency of birth on the
-        # `deps:` line, a dependency of the project's own — was a
-        # conflict to the merge, on every project (2026-09-16).
-        %{^path => _} when path == "mix.exs" ->
-          WorkbenchIgniter.MixFile.apply(igniter, base, theirs, capability)
-
+        # A file the project has not moved from what phx.new wrote is
+        # what phx.new writes with the capability, as phx.new writes it:
+        # the guarantee, and the case that matters. Operations and
+        # merges below are for a file the project has moved.
         %{^path => own} ->
-          merge_into(igniter, path, own, base, theirs, capability)
+          if untouched?(path, own, base),
+            do: as_phx_new(igniter, path, own, theirs),
+            else: moved(igniter, path, own, base, theirs, capability)
 
         _ ->
           Igniter.create_new_file(igniter, path, theirs)
       end
     end)
+  end
+
+  defp moved(igniter, path, own, base, theirs, capability) do
+    case path do
+      # mix.exs is applied as operations on what it holds, not merged
+      # as text (WorkbenchIgniter.MixFile): anything beside where
+      # phx.new writes — the workbench's dependency of birth on the
+      # `deps:` line, a dependency of the project's own — was a
+      # conflict to the merge, on every project (2026-09-16).
+      "mix.exs" ->
+        WorkbenchIgniter.MixFile.apply(igniter, base, theirs, capability)
+
+      _ ->
+        merge_into(igniter, path, own, base, theirs, capability)
+    end
+  end
+
+  # Not moved: what the project has is what phx.new wrote, its own
+  # secrets aside — each generation draws its own. Judged by content,
+  # not layout: an Elixir file as the formatter leaves it (a project
+  # that ran `mix format`, or one Igniter formatted on an earlier
+  # insert, has not moved), any other file up to how it ends.
+  defp untouched?(path, own, base) do
+    base = splice(base, secrets(own))
+
+    if Path.extname(path) in [".ex", ".exs"],
+      do: formatted(own) != :error and formatted(own) == formatted(base),
+      else: String.trim_trailing(own, "\n") == String.trim_trailing(base, "\n")
+  end
+
+  defp formatted(text) do
+    text |> Code.format_string!() |> IO.iodata_to_binary()
+  rescue
+    _ -> :error
+  end
+
+  # phx.new's file with the capability, with the project's secrets.
+  defp as_phx_new(igniter, path, own, theirs) do
+    content = splice(theirs, secrets(own))
+    Igniter.update_file(igniter, path, &Rewrite.Source.update(&1, :content, fn _ -> content end))
   end
 
   # One changed file the project has: three ways, ours with the
@@ -562,15 +608,26 @@ defmodule WorkbenchIgniter.PhxDelta do
     secrets = secrets(ours)
     {ours, base, theirs} = {laid_out(path, ours), laid_out(path, base), laid_out(path, theirs)}
 
-    merged =
-      if WorkbenchIgniter.IgnoreFile.ignore_file?(path),
-        do: WorkbenchIgniter.IgnoreFile.merge(ours, base, theirs),
-        else: merge3(ours, splice(base, secrets), splice(theirs, secrets))
+    {merged, notices} =
+      cond do
+        WorkbenchIgniter.IgnoreFile.ignore_file?(path) ->
+          {WorkbenchIgniter.IgnoreFile.merge(ours, base, theirs), []}
+
+        router?(path) ->
+          case WorkbenchIgniter.RouterFile.merge(ours, base, theirs) do
+            {:ok, merged, notices} -> {{:ok, merged}, notices}
+            :fallback -> {merge3(ours, base, theirs), []}
+          end
+
+        true ->
+          {merge3(ours, splice(base, secrets), splice(theirs, secrets)), []}
+      end
 
     case merged do
       {:ok, merged} ->
-        Igniter.update_file(
-          igniter,
+        notices
+        |> Enum.reduce(igniter, &Igniter.add_notice(&2, "#{path}: #{&1}"))
+        |> Igniter.update_file(
           path,
           &Rewrite.Source.update(&1, :content, fn _ -> merged end)
         )
@@ -591,6 +648,11 @@ defmodule WorkbenchIgniter.PhxDelta do
         )
     end
   end
+
+  # The router is applied as operations on its pipelines, scopes and
+  # routes (WorkbenchIgniter.RouterFile), and merged as text only when
+  # those cannot say the capability's change.
+  defp router?(path), do: String.match?(path, ~r{^lib/[^/]+_web/router\.ex$})
 
   # phx.new's templates are not what the formatter would leave: the
   # router opens its dev routes with a blank line after `do`, which the

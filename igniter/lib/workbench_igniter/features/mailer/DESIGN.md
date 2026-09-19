@@ -344,6 +344,22 @@ edit of ours, so it neither conflicts nor gets replaced.
 
 ### 3.4 Three-way merge with `git merge-file`, not AST patches
 
+**First, the guarantee.** A file the project has not moved from what
+`phx.new` wrote is written as `phx.new` writes it with the capability —
+`theirs`, byte for byte, with the project's own secrets. That is the
+case with the value in it — a project that grows a capability it left
+out at birth, and should end where a birth with it would have — and it
+is kept by construction, not by a merge coming out right. "Not moved"
+is judged by content, not layout: the project's secrets are spliced
+into base before comparing (§3.3), and an Elixir file is compared as
+the formatter leaves both — a project that ran `mix format`, or that
+Igniter formatted on an earlier insert, has not moved it. Everything
+below is for a file the project *has* moved: there the engine offers
+what it can — the project's edits kept, the capability's lines put in
+— and says so when it cannot. `grown_vs_born_test` holds the guarantee
+(§4.6): a project born bare and grown cartridge by cartridge is the
+project born whole, byte for byte, secrets aside.
+
 Changed files have three versions: the project's (ours), `phx.new`'s
 without the capability (base), `phx.new`'s with it (theirs). Three
 ways to put theirs' lines into ours:
@@ -391,6 +407,33 @@ patch set — the one side-effect write in the engine, made because the
 file exists *for* the issue and a patch set the issue withholds would
 withhold it too (the first version did, and the user had only the
 message). In test mode it stays a patch, so the suite can assert it.
+
+**Two Elixir files are applied as operations, not merged as text.**
+Option 2 above was rejected for needing a description of what changed
+per capability; for two files a *grammar* of the file is enough, and
+the description is read off base and theirs each time, never written.
+`mix.exs` is its keywords, dependencies and aliases
+(`WorkbenchIgniter.MixFile`, 2026-09-16: anything beside where
+`phx.new` writes — the workbench's own dependency on the `deps:` line
+— conflicted on every project). The router is its pipelines, scopes
+and routes (`WorkbenchIgniter.RouterFile`, 2026-09-19): each item known
+by what it is — a pipeline by its name, a scope by its path and alias,
+a route by its verb and path, the dev block by its `if` — with the
+comments above it; theirs' additions go at the block's end when they
+end it, else after the item they follow in theirs; a removal or a
+change applies where the project still has the item as base had it,
+and a block the project left as base had it becomes theirs whole, in
+`phx.new`'s layout. What the project changed stays, with a notice — not
+an issue, which would withhold the patch set for an edit that is no
+fault. The text merge could not do this: html turns the `scope "/api"`
+an API keeps its routes in into a comment, and dashboard and mailer
+open the dev block at the router's end and add their route at the end
+of `/dev` — each where a project writes too, so any project that had
+used its router conflicted (§4.6). The grammar belongs to the router,
+not to a version: before applying, `merge/3` applies the operations
+to base, item by item, and they must give theirs back — a `phx.new`
+whose change they cannot say fails that check and the router falls
+back to the text merge above, conflict and all.
 
 ### 3.5 Files stay where `phx.new` puts them; the mark is read once
 
@@ -616,6 +659,35 @@ umbrella project (`Phx.New.Single` only); `--dev` and
 §4.1's 4 s for 39 tests bounds from above; `./wb.sh eject mailer`
 after §4.5; sending a mail.
 
+### 4.6 The router, used
+
+Six routers a project had used — a route in `/api` under html; a
+scope appended at the end under dashboard and under mailer; a route of
+the project's in `/dev` under mailer and under dashboard; a route in
+`/` under dashboard — were grown in memory with the helpers of
+`grown_vs_born_test` (2026-09-19). Merged as text, four of the six
+conflicted, and none of the four had a route of the project's in the
+capability's way: they met as lines, not as routes. Applied as
+operations (§3.4), all six are clean, the project's routes where the
+project put them and the capability's where `phx.new` puts them —
+`router_file_test.exs` holds them. The same file walks every shape of
+the router `phx.new` 1.8.9 makes — html with and without live,
+dashboard, mailer: twelve — and each capability it lacks, and checks
+that the operations turn base into theirs with no fallback. The first
+run found one that fell back, html over a router with nothing else: two
+items theirs adds side by side at the end, the `/` scope and the
+comment that ends the block, were spliced in reverse; the splices now
+keep their order.
+
+The same day the guarantee of §3.4 went in: a file the project has not
+moved is `theirs`, not merged. `grown_vs_born_test` used to compare
+born and grown with allowances — how a file ends, a blank line after
+`do`, the order of `mix.exs`'s lists and `.gitignore`'s patterns —
+because merged files differed by those. With the guarantee none of them
+is needed, and they are gone: every step of the 560 from a shape, and
+every one of the 13 440 orders, gives the project born whole byte for
+byte, its secrets aside.
+
 ## 5. Limitations and open questions
 
 * **The archive is pinned by configuration, not by the project.**
@@ -635,10 +707,17 @@ after §4.5; sending a mail.
   word, and a version apart then shows as `mix.exs` conflicts, as in
   §4.2.
 * **Adjacent hunks conflict.** `git merge-file` needs unchanged lines
-  between ours' and theirs' changes; a project that adds its own
-  dependency right after `{:phoenix, …}` in an API-only project will
-  conflict with every base cartridge's `mix.exs` hunk. The unit test
-  covers a rewritten list, not an adjacent line.
+  between ours' and theirs' changes. `mix.exs` and the router no
+  longer go through it (§3.4); every other file does, and a project
+  edit beside a capability's hunk — a line of its own at the end of
+  `config.exs`, a component after the last one in
+  `core_components.ex` — conflicts there.
+* **The router keeps what the project changed, whole.** A scope the
+  project edited stays as the project has it even where the capability
+  would change something small in it, and a notice says so; the
+  capability's change to that scope is then the user's to make. html
+  over an API is the case that matters: its `scope "/api"` stays, and
+  `phx.new`'s commented example of one lands beside it.
 * **A removal is decided on one comparison** (§3.3): a placeholder
   that differs from `phx.new`'s by a byte — a trailing newline added by
   an editor — is kept as the project's. Right by construction, and

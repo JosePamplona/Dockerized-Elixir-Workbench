@@ -74,7 +74,10 @@ comment — no bundle, no LiveView client. The two builders inserted
 afterwards bring their pipelines and take those placeholders away.
 
 Files the project already changed are merged three ways; a conflict is
-reported with `phx.new`'s version of the file beside it.
+reported with `phx.new`'s version of the file beside it. The router is
+not merged as text: its routes, scopes and pipelines go in as
+operations, beside the project's own — an API's `scope "/api"`
+stays, active, next to the page's `scope "/"`.
 
 ## Options
 

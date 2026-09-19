@@ -15,12 +15,12 @@ defmodule WorkbenchIgniter.GrownVsBornTest do
   them, one applied before the next, and the two trees are compared
   file by file.
 
-  What may differ is said here and nowhere else: the secrets phx.new
-  draws on every run; how a file ends (Igniter writes one newline);
-  the order of `mix.exs`'s lists and of `.gitignore`'s patterns, where
-  order means nothing — a cartridge appends where phx.new interleaves;
-  and the files a birth writes that this one does not go through
-  (`.env`, by `workbench.setup`) or that Igniter leaves on its first run.
+  Byte for byte: a file the project never moved is phx.new's own, as
+  phx.new writes it (`PhxDelta`, 2026-09-19), and a project grown
+  untouched is one never moved. What may differ is said here and
+  nowhere else: the secrets phx.new draws on every run, and the files a
+  birth writes that this one does not go through (`.env`, by
+  `workbench.setup`) or that Igniter leaves on its first run.
 
   ## In which orders
 

@@ -29,7 +29,9 @@ toolchain — asked of `phx.new` itself (`WorkbenchIgniter.PhxDelta`, see
 `/live` socket uncommented when live had not already turned it on.
 
 Files the project already changed are merged three ways; a conflict is
-reported with `phx.new`'s version of the file beside it.
+reported with `phx.new`'s version of the file beside it. The router is
+not merged as text: its routes, scopes and pipelines go in as
+operations, beside the project's own.
 
 ## Options
 

@@ -141,13 +141,63 @@ defmodule Console.Papers do
     end
   end
 
-  @doc "Markdown to HTML with GFM tables and the HTML in it left out."
+  @doc """
+  Markdown to HTML with GFM tables and the HTML in it left out, and the
+  images from outside read, not loaded (`outside_images/1`).
+  """
   def to_html(md) do
-    MDEx.to_html!(md,
+    md
+    |> MDEx.to_html!(
       extension: [table: true, strikethrough: true, autolink: true, tasklist: true],
       render: [unsafe: false]
     )
+    |> outside_images()
   end
+
+  @doc """
+  An image from another origin never loads here — the policy's
+  `img-src` is this origin, `data:` and `blob:`, and a paper is foreign
+  content — so left as it came it is a broken picture with its alt
+  beside it. Until 2026-09-19 that is what the version badge the
+  versioning cartridge puts under a README's title looked like.
+
+  A shields.io static badge says everything in its own address, and
+  `Console.Shields` draws it from there: the SVG the service would
+  have sent, to the byte, put in the `<img>` as its own text — a
+  `data:` address, which the policy allows and which asks nobody. Any
+  other outside image — a dynamic badge, a logo'd one, a picture — is a
+  link to itself wearing its alt, which is the honest reading of a
+  picture not shown.
+  """
+  def outside_images(html) do
+    Regex.replace(~r/<img src="(https?:[^"]+)"([^>]*?)\s*\/?>/, html, fn _whole, src, rest ->
+      alt =
+        case Regex.run(~r/alt="([^"]*)"/, rest) do
+          [_, alt] -> alt
+          _ -> ""
+        end
+
+      case Console.Shields.badge(unescape(src)) do
+        {:ok, badge} ->
+          ~s(<img class="shield" src="data:image/svg+xml;base64,#{Base.encode64(badge.svg)}" ) <>
+            ~s(alt="#{escape(badge.alt)}" width="#{ceil(badge.width)}" height="#{badge.height}" ) <>
+            ~s(title="#{escape(badge.alt)} — a shields.io badge, drawn here from its own address: the console loads no image from outside" />)
+
+        :error ->
+          host = URI.parse(unescape(src)).host || "outside"
+
+          ~s(<a class="outside-img" href="#{src}" target="_blank" rel="noopener noreferrer" ) <>
+            ~s(title="an image at #{escape(host)}, not loaded: the console loads no image from outside">) <>
+            "#{if alt == "", do: escape(host), else: alt}</a>"
+      end
+    end)
+  end
+
+  defp escape(text), do: text |> Phoenix.HTML.html_escape() |> Phoenix.HTML.safe_to_string()
+
+  # The renderer escaped the address for its attribute; parsing wants it plain.
+  defp unescape(text),
+    do: text |> String.replace("&amp;", "&") |> String.replace("&quot;", "\"")
 
   # A relative link goes to what the console can open — another box's
   # paper, a paper of this box — and the rest to the repository.

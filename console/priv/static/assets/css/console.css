@@ -889,6 +889,9 @@ pre .ln{display:block}
 .md th{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px;background:var(--surface-2)}
 .md hr{border:0;border-top:1px solid var(--line);margin:1.5em 0}
 .md img{max-width:100%}
+/* A shields.io badge drawn from its address (Console.Shields, through Console.Papers.outside_images/1): the service's own SVG in an <img>, at its own size — never stretched by the booklet's measure. Any other outside image is a link wearing its alt. */
+.md img.shield{max-width:none;vertical-align:middle}
+.md a.outside-img{font-family:var(--mono);font-size:.86em}
 .md svg.diagram{width:100%;height:auto;display:block;margin:0 0 1.2em;max-width:none}
 .md p:has(> svg.diagram){max-width:none}
 .md .revision{font-family:var(--mono);font-size:12px;color:var(--muted)}

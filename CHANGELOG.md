@@ -1544,6 +1544,33 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **A README's badges are drawn in the console, to the byte.** The
+  badge the versioning cartridge puts under a README's title is a
+  shields.io picture, and the console's policy loads no image from
+  another origin (`img-src` is this origin, `data:` and `blob:`), so
+  Project → README showed a broken picture with its alt. The policy
+  stays as it is. A shields.io static badge says everything in its own
+  address — `/badge/<label>-<message>-<colour>`, the style and the
+  overrides in the query — and what the service does with it is
+  published, so `Console.Shields` does the same: badge-maker's
+  renderer followed line by line (the route's expression and its
+  escapes, shields' colour names and CSS's, the brightness past which
+  the text turns dark, widths looked up in anafanafo's tables of
+  Verdana's advances — `console/priv/shields/`, MIT — truncated,
+  rounded up to odd and pinned with `textLength`, which is why the
+  badge is the same on a machine without Verdana), in the four styles
+  those tables cover: flat, flat-square, plastic and for-the-badge.
+  The SVG goes in the `<img>` as its own text, a `data:` address,
+  asking nobody and needing no network. Checked against the service:
+  49 addresses asked of img.shields.io on 2026-09-19 and kept in
+  `console/test/fixtures/shields/`, and the 46 of them that are
+  drawable come out the same bytes — emoji, CJK, `hsl(1turn,…)` and a
+  label colour with no label among them. What is not drawn says so and
+  is a link to itself wearing its alt: the social style, a logo
+  (simple-icons, a request), a dynamic badge, any other outside image.
+  In the shared renderer, so a cartridge's papers and the workbench's
+  own README read the same.
+
 - **The Record's `--no-live` row points at html.** It named the
   `live` cartridge, gone into html as `--live` on 2026-09-18, so the
   row wore an unknown box's name and never read as inserted. The

@@ -64,12 +64,33 @@ the developer's machine, not secrets:
 | --- | --- |
 | `pgadmin` | nothing: desktop mode, no pgAdmin account; the server's password comes from the `pgpass` the container writes |
 | `phpmyadmin` | nothing: signed in as `root` |
-| `adminer` | the password **`pass`** — Adminer's own, checked by Adminer and never sent to the database; on SQL Server, **`some!Password`**, sa's, since that server checks its own. The user and the database come filled in |
+| `adminer` | a password, the only field left: **`pass`** on Postgres, MySQL and SQLite — Adminer's own, checked by Adminer and never sent to the database — and **`some!Password`** on SQL Server, sa's, which that server checks itself. The user and the database come filled in |
 | `cloudbeaver` | nothing: the connection is open on arrival. CloudBeaver's own settings take its administrator, **`cbadmin`** / **`pass`** |
 
-The databases themselves, as `phx.new` and ecto set them: Postgres
-`postgres` / `postgres`, MySQL `root` with no password, SQL Server
-`sa` / `some!Password`, SQLite none.
+Adminer asks for one because it refuses a login with an empty
+password, a database without passwords, or a server that accepts any —
+which is all four of these inside the pod. That rule is Adminer's, and
+the box leaves it as its author wrote it rather than teaching the
+plugin to answer for the server; what the box does instead is fill the
+rest of the form in, and say here what to type.
+
+### The credentials
+
+The database's own, as `phx.new` and ecto set them — for any client,
+not only these four: a shell in the workspace, a desktop DBeaver, a
+migration you run by hand. The server answers on `127.0.0.1` inside
+the pod, and the databases are `<app>_dev` and, in a release,
+`<app>_prod`:
+
+| Database | Port | User | Password | In Adminer, type |
+| --- | --- | --- | --- | --- |
+| Postgres | 5432 | `postgres` | `postgres` | `pass` |
+| MySQL | 3306 | `root` | none | `pass` |
+| SQL Server | 1433 | `sa` | `some!Password` | `some!Password` |
+| SQLite | — | none | none | `pass` |
+
+SQLite is a file, not a server: `/app/src/<app>_dev.db` in the
+workspace, `/app/data/<app>_prod.db` on the release's volume.
 
 The image tags are `PGADMIN_IMAGE_VERSION`, `PHPMYADMIN_IMAGE_VERSION`,
 `ADMINER_IMAGE_VERSION` and `CLOUDBEAVER_IMAGE_VERSION` in

@@ -432,6 +432,18 @@ verifies forever. It is not a secret: it is what Adminer's rule asks
 for, and it protects the page, not the database, which the pod does
 not publish.
 
+On SQL Server the typed password is sa's instead, since that server
+checks its own and `Password` withholds only from a server that
+requires none (§2.6) — so what to type differs by adapter. The plugin
+could level it, answering `credentials()` with ecto's password
+whatever was typed, and `pass` would open all four; it does not,
+because the rule is Adminer's own and a box installs a tool as its
+author wrote it. What the box owes the reader instead is the
+credentials themselves, and they are a table in the
+[README](README.md): each database's user, password and port, for any
+client — a shell, a desktop DBeaver — not only for these four
+(2026-09-19).
+
 **Tried and not kept (2026-09-19): no password, the port on loopback.**
 Adminer is the one admin of four behind a password, and the author's
 reason for the rule (§2.6) — "a forgotten Adminer uploaded on a place

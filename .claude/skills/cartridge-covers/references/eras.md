@@ -279,6 +279,9 @@ line without naming a medium; the era renders it:
 * **Candid** — the mechanism shows what is happening while it
   happens, and leaves the judgement to you. Subtitles disclose
   (`STOP GUESSING`). Added for dashboard.
+* **Fitting** — the mechanism hands each one what was made for it, the
+  moment they step in, and never the neighbour's. Subtitles assign
+  (`TO EACH ITS OWN`). Added for version_manager.
 
 Landmarks, not options — each one was a cartridge's need read as a
 stance, which is where a register comes from now (`NEED.md`). Add one when a cartridge wants a stance

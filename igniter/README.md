@@ -38,7 +38,8 @@ the legacy `app.sh` and the earlier package editions lives in the git log.
 │   │       │                                        #   lives in priv/features/exdoc/
 │   │       ├── 📦 credo/, mock/, osmon/, ...        # dep-only cartridges: README + <f>.ex + task.ex
 │   │       ├── 📦 chiefs_setup/                     # the collection: its installer inserts the picks
-│   │       ├── 📦 ansi/, toolchain/, versioning/    # the house's settings: one decision each
+│   │       ├── 📦 ansi/, version_manager/,          # the house's settings: one decision each
+│   │       │      toolchain/, versioning/
 │   │       ├── 📦 guidelines/                       # the team's conventions into exdoc's site (requires it)
 │   │       ├── 📦 githooks/, exmachina/             # cartridges no collection picks
 │   │       ├── 📦 clustering/                       #   rel/*.eex + distributed exports

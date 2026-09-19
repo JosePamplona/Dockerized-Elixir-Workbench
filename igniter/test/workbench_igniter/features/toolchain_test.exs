@@ -7,54 +7,38 @@ defmodule WorkbenchIgniter.Features.ToolchainTest do
 
   alias WorkbenchIgniter.Features.Toolchain
 
-  defp installed(argv \\ []) do
-    phx_test_project()
-    |> Igniter.compose_task("workbench.install.toolchain", argv)
-    |> apply_igniter!()
-  end
-
   describe "mix workbench.install.toolchain" do
-    test "writes the versions running the installer" do
-      file = installed().assigns[:test_files][".tool-versions"]
+    test "keeps the language server's directory out of git, and nothing else" do
+      igniter = Igniter.compose_task(phx_test_project(), "workbench.install.toolchain", [])
 
-      assert file =~ "elixir #{System.version()}\n"
-      assert file =~ ~r/^erlang \d/m
-    end
-
-    test "--elixir and --erlang pin something else" do
-      file =
-        installed(["--elixir", "1.18.4", "--erlang", "27.3"]).assigns[:test_files][
-          ".tool-versions"
-        ]
-
-      assert file == "erlang 27.3\nelixir 1.18.4\n"
-    end
-
-    test "keeps the language server's cache out of git" do
-      phx_test_project()
-      |> Igniter.compose_task("workbench.install.toolchain", [])
-      |> assert_has_patch(".gitignore", """
+      assert_has_patch(igniter, ".gitignore", """
       + |# Elixir Language Server directory.
       + |/.elixir_ls/
       """)
+
+      # The pin is version_manager's since v0.2.0.
+      refute Igniter.exists?(igniter, ".tool-versions")
     end
 
-    test "is a no-op on a second run, and never overwrites an existing pin" do
+    test "is a no-op on a second run" do
       phx_test_project()
       |> Igniter.compose_task("workbench.install.toolchain", [])
       |> apply_igniter!()
-      |> Igniter.compose_task("workbench.install.toolchain", ["--elixir", "1.0.0"])
+      |> Igniter.compose_task("workbench.install.toolchain", [])
       |> assert_unchanged()
-      |> assert_has_notice(&(&1 =~ "the pin is in"))
     end
   end
 
-  describe "state/1" do
-    test "reads the versions back off the file" do
-      {state, _} = Toolchain.state(installed(["--elixir", "1.18.4", "--erlang", "27.3"]))
-      assert state == %{elixir: "1.18.4", erlang: "27.3"}
+  describe "installed?/1" do
+    test "reads the entry in .gitignore" do
+      assert {false, _} = Toolchain.installed?(phx_test_project())
 
-      assert {%{}, _} = Toolchain.state(phx_test_project())
+      igniter =
+        phx_test_project()
+        |> Igniter.compose_task("workbench.install.toolchain", [])
+        |> apply_igniter!()
+
+      assert {true, _} = Toolchain.installed?(igniter)
     end
   end
 end

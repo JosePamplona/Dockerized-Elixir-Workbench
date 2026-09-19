@@ -12,6 +12,7 @@ defmodule WorkbenchIgniter.Features.ChiefsSetupTest do
     test "default choices: the picks in insertion order, with their argv" do
       assert ChiefsSetup.members(interface: "rest") == [
                {"ansi", []},
+               {"version_manager", []},
                {"toolchain", []},
                {"versioning", []},
                {"osmon", []},

@@ -38,6 +38,7 @@ defmodule WorkbenchIgniter.Features.ChiefsSetup do
     [
       # The house's settings on a stock project.
       {"ansi", []},
+      {"version_manager", []},
       {"toolchain", []},
       {"versioning", []},
       {"osmon", []},

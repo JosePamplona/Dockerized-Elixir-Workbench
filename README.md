@@ -176,11 +176,11 @@ Workbench features can be installed on the existing project at any time:
 ./wb.sh add [FEATURE] [OPTIONS]
 ```
 
-`[FEATURE]` is one of: **chiefs_setup**, **ansi**, **toolchain**, **versioning**, **healthcheck**, **rest**, **graphql**, **coveralls**, **exdoc**, **guidelines**, **enhancements**, **auth0**, **openai**, **credo**, **githooks**, **exmachina**, **mock**, **exdebug**, **psql_extras**, **pgadmin**, **adminer**, **k6**, **monitoring**, **osmon**, **clustering**, **healthcheck2**, **ash**, **mailer**, **gettext**, **ecto**, **esbuild**, **tailwind**, **html**, **dashboard**. `[OPTIONS]` are the flags of the corresponding `mix workbench.install.FEATURE` task.
+`[FEATURE]` is one of: **chiefs_setup**, **ansi**, **version_manager**, **toolchain**, **versioning**, **healthcheck**, **rest**, **graphql**, **coveralls**, **exdoc**, **guidelines**, **enhancements**, **auth0**, **openai**, **credo**, **githooks**, **exmachina**, **mock**, **exdebug**, **psql_extras**, **pgadmin**, **adminer**, **k6**, **monitoring**, **osmon**, **clustering**, **healthcheck2**, **ash**, **mailer**, **gettext**, **ecto**, **esbuild**, **tailwind**, **html**, **dashboard**. `[OPTIONS]` are the flags of the corresponding `mix workbench.install.FEATURE` task.
 
 **chiefs_setup** is a *collection*: a cartridge whose installer inserts other cartridges — the workbench's picks (the house's settings, the dep-only quintet, REST or GraphQL as its `--interface` says, coveralls, exdoc, enhancements and healthcheck). Adding it inserts each missing member as its own commit, so `eject` still reverts one cartridge alone; the collection leaves no commit of its own.
 
-**ansi**, **toolchain** and **versioning** are what the retired opinionated `new` used to write into every project, one decision each: coloured logs through Docker, a `.tool-versions` so your editor knows which Elixir this is (plus `/.elixir_ls/` ignored), and the project's initial version with its `CHANGELOG.md`.
+**ansi**, **version_manager**, **toolchain** and **versioning** are what the retired opinionated `new` used to write into every project, one decision each: coloured logs through Docker, the file your version manager reads, so your host switches to this project's Erlang and Elixir when you `cd` into it and to another project's when you leave (`.tool-versions` for asdf, which mise reads too, or `mise.toml` with `--manager mise`), `/.elixir_ls/` ignored, and a `CHANGELOG.md` opened at the project's version, which is where its versioning starts.
 
 The workbench can say all of that itself, and which cartridges the project already carries:
 

@@ -66,7 +66,8 @@ installing it.
 Setup's non-feature configuration went with it in the first pass and
 was rescued in the second, as boxes rather than as lines in a task —
 one decision each, joined to this recipe: `ansi`, `toolchain`
-(`.tool-versions` + the ElixirLS ignore) and `versioning` (the initial
+(`.tool-versions` + the ElixirLS ignore; two boxes since 2026-09-18,
+`version_manager` and `toolchain`) and `versioning` (the initial
 version + `CHANGELOG.md`). Two pieces deliberately became *no* box:
 the generators and migration types, which are the config half of
 enhancements' `--id-type`/`--timestamps` and belong in the cartridge

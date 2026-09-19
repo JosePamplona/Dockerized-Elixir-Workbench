@@ -1,57 +1,39 @@
 # Cartridge: toolchain
 
-What the project tells the **host's** toolchain — not the workbench's
-image.
+The editor's language server, kept out of git.
 
 * **Task**: `mix workbench.install.toolchain`
-* **Inserted by**: `wb.sh add toolchain`; a chiefs_setup pick.
+* **Inserted by**: `wb.sh add toolchain`
 
 ## Description
 
-Inside the container the stack comes from the image and nothing reads a
-version file. Outside it — your editor, its language server, a `mix` in
-your own shell — nothing knows which Elixir this project is. This
-cartridge writes that down, and keeps the language server's droppings
-out of git.
+Open the project on your own machine with an editor whose language
+server is ElixirLS and it builds the project into `.elixir_ls/`, beside
+the source — a directory nobody wants in a commit and every clone has
+to ignore again. This cartridge ignores it in the project, once.
 
-The versions are not asked for and not read off `mix.exs`: its
-`elixir:` line is a requirement range (`~> 1.17`), not a version. The
-installer runs *inside* the toolchain container, so it reports what is
-actually running it — `System.version/0` and the OTP release — which is
-the stack the image was built from. That is the one source that cannot
-drift from the workspace.
+Until v0.2.0 it also pinned the host's Erlang and Elixir
+(`.tool-versions`). That is [version_manager](../version_manager/)'s
+now: a version manager and a language server are two tools. What is
+left here still carries the old name; the name and the scope — other
+language servers keep directories of their own — are to settle in this
+box's own session (`SCRIPT.md`, "The author's selection").
 
 ## What it installs
 
-* `.tool-versions`:
-
-  ```text
-  erlang 27.3.4.2
-  elixir 1.19.5
-  ```
-
-  Read by [asdf](https://asdf-vm.com) and [mise](https://mise.jdx.dev);
-  other version managers ignore it.
 * `/.elixir_ls/` in `.gitignore`, under its comment.
-
-## Options
-
-* `--elixir`, `--erlang` - Pin something other than the versions
-  running the installer. Rarely what you want: the point of the file is
-  to agree with the image.
 
 ## The mark
 
-`.tool-versions` itself. An existing one is never overwritten
-(`on_exists: :skip`), so a project that pins its own versions keeps
-them; `state/1` reads back what the file says, so the console can show
-the pin beside the workspace's stack.
+The entry itself, read in `.gitignore`: a second run finds it and
+changes nothing, and so does a first run on a project that already
+ignores the directory. No options, so no `state/1`.
 
 ## Contents
 
 | File | Role |
 | --- | --- |
-| `toolchain.ex` | Manifest + logic (`info/2`, `install/1`, `state/1`) |
+| `toolchain.ex` | Manifest + logic (`info/2`, `install/1`) |
 | `task.ex` | `Mix.Tasks.Workbench.Install.Toolchain` shell |
 
 Cartridge test: `test/workbench_igniter/features/toolchain_test.exs`.

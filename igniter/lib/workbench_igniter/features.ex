@@ -25,6 +25,7 @@ defmodule WorkbenchIgniter.Features do
     Features.ChiefsSetup,
     # The house's settings on a stock project: one decision each.
     Features.Ansi,
+    Features.VersionManager,
     Features.Toolchain,
     Features.Versioning,
     # Trivial dep-only group.

@@ -5,6 +5,26 @@ it. Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) applied to
 what the cartridge *installs*.
 
+## v0.2.0 - (2026-09-18)
+
+### Removed
+
+- `.tool-versions`, `--elixir` / `--erlang` and the versions in
+  `state/1`: the pin of the host's stack is the new `version_manager`
+  cartridge's (`.tool-versions` or `mise.toml`, by `--manager`). A
+  version manager and a language server are two tools, and a project
+  may have either without the other.
+
+### Changed
+
+- The mark is the `/.elixir_ls/` entry in `.gitignore`, where it was
+  `.tool-versions`. A project that took v0.1.0 carries both files'
+  marks: it reads as having toolchain and version_manager in, which is
+  what it has.
+- The name and the scope — ElixirLS is a language server, not only
+  VS Code's; Lexical, Next LS and Expert keep directories of their own —
+  are still to settle (`SCRIPT.md`, "The author's selection").
+
 ## v0.1.0 - (2026-08-30)
 
 ### Added

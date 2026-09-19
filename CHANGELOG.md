@@ -25,6 +25,33 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   no stamp. One link on the head, not one per row: every row points at
   the same page.
 
+- **version_manager: the host's pin is a box of its own.** The first
+  box of the shelf's migration (`SCRIPT.md`, the author's selection:
+  asdf/mise). toolchain held two capsules of knowledge — the
+  `.tool-versions` a version manager reads and the `/.elixir_ls/` a
+  language server leaves — and a project may want either without the
+  other. The pin is `version_manager` now, with the manager as its
+  option: `--manager asdf` (the default) writes `.tool-versions`,
+  asdf's file, which mise reads too; `--manager mise` writes
+  `mise.toml`, the file mise recommends over it. The option changes the
+  file, so the file is the state: `state/1` says the manager back off
+  the one that is there, and any version file of either manager
+  (`.mise.toml` included) is the mark — never overwritten, and a
+  project on mise is not handed an asdf file beside its own. What the
+  split found: toolchain wrote `elixir 1.19.6`, and both managers
+  install Elixir precompiled, where the bare version is the build
+  against the *oldest* OTP that Elixir supports (asdf-elixir's README),
+  not the Erlang pinned on the line above. The installer knows the OTP
+  it runs on, so it writes `1.19.6-otp-28`. toolchain's `--elixir` and
+  `--erlang` did not come along: typing the versions contradicts the
+  file's one claim, and another pin is an edit of a file that is the
+  project's. Read back by a real mise
+  (2026.9.11, in a container) from both files; the names checked
+  against asdf's listings. toolchain keeps the language server's
+  ignore, its mark now that entry, its name and scope to settle in its
+  own session; chiefs_setup inserts both, fifteen picks (version_manager
+  v0.1.0, toolchain v0.2.0, chiefs_setup v0.3.0, 2026-09-18).
+
 - **A requirement can name the state it needs.** `requires/0` took
   names, and a cartridge that needed more — pgadmin and psql_extras, on
   Postgres and nothing else — checked it by hand after the names, each

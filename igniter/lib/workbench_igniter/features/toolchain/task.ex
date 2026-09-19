@@ -3,33 +3,23 @@ defmodule Mix.Tasks.Workbench.Install.Toolchain do
 
   alias WorkbenchIgniter.Features.Toolchain
 
-  @shortdoc "Pins the Elixir and Erlang the project runs on, for the host"
+  @shortdoc "Keeps the editor's language server directory out of git"
 
   @moduledoc """
   #{@shortdoc}
 
-  For working on the project outside the container — an editor, a
-  language server, a `mix` in your own shell — where nothing knows which
-  Elixir this project is. It writes:
+  For working on the project outside the container, with an editor whose
+  language server is ElixirLS: it builds the project into `.elixir_ls/`,
+  beside the source. It writes:
 
-  * `.tool-versions` with the Elixir and Erlang running the installer
-    (asdf and mise read it; the container ignores it)
-  * `/.elixir_ls/` in `.gitignore`, so the language server's cache stays
-    out of the repository
+  * `/.elixir_ls/` in `.gitignore`, under its comment
 
-  The versions default to the ones actually running this task — the
-  toolchain image's — because `mix.exs` only carries a requirement
-  range, and a hand-written pin drifts from the image the workspace
-  builds. Re-running it is a no-op: an existing `.tool-versions` is
-  never overwritten.
+  Re-running it is a no-op: the entry goes in once. The Erlang and
+  Elixir the host should run are `version_manager`'s.
 
   ## Example
 
       #{Toolchain.info([], nil).example}
-
-  ## Options
-
-  #{WorkbenchIgniter.Feature.options_doc(Toolchain)}
   """
 
   @impl Igniter.Mix.Task

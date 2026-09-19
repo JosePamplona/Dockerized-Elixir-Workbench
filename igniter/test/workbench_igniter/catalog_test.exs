@@ -22,14 +22,14 @@ defmodule WorkbenchIgniter.CatalogTest do
 
   # Every cartridge there is, by directory name, in shelf order: the
   # collection first, then the cartridges, then the base ones.
-  @cartridges ~w(chiefs_setup ansi toolchain versioning
+  @cartridges ~w(chiefs_setup ansi version_manager toolchain versioning
                  osmon psql_extras credo mock exdebug rest graphql
                  coveralls exdoc guidelines enhancements auth0 openai healthcheck stripe
                  githooks exmachina clustering healthcheck2 ash specdd pgadmin adminer k6 monitoring
                  mailer gettext ecto esbuild tailwind html dashboard)
   # The chiefs_setup recipe with its default choices, in insertion order.
-  @picks ~w(ansi toolchain versioning osmon psql_extras pgadmin credo mock exdebug rest
-            coveralls exdoc enhancements healthcheck)
+  @picks ~w(ansi version_manager toolchain versioning osmon psql_extras pgadmin credo mock
+            exdebug rest coveralls exdoc enhancements healthcheck)
   # Base cartridges a default phx.new project already carries.
   @in_by_default ~w(mailer gettext ecto esbuild tailwind html dashboard)
 
@@ -232,7 +232,7 @@ defmodule WorkbenchIgniter.CatalogTest do
 
       # The facts column says what is true of the box, and nothing when
       # nothing is — there is no kind to print.
-      assert output =~ ~r/^chiefs_setup +v\d+\.\d+\.\d+ +inserts 14 +Your project is vanilla/m
+      assert output =~ ~r/^chiefs_setup +v\d+\.\d+\.\d+ +inserts 15 +Your project is vanilla/m
       assert output =~ ~r/^mailer +\S+ +base +You want to see the mail/m
       assert output =~ ~r/^stripe +- +pending +Your users should be able to pay/m
       assert output =~ ~r/^healthcheck2 +v0\.1\.0 +Your platform polls/m
@@ -331,9 +331,7 @@ defmodule WorkbenchIgniter.CatalogTest do
     # project.
     @runs %{
       "chiefs_setup" => [{~w(--interface graphql), %{interface: "graphql"}}],
-      "toolchain" => [
-        {~w(--elixir 1.18.4 --erlang 27.3), %{elixir: "1.18.4", erlang: "27.3"}}
-      ],
+      "version_manager" => [{~w(--manager mise), %{manager: "mise"}}],
       "versioning" => [
         {~w(--version 1.2.3 --task --readme-badge),
          %{version: "1.2.3", task: true, readme_badge: true}}

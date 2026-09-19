@@ -27,7 +27,8 @@ member only names the *fellow members* that ride along (exdoc's
 
 [chiefs_setup](chiefs_setup/) is the collection: the picks of the
 retired opinionated line — the house's settings ([ansi](ansi/) →
-[toolchain](toolchain/) → [versioning](versioning/)), the trivial dep
+[version_manager](version_manager/) → [toolchain](toolchain/) →
+[versioning](versioning/)), the trivial dep
 group ([osmon](osmon/) → [psql_extras](psql_extras/) →
 [credo](credo/) → [mock](mock/) → [exdebug](exdebug/)),
 [rest](rest/) | [graphql](graphql/) (its `--interface` choice),
@@ -46,7 +47,8 @@ time or not at all:
 | Cartridge | The decision | What it writes |
 | --- | --- | --- |
 | [ansi](ansi/) | logs come out coloured through Docker | `config :elixir, ansi_enabled: true` |
-| [toolchain](toolchain/) | the host knows which Elixir this is | `.tool-versions` (off the running toolchain) + `/.elixir_ls/` in `.gitignore` |
+| [version_manager](version_manager/) | the host switches to this project's Erlang and Elixir on `cd` | `.tool-versions` for asdf (mise reads it too) or `mise.toml`, off the running toolchain, Elixir with its OTP |
+| [toolchain](toolchain/) | the editor's language server stays out of git | `/.elixir_ls/` in `.gitignore` |
 | [versioning](versioning/) | the project's version is a decision | `version:` in `mix.exs` + `CHANGELOG.md`; `mix version` and the README badge on request |
 
 The rest of what setup configured did not become boxes, because it

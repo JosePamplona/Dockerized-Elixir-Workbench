@@ -11,17 +11,17 @@ in, which the marks build on):
 
 | # | Pick | Argv it gets |
 | :-: | :-- | :-- |
-| 1–3 | ansi, toolchain, versioning | — |
-| 4–8 | osmon, psql_extras, credo, mock, exdebug | — |
-| 9 | rest `--health` **or** graphql | `--interface` decides |
-| 10 | coveralls | `--exdoc` |
-| 11 | exdoc | `--coveralls` |
-| 12 | enhancements | `--interface`, `--exdoc`, `--health` |
-| 13 | healthcheck | — |
+| 1–4 | ansi, version_manager, toolchain, versioning | — |
+| 5–9 | osmon, psql_extras, credo, mock, exdebug | — |
+| 10 | rest `--health` **or** graphql | `--interface` decides |
+| 11 | coveralls | `--exdoc` |
+| 12 | exdoc | `--coveralls` |
+| 13 | enhancements | `--interface`, `--exdoc`, `--health` |
+| 14 | healthcheck | — |
 
-The first three are the house's settings on a stock project — coloured
-logs, the host's version pin, a version and a changelog — and the rest
-is what it then carries.
+The first four are the house's settings on a stock project — coloured
+logs, the host's version pin, the language server's ignore, a version
+and a changelog — and the rest is what it then carries.
 
 The argv a pick gets is the recipe telling it which *fellow picks* ride
 along (exdoc links the coverage report because coveralls is in the

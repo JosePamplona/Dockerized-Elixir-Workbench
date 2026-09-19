@@ -7,6 +7,16 @@ what the cartridge *installs* — here, the recipe: a changed pick or
 argv is a minor, a removed pick (a project counting on it stops getting
 it) is a major.
 
+## v0.3.0 - (2026-09-18)
+
+### Added
+
+- `version_manager` joins the recipe, ahead of `toolchain`: the
+  `.tool-versions` toolchain wrote is that cartridge's now, so the
+  collection still leaves what it left — the pin and the language
+  server's ignore — as two commits instead of one. Elixir is pinned
+  with its OTP (`1.19.6-otp-28`).
+
 ## v0.2.0 - (2026-08-30)
 
 ### Added

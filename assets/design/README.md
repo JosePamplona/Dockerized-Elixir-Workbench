@@ -61,7 +61,7 @@ one: a bordered box is a door you press.
   no link). It never wears the gold. A printed back plate uses the bare
   form — a plate knows no project.
 * **`.door-ref`** — an address: a route the reader opens in the browser
-  (`/dev/docs`, `/dev/mailbox`, healthcheck2's `{path}/live` on the app's
+  (`/dev/docs`, `/dev/mailbox`, health_probe's `{path}/live` on the app's
   port; pgAdmin's `/` on the port the compose publishes for it) or a
   port of a service (`localhost:4001`, `database:5432`). One order wherever it is read: the label first, in
   the house's lettering because it is a name, then the address in mono

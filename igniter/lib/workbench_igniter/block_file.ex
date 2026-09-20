@@ -52,7 +52,7 @@ defmodule WorkbenchIgniter.BlockFile do
   names it. The open line takes an optional `:note`, for the project's
   reader:
 
-      # >>> healthcheck — the modules its controller test copies
+      # >>> health_endpoint — the modules its controller test copies
 
   ## Where a new block goes
 

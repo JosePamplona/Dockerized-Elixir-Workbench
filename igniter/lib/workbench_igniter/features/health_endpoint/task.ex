@@ -1,9 +1,9 @@
-defmodule Mix.Tasks.Workbench.Install.Healthcheck do
+defmodule Mix.Tasks.Workbench.Install.HealthEndpoint do
   use WorkbenchIgniter.Task
 
-  alias WorkbenchIgniter.Features.Healthcheck
+  alias WorkbenchIgniter.Features.HealthEndpoint
 
-  @shortdoc "Adds a healthcheck endpoint with controller, tests and router scope"
+  @shortdoc "Adds a health endpoint with controller, tests and router scope"
 
   @moduledoc """
   #{@shortdoc}
@@ -15,14 +15,14 @@ defmodule Mix.Tasks.Workbench.Install.Healthcheck do
     info only when dev routes are enabled)
   * creates `MyAppWeb.HealthcheckController`
   * creates the controller unit tests
-  * adds a scope with the healthcheck route to the Phoenix router
+  * adds a scope with the health route to the Phoenix router
 
   All changes are accumulated in a single patch set and shown as a diff
   before being applied (pass `--yes` to skip confirmation).
 
   ## Example
 
-      mix workbench.install.healthcheck
+      mix workbench.install.health_endpoint
 
   When the project has the REST/OpenAPI feature (`workbench.install.rest`) —
   detected by the presence of `MyAppWeb.OpenApi.Spec`, or forced with
@@ -31,12 +31,12 @@ defmodule Mix.Tasks.Workbench.Install.Healthcheck do
 
   ## Options
 
-  #{WorkbenchIgniter.Feature.options_doc(Healthcheck)}
+  #{WorkbenchIgniter.Feature.options_doc(HealthEndpoint)}
   """
 
   @impl Igniter.Mix.Task
-  def info(argv, composing_task), do: Healthcheck.info(argv, composing_task)
+  def info(argv, composing_task), do: HealthEndpoint.info(argv, composing_task)
 
   @impl Igniter.Mix.Task
-  def igniter(igniter), do: Healthcheck.install(igniter)
+  def igniter(igniter), do: HealthEndpoint.install(igniter)
 end

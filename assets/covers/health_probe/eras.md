@@ -1,4 +1,4 @@
-# healthcheck2 — six proposals
+# health_probe — six proposals
 
 Written from the cartridge's README and nothing else. The era block of
 the winner goes into `cover.prompt.txt` verbatim; what follows is the

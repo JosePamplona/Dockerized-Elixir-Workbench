@@ -25,7 +25,7 @@ defmodule WorkbenchIgniter.Features.ChiefsSetupTest do
                {"coveralls", ["--exdoc"]},
                {"exdoc", ["--coveralls"]},
                {"enhancements", ["--interface", "rest", "--exdoc", "--health"]},
-               {"healthcheck", []}
+               {"health_endpoint", []}
              ]
     end
 

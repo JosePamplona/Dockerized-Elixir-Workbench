@@ -19,12 +19,12 @@ the legacy `app.sh` and the earlier package editions lives in the git log.
 │   │   ├── 📄 phx_delta.ex                          # a phx.new capability added after the fact, as the difference between two generations
 │   │   ├── 📄 features.ex                           # registry: every cartridge, in shelf order — the catalog
 │   │   └── 📁 features/                             # one directory per cartridge, each with its README:
-│   │       ├── 📦 healthcheck/                      #   the reference cartridge
+│   │       ├── 📦 health_endpoint/                  #   the reference cartridge
 │   │       │   ├── 📄 README.md                     #   what it installs, options, contents
 │   │       │   ├── 📄 CHANGELOG.md                  #   the cartridge's own version history
 │   │       │   ├── 📄 DESIGN.md                     #   why it is shaped like this, with sources
-│   │       │   ├── 📄 healthcheck.ex                #   manifest + install logic
-│   │       │   ├── 📄 task.ex                       #   Mix.Tasks.Workbench.Install.Healthcheck shell
+│   │       │   ├── 📄 health_endpoint.ex            #   manifest + install logic
+│   │       │   ├── 📄 task.ex                       #   Mix.Tasks.Workbench.Install.HealthEndpoint shell
 │   │       │   └── 📄 templates/*.eex               #   compile-time embedded templates
 │   │       ├── 📦 rest/                             # same (6 templates)
 │   │       ├── 📦 graphql/                          # same (2 templates)
@@ -43,7 +43,7 @@ the legacy `app.sh` and the earlier package editions lives in the git log.
 │   │       ├── 📦 guidelines/                       # the team's conventions into exdoc's site (requires it)
 │   │       ├── 📦 githooks/, exmachina/             # cartridges no collection picks
 │   │       ├── 📦 clustering/                       #   rel/*.eex + distributed exports
-│   │       ├── 📦 healthcheck2/                     #   liveness/readiness plug, mounted first
+│   │       ├── 📦 health_probe/                     #   liveness/readiness plug, mounted first
 │   │       ├── 📦 mailer/                           #   a base cartridge: phx.new's --no-mailer, undone through phx_delta
 │   │       ├── 📦 ash/                              #   queues the mix igniter.install of ash-hq.org
 │   │       ├── 📦 stripe/                           # pending manifest (installer not done)
@@ -77,7 +77,7 @@ functionality. Every cartridge — dep-only ones included — is a directory
 with its own `README.md` explaining what it installs, how it is inserted
 and the role of each file; the general index is
 [`lib/workbench_igniter/features/README.md`](lib/workbench_igniter/features/README.md).
-`healthcheck/` is the reference:
+`health_endpoint/` is the reference:
 
 - **`<feature>.ex`** — a `WorkbenchIgniter.Features.<Feature>` module with
   `use WorkbenchIgniter.Feature`. It gathers the *manifest* and the
@@ -158,7 +158,7 @@ and the role of each file; the general index is
   references. Where sources disagree it says so and takes a side. The
   README stays operational — what it installs, options, wiring — and
   links here for the why. A dep-only cartridge's is a page. Same
-  backfill rule as the changelog; `healthcheck2/DESIGN.md` is the
+  backfill rule as the changelog; `health_probe/DESIGN.md` is the
   reference, and the criteria for writing one are in the features
   index, under *Writing a DESIGN.md*.
 
@@ -221,7 +221,7 @@ one alone.
 - [ ] `installed?/1`, off one mark; and the idempotency guard reads
       that same function if it touches the router or any other
       non-idempotent edit (`installed?` + `add_notice`; see
-      healthcheck).
+      health_endpoint).
 - [ ] Templates as EEx module *bodies* in `templates/`
       (`embed_templates()`); verbatim files in `assets/`
       (`embed_assets()`, `.asset` suffix for `*.ex` files); binary
@@ -276,9 +276,9 @@ mix workbench.install.chiefs_setup --interface rest --yes
 or individual installers:
 
 ```sh
-mix workbench.install.healthcheck          # shows the diff and asks for confirmation
-mix workbench.install.healthcheck --yes    # applies directly (for Docker/CI use)
-mix workbench.install.healthcheck --endpoint /status   # configurable route
+mix workbench.install.health_endpoint          # shows the diff and asks for confirmation
+mix workbench.install.health_endpoint --yes    # applies directly (for Docker/CI use)
+mix workbench.install.health_endpoint --endpoint /status   # configurable route
 ```
 
 The task performs, in a single atomic patch set:

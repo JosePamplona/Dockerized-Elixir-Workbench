@@ -7,7 +7,7 @@ defmodule WorkbenchIgniter.Features.Rest do
   renders live in this directory, and the `Mix.Tasks.Workbench.Install.Rest`
   shell in `task.ex` delegates here.
 
-  Ordering: inserted before healthcheck, so healthcheck autodetects the
+  Ordering: inserted before health_endpoint, so health_endpoint autodetects the
   `OpenApi.Spec` module in the patch set and generates its
   OpenApiSpex-documented variant.
   """

@@ -9,7 +9,7 @@ REST API documented with OpenAPI (open_api_spex) and SwaggerUI.
 
 * **Task**: `mix workbench.install.rest`
 * **Inserted by**: `wb.sh add --archived rest`. Mutually exclusive with `graphql`.
-* **Ordering**: before `healthcheck`, which autodetects the
+* **Ordering**: before `health_endpoint`, which autodetects the
   `OpenApi.Spec` module in the patch set. `--auth0`, `--openai` and
   `--health` name the fellow cartridges that shape its spec.
 
@@ -33,7 +33,7 @@ document would.
 
 This cartridge is also the foundation other features build on: auth0 adds
 its `GET /user` endpoint to the scope it creates, openai adds the
-conversation routes, and healthcheck detects it to generate its documented
+conversation routes, and health_endpoint detects it to generate its documented
 variant. The specification adjusts to whichever of those features are
 enabled, so the published contract always matches what the project
 actually does.

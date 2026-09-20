@@ -1,4 +1,4 @@
-# healthcheck2 — back copy
+# health_probe — back copy
 
 Set in the front's register (laconic). Every string here is composited
 as typeset text, never generated, so it can be any size and is exact.
@@ -38,7 +38,7 @@ WORKS WITH KUBERNETES, FLY.IO, AWS ECS
 
 ## Install
 
-`./wb.sh add healthcheck2`
+`./wb.sh add health_probe`
 
 ## Badge
 

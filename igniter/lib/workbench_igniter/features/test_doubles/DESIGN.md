@@ -48,7 +48,7 @@ narrower than the papers said: meck has compiled on OTP 29 since 1.0.0
 
 `mock.ex` adds `{:mock, "~> 0.3", only: :test}` and returns. There is
 no template, no `priv/`, no CHANGELOG, no paper. Three cartridges
-compose it — healthcheck (`healthcheck.ex:42,166`), coveralls
+compose it — health_endpoint (`health_endpoint.ex:42,166`), coveralls
 (`coveralls.ex:93,277`), enhancements (`enhancements.ex:53,345`) — and
 chiefs_setup picks it directly (`chiefs_setup.ex:47`). The knowledge
 the box is supposed to hold is not in it; it is in the eight test files
@@ -72,7 +72,7 @@ is:
 | `openai/assistant_test.eex` (673 lines), `conversation_controller_test.eex` (732), `assistant_fixtures.eex` | `Finch.request/2` | third party |
 | `coveralls/cover_test.exs` | `File.write!/2` | stdlib |
 | `enhancements/db_task_test.eex` | `File.cp!/2`, `File.write!/2` | stdlib |
-| `healthcheck/controller_test.eex` | `Repo.query/1` and `System.cmd/2`, made to raise | stdlib + the project's repo |
+| `health_endpoint/controller_test.eex` | `Repo.query/1` and `System.cmd/2`, made to raise | stdlib + the project's repo |
 
 Every one is `with_mock`/`with_mocks` with `[:passthrough]`: a global
 replacement of a module the project did not define. Two of them are not
@@ -220,7 +220,7 @@ Two caveats matter for the census:
 | `Finch`, `HTTPoison` (openai, auth0) | only after a client behaviour exists | directly |
 | `<App>.Accounts.from_token/1` | natural — the project's own code | yes |
 | `File.write!/2`, `File.cp!/2` (coveralls, enhancements) | impossible | yes |
-| `System.cmd/2`, `Repo.query/1` made to raise (healthcheck) | impossible | yes |
+| `System.cmd/2`, `Repo.query/1` made to raise (health_endpoint) | impossible | yes |
 
 The rows Mox cannot serve are not oversights of the library: they are
 Valim's point [2] turned around. A test that must falsify `File` is
@@ -362,7 +362,7 @@ wiring is a file:
   of the contract in `lib/`, and the line of `config/test.exs` that
   injects the double.
 
-And `test_helper.exs` is **shared**: healthcheck would declare `Repo`
+And `test_helper.exs` is **shared**: health_endpoint would declare `Repo`
 and `System`, coveralls `File`, auth0 `HTTPoison` and its `Accounts`,
 openai `Finch` — each cartridge owning its block, exactly as `MixFile`,
 `ComposeFile`, `EnvFile` and `IgnoreFile` own theirs, and idempotent
@@ -396,7 +396,7 @@ thing, and this is where the composition has to become explicit:
 
 | Cartridge | Needs | Why |
 | --- | --- | --- |
-| healthcheck | `mimic` | `Repo.query/1` and `System.cmd/2` raising |
+| health_endpoint | `mimic` | `Repo.query/1` and `System.cmd/2` raising |
 | coveralls | `mimic` | `File.write!/2`, as a spy |
 | enhancements | `mimic` | `File.cp!/2`, `File.write!/2` |
 | auth0, openai | `mimic` today; `mox` if their client grows a behaviour | §2.4 |
@@ -404,10 +404,10 @@ thing, and this is where the composition has to become explicit:
 
 This was feared to be blocked and is not. A **composing cartridge**
 already passes argv — `Igniter.compose_task/3` takes it, as coveralls
-composes exdoc with `--exdoc` — so healthcheck composes
+composes exdoc with `--exdoc` — so health_endpoint composes
 `workbench.install.test_doubles` with `--double mimic` and says what it
 needs. Two composers that disagree do not fight, because `rerun/0` is
-`:adds`: healthcheck's mimic and stripe's mox both end up installed,
+`:adds`: health_endpoint's mimic and stripe's mox both end up installed,
 which is the honest answer for a project that has both cartridges.
 
 What stays closed is the **collection**, and deliberately:
@@ -497,7 +497,7 @@ to measuring when it happens, in the form db_admin's §4 takes:
   grows a real boundary should move to Mox, and the box should make
   that the easy step rather than the ideological one.
 * **Which cartridges should grow a boundary** is not decided here.
-  openai and auth0 are the candidates; healthcheck's `System.cmd` and
+  openai and auth0 are the candidates; health_endpoint's `System.cmd` and
   `Repo.query` probably are not, since what they simulate is the
   platform failing.
 * **Neither precondition is left.** `WorkbenchIgniter.BlockFile`

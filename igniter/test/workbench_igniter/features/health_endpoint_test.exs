@@ -1,4 +1,4 @@
-defmodule WorkbenchIgniter.Features.HealthcheckTest do
+defmodule WorkbenchIgniter.Features.HealthEndpointTest do
   @moduledoc false
 
   use ExUnit.Case, async: true
@@ -8,10 +8,10 @@ defmodule WorkbenchIgniter.Features.HealthcheckTest do
   # Every test runs against an in-memory Phoenix project (app: :test,
   # modules Test / TestWeb) — no files are written to disk.
 
-  describe "mix workbench.install.healthcheck" do
+  describe "mix workbench.install.health_endpoint" do
     test "creates the controller and its test in Phoenix conventional paths" do
       phx_test_project()
-      |> Igniter.compose_task("workbench.install.healthcheck", [])
+      |> Igniter.compose_task("workbench.install.health_endpoint", [])
       |> assert_creates(
         "lib/test_web/controllers/healthcheck_controller.ex",
         fn content ->
@@ -35,7 +35,7 @@ defmodule WorkbenchIgniter.Features.HealthcheckTest do
       # the new modules to lib/test_web/healthcheck_controller.ex on write.
       igniter =
         phx_test_project()
-        |> Igniter.compose_task("workbench.install.healthcheck", [])
+        |> Igniter.compose_task("workbench.install.health_endpoint", [])
         |> apply_igniter!()
 
       files = Map.keys(igniter.assigns[:test_files])
@@ -47,7 +47,7 @@ defmodule WorkbenchIgniter.Features.HealthcheckTest do
 
     test "adds the /health scope to the router" do
       phx_test_project()
-      |> Igniter.compose_task("workbench.install.healthcheck", [])
+      |> Igniter.compose_task("workbench.install.health_endpoint", [])
       |> assert_has_patch(
         "lib/test_web/router.ex",
         """
@@ -62,7 +62,7 @@ defmodule WorkbenchIgniter.Features.HealthcheckTest do
 
     test "enables dev_routes in config/test.exs" do
       phx_test_project()
-      |> Igniter.compose_task("workbench.install.healthcheck", [])
+      |> Igniter.compose_task("workbench.install.health_endpoint", [])
       |> assert_has_patch(
         "config/test.exs",
         """
@@ -73,7 +73,7 @@ defmodule WorkbenchIgniter.Features.HealthcheckTest do
 
     test "adds the mock test dependency" do
       phx_test_project()
-      |> Igniter.compose_task("workbench.install.healthcheck", [])
+      |> Igniter.compose_task("workbench.install.health_endpoint", [])
       |> assert_has_patch(
         "mix.exs",
         """
@@ -91,7 +91,7 @@ defmodule WorkbenchIgniter.Features.HealthcheckTest do
       # exempt it via `dont_move_files` in the target project's `.igniter.exs`
       # (the ~r"lib/mix" entry is Igniter's own default, same reason).
       phx_test_project()
-      |> Igniter.compose_task("workbench.install.healthcheck", [])
+      |> Igniter.compose_task("workbench.install.health_endpoint", [])
       |> assert_has_patch(
         ".igniter.exs",
         """
@@ -102,7 +102,7 @@ defmodule WorkbenchIgniter.Features.HealthcheckTest do
 
     test "--endpoint overrides the scope route" do
       phx_test_project()
-      |> Igniter.compose_task("workbench.install.healthcheck", ["--endpoint", "/status"])
+      |> Igniter.compose_task("workbench.install.health_endpoint", ["--endpoint", "/status"])
       |> assert_has_patch(
         "lib/test_web/router.ex",
         """
@@ -120,7 +120,7 @@ defmodule WorkbenchIgniter.Features.HealthcheckTest do
     test "without the REST feature the controller has no OpenApiSpex specs" do
       igniter =
         phx_test_project()
-        |> Igniter.compose_task("workbench.install.healthcheck", [])
+        |> Igniter.compose_task("workbench.install.health_endpoint", [])
         |> apply_igniter!()
 
       controller =
@@ -138,7 +138,7 @@ defmodule WorkbenchIgniter.Features.HealthcheckTest do
       igniter =
         phx_test_project()
         |> Igniter.compose_task("workbench.install.rest", [])
-        |> Igniter.compose_task("workbench.install.healthcheck", [])
+        |> Igniter.compose_task("workbench.install.health_endpoint", [])
         |> apply_igniter!()
 
       controller =
@@ -155,7 +155,7 @@ defmodule WorkbenchIgniter.Features.HealthcheckTest do
     test "--open-api forces the documented variant without the REST feature" do
       igniter =
         phx_test_project()
-        |> Igniter.compose_task("workbench.install.healthcheck", ["--open-api"])
+        |> Igniter.compose_task("workbench.install.health_endpoint", ["--open-api"])
         |> apply_igniter!()
 
       controller =
@@ -166,9 +166,9 @@ defmodule WorkbenchIgniter.Features.HealthcheckTest do
 
     test "is a no-op with a notice when the controller already exists" do
       phx_test_project()
-      |> Igniter.compose_task("workbench.install.healthcheck", [])
+      |> Igniter.compose_task("workbench.install.health_endpoint", [])
       |> apply_igniter!()
-      |> Igniter.compose_task("workbench.install.healthcheck", [])
+      |> Igniter.compose_task("workbench.install.health_endpoint", [])
       |> assert_unchanged()
       |> assert_has_notice(&(&1 =~ "already installed"))
     end

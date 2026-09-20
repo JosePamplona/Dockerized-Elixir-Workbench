@@ -43,12 +43,12 @@ defmodule WorkbenchIgniter.Features do
     Features.Enhancements,
     Features.Auth0,
     Features.Openai,
-    Features.Healthcheck,
+    Features.HealthEndpoint,
     Features.Stripe,
     Features.Githooks,
     Features.Exmachina,
     Features.Clustering,
-    Features.Healthcheck2,
+    Features.HealthProbe,
     Features.Ash,
     Features.Specdd,
     # Services of the workspace, declared for the compose (scripts/PLAN.md).
@@ -97,7 +97,7 @@ defmodule WorkbenchIgniter.Features do
       # postgres); `%{}` when the names are enough.
       conditions: WorkbenchIgniter.Feature.conditions(feature),
       # The cartridges its installer inserts along, off the `composes`
-      # its `info/2` declares to Igniter (healthcheck brings mock in for
+      # its `info/2` declares to Igniter (health_endpoint brings mock in for
       # its tests): the other way a cartridge stands on another, and
       # the one `requires` does not say. `workbench.dependents` reads
       # both. A collection's members are its recipe, not this.

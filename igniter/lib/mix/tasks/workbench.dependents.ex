@@ -10,7 +10,7 @@ defmodule Mix.Tasks.Workbench.Dependents do
 
   What would be left standing on nothing if NAME came out: every
   cartridge this project carries that declares NAME in its `requires`
-  or brings it in itself (`composes`: healthcheck's installer inserts
+  or brings it in itself (`composes`: health_endpoint's installer inserts
   mock, whose library its tests use), and everything that builds on
   *those* in turn. One name per line, in
   the order they have to be ejected in — each one before anything it

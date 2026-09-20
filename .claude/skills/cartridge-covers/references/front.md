@@ -78,7 +78,7 @@ is one more thing the generator can get wrong.
 Two things are never slots. The **version** and the **date**: they
 belong to the back, typeset from the cartridge's `CHANGELOG.md`, and
 a version drawn into the hero is wrong at the next release — the
-healthcheck2 hero carries a `VERSION 0.1.0` the generator drew on its
+health_probe hero carries a `VERSION 0.1.0` the generator drew on its
 own, and it is asked out at the next continuation.
 
 The back adds one of its own, the **device**: the mark ghosted into its
@@ -400,7 +400,7 @@ moves anything. The first is kept as the evidence it was.
 
 **The field starts under the band, not at the edge.** A top inset is
 spending most of itself on a strip that is not part of the picture. On
-`healthcheck` and `exdebug` the violet begins at `y=83` of 728, which is
+`health_endpoint` and `exdebug` the violet begins at `y=83` of 728, which is
 **0.114 of the width** — and that is exactly the `0.11` this section used
 to recommend for top corners without knowing why. The number was never
 about the seal. Measured on those two covers only: `coveralls` and
@@ -431,7 +431,7 @@ optical top gap  = margin + 0.015 - band
 top margin that matches the sides = band + side margin - 0.015
 ```
 
-`healthcheck` is that arithmetic: `0.114 + 0.05 - 0.015` = `0.15`, and
+`health_endpoint` is that arithmetic: `0.114 + 0.05 - 0.015` = `0.15`, and
 `--margin 0.05,0.15` is what it was stamped with. At `0.11` the seal sat
 8px under the band against 47px at the right, and read as hanging off the
 band rather than placed in the field.
@@ -447,7 +447,7 @@ where the number is assigned **at archive time as one more than the
 highest already there for that feature**. So 1 is the first ever made, n
 is the one most recently retired, and nothing is ever renumbered. This
 guide writes those as `coveralls-3` for short. Plates are archived the
-same way as `back-N`, on their own count: `healthcheck` retired six
+same way as `back-N`, on their own count: `health_endpoint` retired six
 covers-worth of plate before one passed, and they are `back-1` to
 `back-6`.
 

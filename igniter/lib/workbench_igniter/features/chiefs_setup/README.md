@@ -23,7 +23,7 @@ in, which the marks build on):
 | 11 | coveralls | `--exdoc` |
 | 12 | exdoc | `--coveralls` |
 | 13 | enhancements | `--interface`, `--exdoc`, `--health` |
-| 14 | healthcheck | — |
+| 14 | health_endpoint | — |
 
 The first four are the house's settings on a stock project — coloured
 logs, the host's version pin, the language server's ignore, a version

@@ -1,4 +1,4 @@
-# healthcheck2
+# health_probe
 
 Your platform polls the app, and the answer decides whether it restarts it or diverts traffic.
 
@@ -6,4 +6,4 @@ Your platform polls the app, and the answer decides whether it restarts it or di
 
 **After:** `/health/live` and `/health/ready` as the first plug of the endpoint: alive if the VM answers, ready if the repo does, within a second.
 
-**Not for:** humans reading a body — it says `ok` or `unavailable`; the JSON is `healthcheck`'s.
+**Not for:** humans reading a body — it says `ok` or `unavailable`; the JSON is `health_endpoint`'s.

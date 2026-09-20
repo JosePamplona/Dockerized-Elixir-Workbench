@@ -1,10 +1,10 @@
-defmodule WorkbenchIgniter.Features.Healthcheck do
+defmodule WorkbenchIgniter.Features.HealthEndpoint do
   @moduledoc """
-  Healthcheck endpoint with controller, tests and router scope.
+  Health endpoint with controller, tests and router scope.
 
   This is a full feature cartridge: manifest, install logic and the EEx
   templates it renders all live in this directory, and the
-  `Mix.Tasks.Workbench.Install.Healthcheck` shell in `task.ex` delegates
+  `Mix.Tasks.Workbench.Install.HealthEndpoint` shell in `task.ex` delegates
   here. See `WorkbenchIgniter.Feature` for the conventions.
 
   Ordering: inserted last, after rest, so `install/1` autodetects the
@@ -15,15 +15,15 @@ defmodule WorkbenchIgniter.Features.Healthcheck do
 
   embed_templates()
 
-  @example "mix workbench.install.healthcheck"
+  @example "mix workbench.install.health_endpoint"
 
   @impl true
   def archived,
     do:
-      "2026-09-20: one of two boxes for one need — healthcheck2's probes are the one the reference takes"
+      "2026-09-20: one of two boxes for one need — health_probe's probes are the one the reference takes"
 
   @impl true
-  def task, do: "workbench.install.healthcheck"
+  def task, do: "workbench.install.health_endpoint"
 
   @impl true
   def console, do: [doors: [{"health", "{endpoint}"}]]
@@ -33,7 +33,7 @@ defmodule WorkbenchIgniter.Features.Healthcheck do
   @impl true
   def option_docs do
     [
-      endpoint: "Route for the healthcheck scope. Defaults to `/health`.",
+      endpoint: "Route for the health endpoint's scope. Defaults to `/health`.",
       open_api:
         "Generate the OpenApiSpex-documented variant even if the REST feature is not detected (it must be installed for it to compile)."
     ]
@@ -139,7 +139,7 @@ defmodule WorkbenchIgniter.Features.Healthcheck do
         Igniter.add_notice(
           igniter,
           "#{inspect(controller)} already exists: " <>
-            "healthcheck is already installed, skipping."
+            "health_endpoint is already installed, skipping."
         )
 
       {false, igniter} ->

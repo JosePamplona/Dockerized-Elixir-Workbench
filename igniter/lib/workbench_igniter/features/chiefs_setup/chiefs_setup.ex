@@ -31,7 +31,7 @@ defmodule WorkbenchIgniter.Features.ChiefsSetup do
   def task, do: "workbench.install.chiefs_setup"
 
   # The picks, in insertion order — the order the old `workbench.setup`
-  # composed them in, which the marks build on (healthcheck autodetects
+  # composed them in, which the marks build on (health_endpoint autodetects
   # rest's OpenApi.Spec; auth0 would need enhancements' Schema). The
   # argv is the recipe: the flags that tell a member which *fellow
   # picks* ride along (exdoc's `--coveralls`), never a member option
@@ -56,7 +56,7 @@ defmodule WorkbenchIgniter.Features.ChiefsSetup do
       {"coveralls", ["--exdoc"]},
       {"exdoc", ["--coveralls"]},
       {"enhancements", ["--interface", interface, "--exdoc", "--health"]},
-      {"healthcheck", []}
+      {"health_endpoint", []}
     ]
   end
 

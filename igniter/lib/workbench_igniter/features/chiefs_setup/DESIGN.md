@@ -73,7 +73,7 @@ the generators and migration types, which are the config half of
 enhancements' `--id-type`/`--timestamps` and belong in the cartridge
 that already owns the decision — two boxes writing one policy can
 contradict each other — and `dev_routes` in test, already written by
-healthcheck, which is what needs it. The `README.md` template found no
+health_endpoint, which is what needs it. The `README.md` template found no
 owner: a generated README has to know every cartridge, which is the
 coupling this design removes, so it stays deleted.
 

@@ -79,7 +79,7 @@ generated tests need a double registers it, and owns its own block of
 alias WorkbenchIgniter.Features.TestDoubles
 
 igniter
-|> TestDoubles.copy("healthcheck", ["MyApp.Repo", "System"],
+|> TestDoubles.copy("health_endpoint", ["MyApp.Repo", "System"],
      note: "what its controller test makes raise")
 |> TestDoubles.defmock("openai", [{"MyApp.OpenAI.Mock", "MyApp.OpenAI.Client"}])
 ```
@@ -87,10 +87,10 @@ igniter
 gives
 
 ```elixir
-# >>> healthcheck — what its controller test makes raise
+# >>> health_endpoint — what its controller test makes raise
 Mimic.copy(MyApp.Repo)
 Mimic.copy(System)
-# <<< healthcheck
+# <<< health_endpoint
 
 # >>> openai
 Mox.defmock(MyApp.OpenAI.Mock, for: MyApp.OpenAI.Client)
@@ -132,7 +132,7 @@ editing boundary, not a record the project keeps for the workbench.
 else, on a library whose last release is 2024-12-16 and whose pin
 (`meck ~> 0.9.2`) locks out the meck that compiles on OTP 29. The eight
 generated test files that `import Mock` move one cartridge at a time
-(healthcheck, coveralls, enhancements, auth0, openai), and `mock` stays
+(health_endpoint, coveralls, enhancements, auth0, openai), and `mock` stays
 on the shelf until the last of them has.
 
 ## Contents

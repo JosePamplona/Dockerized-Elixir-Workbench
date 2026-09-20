@@ -1,4 +1,4 @@
-# healthcheck2 — Design
+# health_probe — Design
 
 *Revision: cartridge v0.1.0 (2026-08-28). Sources consulted on that
 date; quotations are verbatim from the page as read then.*
@@ -22,7 +22,7 @@ against a real database.
 
 ## 1. Problem
 
-The workbench's existing `healthcheck` cartridge grew out of a
+The workbench's existing `health_endpoint` cartridge grew out of a
 different need: a JSON endpoint a developer can open in a browser,
 with versions, environment and database details in development, and
 an entry in the Swagger page. It is a controller behind the router,
@@ -31,7 +31,7 @@ composed by the opinionated `workbench.setup`.
 The vanilla edition of the workbench (`new2`, `setup2`) starts from a
 stock `phx.new` project and adds features one at a time, each doing
 one thing. What that project needs to be *deployed* is narrower than
-what `healthcheck` offers: a route a platform can poll, cheaply, with
+what `health_endpoint` offers: a route a platform can poll, cheaply, with
 an answer the platform interprets correctly. Every mainstream platform
 polls; none of them read a JSON body. And a probe that costs the whole
 endpoint pipeline, or that answers "healthy" when the platform should
@@ -265,7 +265,7 @@ platform and the pod must not reuse a verdict.
 JSON with details was rejected for this cartridge because every field
 is either a cost (a database version needs a query), a leak (versions
 and environment on an unauthenticated route) or a lie (a static `"ok"`
-in JSON is not more machine-readable than `ok`). The `healthcheck`
+in JSON is not more machine-readable than `ok`). The `health_endpoint`
 cartridge exists for the case where that body is wanted.
 
 ### 3.7 What is deliberately absent
@@ -290,7 +290,7 @@ cartridge exists for the case where that body is wanted.
 
 Two levels, both automated.
 
-The **cartridge test** (`test/workbench_igniter/features/healthcheck2_test.exs`,
+The **cartridge test** (`test/workbench_igniter/features/health_probe_test.exs`,
 8 cases) runs the installer against Igniter's in-memory Phoenix
 project and asserts on the patch set: the two files and their contents,
 the endpoint line and its position before `Plug.Static` and the router,
@@ -339,11 +339,11 @@ and could weaken it for very low probe rates.
   on (§3.2). That is a property of every generic liveness check, not
   of this one, but it should not be mistaken for coverage.
 
-## 6. Relation to `healthcheck`
+## 6. Relation to `health_endpoint`
 
 The two cartridges do not share a file or a route and can be
-installed together. `healthcheck` is the developer's endpoint: JSON,
-versions, `?verbose`, Swagger. `healthcheck2` is the platform's. A
+installed together. `health_endpoint` is the developer's endpoint: JSON,
+versions, `?verbose`, Swagger. `health_probe` is the platform's. A
 project that only deploys needs the second; a project whose team opens
 `/health` in a browser may want both. Neither knows about the other.
 

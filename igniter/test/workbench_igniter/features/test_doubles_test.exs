@@ -74,7 +74,7 @@ defmodule WorkbenchIgniter.Features.TestDoublesTest do
         |> apply_igniter!()
         |> TestDoubles.copy("coveralls", ["File"])
         |> apply_igniter!()
-        |> TestDoubles.copy("healthcheck", ["MyApp.Repo", "System"],
+        |> TestDoubles.copy("health_endpoint", ["MyApp.Repo", "System"],
           note: "what its controller test makes raise"
         )
         |> apply_igniter!()
@@ -86,10 +86,10 @@ defmodule WorkbenchIgniter.Features.TestDoublesTest do
                Mimic.copy(File)
                # <<< coveralls
 
-               # >>> healthcheck — what its controller test makes raise
+               # >>> health_endpoint — what its controller test makes raise
                Mimic.copy(MyApp.Repo)
                Mimic.copy(System)
-               # <<< healthcheck
+               # <<< health_endpoint
 
                ExUnit.start()
                """
@@ -100,18 +100,18 @@ defmodule WorkbenchIgniter.Features.TestDoublesTest do
         test_project(files: %{@helper => "ExUnit.start()\n"})
         |> Igniter.compose_task(@task, [])
         |> apply_igniter!()
-        |> TestDoubles.copy("healthcheck", ["MyApp.Repo"])
+        |> TestDoubles.copy("health_endpoint", ["MyApp.Repo"])
         |> apply_igniter!()
 
-      assert_unchanged(TestDoubles.copy(igniter, "healthcheck", ["MyApp.Repo"]), @helper)
+      assert_unchanged(TestDoubles.copy(igniter, "health_endpoint", ["MyApp.Repo"]), @helper)
 
       grown =
         igniter
-        |> TestDoubles.copy("healthcheck", ["MyApp.Repo", "System"])
+        |> TestDoubles.copy("health_endpoint", ["MyApp.Repo", "System"])
         |> apply_igniter!()
 
       assert grown.assigns[:test_files][@helper] =~
-               "# >>> healthcheck\nMimic.copy(MyApp.Repo)\nMimic.copy(System)\n# <<< healthcheck"
+               "# >>> health_endpoint\nMimic.copy(MyApp.Repo)\nMimic.copy(System)\n# <<< health_endpoint"
     end
 
     test "with --type-check in, every copy asks for it, and a mock is Hammox's" do
@@ -140,7 +140,7 @@ defmodule WorkbenchIgniter.Features.TestDoublesTest do
         |> apply_igniter!()
         |> TestDoubles.copy("coveralls", ["File"])
         |> apply_igniter!()
-        |> TestDoubles.copy("healthcheck", ["System"])
+        |> TestDoubles.copy("health_endpoint", ["System"])
         |> apply_igniter!()
         |> TestDoubles.forget("coveralls")
         |> apply_igniter!()
@@ -148,9 +148,9 @@ defmodule WorkbenchIgniter.Features.TestDoublesTest do
 
       assert content ==
                """
-               # >>> healthcheck
+               # >>> health_endpoint
                Mimic.copy(System)
-               # <<< healthcheck
+               # <<< health_endpoint
 
                ExUnit.start()
                """

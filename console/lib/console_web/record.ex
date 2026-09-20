@@ -331,7 +331,7 @@ defmodule ConsoleWeb.Record do
 
     # A cartridge that reports nothing of itself — no `state/1`, or an
     # edition from before it had one — still went in with a line, and its
-    # Insert commit keeps it: `Insert healthcheck --endpoint /health3
+    # Insert commit keeps it: `Insert health_endpoint --endpoint /health3
     # --open-api`. What the project reports wins; the commit is what is
     # left to read when it reports nothing (2026-09-10).
     case {c["state"] || %{}, insert} do

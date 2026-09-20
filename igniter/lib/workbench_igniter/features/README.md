@@ -33,7 +33,7 @@ group ([dashboard_extras](dashboard_extras/) → [credo](credo/) →
 [mock](mock/) → [exdebug](exdebug/)),
 [rest](rest/) | [graphql](graphql/) (its `--interface` choice),
 [coveralls](coveralls/), [exdoc](exdoc/), [enhancements](enhancements/)
-and [healthcheck](healthcheck/) — in the order their marks build on
+and [health_endpoint](health_endpoint/) — in the order their marks build on
 each other. [auth0](auth0/), [openai](openai/) and [stripe](stripe/)
 (*pending*: manifest only) stay à la carte: they need external
 accounts, as does [guidelines](guidelines/), which needs the team's URL.
@@ -55,7 +55,7 @@ The rest of what setup configured did not become boxes, because it
 already had owners: the generators and migration types are the config
 half of [enhancements](enhancements/)' `--id-type` and `--timestamps`
 (one decision, both halves, one cartridge), and `dev_routes` in test is
-written by [healthcheck](healthcheck/), which needs it. Its `README.md`
+written by [health_endpoint](health_endpoint/), which needs it. Its `README.md`
 template found no owner and is deliberately gone: a generated README
 would have to know every cartridge, which is the coupling this
 structure exists to remove.
@@ -112,7 +112,7 @@ Dep-only cartridges have no `priv/features/<feature>/` directory:
 | Cartridge | Installs | Picked by |
 | --- | --- | --- |
 | [credo](credo/) | `{:credo, "~> 1.7", only: [:dev, :test], runtime: false}` | chiefs_setup |
-| [mock](mock/) | `{:mock, "~> 0.3", only: :test}` | chiefs_setup (also composed by healthcheck and enhancements; coveralls moved to test_doubles on 2026-09-20, and the last of the three takes it off the shelf) |
+| [mock](mock/) | `{:mock, "~> 0.3", only: :test}` | chiefs_setup (also composed by health_endpoint and enhancements; coveralls moved to test_doubles on 2026-09-20, and the last of the three takes it off the shelf) |
 | [test_doubles](test_doubles/) | `{:mimic, "~> 2.0", only: :test}`, `{:mox, "~> 1.2", only: :test}` or `{:hammox, "~> 1.0", only: :test}` with `--type-check`, by `--double` | chiefs_setup (also composed by coveralls, with `--double mimic`) |
 | [exdebug](exdebug/) | `{:ex_debug, "~> 1.0"}` | chiefs_setup |
 | [dashboard_extras](dashboard_extras/) | `:os_mon` in `extra_applications`, and the extras of the project's database: `ecto_psql_extras`, `ecto_mysql_extras` or `ecto_sqlite3_extras` (none on SQL Server or without a database) | chiefs_setup |
@@ -150,10 +150,10 @@ chiefs_setup pick, bare: the admin of the database the project is on.
 Each of its admins says which databases it serves, as a requirement on
 the option's value. k6 and monitoring are inserted by hand.
 
-[healthcheck2](healthcheck2/) is the vanilla counterpart of
-`healthcheck`: liveness and readiness probes as the first plug of the
+[health_probe](health_probe/) is the vanilla counterpart of
+`health_endpoint`: liveness and readiness probes as the first plug of the
 endpoint, no dependency, no router change. Installed by hand with
-`wb.sh add healthcheck2`.
+`wb.sh add health_probe`.
 
 [guidelines](guidelines/) puts the team's coding conventions in the
 project's own documentation, downloaded from `--url`. It builds on
@@ -224,7 +224,7 @@ cartridges as `base`.
 A cartridge can light the console up: `console/0` names the *doors* it
 opens on the app's port (exdoc `/dev/docs`, rest `/dev/swagger`, mailer
 `/dev/mailbox`, ash `/admin` when `ash_admin` is in, dashboard_extras
-the two dashboard pages it lights, healthcheck2
+the two dashboard pages it lights, health_probe
 `{path}/live` and `{path}/ready`) and the *tabs* it turns on (clustering
 → Cluster). The catalog carries it as `console`; the console shows the
 doors of what is inserted and nothing of what is not. There is no
@@ -305,7 +305,7 @@ should pick it also names it in its `members/1`.
 
 ## Writing a DESIGN.md
 
-[`healthcheck2/DESIGN.md`](healthcheck2/DESIGN.md) is the reference for
+[`health_probe/DESIGN.md`](health_probe/DESIGN.md) is the reference for
 the shape; this is what makes one worth reading. It is a set of
 criteria, not a template — a template gets filled in, and a filled-in
 rationale is worse than none.

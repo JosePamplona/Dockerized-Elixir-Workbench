@@ -240,7 +240,7 @@ and cannot see the host's `WORKSPACE_PATH`. Candidates for a default:
 
 * **The container's directory basename.** Rejected: `src`.
 * **Ask.** Rejected: every other cartridge derives what it can from the
-  project (toolchain reads the running VM, healthcheck2 the endpoint).
+  project (toolchain reads the running VM, health_probe the endpoint).
 * **The app name.** Chosen: it is what `mix phx.new my_app` names the
   directory, and what a clone is most likely called. Where the
   workbench keeps the project (`_workspaces/test_50`) it is wrong, and
@@ -374,7 +374,7 @@ an agent is argued from the bootstrap's own rules, not observed.
   `state/1` reports the real version, and the cartridge's version stays
   what was inserted. That is the same relation ash has with the
   packages its queued installer fetches.
-* **A cartridge that writes code could write its spec.** healthcheck2
+* **A cartridge that writes code could write its spec.** health_probe
   plants a plug and its test; a `lib/my_app_web/plugs/health.sdd`
   beside them (`Owns`, `Must`, two `Scenario`s from its README) would be
   the spec-driven counterpart of what the README already says. Nothing

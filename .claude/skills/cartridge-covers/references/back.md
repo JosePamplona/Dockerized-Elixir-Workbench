@@ -141,7 +141,7 @@ cartridge is, not which era it is.
 It used to be generated on the plate, at foreground size, in the era's
 own form — the one piece of text the back let the generator draw, and
 the reason the plate had a foreground element at all. Three plates on
-`healthcheck2` ended that: given a rectangle, the name came back inside
+`health_probe` ended that: given a rectangle, the name came back inside
 a drawn panel that took a sixth of the face; asked out of the panel, it
 kept the panel's place and size; and either way the top third of the
 face was the name's, with the screenshots squeezed to 0.30 of the width
@@ -206,8 +206,8 @@ cartridge's anatomy, and which one is which matters. `NEED.md` is the
 developer's situation in their own second person — what a back's blurb
 *is*, and the register's home. The README says what the cartridge
 *installs*, and copy drawn from it alone is a spec sheet —
-healthcheck2's first back read "`/health/ready`: `SELECT 1` on the
-repo, 1 s timeout" and was retired for it; healthcheck2's kept back
+health_probe's first back read "`/health/ready`: `SELECT 1` on the
+repo, 1 s timeout" and was retired for it; health_probe's kept back
 was drawn from `DESIGN.md` because the need had no file yet, and what
 it drew from the Abstract and Problem is what `NEED.md` now says
 directly. `DESIGN.md` remains the source for what only it knows: the
@@ -251,7 +251,7 @@ is unreadable, and two conclusions fit: change the shot, or change the
 frame. The guide took the first — *"do not fight it in the prompt,
 retake the screenshots at the frames' ratio"* — on the strength of the
 frames having *come back* 5:7 once, which was never a claim that they
-had to be. Its cost came due on `healthcheck`: Swagger UI has no mobile
+had to be. Its cost came due on `health_endpoint`: Swagger UI has no mobile
 layout, so the "narrow viewport is still an actual screen" argument
 produced a page with its tag description broken to one letter per line.
 
@@ -310,14 +310,14 @@ every existing back is the wrong face, so the CD-ROM entry is a
 condensed one. And faces with a tall line box (Noto, Palatino) push a
 feature list into the flash at the leading Liberation Narrow was
 measured with, so `FEAT_LEAD` is per era — zero for the Noto faces,
-0.004 for the editorial — and healthcheck's layout moved its features
+0.004 for the editorial — and health_endpoint's layout moved its features
 up a hair besides. A re-set back is judged the way a plate is:
 composed, and looked at.
 
 **Nothing on a back is generated text any more.** The name was the
 exception — generated at the one size where text does not fail, in a
 form the era chose, after the band it used to be came back in the
-accent colour on two `healthcheck` plates of three — and it was the
+accent colour on two `health_endpoint` plates of three — and it was the
 exception that cost the face its top third. It is the lozenge now, set
 here with everything else; the two faces are one box by the seal, the
 colour, the era and the lozenge.
@@ -331,9 +331,9 @@ the seal's `X` from it, so no back computes the strip by hand. It is the one ele
 faces, which is the point: either side up on the shelf, the box says it
 is one of ours.
 
-### The layout, as healthcheck2 set it
+### The layout, as health_probe set it
 
-The first back made whole this way is `healthcheck2`, and its
+The first back made whole this way is `health_probe`, and its
 `back/layout.env` is the worked example the next back starts from,
 measured again against its own plate. Top to bottom: the screenshots
 first, under the plate's top edge, two frames at the shots' own
@@ -349,7 +349,7 @@ install row, the legal line's place, the seal's size and margins and
 the block's centring follow from it (`INSTALL_ROW`, `LEGAL_Y`,
 `SEAL_SIZE`, `SEAL_MARGIN`, `NAME_X` override one at a time; the backs
 made before the pattern set them by hand). The band is the strip's
-room whatever the plate draws across it — healthcheck2's embossed frame
+room whatever the plate draws across it — health_probe's embossed frame
 runs through its band, and the block ignores it. `covers.py back`
 warns when a row runs wider than the margins; `NAME_POINT`, `NAME_KERN`
 and `INSTALL_POINT` bring it in. The plate carries nothing

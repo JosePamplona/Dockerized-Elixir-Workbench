@@ -11,7 +11,7 @@ defmodule Mix.Tasks.Workbench.Install.ChiefsSetup do
   The collection cartridge: its installer inserts other cartridges — the
   trivial dep-only group (dashboard_extras, credo, mock, exdebug), the
   API interface `--interface` chooses (rest or graphql), coveralls,
-  exdoc, enhancements and healthcheck — in the order their marks build
+  exdoc, enhancements and health_endpoint — in the order their marks build
   on each other. Each member's own guard makes a re-run a no-op, so on a
   project that already carries some picks only the missing ones land.
 

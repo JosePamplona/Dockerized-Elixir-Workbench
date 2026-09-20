@@ -10,7 +10,7 @@
      Never gold: the accent belongs to the stamp. On a printed back
      plate use the state-free bare form — a plate knows no project.
    .door-ref — an address: a route the project offers on the app's port
-     (exdoc's /dev/docs, mailer's /dev/mailbox, healthcheck2's
+     (exdoc's /dev/docs, mailer's /dev/mailbox, health_probe's
      {path}/live) or a port the compose publishes for a service
      (localhost:4001, database:5432). One order wherever it is read — the
      label first, in the house's lettering because it is a name, then the

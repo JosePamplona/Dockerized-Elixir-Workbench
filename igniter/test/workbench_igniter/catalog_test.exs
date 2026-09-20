@@ -24,12 +24,12 @@ defmodule WorkbenchIgniter.CatalogTest do
   # collection first, then the cartridges, then the base ones.
   @cartridges ~w(chiefs_setup ansi version_manager toolchain changelog
                  dashboard_extras credo mock test_doubles exdebug rest graphql
-                 coveralls exdoc guidelines enhancements auth0 openai healthcheck stripe
-                 githooks exmachina clustering healthcheck2 ash specdd db_admin k6 monitoring
+                 coveralls exdoc guidelines enhancements auth0 openai health_endpoint stripe
+                 githooks exmachina clustering health_probe ash specdd db_admin k6 monitoring
                  mailer gettext ecto esbuild tailwind html dashboard)
   # The chiefs_setup recipe with its default choices, in insertion order.
   @picks ~w(ansi version_manager toolchain changelog dashboard_extras db_admin credo mock test_doubles
-            exdebug rest coveralls exdoc enhancements healthcheck)
+            exdebug rest coveralls exdoc enhancements health_endpoint)
   # Base cartridges a default phx.new project already carries.
   @in_by_default ~w(mailer gettext ecto esbuild tailwind html dashboard)
 
@@ -90,15 +90,15 @@ defmodule WorkbenchIgniter.CatalogTest do
     end
 
     test "reads the version off the cartridge changelog" do
-      assert %{version: %{version: "0.1.0", date: "2026-08-28"}} =
-               Features.entry(Features.Healthcheck2)
+      assert %{version: %{version: "0.2.0", date: "2026-09-20"}} =
+               Features.entry(Features.HealthProbe)
 
       assert %{version: nil} = Features.entry(Features.Credo)
     end
 
     test "lists the installer's options with their defaults" do
       assert %{options: [%{name: :path, type: :string, default: "/health", choices: nil}]} =
-               Features.entry(Features.Healthcheck2)
+               Features.entry(Features.HealthProbe)
 
       assert %{pending: true, options: [], example: nil, requires: ["auth0"]} =
                Features.entry(Features.Stripe)
@@ -164,7 +164,7 @@ defmodule WorkbenchIgniter.CatalogTest do
       # Rendered: --no- for a boolean that defaults to true, wrapped bullets.
       assert WorkbenchIgniter.Feature.options_doc(Toggle) =~ ~r/^\* `--no-thing` - Something on/m
 
-      assert WorkbenchIgniter.Feature.options_doc(Features.Healthcheck2) =~
+      assert WorkbenchIgniter.Feature.options_doc(Features.HealthProbe) =~
                ~r/^\* `--path` - Prefix/
 
       # And in the task's own docs, interpolations resolved.
@@ -174,12 +174,12 @@ defmodule WorkbenchIgniter.CatalogTest do
       assert doc =~ "* `--theme` - HTML report theme, one of `custom`, `exdoc-ish`:"
 
       assert %{options: [%{name: :path, doc: "Prefix of the two probe routes" <> _}]} =
-               Features.entry(Features.Healthcheck2)
+               Features.entry(Features.HealthProbe)
     end
 
     test "says whether a second run adds or is a no-op, and what an adding one carries" do
       assert Features.Ash.rerun() == :adds
-      assert Features.Healthcheck2.rerun() == :noop
+      assert Features.HealthProbe.rerun() == :noop
       assert %{rerun: :adds} = Features.entry(Features.Ash)
 
       # A project with Ash, its Postgres layer, one API and one advanced
@@ -222,7 +222,7 @@ defmodule WorkbenchIgniter.CatalogTest do
                Enum.find(entries, &(&1["name"] == "credo"))
 
       assert %{"covers" => %{"front" => nil, "back" => nil}} =
-               Enum.find(entries, &(&1["name"] == "healthcheck2"))
+               Enum.find(entries, &(&1["name"] == "health_probe"))
     after
       :ok
     end
@@ -245,7 +245,7 @@ defmodule WorkbenchIgniter.CatalogTest do
       retired = for f <- Features.catalog(), f.archived?(), do: f.name()
 
       assert Enum.sort(retired) ==
-               ~w(ansi auth0 chiefs_setup enhancements graphql healthcheck mock openai rest toolchain)
+               ~w(ansi auth0 chiefs_setup enhancements graphql health_endpoint mock openai rest toolchain)
     end
 
     test "an archived box says so in the facts column, with the others" do
@@ -278,7 +278,7 @@ defmodule WorkbenchIgniter.CatalogTest do
 
       assert output =~ ~r/^mailer +\S+ +base +You want to see the mail/m
       assert output =~ ~r/^stripe +- +pending +Your users should be able to pay/m
-      assert output =~ ~r/^healthcheck2 +v0\.1\.0 +Your platform polls/m
+      assert output =~ ~r/^health_probe +v0\.2\.0 +Your platform polls/m
       assert output =~ ~r/^credo +- +You want a reviewer/m
     end
   end
@@ -347,7 +347,7 @@ defmodule WorkbenchIgniter.CatalogTest do
     # What may light up beside the cartridge, in catalog order, and all
     # of it off the manifest: what it requires (composed above as
     # prerequisites), what its installer composes (mock rides along
-    # with healthcheck, coveralls and enhancements), and what those
+    # with health_endpoint, coveralls and enhancements), and what those
     # stand on in turn. A cartridge that inserts more than it declares
     # fails above. The collection is the exception: every member of its
     # recipe, which the status lists in catalog order, not the recipe's.
@@ -453,11 +453,11 @@ defmodule WorkbenchIgniter.CatalogTest do
         {~w(--project-name Probe --interface graphql), %{project_name: nil, interface: nil}},
         {~w(--interface rest), %{project_name: nil, interface: "rest"}}
       ],
-      "healthcheck" => [
+      "health_endpoint" => [
         {~w(--endpoint /health3 --open-api), %{endpoint: "/health3", open_api: true}}
       ],
       "clustering" => [{~w(--dns-query probe.internal), %{dns_query: "probe.internal"}}],
-      "healthcheck2" => [{~w(--path /alive), %{path: "/alive"}}]
+      "health_probe" => [{~w(--path /alive), %{path: "/alive"}}]
     }
 
     for feature <- Features.catalog(),
@@ -510,7 +510,7 @@ defmodule WorkbenchIgniter.CatalogTest do
 
   describe "composes" do
     test "names, off the installer's info, the cartridges it inserts along" do
-      assert %{composes: ["mock"]} = Features.entry(Features.Healthcheck)
+      assert %{composes: ["mock"]} = Features.entry(Features.HealthEndpoint)
       assert %{composes: ["test_doubles"]} = Features.entry(Features.Coveralls)
       assert %{composes: ["mock"]} = Features.entry(Features.Enhancements)
       assert %{composes: []} = Features.entry(Features.Credo)
@@ -543,12 +543,12 @@ defmodule WorkbenchIgniter.CatalogTest do
     test "mix workbench.dependents sees what a cartridge composes" do
       {status, _} =
         phx_test_project()
-        |> Igniter.compose_task("workbench.install.healthcheck", [])
+        |> Igniter.compose_task("workbench.install.health_endpoint", [])
         |> apply_igniter!()
         |> Features.status()
 
-      assert Mix.Tasks.Workbench.Dependents.dependents(status, "mock") == ["healthcheck"]
-      assert Mix.Tasks.Workbench.Dependents.dependents(status, "healthcheck") == []
+      assert Mix.Tasks.Workbench.Dependents.dependents(status, "mock") == ["health_endpoint"]
+      assert Mix.Tasks.Workbench.Dependents.dependents(status, "health_endpoint") == []
     end
   end
 end

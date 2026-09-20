@@ -1,21 +1,21 @@
-# Cartridge: healthcheck
+# Cartridge: health_endpoint
 
-> **Archived 2026-09-20**: one of two boxes for one need — healthcheck2's
+> **Archived 2026-09-20**: one of two boxes for one need — health_probe's
 > probes are the one the reference takes. The box stays on the shelf for the
 > reading — these papers are why it was made; it is no longer a pick for a new
 > project, and `wb.sh add` refuses it unless `--archived` says so.
 
-Healthcheck endpoint with controller, tests and router scope.
+Health endpoint with controller, tests and router scope.
 
-* **Task**: `mix workbench.install.healthcheck`
-* **Inserted by**: `wb.sh add --archived healthcheck`
+* **Task**: `mix workbench.install.health_endpoint`
+* **Inserted by**: `wb.sh add --archived health_endpoint`
 * **Ordering**: inserted last, after `rest`, so the autodetection finds
   `MyAppWeb.OpenApi.Spec` in the patch set and generates the
   OpenApiSpex-documented variant.
 
 ## Description
 
-Gives the application a healthcheck endpoint: a public route where
+Gives the application a health endpoint: a public route where
 anything — monitoring tools, load balancers, container orchestrators, or
 a teammate with a browser — can ask "are you alive?" and get an immediate
 answer. Checking the health of the service becomes a single request
@@ -59,10 +59,10 @@ router edit is not idempotent by itself).
 
 | File | Role |
 | --- | --- |
-| `healthcheck.ex` | Manifest + logic (`info/2`, `install/1`) |
-| `task.ex` | `Mix.Tasks.Workbench.Install.Healthcheck` shell |
+| `health_endpoint.ex` | Manifest + logic (`info/2`, `install/1`) |
+| `task.ex` | `Mix.Tasks.Workbench.Install.HealthEndpoint` shell |
 | `templates/controller.eex` | Controller (with/without OpenAPI variants) |
 | `templates/controller_test.eex` | Controller unit test |
 | `templates/schema.eex` | OpenAPI schema (OpenAPI variant only) |
 
-Cartridge test: `test/workbench_igniter/features/healthcheck_test.exs`.
+Cartridge test: `test/workbench_igniter/features/health_endpoint_test.exs`.

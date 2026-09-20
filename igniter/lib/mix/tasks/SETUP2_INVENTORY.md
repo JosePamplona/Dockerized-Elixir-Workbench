@@ -33,7 +33,7 @@ Todas fuera de setup2 (composes: []). En orden de composición:
 | 10  | Enhancements | `workbench.install.enhancements` | `--enhance`            |
 | 11  | Auth0        | `workbench.install.auth0`        | `--auth0`              |
 | 12  | Openai       | `workbench.install.openai`       | `--openai` (⇒ `--auth0`) |
-| 13  | Healthcheck  | `workbench.install.healthcheck`  | `--health`             |
+| 13  | HealthEndpoint  | `workbench.install.health_endpoint`  | `--health`             |
 | 14  | Stripe       | — (`pending?: true`)             | `--stripe` (⇒ `--auth0`) |
 
 Detalles que importan: `--enhance` dispara **6** tasks (los 5 dep-only + Enhancements), `rest`/`graphql` son mutuamente excluyentes vía `--interface`, y Stripe no tiene `task.ex` — hoy solo emite el aviso de `notice_pending/2`, así que en setup2 desaparece también ese aviso.

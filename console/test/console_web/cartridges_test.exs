@@ -99,7 +99,7 @@ defmodule ConsoleWeb.CartridgesTest do
                "/health/live"
     end
 
-    test "an empty value is a value: healthcheck2 at the root opens /live, not the default's" do
+    test "an empty value is a value: health_probe at the root opens /live, not the default's" do
       assert Cartridges.fill_path(@door, %{"state" => %{"path" => ""}, "options" => @options}) ==
                "/live"
     end

@@ -46,7 +46,7 @@ defmodule WorkbenchIgniter.Features.Enhancements do
       openai:
         "The openai feature is composed too: the diagrams and Postman collection of that combo, and the assistant fixtures.",
       stripe: "The stripe feature is composed too: the DbSchema diagrams of that combo.",
-      health: "The healthcheck feature is composed too: the Postman collection of that combo."
+      health: "The health_endpoint feature is composed too: the Postman collection of that combo."
     ]
   end
 

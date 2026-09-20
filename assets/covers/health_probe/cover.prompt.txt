@@ -77,3 +77,43 @@ lettering.
    unbroken. Everything else in the picture stays exactly as it is.
    The version is the back's, typeset from the changelog; a version
    drawn in the hero is wrong at the next release.
+
+4. (2026-09-20, written before the take) The title lockup reads
+   `HEALTH PROBE`, not `HEALTHCHECK II`: same classical serif, same
+   size, same position, same gold, centred where the old title was;
+   the subtitle `ALIVE. READY.` under it is unchanged. The cartridge
+   was renamed — the numeral said only that another box had the word
+   first — and the lockup is the box's name, painted into this hero
+   rather than typeset over it, so it can only be changed here.
+   Everything else in the picture stays exactly as it is.
+
+   Changes 3 and 4 go to the generator in **one turn**, on the hero
+   archived as `_archived/art/cover-6.jpg`: they touch the same band
+   of the picture — the lockup and the line under it — and two turns
+   over the same band is two repaintings of it.
+
+   The take (2026-09-20, `_archived/art/cover-7.png`) applied 4 and
+   not 3: the lockup came back `HEALTH PROBE` and `VERSION 0.1.0` is
+   still under the subtitle. Two asks in one turn, one of them
+   applied. So 3 goes again, alone, on that take — and the scene was
+   repainted around the change for the second time on this shelf:
+   the same composition, a larger bell lit anew, larger lozenges, the
+   title a fifth taller (cap 0.0587 of the height against 0.0498),
+   the subtitle with it. Kept: the lockup is what was asked for.
+
+   Change 3 is left unmade by the author's decision (2026-09-20): the
+   hero is taken as it stands, `VERSION 0.1.0` painted under the
+   subtitle, rather than spend another turn on a repainting scene.
+   The box therefore says 0.1.0 on its front and v0.2.0 on the back's
+   strip, which is typeset from the changelog; the entry stays here
+   for whoever continues this hero next.
+
+   And then the second turn took it: sent with the padded canvas of
+   this hero, the expansion came back whole at 1177x1656 with the
+   line gone, and the embossed frame and its rounded corners gone
+   with it — asked to keep the picture inside exactly as it is. The
+   interior is repainted by that turn (the second time on this
+   shelf); here it repainted in the direction the log was asking.
+   Change 3 is done, in the expansion rather than in the hero:
+   `art/hero.jpg` still carries the line, and whoever continues this
+   hero starts from an image the box no longer shows.

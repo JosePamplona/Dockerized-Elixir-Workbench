@@ -1,14 +1,14 @@
-defmodule Mix.Tasks.Workbench.Install.Healthcheck2 do
+defmodule Mix.Tasks.Workbench.Install.HealthProbe do
   use WorkbenchIgniter.Task
 
-  alias WorkbenchIgniter.Features.Healthcheck2
+  alias WorkbenchIgniter.Features.HealthProbe
 
   @shortdoc "Adds liveness and readiness probes as the first plug of the endpoint"
 
   @moduledoc """
   #{@shortdoc}
 
-  The vanilla healthcheck: what a container orchestrator or a load
+  The vanilla health check: what a container orchestrator or a load
   balancer consumes, and nothing else. It installs
 
   * `MyAppWeb.Plugs.Health`, answering `GET /health/live` (200 while the
@@ -28,11 +28,11 @@ defmodule Mix.Tasks.Workbench.Install.Healthcheck2 do
 
   ## Example
 
-      #{Healthcheck2.info([], nil).example}
+      #{HealthProbe.info([], nil).example}
 
   ## Options
 
-  #{WorkbenchIgniter.Feature.options_doc(Healthcheck2)}
+  #{WorkbenchIgniter.Feature.options_doc(HealthProbe)}
 
   ## Wiring the platform
 
@@ -58,8 +58,8 @@ defmodule Mix.Tasks.Workbench.Install.Healthcheck2 do
   """
 
   @impl Igniter.Mix.Task
-  def info(argv, composing_task), do: Healthcheck2.info(argv, composing_task)
+  def info(argv, composing_task), do: HealthProbe.info(argv, composing_task)
 
   @impl Igniter.Mix.Task
-  def igniter(igniter), do: Healthcheck2.install(igniter)
+  def igniter(igniter), do: HealthProbe.install(igniter)
 end

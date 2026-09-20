@@ -1,4 +1,4 @@
-# Changelog — healthcheck2
+# Changelog — health_probe
 
 Versioned on its own, independently of the workbench release that ships
 it. Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
@@ -6,6 +6,21 @@ it. Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 what the cartridge *installs*: a change in the generated files' shape or
 routes is a minor, a change that breaks a project already carrying them
 (a renamed module, a moved route) is a major.
+
+## v0.2.0 - (2026-09-20)
+
+### Changed
+
+- The cartridge is `health_probe`, not `healthcheck2`: `wb.sh add
+  health_probe`, `mix workbench.install.health_probe`. The `2` said
+  only that another box got the word first; the name says now what the
+  box writes — the probe a platform polls — and stands on its own
+  beside `health_endpoint`, the reading endpoint that was
+  `healthcheck`. What it installs is unchanged: the same
+  `MyAppWeb.Plugs.Health`, the same two routes, the same `--path`.
+- The comment the installer leaves above the plug in the endpoint reads
+  `Workbench health probe`, the one line of generated text that carried
+  the old name.
 
 ## v0.1.0 - (2026-08-28)
 

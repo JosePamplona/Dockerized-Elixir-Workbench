@@ -148,7 +148,7 @@
      Never gold: the accent belongs to the stamp. On a printed back
      plate use the state-free bare form — a plate knows no project.
    .door-ref — an address: a route the project offers on the app's port
-     (exdoc's /dev/docs, mailer's /dev/mailbox, healthcheck2's
+     (exdoc's /dev/docs, mailer's /dev/mailbox, health_probe's
      {path}/live) or a port the compose publishes for a service
      (localhost:4001, database:5432). One order wherever it is read — the
      label first, in the house's lettering because it is a name, then the
@@ -536,7 +536,7 @@ ol.findings>li>b{font:600 17px var(--cond);letter-spacing:.04em}
 
 <header class="band"><div class="wrap">
   <h1>La estructura de los cartuchos</h1>
-  <p>Hoy la lista <i>Inserted</i> no mostraba las opciones con que se insertó healthcheck, y ecto callaba su <code>--binary-id</code>.
+  <p>Hoy la lista <i>Inserted</i> no mostraba las opciones con que se insertó health_endpoint, y ecto callaba su <code>--binary-id</code>.
      No eran dos fallos sueltos, sino el mismo síntoma: el contrato de un cartucho dice menos de lo que el resto del sistema ya
      le exige. Esta página dibuja cómo funciona hoy, leído del código el 10 de septiembre de 2026 —los 37 cartuchos del catálogo—, dónde
      vive cada verdad, dónde se rompe, y una propuesta para darle estructura con modelos conocidos. La primera mitad es lo que hay;
@@ -718,7 +718,7 @@ y <b>exclusiones</b> que solo existen en comentarios y en la receta de <code>chi
 <figure class="dg">
 <svg viewBox="0 0 960 420" role="img" aria-labelledby="dep-title dep-desc" xmlns="http://www.w3.org/2000/svg">
   <title id="dep-title">Dependencias declaradas y no declaradas</title>
-  <desc id="dep-desc">openai y stripe requieren auth0, que requiere enhancements, y guidelines requiere exdoc; healthcheck, coveralls y enhancements componen mock por dentro sin declararlo, así que quitar mock no avisa a nadie.</desc>
+  <desc id="dep-desc">openai y stripe requieren auth0, que requiere enhancements, y guidelines requiere exdoc; health_endpoint, coveralls y enhancements componen mock por dentro sin declararlo, así que quitar mock no avisa a nadie.</desc>
   <defs>
     <marker id="a3" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon class="ah" points="0 0, 8 3, 0 6"/></marker>
   </defs>
@@ -739,7 +739,7 @@ y <b>exclusiones</b> que solo existen en comentarios y en la receta de <code>chi
   <!-- nodes -->
   <rect class="box" x="48" y="72" width="144" height="48" rx="6"/><text class="nm" x="120" y="100" text-anchor="middle">openai · stripe</text>
   <rect class="box" x="48" y="160" width="144" height="48" rx="6"/><text class="nm" x="120" y="188" text-anchor="middle">guidelines</text>
-  <rect class="box" x="48" y="248" width="144" height="48" rx="6"/><text class="nm" x="120" y="276" text-anchor="middle">healthcheck</text>
+  <rect class="box" x="48" y="248" width="144" height="48" rx="6"/><text class="nm" x="120" y="276" text-anchor="middle">health_endpoint</text>
   <rect class="box" x="48" y="336" width="144" height="48" rx="6"/><text class="nm" x="120" y="364" text-anchor="middle">coveralls</text>
   <rect class="box" x="288" y="72" width="144" height="48" rx="6"/><text class="nm" x="360" y="100" text-anchor="middle">auth0</text>
   <rect class="box" x="288" y="160" width="144" height="48" rx="6"/><text class="nm" x="360" y="188" text-anchor="middle">exdoc</text>
@@ -761,7 +761,7 @@ y <b>exclusiones</b> que solo existen en comentarios y en la receta de <code>chi
 <tbody>
 <tr><td class="k">Requiere</td><td><code>requires/0</code></td><td>openai, stripe → auth0 → enhancements · guidelines → exdoc · live → html · adminer, pgadmin, psql_extras → ecto</td><td>Sí: el instalador rechaza, eject ordena.</td></tr>
 <tr><td class="k">Requiere por valor</td><td><code>{valor, doc, requires}</code> en <code>choices/0</code></td><td>ash <code>--auth password</code> → live, mailer</td><td>Sí: rechaza, y el catálogo lo lleva junto al valor.</td></tr>
-<tr><td class="k">Compone</td><td><code>Igniter.compose_task</code> dentro de <code>install/1</code></td><td>healthcheck, coveralls, enhancements → mock</td><td><b class="bad">No.</b> <code>eject mock</code> no avisa a nadie.</td></tr>
+<tr><td class="k">Compone</td><td><code>Igniter.compose_task</code> dentro de <code>install/1</code></td><td>health_endpoint, coveralls, enhancements → mock</td><td><b class="bad">No.</b> <code>eject mock</code> no avisa a nadie.</td></tr>
 <tr><td class="k">Flag que nombra</td><td>Una opción booleana con el nombre de otro cartucho</td><td>rest <code>--auth0 --openai --health</code> · exdoc <code>--coveralls --auth0</code> · coveralls <code>--exdoc</code> · enhancements <code>--exdoc --auth0 --openai --stripe --health --interface</code> · auth0, openai, coveralls <code>--interface</code></td><td><b class="bad">No.</b> Nadie comprueba que el nombrado esté dentro, ni el flag se entera si después sale.</td></tr>
 <tr><td class="k">Excluye</td><td>Comentario en graphql y la opción <code>--interface</code> de chiefs_setup</td><td>rest ⟂ graphql</td><td><b class="bad">No.</b> Nada impide insertar los dos a mano.</td></tr>
 <tr><td class="k">Contiene</td><td><code>members/1</code></td><td>chiefs_setup → 14 cartuchos, uno por commit</td><td>Sí: expand inserta los que faltan.</td></tr>
@@ -791,12 +791,12 @@ pero no dicen cuáles lleva el proyecto: <code>rest</code>, <code>coveralls</cod
 <tr class="gap"><td class="k">enhancements</td><td class="argv">--project-name --id-type --timestamps --interface --exdoc --auth0 --openai --stripe --health</td><td class="c"><b class=bad>✗</b></td><td>fichero</td><td>·</td><td>mock</td><td class="c">·</td><td class="c">·</td><td class="c">·</td><td class="c">·</td></tr>
 <tr class="gap"><td class="k">auth0</td><td class="argv">--project-name --interface</td><td class="c"><b class=bad>✗</b></td><td>módulo</td><td>enhancements</td><td>·</td><td class="c">·</td><td class="c">·</td><td class="c">·</td><td class="c">·</td></tr>
 <tr class="gap"><td class="k">openai</td><td class="argv">--project-name --interface</td><td class="c"><b class=bad>✗</b></td><td>módulo</td><td>auth0</td><td>·</td><td class="c">·</td><td class="c">·</td><td class="c">·</td><td class="c">·</td></tr>
-<tr class=""><td class="k">healthcheck</td><td class="argv">--endpoint --open-api</td><td class="c">✓</td><td>módulo</td><td>·</td><td>mock</td><td class="c">·</td><td class="c">✓</td><td class="c">·</td><td class="c">·</td></tr>
+<tr class=""><td class="k">health_endpoint</td><td class="argv">--endpoint --open-api</td><td class="c">✓</td><td>módulo</td><td>·</td><td>mock</td><td class="c">·</td><td class="c">✓</td><td class="c">·</td><td class="c">·</td></tr>
 <tr class=""><td class="k">stripe</td><td class="argv">—</td><td class="c">·</td><td>—</td><td>auth0</td><td>·</td><td class="c">·</td><td class="c">·</td><td class="c">·</td><td class="c">pendiente</td></tr>
 <tr class=""><td class="k">githooks</td><td class="argv">—</td><td class="c">·</td><td>dep</td><td>·</td><td>·</td><td class="c">·</td><td class="c">·</td><td class="c">·</td><td class="c">·</td></tr>
 <tr class=""><td class="k">exmachina</td><td class="argv">—</td><td class="c">·</td><td>dep</td><td>·</td><td>·</td><td class="c">·</td><td class="c">·</td><td class="c">·</td><td class="c">·</td></tr>
 <tr class="gap"><td class="k">clustering</td><td class="argv">--dns-query</td><td class="c"><b class=bad>✗</b></td><td>marcador</td><td>·</td><td>·</td><td class="c">·</td><td class="c">✓</td><td class="c">·</td><td class="c">·</td></tr>
-<tr class=""><td class="k">healthcheck2</td><td class="argv">--path</td><td class="c">✓</td><td>módulo</td><td>·</td><td>·</td><td class="c">·</td><td class="c">✓</td><td class="c">·</td><td class="c">·</td></tr>
+<tr class=""><td class="k">health_probe</td><td class="argv">--path</td><td class="c">✓</td><td>módulo</td><td>·</td><td>·</td><td class="c">·</td><td class="c">✓</td><td class="c">·</td><td class="c">·</td></tr>
 <tr class=""><td class="k">ash</td><td class="argv">--data-layer --api --auth --with --example</td><td class="c">✓</td><td>dep</td><td>·</td><td>·</td><td class="c">adds</td><td class="c">✓</td><td class="c">·</td><td class="c">·</td></tr>
 <tr class=""><td class="k">specdd</td><td class="argv">—</td><td class="c">·</td><td>—</td><td>·</td><td>·</td><td class="c">·</td><td class="c">·</td><td class="c">·</td><td class="c">pendiente</td></tr>
 <tr class=""><td class="k">pgadmin</td><td class="argv">—</td><td class="c">·</td><td>fichero</td><td>ecto</td><td>·</td><td class="c">·</td><td class="c">·</td><td class="c">✓</td><td class="c">·</td></tr>
@@ -820,9 +820,9 @@ pero no dicen cuáles lleva el proyecto: <code>rest</code>, <code>coveralls</cod
   Su documentación dice que es «meaningful for an <code>:adds</code> cartridge», vacío por defecto. Pero hoy lo leen cuatro sitios:
   la lista <i>Inserted</i>, las puertas con <code>{opción}</code>, <code>services/1</code> (qué contenedores cocinar) y la condición <code>--with</code>.
   8 de los 15 cartuchos con opciones no lo implementan.
-  <span class="ev">feature.ex: «state/1 — what the project carries of an :adds cartridge's options» · healthcheck y ecto, arreglados hoy</span></li>
+  <span class="ev">feature.ex: «state/1 — what the project carries of an :adds cartridge's options» · health_endpoint y ecto, arreglados hoy</span></li>
 <li><b>Un silencio se lee como una respuesta.</b> El <code>%{}</code> por defecto no se distingue de «no lleva nada», y
-  <code>fill_path</code> rellena la ruta de una puerta con el valor por defecto cuando no hay estado: la puerta de healthcheck apuntaba
+  <code>fill_path</code> rellena la ruta de una puerta con el valor por defecto cuando no hay estado: la puerta de health_endpoint apuntaba
   a <code>/health</code> en un proyecto que usa <code>/health3</code>.
   <span class="ev">console/lib/console_web/cartridges.ex · fill_path/2: get_in(c, ["state", o]) || default</span></li>
 <li><b>Hay dependencias que no se declaran.</b> Tres cartuchos componen <code>mock</code> por dentro; como <code>dependents</code> solo lee
@@ -866,7 +866,7 @@ catálogo tiene ya una prueba que recorre los 37 cartuchos comprobándolo. Es ex
   <ul>
     <li><b><code>state/1</code> obligatorio para todo cartucho con opciones</b>, con el contrato reescrito: deja de ser «para <code>:adds</code>» y pasa a ser
         «lo que el proyecto lleva de tus opciones». Faltan 8: <code>rest</code>, <code>coveralls</code>, <code>exdoc</code>, <code>guidelines</code>, <code>enhancements</code>, <code>auth0</code>, <code>openai</code>, <code>clustering</code>.</li>
-    <li><b>Las composiciones, declaradas</b>: <code>healthcheck</code>, <code>coveralls</code> y <code>enhancements</code> añaden <code>mock</code> a <code>requires</code>
+    <li><b>Las composiciones, declaradas</b>: <code>health_endpoint</code>, <code>coveralls</code> y <code>enhancements</code> añaden <code>mock</code> a <code>requires</code>
         (o a una lista nueva <code>composes</code> que <code>dependents</code> también lea).</li>
     <li><b>La suite de conformidad</b>, junto a la prueba de <code>installed?</code> que ya existe: para cada cartucho con opciones, instalar con valores no por defecto
         y comprobar que <code>state/1</code> los devuelve con las mismas claves que el esquema; para cada <code>compose_task</code>, que el compuesto esté declarado.</li>

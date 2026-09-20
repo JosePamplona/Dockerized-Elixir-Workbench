@@ -5,7 +5,7 @@ defmodule ConsoleWeb.RecordTest do
 
   # A status as `wb.sh status --json` answers it, with what
   # `mix workbench.status` publishes: ecto born with postgres and mailer
-  # out, mailer brought in by its cartridge since; healthcheck2 by
+  # out, mailer brought in by its cartridge since; health_probe by
   # commit; dev up, prod baked with a service left behind.
   @status %{
     "exists" => true,
@@ -36,8 +36,8 @@ defmodule ConsoleWeb.RecordTest do
       "inserts" => [
         %{
           "sha" => "fcb1afa3bf",
-          "feature" => "healthcheck2",
-          "subject" => "Insert healthcheck2 --path /probe",
+          "feature" => "health_probe",
+          "subject" => "Insert health_probe --path /probe",
           "date" => "2026-09-08",
           "argv" => ["--path", "/probe"]
         }
@@ -134,7 +134,7 @@ defmodule ConsoleWeb.RecordTest do
         },
         %{"name" => "mailer", "installed" => true, "base" => true, "state" => %{}},
         %{
-          "name" => "healthcheck2",
+          "name" => "health_probe",
           "installed" => true,
           "base" => false,
           "state" => %{"path" => "/probe"},
@@ -156,7 +156,7 @@ defmodule ConsoleWeb.RecordTest do
       "console" => %{"doors" => [%{"label" => "mailbox", "path" => "/dev/mailbox"}]}
     },
     %{
-      "name" => "healthcheck2",
+      "name" => "health_probe",
       "console" => %{
         "doors" => [
           %{"label" => "live", "path" => "{path}/live"},
@@ -274,7 +274,7 @@ defmodule ConsoleWeb.RecordTest do
     page = Record.page(@status, @catalog, reads)
 
     # Inserted first, born second.
-    assert Enum.map(page.cartridges, & &1.c["name"]) == ~w(healthcheck2 ecto mailer)
+    assert Enum.map(page.cartridges, & &1.c["name"]) == ~w(health_probe ecto mailer)
 
     hc = Enum.at(page.cartridges, 0)
     assert elem(hc.origin, 0) == "by commit"

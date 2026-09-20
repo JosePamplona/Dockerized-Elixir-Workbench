@@ -158,7 +158,7 @@ defmodule ConsoleWeb.ShelfTest do
 
   test "a cartridge on the shelf says what it takes, typed, and what it would open, shut" do
     health =
-      Map.merge(entry("healthcheck"), %{
+      Map.merge(entry("health_endpoint"), %{
         "options" => [
           %{"name" => "endpoint", "type" => "string", "default" => "/health", "choices" => []}
         ],

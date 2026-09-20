@@ -854,6 +854,53 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **The two health boxes are `health_endpoint` and `health_probe`.**
+  `healthcheck` and `healthcheck2` were one need read twice, and their
+  names said only which one got the word first: the `2` made the
+  newer box look like a version of the older, when it is the other
+  answer to the same question. Each is now named for what it writes.
+  `health_endpoint` (was `healthcheck`, archived the same day) writes
+  the controller behind the router — JSON that grows in dev, an entry
+  in the Swagger page, a route a person reads. `health_probe` (was
+  `healthcheck2`) writes the plug mounted first in the endpoint —
+  `/health/live` and `/health/ready`, what a platform polls, and no
+  log line for it. The shelf keeps its own order — `health_endpoint`
+  in the Phoenix line it belongs to, `health_probe` among the
+  production boxes — but the names no longer read as a box and its
+  sequel, and each NEED.md's *Not for* points at the other by a name
+  that says what it is. `wb.sh add
+  health_probe`, `wb.sh add --archived health_endpoint`, `mix
+  workbench.install.health_probe`, `mix
+  workbench.install.health_endpoint`, the boxes at
+  `features/health_probe/` and `features/health_endpoint/`, their art
+  at `assets/covers/health_probe/` and
+  `assets/covers/health_endpoint/`.
+
+  What either installs is unchanged, options included. The generated
+  code keeps the names it always had — `MyAppWeb.HealthcheckController`
+  and `MyAppWeb.OpenApi.Schemas.Healthcheck` are what a project already
+  carrying the endpoint has, and renaming them would break it for
+  nothing — so the only generated text that moved is the comment
+  `health_probe` leaves above its plug, now `# Workbench health probe`.
+  Cartridge versions: `health_probe` v0.2.0; `health_endpoint`, whose
+  papers predate the per-cartridge changelog, has none to bump.
+
+  The box follows. `health_probe`'s front carries its title painted
+  into the hero, not typeset over it, so the lockup was asked for as
+  a logged change and came back on the first turn: the face reads
+  `HEALTH PROBE`, on a scene the generator repainted around the word
+  — a larger bell lit anew, the title a fifth taller. The line
+  `VERSION 0.1.0` the hero carried was asked off in the same turn and
+  ignored; the second turn, the one that paints the margins, took it
+  off instead, and dropped the embossed frame and its rounded corners
+  with it. Cut at correlation 0.97 and stamped with the take's own
+  options. The back is stamped text and was recomposed as it stood —
+  the install lozenge reads `./wb.sh add health_probe` and the strip
+  v0.2.0, which the front no longer contradicts. In the cover record
+  the takes keep the name they were made under (`healthcheck2-1`,
+  `healthcheck-2`), since that is what the files in `_archived/` are
+  called.
+
 - **Ten boxes archived: the Phoenix line, and the two a newer box
   covers.** The first use of the state, and the pruning SCRIPT.md
   asked for (Phase 2). `chiefs_setup`, `rest`, `graphql`,

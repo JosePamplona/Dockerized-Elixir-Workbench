@@ -1,10 +1,10 @@
-defmodule WorkbenchIgniter.Features.Healthcheck2 do
+defmodule WorkbenchIgniter.Features.HealthProbe do
   @moduledoc """
   Liveness and readiness probes as a plug mounted first in the endpoint.
 
-  Installed on demand with `mix workbench.install.healthcheck2`
-  (`wb.sh add healthcheck2`). It is the vanilla counterpart of
-  `healthcheck`: where that one is a controller behind the router, with
+  Installed on demand with `mix workbench.install.health_probe`
+  (`wb.sh add health_probe`). It is the vanilla counterpart of
+  `health_endpoint`: where that one is a controller behind the router, with
   a JSON body that grows in dev and a Swagger entry, this one is what an
   orchestrator consumes and nothing more.
 
@@ -36,10 +36,10 @@ defmodule WorkbenchIgniter.Features.Healthcheck2 do
 
   embed_templates()
 
-  @example "mix workbench.install.healthcheck2 --path /health"
+  @example "mix workbench.install.health_probe --path /health"
 
   @impl true
-  def task, do: "workbench.install.healthcheck2"
+  def task, do: "workbench.install.health_probe"
 
   # The installer's options, one line each: the task's "## Options"
   # section and the help a form shows are rendered from here.
@@ -124,7 +124,7 @@ defmodule WorkbenchIgniter.Features.Healthcheck2 do
       {true, igniter} ->
         Igniter.add_notice(
           igniter,
-          "#{inspect(plug)} already exists: healthcheck2 is already installed, skipping."
+          "#{inspect(plug)} already exists: health_probe is already installed, skipping."
         )
 
       {false, igniter} ->
@@ -179,7 +179,7 @@ defmodule WorkbenchIgniter.Features.Healthcheck2 do
   # of the plug pipeline, so they can stay where they are.
   defp mount_first(igniter, endpoint, plug) do
     code = """
-    # Workbench healthcheck: answer the probes before anything else runs.
+    # Workbench health probe: answer the probes before anything else runs.
     plug #{inspect(plug)}
     """
 

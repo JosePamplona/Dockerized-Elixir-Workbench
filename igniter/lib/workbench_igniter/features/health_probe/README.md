@@ -1,4 +1,4 @@
-# healthcheck2
+# health_probe
 
 Liveness and readiness probes, as **the first plug of the endpoint**.
 What a container orchestrator or a load balancer consumes, and nothing
@@ -7,14 +7,14 @@ else.
 Install it on demand with
 
 ```sh
-./wb.sh add healthcheck2
-mix workbench.install.healthcheck2 --path /health
+./wb.sh add health_probe
+mix workbench.install.health_probe --path /health
 ```
 
-It is the vanilla counterpart of [healthcheck](../healthcheck/), in the
-sense `new2` is of `new`: that one is a controller behind the router,
-with a JSON body that grows in dev and an entry in the Swagger page;
-this one answers a probe and gets out of the way. Both can coexist —
+It is the vanilla counterpart of [health_endpoint](../health_endpoint/):
+that one is a controller behind the router, with a JSON body that grows
+in dev and an entry in the Swagger page; this one answers a probe and
+gets out of the way. Both can coexist —
 they share no file and no route.
 
 ## What it installs
@@ -123,11 +123,11 @@ touched and a notice says so.
 
 | File | Role |
 | --- | --- |
-| `healthcheck2.ex` | Manifest + logic (`info/2`, `install/1`) |
-| `task.ex` | `Mix.Tasks.Workbench.Install.Healthcheck2` shell |
+| `health_probe.ex` | Manifest + logic (`info/2`, `install/1`) |
+| `task.ex` | `Mix.Tasks.Workbench.Install.HealthProbe` shell |
 | `CHANGELOG.md` | The cartridge's own version history |
 | `DESIGN.md` | Why it is shaped like this, with sources |
-| `priv/features/healthcheck2/templates/plug.eex` | The plug |
-| `priv/features/healthcheck2/templates/plug_test.eex` | Its test |
+| `priv/features/health_probe/templates/plug.eex` | The plug |
+| `priv/features/health_probe/templates/plug_test.eex` | Its test |
 
-Cartridge test: `test/workbench_igniter/features/healthcheck2_test.exs`.
+Cartridge test: `test/workbench_igniter/features/health_probe_test.exs`.

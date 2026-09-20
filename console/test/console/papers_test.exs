@@ -60,7 +60,7 @@ defmodule Console.PapersTest do
   end
 
   test "reads a cartridge's papers off the workbench and rewrites what they point to" do
-    assert "readme" in Papers.carried("healthcheck2")
+    assert "readme" in Papers.carried("health_probe")
     page = Papers.render("clustering", "design")
     assert page.html =~ ~s(src="/figures/assets/diagrams/clustering/)
     refute page.html =~ "<svg"

@@ -37,7 +37,7 @@ defmodule WorkbenchIgniter.BlockFileTest do
         test_project(files: %{@helper => @start})
         |> BlockFile.put(@helper, "coveralls", "Mimic.copy(File)", before: "ExUnit.start()")
         |> apply_igniter!()
-        |> BlockFile.put(@helper, "healthcheck", "Mimic.copy(MyApp.Repo)\nMimic.copy(System)",
+        |> BlockFile.put(@helper, "health_endpoint", "Mimic.copy(MyApp.Repo)\nMimic.copy(System)",
           before: "ExUnit.start()",
           note: "the modules its controller test copies"
         )
@@ -50,15 +50,15 @@ defmodule WorkbenchIgniter.BlockFileTest do
                Mimic.copy(File)
                # <<< coveralls
 
-               # >>> healthcheck — the modules its controller test copies
+               # >>> health_endpoint — the modules its controller test copies
                Mimic.copy(MyApp.Repo)
                Mimic.copy(System)
-               # <<< healthcheck
+               # <<< health_endpoint
 
                ExUnit.start()
                """
 
-      assert BlockFile.owners(content) == ["coveralls", "healthcheck"]
+      assert BlockFile.owners(content) == ["coveralls", "health_endpoint"]
       assert BlockFile.block(content, "coveralls") == {:ok, "Mimic.copy(File)\n"}
     end
 

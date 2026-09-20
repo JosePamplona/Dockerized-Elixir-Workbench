@@ -229,7 +229,7 @@ cartridge owns a `users` table and its `enhancements` generate Ecto
 schemas and a `db` task, which Ash's domain, resources and
 `ash.setup` aliases replace rather than extend. The cartridge belongs
 with `new2` — a stock `phx.new` project plus Ash — like `clustering`
-and `healthcheck2`.
+and `health_probe`.
 
 ### 3.6 `TOKEN_SIGNING_SECRET` in `.env`, and what is deliberately absent
 

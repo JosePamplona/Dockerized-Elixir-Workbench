@@ -1,4 +1,4 @@
-defmodule WorkbenchIgniter.Features.Healthcheck2Test do
+defmodule WorkbenchIgniter.Features.HealthProbeTest do
   @moduledoc false
 
   use ExUnit.Case, async: true
@@ -10,7 +10,7 @@ defmodule WorkbenchIgniter.Features.Healthcheck2Test do
 
   defp install(argv \\ []) do
     phx_test_project()
-    |> Igniter.compose_task("workbench.install.healthcheck2", argv)
+    |> Igniter.compose_task("workbench.install.health_probe", argv)
   end
 
   defp files(igniter), do: igniter.assigns[:test_files]
@@ -52,7 +52,7 @@ defmodule WorkbenchIgniter.Features.Healthcheck2Test do
       |> assert_has_patch(
         "lib/test_web/endpoint.ex",
         """
-        + | # Workbench healthcheck: answer the probes before anything else runs.
+        + | # Workbench health probe: answer the probes before anything else runs.
         + | plug TestWeb.Plugs.Health
         """
       )
@@ -87,7 +87,7 @@ defmodule WorkbenchIgniter.Features.Healthcheck2Test do
       igniter =
         phx_test_project()
         |> Igniter.rm("lib/test/repo.ex")
-        |> Igniter.compose_task("workbench.install.healthcheck2", [])
+        |> Igniter.compose_task("workbench.install.health_probe", [])
         |> apply_igniter!()
 
       plug = files(igniter)["lib/test_web/plugs/health.ex"]
@@ -128,7 +128,7 @@ defmodule WorkbenchIgniter.Features.Healthcheck2Test do
     # The plug as the installer wrote it, compiled under a name of its
     # own so the tests can run side by side.
     defp plug(project, argv) do
-      {:ok, grown} = Grown.add(project, "healthcheck2", argv)
+      {:ok, grown} = Grown.add(project, "health_probe", argv)
       source = grown.assigns[:test_files]["lib/test_web/plugs/health.ex"]
       name = "TestWeb.Plugs.Health#{System.unique_integer([:positive])}"
 
@@ -179,7 +179,7 @@ defmodule WorkbenchIgniter.Features.Healthcheck2Test do
         # Whoever reads the prefix back reads the same one: the project's
         # state (the console's doors are filled from it), the plug's own
         # words, and the test the project is given.
-        assert {%{path: ^prefix}, _} = WorkbenchIgniter.Features.Healthcheck2.state(grown)
+        assert {%{path: ^prefix}, _} = WorkbenchIgniter.Features.HealthProbe.state(grown)
         files = grown.assigns[:test_files]
         assert files["lib/test_web/plugs/health.ex"] =~ "`GET #{prefix}/live`"
         assert files["test/test_web/plugs/health_test.exs"] =~ ~s|get(conn, "#{prefix}/live")|
@@ -219,26 +219,26 @@ defmodule WorkbenchIgniter.Features.Healthcheck2Test do
 
     test "the test it gives the project is Elixir, on every shape and prefix" do
       for shape <- [[], ~w(ecto)], argv <- [[], ~w(--path /), ~w(--path /api/v1/healthz)] do
-        {:ok, grown} = Grown.add(Grown.born(shape), "healthcheck2", argv)
+        {:ok, grown} = Grown.add(Grown.born(shape), "health_probe", argv)
         test = grown.assigns[:test_files]["test/test_web/plugs/health_test.exs"]
         assert {:ok, _} = Code.string_to_quoted(test), "#{inspect(shape)} #{inspect(argv)}"
       end
     end
 
     test "a second insert, with another prefix, leaves the first: the mark is the plug" do
-      {:ok, grown} = Grown.add(Grown.born(~w(ecto)), "healthcheck2", ~w(--path /status))
+      {:ok, grown} = Grown.add(Grown.born(~w(ecto)), "health_probe", ~w(--path /status))
 
-      again = Igniter.compose_task(grown, "workbench.install.healthcheck2", ~w(--path /other))
+      again = Igniter.compose_task(grown, "workbench.install.health_probe", ~w(--path /other))
       assert_unchanged(again)
       assert_has_notice(again, &(&1 =~ "already installed"))
-      assert {%{path: "/status"}, _} = WorkbenchIgniter.Features.Healthcheck2.state(again)
+      assert {%{path: "/status"}, _} = WorkbenchIgniter.Features.HealthProbe.state(again)
     end
   end
 
   test "running it twice changes nothing" do
     install()
     |> apply_igniter!()
-    |> Igniter.compose_task("workbench.install.healthcheck2", [])
+    |> Igniter.compose_task("workbench.install.health_probe", [])
     |> assert_unchanged()
     |> assert_has_notice(&(&1 =~ "already installed"))
   end

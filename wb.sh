@@ -2297,7 +2297,7 @@ if [ $# -gt 0 ]; then
           composes_left_note
         fi
 
-      else args_error "Missing feature name. Try: ./$(basename "$0") add healthcheck"; fi
+      else args_error "Missing feature name. Try: ./$(basename "$0") add health_probe"; fi
     else terminate "There is no project to add features to."; fi
 
   elif [[ "$1" == "eject" ]]; then
@@ -2307,8 +2307,8 @@ if [ $# -gt 0 ]; then
       FEATURE=$1
       require_clean_workspace eject
       # The latest insert of this cartridge: its subject starts with the
-      # feature name, whole word (so 'healthcheck' never matches
-      # 'healthcheck2').
+      # feature name, whole word (so 'dashboard' never matches
+      # 'dashboard_extras').
       SHA=$(active_inserts | awk -F'\x1f' -v f="$FEATURE" '$2 == "Insert " f || index($2, "Insert " f " ") == 1 { print $1; exit }')
       [ -n "$SHA" ] || terminate \
         "No 'Insert $FEATURE' commit in the workspace: nothing to eject." \

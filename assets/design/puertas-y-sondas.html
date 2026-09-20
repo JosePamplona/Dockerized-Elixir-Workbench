@@ -348,8 +348,8 @@ dice una cosa distinta en cada sitio. Quien aprenda a leer una de las dos aprend
   <tr><td>graphql</td><td>graphiql</td><td class="n">/graphiql</td><td class="n">puerta</td></tr>
   <tr><td>coveralls</td><td>coverage</td><td class="n">/dev/docs/cover</td><td class="n">puerta, si exdoc está</td></tr>
   <tr><td>ash</td><td>admin</td><td class="n">/admin</td><td class="n">puerta, con ash_admin</td></tr>
-  <tr><td>healthcheck</td><td>health</td><td class="n">{endpoint}</td><td class="n">sonda</td></tr>
-  <tr><td>healthcheck2</td><td>live &middot; ready</td><td class="n">{path}/live &middot; {path}/ready</td><td class="n">2 sondas</td></tr>
+  <tr><td>health_endpoint</td><td>health</td><td class="n">{endpoint}</td><td class="n">sonda</td></tr>
+  <tr><td>health_probe</td><td>live &middot; ready</td><td class="n">{path}/live &middot; {path}/ready</td><td class="n">2 sondas</td></tr>
 </table>
 
 <h2>Los cinco</h2>
@@ -461,14 +461,14 @@ const ROWS = [
       { l: "docs", p: "/dev/docs", who: "exdoc" }, { l: "mailbox", p: "/dev/mailbox", who: "mailer" },
       { l: "coverage", p: "/dev/docs/cover", who: "coveralls" } ] },
   { where: "Raíl · Sondas", sub: "todavía no existen", kind: "probe", items: [
-      { l: "live", p: "/health/live", who: "healthcheck2", read: ["200", "good"] },
-      { l: "ready", p: "/health/ready", who: "healthcheck2", read: ["200", "good"] },
-      { l: "health", p: "/health", who: "healthcheck", read: ["no answer", "bad"] } ] },
+      { l: "live", p: "/health/live", who: "health_probe", read: ["200", "good"] },
+      { l: "ready", p: "/health/ready", who: "health_probe", read: ["200", "good"] },
+      { l: "health", p: "/health", who: "health_endpoint", read: ["no answer", "bad"] } ] },
   { where: "La caja · Opens", sub: "rest, insertado", kind: "door", nb: true, box: true, items: [
       { l: "swagger", p: "/dev/swagger" }, { l: "openapi", p: "/dev/openapi" } ] },
   { where: "La caja · Opens", sub: "ash, en la estantería", kind: "door", box: true, state: "shut", items: [
       { l: "admin", p: "/admin" } ] },
-  { where: "La caja · Answers", sub: "healthcheck2", kind: "probe", box: true, items: [
+  { where: "La caja · Answers", sub: "health_probe", kind: "probe", box: true, items: [
       { l: "live", p: "{path}/live" }, { l: "ready", p: "{path}/ready" } ] },
 ];
 
@@ -532,7 +532,7 @@ for (const c of CANDS) {
     // Los vecinos del renglón: donde de verdad conviven, la mención y la chapa.
     if (row.nb) {
       r.append(el("span", { class: "sep" }));
-      r.append(el("button", { class: "cart-ref in" }, "healthcheck"));
+      r.append(el("button", { class: "cart-ref in" }, "health_endpoint"));
       r.append(el("span", { class: "chip good" }, "clean"));
       r.append(el("span", { class: "chip" }, "v0.2.0"));
     }

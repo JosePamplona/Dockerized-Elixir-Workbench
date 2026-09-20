@@ -225,8 +225,18 @@ one alone.
       module-name → path convention (e.g. `controllers/`,
       `test/support/fixtures/`).
 - [ ] Tests with `Igniter.Test.phx_test_project()`: creation, patches,
-      idempotency (apply twice ⇒ `assert_unchanged`). Add the cartridge's
-      `README.md`.
+      idempotency (apply twice ⇒ `assert_unchanged`).
+- [ ] The four papers beside the code, as the anatomy has them
+      (`features/README.md`): `README.md`, `NEED.md` (the catalog test
+      refuses a cartridge without one), `CHANGELOG.md` and `DESIGN.md`.
+      The README's **Contents** is a table drawn as a *tree* of the
+      cartridge's own files — its directory, its `priv/`, its test,
+      each a root after an empty row, the branch in code in the first
+      column with 📁 and 📄 and no-break spaces (U+00A0) for the
+      indentation, the role on one line beside it. Copy the shape from
+      [ecto](lib/workbench_igniter/features/ecto/README.md#contents);
+      a flat two-column list of files is the pre-2026-09-19 shape and
+      is not it.
 - [ ] Manual validation: `./wb.sh new`, then `./wb.sh add <feature>` on
       the created project.
 

@@ -23,7 +23,7 @@ defmodule WorkbenchIgniter.CatalogTest do
   # Every cartridge there is, by directory name, in shelf order: the
   # collection first, then the cartridges, then the base ones.
   @cartridges ~w(chiefs_setup ansi version_manager toolchain versioning
-                 dashboard_extras credo mock exdebug rest graphql
+                 dashboard_extras credo mock test_doubles exdebug rest graphql
                  coveralls exdoc guidelines enhancements auth0 openai healthcheck stripe
                  githooks exmachina clustering healthcheck2 ash specdd db_admin k6 monitoring
                  mailer gettext ecto esbuild tailwind html dashboard)
@@ -335,6 +335,11 @@ defmodule WorkbenchIgniter.CatalogTest do
       # On Postgres the default is pgadmin; the answer is in the shelf's order.
       "db_admin" => [
         {~w(--admin cloudbeaver,adminer), %{admin: ~w(adminer cloudbeaver)}}
+      ],
+      # The default is mimic; mox with --type-check is Hammox, which is
+      # the mark both options leave.
+      "test_doubles" => [
+        {~w(--double mox --type-check), %{double: ["mox"], type_check: true}}
       ],
       "versioning" => [
         {~w(--init-version 1.2.3 --mix-task --readme-badge),

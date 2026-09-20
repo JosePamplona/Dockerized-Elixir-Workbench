@@ -32,6 +32,7 @@ defmodule WorkbenchIgniter.Features do
     Features.DashboardExtras,
     Features.Credo,
     Features.Mock,
+    Features.TestDoubles,
     Features.Exdebug,
     # API interface (mutually exclusive: chiefs_setup inserts one).
     Features.Rest,

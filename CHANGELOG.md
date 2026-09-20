@@ -16,6 +16,29 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **test_doubles: what a test puts in the place of the real thing.**
+  A box for the two maintained double libraries, the choice not a
+  preference but a question about whose module is being replaced:
+  `--double mimic` copies a module out of the way and answers in its
+  place — any module, `File`, `System`, an HTTP client — and asks
+  nothing of the code; `--double mox` replaces nothing, builds a new
+  module against a behaviour the project declares, and needs the code
+  to ask its configuration whom to call. Both, comma-separated, is a
+  normal answer, and a second run adds the other. Without the option,
+  mimic. `--type-check` is one switch with two implementations:
+  Hammox in Mox's place, `type_check: true` on every Mimic copy.
+
+  The box is the dependency **and the way in**, which is what `mock`
+  never had: `copy/4` and `defmock/4` register what a cartridge's
+  tests replace into that cartridge's own block of
+  `test/test_helper.exs`, so several can stand in one file and be
+  ejected apart. It takes over from `mock`, whose library has not
+  released since December 2024 and whose pin (`meck ~> 0.9.2`) locks
+  out the meck that compiles on OTP 29 — the fix exists upstream and
+  cannot arrive. The eight generated files that `import Mock` move one
+  cartridge at a time; `mock` stays on the shelf until the last of
+  them has.
+
 - **A cartridge owns its block of a file it shares.** `.env` and
   `.gitignore` are sets, so an entry goes at the end and a merge can
   reorder freely; `test/test_helper.exs` and a git hook are not —

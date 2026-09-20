@@ -503,7 +503,8 @@ export const Booklet = {
 
 // --- the box in hand: a click turns it (phx-click on the face; Enter is
 // phx-keydown, Space is the browser's own for a button and is given here),
-// and the lozenge in its corner opens the viewer on the side that shows.
+// and the lozenge in its corner opens the viewer on the piece — both faces
+// side by side, centred on the side that shows.
 // The lozenge stops its click before the document, where LiveView listens
 // for the face's.
 export const Face = {
@@ -511,9 +512,12 @@ export const Face = {
     this.el.addEventListener("keydown", ev => { if (ev.key === " " && ev.target === this.el) { ev.preventDefault(); this.el.click() } })
     this.el.querySelector(".expand").addEventListener("click", ev => {
       ev.stopPropagation()
+      // The viewer is given the piece, both faces, and the side that showed:
+      // it opens on that one and holds the other beside it.
       const back = this.el.querySelector(".card").classList.contains("back")
-      const img = this.el.querySelector(back ? ".side.back img" : ".side.front img")
-      if (img) openViewer(img, img.alt || (back ? "The back of the box" : "The box"))
+      const front = this.el.querySelector(".side.front img"), rear = this.el.querySelector(".side.back img")
+      if (front && rear) openViewerPair([front, rear], (front.alt || rear.alt || "The box").replace(/ — box (cover|back)$/, ""), ["cover", "back"], back ? 1 : 0)
+      else { const img = back ? rear : front; if (img) openViewer(img, img.alt || (back ? "The back of the box" : "The box")) }
     })
   },
 }
@@ -1056,7 +1060,14 @@ export const Term = {
 
 // --- the figure viewer: fit, zoom about the cursor, pan. A figure is an <img>
 // here — a drawing is its own document — so the viewer handles one shape.
-const viewer = { scale: 1, x: 0, y: 0, w: 0, h: 0, drag: null }
+// A box is not one shape: it is two faces of the same piece, and they are
+// laid side by side on a single canvas, so a zoom is a zoom of the piece and
+// not of a picture of one of its sides — the name band, the crest and the
+// type are compared between cover and back without closing anything.
+// `faces` says where each one sits in the canvas's own units and which one
+// is being looked at: the one the box showed when it was expanded opens
+// centred, Fit comes back to it, and ← → walk to the other one.
+const viewer = { scale: 1, x: 0, y: 0, w: 0, h: 0, drag: null, faces: null, focus: 0, name: "" }
 function viewerEl() {
   let v = document.getElementById("viewer")
   if (v) return v
@@ -1065,14 +1076,60 @@ function viewerEl() {
   document.body.append(v)
   const $ = s => v.querySelector(s), stage = $("#v-stage"), canvas = $("#v-canvas")
   const apply = () => { canvas.style.width = viewer.w * viewer.scale + "px"; canvas.style.height = viewer.h * viewer.scale + "px"; canvas.style.transform = `translate(${viewer.x}px, ${viewer.y}px)`; $("#v-pct").textContent = Math.round(viewer.scale * 100) + "%" }
-  const fit = () => { const st = stage.getBoundingClientRect(); viewer.scale = Math.min((st.width - 48) / viewer.w, (st.height - 48) / viewer.h, 4); viewer.x = (st.width - viewer.w * viewer.scale) / 2; viewer.y = (st.height - viewer.h * viewer.scale) / 2; apply() }
+  // One face of the canvas, in the canvas's units — the whole of it when
+  // there is only ever one, which is what a figure is.
+  const face = i => viewer.faces ? viewer.faces[i] : { x: 0, w: viewer.w }
+  const said = () => { $("#v-title").textContent = viewer.faces ? `${viewer.name} — ${face(viewer.focus).label}` : viewer.name }
+  // Fit and 1:1 measure the face being looked at, not the pair: two faces
+  // side by side fitted whole would open every box too far away to read.
+  const fit = () => { const st = stage.getBoundingClientRect(), f = face(viewer.focus); viewer.scale = Math.min((st.width - 48) / f.w, (st.height - 48) / viewer.h, 4); viewer.x = st.width / 2 - (f.x + f.w / 2) * viewer.scale; viewer.y = (st.height - viewer.h * viewer.scale) / 2; apply() }
   const zoom = (factor, cx, cy) => { const st = stage.getBoundingClientRect(); if (cx === undefined) { cx = st.width / 2; cy = st.height / 2 } const next = Math.min(8, Math.max(0.1, viewer.scale * factor)); viewer.x = cx - (cx - viewer.x) * (next / viewer.scale); viewer.y = cy - (cy - viewer.y) * (next / viewer.scale); viewer.scale = next; apply() }
-  const actual = () => { const st = stage.getBoundingClientRect(); viewer.scale = 1; viewer.x = (st.width - viewer.w) / 2; viewer.y = (st.height - viewer.h) / 2; apply() }
-  const close = () => { v.classList.remove("on"); canvas.replaceChildren() }
+  const actual = () => { const st = stage.getBoundingClientRect(), f = face(viewer.focus); viewer.scale = 1; viewer.x = st.width / 2 - (f.x + f.w / 2); viewer.y = (st.height - viewer.h) / 2; apply() }
+  // Turning inside the viewer keeps the zoom and the height: the same detail
+  // of the other face slides in, which is the whole point of holding both.
+  const turn = d => {
+    if (!viewer.faces) return
+    viewer.focus = (viewer.focus + d + viewer.faces.length) % viewer.faces.length
+    const st = stage.getBoundingClientRect(), f = face(viewer.focus)
+    viewer.x = st.width / 2 - (f.x + f.w / 2) * viewer.scale; said(); apply()
+  }
+  const close = () => { v.classList.remove("on"); canvas.replaceChildren(); canvas.classList.remove("pair"); viewer.faces = null }
+  const clone = img => { const n = img.cloneNode(true); n.setAttribute("draggable", "false"); n.className = ""; n.style.cssText = ""; return n }
+  // Both faces are shown once both are measured: the canvas has one set of
+  // units and one of them half-loaded would lay the other one out wrong.
+  const loaded = (nodes, show) => {
+    let left = nodes.filter(n => !(n.complete && n.naturalWidth)).length
+    if (!left) return show()
+    for (const n of nodes) if (!(n.complete && n.naturalWidth)) n.onload = n.onerror = () => { if (--left === 0) show() }
+  }
   v.open = (img, title) => {
-    canvas.replaceChildren(); const node = img.cloneNode(true); node.setAttribute("draggable", "false"); node.className = ""
-    const show = () => { viewer.w = node.naturalWidth || node.width || 800; viewer.h = node.naturalHeight || node.height || 600; canvas.append(node); $("#v-title").textContent = title; v.classList.add("on"); fit(); $("#v-close").focus() }
-    if (node.complete && node.naturalWidth) show(); else { node.onload = show; if (node.complete) show() }
+    canvas.replaceChildren(); canvas.classList.remove("pair"); viewer.faces = null; viewer.focus = 0
+    const node = clone(img)
+    const show = () => { viewer.w = node.naturalWidth || node.width || 800; viewer.h = node.naturalHeight || node.height || 600; canvas.append(node); viewer.name = title; said(); $(".hint").textContent = "scroll to zoom · drag to pan · esc to close"; v.classList.add("on"); fit(); $("#v-close").focus() }
+    loaded([node], show)
+  }
+  // The piece: the faces in the order they are turned, and which one showed.
+  v.openPair = (imgs, name, labels, which) => {
+    canvas.replaceChildren(); const nodes = imgs.map(clone)
+    const show = () => {
+      // The faces are brought to one height and set out left to right with a
+      // gap of their own; the canvas carries the pair's size, and each face
+      // is placed in per cent of it, so the whole layout grows with the zoom.
+      const h = Math.max(...nodes.map(n => n.naturalHeight || n.height || 1000))
+      const ws = nodes.map(n => (n.naturalWidth || n.width || 700) * h / (n.naturalHeight || n.height || 1000)), gap = h * 0.04
+      viewer.h = h; viewer.w = ws.reduce((a, b) => a + b, 0) + gap * (nodes.length - 1); viewer.faces = []
+      let x = 0
+      nodes.forEach((n, i) => {
+        viewer.faces.push({ x, w: ws[i], label: labels[i] })
+        n.style.cssText = `position:absolute;top:0;height:100%;left:${x / viewer.w * 100}%;width:${ws[i] / viewer.w * 100}%`
+        x += ws[i] + gap
+      })
+      canvas.classList.add("pair"); canvas.append(...nodes)
+      viewer.name = name; viewer.focus = Math.min(Math.max(which, 0), nodes.length - 1); said()
+      $(".hint").textContent = "scroll to zoom · drag to pan · ← → turn · esc to close"
+      v.classList.add("on"); fit(); $("#v-close").focus()
+    }
+    loaded(nodes, show)
   }
   $("#v-close").addEventListener("click", close); $("#v-in").addEventListener("click", () => zoom(1.25)); $("#v-out").addEventListener("click", () => zoom(0.8)); $("#v-fit").addEventListener("click", fit); $("#v-100").addEventListener("click", actual)
   stage.addEventListener("wheel", ev => { ev.preventDefault(); const r = stage.getBoundingClientRect(); zoom(ev.deltaY < 0 ? 1.12 : 1 / 1.12, ev.clientX - r.left, ev.clientY - r.top) }, { passive: false })
@@ -1082,7 +1139,8 @@ function viewerEl() {
   for (const t of ["pointerup", "pointercancel"]) stage.addEventListener(t, () => { viewer.drag = null; stage.classList.remove("dragging") })
   stage.addEventListener("dblclick", ev => { const r = stage.getBoundingClientRect(); zoom(viewer.scale < 1.5 ? 2 : 0.5, ev.clientX - r.left, ev.clientY - r.top) })
   addEventListener("resize", () => { if (v.classList.contains("on")) fit() })
-  document.addEventListener("keydown", ev => { if (!v.classList.contains("on")) return; if (ev.key === "Escape") close(); else if (ev.key === "+" || ev.key === "=") zoom(1.25); else if (ev.key === "-") zoom(0.8); else if (ev.key === "0") actual(); else if (ev.key === "f") fit() })
+  document.addEventListener("keydown", ev => { if (!v.classList.contains("on")) return; if (ev.key === "Escape") close(); else if (ev.key === "+" || ev.key === "=") zoom(1.25); else if (ev.key === "-") zoom(0.8); else if (ev.key === "0") actual(); else if (ev.key === "f") fit(); else if (ev.key === "ArrowLeft") turn(-1); else if (ev.key === "ArrowRight") turn(1) })
   return v
 }
 export function openViewer(img, title) { viewerEl().open(img, title) }
+export function openViewerPair(imgs, name, labels, which) { viewerEl().openPair(imgs, name, labels, which) }

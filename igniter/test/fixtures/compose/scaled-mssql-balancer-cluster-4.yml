@@ -92,9 +92,9 @@ services:
 
   # One-shot migration (rel/overlays/bin/migrate, from phx.gen.release),
   # so the replicas do not race each other running it on boot. The
-  # database itself is created by database_init below: the mssql image
-  # has no variable that creates one, so a one-shot does, once the
-  # server is healthy, and the migrator waits for it instead.
+  # database itself is created by the `create` one-shot below: the
+  # mssql image has no variable that creates one, so a one-shot does,
+  # once the server is healthy, and the migrator waits for it instead.
   migrate:
     image: lorem-ipsum:0.1.0-prod
     build:
@@ -106,10 +106,10 @@ services:
     environment:
       DATABASE_URL: ecto://sa:some!Password@database/lorem_ipsum_prod
     depends_on:
-      database_init:
+      create:
         condition: service_completed_successfully
 
-  database_init:
+  create:
     image: mcr.microsoft.com/mssql/server:2022-latest
     command: ["/opt/mssql-tools18/bin/sqlcmd", "-C", "-S", "database", "-U", "sa", "-P", "some!Password", "-b", "-Q", "IF DB_ID('lorem_ipsum_prod') IS NULL CREATE DATABASE [lorem_ipsum_prod]"]
     depends_on:

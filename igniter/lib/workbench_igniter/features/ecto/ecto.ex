@@ -114,10 +114,10 @@ defmodule WorkbenchIgniter.Features.Ecto do
   # engine; in a release the one-shot `migrate` the app waits for (the
   # dev image migrates itself on boot), with what has to be there before
   # it — the database MSSQL's image cannot create by a variable
-  # (`database_init`), a place nobody can write in for the SQLite file
-  # (`volume_init`) — and, on the bridge network, where the database is
-  # now that it is not on localhost. The first in the file (position 10):
-  # what administers a database comes after it.
+  # (`create`, Ecto's other verb), a place nobody can write in for the
+  # SQLite file (`volume_init`) — and, on the bridge network, where the
+  # database is now that it is not on localhost. The first in the file
+  # (position 10): what administers a database comes after it.
   # The names `services/1` asks by: one per engine.
   @engines ~w(postgres mysql mssql sqlite)
 
@@ -156,7 +156,7 @@ defmodule WorkbenchIgniter.Features.Ecto do
       }
     ] ++
       if(database.engine == "mssql",
-        do: [one_shot("database_init", "scaled/database_init.yml.eex", [:scaled], context)],
+        do: [one_shot("create", "scaled/create.yml.eex", [:scaled], context)],
         else: []
       ) ++
       [
@@ -188,7 +188,7 @@ defmodule WorkbenchIgniter.Features.Ecto do
       }
     ] ++
       if(database.engine == "mssql",
-        do: [one_shot("database_init", "pod/database_init.yml.eex", release, context)],
+        do: [one_shot("create", "pod/create.yml.eex", release, context)],
         else: []
       ) ++
       if(database.sqlite,

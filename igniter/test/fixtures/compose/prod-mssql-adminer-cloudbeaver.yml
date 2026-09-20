@@ -91,7 +91,7 @@ services:
     env_file:
       - ./.env
     depends_on:
-      database_init:
+      create:
         condition: service_completed_successfully
 
   # The creation, before the migration: bin/migrate runs the migrations
@@ -100,7 +100,7 @@ services:
   # One-shot, on the same image, run to completion once the server is
   # healthy; the migrator waits for it. The dev compose has no such
   # service: 'mix setup' creates the database on its own.
-  database_init:
+  create:
     image: mcr.microsoft.com/mssql/server:2022-latest
     network_mode: "service:pod"
     command: ["/opt/mssql-tools18/bin/sqlcmd", "-C", "-S", "localhost", "-U", "sa", "-P", "some!Password", "-b", "-Q", "IF DB_ID('lorem_ipsum_prod') IS NULL CREATE DATABASE [lorem_ipsum_prod]"]

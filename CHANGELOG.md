@@ -281,7 +281,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `priv/features/<name>/compose/pod/` and `scaled/` (`embed_compose/0`,
   which trims nothing: a fragment is the file's text). **ecto** owns the
   three servers, the release's one-shots (`migrate`, MSSQL's
-  `database_init`, SQLite's `volume_init`), what the app waits for, the
+  `create`, SQLite's `volume_init`), what the app waits for, the
   data volume and the `DATABASE_URL` of the bridge network; **pgadmin**
   and **adminer** their block, their port on the pod and pgAdmin's
   config; **k6** its block on both topologies; **monitoring** Prometheus
@@ -764,16 +764,28 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
-- **SQLite's one-shot is named for what it does: `volume_init`.** It
-  was `data_init`, which initialises no data — it hands `/app/data` to
-  `nobody`, because a named volume mounted where the image has no
-  directory comes up owned by root and the release does not run as
-  root. Three letters from `database_init`, which creates a database
-  and is a different job entirely, so the two read as variants of one
-  thing when they are not: one prepares the **volume**, the other the
-  **base**. Named by the job and not by the engine, as ecto's
-  `database` is — db_admin's adminer waits on it because the volume has
-  to be ready, not because the project is on SQLite.
+- **ecto's release one-shots are named for what they do: `create` and
+  `volume_init`.** They were `database_init` and `data_init` — three
+  letters apart, and variants of one word for two different jobs.
+
+  MSSQL's is now **`create`**, which is what it is: an idempotent
+  `CREATE DATABASE` run before the migrator, the other half of Ecto's
+  own pair beside `migrate`, which has been called that all along and
+  runs `bin/migrate` from `phx.gen.release`. Two verbs a reader already
+  knows, in the order they happen. It shares a word with `docker
+  compose create`, which is cosmetic: a service name is always in
+  argument position, and `wb.sh` wraps the commands anyway.
+
+  SQLite's is now **`volume_init`**, because `data_init` initialises no
+  data — it hands `/app/data` to `nobody`, a named volume mounted where
+  the image has no directory coming up owned by root while the release
+  does not run as root. It stays a noun deliberately: `create` and
+  `migrate` are Ecto operations, and this one is not, so the asymmetry
+  says something true.
+
+  Both named by the job and not by the engine, as ecto's `database` is
+  — db_admin's adminer waits on `volume_init` because the volume has to
+  be ready, not because the project is on SQLite.
 
 - **A cartridge's Contents is a tree of its files.** The table at the
   foot of a cartridge's README draws the cartridge's own files as a

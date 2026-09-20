@@ -121,7 +121,7 @@ defmodule WorkbenchIgniter.ServicesConformanceTest do
       ecto = offers.("ecto")
       assert Enum.map(ecto["database"], & &1.value) == ~w(postgres mysql mssql)
       assert Enum.map(ecto["migrate"], & &1.value) == ~w(postgres mysql mssql sqlite3)
-      assert ecto["database_init"] == [%{option: :database, value: "mssql"}]
+      assert ecto["create"] == [%{option: :database, value: "mssql"}]
       assert ecto["volume_init"] == [%{option: :database, value: "sqlite3"}]
 
       # monitoring takes no options: its two come whatever you do, and

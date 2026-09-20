@@ -195,8 +195,8 @@ defmodule WorkbenchIgniter.Features do
   # `database`), and no rule over the words would know it.
   #
   # All of them per service, not one: ecto's `database` comes with any
-  # of four engines and its `database_init` with mssql alone, and a
-  # reader that only knew the first could not tell those apart.
+  # of four engines and its `create` with mssql alone, and a reader
+  # that only knew the first could not tell those apart.
   defp brought_by(_feature, nil), do: %{}
 
   defp brought_by(feature, %Igniter.Mix.Task.Info{schema: schema}) do

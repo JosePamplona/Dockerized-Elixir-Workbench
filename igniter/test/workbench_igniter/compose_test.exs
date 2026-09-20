@@ -419,7 +419,7 @@ defmodule WorkbenchIgniter.ComposeTest do
                }
 
       assert Compose.service_names(:prod, ~w(mssql)).names ==
-               ~w(pod app migrate database_init database)
+               ~w(pod app migrate create database)
 
       assert Compose.service_names(:prod, ~w(sqlite)).names == ~w(pod app migrate volume_init)
       assert Compose.service_names(:dev, []).names == ~w(pod app)

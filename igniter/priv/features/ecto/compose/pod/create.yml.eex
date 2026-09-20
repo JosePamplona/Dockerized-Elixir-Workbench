@@ -4,7 +4,7 @@
   # One-shot, on the same image, run to completion once the server is
   # healthy; the migrator waits for it. The dev compose has no such
   # service: 'mix setup' creates the database on its own.
-  database_init:
+  create:
     image: mcr.microsoft.com/mssql/server:<%= @version.("mssql", "2022-latest") %>
     network_mode: "service:pod"
     command: ["/opt/mssql-tools18/bin/sqlcmd", "-C", "-S", "localhost", "-U", "sa", "-P", "some!Password", "-b", "-Q", "IF DB_ID('<%= @app_name %>_prod') IS NULL CREATE DATABASE [<%= @app_name %>_prod]"]

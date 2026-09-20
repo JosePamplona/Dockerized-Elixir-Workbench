@@ -163,8 +163,8 @@ mechanism without changing a single file it writes.
    cartridge's table stops saying "no service".
    *Landed on 2026-09-07*, SQLite in a release with it: ecto declares
    the engine (`postgres`, `mysql`, `mssql`, `sqlite`), the `database`
-   service keeps its name and takes its engine, `database_init` creates
-   SQL Server's database in the release deployments, `volume_init` chowns
+   service keeps its name and takes its engine, `create` makes SQL
+   Server's database in the release deployments, `volume_init` chowns
    SQLite's volume for `nobody`, and scaled refuses SQLite. One table in
    the ecto module writes the release's connection for both its
    installer and `new`. *Run live the same day*: MySQL, SQLite and SQL

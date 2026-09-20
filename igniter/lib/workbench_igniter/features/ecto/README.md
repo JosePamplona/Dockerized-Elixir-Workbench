@@ -98,14 +98,14 @@ project carries it — nothing is touched and a notice says so.
 | `│   ├── 📄 postgres.yml.eex` | The Postgres server |
 | `│   ├── 📄 mysql.yml.eex` | The MySQL server |
 | `│   ├── 📄 mssql.yml.eex` | The SQL Server server |
-| `│   ├── 📄 database_init.yml.eex` | Creates the database on SQL Server |
+| `│   ├── 📄 create.yml.eex` | Creates the database on SQL Server |
 | `│   ├── 📄 volume_init.yml.eex` | SQLite's volume, handed to the release |
 | `│   └── 📄 migrate.yml.eex` | The one-shot migration, before the app |
 | `└── 📁 scaled/` | Replicas: no SQLite |
 | `    ├── 📄 postgres.yml.eex` | The Postgres server |
 | `    ├── 📄 mysql.yml.eex` | The MySQL server |
 | `    ├── 📄 mssql.yml.eex` | The SQL Server server |
-| `    ├── 📄 database_init.yml.eex` | Creates the database on SQL Server |
+| `    ├── 📄 create.yml.eex` | Creates the database on SQL Server |
 | `    └── 📄 migrate.yml.eex` | One migration, not one per replica |
 |  |  |
 | `📁 test/workbench_igniter/features/` |  |

@@ -500,7 +500,11 @@ table.carts .argv .val{overflow-wrap:anywhere}
 table.carts td .pairs{grid-template-columns:max-content}
 .row{margin-top:18px}
 .row .label{margin-bottom:10px;display:block}
-.boxes{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:22px 18px;align-items:end;padding:0 14px 18px}
+/* The boxes hang from a common top, not from a common bottom: every
+   cover is the same 5:7, so their feet line up on the plank anyway, and
+   a caption that takes two lines grows downwards instead of lifting its
+   own cover off the shelf. */
+.boxes{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:22px 18px;align-items:start;padding:0 14px 18px}
 .plank{height:10px;background:var(--shelf);border-bottom:6px solid var(--shelf-edge);border-radius:1px;box-shadow:0 8px 14px rgba(0,0,0,.22)}
 .box{position:relative;display:block;width:100%;text-align:left;border-radius:2px}
 .box .face{aspect-ratio:5/7;width:100%;background:var(--board);border-radius:2px;overflow:hidden;box-shadow:var(--shadow);transition:transform .18s ease, box-shadow .18s ease, filter .18s ease, opacity .18s ease;position:relative}

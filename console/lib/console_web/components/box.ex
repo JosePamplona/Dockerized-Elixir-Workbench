@@ -493,8 +493,9 @@ defmodule ConsoleWeb.Box do
   end
 
   # Specs: what the cartridge is, as opposed to what you are about to do
-  # with it. Two rows move with the options — a collection's recipe, and
-  # what a chosen value builds on — so the panel says which switch moved it.
+  # with it. Three rows move with the options — a collection's recipe,
+  # what a chosen value builds on, and the containers it raises — so the
+  # panel says which switch moved it.
   defp specs(assigns) do
     asked = value_requires(assigns.box, assigns.args, assigns.status)
     members = members(assigns)
@@ -505,6 +506,7 @@ defmodule ConsoleWeb.Box do
         asked: asked,
         members: members,
         up: up,
+        brings: brings(assigns),
         console: assigns.box["console"] || %{}
       )
 
@@ -522,7 +524,7 @@ defmodule ConsoleWeb.Box do
         <span class="note">{kind_note(@box)}</span>
       </span>
       <span :if={@box["requires"] != [] || @asked != []} class="k">Needs</span>
-      <span :if={@box["requires"] != [] || @asked != []} class="v">
+      <span :if={@box["requires"] != [] || @asked != []} class="v stack">
         <span :for={r <- @box["requires"]} class="req"><.cart_ref
           name={r}
           installed={Cartridges.satisfies?(@status, r, condition(@box, r))}
@@ -535,7 +537,7 @@ defmodule ConsoleWeb.Box do
         /><span :if={conds[n]} class="by">with {Cartridges.state_said(conds[n])}</span></span><span class="by">by {why}</span></span>
       </span>
       <span :if={@box["collection"]} class="k">Inserts</span>
-      <span :if={@box["collection"]} class="v">
+      <span :if={@box["collection"]} class="v stack">
         <span :if={@members == :asking} class="note">asking the project which of its picks are already in…</span>
         <%= if is_list(@members) do %>
           <span :for={m <- @members} class="why"><.cart_ref
@@ -544,8 +546,18 @@ defmodule ConsoleWeb.Box do
           /><span :if={m["argv"] != []}>{Enum.join(m["argv"], " ")}</span></span>
         <% end %>
       </span>
+      <span :if={@brings != []} class="k">Brings</span>
+      <span :if={@brings != []} class="v stack">
+        <span :for={{service, why} <- @brings} class={["req", why && "unlit"]} title={why}>
+          <span class="svc" style={"--svc:#{ConsoleWeb.Services.role_color(service["role"])}"}>
+            {service["service"]}
+          </span>
+          <span :if={service["listens"]} class="path">:{service["listens"]}</span>
+          <span class="by">{Enum.join(service["deploys"] || [], " · ")}</span>
+        </span>
+      </span>
       <span :if={(@console["doors"] || []) != []} class="k">Opens</span>
-      <span :if={(@console["doors"] || []) != []} class="v">
+      <span :if={(@console["doors"] || []) != []} class="v stack">
         <.door_ref
           :for={d <- @console["doors"]}
           label={d["label"]}
@@ -602,6 +614,76 @@ defmodule ConsoleWeb.Box do
   defp members(%{box: %{"collection" => true}, recipe: :asking}), do: :asking
   defp members(%{box: %{"collection" => true}, recipe: recipe}) when is_list(recipe), do: recipe
   defp members(%{box: box}), do: box["members"] || []
+
+  # The containers the box raises: `[{service, why}]`, `why` the reason
+  # it is unlit and `nil` when it is lit.
+  #
+  # Once it is in, the project says it — the carried cartridge's
+  # `compose` is the real thing, engine and all, and nothing here has
+  # to guess. On the shelf there is no project to ask, so the row reads
+  # the manifest's menu (`offers`) and lights what the form is holding:
+  # it moves with the switches, as Needs and Inserts do.
+  #
+  # Either way the rest of the menu stays, unlit. A cartridge that can
+  # be run again to add more — `rerun: adds`, as db_admin is — lights
+  # it by the form like a box on the shelf: those are containers the
+  # reader can still have, and ticking the switch is how they ask. One
+  # whose form is locked cannot be moved by any switch, so the reason
+  # is not a switch but the state it went in with: ecto on sqlite has
+  # no `database` container because SQLite is a file, and the row says
+  # that rather than leaving the reader to wonder where it went.
+  defp brings(assigns) do
+    have = if assigns.installed, do: assigns.c["compose"] || [], else: []
+    inside = MapSet.new(have, & &1["service"])
+    locked = assigns.installed and assigns.box["rerun"] != "adds"
+
+    rest =
+      for o <- assigns.box["offers"] || [], not MapSet.member?(inside, o["service"]), do: o
+
+    for(service <- have, do: {service, nil}) ++
+      for o <- rest do
+        cond do
+          locked -> {o, locked_out(o, assigns.box, assigns.c)}
+          chosen?(o, assigns.args) -> {o, nil}
+          true -> {o, unlit(o)}
+        end
+      end
+  end
+
+  # Why it is not there and no switch will bring it: the cartridge is
+  # in and its form is locked, so what it went in with decided this.
+  # Said as that state and not as the switch — `--database postgres`
+  # would be a lie, since the reader cannot move it without ejecting
+  # first — and narrowed to the options this container hangs on, so a
+  # cartridge with many switches does not read out all of them.
+  defp locked_out(offer, box, c) do
+    decided = Map.take(c["state"] || %{}, for(w <- offer["with"] || [], do: w["option"]))
+
+    if decided == %{},
+      do: unlit(offer),
+      else: "#{box["name"]} is in with #{Cartridges.state_said(decided)}"
+  end
+
+  # Whether the form as filled brings this one: a service that waits on
+  # no choice always does, and one that waits needs any of its choices
+  # to be the value the field holds (`--admin` holds several).
+  defp chosen?(offer, args) do
+    (offer["with"] || []) == [] or
+      Enum.any?(offer["with"], &(&1["value"] in List.wrap(args[&1["option"]] || [])))
+  end
+
+  # Why it is not lit: the switches that would bring it, in the words
+  # the reader would type.
+  defp unlit(offer) do
+    said =
+      (offer["with"] || [])
+      |> Enum.group_by(& &1["option"], & &1["value"])
+      |> Enum.map_join(" · ", fn {option, values} ->
+        "--#{String.replace(option, "_", "-")} #{Enum.join(values, ", ")}"
+      end)
+
+    if said == "", do: nil, else: "only with #{said}"
+  end
 
   @doc "What each chosen value builds on: [{\"--flag value\", [names], conditions}]."
   def value_requires(box, args, _status) do

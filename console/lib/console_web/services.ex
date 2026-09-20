@@ -65,11 +65,20 @@ defmodule ConsoleWeb.Services do
   @doc "The CSS colour a service is drawn in: its role's, the balancer told apart from the pod."
   @spec color(map() | nil, String.t() | nil) :: String.t()
   def color(_status, "balancer"), do: "var(--svc-balancer)"
+  def color(status, service), do: role_color(get(status, service)["role"])
 
-  def color(status, service) do
-    role = get(status, service)["role"]
-    "var(--svc-#{Map.get(@tokens, role, "network")})"
-  end
+  @doc """
+  The CSS colour of a role, for a drawer that already knows one.
+
+  The same step `color/2` ends in, reachable on its own: that one finds
+  the role by asking the project, and the project only knows the
+  cartridges it carries. A box on the shelf brings its services' roles
+  with it (the catalog's `offers`), and drawing those through `color/2`
+  painted every one of them the plainest — a shelf full of databases
+  and dashboards in the colour of network.
+  """
+  @spec role_color(String.t() | nil) :: String.t()
+  def role_color(role), do: "var(--svc-#{Map.get(@tokens, role, "network")})"
 
   @doc "The colour of every service known now, by name — what the logs' hook paints with, in the browser."
   @spec colors(map() | nil) :: %{String.t() => String.t()}

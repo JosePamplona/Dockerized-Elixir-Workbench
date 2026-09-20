@@ -108,6 +108,14 @@ defmodule WorkbenchIgniter.Features do
       # (`Compose.brought/2`). The ones that hang on its state (ecto's
       # database, by engine) are in the status of a project that has it.
       compose: WorkbenchIgniter.Compose.brought(feature, feature.services(%{})),
+      # The whole menu: every service it could bring, whatever is
+      # chosen (`services(:any)`), each with the choices it comes
+      # `with` — `[]` for one that comes whatever you pick. `compose`
+      # is what a project with nothing chosen gets; this is what the
+      # shelf can promise before anything is, and what lets a reader
+      # holding a half-filled form be told which of them that form
+      # brings. Same faces, so one reader draws both.
+      offers: offers(feature, info),
       # A base cartridge: a phx.new capability, in a default project
       # from birth and left out with its --no-* flag.
       base: String.to_atom(feature.name()) in WorkbenchIgniter.PhxDelta.capabilities(),
@@ -129,6 +137,94 @@ defmodule WorkbenchIgniter.Features do
 
   defp members(feature, %Igniter.Mix.Task.Info{defaults: defaults}) do
     for {name, argv} <- feature.members(defaults || []), do: %{name: name, argv: argv}
+  end
+
+  # Every service the cartridge promises, drawn as the compose draws
+  # one, each told the choices it comes `with` — `[]` for one that
+  # comes whatever you pick. Enough for a reader holding a half-filled
+  # form to say which of them it is about to get.
+  #
+  # Asked whole and then one at a time, as `Compose.images/0` asks: the
+  # menu is not a project anyone could have — ecto refuses four
+  # databases at once — so a cartridge that turns the whole list down
+  # still answers for each of its own alone. First answer per service
+  # wins, so the order is the compose's where there is one.
+  defp offers(feature, info) do
+    by = brought_by(feature, info)
+    names = feature.services(:any)
+
+    # What it brings with nothing chosen at all comes whatever you
+    # choose: no list of choices to wait for.
+    always =
+      MapSet.new(WorkbenchIgniter.Compose.brought(feature, feature.services(%{})), & &1.service)
+
+    faces =
+      for asked <- [names | Enum.map(names, &[&1])],
+          service <- WorkbenchIgniter.Compose.brought(feature, asked),
+          do: service
+
+    faces
+    |> Enum.group_by(& &1.service)
+    |> Enum.map(fn {name, [first | _] = drawn} ->
+      first
+      # What the choice decides and the service does not: ecto's one
+      # `database` is a different repository on a different port per
+      # engine. The menu says these only where every choice agrees;
+      # where they disagree it says nothing rather than the first
+      # engine's, and the project that has the cartridge says it (the
+      # status' own `compose`).
+      |> Map.put(:image, agreed(drawn, & &1.image))
+      |> Map.put(:listens, agreed(drawn, & &1.listens))
+      |> Map.put(:published, agreed(drawn, & &1.published) || [])
+      |> Map.put(:with, if(MapSet.member?(always, name), do: [], else: by[name] || []))
+    end)
+    |> Enum.sort_by(& &1.position)
+  end
+
+  defp agreed(faces, field) do
+    case faces |> Enum.map(field) |> Enum.uniq() do
+      [one] -> one
+      _ -> nil
+    end
+  end
+
+  # Which choices bring which service, asked of the cartridge one
+  # choice at a time: a state holding a single value, and the compose
+  # it gives. Asked, never guessed — the name in the file is the
+  # compose's, not the choice's (ecto's four engines all come as one
+  # `database`), and no rule over the words would know it.
+  #
+  # All of them per service, not one: ecto's `database` comes with any
+  # of four engines and its `database_init` with mssql alone, and a
+  # reader that only knew the first could not tell those apart.
+  defp brought_by(_feature, nil), do: %{}
+
+  defp brought_by(feature, %Igniter.Mix.Task.Info{schema: schema}) do
+    choices = feature.choices()
+
+    for {key, type} <- schema || [],
+        value <- choice_values(Keyword.get(choices, key)),
+        state = if(type == :csv, do: %{key => [value]}, else: %{key => value}),
+        service <- WorkbenchIgniter.Compose.brought(feature, feature.services(state)) do
+      {service.service, %{option: key, value: value}}
+    end
+    |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
+    |> Map.new(fn {name, brings_it} -> {name, Enum.uniq(brings_it)} end)
+  end
+
+  # The values of one option, flat: the sections opened out, the
+  # open-ended list read through, each value by itself.
+  defp choice_values(nil), do: []
+  defp choice_values({:open, values}), do: choice_values(values)
+
+  defp choice_values(values) do
+    values
+    |> choice_list()
+    |> Enum.flat_map(fn
+      %{group: _, values: grouped} -> grouped
+      value -> [value]
+    end)
+    |> Enum.map(& &1.value)
   end
 
   @doc """

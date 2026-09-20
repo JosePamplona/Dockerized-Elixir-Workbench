@@ -16,6 +16,45 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **A box says which containers it brings.** The Spec of a box in hand
+  gained a **Brings** row, beside Needs and Opens: the compose services
+  the cartridge raises, each with its role's colour, the port it
+  listens on and the deployments it enters. Once the cartridge is in,
+  the project says it and the row repeats it, engine and all. While it
+  is on the shelf there is no project to ask, so the row reads the
+  catalog's new `offers` — every container the cartridge could raise,
+  each with the choices it comes `with` — and lights the ones the form
+  is holding, which is why the row moves with the switches instead of
+  promising all four databases to a reader who has picked one. What no
+  switch can bring is still shown, unlit, with the reason: a cartridge
+  whose form is locked blames the state it went in with («ecto is in
+  with database sqlite3»), not a switch nobody can move.
+
+  `offers` is derived, never written down twice: the manifest asks the
+  cartridge for `services(:any)` and then asks again one choice at a
+  time, so the answer is the cartridge's own. That matters because the
+  name in the compose is not the name of the choice — ecto's four
+  engines all arrive as one `database`, and `--database sqlite3` brings
+  no server at all, SQLite being a file, but the one-shot that makes a
+  place for it. Where the choice decides something the service does not
+  — the image and the port of `database` differ per engine — the menu
+  says nothing rather than the first engine's, and the project that has
+  the cartridge says it.
+
+  The rows that name cartridges or containers — Needs, Inserts, Brings,
+  Opens — now stand one item per line. Thirteen picks of a collection
+  were a paragraph that wrapped; they are a list, and read as one.
+
+- **A cartridge's promise about its own services is checked.**
+  `services(:any)` is each cartridge's word that these are all of its
+  containers whatever you choose, and two readers stand on it —
+  `Compose.images/0`, which tells the workbench's images from a
+  daemon's, and the catalog's `offers`. Neither would notice it broken:
+  add an engine, forget the `:any` line, and the new image quietly
+  stops being the house's while every test passes. A conformance suite
+  now walks the real shelf and holds the promise to what the cartridges
+  actually answer, in both directions.
+
 - **The Record's flags cite their source.** The head of the «in
   phx.new's words» column is a link to `mix phx.new`'s page on hexdocs,
   which the column quotes — at the version that generated the project,
@@ -1712,6 +1751,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   own; what has happened to the project belongs beside what it is.
 
 ### Fixed
+
+- **A service the project does not carry wore the wrong colour.**
+  `ConsoleWeb.Services.color/2` finds a service's role by asking the
+  project, and the project only knows the cartridges it carries, so
+  anything else fell through to the plainest token — every container on
+  a shelf box drawn in the colour of network, databases and dashboards
+  alike. The module's own rule is that a colour is a *role's*, not a
+  service's, and that step is now reachable on its own
+  (`role_color/1`), for a drawer that already knows the role. `color/2`
+  ends in it.
 
 - **A README's badges are drawn in the console, to the byte.** The
   badge the versioning cartridge puts under a README's title is a

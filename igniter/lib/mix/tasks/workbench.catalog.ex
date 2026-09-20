@@ -19,6 +19,12 @@ defmodule Mix.Tasks.Workbench.Catalog do
   Nothing here looks at a project: for what the current project
   carries, see `mix workbench.status`.
 
+  A cartridge that brings compose services says so twice: `compose` is
+  what a project gets from it with nothing chosen, and `offers` is the
+  whole menu — every container it could raise, each with the choices it
+  comes `with`, so a reader can light the ones a given set of switches
+  would bring.
+
   ## Options
 
   * `--json` - One JSON array instead of the table, for tools.

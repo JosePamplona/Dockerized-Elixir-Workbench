@@ -16,6 +16,24 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **A cartridge owns its block of a file it shares.** `.env` and
+  `.gitignore` are sets, so an entry goes at the end and a merge can
+  reorder freely; `test/test_helper.exs` and a git hook are not —
+  every `Mimic.copy/1` has to stand before `ExUnit.start()`, and a
+  hook runs its commands in sequence. Appending is wrong there, and
+  rewriting the file whole means the second cartridge erases the
+  first. `WorkbenchIgniter.BlockFile` gives each cartridge a block
+  of its own, delimited and named, and puts it where an anchor says:
+  a re-run with other options replaces the block where it stands
+  instead of adding a second, an eject takes one away and leaves
+  every other, and the file can say who wrote in it. The anchor
+  decides where a block is born, never where it lives, so a project
+  that moved it keeps it moved; an open sentinel without its close
+  raises, naming the file and the owner, rather than rewriting a
+  file somebody half-edited. The delimiter is never a mark: no
+  cartridge may answer `installed?/1` or `state/1` by looking for
+  one.
+
 - **A box says which containers it brings.** The Spec of a box in hand
   gained a **Brings** row, beside Needs and Opens: the compose services
   the cartridge raises, each with its role's colour, the port it

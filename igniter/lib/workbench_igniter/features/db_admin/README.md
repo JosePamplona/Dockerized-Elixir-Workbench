@@ -14,12 +14,16 @@ run in a browser come in two kinds. A database's own admin goes deep on
 one server and refuses the rest; a generalist reads several and knows
 less of each:
 
-| `--admin` | What it is | Good for | Serves |
-| --- | --- | --- | --- |
-| `pgadmin` | [pgAdmin](https://www.pgadmin.org), Postgres' own | query plans drawn, server activity, roles, its dashboards | postgres |
-| `phpmyadmin` | [phpMyAdmin](https://www.phpmyadmin.net), MySQL's and MariaDB's own | users and privileges, server variables, import and export | mysql |
-| `adminer` | [Adminer](https://www.adminer.org), one PHP page | a quick look and an edit on any database; the lightest by far (a 120 MB image) | postgres, mysql, mssql, sqlite3 |
-| `cloudbeaver` | [CloudBeaver](https://github.com/dbeaver/cloudbeaver), DBeaver in the browser | a full SQL editor with completion, ER diagrams, data export; a Java server (700 MB) | postgres, mysql, mssql |
+| `--admin` | What it is | Good for | Image | Serves |
+| --- | --- | --- | --- | --- |
+| `pgadmin` | [pgAdmin](https://www.pgadmin.org), Postgres' own | query plans drawn, server activity, roles, its dashboards | 529 MB | postgres |
+| `phpmyadmin` | [phpMyAdmin](https://www.phpmyadmin.net), MySQL's and MariaDB's own | users and privileges, server variables, import and export | 608 MB | mysql |
+| `adminer` | [Adminer](https://www.adminer.org), one PHP page | a quick look and an edit on any database; the lightest by far | 122 MB | postgres, mysql, mssql, sqlite3 |
+| `cloudbeaver` | [CloudBeaver](https://github.com/dbeaver/cloudbeaver), DBeaver in the browser | a full SQL editor with completion, ER diagrams, data export; a Java server | 717 MB | postgres, mysql, mssql |
+
+The sizes are the images as pulled on 2026-09-19, at the tags
+`config.conf` names: `dpage/pgadmin4:latest`, `phpmyadmin:5`,
+`adminer:6`, `dbeaver/cloudbeaver:latest`.
 
 Which image, told what, opening with which file so that the page comes
 up already on the project's database — and which of them can serve the

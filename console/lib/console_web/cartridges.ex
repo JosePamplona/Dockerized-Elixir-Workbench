@@ -148,10 +148,11 @@ defmodule ConsoleWeb.Cartridges do
     end
   end
 
-  @doc "What is true of a box: not done, a collection of N, base."
+  @doc "What is true of a box: not done, archived, a collection of N, base."
   def facts(e) do
     [
       e["pending"] && "not done",
+      e["archived"] && "archived",
       e["collection"] && "inserts #{length(e["members"] || [])}",
       e["base"] && "base"
     ]

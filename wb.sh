@@ -1879,13 +1879,17 @@
       "                      sets a standing one)." \
       "  PHX_NEW_OPTIONS     Any flag of 'mix phx.new'."
 
-    print_command "add FEATURE [OPTIONS...]"
+    print_command "add [--archived] FEATURE [OPTIONS...]"
     command_content \
       "Insert a cartridge as one commit ('Insert FEATURE …'), the services it" \
       "brings baked into the compose files in that same commit. A collection" \
       "inserts each missing member as its own commit. Needs a clean tree." \
-      "  FEATURE   A cartridge of the catalog ('catalog' lists them)." \
-      "  OPTIONS   Flags of its 'mix workbench.install.FEATURE' task."
+      "  FEATURE    A cartridge of the catalog ('catalog' lists them)." \
+      "  OPTIONS    Flags of its 'mix workbench.install.FEATURE' task." \
+      "  --archived Insert a retired cartridge anyway. An archived box is not" \
+      "             offered for new projects — its papers stay on the shelf as" \
+      "             the log of why it was made — but its installer still works,"\
+      "             so a hand rebuilding an old project can ask for it."
 
     print_command "eject FEATURE"
     command_content \
@@ -1949,11 +1953,12 @@
       "Write values into config.conf in place, keeping comments and order." \
       "A key the file does not export is refused."
 
-    print_command "expand [--json] CARTRIDGE [OPTIONS...]"
+    print_command "expand [--json] [--archived] CARTRIDGE [OPTIONS...]"
     command_content \
       "Print what 'add CARTRIDGE OPTIONS' would insert, one 'NAME [ARGV]' per" \
       "line in insert order, without inserting it." \
-      "  --json   One JSON array of {name, argv}."
+      "  --json     One JSON array of {name, argv}." \
+      "  --archived Draw the plan of a retired cartridge too."
 
     print_command "status [--json [--fast]]"
     command_content \
@@ -2236,6 +2241,21 @@ if [ $# -gt 0 ]; then
   elif [[ "$1" == "add" ]]; then
     shift
 
+    # The one flag of 'add' that is the workbench's and not the
+    # installer's: it says whether an archived cartridge may be planned
+    # at all, so it is taken out here and handed to 'expand', never to
+    # 'mix workbench.install.FEATURE' — which knows nothing about it and
+    # parses its switches strictly.
+    ADD_FORCE=()
+    ADD_ARGS=()
+    while [ $# -gt 0 ]; do
+      case "$1" in
+        --archived) ADD_FORCE=(--archived); shift ;;
+        *) ADD_ARGS+=("$1"); shift ;;
+      esac
+    done
+    set -- "${ADD_ARGS[@]}"
+
     if [[ "$EXISTING_PROJECT" == true ]]; then
       if [ $# -gt 0 ]; then
         require_clean_workspace add
@@ -2246,7 +2266,7 @@ if [ $# -gt 0 ]; then
         # rest is mix noise. Each insert then runs as its own container
         # and its own commit, so 'eject' reverts one cartridge alone —
         # a collection leaves no commit of its own.
-        PLAN=$(expand_plan "$@") || terminate "Could not expand '$1'."
+        PLAN=$(expand_plan "${ADD_FORCE[@]}" "$@") || terminate "Could not expand '$1'."
 
         if [ -z "$PLAN" ]; then
           echo "Nothing to insert: the project already carries every cartridge of '$1'."
@@ -2721,8 +2741,11 @@ if [ $# -gt 0 ]; then
     # what the project already carries. Nothing is written.
     if [[ "$EXISTING_PROJECT" == true ]]; then
       [[ "$1" == "--json" ]] && { EXPAND_JSON=true; shift; } || EXPAND_JSON=false
+      # Same flag as 'add', and for the same reason: the plan of an
+      # archived cartridge is only drawn when it is asked for by name.
+      [[ "$1" == "--archived" ]] && { EXPAND_FORCE=(--archived); shift; } || EXPAND_FORCE=()
       if [ $# -gt 0 ]; then
-        PLAN=$(expand_plan "$@") || terminate "Could not expand '$1'."
+        PLAN=$(expand_plan "${EXPAND_FORCE[@]}" "$@") || terminate "Could not expand '$1'."
         if $EXPAND_JSON
         then echo "$PLAN" | plan_json
         else echo "$PLAN"; fi

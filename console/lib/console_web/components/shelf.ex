@@ -3,7 +3,7 @@ defmodule ConsoleWeb.Shelf do
   The shelf: every cartridge as a box on a plank, or as a row. There is
   one kind of cartridge, so the only division is the box's *state*, and
   since 2026-09-10 that state is the ribbon and not three planks at
-  once: inserted, on the shelf, not done — one at a time. The ribbon
+  once: inserted, on the shelf, not done, archived — one at a time. The ribbon
   read *all / collections / base / with a box* until then, which asked
   a question the box already answers: what a cartridge is rides on it
   as a fact (`base`, `inserts 4`, `not done`), in both views.
@@ -21,10 +21,16 @@ defmodule ConsoleWeb.Shelf do
   import ConsoleWeb.Square, only: [square: 1]
   alias ConsoleWeb.{Box, Cartridges, Record}
 
+  # Archived last: the state nobody picks a cartridge from. It is a
+  # state and not a filter taken off the shelf — the retired boxes are
+  # counted where the others are, one click away, because their papers
+  # are the log of why they were made and that reading is the reason
+  # they stay.
   @docs [
     {"in", "Inserted"},
     {"shelf", "On the shelf"},
-    {"pending", "Not done"}
+    {"pending", "Not done"},
+    {"archived", "Archived"}
   ]
   def docs, do: @docs
   def doc_names, do: Enum.map(@docs, &elem(&1, 0))
@@ -39,11 +45,14 @@ defmodule ConsoleWeb.Shelf do
   end
 
   # Which of the catalog each state holds. A cartridge that is in is in,
-  # whatever else it is; of the rest, the ones with no installer yet are
-  # not done, and the others are on the shelf.
+  # whatever else it is — a project carrying a retired box is told the
+  # truth about its own project first; of the rest, the retired are
+  # archived, then the ones with no installer yet are not done, and the
+  # others are on the shelf.
   defp state(status, e) do
     cond do
       Cartridges.installed?(status, e["name"]) -> "in"
+      e["archived"] -> "archived"
       e["pending"] -> "pending"
       true -> "shelf"
     end
@@ -81,7 +90,7 @@ defmodule ConsoleWeb.Shelf do
     ~H"""
     <div class="pdocs shelfp">
       <.ribbon
-        label="The shelf: what is in, what is on it, what is not done"
+        label="The shelf: what is in, what is on it, what is not done, what is retired"
         selected={@filter}
         docked
         items={
@@ -133,7 +142,7 @@ defmodule ConsoleWeb.Shelf do
               tab={@tab}
               status={@status}
             />
-            <%!-- On the shelf and Not done read in Inserted's table, its
+            <%!-- On the shelf, Not done and Archived read in Inserted's table, its
                   columns included: the parameters the cartridge takes, with
                   their type, and the addresses it would open, shut. The
                   summary rides on the name's title. No bell: nothing of
@@ -351,7 +360,7 @@ defmodule ConsoleWeb.Shelf do
 
     ~H"""
     <.link
-      class={["box", @e["pending"] && "pending", @installed && "in"]}
+      class={["box", @e["pending"] && "pending", @e["archived"] && "archived", @installed && "in"]}
       patch={"/#{@tab}?box=#{@e["name"]}"}
       aria-label={"#{title(@e)}: pick up the box"}
     >
@@ -386,7 +395,7 @@ defmodule ConsoleWeb.Shelf do
     ~H"""
     <%!-- A row of the Inserted table's shape, for a cartridge that is not
           in: the mention opens the box. --%>
-    <tr class={[@installed && "in", @e["pending"] && "pending"]}>
+    <tr class={[@installed && "in", @e["pending"] && "pending", @e["archived"] && "archived"]}>
       <td class="th"><img src={"/covers/#{front(@e)}"} alt="" draggable="false" /></td>
       <td title={
         @e["summary"] || "Documented in the generated project, but its installer is not done yet."

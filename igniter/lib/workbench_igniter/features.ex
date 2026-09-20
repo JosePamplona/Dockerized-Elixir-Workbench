@@ -126,6 +126,10 @@ defmodule WorkbenchIgniter.Features do
       collection: members != [],
       members: members,
       pending: feature.pending?(),
+      # Retired: why it was, in one line, or nil while it is current.
+      # The box stays on the shelf whole — the papers are the log of the
+      # reasoning — and only stops being offered for new projects.
+      archived: feature.archived(),
       example: info && info.example,
       options: options(info, feature)
     }

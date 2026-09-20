@@ -363,7 +363,7 @@ defmodule ConsoleWeb.Box do
   defp sheet(assigns) do
     ~H"""
     <div class="body">
-      <div class="hand">
+      <div class={["hand", @box["archived"] && "archived"]}>
         <%!-- The box is turned by hand: a click on it, Enter or Space
               with it focused. Not a <button>: its two sides hold headings
               and paragraphs, which a button may not. The lozenge in the
@@ -435,8 +435,16 @@ defmodule ConsoleWeb.Box do
             >
               not done
             </.chip>
+            <%!-- Archived is a fact of the box and being in is a fact of
+                  the project, so a retired box a project already carries
+                  says both. It does not also say *on the shelf*: that
+                  one is the plain absence of being in, and the ribbon
+                  reads these four as one state each. The chip is
+                  `off` and not `unlit` — it reports something true out
+                  there, it is not a control the reader cannot use. --%>
+            <.chip :if={@box["archived"]} class="off" title={@box["archived"]}>archived</.chip>
             <.chip :if={!@box["pending"] && @installed} class="good">inserted</.chip>
-            <.chip :if={!@box["pending"] && !@installed}>on the shelf</.chip>
+            <.chip :if={!@box["pending"] && !@box["archived"] && !@installed}>on the shelf</.chip>
             <.chip :if={@box["version"]}>v{@box["version"]["version"]}</.chip>
             <.chip :if={@box["collection"]}>collection</.chip>
             <.chip :if={@box["base"]} title="a phx.new capability: in from birth unless left out">
@@ -864,13 +872,17 @@ defmodule ConsoleWeb.Box do
               nothing to revert. --%>
         <div :if={@can_insert} class="foot">
           <div class="cmd">
-            ./wb.sh add {@box["name"]}{if @argv != [], do: " " <> Enum.join(@argv, " ")}
+            ./wb.sh add {if @box["archived"], do: "--archived "}{@box["name"]}{if @argv != [],
+              do: " " <> Enum.join(@argv, " ")}
           </div>
           <.job_button
             label={
               cond do
                 @box["pending"] ->
                   "Not done yet"
+
+                @box["archived"] ->
+                  "Archived"
 
                 @missing != [] ->
                   "Insert #{hd(@missing)} first"
@@ -897,6 +909,10 @@ defmodule ConsoleWeb.Box do
             why={
               cond do
                 @box["pending"] -> "no installer yet: nothing to run"
+                # The installer still works; the console is not where it
+                # is forced. The shell's flag is, and the command above
+                # already carries it.
+                @box["archived"] -> "#{@box["archived"]} — the line above inserts it anyway"
                 not @clean -> "the tree has changes git does not have — commit first"
                 @missing != [] -> "#{hd(@missing)} has to go in first"
                 @left == :asking -> "reading what is in"
@@ -1241,6 +1257,9 @@ defmodule ConsoleWeb.Box do
   # A note each, for the verb it stands under.
   defp insert_note(a) do
     cond do
+      a.box["archived"] ->
+        "retired: not offered for new projects — its papers stay for the reading"
+
       not a.clean ->
         "the tree has changes git does not have — commit first"
 

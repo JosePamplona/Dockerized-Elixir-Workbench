@@ -79,6 +79,11 @@ defmodule Mix.Tasks.Workbench.Serve do
     if feature.pending?(),
       do: raise("The #{name} cartridge is pending: its installer is not done yet.")
 
+    # The console never forces an archived box: the flag that does is
+    # the shell's, for a hand rebuilding an old project on purpose.
+    if feature.archived?(),
+      do: raise("The #{name} cartridge is archived (#{feature.archived()}).")
+
     for {member, argv} <- Mix.Tasks.Workbench.Expand.plan(feature, req["argv"] || []),
         do: %{name: member, argv: argv}
   end

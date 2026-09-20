@@ -16,6 +16,33 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **A fourth state for a box: `archived`, the retired that stay for the
+  reading.** A cartridge that is no longer a pick for a new project was
+  until now only deletable, and deleting it sent the reasoning that
+  made it — its NEED, its README, its CHANGELOG, the choices its
+  DESIGN argued — to the git history, where nobody reads it. Archiving
+  keeps the whole box where it is and changes one thing: what the
+  workbench offers. `archived/0` is the new manifest answer, one line
+  opening with the date (`nil` while a cartridge is current), and
+  `use WorkbenchIgniter.Feature` derives `archived?/0` from it so the
+  fact and its reason cannot disagree. The catalog carries the line;
+  the table's facts column says `archived` beside `pending`, `base` and
+  `inserts N`, which are independent and joined, not chosen between.
+  It is the mirror of `pending`: that one is *not yet*, with no
+  installer to run, and this one is *no longer*, the installer still
+  working — so this refusal names a way through. `./wb.sh add NAME`
+  refuses with the line and points at `./wb.sh add --archived NAME`,
+  which the shell takes out of the argv and hands to `expand`, never to
+  the installer, whose switches it is not one of (`expand` takes it
+  too, for the plan alone). The console never forces one: `serve`
+  refuses the ask, and the box's Installation screen shows the command
+  with its flag and an unlit button beside it. Nothing changes for a
+  project that already carries an archived cartridge — it reads as
+  inserted, and ejects — because archiving is a fact of the box and
+  being inserted is a fact of the project. The shelf's ribbon gained
+  *Archived* as its fourth state, last and counted: not hidden, one
+  click away, because the papers are why the box stays.
+
 - **coveralls' tests stand on Mimic, and run concurrently again.** The
   `mix cover` task's unit tests double `File.write!/2` to read the
   report they would have written; with `mock` that replacement was
@@ -826,6 +853,23 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   says how to run the same checks before pushing.
 
 ### Updated
+
+- **Colour on the plank says what you can have, not what you already
+  took.** The shelf greyed every box that was not in the project —
+  `grayscale(.92)` at `.6` — which spent the room's strongest mark on
+  its most reversible fact, left the Cartridges screen a grey wall with
+  two boxes lit, and made the cover art, which is most of the work a box
+  carries, unreadable on the one screen that exists to show it. Now the
+  whole shelf is in colour — inserted, on the shelf and not done alike —
+  and the black and white is kept for the box that genuinely cannot be
+  picked: the archived. That grey does not lift under the pointer, where
+  the old one did: dimming that clears on hover reads as a state of the
+  view, and this is a state of the cartridge. The list's thumbnails and
+  the box picked up read the same grammar. And the accent ring is back
+  on the inserted box: it was dropped when colour against grey was
+  already the loudest thing on the plank, and with colour no longer
+  saying what is in, that reason went with it — inset, so the covers
+  keep their grid.
 
 - **The versioning cartridge is `changelog`.** `wb.sh add changelog`,
   `mix workbench.install.changelog`, the box at

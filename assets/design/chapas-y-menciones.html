@@ -275,7 +275,7 @@ las cuatro que no están en tu lista y conviene mirar antes de decidir.</p>
   <tr><td>Deploy &middot; general</td><td><code>dev is running</code> &middot; <code>working</code> &middot; <code>nothing is up</code></td><td class="n">1</td></tr>
   <tr><td>Deploy &middot; por opción</td><td><code>running</code> &middot; <code>baked</code> &middot; <code>not baked</code></td><td class="n">quitadas</td></tr>
   <tr><td>Jobs y la bandeja</td><td><code>running</code> &middot; <code>exit 0</code> &middot; <code>exit 1</code> &middot; <code>idle</code></td><td class="n">1 por job</td></tr>
-  <tr><td>La caja &middot; el kicker</td><td><code>inserted</code> &middot; <code>on the shelf</code> &middot; <code>not done</code> &middot; <code>v0.2.0</code> &middot; <code>collection</code> &middot; <code>base</code></td><td class="n">hasta 4</td></tr>
+  <tr><td>La caja &middot; el kicker</td><td><code>inserted</code> &middot; <code>on the shelf</code> &middot; <code>not done</code> &middot; <code>archived</code> &middot; <code>v0.2.0</code> &middot; <code>collection</code> &middot; <code>base</code></td><td class="n">hasta 4</td></tr>
   <tr><td>Cluster</td><td><code>4 replicas</code> &middot; <code>balancer on :4000</code> &middot; <code>3 of 3</code></td><td class="n">6</td></tr>
   <tr><td>Nuevo proyecto</td><td><code>the workspace is empty</code> &middot; <code>a project exists here</code></td><td class="n">1</td></tr>
   <tr><td>Config</td><td><code>new</code>, y el efecto de cada campo</td><td class="n">varias</td></tr>
@@ -379,6 +379,13 @@ const BOARD = [
   { where: "La caja · stripe y ash", chips: [
       { l: "state", t: "not done", c: "warn" }, { l: "state", t: "on the shelf", c: "" },
       { l: "version", t: "v0.4.0", c: "" }], refs: [["stripe", 0], ["ash", 0]] },
+  // Retirado: la chapa es `off` y no `unlit` — cuenta algo cierto ahí
+  // fuera, no es un control que el lector no pueda usar. Y convive con
+  // el estado del proyecto: una caja retirada que un proyecto lleva
+  // sigue leyéndose insertada.
+  { where: "La caja · retirada", chips: [
+      { l: "state", t: "archived", c: "off" }, { l: "state", t: "inserted", c: "good" },
+      { l: "version", t: "v0.1.0", c: "" }], refs: [["setup", 1]] },
   { where: "Cluster", chips: [
       { l: "nodes", t: "4 replicas", c: "good" }, { l: "balancer", t: "balancer on :4000", c: "good" },
       { l: "peers", t: "3 of 3", c: "good" }] },

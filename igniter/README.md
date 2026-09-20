@@ -84,6 +84,11 @@ and the role of each file; the general index is
   install logic:
   - `task/0` — installer mix task name (public interface, never changes).
   - `pending?/0` — documented, but its installer is not done yet.
+  - `archived/0` — why it was retired, in one line opening with the
+    date, or `nil` while it is current. The box stays on the shelf
+    whole — its papers are the log of the reasoning that made it — and
+    only stops being offered for a new project: `wb.sh add` refuses and
+    names `--archived`, which inserts it anyway.
   - `members/1` — a collection's recipe: the cartridges its installer
     inserts, in order, with the argv each one gets (chiefs_setup). `[]`
     — the default — means a plain cartridge.

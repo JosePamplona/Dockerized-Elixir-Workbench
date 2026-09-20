@@ -264,6 +264,10 @@ which cartridges have one and why.
 
 * `task/0` - installer mix task name (public interface).
 * `pending?/0` - documented, but its installer is not done yet.
+* `archived/0` - why it was retired, one line opening with the date, or
+  `nil` while it is current: not offered for new projects, its papers
+  kept for the reading. The mirror of `pending?/0` — *no longer*, where
+  that one is *not yet*.
 * `members/1` - a collection's recipe: the cartridges it inserts, in
   order, with the argv each installer gets; may depend on the
   collection's own options. `[]` (the default) means a plain cartridge.

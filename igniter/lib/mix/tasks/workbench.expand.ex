@@ -6,7 +6,7 @@ defmodule Mix.Tasks.Workbench.Expand do
   @moduledoc """
   #{@shortdoc}
 
-      mix workbench.expand CARTRIDGE [OPTIONS]
+      mix workbench.expand [--archived] CARTRIDGE [OPTIONS]
 
   The planning half of `wb.sh add`: one `plan> <name> [argv]` line per
   install to run, in order — the shell runs each as its own container
@@ -19,18 +19,37 @@ defmodule Mix.Tasks.Workbench.Expand do
 
   Everything but the `plan> ` lines is progress noise from mix: the
   shell filters by the prefix.
+
+  A cartridge that is not to be offered is refused here, where the plan
+  is drawn, and not by its installer: `pending` has none to run, and
+  `archived` still has a working one — the box was retired, not broken.
+  So the retired refusal names `--archived`, which draws the plan
+  anyway for whoever is rebuilding an old project on purpose. There is
+  no such flag for a pending box: nothing to force.
   """
 
   alias WorkbenchIgniter.Features
 
   @impl Mix.Task
-  def run([]), do: Mix.raise("Missing cartridge name. Try: mix workbench.expand chiefs_setup")
+  def run(["--archived" | argv]), do: run(argv, true)
+  def run(argv), do: run(argv, false)
 
-  def run([name | argv]) do
+  defp run([], _forced),
+    do: Mix.raise("Missing cartridge name. Try: mix workbench.expand chiefs_setup")
+
+  defp run([name | argv], forced) do
     feature = Features.named(name) || Mix.raise("Unknown cartridge: #{name}")
 
     if feature.pending?() do
       Mix.raise("The #{name} cartridge is pending: its installer is not done yet.")
+    end
+
+    if feature.archived?() and not forced do
+      Mix.raise(
+        "The #{name} cartridge is archived (#{feature.archived()}). It is not offered " <>
+          "for new projects; its papers stay on the shelf. To insert it anyway: " <>
+          "./wb.sh add --archived #{name}"
+      )
     end
 
     for {member, member_argv} <- plan(feature, argv) do

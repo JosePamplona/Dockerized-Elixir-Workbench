@@ -1,7 +1,7 @@
 defmodule ConsoleWeb.ShelfTest do
   @moduledoc """
   The shelf reads one state at a time — inserted, on the shelf, not
-  done — and *Inserted* is the one with more to say: the row the Record
+  done, archived — and *Inserted* is the one with more to say: the row the Record
   paper used to draw, with where the cartridge came from, the
   parameters it was installed with and the addresses it opens.
   """
@@ -13,6 +13,7 @@ defmodule ConsoleWeb.ShelfTest do
       "name" => name,
       "summary" => "What #{name} is",
       "pending" => Keyword.get(opts, :pending, false),
+      "archived" => opts[:archived],
       "base" => Keyword.get(opts, :base, false),
       "collection" => Keyword.get(opts, :collection, false),
       "covers" => %{"front" => opts[:cover]},
@@ -47,6 +48,9 @@ defmodule ConsoleWeb.ShelfTest do
 
   defp catalog, do: [entry("ecto", base: true), entry("adminer"), entry("k6", pending: true)]
 
+  defp with_retired,
+    do: catalog() ++ [entry("setup", archived: "2026-09-20: chiefs_setup's collection covers it")]
+
   test "the ribbon is the state, and counts it" do
     html = shelf(catalog(), status(["ecto"]), filter: "shelf")
     assert html =~ ~r{Inserted.*?1}s
@@ -63,6 +67,33 @@ defmodule ConsoleWeb.ShelfTest do
     html = shelf(catalog(), status(["ecto"]), filter: "pending")
     assert html =~ "k6"
     refute html =~ "adminer"
+  end
+
+  test "Archived is a state of the ribbon: counted, one click away, never hidden" do
+    html = shelf(with_retired(), status([]), filter: "archived")
+    assert html =~ ~r{Archived.*?1}s
+    assert html =~ "setup"
+    # It is out of the states a new project is picked from, and the
+    # others did not lose anybody to it.
+    refute shelf(with_retired(), status([]), filter: "shelf") =~ ">setup<"
+    refute shelf(with_retired(), status([]), filter: "pending") =~ ">setup<"
+  end
+
+  test "a retired box a project carries still reads as inserted" do
+    # Archived is a fact of the box and being in is a fact of the
+    # project: the project is told the truth about itself first.
+    html = shelf(with_retired(), status(["setup"]), filter: "in")
+    assert html =~ "setup"
+    refute shelf(with_retired(), status(["setup"]), filter: "archived") =~ ">setup<"
+  end
+
+  test "the box of a retired cartridge wears the state, in both views" do
+    covers = shelf(with_retired(), status([]), filter: "archived")
+    assert covers =~ ~r{class="box archived[^"]*"}
+    assert covers =~ "archived"
+
+    list = shelf(with_retired(), status([]), filter: "archived", view: "list")
+    assert list =~ ~s(<tr phx-r class="archived">)
   end
 
   test "what a cartridge is stays a fact on the box, where the ribbon no longer asks it" do

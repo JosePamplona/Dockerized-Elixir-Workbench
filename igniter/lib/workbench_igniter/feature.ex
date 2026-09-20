@@ -8,6 +8,8 @@ defmodule WorkbenchIgniter.Feature do
 
   * `task/0` - the `mix workbench.install.*` task that installs it.
   * `pending?/0` - documented, but its installer is not done yet.
+  * `archived/0` - retired: its papers stay on the shelf, it is not
+    offered for new projects.
   * `installed?/1` - whether the target project already carries it, read
     off the same mark the installer's guard reads.
   * `state/1` - what the project carries of its options, read off the
@@ -41,6 +43,30 @@ defmodule WorkbenchIgniter.Feature do
 
   @doc "Documented in the generated project, but its installer is not done yet."
   @callback pending?() :: boolean()
+
+  @doc """
+  Why the cartridge was retired, in one line opening with the date
+  (`"2026-09-20: db_admin's box covers it"`), or `nil` — the default —
+  while it is current.
+
+  A retired cartridge is *not* a deleted one: its papers, its CHANGELOG
+  and its box stay where they are, because the reasoning that made it
+  is worth reading after the box stops being offered. That is the whole
+  point of the state — the shelf keeps the log. What changes is only
+  what the workbench offers for a *new* project: `wb.sh add` refuses
+  and names the flag that forces it anyway (`--archived`), the console
+  shows the box unlit with this line as the reason, and nothing here
+  touches a project that already carries it — `installed?/1`, `state/1`
+  and `eject` answer exactly as before, because archiving is a fact of
+  the box and being inserted is a fact of the project.
+
+  The mirror of `pending?/0`: that one is *not yet* — no installer to
+  run, so nothing can force it — and this one is *no longer*, the
+  installer still working. `use WorkbenchIgniter.Feature` derives
+  `archived?/0` from this, so the fact and its reason can never
+  disagree.
+  """
+  @callback archived() :: String.t() | nil
 
   @doc """
   The cartridges a *collection* cartridge inserts, in order — by name,
@@ -249,6 +275,15 @@ defmodule WorkbenchIgniter.Feature do
       def pending?, do: false
 
       @impl WorkbenchIgniter.Feature
+      def archived, do: nil
+
+      @doc "Whether the cartridge is retired: `archived/0` gave a reason."
+      # `is_binary` and not `!= nil`: a cartridge that overrides
+      # `archived/0` with its line has a literal for a body, and the type
+      # checker reads the comparison as one that is always true.
+      def archived?, do: is_binary(archived())
+
+      @impl WorkbenchIgniter.Feature
       def members(_opts), do: []
 
       @impl WorkbenchIgniter.Feature
@@ -284,6 +319,7 @@ defmodule WorkbenchIgniter.Feature do
                      afterwards: 0,
                      console: 0,
                      pending?: 0,
+                     archived: 0,
                      members: 1,
                      choices: 0,
                      option_docs: 0,

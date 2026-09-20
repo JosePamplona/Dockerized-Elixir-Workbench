@@ -478,9 +478,10 @@ table.rows tr.new{animation:seat 1.2s ease-out}
 /* The cover stands as tall as the row's verb, the box's own button, at
    the covers' 5:7; the cell's width is the cover's and its air. */
 table.carts td.th{width:30px;padding-right:0}
-table.carts .th img{width:calc(30px * 5 / 7);height:30px;object-fit:cover;display:block;border-radius:2px;background:var(--board);filter:grayscale(.92) contrast(.92);opacity:.6}
-table.carts tr.in .th img{filter:none;opacity:1}
-table.carts tr.pending .th img{filter:grayscale(.5);opacity:.8}
+/* The list's thumbnails read the plank's grammar at 30px: colour for
+   every box that can be had, black and white for the archived. */
+table.carts .th img{width:calc(30px * 5 / 7);height:30px;object-fit:cover;display:block;border-radius:2px;background:var(--board)}
+table.carts tr.archived .th img{filter:grayscale(1) contrast(.9)}
 /* The facts stay on one line: a kind is read at a glance, not assembled from two rows. */
 table.carts .fx{display:flex;gap:6px}
 table.carts td.vr{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
@@ -506,20 +507,31 @@ table.carts td .pairs{grid-template-columns:max-content}
 .box .face img{display:block;width:100%;height:100%;object-fit:cover}
 .box:hover .face,.box:focus-visible .face{transform:translateY(-6px) rotate(-.6deg)}
 .box .face.socket .name{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#F3ECF5;text-align:center;font-size:clamp(11px,1.6vw,15px);line-height:1.15;padding:6px 8px;background:rgba(20,10,28,.72);border:1px solid rgba(212,178,126,.6);border-radius:2px;max-width:88%}
-.box .cap{display:flex;justify-content:space-between;align-items:baseline;gap:6px;margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--muted)}
+/* The caption wraps rather than spilling into the next box: three facts
+   at once (archived · inserts 15) are wider than a 128px column, and
+   nowrap on the facts alone sent them across the neighbour's name. */
+.box .cap{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:2px 6px;margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--muted)}
 .box .cap b{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);font-size:12px}
-/* Inserted or not is the box itself, not a sticker over it: the
-   inserted ones keep their colour, the rest sit quiet on the shelf. The
-   stamp covered the cover's own band and part of its art — it belongs on
-   a printed back, not here. The accent ring went the same way: colour
-   against grey is already the loudest thing on the plank, and a second
-   mark for one fact is a mark that has to be read to say nothing new. */
-.box .face{filter:grayscale(.92) contrast(.92);opacity:.6}
-.box.in .face{filter:none;opacity:1}
-/* A not-done box is a drawing, and the drawing already says it: the
-   hard dimming written for dark art washed it off the plank. */
-.box.pending .face{filter:grayscale(.5);opacity:.8}
-.box:hover .face,.box:focus-visible .face{filter:none;opacity:1}
+/* Colour on the plank says what you can have, not what you already
+   took. Grey used to mean "not in this project" — the strongest mark in
+   the room spent on the most reversible fact, with the shelf a grey wall
+   and the art, which is most of the work a box carries, unreadable on
+   the screen that exists to show it. So the whole shelf is in colour —
+   on the shelf, not done, inserted alike — and the black and white is
+   kept for the one box that cannot be had: the archived, retired and no
+   longer offered. That mark is the box's own and does not lift under the
+   pointer; dimming that clears on hover reads as a state of the view,
+   and this is a state of the cartridge. The caption, which a reader has
+   to read anyway, carries the reason. */
+.box.archived .face{filter:grayscale(1) contrast(.9)}
+/* With colour no longer saying it, the accent ring comes back to say
+   what is in — it was dropped when colour against grey was already the
+   loudest thing on the plank, and that is no longer true. Inset, so the
+   box keeps its size and the covers stay on their grid — and drawn
+   on a layer of its own, because the cover fills the face and an inset
+   shadow on the face itself is painted under the art, where nobody
+   sees it. */
+.box.in .face::after{content:"";position:absolute;inset:0;border-radius:2px;box-shadow:inset 0 0 0 2px var(--accent);pointer-events:none}
 .box .cap .st{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 .box .cap .st::before{content:"";width:6px;height:6px;border-radius:50%;border:1.5px solid var(--soft);box-sizing:border-box;flex:none}
 .box.in .cap .st{color:var(--ink)}
@@ -912,6 +924,9 @@ pre .ln{display:block}
 .hand .side{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:var(--board);border-radius:2px;overflow:hidden;box-shadow:var(--shadow)}
 .hand .side.back{transform:rotateY(180deg)}
 .hand .side img{width:100%;height:100%;object-fit:cover;display:block}
+/* Picked up, an archived box is the same black and white it is on the
+   plank: the state belongs to the cartridge, not to one screen of it. */
+.hand.archived .side{filter:grayscale(1) contrast(.9)}
 .hand .typeset{position:absolute;inset:0;padding:14px;color:#F3ECF5;background:linear-gradient(180deg,rgba(20,10,28,.15),rgba(20,10,28,.85));display:flex;flex-direction:column;justify-content:flex-end;gap:6px}
 .hand .typeset h4{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:17px;margin:0;line-height:1.05;text-wrap:balance}
 .hand .typeset p{margin:0;font-size:12px;line-height:1.35}

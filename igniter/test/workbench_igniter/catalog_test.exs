@@ -227,6 +227,20 @@ defmodule WorkbenchIgniter.CatalogTest do
       :ok
     end
 
+    test "every cartridge answers for its retirement, and the retired say why" do
+      # The catalog carries the key either way, so a reader never has to
+      # tell "not archived" from "this catalog is too old to say"; and a
+      # retired box never carries the fact without the reason, which is
+      # the whole point of keeping it on the shelf.
+      for feature <- Features.catalog() do
+        line = Map.fetch!(Features.entry(feature), :archived)
+        assert line == feature.archived()
+        assert feature.archived?() == is_binary(line)
+
+        if line, do: assert(line =~ ~r/^\d{4}-\d{2}-\d{2}: \S/)
+      end
+    end
+
     test "mix workbench.catalog prints a table" do
       output = capture_io(fn -> Mix.Tasks.Workbench.Catalog.run([]) end)
 

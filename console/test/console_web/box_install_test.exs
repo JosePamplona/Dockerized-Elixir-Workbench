@@ -55,6 +55,19 @@ defmodule ConsoleWeb.BoxInstallTest do
     }
   end
 
+  test "archived: the console does not force it, and says the line that does" do
+    box = Map.put(@box, "archived", "2026-09-20: chiefs_setup's collection covers it")
+    html = screen(box, %{"exists" => true, "git" => %{"repo" => true, "clean" => true}})
+
+    # The command the reader would have to run is the honest one, flag
+    # included; the button beside it is unlit, with the reason.
+    assert html =~ "./wb.sh add --archived ecto"
+    assert html =~ "Archived"
+    assert html =~ "chiefs_setup&#39;s collection covers it"
+    assert html =~ "retired: not offered for new projects"
+    refute html =~ ~s(phx-value-args="add ecto")
+  end
+
   test "not in: the insert foot alone" do
     html = screen(@box, %{"exists" => true, "git" => %{"repo" => true, "clean" => true}})
     assert html =~ "./wb.sh add ecto"

@@ -13,7 +13,10 @@ defmodule Mix.Tasks.Workbench.Catalog do
   version (off its CHANGELOG.md), the switches of its installer, and
   the facts that are true of it — it inserts other cartridges
   (`collection`, with its `members`), `phx.new` decides it at
-  generation time (`base`), it is not done yet (`pending`). The
+  generation time (`base`), it is not done yet (`pending`), it is
+  retired and no longer offered (`archived`, with the line saying why —
+  the box stays here, because its papers are the log of the reasoning
+  that made it). The
   facts are independent, and most cartridges carry none: there is one
   kind of cartridge, and these say what a box does, not what it is.
   Nothing here looks at a project: for what the current project
@@ -96,6 +99,7 @@ defmodule Mix.Tasks.Workbench.Catalog do
   defp facts_column(entry) do
     [
       if(entry.pending, do: "pending"),
+      if(entry.archived, do: "archived"),
       if(entry.collection, do: "inserts #{length(entry.members)}"),
       if(entry.base, do: "base")
     ]

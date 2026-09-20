@@ -1,9 +1,15 @@
 # Cartridge: toolchain
 
+> **Archived 2026-09-20**: split done — version_manager carries the host's
+> versions, and the `.gitignore` half comes back under a name of its own. The
+> box stays on the shelf for the reading — these papers are why it was made;
+> it is no longer a pick for a new project, and `wb.sh add` refuses it unless
+> `--archived` says so.
+
 The editor's language server, kept out of git.
 
 * **Task**: `mix workbench.install.toolchain`
-* **Inserted by**: `wb.sh add toolchain`
+* **Inserted by**: `wb.sh add --archived toolchain`
 
 ## Description
 

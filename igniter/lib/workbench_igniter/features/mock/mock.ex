@@ -17,6 +17,11 @@ defmodule WorkbenchIgniter.Features.Mock do
   def dep, do: @dep
 
   @impl true
+  def archived,
+    do:
+      "2026-09-20: test_doubles' box covers it, and the last two cartridges that composed it are retired beside it"
+
+  @impl true
   def task, do: "workbench.install.mock"
 
   @doc "Task metadata, exposed unchanged through the mix task shell."

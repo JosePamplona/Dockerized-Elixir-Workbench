@@ -12,6 +12,11 @@ defmodule WorkbenchIgniter.Features.Ansi do
   use WorkbenchIgniter.Feature
 
   @impl true
+  def archived,
+    do:
+      "2026-09-20: out of the reference project's selection — no story of it asks for coloured logs in the container"
+
+  @impl true
   def task, do: "workbench.install.ansi"
 
   @doc "Task metadata, exposed unchanged through the mix task shell."

@@ -1,10 +1,15 @@
 # Cartridge: enhancements
 
+> **Archived 2026-09-20**: the Phoenix line's — its Ecto generators and schema
+> config fight Ash's domain. The box stays on the shelf for the reading —
+> these papers are why it was made; it is no longer a pick for a new project,
+> and `wb.sh add` refuses it unless `--archived` says so.
+
 Workbench base enhancements: shared schema and helper, the `mix db`
 task, and the base test suite.
 
 * **Task**: `mix workbench.install.enhancements`
-* **Inserted by**: `wb.sh add enhancements`
+* **Inserted by**: `wb.sh add --archived enhancements`
 * **Ordering**: before `auth0`, whose User schema uses the `MyApp.Schema`
   this feature generates (`auth0` refuses until this is in).
 * **Options**: `--project-name` `--interface`

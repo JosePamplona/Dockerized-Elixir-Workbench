@@ -23,6 +23,11 @@ defmodule WorkbenchIgniter.Features.ChiefsSetup do
   @interfaces ~w(rest graphql)
 
   @impl true
+  def archived,
+    do:
+      "2026-09-20: the Phoenix line's collection, and the Ash line takes no collection — enhancements and auth0 fight Ash's domain"
+
+  @impl true
   def task, do: "workbench.install.chiefs_setup"
 
   # The picks, in insertion order — the order the old `workbench.setup`

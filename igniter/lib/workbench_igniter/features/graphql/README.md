@@ -1,9 +1,14 @@
 # Cartridge: graphql
 
+> **Archived 2026-09-20**: the Phoenix line's API — on Ash it is `ash --api
+> graphql`. The box stays on the shelf for the reading — these papers are why
+> it was made; it is no longer a pick for a new project, and `wb.sh add`
+> refuses it unless `--archived` says so.
+
 GraphQL API with Absinthe, served at `/graphiql`.
 
 * **Task**: `mix workbench.install.graphql`
-* **Inserted by**: `wb.sh add graphql`. Mutually exclusive with `rest`.
+* **Inserted by**: `wb.sh add --archived graphql`. Mutually exclusive with `rest`.
 * **Origin**: in app.sh this feature was a "Coming soon" stub; here it is
   a new implementation, not a port.
 

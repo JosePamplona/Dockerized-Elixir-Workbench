@@ -18,6 +18,11 @@ defmodule WorkbenchIgniter.Features.Healthcheck do
   @example "mix workbench.install.healthcheck"
 
   @impl true
+  def archived,
+    do:
+      "2026-09-20: one of two boxes for one need — healthcheck2's probes are the one the reference takes"
+
+  @impl true
   def task, do: "workbench.install.healthcheck"
 
   @impl true

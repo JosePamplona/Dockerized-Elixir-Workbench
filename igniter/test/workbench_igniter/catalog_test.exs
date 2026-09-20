@@ -241,12 +241,41 @@ defmodule WorkbenchIgniter.CatalogTest do
       end
     end
 
+    test "the Phoenix line and the two superseded boxes are the retired ones" do
+      retired = for f <- Features.catalog(), f.archived?(), do: f.name()
+
+      assert Enum.sort(retired) ==
+               ~w(ansi auth0 chiefs_setup enhancements graphql healthcheck mock openai rest toolchain)
+    end
+
+    test "an archived box says so in the facts column, with the others" do
+      # Independent facts, joined and not chosen between: a retired
+      # collection is both. The line saying why is not in the table —
+      # it is one line per box here — but in the JSON and the console.
+      entry = %{
+        name: "gone",
+        version: nil,
+        need: nil,
+        summary: "What it was for.",
+        pending: false,
+        archived: "2026-09-20: db_admin's box covers it",
+        collection: true,
+        members: [%{name: "credo", argv: []}],
+        base: false
+      }
+
+      assert Mix.Tasks.Workbench.Catalog.table([entry]) =~
+               ~r/^gone +- +archived · inserts 1 +What it was for\./
+    end
+
     test "mix workbench.catalog prints a table" do
       output = capture_io(fn -> Mix.Tasks.Workbench.Catalog.run([]) end)
 
       # The facts column says what is true of the box, and nothing when
       # nothing is — there is no kind to print.
-      assert output =~ ~r/^chiefs_setup +v\d+\.\d+\.\d+ +inserts 15 +Your project is vanilla/m
+      assert output =~
+               ~r/^chiefs_setup +v\d+\.\d+\.\d+ +archived · inserts 15 +Your project is vanilla/m
+
       assert output =~ ~r/^mailer +\S+ +base +You want to see the mail/m
       assert output =~ ~r/^stripe +- +pending +Your users should be able to pay/m
       assert output =~ ~r/^healthcheck2 +v0\.1\.0 +Your platform polls/m

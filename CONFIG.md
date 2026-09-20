@@ -1,7 +1,7 @@
 <!-- markdownlint-disable MD033 -->
 # Configuration File
 
-The configuration file `config.conf` configures the projects `./wb.sh new` creates, who signs the workbench's commits, and the service images baked into each workspace. There is no feature configuration here: features are cartridges, inserted on the created project one commit each (`./wb.sh add NAME`; `./wb.sh add chiefs_setup` inserts the workbench's own picks) and listed by `./wb.sh catalog`.
+The configuration file `config.conf` configures the projects `./wb.sh new` creates, who signs the workbench's commits, and the service images baked into each workspace. There is no feature configuration here: features are cartridges, inserted on the created project one commit each (`./wb.sh add NAME`) and listed by `./wb.sh catalog`.
 
 ## Project creation configuration
 
@@ -26,7 +26,7 @@ The installer and the stack have to hold each other, and that pair decides the r
 
 ## Git
 
-The workbench commits what it does to the workspace: the first commit after `new` (the baseline), one commit per inserted cartridge (`Insert FEATURE …`, so `eject FEATURE` can revert that one alone — a collection like `chiefs_setup` leaves one commit per member, none of its own) and the revert itself. The commits run inside the toolchain container — where the project's git hooks can run `mix` — and are signed as this says:
+The workbench commits what it does to the workspace: the first commit after `new` (the baseline), one commit per inserted cartridge (`Insert FEATURE …`, so `eject FEATURE` can revert that one alone — a collection leaves one commit per member, none of its own) and the revert itself. The commits run inside the toolchain container — where the project's git hooks can run `mix` — and are signed as this says:
 
 | Variable | Type | Example | Description |
 | --: | :-- | :-- | :-- |
@@ -50,6 +50,6 @@ There is no host ports configuration: each workspace gets the first available po
 | `PROMETHEUS_IMAGE_VERSION` | string | `"latest"` | _Prometheus_ docker image the `monitoring` cartridge puts in the compose, scraping the app's `/metrics`.<br/>Available versions: <https://hub.docker.com/r/prom/prometheus/tags> |
 | `GRAFANA_IMAGE_VERSION` | string | `"latest"` | _Grafana_ docker image the `monitoring` cartridge puts in the compose, published on its own port (the first free one from `3000`).<br/>Available versions: <https://hub.docker.com/r/grafana/grafana/tags> |
 
-There is nothing else: the retired feature flags (`ENHANCE`, `EXDOC`, `COVERALLS`, `HEALTH`, …) died with the opinionated `workbench.setup` composition. Their features live on as cartridges — the ones the chief still picks, in the `chiefs_setup` collection — and each cartridge's options are set on its own installer (`./wb.sh add coveralls --theme custom`), not here.
+There is nothing else: the retired feature flags (`ENHANCE`, `EXDOC`, `COVERALLS`, `HEALTH`, …) died with the opinionated `workbench.setup` composition. Their features live on as cartridges, inserted one at a time, and each cartridge's options are set on its own installer (`./wb.sh add coveralls --theme custom`), not here.
 
 The settings that were not features went the same way: `INIT_VERSION` is `changelog`'s `--init-version`, the stack a project pins for its host is `version_manager` (read off the toolchain that installs it, not from these variables), `ID_TYPE` and `TIMESTAMPS` are `enhancements`' options, `COVERAGE_THEME` is `coveralls`' `--theme`, and `CODING_GUIDELINES_URL` is `guidelines`' `--url`.

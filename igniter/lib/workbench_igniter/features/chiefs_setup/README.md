@@ -1,5 +1,11 @@
 # chiefs_setup
 
+> **Archived 2026-09-20**: the Phoenix line's collection, and the Ash line
+> takes no collection — enhancements and auth0 fight Ash's domain. The box
+> stays on the shelf for the reading — these papers are why it was made; it is
+> no longer a pick for a new project, and `wb.sh add` refuses it unless
+> `--archived` says so.
+
 The collection cartridge: it installs no file of its own — its
 installer inserts other cartridges, the workbench's picks for a project
 that wants the opinionated line without choosing box by box.

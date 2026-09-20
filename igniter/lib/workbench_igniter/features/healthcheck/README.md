@@ -1,9 +1,14 @@
 # Cartridge: healthcheck
 
+> **Archived 2026-09-20**: one of two boxes for one need — healthcheck2's
+> probes are the one the reference takes. The box stays on the shelf for the
+> reading — these papers are why it was made; it is no longer a pick for a new
+> project, and `wb.sh add` refuses it unless `--archived` says so.
+
 Healthcheck endpoint with controller, tests and router scope.
 
 * **Task**: `mix workbench.install.healthcheck`
-* **Inserted by**: `wb.sh add healthcheck`
+* **Inserted by**: `wb.sh add --archived healthcheck`
 * **Ordering**: inserted last, after `rest`, so the autodetection finds
   `MyAppWeb.OpenApi.Spec` in the patch set and generates the
   OpenApiSpex-documented variant.

@@ -16,6 +16,10 @@ defmodule WorkbenchIgniter.Features.Openai do
   @example "mix workbench.install.openai --project-name \"Lorem Ipsum\""
 
   @impl true
+  def archived,
+    do: "2026-09-20: it needs an outside account, which a portfolio project cannot carry"
+
+  @impl true
   def task, do: "workbench.install.openai"
 
   # Assistants belong to users: what it installs builds on the Accounts

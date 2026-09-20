@@ -1,9 +1,15 @@
 # Cartridge: mock
 
+> **Archived 2026-09-20**: test_doubles' box covers it, and the last two
+> cartridges that composed it are retired beside it. The box stays on the
+> shelf for the reading — these papers are why it was made; it is no longer a
+> pick for a new project, and `wb.sh add` refuses it unless `--archived` says
+> so.
+
 Mock library for tests.
 
 * **Task**: `mix workbench.install.mock`
-* **Inserted by**: `wb.sh add mock` — also composed directly by
+* **Inserted by**: `wb.sh add --archived mock` — also composed directly by
   `healthcheck`, `coveralls` and `enhancements`, whose generated tests
   use it.
 

@@ -22,6 +22,11 @@ defmodule WorkbenchIgniter.Features.Enhancements do
   @example "mix workbench.install.enhancements --id-type uuid --timestamps naive_datetime_usec"
 
   @impl true
+  def archived,
+    do:
+      "2026-09-20: the Phoenix line's — its Ecto generators and schema config fight Ash's domain"
+
+  @impl true
   def task, do: "workbench.install.enhancements"
 
   # The installer's options, one line each: the task's "## Options"

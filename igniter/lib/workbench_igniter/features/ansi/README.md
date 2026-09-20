@@ -1,9 +1,14 @@
 # Cartridge: ansi
 
+> **Archived 2026-09-20**: out of the reference project's selection — no story
+> of it asks for coloured logs in the container. The box stays on the shelf
+> for the reading — these papers are why it was made; it is no longer a pick
+> for a new project, and `wb.sh add` refuses it unless `--archived` says so.
+
 Coloured logs from inside the container.
 
 * **Task**: `mix workbench.install.ansi`
-* **Inserted by**: `wb.sh add ansi`
+* **Inserted by**: `wb.sh add --archived ansi`
 
 ## Description
 

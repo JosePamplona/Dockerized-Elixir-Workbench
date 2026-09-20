@@ -64,7 +64,7 @@ Every command it runs is a job in its tray, with the output and exit code `wb.sh
 
     It can accept all option flags from the task `mix phx.new` like `--no-html` or `--no-ecto` (Full task [phx.new](https://hexdocs.pm/phoenix/Mix.Tasks.Phx.New.html) documentation).
 
-    `config.conf` only names the project, the workspace and the stack versions: they shape the project generation and the images, not the Elixir configuration. Everything else — docs, coverage, API, checks — arrives afterwards as cartridges with the `add` command; `./wb.sh add chiefs_setup` inserts the workbench's own picks in one go.
+    `config.conf` only names the project, the workspace and the stack versions: they shape the project generation and the images, not the Elixir configuration. Everything else — docs, coverage, API, checks — arrives afterwards as cartridges with the `add` command, one at a time.
 
 ## Deployment
 
@@ -166,7 +166,7 @@ The **monitoring** cartridge puts [PromEx](https://hexdocs.pm/prom_ex) in the ap
 
 ### Services that are cartridges
 
-Some cartridges bring a container rather than Elixir code: **db_admin** (a database admin in the browser, open on the project's database: `--admin pgadmin`, `phpmyadmin`, `adminer` or `cloudbeaver`, one or several, each with the file it opens with in the workspace; without `--admin`, the one for the project's database; requires ecto), **k6**, and **monitoring** (Prometheus and Grafana, beside the PromEx it installs). Each declares the compose services it needs, and `./wb.sh bake` writes them in — `add` says so when the compose is behind — while the prod and scaled files pick them up on their next `up`. A vanilla `new` brings the database alone; `chiefs_setup` inserts db_admin among its picks.
+Some cartridges bring a container rather than Elixir code: **db_admin** (a database admin in the browser, open on the project's database: `--admin pgadmin`, `phpmyadmin`, `adminer` or `cloudbeaver`, one or several, each with the file it opens with in the workspace; without `--admin`, the one for the project's database; requires ecto), **k6**, and **monitoring** (Prometheus and Grafana, beside the PromEx it installs). Each declares the compose services it needs, and `./wb.sh bake` writes them in — `add` says so when the compose is behind — while the prod and scaled files pick them up on their next `up`. A vanilla `new` brings the database alone.
 
 ### Add features
 
@@ -178,7 +178,9 @@ Workbench features can be installed on the existing project at any time:
 
 `[FEATURE]` is one of: **chiefs_setup**, **ansi**, **version_manager**, **toolchain**, **changelog**, **healthcheck**, **rest**, **graphql**, **coveralls**, **exdoc**, **guidelines**, **enhancements**, **auth0**, **openai**, **credo**, **githooks**, **exmachina**, **mock**, **exdebug**, **dashboard_extras**, **db_admin**, **k6**, **monitoring**, **clustering**, **healthcheck2**, **ash**, **mailer**, **gettext**, **ecto**, **esbuild**, **tailwind**, **html**, **dashboard**. `[OPTIONS]` are the flags of the corresponding `mix workbench.install.FEATURE` task.
 
-**chiefs_setup** is a *collection*: a cartridge whose installer inserts other cartridges — the workbench's picks (the house's settings, the dep-only quintet, REST or GraphQL as its `--interface` says, coveralls, exdoc, enhancements and healthcheck). Adding it inserts each missing member as its own commit, so `eject` still reverts one cartridge alone; the collection leaves no commit of its own.
+Ten of those are *archived* (**chiefs_setup**, **ansi**, **toolchain**, **mock**, **rest**, **graphql**, **enhancements**, **auth0**, **openai**, **healthcheck**, retired 2026-09-20): the Phoenix line's boxes, plus the two a newer box covers — `mock` by `test_doubles` and `healthcheck` by `healthcheck2`. Each says on its own papers why it went, which is why they stay; `add` refuses them unless `--archived` says so.
+
+**chiefs_setup** was a *collection*: a cartridge whose installer inserts other cartridges — the workbench's picks (the house's settings, the dep-only quintet, REST or GraphQL as its `--interface` says, coveralls, exdoc, enhancements and healthcheck). Adding one inserts each missing member as its own commit, so `eject` still reverts one cartridge alone; the collection leaves no commit of its own. It is archived with the line it collected, and is for now the only collection the shelf has had.
 
 **ansi**, **version_manager**, **toolchain** and **changelog** are what the retired opinionated `new` used to write into every project, one decision each: coloured logs through Docker, the file your version manager reads, so your host switches to this project's Erlang and Elixir when you `cd` into it and to another project's when you leave (`.tool-versions` for asdf, which mise reads too, or `mise.toml` with `--manager mise`), `/.elixir_ls/` ignored, and a `CHANGELOG.md` opened at the project's version, which is where its versioning starts.
 
@@ -199,6 +201,8 @@ Every insert is **one commit** in the workspace (`Insert FEATURE …`, signed as
 ```
 
 **mailer**, **gettext**, **ecto**, **esbuild**, **tailwind**, **html** and **dashboard** are *base cartridges*: what `phx.new` decides at generation time (its `--no-*` flags), added afterwards as `phx.new` itself would have generated it — the difference between the project generated with and without the flag, at the toolchain's Phoenix. A project born with them shows them inserted; one left out at creation (`./wb.sh new --no-live`) is a box on the shelf, to insert later. `ecto` takes `--database postgres|mysql|mssql|sqlite3` and `--binary-id` (`phx.new`'s flags that only Ecto reads); after inserting it, `./wb.sh bake` puts the Postgres into the compose and `./wb.sh setup` creates the database. LiveView is `html`'s own `--live`, on by default as in `phx.new`: `./wb.sh add html --no-live` leaves it out, and `./wb.sh add html` on a project born `--no-live` adds it.
+
+A box that is no longer offered is *archived*, not deleted: its papers, its CHANGELOG and its box art stay on the shelf — they are the log of the reasoning that made it, which is worth reading long after the cartridge stops being a pick for a new project. `./wb.sh add` refuses it and names the flag that inserts it anyway, for a hand rebuilding an old project: `./wb.sh add --archived NAME`. Nothing changes for a project that already carries one — it reads as inserted, and ejects — because being archived is a fact of the box and being inserted is a fact of the project. The console counts the archived in the shelf's ribbon, beside *Inserted*, *On the shelf* and *Not done*, and their boxes are the only ones on the plank in black and white: colour there says what you can have.
 
 A cartridge whose options are independent pieces (ash: every option is a package) can be run again with more of them and adds only what is missing; the others are inserted once, with the options of that moment, and changing them means ejecting and inserting again. The catalog says which is which (`rerun`).
 

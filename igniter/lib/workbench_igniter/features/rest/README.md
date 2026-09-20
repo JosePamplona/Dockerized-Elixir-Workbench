@@ -1,9 +1,14 @@
 # Cartridge: rest
 
+> **Archived 2026-09-20**: the Phoenix line's API — on Ash it is `ash --api
+> json_api`. The box stays on the shelf for the reading — these papers are why
+> it was made; it is no longer a pick for a new project, and `wb.sh add`
+> refuses it unless `--archived` says so.
+
 REST API documented with OpenAPI (open_api_spex) and SwaggerUI.
 
 * **Task**: `mix workbench.install.rest`
-* **Inserted by**: `wb.sh add rest`. Mutually exclusive with `graphql`.
+* **Inserted by**: `wb.sh add --archived rest`. Mutually exclusive with `graphql`.
 * **Ordering**: before `healthcheck`, which autodetects the
   `OpenApi.Spec` module in the patch set. `--auth0`, `--openai` and
   `--health` name the fellow cartridges that shape its spec.

@@ -1,9 +1,14 @@
 # Cartridge: auth0
 
+> **Archived 2026-09-20**: the Phoenix line's sign-in, and it needs an outside
+> account — on Ash it is `ash --auth password`. The box stays on the shelf for
+> the reading — these papers are why it was made; it is no longer a pick for a
+> new project, and `wb.sh add` refuses it unless `--archived` says so.
+
 Auth0 JWT authentication: Accounts context, User schema and token plug.
 
 * **Task**: `mix workbench.install.auth0`
-* **Inserted by**: `wb.sh add auth0`. It needs an Auth0 account.
+* **Inserted by**: `wb.sh add --archived auth0`. It needs an Auth0 account.
   `openai` and `stripe` build on it (`requires`).
 * **Requires**: `enhancements` (the User uses `MyApp.Schema`); the
   installer refuses until it is in.

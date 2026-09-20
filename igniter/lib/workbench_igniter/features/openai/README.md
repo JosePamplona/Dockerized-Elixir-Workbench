@@ -1,10 +1,15 @@
 # Cartridge: openai
 
+> **Archived 2026-09-20**: it needs an outside account, which a portfolio
+> project cannot carry. The box stays on the shelf for the reading — these
+> papers are why it was made; it is no longer a pick for a new project, and
+> `wb.sh add` refuses it unless `--archived` says so.
+
 OpenAI assistant with the Conversations context (per-user persisted
 conversations and messages).
 
 * **Task**: `mix workbench.install.openai`
-* **Inserted by**: `wb.sh add openai`. It needs an OpenAI account.
+* **Inserted by**: `wb.sh add --archived openai`. It needs an OpenAI account.
 * **Requires**: `auth0` (conversations belong to users); the installer
   refuses until it is in.
 * **Options**: `--project-name` `--interface`

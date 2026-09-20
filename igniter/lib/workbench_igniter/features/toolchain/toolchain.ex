@@ -15,6 +15,11 @@ defmodule WorkbenchIgniter.Features.Toolchain do
   @gitignore_entry "/.elixir_ls/"
 
   @impl true
+  def archived,
+    do:
+      "2026-09-20: split done — version_manager carries the host's versions, and the .gitignore half comes back under a name of its own"
+
+  @impl true
   def task, do: "workbench.install.toolchain"
 
   @doc "Task metadata, exposed unchanged through the mix task shell."

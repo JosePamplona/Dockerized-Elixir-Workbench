@@ -13,6 +13,9 @@ defmodule WorkbenchIgniter.Features.Graphql do
   @example "mix workbench.install.graphql"
 
   @impl true
+  def archived, do: "2026-09-20: the Phoenix line's API — on Ash it is `ash --api graphql`"
+
+  @impl true
   def task, do: "workbench.install.graphql"
 
   @impl true

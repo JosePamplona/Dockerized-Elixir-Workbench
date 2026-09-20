@@ -854,6 +854,29 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **Ten boxes archived: the Phoenix line, and the two a newer box
+  covers.** The first use of the state, and the pruning SCRIPT.md
+  asked for (Phase 2). `chiefs_setup`, `rest`, `graphql`,
+  `enhancements`, `auth0` and `openai` are the Phoenix line's —
+  enhancements' Ecto generators and auth0's `users` table fight Ash's
+  domain, the two APIs are `ash --api json_api|graphql` there, and
+  auth0 and openai need an outside account a portfolio project cannot
+  carry; the collection retires with the line it collected, so there is
+  no collection on either line now. `mock` goes because test_doubles'
+  box covers it, and the last two cartridges that composed it —
+  enhancements and healthcheck — retire beside it, so nothing reaches
+  it through the back door of `composes` either. `healthcheck` was one
+  of two boxes for one need and healthcheck2's probes are the one the
+  reference takes. `ansi` is out of the reference's selection, and
+  `toolchain`'s two halves parted: version_manager carries the host's
+  versions and the `.gitignore` entry comes back under a name of its
+  own. Every one of the ten keeps its papers, with the line saying why
+  at the head of its README — which is the whole reason the state
+  exists. The shelf a new project is picked from is now the Ash line's
+  and the boxes for both; of the Phoenix-line boxes only `exmachina`
+  is still offered. SCRIPT.md's rows 2 and 15 and README/CONFIG's
+  `add chiefs_setup` lines were corrected with them.
+
 - **Colour on the plank says what you can have, not what you already
   took.** The shelf greyed every box that was not in the project —
   `grayscale(.92)` at `.6` — which spent the room's strongest mark on

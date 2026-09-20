@@ -80,7 +80,7 @@ defmodule WorkbenchIgniter.Features.Exdoc do
   # the controller, the token page --auth0 plants. Two options leave no
   # mark the project keeps: --version stamps the `doc/` dummies only
   # (gitignored, overwritten by `mix docs`; the project's version is
-  # versioning's), and --build runs `mix docs` once.
+  # changelog's), and --build runs `mix docs` once.
   @impl true
   def state(igniter) do
     {name, igniter} = mix_project_value(igniter, :name)

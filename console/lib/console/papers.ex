@@ -170,7 +170,7 @@ defmodule Console.Papers do
   `img-src` is this origin, `data:` and `blob:`, and a paper is foreign
   content — so left as it came it is a broken picture with its alt
   beside it. Until 2026-09-19 that is what the version badge the
-  versioning cartridge puts under a README's title looked like.
+  changelog cartridge puts under a README's title looked like.
 
   A shields.io static badge says everything in its own address, and
   `Console.Shields` draws it from there: the SVG the service would

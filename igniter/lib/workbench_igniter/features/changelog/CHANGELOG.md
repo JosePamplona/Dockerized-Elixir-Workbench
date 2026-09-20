@@ -1,9 +1,24 @@
-# Changelog — versioning
+# Changelog — changelog
 
 Versioned on its own, independently of the workbench release that ships
 it. Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) applied to
 what the cartridge *installs*.
+
+## v0.4.0 - (2026-09-20)
+
+### Changed
+
+- The cartridge is `changelog`, not `versioning`: `wb.sh add changelog`,
+  `mix workbench.install.changelog`. It is named for what it puts in the
+  project — the file its mark looks for — instead of for the discipline
+  around it, which the box cannot install and whose one undecidable
+  part, when `0.1.0` becomes `0.2.0`, it leaves to whoever cuts the
+  release. On the shelf it no longer reads as a pair with
+  `version_manager`, which shares nothing with it but the word.
+- What it installs is unchanged: the same `CHANGELOG.md` at the same
+  version, the same `mix version` task and the same README badge, under
+  the same options.
 
 ## v0.3.0 - (2026-09-18)
 

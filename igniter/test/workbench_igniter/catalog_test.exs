@@ -22,13 +22,13 @@ defmodule WorkbenchIgniter.CatalogTest do
 
   # Every cartridge there is, by directory name, in shelf order: the
   # collection first, then the cartridges, then the base ones.
-  @cartridges ~w(chiefs_setup ansi version_manager toolchain versioning
+  @cartridges ~w(chiefs_setup ansi version_manager toolchain changelog
                  dashboard_extras credo mock test_doubles exdebug rest graphql
                  coveralls exdoc guidelines enhancements auth0 openai healthcheck stripe
                  githooks exmachina clustering healthcheck2 ash specdd db_admin k6 monitoring
                  mailer gettext ecto esbuild tailwind html dashboard)
   # The chiefs_setup recipe with its default choices, in insertion order.
-  @picks ~w(ansi version_manager toolchain versioning dashboard_extras db_admin credo mock test_doubles
+  @picks ~w(ansi version_manager toolchain changelog dashboard_extras db_admin credo mock test_doubles
             exdebug rest coveralls exdoc enhancements healthcheck)
   # Base cartridges a default phx.new project already carries.
   @in_by_default ~w(mailer gettext ecto esbuild tailwind html dashboard)
@@ -341,7 +341,7 @@ defmodule WorkbenchIgniter.CatalogTest do
       "test_doubles" => [
         {~w(--double mox --type-check), %{double: ["mox"], type_check: true}}
       ],
-      "versioning" => [
+      "changelog" => [
         {~w(--init-version 1.2.3 --mix-task --readme-badge),
          %{init_version: "1.2.3", mix_task: true, readme_badge: true}}
       ],

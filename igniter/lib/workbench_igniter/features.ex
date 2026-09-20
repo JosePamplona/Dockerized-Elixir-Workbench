@@ -27,7 +27,7 @@ defmodule WorkbenchIgniter.Features do
     Features.Ansi,
     Features.VersionManager,
     Features.Toolchain,
-    Features.Versioning,
+    Features.Changelog,
     # Trivial dep-only group.
     Features.DashboardExtras,
     Features.Credo,

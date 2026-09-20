@@ -827,6 +827,35 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **The versioning cartridge is `changelog`.** `wb.sh add changelog`,
+  `mix workbench.install.changelog`, the box at
+  `features/changelog/` and its art at `assets/covers/changelog/`. The
+  box is named for what it puts in the project — a `CHANGELOG.md`,
+  which is also the mark it looks for — instead of for the discipline
+  around it: it cannot install SemVer, and the one part of versioning
+  that cannot be automated, deciding when `0.1.0` becomes `0.2.0`, is
+  the part its own NEED.md already says it does not do. On the shelf it
+  no longer sits beside `version_manager` reading as its pair, which it
+  never was: one opens a record of changes, the other writes
+  `.tool-versions`. What it installs is unchanged, options included
+  (cartridge v0.4.0).
+
+  The box follows. The back is stamped text throughout and was
+  recomposed as it stood — the install lozenge reads `./wb.sh add
+  changelog` and the strip says v0.4.0 — but the front's lockup is
+  painted into the art, not typeset by `covers.py`, so the hero was
+  generated again with **one word** of the prompt changed, the title,
+  and everything else left as the take that worked had written it. The
+  word in the ship's log on the page stays `CHANGELOG`: there it is the
+  file, in the lockup it is the box. What came back was not that one
+  word: it is a new render of the same scene, lighter, the master lit
+  from the front, a bookshelf and a pewter cup where the rope coil was.
+  Kept, and the misses recorded beside it. The first take is archived
+  as `cover-1`.
+
+  The back's two screenshots are still real output of the old task
+  name, and are the one thing on the box left to redo.
+
 - **ecto's release one-shots are named for what they do: `create` and
   `volume_init`.** They were `database_init` and `data_init` — three
   letters apart, and variants of one word for two different jobs.

@@ -1,4 +1,4 @@
-# versioning — six proposals
+# changelog — six proposals
 
 Written from the cartridge's NEED.md first, then its README and
 DESIGN.md (v0.3.0), and nothing else. The era block of the winner goes

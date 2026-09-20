@@ -1,7 +1,7 @@
-defmodule Mix.Tasks.Workbench.Install.Versioning do
+defmodule Mix.Tasks.Workbench.Install.Changelog do
   use WorkbenchIgniter.Task
 
-  alias WorkbenchIgniter.Features.Versioning
+  alias WorkbenchIgniter.Features.Changelog
 
   @shortdoc "Starts versioning in the project: a changelog opened at the version it is on; the mix version task and the README badge on request"
 
@@ -28,16 +28,16 @@ defmodule Mix.Tasks.Workbench.Install.Versioning do
 
   ## Example
 
-      #{Versioning.info([], nil).example}
+      #{Changelog.info([], nil).example}
 
   ## Options
 
-  #{WorkbenchIgniter.Feature.options_doc(Versioning)}
+  #{WorkbenchIgniter.Feature.options_doc(Changelog)}
   """
 
   @impl Igniter.Mix.Task
-  def info(argv, composing_task), do: Versioning.info(argv, composing_task)
+  def info(argv, composing_task), do: Changelog.info(argv, composing_task)
 
   @impl Igniter.Mix.Task
-  def igniter(igniter), do: Versioning.install(igniter)
+  def igniter(igniter), do: Changelog.install(igniter)
 end

@@ -28,7 +28,7 @@ member only names the *fellow members* that ride along (exdoc's
 [chiefs_setup](chiefs_setup/) is the collection: the picks of the
 retired opinionated line — the house's settings ([ansi](ansi/) →
 [version_manager](version_manager/) → [toolchain](toolchain/) →
-[versioning](versioning/)), the trivial dep
+[changelog](changelog/)), the trivial dep
 group ([dashboard_extras](dashboard_extras/) → [credo](credo/) →
 [mock](mock/) → [exdebug](exdebug/)),
 [rest](rest/) | [graphql](graphql/) (its `--interface` choice),
@@ -49,7 +49,7 @@ time or not at all:
 | [ansi](ansi/) | logs come out coloured through Docker | `config :elixir, ansi_enabled: true` |
 | [version_manager](version_manager/) | the host switches to this project's Erlang and Elixir on `cd` | `.tool-versions` for asdf (mise reads it too) or `mise.toml`, off the running toolchain, Elixir with its OTP |
 | [toolchain](toolchain/) | the editor's language server stays out of git | `/.elixir_ls/` in `.gitignore` |
-| [versioning](versioning/) | a project with a version number and no versioning | `CHANGELOG.md` opened at the version `mix.exs` has (`--init-version` for another); `mix version` and the README badge on request |
+| [changelog](changelog/) | a project with a version number and no versioning | `CHANGELOG.md` opened at the version `mix.exs` has (`--init-version` for another); `mix version` and the README badge on request |
 
 The rest of what setup configured did not become boxes, because it
 already had owners: the generators and migration types are the config

@@ -64,7 +64,7 @@ here.
 
 **Idempotency**: if `test/support/fixtures.ex` already exists, notice
 and no-op. (The mark was the `mix version` task until v1.0.0, when the
-task moved to versioning.)
+task moved to changelog.)
 
 ## Contents
 

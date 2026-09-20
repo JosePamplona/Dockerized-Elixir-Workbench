@@ -1,4 +1,4 @@
-# versioning — back copy
+# changelog — back copy
 
 Set in the front's register (inaugural). Every string here is
 composited as typeset text, never generated, so it can be any size and
@@ -39,7 +39,7 @@ VERIFIED ON PHOENIX 1.8, ELIXIR 1.19 / OTP 27
 
 ## Install
 
-`./wb.sh add versioning`
+`./wb.sh add changelog`
 
 ## Badge
 

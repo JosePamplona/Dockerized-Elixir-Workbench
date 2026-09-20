@@ -69,7 +69,7 @@ the table's near side and the master's coat in deep shadow, low in
 detail, and the lockup sits on it.
 
 Title lockup across the lower part of the image, over that shadow:
-"VERSIONING" on one line, set large in extruded fantasy lettering with
+"CHANGELOG" on one line, set large in extruded fantasy lettering with
 a hard bevel, gold catching the lantern's light, centred on the width
 and four fifths of the width wide; and beneath it, in smaller capitals
 of the same lettering, the subtitle "FROM HERE ON".
@@ -96,12 +96,16 @@ named above are all of them.
 
 The flat grey border around this picture is blank. Paint it by
 continuing the picture outward into it on every side, to the edges —
-the dark oak beams of the cabin's ceiling continue above to the top
-edge, the deep shadow of the table's front and of the master's coat
-continues below to the bottom edge, and in the thin strip at each side
-the same things run on to the edge at the same heights: the beams, the
-dark panelled wall, the oak of the table top and the shadow under it,
-the master's dark coat at the left, and at the right, beside the small
-white block of bars, a narrow strip of the oak table. Keep the picture
-inside exactly as it is, and add nothing new: no figure, no object, no
+above, the dark oak beams of the cabin's ceiling run on to the top
+edge, the same beams at the same angle in the same near-black brown;
+below, the deep shadow of the table's near front and of the master's
+coat continues to the bottom edge; and in the thin strip at each side
+the same things run on to the edge at the same heights. At the left:
+the dark shelf of book spines near the top, then the master's hair,
+then his coat's shoulder in deep shadow all the way down to the bottom
+edge. At the right: the dark panelling and beam near the top, then the
+framed dark chart on the wall, then the stacked leather books, then
+the lit oak of the table top, then the pewter cup, and under it the
+table's front in shadow to the bottom edge. Keep the picture inside
+exactly as it is, and add nothing new: no figure, no object, no
 lettering.

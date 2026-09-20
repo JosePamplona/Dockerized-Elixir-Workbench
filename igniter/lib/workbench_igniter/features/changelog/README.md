@@ -1,10 +1,10 @@
-# Cartridge: versioning
+# Cartridge: changelog
 
 A project with a version number and no versioning, given the means to
 have it — from wherever the project is today.
 
-* **Task**: `mix workbench.install.versioning`
-* **Inserted by**: `wb.sh add versioning`
+* **Task**: `mix workbench.install.changelog`
+* **Inserted by**: `wb.sh add changelog`
 
 ## Description
 
@@ -122,18 +122,18 @@ file) cannot be read: the insert says so and asks for `--init-version`.
 
 | File | Role |
 | --- | --- |
-| `📁 lib/workbench_igniter/features/versioning/` | The cartridge: its code and its papers |
-| `├── 📄 versioning.ex` | The changelog, the task, the badge |
+| `📁 lib/workbench_igniter/features/changelog/` | The cartridge: its code and its papers |
+| `├── 📄 changelog.ex` | The changelog, the task, the badge |
 | `├── 📄 task.ex` | The Mix task `wb.sh add` runs |
 | `├── 📄 README.md` | What it installs, and how it runs |
 | `├── 📄 NEED.md` | The need, the line the shelf shows |
 | `├── 📄 CHANGELOG.md` | Its versions, apart from the workbench's |
 | `└── 📄 DESIGN.md` | Why by hand, and what is left out |
 |  |  |
-| `📁 priv/features/versioning/templates/` | What it writes into the project |
+| `📁 priv/features/changelog/templates/` | What it writes into the project |
 | `├── 📄 changelog.eex` | The changelog it opens |
 | `├── 📄 version_task.eex` | The `mix version` task (`--mix-task`) |
 | `└── 📄 version_task_test.eex` | The task's own test |
 |  |  |
 | `📁 test/workbench_igniter/features/` |  |
-| `└── 📄 versioning_test.exs` | The install, its options, the mark |
+| `└── 📄 changelog_test.exs` | The install, its options, the mark |

@@ -1,4 +1,4 @@
-# versioning — Design
+# changelog — Design
 
 *Revision: cartridge v0.3.0 (2026-09-18). Sources consulted on that
 date; quotations are verbatim from the page as read then.*
@@ -134,7 +134,7 @@ because a generator has to write something". By 2.1 that was wrong
 twice: `0.1.0` is what SemVer tells a new project to start at, not an
 accident of the generator; and on a project already at `2.3.1`, a
 default of `0.0.0` rewrote the number of a released project to something
-it never was — a bare `wb.sh add versioning` took the version *back*.
+it never was — a bare `wb.sh add changelog` took the version *back*.
 
 With the default on the project's own number, the ordinary insert
 changes nothing the project has: `mix.exs` is not touched (not even
@@ -262,7 +262,7 @@ task, whose pattern reads the doubled form back.
   under exdoc and the catalog's `state/1` run on `--init-version 1.2.3`.
 
 * A real project: `phx.new` 1.8.9 (`--no-ecto --no-html`), this package
-  as a path dependency, `mix workbench.install.versioning --mix-task
+  as a path dependency, `mix workbench.install.changelog --mix-task
   --readme-badge`: `mix.exs` untouched at `0.1.0`, the changelog opened
   there, the badge under the README's title; the planted test passes in
   the project (7 tests); two entries written under `Unreleased` and

@@ -1,4 +1,4 @@
-# versioning
+# changelog
 
 Your project has a version number, and no versioning: nobody can say what changed between one build and the next.
 

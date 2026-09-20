@@ -1,4 +1,4 @@
-defmodule WorkbenchIgniter.Features.Versioning do
+defmodule WorkbenchIgniter.Features.Changelog do
   @moduledoc """
   A project with no versioning, given the means to have it: a
   `CHANGELOG.md` opened at the version the project is on, where every
@@ -27,7 +27,7 @@ defmodule WorkbenchIgniter.Features.Versioning do
 
   embed_templates()
 
-  @example "mix workbench.install.versioning --mix-task --readme-badge"
+  @example "mix workbench.install.changelog --mix-task --readme-badge"
 
   @task_file "lib/mix/tasks/version.ex"
   @task_test_file "test/mix/tasks/version_test.exs"
@@ -36,7 +36,7 @@ defmodule WorkbenchIgniter.Features.Versioning do
   @badge_url "https://img.shields.io/badge/version-"
 
   @impl true
-  def task, do: "workbench.install.versioning"
+  def task, do: "workbench.install.changelog"
 
   # The installer's options, one line each: the task's "## Options"
   # section and the help a form shows are rendered from here.

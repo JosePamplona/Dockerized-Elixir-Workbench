@@ -39,7 +39,7 @@ the legacy `app.sh` and the earlier package editions lives in the git log.
 │   │       ├── 📦 credo/, mock/, exdebug/, ...      # dep-only cartridges: README + <f>.ex + task.ex
 │   │       ├── 📦 chiefs_setup/                     # the collection: its installer inserts the picks
 │   │       ├── 📦 ansi/, version_manager/,          # the house's settings: one decision each
-│   │       │      toolchain/, versioning/
+│   │       │      toolchain/, changelog/
 │   │       ├── 📦 guidelines/                       # the team's conventions into exdoc's site (requires it)
 │   │       ├── 📦 githooks/, exmachina/             # cartridges no collection picks
 │   │       ├── 📦 clustering/                       #   rel/*.eex + distributed exports

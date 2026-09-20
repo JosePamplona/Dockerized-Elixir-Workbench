@@ -40,7 +40,7 @@ defmodule WorkbenchIgniter.Features.ChiefsSetup do
       {"ansi", []},
       {"version_manager", []},
       {"toolchain", []},
-      {"versioning", []},
+      {"changelog", []},
       {"dashboard_extras", []},
       {"db_admin", []},
       {"credo", []},

@@ -415,7 +415,7 @@ chiefs_setup's rule is that its argv names "the flags that tell a
 member which *fellow picks* ride along, never a member option surfaced
 as the collection's". So chiefs_setup picks `test_doubles` bare and the
 project gets mimic; a chief who wants Mox asks for it by hand. That is
-the same limit recorded against versioning's `--mix-task`, and it is a
+the same limit recorded against changelog's `--mix-task`, and it is a
 rule rather than a gap.
 
 ### 3.7 What the box takes back from enhancements

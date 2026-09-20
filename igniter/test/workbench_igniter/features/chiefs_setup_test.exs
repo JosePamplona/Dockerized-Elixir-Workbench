@@ -14,7 +14,7 @@ defmodule WorkbenchIgniter.Features.ChiefsSetupTest do
                {"ansi", []},
                {"version_manager", []},
                {"toolchain", []},
-               {"versioning", []},
+               {"changelog", []},
                {"dashboard_extras", []},
                {"db_admin", []},
                {"credo", []},

@@ -285,7 +285,7 @@ line without naming a medium; the era renders it:
 * **Inaugural** — the mechanism declares that the record begins here,
   wherever here is, and keeps it from now on; it claims nothing about
   what came before. Subtitles commence (`FROM HERE ON`). Added for
-  versioning.
+  changelog.
 * **Kindling** — the mechanism lights what was already built in and
   waiting dark, and brings nothing of its own into the room. Subtitles
   switch on (`LIGHTS ON`). Added for dashboard_extras.

@@ -1,11 +1,11 @@
-defmodule WorkbenchIgniter.Features.VersioningTest do
+defmodule WorkbenchIgniter.Features.ChangelogTest do
   @moduledoc false
 
   use ExUnit.Case, async: true
 
   import Igniter.Test
 
-  alias WorkbenchIgniter.Features.Versioning
+  alias WorkbenchIgniter.Features.Changelog
 
   @attribute_mix """
   defmodule Test.MixProject do
@@ -24,9 +24,9 @@ defmodule WorkbenchIgniter.Features.VersioningTest do
   defp files(igniter),
     do: igniter |> apply_igniter!() |> Map.get(:assigns) |> Map.get(:test_files)
 
-  describe "mix workbench.install.versioning" do
+  describe "mix workbench.install.changelog" do
     test "opens the changelog at the version mix.exs has, and leaves mix.exs alone" do
-      igniter = Igniter.compose_task(phx_test_project(), "workbench.install.versioning", [])
+      igniter = Igniter.compose_task(phx_test_project(), "workbench.install.changelog", [])
 
       assert_unchanged(igniter, "mix.exs")
 
@@ -39,7 +39,7 @@ defmodule WorkbenchIgniter.Features.VersioningTest do
     test "a project well under way opens at its own version, read through @version" do
       igniter =
         test_project(files: %{"mix.exs" => @attribute_mix})
-        |> Igniter.compose_task("workbench.install.versioning", ["--readme-badge"])
+        |> Igniter.compose_task("workbench.install.changelog", ["--readme-badge"])
 
       assert_unchanged(igniter, "mix.exs")
       assert files(igniter)["CHANGELOG.md"] =~ "## v2.3.1 - (#{today()})"
@@ -49,7 +49,7 @@ defmodule WorkbenchIgniter.Features.VersioningTest do
     test "--init-version writes the one asked for, into mix.exs and the changelog" do
       files =
         phx_test_project()
-        |> Igniter.compose_task("workbench.install.versioning", ["--init-version", "0.0.0"])
+        |> Igniter.compose_task("workbench.install.changelog", ["--init-version", "0.0.0"])
         |> files()
 
       assert files["mix.exs"] =~ ~s|version: "0.0.0"|
@@ -59,7 +59,7 @@ defmodule WorkbenchIgniter.Features.VersioningTest do
     test "--init-version moves @version, not the key that points at it" do
       files =
         test_project(files: %{"mix.exs" => @attribute_mix})
-        |> Igniter.compose_task("workbench.install.versioning", ["--init-version", "3.0.0"])
+        |> Igniter.compose_task("workbench.install.changelog", ["--init-version", "3.0.0"])
         |> files()
 
       assert files["mix.exs"] =~ ~s|@version "3.0.0"|
@@ -68,7 +68,7 @@ defmodule WorkbenchIgniter.Features.VersioningTest do
 
     test "a version Mix would not compile is refused" do
       phx_test_project()
-      |> Igniter.compose_task("workbench.install.versioning", ["--init-version", "1.2"])
+      |> Igniter.compose_task("workbench.install.changelog", ["--init-version", "1.2"])
       |> assert_has_issue(&(&1 =~ "--init-version 1.2: not a version Mix accepts"))
     end
 
@@ -77,7 +77,7 @@ defmodule WorkbenchIgniter.Features.VersioningTest do
         String.replace(@attribute_mix, ~s|@version "2.3.1"|, "@version File.read!(\"VERSION\")")
 
       test_project(files: %{"mix.exs" => mix})
-      |> Igniter.compose_task("workbench.install.versioning", [])
+      |> Igniter.compose_task("workbench.install.changelog", [])
       |> assert_has_issue(&(&1 =~ "say where the history opens with --init-version"))
     end
 
@@ -85,7 +85,7 @@ defmodule WorkbenchIgniter.Features.VersioningTest do
       files =
         phx_test_project()
         |> Igniter.compose_task(
-          "workbench.install.versioning",
+          "workbench.install.changelog",
           ~w(--init-version 2.0.0-rc.1 --readme-badge)
         )
         |> files()
@@ -96,9 +96,9 @@ defmodule WorkbenchIgniter.Features.VersioningTest do
 
     test "is a no-op on a second run, and never moves the version under a written history" do
       phx_test_project()
-      |> Igniter.compose_task("workbench.install.versioning", [])
+      |> Igniter.compose_task("workbench.install.changelog", [])
       |> apply_igniter!()
-      |> Igniter.compose_task("workbench.install.versioning", ["--init-version", "9.9.9"])
+      |> Igniter.compose_task("workbench.install.changelog", ["--init-version", "9.9.9"])
       |> assert_unchanged()
       |> assert_has_notice(&(&1 =~ "keeps its own history"))
     end
@@ -108,7 +108,7 @@ defmodule WorkbenchIgniter.Features.VersioningTest do
     test "neither is in by default" do
       files =
         phx_test_project()
-        |> Igniter.compose_task("workbench.install.versioning", [])
+        |> Igniter.compose_task("workbench.install.changelog", [])
         |> apply_igniter!()
         |> Map.get(:assigns)
         |> Map.get(:test_files)
@@ -121,7 +121,7 @@ defmodule WorkbenchIgniter.Features.VersioningTest do
       files =
         phx_test_project()
         |> Igniter.compose_task(
-          "workbench.install.versioning",
+          "workbench.install.changelog",
           ~w(--init-version 1.2.3 --mix-task --readme-badge)
         )
         |> apply_igniter!()
@@ -138,10 +138,10 @@ defmodule WorkbenchIgniter.Features.VersioningTest do
     test "a second run adds the missing piece at the project's version, and moves nothing" do
       igniter =
         phx_test_project()
-        |> Igniter.compose_task("workbench.install.versioning", ~w(--init-version 1.2.3))
+        |> Igniter.compose_task("workbench.install.changelog", ~w(--init-version 1.2.3))
         |> apply_igniter!()
         |> Igniter.compose_task(
-          "workbench.install.versioning",
+          "workbench.install.changelog",
           ~w(--init-version 9.9.9 --readme-badge)
         )
 
@@ -156,18 +156,18 @@ defmodule WorkbenchIgniter.Features.VersioningTest do
     test "state reads the two back, nil for the badge without a README" do
       installed =
         phx_test_project()
-        |> Igniter.compose_task("workbench.install.versioning", ~w(--mix-task --readme-badge))
+        |> Igniter.compose_task("workbench.install.changelog", ~w(--mix-task --readme-badge))
         |> apply_igniter!()
 
       assert {%{init_version: "0.1.0", mix_task: true, readme_badge: true}, _} =
-               Versioning.state(installed)
+               Changelog.state(installed)
 
       bare =
         phx_test_project()
-        |> Igniter.compose_task("workbench.install.versioning", [])
+        |> Igniter.compose_task("workbench.install.changelog", [])
         |> apply_igniter!()
 
-      assert {%{mix_task: false, readme_badge: false}, _} = Versioning.state(bare)
+      assert {%{mix_task: false, readme_badge: false}, _} = Changelog.state(bare)
     end
   end
 
@@ -178,22 +178,22 @@ defmodule WorkbenchIgniter.Features.VersioningTest do
 
       project = phx_test_project(files: %{"CHANGELOG.md" => changelog})
 
-      assert {%{init_version: "1.0.0-rc.1"}, _} = Versioning.state(project)
-      assert {%{init_version: nil}, _} = Versioning.state(phx_test_project())
+      assert {%{init_version: "1.0.0-rc.1"}, _} = Changelog.state(project)
+      assert {%{init_version: nil}, _} = Changelog.state(phx_test_project())
     end
   end
 
   describe "the mark" do
     test "is the changelog, not the version every project already has" do
-      assert {false, _} = Versioning.installed?(phx_test_project())
+      assert {false, _} = Changelog.installed?(phx_test_project())
 
       installed =
         phx_test_project()
-        |> Igniter.compose_task("workbench.install.versioning", [])
+        |> Igniter.compose_task("workbench.install.changelog", [])
         |> apply_igniter!()
 
-      assert {true, _} = Versioning.installed?(installed)
-      assert {%{init_version: "0.1.0", mix_task: false}, _} = Versioning.state(installed)
+      assert {true, _} = Changelog.installed?(installed)
+      assert {%{init_version: "0.1.0", mix_task: false}, _} = Changelog.state(installed)
     end
   end
 end

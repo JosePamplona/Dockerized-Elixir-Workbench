@@ -1,0 +1,59 @@
+# test_doubles — manual plate
+
+The plate is **manual**, like the hero: made in conversation with the
+generator, outside the repository. The prompt that had been written
+here was never run; the image is the source, and this file is the log
+of the changes asked of it, each written before the take that tests it.
+The turns that made it were not logged; the log starts here.
+
+`art/back.jpg` is archived before anything overwrites it, on the
+plate's own count (`_archived/art/back-N.jpg`).
+
+## What the plate carries (measured 2026-09-20, 728×1024, 0.711 — 5:7 within tolerance)
+
+A violet bulkhead interior, the front's world seen with nobody in it.
+Top to bottom, by the standard deviation of each band of the face:
+
+| Band | stddev | What is there |
+| --- | --- | --- |
+| 0.00–0.12 | 6–10 | the dark ceiling: the flattest field on the plate |
+| 0.12–0.44 | 10–13 | violet wall, hatches and rivets; a small sunburst near 0.20 and a fanned one at 0.34–0.44 |
+| 0.44–0.70 | 17–24 | a lit panel of gears and pistons, the busiest field |
+| 0.70–0.80 | 12 | wall again |
+| 0.84–0.90 | 29–40 | a bench of flasks at the left, two CRTs and a keyboard at the right |
+| 0.94–1.00 | 11–19 | dark foot, mean 23: the nearest thing to a band |
+
+Invariants, checked: nothing lettered anywhere; flat, edge to edge, no
+border, rim, bevel or background; 5:7 within 0.004; no furniture, no
+wear; the violet dominant.
+
+## What the layout has to answer
+
+Three things differ from the pattern `covers.py back` assumes, and each
+is a layout decision rather than a fault — a plate is judged
+**composed**, not bare (`back.md`; the inert editorial plate that
+composed well is the precedent):
+
+* **The band is at 0.94, thin and dark.** `NAME_Y` about 1.32 in width
+  fractions, and `INSTALL_ROW=beside` as on version_manager and ash,
+  whose bands were also short.
+* **The copy's field is the machinery panel.** The pattern assumes the
+  middle third is a watermark the blurb can sit over; here it is a lit
+  mechanism at stddev 17–24. Compose it and look: if the blurb does not
+  read, the answer is the copy's field, not the plate.
+* **The frames go in the ceiling**, the flattest field: two at 0.40 of
+  the width from about 0.06, ending above two fifths of the face, which
+  is what keeps a back writable.
+
+## The log
+
+*(no changes asked; the plate stands, judged composed — `sealed/back.jpg`,
+2026-09-20)*
+
+What the layout answered, measured onto the plate rather than assumed:
+the frames in the ceiling at 0.06 (width fractions), 0.40 wide and
+0.186 tall, the shots cropped to their content and the shorter padded
+to the other's height; the features over the gears, which they read
+over in the era's black; the quote on the plain wall at 1.005; the
+strip from `NAME_Y=1.295` with `INSTALL_ROW=beside` and the row a step
+smaller — at 1.325 the legal line and the version ran off the face.

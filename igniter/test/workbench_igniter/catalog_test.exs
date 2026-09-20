@@ -28,7 +28,7 @@ defmodule WorkbenchIgniter.CatalogTest do
                  githooks exmachina clustering healthcheck2 ash specdd db_admin k6 monitoring
                  mailer gettext ecto esbuild tailwind html dashboard)
   # The chiefs_setup recipe with its default choices, in insertion order.
-  @picks ~w(ansi version_manager toolchain versioning dashboard_extras db_admin credo mock
+  @picks ~w(ansi version_manager toolchain versioning dashboard_extras db_admin credo mock test_doubles
             exdebug rest coveralls exdoc enhancements healthcheck)
   # Base cartridges a default phx.new project already carries.
   @in_by_default ~w(mailer gettext ecto esbuild tailwind html dashboard)
@@ -232,7 +232,7 @@ defmodule WorkbenchIgniter.CatalogTest do
 
       # The facts column says what is true of the box, and nothing when
       # nothing is — there is no kind to print.
-      assert output =~ ~r/^chiefs_setup +v\d+\.\d+\.\d+ +inserts 14 +Your project is vanilla/m
+      assert output =~ ~r/^chiefs_setup +v\d+\.\d+\.\d+ +inserts 15 +Your project is vanilla/m
       assert output =~ ~r/^mailer +\S+ +base +You want to see the mail/m
       assert output =~ ~r/^stripe +- +pending +Your users should be able to pay/m
       assert output =~ ~r/^healthcheck2 +v0\.1\.0 +Your platform polls/m
@@ -468,7 +468,7 @@ defmodule WorkbenchIgniter.CatalogTest do
   describe "composes" do
     test "names, off the installer's info, the cartridges it inserts along" do
       assert %{composes: ["mock"]} = Features.entry(Features.Healthcheck)
-      assert %{composes: ["mock"]} = Features.entry(Features.Coveralls)
+      assert %{composes: ["test_doubles"]} = Features.entry(Features.Coveralls)
       assert %{composes: ["mock"]} = Features.entry(Features.Enhancements)
       assert %{composes: []} = Features.entry(Features.Credo)
       assert %{composes: []} = Features.entry(Features.Stripe)

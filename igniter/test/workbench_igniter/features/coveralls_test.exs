@@ -47,7 +47,11 @@ defmodule WorkbenchIgniter.Features.CoverallsTest do
       assert files["lib/mix/tasks/cover.ex"] =~ "defmodule Mix.Tasks.Cover do"
       assert files["test/mix/tasks/cover_test.exs"] =~ "defmodule Mix.Tasks.CoverTest do"
       # The cover task tests use Mock.
-      assert files["mix.exs"] =~ "{:mock,"
+      assert files["mix.exs"] =~ "{:mimic,"
+
+      # Its block of the shared test helper, and nobody else's.
+      assert files["test/test_helper.exs"] =~ "# >>> coveralls"
+      assert files["test/test_helper.exs"] =~ "Mimic.copy(File)"
       # The generated reports are not source files.
       assert files[".gitignore"] =~ "/TESTING.md"
       refute files[".gitignore"] =~ "COVERAGE.md"

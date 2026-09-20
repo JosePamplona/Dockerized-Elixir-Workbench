@@ -16,6 +16,28 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **coveralls' tests stand on Mimic, and run concurrently again.** The
+  `mix cover` task's unit tests double `File.write!/2` to read the
+  report they would have written; with `mock` that replacement was
+  global to the VM, so the file could not be `async: true`. It is now,
+  and the five `with_mocks` blocks are five `stub(File, :write!, …)`
+  calls. The cartridge composes `test_doubles --double mimic` in place
+  of `mock` and registers `File` in **its own block** of
+  `test/test_helper.exs`, so another cartridge's copies can stand in
+  the same file and either can be ejected without touching the other.
+  `File` is nobody's module to declare a behaviour for, which is why
+  this side of the box is Mimic's. Verified in a generated project: the
+  block in the helper, the dep behind it, nine tests green and the
+  suite's sync column at zero. The first of the five cartridges that
+  `mock` still holds; chiefs_setup picks both boxes while the migration
+  runs.
+
+- **The `mix cover` task stops warning in a project without a docs
+  `source_url`.** `@source_ref` was read only inside another attribute,
+  behind an `&&` that never reached it there, so every such project
+  compiled with *module attribute @source_ref was set but never used*.
+  The ref is read where it is used.
+
 - **test_doubles: what a test puts in the place of the real thing.**
   A box for the two maintained double libraries, the choice not a
   preference but a question about whose module is being replaced:

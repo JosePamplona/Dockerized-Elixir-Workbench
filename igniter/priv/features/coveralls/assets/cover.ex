@@ -35,10 +35,12 @@ defmodule Mix.Tasks.Cover do
   # GitHub source links — derived from ExDoc config (degrades to plain text if missing)
   @docs_config Mix.Project.config()[:docs] || []
   @source_url Mix.Project.config()[:source_url]
-  @source_ref @docs_config[:source_ref] || "main"
+  # The ref is read where it is used: as an attribute of its own it is
+  # unused — and warns — in a project whose docs config has no
+  # `source_url`, since the `&&` below never reaches it.
   @source_url_pattern @docs_config[:source_url_pattern] ||
                         (@source_url &&
-                           "#{@source_url}/blob/#{@source_ref}/%{path}#L%{line}")
+                           "#{@source_url}/blob/#{@docs_config[:source_ref] || "main"}/%{path}#L%{line}")
 
   # Regex patterns
   @tests ~r/(\e\[.*?m)*?\d* test(s)?, (\d*) failure/

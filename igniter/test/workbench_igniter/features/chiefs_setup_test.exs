@@ -19,6 +19,7 @@ defmodule WorkbenchIgniter.Features.ChiefsSetupTest do
                {"db_admin", []},
                {"credo", []},
                {"mock", []},
+               {"test_doubles", []},
                {"exdebug", []},
                {"rest", ["--health"]},
                {"coveralls", ["--exdoc"]},

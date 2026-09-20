@@ -51,7 +51,12 @@ ran them sees and become part of what the project shows about itself.
     Remixicon picked up from `doc/dist/` when the docs are built, file
     filter, coverage vs. minimum target cards.
   * `custom` — the original workbench report.
-* With `--exdoc`: composes `workbench.install.mock`, plants the
+* With `--exdoc`: composes `workbench.install.test_doubles --double
+  mimic` and registers `File` in its own block of
+  `test/test_helper.exs` — the task's tests read the report it would
+  have written instead of writing it, and `File` is nobody's module to
+  declare a behaviour for. They run `async: true`, which `mock`'s
+  VM-wide replacement cost them. Plants the
   `mix cover` task (`lib/mix/tasks/cover.ex` + formatter + test) that
   generates `TESTING.md` for ExDoc, and gitignores it.
 

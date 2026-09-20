@@ -10,6 +10,25 @@ Backfilled at the version below, its first: the cartridge shipped
 before a changelog was part of the anatomy, and gets one on its next
 change, as the features index says.
 
+## v0.2.0 - (2026-09-20)
+
+### Updated
+
+- **The cover task's tests stand on Mimic, not Mock**, and run
+  concurrently again. `Mix.Tasks.CoverTest` doubles `File.write!/2` to
+  read the report it would have written; with `mock` that replacement
+  was global to the VM, so the file was `use ExUnit.Case` without
+  `async: true`. It is `use ExUnit.Case, async: true` and `use Mimic`
+  now, five `with_mocks` blocks become five `stub(File, :write!, …)`
+  calls, and the double lives in the process that asks for it.
+- **It composes `test_doubles` with `--double mimic`** in place of
+  `mock`, and registers `File` in **its own block** of
+  `test/test_helper.exs` through `WorkbenchIgniter.BlockFile`, so
+  another cartridge's copies can stand in the same file and either can
+  be ejected without touching the other. `File` is nobody's module to
+  declare a behaviour for, which is why this side of the box is Mimic's
+  and not Mox's.
+
 ## v0.1.0 - (2026-08-30)
 
 ### Added

@@ -10,6 +10,8 @@ defmodule WorkbenchIgniter.Features.Coveralls do
   """
   use WorkbenchIgniter.Feature
 
+  alias WorkbenchIgniter.Features.TestDoubles
+
   embed_templates()
   embed_assets()
 
@@ -90,7 +92,7 @@ defmodule WorkbenchIgniter.Features.Coveralls do
     %Igniter.Mix.Task.Info{
       group: :workbench_igniter,
       example: @example,
-      composes: ["workbench.install.mock"],
+      composes: ["workbench.install.test_doubles"],
       schema: [
         minimum_coverage: :string,
         interface: :string,
@@ -273,8 +275,16 @@ defmodule WorkbenchIgniter.Features.Coveralls do
   defp plant_cover_task(igniter, opts) do
     if opts[:exdoc] do
       igniter
-      # The cover task unit tests use the Mock library.
-      |> Igniter.compose_task("workbench.install.mock", [])
+      # The cover task's unit tests stand on a double of `File`: the
+      # report is written with `File.write!/2`, and the tests read what
+      # it would have written instead of writing it. That is Mimic's
+      # side of test_doubles — `File` is nobody's module to declare a
+      # behaviour for — and the copy is registered in this cartridge's
+      # own block of the test helper.
+      |> Igniter.compose_task("workbench.install.test_doubles", ["--double", "mimic"])
+      |> TestDoubles.copy("coveralls", ["File"],
+        note: "the report's writer, which its task tests read instead of writing"
+      )
       |> Igniter.create_new_file(
         "lib/mix/tasks/cover.ex",
         asset("cover.ex"),

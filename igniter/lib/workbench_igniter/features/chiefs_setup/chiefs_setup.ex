@@ -45,6 +45,7 @@ defmodule WorkbenchIgniter.Features.ChiefsSetup do
       {"db_admin", []},
       {"credo", []},
       {"mock", []},
+      {"test_doubles", []},
       {"exdebug", []},
       interface_member(interface),
       {"coveralls", ["--exdoc"]},

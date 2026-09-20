@@ -452,6 +452,9 @@ TITLE_Y = 0.875
 TITLE_POINT = 0.052
 # The rules' length, the same on every box so the shelf lines up
 # whatever the name's length: a little wider than the crest's PHOENIX.
+# It is a floor, and a name wider than it pushes the rules out — which
+# is why a set that shares one art gives `--title-rule` the longest
+# name's width, measured at the point it is set in.
 TITLE_RULE = 0.46
 LOCKUP_FIT = "0.80,0.16"
 # `--mark NAME=FILE`: the tools a box installs, by their own marks — the
@@ -484,16 +487,25 @@ def margins(spec):
 
 
 def corner_insets(corner, t, r, b, l):
-    """The horizontal and vertical values a corner is measured from."""
+    """The horizontal and vertical values a corner is measured from.
+
+    `bc` and `tc` are the foot and the head of the window, centred on
+    its width: there is no side to be inset from, so the horizontal
+    value is the board's on neither side — 0 — and only the vertical
+    one is read."""
     try:
-        return {"br": (r, b), "bl": (l, b), "tr": (r, t), "tl": (l, t)}[corner]
+        return {"br": (r, b), "bl": (l, b), "tr": (r, t), "tl": (l, t),
+                "bc": (0, b), "tc": (0, t)}[corner]
     except KeyError:
-        die(f"Unknown corner '{corner}'. Use br, bl, tr or tl.")
+        die(f"Unknown corner '{corner}'. Use br, bl, tr, tl, bc or tc.")
 
 
-def place_at_corner(base, layer, corner, inset_x, inset_y):
-    """`layer` in `base`'s corner, inset by (inset_x, inset_y) — negative insets overhang."""
-    x = inset_x if corner[1] == "l" else base.width - layer.width - inset_x
+def place_at_corner(base, layer, corner, inset_x, inset_y, centre_x=None):
+    """`layer` in `base`'s corner, inset by (inset_x, inset_y) — negative
+    insets overhang. A centred position (`bc`, `tc`) sits on `centre_x`,
+    the window's middle, and ignores the horizontal inset."""
+    x = (centre_x - layer.width / 2 if corner[1] == "c"
+         else inset_x if corner[1] == "l" else base.width - layer.width - inset_x)
     y = inset_y if corner[0] == "t" else base.height - layer.height - inset_y
     paste(base, layer, (x, y))
 
@@ -557,7 +569,8 @@ def marks_strip(marks, window_width):
 
 def stamp(art, output, face="cover", corner="br", size=SEAL_SIZE, placement="straddle",
           margin=SEAL_MARGIN, badge="", badge_corner="", badge_style="box", badge_ink="",
-          title="", title_y=TITLE_Y, title_point=TITLE_POINT, marks=(), lockup="", lockup_fit=LOCKUP_FIT,
+          title="", title_y=TITLE_Y, title_point=TITLE_POINT, title_rule=TITLE_RULE,
+          marks=(), lockup="", lockup_fit=LOCKUP_FIT,
           quiet=False):
     """Overlay, seal, lockup and badge onto `art`, written to `output`.
 
@@ -616,12 +629,16 @@ def stamp(art, output, face="cover", corner="br", size=SEAL_SIZE, placement="str
             return px(board, scale) - seal_width // 2
         return px(window_width, m) + px(board, scale)
     inset_x, inset_y = inset(f_x, m_x), inset(f_y, m_y)
-    place_at_corner(image, seal, corner, inset_x, inset_y)
-    if placement == "straddle":
+    place_at_corner(image, seal, corner, inset_x, inset_y,
+                    centre_x=(image.width + px(f_left, scale) - px(f_right, scale)) / 2)
+    if placement == "straddle" and corner[1] != "c":
         placing = ("straddling" if f_x > 0 and f_y > 0
                    else "straddling the top or bottom, inset from the side" if f_y > 0
                    else "straddling the side, inset from the top or bottom" if f_x > 0
                    else "inside (no board at that corner)")
+    elif placement == "straddle":
+        placing = ("straddling the foot of the window, centred on its width" if f_y > 0
+                   else "centred on the window's width, inside")
     else:
         placing = f"inside, inset {inset_x}px x {inset_y}px"
 
@@ -644,7 +661,7 @@ def stamp(art, output, face="cover", corner="br", size=SEAL_SIZE, placement="str
     titling = ""
     if title:
         tb = engraved_badge(title, font(ENGRAVED_FONT, px(window_width, title_point)), badge_ink or ENGRAVED_INK,
-                            min_width=px(window_width, TITLE_RULE))
+                            min_width=px(window_width, title_rule))
         w_top = px(f_top, scale)
         w_height = image.height - w_top - px(f_bottom, scale)
         t_centre_x = (image.width + px(f_left, scale) - px(f_right, scale)) / 2
@@ -707,6 +724,7 @@ def cmd_stamp(args):
           margin=args.margin, badge=args.badge, badge_corner=args.badge_corner,
           badge_style=args.badge_style, badge_ink=args.badge_ink,
           title=args.title, title_y=args.title_y, title_point=args.title_point,
+          title_rule=args.title_rule,
           marks=[mark_arg(args.feature, m) for m in args.mark], lockup=args.lockup,
           lockup_fit=args.lockup_fit)
 
@@ -741,6 +759,19 @@ BACK_DEFAULTS = dict(
     # blurb face for it (an italic, where the era has one).
     QUOTE_Y="", F_QUOTE="",
     ACCENT="#B6F542", INK=INK, MUTED="#CDBFDA",
+    # The field behind the requirements flash and the badge, at the
+    # foot of the copy: empty is the dark pattern every plate had
+    # while plates were dark — a translucent black under the flash, a
+    # near-black under the badge. "none" leaves both unfilled, the
+    # boxes ruled straight onto the plate, which is what a pale plate
+    # wants: a dark field on parchment reads as a hole. A hex value
+    # fills both with it.
+    FIELD="",
+    # The legal line's ink: empty follows MUTED, which is right while
+    # the strip and the copy share a ground. A pale plate with a dark
+    # band does not: the captions want a dark muted and the legal line,
+    # inside the band, a light one.
+    LEGAL_INK="",
     # The frames' rules, when the plate is generated without frames and
     # they are drawn here around each FRAMES rectangle: outer colour and
     # width, inner colour and width, in pixels of a 728px plate. Empty
@@ -929,11 +960,14 @@ def cmd_back(args):
 
     # Requirements flash (left) and badge (right), one row.
     rw, rh = P(0.56), P(0.078)
-    flash = outlined_box((rw, rh), rgba((0, 0, 0), 0.35), accent, 2)
+    field = str(L["FIELD"])
+    flash_fill = (0, 0, 0, 0) if field == "none" else rgba(field) if field else rgba((0, 0, 0), 0.35)
+    badge_fill = (0, 0, 0, 0) if field == "none" else rgba(field) if field else rgba("#1a1020")
+    flash = outlined_box((rw, rh), flash_fill, accent, 2)
     centred(flash, req, font(f_head, P(0.023)), accent, interline=P(0.004))
     plate.alpha_composite(flash, (x0, P(fl("REQ_Y"))))
     bw = P(0.26)
-    box = outlined_box((bw, rh), rgba("#1a1020"), ink, 2)
+    box = outlined_box((bw, rh), badge_fill, ink, 2)
     centred(box, badge, font(f_head, P(0.032)), ink)
     plate.alpha_composite(box, (x0 + text_w - bw, P(fl("REQ_Y"))))
 
@@ -989,7 +1023,8 @@ def cmd_back(args):
     else:
         seal_margin = f"{margin_x if margin_x is not None else 0.03:.4f},{margin_y if margin_y is not None else 0.03:.4f}"
     legal_x = P(fl("LEGAL_X")) if str(L["LEGAL_X"]) != "" else name_x
-    caption(plate, (legal_x, legal_y), legal, legal_fnt, muted, P(0.52))
+    caption(plate, (legal_x, legal_y), legal, legal_fnt,
+            rgba(L["LEGAL_INK"]) if L["LEGAL_INK"] else muted, P(0.52))
     if name_loz:
         plate.alpha_composite(name_loz, (round(name_x), round(name_y)))
     if inst_loz and below:
@@ -1021,7 +1056,7 @@ def main():
     p = sub.add_parser("stamp", help="overlay, seal, badge and lockup onto a face")
     p.add_argument("feature")
     p.add_argument("-f", "--face", default="cover", help="cover | back (default: cover). The cover gets the overlay; the back does not.")
-    p.add_argument("-c", "--corner", default="br", help="br | bl | tr | tl (default: br): the quiet corner of the artwork")
+    p.add_argument("-c", "--corner", default="br", help="br | bl | tr | tl | bc | tc (default: br): the quiet corner of the artwork, or the centred foot or head of the window")
     p.add_argument("-s", "--size", type=float, default=SEAL_SIZE, help=f"seal width as a fraction of the window's width (default: {SEAL_SIZE})")
     p.add_argument("--straddle", dest="placement", action="store_const", const="straddle", default="straddle", help="centre the seal on the window's corner, half on the board, half on the art (default when overlaid)")
     p.add_argument("--inside", dest="placement", action="store_const", const="inside", help="set the seal inside the window, inset by the margin (always, on a bare face)")
@@ -1033,6 +1068,7 @@ def main():
     p.add_argument("-t", "--title", default="", help="typeset this name, engraved, centred on the window: for an art shared by several cartridges")
     p.add_argument("--title-y", type=float, default=TITLE_Y, help=f"the title's centre, as a fraction of the window's height (default: {TITLE_Y})")
     p.add_argument("--title-point", type=float, default=TITLE_POINT, help=f"the title's size, as a fraction of the window's width (default: {TITLE_POINT})")
+    p.add_argument("--title-rule", type=float, default=TITLE_RULE, help=f"the rules' length, as a fraction of the window's width: the same on every box of a shared art, so give the longest name's (default: {TITLE_RULE})")
     p.add_argument("--mark", action="append", default=[], metavar="NAME=FILE", help="a tool's own mark, FILE relative to the feature's directory, on a rounded square with NAME under it; repeat it, in order, for a row centred along the top of the window")
     p.add_argument("-l", "--lockup", default="", help="composite this title lockup PNG, centred on the window's width")
     p.add_argument("--lockup-fit", default=LOCKUP_FIT, help=f"its width, and the inset of its bottom edge from the window's bottom, as fractions of the window's width (default: {LOCKUP_FIT})")

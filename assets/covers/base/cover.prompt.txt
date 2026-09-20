@@ -14,6 +14,23 @@ Changes from the prompt, as they stand in the hero:
     metal gold with no vermilion left; the ground is aged parchment,
     darkening and foxed towards the edges, instead of even ivory laid
     paper.
+  - 2026-09-19 (hero-3) — the whole device — crest, laurels, scroll
+    and the *PHOENIX / BASE CARTRIDGE* lockup — reduced to about a
+    third and set in the top third of the face: the shield centred on
+    the width from 0.07 to 0.20 of the height, the scroll at 0.24, the
+    lockup ending at 0.33. Below it the face is aged parchment, edge to
+    edge, with nothing on it.
+  - 2026-09-20 (cover, by hand) — the composition of the cut face
+    itself, in art/cover.xcf, which is the source of art/cover.jpg from
+    here on: the device moved out of the top third and down to the
+    left, the shield from 0.157 to 0.454 of the width and from 0.44 to
+    0.743 of the height, with the parchment bare above it and to its
+    right. The top third is the engraved name's, and the space beside
+    the device is the seal's, which is why the seal is no longer
+    centred at the foot: --corner tl --inside -m 0.4625,0,0,0.4950
+    --size 0.396 sets it at 490,570 of the 707x995 face with a 140px
+    radius, and --title-y 0.3042 puts the name 140px above where the
+    third hero had it.
 
 ================================================================
 
@@ -80,7 +97,8 @@ marks named above are all of them.
 
 The flat grey border around this picture is blank. Paint it by
 continuing the picture outward into it on every side, to the edges —
-the even ivory laid paper continues above to the top edge, below the
-subtitle to the bottom edge, and to both side edges, with the same
-grain and the same light. Keep the picture inside exactly as it is,
-and add nothing new: no figure, no object, no lettering.
+the aged parchment continues above the crest to the top edge, below to
+the bottom edge, and to both side edges, with the same grain, the same
+foxing and the same light, darkening towards the edges as it already
+does. Keep the picture inside exactly as it is, and add nothing new:
+no figure, no object, no lettering.

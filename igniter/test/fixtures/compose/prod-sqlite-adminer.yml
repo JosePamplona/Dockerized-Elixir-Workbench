@@ -95,7 +95,7 @@ services:
     volumes:
       - data:/app/data
     depends_on:
-      data_init:
+      volume_init:
         condition: service_completed_successfully
 
   # A place for the file, before the migration: the release runs as
@@ -103,7 +103,7 @@ services:
   # comes up owned by root. This one-shot, as root on the same image,
   # hands /app/data to nobody once; the migrator waits for it, and the
   # volume keeps the ownership from then on.
-  data_init:
+  volume_init:
     image: lorem-ipsum:0.1.0-prod
     build:
       dockerfile: Dockerfile
@@ -128,7 +128,7 @@ services:
     # release's volume — so SQLite can write its journal beside the file.
     user: "65534:65534"
     depends_on:
-      data_init:
+      volume_init:
         condition: service_completed_successfully
     volumes:
       - ./adminer:/var/www/html/plugins-enabled:ro

@@ -208,7 +208,7 @@ defmodule ConsoleWeb.BoxBringsTest do
             "role" => "database"
           },
           %{
-            "service" => "data_init",
+            "service" => "volume_init",
             "with" => [%{"option" => "database", "value" => "sqlite3"}],
             "listens" => nil,
             "deploys" => ["prod"],
@@ -217,10 +217,10 @@ defmodule ConsoleWeb.BoxBringsTest do
         ]
       }
 
-      status = carrying("ecto", ["data_init"], state: %{"database" => "sqlite3"})
+      status = carrying("ecto", ["volume_init"], state: %{"database" => "sqlite3"})
 
       assert lit(sheet(ecto, status)) == %{
-               "data_init" => :lit,
+               "volume_init" => :lit,
                "database" => {:unlit, "ecto is in with database sqlite3"}
              }
     end

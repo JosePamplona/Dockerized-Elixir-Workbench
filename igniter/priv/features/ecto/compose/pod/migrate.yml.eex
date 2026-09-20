@@ -17,7 +17,7 @@
     volumes:
       - data:/app/data
     depends_on:
-      data_init:
+      volume_init:
         condition: service_completed_successfully<% end %><%= if @engine == "mssql" do %>
     depends_on:
       database_init:

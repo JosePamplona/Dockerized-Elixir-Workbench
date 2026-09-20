@@ -133,7 +133,7 @@ defmodule WorkbenchIgniter.ComposeTest do
 
       # A cartridge that asks for no container brings none; SQLite runs no server.
       assert Compose.brought(Features.Mailer, @asked) == []
-      assert Map.keys(brought(Features.Ecto, ["sqlite"])) == ~w(data_init migrate)
+      assert Map.keys(brought(Features.Ecto, ["sqlite"])) == ~w(migrate volume_init)
     end
 
     test "and what it is: a title, a role, the image off its own block, the sessions it offers" do
@@ -421,7 +421,7 @@ defmodule WorkbenchIgniter.ComposeTest do
       assert Compose.service_names(:prod, ~w(mssql)).names ==
                ~w(pod app migrate database_init database)
 
-      assert Compose.service_names(:prod, ~w(sqlite)).names == ~w(pod app migrate data_init)
+      assert Compose.service_names(:prod, ~w(sqlite)).names == ~w(pod app migrate volume_init)
       assert Compose.service_names(:dev, []).names == ~w(pod app)
     end
 

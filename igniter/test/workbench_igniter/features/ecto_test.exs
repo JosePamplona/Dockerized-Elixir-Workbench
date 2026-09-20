@@ -198,7 +198,7 @@ defmodule WorkbenchIgniter.Features.EctoTest do
 
       # Nothing runs beside the app in dev; a release has the migration and the volume's one-shot.
       brought = Compose.brought(Features.Ecto, ["sqlite"])
-      assert Enum.map(brought, & &1.service) == ~w(migrate data_init)
+      assert Enum.map(brought, & &1.service) == ~w(migrate volume_init)
       assert Enum.all?(brought, &(&1.deploys == ["prod"]))
     end
 

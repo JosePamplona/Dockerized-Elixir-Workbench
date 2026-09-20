@@ -115,7 +115,7 @@ defmodule WorkbenchIgniter.Features.Ecto do
   # dev image migrates itself on boot), with what has to be there before
   # it — the database MSSQL's image cannot create by a variable
   # (`database_init`), a place nobody can write in for the SQLite file
-  # (`data_init`) — and, on the bridge network, where the database is
+  # (`volume_init`) — and, on the bridge network, where the database is
   # now that it is not on localhost. The first in the file (position 10):
   # what administers a database comes after it.
   # The names `services/1` asks by: one per engine.
@@ -194,12 +194,12 @@ defmodule WorkbenchIgniter.Features.Ecto do
       if(database.sqlite,
         do: [
           %Service{
-            name: "data_init",
+            name: "volume_init",
             deploys: release,
             position: 10,
             title: "the one-shot that hands the data volume to the release",
             role: "job",
-            body: compose_fragment("pod/data_init.yml.eex", context),
+            body: compose_fragment("pod/volume_init.yml.eex", context),
             app_volumes:
               "      # The SQLite file, on a volume that outlives the container: the\n" <>
                 "      # release opens it where DATABASE_PATH (.env) says, /app/data.\n" <>

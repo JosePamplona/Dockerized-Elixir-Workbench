@@ -281,7 +281,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `priv/features/<name>/compose/pod/` and `scaled/` (`embed_compose/0`,
   which trims nothing: a fragment is the file's text). **ecto** owns the
   three servers, the release's one-shots (`migrate`, MSSQL's
-  `database_init`, SQLite's `data_init`), what the app waits for, the
+  `database_init`, SQLite's `volume_init`), what the app waits for, the
   data volume and the `DATABASE_URL` of the bridge network; **pgadmin**
   and **adminer** their block, their port on the pod and pgAdmin's
   config; **k6** its block on both topologies; **monitoring** Prometheus
@@ -763,6 +763,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   says how to run the same checks before pushing.
 
 ### Updated
+
+- **SQLite's one-shot is named for what it does: `volume_init`.** It
+  was `data_init`, which initialises no data — it hands `/app/data` to
+  `nobody`, because a named volume mounted where the image has no
+  directory comes up owned by root and the release does not run as
+  root. Three letters from `database_init`, which creates a database
+  and is a different job entirely, so the two read as variants of one
+  thing when they are not: one prepares the **volume**, the other the
+  **base**. Named by the job and not by the engine, as ecto's
+  `database` is — db_admin's adminer waits on it because the volume has
+  to be ready, not because the project is on SQLite.
 
 - **A cartridge's Contents is a tree of its files.** The table at the
   foot of a cartridge's README draws the cartridge's own files as a

@@ -99,7 +99,7 @@ project carries it — nothing is touched and a notice says so.
 | `│   ├── 📄 mysql.yml.eex` | The MySQL server |
 | `│   ├── 📄 mssql.yml.eex` | The SQL Server server |
 | `│   ├── 📄 database_init.yml.eex` | Creates the database on SQL Server |
-| `│   ├── 📄 data_init.yml.eex` | SQLite's volume, handed to the release |
+| `│   ├── 📄 volume_init.yml.eex` | SQLite's volume, handed to the release |
 | `│   └── 📄 migrate.yml.eex` | The one-shot migration, before the app |
 | `└── 📁 scaled/` | Replicas: no SQLite |
 | `    ├── 📄 postgres.yml.eex` | The Postgres server |

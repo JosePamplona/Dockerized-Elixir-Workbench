@@ -3,7 +3,7 @@
   # comes up owned by root. This one-shot, as root on the same image,
   # hands /app/data to nobody once; the migrator waits for it, and the
   # volume keeps the ownership from then on.
-  data_init:
+  volume_init:
     image: <%= @image %>
     build:
       dockerfile: <%= @dockerfile %>

@@ -19,7 +19,7 @@
     # release's volume — so SQLite can write its journal beside the file.
     user: "<%= if @dev, do: "#{@uid}:#{@gid}", else: "65534:65534" %>"<% end %><%= if @sqlite and not @dev do %>
     depends_on:
-      data_init:
+      volume_init:
         condition: service_completed_successfully<% end %>
     volumes:
       - ./adminer:/var/www/html/plugins-enabled:ro<%= if @sqlite and @dev do %>

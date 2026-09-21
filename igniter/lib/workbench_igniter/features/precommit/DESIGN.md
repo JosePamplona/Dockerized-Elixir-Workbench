@@ -1,6 +1,6 @@
 # precommit: the hook across the mount
 
-Revision: cartridge v0.1.0 (2026-09-20)
+Revision: cartridge v0.1.1 (2026-09-21)
 
 ## Abstract
 
@@ -60,7 +60,8 @@ Installation runs from the module body of `GitHooks` — `if
 Application.get_env(:git_hooks, :auto_install, true) do
 Install.run(["--quiet"]) end` in 0.7.3, `Application.compile_env/3` in
 0.9.0 — so it happens when the dependency compiles, in dev, and not on
-every mix invocation.
+every mix invocation. Mix compiles a dependency from its own directory,
+and the library resolves the repository from there (§3).
 
 The two versions differ in exactly one thing that matters here, and it
 is the crossing. 0.7.3 defaults `project_path` to
@@ -146,6 +147,18 @@ It reaches Docker through the project's own compose file, not through
 a script outside the repository would be a contract running the wrong
 way.
 
+Not every commit is made on the host. The workbench's console runs git
+in a container of the workbench image with the source at `/app/src`,
+and so does a terminal opened in the workspace; there mix is already
+on the PATH, and Docker may not be reachable at all. So the script
+looks first: at `/app/src` with a `mix` to call, it calls it. Both
+conditions, because a host with an Elixir of its own is still a host,
+and its mix has none of the project's dependencies. The workbench's
+own commits — an insert, an eject's revert, a bake — skip the hook
+(`--no-verify`): they are its bookkeeping, not the developer's
+changes, and an eject a check could refuse would be an eject that
+cannot happen.
+
 ![The commit that crosses the mount: git runs the shim git_hooks installed in .git/hooks, which calls .githooks/mix on the host; that script reaches the app container with docker compose exec, where mix git_hooks.run executes the project's .githooks/pre-commit — set -e, each cartridge's block in order — and the non-zero status walks back across the mount to abort the commit; in the else region, the library's own example runs mix on the host, finds no Elixir and cannot enter the container's path, so the arrow never leaves it](../../../../../assets/diagrams/precommit/the-crossing.svg)
 
 *The gold arrow is the crossing, and the two files in gold are the ones
@@ -165,6 +178,24 @@ is right for this too — and harmless, and the cartridge writes it
 because its requirement (`~> 0.7`) admits a project that resolved the
 older one. It is the kind of line that looks like decoration until the
 version underneath it moves.
+
+`auto_install: false` is the third half, found after v0.1.0 shipped.
+The library installs from the module body of `GitHooks`, that is while
+the dependency compiles, and Mix compiles a dependency from its own
+directory — `deps/git_hooks`, where a relative `project_path` expands
+too, and where 0.9.0's `git rev-parse --show-toplevel` starts when there
+is none. In an ordinary project git walks up from there to the root. In
+a workspace `deps/` is a Docker volume, another filesystem, and git
+stops at its edge: *"not a git repository (or any parent up to mount
+point /app/src) — Stopping at filesystem boundary"*, a `MatchError` in
+`GitPath.resolve_git_hooks_path/0`, and a dependency that does not
+compile. So the installer does not leave it to the compile: it queues
+`git_hooks.install` (`Igniter.add_task/3`), which Igniter runs as a
+`mix` of its own from the project's root once the files are written,
+where `"."` is the root on both sides of the mount — and whose failure
+fails the insert. `GIT_DISCOVERY_ACROSS_FILESYSTEM=1` in the images
+would have hidden it for this workbench and no other; the setting
+belongs to the project, which is where the fault was.
 
 ### 4. Two stages, and a block is born at one of them
 
@@ -190,7 +221,9 @@ one word away in a file the project owns.
 
 **In a real project, on 2026-09-20** — a scratch mix project with the
 cartridge inserted by its own installer, an app container off the
-workbench image, and the source bind-mounted at `/app/src`: `mix deps.compile` inside the container installed
+workbench image, and the source bind-mounted at `/app/src`, with
+`deps/` on the same bind mount — which is why the probe missed what
+§3 describes: `mix deps.compile` inside the container installed
 `.git/hooks/pre-commit`, mode 0755, carrying `cd_path="."` and `sh
 .githooks/mix git_hooks.run pre_commit` — the substitution the
 configuration asked for. A `git commit` **on the host**, with a badly
@@ -226,10 +259,10 @@ is the right call for both, and neither was tried.
   means the commit is refused with the reason, and `--no-verify` is the
   way through. A check that ran on the host instead would need an
   Elixir there, which is the thing the workbench exists to avoid.
-* **`auto_install` happens when the dependency compiles**, not on every
-  mix run. Between `wb.sh add precommit` and the next `deps.get` or
-  `deps.compile`, the shim is not in `.git/hooks` yet; the cartridge
-  says so in its `afterwards`, and `git_hooks.install` is one command.
+* **A fresh clone installs the hook by hand.** With `auto_install` off,
+  compiling the dependencies no longer puts the shim in `.git/hooks`;
+  the insert does, once, and a clone of the project runs `./wb.sh mix
+  git_hooks.install`. The cartridge says so in its `afterwards`.
 * **One block per cartridge means a cartridge's checks are
   contiguous.** With `--checks test`, the whole of this box's block
   moves below the divider, so its `format` runs after another

@@ -4,6 +4,26 @@
 The cartridge's own versions, over what it installs in a project —
 independent of the workbench release that ships it.
 
+## v0.1.1 - (2026-09-21)
+
+### Fixed
+
+- The dependency compiles in a workspace. `auto_install` is `false`
+  and the installer runs `git_hooks.install` itself, from the
+  project's root. The library installs while `git_hooks` compiles, and
+  Mix compiles a dependency from `deps/git_hooks`, which in a workspace
+  is a Docker volume: git stopped at the filesystem boundary before
+  reaching the project's `.git`, the dependency did not compile, and
+  every Mix task after the insert failed with it — the next `add`
+  among them, as *Could not expand*. The insert itself had reported
+  success, because nothing in it compiled the dependency. Now the
+  hook is in `.git/hooks` when the insert ends, or the insert fails.
+- `.githooks/mix` runs `mix` in place when the commit is made inside
+  the project's container — the source at `/app/src` and mix on the
+  PATH, as in the workbench's console or a terminal — and reaches the
+  container through Docker only from outside it. Such a container may
+  have no Docker at all, and the commit failed there.
+
 ## v0.1.0 - (2026-09-20)
 
 The box githooks becomes the box that owns the pre-commit hook: same

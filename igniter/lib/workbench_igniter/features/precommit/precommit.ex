@@ -6,9 +6,9 @@ defmodule WorkbenchIgniter.Features.Precommit do
   The box is three things, and the third is the one that makes it a box
   rather than an option of somebody else:
 
-    * the dependency, `git_hooks`, which writes `.git/hooks/pre-commit`
-      when the dev dependencies compile and takes it away again when the
-      configuration goes;
+    * the dependency, `git_hooks`, whose `git_hooks.install` writes
+      `.git/hooks/pre-commit` — run by the installer, from the project's
+      root — and takes it away again when the configuration goes;
     * `.githooks/mix`, the host's way in — the hook runs on the machine
       that commits, and that machine has Docker and nothing else, so
       `mix` there means `docker compose exec app mix`;
@@ -132,8 +132,8 @@ defmodule WorkbenchIgniter.Features.Precommit do
   @impl true
   def afterwards,
     do:
-      "The hook installs itself when the dev dependencies compile (`./wb.sh mix deps.get`); " <>
-        "`./wb.sh mix git_hooks.install` does it on demand, and `sh #{@hook}` runs the checks without committing."
+      "The hook is in `.git/hooks` already; a fresh clone of the project installs it with " <>
+        "`./wb.sh mix git_hooks.install`, and `sh #{@hook}` runs the checks without committing."
 
   # The mark: the file the installer writes, which is also what the
   # project's developer edits and reads. The dependency is not it —
@@ -174,6 +174,7 @@ defmodule WorkbenchIgniter.Features.Precommit do
           stage: stage(chosen),
           note: "the checks that come with Elixir, not with a cartridge"
         )
+        |> Igniter.add_task("git_hooks.install", [])
 
       unknown ->
         Igniter.add_issue(
@@ -198,14 +199,23 @@ defmodule WorkbenchIgniter.Features.Precommit do
   # What goes in that file is the file's business, so a cartridge
   # bringing a check never comes back here.
   #
-  # `project_path: "."` is not decoration. The library writes the value
+  # `auto_install: false` is not a preference. The library installs
+  # from the module body of `GitHooks`, that is, while the dependency
+  # compiles — and Mix compiles a dependency from its own directory,
+  # `deps/git_hooks`, which in a workspace is a Docker volume: another
+  # filesystem, where git stops looking for `.git` before it reaches
+  # the project ("Stopping at filesystem boundary"), and the dependency
+  # does not compile. The installer runs `git_hooks.install` instead,
+  # as a task of its own, from the project's root.
+  #
+  # `project_path: "."` is not decoration either. The library writes the value
   # of `File.cwd!()` into the hook it installs, and it installs it from
   # inside the container, where that is `/app/src` — a path the host
   # would `cd` into and not find. A dot is true on both sides of the
   # mount.
   defp configure_git_hooks(igniter) do
     igniter
-    |> Igniter.Project.Config.configure("dev.exs", :git_hooks, [:auto_install], true)
+    |> Igniter.Project.Config.configure("dev.exs", :git_hooks, [:auto_install], false)
     |> Igniter.Project.Config.configure("dev.exs", :git_hooks, [:verbose], true)
     |> Igniter.Project.Config.configure("dev.exs", :git_hooks, [:project_path], ".")
     |> Igniter.Project.Config.configure("dev.exs", :git_hooks, [:mix_path], "sh #{@runner}")

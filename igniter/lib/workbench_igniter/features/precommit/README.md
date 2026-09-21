@@ -35,7 +35,7 @@ not the formatter.
 ## What it installs
 
 * `{:git_hooks, "~> 0.7", only: :dev, runtime: false}` in the project deps.
-* `config :git_hooks` in `config/dev.exs`: `auto_install`, `verbose`,
+* `config :git_hooks` in `config/dev.exs`: `auto_install: false`, `verbose`,
   `project_path: "."`, `mix_path: "sh .githooks/mix"` and one hook,
   `pre_commit`, whose one task is the script below. No cartridge ever
   writes here again — what runs is the script's business.
@@ -44,10 +44,10 @@ not the formatter.
   cartridge, and a comment line dividing the fast checks from the ones
   that compile the project or run the suite.
 
-The hook itself, `.git/hooks/pre-commit`, is written by `git_hooks`
-when the dev dependencies compile (it backs up whatever was there
-first), and removed again if the configuration goes. `./wb.sh mix
-git_hooks.install` does it on demand.
+The hook itself, `.git/hooks/pre-commit`, is written by `mix
+git_hooks.install`, which the insert runs (it backs up whatever was
+there first), and removed again if the configuration goes. It is not
+part of a clone: a fresh one runs `./wb.sh mix git_hooks.install`.
 
 ## Options
 

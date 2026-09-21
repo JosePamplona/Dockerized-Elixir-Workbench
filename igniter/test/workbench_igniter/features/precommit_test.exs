@@ -25,6 +25,15 @@ defmodule WorkbenchIgniter.Features.PrecommitTest do
       assert_creates(igniter, Precommit.hook())
     end
 
+    # The library's own install runs while the dependency compiles, from
+    # `deps/git_hooks` — a volume in a workspace, where git cannot see
+    # the project's `.git`. The task runs from the project's root.
+    test "installs the hook itself, not when the dependency compiles" do
+      igniter = install()
+
+      assert {"git_hooks.install", []} in igniter.tasks
+    end
+
     test "points git_hooks at the host's way in, and at the hook file" do
       config =
         install()
@@ -32,7 +41,7 @@ defmodule WorkbenchIgniter.Features.PrecommitTest do
         |> Map.get(:assigns)
         |> get_in([:test_files, "config/dev.exs"])
 
-      assert config =~ "auto_install: true"
+      assert config =~ "auto_install: false"
       assert config =~ ~s(mix_path: "sh .githooks/mix")
       assert config =~ ~s(project_path: ".")
       assert config =~ ~s(tasks: [{:cmd, "sh .githooks/pre-commit"}])

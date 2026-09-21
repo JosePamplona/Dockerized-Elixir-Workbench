@@ -2178,6 +2178,35 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **precommit v0.1.1: the dependency compiles in a workspace, and the
+  hook runs where the project is.** git_hooks installs the hook while
+  it compiles, and Mix compiles a dependency from `deps/git_hooks` —
+  in a workspace a Docker volume, another filesystem, where git stopped
+  before the project's `.git` (*"Stopping at filesystem boundary"*).
+  The dependency did not compile, every Mix task after the insert
+  failed with it, and the insert had said it succeeded, because nothing
+  in it compiled the dependency; the next `add` showed it, as *Could
+  not expand*. `auto_install` is off now and the insert runs
+  `git_hooks.install` itself, from the project's root, so the hook is
+  in `.git/hooks` when the insert ends or the insert fails. And
+  `.githooks/mix` runs `mix` right there when the commit is made inside
+  the project's container (the source at `/app/src`, mix on the PATH:
+  the console, a terminal), instead of reaching for a Docker such a
+  container may not have.
+
+- **The workbench's own commits skip the project's hooks.** `Insert`,
+  `Revert`, `Bake` and `New project` are the workbench's bookkeeping —
+  one cartridge, one commit — and commit with `--no-verify`; `./wb.sh
+  commit`, the developer's, runs them. With the hook installed at
+  insert time, the insert's own commit ran it, in a container with no
+  Docker, and failed; a hook with `--checks test` would have run the
+  suite on every `add`, and one refusing an `eject` would have made
+  the eject impossible. The container `wb.sh commit` runs git in now
+  mounts the project's build volumes, since the hook runs mix there.
+  Checked on a copy of a workspace: the insert committed with the hook
+  in place, and `./wb.sh commit` refused a badly formatted file and let
+  it through formatted.
+
 - **A service the project does not carry wore the wrong colour.**
   `ConsoleWeb.Services.color/2` finds a service's role by asking the
   project, and the project only knows the cartridges it carries, so

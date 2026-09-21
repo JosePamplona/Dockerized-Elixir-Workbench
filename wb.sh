@@ -1316,12 +1316,16 @@
       toolchain_env "${GIT_COLOR_ENV[@]}" "${GIT_IDENTITY_ENV[@]}" \
         git -C "$WORKSPACE_MOUNT" "$@"
     else
-      ensure_workbench_image || return 1
+      # The build volumes too: a hook that runs here runs mix here
+      # (.githooks/mix, on the precommit cartridge), and mix without
+      # the project's deps and _build has nothing to run it with.
+      ensure_build_volumes && ensure_workbench_image || return 1
       docker run \
         --rm \
         "${GIT_COLOR_ENV[@]/#/--env=}" \
         "${GIT_IDENTITY_ENV[@]/#/--env=}" \
         --volume "$SOURCE_CODE_VOLUME" \
+        "${BUILD_VOLUMES[@]}" \
         --workdir /app/src \
         "$WORKBENCH_IMAGE" git "$@"
     fi
@@ -1333,14 +1337,22 @@
     [ -n "$(git_read status --porcelain 2>/dev/null)" ]
   }
 
-  # workspace_commit <MESSAGE>
+  # workspace_commit [--hooks] <MESSAGE>
     # Commits everything in the workspace under MESSAGE, when there is
     # anything to commit, and says who signed it.
+    # The project's hooks run only with --hooks, which is the reader's
+    # own 'commit'. The rest are the workbench's bookkeeping — one
+    # cartridge, one commit, and its revert — and a pre-commit hook is
+    # the developer's reminder about their changes, not a gate on that:
+    # an eject a check refuses is an eject that cannot happen, and a
+    # hook running the suite would run it on every insert.
   workspace_commit() {
+    local verify=(--no-verify)
+    if [[ "$1" == "--hooks" ]]; then verify=(); shift; fi
     [ -d "$WORKSPACE_PATH/.git" ] || workspace_git init -q
     if workspace_dirty; then
       workspace_git add -A && \
-      workspace_git commit -q -m "$1" && \
+      workspace_git commit -q "${verify[@]}" -m "$1" && \
       echo "Committed ${B}$1${R} (as $GIT_NAME <$GIT_EMAIL>)."
     else
       echo "Nothing to commit."
@@ -2384,7 +2396,7 @@ if [ $# -gt 0 ]; then
       fi
 
       rebake_composes
-      if workspace_git add -A && workspace_git commit -q --no-edit --cleanup=strip; then
+      if workspace_git add -A && workspace_git commit -q --no-verify --no-edit --cleanup=strip; then
         echo "Ejected ${B}$FEATURE${R}: $(workspace_git log --format='%h %s' -n 1)" \
           "(as $GIT_NAME <$GIT_EMAIL>)."
         composes_left_note
@@ -2688,9 +2700,9 @@ if [ $# -gt 0 ]; then
       # carry a line break.
       if [[ "$1" == "--message-file" ]]; then
         [ -r "$2" ] || terminate "No message file at '$2'."
-        workspace_commit "$(cat "$2")"
+        workspace_commit --hooks "$(cat "$2")"
       else
-        workspace_commit "${*:-Workbench: commit pending changes}"
+        workspace_commit --hooks "${*:-Workbench: commit pending changes}"
       fi
     else terminate "There is no project to commit."; fi
 

@@ -292,6 +292,10 @@ line without naming a medium; the era renders it:
 * **Lucid** — the mechanism lets you see what you had been handling
   blind, laid out as it is, and leaves the hands to you. Subtitles
   uncover (`SEE WHAT YOU KEEP`). Added for db_admin.
+* **Scrupulous** — the mechanism holds back what you were about to
+  send, over something small you would rather it had not noticed, and
+  it holds it because you fitted it there and for nobody else.
+  Subtitles halt (`NOT YET`). Added for precommit.
 
 Landmarks, not options — each one was a cartridge's need read as a
 stance, which is where a register comes from now (`NEED.md`). Add one when a cartridge wants a stance

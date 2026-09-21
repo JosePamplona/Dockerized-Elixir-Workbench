@@ -60,6 +60,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `test/coverage/template/`: `test/` is outside the Dockerfile's context
   by phx.gen.release's own `.dockerignore`, and nothing compiles a
   loose `.eex` there.
+- **A default is a field's placeholder, never its value.** The
+  installation form filled each text field with the option's default,
+  so changing it meant deleting it first, and a default could not be
+  told from a value typed. The field starts empty and shows the
+  default in grey; empty is the default (the flag is left out of the
+  line). An option whose default the installer reads off the project
+  (`detected/0` in the manifest, `detected` in the catalog) says *read
+  off the project* instead.
+
 - **The console serves the project's pages: a door of a third kind,
   green.** ExDoc's site and the coverage report were served by the
   project — a pipeline, a controller and `/dev/docs` routes exdoc

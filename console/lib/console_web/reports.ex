@@ -97,9 +97,8 @@ defmodule ConsoleWeb.Reports do
 
   defp route(conn, _) do
     opts = conn.assigns[:reports] || []
-    status = Bench.status()
-    root = Keyword.get(opts, :root, status && status["workspace"])
-    outputs = Keyword.get_lazy(opts, :outputs, fn -> outputs(status, Bench.catalog()) end)
+    root = Keyword.get_lazy(opts, :root, fn -> (Bench.status() || %{})["workspace"] end)
+    outputs = Keyword.get_lazy(opts, :outputs, fn -> outputs(Bench.status(), Bench.catalog()) end)
 
     case conn.path_info do
       [] ->

@@ -883,7 +883,7 @@ defmodule ConsoleWeb.Box do
                   placeholder={
                     if @locked && @insert == nil,
                       do: "inserted by hand: value unknown",
-                      else: o["type"]
+                      else: placeholder(o)
                   }
                   disabled={@locked}
                 />
@@ -1120,6 +1120,20 @@ defmodule ConsoleWeb.Box do
     end
   end
 
+  # The default is shown, never filled in: an empty field is the
+  # default (`text_argv/3` leaves the flag out), and one the reader typed
+  # reads as theirs. A default the installer reads off the project
+  # (`detected`) is not known here, so the field says where it comes
+  # from; without a default it says its type.
+  defp placeholder(%{"detected" => true}), do: "read off the project"
+
+  defp placeholder(o) do
+    case o["default"] do
+      default when default in [nil, "", []] -> o["type"]
+      default -> default |> List.wrap() |> Enum.join(",")
+    end
+  end
+
   defp text_value(o, args, state, from_insert, inserted) do
     flag = "--" <> String.replace(o["name"], "_", "-")
 
@@ -1133,11 +1147,11 @@ defmodule ConsoleWeb.Box do
       from_insert ->
         case Enum.drop_while(inserted, &(&1 != flag)) do
           [_, v | _] -> v
-          _ -> o["default"]
+          _ -> nil
         end
 
       true ->
-        o["default"]
+        nil
     end
   end
 

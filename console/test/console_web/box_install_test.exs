@@ -109,6 +109,29 @@ defmodule ConsoleWeb.BoxInstallTest do
     refute html =~ ~r{value="postgres"[^>]*checked}
   end
 
+  test "a default is the field's placeholder, never its value" do
+    box = %{
+      "name" => "exdoc",
+      "options" => [
+        %{"name" => "minimum", "type" => "string", "default" => "80"},
+        %{"name" => "repo_url", "type" => "string", "detected" => true},
+        %{"name" => "homepage_url", "type" => "string"}
+      ]
+    }
+
+    html = screen(box, %{"exists" => true, "project" => %{"cartridges" => []}})
+
+    # Empty, showing what an empty field means: the default, where it
+    # comes from when the installer reads it off the project, or the type.
+    assert html =~ ~r{id="opt-minimum"[^>]*placeholder="80"}
+    refute html =~ ~r{id="opt-minimum"[^>]*value=}
+    assert html =~ ~r{id="opt-repo_url"[^>]*placeholder="read off the project"}
+    assert html =~ ~r{id="opt-homepage_url"[^>]*placeholder="string"}
+    # And an empty field leaves its flag out of the line.
+    assert Box.argv(box, %{"minimum" => ""}) == []
+    assert Box.argv(box, %{"minimum" => "90"}) == ["--minimum", "90"]
+  end
+
   test "with nothing to read the line is the bare verb" do
     # Born with the project, or inserted by a hand that left no commit.
     assert Box.line_argv(@box, %{}, nil, true) == []

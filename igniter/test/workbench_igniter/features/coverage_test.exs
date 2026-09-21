@@ -1,17 +1,17 @@
-defmodule WorkbenchIgniter.Features.CoverallsTest do
+defmodule WorkbenchIgniter.Features.CoverageTest do
   @moduledoc false
 
   use ExUnit.Case, async: true
 
   import Igniter.Test
 
-  alias WorkbenchIgniter.Features.Coveralls
+  alias WorkbenchIgniter.Features.Coverage
   alias WorkbenchIgniter.Features.Precommit
 
-  describe "mix workbench.install.coveralls" do
+  describe "mix workbench.install.coverage" do
     test "adds the dependency and the mix.exs coverage configuration" do
       phx_test_project()
-      |> Igniter.compose_task("workbench.install.coveralls", [])
+      |> Igniter.compose_task("workbench.install.coverage", [])
       |> assert_has_patch("mix.exs", """
       + | {:excoveralls, "~> 0.18", only: :test},
       """)
@@ -26,7 +26,7 @@ defmodule WorkbenchIgniter.Features.CoverallsTest do
     test "creates coveralls.json with defaults" do
       igniter =
         phx_test_project()
-        |> Igniter.compose_task("workbench.install.coveralls", [])
+        |> Igniter.compose_task("workbench.install.coverage", [])
         |> apply_igniter!()
 
       json = igniter.assigns[:test_files]["coveralls.json"]
@@ -42,7 +42,7 @@ defmodule WorkbenchIgniter.Features.CoverallsTest do
     test "--exdoc plants the cover task and its tests" do
       igniter =
         phx_test_project()
-        |> Igniter.compose_task("workbench.install.coveralls", ["--exdoc"])
+        |> Igniter.compose_task("workbench.install.coverage", ["--exdoc"])
         |> apply_igniter!()
 
       files = igniter.assigns[:test_files]
@@ -53,7 +53,7 @@ defmodule WorkbenchIgniter.Features.CoverallsTest do
       assert files["mix.exs"] =~ "{:mimic,"
 
       # Its block of the shared test helper, and nobody else's.
-      assert files["test/test_helper.exs"] =~ "# >>> coveralls"
+      assert files["test/test_helper.exs"] =~ "# >>> coverage"
       assert files["test/test_helper.exs"] =~ "Mimic.copy(File)"
       # The generated reports are not source files.
       assert files[".gitignore"] =~ "/TESTING.md"
@@ -63,7 +63,7 @@ defmodule WorkbenchIgniter.Features.CoverallsTest do
     test "keeps file paths untruncated for the mix cover parser" do
       igniter =
         phx_test_project()
-        |> Igniter.compose_task("workbench.install.coveralls", [])
+        |> Igniter.compose_task("workbench.install.coverage", [])
         |> apply_igniter!()
 
       # The cover task parses the terminal coverage rows: a narrow column
@@ -75,7 +75,7 @@ defmodule WorkbenchIgniter.Features.CoverallsTest do
     test "--interface graphql, and a project without html, drop their skip_files entries" do
       igniter =
         WorkbenchIgniter.TestProject.new(~w(--no-html))
-        |> Igniter.compose_task("workbench.install.coveralls", ["--interface", "graphql"])
+        |> Igniter.compose_task("workbench.install.coverage", ["--interface", "graphql"])
         |> apply_igniter!()
 
       json = igniter.assigns[:test_files]["coveralls.json"]
@@ -87,7 +87,7 @@ defmodule WorkbenchIgniter.Features.CoverallsTest do
     test "plants the exdoc-ish report theme by default" do
       igniter =
         phx_test_project()
-        |> Igniter.compose_task("workbench.install.coveralls", [])
+        |> Igniter.compose_task("workbench.install.coverage", [])
         |> apply_igniter!()
 
       files = igniter.assigns[:test_files]
@@ -101,7 +101,7 @@ defmodule WorkbenchIgniter.Features.CoverallsTest do
     test "--theme custom plants the original report theme" do
       igniter =
         phx_test_project()
-        |> Igniter.compose_task("workbench.install.coveralls", ["--theme", "custom"])
+        |> Igniter.compose_task("workbench.install.coverage", ["--theme", "custom"])
         |> apply_igniter!()
 
       files = igniter.assigns[:test_files]
@@ -114,21 +114,21 @@ defmodule WorkbenchIgniter.Features.CoverallsTest do
     test "rejects an unknown theme" do
       igniter =
         phx_test_project()
-        |> Igniter.compose_task("workbench.install.coveralls", ["--theme", "nope"])
+        |> Igniter.compose_task("workbench.install.coverage", ["--theme", "nope"])
 
       assert Enum.any?(igniter.issues, &(&1 =~ "Unknown coverage report theme \"nope\""))
       assert Enum.any?(igniter.issues, &(&1 =~ "custom, exdoc-ish"))
     end
 
     test "lists the themes from the asset directories" do
-      assert WorkbenchIgniter.Features.Coveralls.themes() == ["custom", "exdoc-ish"]
+      assert WorkbenchIgniter.Features.Coverage.themes() == ["custom", "exdoc-ish"]
     end
 
     test "is a no-op with a notice when already installed" do
       phx_test_project()
-      |> Igniter.compose_task("workbench.install.coveralls", [])
+      |> Igniter.compose_task("workbench.install.coverage", [])
       |> apply_igniter!()
-      |> Igniter.compose_task("workbench.install.coveralls", [])
+      |> Igniter.compose_task("workbench.install.coverage", [])
       |> assert_unchanged()
       |> assert_has_notice(&(&1 =~ "already installed"))
     end
@@ -138,17 +138,17 @@ defmodule WorkbenchIgniter.Features.CoverallsTest do
     test "writes no hook by default" do
       igniter =
         phx_test_project()
-        |> Igniter.compose_task("workbench.install.coveralls", [])
+        |> Igniter.compose_task("workbench.install.coverage", [])
         |> apply_igniter!()
 
       refute Igniter.exists?(igniter, Precommit.hook())
-      assert {%{githook: false}, _} = Coveralls.state(igniter)
+      assert {%{githook: false}, _} = Coverage.state(igniter)
     end
 
     test "inserts the precommit cartridge and takes a block of its hook" do
       igniter =
         phx_test_project()
-        |> Igniter.compose_task("workbench.install.coveralls", ~w(--githook))
+        |> Igniter.compose_task("workbench.install.coverage", ~w(--githook))
         |> apply_igniter!()
 
       files = igniter.assigns[:test_files]
@@ -160,29 +160,29 @@ defmodule WorkbenchIgniter.Features.CoverallsTest do
       assert files[".githooks/mix"] =~ "docker compose exec"
 
       assert hook =~
-               "# >>> coveralls — the suite, and what it did not reach\n#{Coveralls.check_command()}\n# <<< coveralls"
+               "# >>> coverage — the suite, and what it did not reach\n#{Coverage.check_command()}\n# <<< coverage"
     end
 
     test "the block is born below the divider: the suite is the slowest check" do
       hook =
         phx_test_project()
-        |> Igniter.compose_task("workbench.install.coveralls", ~w(--githook))
+        |> Igniter.compose_task("workbench.install.coverage", ~w(--githook))
         |> apply_igniter!()
         |> Map.get(:assigns)
         |> get_in([:test_files, Precommit.hook()])
 
       [fast, slow] = String.split(hook, "# --- slow:")
 
-      assert slow =~ Coveralls.check_command()
-      refute fast =~ Coveralls.check_command()
+      assert slow =~ Coverage.check_command()
+      refute fast =~ Coverage.check_command()
     end
 
     test "says back that the project carries it" do
       {state, _igniter} =
         phx_test_project()
-        |> Igniter.compose_task("workbench.install.coveralls", ~w(--githook))
+        |> Igniter.compose_task("workbench.install.coverage", ~w(--githook))
         |> apply_igniter!()
-        |> Coveralls.state()
+        |> Coverage.state()
 
       assert state.githook
     end
@@ -190,26 +190,26 @@ defmodule WorkbenchIgniter.Features.CoverallsTest do
     test "a second run adds the block to a project installed without it" do
       igniter =
         phx_test_project()
-        |> Igniter.compose_task("workbench.install.coveralls", [])
+        |> Igniter.compose_task("workbench.install.coverage", [])
         |> apply_igniter!()
-        |> Igniter.compose_task("workbench.install.coveralls", ~w(--githook))
+        |> Igniter.compose_task("workbench.install.coverage", ~w(--githook))
         |> apply_igniter!()
 
-      assert igniter.assigns[:test_files][Precommit.hook()] =~ Coveralls.check_command()
+      assert igniter.assigns[:test_files][Precommit.hook()] =~ Coverage.check_command()
     end
 
-    test "ejecting coveralls leaves credo's block and the box's own checks standing" do
+    test "ejecting coverage leaves credo's block and the box's own checks standing" do
       hook =
         phx_test_project()
-        |> Igniter.compose_task("workbench.install.coveralls", ~w(--githook))
+        |> Igniter.compose_task("workbench.install.coverage", ~w(--githook))
         |> Igniter.compose_task("workbench.install.credo", ~w(--githook))
         |> apply_igniter!()
-        |> Precommit.forget("coveralls")
+        |> Precommit.forget("coverage")
         |> apply_igniter!()
         |> Map.get(:assigns)
         |> get_in([:test_files, Precommit.hook()])
 
-      refute hook =~ "coveralls"
+      refute hook =~ "coverage"
       assert hook =~ "mix credo"
       assert hook =~ "mix format --check-formatted"
     end

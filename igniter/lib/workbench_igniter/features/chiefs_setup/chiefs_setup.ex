@@ -34,7 +34,7 @@ defmodule WorkbenchIgniter.Features.ChiefsSetup do
   # composed them in, which the marks build on (health_endpoint autodetects
   # rest's OpenApi.Spec; auth0 would need enhancements' Schema). The
   # argv is the recipe: the flags that tell a member which *fellow
-  # picks* ride along (exdoc's `--coveralls`), never a member option
+  # picks* ride along (exdoc's `--coverage`), never a member option
   # surfaced as the collection's.
   @impl true
   def members(opts) do
@@ -53,8 +53,8 @@ defmodule WorkbenchIgniter.Features.ChiefsSetup do
       {"test_doubles", []},
       {"exdebug", []},
       interface_member(interface),
-      {"coveralls", ["--exdoc"]},
-      {"exdoc", ["--coveralls"]},
+      {"coverage", ["--exdoc"]},
+      {"exdoc", ["--coverage"]},
       {"enhancements", ["--interface", interface, "--exdoc", "--health"]},
       {"health_endpoint", []}
     ]

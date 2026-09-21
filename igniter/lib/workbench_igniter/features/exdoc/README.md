@@ -5,7 +5,7 @@ per-feature extra pages (coverage, auth token, database diagram).
 
 * **Task**: `mix workbench.install.exdoc`
 * **Inserted by**: `wb.sh add exdoc`
-* **Options**: `--project-name` `--repo-url` `[--coveralls --auth0]`
+* **Options**: `--project-name` `--repo-url` `[--coverage --auth0]`
   `[--build]` — whether the project has Ecto (the database page and
   diagram) is read off the project, not asked.
 
@@ -40,7 +40,7 @@ documents.
   Auth0 SDK scripts and `token.js`).
 * `MyAppWeb.ExDocController` (index / cover / 404 fallback) + its test.
 * Router: `:exdoc` pipeline (`Plug.Static` over the standard `doc/`
-  output dir, dev-only) and `/dev/docs` routes (with `--coveralls`, also
+  output dir, dev-only) and `/dev/docs` routes (with `--coverage`, also
   `/docs/cover`).
 * Assets under the project's `assets/exdoc/`: `docs_config.js`, logo,
   `themedImage.js`; with auth0, `token.js` and the `token.md` page.

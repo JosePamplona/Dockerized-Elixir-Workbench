@@ -39,11 +39,11 @@ and reintroduces the special box the change exists to remove.
 **The one-input frontier.** A collection's option must be a decision
 the collection owns, explainable on the box without naming a member's
 switch (`--interface` qualifies; `--coverage-theme` does not — it is
-coveralls' `--theme`, set by inserting coveralls). This is the rule
+coverage's `--theme`, set by inserting coverage). This is the rule
 that keeps option creep from rebuilding setup under another name.
 
 **Argv is recipe, not forwarding.** A member's argv tells it which
-fellow picks ride along (`exdoc --coveralls`), mirroring what setup's
+fellow picks ride along (`exdoc --coverage`), mirroring what setup's
 `argv/1` derived from its flags. The cost accepted: the recipe breaks
 at compile/test time if a member renames a switch — the catalog test
 runs the collection's install, so a rename is caught there.
@@ -90,7 +90,7 @@ container run each, ~11 for a full add) accepted and not measured.
   was setup's `--interface` validation, and per-cartridge `conflicts`
   machinery was deliberately not built for one pair.
 - The recipe's argv couples the collection to the member switches it
-  names (`--exdoc`, `--coveralls`, `--health`, `--interface`); the
+  names (`--exdoc`, `--coverage`, `--health`, `--interface`); the
   member's own defaults cover everything else.
 
 ## References

@@ -1,10 +1,10 @@
-defmodule Mix.Tasks.Workbench.Install.Coveralls do
+defmodule Mix.Tasks.Workbench.Install.Coverage do
   use WorkbenchIgniter.Task
 
-  alias WorkbenchIgniter.Features.Coveralls
+  alias WorkbenchIgniter.Features.Coverage
   alias WorkbenchIgniter.Features.Precommit
 
-  @shortdoc "Adds ExCoveralls test coverage reports to the project"
+  @shortdoc "Adds test coverage reports to the project, measured by ExCoveralls"
 
   @moduledoc """
   #{@shortdoc}
@@ -22,7 +22,7 @@ defmodule Mix.Tasks.Workbench.Install.Coveralls do
   * with `--exdoc`, plants the `mix cover` task (testing & coverage reports
     integrated into ExDoc) along with its ExUnit formatter and unit tests,
     and gitignores the generated `TESTING.md` report
-  * with `--githook`, puts `#{Coveralls.check_command()}` before every
+  * with `--githook`, puts `#{Coverage.check_command()}` before every
     commit — in this cartridge's own block of `#{Precommit.hook()}`,
     below the divider that separates the checks that refuse a commit in
     a second from the ones that compile the project. The hook itself,
@@ -32,16 +32,16 @@ defmodule Mix.Tasks.Workbench.Install.Coveralls do
 
   ## Example
 
-      mix workbench.install.coveralls --exdoc
+      mix workbench.install.coverage --exdoc
 
   ## Options
 
-  #{WorkbenchIgniter.Feature.options_doc(Coveralls)}
+  #{WorkbenchIgniter.Feature.options_doc(Coverage)}
   """
 
   @impl Igniter.Mix.Task
-  def info(argv, composing_task), do: Coveralls.info(argv, composing_task)
+  def info(argv, composing_task), do: Coverage.info(argv, composing_task)
 
   @impl Igniter.Mix.Task
-  def igniter(igniter), do: Coveralls.install(igniter)
+  def igniter(igniter), do: Coverage.install(igniter)
 end

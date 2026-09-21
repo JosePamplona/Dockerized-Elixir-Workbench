@@ -71,7 +71,7 @@ defmodule ConsoleWeb.ReportsTest do
       "project" => %{
         "cartridges" => [
           %{"name" => "exdoc", "installed" => true},
-          %{"name" => "coveralls", "installed" => true},
+          %{"name" => "coverage", "installed" => true},
           %{"name" => "mailer", "installed" => true},
           %{"name" => "gone", "installed" => false}
         ]
@@ -91,7 +91,7 @@ defmodule ConsoleWeb.ReportsTest do
         "console" => %{"doors" => [output.("docs", "doc", "index.html", %{})]}
       },
       %{
-        "name" => "coveralls",
+        "name" => "coverage",
         "console" => %{
           "doors" => [
             output.("coverage", "cover", "excoveralls.html", %{

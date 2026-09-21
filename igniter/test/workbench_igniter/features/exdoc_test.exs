@@ -51,7 +51,7 @@ defmodule WorkbenchIgniter.Features.ExdocTest do
       assert router =~ ~s|from: "doc"|
       assert router =~ ~s|get "/docs/", ExDocController, :index|
       assert router =~ ~s|get "/docs/*path", ExDocController, :handle|
-      # Without --coveralls there is no cover route or action.
+      # Without --coverage there is no cover route or action.
       refute router =~ ":cover"
       refute files["lib/test_web/controllers/exdoc_controller.ex"] =~ "def cover"
     end
@@ -84,10 +84,10 @@ defmodule WorkbenchIgniter.Features.ExdocTest do
       refute Map.has_key?(files, "assets/exdoc/js/token.js")
     end
 
-    test "--coveralls adds the cover route, action, page and dummy" do
+    test "--coverage adds the cover route, action, page and dummy" do
       igniter =
         phx_test_project()
-        |> Igniter.compose_task("workbench.install.exdoc", ["--coveralls"])
+        |> Igniter.compose_task("workbench.install.exdoc", ["--coverage"])
         |> apply_igniter!()
 
       files = igniter.assigns[:test_files]
@@ -191,7 +191,7 @@ defmodule WorkbenchIgniter.Features.ExdocTest do
 
       files = igniter.assigns[:test_files]
 
-      # The recipe's --coveralls: the docs controller serves the report.
+      # The recipe's --coverage: the docs controller serves the report.
       assert files["lib/test_web/controllers/exdoc_controller.ex"] =~ "def cover"
     end
   end

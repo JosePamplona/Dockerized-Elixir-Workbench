@@ -20,7 +20,7 @@ defmodule WorkbenchIgniter.ConsoleTest do
              %{label: "docs", path: "doc/", output: %{dir: "doc", index: "index.html"}, when: nil}
            ]
 
-    assert by.("coveralls").doors == [
+    assert by.("coverage").doors == [
              %{
                label: "coverage",
                path: "cover/",

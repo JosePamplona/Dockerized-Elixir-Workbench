@@ -72,7 +72,7 @@ defmodule WorkbenchIgniter.Features.TestDoublesTest do
         test_project(files: %{@helper => "ExUnit.start()\n"})
         |> Igniter.compose_task(@task, [])
         |> apply_igniter!()
-        |> TestDoubles.copy("coveralls", ["File"])
+        |> TestDoubles.copy("coverage", ["File"])
         |> apply_igniter!()
         |> TestDoubles.copy("health_endpoint", ["MyApp.Repo", "System"],
           note: "what its controller test makes raise"
@@ -82,9 +82,9 @@ defmodule WorkbenchIgniter.Features.TestDoublesTest do
 
       assert content ==
                """
-               # >>> coveralls
+               # >>> coverage
                Mimic.copy(File)
-               # <<< coveralls
+               # <<< coverage
 
                # >>> health_endpoint — what its controller test makes raise
                Mimic.copy(MyApp.Repo)
@@ -121,7 +121,7 @@ defmodule WorkbenchIgniter.Features.TestDoublesTest do
         |> apply_igniter!()
 
       assert igniter
-             |> TestDoubles.copy("coveralls", ["File"])
+             |> TestDoubles.copy("coverage", ["File"])
              |> apply_igniter!()
              |> then(& &1.assigns[:test_files][@helper]) =~
                "Mimic.copy(File, type_check: true)"
@@ -138,11 +138,11 @@ defmodule WorkbenchIgniter.Features.TestDoublesTest do
         test_project(files: %{@helper => "ExUnit.start()\n"})
         |> Igniter.compose_task(@task, [])
         |> apply_igniter!()
-        |> TestDoubles.copy("coveralls", ["File"])
+        |> TestDoubles.copy("coverage", ["File"])
         |> apply_igniter!()
         |> TestDoubles.copy("health_endpoint", ["System"])
         |> apply_igniter!()
-        |> TestDoubles.forget("coveralls")
+        |> TestDoubles.forget("coverage")
         |> apply_igniter!()
         |> then(& &1.assigns[:test_files][@helper])
 
@@ -161,11 +161,11 @@ defmodule WorkbenchIgniter.Features.TestDoublesTest do
         test_project()
         |> Igniter.compose_task(@task, [])
         |> apply_igniter!()
-        |> TestDoubles.copy("coveralls", ["File"])
+        |> TestDoubles.copy("coverage", ["File"])
         |> apply_igniter!()
 
       assert igniter.assigns[:test_files][@helper] ==
-               "# >>> coveralls\nMimic.copy(File)\n# <<< coveralls\n\nExUnit.start()\n"
+               "# >>> coverage\nMimic.copy(File)\n# <<< coverage\n\nExUnit.start()\n"
     end
   end
 end

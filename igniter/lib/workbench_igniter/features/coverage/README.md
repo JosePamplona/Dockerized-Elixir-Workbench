@@ -1,10 +1,10 @@
-# Cartridge: coveralls
+# Cartridge: coverage
 
 Test coverage with ExCoveralls, the workbench HTML report and the
 `mix cover` task.
 
-* **Task**: `mix workbench.install.coveralls`
-* **Inserted by**: `wb.sh add coveralls`
+* **Task**: `mix workbench.install.coverage`
+* **Inserted by**: `wb.sh add coverage`
 * **Options**: `--interface <i>` `[--theme <t>]` `[--exdoc]` `[--githook]`
   `[--build]` — whether the project has html (the components folder to
   leave out) is read off the project.
@@ -42,7 +42,7 @@ ran them sees and become part of what the project shows about itself.
   (with `--interface rest` it skips the `open_api` files; without
   `--no-html` it skips the components folder).
 * The chosen HTML report theme (`--theme`) under `assets/cover/template/`.
-  Themes live in `priv/features/coveralls/assets/template/<theme>/`, one
+  Themes live in `priv/features/coverage/assets/template/<theme>/`, one
   directory each with the
   three files excoveralls renders (`coverage.html.eex`, `_script.html.eex`,
   `_style.html.eex`); adding a theme is adding a directory:
@@ -62,7 +62,7 @@ ran them sees and become part of what the project shows about itself.
 
 **Idempotency**: if `coveralls.json` already exists, notice and no-op —
 except the hook block, which a second run adds when it is missing, so
-`--githook` on a project that took coveralls without it is honoured
+`--githook` on a project that took coverage without it is honoured
 instead of skipped along with the rest.
 
 ## Options
@@ -87,14 +87,14 @@ instead of skipped along with the rest.
 
 ## Contents
 
-Templates and assets live under `priv/features/coveralls/`:
+Templates and assets live under `priv/features/coverage/`:
 
 | File | Role |
 | --- | --- |
-| `coveralls.ex` | Manifest + logic |
+| `coverage.ex` | Manifest + logic |
 | `CHANGELOG.md` | Its versions, apart from the workbench's |
 | `DESIGN.md` | Why this coverage tool, the report's two themes, and where its pre-commit line lives |
-| `task.ex` | `Mix.Tasks.Workbench.Install.Coveralls` shell |
+| `task.ex` | `Mix.Tasks.Workbench.Install.Coverage` shell |
 | `templates/coveralls_json.eex` | `coveralls.json` |
 | `assets/template/<theme>/*.html.eex` | HTML report themes (verbatim: their `<%= %>` tags belong to the target project) |
 | `assets/cover.ex` | `mix cover` task |

@@ -14,20 +14,20 @@ defmodule WorkbenchIgniter.BlockFileTest do
     test "the block stands above the anchor, once" do
       igniter =
         test_project(files: %{@helper => @start})
-        |> BlockFile.put(@helper, "coveralls", "Mimic.copy(File)", before: "ExUnit.start()")
+        |> BlockFile.put(@helper, "coverage", "Mimic.copy(File)", before: "ExUnit.start()")
         |> apply_igniter!()
 
       assert igniter.assigns[:test_files][@helper] ==
                """
-               # >>> coveralls
+               # >>> coverage
                Mimic.copy(File)
-               # <<< coveralls
+               # <<< coverage
 
                ExUnit.start()
                """
 
       again =
-        BlockFile.put(igniter, @helper, "coveralls", "Mimic.copy(File)", before: "ExUnit.start()")
+        BlockFile.put(igniter, @helper, "coverage", "Mimic.copy(File)", before: "ExUnit.start()")
 
       assert_unchanged(again, @helper)
     end
@@ -35,7 +35,7 @@ defmodule WorkbenchIgniter.BlockFileTest do
     test "a second owner gets its own block, and the first keeps its place" do
       content =
         test_project(files: %{@helper => @start})
-        |> BlockFile.put(@helper, "coveralls", "Mimic.copy(File)", before: "ExUnit.start()")
+        |> BlockFile.put(@helper, "coverage", "Mimic.copy(File)", before: "ExUnit.start()")
         |> apply_igniter!()
         |> BlockFile.put(@helper, "health_endpoint", "Mimic.copy(MyApp.Repo)\nMimic.copy(System)",
           before: "ExUnit.start()",
@@ -46,9 +46,9 @@ defmodule WorkbenchIgniter.BlockFileTest do
 
       assert content ==
                """
-               # >>> coveralls
+               # >>> coverage
                Mimic.copy(File)
-               # <<< coveralls
+               # <<< coverage
 
                # >>> health_endpoint — the modules its controller test copies
                Mimic.copy(MyApp.Repo)
@@ -58,18 +58,18 @@ defmodule WorkbenchIgniter.BlockFileTest do
                ExUnit.start()
                """
 
-      assert BlockFile.owners(content) == ["coveralls", "health_endpoint"]
-      assert BlockFile.block(content, "coveralls") == {:ok, "Mimic.copy(File)\n"}
+      assert BlockFile.owners(content) == ["coverage", "health_endpoint"]
+      assert BlockFile.block(content, "coverage") == {:ok, "Mimic.copy(File)\n"}
     end
 
     test "re-run with other options replaces the block where it stands" do
       content =
         test_project(files: %{@helper => @start})
-        |> BlockFile.put(@helper, "coveralls", "Mimic.copy(File)", before: "ExUnit.start()")
+        |> BlockFile.put(@helper, "coverage", "Mimic.copy(File)", before: "ExUnit.start()")
         |> apply_igniter!()
         |> BlockFile.put(@helper, "openai", "Mimic.copy(Finch)", before: "ExUnit.start()")
         |> apply_igniter!()
-        |> BlockFile.put(@helper, "coveralls", "Mimic.copy(File, type_check: true)",
+        |> BlockFile.put(@helper, "coverage", "Mimic.copy(File, type_check: true)",
           before: "ExUnit.start()"
         )
         |> apply_igniter!()
@@ -77,9 +77,9 @@ defmodule WorkbenchIgniter.BlockFileTest do
 
       assert content ==
                """
-               # >>> coveralls
+               # >>> coverage
                Mimic.copy(File, type_check: true)
-               # <<< coveralls
+               # <<< coverage
 
                # >>> openai
                Mimic.copy(Finch)
@@ -88,20 +88,20 @@ defmodule WorkbenchIgniter.BlockFileTest do
                ExUnit.start()
                """
 
-      assert BlockFile.owners(content) == ["coveralls", "openai"]
+      assert BlockFile.owners(content) == ["coverage", "openai"]
     end
 
     test "the anchor decides where a block is born, never where it lives" do
       moved = """
       ExUnit.start()
 
-      # >>> coveralls
+      # >>> coverage
       Mimic.copy(File)
-      # <<< coveralls
+      # <<< coverage
       """
 
       assert {:ok, content} =
-               BlockFile.put_text(moved, "coveralls", "Mimic.copy(File, type_check: true)",
+               BlockFile.put_text(moved, "coverage", "Mimic.copy(File, type_check: true)",
                  before: "ExUnit.start()"
                )
 
@@ -109,9 +109,9 @@ defmodule WorkbenchIgniter.BlockFileTest do
                """
                ExUnit.start()
 
-               # >>> coveralls
+               # >>> coverage
                Mimic.copy(File, type_check: true)
-               # <<< coveralls
+               # <<< coverage
                """
     end
 
@@ -163,14 +163,14 @@ defmodule WorkbenchIgniter.BlockFileTest do
 
       igniter =
         test_project(files: %{@helper => before})
-        |> BlockFile.put(@helper, "coveralls", "Mimic.copy(File)", before: "ExUnit.start()")
+        |> BlockFile.put(@helper, "coverage", "Mimic.copy(File)", before: "ExUnit.start()")
         |> apply_igniter!()
         |> BlockFile.put(@helper, "openai", "Mimic.copy(Finch)", before: "ExUnit.start()")
         |> apply_igniter!()
 
       both = igniter.assigns[:test_files][@helper]
 
-      assert {:ok, one} = BlockFile.drop_text(both, "coveralls")
+      assert {:ok, one} = BlockFile.drop_text(both, "coverage")
 
       assert one ==
                """

@@ -20,8 +20,8 @@ in, which the marks build on):
 | 1–4 | ansi, version_manager, toolchain, changelog | — |
 | 5–9 | dashboard_extras, db_admin, credo, mock, exdebug | — |
 | 10 | rest `--health` **or** graphql | `--interface` decides |
-| 11 | coveralls | `--exdoc` |
-| 12 | exdoc | `--coveralls` |
+| 11 | coverage | `--exdoc` |
+| 12 | exdoc | `--coverage` |
 | 13 | enhancements | `--interface`, `--exdoc`, `--health` |
 | 14 | health_endpoint | — |
 
@@ -30,11 +30,11 @@ logs, the host's version pin, the language server's ignore, a version
 and a changelog — and the rest is what it then carries.
 
 The argv a pick gets is the recipe telling it which *fellow picks* ride
-along (exdoc links the coverage report because coveralls is in the
+along (exdoc links the coverage report because coverage is in the
 box), never a member option surfaced as the collection's. auth0, openai
 and stripe are not picks: they need external accounts, so they stay à
 la carte (`wb.sh add auth0`, …) — and neither is guidelines, whose URL
-is the team's to give. Nor is `--build` on exdoc and coveralls: the
+is the team's to give. Nor is `--build` on exdoc and coverage: the
 recipe leaves it off, so an insert never waits on a suite or a
 database.
 

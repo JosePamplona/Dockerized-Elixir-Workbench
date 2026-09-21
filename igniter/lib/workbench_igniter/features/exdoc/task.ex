@@ -27,7 +27,7 @@ defmodule Mix.Tasks.Workbench.Install.Exdoc do
 
   ## Example
 
-      mix workbench.install.exdoc --project-name "Lorem Ipsum" --coveralls
+      mix workbench.install.exdoc --project-name "Lorem Ipsum" --coverage
 
   ## Options
 

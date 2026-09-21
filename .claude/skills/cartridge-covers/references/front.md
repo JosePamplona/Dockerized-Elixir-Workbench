@@ -121,7 +121,7 @@ Five habits, in order of how much they buy you:
   composition wants, all at foreground size; anything that must sit far
   back should be texture rather than a fact.
 * **Fix the figure's scale.** Say how big the body is in the frame, or it
-  will drift: coveralls' droid is a speck at the foot of its gauge while
+  will drift: coverage's droid is a speck at the foot of its gauge while
   clustering's fill half the panel. "Waist-high to the gauge" or
   "occupying the lower third" is enough.
 
@@ -338,7 +338,7 @@ The overlay is a bitmap, so a cover wider than it scales it up;
 
 ```sh
 ./assets/covers/covers.py stamp clustering --corner br
-./assets/covers/covers.py stamp coveralls --face back --corner bl --size 0.12
+./assets/covers/covers.py stamp coverage --face back --corner bl --size 0.12
 ```
 
 It reads `<feature>/art/<face>.jpg` — the raw generated artwork — and
@@ -403,7 +403,7 @@ spending most of itself on a strip that is not part of the picture. On
 `health_endpoint` and `exdebug` the violet begins at `y=83` of 728, which is
 **0.114 of the width** — and that is exactly the `0.11` this section used
 to recommend for top corners without knowing why. The number was never
-about the seal. Measured on those two covers only: `coveralls` and
+about the seal. Measured on those two covers only: `coverage` and
 `exdoc` have no dark strip for the scan to find, so treat 0.114 as their
 figure rather than a property of the format, and measure per cover:
 

@@ -32,11 +32,11 @@ environment:
    format --check-formatted"}` — the library's own first example [2] —
    cannot run.
 2. **The plan had the shelf absorbing this box into credo and
-   coveralls**, an option each. That would leave the formatter, the
+   coverage**, an option each. That would leave the formatter, the
    compiler's warnings and the suite with no owner at all: they come
    with Elixir, no cartridge installs them, and they are the checks a
    pre-commit hook is *for*.
-3. **Two cartridges write one file.** credo's line and coveralls' go in
+3. **Two cartridges write one file.** credo's line and coverage's go in
    the same hook, in sequence, where the first failure cuts the rest.
    Appending is wrong and rewriting is worse — the second cartridge
    erases the first.

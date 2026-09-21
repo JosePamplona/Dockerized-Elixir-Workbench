@@ -36,7 +36,7 @@ is Hammox on the Mox side and `Mimic.copy/2`'s `type_check: true` on
 the other. And the box writes, which is what `mock` never did: the
 `Mimic.copy/1` lines and the `Mox.defmock/2` calls live in
 `test_helper.exs`, a file five cartridges will write into, which needs
-the same owner-block file tool that credo and coveralls need for the
+the same owner-block file tool that credo and coverage need for the
 git hook. The blocker that opened this migration turns out to be
 narrower than the papers said: meck has compiled on OTP 29 since 1.0.0
 (2024-12-13), but `mock` pins `~> 0.9.2` and has not released since
@@ -48,8 +48,8 @@ narrower than the papers said: meck has compiled on OTP 29 since 1.0.0
 
 `mock.ex` adds `{:mock, "~> 0.3", only: :test}` and returns. There is
 no template, no `priv/`, no CHANGELOG, no paper. Three cartridges
-compose it — health_endpoint (`health_endpoint.ex:42,166`), coveralls
-(`coveralls.ex:93,277`), enhancements (`enhancements.ex:53,345`) — and
+compose it — health_endpoint (`health_endpoint.ex:42,166`), coverage
+(`coverage.ex:93,277`), enhancements (`enhancements.ex:53,345`) — and
 chiefs_setup picks it directly (`chiefs_setup.ex:47`). The knowledge
 the box is supposed to hold is not in it; it is in the eight test files
 those cartridges plant, and those files were never the box's to
@@ -70,7 +70,7 @@ is:
 | `auth0/accounts_test.eex` | `HTTPoison.get/2` | third party |
 | `auth0/user_controller_test.eex` | `Auth0Jwks.Token`, `<App>.Accounts.from_token/1` | third party + the project's |
 | `openai/assistant_test.eex` (673 lines), `conversation_controller_test.eex` (732), `assistant_fixtures.eex` | `Finch.request/2` | third party |
-| `coveralls/cover_test.exs` | `File.write!/2` | stdlib |
+| `coverage/cover_test.exs` | `File.write!/2` | stdlib |
 | `enhancements/db_task_test.eex` | `File.cp!/2`, `File.write!/2` | stdlib |
 | `health_endpoint/controller_test.eex` | `Repo.query/1` and `System.cmd/2`, made to raise | stdlib + the project's repo |
 
@@ -219,7 +219,7 @@ Two caveats matter for the census:
 | --- | --- | --- |
 | `Finch`, `HTTPoison` (openai, auth0) | only after a client behaviour exists | directly |
 | `<App>.Accounts.from_token/1` | natural — the project's own code | yes |
-| `File.write!/2`, `File.cp!/2` (coveralls, enhancements) | impossible | yes |
+| `File.write!/2`, `File.cp!/2` (coverage, enhancements) | impossible | yes |
 | `System.cmd/2`, `Repo.query/1` made to raise (health_endpoint) | impossible | yes |
 
 The rows Mox cannot serve are not oversights of the library: they are
@@ -363,13 +363,13 @@ wiring is a file:
   injects the double.
 
 And `test_helper.exs` is **shared**: health_endpoint would declare `Repo`
-and `System`, coveralls `File`, auth0 `HTTPoison` and its `Accounts`,
+and `System`, coverage `File`, auth0 `HTTPoison` and its `Accounts`,
 openai `Finch` — each cartridge owning its block, exactly as `MixFile`,
 `ComposeFile`, `EnvFile` and `IgnoreFile` own theirs, and idempotent
 because `Mimic.copy/2` is [4].
 
 That is the second request of the same shape in two consecutive steps
-of the migration: credo and coveralls both write into one git hook and
+of the migration: credo and coverage both write into one git hook and
 each must own its block. **One owner-block file tool serves both**, and
 building it before either installer is the cheaper order. It exists
 since 2026-09-19 as `WorkbenchIgniter.BlockFile`
@@ -397,13 +397,13 @@ thing, and this is where the composition has to become explicit:
 | Cartridge | Needs | Why |
 | --- | --- | --- |
 | health_endpoint | `mimic` | `Repo.query/1` and `System.cmd/2` raising |
-| coveralls | `mimic` | `File.write!/2`, as a spy |
+| coverage | `mimic` | `File.write!/2`, as a spy |
 | enhancements | `mimic` | `File.cp!/2`, `File.write!/2` |
 | auth0, openai | `mimic` today; `mox` if their client grows a behaviour | §2.4 |
 | stripe (pending) | `mox` | the cartridge owns the client; the reference project's row 15 already says Mox |
 
 This was feared to be blocked and is not. A **composing cartridge**
-already passes argv — `Igniter.compose_task/3` takes it, as coveralls
+already passes argv — `Igniter.compose_task/3` takes it, as coverage
 composes exdoc with `--exdoc` — so health_endpoint composes
 `workbench.install.test_doubles` with `--double mimic` and says what it
 needs. Two composers that disagree do not fight, because `rerun/0` is
@@ -437,14 +437,14 @@ as rest's `--health`, and the two should be judged together.
   the box's line unstatable just as the catalog is about to state it.
   exmachina stays a box of its own; fixtures `phx.gen` already writes,
   and the workbench does not plant over generated code.
-* **coveralls.** Coverage says where the tests are not looking; that is
+* **coverage.** Coverage says where the tests are not looking; that is
   not "do not call the real thing". It also carries HTML report themes,
   `mix cover`, `coveralls.json` and a console door, so it would swallow
   its host rather than be absorbed. It stays in pin, gaining the git
   hook, as the author's selection has it.
 * **A collection.** If the three ever want to be inserted together,
   that is a collection of the Phoenix line — doubles, exmachina,
-  coveralls — and costs no boundary.
+  coverage — and costs no boundary.
 
 ## 4. Evaluation
 
@@ -502,7 +502,7 @@ to measuring when it happens, in the form db_admin's §4 takes:
   platform failing.
 * **Neither precondition is left.** `WorkbenchIgniter.BlockFile`
   landed on 2026-09-19, before this installer and before credo's and
-  coveralls' git hook, which is the other step that owed it; and the
+  coverage's git hook, which is the other step that owed it; and the
   composed switch turned out to be available already (§3.6). What is
   left is the migration itself, cartridge by cartridge.
 * **Mimic's local-call caveat** [5] is invisible today and will not be

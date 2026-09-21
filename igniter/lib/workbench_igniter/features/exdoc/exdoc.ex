@@ -14,7 +14,7 @@ defmodule WorkbenchIgniter.Features.Exdoc do
   embed_templates()
   embed_assets()
 
-  @example "mix workbench.install.exdoc --project-name \"Lorem Ipsum\" --coveralls"
+  @example "mix workbench.install.exdoc --project-name \"Lorem Ipsum\" --coverage"
 
   @impl true
   def task, do: "workbench.install.exdoc"
@@ -35,7 +35,7 @@ defmodule WorkbenchIgniter.Features.Exdoc do
       repo_url: "Repository URL for `source_url`/`authors`.",
       version:
         "The version the pages are stamped with (titles, the 404 page) until `mix version` sets the real one. Default: `0.0.0`.",
-      coveralls:
+      coverage:
         "The coveralls feature is composed too: the coverage report is served beside the docs (`/cover`), with its page and the controller action.",
       auth0:
         "The auth0 feature is composed too: the \"Get access tokens\" page and its scripts, to try the API from the docs.",
@@ -53,14 +53,14 @@ defmodule WorkbenchIgniter.Features.Exdoc do
         project_name: :string,
         version: :string,
         repo_url: :string,
-        coveralls: :boolean,
+        coverage: :boolean,
         auth0: :boolean,
         build: :boolean
       ],
       defaults: [
         version: "0.0.0",
         repo_url: "https://github.com/user/repo",
-        coveralls: false,
+        coverage: false,
         auth0: false,
         build: false
       ]
@@ -76,7 +76,7 @@ defmodule WorkbenchIgniter.Features.Exdoc do
     do: Module.concat(Igniter.Libs.Phoenix.web_module(igniter), ExDocController)
 
   # What the project carries, read off what the install wrote: the name
-  # and source_url of mix.exs, the `cover` action --coveralls adds to
+  # and source_url of mix.exs, the `cover` action --coverage adds to
   # the controller, the token page --auth0 plants. Two options leave no
   # mark the project keeps: --version stamps the `doc/` dummies only
   # (gitignored, overwritten by `mix docs`; the project's version is
@@ -100,7 +100,7 @@ defmodule WorkbenchIgniter.Features.Exdoc do
        project_name: name,
        version: nil,
        repo_url: repo_url,
-       coveralls: cover?,
+       coverage: cover?,
        auth0: token?,
        build: nil
      }, igniter}
@@ -172,7 +172,7 @@ defmodule WorkbenchIgniter.Features.Exdoc do
       web_module: inspect(web_module),
       project_name: opts[:project_name],
       version: opts[:version],
-      coveralls: opts[:coveralls]
+      coverage: opts[:coverage]
     ]
 
     igniter
@@ -213,7 +213,7 @@ defmodule WorkbenchIgniter.Features.Exdoc do
       join(
         [
           ~s|"assets/exdoc/config" => "/"|,
-          only(opts[:coveralls], ~s|"cover" => "/"|),
+          only(opts[:coverage], ~s|"cover" => "/"|),
           ~s|"assets/exdoc/images" => "/assets"|,
           ~s|"assets/exdoc/js" => "/assets"|
         ],
@@ -227,7 +227,7 @@ defmodule WorkbenchIgniter.Features.Exdoc do
           ~s|{"CHANGELOG.md", [title: "Changelog"]}|,
           only(opts[:auth0], ~s|{"assets/exdoc/token.md", [title: "Get access tokens"]}|),
           only(opts[:ecto], ~s|{"assets/exdoc/database.md", [title: "Database"]}|),
-          only(opts[:coveralls], ~s|{"TESTING.md", [title: "Test Suite Report"]}|)
+          only(opts[:coverage], ~s|{"TESTING.md", [title: "Test Suite Report"]}|)
         ],
         ",\n    "
       )
@@ -236,7 +236,7 @@ defmodule WorkbenchIgniter.Features.Exdoc do
       join(
         [
           only(opts[:auth0], ~s|"assets/exdoc/token.md"|),
-          only(opts[:coveralls], ~s|"TESTING.md"|),
+          only(opts[:coverage], ~s|"TESTING.md"|),
           only(opts[:ecto], ~s|"assets/exdoc/database.md"|)
         ],
         ",\n      "
@@ -305,7 +305,7 @@ defmodule WorkbenchIgniter.Features.Exdoc do
 
   defp adjust_router(igniter, router, app_name, web_module, opts) do
     cover_route =
-      if opts[:coveralls],
+      if opts[:coverage],
         do: ~s|    get "/docs/cover", ExDocController, :cover\n|,
         else: ""
 
@@ -373,7 +373,7 @@ defmodule WorkbenchIgniter.Features.Exdoc do
   # project root; a placeholder keeps `mix docs` from failing on a missing
   # extra file, and an existing report is never clobbered.
   defp plant_testing_placeholder(igniter, opts) do
-    if opts[:coveralls] do
+    if opts[:coverage] do
       Igniter.create_new_file(
         igniter,
         "TESTING.md",
@@ -426,7 +426,7 @@ defmodule WorkbenchIgniter.Features.Exdoc do
   end
 
   defp plant_cover_dummy(igniter, dir, opts) do
-    if opts[:coveralls] do
+    if opts[:coverage] do
       Igniter.create_new_file(igniter, "#{dir}/excoveralls.html", "<title>Coverage</title>\n",
         on_exists: :overwrite
       )

@@ -30,7 +30,7 @@ defmodule Mix.Tasks.Workbench.Install.Precommit do
 
   `--check` chooses among the checks that come with Elixir and belong
   to no cartridge. A cartridge with a check of its own brings it with
-  its own option — `credo --githook`, `coveralls --githook` — and owns
+  its own option — `credo --githook`, `coverage --githook` — and owns
   its block here, so ejecting it leaves the rest of the hook standing.
 
   The hook is local to each clone, which is the whole truth about

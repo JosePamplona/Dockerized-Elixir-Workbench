@@ -1,4 +1,4 @@
-# coveralls
+# coverage
 
 You want to know where the tests aren't looking.
 

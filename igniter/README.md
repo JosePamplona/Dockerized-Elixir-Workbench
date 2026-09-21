@@ -32,7 +32,7 @@ the legacy `app.sh` and the earlier package editions lives in the git log.
 │   │       ├── 📦 openai/                           # same (13 templates)
 │   │       ├── 📦 enhancements/                     # same (16 templates), + verbatim assets/
 │   │       │   └── 📁 assets/{db_schema, postman}/  #   DbSchema diagrams and Postman collections
-│   │       ├── 📦 coveralls/                        # same, + embedded verbatim assets/
+│   │       ├── 📦 coverage/                        # same, + embedded verbatim assets/
 │   │       │   └── 📁 assets/{cover.ex.asset, ...}  #   .asset suffix: mix won't compile them
 │   │       ├── 📦 exdoc/                            # same, + text assets/; the binary PNG logo
 │   │       │                                        #   lives in priv/features/exdoc/
@@ -130,7 +130,7 @@ and the role of each file; the general index is
   recompiles). Rendered through the module's local `template/2`, with the
   same semantics as `WorkbenchIgniter.template/2`.
 - **`assets/`** — files the feature copies verbatim (no rendering):
-  `embed_assets()` embeds them as a local `asset/1` (see coveralls).
+  `embed_assets()` embeds them as a local `asset/1` (see coverage).
   Careful: a `*.ex` asset would be compiled by mix along with the package
   — it is stored with an extra `.asset` suffix (`cover.ex.asset`) and the
   macro strips it from the key.

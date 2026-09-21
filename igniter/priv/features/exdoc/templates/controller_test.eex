@@ -29,7 +29,7 @@ describe "[HTML] /dev/docs" do
     # Check response
     assert response =~ "<title><%= @project_name %> v#{@version} — Documentation"
   end
-<%= if @coveralls do %>
+<%= if @coverage do %>
 
   test "return 200 with coverage report HTML page", %{conn: conn} do
     response =

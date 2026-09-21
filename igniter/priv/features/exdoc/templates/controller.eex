@@ -17,7 +17,7 @@ def index(conn, _params) do
   page_path = Path.join(@exdoc_dir, "index.html")
   send_file(conn, 200, page_path)
 end
-<%= if @coveralls do %>
+<%= if @coverage do %>
 
 @doc """
 For a request specifiying coverage, sends the coverage report page.

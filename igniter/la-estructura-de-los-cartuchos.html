@@ -718,7 +718,7 @@ y <b>exclusiones</b> que solo existen en comentarios y en la receta de <code>chi
 <figure class="dg">
 <svg viewBox="0 0 960 420" role="img" aria-labelledby="dep-title dep-desc" xmlns="http://www.w3.org/2000/svg">
   <title id="dep-title">Dependencias declaradas y no declaradas</title>
-  <desc id="dep-desc">openai y stripe requieren auth0, que requiere enhancements, y guidelines requiere exdoc; health_endpoint, coveralls y enhancements componen mock por dentro sin declararlo, así que quitar mock no avisa a nadie.</desc>
+  <desc id="dep-desc">openai y stripe requieren auth0, que requiere enhancements, y guidelines requiere exdoc; health_endpoint, coverage y enhancements componen mock por dentro sin declararlo, así que quitar mock no avisa a nadie.</desc>
   <defs>
     <marker id="a3" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon class="ah" points="0 0, 8 3, 0 6"/></marker>
   </defs>
@@ -740,7 +740,7 @@ y <b>exclusiones</b> que solo existen en comentarios y en la receta de <code>chi
   <rect class="box" x="48" y="72" width="144" height="48" rx="6"/><text class="nm" x="120" y="100" text-anchor="middle">openai · stripe</text>
   <rect class="box" x="48" y="160" width="144" height="48" rx="6"/><text class="nm" x="120" y="188" text-anchor="middle">guidelines</text>
   <rect class="box" x="48" y="248" width="144" height="48" rx="6"/><text class="nm" x="120" y="276" text-anchor="middle">health_endpoint</text>
-  <rect class="box" x="48" y="336" width="144" height="48" rx="6"/><text class="nm" x="120" y="364" text-anchor="middle">coveralls</text>
+  <rect class="box" x="48" y="336" width="144" height="48" rx="6"/><text class="nm" x="120" y="364" text-anchor="middle">coverage</text>
   <rect class="box" x="288" y="72" width="144" height="48" rx="6"/><text class="nm" x="360" y="100" text-anchor="middle">auth0</text>
   <rect class="box" x="288" y="160" width="144" height="48" rx="6"/><text class="nm" x="360" y="188" text-anchor="middle">exdoc</text>
   <rect class="box" x="528" y="72" width="144" height="48" rx="6"/><text class="nm" x="600" y="100" text-anchor="middle">enhancements</text>
@@ -761,8 +761,8 @@ y <b>exclusiones</b> que solo existen en comentarios y en la receta de <code>chi
 <tbody>
 <tr><td class="k">Requiere</td><td><code>requires/0</code></td><td>openai, stripe → auth0 → enhancements · guidelines → exdoc · live → html · adminer, pgadmin, psql_extras → ecto</td><td>Sí: el instalador rechaza, eject ordena.</td></tr>
 <tr><td class="k">Requiere por valor</td><td><code>{valor, doc, requires}</code> en <code>choices/0</code></td><td>ash <code>--auth password</code> → live, mailer</td><td>Sí: rechaza, y el catálogo lo lleva junto al valor.</td></tr>
-<tr><td class="k">Compone</td><td><code>Igniter.compose_task</code> dentro de <code>install/1</code></td><td>health_endpoint, coveralls, enhancements → mock</td><td><b class="bad">No.</b> <code>eject mock</code> no avisa a nadie.</td></tr>
-<tr><td class="k">Flag que nombra</td><td>Una opción booleana con el nombre de otro cartucho</td><td>rest <code>--auth0 --openai --health</code> · exdoc <code>--coveralls --auth0</code> · coveralls <code>--exdoc</code> · enhancements <code>--exdoc --auth0 --openai --stripe --health --interface</code> · auth0, openai, coveralls <code>--interface</code></td><td><b class="bad">No.</b> Nadie comprueba que el nombrado esté dentro, ni el flag se entera si después sale.</td></tr>
+<tr><td class="k">Compone</td><td><code>Igniter.compose_task</code> dentro de <code>install/1</code></td><td>health_endpoint, coverage, enhancements → mock</td><td><b class="bad">No.</b> <code>eject mock</code> no avisa a nadie.</td></tr>
+<tr><td class="k">Flag que nombra</td><td>Una opción booleana con el nombre de otro cartucho</td><td>rest <code>--auth0 --openai --health</code> · exdoc <code>--coverage --auth0</code> · coverage <code>--exdoc</code> · enhancements <code>--exdoc --auth0 --openai --stripe --health --interface</code> · auth0, openai, coverage <code>--interface</code></td><td><b class="bad">No.</b> Nadie comprueba que el nombrado esté dentro, ni el flag se entera si después sale.</td></tr>
 <tr><td class="k">Excluye</td><td>Comentario en graphql y la opción <code>--interface</code> de chiefs_setup</td><td>rest ⟂ graphql</td><td><b class="bad">No.</b> Nada impide insertar los dos a mano.</td></tr>
 <tr><td class="k">Contiene</td><td><code>members/1</code></td><td>chiefs_setup → 14 cartuchos, uno por commit</td><td>Sí: expand inserta los que faltan.</td></tr>
 </tbody></table></div>
@@ -770,7 +770,7 @@ y <b>exclusiones</b> que solo existen en comentarios y en la receta de <code>chi
 <!-- ======================================================================= -->
 <h2 id="matriz">La matriz</h2>
 <p>Los 37 cartuchos del catálogo, en el orden de la estantería, con lo que cada uno implementa. En rojo, los que aceptan opciones
-pero no dicen cuáles lleva el proyecto: <code>rest</code>, <code>coveralls</code>, <code>exdoc</code>, <code>guidelines</code>, <code>enhancements</code>, <code>auth0</code>, <code>openai</code>, <code>clustering</code>. Calculada del código al generar esta página.</p>
+pero no dicen cuáles lleva el proyecto: <code>rest</code>, <code>coverage</code>, <code>exdoc</code>, <code>guidelines</code>, <code>enhancements</code>, <code>auth0</code>, <code>openai</code>, <code>clustering</code>. Calculada del código al generar esta página.</p>
 <div class="tbl"><table class="t mx">
 <thead><tr><th>Cartucho</th><th>Opciones</th><th>state</th><th>installed?</th><th>requires</th><th>compone</th><th>rerun</th><th>console</th><th>services</th><th>tipo</th></tr></thead>
 <tbody>
@@ -785,8 +785,8 @@ pero no dicen cuáles lleva el proyecto: <code>rest</code>, <code>coveralls</cod
 <tr class=""><td class="k">exdebug</td><td class="argv">—</td><td class="c">·</td><td>dep</td><td>·</td><td>·</td><td class="c">·</td><td class="c">·</td><td class="c">·</td><td class="c">·</td></tr>
 <tr class="gap"><td class="k">rest</td><td class="argv">--project-name --auth0 --openai --health</td><td class="c"><b class=bad>✗</b></td><td>módulo</td><td>·</td><td>·</td><td class="c">·</td><td class="c">✓</td><td class="c">·</td><td class="c">·</td></tr>
 <tr class=""><td class="k">graphql</td><td class="argv">—</td><td class="c">·</td><td>módulo</td><td>·</td><td>·</td><td class="c">·</td><td class="c">✓</td><td class="c">·</td><td class="c">·</td></tr>
-<tr class="gap"><td class="k">coveralls</td><td class="argv">--minimum-coverage --interface --exdoc --theme --githook --build</td><td class="c">✓</td><td>fichero</td><td>·</td><td>test_doubles, precommit</td><td class="c">·</td><td class="c">✓</td><td class="c">·</td><td class="c">·</td></tr>
-<tr class="gap"><td class="k">exdoc</td><td class="argv">--project-name --version --repo-url --coveralls --auth0 --build</td><td class="c"><b class=bad>✗</b></td><td>módulo</td><td>·</td><td>·</td><td class="c">·</td><td class="c">✓</td><td class="c">·</td><td class="c">·</td></tr>
+<tr class="gap"><td class="k">coverage</td><td class="argv">--minimum-coverage --interface --exdoc --theme --githook --build</td><td class="c">✓</td><td>fichero</td><td>·</td><td>test_doubles, precommit</td><td class="c">·</td><td class="c">✓</td><td class="c">·</td><td class="c">·</td></tr>
+<tr class="gap"><td class="k">exdoc</td><td class="argv">--project-name --version --repo-url --coverage --auth0 --build</td><td class="c"><b class=bad>✗</b></td><td>módulo</td><td>·</td><td>·</td><td class="c">·</td><td class="c">✓</td><td class="c">·</td><td class="c">·</td></tr>
 <tr class="gap"><td class="k">guidelines</td><td class="argv">--url</td><td class="c"><b class=bad>✗</b></td><td>fichero</td><td>exdoc</td><td>·</td><td class="c">·</td><td class="c">·</td><td class="c">·</td><td class="c">·</td></tr>
 <tr class="gap"><td class="k">enhancements</td><td class="argv">--project-name --id-type --timestamps --interface --exdoc --auth0 --openai --stripe --health</td><td class="c"><b class=bad>✗</b></td><td>fichero</td><td>·</td><td>mock</td><td class="c">·</td><td class="c">·</td><td class="c">·</td><td class="c">·</td></tr>
 <tr class="gap"><td class="k">auth0</td><td class="argv">--project-name --interface</td><td class="c"><b class=bad>✗</b></td><td>módulo</td><td>enhancements</td><td>·</td><td class="c">·</td><td class="c">·</td><td class="c">·</td><td class="c">·</td></tr>
@@ -828,7 +828,7 @@ pero no dicen cuáles lleva el proyecto: <code>rest</code>, <code>coveralls</cod
 <li><b>Hay dependencias que no se declaran.</b> Tres cartuchos componen <code>mock</code> por dentro; como <code>dependents</code> solo lee
   <code>requires</code>, <code>wb.sh eject mock</code> revierte sin avisar y deja sus pruebas sin la librería.
   <span class="ev">workbench.dependents.ex: «every cartridge … that declares NAME in its requires»</span></li>
-<li><b>Los cartuchos se nombran entre sí por flags.</b> <code>rest --auth0</code>, <code>exdoc --coveralls</code>,
+<li><b>Los cartuchos se nombran entre sí por flags.</b> <code>rest --auth0</code>, <code>exdoc --coverage</code>,
   <code>enhancements --stripe</code>… La regla de la frontera de las colecciones permite nombrar a un compañero en una <i>receta</i>;
   fuera de ella, un flag así es un acoplamiento que nadie comprueba en ninguno de los dos sentidos.</li>
 <li><b>Una exclusión vive en comentarios.</b> rest y graphql son excluyentes según el moduledoc de graphql y la opción
@@ -865,8 +865,8 @@ catálogo tiene ya una prueba que recorre los 37 cartuchos comprobándolo. Es ex
   <h3>Que ningún cartucho calle, y que ninguna dependencia se esconda</h3>
   <ul>
     <li><b><code>state/1</code> obligatorio para todo cartucho con opciones</b>, con el contrato reescrito: deja de ser «para <code>:adds</code>» y pasa a ser
-        «lo que el proyecto lleva de tus opciones». Faltan 8: <code>rest</code>, <code>coveralls</code>, <code>exdoc</code>, <code>guidelines</code>, <code>enhancements</code>, <code>auth0</code>, <code>openai</code>, <code>clustering</code>.</li>
-    <li><b>Las composiciones, declaradas</b>: <code>health_endpoint</code>, <code>coveralls</code> y <code>enhancements</code> añaden <code>mock</code> a <code>requires</code>
+        «lo que el proyecto lleva de tus opciones». Faltan 8: <code>rest</code>, <code>coverage</code>, <code>exdoc</code>, <code>guidelines</code>, <code>enhancements</code>, <code>auth0</code>, <code>openai</code>, <code>clustering</code>.</li>
+    <li><b>Las composiciones, declaradas</b>: <code>health_endpoint</code>, <code>coverage</code> y <code>enhancements</code> añaden <code>mock</code> a <code>requires</code>
         (o a una lista nueva <code>composes</code> que <code>dependents</code> también lea).</li>
     <li><b>La suite de conformidad</b>, junto a la prueba de <code>installed?</code> que ya existe: para cada cartucho con opciones, instalar con valores no por defecto
         y comprobar que <code>state/1</code> los devuelve con las mismas claves que el esquema; para cada <code>compose_task</code>, que el compuesto esté declarado.</li>

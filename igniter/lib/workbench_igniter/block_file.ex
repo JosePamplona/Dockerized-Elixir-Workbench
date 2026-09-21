@@ -16,9 +16,9 @@ defmodule WorkbenchIgniter.BlockFile do
 
   So a cartridge owns a **block**, delimited and named:
 
-      # >>> coveralls
+      # >>> coverage
       Mimic.copy(File)
-      # <<< coveralls
+      # <<< coverage
 
   and this module puts it, replaces it, reads it and takes it away
   without touching anybody else's. Four properties come out of that,

@@ -18,12 +18,12 @@ into one patch set.
 **The design rule for a collection's options**: an option must be a
 decision the collection itself owns — explainable on the box in one
 line without naming a member's switch (chiefs_setup's `--interface`
-qualifies; a `--coverage-theme` would not, it is coveralls' `--theme`).
+qualifies; a `--coverage-theme` would not, it is coverage's `--theme`).
 Re-exposing a member's option is how the one-type-of-cartridge
 simplification would rot back into a second type: whoever needs the
 member's option inserts the member directly. The argv a recipe hands a
 member only names the *fellow members* that ride along (exdoc's
-`--coveralls`).
+`--coverage`).
 
 [chiefs_setup](chiefs_setup/) is the collection: the picks of the
 retired opinionated line — the house's settings ([ansi](ansi/) →
@@ -32,7 +32,7 @@ retired opinionated line — the house's settings ([ansi](ansi/) →
 group ([dashboard_extras](dashboard_extras/) → [credo](credo/) →
 [mock](mock/) → [exdebug](exdebug/)),
 [rest](rest/) | [graphql](graphql/) (its `--interface` choice),
-[coveralls](coveralls/), [exdoc](exdoc/), [enhancements](enhancements/)
+[coverage](coverage/), [exdoc](exdoc/), [enhancements](enhancements/)
 and [health_endpoint](health_endpoint/) — in the order their marks build on
 each other. [auth0](auth0/), [openai](openai/) and [stripe](stripe/)
 (*pending*: manifest only) stay à la carte: they need external
@@ -112,8 +112,8 @@ Dep-only cartridges have no `priv/features/<feature>/` directory:
 | Cartridge | Installs | Picked by |
 | --- | --- | --- |
 | [credo](credo/) | `{:credo, "~> 1.7", only: [:dev, :test], runtime: false}`, and with `--githook` its line in the pre-commit hook (composes [precommit](precommit/)) | chiefs_setup |
-| [mock](mock/) | `{:mock, "~> 0.3", only: :test}` | chiefs_setup (also composed by health_endpoint and enhancements; coveralls moved to test_doubles on 2026-09-20, and the last of the three takes it off the shelf) |
-| [test_doubles](test_doubles/) | `{:mimic, "~> 2.0", only: :test}`, `{:mox, "~> 1.2", only: :test}` or `{:hammox, "~> 1.0", only: :test}` with `--type-check`, by `--double` | chiefs_setup (also composed by coveralls, with `--double mimic`) |
+| [mock](mock/) | `{:mock, "~> 0.3", only: :test}` | chiefs_setup (also composed by health_endpoint and enhancements; coverage moved to test_doubles on 2026-09-20, and the last of the three takes it off the shelf) |
+| [test_doubles](test_doubles/) | `{:mimic, "~> 2.0", only: :test}`, `{:mox, "~> 1.2", only: :test}` or `{:hammox, "~> 1.0", only: :test}` with `--type-check`, by `--double` | chiefs_setup (also composed by coverage, with `--double mimic`) |
 | [exdebug](exdebug/) | `{:ex_debug, "~> 1.0"}` | chiefs_setup |
 | [dashboard_extras](dashboard_extras/) | `:os_mon` in `extra_applications`, and the extras of the project's database: `ecto_psql_extras`, `ecto_mysql_extras` or `ecto_sqlite3_extras` (none on SQL Server or without a database) | chiefs_setup |
 | [test_data](test_data/) | `{:faker, "~> 0.19", only: :test}` and, by the line: on Ecto `{:ex_machina, "~> 2.8", only: :test}`, `test/support/factory.ex` and the test that inserts every factory; on Ash `test/support/generator.ex` (`Ash.Generator`) | no one (`wb.sh add test_data`) |
@@ -131,7 +131,7 @@ checks. Its own options are the ones that belong to no cartridge (`mix
 format`, `mix compile --warnings-as-errors`, `mix test`, `mix
 deps.unlock --check-unused`), and a cartridge with a check of its own
 brings it with an option of its own — [credo](credo/) and
-[coveralls](coveralls/) `--githook` — composing this installer and
+[coverage](coverage/) `--githook` — composing this installer and
 taking **a block of the hook** through `Precommit.check/4`
 (`WorkbenchIgniter.BlockFile`, as test_doubles does with the test
 helper). Each block is its cartridge's to write and to take away, so
@@ -240,7 +240,7 @@ opens on the app's port (rest `/dev/swagger`, mailer
 `/dev/mailbox`, ash `/admin` when `ash_admin` is in, dashboard_extras
 the two dashboard pages it lights, health_probe
 `{path}/live` and `{path}/ready`), the pages its tool writes on disk
-for the reader (exdoc `doc/`, coveralls `cover/`: `{:output, dir,
+for the reader (exdoc `doc/`, coverage `cover/`: `{:output, dir,
 index}`, served by the console off the workspace, the app up or not)
 and the *tabs* it turns on (clustering → Cluster). The catalog carries
 it as `console`; the console shows the

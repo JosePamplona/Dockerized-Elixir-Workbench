@@ -656,7 +656,7 @@ its own merits.
 
 ExDoc's site and ExCoveralls' HTML report were served by the project:
 exdoc planted a pipeline, a `Plug.Static`, an `ExDocController` and the
-`/dev/docs` routes in the project's router, and `coveralls --exdoc` a
+`/dev/docs` routes in the project's router, and `coverage --exdoc` a
 `/docs/cover` action on that controller — the workbench's reading
 carried by the project, for the workbench's reader, and only in dev,
 only with the app up. It is the contract [no contract back] refuses.
@@ -709,11 +709,11 @@ declare, and nothing else of the workspace — `.env` is in it.
   another `output_dir`. The door says the tool's default, and a project
   that moved it reads *nothing built*. The fix is the cartridge's
   `state/1` reporting where the output lands — exdoc reads `mix.exs`,
-  coveralls reads its json — as a fact and not an option, which the
+  coverage reads its json — as a fact and not an option, which the
   Record's parameters column has to learn to tell apart.
 * **Building it from the door.** An unlit door says *nothing built*; the
   command that builds it is the cartridge's to name, a job to run.
-* **The boxes.** exdoc and coveralls still plant the router, the
+* **The boxes.** exdoc and coverage still plant the router, the
   controller and `/dev/docs/cover`; their doors changed, their
   installers did not. Their next editions drop them, and exdoc's NEED
   (*served by the project itself*) says the new thing. The auth0 token

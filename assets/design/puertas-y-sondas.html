@@ -346,7 +346,7 @@ dice una cosa distinta en cada sitio. Quien aprenda a leer una de las dos aprend
   <tr><td>dashboard</td><td>dashboard</td><td class="n">/dev/dashboard</td><td class="n">puerta</td></tr>
   <tr><td>rest</td><td>swagger &middot; openapi</td><td class="n">/dev/swagger &middot; /dev/openapi</td><td class="n">2 puertas</td></tr>
   <tr><td>graphql</td><td>graphiql</td><td class="n">/graphiql</td><td class="n">puerta</td></tr>
-  <tr><td>coveralls</td><td>coverage</td><td class="n">/dev/docs/cover</td><td class="n">puerta, si exdoc está</td></tr>
+  <tr><td>coverage</td><td>coverage</td><td class="n">/dev/docs/cover</td><td class="n">puerta, si exdoc está</td></tr>
   <tr><td>ash</td><td>admin</td><td class="n">/admin</td><td class="n">puerta, con ash_admin</td></tr>
   <tr><td>health_endpoint</td><td>health</td><td class="n">{endpoint}</td><td class="n">sonda</td></tr>
   <tr><td>health_probe</td><td>live &middot; ready</td><td class="n">{path}/live &middot; {path}/ready</td><td class="n">2 sondas</td></tr>
@@ -459,7 +459,7 @@ const ROWS = [
       { l: "graphiql", p: "/graphiql", who: "graphql" } ] },
   { where: "Raíl · Puertas", sub: "la app abajo", kind: "door", state: "shut", items: [
       { l: "docs", p: "/dev/docs", who: "exdoc" }, { l: "mailbox", p: "/dev/mailbox", who: "mailer" },
-      { l: "coverage", p: "/dev/docs/cover", who: "coveralls" } ] },
+      { l: "coverage", p: "/dev/docs/cover", who: "coverage" } ] },
   { where: "Raíl · Sondas", sub: "todavía no existen", kind: "probe", items: [
       { l: "live", p: "/health/live", who: "health_probe", read: ["200", "good"] },
       { l: "ready", p: "/health/ready", who: "health_probe", read: ["200", "good"] },

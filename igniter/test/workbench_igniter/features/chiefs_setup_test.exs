@@ -22,8 +22,8 @@ defmodule WorkbenchIgniter.Features.ChiefsSetupTest do
                {"test_doubles", []},
                {"exdebug", []},
                {"rest", ["--health"]},
-               {"coveralls", ["--exdoc"]},
-               {"exdoc", ["--coveralls"]},
+               {"coverage", ["--exdoc"]},
+               {"exdoc", ["--coverage"]},
                {"enhancements", ["--interface", "rest", "--exdoc", "--health"]},
                {"health_endpoint", []}
              ]

@@ -1037,6 +1037,20 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **coveralls is `coverage`: the box named for the need, not the
+  dependency.** The old name was ExCoveralls', and it also read like
+  the coveralls.io service, which the box never talks to. With the
+  need's name, a later move to another tool (Elixir's own
+  `mix test --cover`, say) is a new version of the same box, not a
+  box with a new name. The task is `workbench.install.coverage`, and
+  the blocks the box owns in the test helper and the pre-commit hook
+  are `# >>> coverage`. exdoc's `--coveralls` is `--coverage`, and
+  chiefs_setup's recipe follows. What the box installs is unchanged:
+  `coveralls.json` (still the mark), `mix coveralls` and ExCoveralls
+  are the library's names and stay. The cartridge's older CHANGELOG
+  entries, and the cover records where "coveralls" was the name at the
+  time, keep it.
+
 - **The two health boxes are `health_endpoint` and `health_probe`.**
   `healthcheck` and `healthcheck2` were one need read twice, and their
   names said only which one got the word first: the `2` made the

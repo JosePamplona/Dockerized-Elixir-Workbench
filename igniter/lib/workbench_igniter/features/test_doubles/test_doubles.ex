@@ -27,7 +27,7 @@ defmodule WorkbenchIgniter.Features.TestDoubles do
   are what a cartridge whose generated tests need a double calls, each
   owning its block of `test/test_helper.exs`
   (`WorkbenchIgniter.BlockFile`), so health_endpoint's copied modules and
-  coveralls' can stand in one file and be eject-ed apart. It takes over
+  coverage's can stand in one file and be eject-ed apart. It takes over
   from `mock`, which is a dependency and nothing else, whose library
   has not released since 2024-12-16 and whose pin (`meck ~> 0.9.2`)
   locks out the meck that compiles on OTP 29.

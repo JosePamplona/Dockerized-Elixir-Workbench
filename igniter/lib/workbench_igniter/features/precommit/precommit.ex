@@ -24,8 +24,8 @@ defmodule WorkbenchIgniter.Features.Precommit do
 
   A cartridge that brings a check of its own does not write here by
   hand: it composes this installer and calls `check/4`, the way
-  coveralls composes test_doubles for the double its tests need. credo
-  and coveralls do (`--githook`), each owning its block, so ejecting
+  coverage composes test_doubles for the double its tests need. credo
+  and coverage do (`--githook`), each owning its block, so ejecting
   either leaves the other's checks standing.
   """
   use WorkbenchIgniter.Feature

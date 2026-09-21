@@ -23,7 +23,7 @@ solved:
 * **More than one cartridge wants a line in the same hook.** The checks
   live in `.githooks/pre-commit`, a plain shell script where each
   cartridge owns a delimited block (`WorkbenchIgniter.BlockFile`).
-  credo's block and coveralls' stand in one file, in order, and
+  credo's block and coverage's stand in one file, in order, and
   ejecting either takes its own lines and leaves the rest.
 
 What this box installs itself are the checks that belong to **no**
@@ -57,7 +57,7 @@ git_hooks.install` does it on demand.
 
 A second run adds the checks it is given and keeps the ones already
 there. A cartridge's own check is that cartridge's option — `credo
---githook`, `coveralls --githook` — never one of these.
+--githook`, `coverage --githook` — never one of these.
 
 ## The file, after `credo --githook`
 
@@ -78,7 +78,7 @@ mix credo
 ```
 
 Credo's block stands above the divider because Credo reads the source
-and never compiles the project; coveralls' `mix coveralls`, which runs
+and never compiles the project; coverage's `mix coveralls`, which runs
 the suite, is born below it.
 
 It is the project's file: add a line of your own outside the blocks,

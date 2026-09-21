@@ -1,4 +1,4 @@
-# Changelog — coveralls
+# Changelog — coverage
 
 Versioned on its own, independently of the workbench release that ships
 it. Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
@@ -9,6 +9,20 @@ minor, a change that breaks a project already carrying them is a major.
 Backfilled at the version below, its first: the cartridge shipped
 before a changelog was part of the anatomy, and gets one on its next
 change, as the features index says.
+
+## v0.4.0 - (2026-09-21)
+
+### Changed
+
+- **The box is named for the need: `coverage`, not `coveralls`.** The
+  old name was the dependency's, and read like the coveralls.io service
+  the box never talks to. The task is `workbench.install.coverage`, the
+  blocks it owns in `test/test_helper.exs` and in the pre-commit hook
+  are `# >>> coverage`, and exdoc's flag is `--coverage`. What it
+  installs is unchanged: ExCoveralls, `coveralls.json` (still the mark)
+  and `mix coveralls` are the library's names and stay. A project that
+  took the box under its old name reads as carrying it; its blocks keep
+  the owner `coveralls`, so a later `--githook` would add a second one.
 
 ## v0.3.0 - (2026-09-20)
 

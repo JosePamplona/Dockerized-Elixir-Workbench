@@ -60,7 +60,7 @@ defmodule WorkbenchIgniter.Features.ProjectShapeTest do
     for feature <- [
           WorkbenchIgniter.Features.Enhancements,
           WorkbenchIgniter.Features.Exdoc,
-          WorkbenchIgniter.Features.Coveralls
+          WorkbenchIgniter.Features.Coverage
         ] do
       keys = Keyword.keys(feature.info([], nil).schema)
 

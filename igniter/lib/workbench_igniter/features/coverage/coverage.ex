@@ -1,12 +1,12 @@
-defmodule WorkbenchIgniter.Features.Coveralls do
+defmodule WorkbenchIgniter.Features.Coverage do
   @moduledoc """
   ExCoveralls test coverage with the workbench HTML report and `mix cover`.
 
   Full feature cartridge: manifest and install logic live in this
-  directory, and the `Mix.Tasks.Workbench.Install.Coveralls` shell in
+  directory, and the `Mix.Tasks.Workbench.Install.Coverage` shell in
   `task.ex` delegates here. The `coveralls.json` template and the verbatim
   assets it plants (report themes, `mix cover` task) live under
-  `priv/features/coveralls/`.
+  `priv/features/coverage/`.
   """
   use WorkbenchIgniter.Feature
 
@@ -16,7 +16,7 @@ defmodule WorkbenchIgniter.Features.Coveralls do
   embed_templates()
   embed_assets()
 
-  @example "mix workbench.install.coveralls --exdoc"
+  @example "mix workbench.install.coverage --exdoc"
 
   @preferred_envs [
     :cover,
@@ -37,7 +37,7 @@ defmodule WorkbenchIgniter.Features.Coveralls do
   @template_path "assets/cover/template"
 
   # Report themes: one directory per theme under the cartridge's
-  # `priv/features/coveralls/assets/template/`, each holding the three
+  # `priv/features/coverage/assets/template/`, each holding the three
   # files excoveralls renders. Adding a theme is adding a directory; the
   # option validates against this list.
   @themes_dir WorkbenchIgniter.Feature.priv_dir(__ENV__.file, "assets/template")
@@ -49,12 +49,12 @@ defmodule WorkbenchIgniter.Features.Coveralls do
   @spec check_command() :: String.t()
   def check_command, do: @check
 
-  @doc "Available HTML report themes (`priv/features/coveralls/assets/template/<theme>/`)."
+  @doc "Available HTML report themes (`priv/features/coverage/assets/template/<theme>/`)."
   @spec themes() :: [String.t()]
   def themes, do: @themes
 
   @impl true
-  def task, do: "workbench.install.coveralls"
+  def task, do: "workbench.install.coverage"
 
   @impl true
   def console, do: [doors: [{"coverage", {:output, "cover", "excoveralls.html"}}]]
@@ -188,12 +188,12 @@ defmodule WorkbenchIgniter.Features.Coveralls do
     cond do
       # Already inserted: the json, the theme and the report are fixed at
       # the insert, but the hook block is a piece the installer adds when
-      # it is missing, so `--githook` on a project that took coveralls
+      # it is missing, so `--githook` on a project that took coverage
       # without it is honoured instead of being silently skipped.
       installed? ->
         igniter
         |> Igniter.add_notice(
-          "coveralls.json already exists: coveralls is already installed, skipping" <>
+          "coveralls.json already exists: coverage is already installed, skipping" <>
             if(opts[:githook], do: " everything but the pre-commit hook.", else: ".")
         )
         |> githook(opts[:githook])
@@ -329,7 +329,7 @@ defmodule WorkbenchIgniter.Features.Coveralls do
       # behaviour for — and the copy is registered in this cartridge's
       # own block of the test helper.
       |> Igniter.compose_task("workbench.install.test_doubles", ["--double", "mimic"])
-      |> TestDoubles.copy("coveralls", ["File"],
+      |> TestDoubles.copy(name(), ["File"],
         note: "the report's writer, which its task tests read instead of writing"
       )
       |> Igniter.create_new_file(

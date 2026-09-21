@@ -1,4 +1,4 @@
-# coveralls — Design
+# coverage — Design
 
 Revision: cartridge v0.3.0 (2026-09-20)
 
@@ -189,7 +189,7 @@ no-op once `coveralls.json` exists — the json, the themes and the report
 are the project's to edit afterwards, and re-running must not undo an
 edit. But the hook block is not like them: it is a piece the installer
 adds when it is missing, so `--githook` on a project that already took
-coveralls writes the block and the notice says which of the two
+coverage writes the block and the notice says which of the two
 happened. The cartridge is `rerun: :adds`. The rejected alternative is
 what the box did until this revision: skip the whole install, notice
 `skipping`, and leave a developer who asked for a hook with no hook and

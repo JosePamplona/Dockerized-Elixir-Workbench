@@ -37,7 +37,7 @@ defmodule WorkbenchIgniter.Features do
     # API interface (mutually exclusive: chiefs_setup inserts one).
     Features.Rest,
     Features.Graphql,
-    Features.Coveralls,
+    Features.Coverage,
     Features.Exdoc,
     Features.Guidelines,
     Features.Enhancements,

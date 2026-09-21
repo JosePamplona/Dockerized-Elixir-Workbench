@@ -11,6 +11,13 @@ Backfilled at the version below, its first: the cartridge shipped
 before a changelog was part of the anatomy, and gets one on its next
 change, as the features index says.
 
+## v0.2.0 - (2026-09-21)
+
+### Updated
+
+- **`--coveralls` is `--coverage`**, after the box it names, which
+  took the need's name. The page and the report it joins are the same.
+
 ## v0.1.0 - (2026-08-30)
 
 ### Added

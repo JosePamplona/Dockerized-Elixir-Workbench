@@ -41,7 +41,7 @@ is then a layout decision, measured against the copy's budget instead
 of the plate. The plate prompt's layout clause loses its frames
 paragraph; everything else in it stays.
 
-One back has been made this way — coveralls — and the rules below are
+One back has been made this way — coverage — and the rules below are
 what it left. Where a guess survived contact it says so; where it did
 not, it is gone.
 
@@ -94,7 +94,7 @@ writable.
 Match the shot's aspect to its frame. `covers.py back` scales the shot
 to cover the frame and crops from the top, so a mismatch is not letterboxed — it silently
 loses the sides of the picture. The plate carries no furniture, like
-the front: it is generated clean, and the barcode the coveralls plate
+the front: it is generated clean, and the barcode the coverage plate
 brought predates that.
 
 Three things in that template are not obvious, and each one cost a
@@ -113,7 +113,7 @@ position matters is composited, not asked for.
 
 **The frames set the copy's budget.** A back has room for the frames and
 then for headline, blurb, features, flash and legal strip, and the
-second half is what makes it a back. `coveralls` left the copy 0.84 of
+second half is what makes it a back. `coverage` left the copy 0.84 of
 the width in height; plates whose frames ran to half the face left
 0.42–0.56, and no `layout.env` recovers that — the blurb loses a line,
 then a feature bullet goes, then the flash lands in the legal strip.
@@ -150,7 +150,7 @@ its foot is where a box says who published it — which is what the name
 is. With it typeset, the plate carries no lettering, and the one
 prohibition on this face is the whole of it.
 
-The backs made while the plate still carried the name — coveralls,
+The backs made while the plate still carried the name — coverage,
 exdebug, exdoc, clustering — keep their generated name until they are
 remade, and their `layout.env` has no `NAME_Y`.
 
@@ -233,7 +233,7 @@ can be re-set without rewriting it.
 ### The screenshots
 
 **Real ones**, of what the cartridge actually installs, which is the
-truth principle applied to the back: coveralls shows its HTML report,
+truth principle applied to the back: coverage shows its HTML report,
 the `TESTING.md` page in the docs and the `mix cover` run in a terminal.
 "Actual screens shown" is the period phrase for it, and here it is not
 a lie.
@@ -246,7 +246,7 @@ collection is quoting — a portrait frame is less period-accurate, not
 more.
 
 This is the correction of a rule that read the evidence backwards. What
-`coveralls` showed was that a 1280×800 window squeezed into a 5:7 frame
+`coverage` showed was that a 1280×800 window squeezed into a 5:7 frame
 is unreadable, and two conclusions fit: change the shot, or change the
 frame. The guide took the first — *"do not fight it in the prompt,
 retake the screenshots at the frames' ratio"* — on the strength of the
@@ -360,7 +360,7 @@ band and device fall — everything else is this order.
 `covers.py back` does all of this:
 
 ```sh
-./assets/covers/covers.py back coveralls
+./assets/covers/covers.py back coverage
 ```
 
 It reads `<feature>/art/back.jpg`, and from `<feature>/back/` the copy,
@@ -368,7 +368,7 @@ the shots and `layout.env` — the frame rectangles and text positions
 **measured off that plate**, as fractions of its width, since no two
 plates put the frames in the same place — composes, and seals the
 result into `<feature>/sealed/back.jpg`. It was written after the
-coveralls back was composed by hand, from that composition, and
+coverage back was composed by hand, from that composition, and
 reproduced it pixel for pixel; the port to PIL was checked the same way
 against exdebug's archived back. Making a back is therefore: generate
 the plate, measure it into `layout.env`, write `copy.md`, take the

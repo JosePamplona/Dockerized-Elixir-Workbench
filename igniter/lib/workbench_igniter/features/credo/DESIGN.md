@@ -55,11 +55,11 @@ block of its own (`WorkbenchIgniter.BlockFile`). Three properties come
 from that, and they are why the option lives here rather than in a box
 that would know about every tool: the block is this cartridge's to
 write and to take away, `state/1` reads it back without parsing
-anybody else's lines, and coveralls' block can stand in the same file
+anybody else's lines, and coverage's block can stand in the same file
 untouched.
 
 The rejected alternative is the one the release plan carried: absorb
-the hook box into credo and coveralls, an option each and no box. It
+the hook box into credo and coverage, an option each and no box. It
 leaves the formatter, the compiler's warnings and the suite with no
 owner — they come with Elixir, and no cartridge installs them.
 
@@ -73,7 +73,7 @@ line is in a file the project owns.
 **Above the divider.** `Precommit.check/4` takes a `:stage`, and this
 block is born `:fast`: Credo reads the source and never compiles the
 project, so it belongs with the checks that refuse a commit in a
-second, ahead of `mix compile`, the suite and coveralls' block. Born,
+second, ahead of `mix compile`, the suite and coverage's block. Born,
 not fixed — the stage only decides where a new block appears, and a
 project that moves it has the block replaced where it stands. The
 alternative is the default, `:slow`, which is where every block lands

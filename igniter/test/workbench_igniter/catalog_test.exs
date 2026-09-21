@@ -24,12 +24,12 @@ defmodule WorkbenchIgniter.CatalogTest do
   # collection first, then the cartridges, then the base ones.
   @cartridges ~w(chiefs_setup ansi version_manager toolchain changelog
                  dashboard_extras credo mock test_doubles exdebug rest graphql
-                 coveralls exdoc guidelines enhancements auth0 openai health_endpoint stripe
+                 coverage exdoc guidelines enhancements auth0 openai health_endpoint stripe
                  precommit test_data clustering health_probe ash specdd db_admin k6 monitoring
                  mailer gettext ecto esbuild tailwind html dashboard)
   # The chiefs_setup recipe with its default choices, in insertion order.
   @picks ~w(ansi version_manager toolchain changelog dashboard_extras db_admin credo mock test_doubles
-            exdebug rest coveralls exdoc enhancements health_endpoint)
+            exdebug rest coverage exdoc enhancements health_endpoint)
   # Base cartridges a default phx.new project already carries.
   @in_by_default ~w(mailer gettext ecto esbuild tailwind html dashboard)
 
@@ -144,7 +144,7 @@ defmodule WorkbenchIgniter.CatalogTest do
 
       assert %{choices: nil, multiple: false} = by.(:example)
 
-      theme = Enum.find(Features.entry(Features.Coveralls).options, &(&1.name == :theme))
+      theme = Enum.find(Features.entry(Features.Coverage).options, &(&1.name == :theme))
       assert %{open: false} = theme
 
       assert [%{value: "exdoc-ish", doc: "mimics" <> _}, %{value: "custom", doc: _}] =
@@ -169,7 +169,7 @@ defmodule WorkbenchIgniter.CatalogTest do
 
       # And in the task's own docs, interpolations resolved.
       {:docs_v1, _, _, _, %{"en" => doc}, _, _} =
-        Code.fetch_docs(Mix.Tasks.Workbench.Install.Coveralls)
+        Code.fetch_docs(Mix.Tasks.Workbench.Install.Coverage)
 
       assert doc =~ "* `--theme` - HTML report theme, one of `custom`, `exdoc-ish`:"
 
@@ -319,7 +319,7 @@ defmodule WorkbenchIgniter.CatalogTest do
         others = (installed -- [@feature.name()]) -- @in_by_default
 
         # Nothing lights up that the manifest does not account for;
-        # what it does account for may stay out (coveralls composes
+        # what it does account for may stay out (coverage composes
         # mock with --exdoc alone).
         assert others -- others_installed(@feature.name()) == [],
                "#{@feature.name()} inserted #{inspect(others)}, more than it declares"
@@ -347,7 +347,7 @@ defmodule WorkbenchIgniter.CatalogTest do
     # What may light up beside the cartridge, in catalog order, and all
     # of it off the manifest: what it requires (composed above as
     # prerequisites), what its installer composes (mock rides along
-    # with health_endpoint, coveralls and enhancements), and what those
+    # with health_endpoint, coverage and enhancements), and what those
     # stand on in turn. A cartridge that inserts more than it declares
     # fails above. The collection is the exception: every member of its
     # recipe, which the status lists in catalog order, not the recipe's.
@@ -392,7 +392,7 @@ defmodule WorkbenchIgniter.CatalogTest do
         {~w(--project-name Probe --auth0 --openai --health),
          %{project_name: "Probe", auth0: true, openai: true, health: true}}
       ],
-      "coveralls" => [
+      "coverage" => [
         # --build runs the suite once; cover/ is gitignored.
         {~w(--minimum-coverage 90 --interface graphql --exdoc --theme custom --githook --build),
          %{
@@ -407,12 +407,12 @@ defmodule WorkbenchIgniter.CatalogTest do
       "exdoc" => [
         # --version stamps the gitignored doc/ dummies only; --build runs mix docs once.
         {~w(--project-name Probe --version 9.9.9 --repo-url https://example.com/acme/probe
-            --coveralls --auth0 --build),
+            --coverage --auth0 --build),
          %{
            project_name: "Probe",
            version: nil,
            repo_url: "https://example.com/acme/probe",
-           coveralls: true,
+           coverage: true,
            auth0: true,
            build: nil
          }}
@@ -521,7 +521,7 @@ defmodule WorkbenchIgniter.CatalogTest do
   describe "composes" do
     test "names, off the installer's info, the cartridges it inserts along" do
       assert %{composes: ["mock"]} = Features.entry(Features.HealthEndpoint)
-      assert %{composes: ["test_doubles", "precommit"]} = Features.entry(Features.Coveralls)
+      assert %{composes: ["test_doubles", "precommit"]} = Features.entry(Features.Coverage)
       assert %{composes: ["mock"]} = Features.entry(Features.Enhancements)
       assert %{composes: ["precommit"]} = Features.entry(Features.Credo)
       assert %{composes: []} = Features.entry(Features.Stripe)

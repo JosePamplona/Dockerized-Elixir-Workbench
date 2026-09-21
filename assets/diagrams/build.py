@@ -19,7 +19,7 @@ r=8 elbows, labels masked and 6px clear of their stroke, arrows drawn
 before boxes, at most two accents per diagram, a legend strip at the
 foot. The types: Deployment (clustering's README), Sequence
 (clustering's DESIGN, §3.2; ash's DESIGN, §3.1), Architecture (ash's
-README).
+README; test_data's DESIGN, §3.1).
 """
 import json, os, re
 
@@ -384,6 +384,36 @@ def precommit_crossing():
                              ("muted", "call"), ("muted,d", "return")]))
     return W, H, "\n".join(o)
 
+# --- test_data DESIGN §3.1: the four roads a test record takes to the database -------
+def test_data_roads():
+    W, H = 960, 580
+    o = []
+    o.append(zone(24, 56, 912, 200, "ECTO LINE"))
+    o.append(zone(24, 272, 912, 200, "ASH LINE"))
+    # arrows before boxes: the roads through the rules, then the two that skip them
+    o.append(hline(248, 368, 116))                                     # fixture -> changeset
+    o.append(hline(568, 688, 116))                                     # changeset -> repo
+    o.append(hline(248, 688, 196, dashed=True))                        # factory -> repo
+    o.append(label(468, 196, "SKIPS THE CHANGESET"))
+    o.append(hline(248, 368, 332))                     # generator -> action
+    o.append(hline(568, 688, 332))                     # action -> data layer
+    o.append(hline(248, 688, 412, dashed=True))                        # seed -> data layer
+    o.append(label(468, 412, "SKIPS THE ACTION"))
+    # the Ecto line
+    o.append(node(48, 88, 200, 56, "Phoenix fixture", "user_fixture/1 · the context"))
+    o.append(node(368, 88, 200, 56, "changeset", "cast · validate · constraints"))
+    o.append(node(48, 168, 200, 56, "ExMachina factory", "insert(:user)", kind="focal"))
+    o.append(node(688, 88, 200, 136, "Repo", "Repo.insert!", sub2="the database's constraints", kind="store"))
+    # the Ash line
+    o.append(node(48, 304, 200, 56, "changeset_generator", "generate(user())", kind="focal"))
+    o.append(node(368, 304, 200, 56, "the action", "changes · validations · policies"))
+    o.append(node(48, 384, 200, 56, "seed_generator", "Ash.Seed · for one state", kind="optional"))
+    o.append(node(688, 304, 200, 136, "data layer", "ash_postgres · ETS", sub2="the database's constraints", kind="store"))
+    o.append(text(480, 504, "On Ecto the box's road skips the changeset, so its test inserts every factory and lets the database refuse by name.", font="text", size=13, fill="var(--muted)", italic=True))
+    o.append(text(480, 524, "On Ash its road is the action itself: the rules check every record the generator makes.", font="text", size=13, fill="var(--muted)", italic=True))
+    o.append(legend(552, W, [("focal", "what test_data writes"), ("store", "where the row lands"), ("optional", "a seed"), ("muted", "through the rules"), ("muted,d", "under them")]))
+    return W, H, "\n".join(o)
+
 # --- writing ----------------------------------------------------------------------------
 DIAGRAMS = [
     ("clustering", "scaled-deployment", "Deployment", "The scaled deployment, and what clustering adds inside it",
@@ -396,6 +426,8 @@ DIAGRAMS = [
      "Sequence diagram of an ash install: wb.sh runs the cartridge, which builds the argv of missing packages and hands Igniter a patch set holding only the .env entry and a queued igniter.install task; Igniter writes .env, runs the task, each package installer writes its files, and the output — where Ash's changes appear — returns with a notice.", ash_sequence),
     ("precommit", "the-crossing", "Sequence", "The commit that crosses the mount",
      "Sequence diagram of a commit in a workbench project: git runs the shim git_hooks installed in .git/hooks, which calls .githooks/mix on the host; that script reaches the app container with docker compose exec, where mix git_hooks.run executes the project's .githooks/pre-commit — the formatter first, then each cartridge's block, the first failure cutting the rest — and the non-zero status walks back across the mount to abort the commit. The alternative branch is the library's own example, a mix command run on the host: it finds no Elixir there and cannot cd into the container's path, so the arrow never leaves the host.", precommit_crossing),
+    ("test_data", "four-roads", "Architecture", "The four roads a test record takes to the database",
+     "Architecture diagram of test data on both lines. On Ecto, a Phoenix fixture goes through the context's changeset to the repo, while an ExMachina factory — what test_data writes — goes straight to Repo.insert! and skips the changeset, leaving the database's constraints as the only check. On Ash, a changeset_generator — what test_data writes — runs the resource's action with its changes, validations and policies before the data layer, while seed_generator writes under the action for a state no action reaches.", test_data_roads),
 ]
 
 def page(slug, kind, title, desc, W, H, body):

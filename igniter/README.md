@@ -41,7 +41,7 @@ the legacy `app.sh` and the earlier package editions lives in the git log.
 │   │       ├── 📦 ansi/, version_manager/,          # the house's settings: one decision each
 │   │       │      toolchain/, changelog/
 │   │       ├── 📦 guidelines/                       # the team's conventions into exdoc's site (requires it)
-│   │       ├── 📦 precommit/, exmachina/            # cartridges no collection picks
+│   │       ├── 📦 precommit/, test_data/            # cartridges no collection picks
 │   │       ├── 📦 clustering/                       #   rel/*.eex + distributed exports
 │   │       ├── 📦 health_probe/                     #   liveness/readiness plug, mounted first
 │   │       ├── 📦 mailer/                           #   a base cartridge: phx.new's --no-mailer, undone through phx_delta

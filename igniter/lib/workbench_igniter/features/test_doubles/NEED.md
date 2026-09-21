@@ -6,4 +6,4 @@ Your tests must not call the real thing.
 
 **After:** Mox for the service you own a contract with, Mimic for the module that is not yours — mocks, stubs and spies, each where it belongs.
 
-**Not for:** factories and fixtures, which build data rather than replace a collaborator: that is exmachina, and what `phx.gen` already writes.
+**Not for:** factories and fixtures, which build data rather than replace a collaborator: that is test_data, and what `phx.gen` already writes.

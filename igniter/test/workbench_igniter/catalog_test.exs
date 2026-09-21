@@ -25,7 +25,7 @@ defmodule WorkbenchIgniter.CatalogTest do
   @cartridges ~w(chiefs_setup ansi version_manager toolchain changelog
                  dashboard_extras credo mock test_doubles exdebug rest graphql
                  coveralls exdoc guidelines enhancements auth0 openai health_endpoint stripe
-                 precommit exmachina clustering health_probe ash specdd db_admin k6 monitoring
+                 precommit test_data clustering health_probe ash specdd db_admin k6 monitoring
                  mailer gettext ecto esbuild tailwind html dashboard)
   # The chiefs_setup recipe with its default choices, in insertion order.
   @picks ~w(ansi version_manager toolchain changelog dashboard_extras db_admin credo mock test_doubles
@@ -93,7 +93,7 @@ defmodule WorkbenchIgniter.CatalogTest do
       assert %{version: %{version: "0.2.0", date: "2026-09-20"}} =
                Features.entry(Features.HealthProbe)
 
-      assert %{version: nil} = Features.entry(Features.Exmachina)
+      assert %{version: nil} = Features.entry(Features.Rest)
     end
 
     test "lists the installer's options with their defaults" do
@@ -279,7 +279,7 @@ defmodule WorkbenchIgniter.CatalogTest do
       assert output =~ ~r/^mailer +\S+ +base +You want to see the mail/m
       assert output =~ ~r/^stripe +- +pending +Your users should be able to pay/m
       assert output =~ ~r/^health_probe +v0\.2\.0 +Your platform polls/m
-      assert output =~ ~r/^exmachina +- +Your tests need realistic records/m
+      assert output =~ ~r/^test_data +v0\.1\.0 +Your tests need records/m
     end
   end
 

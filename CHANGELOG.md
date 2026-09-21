@@ -16,6 +16,34 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **exmachina becomes test_data: the records a test needs, on either
+  line.** The old box added `ex_machina` to the deps and stopped there.
+  There was no factory module to import, nothing in the test helper,
+  and no word about the trap everyone meets: ExMachina writes with
+  `Repo.insert!` and never runs the schema's changeset. The box is now
+  named for the need, beside `test_doubles` (that one replaces a
+  collaborator, this one builds the data), and it reads the project's
+  line. On Ecto it installs ExMachina with **Faker**. It writes
+  `test/support/factory.ex` with no factories but four rules in its
+  documentation: defaults minimal and valid, unique columns by
+  `sequence/2` and never Faker, associations by `build`, and Faker only
+  for what nobody asserts. It adds a test that finds every
+  `*_factory/0` and inserts it inside the sandbox, so a factory the
+  database refuses fails by its own name. On **Ash**, where ExMachina
+  would bypass the actions, validations and policies, it writes an
+  `Ash.Generator` module whose generators run the action, with Faker
+  inside `StreamData.repeatedly/1` the way Ash's own docs use it. Both
+  libraries' helper lines go in the cartridge's block of
+  `test_helper.exs`. A project with neither Ecto nor Ash is refused,
+  and a project that took the old box gets the rest on a second run.
+  DESIGN.md grounds each decision in the libraries' own papers, the
+  patterns (Object Mother, Test Data Builder, Meszaros' smells and
+  *Generated Value*) and the sandbox's lock. Verified in two `phx.new`
+  probes. On Ecto, a factory that broke a foreign key failed by its
+  name and the rest inserted. On Ash, a generator went through a
+  validating action. On both, Faker's values repeated under `mix test
+  --seed`.
+
 - **githooks becomes precommit: the box that owns the hook, not the box
   that installs a dependency.** The shelf's plan had this box absorbed
   into credo and coveralls, an option each. The absorption would have

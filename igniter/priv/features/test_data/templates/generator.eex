@@ -1,0 +1,37 @@
+@moduledoc """
+Test data for <%= @app_module %>'s resources, made through their
+actions: `generate(user())`, `generate_many(user(), 3)`,
+`generate(user(name: "Ana"))`.
+
+A generator is a function returning `changeset_generator/3`, which runs
+the action when `generate/1` takes a value from it — the action's
+changes, validations and policies included, so a record the domain would
+refuse is never made. `seed_generator/2` writes straight to the data
+layer and skips all of that: keep it for a state no action reaches.
+
+Four rules keep them honest:
+
+  * **Minimal and valid.** A default is what the action needs. A value
+    the test asserts on is written in the test, as an override.
+  * **Unique by `System.unique_integer/1`.** An identity is
+    `System.unique_integer([:positive])`, not `sequence/3`, which is
+    unique within one test only; two concurrent tests inserting the same
+    value wait on each other's lock.
+  * **Parents once.** `opts[:author_id] || once(:author, fn ->
+    generate(user()).id end)` makes one per test, not one per record.
+  * **Faker for what nobody asserts**, lazily:
+    `StreamData.repeatedly(fn -> Faker.Person.name() end)`. The
+    generators are StreamData, so they feed `ExUnitProperties` as they
+    are.
+"""
+use Ash.Generator
+
+# def user(opts \\ []) do
+#   changeset_generator(<%= @app_module %>.Accounts.User, :create,
+#     defaults: [
+#       email: "user#{System.unique_integer([:positive])}@example.com",
+#       name: StreamData.repeatedly(fn -> Faker.Person.name() end)
+#     ],
+#     overrides: opts
+#   )
+# end

@@ -116,7 +116,7 @@ Dep-only cartridges have no `priv/features/<feature>/` directory:
 | [test_doubles](test_doubles/) | `{:mimic, "~> 2.0", only: :test}`, `{:mox, "~> 1.2", only: :test}` or `{:hammox, "~> 1.0", only: :test}` with `--type-check`, by `--double` | chiefs_setup (also composed by coveralls, with `--double mimic`) |
 | [exdebug](exdebug/) | `{:ex_debug, "~> 1.0"}` | chiefs_setup |
 | [dashboard_extras](dashboard_extras/) | `:os_mon` in `extra_applications`, and the extras of the project's database: `ecto_psql_extras`, `ecto_mysql_extras` or `ecto_sqlite3_extras` (none on SQL Server or without a database) | chiefs_setup |
-| [exmachina](exmachina/) | `{:ex_machina, "~> 2.8", only: :test}` | no one (`wb.sh add exmachina`) |
+| [test_data](test_data/) | `{:faker, "~> 0.19", only: :test}` and, by the line: on Ecto `{:ex_machina, "~> 2.8", only: :test}`, `test/support/factory.ex` and the test that inserts every factory; on Ash `test/support/generator.ex` (`Ash.Generator`) | no one (`wb.sh add test_data`) |
 | [stripe](stripe/) | — (pending; requires auth0) | no one |
 
 Each cartridge README explains what it brings (mock's carries the pending

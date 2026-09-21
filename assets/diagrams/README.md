@@ -32,6 +32,7 @@ says "credo".
 | ash | README, *What it installs* | what the queued command wires into the project | Architecture |
 | ash | DESIGN, §3.1 | who writes what, and when — why the cartridge's diff is empty | Sequence |
 | precommit | DESIGN, §3 | the commit crossing the mount, and where the same commit stops without the cartridge | Sequence |
+| test_data | DESIGN, §3.1 | the four roads a test record takes to the database, the two the cartridge writes, and which skip the rules | Architecture |
 
 ## How one is drawn
 

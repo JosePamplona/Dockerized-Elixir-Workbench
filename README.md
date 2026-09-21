@@ -176,7 +176,7 @@ Workbench features can be installed on the existing project at any time:
 ./wb.sh add [FEATURE] [OPTIONS]
 ```
 
-`[FEATURE]` is one of: **chiefs_setup**, **ansi**, **version_manager**, **toolchain**, **changelog**, **health_endpoint**, **rest**, **graphql**, **coveralls**, **exdoc**, **guidelines**, **enhancements**, **auth0**, **openai**, **credo**, **precommit**, **exmachina**, **mock**, **exdebug**, **dashboard_extras**, **db_admin**, **k6**, **monitoring**, **clustering**, **health_probe**, **ash**, **mailer**, **gettext**, **ecto**, **esbuild**, **tailwind**, **html**, **dashboard**. `[OPTIONS]` are the flags of the corresponding `mix workbench.install.FEATURE` task.
+`[FEATURE]` is one of: **chiefs_setup**, **ansi**, **version_manager**, **toolchain**, **changelog**, **health_endpoint**, **rest**, **graphql**, **coveralls**, **exdoc**, **guidelines**, **enhancements**, **auth0**, **openai**, **credo**, **precommit**, **test_data**, **mock**, **exdebug**, **dashboard_extras**, **db_admin**, **k6**, **monitoring**, **clustering**, **health_probe**, **ash**, **mailer**, **gettext**, **ecto**, **esbuild**, **tailwind**, **html**, **dashboard**. `[OPTIONS]` are the flags of the corresponding `mix workbench.install.FEATURE` task.
 
 Ten of those are *archived* (**chiefs_setup**, **ansi**, **toolchain**, **mock**, **rest**, **graphql**, **enhancements**, **auth0**, **openai**, **health_endpoint**, retired 2026-09-20): the Phoenix line's boxes, plus the two a newer box covers — `mock` by `test_doubles` and `health_endpoint` by `health_probe`. Each says on its own papers why it went, which is why they stay; `add` refuses them unless `--archived` says so.
 

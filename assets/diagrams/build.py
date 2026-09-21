@@ -321,6 +321,69 @@ def ash_sequence():
     o.append(legend(560, W, [("muted", "call"), ("muted,d", "return"), ("accent", "the cartridge's whole diff"), ("focal", "the cartridge")]))
     return W, H, "\n".join(o)
 
+# --- 4. precommit DESIGN §3: the commit that crosses the mount -------------------
+def precommit_crossing():
+    W, H = 1152, 800
+    actors = [("git commit", 104, "on the host", "backend"),
+              ("the shim", 304, ".git/hooks/pre-commit", "backend"),
+              (".githooks/mix", 536, "the way in", "focal"),
+              ("git_hooks.run", 800, "mix, in the container", "backend"),
+              ("the checks", 1040, ".githooks/pre-commit", "focal")]
+    o = []
+    # the two grounds first, behind everything: the boundary is the diagram
+    o.append(zone(24, 36, 628, 620, "THE HOST · DOCKER, NO ELIXIR"))
+    o.append(zone(684, 36, 444, 620, "THE CONTAINER · /app/src"))
+    # the fragment under the lifelines, so the activations stay readable inside it
+    o.append('<rect x="220" y="184" width="908" height="428" rx="4" fill="var(--ink-02)" stroke="var(--ink-20)" stroke-width="1"/>')
+    for _, cx, _, _ in actors:
+        o.append(f'<line x1="{cx}" y1="112" x2="{cx}" y2="632" stroke="var(--ink-20)" stroke-width="1" stroke-dasharray="3,3"/>')
+
+    def bar(cx, y1, y2): return f'<rect x="{cx - 4}" y="{y1}" width="8" height="{y2 - y1}" fill="var(--ink-05)" stroke="var(--muted)" stroke-width="0.8"/>'
+
+    def note(x, y, s, fill="var(--muted)"):
+        w = 8 + 6 * len(s)
+        return (f'<rect x="{x - 4}" y="{y - 9}" width="{w}" height="12" rx="2" fill="var(--paper)"/>'
+                + text(x, y, s, size=8, anchor="start", tracking="0.04em", fill=fill))
+
+    def msg(x1, x2, y, s, color="muted", dashed=False):
+        o.append(hline(x1, x2, y, color=color, dashed=dashed))
+        o.append(label((x1 + x2) / 2, y, s, fill=f"var(--{color})"))
+
+    o.append(bar(104, 128, 584)); o.append(bar(304, 152, 560))
+    o.append(bar(536, 240, 528)); o.append(bar(800, 288, 496)); o.append(bar(1040, 344, 464))
+
+    # git's own turn, above the fragment: the hook is a file with the bit set
+    msg(108, 300, 152, "runs the hook, mode 0755")
+
+    # the ALT: what the cartridge configures, against the library's own example
+    o.append('<rect x="220" y="184" width="40" height="16" rx="2" fill="var(--paper)" stroke="var(--ink-20)" stroke-width="1"/>')
+    o.append(text(240, 196, "ALT", size=8, tracking="0.12em"))
+    o.append(note(272, 212, "[precommit: mix_path = sh .githooks/mix · project_path \".\"]", fill="var(--accent)"))
+
+    msg(308, 532, 240, "sh .githooks/mix git_hooks.run pre_commit")
+    msg(540, 796, 288, "docker compose exec -T app mix", color="accent")
+    o.append(note(556, 306, "run --rm with the workspace down · either way, the same source", fill="var(--accent)"))
+    msg(804, 1036, 344, "{:cmd, \"sh .githooks/pre-commit\"}")
+    o.append(f'<path d="M 1044,368 H 1068 Q 1076,368 1076,376 V 384 Q 1076,392 1068,392 H 1044" {stroke_attrs("muted")}/>')
+    o.append(note(852, 408, "set -e · the blocks, in order"))
+    msg(1036, 804, 440, "exit 1", dashed=True)
+    msg(796, 540, 472, "non-zero", dashed=True)
+    msg(532, 308, 504, "non-zero", dashed=True)
+    msg(300, 108, 536, "the commit is aborted", dashed=True)
+
+    # the else: the library's own example, on a machine with no Elixir
+    o.append('<line x1="228" y1="560" x2="1120" y2="560" stroke="var(--ink-20)" stroke-width="1" stroke-dasharray="4,3"/>')
+    o.append(note(272, 580, "[else · the library's own example: {:cmd, \"mix format --check-formatted\"}, project_path from File.cwd!()]"))
+    o.append(hline(308, 448, 600, marker=False))
+    o.append(f'<path d="M 452,594 l 12,12 M 464,594 l -12,12" fill="none" stroke="var(--muted)" stroke-width="1.4"/>')
+    o.append(note(480, 604, "cd /app/src: no such file · mix: not found — the arrow never leaves the host"))
+
+    for name, cx, sub, kind in actors:
+        o.append(node(cx - 80, 56, 160, 48, name, sub, kind=kind))
+    o.append(legend(712, W, [("focal", "what the cartridge writes"), ("accent", "the crossing"),
+                             ("muted", "call"), ("muted,d", "return")]))
+    return W, H, "\n".join(o)
+
 # --- writing ----------------------------------------------------------------------------
 DIAGRAMS = [
     ("clustering", "scaled-deployment", "Deployment", "The scaled deployment, and what clustering adds inside it",
@@ -331,6 +394,8 @@ DIAGRAMS = [
      "Architecture diagram of the ash cartridge: the cartridge queues one mix igniter.install command and writes a TOKEN_SIGNING_SECRET entry in .env; the command's installers write the Accounts domain, the AshPostgres repo with its migrations, the API routes and the authentication strategies into the project, and the authentication reads the secret at boot in production.", ash_wiring),
     ("ash", "who-writes-what", "Sequence", "Who writes what, and when",
      "Sequence diagram of an ash install: wb.sh runs the cartridge, which builds the argv of missing packages and hands Igniter a patch set holding only the .env entry and a queued igniter.install task; Igniter writes .env, runs the task, each package installer writes its files, and the output — where Ash's changes appear — returns with a notice.", ash_sequence),
+    ("precommit", "the-crossing", "Sequence", "The commit that crosses the mount",
+     "Sequence diagram of a commit in a workbench project: git runs the shim git_hooks installed in .git/hooks, which calls .githooks/mix on the host; that script reaches the app container with docker compose exec, where mix git_hooks.run executes the project's .githooks/pre-commit — the formatter first, then each cartridge's block, the first failure cutting the rest — and the non-zero status walks back across the mount to abort the commit. The alternative branch is the library's own example, a mix command run on the host: it finds no Elixir there and cannot cd into the container's path, so the arrow never leaves the host.", precommit_crossing),
 ]
 
 def page(slug, kind, title, desc, W, H, body):

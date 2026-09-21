@@ -31,6 +31,7 @@ says "credo".
 | clustering | DESIGN, §3.2 | how the release becomes a named node, and what the same boot does without the block | Sequence |
 | ash | README, *What it installs* | what the queued command wires into the project | Architecture |
 | ash | DESIGN, §3.1 | who writes what, and when — why the cartridge's diff is empty | Sequence |
+| precommit | DESIGN, §3 | the commit crossing the mount, and where the same commit stops without the cartridge | Sequence |
 
 ## How one is drawn
 

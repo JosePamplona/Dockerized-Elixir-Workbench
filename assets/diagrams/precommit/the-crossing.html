@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The commit that crosses the mount</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+svg.diagram{
+      --paper:#F2EDF3;
+      --surface:#FBF8FC;
+      --paper-2:#EBE3EE;
+      --ink:#1D1424;
+      --muted:#6B5C76;
+      --soft:#8F819A;
+      --rule:#D6CBDA;
+      --accent:#9A7A3E;
+      --accent-tint:rgba(154,122,62,.12);
+      --link:#3F6FA8;
+      --ink-02:rgba(29,20,36,.02);
+      --ink-03:rgba(29,20,36,.03);
+      --ink-05:rgba(29,20,36,.05);
+      --ink-12:rgba(29,20,36,.12);
+      --ink-20:rgba(29,20,36,.20);
+      --ink-30:rgba(29,20,36,.30);
+      --muted-10:rgba(107,92,118,.10);
+      --accent-50:rgba(154,122,62,.50);
+      --f-display:'Barlow Condensed','Roboto Condensed','Arial Narrow',sans-serif;
+      --f-text:'Source Serif 4',Georgia,serif;
+      --f-code:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+    }
+    @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) svg.diagram, svg.diagram:root{
+        --paper:#160F1B;
+        --surface:#22182A;
+        --paper-2:#2C2036;
+        --ink:#EFE7F2;
+        --muted:#A394AE;
+        --soft:#7E7189;
+        --rule:#3B2D46;
+        --accent:#D4B27E;
+        --accent-tint:rgba(212,178,126,.14);
+        --link:#8DBBE8;
+        --ink-02:rgba(239,231,242,.02);
+        --ink-03:rgba(239,231,242,.03);
+        --ink-05:rgba(239,231,242,.05);
+        --ink-12:rgba(239,231,242,.12);
+        --ink-20:rgba(239,231,242,.20);
+        --ink-30:rgba(239,231,242,.30);
+        --muted-10:rgba(163,148,174,.10);
+        --accent-50:rgba(212,178,126,.50);
+      } }
+    :root[data-theme="dark"] svg.diagram{
+      --paper:#160F1B;
+      --surface:#22182A;
+      --paper-2:#2C2036;
+      --ink:#EFE7F2;
+      --muted:#A394AE;
+      --soft:#7E7189;
+      --rule:#3B2D46;
+      --accent:#D4B27E;
+      --accent-tint:rgba(212,178,126,.14);
+      --link:#8DBBE8;
+      --ink-02:rgba(239,231,242,.02);
+      --ink-03:rgba(239,231,242,.03);
+      --ink-05:rgba(239,231,242,.05);
+      --ink-12:rgba(239,231,242,.12);
+      --ink-20:rgba(239,231,242,.20);
+      --ink-30:rgba(239,231,242,.30);
+      --muted-10:rgba(163,148,174,.10);
+      --accent-50:rgba(212,178,126,.50);
+    }
+    
+    body { font-family: 'Source Serif 4',Georgia,serif; background: var(--page); color: var(--page-ink); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 3rem 2rem; }
+    :root { --page: #F2EDF3; --page-ink: #1D1424; --page-muted: #6B5C76; }
+    @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --page: #160F1B; --page-ink: #EFE7F2; --page-muted: #A394AE; } }
+    :root[data-theme="dark"] { --page: #160F1B; --page-ink: #EFE7F2; --page-muted: #A394AE; }
+    .frame { max-width: 1200px; width: 100%; }
+    .eyebrow { font-family: 'IBM Plex Mono',ui-monospace,Menlo,monospace; font-size: 0.66rem; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: var(--page-muted); margin-bottom: 0.5rem; }
+    h1 { font-family: 'Source Serif 4',Georgia,serif; font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem); font-weight: 400; letter-spacing: -0.02em; line-height: 1.15; margin-bottom: 1.5rem; }
+    svg { width: 100%; min-width: 900px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Sequence · Dockerized Elixir Workbench</p>
+    <h1>The commit that crosses the mount</h1>
+<svg class="diagram" viewBox="0 0 1152 800" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="the-crossing-title the-crossing-desc">
+  <title id="the-crossing-title">The commit that crosses the mount</title>
+  <desc id="the-crossing-desc">Sequence diagram of a commit in a workbench project: git runs the shim git_hooks installed in .git/hooks, which calls .githooks/mix on the host; that script reaches the app container with docker compose exec, where mix git_hooks.run executes the project's .githooks/pre-commit — the formatter first, then each cartridge's block, the first failure cutting the rest — and the non-zero status walks back across the mount to abort the commit. The alternative branch is the library's own example, a mix command run on the host: it finds no Elixir there and cannot cd into the container's path, so the arrow never leaves the host.</desc>
+  <defs><marker id="arrow-muted" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="var(--muted)"/></marker><marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="var(--accent)"/></marker><marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="var(--link)"/></marker><marker id="arrow-ink" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="var(--ink)"/></marker></defs>
+  <rect x="0" y="0" width="1152" height="800" fill="var(--paper)"/>
+<rect x="24" y="36" width="628" height="620" rx="8" fill="var(--ink-02)" stroke="var(--ink-20)" stroke-width="0.8" stroke-dasharray="4,4"/>
+<rect x="36" y="40" width="176" height="12" rx="2" fill="var(--paper)"/>
+<text x="124.0" y="49" fill="var(--soft)" font-size="7" font-family="var(--f-code)" text-anchor="middle" letter-spacing="0.14em">THE HOST · DOCKER, NO ELIXIR</text>
+<rect x="684" y="36" width="444" height="620" rx="8" fill="var(--ink-02)" stroke="var(--ink-20)" stroke-width="0.8" stroke-dasharray="4,4"/>
+<rect x="696" y="40" width="152" height="12" rx="2" fill="var(--paper)"/>
+<text x="772.0" y="49" fill="var(--soft)" font-size="7" font-family="var(--f-code)" text-anchor="middle" letter-spacing="0.14em">THE CONTAINER · /app/src</text>
+<rect x="220" y="184" width="908" height="428" rx="4" fill="var(--ink-02)" stroke="var(--ink-20)" stroke-width="1"/>
+<line x1="104" y1="112" x2="104" y2="632" stroke="var(--ink-20)" stroke-width="1" stroke-dasharray="3,3"/>
+<line x1="304" y1="112" x2="304" y2="632" stroke="var(--ink-20)" stroke-width="1" stroke-dasharray="3,3"/>
+<line x1="536" y1="112" x2="536" y2="632" stroke="var(--ink-20)" stroke-width="1" stroke-dasharray="3,3"/>
+<line x1="800" y1="112" x2="800" y2="632" stroke="var(--ink-20)" stroke-width="1" stroke-dasharray="3,3"/>
+<line x1="1040" y1="112" x2="1040" y2="632" stroke="var(--ink-20)" stroke-width="1" stroke-dasharray="3,3"/>
+<rect x="100" y="128" width="8" height="456" fill="var(--ink-05)" stroke="var(--muted)" stroke-width="0.8"/>
+<rect x="300" y="152" width="8" height="408" fill="var(--ink-05)" stroke="var(--muted)" stroke-width="0.8"/>
+<rect x="532" y="240" width="8" height="288" fill="var(--ink-05)" stroke="var(--muted)" stroke-width="0.8"/>
+<rect x="796" y="288" width="8" height="208" fill="var(--ink-05)" stroke="var(--muted)" stroke-width="0.8"/>
+<rect x="1036" y="344" width="8" height="120" fill="var(--ink-05)" stroke="var(--muted)" stroke-width="0.8"/>
+<line x1="108" y1="152" x2="300" y2="152" fill="none" stroke="var(--muted)" stroke-width="1.2" marker-end="url(#arrow-muted)"/>
+<rect x="128.0" y="132" width="152" height="12" rx="2" fill="var(--paper)"/><text x="204.0" y="141" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="middle" letter-spacing="0.06em">runs the hook, mode 0755</text>
+<rect x="220" y="184" width="40" height="16" rx="2" fill="var(--paper)" stroke="var(--ink-20)" stroke-width="1"/>
+<text x="240" y="196" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="middle" letter-spacing="0.12em">ALT</text>
+<rect x="268" y="203" width="362" height="12" rx="2" fill="var(--paper)"/><text x="272" y="212" fill="var(--accent)" font-size="8" font-family="var(--f-code)" text-anchor="start" letter-spacing="0.04em">[precommit: mix_path = sh .githooks/mix · project_path "."]</text>
+<line x1="308" y1="240" x2="532" y2="240" fill="none" stroke="var(--muted)" stroke-width="1.2" marker-end="url(#arrow-muted)"/>
+<rect x="293.0" y="220" width="254" height="12" rx="2" fill="var(--paper)"/><text x="420.0" y="229" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="middle" letter-spacing="0.06em">sh .githooks/mix git_hooks.run pre_commit</text>
+<line x1="540" y1="288" x2="796" y2="288" fill="none" stroke="var(--accent)" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+<rect x="574.0" y="268" width="188" height="12" rx="2" fill="var(--paper)"/><text x="668.0" y="277" fill="var(--accent)" font-size="8" font-family="var(--f-code)" text-anchor="middle" letter-spacing="0.06em">docker compose exec -T app mix</text>
+<rect x="552" y="297" width="380" height="12" rx="2" fill="var(--paper)"/><text x="556" y="306" fill="var(--accent)" font-size="8" font-family="var(--f-code)" text-anchor="start" letter-spacing="0.04em">run --rm with the workspace down · either way, the same source</text>
+<line x1="804" y1="344" x2="1036" y2="344" fill="none" stroke="var(--muted)" stroke-width="1.2" marker-end="url(#arrow-muted)"/>
+<rect x="817.0" y="324" width="206" height="12" rx="2" fill="var(--paper)"/><text x="920.0" y="333" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="middle" letter-spacing="0.06em">{:cmd, "sh .githooks/pre-commit"}</text>
+<path d="M 1044,368 H 1068 Q 1076,368 1076,376 V 384 Q 1076,392 1068,392 H 1044" fill="none" stroke="var(--muted)" stroke-width="1.2" marker-end="url(#arrow-muted)"/>
+<rect x="848" y="399" width="182" height="12" rx="2" fill="var(--paper)"/><text x="852" y="408" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="start" letter-spacing="0.04em">set -e · the blocks, in order</text>
+<line x1="1036" y1="440" x2="804" y2="440" fill="none" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#arrow-muted)"/>
+<rect x="898.0" y="420" width="44" height="12" rx="2" fill="var(--paper)"/><text x="920.0" y="429" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="middle" letter-spacing="0.06em">exit 1</text>
+<line x1="796" y1="472" x2="540" y2="472" fill="none" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#arrow-muted)"/>
+<rect x="640.0" y="452" width="56" height="12" rx="2" fill="var(--paper)"/><text x="668.0" y="461" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="middle" letter-spacing="0.06em">non-zero</text>
+<line x1="532" y1="504" x2="308" y2="504" fill="none" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#arrow-muted)"/>
+<rect x="392.0" y="484" width="56" height="12" rx="2" fill="var(--paper)"/><text x="420.0" y="493" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="middle" letter-spacing="0.06em">non-zero</text>
+<line x1="300" y1="536" x2="108" y2="536" fill="none" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#arrow-muted)"/>
+<rect x="137.0" y="516" width="134" height="12" rx="2" fill="var(--paper)"/><text x="204.0" y="525" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="middle" letter-spacing="0.06em">the commit is aborted</text>
+<line x1="228" y1="560" x2="1120" y2="560" stroke="var(--ink-20)" stroke-width="1" stroke-dasharray="4,3"/>
+<rect x="268" y="571" width="638" height="12" rx="2" fill="var(--paper)"/><text x="272" y="580" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="start" letter-spacing="0.04em">[else · the library's own example: {:cmd, "mix format --check-formatted"}, project_path from File.cwd!()]</text>
+<line x1="308" y1="600" x2="448" y2="600" fill="none" stroke="var(--muted)" stroke-width="1.2"/>
+<path d="M 452,594 l 12,12 M 464,594 l -12,12" fill="none" stroke="var(--muted)" stroke-width="1.4"/>
+<rect x="476" y="595" width="464" height="12" rx="2" fill="var(--paper)"/><text x="480" y="604" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="start" letter-spacing="0.04em">cd /app/src: no such file · mix: not found — the arrow never leaves the host</text>
+<rect x="24" y="56" width="160" height="48" rx="6" fill="var(--paper)"/>
+<rect x="24" y="56" width="160" height="48" rx="6" fill="var(--surface)" stroke="var(--ink)" stroke-width="1"/>
+<text x="104.0" y="78.0" fill="var(--ink)" font-size="13" font-family="var(--f-display)" text-anchor="middle" font-weight="600" letter-spacing="0.04em">git commit</text>
+<text x="104.0" y="92.0" fill="var(--muted)" font-size="9" font-family="var(--f-code)" text-anchor="middle">on the host</text>
+<rect x="224" y="56" width="160" height="48" rx="6" fill="var(--paper)"/>
+<rect x="224" y="56" width="160" height="48" rx="6" fill="var(--surface)" stroke="var(--ink)" stroke-width="1"/>
+<text x="304.0" y="78.0" fill="var(--ink)" font-size="13" font-family="var(--f-display)" text-anchor="middle" font-weight="600" letter-spacing="0.04em">the shim</text>
+<text x="304.0" y="92.0" fill="var(--muted)" font-size="9" font-family="var(--f-code)" text-anchor="middle">.git/hooks/pre-commit</text>
+<rect x="456" y="56" width="160" height="48" rx="6" fill="var(--paper)"/>
+<rect x="456" y="56" width="160" height="48" rx="6" fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="1"/>
+<text x="536.0" y="78.0" fill="var(--ink)" font-size="13" font-family="var(--f-display)" text-anchor="middle" font-weight="600" letter-spacing="0.04em">.githooks/mix</text>
+<text x="536.0" y="92.0" fill="var(--muted)" font-size="9" font-family="var(--f-code)" text-anchor="middle">the way in</text>
+<rect x="720" y="56" width="160" height="48" rx="6" fill="var(--paper)"/>
+<rect x="720" y="56" width="160" height="48" rx="6" fill="var(--surface)" stroke="var(--ink)" stroke-width="1"/>
+<text x="800.0" y="78.0" fill="var(--ink)" font-size="13" font-family="var(--f-display)" text-anchor="middle" font-weight="600" letter-spacing="0.04em">git_hooks.run</text>
+<text x="800.0" y="92.0" fill="var(--muted)" font-size="9" font-family="var(--f-code)" text-anchor="middle">mix, in the container</text>
+<rect x="960" y="56" width="160" height="48" rx="6" fill="var(--paper)"/>
+<rect x="960" y="56" width="160" height="48" rx="6" fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="1"/>
+<text x="1040.0" y="78.0" fill="var(--ink)" font-size="13" font-family="var(--f-display)" text-anchor="middle" font-weight="600" letter-spacing="0.04em">the checks</text>
+<text x="1040.0" y="92.0" fill="var(--muted)" font-size="9" font-family="var(--f-code)" text-anchor="middle">.githooks/pre-commit</text>
+<line x1="24" y1="704" x2="1128" y2="704" stroke="var(--ink-12)" stroke-width="0.8"/>
+<text x="24" y="720" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="start" letter-spacing="0.14em">LEGEND</text>
+<rect x="96" y="712" width="16" height="10" rx="2" fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="0.8"/>
+<text x="120" y="720" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="start">what the cartridge writes</text>
+<line x1="302" y1="717" x2="318" y2="717" stroke="var(--accent)" stroke-width="1.2"/>
+<text x="326" y="720" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="start">the crossing</text>
+<line x1="430" y1="717" x2="446" y2="717" stroke="var(--muted)" stroke-width="1.2"/>
+<text x="454" y="720" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="start">call</text>
+<line x1="510" y1="717" x2="526" y2="717" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="5,4"/>
+<text x="534" y="720" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="start">return</text>
+</svg>
+  </div>
+</body>
+</html>

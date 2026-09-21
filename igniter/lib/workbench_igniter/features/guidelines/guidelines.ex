@@ -19,7 +19,7 @@ defmodule WorkbenchIgniter.Features.Guidelines do
   """
   use WorkbenchIgniter.Feature
 
-  @page "assets/exdoc/coding.md"
+  @page "guides/coding.md"
   @title "Coding guidelines"
 
   @example ~s|mix workbench.install.guidelines --url "https://raw.githubusercontent.com/user/repo/main/GUIDE.md"|
@@ -109,27 +109,7 @@ defmodule WorkbenchIgniter.Features.Guidelines do
   end
 
   # The two lists exdoc's `docs:` block keeps: the extras themselves and
-  # the group they are shown under. Appended, never rewritten — exdoc's
-  # own pages stay where its installer put them.
-  defp list_in_docs(igniter) do
-    igniter
-    |> update_docs([:extras], fn zipper ->
-      # Real AST, not the `{:code, source}` marker `MixProject.update/4`
-      # takes for a whole value: this appends *into* a list.
-      Igniter.Code.List.append_new_to_list(
-        zipper,
-        Sourceror.parse_string!(~s|{"#{@page}", [title: "#{@title}"]}|)
-      )
-    end)
-    |> update_docs([:groups_for_extras, :Support], fn zipper ->
-      Igniter.Code.List.append_new_to_list(zipper, Sourceror.parse_string!(~s|"#{@page}"|))
-    end)
-  end
-
-  defp update_docs(igniter, path, fun) do
-    Igniter.Project.MixProject.update(igniter, :project, [:docs | path], fn
-      nil -> :error
-      zipper -> fun.(zipper)
-    end)
-  end
+  # the group they are shown under — exdoc's to write into.
+  defp list_in_docs(igniter),
+    do: WorkbenchIgniter.Features.Exdoc.list_page(igniter, @page, @title, :Support)
 end

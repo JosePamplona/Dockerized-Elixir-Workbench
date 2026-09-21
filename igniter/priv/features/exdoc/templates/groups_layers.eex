@@ -1,0 +1,14 @@
+# The sidebar's module groups (exdoc --module-groups layers): each module
+# by the layer it belongs to — read off its behaviours and its directory
+# where the name does not say it. The first group that matches wins.
+defp groups_for_modules do
+  [
+    Application: [
+      <%= @mod %>,
+      ~r/^<%= @mod %>\.(Release|Mailer)$/,
+      &behaves?(&1, [Application, Ecto.Repo])
+    ],
+    Contexts: [~r/^<%= @mod %>\.[A-Z]\w*$/],
+    Schemas: [~r/^<%= @mod %>\.[A-Z]\w*\.[A-Z]\w*(?<!Error|Exception)$/]
+  ] ++ web_groups()
+end

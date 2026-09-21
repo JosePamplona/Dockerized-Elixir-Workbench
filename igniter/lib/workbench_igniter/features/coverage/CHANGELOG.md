@@ -32,6 +32,28 @@ change, as the features index says.
   took the box under its old name reads as carrying it; its blocks keep
   the owner `coveralls`, so a later `--githook` would add a second one.
 
+### Updated
+
+- **The report's templates live under `test/coverage/template/`**, not
+  `assets/cover/template/`. `assets/` is a Phoenix application's
+  release build input — `phx.gen.release`'s Dockerfile copies it into
+  its builder, tailwind scans it — and the templates are a dev tool's
+  source. `test/` is left out of the Dockerfile's context by the same
+  generator's `.dockerignore`, and nothing compiles a loose `.eex`
+  there: only `test/support` is compiled, and `mix test` loads
+  `*_test.exs`. `state/1` reads the theme wherever the project's
+  `coveralls.json` says the templates are, so a project that has them
+  under `assets/` still says its theme back.
+- **The report and the report page link each other by relative
+  paths.** The `exdoc-ish` theme's sidebar (`/dev/docs`,
+  `/dev/docs/testing.html`, `/dev/docs/cover`), the `custom` theme's
+  *Back* link and `mix cover`'s links into the report (`./cover`) named
+  the routes exdoc v0.1.0 planted in the project. exdoc copies the
+  coverage output dir into the site's root, so the report sits beside
+  `testing.html`: `index.html`, `testing.html` and `excoveralls.html`
+  resolve wherever the site is served — by the console since exdoc
+  v0.2.0, and under `/dev/docs` in a project that still carries v0.1.0.
+
 ## v0.3.0 - (2026-09-20)
 
 ### Added

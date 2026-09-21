@@ -21,7 +21,8 @@ and this box carries the failure mode alone.
 
 ## What it installs
 
-* `assets/exdoc/coding.md` — the page, downloaded from `--url`.
+* `guides/coding.md` — the page, downloaded from `--url`, beside the
+  site's other sources.
 * Its two entries in the `docs:` block of `mix.exs`: `extras` and
   `groups_for_extras[:Support]`.
 
@@ -41,7 +42,7 @@ that does not exist — and replacing the file by hand finishes the job.
 
 ## The mark
 
-`assets/exdoc/coding.md`. A second run finds it and skips with a
+`guides/coding.md`. A second run finds it and skips with a
 notice: to point the page at another URL, eject and insert again.
 
 ## Contents

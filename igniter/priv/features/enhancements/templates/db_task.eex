@@ -9,7 +9,7 @@ defmodule Mix.Tasks.Db do
   @svg         "MainLayout.svg"        # DbSchema *.svg image filename.
   @model       "database.md"           # DbSchema *.md documentation filename.
 
-  @target_path  "./assets/exdoc/" # Generated files target path.
+  @target_path  "./guides/" # Generated files target path.
   @light_target "model-light.svg" # Target light version model filename.
   @dark_target  "model-dark.svg"  # Target dark version model filename.
   

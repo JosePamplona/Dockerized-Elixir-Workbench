@@ -34,7 +34,12 @@ defmodule WorkbenchIgniter.Features.Coverage do
   # The line --githook puts in the project's pre-commit hook: the suite
   # with coverage, refused under the minimum coveralls.json carries.
   @check "mix coveralls"
-  @template_path "assets/cover/template"
+
+  # The report's templates: dev-tool source, so under test/ — which the
+  # release's Dockerfile context leaves out and nothing compiles (only
+  # test/support is, and mix test loads *_test.exs) — never under
+  # assets/, the release build's input. Until v0.4.0 they were there.
+  @template_path "test/coverage/template"
 
   # Report themes: one directory per theme under the cartridge's
   # `priv/features/coverage/assets/template/`, each holding the three
@@ -144,7 +149,9 @@ defmodule WorkbenchIgniter.Features.Coverage do
   def state(igniter) do
     app_name = Igniter.Project.Application.app_name(igniter)
     {json, igniter} = file_content(igniter, "coveralls.json")
-    {report, igniter} = file_content(igniter, "#{@template_path}/coverage.html.eex")
+    # Where the project's coveralls.json says the templates are: this
+    # edition's test/, an older one's assets/, or wherever it moved them.
+    {report, igniter} = file_content(igniter, "#{template_path(json)}/coverage.html.eex")
     {cover_task?, igniter} = file_installed?(igniter, "lib/mix/tasks/cover.ex")
     {checks, igniter} = Precommit.checks_of(igniter, name())
 
@@ -313,10 +320,19 @@ defmodule WorkbenchIgniter.Features.Coverage do
     Igniter.create_new_file(igniter, "coveralls.json", content, on_exists: :overwrite)
   end
 
+  defp template_path(json) when is_binary(json) do
+    case Regex.run(~r/"template_path":\s*"([^"]+)"/, json) do
+      [_, path] -> path |> String.trim_leading("./") |> String.trim_trailing("/")
+      nil -> @template_path
+    end
+  end
+
+  defp template_path(_), do: @template_path
+
   # --- excoveralls HTML report theme -----------------------------------------
 
-  # The chosen theme's files land flat under `assets/cover/template/`, the
-  # `template_path` coveralls.json points excoveralls at.
+  # The chosen theme's files land flat under `test/coverage/template/`,
+  # the `template_path` coveralls.json points excoveralls at.
   defp plant_report_template(igniter, theme) do
     Enum.reduce(@report_template_files, igniter, fn file, igniter ->
       Igniter.create_new_file(

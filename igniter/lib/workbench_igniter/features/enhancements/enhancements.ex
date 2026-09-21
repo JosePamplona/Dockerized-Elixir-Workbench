@@ -102,7 +102,7 @@ defmodule WorkbenchIgniter.Features.Enhancements do
     {schema, igniter} = file_content(igniter, "lib/#{app_name}/schema.ex")
     {error_json, igniter} = file_content(igniter, "lib/#{app_name}_web/controllers/error_json.ex")
     {dbs, igniter} = file_content(igniter, "assets/db_schema/database.dbs")
-    {model_page, igniter} = file_content(igniter, "assets/exdoc/database.md")
+    {model_page, igniter} = file_content(igniter, "guides/database.md")
     {postman, igniter} = file_content(igniter, "#{app_name}.postman_collection.json")
 
     has? = fn content, text -> content && String.contains?(content, text) end
@@ -275,17 +275,17 @@ defmodule WorkbenchIgniter.Features.Enhancements do
   # Plants the files `mix db` would generate, so ExDoc has real database
   # pages (instead of a placeholder) and the db task tests — which mock
   # the copy — find their input files. Always planted with the ecto group:
-  # the db task targets assets/exdoc/ even when the ExDoc feature is off.
+  # the db task targets guides/ even when the ExDoc feature is off.
   defp initial_db_docs(igniter, combo, assigns, _opts) do
     igniter
     |> plant_diagram(
       combo,
       "light/MainLayout.svg",
-      "assets/exdoc/images/model-light.svg",
+      "guides/images/model-light.svg",
       assigns
     )
-    |> plant_diagram(combo, "dark/MainLayout.svg", "assets/exdoc/images/model-dark.svg", assigns)
-    |> plant_diagram(combo, "light/database.md", "assets/exdoc/database.md", assigns)
+    |> plant_diagram(combo, "dark/MainLayout.svg", "guides/images/model-dark.svg", assigns)
+    |> plant_diagram(combo, "light/database.md", "guides/database.md", assigns)
   end
 
   defp plant_diagram(igniter, combo, file, target, assigns) do

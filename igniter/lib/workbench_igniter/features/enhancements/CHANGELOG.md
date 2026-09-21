@@ -11,6 +11,14 @@ Backfilled at the version below, its first: the cartridge shipped
 before a changelog was part of the anatomy, and gets one on its next
 change, as the features index says.
 
+## v1.1.0 - (2026-09-21)
+
+### Updated
+
+- `mix db` writes the database page and the model diagrams under
+  `guides/`, where exdoc v0.2.0 keeps the site's sources, instead of
+  `assets/exdoc/`, the release build's input.
+
 ## v1.0.0 - (2026-09-17)
 
 ### Removed

@@ -34,9 +34,44 @@ defmodule WorkbenchIgniter.Features.CoverageTest do
       assert json =~ ~s|"minimum_coverage": 80|
       # The standard `cover/` output dir, already in phx.new's .gitignore.
       assert json =~ ~s|"output_dir": "cover"|
-      assert json =~ ~s|"template_path": "assets/cover/template"|
+      assert json =~ ~s|"template_path": "test/coverage/template"|
       assert json =~ ~s|"test_web/open_api"|
       assert json =~ ~s|"test_web/components"|
+    end
+
+    test "the report's templates live under test/, never assets/" do
+      before = phx_test_project()
+
+      igniter =
+        before
+        |> Igniter.compose_task("workbench.install.coverage", [])
+        |> apply_igniter!()
+
+      planted =
+        Map.keys(igniter.assigns[:test_files]) --
+          Map.keys(apply_igniter!(before).assigns[:test_files])
+
+      # assets/ is the release build's input; test/ is outside the
+      # Dockerfile's context and nothing compiles a loose .eex there.
+      assert "test/coverage/template/coverage.html.eex" in planted
+      refute Enum.any?(planted, &String.starts_with?(&1, "assets/"))
+    end
+
+    test "the theme is read where coveralls.json says the templates are" do
+      # A project from before v0.4.0: templates under assets/.
+      igniter =
+        phx_test_project()
+        |> Igniter.create_new_file(
+          "coveralls.json",
+          ~s|{"coverage_options": {"template_path": "./assets/cover/template"}}|
+        )
+        |> Igniter.create_new_file(
+          "assets/cover/template/coverage.html.eex",
+          Coverage.asset("template/custom/coverage.html.eex")
+        )
+        |> apply_igniter!()
+
+      assert {%{theme: "custom"}, _} = Coverage.state(igniter)
     end
 
     test "--exdoc plants the cover task and its tests" do
@@ -93,9 +128,9 @@ defmodule WorkbenchIgniter.Features.CoverageTest do
       files = igniter.assigns[:test_files]
 
       # Same target path whatever the theme: coveralls.json points there.
-      assert files["assets/cover/template/coverage.html.eex"] =~ ~s|class="sidebar-projectName"|
-      assert files["assets/cover/template/_style.html.eex"] =~ "--sidebarBackground"
-      assert files["assets/cover/template/_script.html.eex"] =~ "ex_doc:settings"
+      assert files["test/coverage/template/coverage.html.eex"] =~ ~s|class="sidebar-projectName"|
+      assert files["test/coverage/template/_style.html.eex"] =~ "--sidebarBackground"
+      assert files["test/coverage/template/_script.html.eex"] =~ "ex_doc:settings"
     end
 
     test "--theme custom plants the original report theme" do
@@ -106,9 +141,9 @@ defmodule WorkbenchIgniter.Features.CoverageTest do
 
       files = igniter.assigns[:test_files]
 
-      assert files["assets/cover/template/coverage.html.eex"] =~ "Test Coverage Overview"
-      assert Map.has_key?(files, "assets/cover/template/_script.html.eex")
-      assert Map.has_key?(files, "assets/cover/template/_style.html.eex")
+      assert files["test/coverage/template/coverage.html.eex"] =~ "Test Coverage Overview"
+      assert Map.has_key?(files, "test/coverage/template/_script.html.eex")
+      assert Map.has_key?(files, "test/coverage/template/_style.html.eex")
     end
 
     test "rejects an unknown theme" do

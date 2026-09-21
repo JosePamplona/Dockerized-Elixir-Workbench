@@ -8,7 +8,7 @@ defmodule Mix.Tasks.Workbench.Install.Guidelines do
   @moduledoc """
   #{@shortdoc}
 
-  Downloads the markdown at `--url` as `assets/exdoc/coding.md` and
+  Downloads the markdown at `--url` as `guides/coding.md` and
   lists it in the ExDoc site, under *Support*.
 
   It builds on exdoc, which owns the site and the `docs:` block this

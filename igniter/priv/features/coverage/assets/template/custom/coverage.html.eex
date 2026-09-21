@@ -10,7 +10,7 @@
     <div id='coverage'>
       <h1 id='overview'>🧪 Test Coverage Overview</h1>
       <div id="menu">
-        <li><a href='/dev/docs/testing.html'>🔙 Back</a></li>
+        <li><a href='testing.html'>🔙 Back</a></li>
         <li><a href='#'>🧪 Test Coverage Overview</a></li>
         <%= for file <- @cov.files do %>
           <%= if not @filter_full_covered or file.coverage < 100 do %>

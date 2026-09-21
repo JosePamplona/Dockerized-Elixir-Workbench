@@ -149,6 +149,12 @@ defmodule WorkbenchIgniter.CatalogTest do
 
       assert [%{value: "exdoc-ish", doc: "mimics" <> _}, %{value: "custom", doc: _}] =
                theme.choices
+
+      # A default read off the project is marked, and has no value here.
+      exdoc = Features.entry(Features.named("exdoc")).options
+      detected = for o <- exdoc, o.detected, do: o.name
+      assert detected == [:project_name, :repo_url, :module_groups]
+      assert Enum.all?(exdoc, &(not &1.detected or is_nil(&1.default)))
     end
 
     test "documents its options from the cartridge, into the task's moduledoc" do
@@ -408,15 +414,17 @@ defmodule WorkbenchIgniter.CatalogTest do
          }}
       ],
       "exdoc" => [
-        # --version stamps the gitignored doc/ dummies only; --build runs mix docs once.
-        {~w(--project-name Probe --version 9.9.9 --repo-url https://example.com/acme/probe
-            --coverage --auth0 --build),
+        # --build runs mix docs once.
+        {~w(--project-name Probe --repo-url https://example.com/acme/probe
+            --homepage-url https://probe.example.com --app-logo --module-groups contexts
+            --coverage --build),
          %{
            project_name: "Probe",
-           version: nil,
            repo_url: "https://example.com/acme/probe",
+           homepage_url: "https://probe.example.com",
+           app_logo: true,
+           module_groups: "contexts",
            coverage: true,
-           auth0: true,
            build: nil
          }}
       ],

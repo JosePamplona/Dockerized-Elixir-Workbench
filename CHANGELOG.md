@@ -16,6 +16,48 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **exdoc v0.2.0: the project serves nothing.** The `ExDocController`
+  and its test, the `:exdoc` pipeline and the `/dev/docs` routes are no
+  longer planted — `mix docs` writes `doc/` and the console serves it —
+  and with them go the dummy pages under `doc/`, `--version` (it only
+  stamped them) and `--auth0` (the token page needs the app's origin,
+  and auth0 is archived). The mark is the site's config, which every
+  edition planted, so a project carrying v0.1.0 reads as exdoc still.
+  The cartridge has its `DESIGN.md`, with ExDoc quoted from its source.
+  coverage v0.4.0 goes with it: the report and the Test Suite Report
+  link each other by relative paths (exdoc copies the report into the
+  site's root), which hold under the console and under an old
+  project's `/dev/docs` alike. Verified in a probe project, the three
+  pages opening each other through the console's listener. Two more
+  exdoc changes ride along: **`--app-logo`**, off by default (the
+  placeholder was 1.9 MB with somebody else's name, committed always),
+  and **the changelog listed only when the project keeps one** — listed
+  always, `mix docs` stopped on a project without it. And
+  **`--module-groups`**: `layers`, `ash`, `contexts`
+  (a group per directory under `lib/<app>/`, read when the docs are
+  built, for the large project) or `none`, read off the project when not
+  given. The presets tell a live view or an Ash change by the behaviour
+  it declares, through the functions ExDoc accepts as group patterns;
+  checked with `mix docs` on the probe and on tunez. **`--homepage-url`**
+  is the website the sidebar's name and logo link to: v0.1.0 wrote the
+  repository there, and the logo opened GitHub. The site's name, unasked,
+  is the `name:` mix.exs has or the app's name in words (`lorem_ipsum`
+  as *Lorem Ipsum*, not *Lorem_ipsum*), and its repository the
+  `source_url:` it has or the `origin` of the project's own git
+  repository — never the workbench's, which a workspace without a `.git`
+  of its own would otherwise answer with — the placeholder only when
+  neither says it, and then commented out, so the site's source links
+  are absent rather than broken.
+- **The docs' sources leave `assets/`.** exdoc's config, theme script
+  and logo, guidelines' page and enhancements' database page and
+  diagrams move from `assets/exdoc/` to `guides/`, layout unchanged:
+  `assets/` is a Phoenix application's release build input — the
+  Dockerfile copies it, tailwind scans it — and these are a dev tool's
+  files. exdoc still recognises a project that has them in the old
+  place. coverage's report templates follow them out, to
+  `test/coverage/template/`: `test/` is outside the Dockerfile's context
+  by phx.gen.release's own `.dockerignore`, and nothing compiles a
+  loose `.eex` there.
 - **The console serves the project's pages: a door of a third kind,
   green.** ExDoc's site and the coverage report were served by the
   project — a pipeline, a controller and `/dev/docs` routes exdoc

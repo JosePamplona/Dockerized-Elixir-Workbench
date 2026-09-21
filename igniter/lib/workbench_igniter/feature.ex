@@ -127,6 +127,15 @@ defmodule WorkbenchIgniter.Feature do
   @type choice :: [value()] | [{atom(), [value()]}] | {:open, [value()] | [{atom(), [value()]}]}
 
   @doc """
+  The options whose default is read off the project when not given —
+  exdoc's name, repository and module groups — by their schema key.
+  They carry no default in the schema, since the value is the
+  project's; the catalog marks them `detected`, and a form says so
+  where it would show a default. Empty by default.
+  """
+  @callback detected() :: [atom()]
+
+  @doc """
   One line per option of the installer, keyed as in the `info/2` schema:
   what it does, its default, its values. The one source of the task's
   "## Options" section — `options_doc/1` renders it into the task's
@@ -307,7 +316,9 @@ defmodule WorkbenchIgniter.Feature do
           file_installed?: 2,
           marker_installed?: 3,
           file_content: 2,
-          mix_project_value: 2
+          mix_project_value: 2,
+          display_name: 1,
+          repo_url: 1
         ]
 
       @impl WorkbenchIgniter.Feature
@@ -330,6 +341,9 @@ defmodule WorkbenchIgniter.Feature do
 
       @impl WorkbenchIgniter.Feature
       def option_docs, do: []
+
+      @impl WorkbenchIgniter.Feature
+      def detected, do: []
 
       @impl WorkbenchIgniter.Feature
       def rerun, do: :noop
@@ -366,6 +380,7 @@ defmodule WorkbenchIgniter.Feature do
                      members: 1,
                      choices: 0,
                      option_docs: 0,
+                     detected: 0,
                      rerun: 0,
                      state: 1
 
@@ -760,6 +775,93 @@ defmodule WorkbenchIgniter.Feature do
       {nil, igniter}
     end
   end
+
+  @doc """
+  The project's display name, as `{name, igniter}`: the `name:` its
+  `mix.exs` already has — somebody wrote it, and it is not rewritten —
+  or else the app's name made words, capitalized and spaced:
+  `:lorem_ipsum` is `"Lorem Ipsum"`, `:lorem_3` is `"Lorem 3"`. An
+  acronym comes out as a word (`:my_api` is `"My Api"`); the flag that
+  asks for the name is how to say it otherwise.
+  """
+  @spec display_name(Igniter.t()) :: {String.t(), Igniter.t()}
+  def display_name(igniter) do
+    case mix_project_value(igniter, :name) do
+      {name, igniter} when is_binary(name) and name != "" ->
+        {name, igniter}
+
+      {_, igniter} ->
+        name =
+          igniter
+          |> Igniter.Project.Application.app_name()
+          |> to_string()
+          |> String.split("_", trim: true)
+          |> Enum.map_join(" ", &String.capitalize/1)
+
+        {name, igniter}
+    end
+  end
+
+  @doc """
+  The project's repository as a browsable URL, as `{url | nil, igniter}`:
+  the `source_url:` its `mix.exs` already has, or else the `origin`
+  remote of the project's own git repository (`git_origin/1`). `nil`
+  when neither says it — the caller writes its placeholder. Under
+  `Igniter.Test` the remote is not read: the suite runs inside the
+  workbench's repository, whose remote is nobody's project.
+  """
+  @spec repo_url(Igniter.t()) :: {String.t() | nil, Igniter.t()}
+  def repo_url(igniter) do
+    case mix_project_value(igniter, :source_url) do
+      {url, igniter} when is_binary(url) and url != "" ->
+        {url, igniter}
+
+      {_, igniter} ->
+        if igniter.assigns[:test_mode?],
+          do: {nil, igniter},
+          else: {git_origin(File.cwd!()), igniter}
+    end
+  end
+
+  @doc """
+  The `origin` remote of the git repository rooted at `dir`, as an
+  `https://` URL a browser opens; `nil` when `dir` is not the root of
+  its own repository — a project directory inside another repository
+  (a workspace under the workbench's) must not take that one's remote —
+  when there is no `origin`, or when it is not a host/owner/repo address.
+  """
+  @spec git_origin(Path.t()) :: String.t() | nil
+  def git_origin(dir) do
+    # The prefix of `dir` within its repository is empty at the root.
+    with {"\n", 0} <-
+           System.cmd("git", ["-C", dir, "rev-parse", "--show-prefix"], stderr_to_stdout: true),
+         {remote, 0} <- System.cmd("git", ["-C", dir, "config", "--get", "remote.origin.url"]) do
+      browsable(String.trim(remote))
+    else
+      _ -> nil
+    end
+  end
+
+  @doc """
+  A git remote as the `https://` page of its repository:
+  `git@github.com:acme/app.git`, `ssh://git@gitlab.com:2222/acme/app.git`
+  and `https://user@github.com/acme/app.git` are all
+  `https://<host>/acme/app`. `nil` for what is not host/owner/repo — a
+  local path, a `file://` remote.
+  """
+  @spec browsable(String.t()) :: String.t() | nil
+  def browsable(remote) do
+    patterns = [
+      ~r{^[\w.-]+@([\w.-]+):(?!//)(.+?)(?:\.git)?/?$},
+      ~r{^(?:ssh|git|https?)://(?:[^@/]+@)?([\w.-]+)(?::\d+)?/(.+?)(?:\.git)?/?$}
+    ]
+
+    Enum.find_value(patterns, &page(Regex.run(&1, remote)))
+  end
+
+  # host and owner/repo — a subgroup's path included — as the page.
+  defp page([_, host, path]), do: if(path =~ ~r{^[^/]+/[^/]+}, do: "https://#{host}/#{path}")
+  defp page(nil), do: nil
 
   @doc """
   The literal a key of `mix.exs`'s `project/0` keyword holds — `:version`,

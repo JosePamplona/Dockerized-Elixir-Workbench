@@ -55,7 +55,7 @@ here.
   and the DbSchema diagrams under the project's `assets/db_schema/`,
   picking the combo for the enabled features (`none`, `auth0`,
   `auth0_openai`, …). It also plants the files `mix db` would generate
-  (`assets/exdoc/database.md` and the model SVGs) so ExDoc has real pages
+  (`guides/database.md` and the model SVGs under `guides/images/`) so ExDoc has real pages
   from the start.
 * **REST group** (`--interface rest`): enhanced `error_json.ex` (changeset
   error rendering) and the Postman collection for the enabled features

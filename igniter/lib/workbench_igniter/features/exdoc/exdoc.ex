@@ -1,7 +1,9 @@
 defmodule WorkbenchIgniter.Features.Exdoc do
   @moduledoc """
-  ExDoc documentation site served by the app, with per-feature extra pages
-  (coverage, auth token, database diagram).
+  ExDoc's site for the project, with per-feature extra pages (the test
+  suite report, the database diagram). `mix docs` writes it to `doc/`,
+  and the console serves it off the workspace (console/PLAN.md): the
+  project carries no route, no controller and no environment for it.
 
   Full feature cartridge: manifest, install logic, EEx templates and the
   text assets it plants (theme JS, extra pages) live in this directory;
@@ -13,6 +15,13 @@ defmodule WorkbenchIgniter.Features.Exdoc do
 
   embed_templates()
   embed_assets()
+
+  # Read off the project when not given: the install computes them.
+  @impl true
+  def detected, do: [:project_name, :repo_url, :module_groups]
+
+  # The presets of the sidebar's module groups; `choices/0` says each.
+  @module_groups ~w(layers ash contexts none)
 
   @example "mix workbench.install.exdoc --project-name \"Lorem Ipsum\" --coverage"
 
@@ -31,16 +40,36 @@ defmodule WorkbenchIgniter.Features.Exdoc do
   @impl true
   def option_docs do
     [
-      project_name: "Display name (default: capitalized app name).",
-      repo_url: "Repository URL for `source_url`/`authors`.",
-      version:
-        "The version the pages are stamped with (titles, the 404 page) until `mix version` sets the real one. Default: `0.0.0`.",
+      project_name:
+        "The name the site is titled with. Default: the `name:` mix.exs already has, or the app's name in words (`lorem_ipsum` is `Lorem Ipsum`).",
+      repo_url:
+        "The repository, for `source_url` (the links to each function's source) and `authors`. Default: the `source_url:` mix.exs has, or the `origin` remote of the project's own git repository, or a placeholder to replace.",
+      homepage_url:
+        "The project's website, where the sidebar's logo and name link. Default: none — they open the docs' main page, as ExDoc does.",
+      app_logo:
+        "Plant a placeholder logo (`guides/images/app-logo.png`) and name it the site's `logo:`, to be replaced by the project's own. Off by default: it is a 1.9 MB image with somebody else's name on it.",
+      module_groups:
+        "How the sidebar groups the modules, one of #{Enum.map_join(@module_groups, ", ", &"`#{&1}`")}. Default: read off the project — `ash` when it depends on Ash, `layers` otherwise.",
       coverage:
-        "The coveralls feature is composed too: the coverage report is served beside the docs (`/cover`), with its page and the controller action.",
-      auth0:
-        "The auth0 feature is composed too: the \"Get access tokens\" page and its scripts, to try the API from the docs.",
+        "The coverage report joins the site: the Test Suite Report page `mix cover` writes, and ExCoveralls' HTML copied in beside it.",
       build:
         "Run `mix docs` once the insert is applied, so the site has pages on first boot. Off by default: it needs the dependencies fetched and compiled."
+    ]
+  end
+
+  # The sidebar's module groups: what a module is, where the project
+  # stands. ExDoc's own flat list is `none`.
+  @impl true
+  def choices do
+    [
+      module_groups: [
+        {"layers",
+         "by layer: application, contexts, schemas, live views, controllers, components, web"},
+        {"ash", "by role in the Ash DSL: domains, resources, changes, validations, types"},
+        {"contexts",
+         "one group per context (a directory under lib/<app>/), read when the docs are built"},
+        {"none", "ExDoc's own flat, alphabetical list"}
+      ]
     ]
   end
 
@@ -51,59 +80,166 @@ defmodule WorkbenchIgniter.Features.Exdoc do
       example: @example,
       schema: [
         project_name: :string,
-        version: :string,
         repo_url: :string,
+        homepage_url: :string,
+        app_logo: :boolean,
+        module_groups: :string,
         coverage: :boolean,
-        auth0: :boolean,
         build: :boolean
       ],
       defaults: [
-        version: "0.0.0",
-        repo_url: "https://github.com/user/repo",
+        app_logo: false,
         coverage: false,
-        auth0: false,
         build: false
       ]
     }
   end
 
-  # The mark: the controller that serves the docs.
-  @impl true
-  def installed?(igniter),
-    do: Igniter.Project.Module.module_exists(igniter, controller_module(igniter))
+  # The mark: the site's config, the one file of the theme every
+  # edition planted — under guides/ since v0.2.0, under assets/exdoc/
+  # before, where it rode into every release build. A project that
+  # carries v0.1.0, controller and all, is exdoc all the same.
+  @mark "guides/config/docs_config.js"
+  @v0_1_mark "assets/exdoc/config/docs_config.js"
+  @logo "guides/images/app-logo.png"
+  @changelog "CHANGELOG.md"
+  # What `source_url:` says until the project has a repository to name.
+  @placeholder_repo "https://github.com/user/repo"
 
-  defp controller_module(igniter),
-    do: Module.concat(Igniter.Libs.Phoenix.web_module(igniter), ExDocController)
+  @impl true
+  def installed?(igniter) do
+    case file_installed?(igniter, @mark) do
+      {true, igniter} -> {true, igniter}
+      {false, igniter} -> file_installed?(igniter, @v0_1_mark)
+    end
+  end
 
   # What the project carries, read off what the install wrote: the name
-  # and source_url of mix.exs, the `cover` action --coverage adds to
-  # the controller, the token page --auth0 plants. Two options leave no
-  # mark the project keeps: --version stamps the `doc/` dummies only
-  # (gitignored, overwritten by `mix docs`; the project's version is
-  # changelog's), and --build runs `mix docs` once.
+  # and source_url of mix.exs, and in its `docs:` block the website the
+  # sidebar links, the module groups' preset, the placeholder logo
+  # --app-logo names (the file itself lands after the patch set, a
+  # binary copied verbatim) and the report page --coverage lists.
+  # --build leaves no mark: it runs `mix docs` once.
   @impl true
   def state(igniter) do
     {name, igniter} = mix_project_value(igniter, :name)
     {repo_url, igniter} = mix_project_value(igniter, :source_url)
-    {token?, igniter} = file_installed?(igniter, "assets/exdoc/token.md")
-
-    {cover?, igniter} =
-      case Igniter.Project.Module.find_module(igniter, controller_module(igniter)) do
-        {:ok, {igniter, source, _zipper}} ->
-          {String.contains?(Rewrite.Source.get(source, :content), "def cover("), igniter}
-
-        {:error, igniter} ->
-          {false, igniter}
-      end
+    {mix_exs, igniter} = file_content(igniter, "mix.exs")
 
     {%{
        project_name: name,
-       version: nil,
        repo_url: repo_url,
-       coverage: cover?,
-       auth0: token?,
+       homepage_url: homepage_url(mix_exs),
+       app_logo: is_binary(mix_exs) and String.contains?(mix_exs, ~s|logo: "#{@logo}"|),
+       module_groups: module_groups(mix_exs),
+       coverage: is_binary(mix_exs) and String.contains?(mix_exs, ~s|{"TESTING.md"|),
        build: nil
      }, igniter}
+  end
+
+  defp homepage_url(mix_exs) when is_binary(mix_exs) do
+    case Regex.run(~r/homepage_url: "([^"]*)"/, mix_exs) do
+      [_, url] -> url
+      nil -> nil
+    end
+  end
+
+  defp homepage_url(_), do: nil
+
+  # Which preset wrote the groups, by the lines only it writes.
+  defp module_groups(mix_exs) when is_binary(mix_exs) do
+    cond do
+      not String.contains?(mix_exs, "defp groups_for_modules") -> "none"
+      String.contains?(mix_exs, "exdoc --module-groups ash") -> "ash"
+      String.contains?(mix_exs, "exdoc --module-groups contexts") -> "contexts"
+      String.contains?(mix_exs, "exdoc --module-groups layers") -> "layers"
+      true -> nil
+    end
+  end
+
+  defp module_groups(_), do: nil
+
+  @doc """
+  Whether mix.exs keeps a `docs:` block with `extras:` in `project/0`,
+  as this installer writes it — where another cartridge lists a page of
+  its own with `list_page/4`.
+  """
+  def lists_pages?(igniter), do: docs_has?(igniter, [:extras])
+
+  @doc """
+  Lists a page of another cartridge in the site: `{page, [title: title]}`
+  appended to the `docs:` extras, and `page` to `groups_for_extras` under
+  `group` when the block has that group — a `docs:` the project wrote
+  itself is not given groups it did not ask for. Appended, never
+  rewritten — the pages already listed stay where they are — and once
+  only, so a second run changes nothing. Assumes `lists_pages?/1`.
+  """
+  def list_page(igniter, page, title, group) do
+    igniter =
+      update_docs(igniter, [:extras], fn zipper ->
+        # Real AST, not the `{:code, source}` marker `MixProject.update/4`
+        # takes for a whole value: this appends *into* a list.
+        Igniter.Code.List.append_new_to_list(
+          zipper,
+          Sourceror.parse_string!(~s|{"#{page}", [title: "#{title}"]}|),
+          names?(page)
+        )
+      end)
+
+    case docs_has?(igniter, [:groups_for_extras, group]) do
+      {true, igniter} ->
+        update_docs(igniter, [:groups_for_extras, group], fn zipper ->
+          Igniter.Code.List.append_new_to_list(
+            zipper,
+            Sourceror.parse_string!(~s|"#{page}"|),
+            names?(page)
+          )
+        end)
+
+      {false, igniter} ->
+        igniter
+    end
+  end
+
+  # Already listed is by name: `"CHANGELOG.md"` or `{"CHANGELOG.md", …}`,
+  # however it was written — AST equality misses the entry a first run
+  # wrote, and a project may list the page bare.
+  defp names?(page) do
+    fn a, b -> Enum.all?([a, b], &(Sourceror.to_string(&1) =~ ~s|"#{page}"|)) end
+  end
+
+  # Read, never created: `MixProject.update/4` builds a missing path.
+  defp docs_has?(igniter, path) do
+    igniter = Igniter.include_existing_file(igniter, "mix.exs")
+
+    zipper =
+      igniter.rewrite
+      |> Rewrite.source!("mix.exs")
+      |> Rewrite.Source.get(:quoted)
+      |> Sourceror.Zipper.zip()
+
+    found? =
+      with {:ok, zipper} <- Igniter.Code.Function.move_to_def(zipper, :project, 0),
+           {:ok, _} <- get_path(zipper, [:docs | path]) do
+        true
+      else
+        _ -> false
+      end
+
+    {found?, igniter}
+  end
+
+  defp get_path(zipper, []), do: {:ok, zipper}
+
+  defp get_path(zipper, [key | rest]) do
+    with {:ok, zipper} <- Igniter.Code.Keyword.get_key(zipper, key), do: get_path(zipper, rest)
+  end
+
+  defp update_docs(igniter, path, fun) do
+    Igniter.Project.MixProject.update(igniter, :project, [:docs | path], fn
+      nil -> :error
+      zipper -> fun.(zipper)
+    end)
   end
 
   @doc "Installer body, run by the mix task shell as its `igniter/1`."
@@ -111,49 +247,52 @@ defmodule WorkbenchIgniter.Features.Exdoc do
     # Whether the project has Ecto — the database page and diagram — is
     # read off the project, not asked.
     {facts, igniter} = WorkbenchIgniter.PhxDelta.facts(igniter)
+    {name, igniter} = display_name(igniter)
+    {repo, igniter} = repo_url(igniter)
 
     opts =
       igniter.args.options
       |> Keyword.put(:ecto, facts.ecto)
-      |> Keyword.put_new_lazy(:project_name, fn ->
-        Mix.Project.config()[:app] |> to_string() |> String.capitalize()
+      # The changelog is listed when the project keeps one; the
+      # changelog cartridge lists it when it opens one later.
+      |> Keyword.put(:changelog, Igniter.exists?(igniter, @changelog))
+      # The sidebar follows the line the project is on, unless asked.
+      |> Keyword.put_new_lazy(:module_groups, fn ->
+        if Igniter.Project.Deps.has_dep?(igniter, :ash), do: "ash", else: "layers"
       end)
+      |> Keyword.put_new(:project_name, name)
+      # Nothing found and nothing asked: the placeholder, commented out.
+      |> Keyword.put(:placeholder_repo, is_nil(repo) and is_nil(igniter.args.options[:repo_url]))
+      |> Keyword.put_new(:repo_url, repo || @placeholder_repo)
 
-    app_name = Igniter.Project.Application.app_name(igniter)
     app_module = Igniter.Project.Module.module_name_prefix(igniter)
     web_module = Igniter.Libs.Phoenix.web_module(igniter)
-    controller = controller_module(igniter)
+
+    preset = opts[:module_groups]
 
     case installed?(igniter) do
       {true, igniter} ->
         Igniter.add_notice(
           igniter,
-          "#{inspect(controller)} already exists: ExDoc is already installed, skipping."
+          "#{@mark} already exists: ExDoc is already installed, skipping."
+        )
+
+      {false, igniter} when preset not in @module_groups ->
+        Igniter.add_issue(
+          igniter,
+          "Unknown --module-groups #{inspect(preset)}. " <>
+            "One of: #{Enum.join(@module_groups, ", ")}."
         )
 
       {false, igniter} ->
-        install(igniter, app_name, app_module, web_module, controller, opts)
+        igniter
+        |> Igniter.Project.Deps.add_dep({:ex_doc, "~> 0.38", only: :dev, runtime: false},
+          on_exists: :skip
+        )
+        |> configure_mix_project(app_module, web_module, opts)
+        |> plant_assets(opts)
+        |> build_docs(opts)
     end
-  end
-
-  defp install(igniter, app_name, app_module, web_module, controller, opts) do
-    {igniter, router} = Igniter.Libs.Phoenix.select_router(igniter)
-    # phx.new derives its directories from the app name; deriving them from
-    # the module (Macro.underscore/1) diverges on names carrying digits
-    # (app :lorem_3 -> Lorem3Web -> "lorem3_web" instead of "lorem_3_web").
-    web_dir = "#{app_name}_web"
-
-    igniter
-    |> Igniter.Project.Deps.add_dep({:ex_doc, "~> 0.38", only: :dev, runtime: false},
-      on_exists: :skip
-    )
-    |> Igniter.Project.IgniterConfig.dont_move_file_pattern(~r"/controllers/")
-    |> create_controller(controller, web_module, web_dir, app_name, opts)
-    |> configure_mix_project(app_name, app_module, web_module, opts)
-    |> adjust_router(router, app_name, web_module, opts)
-    |> plant_assets(app_name, opts)
-    |> plant_test_dummies(opts)
-    |> build_docs(opts)
   end
 
   # `--build`: generate the site once the patch set is applied, so the
@@ -164,33 +303,9 @@ defmodule WorkbenchIgniter.Features.Exdoc do
     if opts[:build], do: Igniter.add_task(igniter, "docs", []), else: igniter
   end
 
-  # --- Controller and tests ---------------------------------------------------
-
-  defp create_controller(igniter, controller, web_module, web_dir, app_name, opts) do
-    assigns = [
-      app_name: app_name,
-      web_module: inspect(web_module),
-      project_name: opts[:project_name],
-      version: opts[:version],
-      coverage: opts[:coverage]
-    ]
-
-    igniter
-    |> Igniter.Project.Module.create_module(
-      controller,
-      template("controller.eex", assigns),
-      path: "lib/#{web_dir}/controllers/exdoc_controller.ex"
-    )
-    |> Igniter.Project.Module.create_module(
-      Module.concat(web_module, ExDocControllerTest),
-      template("controller_test.eex", assigns),
-      path: "test/#{web_dir}/controllers/exdoc_controller_test.exs"
-    )
-  end
-
   # --- mix.exs ----------------------------------------------------------------
 
-  defp configure_mix_project(igniter, app_name, app_module, web_module, opts) do
+  defp configure_mix_project(igniter, app_module, web_module, opts) do
     set = fn igniter, key, code ->
       Igniter.Project.MixProject.update(igniter, :project, [key], fn _zipper ->
         {:ok, {:code, code}}
@@ -200,22 +315,45 @@ defmodule WorkbenchIgniter.Features.Exdoc do
     igniter
     |> set.(:name, inspect(opts[:project_name]))
     |> set.(:source_url, inspect(opts[:repo_url]))
-    |> set.(:docs, docs_source(app_name, app_module, web_module, opts))
-    |> add_before_closing_tags(app_module, opts)
+    |> set.(:docs, docs_source(opts))
+    |> add_before_closing_tags(app_module)
+    |> add_module_groups(app_module, web_module, opts)
+    |> comment_placeholder_repo(opts[:placeholder_repo])
   end
 
-  defp docs_source(_app_name, app_module, web_module, opts) do
-    mod = inspect(app_module)
-    web = inspect(web_module)
-    owner = opts[:repo_url] |> String.trim_trailing("/") |> String.split("/") |> Enum.at(-2)
+  # A project with no repository to name gets the placeholder commented
+  # out: live, every "source" link of the site would open a page that
+  # does not exist; commented, ExDoc leaves them out, and the line waits
+  # to be filled in. `source_url` sits before `docs:`, so the list stays
+  # valid around the comment.
+  defp comment_placeholder_repo(igniter, true) do
+    Igniter.update_file(igniter, "mix.exs", fn source ->
+      Rewrite.Source.update(source, :content, fn content ->
+        String.replace(
+          content,
+          ~s|source_url: "#{@placeholder_repo}",|,
+          ~s|# source_url: "#{@placeholder_repo}",|
+        )
+      end)
+    end)
+  end
+
+  defp comment_placeholder_repo(igniter, _), do: igniter
+
+  defp docs_source(opts) do
+    # The repository's owner, as far as its URL says: none for the
+    # placeholder, whose owner is nobody.
+    owner =
+      unless opts[:placeholder_repo],
+        do: opts[:repo_url] |> String.trim_trailing("/") |> String.split("/") |> Enum.at(-2)
 
     assets =
       join(
         [
-          ~s|"assets/exdoc/config" => "/"|,
+          ~s|"guides/config" => "/"|,
           only(opts[:coverage], ~s|"cover" => "/"|),
-          ~s|"assets/exdoc/images" => "/assets"|,
-          ~s|"assets/exdoc/js" => "/assets"|
+          ~s|"guides/images" => "/assets"|,
+          ~s|"guides/js" => "/assets"|
         ],
         ",\n    "
       )
@@ -224,30 +362,42 @@ defmodule WorkbenchIgniter.Features.Exdoc do
       join(
         [
           ~s|{"README.md", [title: "Overview"]}|,
-          ~s|{"CHANGELOG.md", [title: "Changelog"]}|,
-          only(opts[:auth0], ~s|{"assets/exdoc/token.md", [title: "Get access tokens"]}|),
-          only(opts[:ecto], ~s|{"assets/exdoc/database.md", [title: "Database"]}|),
+          only(opts[:changelog], ~s|{"#{@changelog}", [title: "Changelog"]}|),
+          only(opts[:ecto], ~s|{"guides/database.md", [title: "Database"]}|),
           only(opts[:coverage], ~s|{"TESTING.md", [title: "Test Suite Report"]}|)
         ],
         ",\n    "
       )
 
+    project = join([~s|"README.md"|, only(opts[:changelog], ~s|"#{@changelog}"|)], ",\n      ")
+
     support =
       join(
         [
-          only(opts[:auth0], ~s|"assets/exdoc/token.md"|),
           only(opts[:coverage], ~s|"TESTING.md"|),
-          only(opts[:ecto], ~s|"assets/exdoc/database.md"|)
+          only(opts[:ecto], ~s|"guides/database.md"|)
         ],
         ",\n      "
+      )
+
+    groups =
+      if opts[:module_groups] != "none", do: "groups_for_modules: groups_for_modules(),"
+
+    # The sidebar's head: where its name and logo link, and the logo.
+    sidebar =
+      join(
+        [
+          only(opts[:homepage_url], ~s|homepage_url: "#{opts[:homepage_url]}",|),
+          only(opts[:app_logo], ~s|logo: "#{@logo}",|)
+        ],
+        "\n  "
       )
 
     """
     [
       source_ref: "main",
-      authors: ["#{owner}"],
-      homepage_url: "#{opts[:repo_url]}",
-      logo: "assets/exdoc/images/app-logo.png",
+      #{owner && ~s|authors: ["#{owner}"],|}
+      #{sidebar}
       output: "doc",
       main: "readme",
       assets: %{
@@ -258,41 +408,21 @@ defmodule WorkbenchIgniter.Features.Exdoc do
       ],
       groups_for_extras: [
         Project: [
-          "README.md",
-          "CHANGELOG.md"
+          #{project}
         ],
         Support: [
           #{support}
         ]
       ],
-      groups_for_modules: [
-        Contexts: ~r/^#{mod}\\.(?!(.*\\..*|Mailer|Repo|Helper|Release|.*Ecto.*)$).*$/,
-        Schemas: ~r/^#{mod}\\..*\\.(?!.*(Enum)$).*$/,
-        Types: ~r/^#{mod}\\..*(Enum|EctoURI)$/,
-        Web: ~r/^#{web}(?!(.Plug..*|.*(Controller|HTML|JSON))$)/,
-        Plugs: ~r/^#{web}.Plug..*$/,
-        Controllers: ~r/^#{web}.*(Controller)$/,
-        Views: ~r/^#{web}.*(HTML|JSON)$/
-      ],
+      #{groups}
       before_closing_head_tag: &before_closing_head_tag/1,
       before_closing_body_tag: &before_closing_body_tag/1
     ]
     """
   end
 
-  defp add_before_closing_tags(igniter, app_module, opts) do
-    scripts =
-      join(
-        [
-          ~s|  <script src="./assets/themedImage.js"></script>|,
-          opts[:auth0] &&
-            ~s|  <script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>|,
-          opts[:auth0] && ~s|  <script src="./assets/auth_config.js"></script>|,
-          opts[:auth0] && ~s|  <script src="./assets/token.js"></script>|
-        ],
-        "\n"
-      )
-
+  defp add_before_closing_tags(igniter, app_module) do
+    scripts = ~s|  <script src="./assets/themedImage.js"></script>|
     code = template("before_closing.eex", scripts: scripts)
     mix_project = Module.concat(app_module, MixProject)
 
@@ -301,55 +431,41 @@ defmodule WorkbenchIgniter.Features.Exdoc do
     end)
   end
 
-  # --- Router -----------------------------------------------------------------
+  # The groups are functions of mix.exs, written after the project's own:
+  # a preset reads a module's behaviours and directory, which a keyword
+  # of literals cannot say, and `contexts` lists lib/<app>/ when the docs
+  # are built. `none` writes nothing and ExDoc lists the modules flat.
+  defp add_module_groups(igniter, app_module, web_module, opts) do
+    case opts[:module_groups] do
+      "none" ->
+        igniter
 
-  defp adjust_router(igniter, router, app_name, web_module, opts) do
-    cover_route =
-      if opts[:coverage],
-        do: ~s|    get "/docs/cover", ExDocController, :cover\n|,
-        else: ""
+      preset ->
+        assigns = [
+          mod: inspect(app_module),
+          web: inspect(web_module),
+          app: Igniter.Project.Application.app_name(igniter)
+        ]
 
-    code = """
-    # ExDoc documentation site
-    if Application.compile_env(:#{app_name}, :dev_routes) do
-      scope "/dev", #{inspect(web_module)} do
-        pipe_through :exdoc
+        code =
+          template("groups_#{preset}.eex", assigns) <>
+            "\n\n" <> template("groups_web.eex", assigns)
 
-        get "/docs/", ExDocController, :index
-    #{cover_route}    get "/docs/*path", ExDocController, :handle
-      end
+        Igniter.Project.Module.find_and_update_module!(
+          igniter,
+          Module.concat(app_module, MixProject),
+          fn zipper -> {:ok, Igniter.Code.Common.add_code(zipper, code, placement: :after)} end
+        )
     end
-    """
-
-    igniter
-    |> Igniter.Libs.Phoenix.add_pipeline(
-      :exdoc,
-      """
-      # The docs live in the standard `doc/` output dir, outside priv:
-      # these routes are dev-only, where the VM cwd is the project root.
-      plug Plug.Static,
-        at: "/dev/docs",
-        from: "doc",
-        cache_control_for_etags: "public, max-age=86400",
-        gzip: true
-      """,
-      router: router,
-      warn_on_present?: false
-    )
-    |> Igniter.Project.Module.find_and_update_module!(router, fn zipper ->
-      {:ok, Igniter.Code.Common.add_code(zipper, code, placement: :after)}
-    end)
   end
 
-  # --- assets/exdoc -----------------------------------------------------------
+  # --- guides/ ---------------------------------------------------------------
 
-  defp plant_assets(igniter, _app_name, opts) do
+  defp plant_assets(igniter, opts) do
     igniter
-    |> plant_asset("js/docs_config.js", "assets/exdoc/config/docs_config.js")
-    |> plant_logo()
-    |> plant_asset("js/themedImage.js", "assets/exdoc/js/themedImage.js")
-    |> plant_if(opts[:auth0], "js/token.js", "assets/exdoc/js/token.js")
-    |> plant_if(opts[:auth0], "token.md", "assets/exdoc/token.md")
+    |> plant_asset("js/docs_config.js", @mark)
+    |> plant_logo(opts[:app_logo])
+    |> plant_asset("js/themedImage.js", "guides/js/themedImage.js")
     |> plant_testing_placeholder(opts)
     |> plant_database_placeholder(opts)
   end
@@ -358,16 +474,11 @@ defmodule WorkbenchIgniter.Features.Exdoc do
     Igniter.create_new_file(igniter, path, asset(asset), on_exists: :overwrite)
   end
 
-  defp plant_if(igniter, condition, asset, path) do
-    if condition, do: plant_asset(igniter, asset, path), else: igniter
-  end
-
   # The logo is a binary asset: copied verbatim after the patch set is
   # applied, never through the rewrite pipeline (which would normalize
   # its trailing bytes). See WorkbenchIgniter.plant_binary_asset/4.
-  defp plant_logo(igniter) do
-    plant_binary_asset(igniter, "images/app-logo.png", "assets/exdoc/images/app-logo.png")
-  end
+  defp plant_logo(igniter, true), do: plant_binary_asset(igniter, "images/app-logo.png", @logo)
+  defp plant_logo(igniter, _), do: igniter
 
   # TESTING.md is generated (and overwritten) by `mix cover` at the
   # project root; a placeholder keeps `mix docs` from failing on a missing
@@ -389,46 +500,12 @@ defmodule WorkbenchIgniter.Features.Exdoc do
   # that runs, a placeholder keeps `mix docs` from failing on a missing
   # extra file.
   defp plant_database_placeholder(igniter, opts) do
-    if opts[:ecto] and not Igniter.exists?(igniter, "assets/exdoc/database.md") do
+    if opts[:ecto] and not Igniter.exists?(igniter, "guides/database.md") do
       Igniter.create_new_file(
         igniter,
-        "assets/exdoc/database.md",
+        "guides/database.md",
         "# Database\n\n> Run `mix db` to generate the database documentation.\n",
         on_exists: :skip
-      )
-    else
-      igniter
-    end
-  end
-
-  # --- Dummy documentation pages ----------------------------------------------
-
-  # Lets the generated test suite (and coverage reports) pass before
-  # `mix docs` has ever run. They live in the gitignored `doc/` output dir
-  # and are overwritten by the real documentation.
-  defp plant_test_dummies(igniter, opts) do
-    dir = "doc"
-    name = opts[:project_name]
-    version = opts[:version]
-
-    igniter
-    |> Igniter.create_new_file(
-      "#{dir}/index.html",
-      "<title>#{name} v#{version} — Documentation</title>\n",
-      on_exists: :overwrite
-    )
-    |> Igniter.create_new_file(
-      "#{dir}/404.html",
-      "<title>404 — #{name} v#{version}</title>\n",
-      on_exists: :overwrite
-    )
-    |> plant_cover_dummy(dir, opts)
-  end
-
-  defp plant_cover_dummy(igniter, dir, opts) do
-    if opts[:coverage] do
-      Igniter.create_new_file(igniter, "#{dir}/excoveralls.html", "<title>Coverage</title>\n",
-        on_exists: :overwrite
       )
     else
       igniter

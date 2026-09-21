@@ -1,0 +1,22 @@
+# The sidebar's module groups (exdoc --module-groups ash): each module by
+# its role in the Ash DSL — read off the behaviour it implements, since a
+# change and a resource are named alike — then the web layer. The first
+# group that matches wins, so the resources come after every role.
+defp groups_for_modules do
+  [
+    Application: [
+      <%= @mod %>,
+      ~r/^<%= @mod %>\.(Release|Mailer)$/,
+      &behaves?(&1, [Application, Ecto.Repo, AshAuthentication.Secret])
+    ],
+    Domains: [&behaves?(&1, [Ash.Domain])],
+    Changes: [&behaves?(&1, [Ash.Resource.Change])],
+    Validations: [&behaves?(&1, [Ash.Resource.Validation])],
+    Calculations: [&behaves?(&1, [Ash.Resource.Calculation])],
+    Preparations: [&behaves?(&1, [Ash.Resource.Preparation])],
+    Checks: [&behaves?(&1, [Ash.Policy.Check])],
+    Types: [&behaves?(&1, [Ash.Type])],
+    Senders: [&behaves?(&1, [AshAuthentication.Sender])],
+    Resources: [~r/^<%= @mod %>\.[A-Z]\w*\.[A-Z]\w*(?<!Error|Exception)$/]
+  ] ++ web_groups()
+end

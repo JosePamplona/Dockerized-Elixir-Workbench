@@ -26,17 +26,17 @@
       <nav id="sidebar" class="sidebar">
         <div class="sidebar-header">
           <div class="sidebar-projectInfo">
-            <a href="/dev/docs" class="sidebar-projectImage">
+            <a href="index.html" class="sidebar-projectImage">
               <img src="assets/logo.png" alt="<%= project[:name] || project[:app] %>" onerror="this.parentNode.hidden = true" />
             </a>
             <div>
-              <a href="/dev/docs" class="sidebar-projectName" translate="no"><%= project[:name] || project[:app] %></a>
+              <a href="index.html" class="sidebar-projectName" translate="no"><%= project[:name] || project[:app] %></a>
               <div class="sidebar-projectVersion" translate="no">v<%= project[:version] %></div>
             </div>
           </div>
           <ul class="sidebar-list-nav" role="tablist">
-            <li><a href="/dev/docs/testing.html" role="tab">Pages</a></li>
-            <li><a href="/dev/docs/cover#" role="tab" aria-selected="true">Coverage</a></li>
+            <li><a href="testing.html" role="tab">Pages</a></li>
+            <li><a href="#" role="tab" aria-selected="true">Coverage</a></li>
           </ul>
         </div>
 

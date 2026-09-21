@@ -162,11 +162,11 @@ defmodule Mix.Tasks.CoverTest do
       content = run_capturing_report(@passing_output, @passing_json)
 
       assert content =~ "## Coverage"
-      assert content =~ "Full test coverage report: [Test Coverage Overview](./cover)."
+      assert content =~ "Full test coverage report: [Test Coverage Overview](./excoveralls.html)."
       assert content =~ "| Coverage | Status | File | Lines | Relevant | Missed |"
 
       assert content =~
-               "| 90.0% | ✅ | [`lib/my_app/foo.ex`](cover#lib/my_app/foo.ex) | 20 | 10 | 1 |"
+               "| 90.0% | ✅ | [`lib/my_app/foo.ex`](excoveralls.html#lib/my_app/foo.ex) | 20 | 10 | 1 |"
 
       assert content =~ "| **95.0%** | ✅ | | **30** | **15** | **1** |"
     end

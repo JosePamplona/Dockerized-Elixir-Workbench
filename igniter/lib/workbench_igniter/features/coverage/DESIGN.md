@@ -1,6 +1,6 @@
 # coverage — Design
 
-Revision: cartridge v0.3.0 (2026-09-20)
+Revision: cartridge v0.4.0 (2026-09-21)
 
 ## Abstract
 
@@ -105,8 +105,25 @@ box makes for `mix credo` over `mix credo --strict`. 80 is written into
 number in the project's own tree, and the cartridge never rewrites it
 (§"a second run", below).
 
+**The templates live under `test/`, not `assets/`.** Until v0.4.0 they
+were planted under `assets/cover/template/`, and in a Phoenix
+application `assets/` is the release build's input: the Dockerfile
+`phx.gen.release` writes copies it into the builder stage, and tailwind
+scans it for classes. The templates are a dev tool's source and reach
+neither the release nor the pages it serves. `test/` is the place with
+all three properties they need: the same generator's `.dockerignore`
+leaves `/test/` out of the build's context; nothing compiles there but
+`test/support` (`elixirc_paths(:test)`), and `mix test` loads only
+`*_test.exs`; and a formatter reading `{config,lib,test}/**/*.{ex,exs}`
+never opens an `.eex`. It is also what the templates are about: the
+suite's report. Rejected: `.dockerignore` alone, which hides them from
+Docker and not from tailwind; and a directory at the root, one more
+for a reader to learn, where `test/` already says what it holds.
+`state/1` reads the theme wherever `coveralls.json`'s `template_path`
+points, so an older project, or one that moved them, still says it.
+
 **The report is planted, in one of two themes.** The cartridge writes
-the `.eex` templates into `assets/cover/template/` and points
+the `.eex` templates into `test/coverage/template/` and points
 `template_path` at them, instead of leaving ExCoveralls' bundled report
 in place. The reason is ownership: a report is a page with the project's
 name on it, and the templates are `.eex` whose tags belong to the target
@@ -143,10 +160,13 @@ so a later tidy-up does not quietly break the report.
 **`mix cover` is a task in the project, not in the workbench.** With
 `--exdoc` the cartridge plants `lib/mix/tasks/cover.ex`, an ExUnit
 formatter and their tests, and the task writes `TESTING.md` — execution
-board, coverage table, per-module sections — for ExDoc to serve. It
-belongs in the project because the person who runs it is the project's
-developer, in the project's container, and because the report is
-generated output: `TESTING.md` is gitignored, the task is source. The
+board, coverage table, per-module sections — for ExDoc's site, where it
+links the HTML report by a relative path (exdoc copies the coverage
+output dir into the site's root, so both sit side by side wherever the
+site is served; until v0.4.0 the links named exdoc's `/dev/docs`
+routes). It belongs in the project because the person who runs it is the
+project's developer, in the project's container, and because the report
+is generated output: `TESTING.md` is gitignored, the task is source. The
 alternative — the workbench generating the report from outside — needs
 the workbench to know the project's suite, which is the contract the
 workbench does not ask for.

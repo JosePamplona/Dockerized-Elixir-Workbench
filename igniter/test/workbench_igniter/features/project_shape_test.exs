@@ -43,7 +43,7 @@ defmodule WorkbenchIgniter.Features.ProjectShapeTest do
         "https://example.com/r"
       ])
 
-    refute files(igniter)["assets/exdoc/database.md"]
+    refute files(igniter)["guides/database.md"]
 
     assert files(
              project([])
@@ -53,7 +53,7 @@ defmodule WorkbenchIgniter.Features.ProjectShapeTest do
                "--repo-url",
                "https://example.com/r"
              ])
-           )["assets/exdoc/database.md"]
+           )["guides/database.md"]
   end
 
   test "the schemas no longer take the phx.new shape" do

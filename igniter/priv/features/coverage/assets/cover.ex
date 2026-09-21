@@ -10,9 +10,10 @@ defmodule Mix.Tasks.Cover do
   @test_output_path "."
   @coverage_config "coveralls.json"
   @coverage_filename "excoveralls.html"
-  # Served by the dev-only ExDocController route (/dev/docs/cover); relative
-  # to COVERAGE.md so it resolves whatever host/port the app runs on.
-  @coverage_route "cover"
+  # ExDoc copies the coverage output dir into the site's root (the
+  # `"cover" => "/"` entry of `docs: [assets: ...]`), so the report sits
+  # beside this page: relative, it resolves wherever the site is served.
+  @coverage_route @coverage_filename
   @coverage_link "[Test Coverage Overview](./#{@coverage_route})"
   # coveralls.json is read at compile time when present (dev/test). The
   # production image never copies it, so compilation falls back to the

@@ -384,6 +384,7 @@ defmodule WorkbenchIgniter.Features do
         requires: on.requires,
         conditions: on.conditions,
         open: open,
+        detected: key in feature.detected(),
         doc: Keyword.get(docs, key)
       }
     end

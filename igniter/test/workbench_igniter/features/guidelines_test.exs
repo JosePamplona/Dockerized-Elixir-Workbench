@@ -27,16 +27,16 @@ defmodule WorkbenchIgniter.Features.GuidelinesTest do
         |> Map.get(:assigns)
         |> Map.get(:test_files)
 
-      assert files["assets/exdoc/coding.md"] =~ "# Coding guidelines"
+      assert files["guides/coding.md"] =~ "# Coding guidelines"
       # The two lists exdoc keeps, each with the page appended and its
       # own pages untouched.
-      assert files["mix.exs"] =~ ~s|{"assets/exdoc/coding.md", [title: "Coding guidelines"]}|
+      assert files["mix.exs"] =~ ~s|{"guides/coding.md", [title: "Coding guidelines"]}|
       assert files["mix.exs"] =~ ~s|{"README.md", [title: "Overview"]}|
 
       support =
         Regex.run(~r/Support: \[(.*?)\]/s, files["mix.exs"]) |> List.last()
 
-      assert support =~ ~s|"assets/exdoc/coding.md"|
+      assert support =~ ~s|"guides/coding.md"|
     end
 
     test "warns and plants a placeholder naming the URL when the download fails" do
@@ -48,7 +48,7 @@ defmodule WorkbenchIgniter.Features.GuidelinesTest do
              |> apply_igniter!()
              |> Map.get(:assigns)
              |> Map.get(:test_files)
-             |> Map.get("assets/exdoc/coding.md") =~ @url
+             |> Map.get("guides/coding.md") =~ @url
     end
 
     test "refuses without a URL: it is the page the cartridge installs" do

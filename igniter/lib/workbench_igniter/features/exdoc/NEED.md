@@ -1,9 +1,9 @@
 # exdoc
 
-You want the project's documentation readable, served by the project itself.
+You want the project's documentation readable, built from the code it describes.
 
 **Before:** module and function docs nobody opens, and the curated pages nowhere.
 
-**After:** `/dev/docs`: ExDoc's site built from the code, plus the workbench's pages — coverage, the auth token, the database diagram — one URL away in dev.
+**After:** `mix docs`, and the console opens ExDoc's site built from the code, plus the workbench's pages — the test suite report, the database diagram — whether the app is running or not.
 
-**Not for:** publishing — it is served in dev; HexDocs is another step.
+**Not for:** publishing — HexDocs is another step.

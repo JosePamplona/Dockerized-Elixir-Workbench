@@ -20,9 +20,9 @@ defmodule Mix.Tasks.DbTest do
         assert String.split(output, "\n") == [
           "Formatting DbSchema files...",
           "Success! the DbSchema files were generated:",
-          "  ./assets/exdoc/database.md",
-          "  ./assets/exdoc/images/model-light.svg",
-          "  ./assets/exdoc/images/model-dark.svg",
+          "  ./guides/database.md",
+          "  ./guides/images/model-light.svg",
+          "  ./guides/images/model-dark.svg",
           ""
         ]
       end

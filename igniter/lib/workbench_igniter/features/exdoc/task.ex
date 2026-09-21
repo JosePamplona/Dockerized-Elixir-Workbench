@@ -3,7 +3,7 @@ defmodule Mix.Tasks.Workbench.Install.Exdoc do
 
   alias WorkbenchIgniter.Features.Exdoc
 
-  @shortdoc "Adds ExDoc documentation served at /dev/docs to the project"
+  @shortdoc "Adds the ExDoc documentation site to the project"
 
   @moduledoc """
   #{@shortdoc}
@@ -14,16 +14,14 @@ defmodule Mix.Tasks.Workbench.Install.Exdoc do
   * configures `name`, `source_url` and the full `docs` section in
     `mix.exs` (assets, extras, groups and regex-based module groups),
     plus the `before_closing_*_tag` helper functions
-  * creates `MyAppWeb.ExDocController` (index / coverage / 404 fallback)
-    with its unit tests
-  * router: `:exdoc` pipeline (`Plug.Static` over the standard `doc/`
-    output dir, already gitignored by phx.new) and dev routes under
-    `/dev/docs`
-  * plants the documentation assets under `assets/exdoc/`: logo, theme
-    JS, and the conditional pages (token, database placeholder), plus
-    the root `COVERAGE.md` and `TESTING.md` placeholders for `mix cover`
-  * seeds dummy pages in `doc/` so the test suite passes before the first
-    `mix docs` run
+  * plants the site's sources under `guides/` — outside `assets/`, the
+    release build's input: its config, the logo, the theme JS and the
+    database placeholder, plus the root `TESTING.md` placeholder for
+    `mix cover` with `--coverage`
+
+  `mix docs` writes the site to the standard `doc/` output dir, already
+  gitignored by phx.new, and the console serves it from there: the
+  project carries no route or controller for it.
 
   ## Example
 

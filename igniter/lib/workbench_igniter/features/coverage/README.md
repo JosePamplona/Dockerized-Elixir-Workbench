@@ -28,8 +28,10 @@ attention.
 The cartridge also ties coverage into the project's documentation: the
 `mix cover` task runs the suite and produces `TESTING.md` — execution
 result board, coverage table and per-module sections in one report —
-which the ExDoc feature publishes as a page of the documentation site. Test results stop being something only the person who
-ran them sees and become part of what the project shows about itself.
+which the ExDoc feature publishes as a page of the documentation site,
+beside the HTML report it links. Test results stop being something only
+the person who ran them sees and become part of what the project shows
+about itself.
 
 ## What it installs
 
@@ -41,7 +43,8 @@ ran them sees and become part of what the project shows about itself.
   gitignored by phx.new), report template path, minimum coverage and skip list
   (with `--interface rest` it skips the `open_api` files; without
   `--no-html` it skips the components folder).
-* The chosen HTML report theme (`--theme`) under `assets/cover/template/`.
+* The chosen HTML report theme (`--theme`) under `test/coverage/template/`
+  — dev-tool source, kept out of `assets/`, the release build's input.
   Themes live in `priv/features/coverage/assets/template/<theme>/`, one
   directory each with the
   three files excoveralls renders (`coverage.html.eex`, `_script.html.eex`,

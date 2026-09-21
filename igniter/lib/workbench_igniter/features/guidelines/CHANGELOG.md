@@ -5,6 +5,15 @@ it. Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) applied to
 what the cartridge *installs*.
 
+## v0.2.0 - (2026-09-21)
+
+### Updated
+
+- The page is `guides/coding.md`, beside the rest of the site's sources
+  since exdoc v0.2.0 moved them out of `assets/`, the release build's
+  input. Its entries in the `docs:` block are written through exdoc's
+  `list_page/4`, the code that owns the block's shape.
+
 ## v0.1.0 - (2026-08-30)
 
 ### Added

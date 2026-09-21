@@ -307,6 +307,10 @@ which cartridges have one and why.
 * `option_docs/0` - one line per option: the task's "## Options"
   section is rendered from it (`WorkbenchIgniter.Feature.options_doc/1`
   in the task's `@moduledoc`), and so is the help beside a form field.
+* `detected/0` - the options whose default the installer reads off the
+  project (exdoc's name, repository, module groups): no default in the
+  schema, `detected` in the catalog, and a form's field says *read off
+  the project* where it would show a default.
 * `rerun/0` - what a second run does: `:noop` (the guard skips it) or
   `:adds` (every option a piece the installer adds when missing).
 * `state/1` - what the project carries of its options, read off the

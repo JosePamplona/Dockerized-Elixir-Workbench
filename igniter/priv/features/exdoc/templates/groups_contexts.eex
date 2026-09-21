@@ -1,0 +1,23 @@
+# The sidebar's module groups (exdoc --module-groups contexts): one group
+# per context, a directory under lib/<%= @app %>/, read each time the docs
+# are built — a new context is a new group without touching this file.
+# Then what lives beside the contexts, and the web layer.
+defp groups_for_modules do
+  dir = "lib/<%= @app %>"
+
+  contexts =
+    for {:ok, entries} <- [File.ls(dir)],
+        context <- Enum.sort(entries),
+        File.dir?(Path.join(dir, context)) do
+      name = Macro.camelize(context)
+      {String.to_atom(name), [~r/^<%= @mod %>\.#{name}(\.|$)/]}
+    end
+
+  contexts ++
+    [
+      Application: [
+        ~r/^<%= @mod %>(\.[A-Z]\w*)?$/,
+        &behaves?(&1, [Application, Ecto.Repo])
+      ]
+    ] ++ web_groups()
+end

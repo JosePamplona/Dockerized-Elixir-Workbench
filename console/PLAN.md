@@ -713,13 +713,12 @@ declare, and nothing else of the workspace — `.env` is in it.
   Record's parameters column has to learn to tell apart.
 * **Building it from the door.** An unlit door says *nothing built*; the
   command that builds it is the cartridge's to name, a job to run.
-* **The boxes.** exdoc and coverage still plant the router, the
-  controller and `/dev/docs/cover`; their doors changed, their
-  installers did not. Their next editions drop them, and exdoc's NEED
-  (*served by the project itself*) says the new thing. The auth0 token
-  page is the one piece that needs the app's origin — Auth0's callback,
-  the API without CORS — and either stays in the project or is left to
-  Swagger.
+* ~~**The boxes.**~~ *Done on 2026-09-21:* exdoc v0.2.0 plants no
+  router, controller or `doc/` dummies, and dropped `--version` and
+  `--auth0` (the token page needs the app's origin; auth0 is archived);
+  coverage v0.4.0 links the report and the report page by relative
+  paths, which hold under the console and under a v0.1.0 project's
+  `/dev/docs` alike. No `exdoc_tied` copy: git keeps v0.1.0.
 * **Symlinks** under an output dir are followed.
 
 ## Open — one word, two things: *installer*

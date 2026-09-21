@@ -18,7 +18,7 @@ defmodule Mix.Tasks.Workbench.Install.Coverage do
     dir (already gitignored by phx.new), with the custom template, minimum
     coverage and skip list
   * plants the chosen excoveralls HTML report theme (`--theme`) under
-    `assets/cover/template/`
+    `test/coverage/template/`
   * with `--exdoc`, plants the `mix cover` task (testing & coverage reports
     integrated into ExDoc) along with its ExUnit formatter and unit tests,
     and gitignores the generated `TESTING.md` report

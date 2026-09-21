@@ -1,0 +1,144 @@
+credo — front cover, hero prompt
+Era 4, console (late 1980s). Register: tireless. From eras.md
+proposal 7, the author's: the classroom, and Credo's outputs on the
+board as lessons.
+
+Take 5. Take 4 (`_archived/art/cover-3.jpg`) was accepted, expanded,
+cut and stamped, and it is still the source of this cover's lettering:
+its lockup was cut out of it as `art/lockup.png` (keyed on its violet
+fill, with a ring for the cream outline and the drop shadow). The author
+asked for Credo's mark and the title **centred together as one block**,
+and a generated lockup cannot give that: the console genre sets its
+lockup centred at the foot whatever it is told (exdebug-4, exdebug-5),
+and a space asked for beside the title is a space that comes back
+filled. So this take asks for **no lettering in the lower part at all**,
+and `covers.py stamp --lockup art/lockup.png --mark-beside-lockup`
+composites the mark and the lockup as one block, centred exactly.
+
+Take 4's notes, which still hold: three takes have been archived, and between them they settled
+one thing: **a decimal fraction written in this prompt comes back
+lettered on the face.** Take 1 (carton) returned twenty-seven of them
+with leader rules; take 3 (this era, eleven fractions) returned six as a
+scale down the left margin. It is not the era — the carton block's own
+"technical schematic" was a suspect and console cleared it — and it is
+not a missing prohibition: take 1 forbade measurements, dimension lines,
+leaders and captions by name, and came back with all four drawn.
+
+So this take carries **no decimal fraction at all**. The reference image
+is at the hero's own proportion and already holds every position the old
+coordinate list held; giving both was giving the generator two answers,
+and it drew the numbers. Placement is the drawing's job here, stated in
+words.
+
+The one placement the drawing does not settle is the top of the frame:
+take 3 hung the board a sixth of the way down, where the composited mark
+lands, so the band above the board is described below and is the thing
+to check first on what comes back.
+
+THE HERO IS GENERATED FROM A REFERENCE IMAGE, attached to turn 1:
+  art/reference-classroom-4x5.png
+the author's drawing of a classroom, cropped to the hero's own 4:5 on
+the board's centre. The original, `reference-classroom.png`, 1595×986
+landscape, is beside it as the source.
+
+THE BADGE IS NOT IN THIS PROMPT. Credo's own mark is composited
+afterwards by `covers.py stamp --mark credo=marks/1-credo.png`, centred
+along the top of the window. Nothing here asks the generator for a logo
+or a mark: the one time a generator was asked for one it put "Nintendo"
+in the seal. The hero's job is to leave the top of the image an even
+field so the mark has somewhere to land.
+
+--- turn 1, with art/reference-classroom-4x5.png attached ---
+
+Late-1980s console game box cover art. Painted airbrush illustration with
+the slightly stiff, heroic look of North American 8-bit era packaging:
+hard airbrush gradients, chunky specular highlights, visible matte
+cardboard grain.
+
+Flat cover illustration filling the entire image edge to edge, all of
+it in one plane: the four edges of the image are the four edges of the
+illustration, and the illustration is all there is — not a product
+photograph, not a box or a board: no bevel, no lip, no rim of light, no
+edge, no shadow, no surface behind it, no margin of any colour around
+it. Proportions 4:5 portrait. The ground of the illustration, edge to
+edge, is one tone that reads clearly lighter or darker in value than
+Elixir violet (#4B275F).
+
+The attached drawing is the reference for the room, and it is a picture
+of a place: a classroom seen from the back of the room in one-point
+perspective, with a blackboard on the far wall, an empty chair behind a
+teacher's desk, and a tiled floor running toward the viewer. Paint that
+same place, in that same perspective, with the blackboard, the desk, the
+chair and the floor at the size and in the position the drawing gives
+them, in the manner of the first two paragraphs — airbrushed, heroic,
+lit — rather than in the drawing's own coloured-pencil shading, outline
+weight, colours or framing.
+
+The ceiling and the band of bare far wall above the blackboard together
+fill the top quarter of the image, lit, even and calm, with nothing
+hanging in them and nothing drawn on them: the board's frame begins
+below that quarter, as it does in the drawing.
+
+The light comes from high on the left and falls across the far wall and
+the blackboard, so the board is the brightest thing in the room and the
+desk and the chair below it stand in the warmer shadow the light leaves.
+The walls, the ceiling and the tiled floor are all a warm ochre,
+airbrushed from pale at the top of the wall to deep at the foot of the
+floor, and that ochre is clearly lighter in value than Elixir violet.
+The far wall is bare to the left of the board and to the right of it.
+
+The blackboard is a deep slate green field in a heavy dark frame, wide
+and low, the lit half of it paler than the half in shadow. Every chalk
+mark on it is opaque and bright, in a plain hand at foreground size,
+each stroke carrying a hard specular highlight along its upper edge.
+
+Chalked across the top of the board, a row of five tags, one character
+in brackets each, all on one line, evenly spaced across the left two
+thirds of the board, reading
+
+  [C]   [D]   [F]   [R]   [W]
+
+and below that row, filling the rest of the board, three lines of chalk
+left-aligned under the first tag, one under the other, reading
+
+  Modules should have a @moduledoc tag.
+  There should be no calls to dbg/1.
+  Avoid long quote blocks.
+
+A chalk rail runs along the foot of the board, carrying a short stub of
+chalk toward its left end and a felt eraser toward its right. Those five
+tags, those three lines, the chalk and the eraser are everything the
+board carries.
+
+The teacher's desk stands where the drawing puts it, solid and
+monumental, its top clear; the chair stands between the desk and the
+board, turned to face the room, and there is nobody in it, and nobody
+anywhere in the room.
+
+Below the desk, the tiled floor runs on toward the viewer to the bottom
+edge of the image: the lower quarter of the image is that floor, warm,
+evenly lit and calm, its tiles receding in the same one-point
+perspective, the desk's shadow falling back across it and nothing
+standing on it.
+
+The five chalked tags and the three chalked lines are all the lettering
+in the image.
+
+The top left of the artwork is composed as a quiet area: low detail, no
+focal element, an even field of tone — the lit ceiling.
+
+Every mark on the face is printed illustration or type, and the marks
+named above are all of them.
+
+The reference's own chalked line, its two ceiling fixtures, its wall
+clock, its map, its plant, its side table and its flag are not in this
+image; the far wall and the ceiling are bare where they stood.
+
+--- turn 2, with the padded canvas from covers.py pad ---
+
+The flat grey border around this picture is blank. Paint it by
+continuing the picture outward into it on every side, to the edges —
+the lit ceiling continues above, the tiled floor continues below, and
+the warm ochre far wall continues to both sides. Keep the picture inside
+exactly as it is, and add nothing new: no figure, no object, no
+lettering.

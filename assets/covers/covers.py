@@ -469,6 +469,12 @@ MARK_TOP = 0.06
 MARK_FIELD = "#F6F3EE"
 MARK_RULE = "#BEC4D0"
 MARK_POINT = 0.023
+# `--mark-style bare`: the mark alone, no square and no name — for a box
+# whose one tool is the box itself (credo), where the name under the
+# square would repeat the title and the square would frame a mark that
+# is already a square. `--mark-scale` multiplies the size the mark has
+# inside a tile; the top stays MARK_TOP.
+MARK_STYLES = ("tile", "bare")
 
 
 def margins(spec):
@@ -527,11 +533,28 @@ def engraved_badge(text, fnt, ink, min_width=0):
     return badge
 
 
-def marks_strip(marks, window_width):
+def marks_strip(marks, window_width, style="tile", scale=1.0):
     """A row of marks, each fitted to a rounded square with its name
-    under it: `marks` is [(name, path)]. Returns the strip, shadows
-    included, on a clear field."""
+    under it — or, `style="bare"`, the marks alone at `scale` times the
+    size they take inside a square: `marks` is [(name, path)]. Returns
+    the strip, shadows included, on a clear field."""
     side, gap = px(window_width, MARK_SIDE), px(window_width, MARK_GAP)
+    if style == "bare":
+        fitted = []
+        for _name, path in marks:
+            if not os.path.isfile(path):
+                die(f"No mark at {path}")
+            mark = Image.open(path).convert("RGBA")
+            mark = mark.crop(mark.getbbox() or (0, 0, mark.width, mark.height))
+            mark.thumbnail((round(side * 0.80 * scale), round(side * 0.66 * scale)), Image.LANCZOS)
+            fitted.append(mark)
+        w = sum(m.width for m in fitted) + gap * (len(fitted) - 1)
+        strip = Image.new("RGBA", (w, max(m.height for m in fitted)), (0, 0, 0, 0))
+        x = 0
+        for mark in fitted:
+            strip.alpha_composite(mark, (x, 0))
+            x += mark.width + gap
+        return strip
     fnt = font(BADGE_FONT, px(window_width, MARK_POINT))
     label_gap = round(side * 0.08)
     x0, y0, x1, y1 = fnt.getbbox("Ag")
@@ -570,8 +593,8 @@ def marks_strip(marks, window_width):
 def stamp(art, output, face="cover", corner="br", size=SEAL_SIZE, placement="straddle",
           margin=SEAL_MARGIN, badge="", badge_corner="", badge_style="box", badge_ink="",
           title="", title_y=TITLE_Y, title_point=TITLE_POINT, title_rule=TITLE_RULE,
-          marks=(), lockup="", lockup_fit=LOCKUP_FIT,
-          quiet=False):
+          marks=(), mark_style="tile", mark_scale=1.0, lockup="", lockup_fit=LOCKUP_FIT,
+          seal_at="", mark_at="", mark_beside_lockup=False, lockup_at="", quiet=False):
     """Overlay, seal, lockup and badge onto `art`, written to `output`.
 
     The overlay and the seal are the two elements the generator must
@@ -629,9 +652,25 @@ def stamp(art, output, face="cover", corner="br", size=SEAL_SIZE, placement="str
             return px(board, scale) - seal_width // 2
         return px(window_width, m) + px(board, scale)
     inset_x, inset_y = inset(f_x, m_x), inset(f_y, m_y)
-    place_at_corner(image, seal, corner, inset_x, inset_y,
-                    centre_x=(image.width + px(f_left, scale) - px(f_right, scale)) / 2)
-    if placement == "straddle" and corner[1] != "c":
+    w_left, w_top = px(f_left, scale), px(f_top, scale)
+    w_height = image.height - w_top - px(f_bottom, scale)
+
+    def window_point(spec):
+        """`X,Y`, fractions of the window, as a point on the face."""
+        x, y = (float(v) for v in spec.split(","))
+        return w_left + window_width * x, w_top + w_height * y
+
+    if seal_at:
+        # `--seal-at X,Y`: the seal's centre anywhere in the window — for
+        # a seal set beside the title rather than in a corner.
+        sx, sy = window_point(seal_at)
+        paste(image, seal, (sx - seal.width / 2, sy - seal.height / 2))
+    else:
+        place_at_corner(image, seal, corner, inset_x, inset_y,
+                        centre_x=(image.width + px(f_left, scale) - px(f_right, scale)) / 2)
+    if seal_at:
+        placing = f"centred at {seal_at} of the window"
+    elif placement == "straddle" and corner[1] != "c":
         placing = ("straddling" if f_x > 0 and f_y > 0
                    else "straddling the top or bottom, inset from the side" if f_y > 0
                    else "straddling the side, inset from the top or bottom" if f_x > 0
@@ -654,8 +693,28 @@ def stamp(art, output, face="cover", corner="br", size=SEAL_SIZE, placement="str
         lk = lk.resize((lockup_width, round(lk.height * lockup_width / lk.width)), Image.LANCZOS)
         l_inset_y = px(window_width, l_b) + px(f_bottom, scale)
         l_centre_x = (image.width + px(f_left, scale) - px(f_right, scale)) / 2
-        paste(image, lk, (l_centre_x - lk.width / 2, image.height - lk.height - l_inset_y))
-        locking = f" lockup {lockup_width}px wide, bottom {l_inset_y}px up,"
+        l_top = image.height - lk.height - l_inset_y
+        if lockup_at:
+            # `--lockup-at X,Y`: the lockup's (or the block's) centre
+            # anywhere in the window, instead of at its foot.
+            l_centre_x, l_cy = window_point(lockup_at)
+            l_top = l_cy - lk.height / 2
+        if mark_beside_lockup and marks:
+            # `--mark-beside-lockup`: the mark and the lockup are one block,
+            # the mark on the left at the lockup's own height, the pair
+            # centred on the window — for a box whose one tool is itself
+            # (credo), where the tool's mark reads as part of the name.
+            side = px(window_width, MARK_SIDE)
+            ms = marks_strip(marks, window_width, "bare", lk.height / (side * 0.66))
+            gap = px(window_width, MARK_GAP)
+            left = l_centre_x - (ms.width + gap + lk.width) / 2
+            paste(image, ms, (left, l_top + (lk.height - ms.height) / 2))
+            paste(image, lk, (left + ms.width + gap, l_top))
+            marks = ()
+            locking = f" lockup {lockup_width}px wide with the mark beside it as one block, bottom {l_inset_y}px up,"
+        else:
+            paste(image, lk, (l_centre_x - lk.width / 2, l_top))
+            locking = f" lockup {lockup_width}px wide, bottom {l_inset_y}px up,"
 
     # The title, centred on the window at the height asked for.
     titling = ""
@@ -671,11 +730,16 @@ def stamp(art, output, face="cover", corner="br", size=SEAL_SIZE, placement="str
     # The marks, a row centred on the window along its top.
     marking = ""
     if marks:
-        ms = marks_strip(marks, window_width)
+        ms = marks_strip(marks, window_width, mark_style, mark_scale)
         w_top = px(f_top, scale)
         w_height = image.height - w_top - px(f_bottom, scale)
         m_centre_x = (image.width + px(f_left, scale) - px(f_right, scale)) / 2
-        paste(image, ms, (m_centre_x - ms.width / 2, w_top + w_height * MARK_TOP))
+        if mark_at:
+            # `--mark-at X,Y`: the row's centre anywhere in the window.
+            mx, my = window_point(mark_at)
+            paste(image, ms, (mx - ms.width / 2, my - ms.height / 2))
+        else:
+            paste(image, ms, (m_centre_x - ms.width / 2, w_top + w_height * MARK_TOP))
         marking = f" {len(marks)} marks along the top,"
 
     # The badge, in the corner asked for, or the bottom corner the seal left free.
@@ -725,8 +789,10 @@ def cmd_stamp(args):
           badge_style=args.badge_style, badge_ink=args.badge_ink,
           title=args.title, title_y=args.title_y, title_point=args.title_point,
           title_rule=args.title_rule,
-          marks=[mark_arg(args.feature, m) for m in args.mark], lockup=args.lockup,
-          lockup_fit=args.lockup_fit)
+          marks=[mark_arg(args.feature, m) for m in args.mark], mark_style=args.mark_style,
+          mark_scale=args.mark_scale, lockup=args.lockup, lockup_fit=args.lockup_fit,
+          seal_at=args.seal_at, mark_at=args.mark_at, mark_beside_lockup=args.mark_beside_lockup,
+          lockup_at=args.lockup_at)
 
 
 # THE BACK ====================================================================
@@ -1070,6 +1136,12 @@ def main():
     p.add_argument("--title-point", type=float, default=TITLE_POINT, help=f"the title's size, as a fraction of the window's width (default: {TITLE_POINT})")
     p.add_argument("--title-rule", type=float, default=TITLE_RULE, help=f"the rules' length, as a fraction of the window's width: the same on every box of a shared art, so give the longest name's (default: {TITLE_RULE})")
     p.add_argument("--mark", action="append", default=[], metavar="NAME=FILE", help="a tool's own mark, FILE relative to the feature's directory, on a rounded square with NAME under it; repeat it, in order, for a row centred along the top of the window")
+    p.add_argument("--mark-style", choices=MARK_STYLES, default="tile", help="tile | bare (default: tile): each mark on a rounded square with its name under it, or the marks alone — for a box whose one tool is itself")
+    p.add_argument("--mark-scale", type=float, default=1.0, help="the marks' size, times what they take inside a tile (default: 1.0)")
+    p.add_argument("--lockup-at", default="", metavar="X,Y", help="centre the lockup (with --mark-beside-lockup, the block) here, fractions of the window, instead of at its foot; its width stays --lockup-fit's")
+    p.add_argument("--mark-beside-lockup", action="store_true", help="set the mark on the lockup's left, at its height, the pair centred on the window as one block (needs --lockup)")
+    p.add_argument("--mark-at", default="", metavar="X,Y", help="centre the marks here, fractions of the window, instead of along its top")
+    p.add_argument("--seal-at", default="", metavar="X,Y", help="centre the seal here, fractions of the window, instead of at --corner: beside the title, say")
     p.add_argument("-l", "--lockup", default="", help="composite this title lockup PNG, centred on the window's width")
     p.add_argument("--lockup-fit", default=LOCKUP_FIT, help=f"its width, and the inset of its bottom edge from the window's bottom, as fractions of the window's width (default: {LOCKUP_FIT})")
     p.add_argument("-o", "--output", default="", help="write here instead of FEATURE/sealed/FACE.jpg, for a trial run")

@@ -292,6 +292,10 @@ line without naming a medium; the era renders it:
 * **Lucid** — the mechanism lets you see what you had been handling
   blind, laid out as it is, and leaves the hands to you. Subtitles
   uncover (`SEE WHAT YOU KEEP`). Added for db_admin.
+* **Tireless** — the mechanism makes the same remark the thousandth
+  time exactly as it made the first, with no heat in it, so nobody has
+  to make it again. Subtitles stand (`THE LESSON STANDS`). Added for
+  credo.
 * **Scrupulous** — the mechanism holds back what you were about to
   send, over something small you would rather it had not noticed, and
   it holds it because you fitted it there and for nobody else.

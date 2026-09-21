@@ -109,10 +109,19 @@ defmodule WorkbenchIgniter.Feature do
 
       [data_layer: [{"postgres", "ash_postgres"}, {"none", "no data layer"}],
        with: {:open, [ai: ~w(tidewave ash_ai)]}]
+
+  A boolean switch has one value worth declaring, `true`, and declares
+  it only for what turning it on builds on: credo's `--githook` writes
+  its block into the hook the precommit cartridge owns, so
+  `githook: [{true, doc, ["precommit"]}]`. The catalog carries that as
+  the option's own `requires` rather than as a list of values, and the
+  console shows the box unlit, with the reason, while the project lacks
+  it.
   """
   @callback choices() :: [{atom(), choice()}]
   @type value ::
           String.t()
+          | {true, String.t() | nil, [requirement()]}
           | {String.t(), String.t() | nil}
           | {String.t(), String.t() | nil, [String.t()]}
   @type choice :: [value()] | [{atom(), [value()]}] | {:open, [value()] | [{atom(), [value()]}]}
@@ -594,7 +603,7 @@ defmodule WorkbenchIgniter.Feature do
   @spec refuse_values(Igniter.t(), [{atom(), String.t(), [shortfall()]}]) :: Igniter.t()
   def refuse_values(igniter, missing) do
     Enum.reduce(missing, igniter, fn {key, value, shortfalls}, igniter ->
-      Igniter.add_issue(igniter, "--#{flag(key)} #{value} builds on " <> lacking(shortfalls))
+      Igniter.add_issue(igniter, "#{switch_said(key, value)} builds on " <> lacking(shortfalls))
     end)
   end
 
@@ -639,6 +648,10 @@ defmodule WorkbenchIgniter.Feature do
   defp switch({key, values}) when is_list(values), do: "--#{flag(key)} #{Enum.join(values, "|")}"
   defp switch({key, value}), do: "--#{flag(key)} #{value}"
   defp flag(key), do: key |> to_string() |> String.replace("_", "-")
+
+  # A boolean is its flag alone: `--githook`, not `--githook true`.
+  defp switch_said(key, true), do: "--#{flag(key)}"
+  defp switch_said(key, value), do: "--#{flag(key)} #{value}"
 
   @doc """
   What is lacking, said after "NAME builds on": "html, not in the

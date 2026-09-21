@@ -14,15 +14,18 @@ would otherwise argue about in every pull request.
 With `--githook` it also runs before every commit. The hook itself is
 not this cartridge's — the **precommit** box owns the file, the way it
 reaches `mix` inside the container, and the checks that come with
-Elixir — and this one inserts that box and writes a block of its own in
-`.githooks/pre-commit`. Ejecting either leaves the other's checks
-standing.
+Elixir — and this one writes a block of its own in
+`.githooks/pre-commit`. So `--githook` needs precommit in first, and
+refuses while it is not (`./wb.sh add precommit`). Ejecting credo
+leaves the rest of the hook standing; precommit's eject waits until
+credo's block is gone.
 
 ## What it installs
 
 * `{:credo, "~> 1.7", only: [:dev, :test], runtime: false}` in the project deps.
-* With `--githook`: the **precommit** cartridge, and `mix credo` in this
-  cartridge's block of `.githooks/pre-commit`.
+* With `--githook`: `mix credo` in this cartridge's block of
+  `.githooks/pre-commit`, which the **precommit** cartridge owns and has
+  to be in already.
 
 **Idempotency**: `on_exists: :skip` for the dependency; the hook line is
 written once, and a second run adds it if it is missing.
@@ -31,7 +34,7 @@ written once, and a second run adds it if it is missing.
 
 | Option | What it does |
 | --- | --- |
-| `--githook` | Run `mix credo` before every commit, in this cartridge's own block of the pre-commit hook. Default: off. |
+| `--githook` | Run `mix credo` before every commit, in this cartridge's own block of the pre-commit hook. Builds on precommit: insert it first. Default: off. |
 
 The line is `mix credo`, not `mix credo --strict`: a hook that refuses
 the first commit after it is inserted is a hook the developer turns

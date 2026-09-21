@@ -27,8 +27,9 @@ defmodule Mix.Tasks.Workbench.Install.Coverage do
     below the divider that separates the checks that refuse a commit in
     a second from the ones that compile the project. The hook itself,
     the way it reaches `mix` inside the container and the checks that
-    come with Elixir are the **precommit** cartridge's, inserted with
-    it; ejecting either box leaves the other's checks standing
+    come with Elixir are the **precommit** cartridge's, which has to be
+    in first — the option refuses otherwise; ejecting coverage leaves
+    the rest of the hook standing
 
   ## Example
 

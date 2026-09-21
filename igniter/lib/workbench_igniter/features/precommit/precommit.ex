@@ -24,10 +24,14 @@ defmodule WorkbenchIgniter.Features.Precommit do
   can run Credo before a commit and not the formatter.
 
   A cartridge that brings a check of its own does not write here by
-  hand: it composes this installer and calls `check/4`, the way
-  coverage composes test_doubles for the double its tests need. credo
-  and coverage do (`--githook`), each owning its block, so ejecting
-  either leaves the other's checks standing.
+  hand: it requires this box for the option that brings the check
+  (`choices/0`: `githook: [{true, doc, ["precommit"]}]`) and calls
+  `check/4`. credo and coverage do (`--githook`), each owning its
+  block, so ejecting either leaves the other's checks standing — and
+  this box's eject waits until their blocks are gone
+  (`workbench.dependents` reads them off their `state/1`). Neither
+  inserts this box along: it would come in their commit, with no
+  insert of its own, and their eject would leave its hook behind.
   """
   use WorkbenchIgniter.Feature
 
@@ -331,7 +335,7 @@ defmodule WorkbenchIgniter.Features.Precommit do
   hook — one command per line, run in order, the first failure cutting
   the rest (`set -e`).
 
-  A cartridge with a check of its own composes this installer and calls
+  A cartridge with a check of its own requires this box and calls
   this: its commands are its own, and so is the block, so an eject
   takes them away without touching anybody else's
   (`WorkbenchIgniter.BlockFile`).

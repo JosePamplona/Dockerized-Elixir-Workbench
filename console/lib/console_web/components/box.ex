@@ -699,13 +699,26 @@ defmodule ConsoleWeb.Box do
   end
 
   @doc "What each chosen value builds on: [{\"--flag value\", [names], conditions}]."
-  def value_requires(box, args, _status) do
+  def value_requires(box, args, _status),
+    do: chosen_values(box, args) ++ switches_on(box, args)
+
+  defp chosen_values(box, args) do
     for o <- box["options"] || [],
         o["choices"],
         v <- List.wrap(args[o["name"]] || []),
         c = Enum.find(choices(o), &(&1["value"] == v)),
         (c["requires"] || []) != [] do
       {"--#{String.replace(o["name"], "_", "-")} #{v}", c["requires"], c["conditions"] || %{}}
+    end
+  end
+
+  # A switch turned on says it by its flag alone.
+  defp switches_on(box, args) do
+    for o <- box["options"] || [],
+        o["type"] == "boolean",
+        (o["requires"] || []) != [],
+        args[o["name"]] == "on" do
+      {"--#{String.replace(o["name"], "_", "-")}", o["requires"], o["conditions"] || %{}}
     end
   end
 
@@ -827,8 +840,17 @@ defmodule ConsoleWeb.Box do
                 </div>
               </div>
             <% else %>
+              <%!-- A switch that builds on a cartridge (credo's --githook
+                    on precommit) is unlit while the project lacks it,
+                    and says why — unless the project already carries it
+                    on, which the box then says checked. --%>
+              <% need =
+                if (@c["state"] || %{})[o["name"]] == true, do: [], else: lacks(o, @status) %>
               <div class="field">
-                <label for={"opt-#{o["name"]}"}>{flag}</label>
+                <label for={"opt-#{o["name"]}"}>{flag}<span
+                  :if={need != []}
+                  class="in lacks"
+                >needs {Enum.join(need, " + ")}</span></label>
                 <%!-- A form sends nothing for an unchecked box: the "off"
                       before it is what says a switch was turned off, which
                       matters for one on by default (html's --live). --%>
@@ -844,8 +866,13 @@ defmodule ConsoleWeb.Box do
                   type="checkbox"
                   id={"opt-#{o["name"]}"}
                   name={"opt[#{o["name"]}]"}
-                  checked={checked?(o, @args, @c["state"] || %{}, @from_insert, @inserted_args)}
-                  disabled={@locked}
+                  checked={
+                    need == [] && checked?(o, @args, @c["state"] || %{}, @from_insert, @inserted_args)
+                  }
+                  disabled={@locked || need != []}
+                  title={
+                    need != [] && "builds on #{Enum.join(need, " and ")}, which this project lacks"
+                  }
                 />
                 <input
                   :if={o["type"] != "boolean"}

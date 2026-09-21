@@ -335,6 +335,9 @@ defmodule WorkbenchIgniter.CatalogTest do
     defp prereqs("auth0"), do: ["workbench.install.enhancements"]
     defp prereqs("openai"), do: ["workbench.install.enhancements", "workbench.install.auth0"]
     defp prereqs("guidelines"), do: ["workbench.install.exdoc"]
+    # Their --githook writes into precommit's hook (the runs below).
+    defp prereqs("credo"), do: ["workbench.install.precommit"]
+    defp prereqs("coverage"), do: ["workbench.install.precommit"]
     defp prereqs(_name), do: []
 
     # The arguments an installer cannot do without. guidelines takes the
@@ -356,7 +359,7 @@ defmodule WorkbenchIgniter.CatalogTest do
 
     defp stands_on(name) do
       entry = Features.entry(Features.named(name))
-      direct = entry.requires ++ entry.composes
+      direct = entry.requires ++ entry.composes ++ Enum.flat_map(entry.options, & &1.requires)
       Enum.uniq(direct ++ Enum.flat_map(direct, &stands_on/1))
     end
   end
@@ -521,9 +524,9 @@ defmodule WorkbenchIgniter.CatalogTest do
   describe "composes" do
     test "names, off the installer's info, the cartridges it inserts along" do
       assert %{composes: ["mock"]} = Features.entry(Features.HealthEndpoint)
-      assert %{composes: ["test_doubles", "precommit"]} = Features.entry(Features.Coverage)
+      assert %{composes: ["test_doubles"]} = Features.entry(Features.Coverage)
       assert %{composes: ["mock"]} = Features.entry(Features.Enhancements)
-      assert %{composes: ["precommit"]} = Features.entry(Features.Credo)
+      assert %{composes: []} = Features.entry(Features.Credo)
       assert %{composes: []} = Features.entry(Features.Stripe)
     end
 
@@ -559,6 +562,36 @@ defmodule WorkbenchIgniter.CatalogTest do
 
       assert Mix.Tasks.Workbench.Dependents.dependents(status, "mock") == ["health_endpoint"]
       assert Mix.Tasks.Workbench.Dependents.dependents(status, "health_endpoint") == []
+    end
+
+    # An option builds on a cartridge as much as the box does, while
+    # the project carries it: credo's block stands in precommit's hook.
+    test "mix workbench.dependents sees what a carried option builds on" do
+      project =
+        phx_test_project()
+        |> Igniter.compose_task("workbench.install.precommit", [])
+        |> apply_igniter!()
+
+      {with_block, _} =
+        project
+        |> Igniter.compose_task("workbench.install.credo", ~w(--githook))
+        |> apply_igniter!()
+        |> Features.status()
+
+      {without, _} =
+        project
+        |> Igniter.compose_task("workbench.install.credo", [])
+        |> apply_igniter!()
+        |> Features.status()
+
+      assert Mix.Tasks.Workbench.Dependents.dependents(with_block, "precommit") == ["credo"]
+      assert Mix.Tasks.Workbench.Dependents.dependents(without, "precommit") == []
+    end
+
+    test "a boolean's requirement is the option's own in the catalog" do
+      githook = Enum.find(Features.entry(Features.Credo).options, &(&1.name == :githook))
+
+      assert %{type: :boolean, choices: nil, requires: ["precommit"]} = githook
     end
   end
 end

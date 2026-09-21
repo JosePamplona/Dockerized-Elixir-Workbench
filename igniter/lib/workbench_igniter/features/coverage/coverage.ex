@@ -72,7 +72,9 @@ defmodule WorkbenchIgniter.Features.Coverage do
       interface: [
         {"rest", "skips the open_api files in the report"},
         {"graphql", "the GraphQL project: nothing skipped"}
-      ]
+      ],
+      # The hook is precommit's: its block goes in a file that box owns.
+      githook: [{true, "the suite before the commit", ["precommit"]}]
     ]
   end
 
@@ -88,7 +90,7 @@ defmodule WorkbenchIgniter.Features.Coverage do
       theme:
         "HTML report theme, one of #{Enum.map_join(themes(), ", ", &"`#{&1}`")}: `exdoc-ish` mimics the ExDoc pages (sidebar, light/dark theme, fonts) so the report blends into the documentation site, `custom` is the original workbench report. Default: `exdoc-ish`.",
       githook:
-        "Run `#{@check}` before every commit, in this cartridge's own block of `#{Precommit.hook()}` (the precommit cartridge, inserted with it). Off by default: it is the suite plus its instrumentation, the slowest check a commit can wait for, and coverage's natural home is CI.",
+        "Run `#{@check}` before every commit, in this cartridge's own block of `#{Precommit.hook()}`. Builds on the precommit cartridge, which owns the hook: insert it first. Off by default: it is the suite plus its instrumentation, the slowest check a commit can wait for, and coverage's natural home is CI.",
       build:
         "Run the suite once the insert is applied, so the report has numbers. Off by default: it needs the dependencies compiled and, with Ecto, a test database — which means the compose has one (`./wb.sh bake`)."
     ]
@@ -103,7 +105,7 @@ defmodule WorkbenchIgniter.Features.Coverage do
     %Igniter.Mix.Task.Info{
       group: :workbench_igniter,
       example: @example,
-      composes: ["workbench.install.test_doubles", "workbench.install.precommit"],
+      composes: ["workbench.install.test_doubles"],
       schema: [
         minimum_coverage: :string,
         interface: :string,
@@ -185,7 +187,17 @@ defmodule WorkbenchIgniter.Features.Coverage do
 
     {installed?, igniter} = installed?(igniter)
 
+    {missing, igniter} =
+      WorkbenchIgniter.Feature.missing_option_requirements(igniter, __MODULE__,
+        githook: opts[:githook]
+      )
+
     cond do
+      # Refused before anything is written, a second run included:
+      # the block goes in precommit's hook, which has to be there.
+      missing != [] ->
+        WorkbenchIgniter.Feature.refuse_values(igniter, missing)
+
       # Already inserted: the json, the theme and the report are fixed at
       # the insert, but the hook block is a piece the installer adds when
       # it is missing, so `--githook` on a project that took coverage
@@ -234,7 +246,6 @@ defmodule WorkbenchIgniter.Features.Coverage do
   # the commit in a second.
   defp githook(igniter, true) do
     igniter
-    |> Igniter.compose_task("workbench.install.precommit", [])
     |> Precommit.check(name(), [@check],
       note: "the suite, and what it did not reach",
       stage: :slow

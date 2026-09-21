@@ -131,8 +131,9 @@ checks. Its own options are the ones that belong to no cartridge (`mix
 format`, `mix compile --warnings-as-errors`, `mix test`, `mix
 deps.unlock --check-unused`), and a cartridge with a check of its own
 brings it with an option of its own — [credo](credo/) and
-[coverage](coverage/) `--githook` — composing this installer and
-taking **a block of the hook** through `Precommit.check/4`
+[coverage](coverage/) `--githook` — which builds on precommit being
+in (the option refuses otherwise, and the console shows it unlit) and
+takes **a block of the hook** through `Precommit.check/4`
 (`WorkbenchIgniter.BlockFile`, as test_doubles does with the test
 helper). Each block is its cartridge's to write and to take away, so
 either can be ejected without touching the other's checks.

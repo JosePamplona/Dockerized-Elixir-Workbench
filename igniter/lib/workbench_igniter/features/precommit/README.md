@@ -92,10 +92,16 @@ committing.
 ## The way in, for a cartridge with a check of its own
 
 ```elixir
-igniter
-|> Igniter.compose_task(Precommit.task(), [])
-|> Precommit.check("credo", ["mix credo"], note: "the reviewer that never tires")
+# the option builds on this box, and is refused while it is not in
+def choices, do: [githook: [{true, "the check before the commit", ["precommit"]}]]
+
+# in the installer, once missing_option_requirements/3 found nothing lacking
+Precommit.check(igniter, "credo", ["mix credo"], note: "the reviewer that never tires")
 ```
+
+Required, never inserted along: inserted along, this box would come in
+the other cartridge's commit, and that cartridge's eject would leave
+the hook behind in `.git/hooks`.
 
 `stage: :fast` puts a new block above the divider; `:slow`, the
 default, below it. `Precommit.forget/2` is what an eject owes, and

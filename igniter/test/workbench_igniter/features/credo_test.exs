@@ -8,6 +8,12 @@ defmodule WorkbenchIgniter.Features.CredoTest do
   alias WorkbenchIgniter.Features.Credo
   alias WorkbenchIgniter.Features.Precommit
 
+  defp with_precommit do
+    test_project()
+    |> Igniter.compose_task("workbench.install.precommit", [])
+    |> apply_igniter!()
+  end
+
   describe "mix workbench.install.credo" do
     test "adds the dependency to mix.exs" do
       test_project()
@@ -34,17 +40,28 @@ defmodule WorkbenchIgniter.Features.CredoTest do
   end
 
   describe "--githook" do
-    test "inserts the precommit cartridge and takes a block of its hook" do
+    # The hook is precommit's, so the option builds on it being in.
+    test "refuses while precommit is not in, and writes nothing" do
+      igniter = test_project() |> Igniter.compose_task("workbench.install.credo", ~w(--githook))
+
+      assert_has_issue(igniter, fn issue ->
+        issue =~ "--githook builds on precommit" and issue =~ "./wb.sh add precommit"
+      end)
+
+      refute Igniter.exists?(igniter, Precommit.hook())
+      refute Igniter.exists?(igniter, ".githooks/mix")
+    end
+
+    test "takes a block of precommit's hook" do
       igniter =
-        test_project()
+        with_precommit()
         |> Igniter.compose_task("workbench.install.credo", ~w(--githook))
         |> apply_igniter!()
 
       hook = igniter.assigns[:test_files][Precommit.hook()]
 
-      # The hook box came with it: its own block, and the way in.
+      # precommit's own block stands beside it.
       assert hook =~ "mix format --check-formatted"
-      assert igniter.assigns[:test_files][".githooks/mix"] =~ "docker compose exec"
 
       assert hook =~ "# >>> credo — the reviewer that never tires\nmix credo\n# <<< credo"
       refute hook =~ "mix credo --strict"
@@ -52,7 +69,7 @@ defmodule WorkbenchIgniter.Features.CredoTest do
 
     test "the block is born above the divider: the reviewer reads source" do
       hook =
-        test_project()
+        with_precommit()
         |> Igniter.compose_task("workbench.install.credo", ~w(--githook))
         |> apply_igniter!()
         |> Map.get(:assigns)
@@ -66,7 +83,7 @@ defmodule WorkbenchIgniter.Features.CredoTest do
 
     test "says back that the project carries it" do
       {state, _igniter} =
-        test_project()
+        with_precommit()
         |> Igniter.compose_task("workbench.install.credo", ~w(--githook))
         |> apply_igniter!()
         |> Credo.state()
@@ -76,7 +93,7 @@ defmodule WorkbenchIgniter.Features.CredoTest do
 
     test "a second run adds the block to a project that took the dependency without it" do
       igniter =
-        test_project()
+        with_precommit()
         |> Igniter.compose_task("workbench.install.credo", [])
         |> apply_igniter!()
         |> Igniter.compose_task("workbench.install.credo", ~w(--githook))
@@ -87,7 +104,7 @@ defmodule WorkbenchIgniter.Features.CredoTest do
 
     test "ejecting credo leaves the rest of the hook standing" do
       hook =
-        test_project()
+        with_precommit()
         |> Igniter.compose_task("workbench.install.credo", ~w(--githook))
         |> apply_igniter!()
         |> Precommit.forget("credo")

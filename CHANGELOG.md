@@ -2208,6 +2208,20 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   replaced. Checked on a copy of a workspace: insert, eject, the three
   files gone from `.git/hooks`, and the next `./wb.sh commit` through.
 
+- **A switch can build on a cartridge, and credo's and coverage's
+  `--githook` build on precommit.** They inserted precommit along, in
+  their own commit: precommit then had no insert of its own to eject,
+  and their eject took its files and left its hook in `.git/hooks`. Now
+  the option refuses while precommit is not in, naming `./wb.sh add
+  precommit`, as db_admin's admins refuse a database they do not serve.
+  A boolean declares it in `choices/0` (`githook: [{true, doc,
+  ["precommit"]}]`); the catalog carries it as the option's own
+  `requires`, the console shows the switch unlit with *needs
+  precommit*, and `mix workbench.dependents` counts an option the
+  project carries — read off the cartridge's `state/1` — so precommit's
+  eject waits until credo's block is gone. credo v0.2.0, coverage
+  v0.4.0.
+
 - **The workbench's own commits skip the project's hooks.** `Insert`,
   `Revert`, `Bake` and `New project` are the workbench's bookkeeping —
   one cartridge, one commit — and commit with `--no-verify`; `./wb.sh

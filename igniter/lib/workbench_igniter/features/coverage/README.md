@@ -74,8 +74,9 @@ instead of skipped along with the rest.
 * `--theme` - Report theme: `exdoc-ish` | `custom`. Default:
   `exdoc-ish`.
 * `--githook` - Run `mix coveralls` before every commit, in this
-  cartridge's own block of `.githooks/pre-commit` (the **precommit**
-  cartridge, inserted with it). Off by default: it is the suite plus
+  cartridge's own block of `.githooks/pre-commit`. Builds on the
+  **precommit** cartridge, which owns the hook: insert it first, the
+  option refuses otherwise. Off by default: it is the suite plus
   its instrumentation, the slowest check a commit can wait for, and
   coverage's natural home is CI. Ejecting either box leaves the other's
   checks standing.

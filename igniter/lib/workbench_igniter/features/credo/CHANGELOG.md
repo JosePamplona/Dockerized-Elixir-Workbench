@@ -4,6 +4,19 @@
 The cartridge's own versions, over what it installs in a project —
 independent of the workbench release that ships it.
 
+## v0.2.0 - (2026-09-21)
+
+### Changed
+
+- **`--githook` builds on precommit, and no longer inserts it.** The
+  option refuses while the precommit cartridge is not in, naming
+  `./wb.sh add precommit`, and writes nothing. Inserted along,
+  precommit came in credo's own commit: it had no insert of its own to
+  eject, and credo's eject took its files and left its hook in
+  `.git/hooks`, calling a runner that was gone. The console shows the
+  switch unlit while precommit is not in, and precommit's eject waits
+  until credo's block is gone.
+
 ## v0.1.0 - (2026-09-20)
 
 The first version of the cartridge's own record: it was written before

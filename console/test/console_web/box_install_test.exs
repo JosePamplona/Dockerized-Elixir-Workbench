@@ -205,6 +205,56 @@ defmodule ConsoleWeb.BoxInstallTest do
     refute html =~ ~s(<label class="need")
   end
 
+  # credo's --githook writes into the hook precommit owns.
+  @credo %{
+    "name" => "credo",
+    "rerun" => "adds",
+    "requires" => [],
+    "options" => [
+      %{
+        "name" => "githook",
+        "type" => "boolean",
+        "default" => false,
+        "choices" => nil,
+        "requires" => ["precommit"],
+        "conditions" => %{}
+      }
+    ]
+  }
+
+  defp with_cartridges(cartridges) do
+    %{
+      "exists" => true,
+      "git" => %{"repo" => true, "clean" => true, "inserts" => []},
+      "project" => %{"cartridges" => cartridges}
+    }
+  end
+
+  test "a switch that builds on a cartridge the project lacks is unlit, and says why" do
+    html = screen(@credo, with_cartridges([%{"name" => "precommit", "installed" => false}]))
+    assert html =~ ~r{id="opt-githook"[^>]*disabled}
+    assert html =~ ~s(class="in lacks")
+    assert html =~ "needs precommit"
+  end
+
+  test "with the cartridge in, the switch is lit" do
+    html =
+      screen(
+        @credo,
+        with_cartridges([%{"name" => "precommit", "installed" => true, "state" => %{}}])
+      )
+
+    refute html =~ ~r{id="opt-githook"[^>]*disabled}
+    refute html =~ "needs precommit"
+  end
+
+  test "a switch turned on names what it builds on" do
+    assert ConsoleWeb.Box.value_requires(@credo, %{"githook" => "on"}, %{}) ==
+             [{"--githook", ["precommit"], %{}}]
+
+    assert ConsoleWeb.Box.value_requires(@credo, %{"githook" => "off"}, %{}) == []
+  end
+
   test "rerunnable with a value still free: Add to cartridge, lit" do
     html = screen(@db_admin, with_admins(["pgadmin"]))
     assert html =~ "Add to cartridge"

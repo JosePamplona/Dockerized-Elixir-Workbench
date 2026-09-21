@@ -15,7 +15,8 @@ defmodule Mix.Tasks.Workbench.Install.Credo do
   `--githook` also puts `#{Credo.check_command()}` before every commit.
   The hook, the way it reaches `mix` inside the container and the
   checks that come with Elixir are the **precommit** cartridge's, which
-  this one inserts when asked; what Credo adds to them is a block of
+  has to be in first — the option refuses otherwise; what Credo adds to
+  them is a block of
   `#{Precommit.hook()}` belonging to this cartridge alone, so ejecting
   either box leaves the other's checks standing.
 

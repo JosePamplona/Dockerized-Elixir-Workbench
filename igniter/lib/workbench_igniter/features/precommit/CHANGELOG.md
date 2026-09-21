@@ -25,6 +25,11 @@ independent of the workbench release that ships it.
   `git_hooks.db`, and only what calls `git_hooks.run`), puts back the
   hook it had replaced unless that is a shim of its own too, and
   touches no repository but the project's.
+- A cartridge with a check of its own requires this box for its
+  option instead of inserting it along (credo and coverage
+  `--githook`), so this box always comes in with an insert of its own,
+  and its eject — the one that takes the hook away — is the one that
+  runs.
 - `.githooks/mix` runs `mix` in place when the commit is made inside
   the project's container — the source at `/app/src` and mix on the
   PATH, as in the workbench's console or a terminal — and reaches the

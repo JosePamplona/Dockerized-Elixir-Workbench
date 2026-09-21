@@ -49,14 +49,28 @@ arriving unasked.
 **`--githook` writes in a file this cartridge does not own.** The
 pre-commit hook, `.githooks/pre-commit`, belongs to the **precommit**
 cartridge: it carries the crossing into the container, the checks that
-come with Elixir, and the skeleton. This cartridge composes that
-installer and calls `Precommit.check/4`, which gives it a delimited
+come with Elixir, and the skeleton. This cartridge requires that box
+for the option (`choices/0`: `githook: [{true, doc, ["precommit"]}]`,
+refused while it is not in) and calls `Precommit.check/4`, which gives
+it a delimited
 block of its own (`WorkbenchIgniter.BlockFile`). Three properties come
 from that, and they are why the option lives here rather than in a box
 that would know about every tool: the block is this cartridge's to
 write and to take away, `state/1` reads it back without parsing
 anybody else's lines, and coverage's block can stand in the same file
 untouched.
+
+It **requires** the box and does not insert it along, which v0.1.0
+did (`compose_task`). Inserted along, precommit came in the commit of
+`Insert credo --githook`: two cartridges in one commit, precommit
+carried with no insert of its own to eject, and credo's eject taking
+precommit's files with it — while its hook stayed in `.git/hooks`,
+calling a runner that was gone, because the eject that knows how to
+take the hook away is precommit's (`ejected/1`), and it was never
+asked. Required, each box is its own commit and its own eject, and
+`workbench.dependents` reads credo's block off its `state/1` to hold
+precommit's eject until the block is gone. db_admin's admins gate on
+the database the same way.
 
 The rejected alternative is the one the release plan carried: absorb
 the hook box into credo and coverage, an option each and no box. It

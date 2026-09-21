@@ -134,6 +134,12 @@ defmodule WorkbenchIgniter.Features.CoverageTest do
     end
   end
 
+  defp with_precommit do
+    phx_test_project()
+    |> Igniter.compose_task("workbench.install.precommit", [])
+    |> apply_igniter!()
+  end
+
   describe "--githook" do
     test "writes no hook by default" do
       igniter =
@@ -145,19 +151,37 @@ defmodule WorkbenchIgniter.Features.CoverageTest do
       assert {%{githook: false}, _} = Coverage.state(igniter)
     end
 
-    test "inserts the precommit cartridge and takes a block of its hook" do
+    # The hook is precommit's, so the option builds on it being in.
+    test "refuses while precommit is not in, and writes nothing" do
+      igniter =
+        phx_test_project() |> Igniter.compose_task("workbench.install.coverage", ~w(--githook))
+
+      assert_has_issue(igniter, &(&1 =~ "--githook builds on precommit"))
+      refute Igniter.exists?(igniter, "coveralls.json")
+      refute Igniter.exists?(igniter, Precommit.hook())
+    end
+
+    test "a second run refuses it too, on a project with coverage and no precommit" do
       igniter =
         phx_test_project()
+        |> Igniter.compose_task("workbench.install.coverage", [])
+        |> apply_igniter!()
+        |> Igniter.compose_task("workbench.install.coverage", ~w(--githook))
+
+      assert_has_issue(igniter, &(&1 =~ "--githook builds on precommit"))
+    end
+
+    test "takes a block of precommit's hook" do
+      igniter =
+        with_precommit()
         |> Igniter.compose_task("workbench.install.coverage", ~w(--githook))
         |> apply_igniter!()
 
       files = igniter.assigns[:test_files]
       hook = files[Precommit.hook()]
 
-      # The hook box came with it: its own check, and the way into the
-      # container the host has no Elixir for.
+      # precommit's own block stands beside it.
       assert hook =~ "mix format --check-formatted"
-      assert files[".githooks/mix"] =~ "docker compose exec"
 
       assert hook =~
                "# >>> coverage — the suite, and what it did not reach\n#{Coverage.check_command()}\n# <<< coverage"
@@ -165,7 +189,7 @@ defmodule WorkbenchIgniter.Features.CoverageTest do
 
     test "the block is born below the divider: the suite is the slowest check" do
       hook =
-        phx_test_project()
+        with_precommit()
         |> Igniter.compose_task("workbench.install.coverage", ~w(--githook))
         |> apply_igniter!()
         |> Map.get(:assigns)
@@ -179,7 +203,7 @@ defmodule WorkbenchIgniter.Features.CoverageTest do
 
     test "says back that the project carries it" do
       {state, _igniter} =
-        phx_test_project()
+        with_precommit()
         |> Igniter.compose_task("workbench.install.coverage", ~w(--githook))
         |> apply_igniter!()
         |> Coverage.state()
@@ -189,7 +213,7 @@ defmodule WorkbenchIgniter.Features.CoverageTest do
 
     test "a second run adds the block to a project installed without it" do
       igniter =
-        phx_test_project()
+        with_precommit()
         |> Igniter.compose_task("workbench.install.coverage", [])
         |> apply_igniter!()
         |> Igniter.compose_task("workbench.install.coverage", ~w(--githook))
@@ -200,7 +224,7 @@ defmodule WorkbenchIgniter.Features.CoverageTest do
 
     test "ejecting coverage leaves credo's block and the box's own checks standing" do
       hook =
-        phx_test_project()
+        with_precommit()
         |> Igniter.compose_task("workbench.install.coverage", ~w(--githook))
         |> Igniter.compose_task("workbench.install.credo", ~w(--githook))
         |> apply_igniter!()

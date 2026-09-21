@@ -367,12 +367,22 @@ defmodule WorkbenchIgniter.Features do
           values -> {false, values}
         end
 
+      # A boolean's one declared value is what turning it on builds on,
+      # the option's own `requires` and not a list to choose from.
+      {values, on} =
+        case {type, values} do
+          {:boolean, [{true, _doc, _requires} = on]} -> {nil, choice_value(on)}
+          _ -> {values, %{requires: [], conditions: %{}}}
+        end
+
       %{
         name: key,
         type: type,
         default: Keyword.get(defaults || [], key),
         multiple: type == :csv,
         choices: choice_list(values),
+        requires: on.requires,
+        conditions: on.conditions,
         open: open,
         doc: Keyword.get(docs, key)
       }

@@ -7,8 +7,11 @@ defmodule WorkbenchIgniter.Features.Credo do
   **this cartridge's own block** of it
   (`WorkbenchIgniter.Features.Precommit`): the hook, its host-side
   runner and the checks that come with Elixir are that box's, and what
-  Credo adds to them is this one's. Ejecting either leaves the other's
-  checks standing.
+  Credo adds to them is this one's. So `--githook` builds on precommit
+  being in, and refuses while it is not — never inserts it along: that
+  would be two cartridges in one commit, and an eject of this one that
+  takes the other's hook with it. Ejecting either leaves the other's
+  checks standing; precommit's eject waits until this block is gone.
 
   The line is `mix credo`, not `mix credo --strict`: a hook that
   refuses the first commit after it is inserted is a hook the developer
@@ -36,7 +39,6 @@ defmodule WorkbenchIgniter.Features.Credo do
     %Igniter.Mix.Task.Info{
       group: :workbench_igniter,
       example: "mix " <> task() <> " --githook",
-      composes: ["workbench.install.precommit"],
       schema: [githook: :boolean],
       defaults: [githook: false]
     }
@@ -46,9 +48,12 @@ defmodule WorkbenchIgniter.Features.Credo do
   def option_docs do
     [
       githook:
-        "Run `#{@check}` before every commit, in this cartridge's own block of `#{Precommit.hook()}` (the precommit cartridge, inserted with it). Default: off."
+        "Run `#{@check}` before every commit, in this cartridge's own block of `#{Precommit.hook()}`. Builds on the precommit cartridge, which owns the hook: insert it first. Default: off."
     ]
   end
+
+  @impl true
+  def choices, do: [githook: [{true, "the check before the commit", ["precommit"]}]]
 
   # The hook line is a piece the installer adds when missing.
   @impl true
@@ -68,18 +73,26 @@ defmodule WorkbenchIgniter.Features.Credo do
 
   @doc "Installer body, run by the mix task shell as its `igniter/1`."
   def install(igniter) do
-    igniter
-    |> Igniter.Project.Deps.add_dep(@dep, on_exists: :skip)
-    |> githook(igniter.args.options[:githook])
+    githook? = igniter.args.options[:githook]
+
+    case WorkbenchIgniter.Feature.missing_option_requirements(igniter, __MODULE__,
+           githook: githook?
+         ) do
+      {[], igniter} ->
+        igniter
+        |> Igniter.Project.Deps.add_dep(@dep, on_exists: :skip)
+        |> githook(githook?)
+
+      {missing, igniter} ->
+        WorkbenchIgniter.Feature.refuse_values(igniter, missing)
+    end
   end
 
   # `stage: :fast`: Credo reads the source and does not compile the
   # project, so its block is born above the hook's divider, among the
   # checks that refuse a commit in a second.
   defp githook(igniter, true) do
-    igniter
-    |> Igniter.compose_task("workbench.install.precommit", [])
-    |> Precommit.check(name(), [@check], note: "the reviewer that never tires", stage: :fast)
+    Precommit.check(igniter, name(), [@check], note: "the reviewer that never tires", stage: :fast)
   end
 
   defp githook(igniter, _off), do: igniter

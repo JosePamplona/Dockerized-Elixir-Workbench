@@ -9,9 +9,12 @@ defmodule Mix.Tasks.Workbench.Dependents do
       mix workbench.dependents NAME [--json]
 
   What would be left standing on nothing if NAME came out: every
-  cartridge this project carries that declares NAME in its `requires`
-  or brings it in itself (`composes`: health_endpoint's installer inserts
-  mock, whose library its tests use), and everything that builds on
+  cartridge this project carries that declares NAME in its `requires`,
+  brings it in itself (`composes`: health_endpoint's installer inserts
+  mock, whose library its tests use), or carries an option that builds
+  on it (credo with `--githook`, whose block stands in precommit's
+  hook — read off credo's `state/1`, so a credo without the block does
+  not count), and everything that builds on
   *those* in turn. One name per line, in
   the order they have to be ejected in — each one before anything it
   stands on — and nothing at all when the cartridge can go on its own.
@@ -98,9 +101,32 @@ defmodule Mix.Tasks.Workbench.Dependents do
       else: reach(installed, next, MapSet.union(seen, MapSet.new(next)))
   end
 
-  # What a cartridge stands on: what must be in before it, and what its
-  # installer brought in with it.
-  defp stands_on(c), do: (c.requires || []) ++ (c.composes || [])
+  # What a cartridge stands on: what must be in before it, what its
+  # installer brought in with it, and what the options it carries build
+  # on — as the project says it carries them, not as it was inserted.
+  defp stands_on(c), do: (c.requires || []) ++ (c.composes || []) ++ chosen_requires(c)
+
+  defp chosen_requires(c) do
+    state = Map.get(c, :state) || %{}
+
+    Enum.flat_map(Map.get(c, :options) || [], fn o ->
+      carried = Map.get(state, o.name)
+
+      on = if carried == true, do: Map.get(o, :requires) || [], else: []
+
+      picked =
+        for v <- values(o.choices),
+            v.value == carried or (is_list(carried) and v.value in carried),
+            name <- v.requires,
+            do: name
+
+      on ++ picked
+    end)
+  end
+
+  defp values(nil), do: []
+  defp values([%{group: _} | _] = groups), do: Enum.flat_map(groups, & &1.values)
+  defp values(values), do: values
 
   # Outermost first: a cartridge can only come out once nothing left in
   # the set stands on it. Levels are not enough — two cartridges can be

@@ -14,6 +14,14 @@ change, as the features index says.
 
 ### Changed
 
+- **`--githook` builds on precommit, and no longer inserts it.** The
+  option refuses while the precommit cartridge is not in, a second run
+  included, and writes nothing. Inserted along, precommit came in
+  coverage's own commit, with no insert of its own to eject, and
+  coverage's eject left its hook in `.git/hooks` calling a runner that
+  was gone. The console shows the switch unlit while precommit is not
+  in, and precommit's eject waits until coverage's block is gone.
+
 - **The box is named for the need: `coverage`, not `coveralls`.** The
   old name was the dependency's, and read like the coveralls.io service
   the box never talks to. The task is `workbench.install.coverage`, the

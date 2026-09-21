@@ -26,7 +26,16 @@ defmodule Console.Application do
     # See https://elixir.hexdocs.pm/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Console.Supervisor]
-    Supervisor.start_link(children, opts)
+    Supervisor.start_link(children ++ reports(), opts)
+  end
+
+  # The project's pages on a port of their own (ConsoleWeb.Reports);
+  # none where it is not configured, as in the tests.
+  defp reports do
+    case Application.get_env(:console, :reports) do
+      nil -> []
+      opts -> [{Bandit, [plug: ConsoleWeb.Reports, scheme: :http] ++ opts}]
+    end
   end
 
   # Tell Phoenix to update the endpoint configuration

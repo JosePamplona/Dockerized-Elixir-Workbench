@@ -24,6 +24,7 @@ defmodule ConsoleWeb.Record do
   """
 
   alias ConsoleWeb.Cartridges
+  alias ConsoleWeb.Reports
 
   @caps ~w(ecto html live dashboard mailer gettext esbuild tailwind)
   @deploys ~w(dev prod scaled)
@@ -315,6 +316,10 @@ defmodule ConsoleWeb.Record do
     do:
       addresses(status, c, e, get_in(status, ["ports", "app"]), Cartridges.app_up?(status), reads)
 
+  @doc "One door a cartridge declares, as its row reads it: the box's Opens shows the same."
+  def door(status, c, d, reads \\ %{}),
+    do: route(status, c, d, get_in(status, ["ports", "app"]), Cartridges.app_up?(status), reads)
+
   defp addresses(status, c, e, port, up, reads) do
     services(c, status, reads) ++
       for(d <- get_in(e, ["console", "doors"]) || [], do: route(status, c, d, port, up, reads))
@@ -377,6 +382,34 @@ defmodule ConsoleWeb.Record do
 
   defp argv_params([flag | rest], options), do: [{flag, false} | argv_params(rest, options)]
 
+  # A page a tool of the project wrote on disk, served by the console on
+  # the origin beside it (ConsoleWeb.Reports): shut by its condition, or
+  # while nothing is built, never by the app — it answers with the app
+  # down. Not knocked: its reading is when it was built.
+  defp route(status, c, %{"output" => %{} = o} = d, _port, _up, _reads) do
+    output = %{dir: Cartridges.fill_path(o["dir"], c), index: o["index"]}
+    built = Reports.built(status["workspace"], output)
+    port = Reports.port()
+
+    why =
+      cond do
+        not Cartridges.holds?(status, c, d) -> shut_why(d)
+        is_nil(port) -> "the console serves no pages here"
+        is_nil(built) -> "nothing built in #{output.dir}/ yet"
+        true -> nil
+      end
+
+    %{
+      label: d["label"],
+      path: output.dir <> "/",
+      kind: "output",
+      port: nil,
+      href: if(is_nil(why), do: "http://localhost:#{port}/#{d["label"]}/"),
+      why: why,
+      read: built && {"built " <> built_when(built), ""}
+    }
+  end
+
   # A route the cartridge opens on the app's port: shut by its condition,
   # or by the app being down, or open with its address and what it answered.
   defp route(status, c, d, port, up, reads) do
@@ -385,9 +418,7 @@ defmodule ConsoleWeb.Record do
     why =
       cond do
         not Cartridges.holds?(status, c, d) ->
-          if d["when"]["with"],
-            do: "only with --with #{d["when"]["with"]}",
-            else: "only with #{d["when"]["cartridge"]} inserted"
+          shut_why(d)
 
         not up ->
           "the app is down"
@@ -407,6 +438,20 @@ defmodule ConsoleWeb.Record do
       why: why,
       read: read(reads, href)
     }
+  end
+
+  defp shut_why(d) do
+    if d["when"]["with"],
+      do: "only with --with #{d["when"]["with"]}",
+      else: "only with #{d["when"]["cartridge"]} inserted"
+  end
+
+  # Today's build by its time, an older one by its day: the reading is
+  # how fresh the page is, not a timestamp to copy.
+  defp built_when(built) do
+    if NaiveDateTime.to_date(built) == NaiveDateTime.to_date(NaiveDateTime.local_now()),
+      do: Calendar.strftime(built, "%H:%M"),
+      else: Calendar.strftime(built, "%-d %b")
   end
 
   # The services a cartridge brings to the workspace, as `docker compose
@@ -467,7 +512,12 @@ defmodule ConsoleWeb.Record do
         ) ++
           for(
             d <- get_in(e, ["console", "doors"]) || [],
-            do: shut.(d["label"], Cartridges.fill_path(d["path"], e), "route")
+            do:
+              shut.(
+                d["label"],
+                Cartridges.fill_path(d["path"], e),
+                if(d["output"], do: "output", else: "route")
+              )
           )
     }
   end

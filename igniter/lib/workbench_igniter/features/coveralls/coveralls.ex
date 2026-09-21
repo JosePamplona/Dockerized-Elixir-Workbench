@@ -57,7 +57,7 @@ defmodule WorkbenchIgniter.Features.Coveralls do
   def task, do: "workbench.install.coveralls"
 
   @impl true
-  def console, do: [doors: [{"coverage", "/dev/docs/cover", when: {:cartridge, "exdoc"}}]]
+  def console, do: [doors: [{"coverage", {:output, "cover", "excoveralls.html"}}]]
 
   # The themes are the directories under assets/template — the same
   # list the installer checks --theme against.

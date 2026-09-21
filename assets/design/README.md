@@ -79,7 +79,12 @@ one: a bordered box is a door you press.
   (`addr-route`) for a route — an address the reader opens, and the
   knock reads by HTTP, whether the project offers it on the app's port
   or a service offers it on its own (pgAdmin, Grafana); blue
-  (`addr-port`) for a port — a service's, read off `docker compose ps`.
+  (`addr-port`) for a port — a service's, read off `docker compose ps`;
+  green (`addr-output`, since 2026-09-20) for a page a tool of the
+  project wrote on disk — ExDoc's `doc/`, the coverage report's
+  `cover/` — which the console serves off the workspace and which
+  answers with the app down, so it is never knocked: its reading is
+  when it was built.
   The split is what the face does, not who offers it (settled
   2026-09-09): the same pgAdmin is a violet door on its cartridge's row
   and a blue port on its deployment's. A route is written on its port,

@@ -652,6 +652,76 @@ workspace, and the first `up` after `new` compiling the project once
 more. `:erpc` stays on the shelf for the terminal's `iex`, if ever, on
 its own merits.
 
+## The project's pages are served by the console, settled on 2026-09-20
+
+ExDoc's site and ExCoveralls' HTML report were served by the project:
+exdoc planted a pipeline, a `Plug.Static`, an `ExDocController` and the
+`/dev/docs` routes in the project's router, and `coveralls --exdoc` a
+`/docs/cover` action on that controller — the workbench's reading
+carried by the project, for the workbench's reader, and only in dev,
+only with the app up. It is the contract [no contract back] refuses.
+**Decided:** the console serves them off the workspace, where they
+already are, and the project serves nothing for it.
+
+**What the project owes: nothing.** `mix docs` writes `doc/`,
+`mix coveralls.html` writes `cover/` — the tools' own output, gitignored,
+on the disk the console has mounted at `/app/src`. The console reads
+the files as they are. The docs can be read with the app down, with
+prod or scaled up, with no `dev_routes`.
+
+**On an origin of its own.** Those pages carry the project's
+JavaScript. On the console's origin that script could read the page
+that runs `wb.sh --yes`. `ConsoleWeb.Reports` is a second Bandit
+listener on the port beside the console's (4001 in the container;
+`wb.sh console` publishes it on `127.0.0.1`, the next free port after
+the console's, kept across a start-again), read-only (GET, HEAD), the
+loopback names only (a rebound DNS name gets 421), never framed.
+Another port is another origin, and ExDoc keeps a real one: its search,
+its `localStorage`, its theme work as on HexDocs — verified on
+2026-09-20 against tunez's site, 131 hits for a search, the theme kept
+across a reload, no console errors. A `sandbox` CSP on the console's
+own port was the alternative, and it gives the page an opaque origin,
+where `localStorage` throws.
+
+**What the prototype found in the console.** `check_origin:
+["//localhost", "//127.0.0.1"]` compares the host and not the port: a
+page on `localhost:4132` opened the console's socket. It could mount
+nothing — the signed session is in the console's page, unreadable
+across origins — but the first fence was open. The check names the
+port now, the one the browser sees (`CONSOLE_PUBLIC_PORT`, which
+`wb.sh console` passes, since Docker publishes 4000 on another).
+
+**A door of a third kind: the output.** A cartridge declares
+`{label, {:output, dir, index}}` — `{"docs", {:output, "doc",
+"index.html"}}`, `{"coverage", {:output, "cover", "excoveralls.html"}}` —
+beside the routes (violet, on the app's port) and the ports (blue, the
+compose's). It is green (`addr-output`): a page on disk, which answers
+whether the app runs or not. It is not knocked: what it has to say is
+when it was built, read off the index's mtime, attached where a route
+has its HTTP code. Unlit, with the reason, while nothing is built. The
+listener serves `/<label>/` from the dirs the inserted cartridges
+declare, and nothing else of the workspace — `.env` is in it.
+
+**Open.**
+
+* **Where the project moved the output.** tunez writes its docs to
+  `priv/static/doc` (`docs: [output: …]`); a `coveralls.json` may name
+  another `output_dir`. The door says the tool's default, and a project
+  that moved it reads *nothing built*. The fix is the cartridge's
+  `state/1` reporting where the output lands — exdoc reads `mix.exs`,
+  coveralls reads its json — as a fact and not an option, which the
+  Record's parameters column has to learn to tell apart.
+* **Building it from the door.** An unlit door says *nothing built*; the
+  command that builds it is the cartridge's to name, a job to run.
+* **The boxes.** exdoc and coveralls still plant the router, the
+  controller and `/dev/docs/cover`; their doors changed, their
+  installers did not. Their next editions drop them, and exdoc's NEED
+  (*served by the project itself*) says the new thing. The auth0 token
+  page is the one piece that needs the app's origin — Auth0's callback,
+  the API without CORS — and either stays in the project or is left to
+  Swagger.
+* **Symlinks** under an output dir are followed.
+
 ## Open — one word, two things: *installer*
 
 `wb.sh installers` is the verb for the Phoenix generators: the stable

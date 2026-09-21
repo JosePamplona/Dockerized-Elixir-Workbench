@@ -16,6 +16,28 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **The console serves the project's pages: a door of a third kind,
+  green.** ExDoc's site and the coverage report were served by the
+  project — a pipeline, a controller and `/dev/docs` routes exdoc
+  planted in its router, only in dev, only with the app up: the
+  workbench's reading carried by the project. Now a cartridge declares
+  what its tool writes on disk, `{label, {:output, dir, index}}` —
+  exdoc `doc/`, coveralls `cover/` — and the console serves it off the
+  workspace (`ConsoleWeb.Reports`) on a listener of its own, the port
+  beside the console's, which `wb.sh console` publishes on `127.0.0.1`.
+  Another port is another origin: the project's JavaScript never runs
+  where the page that runs `wb.sh --yes` lives, and ExDoc keeps a real
+  origin — search, `localStorage`, the theme work as on HexDocs.
+  Read-only, loopback names only, and only the dirs the inserted
+  cartridges declare: `.env` is in the workspace too. The door is
+  green (`addr-output`, the terminal's moss beside `good`'s sea green,
+  a layer and not a verdict), written as the dir it is read from, its
+  reading when it was built; it answers with the app down and is never
+  knocked. The rail, the Record and the box read it through one
+  function now — the box had a copy of its own that painted every door
+  violet. What stays open (moved outputs, building from the door, the
+  two boxes dropping their routes) is in `console/PLAN.md`.
+
 - **exmachina becomes test_data: the records a test needs, on either
   line.** The old box added `ex_machina` to the deps and stopped there.
   There was no factory module to import, nothing in the test helper,
@@ -2547,6 +2569,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   second row of tabs, the Docker screen, the colour of the code — and
   each is settled, its answer in the console and in this file. They stay
   in the history for whoever wants the candidates.
+
+### Security
+
+- **The console's `check_origin` names the port.** `["//localhost",
+  "//127.0.0.1"]` compared the host alone, so any page on another port
+  of localhost — the project's app, the pages beside the console —
+  could open the console's socket. It mounted nothing, since the
+  signed session is unreadable across origins, but the first fence was
+  open. The check is the port the browser sees now,
+  `CONSOLE_PUBLIC_PORT`, which `wb.sh console` passes.
 
 ## v0.11.0 - (2026-09-06)
 

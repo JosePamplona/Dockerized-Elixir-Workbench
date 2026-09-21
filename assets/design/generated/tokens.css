@@ -55,6 +55,7 @@
   --svc-job:#C9A0DC;
   --addr-port:#3F6FA8;
   --addr-route:#6E3E8C;
+  --addr-output:#4A6B2E;
   --cond:"Barlow Condensed","Arial Narrow", Impact, sans-serif;
   --serif:"Source Serif 4",Georgia, "Times New Roman", serif;
   --mono:"IBM Plex Mono",ui-monospace, "SF Mono", Menlo, monospace;
@@ -107,6 +108,7 @@
     --ansi-bright-white:#ECEFF4;
     --addr-port:#8DBBE8;
     --addr-route:#BE9BDE;
+    --addr-output:#A3BE8C;
   }
 }
 :root[data-theme="dark"]{
@@ -156,4 +158,5 @@
   --ansi-bright-white:#ECEFF4;
   --addr-port:#8DBBE8;
   --addr-route:#BE9BDE;
+  --addr-output:#A3BE8C;
 }

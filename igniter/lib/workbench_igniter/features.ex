@@ -334,16 +334,23 @@ defmodule WorkbenchIgniter.Features do
     }
   end
 
-  defp door({label, path}), do: %{label: label, path: path, when: nil}
+  defp door({label, path}), do: door({label, path, []})
 
   defp door({label, path, opts}) do
     when_ =
-      case Keyword.fetch!(opts, :when) do
+      case Keyword.get(opts, :when) do
+        nil -> nil
         {:with, value} -> %{with: value}
         {:cartridge, name} -> %{cartridge: name}
       end
 
-    %{label: label, path: path, when: when_}
+    case path do
+      {:output, dir, index} ->
+        %{label: label, path: dir <> "/", output: %{dir: dir, index: index}, when: when_}
+
+      path ->
+        %{label: label, path: path, when: when_}
+    end
   end
 
   defp options(nil, _feature), do: []

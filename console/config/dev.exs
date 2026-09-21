@@ -6,6 +6,8 @@ import Config
 # The watchers configuration can be used to run external
 # watchers to your application. For example, we can use it
 # to bundle .js and .css sources.
+public_port = System.get_env("CONSOLE_PUBLIC_PORT") || System.get_env("PORT") || "4000"
+
 config :console, ConsoleWeb.Endpoint,
   # 0.0.0.0 inside the container, where the port has to be reachable
   # from the host; `./wb.sh console` publishes it on 127.0.0.1 only. The
@@ -13,7 +15,11 @@ config :console, ConsoleWeb.Endpoint,
   # wipes a workspace: the origin check stays on even in dev, so no
   # page the reader visits while the console is up can open its socket.
   http: [ip: {0, 0, 0, 0}, port: String.to_integer(System.get_env("PORT") || "4000")],
-  check_origin: ["//localhost", "//127.0.0.1"],
+  # The port is part of the check: the project's pages are served on
+  # the port beside this one (ConsoleWeb.Reports), the same host, and
+  # "//localhost" alone lets them in. CONSOLE_PUBLIC_PORT is the port
+  # the browser sees when Docker publishes 4000 on another.
+  check_origin: ["//localhost:#{public_port}", "//127.0.0.1:#{public_port}"],
   code_reloader: true,
   # The shelf is read in this BEAM off the workbench's package, a path
   # dependency: reloaded with the console, or a cartridge edited while
@@ -24,6 +30,13 @@ config :console, ConsoleWeb.Endpoint,
   watchers: [
     esbuild: {Esbuild, :install_and_run, [:console, ~w(--sourcemap=inline --watch)]}
   ]
+
+# The project's docs and coverage report, on their own origin
+# (ConsoleWeb.Reports): the port beside the console's, published on
+# 127.0.0.1 like it.
+config :console, :reports,
+  ip: {0, 0, 0, 0},
+  port: String.to_integer(System.get_env("REPORTS_PORT") || "4001")
 
 # ## SSL Support
 #

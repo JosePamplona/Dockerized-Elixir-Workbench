@@ -280,6 +280,10 @@ def components_css():
        .door-port   blue, addr-port: a port the compose publishes on the host
        .door-inside the same blue, hollow: a port inside the pod, no door on
                     the host (database:5432) — the layer kept, the opening not
+       .door-output green, addr-output: a page a tool wrote on disk (doc/,
+                    cover/), served by the console on an origin of its own;
+                    written as the dir it is read from, its reading when it
+                    was built — never knocked, it answers with the app down
      (prefixed, because `.console` is the LiveView console's own root.)
      A route is written on its port — <span><em>:4001</em>/dev/mailbox</span>,
      the port dimmed — because it rides on one; a port is written whole.
@@ -508,6 +512,7 @@ def components_css():
 .door-ref::before{content:"";width:8px;height:8px;border-radius:2px;flex:none;background:var(--addr-route)}
 .door-ref.door-port::before{background:var(--addr-port)}
 .door-ref.door-inside::before{background:none;box-shadow:inset 0 0 0 2px var(--addr-port)}
+.door-ref.door-output::before{background:var(--addr-output)}
 /* The reading, attached inside the border: the chip's plate behind the box's own line. */
 .door-ref:has(.read){padding-right:0}
 .door-ref .read{display:inline-flex;align-items:center;gap:5px;align-self:stretch;margin:-3px 0 -3px 1px;padding:3px 8px;border-left:1px solid var(--line);border-radius:0 2px 2px 0;font-family:var(--mono);font-style:normal;font-weight:500;font-size:11px;background:var(--surface-2);color:var(--muted)}

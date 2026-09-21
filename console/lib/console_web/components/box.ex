@@ -9,6 +9,7 @@ defmodule ConsoleWeb.Box do
   import ConsoleWeb.Refs
   import ConsoleWeb.Ribbon, only: [ribbon: 1]
   alias ConsoleWeb.Cartridges
+  alias ConsoleWeb.Record
 
   @screens [{"box", "Box"}, {"manual", "Manual"}, {"install", "Installation"}, {"files", "Files"}]
 
@@ -515,7 +516,8 @@ defmodule ConsoleWeb.Box do
         members: members,
         up: up,
         brings: brings(assigns),
-        console: assigns.box["console"] || %{}
+        console: assigns.box["console"] || %{},
+        doors: doors(assigns)
       )
 
     ~H"""
@@ -564,14 +566,16 @@ defmodule ConsoleWeb.Box do
           <span class="by">{Enum.join(service["deploys"] || [], " · ")}</span>
         </span>
       </span>
-      <span :if={(@console["doors"] || []) != []} class="k">Opens</span>
-      <span :if={(@console["doors"] || []) != []} class="v stack">
+      <span :if={@doors != []} class="k">Opens</span>
+      <span :if={@doors != []} class="v stack">
         <.door_ref
-          :for={d <- @console["doors"]}
-          label={d["label"]}
-          path={Cartridges.fill_path(d["path"], @c)}
-          href={"http://localhost:#{@status && @status["ports"]["app"]}#{Cartridges.fill_path(d["path"], @c)}"}
-          why={door_shut(@box, @c, @status, d, @installed, @up)}
+          :for={a <- @doors}
+          label={a.label}
+          path={a.path}
+          href={a.href}
+          why={a.why}
+          kind={a.kind}
+          read={a.read}
         />
       </span>
       <span :if={(@console["tabs"] || []) != []} class="k">Lights</span>
@@ -599,21 +603,22 @@ defmodule ConsoleWeb.Box do
     |> Enum.join(" · ")
   end
 
-  defp door_shut(box, c, status, d, installed, up) do
-    cond do
-      !installed ->
-        "insert #{box["name"]} first"
-
-      !Cartridges.holds?(status, c, d) ->
-        if d["when"]["with"],
-          do: "only with --with #{d["when"]["with"]}",
-          else: "only with #{d["when"]["cartridge"]} inserted"
-
-      !up ->
-        "the app is down"
-
-      true ->
-        nil
+  # The doors as the Record reads them once the box is in — the same
+  # face, reason and reading as on its row — and shut until it is.
+  defp doors(%{box: box, c: c, installed: installed, status: status}) do
+    for d <- get_in(box, ["console", "doors"]) || [] do
+      if installed and c do
+        Record.door(status, c, d)
+      else
+        %{
+          label: d["label"],
+          path: Cartridges.fill_path(d["path"], box),
+          kind: if(d["output"], do: "output", else: "route"),
+          href: nil,
+          why: "insert #{box["name"]} first",
+          read: nil
+        }
+      end
     end
   end
 

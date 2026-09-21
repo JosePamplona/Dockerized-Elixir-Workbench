@@ -207,7 +207,11 @@ defmodule WorkbenchIgniter.Feature do
       as `state/1` reports it, or its default. The console reads them
       and calls them; it asks nothing of the project for its own sake —
       a route exists for the project's reasons, and the workbench only
-      takes advantage of it.
+      takes advantage of it. A door can be a page on disk instead,
+      `{label, {:output, dir, index}}`: what a tool of the project
+      writes for its reader (`{"docs", {:output, "doc", "index.html"}}`),
+      which the console serves off the workspace on an origin of its
+      own, so the project needs no route for it (console/PLAN.md).
     * `tabs:` — screens the console shows only with this cartridge:
       `:cluster`.
 

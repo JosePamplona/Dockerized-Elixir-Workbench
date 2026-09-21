@@ -164,7 +164,18 @@ defmodule ConsoleWeb.RecordTest do
         ]
       }
     },
-    %{"name" => "exdoc", "console" => %{"doors" => [%{"label" => "docs", "path" => "/dev/docs"}]}}
+    %{
+      "name" => "exdoc",
+      "console" => %{
+        "doors" => [
+          %{
+            "label" => "docs",
+            "path" => "doc/",
+            "output" => %{"dir" => "doc", "index" => "index.html"}
+          }
+        ]
+      }
+    }
   ]
 
   test "the birth against today: what moved carries what it is now" do
@@ -429,6 +440,45 @@ defmodule ConsoleWeb.RecordTest do
     page = Record.page(Map.put(@status, "deployment", nil), @catalog)
     assert Enum.all?(page.cartridges, fn row -> Enum.all?(row.addresses, &(&1.why != nil)) end)
     assert Record.hrefs(page) == []
+  end
+
+  @tag :tmp_dir
+  test "a page on disk is a door of its own: green, read off its build, never knocked", %{
+    tmp_dir: ws
+  } do
+    System.put_env("REPORTS_PUBLIC_PORT", "4101")
+    on_exit(fn -> System.delete_env("REPORTS_PUBLIC_PORT") end)
+
+    with_exdoc =
+      @status
+      |> Map.put("workspace", ws)
+      |> update_in(["project", "cartridges"], fn cs ->
+        Enum.map(cs, &if(&1["name"] == "exdoc", do: Map.put(&1, "installed", true), else: &1))
+      end)
+
+    docs = fn status ->
+      Enum.find(Record.page(status, @catalog).cartridges, &(&1.c["name"] == "exdoc")).addresses
+    end
+
+    # Nothing built: shut, with the reason, and not for the app.
+    assert [%{kind: "output", path: "doc/", href: nil, why: "nothing built in doc/ yet"}] =
+             docs.(with_exdoc)
+
+    File.mkdir_p!(Path.join(ws, "doc"))
+    File.write!(Path.join(ws, "doc/index.html"), "")
+
+    # Built: open on the pages' own port, its reading when it was built —
+    # with the app down as much as up, and no knock calls it.
+    for status <- [with_exdoc, Map.put(with_exdoc, "deployment", nil)] do
+      assert [%{href: "http://localhost:4101/docs/", why: nil, read: {"built " <> _, ""}}] =
+               docs.(status)
+    end
+
+    refute "http://localhost:4101/docs/" in Record.hrefs(Record.page(with_exdoc, @catalog))
+
+    # Not inserted, it is offered shut, green all the same.
+    assert %{addresses: [%{kind: "output", path: "doc/", why: "not inserted"}]} =
+             Record.offered(Enum.find(@catalog, &(&1["name"] == "exdoc")))
   end
 
   test "no project, no plan" do

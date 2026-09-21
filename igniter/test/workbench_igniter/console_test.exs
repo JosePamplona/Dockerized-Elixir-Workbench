@@ -14,10 +14,19 @@ defmodule WorkbenchIgniter.ConsoleTest do
       Features.entry(Enum.find(Features.catalog(), &(&1.name() == name))).console
     end
 
-    assert by.("exdoc").doors == [%{label: "docs", path: "/dev/docs", when: nil}]
+    # A page on disk: what the tool writes, served by the console off
+    # the workspace, whether the app runs or not.
+    assert by.("exdoc").doors == [
+             %{label: "docs", path: "doc/", output: %{dir: "doc", index: "index.html"}, when: nil}
+           ]
 
     assert by.("coveralls").doors == [
-             %{label: "coverage", path: "/dev/docs/cover", when: %{cartridge: "exdoc"}}
+             %{
+               label: "coverage",
+               path: "cover/",
+               output: %{dir: "cover", index: "excoveralls.html"},
+               when: nil
+             }
            ]
 
     assert by.("ash").doors == [%{label: "admin", path: "/admin", when: %{with: "ash_admin"}}]
@@ -35,10 +44,15 @@ defmodule WorkbenchIgniter.ConsoleTest do
     assert by.("credo") == %{doors: [], tabs: []}
   end
 
-  test "every door path starts with a slash or an {option}" do
-    for feature <- Features.catalog(),
-        %{path: path} <- Features.entry(feature).console.doors do
-      assert String.starts_with?(path, ["/", "{"]), "#{feature.name()}: #{path}"
+  test "every route starts with a slash or an {option}; an output is a relative dir" do
+    for feature <- Features.catalog(), door <- Features.entry(feature).console.doors do
+      case door do
+        %{output: %{dir: dir}} ->
+          assert {:ok, ^dir} = Path.safe_relative(dir), "#{feature.name()}: #{dir}"
+
+        %{path: path} ->
+          assert String.starts_with?(path, ["/", "{"]), "#{feature.name()}: #{path}"
+      end
     end
   end
 

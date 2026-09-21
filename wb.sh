@@ -2559,6 +2559,10 @@ if [ $# -gt 0 ]; then
         # survives a start-again; the first free one from 4100 otherwise.
         CONSOLE_PORT=$(docker port "$CONSOLE_NAME" 4000/tcp 2>/dev/null | sed -n 's/.*://p' | head -n 1)
         [ -n "$CONSOLE_PORT" ] || CONSOLE_PORT=$(first_free_port 4100)
+        # The project's docs and coverage report, on an origin of their
+        # own: the next port, kept the same way.
+        REPORTS_PORT=$(docker port "$CONSOLE_NAME" 4001/tcp 2>/dev/null | sed -n 's/.*://p' | head -n 1)
+        [ -n "$REPORTS_PORT" ] || REPORTS_PORT=$(first_free_port $((CONSOLE_PORT + 1)))
         docker rm -f "$CONSOLE_NAME" > /dev/null 2>&1
         # The socket's group as the container sees it — not the host's:
         # under Docker Desktop the mounted socket is the VM's, root-owned.
@@ -2592,7 +2596,10 @@ if [ $# -gt 0 ]; then
           --env "WORKBENCH_DIR=$WORKBENCH_PATH" \
           --env "WORKBENCH_PATH=$WORKBENCH_PATH" \
           --env PORT=4000 \
+          --env "CONSOLE_PUBLIC_PORT=$CONSOLE_PORT" \
+          --env "REPORTS_PUBLIC_PORT=$REPORTS_PORT" \
           --publish "127.0.0.1:$CONSOLE_PORT:4000" \
+          --publish "127.0.0.1:$REPORTS_PORT:4001" \
           "$WORKBENCH_IMAGE" sh -c "mix deps.get && mix phx.server" > /dev/null && \
         echo "The console is coming up on ${B}http://localhost:$CONSOLE_PORT${R}" \
           "(first run compiles it: ./$(basename "$0") console logs)." ;;

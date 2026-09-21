@@ -156,7 +156,7 @@ defmodule ConsoleWeb.Board do
     doors =
       for c <- Cartridges.installed(assigns.status),
           a <- Record.addresses(assigns.status, c, entry.(c), assigns.reads),
-          a.kind == "route",
+          a.kind in ["route", "output"],
           do: {c, a}
 
     assigns =

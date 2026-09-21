@@ -236,11 +236,14 @@ bake`, then `setup`); the catalog carries it, and marks the base
 cartridges as `base`.
 
 A cartridge can light the console up: `console/0` names the *doors* it
-opens on the app's port (exdoc `/dev/docs`, rest `/dev/swagger`, mailer
+opens on the app's port (rest `/dev/swagger`, mailer
 `/dev/mailbox`, ash `/admin` when `ash_admin` is in, dashboard_extras
 the two dashboard pages it lights, health_probe
-`{path}/live` and `{path}/ready`) and the *tabs* it turns on (clustering
-→ Cluster). The catalog carries it as `console`; the console shows the
+`{path}/live` and `{path}/ready`), the pages its tool writes on disk
+for the reader (exdoc `doc/`, coveralls `cover/`: `{:output, dir,
+index}`, served by the console off the workspace, the app up or not)
+and the *tabs* it turns on (clustering → Cluster). The catalog carries
+it as `console`; the console shows the
 doors of what is inserted and nothing of what is not. There is no
 separate kind for a health endpoint: it is a route the project has for
 its own reasons, and the console reads it and calls it like any other

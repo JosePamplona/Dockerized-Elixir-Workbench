@@ -20,7 +20,7 @@ defmodule WorkbenchIgniter.Features.Exdoc do
   def task, do: "workbench.install.exdoc"
 
   @impl true
-  def console, do: [doors: [{"docs", "/dev/docs"}]]
+  def console, do: [doors: [{"docs", {:output, "doc", "index.html"}}]]
 
   @impl true
   def afterwards,

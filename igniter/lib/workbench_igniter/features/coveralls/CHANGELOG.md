@@ -10,6 +10,38 @@ Backfilled at the version below, its first: the cartridge shipped
 before a changelog was part of the anatomy, and gets one on its next
 change, as the features index says.
 
+## v0.3.0 - (2026-09-20)
+
+### Added
+
+- **`--githook`**: `mix coveralls` before every commit. The hook, the
+  way it reaches `mix` inside the container and the checks that come
+  with Elixir belong to the **precommit** cartridge, which this one
+  composes when asked; what coverage adds is a block of
+  `.githooks/pre-commit` belonging to this cartridge alone
+  (`WorkbenchIgniter.BlockFile`), so credo's block and this one stand
+  in the same file and either can be ejected without touching the
+  other. Off by default, and the README says why: the suite with its
+  instrumentation is the slowest thing a commit can wait for, and the
+  place coverage is owed to a team is CI. The block is born **below the
+  hook's divider**, after every check that can refuse a commit in a
+  second: `mix coveralls` compiles the project and runs the suite
+  instrumented, and nothing in the hook is slower.
+- `state/1` says whether the line stands in the project's hook, and
+  `DESIGN.md`, the paper the anatomy asks of a cartridge on its next
+  change.
+
+### Updated
+
+- **A second run adds the hook block.** The insert was a no-op once
+  `coveralls.json` existed, which turned `--githook` on a project that
+  already had coveralls into a silent nothing: the flag was asked for
+  and the notice said *skipping*. The json, the themes and the report
+  are still fixed at the insert — they are the project's to edit
+  afterwards — but the hook block is a piece the installer adds when it
+  is missing, and the notice now says which of the two happened. The
+  cartridge is `rerun: :adds`.
+
 ## v0.2.0 - (2026-09-20)
 
 ### Updated

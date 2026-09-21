@@ -55,7 +55,10 @@ defmodule WorkbenchIgniter.ConsoleTest do
   test "health_endpoint reports the endpoint it was inserted with, and its OpenAPI variant" do
     igniter =
       phx_test_project()
-      |> Igniter.compose_task("workbench.install.health_endpoint", ~w(--endpoint /health3 --open-api))
+      |> Igniter.compose_task(
+        "workbench.install.health_endpoint",
+        ~w(--endpoint /health3 --open-api)
+      )
       |> apply_igniter!()
 
     assert {%{endpoint: "/health3", open_api: true}, _} = Features.HealthEndpoint.state(igniter)

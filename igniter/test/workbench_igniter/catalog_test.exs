@@ -25,7 +25,7 @@ defmodule WorkbenchIgniter.CatalogTest do
   @cartridges ~w(chiefs_setup ansi version_manager toolchain changelog
                  dashboard_extras credo mock test_doubles exdebug rest graphql
                  coveralls exdoc guidelines enhancements auth0 openai health_endpoint stripe
-                 githooks exmachina clustering health_probe ash specdd db_admin k6 monitoring
+                 precommit exmachina clustering health_probe ash specdd db_admin k6 monitoring
                  mailer gettext ecto esbuild tailwind html dashboard)
   # The chiefs_setup recipe with its default choices, in insertion order.
   @picks ~w(ansi version_manager toolchain changelog dashboard_extras db_admin credo mock test_doubles
@@ -93,7 +93,7 @@ defmodule WorkbenchIgniter.CatalogTest do
       assert %{version: %{version: "0.2.0", date: "2026-09-20"}} =
                Features.entry(Features.HealthProbe)
 
-      assert %{version: nil} = Features.entry(Features.Credo)
+      assert %{version: nil} = Features.entry(Features.Exmachina)
     end
 
     test "lists the installer's options with their defaults" do
@@ -279,7 +279,7 @@ defmodule WorkbenchIgniter.CatalogTest do
       assert output =~ ~r/^mailer +\S+ +base +You want to see the mail/m
       assert output =~ ~r/^stripe +- +pending +Your users should be able to pay/m
       assert output =~ ~r/^health_probe +v0\.2\.0 +Your platform polls/m
-      assert output =~ ~r/^credo +- +You want a reviewer/m
+      assert output =~ ~r/^exmachina +- +Your tests need realistic records/m
     end
   end
 
@@ -394,8 +394,15 @@ defmodule WorkbenchIgniter.CatalogTest do
       ],
       "coveralls" => [
         # --build runs the suite once; cover/ is gitignored.
-        {~w(--minimum-coverage 90 --interface graphql --exdoc --theme custom --build),
-         %{minimum_coverage: "90", interface: "graphql", exdoc: true, theme: "custom", build: nil}}
+        {~w(--minimum-coverage 90 --interface graphql --exdoc --theme custom --githook --build),
+         %{
+           minimum_coverage: "90",
+           interface: "graphql",
+           exdoc: true,
+           theme: "custom",
+           githook: true,
+           build: nil
+         }}
       ],
       "exdoc" => [
         # --version stamps the gitignored doc/ dummies only; --build runs mix docs once.
@@ -457,6 +464,9 @@ defmodule WorkbenchIgniter.CatalogTest do
         {~w(--endpoint /health3 --open-api), %{endpoint: "/health3", open_api: true}}
       ],
       "clustering" => [{~w(--dns-query probe.internal), %{dns_query: "probe.internal"}}],
+      "credo" => [{~w(--githook), %{githook: true}}],
+      # The box's own checks; a cartridge's check is that cartridge's state.
+      "precommit" => [{~w(--checks compile,unused_deps), %{checks: ~w(unused_deps compile)}}],
       "health_probe" => [{~w(--path /alive), %{path: "/alive"}}]
     }
 
@@ -511,9 +521,9 @@ defmodule WorkbenchIgniter.CatalogTest do
   describe "composes" do
     test "names, off the installer's info, the cartridges it inserts along" do
       assert %{composes: ["mock"]} = Features.entry(Features.HealthEndpoint)
-      assert %{composes: ["test_doubles"]} = Features.entry(Features.Coveralls)
+      assert %{composes: ["test_doubles", "precommit"]} = Features.entry(Features.Coveralls)
       assert %{composes: ["mock"]} = Features.entry(Features.Enhancements)
-      assert %{composes: []} = Features.entry(Features.Credo)
+      assert %{composes: ["precommit"]} = Features.entry(Features.Credo)
       assert %{composes: []} = Features.entry(Features.Stripe)
     end
 

@@ -5,9 +5,9 @@ Test coverage with ExCoveralls, the workbench HTML report and the
 
 * **Task**: `mix workbench.install.coveralls`
 * **Inserted by**: `wb.sh add coveralls`
-* **Options**: `--interface <i>` `[--theme <t>]` `[--exdoc]` `[--build]` — whether
-  the project has html (the components folder to leave out) is read off
-  the project.
+* **Options**: `--interface <i>` `[--theme <t>]` `[--exdoc]` `[--githook]`
+  `[--build]` — whether the project has html (the components folder to
+  leave out) is read off the project.
 
 ## Description
 
@@ -60,7 +60,10 @@ ran them sees and become part of what the project shows about itself.
   `mix cover` task (`lib/mix/tasks/cover.ex` + formatter + test) that
   generates `TESTING.md` for ExDoc, and gitignores it.
 
-**Idempotency**: if `coveralls.json` already exists, notice and no-op.
+**Idempotency**: if `coveralls.json` already exists, notice and no-op —
+except the hook block, which a second run adds when it is missing, so
+`--githook` on a project that took coveralls without it is honoured
+instead of skipped along with the rest.
 
 ## Options
 
@@ -70,6 +73,12 @@ ran them sees and become part of what the project shows about itself.
 * `--exdoc` - Install the `mix cover` task (ExDoc integration).
 * `--theme` - Report theme: `exdoc-ish` | `custom`. Default:
   `exdoc-ish`.
+* `--githook` - Run `mix coveralls` before every commit, in this
+  cartridge's own block of `.githooks/pre-commit` (the **precommit**
+  cartridge, inserted with it). Off by default: it is the suite plus
+  its instrumentation, the slowest check a commit can wait for, and
+  coverage's natural home is CI. Ejecting either box leaves the other's
+  checks standing.
 * `--build` - Run the suite once the insert is applied, so the report
   has numbers. Off by default: it needs the dependencies compiled and,
   on a project with Ecto, a test database — the installer queues
@@ -83,6 +92,8 @@ Templates and assets live under `priv/features/coveralls/`:
 | File | Role |
 | --- | --- |
 | `coveralls.ex` | Manifest + logic |
+| `CHANGELOG.md` | Its versions, apart from the workbench's |
+| `DESIGN.md` | Why this coverage tool, the report's two themes, and where its pre-commit line lives |
 | `task.ex` | `Mix.Tasks.Workbench.Install.Coveralls` shell |
 | `templates/coveralls_json.eex` | `coveralls.json` |
 | `assets/template/<theme>/*.html.eex` | HTML report themes (verbatim: their `<%= %>` tags belong to the target project) |

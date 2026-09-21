@@ -16,6 +16,105 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **githooks becomes precommit: the box that owns the hook, not the box
+  that installs a dependency.** The shelf's plan had this box absorbed
+  into credo and coveralls, an option each. The absorption would have
+  left the checks that come with **Elixir** with no owner at all — the
+  formatter, the compiler's warnings, the suite, the lock file with
+  something stale in it: no cartridge installs them, and they are what
+  a pre-commit hook is for. So the box stays, named for the moment it
+  acts on rather than for the package it installs, and grows into the
+  three things this environment actually needs. Its own `--checks`
+  installs those Elixir checks (`format` by default, then
+  `unused_deps`, `compile`, `test`); a second run adds what it is
+  given.
+
+  The first is **the crossing**. `git commit` runs on the host, and the
+  host of a workbench project carries Docker and nothing else, so a
+  hook calling `mix` there calls nothing: `.githooks/mix` is `docker
+  compose exec app mix` on the running container, `run --rm` when the
+  workspace is down — the workbench's own two paths, in the ambient
+  Docker context — and it goes through the project's own compose file,
+  never through `wb.sh`, because the project owes the workbench
+  nothing. `project_path: "."` is the other half of the same problem:
+  `git_hooks` writes `File.cwd!()` into the shim it installs and
+  installs it from inside the container, where that is `/app/src`, a
+  path the host cannot enter. A dot is true on both sides of the mount.
+
+  The second is **the file**. The checks live in
+  `.githooks/pre-commit`, a shell script with `set -e` where every
+  cartridge owns a delimited block (`WorkbenchIgniter.BlockFile`,
+  written last week for exactly this and for the test helper), and
+  `config/dev.exs` carries one hook whose one task is that file — so no
+  cartridge ever edits somebody else's nested keyword list to add a
+  line. `Precommit.check/4` is the way in, `forget/2` what an eject
+  owes, `checks_of/2` what a cartridge's own `state/1` reads. A new
+  block is born at the stage its caller asks for, either side of the
+  comment line dividing the cheap checks from the ones that compile the
+  project or run the suite, and a block already there is replaced where
+  it stands: a project that moved it meant to. `sh
+  .githooks/pre-commit` runs the lot without committing.
+
+  The crossing is also the box's one figure, in the DESIGN (`assets/diagrams/precommit/the-crossing.svg`):
+  a sequence over the two grounds, with the commit's status walking back
+  to abort it, and an `else` region holding what the same commit does
+  configured the way the library's README shows it — the arrow stops on
+  the host, which is the comparison the prose was carrying in two
+  paragraphs.
+
+  Verified end to end in a scratch project, not only in the suite: the
+  shim installed from inside the container with `cd_path="."`, a `git
+  commit` **on the host** refused by the formatter running in the
+  container, and the same commit passing once the file was formatted.
+  Two things only a real run could show, both recorded in the box's
+  DESIGN: `--check` is one of Igniter's own global switches, so the
+  option is `--checks`; and the version hex resolves for `~> 0.7` is
+  0.9.0, which already resolves the working tree at run time —
+  `project_path` is written all the same, for a project that resolved
+  an older one.
+
+  The third is what the box refuses to be. A hook runs for the person
+  who installed it and `--no-verify` skips it; the wider names the
+  author weighed — a "definition of done", a pull-request gate — would
+  promise a team something only CI can keep, which is the `ci`
+  cartridge still to come. The NEED says so in its *Not for*.
+
+- **credo and coveralls run before the commit, each in its own block.**
+  `credo --githook` (cartridge v0.1.0) puts `mix credo` in the hook —
+  not `--strict`, because a hook that refuses the developer's first
+  commit is a hook they turn off within the hour, and `--strict` is one
+  word away in a file the project owns. `coveralls --githook`
+  (v0.3.0) puts `mix coveralls` there, off by default and saying why:
+  the suite plus its instrumentation is the slowest thing a commit can
+  wait for. Each composes the precommit cartridge and takes a block of
+  its file, so the two stand in one hook, in order, and ejecting either
+  leaves the other's checks standing. credo gets the two papers the
+  anatomy owes a cartridge on its next change, and with them its first
+  option, its `state/1`, and a `DESIGN.md` that says why Dialyzer,
+  `mix format` and Sobelow are not it.
+
+  The two blocks land on **opposite sides of the hook's divider**, and
+  that is the option's whole argument made concrete: credo's is born
+  `:fast`, because Credo reads the source and never compiles the
+  project, and coveralls' `:slow`, after every check that can refuse a
+  commit in a second. A commit Credo is going to reject is rejected
+  before anything compiles.
+
+  And **coveralls' insert learns to be run twice.** It was a no-op once
+  `coveralls.json` existed, which turned `--githook` on a project that
+  already had coveralls into a silent nothing: the flag was asked for,
+  the notice said *skipping*, and no hook appeared. The json, the
+  themes and the report stay fixed at the insert — they are the
+  project's to edit afterwards, and a second run must not undo an edit
+  — but the hook block is a piece the installer adds when it is
+  missing, so the block is written and the notice now says which of the
+  two happened. coveralls gets its `DESIGN.md` with the rest: why a
+  dependency at all when `mix test --cover` is built into Elixir (a
+  terminal summary is not a page a reviewer opens), why the minimum is
+  80 and not Mix's 90 or ExCoveralls' 0, why the report is planted as a
+  template the project owns in one of two themes, and why a column
+  width of 128 in `coveralls.json` is load-bearing.
+
 - **exdebug's box, at v0.1.0: the probe a pipeline can keep.** The
   cartridge still installs one dependency and writes nothing — `as it
   is`, the script's crossing said — and now says what that buys. The

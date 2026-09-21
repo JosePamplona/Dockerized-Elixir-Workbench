@@ -1,0 +1,21 @@
+#!/bin/sh
+#
+# The project's pre-commit checks.
+#
+# git_hooks runs this file inside the workspace's container, so every
+# line here is a command of the project, not of your machine: `mix`,
+# not `docker compose exec`. Run them yourself, without committing,
+# with `sh .githooks/pre-commit`.
+#
+# Each cartridge owns a block, delimited by its name. Yours go outside
+# them, or in a block of your own: a cartridge only ever rewrites the
+# block it opened, and takes it away when it is ejected. Moving a block
+# is how you reorder the checks — it is replaced where it stands, never
+# put back where it was born.
+#
+# The first failure stops the commit. `git commit --no-verify` skips
+# the lot, which is what a hook is: a reminder that runs for the person
+# who installed it, never a gate.
+set -e
+
+# --- slow: what compiles the project or runs the suite ----------------------

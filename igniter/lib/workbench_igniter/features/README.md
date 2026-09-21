@@ -111,17 +111,31 @@ Dep-only cartridges have no `priv/features/<feature>/` directory:
 
 | Cartridge | Installs | Picked by |
 | --- | --- | --- |
-| [credo](credo/) | `{:credo, "~> 1.7", only: [:dev, :test], runtime: false}` | chiefs_setup |
+| [credo](credo/) | `{:credo, "~> 1.7", only: [:dev, :test], runtime: false}`, and with `--githook` its line in the pre-commit hook (composes [precommit](precommit/)) | chiefs_setup |
 | [mock](mock/) | `{:mock, "~> 0.3", only: :test}` | chiefs_setup (also composed by health_endpoint and enhancements; coveralls moved to test_doubles on 2026-09-20, and the last of the three takes it off the shelf) |
 | [test_doubles](test_doubles/) | `{:mimic, "~> 2.0", only: :test}`, `{:mox, "~> 1.2", only: :test}` or `{:hammox, "~> 1.0", only: :test}` with `--type-check`, by `--double` | chiefs_setup (also composed by coveralls, with `--double mimic`) |
 | [exdebug](exdebug/) | `{:ex_debug, "~> 1.0"}` | chiefs_setup |
 | [dashboard_extras](dashboard_extras/) | `:os_mon` in `extra_applications`, and the extras of the project's database: `ecto_psql_extras`, `ecto_mysql_extras` or `ecto_sqlite3_extras` (none on SQL Server or without a database) | chiefs_setup |
-| [githooks](githooks/) | `{:git_hooks, "~> 0.7", only: :dev, runtime: false}` | no one (`wb.sh add githooks`) |
 | [exmachina](exmachina/) | `{:ex_machina, "~> 2.8", only: :test}` | no one (`wb.sh add exmachina`) |
 | [stripe](stripe/) | — (pending; requires auth0) | no one |
 
 Each cartridge README explains what it brings (mock's carries the pending
 migration to Mox).
+
+[precommit](precommit/) is the checks that run before the commit
+exists. The box is the dependency (`git_hooks`), the configuration that
+puts a shim in `.git/hooks`, and two files the project owns:
+`.githooks/mix`, which is how the host — Docker and nothing else —
+reaches `mix` in the container, and `.githooks/pre-commit`, the ordered
+checks. Its own options are the ones that belong to no cartridge (`mix
+format`, `mix compile --warnings-as-errors`, `mix test`, `mix
+deps.unlock --check-unused`), and a cartridge with a check of its own
+brings it with an option of its own — [credo](credo/) and
+[coveralls](coveralls/) `--githook` — composing this installer and
+taking **a block of the hook** through `Precommit.check/4`
+(`WorkbenchIgniter.BlockFile`, as test_doubles does with the test
+helper). Each block is its cartridge's to write and to take away, so
+either can be ejected without touching the other's checks.
 
 [clustering](clustering/) adds no dependency: it writes the `rel/*.eex`
 release templates with the distributed-node exports DNSCluster needs,

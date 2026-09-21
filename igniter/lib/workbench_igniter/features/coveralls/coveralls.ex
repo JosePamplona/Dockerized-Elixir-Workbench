@@ -10,6 +10,7 @@ defmodule WorkbenchIgniter.Features.Coveralls do
   """
   use WorkbenchIgniter.Feature
 
+  alias WorkbenchIgniter.Features.Precommit
   alias WorkbenchIgniter.Features.TestDoubles
 
   embed_templates()
@@ -29,6 +30,10 @@ defmodule WorkbenchIgniter.Features.Coveralls do
   # The HTML report lands in the standard `cover/` output dir (already in
   # phx.new's stock .gitignore); only the report template is a source file.
   @output_dir "cover"
+
+  # The line --githook puts in the project's pre-commit hook: the suite
+  # with coverage, refused under the minimum coveralls.json carries.
+  @check "mix coveralls"
   @template_path "assets/cover/template"
 
   # Report themes: one directory per theme under the cartridge's
@@ -39,6 +44,10 @@ defmodule WorkbenchIgniter.Features.Coveralls do
   @themes @themes_dir |> File.ls!() |> Enum.sort()
   @default_theme "exdoc-ish"
   @report_template_files ~w(coverage.html.eex _script.html.eex _style.html.eex)
+
+  @doc "The line `--githook` puts in the pre-commit hook."
+  @spec check_command() :: String.t()
+  def check_command, do: @check
 
   @doc "Available HTML report themes (`priv/features/coveralls/assets/template/<theme>/`)."
   @spec themes() :: [String.t()]
@@ -78,6 +87,8 @@ defmodule WorkbenchIgniter.Features.Coveralls do
         "The project uses the ExDoc feature: the `mix cover` task (which generates the `TESTING.md` report for the docs) is installed.",
       theme:
         "HTML report theme, one of #{Enum.map_join(themes(), ", ", &"`#{&1}`")}: `exdoc-ish` mimics the ExDoc pages (sidebar, light/dark theme, fonts) so the report blends into the documentation site, `custom` is the original workbench report. Default: `exdoc-ish`.",
+      githook:
+        "Run `#{@check}` before every commit, in this cartridge's own block of `#{Precommit.hook()}` (the precommit cartridge, inserted with it). Off by default: it is the suite plus its instrumentation, the slowest check a commit can wait for, and coverage's natural home is CI.",
       build:
         "Run the suite once the insert is applied, so the report has numbers. Off by default: it needs the dependencies compiled and, with Ecto, a test database — which means the compose has one (`./wb.sh bake`)."
     ]
@@ -92,12 +103,13 @@ defmodule WorkbenchIgniter.Features.Coveralls do
     %Igniter.Mix.Task.Info{
       group: :workbench_igniter,
       example: @example,
-      composes: ["workbench.install.test_doubles"],
+      composes: ["workbench.install.test_doubles", "workbench.install.precommit"],
       schema: [
         minimum_coverage: :string,
         interface: :string,
         exdoc: :boolean,
         theme: :string,
+        githook: :boolean,
         build: :boolean
       ],
       defaults: [
@@ -105,10 +117,16 @@ defmodule WorkbenchIgniter.Features.Coveralls do
         interface: "rest",
         exdoc: false,
         theme: @default_theme,
+        githook: false,
         build: false
       ]
     }
   end
+
+  # The hook block is a piece the installer adds when missing; the rest
+  # of the options are fixed at the insert.
+  @impl true
+  def rerun, do: :adds
 
   # The mark: the coveralls.json the installer writes.
   @impl true
@@ -126,6 +144,7 @@ defmodule WorkbenchIgniter.Features.Coveralls do
     {json, igniter} = file_content(igniter, "coveralls.json")
     {report, igniter} = file_content(igniter, "#{@template_path}/coverage.html.eex")
     {cover_task?, igniter} = file_installed?(igniter, "lib/mix/tasks/cover.ex")
+    {checks, igniter} = Precommit.checks_of(igniter, name())
 
     minimum =
       case json && Regex.run(~r/"minimum_coverage":\s*([\d.]+)/, json) do
@@ -147,6 +166,7 @@ defmodule WorkbenchIgniter.Features.Coveralls do
        interface: interface,
        exdoc: cover_task?,
        theme: theme,
+       githook: @check in checks,
        build: nil
      }, igniter}
   end
@@ -166,11 +186,17 @@ defmodule WorkbenchIgniter.Features.Coveralls do
     {installed?, igniter} = installed?(igniter)
 
     cond do
+      # Already inserted: the json, the theme and the report are fixed at
+      # the insert, but the hook block is a piece the installer adds when
+      # it is missing, so `--githook` on a project that took coveralls
+      # without it is honoured instead of being silently skipped.
       installed? ->
-        Igniter.add_notice(
-          igniter,
-          "coveralls.json already exists: coveralls is already installed, skipping."
+        igniter
+        |> Igniter.add_notice(
+          "coveralls.json already exists: coveralls is already installed, skipping" <>
+            if(opts[:githook], do: " everything but the pre-commit hook.", else: ".")
         )
+        |> githook(opts[:githook])
 
       opts[:theme] not in @themes ->
         Igniter.add_issue(
@@ -193,8 +219,29 @@ defmodule WorkbenchIgniter.Features.Coveralls do
     |> create_coveralls_json(app_name, opts)
     |> plant_report_template(opts[:theme])
     |> plant_cover_task(opts)
+    |> githook(opts[:githook])
     |> build_report(opts)
   end
+
+  # `--githook`: the suite with coverage before every commit. The hook,
+  # the way it reaches mix inside the container and the checks that come
+  # with Elixir are the precommit cartridge's; this is a block of that
+  # file belonging to this cartridge alone, so ejecting either box
+  # leaves the other's checks standing.
+  # The default stage, `:slow`, said out loud: `mix coveralls` compiles
+  # the project and runs the whole suite instrumented, so its block
+  # belongs below the hook's divider, after every check that can refuse
+  # the commit in a second.
+  defp githook(igniter, true) do
+    igniter
+    |> Igniter.compose_task("workbench.install.precommit", [])
+    |> Precommit.check(name(), [@check],
+      note: "the suite, and what it did not reach",
+      stage: :slow
+    )
+  end
+
+  defp githook(igniter, _off), do: igniter
 
   # `--build`: run the suite once the patch set is applied, so the
   # report has numbers before anyone opens it. Queued, never inline:

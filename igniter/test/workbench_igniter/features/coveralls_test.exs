@@ -5,6 +5,9 @@ defmodule WorkbenchIgniter.Features.CoverallsTest do
 
   import Igniter.Test
 
+  alias WorkbenchIgniter.Features.Coveralls
+  alias WorkbenchIgniter.Features.Precommit
+
   describe "mix workbench.install.coveralls" do
     test "adds the dependency and the mix.exs coverage configuration" do
       phx_test_project()
@@ -128,6 +131,87 @@ defmodule WorkbenchIgniter.Features.CoverallsTest do
       |> Igniter.compose_task("workbench.install.coveralls", [])
       |> assert_unchanged()
       |> assert_has_notice(&(&1 =~ "already installed"))
+    end
+  end
+
+  describe "--githook" do
+    test "writes no hook by default" do
+      igniter =
+        phx_test_project()
+        |> Igniter.compose_task("workbench.install.coveralls", [])
+        |> apply_igniter!()
+
+      refute Igniter.exists?(igniter, Precommit.hook())
+      assert {%{githook: false}, _} = Coveralls.state(igniter)
+    end
+
+    test "inserts the precommit cartridge and takes a block of its hook" do
+      igniter =
+        phx_test_project()
+        |> Igniter.compose_task("workbench.install.coveralls", ~w(--githook))
+        |> apply_igniter!()
+
+      files = igniter.assigns[:test_files]
+      hook = files[Precommit.hook()]
+
+      # The hook box came with it: its own check, and the way into the
+      # container the host has no Elixir for.
+      assert hook =~ "mix format --check-formatted"
+      assert files[".githooks/mix"] =~ "docker compose exec"
+
+      assert hook =~
+               "# >>> coveralls — the suite, and what it did not reach\n#{Coveralls.check_command()}\n# <<< coveralls"
+    end
+
+    test "the block is born below the divider: the suite is the slowest check" do
+      hook =
+        phx_test_project()
+        |> Igniter.compose_task("workbench.install.coveralls", ~w(--githook))
+        |> apply_igniter!()
+        |> Map.get(:assigns)
+        |> get_in([:test_files, Precommit.hook()])
+
+      [fast, slow] = String.split(hook, "# --- slow:")
+
+      assert slow =~ Coveralls.check_command()
+      refute fast =~ Coveralls.check_command()
+    end
+
+    test "says back that the project carries it" do
+      {state, _igniter} =
+        phx_test_project()
+        |> Igniter.compose_task("workbench.install.coveralls", ~w(--githook))
+        |> apply_igniter!()
+        |> Coveralls.state()
+
+      assert state.githook
+    end
+
+    test "a second run adds the block to a project installed without it" do
+      igniter =
+        phx_test_project()
+        |> Igniter.compose_task("workbench.install.coveralls", [])
+        |> apply_igniter!()
+        |> Igniter.compose_task("workbench.install.coveralls", ~w(--githook))
+        |> apply_igniter!()
+
+      assert igniter.assigns[:test_files][Precommit.hook()] =~ Coveralls.check_command()
+    end
+
+    test "ejecting coveralls leaves credo's block and the box's own checks standing" do
+      hook =
+        phx_test_project()
+        |> Igniter.compose_task("workbench.install.coveralls", ~w(--githook))
+        |> Igniter.compose_task("workbench.install.credo", ~w(--githook))
+        |> apply_igniter!()
+        |> Precommit.forget("coveralls")
+        |> apply_igniter!()
+        |> Map.get(:assigns)
+        |> get_in([:test_files, Precommit.hook()])
+
+      refute hook =~ "coveralls"
+      assert hook =~ "mix credo"
+      assert hook =~ "mix format --check-formatted"
     end
   end
 

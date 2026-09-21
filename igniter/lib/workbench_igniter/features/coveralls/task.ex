@@ -2,6 +2,7 @@ defmodule Mix.Tasks.Workbench.Install.Coveralls do
   use WorkbenchIgniter.Task
 
   alias WorkbenchIgniter.Features.Coveralls
+  alias WorkbenchIgniter.Features.Precommit
 
   @shortdoc "Adds ExCoveralls test coverage reports to the project"
 
@@ -21,6 +22,13 @@ defmodule Mix.Tasks.Workbench.Install.Coveralls do
   * with `--exdoc`, plants the `mix cover` task (testing & coverage reports
     integrated into ExDoc) along with its ExUnit formatter and unit tests,
     and gitignores the generated `TESTING.md` report
+  * with `--githook`, puts `#{Coveralls.check_command()}` before every
+    commit — in this cartridge's own block of `#{Precommit.hook()}`,
+    below the divider that separates the checks that refuse a commit in
+    a second from the ones that compile the project. The hook itself,
+    the way it reaches `mix` inside the container and the checks that
+    come with Elixir are the **precommit** cartridge's, inserted with
+    it; ejecting either box leaves the other's checks standing
 
   ## Example
 

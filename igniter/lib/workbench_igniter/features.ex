@@ -45,7 +45,7 @@ defmodule WorkbenchIgniter.Features do
     Features.Openai,
     Features.HealthEndpoint,
     Features.Stripe,
-    Features.Githooks,
+    Features.Precommit,
     Features.Exmachina,
     Features.Clustering,
     Features.HealthProbe,

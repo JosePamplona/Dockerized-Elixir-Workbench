@@ -490,7 +490,7 @@ with the counts, the body and the scale before generating.
 | auth0 | NONE SHALL PASS | 1 TOKEN | A gate warden inspecting a glowing signed key against a wall of claims |
 | openai | ASK THE ORACLE | 1 ASSISTANT | A monolith face answering a small figure across a conversation thread |
 | credo | STYLE IS LAW | 0 WARNINGS | An inspector droid stamping verdicts on a scrolling wall of code |
-| githooks | NOTHING GETS THROUGH | 3 HOOKS | Three iron hooks suspended over a commit conveyor belt |
+| precommit | NOT YET, FRIEND | 4 CHECKS | A checkpoint barrier across a conveyor of commits, each one stopped and read before the gate lifts |
 | exmachina | BUILD THE WITNESSES | 1 FACTORY | An assembly line stamping out identical test subjects |
 | mock | TRUST NO ONE | 1 DOUBLE | A shapeshifter mid-transformation into a service it is impersonating |
 | stripe | TAKE THE MONEY | 1 CHARGE | A vault door opening on a stream of coins routed into a ledger |

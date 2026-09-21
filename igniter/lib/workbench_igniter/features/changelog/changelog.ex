@@ -25,6 +25,8 @@ defmodule WorkbenchIgniter.Features.Changelog do
   """
   use WorkbenchIgniter.Feature
 
+  alias WorkbenchIgniter.Features.Exdoc
+
   embed_templates()
 
   @example "mix workbench.install.changelog --mix-task --readme-badge"
@@ -162,6 +164,18 @@ defmodule WorkbenchIgniter.Features.Changelog do
     igniter
     |> add_task(opts[:mix_task])
     |> add_badge(opts[:readme_badge], version)
+    |> list_in_docs()
+  end
+
+  # A docs site that exists already — exdoc's `docs:` block, with its
+  # extras — gets the changelog as one of its pages, beside the README.
+  # exdoc lists it itself when the file is there before it; this is the
+  # other order. Once only: a second run finds it listed.
+  defp list_in_docs(igniter) do
+    case Exdoc.lists_pages?(igniter) do
+      {true, igniter} -> Exdoc.list_page(igniter, @changelog, "Changelog", :Project)
+      {false, igniter} -> igniter
+    end
   end
 
   # mix.exs is left alone when it already says the version.

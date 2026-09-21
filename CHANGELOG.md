@@ -32,8 +32,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   exdoc changes ride along: **`--app-logo`**, off by default (the
   placeholder was 1.9 MB with somebody else's name, committed always),
   and **the changelog listed only when the project keeps one** — listed
-  always, `mix docs` stopped on a project without it. And
-  **`--module-groups`**: `layers`, `ash`, `contexts`
+  always, `mix docs` stopped on a project without it. changelog v0.5.0
+  covers the other order: opening the file, it lists it in a docs block
+  that is already there, through `Exdoc.list_page/4`, which guidelines
+  uses too. And **`--module-groups`**: `layers`, `ash`, `contexts`
   (a group per directory under `lib/<app>/`, read when the docs are
   built, for the large project) or `none`, read off the project when not
   given. The presets tell a live view or an Ash change by the behaviour

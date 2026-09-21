@@ -90,6 +90,10 @@ The rest are amenities, each on request:
   title, at the version the project has, for `mix version` to keep
   current.
 
+And one without asking: when `mix.exs` keeps a docs site — a `docs:`
+block with `extras:`, as [exdoc](../exdoc/) writes it — the changelog
+is listed among its pages, in the `Project` group beside the README.
+
 ## Options
 
 * `--init-version` - Version the history opens at: the changelog's

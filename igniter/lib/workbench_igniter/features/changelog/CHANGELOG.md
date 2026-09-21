@@ -5,6 +5,18 @@ it. Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) applied to
 what the cartridge *installs*.
 
+## v0.5.0 - (2026-09-21)
+
+### Added
+
+- **The changelog is a page of the docs site, when there is one.** A
+  `docs:` block with `extras:` in `mix.exs` — exdoc's — gets
+  `{"CHANGELOG.md", [title: "Changelog"]}` among its extras and the
+  file in its `Project` group, beside the README. exdoc lists it itself
+  when the file is there first; this is the other order. A second run
+  finds it listed, and a `docs:` the project wrote without that group
+  gets the page and no group. Without a docs block nothing is written.
+
 ## v0.4.0 - (2026-09-20)
 
 ### Changed

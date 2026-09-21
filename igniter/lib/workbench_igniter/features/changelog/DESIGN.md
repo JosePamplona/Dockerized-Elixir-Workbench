@@ -1,6 +1,6 @@
 # changelog — Design
 
-*Revision: cartridge v0.3.0 (2026-09-18). Sources consulted on that
+*Revision: cartridge v0.5.0 (2026-09-21). Sources consulted on that
 date; quotations are verbatim from the page as read then.*
 
 ## Abstract
@@ -231,7 +231,26 @@ version` rewrites it. By 2.5 the version's dash is doubled in the URL
 (`version-2.0.0--rc.1-lightgrey.svg`), both by the installer and by the
 task, whose pattern reads the doubled form back.
 
-### 3.8 What is deliberately absent
+### 3.8 The changelog is a page of the docs site, when there is one
+
+A changelog is read by the people who read the docs, and ExDoc lists
+what a project wants read as `extras:`. The two cartridges can come in
+either order, so each covers one: exdoc lists `CHANGELOG.md` when the
+file is there as it writes the block, and this one lists it when the
+block is there as it opens the file. Rejected: exdoc listing it always,
+as it did until its v0.2.0 — `mix docs` stops on an extra whose file is
+missing, so a project without this cartridge had a docs site that did
+not build. Rejected too: this cartridge writing a `docs:` block of its
+own when there is none; a docs site is exdoc's to open.
+
+The listing is exdoc's code (`Exdoc.list_page/4`, which guidelines uses
+for its page too): the block's shape belongs to the cartridge that
+writes it. An entry already there, bare or with its options, is found
+by the page's name, so a second run adds nothing; a block without a
+`Project` group gets the page and no group, since a group nobody asked
+for would move the project's own pages in the sidebar.
+
+### 3.9 What is deliberately absent
 
 * **No git tag, no commit.** Tagging `v1.2.0` is part of a release, but
   the task writes files and stops: what goes in the release commit, and

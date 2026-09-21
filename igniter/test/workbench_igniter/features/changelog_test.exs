@@ -196,4 +196,64 @@ defmodule WorkbenchIgniter.Features.ChangelogTest do
       assert {%{init_version: "0.1.0", mix_task: false}, _} = Changelog.state(installed)
     end
   end
+
+  describe "the docs site" do
+    test "a docs site that is already there gets the changelog as a page, once" do
+      mix_exs = fn igniter -> igniter.assigns[:test_files]["mix.exs"] end
+
+      igniter =
+        phx_test_project()
+        |> Igniter.compose_task("workbench.install.exdoc", [])
+        |> apply_igniter!()
+
+      refute mix_exs.(igniter) =~ "CHANGELOG.md"
+
+      igniter =
+        igniter
+        |> Igniter.compose_task("workbench.install.changelog", [])
+        |> apply_igniter!()
+
+      assert mix_exs.(igniter) =~ ~s|{"CHANGELOG.md", [title: "Changelog"]}|
+      assert [_, project] = Regex.run(~r/Project: \[(.*?)\]/s, mix_exs.(igniter))
+      assert project =~ ~s|"CHANGELOG.md"|
+
+      # A second run finds it listed.
+      again =
+        igniter
+        |> Igniter.compose_task("workbench.install.changelog", [])
+        |> apply_igniter!()
+
+      assert length(String.split(mix_exs.(again), ~s|"CHANGELOG.md"|)) == 3
+    end
+
+    test "without a docs site mix.exs gets no docs block" do
+      files =
+        phx_test_project()
+        |> Igniter.compose_task("workbench.install.changelog", [])
+        |> files()
+
+      refute files["mix.exs"] =~ "docs:"
+    end
+
+    test "a docs block the project wrote itself, without groups, gets the page and no group" do
+      igniter =
+        phx_test_project()
+        |> Igniter.update_elixir_file("mix.exs", fn zipper ->
+          {:ok, zipper} = Igniter.Code.Function.move_to_def(zipper, :project, 0)
+
+          Igniter.Code.Keyword.set_keyword_key(
+            zipper,
+            :docs,
+            Sourceror.parse_string!(~s|[extras: ["README.md"]]|),
+            fn z -> {:ok, z} end
+          )
+        end)
+        |> apply_igniter!()
+        |> Igniter.compose_task("workbench.install.changelog", [])
+
+      mix_exs = files(igniter)["mix.exs"]
+      assert mix_exs =~ ~s|extras: ["README.md", {"CHANGELOG.md", [title: "Changelog"]}]|
+      refute mix_exs =~ "groups_for_extras"
+    end
+  end
 end

@@ -16,6 +16,40 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **exdebug's box, at v0.1.0: the probe a pipeline can keep.** The
+  cartridge still installs one dependency and writes nothing — `as it
+  is`, the script's crossing said — and now says what that buys. The
+  library's whole point is *where a call may stay*: `IO.inspect/2` and
+  `dbg/1` print in every environment, so they are written, read and
+  deleted, while `ExDebug.console/2` prints a framed, labelled,
+  timestamped look at one point of a pipeline in `:dev` and `:test`
+  only and hands the value on untouched everywhere else. Two facts
+  follow, and both are now written down instead of being folklore: the
+  dependency carries no `only: [:dev, :test]` **on purpose**, because
+  the guard is inside the function and a call left in a pipeline has to
+  compile in `:prod`; and the silence rests on a *runtime* read of
+  `MIX_ENV`, which the runner stage of the Dockerfile `phx.gen.release`
+  writes sets to `prod` — so the no-op holds where the workbench's
+  releases actually run, and a release started by hand without that
+  variable takes the print path and raises on a `Mix` it does not
+  carry. Verified in a probe project, in all four places (dev, prod,
+  the release with the variable and without it), and quoted in the
+  paper. No `config :ex_debug` block is written: every key it holds
+  already defaults inside the library and is accepted per call, so a
+  generated block would be a file to maintain that says what the
+  library says. The paper also states plainly whose library it is — the
+  workbench author's own, one release, 171 lines read in full for it —
+  and names the alternative that needs no box, `dbg/1`.
+
+  The box's **back was re-set** from those papers, on the same plate:
+  its copy still sold the cartridge as `PART OF --enhance`, a world
+  retired with `setup`. Four features in place of the old four, the
+  flash carrying what the cartridge was verified on, and — because
+  `covers.py back` reads the version off the cartridge's changelog and
+  there was none until now — the line `cartridge v0.1.0 · 2026-09-20`
+  under the legal strip, the first thing this box says about its own
+  version.
+
 - **A fourth state for a box: `archived`, the retired that stay for the
   reading.** A cartridge that is no longer a pick for a new project was
   until now only deletable, and deleting it sent the reasoning that

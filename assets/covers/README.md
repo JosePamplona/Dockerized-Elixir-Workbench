@@ -172,7 +172,16 @@ the name as a two-line chrome flash, a blind-stamped shield for the
 device, and two real screens — `ExDebug.console/2` in an `iex` session
 recorded with a TTY in the `test_27` workspace, and the library's page
 on HexDocs — composed and sealed by `covers.py back` with the seal at
-0.12, bottom left. Each box had been made under a different
+0.12, bottom left. Re-set on 2026-09-20, plate untouched: the copy
+sold the box as `PART OF --enhance`, a world retired with `setup`, so
+it was rewritten from the cartridge's own rewritten papers — the
+`Logger` line out of `NEED.md`'s *Not for*, the flash's second line
+out of `DESIGN.md`'s Evaluation — and the box gained the version line
+under its legal, which `covers.py back` had been setting all along and
+had nothing to read until the cartridge had a `CHANGELOG.md`. A back
+whose cartridge is re-papered is re-set from the papers; the plate is
+only remade for what is printed *on* it, which here is the generated
+name it still carries. Each box had been made under a different
 version of the flow — coveralls and exdebug before the overlay existed,
 with a generated band in their art; clustering under the first overlay,
 whose sides covered a quarter of the height; health_endpoint's prompt under

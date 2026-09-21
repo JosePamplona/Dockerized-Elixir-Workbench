@@ -1,6 +1,18 @@
 defmodule WorkbenchIgniter.Features.Exdebug do
   @moduledoc """
-  ExDebug helper — a dep-only cartridge.
+  A look at what passes through a pipeline, that the code can keep.
+
+  `ExDebug.console/2` prints the value at one point of a pipeline —
+  labelled, timestamped, framed, with the application and its version
+  under it — and returns it untouched. It prints in `:dev` and `:test`
+  only, so unlike an `IO.inspect/2` or a `dbg/1` the call does not have
+  to come out before the code ships.
+
+  The cartridge is the dependency and nothing else. It carries no
+  `only:` restriction on purpose: the environment check lives inside
+  `console/2`, so a call left in a pipeline still has to compile in
+  `:prod` (DESIGN.md). Nothing is written to `config/`, either — every
+  formatting key the library reads already defaults inside it.
   """
   use WorkbenchIgniter.Feature
 

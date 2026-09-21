@@ -1,0 +1,65 @@
+Mid-1980s literary game cover art. Restrained editorial design rather
+than illustration: an even ground of a single colour, one carefully lit
+object centred with generous space around it, serif type set small, a
+subtle deboss, clean printing on coated stock.
+
+Flat cover illustration filling the entire image edge to edge, all of
+it in one plane: the four edges of the image are the four edges of the
+illustration, and the illustration is all there is — not a product
+photograph, not a box or a board: no bevel, no lip, no rim of light, no
+edge, no shadow, no surface behind it, no margin of any colour around
+it. Proportions 4:5 portrait. Every position below is measured from
+the edges of the image. The ground of the illustration, edge to edge,
+is one tone that reads clearly lighter or darker in value than Elixir
+violet (#4B275F).
+
+Hero illustration: one object lit carefully on an even ground, a paper
+doll chain. The ground is one even light warm grey, edge to edge, lit
+softly from the upper left, its only texture the fine tooth of the
+coated stock. Across the middle of the image, from 0.10 to 0.90 of the
+width, stands a chain of seven paper figures cut from one folded strip
+of cream paper, hand in hand, each figure 0.30 of the height tall, their
+feet on one line at 0.66 of the height down, their centres evenly
+spaced across that span. The folds between them show as faint creases
+where the hands join. Six of the figures are plain cream paper, and
+each carries one small detail drawn lightly in graphite pencil — a hat
+on the first, a collar on the second, round glasses on the third, a bow
+on the fifth, a scarf on the sixth, a cap on the seventh — so no two
+are alike and every one is complete, with a face of two dots and a
+line. The fourth figure, at the centre, 0.50 of the width, is coloured
+in with coloured pencil: a violet dress and a warm face, the only
+colour in the chain, and across its chest, hand-lettered in dark
+graphite capitals at foreground size, "ANA". Under the chain lies one
+soft close shadow falling down and to the right, as of paper standing a
+finger's width off the ground. Above the chain, from the top edge down
+to 0.30 of the height, the image is that same even warm grey ground,
+calm and unbroken; below the shadow, the same ground continues to the
+title.
+
+Title lockup across the lower part of the image, centred, its baseline
+at 0.86 of the height down: "TEST DATA" set in a restrained high-contrast
+serif, dark violet, 0.56 of the width across, and beneath it a smaller
+subtitle "THE REST ARE EXTRAS" in the same serif, letterspaced, dark
+grey, 0.44 of the width across.
+
+In the top left corner of the image, its centre at 0.14 of the width
+and 0.08 of the height down, a small rectangular flash printed as a
+debossed label in the same serif reading "4 RULES" at foreground size.
+
+"ANA", the title, the subtitle and the flash are all the lettering in
+the image.
+
+The top right corner of the artwork is composed as a quiet area: low
+detail, no focal element, an even field of the warm grey ground.
+
+Every mark on the face is printed illustration or type, and the marks
+named above are all of them.
+
+--- second turn, with the padded canvas from covers.py pad ---
+
+The flat grey border around this picture is blank. Paint it by
+continuing the picture outward into it on every side, to the edges —
+the even warm grey ground continues above, below and at both sides,
+with the same soft light from the upper left and the same fine tooth
+of the stock. Keep the picture inside exactly as it is, and add nothing
+new: no figure, no object, no lettering.

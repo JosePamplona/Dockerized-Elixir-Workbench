@@ -300,6 +300,10 @@ line without naming a medium; the era renders it:
   send, over something small you would rather it had not noticed, and
   it holds it because you fitted it there and for nobody else.
   Subtitles halt (`NOT YET`). Added for precommit.
+* **Supporting** — the mechanism supplies everyone the scene needs,
+  plausible and forgettable, so that the one you came for stands alone
+  where you can see it. Subtitles cast (`THE REST ARE EXTRAS`). Added
+  for test_data.
 
 Landmarks, not options — each one was a cartridge's need read as a
 stance, which is where a register comes from now (`NEED.md`). Add one when a cartridge wants a stance

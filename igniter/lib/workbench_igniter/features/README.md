@@ -235,6 +235,14 @@ with a step after the insert says it with `afterwards/0` (ecto: `./wb.sh
 bake`, then `setup`); the catalog carries it, and marks the base
 cartridges as `base`.
 
+An eject is a revert of the insert's commit, and that is the whole of
+it for a cartridge that keeps to the tree — which is the rule. One
+whose insert leaves something where no commit reaches says how to take
+it away with `ejected/1`, beside the insert that did it: `wb.sh eject`
+runs it through `mix workbench.ejected` after the revert is committed.
+[precommit](precommit/) is the one that does: its hook lives in
+`.git/hooks`.
+
 A cartridge can light the console up: `console/0` names the *doors* it
 opens on the app's port (rest `/dev/swagger`, mailer
 `/dev/mailbox`, ash `/admin` when `ash_admin` is in, dashboard_extras

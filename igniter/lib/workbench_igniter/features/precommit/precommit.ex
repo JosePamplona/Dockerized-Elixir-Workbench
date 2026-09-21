@@ -8,7 +8,8 @@ defmodule WorkbenchIgniter.Features.Precommit do
 
     * the dependency, `git_hooks`, whose `git_hooks.install` writes
       `.git/hooks/pre-commit` — run by the installer, from the project's
-      root — and takes it away again when the configuration goes;
+      root; the eject takes it away again (`ejected/1`), since no
+      commit carries it;
     * `.githooks/mix`, the host's way in — the hook runs on the machine
       that commits, and that machine has Docker and nothing else, so
       `mix` there means `docker compose exec app mix`;
@@ -190,6 +191,102 @@ defmodule WorkbenchIgniter.Features.Precommit do
   # stands in the fast section until the suite is one of them.
   defp stage(chosen) do
     if Enum.all?(@checks, &(&1.name not in chosen or &1.stage == :fast)), do: :fast, else: :slow
+  end
+
+  # --- the eject ---------------------------------------------------------------
+
+  @doc """
+  The hook the insert installed, taken away after the revert: it lives
+  in `.git/hooks`, which no commit carries, and it calls
+  `.githooks/mix`, which the revert has just taken — every commit with
+  hooks would fail on it. git_hooks would take it away itself, but only
+  when it runs, and after the eject it is no longer in the project.
+
+  What git_hooks installed is read off its own record, `git_hooks.db`
+  (the hooks' names, space-separated); a hook is removed only when it
+  is git_hooks' — it calls `git_hooks.run` — so one the developer put
+  there since stays. The backup git_hooks made of what was there before
+  is put back, unless it is a shim of its own too: git_hooks backs up
+  whatever it finds, its own hook included when it installs twice.
+  """
+  @impl true
+  def ejected(root) do
+    case hooks_dir(root) do
+      nil ->
+        []
+
+      dir ->
+        db = Path.join(dir, "git_hooks.db")
+
+        installed =
+          case File.read(db) do
+            {:ok, names} -> String.split(names, " ", trim: true)
+            {:error, _} -> []
+          end
+
+        undone = Enum.flat_map(installed, &take_hook(root, dir, String.replace(&1, "_", "-")))
+
+        case File.rm(db) do
+          :ok -> undone ++ ["removed #{Path.relative_to(db, root)}"]
+          {:error, _} -> undone
+        end
+    end
+  end
+
+  # Where git keeps the hooks, asked of git: `core.hooksPath` moves it,
+  # and a worktree's `.git` is a file. Only the project's own
+  # repository: a project that is not one sits inside somebody else's,
+  # and git would answer with that one's hooks.
+  defp hooks_dir(root) do
+    root = Path.expand(root)
+
+    case System.cmd("git", ["rev-parse", "--show-toplevel", "--git-path", "hooks"],
+           cd: root,
+           stderr_to_stdout: true
+         ) do
+      {out, 0} ->
+        case String.split(out, "\n", trim: true) do
+          [^root, path] -> Path.expand(path, root)
+          _ -> nil
+        end
+
+      {_, _} ->
+        nil
+    end
+  end
+
+  defp take_hook(root, dir, hook) do
+    path = Path.join(dir, hook)
+    backup = path <> ".pre_git_hooks_backup"
+
+    if shim?(path) do
+      File.rm!(path)
+      ["removed #{Path.relative_to(path, root)}"] ++ put_back(root, backup, path)
+    else
+      []
+    end
+  end
+
+  defp put_back(root, backup, path) do
+    cond do
+      not File.exists?(backup) ->
+        []
+
+      shim?(backup) ->
+        File.rm!(backup)
+        ["removed #{Path.relative_to(backup, root)}"]
+
+      true ->
+        File.rename!(backup, path)
+        ["restored #{Path.relative_to(path, root)}, the hook it had replaced"]
+    end
+  end
+
+  defp shim?(path) do
+    case File.read(path) do
+      {:ok, content} -> String.contains?(content, "git_hooks.run")
+      {:error, _} -> false
+    end
   end
 
   # --- config/dev.exs ---------------------------------------------------------

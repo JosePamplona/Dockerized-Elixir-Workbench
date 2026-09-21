@@ -2194,6 +2194,20 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   the console, a terminal), instead of reaching for a Docker such a
   container may not have.
 
+- **An eject takes away what the revert cannot.** Every eject was a
+  revert of the insert's commit, and precommit is the first cartridge
+  whose insert leaves something no commit carries: its hook, in
+  `.git/hooks`. The revert took `.githooks/mix` and left the hook
+  calling it, so every commit with hooks after the eject failed. A
+  cartridge now says how to undo what it left outside the tree with
+  `ejected/1` (`WorkbenchIgniter.Feature`, nothing by default — keeping
+  to the tree is the rule), and `wb.sh eject` runs it through `mix
+  workbench.ejected` after the revert is committed, printing what it
+  undid; if it cannot run, the eject stands and says so. precommit's
+  removes what git_hooks installed and puts back the hook it had
+  replaced. Checked on a copy of a workspace: insert, eject, the three
+  files gone from `.git/hooks`, and the next `./wb.sh commit` through.
+
 - **The workbench's own commits skip the project's hooks.** `Insert`,
   `Revert`, `Bake` and `New project` are the workbench's bookkeeping —
   one cartridge, one commit — and commit with `--no-verify`; `./wb.sh

@@ -1359,6 +1359,25 @@
     fi
   }
 
+  # eject_outside_tree <FEATURE>
+    # The half of an eject the revert cannot do: what the insert left
+    # outside the tree, which no commit carries — precommit's hook in
+    # .git/hooks. The cartridge knows what it left ('ejected/1', off
+    # 'mix workbench.ejected'), and is asked after the revert is
+    # committed, because the revert is the decision and could still be
+    # abandoned. A failure here does not undo the eject: it is said,
+    # with the task's last lines, and the reader cleans up by hand.
+  eject_outside_tree() {
+    local answer
+    if answer=$(workspace_igniter workbench.ejected "$1" 2>&1); then
+      grep '^ejected> ' <<< "$answer" | tr -d '\r' | sed "s/^ejected> /  $1 /"
+    else
+      echo "${B}Note${R} $1 may have left something outside the tree (.git/hooks), and could not be asked what:" >&2
+      echo "$answer" | tail -n 5 >&2
+    fi
+    return 0
+  }
+
   # undo_failed_insert <INSERT>
     # An insert that fails leaves behind whatever it had written before
     # it failed, uncommitted — and that alone stops every command after
@@ -2399,6 +2418,7 @@ if [ $# -gt 0 ]; then
       if workspace_git add -A && workspace_git commit -q --no-verify --no-edit --cleanup=strip; then
         echo "Ejected ${B}$FEATURE${R}: $(workspace_git log --format='%h %s' -n 1)" \
           "(as $GIT_NAME <$GIT_EMAIL>)."
+        eject_outside_tree "$FEATURE"
         composes_left_note
       else
         workspace_git revert --abort 2>/dev/null || workspace_git reset -q --hard HEAD

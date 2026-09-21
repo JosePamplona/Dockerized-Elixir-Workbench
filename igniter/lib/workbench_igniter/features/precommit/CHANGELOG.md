@@ -18,6 +18,13 @@ independent of the workbench release that ships it.
   among them, as *Could not expand*. The insert itself had reported
   success, because nothing in it compiled the dependency. Now the
   hook is in `.git/hooks` when the insert ends, or the insert fails.
+- The eject takes the hook away. `.git/hooks/pre-commit` is outside
+  what a commit carries, so the revert left it calling a
+  `.githooks/mix` that was gone, and every commit with hooks failed
+  after it. `ejected/1` removes what git_hooks installed (read off its
+  `git_hooks.db`, and only what calls `git_hooks.run`), puts back the
+  hook it had replaced unless that is a shim of its own too, and
+  touches no repository but the project's.
 - `.githooks/mix` runs `mix` in place when the commit is made inside
   the project's container — the source at `/app/src` and mix on the
   PATH, as in the workbench's console or a terminal — and reaches the

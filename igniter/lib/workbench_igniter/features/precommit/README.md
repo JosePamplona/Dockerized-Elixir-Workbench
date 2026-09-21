@@ -46,8 +46,10 @@ not the formatter.
 
 The hook itself, `.git/hooks/pre-commit`, is written by `mix
 git_hooks.install`, which the insert runs (it backs up whatever was
-there first), and removed again if the configuration goes. It is not
-part of a clone: a fresh one runs `./wb.sh mix git_hooks.install`.
+there first), and taken away by the eject, which puts back whatever it
+had replaced: a revert cannot, since `.git/hooks` is outside what a
+commit carries. It is not part of a clone: a fresh one runs `./wb.sh
+mix git_hooks.install`.
 
 ## Options
 

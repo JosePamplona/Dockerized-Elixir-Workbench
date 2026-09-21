@@ -9,8 +9,8 @@ ordinary Elixir project has: `git commit` runs on the host, and the
 project's `mix` lives in a container. This cartridge installs the
 crossing (`.githooks/mix`), the checks (`.githooks/pre-commit`, a
 script the project owns, one block per cartridge) and the wiring that
-puts the shim in `.git/hooks` and takes it away again (`git_hooks`,
-configured once). Its own options are the checks that come with Elixir
+puts the shim in `.git/hooks` (`git_hooks`, configured once) and
+takes it away again on the eject (`ejected/1`). Its own options are the checks that come with Elixir
 and belong to no cartridge; a cartridge with a check of its own brings
 it through `check/4` and owns its block.
 
@@ -217,6 +217,38 @@ after it is inserted — and `--strict` on a stock `phx.new` project
 does — is a hook the developer turns off within the hour. `--strict` is
 one word away in a file the project owns.
 
+### 6. The eject owes more than the revert
+
+Every eject on the shelf is a revert of the insert's commit, and for
+every other cartridge that is the whole of it. This one leaves a file
+where no commit reaches: `.git/hooks/pre-commit` lives inside `.git`,
+which is not part of the working tree, and git keeps it that way on
+purpose — a hook a clone could carry would be somebody else's code run
+on the first commit. The revert takes `.githooks/mix` away and leaves
+the shim calling it, so every commit with hooks after the eject failed
+(*"cannot open .githooks/mix"*). git_hooks would take its hook away
+itself, but only when it runs, and after the eject it is no longer in
+the project.
+
+So the cartridge says how to undo it: `ejected/1`, a callback of
+`WorkbenchIgniter.Feature` that this cartridge is the first to fill,
+run by `wb.sh eject` through `mix workbench.ejected` **after** the
+revert is committed. After, because the revert is the decision and can
+still conflict and be abandoned; a hook taken away before it would
+leave a project carrying the cartridge without its hook. It reads
+git_hooks' own record (`git_hooks.db`), removes a hook only when it is
+git_hooks' (it calls `git_hooks.run`), and puts back the backup
+git_hooks made of what was there before — unless that backup is a shim
+of its own too, because git_hooks backs up whatever it finds, its own
+hook included when it installs twice. It asks git where the hooks are
+(`core.hooksPath`, a worktree), and only of the project's own
+repository: a project that is not one sits inside somebody else's,
+and git would answer with that one's hooks.
+
+The alternative was the workbench cleaning `.git/hooks` itself, in
+`wb.sh`. That is git_hooks' knowledge, and this cartridge's, and a
+script that knew it would be a script that knows a cartridge.
+
 ## Evaluation
 
 **In a real project, on 2026-09-20** — a scratch mix project with the
@@ -259,6 +291,9 @@ is the right call for both, and neither was tried.
   means the commit is refused with the reason, and `--no-verify` is the
   way through. A check that ran on the host instead would need an
   Elixir there, which is the thing the workbench exists to avoid.
+* **The eject's cleanup is not transactional.** It runs after the
+  revert is committed; if it cannot run, the eject stands and the
+  workbench says so, and the shim is the reader's to delete.
 * **A fresh clone installs the hook by hand.** With `auto_install` off,
   compiling the dependencies no longer puts the shim in `.git/hooks`;
   the insert does, once, and a clone of the project runs `./wb.sh mix

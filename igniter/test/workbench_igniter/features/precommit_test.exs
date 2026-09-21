@@ -177,4 +177,83 @@ defmodule WorkbenchIgniter.Features.PrecommitTest do
       assert hook =~ "mix format --check-formatted"
     end
   end
+
+  # The hook lives in .git/hooks, which no commit carries: the revert
+  # leaves it, calling a .githooks/mix that is gone.
+  describe "ejected/1" do
+    @shim """
+    #!/bin/sh
+    cd_path="."
+    [ -n "$cd_path" ] && cd "$cd_path"
+    sh .githooks/mix git_hooks.run pre_commit "$@"
+    """
+
+    setup %{tmp_dir: root} do
+      {_, 0} = System.cmd("git", ["init", "-q"], cd: root)
+      hooks = Path.join(root, ".git/hooks")
+      File.mkdir_p!(hooks)
+      %{hooks: hooks}
+    end
+
+    defp installed(hooks, hook \\ @shim) do
+      File.write!(Path.join(hooks, "pre-commit"), hook)
+      File.write!(Path.join(hooks, "git_hooks.db"), "pre_commit")
+    end
+
+    @tag :tmp_dir
+    test "takes away the hook git_hooks installed, and its record", %{tmp_dir: root, hooks: hooks} do
+      installed(hooks)
+
+      assert Precommit.ejected(root) == [
+               "removed .git/hooks/pre-commit",
+               "removed .git/hooks/git_hooks.db"
+             ]
+
+      refute File.exists?(Path.join(hooks, "pre-commit"))
+      refute File.exists?(Path.join(hooks, "git_hooks.db"))
+    end
+
+    @tag :tmp_dir
+    test "puts back the hook it had replaced", %{tmp_dir: root, hooks: hooks} do
+      installed(hooks)
+      File.write!(Path.join(hooks, "pre-commit.pre_git_hooks_backup"), "#!/bin/sh\necho mine\n")
+
+      assert "restored .git/hooks/pre-commit, the hook it had replaced" in Precommit.ejected(root)
+      assert File.read!(Path.join(hooks, "pre-commit")) =~ "echo mine"
+    end
+
+    # git_hooks backs up whatever it finds, its own shim included when
+    # it installs twice: putting that back would put back the fault.
+    @tag :tmp_dir
+    test "a backup that is its own shim goes too", %{tmp_dir: root, hooks: hooks} do
+      installed(hooks)
+      File.write!(Path.join(hooks, "pre-commit.pre_git_hooks_backup"), @shim)
+
+      assert "removed .git/hooks/pre-commit.pre_git_hooks_backup" in Precommit.ejected(root)
+      refute File.exists?(Path.join(hooks, "pre-commit"))
+    end
+
+    @tag :tmp_dir
+    test "leaves a hook that is not git_hooks'", %{tmp_dir: root, hooks: hooks} do
+      installed(hooks, "#!/bin/sh\necho mine\n")
+
+      assert Precommit.ejected(root) == ["removed .git/hooks/git_hooks.db"]
+      assert File.read!(Path.join(hooks, "pre-commit")) =~ "echo mine"
+    end
+
+    @tag :tmp_dir
+    test "a second run finds nothing to do", %{tmp_dir: root, hooks: hooks} do
+      installed(hooks)
+      Precommit.ejected(root)
+
+      assert Precommit.ejected(root) == []
+    end
+
+    @tag :tmp_dir
+    test "outside a repository, nothing", %{tmp_dir: root} do
+      File.rm_rf!(Path.join(root, ".git"))
+
+      assert Precommit.ejected(root) == []
+    end
+  end
 end

@@ -14,6 +14,8 @@ defmodule WorkbenchIgniter.Feature do
     off the same mark the installer's guard reads.
   * `state/1` - what the project carries of its options, read off the
     project; required of every cartridge with options.
+  * `ejected/1` - what its eject owes beyond the revert: what the
+    insert left outside the tree, taken away.
   * `members/1` - for a *collection* cartridge: the cartridges it
     inserts, in order, with the argv each one gets.
 
@@ -195,6 +197,30 @@ defmodule WorkbenchIgniter.Feature do
   @callback afterwards() :: String.t() | nil
 
   @doc """
+  What the cartridge's eject owes beyond its revert: the things its
+  insert left **outside the tree**, which no commit carries and so no
+  revert takes away — precommit's hook in `.git/hooks`, written by
+  `git_hooks.install` as a task of the insert. Given the project's
+  root, it takes them away with plain file operations and answers one
+  line per thing it undid (`"removed .git/hooks/pre-commit"`), or
+  nothing.
+
+  `wb.sh eject` runs it after the revert is committed
+  (`mix workbench.ejected`), never before: the revert is the decision,
+  and it can still conflict and be abandoned. So by the time this runs
+  the cartridge's code — its dependency, its configuration — is gone
+  from the project, and whatever it needs has to be here, in the
+  cartridge. It must be idempotent, and must leave alone what it cannot
+  tell is its own. A failure does not undo the eject; the workbench
+  says what was left.
+
+  Nothing by default, and that is the rule: a cartridge keeps to the
+  tree, where the revert is the whole eject. One that does not declares
+  here how to undo it, beside the insert that did it.
+  """
+  @callback ejected(root :: Path.t()) :: [String.t()]
+
+  @doc """
   What the cartridge adds to the console once it is in — the cartridge
   lights the console up. A keyword list of:
 
@@ -317,9 +343,13 @@ defmodule WorkbenchIgniter.Feature do
       @impl WorkbenchIgniter.Feature
       def compose(_context), do: []
 
+      @impl WorkbenchIgniter.Feature
+      def ejected(_root), do: []
+
       defoverridable requires: 0,
                      services: 1,
                      compose: 1,
+                     ejected: 1,
                      afterwards: 0,
                      console: 0,
                      pending?: 0,

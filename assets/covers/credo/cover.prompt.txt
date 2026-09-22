@@ -66,3 +66,51 @@ tiled floor continues below, the window wall on the left and the door
 wall on the right continue to the sides. Keep the picture inside
 exactly as it is, and add nothing new: no figure, no object, no
 lettering.
+
+### 2 — the board in the colours of Credo's mark (2026-09-21)
+
+The chalk table's dots and tags carry colours of the hero's own
+choosing, and they do not rhyme with Credo's mark, which is composited
+beside the title on this face. The author chose the mark's colours
+over the terminal's (`mix credo` colours the categories cyan, olive,
+yellow, blue and red): the board takes the mark's five bars, top to
+bottom, row by row, so the table reads as the mark's echo. Read off
+`marks/1-credo.png`, the bars are green #288850, lime #689800, mustard
+#C8A000, coral red #E05040 and blue #4080C0.
+
+The last row also reads `Warning` where Credo's category is
+*Warnings*, and this change corrects it.
+
+The hero before this change is `_archived/art/hero-manual-1.png`. When
+the new one comes back it is saved as `art/hero.jpg`, `pad` is run
+again, and the second turn (entry 1) is sent with the new canvas: an
+expansion is about the canvas it was sent with.
+
+--- change 2, with art/hero.jpg attached ---
+
+Keep this picture exactly as it is — the room, the light, the desk, the
+chair, the board, the table drawn on it and its lettering — and change
+only the colours of the five rows of the chalk table on the board. Each
+row's dot and its bracketed letter are one colour, and the word beside
+them stays white chalk:
+
+  first row, [C] Consistency: deep green (#288850)
+  second row, [D] Design: lime green (#689800), clearly yellower and
+  lighter than the first row's green
+  third row, [F] Refactoring: mustard yellow (#C8A000)
+  fourth row, [R] Readability: coral red (#E05040)
+  fifth row, [W] Warnings: blue (#4080C0)
+
+In the fifth row the word reads "Warnings", with the final s, in the
+same chalk hand as the other four words.
+
+Sent by the author to the **expansion**, not the hero (`art/expanded.jpg`
+with the change above, no session left for the pad turn), and it came
+back at the expansion's own 1057×1488 with everything outside the board
+the same (mean difference 5.6 of 255 above and below the board, JPEG
+noise and a re-render). The five rows came in the mark's colours, the
+last reads `Warnings`. So the hero is **cut from the expansion** at the
+place `cut` had found the first one (+33+157, 988×1226), and
+`art/hero.jpg` is that crop; `cut` finds it at 1.00. The expansion
+before it is `_archived/art/hero-manual-1-expanded.jpg`. The `[C]` tag
+is deep green on the green slate, dimmer than the other four; accepted.

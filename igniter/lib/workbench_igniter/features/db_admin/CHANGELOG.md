@@ -5,6 +5,21 @@ it. Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) applied to
 what the cartridge *installs*.
 
+## v0.2.0 - (2026-09-21)
+
+### Changed
+
+- **`--admin` has no default.** v0.1.0 picked the database's own admin
+  when none was asked — `pgadmin` on postgres, `phpmyadmin` on mysql,
+  `adminer` on the rest — and the form showed it as the value. Which
+  admin to run beside the database is the developer's choice, not a
+  fact of the project: without `--admin` the run is refused, naming the
+  four.
+- **`adminer` builds on ecto**, said on the value as the others say
+  their databases. It serves any of them, but needs one: the catalog
+  now carries the requirement beside the choice, where it used to
+  carry nothing.
+
 ## v0.1.0 - (2026-09-18)
 
 ### Added

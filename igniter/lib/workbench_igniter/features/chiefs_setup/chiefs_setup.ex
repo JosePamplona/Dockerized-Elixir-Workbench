@@ -47,7 +47,9 @@ defmodule WorkbenchIgniter.Features.ChiefsSetup do
       {"toolchain", []},
       {"changelog", []},
       {"dashboard_extras", []},
-      {"db_admin", []},
+      # --admin has no default: the house is on Postgres, and pgAdmin
+      # is Postgres' own.
+      {"db_admin", ["--admin", "pgadmin"]},
       {"credo", []},
       {"mock", []},
       {"test_doubles", []},

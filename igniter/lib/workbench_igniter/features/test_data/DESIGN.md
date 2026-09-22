@@ -221,16 +221,19 @@ dashboard_extras reads the database:
 
 | The project has | It writes | Factory module |
 | --- | --- | --- |
-| `ash` in its deps | faker; `test/support/generator.ex`, `use Ash.Generator` | `<App>.Generator` |
+| `ash` in its deps, on `ecto_sql` | faker; `test/support/generator.ex`, `use Ash.Generator` | `<App>.Generator` |
 | `ecto_sql` in its deps, no `ash` | ex_machina and faker; `test/support/factory.ex`, `use ExMachina.Ecto, repo: <App>.Repo`; `test/<app>/factory_test.exs` | `<App>.Factory` |
-| neither | nothing: it refuses, naming ecto | — |
+| no `ecto_sql` | nothing: it refuses, naming ecto | — |
 
 Ash first, because an Ash project on Postgres also carries a repo — the
-repo is not what decides, the rules' home is. The refusal names ecto and
-not ash because ecto is the one a Phoenix project inserts
-(`./wb.sh add ecto`); an Ash project never reaches it. There is no
-`requires/0`: the catalog's requirement is a conjunction, and this box
-builds on one *or* the other.
+repo is not what decides, the rules' home is. Both lines build on ecto,
+and the box says so in `requires/0`: the records are rows, and a project
+with no database has nowhere to write them. Until 2026-09-21 it had no
+`requires/0` and refused a project with neither ash nor ecto_sql from
+inside the installer — the refusal was right, but the catalog did not
+carry it, so the console offered the box lit on a project it would
+refuse. An Ash project on a data layer without Ecto (ETS, Mnesia) is
+refused with the rest.
 
 The rejected alternative is the one the old shelf implied: an exmachina
 box for the Phoenix line and nothing for Ash. The reference project is
@@ -406,8 +409,8 @@ the helper lines, and touches nothing it finds. No options, so no
 ## 6. Evaluation
 
 The cartridge's suite covers both shapes: the dependencies, the module,
-the factory test, the helper block, the refusal on a project with
-neither, and the second run on a project that carries only
+the factory test, the helper block, the refusal on a project without
+ecto, and the second run on a project that carries only
 `ex_machina`. The generated code is verified in a `phx.new` probe with
 the cartridge inserted from a path dependency: a factory added to the
 generated module, the factory test inserting it, and `mix test --seed`

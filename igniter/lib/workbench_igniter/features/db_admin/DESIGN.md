@@ -335,7 +335,8 @@ there is never rewritten.
 Each value carries its requirement in `choices/0`: `pgadmin` builds on
 `{"ecto", database: "postgres"}`, `phpmyadmin` on `database: "mysql"`,
 `cloudbeaver` on `database: ["postgres", "mysql", "mssql"]`, `adminer`
-on nothing beyond the box's own `ecto`. The list is new to the
+on `"ecto"` alone — any database, but one there has to be; until v0.2.0
+it said nothing, and the form showed it with no requirement beside it. The list is new to the
 resolver — a list of values is met by any one of them — and is said
 as one: "ecto with database postgres, mysql or mssql". The state is
 asked of ecto's own `state/1`, which reads the driver in the project's
@@ -346,14 +347,13 @@ serve unlit, with the reason, rather than hiding it. One chosen admin
 that does not serve the database refuses the whole run: a run that
 did half of what was asked would have to be read to know which half.
 
-Without `--admin` the box is shaped by the database, as
-dashboard_extras is: `pgadmin` on postgres, `phpmyadmin` on mysql —
-the database's own admin, the deeper tool where one exists — and
-`adminer` on mssql and sqlite3, which have none. The alternative, one
-fixed default, had one candidate, Adminer, the only value that never
-refuses; it would have left the specialist out on the two databases
-that have one. The default cannot be a value in the schema — the
-catalog's `default` is empty, and the option's help says the rule.
+`--admin` has no default (v0.2.0): without it the run is refused,
+naming the four. Which admin to run beside the database is the
+developer's choice, not a fact the project states. v0.1.0 shaped the box
+by the database, as dashboard_extras is — `pgadmin` on postgres,
+`phpmyadmin` on mysql, `adminer` on mssql and sqlite3 — and the form
+showed that pick as if it were the value; dropped on 2026-09-21, since a
+second container nobody chose is not a default worth having.
 
 ### 3.3 phpMyAdmin: the file says who, the compose says where
 
@@ -516,8 +516,8 @@ scaled deployment: there the database is on a bridge network, not on
 
 ### 4.1 Unit tests
 
-`test/workbench_igniter/features/db_admin_test.exs`: the default on
-each of the four databases; each admin's file per adapter; the three
+`test/workbench_igniter/features/db_admin_test.exs`: the refusal
+without `--admin`, and one admin serving each of the four databases; each admin's file per adapter; the three
 refusals (a value off its database, said with what the project has;
 CloudBeaver on SQLite; an unknown name); several at once, a second
 run adding one and leaving the file that is there alone, one bad value

@@ -45,8 +45,8 @@ The box reads the project's line:
 | The project has | It installs |
 | --- | --- |
 | Ecto, no Ash | `{:ex_machina, "~> 2.8", only: :test}`, `{:faker, "~> 0.19", only: :test}`; `test/support/factory.ex` (`<App>.Factory`); `test/<app>/factory_test.exs` |
-| Ash | `{:faker, "~> 0.19", only: :test}`; `test/support/generator.ex` (`<App>.Generator`) |
-| neither | nothing: refused, naming `./wb.sh add ecto` |
+| Ash, on Ecto | `{:faker, "~> 0.19", only: :test}`; `test/support/generator.ex` (`<App>.Generator`) |
+| no Ecto | nothing: it builds on ecto, and is refused naming `./wb.sh add ecto` |
 
 On both lines it adds the libraries' test-helper lines (Faker's alone on
 Ash), as their READMEs

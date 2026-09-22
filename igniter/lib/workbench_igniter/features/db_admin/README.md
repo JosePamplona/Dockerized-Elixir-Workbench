@@ -29,10 +29,9 @@ Which image, told what, opening with which file so that the page comes
 up already on the project's database — and which of them can serve the
 database the project is on: that is what this cartridge knows.
 
-**Without `--admin`** it is the one for the project's database: its own
-admin where it has one — `pgadmin` on postgres, `phpmyadmin` on mysql —
-and `adminer` on mssql and sqlite3, which have none. **With it**, one or
-several, comma-separated; one that does not serve the project's
+**`--admin` has no default**: one or several, comma-separated — the
+database's own (`pgadmin` on postgres, `phpmyadmin` on mysql), `adminer`
+on any, `cloudbeaver` on all but sqlite3; one that does not serve the project's
 database refuses the run and says what the project has:
 
     --admin pgadmin builds on ecto with database postgres, and this

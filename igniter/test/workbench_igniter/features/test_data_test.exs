@@ -140,11 +140,19 @@ defmodule WorkbenchIgniter.Features.TestDataTest do
     end
   end
 
-  test "a project with neither Ecto nor Ash is refused, naming ecto" do
+  test "a project without Ecto is refused, naming ecto — Ash or not" do
     igniter = phx_test_project() |> without_ecto() |> Igniter.compose_task(@task, [])
 
     assert [issue] = igniter.issues
     assert issue =~ "test_data builds on ecto"
     assert issue =~ "./wb.sh add ecto"
+
+    igniter = phx_test_project() |> without_ecto() |> on_ash() |> Igniter.compose_task(@task, [])
+    assert [issue] = igniter.issues
+    assert issue =~ "test_data builds on ecto"
+  end
+
+  test "the manifest builds on ecto" do
+    assert WorkbenchIgniter.Features.TestData.requires() == ["ecto"]
   end
 end

@@ -19,6 +19,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **exdoc v0.3.0: `--readme`**, on by default. `--no-readme` leaves the
   project's README out of the extras and the Project group and drops
   `main: "readme"`, so the site opens on ExDoc's API reference instead.
+- **Two boxes that build on ecto now say so.** Adminer's value in
+  db_admin v0.2.0 carries `ecto` as a requirement: it serves any
+  database, but only when there is one. test_data v0.1.1 declares
+  `requires: ["ecto"]`. Before, its installer refused a project without
+  ecto_sql, but the catalog didn't know, so the console showed the box
+  as available there. db_admin v0.2.0 also drops the default for
+  `--admin`. It used to pick the database's own admin, and now
+  running it without `--admin` is refused with the four names.
+  chiefs_setup's recipe names `--admin pgadmin`.
 
 - **exdoc v0.2.0: the project serves nothing.** The `ExDocController`
   and its test, the `:exdoc` pipeline and the `/dev/docs` routes are no

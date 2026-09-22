@@ -5,10 +5,13 @@ defmodule WorkbenchIgniter.Features.DbAdminTest do
 
   import Igniter.Test
 
+  alias WorkbenchIgniter.Features
   alias WorkbenchIgniter.Features.DbAdmin
 
   defp install(project \\ phx_test_project(), argv \\ []),
     do: Igniter.compose_task(project, "workbench.install.db_admin", argv)
+
+  defp pgadmin, do: phx_test_project() |> install(~w(--admin pgadmin)) |> apply_igniter!()
 
   # A phx.new project on another adapter: its driver in place of postgrex.
   defp on(driver) do
@@ -18,9 +21,26 @@ defmodule WorkbenchIgniter.Features.DbAdminTest do
     |> apply_igniter!()
   end
 
-  describe "without --admin: the one for the project's database" do
-    test "on Postgres, pgAdmin: the servers file, the workspace's Postgres named after the app" do
+  describe "--admin has no default" do
+    test "without it the run is refused with the list, and writes nothing" do
       igniter = install()
+
+      assert igniter.issues == [
+               "--admin is required: one or several of pgadmin, phpmyadmin, adminer, cloudbeaver."
+             ]
+
+      refute Igniter.exists?(igniter, "pgadmin/servers.json")
+    end
+
+    test "the catalog carries no default for it" do
+      admin = Enum.find(Features.entry(DbAdmin).options, &(&1.name == :admin))
+      assert admin.default in [nil, []]
+    end
+  end
+
+  describe "--admin pgadmin" do
+    test "on Postgres: the servers file, the workspace's Postgres named after the app" do
+      igniter = install(phx_test_project(), ~w(--admin pgadmin))
 
       assert_creates(igniter, "pgadmin/servers.json", fn content ->
         assert {:ok, %{"Servers" => %{"1" => server}}} = Jason.decode(content)
@@ -39,10 +59,12 @@ defmodule WorkbenchIgniter.Features.DbAdminTest do
 
       assert {%{admin: ["pgadmin"]}, _} = igniter |> apply_igniter!() |> DbAdmin.state()
     end
+  end
 
-    test "on MySQL, phpMyAdmin: root signed in with no password, the server left to the compose" do
+  describe "--admin phpmyadmin" do
+    test "on MySQL: root signed in with no password, the server left to the compose" do
       on(:myxql)
-      |> install()
+      |> install(~w(--admin phpmyadmin))
       |> assert_creates("phpmyadmin/config.user.inc.php", fn content ->
         assert String.starts_with?(content, "<?php\n")
         assert content =~ "$cfg['Servers'][$i]['auth_type'] = 'config';"
@@ -52,25 +74,23 @@ defmodule WorkbenchIgniter.Features.DbAdminTest do
         refute content =~ "['host']"
       end)
     end
+  end
 
-    test "on SQL Server and on SQLite, which have no admin of their own, Adminer" do
-      for driver <- [:tds, :ecto_sqlite3] do
-        igniter = driver |> on() |> install()
-        assert_creates(igniter, "adminer/login.php")
-        assert {%{admin: ["adminer"]}, _} = igniter |> apply_igniter!() |> DbAdmin.state()
-      end
-    end
-
-    test "every one of ecto's databases has a default, and it serves that database" do
-      served =
-        for {name, _doc, [{"ecto", database: d}]} <- DbAdmin.choices()[:admin],
+  describe "what each admin builds on" do
+    test "every one builds on ecto, and every database has one that serves it" do
+      builds_on =
+        for {name, _doc, [requirement]} <- DbAdmin.choices()[:admin],
             into: %{},
-            do: {name, List.wrap(d)}
+            do: {name, requirement}
+
+      assert builds_on["adminer"] == "ecto"
+      assert map_size(builds_on) == map_size(DbAdmin.files())
 
       for database <- ~w(postgres mysql mssql sqlite3) do
-        admin = DbAdmin.default(database)
-        assert admin in Map.keys(DbAdmin.files())
-        assert database in Map.get(served, admin, [database])
+        assert Enum.any?(builds_on, fn
+                 {_, "ecto"} -> true
+                 {_, {"ecto", database: d}} -> database in List.wrap(d)
+               end)
       end
     end
   end
@@ -182,7 +202,7 @@ defmodule WorkbenchIgniter.Features.DbAdminTest do
     end
 
     test "a second run adds another and leaves the file that is there alone" do
-      igniter = install() |> apply_igniter!() |> install(~w(--admin pgadmin,adminer))
+      igniter = pgadmin() |> install(~w(--admin pgadmin,adminer))
 
       assert_creates(igniter, "adminer/login.php")
       assert Enum.any?(igniter.notices, &(&1 =~ "pgadmin/servers.json already exists"))
@@ -190,7 +210,7 @@ defmodule WorkbenchIgniter.Features.DbAdminTest do
     end
 
     test "is a no-op when the file is there" do
-      install() |> apply_igniter!() |> install() |> assert_unchanged()
+      pgadmin() |> install(~w(--admin pgadmin)) |> assert_unchanged()
     end
 
     test "one that does not serve the database refuses the whole run" do
@@ -219,7 +239,7 @@ defmodule WorkbenchIgniter.Features.DbAdminTest do
   describe "the mark" do
     test "the file of any admin" do
       assert {false, _} = DbAdmin.installed?(phx_test_project())
-      assert {true, _} = install() |> apply_igniter!() |> DbAdmin.installed?()
+      assert {true, _} = pgadmin() |> DbAdmin.installed?()
 
       assert {true, _} =
                install(phx_test_project(), ~w(--admin cloudbeaver))
@@ -246,7 +266,7 @@ defmodule WorkbenchIgniter.Features.DbAdminTest do
       assert [
                {"pgadmin", _, [{"ecto", database: "postgres"}]},
                {"phpmyadmin", _, [{"ecto", database: "mysql"}]},
-               {"adminer", _},
+               {"adminer", _, ["ecto"]},
                {"cloudbeaver", _, [{"ecto", database: ~w(postgres mysql mssql)}]}
              ] = DbAdmin.choices()[:admin]
     end

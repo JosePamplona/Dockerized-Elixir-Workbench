@@ -4,6 +4,15 @@
 The cartridge's own versions, over what it installs in a project —
 independent of the workbench release that ships it.
 
+## v0.1.1 - (2026-09-21)
+
+### Fixed
+
+- **It builds on ecto, and says so** (`requires/0`). It refused a
+  project without ecto_sql from inside the installer, but the catalog
+  did not carry it, so the console offered the box lit on a project it
+  would refuse. An Ash project without Ecto is refused with the rest.
+
 ## v0.1.0 - (2026-09-20)
 
 The first version of the cartridge's own record, under its new name: it

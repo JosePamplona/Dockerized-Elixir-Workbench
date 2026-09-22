@@ -8,11 +8,13 @@ defmodule WorkbenchIgniter.Features.TestData do
 
   | The project has | It writes |
   | --- | --- |
-  | `ash` | faker; `<App>.Generator`, `use Ash.Generator`, in `test/support/generator.ex` |
+  | `ash` (on ecto) | faker; `<App>.Generator`, `use Ash.Generator`, in `test/support/generator.ex` |
   | `ecto_sql`, no `ash` | ex_machina and faker; `<App>.Factory`, `use ExMachina.Ecto`, in `test/support/factory.ex`; the test that inserts every factory |
-  | neither | nothing: it refuses, naming ecto |
+  | no `ecto_sql` | nothing: it refuses, naming ecto |
 
-  Ash first: an Ash project on Postgres has a repo too, and ExMachina
+  Both lines build on ecto (`requires/0`): the records are rows, and a
+  project with no database has nowhere to write them. Ash first: an Ash
+  project on Postgres has a repo too, and ExMachina
   writes through it under the resource's actions, validations and
   policies. A generator runs the action.
 
@@ -47,6 +49,9 @@ defmodule WorkbenchIgniter.Features.TestData do
     }
   end
 
+  @impl true
+  def requires, do: ["ecto"]
+
   # Each piece — a dependency, a file, the helper's block — is added
   # when missing, so a project that took the old exmachina box gets the
   # rest on a second run.
@@ -64,13 +69,15 @@ defmodule WorkbenchIgniter.Features.TestData do
 
   @doc "Installer body, run by the mix task shell as its `igniter/1`."
   def install(igniter) do
-    {ash?, igniter} = dep_installed?(igniter, :ash)
-    {ecto?, igniter} = dep_installed?(igniter, :ecto_sql)
+    case WorkbenchIgniter.Feature.missing_requirements(igniter, __MODULE__) do
+      {[], igniter} ->
+        case dep_installed?(igniter, :ash) do
+          {true, igniter} -> ash(igniter)
+          {false, igniter} -> ecto(igniter)
+        end
 
-    cond do
-      ash? -> ash(igniter)
-      ecto? -> ecto(igniter)
-      true -> WorkbenchIgniter.Feature.refuse(igniter, __MODULE__, [{:absent, "ecto", []}])
+      {missing, igniter} ->
+        WorkbenchIgniter.Feature.refuse(igniter, __MODULE__, missing)
     end
   end
 
@@ -110,7 +117,9 @@ defmodule WorkbenchIgniter.Features.TestData do
     |> create_once(
       Module.concat(app_module, Generator),
       "test/support/generator.ex",
-      "generator.eex", app_module: inspect(app_module))
+      "generator.eex",
+      app_module: inspect(app_module)
+    )
     |> helper(["Faker.start()"])
     |> support_compiled()
   end

@@ -76,15 +76,6 @@ defmodule WorkbenchIgniter.Features.DbAdmin do
   @names Enum.map(@admins, & &1.name)
   @databases ~w(postgres mysql mssql sqlite3)
 
-  # Without `--admin`: the database's own admin, or Adminer where no
-  # web admin of that rank exists (DESIGN.md §3.2).
-  @default %{
-    "postgres" => "pgadmin",
-    "mysql" => "phpmyadmin",
-    "mssql" => "adminer",
-    "sqlite3" => "adminer"
-  }
-
   # Adminer's key for each adapter — the one its URL and its login form
   # name the driver by. MySQL's is `server`, "backwards compatibility"
   # in Adminer's source; SQLite's server is the file, so it has none.
@@ -105,9 +96,6 @@ defmodule WorkbenchIgniter.Features.DbAdmin do
   @doc "The file each admin is written as, and marked by: `%{\"pgadmin\" => \"pgadmin/servers.json\", …}`."
   def files, do: Map.new(@admins, &{&1.name, &1.file})
 
-  @doc "The admin an insert without `--admin` gives, by ecto's database."
-  def default(database), do: @default[database]
-
   @impl true
   def task, do: "workbench.install.db_admin"
 
@@ -124,19 +112,20 @@ defmodule WorkbenchIgniter.Features.DbAdmin do
   def option_docs do
     [
       admin:
-        "Comma-separated, the admins to put beside the database: `pgadmin` (postgres), `phpmyadmin` (mysql), `adminer` (any database), `cloudbeaver` (postgres, mysql, mssql). Default: the database's own — `pgadmin` on postgres, `phpmyadmin` on mysql — and `adminer` on mssql and sqlite3."
+        "Comma-separated, the admins to put beside the database: `pgadmin` (postgres), `phpmyadmin` (mysql), `adminer` (any database), `cloudbeaver` (postgres, mysql, mssql). No default: at least one is required."
     ]
   end
 
   # Each value builds on ecto in a state: the databases the admin
-  # serves. One that serves them all asks for nothing the box does not.
+  # serves. One that serves them all builds on ecto all the same — it
+  # needs a database to open, whichever it is.
   @impl true
   def choices do
     [
       admin:
         for admin <- @admins do
           case admin.serves do
-            @databases -> {admin.name, admin.doc}
+            @databases -> {admin.name, admin.doc, ["ecto"]}
             [database] -> {admin.name, admin.doc, [{"ecto", database: database}]}
             databases -> {admin.name, admin.doc, [{"ecto", database: databases}]}
           end
@@ -263,19 +252,20 @@ defmodule WorkbenchIgniter.Features.DbAdmin do
 
   # Which database the project is on is a fact about the project, asked
   # of the project through ecto's own `state/1` — never the option ecto
-  # was inserted with. It picks the default and meets, or not, what each
-  # chosen admin builds on.
+  # was inserted with. It meets, or not, what each chosen admin builds on.
   defp install_admins(igniter) do
     {%{database: database}, igniter} = EctoCartridge.state(igniter)
 
-    # A :csv switch not given parses as [], not nil: the default is ours.
-    chosen =
-      case igniter.args.options[:admin] do
-        none when none in [nil, []] -> [default(database)]
-        admins -> Enum.uniq(admins)
-      end
+    # A :csv switch not given parses as [], not nil.
+    chosen = Enum.uniq(igniter.args.options[:admin] || [])
 
     case chosen -- @names do
+      _ when chosen == [] ->
+        Igniter.add_issue(
+          igniter,
+          "--admin is required: one or several of #{Enum.join(@names, ", ")}."
+        )
+
       [] ->
         case WorkbenchIgniter.Feature.missing_option_requirements(igniter, __MODULE__,
                admin: chosen

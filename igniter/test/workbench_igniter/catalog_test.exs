@@ -285,7 +285,7 @@ defmodule WorkbenchIgniter.CatalogTest do
       assert output =~ ~r/^mailer +\S+ +base +You want to see the mail/m
       assert output =~ ~r/^stripe +- +pending +Your users should be able to pay/m
       assert output =~ ~r/^health_probe +v0\.2\.0 +Your platform polls/m
-      assert output =~ ~r/^test_data +v0\.1\.0 +Your tests need records/m
+      assert output =~ ~r/^test_data +v0\.1\.1 +Your tests need records/m
     end
   end
 
@@ -351,6 +351,8 @@ defmodule WorkbenchIgniter.CatalogTest do
     # download fails fast, offline, and its placeholder is planted —
     # which is the file the mark reads either way.
     defp args("workbench.install.guidelines"), do: ["--url", "http://localhost:1/guide.md"]
+    # db_admin's --admin has no default.
+    defp args("workbench.install.db_admin"), do: ["--admin", "pgadmin"]
     defp args(_task), do: []
 
     # What may light up beside the cartridge, in catalog order, and all
@@ -384,7 +386,7 @@ defmodule WorkbenchIgniter.CatalogTest do
     @runs %{
       "chiefs_setup" => [{~w(--interface graphql), %{interface: "graphql"}}],
       "version_manager" => [{~w(--manager mise), %{manager: "mise"}}],
-      # On Postgres the default is pgadmin; the answer is in the shelf's order.
+      # No default; the answer is in the shelf's order.
       "db_admin" => [
         {~w(--admin cloudbeaver,adminer), %{admin: ~w(adminer cloudbeaver)}}
       ],

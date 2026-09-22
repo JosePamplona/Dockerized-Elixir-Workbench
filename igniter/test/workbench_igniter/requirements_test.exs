@@ -132,7 +132,7 @@ defmodule WorkbenchIgniter.RequirementsTest do
       assert %{conditions: %{"ecto" => %{database: ~w(postgres mysql mssql)}}} =
                Enum.find(choices, &(&1.value == "cloudbeaver"))
 
-      assert %{requires: [], conditions: %{}} = Enum.find(choices, &(&1.value == "adminer"))
+      assert %{requires: ["ecto"], conditions: %{}} = Enum.find(choices, &(&1.value == "adminer"))
       assert %{requires: [], conditions: %{}} = Features.entry(Features.Html)
     end
   end

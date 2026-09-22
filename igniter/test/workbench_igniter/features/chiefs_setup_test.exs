@@ -16,7 +16,7 @@ defmodule WorkbenchIgniter.Features.ChiefsSetupTest do
                {"toolchain", []},
                {"changelog", []},
                {"dashboard_extras", []},
-               {"db_admin", []},
+               {"db_admin", ["--admin", "pgadmin"]},
                {"credo", []},
                {"mock", []},
                {"test_doubles", []},

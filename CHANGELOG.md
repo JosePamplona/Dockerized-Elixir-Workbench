@@ -16,6 +16,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **The console's jobs remember their workspace, and a delete takes
+  them along.** Each job records the workspace `config.conf` named when
+  it was started. When a `delete` succeeds, `Console.Jobs` drops the
+  finished jobs of that workspace, output included. It cancels any that
+  were still waiting, since their project is gone. The delete job
+  itself stays: it shows the project was deleted and anything left
+  behind. A failed delete drops nothing, because those jobs explain the
+  failure. "Clear done" still only clears the current page's view.
+
 - **exdoc v0.3.0: `--readme`**, on by default. `--no-readme` leaves the
   project's README out of the extras and the Project group and drops
   `main: "readme"`, so the site opens on ExDoc's API reference instead.

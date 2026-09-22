@@ -92,4 +92,57 @@ defmodule Console.JobsTest do
     assert :error = Jobs.cancel(id)
     assert :error = Jobs.confirm(id)
   end
+
+  describe "a delete and its workspace's jobs" do
+    defp on(workspace),
+      do:
+        File.write!(
+          Path.join(System.get_env("WORKBENCH_DIR"), "config.conf"),
+          ~s(export WORKSPACE_PATH="./_workspaces/#{workspace}"\n)
+        )
+
+    defp ran(kind, args) do
+      id = Jobs.run(kind, args)
+      assert_receive {:job, %{id: ^id, state: state}} when state in [:done, :failed], 2000
+      id
+    end
+
+    defp delete do
+      id = Jobs.run({:delete, nil}, ["delete"], confirm: true)
+      :ok = Jobs.confirm(id)
+      assert_receive {:job, %{id: ^id, state: state}} when state in [:done, :failed], 2000
+      id
+    end
+
+    test "a delete that ends well drops the ended ones, cancels the waiting, and stays" do
+      Jobs.subscribe()
+      on("a")
+      mine = ran({:mix, nil}, ["one"])
+      waiting = Jobs.run({:delete, nil}, ["delete"], confirm: true)
+      on("b")
+      theirs = ran({:mix, nil}, ["two"])
+      on("a")
+      deleted = delete()
+
+      assert_receive {:jobs_dropped, [^mine]}
+      assert_receive {:job, %{id: ^waiting, state: :cancelled}}
+
+      ids = Enum.map(Jobs.list(), & &1.id)
+      refute mine in ids
+      assert theirs in ids and deleted in ids and waiting in ids
+      assert {0, []} = Jobs.lines(mine)
+    end
+
+    test "a delete that fails drops nothing" do
+      Jobs.subscribe()
+      on("c")
+      mine = ran({:mix, nil}, ["one"])
+      System.put_env("EXIT", "1")
+      on_exit(fn -> System.delete_env("EXIT") end)
+      delete()
+
+      refute_receive {:jobs_dropped, _}
+      assert mine in Enum.map(Jobs.list(), & &1.id)
+    end
+  end
 end

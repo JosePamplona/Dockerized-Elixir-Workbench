@@ -35,6 +35,14 @@ defmodule Console.Jobs do
   lines appends the rest. A page that opens a job asks `lines/1` for
   what it missed. The state changes still go as `{:job, job}`; the
   last lines of a job go out before its exit does.
+
+  A job carries the workspace it was asked on, as `config.conf` named
+  it then. A `delete` that ends well takes that workspace's history with
+  it: the jobs that ended are dropped, output and all, and go out as
+  `{:jobs_dropped, ids}`; the ones still waiting are cancelled, since
+  what they were about is gone. The delete itself stays — the record
+  that the project went, and of anything it left behind. A delete that
+  fails drops nothing: those jobs are what explains it.
   """
   use GenServer
 
@@ -48,7 +56,18 @@ defmodule Console.Jobs do
   # `id` names the job — the DOM, the topic, the queue; `n` is what the
   # reader counts by: this console's jobs from 1, in the order asked. The
   # id is the BEAM's unique integer, which skips and goes to letters.
-  defstruct [:id, :n, :kind, :args, :cmdline, :state, :exit, :started_at, :finished_at]
+  defstruct [
+    :id,
+    :n,
+    :kind,
+    :args,
+    :cmdline,
+    :workspace,
+    :state,
+    :exit,
+    :started_at,
+    :finished_at
+  ]
 
   def start_link(opts), do: GenServer.start_link(__MODULE__, opts, name: __MODULE__)
 
@@ -116,6 +135,7 @@ defmodule Console.Jobs do
       kind: kind,
       args: args,
       cmdline: Enum.join(["./wb.sh", "--yes" | args], " "),
+      workspace: Workbench.workspace(),
       state: if(opts[:confirm], do: :pending, else: :queued)
     }
 
@@ -220,6 +240,7 @@ defmodule Console.Jobs do
       state
       |> flush()
       |> update(state.running, &%{&1 | state: ended, exit: code, finished_at: DateTime.utc_now()})
+      |> forget_deleted(state.running, ended)
 
     if state.hard, do: Process.cancel_timer(state.hard)
     {:noreply, maybe_start(%{state | running: nil, port: nil, stopping: nil, hard: nil})}
@@ -353,6 +374,37 @@ defmodule Console.Jobs do
 
     %{state | jobs: jobs}
   end
+
+  # A delete that ended well: the rest of its workspace's jobs go with
+  # the project — the ended ones dropped, the waiting ones cancelled.
+  defp forget_deleted(state, id, :done) do
+    case Enum.find(state.jobs, &(&1.id == id)) do
+      %{kind: {:delete, _}, workspace: ws} when is_binary(ws) ->
+        mine = Enum.filter(state.jobs, &(&1.workspace == ws and &1.id != id))
+        {waiting, ended} = Enum.split_with(mine, &(&1.state in [:pending, :queued]))
+        # Nothing else runs while the delete does: the rest have ended.
+        dropped = Enum.map(ended, & &1.id)
+
+        state =
+          Enum.reduce(waiting, state, fn job, state ->
+            update(state, job.id, &%{&1 | state: :cancelled, finished_at: DateTime.utc_now()})
+          end)
+
+        if dropped != [],
+          do: Phoenix.PubSub.broadcast(Console.PubSub, @topic, {:jobs_dropped, dropped})
+
+        %{
+          state
+          | jobs: Enum.reject(state.jobs, &(&1.id in dropped)),
+            out: Map.drop(state.out, dropped)
+        }
+
+      _ ->
+        state
+    end
+  end
+
+  defp forget_deleted(state, _id, _ended), do: state
 
   defp broadcast(job), do: Phoenix.PubSub.broadcast(Console.PubSub, @topic, {:job, job})
 end

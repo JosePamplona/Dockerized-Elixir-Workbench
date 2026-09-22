@@ -369,6 +369,16 @@ defmodule ConsoleWeb.ConsoleLive do
     {:noreply, socket}
   end
 
+  # A delete took its workspace's jobs with it.
+  def handle_info({:jobs_dropped, ids}, socket),
+    do:
+      {:noreply,
+       assign(socket,
+         jobs: Enum.reject(socket.assigns.jobs, &(&1.id in ids)),
+         open_jobs: MapSet.difference(socket.assigns.open_jobs, MapSet.new(ids)),
+         stop_ask: if(socket.assigns.stop_ask in ids, do: nil, else: socket.assigns.stop_ask)
+       )}
+
   # A job's output never touches the assigns: a batch of lines goes to
   # the hook that holds that job's output, on whichever screen shows it.
   def handle_info({:job_lines, id, from, lines}, socket),

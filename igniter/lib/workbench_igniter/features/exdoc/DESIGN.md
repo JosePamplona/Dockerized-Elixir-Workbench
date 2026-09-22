@@ -353,9 +353,14 @@ which the hooks also serve.
 
 ## 5. Limitations
 
-* **`README.md` is listed unconditionally.** phx.new writes it, and a
+* **`README.md` is listed by default.** phx.new writes it, and a
   project that deletes it has a site that stops as the changelog's did
-  before v0.2.0 (§3).
+  before v0.2.0 (§3). `--no-readme` (v0.3.0) leaves it out, for a README
+  written for the repository's front page rather than the docs'; the
+  site then drops `main: "readme"` and opens on ExDoc's own default,
+  the API reference. The page is not read off the file: the README is
+  there at insert time in nearly every project, and the choice is what
+  the site's first page should be.
 * **An output dir moved by the project is not followed.** A `docs:
   [output: …]` other than `doc` leaves the console's door reading
   *nothing built*. `state/1` could report it; the console's plan

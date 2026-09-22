@@ -50,6 +50,8 @@ defmodule WorkbenchIgniter.Features.Exdoc do
         "Plant a placeholder logo (`guides/images/app-logo.png`) and name it the site's `logo:`, to be replaced by the project's own. Off by default: it is a 1.9 MB image with somebody else's name on it.",
       module_groups:
         "How the sidebar groups the modules, one of #{Enum.map_join(@module_groups, ", ", &"`#{&1}`")}. Default: read off the project — `ash` when it depends on Ash, `layers` otherwise.",
+      readme:
+        "The project's `README.md` is the site's first page, Overview, and the one it opens on. Off, the site opens on ExDoc's API reference and leaves the README out. On by default.",
       coverage:
         "The coverage report joins the site: the Test Suite Report page `mix cover` writes, and ExCoveralls' HTML copied in beside it.",
       build:
@@ -84,11 +86,13 @@ defmodule WorkbenchIgniter.Features.Exdoc do
         homepage_url: :string,
         app_logo: :boolean,
         module_groups: :string,
+        readme: :boolean,
         coverage: :boolean,
         build: :boolean
       ],
       defaults: [
         app_logo: false,
+        readme: true,
         coverage: false,
         build: false
       ]
@@ -132,6 +136,7 @@ defmodule WorkbenchIgniter.Features.Exdoc do
        homepage_url: homepage_url(mix_exs),
        app_logo: is_binary(mix_exs) and String.contains?(mix_exs, ~s|logo: "#{@logo}"|),
        module_groups: module_groups(mix_exs),
+       readme: is_binary(mix_exs) and String.contains?(mix_exs, ~s|{"README.md"|),
        coverage: is_binary(mix_exs) and String.contains?(mix_exs, ~s|{"TESTING.md"|),
        build: nil
      }, igniter}
@@ -361,7 +366,7 @@ defmodule WorkbenchIgniter.Features.Exdoc do
     extras =
       join(
         [
-          ~s|{"README.md", [title: "Overview"]}|,
+          only(opts[:readme], ~s|{"README.md", [title: "Overview"]}|),
           only(opts[:changelog], ~s|{"#{@changelog}", [title: "Changelog"]}|),
           only(opts[:ecto], ~s|{"guides/database.md", [title: "Database"]}|),
           only(opts[:coverage], ~s|{"TESTING.md", [title: "Test Suite Report"]}|)
@@ -369,7 +374,11 @@ defmodule WorkbenchIgniter.Features.Exdoc do
         ",\n    "
       )
 
-    project = join([~s|"README.md"|, only(opts[:changelog], ~s|"#{@changelog}"|)], ",\n      ")
+    project =
+      join(
+        [only(opts[:readme], ~s|"README.md"|), only(opts[:changelog], ~s|"#{@changelog}"|)],
+        ",\n      "
+      )
 
     support =
       join(
@@ -399,7 +408,7 @@ defmodule WorkbenchIgniter.Features.Exdoc do
       #{owner && ~s|authors: ["#{owner}"],|}
       #{sidebar}
       output: "doc",
-      main: "readme",
+      #{only(opts[:readme], ~s|main: "readme",|)}
       assets: %{
         #{assets}
       },

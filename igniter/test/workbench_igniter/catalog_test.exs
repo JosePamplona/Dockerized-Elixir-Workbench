@@ -417,13 +417,14 @@ defmodule WorkbenchIgniter.CatalogTest do
         # --build runs mix docs once.
         {~w(--project-name Probe --repo-url https://example.com/acme/probe
             --homepage-url https://probe.example.com --app-logo --module-groups contexts
-            --coverage --build),
+            --no-readme --coverage --build),
          %{
            project_name: "Probe",
            repo_url: "https://example.com/acme/probe",
            homepage_url: "https://probe.example.com",
            app_logo: true,
            module_groups: "contexts",
+           readme: false,
            coverage: true,
            build: nil
          }}

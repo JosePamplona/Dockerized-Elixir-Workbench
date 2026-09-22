@@ -11,6 +11,16 @@ Backfilled at the version below, its first: the cartridge shipped
 before a changelog was part of the anatomy, and gets one on its next
 change, as the features index says.
 
+## v0.3.0 - (2026-09-21)
+
+### Added
+
+- **`--readme`**, on by default: the project's `README.md` as the
+  Overview page and the one the site opens on, as before. `--no-readme`
+  leaves it out of the extras and of the Project group and drops
+  `main: "readme"`, so the site opens on ExDoc's API reference — for a
+  README written for the repository's front page, not for the docs.
+
 ## v0.2.0 - (2026-09-21)
 
 ### Added

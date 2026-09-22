@@ -62,7 +62,9 @@ instead of chasing scattered documents.
   `web_groups/0`, `behaves?/2`, `in_dir?/2`): a live view or an Ash
   change is told by the behaviour it implements, which a name does not
   say.
-* The README among the extras, and the changelog when the project keeps
+* The README among the extras, as Overview and the page the site opens
+  on — or, with `--no-readme`, left out, the site opening on ExDoc's API
+  reference — and the changelog when the project keeps
   one — the [changelog](../changelog/) cartridge lists it when it opens
   one later.
 * Placeholders: `TESTING.md` with `--coverage` (overwritten by

@@ -16,6 +16,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **exdoc v0.3.0: `--readme`**, on by default. `--no-readme` leaves the
+  project's README out of the extras and the Project group and drops
+  `main: "readme"`, so the site opens on ExDoc's API reference instead.
+
 - **exdoc v0.2.0: the project serves nothing.** The `ExDocController`
   and its test, the `:exdoc` pipeline and the `/dev/docs` routes are no
   longer planted — `mix docs` writes `doc/` and the console serves it —

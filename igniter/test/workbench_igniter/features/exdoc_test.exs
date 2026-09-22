@@ -158,6 +158,23 @@ defmodule WorkbenchIgniter.Features.ExdocTest do
       assert project =~ ~s|"README.md"| and project =~ ~s|"CHANGELOG.md"|
     end
 
+    test "the README opens the site, unless --no-readme leaves it out" do
+      mix_exs = fn argv ->
+        phx_test_project()
+        |> Igniter.compose_task("workbench.install.exdoc", argv)
+        |> apply_igniter!()
+        |> then(& &1.assigns[:test_files]["mix.exs"])
+      end
+
+      with_readme = mix_exs.([])
+      assert with_readme =~ ~s|{"README.md", [title: "Overview"]}|
+      assert with_readme =~ ~s|main: "readme"|
+
+      without = mix_exs.(["--no-readme"])
+      refute without =~ "README.md"
+      refute without =~ "main:"
+    end
+
     test "the module groups follow the project: layers on Phoenix, ash on Ash" do
       mix_exs = fn igniter ->
         igniter

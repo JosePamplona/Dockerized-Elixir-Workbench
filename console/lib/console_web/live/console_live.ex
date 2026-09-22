@@ -238,8 +238,10 @@ defmodule ConsoleWeb.ConsoleLive do
 
   # A knock: every open route called once, and what each answered kept
   # for the whole page — the rail's Services & Doors and the Record's
-  # addresses share it. Only when the reader presses the bell on either:
-  # never on a mount, a status or a clock — the calls land in the app's
+  # addresses share it. With the app down there is no route to call, and
+  # the knock still goes: the round from :asking to its answer renders
+  # the pages on disk again, which are read off the disk as they render.
+  # Only when the reader presses the bell on either: never on a mount, a status or a clock — the calls land in the app's
   # logs, and a line the reader did not cause is noise there (the
   # automatic knock lasted a day, 2026-09-09). A status arriving wipes
   # what was heard: a job changed the world, and no chip may say what
@@ -247,14 +249,16 @@ defmodule ConsoleWeb.ConsoleLive do
   defp knock(socket) do
     page = Record.page(socket.assigns.status, socket.assigns.catalog)
 
-    case page && page.up && Record.hrefs(page) do
-      hrefs when is_list(hrefs) and hrefs != [] ->
+    case page do
+      nil ->
+        assign(socket, preads: %{})
+
+      page ->
+        hrefs = if page.up, do: Record.hrefs(page), else: []
+
         socket
         |> assign(preads: :asking)
         |> start_async({:knock, :read}, fn -> Doors.read(hrefs) end)
-
-      _ ->
-        assign(socket, preads: %{})
     end
   end
 

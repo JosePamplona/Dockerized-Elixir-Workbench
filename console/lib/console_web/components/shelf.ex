@@ -188,6 +188,11 @@ defmodule ConsoleWeb.Shelf do
   attr :status, :map, default: nil
 
   def inserted(assigns) do
+    assigns =
+      assign(assigns,
+        knock: Record.knockable?(assigns.up, Enum.flat_map(assigns.rows, & &1.addresses))
+      )
+
     ~H"""
     <%!-- A table, as the Docker screen's containers are: the rows were a
           grid of their own while each was a link that opened the box —
@@ -206,23 +211,23 @@ defmodule ConsoleWeb.Shelf do
             <span class="addr">
               addresses
               <.square
-                :if={@up}
+                :if={@knock}
                 mark="bell"
                 size="small"
                 label="Knock on every door"
                 class="knock"
                 phx-click="knock"
                 aria-busy={to_string(@reads == :asking)}
-                title="knock: call every door once and read what each answers — the rail hears the same"
+                title="knock: call every open route once and read every page off the disk again — the rail hears the same"
               />
               <.square
-                :if={!@up}
+                :if={!@knock}
                 mark="bell"
                 size="small"
                 label="Knock on every door"
                 class="knock unlit"
                 aria-disabled="true"
-                title="nothing is up: deploy, and knock — every door is called once and answers in a chip"
+                title="nothing is up and no page is kept: deploy, and knock — every door is called once and answers in a chip"
               />
             </span>
           </th>

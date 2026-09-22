@@ -385,7 +385,9 @@ defmodule ConsoleWeb.Record do
   # A page a tool of the project wrote on disk, served by the console on
   # the origin beside it (ConsoleWeb.Reports): shut by its condition, or
   # while nothing is built, never by the app — it answers with the app
-  # down. Not knocked: its reading is when it was built.
+  # down. Its reading is when it was built, off the disk at each render;
+  # a knock renders it again, which catches a build made outside the
+  # console. Never called over HTTP: the file is the truth.
   defp route(status, c, %{"output" => %{} = o} = d, _port, _up, _reads) do
     output = %{dir: Cartridges.fill_path(o["dir"], c), index: o["index"]}
     built = Reports.built(status["workspace"], output)
@@ -761,6 +763,13 @@ defmodule ConsoleWeb.Record do
         %{}
     end
   end
+
+  @doc """
+  Whether the bell has anything to knock on: the routes, while the app
+  is up; the pages on disk always — they answer with the app down, and
+  a knock reads them again.
+  """
+  def knockable?(up, addresses), do: up or Enum.any?(addresses, &(&1.kind == "output"))
 
   @doc "The addresses of a plan the console can call: every open route."
   def hrefs(nil), do: []

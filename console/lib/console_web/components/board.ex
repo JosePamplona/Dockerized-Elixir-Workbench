@@ -169,6 +169,7 @@ defmodule ConsoleWeb.Board do
         services: Enum.filter(deployment.services, &(&1.kind == "port")),
         deployment: up || "dev",
         up: up != nil,
+        knock: Record.knockable?(up != nil, Enum.map(doors, &elem(&1, 1))),
         doors: doors,
         sum:
           (fn n ->
@@ -180,23 +181,23 @@ defmodule ConsoleWeb.Board do
     <section class={folded?(@folded, "doors") && "folded"}>
       <.head key="doors" name="Services & Doors" label={@sum} folded={@folded}>
         <.square
-          :if={@up}
+          :if={@knock}
           mark="bell"
           size="small"
           label="Knock on every door"
           class="knock"
           phx-click="knock"
           aria-busy={to_string(@reads == :asking)}
-          title="knock: call every door once and read what each answers — the Record hears the same"
+          title="knock: call every open route once and read every page off the disk again — the Record hears the same"
         />
         <.square
-          :if={!@up}
+          :if={!@knock}
           mark="bell"
           size="small"
           label="Knock on every door"
           class="knock unlit"
           aria-disabled="true"
-          title="nothing is up: deploy, and knock — every door is called once and answers in a chip"
+          title="nothing is up and no page is kept: deploy, and knock — every door is called once and answers in a chip"
         />
       </.head>
       <div class="urls">

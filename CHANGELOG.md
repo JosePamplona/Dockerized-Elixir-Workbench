@@ -16,6 +16,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **The knock bell is lit for the pages on disk too.** A page a tool
+  writes (exdoc's `doc/`) is served by the console, not by the app, so
+  it answers with the app down. Services & Doors and the shelf's
+  Inserted table used to grey out the bell with "nothing is up" all the
+  same. Now it is lit while the app is up or any green page is there
+  (`Record.knockable?/2`). A knock with the app down calls no route. It
+  still renders the pages again, and each is read off the disk as it
+  renders, so a build made outside the console shows up. The pages are
+  never called over HTTP: the file is the truth.
+
 - **The console's jobs remember their workspace, and a delete takes
   them along.** Each job records the workspace `config.conf` named when
   it was started. When a `delete` succeeds, `Console.Jobs` drops the

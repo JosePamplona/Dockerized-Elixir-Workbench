@@ -443,7 +443,7 @@ defmodule ConsoleWeb.RecordTest do
   end
 
   @tag :tmp_dir
-  test "a page on disk is a door of its own: green, read off its build, never knocked", %{
+  test "a page on disk is a door of its own: green, read off its build, never called", %{
     tmp_dir: ws
   } do
     System.put_env("REPORTS_PUBLIC_PORT", "4101")
@@ -475,6 +475,12 @@ defmodule ConsoleWeb.RecordTest do
     end
 
     refute "http://localhost:4101/docs/" in Record.hrefs(Record.page(with_exdoc, @catalog))
+
+    # The bell rings for it with the app down: the knock reads it again.
+    down = Record.page(Map.put(with_exdoc, "deployment", nil), @catalog)
+    assert Record.knockable?(false, Enum.flat_map(down.cartridges, & &1.addresses))
+    refute Record.knockable?(false, [%{kind: "route"}])
+    assert Record.knockable?(true, [])
 
     # Not inserted, it is offered shut, green all the same.
     assert %{addresses: [%{kind: "output", path: "doc/", why: "not inserted"}]} =

@@ -92,7 +92,10 @@ defmodule WorkbenchIgniter.Features.Credo do
   # project, so its block is born above the hook's divider, among the
   # checks that refuse a commit in a second.
   defp githook(igniter, true) do
-    Precommit.check(igniter, name(), [@check], note: "the reviewer that never tires", stage: :fast)
+    Precommit.check(igniter, name(), [@check],
+      note: "the reviewer that never tires",
+      stage: :fast
+    )
   end
 
   defp githook(igniter, _off), do: igniter

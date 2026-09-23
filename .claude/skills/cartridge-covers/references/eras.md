@@ -304,6 +304,10 @@ line without naming a medium; the era renders it:
   plausible and forgettable, so that the one you came for stands alone
   where you can see it. Subtitles cast (`THE REST ARE EXTRAS`). Added
   for test_data.
+* **Cartographic** — the mechanism charts where you have been, and
+  marks the places you have not plainly as unvisited, saying nothing
+  of what is there. Subtitles chart (`WHERE NOBODY LOOKED`). Added for
+  coverage.
 
 Landmarks, not options — each one was a cartridge's need read as a
 stance, which is where a register comes from now (`NEED.md`). Add one when a cartridge wants a stance

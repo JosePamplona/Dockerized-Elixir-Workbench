@@ -1,0 +1,85 @@
+Late-1980s console game box cover art. Painted airbrush illustration with
+the slightly stiff, heroic look of North American 8-bit era packaging:
+hard airbrush gradients, chunky specular highlights, visible matte
+cardboard grain.
+
+Flat cover illustration filling the entire image edge to edge, all of
+it in one plane: the four edges of the image are the four edges of the
+illustration, and the illustration is all there is — not a product
+photograph, not a box or a board: no bevel, no lip, no rim of light, no
+edge, no shadow, no surface behind it, no margin of any colour around
+it. Proportions 4:5 portrait. Every position below is measured from
+the edges of the image. The ground of the illustration, edge to edge,
+is one tone that reads clearly lighter or darker in value than Elixir
+violet (#4B275F).
+
+Hero illustration, painted airbrush: an explorer on a rock ledge at
+dawn, holding a great map open toward the viewer. The ground of the
+painting is the dawn sky: a pale hard airbrush gradient from light gold
+at the horizon to pale sky blue at the top edge, far lighter than the
+land. From the top edge of the image down to a fifth of the height, the
+sky runs across the whole width as an even field of that pale blue, low
+in detail, with no cloud and no sun in it.
+
+Behind the explorer, a wide valley painted in hard gradients falls away
+to a line of blue mountains along the horizon at 0.40 of the height
+down, running across the whole width, the rising sun hidden behind them
+and lighting their ridges gold.
+
+The explorer stands on the ledge facing the viewer, full length, at
+0.50 of the width: the top of their hat at 0.24 of the height down,
+their boots at 0.78 of the height down, their figure 0.54 of the height
+tall. A young explorer in a wide-brimmed hat and a long travelling
+coat, lit hard from the left, with chunky white specular highlights on
+the hat brim, the shoulder and the boots; their face is visible above
+the map, looking down at it.
+
+The map is held open in both hands before the explorer at chest height,
+its painted face turned toward the viewer: a single sheet of cream
+vellum 0.60 of the width across, centred at 0.50 of the width, its top
+edge at 0.42 of the height down and its bottom edge at 0.64, curling a
+little at its two rolled ends where the hands hold it. Most of its face
+is painted in full colour — a coast along its left side, blue rivers,
+green forest, brown mountains, a few small towns — and a dotted red
+trail wanders across it from its lower left corner, through the forest,
+the mountains and the towns. In three small places inside the painted
+land the sheet is bare cream vellum, each outlined in thin brown ink,
+each about a tenth of the map's width across, and the trail passes
+around them: one at the upper left of the map, one just below its
+centre, one at its right. At the centre of each bare patch, one small
+question mark in brown ink.
+
+The ledge is dark grey-brown rock, lit gold along its top edge and
+falling into deep shadow toward the bottom edge. The bottom fifth of the
+image is that rock in deep shadow, low in detail, and the lockup sits
+on it.
+
+Title lockup across the lower part of the image, over that shadow:
+"COVERAGE" on one line, set large in heavy chrome-edged capitals with
+a hard drop shadow, catching the gold dawn light, centred on the width
+and three quarters of the width wide; and beneath it, in smaller
+capitals of the same lettering, the subtitle "WHERE NOBODY LOOKED".
+
+In the top right corner of the image, a small rectangular flash in the
+same heavy capitals reading "80% MIN" at foreground size, its centre at
+0.84 of the width and 0.08 of the height down.
+
+The title, the subtitle, the flash and the three question marks on the
+map are all the lettering in the image.
+
+The top left of the artwork is composed as a quiet area: low detail, no
+focal element, an even field of tone — the pale blue of the upper sky.
+
+Every mark on the face is printed illustration or type, and the marks
+named above are all of them.
+
+--- second turn, with the padded canvas from covers.py pad ---
+
+The flat grey border around this picture is blank. Paint it by
+continuing the picture outward into it on every side, to the edges —
+the pale blue dawn sky continues above to the top edge, the dark rock
+ledge in deep shadow continues below to the bottom edge, and in the
+thin strip at each side the same things run on to the edge at the same
+heights: the pale sky, the blue mountains along the horizon, the valley
+below them, and the shadowed rock. Keep the picture inside exactly as it
+is, and add nothing new: no figure, no object, no lettering.

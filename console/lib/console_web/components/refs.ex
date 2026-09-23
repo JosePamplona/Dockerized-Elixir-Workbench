@@ -67,14 +67,58 @@ defmodule ConsoleWeb.Refs do
   say nothing more. It leaves for somebody else's site, which is what
   tells it apart from a mention of a cartridge (`cart_ref/1`, a drawer
   in this console).
+  With `git` — where a package from git comes from, as the status
+  reports it — the package is its repository instead: GitHub's mark,
+  the repository's page, and with `version`, its tag's tree. A git
+  host other than GitHub has no page the console can name, so the
+  mention says the name and is no link.
   """
   attr :name, :string, required: true
+  attr :git, :map, default: nil, doc: "where it comes from when from git: url, repo, tag…"
   attr :version, :string, default: nil, doc: "that version's docs, and what it prints"
   attr :path, :string, default: nil, doc: "under the package's page on hex.pm"
   attr :label, :string, default: nil, doc: "what it prints, when neither name nor version"
   attr :mark, :boolean, default: true
   attr :title, :string, default: nil
   attr :class, :any, default: nil
+
+  def pkg_ref(%{git: %{} = git} = assigns) do
+    repo = git["repo"]
+
+    assigns =
+      assign(assigns,
+        repo: repo,
+        href:
+          repo &&
+            if(assigns.version,
+              do: "https://github.com/#{repo}/tree/#{assigns.version}",
+              else: "https://github.com/#{repo}"
+            ),
+        says: assigns.label || assigns.version || assigns.name
+      )
+
+    ~H"""
+    <a
+      :if={@href}
+      class={["pkg-ref", !@mark && "bare", @class]}
+      href={@href}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={
+        @title ||
+          if(@version,
+            do: "#{@repo} at #{@version}, on GitHub",
+            else: "#{@name} on GitHub: #{@repo}"
+          )
+      }
+    ><svg :if={@mark} class="mark" aria-hidden="true" width="12" height="12"><use href="/images/icons.svg#github" /></svg>{@says}</a>
+    <span
+      :if={!@href}
+      class={["pkg-ref", "bare", @class]}
+      title={@title || "#{@name} from git: #{@git["url"]}"}
+    >{@says}</span>
+    """
+  end
 
   def pkg_ref(assigns) do
     assigns =

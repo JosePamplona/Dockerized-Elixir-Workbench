@@ -1390,6 +1390,31 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **A base box's packages say where they come from, under the table.**
+  The version a base cartridge brings is read off its insert commit,
+  since the box declares none, and the cell marked that with a `*`
+  whose meaning lived only in its `title`. The mark stays, a space
+  from the version, and a line under the table reads it: the box does
+  not install the package itself, it comes with phx.new, and the
+  version is the one that installer writes — naming the phx.new, read
+  off the `PHX_NEW` the project's `Dockerfile.local` stamped at that
+  same commit, since the stamp moves when the project upgrades and the
+  insert does not. The house had no footnote: `.fn` is the mark, muted
+  mono and never the accent, and `.fn-note` the line that repeats it.
+
+- **A package from GitHub is its repository.** heroicons and daisyui
+  come from git, and the Packages panel showed them as nothing — no
+  version, a lone mark, links to hex.pm pages that do not exist. The
+  insert commit is now read as code (`MixFile.diff/2` on `mix.exs`
+  before and after it) instead of line by line, so a dependency written
+  over several lines is read whole; `MixFile.sources/1` says where each
+  git dependency comes from, and `mix workbench.status` reports it as
+  `git` beside each package, pinning and locking its tag — the lock
+  still never passes a commit's sha off as a version. In the panel the
+  name opens the repository and the tag its tree, with GitHub's mark
+  from the house's sprite in place of hex's; the three columns only hex
+  can answer stand unlit with the reason, and hex is not asked of them.
+
 - **`./wb.sh console` stays in the terminal; `console up` leaves it
   running.** Bare, the console started detached and returned, and its
   output was one more command away (`console logs`), its end another

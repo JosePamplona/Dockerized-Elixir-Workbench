@@ -263,7 +263,17 @@
    .stamp — the golden state seal (INSERTED): accent plate, condensed
      uppercase; whoever places it tilts and positions it. This is why a
      chip's plate is a 16% tint and never a saturated fill: nothing may
-     compete with the seal. */
+     compete with the seal.
+   .fn — a footnote: the mark after a value that says it is not what its
+     column usually is, and the line under the table that says why. The
+     mark stands a space away from the value, so it reads as a sign and
+     not as part of the version it follows, in the muted mono of a
+     reading and never in the accent — it points somewhere, it is not
+     something to press. The note repeats the mark at its head, so the
+     two are found by their shape, and says its sentence once for every
+     row that carries the mark: the reason a title held alone, where
+     nobody who did not hover ever read it. .fn-note is the line; it
+     shows only when a row on screen carries the mark. */
 .cart-ref{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:11px;padding:2px 7px;border-radius:2px;border:1px solid var(--line);color:var(--muted);background:none;cursor:pointer;text-decoration:none}
 .cart-ref::before{content:"";width:7px;height:7px;border-radius:50%;border:1.5px solid var(--soft);box-sizing:border-box;flex:none}
 .cart-ref.in{color:var(--ink)}
@@ -311,6 +321,9 @@
    is the reason. What must not fire is prevented where it is bound. */
 .unlit,[aria-disabled="true"]{pointer-events:auto}
 .nothing{font-family:var(--serif);font-style:italic;color:var(--muted)}
+.fn{font-family:var(--mono);font-weight:500;color:var(--muted);margin-left:.4em}
+.fn-note{margin:8px 0 0;font-size:11.5px;line-height:1.5;color:var(--muted)}
+.fn-note .fn{margin:0 .4em 0 0}
 .fetch{display:flex;align-items:stretch;gap:8px}
 .fetch>:first-child{flex:1;min-width:0;max-width:none}
 /* The square's size is the field's height: 2.5em of the field's type, 13px — the reload of a .fetch had it, and every square has it now, whole pixels so the mark sits centred. */

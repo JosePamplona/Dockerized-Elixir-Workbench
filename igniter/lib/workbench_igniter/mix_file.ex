@@ -92,12 +92,83 @@ defmodule WorkbenchIgniter.MixFile do
     Map.new(deps, fn {name, dep} -> {name, requirement_of(dep)} end)
   end
 
-  defp requirement_of({_name, requirement}) when is_binary(requirement), do: requirement
+  @typedoc """
+  Where a dependency given by git comes from: the repository's `url`,
+  `repo` as `owner/name` when it lives on GitHub, and the one of `tag`,
+  `branch` or `ref` it is held to.
+  """
+  @type git :: %{
+          url: String.t(),
+          repo: String.t() | nil,
+          tag: String.t() | nil,
+          branch: String.t() | nil,
+          ref: String.t() | nil
+        }
 
-  defp requirement_of({:{}, _, [_name, requirement | _]}) when is_binary(requirement),
+  @doc """
+  Where each dependency of `mix.exs` comes from, when that is git:
+  `%{name => git}`, and nothing for a package from hex or a path. A
+  dependency from git has no requirement to read; what it is held to
+  is its tag, and that is the version a reader asks for.
+  """
+  @spec sources(String.t()) :: %{atom() => git()}
+  def sources(text) do
+    %{deps: deps} = read(text)
+    for {name, dep} <- deps, git = git_of(dep), into: %{}, do: {name, git}
+  end
+
+  @doc "The git source of one dependency, as code (`read/1`); nil when not from git."
+  @spec git_of(Macro.t()) :: git() | nil
+  def git_of(dep) do
+    options = options_of(dep)
+
+    url =
+      case options do
+        [_ | _] -> Keyword.get(options, :git) || github_url(Keyword.get(options, :github))
+        _ -> nil
+      end
+
+    if is_binary(url) do
+      %{
+        url: url,
+        repo: repo_of(url),
+        tag: string(options[:tag]),
+        branch: string(options[:branch]),
+        ref: string(options[:ref])
+      }
+    end
+  end
+
+  defp options_of({_name, options}) when is_list(options), do: keywords(options)
+
+  defp options_of({:{}, _, [_name, _requirement, options]}) when is_list(options),
+    do: keywords(options)
+
+  defp options_of(_dep), do: []
+
+  defp github_url(repo) when is_binary(repo), do: "https://github.com/#{repo}.git"
+  defp github_url(_repo), do: nil
+
+  @doc "`owner/name` of a GitHub repository's url; nil for any other host."
+  @spec repo_of(String.t()) :: String.t() | nil
+  def repo_of(url) do
+    case Regex.run(~r{github\.com[/:]([^/]+/[^/]+?)(?:\.git)?/?$}, url) do
+      [_, repo] -> repo
+      nil -> nil
+    end
+  end
+
+  defp string(value) when is_binary(value), do: value
+  defp string(_value), do: nil
+
+  @doc "The requirement one dependency asks for, as code (`read/1`); nil for path or git."
+  @spec requirement_of(Macro.t()) :: String.t() | nil
+  def requirement_of({_name, requirement}) when is_binary(requirement), do: requirement
+
+  def requirement_of({:{}, _, [_name, requirement | _]}) when is_binary(requirement),
     do: requirement
 
-  defp requirement_of(_dep), do: nil
+  def requirement_of(_dep), do: nil
 
   # The last expression of the function's body, or nil.
   defp body_of(ast, name) do

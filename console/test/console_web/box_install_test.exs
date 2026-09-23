@@ -455,6 +455,69 @@ defmodule ConsoleWeb.BoxInstallTest do
       refute html =~ "gone"
     end
 
+    test "a package from git is its repository: the tag for a version, GitHub for its pages, hex left out" do
+      base = %{
+        "name" => "tailwind",
+        "options" => [],
+        "requires" => [],
+        "offers" => [],
+        "base" => true,
+        "console" => %{"doors" => [], "tabs" => []},
+        "deps" => []
+      }
+
+      git = %{
+        "url" => "https://github.com/tailwindlabs/heroicons.git",
+        "repo" => "tailwindlabs/heroicons",
+        "tag" => "v2.2.0",
+        "branch" => nil,
+        "ref" => nil
+      }
+
+      status = %{
+        "exists" => true,
+        "project" => %{
+          "cartridges" => [%{"name" => "tailwind", "installed" => true, "deps" => []}],
+          "deps" => [
+            %{"name" => "tailwind", "pinned" => "~> 0.3", "locked" => "0.3.1"},
+            %{"name" => "heroicons", "pinned" => "v2.2.0", "locked" => "v2.2.0", "git" => git}
+          ]
+        }
+      }
+
+      html =
+        render_component(&ConsoleWeb.Box.box/1,
+          box: base,
+          status: status,
+          catalog: [base],
+          screen: "box",
+          paper: "readme",
+          papers: [],
+          args: %{},
+          packages: %{},
+          read_deps: [
+            %{name: "tailwind", requirement: "~> 0.3", git: nil, from: "1.8.14"},
+            %{
+              name: "heroicons",
+              requirement: nil,
+              git: %{url: git["url"], repo: git["repo"], tag: "v2.2.0", branch: nil, ref: nil},
+              from: "1.8.14"
+            }
+          ],
+          now: ~U[2026-09-23 12:00:00Z]
+        )
+
+      # The name opens the repository and the tag its tree, with
+      # GitHub's mark in place of hex's.
+      assert html =~ ~s|href="https://github.com/tailwindlabs/heroicons"|
+      assert html =~ ~s|href="https://github.com/tailwindlabs/heroicons/tree/v2.2.0"|
+      assert html =~ "icons.svg#github"
+      refute html =~ "hex.pm/packages/heroicons"
+      # Hex has nothing to say of it, and is not asked.
+      assert html =~ "not on hex: it comes from git"
+      assert html =~ ~s(phx-value-names="tailwind")
+    end
+
     test "unasked, the column says nothing was read and the button offers to ask" do
       html = with_hex(%{})
 

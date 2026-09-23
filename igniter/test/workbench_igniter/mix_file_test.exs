@@ -216,6 +216,56 @@ defmodule WorkbenchIgniter.MixFileTest do
     end
   end
 
+  describe "sources/1" do
+    test "where each git dependency comes from, and what it is held to" do
+      text = """
+      defmodule Lorem.MixProject do
+        use Mix.Project
+
+        defp deps do
+          [
+            {:phoenix, "~> 1.8.0"},
+            {:heroicons,
+             github: "tailwindlabs/heroicons",
+             tag: "v2.2.0",
+             sparse: "optimized",
+             app: false,
+             compile: false,
+             depth: 1},
+            {:forked, "~> 1.0", git: "git@github.com:someone/forked.git", branch: "main"},
+            {:elsewhere, git: "https://gitlab.com/team/elsewhere.git", ref: "abc123"},
+            {:workbench_igniter, path: "../../igniter"}
+          ]
+        end
+      end
+      """
+
+      assert MixFile.sources(text) == %{
+               heroicons: %{
+                 url: "https://github.com/tailwindlabs/heroicons.git",
+                 repo: "tailwindlabs/heroicons",
+                 tag: "v2.2.0",
+                 branch: nil,
+                 ref: nil
+               },
+               forked: %{
+                 url: "git@github.com:someone/forked.git",
+                 repo: "someone/forked",
+                 tag: nil,
+                 branch: "main",
+                 ref: nil
+               },
+               elsewhere: %{
+                 url: "https://gitlab.com/team/elsewhere.git",
+                 repo: nil,
+                 tag: nil,
+                 branch: nil,
+                 ref: "abc123"
+               }
+             }
+    end
+  end
+
   defp issues(igniter), do: Igniter.prepare_for_write(igniter).issues
 
   defp rewritten(igniter) do

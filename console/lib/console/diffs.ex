@@ -51,12 +51,17 @@ defmodule Console.Diffs do
 
   @doc """
   The packages an insert put in the project's `mix.exs`, read off its
-  own commit: `%{name, requirement}`, newest insert first. A base
+  own commit: `%{name, requirement, git, from}`, newest insert first;
+  `git` is where a package from git comes from (`MixFile.git_of/1`). A base
   cartridge declares none — its packages arrive inside the `phx.new`
   delta, whatever that installer writes — so what it brought is read
   where it was written, and nothing is kept by hand. A project born
   with the flag has no insert commit, and so nothing to read: that is
-  what the panel says instead of guessing.
+  what the panel says instead of guessing. Each package carries the
+  `phx.new` the delta was generated at (`from`): the `PHX_NEW` the
+  project's `Dockerfile.local` stamped at that same commit, which is
+  the one `PhxDelta` generates at — read there and not today, since the
+  stamp moves when the project upgrades and the insert does not.
   `inserts` are the status's entries of that cartridge.
   """
   def packages_of(_workspace, []), do: []
@@ -64,33 +69,49 @@ defmodule Console.Diffs do
   def packages_of(workspace, inserts) do
     inserts
     |> Enum.flat_map(fn %{"sha" => sha} ->
-      lines =
-        workspace
-        |> git(["show", "--format=", "--unified=0", sha, "--", "mix.exs"])
-        |> String.split("\n")
+      # mix.exs before the insert and after it, read as code: what the
+      # insert brought is the dependencies only the new one has. By the
+      # tree and not by the line, so a dependency written over several
+      # lines — a git one, with its tag three lines down — is read
+      # whole, and a line rewritten only for its comma is no new one.
+      before = mix_exs_at(workspace, sha <> "^")
+      now = mix_exs_at(workspace, sha)
+      from = phx_new_at(workspace, sha)
 
-      # A package on both faces of the patch was already there: the
-      # line was rewritten, most often the comma the insert put after
-      # the dep that used to be last. What the insert brought is what
-      # only the new face has.
-      was = for l <- lines, String.starts_with?(l, "-"), d <- dep_line(l), do: d.name
-
-      for l <- lines,
-          String.starts_with?(l, "+"),
-          dep <- dep_line(l),
-          dep.name not in was,
-          do: dep
+      for {name, code} <- WorkbenchIgniter.MixFile.diff(before, now).deps do
+        %{
+          name: to_string(name),
+          requirement: WorkbenchIgniter.MixFile.requirement_of(code),
+          git: WorkbenchIgniter.MixFile.git_of(code),
+          from: from
+        }
+      end
     end)
     |> Enum.uniq_by(& &1.name)
   end
 
-  # A line of mix.exs's own list: `{:swoosh, "~> 1.16"}`, or a package
-  # given by git or path, which has no requirement to read.
-  defp dep_line(line) do
-    case Regex.run(~r/^[-+]\s*\{:([a-z][a-z0-9_]*),\s*(?:"([^"]+)")?/, line) do
-      [_, name] -> [%{name: name, requirement: nil}]
-      [_, name, requirement] -> [%{name: name, requirement: requirement}]
-      nil -> []
+  # mix.exs as a commit holds it; empty where it does not, or does not
+  # read as code — an empty file has no dependencies to take away.
+  defp mix_exs_at(workspace, rev) do
+    case System.cmd("git", ["-C", workspace, "show", rev <> ":mix.exs"], stderr_to_stdout: true) do
+      {text, 0} -> if match?({:ok, _}, Code.string_to_quoted(text)), do: text, else: ""
+      _ -> ""
+    end
+  end
+
+  # The phx.new a commit's Dockerfile.local stamps; nil without one.
+  defp phx_new_at(workspace, sha) do
+    case System.cmd("git", ["-C", workspace, "show", sha <> ":Dockerfile.local"],
+           stderr_to_stdout: true
+         ) do
+      {text, 0} ->
+        case Regex.run(~r/^ARG\s+PHX_NEW="([^"]+)"/m, text) do
+          [_, version] -> version
+          nil -> nil
+        end
+
+      _ ->
+        nil
     end
   end
 

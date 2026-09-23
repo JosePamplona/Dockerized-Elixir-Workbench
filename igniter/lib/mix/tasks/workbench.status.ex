@@ -25,7 +25,9 @@ defmodule Mix.Tasks.Workbench.Status do
     `deps`, what it put in `mix.exs`: the box's own pin (`declared`),
     what the project asks for today (`pinned`) and what `mix.lock`
     resolved (`locked`), so an insert older than the box reads as the
-    difference it is; `services` are the compose services the installed cartridges ask
+    difference it is — a package from git pins its tag and locks it,
+    and carries `git`, where it comes from (`url`, `repo` on GitHub,
+    `tag`/`branch`/`ref`); `services` are the compose services the installed cartridges ask
     the workspace for (`postgres`, `pgadmin`, `grafana`…), what `mix workbench.compose`
     bakes in, and each installed cartridge carries `compose`: the services
     it brings, by their name in the file, with the port each `listens` on
@@ -150,11 +152,16 @@ defmodule Mix.Tasks.Workbench.Status do
   # the phx.new delta, so what it brought is read off its insert commit
   # and matched against the project here.
   defp project_deps do
-    pinned = pinned_deps()
+    {pinned, git} = pinned_deps()
     locked = Mix.Dep.Lock.read()
 
     for {name, requirement} <- pinned do
-      %{name: to_string(name), pinned: requirement, locked: locked_version(locked[name])}
+      %{
+        name: to_string(name),
+        pinned: requirement,
+        locked: locked_version(locked[name]),
+        git: git[name]
+      }
     end
   end
 
@@ -167,7 +174,7 @@ defmodule Mix.Tasks.Workbench.Status do
   # read here, where this task runs inside the project, and nowhere
   # else: the catalog carries only what a box declares.
   defp with_deps(cartridges) do
-    pinned = pinned_deps()
+    {pinned, git} = pinned_deps()
     locked = Mix.Dep.Lock.read()
 
     Enum.map(cartridges, fn cartridge ->
@@ -175,7 +182,11 @@ defmodule Mix.Tasks.Workbench.Status do
 
       brought = if cartridge.installed and feature, do: feature.deps(cartridge.state), else: []
 
-      Map.put(cartridge, :deps, for(dep <- brought, do: dep_reading(dep, pinned, locked)))
+      Map.put(
+        cartridge,
+        :deps,
+        for(dep <- brought, do: dep_reading(dep, pinned, git, locked))
+      )
     end)
   end
 
@@ -184,33 +195,51 @@ defmodule Mix.Tasks.Workbench.Status do
   # and not `Mix.Project.config()`, which is the project as it was when
   # Mix pushed it — in the resident (`workbench.serve`) that is the
   # project of an hour ago, and a package inserted since would read as
-  # pinned by nobody.
+  # pinned by nobody. A package from git asks for no requirement: what
+  # it is held to is its tag, and that is what it pins — beside where it
+  # comes from (`git`), which is where its pages are.
   defp pinned_deps do
     case File.read("mix.exs") do
-      {:ok, text} -> WorkbenchIgniter.MixFile.requirements(text)
-      {:error, _} -> %{}
+      {:ok, text} ->
+        git = WorkbenchIgniter.MixFile.sources(text)
+
+        pinned =
+          Map.new(WorkbenchIgniter.MixFile.requirements(text), fn {name, requirement} ->
+            {name, requirement || (git[name] && git[name].tag)}
+          end)
+
+        {pinned, git}
+
+      {:error, _} ->
+        {%{}, %{}}
     end
   end
 
-  defp dep_reading(dep, pinned, locked) do
+  defp dep_reading(dep, pinned, git, locked) do
     name = elem(dep, 0)
 
     %{
       name: to_string(name),
       declared: if(is_binary(elem(dep, 1)), do: elem(dep, 1)),
       pinned: Map.get(pinned, name),
-      locked: locked_version(locked[name])
+      locked: locked_version(locked[name]),
+      git: git[name]
     }
   end
 
   # The lock's entry for a package from hex: `{:hex, :ex_doc, "0.40.4", …}`.
   # A package from git is locked to a commit and not to a version —
-  # `{:git, url, sha, …}` — and a sha is not a version to read, nor one
-  # hexdocs has a page for.
+  # `{:git, url, sha, opts}` — and a sha is not a version to read, nor one
+  # hexdocs has a page for; the tag it was fetched at is, when it has one.
   defp locked_version(entry)
        when is_tuple(entry) and tuple_size(entry) > 2 and elem(entry, 0) == :hex do
     version = elem(entry, 2)
     if is_binary(version), do: version
+  end
+
+  defp locked_version({:git, _url, _sha, opts}) when is_list(opts) do
+    tag = opts[:tag]
+    if is_binary(tag), do: tag
   end
 
   defp locked_version(_entry), do: nil

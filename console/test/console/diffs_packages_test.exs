@@ -30,11 +30,16 @@ defmodule Console.DiffsPackagesTest do
         {:phoenix, "~> 1.8.0"},
         {:swoosh, "~> 1.16"},
         {:req, "~> 0.5"},
-        {:heroicons, github: "tailwindlabs/heroicons", tag: "v2.2.0"}
+        {:heroicons,
+         github: "tailwindlabs/heroicons",
+         tag: "v2.2.0",
+         app: false}
       ]
     end
     """)
 
+    File.write!(dir <> "/Dockerfile.local", ~s(ARG PHX_NEW="1.8.14"\n))
+    git(dir, ["add", "."])
     git(dir, ["commit", "--quiet", "-am", "Insert mailer"])
     sha = dir |> git(["rev-parse", "HEAD"]) |> String.trim()
 
@@ -44,12 +49,31 @@ defmodule Console.DiffsPackagesTest do
 
   defp git(dir, args), do: elem(System.cmd("git", ["-C", dir | args], stderr_to_stdout: true), 0)
 
-  test "the packages the insert added, with the requirement it wrote", %{dir: dir, sha: sha} do
+  test "the packages the insert added, with the requirement it wrote and the phx.new it came from",
+       %{dir: dir, sha: sha} do
     assert Console.Diffs.packages_of(dir, [%{"sha" => sha}]) == [
-             %{name: "swoosh", requirement: "~> 1.16"},
-             %{name: "req", requirement: "~> 0.5"},
-             %{name: "heroicons", requirement: nil}
+             %{name: "swoosh", requirement: "~> 1.16", git: nil, from: "1.8.14"},
+             %{name: "req", requirement: "~> 0.5", git: nil, from: "1.8.14"},
+             %{
+               name: "heroicons",
+               requirement: nil,
+               git: %{
+                 url: "https://github.com/tailwindlabs/heroicons.git",
+                 repo: "tailwindlabs/heroicons",
+                 tag: "v2.2.0",
+                 branch: nil,
+                 ref: nil
+               },
+               from: "1.8.14"
+             }
            ]
+  end
+
+  test "the phx.new stamped at the insert, not today's", %{dir: dir, sha: sha} do
+    File.write!(dir <> "/Dockerfile.local", ~s(ARG PHX_NEW="1.9.0"\n))
+    git(dir, ["commit", "--quiet", "-am", "Upgrade phx.new"])
+
+    assert [%{from: "1.8.14"} | _] = Console.Diffs.packages_of(dir, [%{"sha" => sha}])
   end
 
   test "no insert commit, nothing read: a project born with the flag", %{dir: dir} do

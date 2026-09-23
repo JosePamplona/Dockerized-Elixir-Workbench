@@ -224,6 +224,12 @@ one: a bordered box is a door you press.
   a focal node),
   and why nothing else is gold — and why a chip's plate is a tint and
   never a saturated fill: nothing may compete with the seal.
+* **`.fn`** — a footnote: the mark after a value that is not what its
+  column usually is, a space away so it reads as a sign and not as part
+  of the value, in muted mono and never the accent. **`.fn-note`** is
+  the line under the table that says why, led by the same mark, and it
+  shows only when a row on screen carries it. The reason used to live in
+  the cell's `title` alone, which nobody who did not hover ever read.
 
 **The underline is a mark, not a default.** `.cart-ref` and `.door-ref`
 each turn it off in their own declaration, and for the same reason: in

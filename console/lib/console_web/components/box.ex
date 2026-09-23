@@ -307,15 +307,17 @@ defmodule ConsoleWeb.Box do
         true -> "what its insert commit added is not in mix.exs any more"
       end
 
-    names = Enum.map(rows || declared, & &1["name"])
     now = assigns.now || DateTime.utc_now()
+    built = for row <- rows || declared, do: package_row(row, assigns.hex, now, rows != nil)
 
+    # Hex is asked only of what it has: a package from git is not there.
     assigns =
       assign(assigns,
         nothing: nothing,
-        names: names,
+        names: for(r <- built, !r.git, do: r.name),
         now: now,
-        rows: for(row <- rows || declared, do: package_row(row, assigns.hex, now, rows != nil))
+        rows: built,
+        footnote: footnote(built)
       )
 
     ~H"""
@@ -374,15 +376,15 @@ defmodule ConsoleWeb.Box do
           </thead>
           <tbody>
             <tr :for={r <- @rows}>
-              <td><.pkg_ref name={r.name} /></td>
+              <td><.pkg_ref name={r.name} git={r.git} /></td>
               <td
                 class="asks"
                 title={
                   r.read? &&
-                    "read off this box's insert commit: it declares no package of its own — what it brings arrives inside the phx.new delta"
+                    "read off this box's insert commit: it declares no package of its own — what it brings arrives inside the phx.new delta, generated at the phx.new the project stamped then"
                 }
               >
-                {r.brings}<span :if={r.read?} class="off">*</span>
+                {r.brings}<span :if={r.read?} class="fn">*</span>
               </td>
               <td
                 class={["asks", r.carried? && r.pinned != r.brings && "warn"]}
@@ -404,7 +406,13 @@ defmodule ConsoleWeb.Box do
               </td>
               <td class="v" title={if(!r.carried?, do: "the box is not in: no lock resolved it yet")}>
                 <span :if={!r.carried?} class="unlit">–</span>
-                <.pkg_ref :if={r.carried? && r.locked} name={r.name} version={r.locked} mark={false} />
+                <.pkg_ref
+                  :if={r.carried? && r.locked}
+                  name={r.name}
+                  version={r.locked}
+                  git={r.git}
+                  mark={false}
+                />
                 <span :if={r.carried? && !r.locked}>—</span>
               </td>
               <td
@@ -415,24 +423,51 @@ defmodule ConsoleWeb.Box do
                 <span :if={r.why} class="bad" title={r.why}>not read</span>
                 {r.latest}
               </td>
-              <td class="v">{r.ago}<span :if={!r.asked?} class="unlit">–</span></td>
-              <td class="v">{r.downloads}<span :if={!r.asked?} class="unlit">–</span></td>
+              <td class="v" title={r.off_hex}>
+                {r.ago}<span :if={!r.asked?} class="unlit">–</span>
+              </td>
+              <td class="v" title={r.off_hex}>
+                {r.downloads}<span :if={!r.asked?} class="unlit">–</span>
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
+      <p :if={@footnote} class="fn-note"><span class="fn">*</span>{@footnote}</p>
     </div>
     """
   end
 
+  # What the mark in the cartridge column means, said once under the
+  # table: the rows read off an insert commit, and the phx.new that
+  # generated what the commit wrote — one version, or the few when
+  # inserts made at different ones share the panel.
+  defp footnote(rows) do
+    case for(r <- rows, r.read?, do: r.from) do
+      [] ->
+        nil
+
+      froms ->
+        at =
+          case froms |> Enum.reject(&is_nil/1) |> Enum.uniq() do
+            [] -> "phx.new"
+            versions -> "phx.new " <> Enum.join(versions, ", ")
+          end
+
+        "The box does not install this package itself: it comes with #{at}, " <>
+          "and the version is the one that installer writes."
+    end
+  end
+
   # hex's newest release, said against what the project runs: the same
   # number in two columns is a question a reader should not have to ask.
+  defp latest_says(%{off_hex: why}) when is_binary(why), do: why
   defp latest_says(%{latest: nil}), do: nil
 
   defp latest_says(%{latest: latest, locked: locked}) when latest == locked,
     do: "hex.pm's newest release — and the one this project runs"
 
-  defp latest_says(%{latest: latest, locked: locked}) when is_binary(locked),
+  defp latest_says(%{latest: _latest, locked: locked}) when is_binary(locked),
     do: "hex.pm's newest release; this project runs #{locked}"
 
   defp latest_says(_row), do: "hex.pm's newest release"
@@ -452,7 +487,9 @@ defmodule ConsoleWeb.Box do
         "declared" => dep.requirement,
         "pinned" => project[name]["pinned"],
         "locked" => project[name]["locked"],
-        "read" => true
+        "git" => git_said(dep[:git]) || project[name]["git"],
+        "read" => true,
+        "from" => dep[:from]
       }
     end
   end
@@ -463,11 +500,15 @@ defmodule ConsoleWeb.Box do
   # project does with it, and what hex said if anybody asked.
   defp package_row(row, hex, now, carried?) do
     said = hex[row["name"]] || %{}
+    git = git_said(row["git"])
 
     %{
       name: row["name"],
-      brings: row["declared"] || row["requirement"],
+      git: git,
+      off_hex: git && "not on hex: it comes from git, so hex has nothing to say of it",
+      brings: row["declared"] || row["requirement"] || held_to(git),
       read?: row["read"] == true,
+      from: row["from"],
       pinned: row["pinned"],
       locked: row["locked"],
       latest: said[:latest],
@@ -478,6 +519,16 @@ defmodule ConsoleWeb.Box do
       carried?: carried?
     }
   end
+
+  # Where a package from git comes from, keyed as the status's JSON
+  # keys it: Diffs reads it off a commit with atom keys.
+  defp git_said(%{} = git), do: Map.new(git, fn {k, v} -> {to_string(k), v} end)
+  defp git_said(_git), do: nil
+
+  # What a package from git is held to, in the place a version goes:
+  # its tag, or failing that the branch or ref mix.exs names.
+  defp held_to(%{} = git), do: git["tag"] || git["branch"] || git["ref"]
+  defp held_to(_git), do: nil
 
   # A download count a reader can take in: 97.8M, not 97802365.
   defp downloads_said(n) when n >= 1_000_000, do: "#{Float.round(n / 1_000_000, 1)}M"

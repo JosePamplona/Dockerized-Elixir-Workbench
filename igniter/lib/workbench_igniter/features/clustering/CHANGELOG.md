@@ -8,6 +8,19 @@ templates or the environment entry is a minor, a change that breaks a
 project already carrying them (a renamed variable, a node name of a
 different shape) is a major.
 
+## v0.2.1 - (2026-09-22)
+
+### Fixed
+
+- **An empty `--dns-query` gets the default.** A form's field left
+  blank arrived as `""` and was written as `DNS_CLUSTER_QUERY=""`: a
+  release that queries nothing, and a state reading an empty name.
+- **A `--dns-query` that is not a DNS name is refused**, before
+  anything is written: it is declared `:dns_name` (`formats/0`) and
+  checked where every cartridge's options are. The value goes between
+  the quotes of a `.env` line, and a quote or a line break would end it
+  early and break the file for every variable after it.
+
 ## v0.2.0 - (2026-08-30)
 
 ### Added

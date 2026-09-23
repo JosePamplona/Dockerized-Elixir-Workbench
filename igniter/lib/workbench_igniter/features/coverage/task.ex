@@ -17,11 +17,12 @@ defmodule Mix.Tasks.Workbench.Install.Coverage do
   * creates `coveralls.json`: reports go to the standard `cover/` output
     dir (already gitignored by phx.new), with the custom template, minimum
     coverage and skip list
-  * plants the chosen excoveralls HTML report theme (`--theme`) under
+  * plants the chosen excoveralls HTML report theme (`--html-theme`) under
     `test/coverage/template/`
-  * with `--exdoc`, plants the `mix cover` task (testing & coverage reports
-    integrated into ExDoc) along with its ExUnit formatter and unit tests,
-    and gitignores the generated `TESTING.md` report
+  * with `--md-report`, plants the `mix cover` task — the suite's report
+    as Markdown, `TESTING.md` at the project's root — along with its
+    ExUnit formatter, their unit tests and the page that waits until the
+    first run, and gitignores the generated report
   * with `--githook`, puts `#{Coverage.check_command()}` before every
     commit — in this cartridge's own block of `#{Precommit.hook()}`,
     below the divider that separates the checks that refuse a commit in
@@ -33,7 +34,7 @@ defmodule Mix.Tasks.Workbench.Install.Coverage do
 
   ## Example
 
-      mix workbench.install.coverage --exdoc
+      mix workbench.install.coverage --md-report
 
   ## Options
 
@@ -44,5 +45,5 @@ defmodule Mix.Tasks.Workbench.Install.Coverage do
   def info(argv, composing_task), do: Coverage.info(argv, composing_task)
 
   @impl Igniter.Mix.Task
-  def igniter(igniter), do: Coverage.install(igniter)
+  def igniter(igniter), do: WorkbenchIgniter.Feature.install(Coverage, igniter)
 end

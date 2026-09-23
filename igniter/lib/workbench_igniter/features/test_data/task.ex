@@ -24,5 +24,5 @@ defmodule Mix.Tasks.Workbench.Install.TestData do
   def info(argv, composing_task), do: TestData.info(argv, composing_task)
 
   @impl Igniter.Mix.Task
-  def igniter(igniter), do: TestData.install(igniter)
+  def igniter(igniter), do: WorkbenchIgniter.Feature.install(TestData, igniter)
 end

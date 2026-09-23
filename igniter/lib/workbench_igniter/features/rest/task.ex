@@ -38,5 +38,5 @@ defmodule Mix.Tasks.Workbench.Install.Rest do
   def info(argv, composing_task), do: Rest.info(argv, composing_task)
 
   @impl Igniter.Mix.Task
-  def igniter(igniter), do: Rest.install(igniter)
+  def igniter(igniter), do: WorkbenchIgniter.Feature.install(Rest, igniter)
 end

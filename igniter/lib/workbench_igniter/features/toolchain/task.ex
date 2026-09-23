@@ -26,5 +26,5 @@ defmodule Mix.Tasks.Workbench.Install.Toolchain do
   def info(argv, composing_task), do: Toolchain.info(argv, composing_task)
 
   @impl Igniter.Mix.Task
-  def igniter(igniter), do: Toolchain.install(igniter)
+  def igniter(igniter), do: WorkbenchIgniter.Feature.install(Toolchain, igniter)
 end

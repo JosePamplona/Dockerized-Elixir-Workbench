@@ -83,6 +83,29 @@ defmodule Mix.Tasks.Workbench.Install.ClusteringTest do
 
       assert env =~ ~s|DNS_CLUSTER_QUERY="demo.internal"|
     end
+
+    test "an empty --dns-query is a field left blank: the default goes in" do
+      files = %{".env" => "PORT=\"4000\"\n"}
+
+      env =
+        install(["--dns-query", ""], files)
+        |> apply_igniter!()
+        |> files()
+        |> Map.get(".env")
+
+      refute env =~ ~s|DNS_CLUSTER_QUERY=""|
+      assert env =~ ~s|DNS_CLUSTER_QUERY="test.default.svc.cluster.local"|
+    end
+
+    test "a --dns-query with a quote is refused, and nothing is written" do
+      igniter =
+        install(["--dns-query", ~s|demo"internal|], %{".env" => "PORT=\"4000\"\n"})
+
+      # Between a .env line's quotes, it would end the value early.
+      assert_has_issue(igniter, &(&1 =~ "--dns-query takes a DNS name"))
+      refute Igniter.exists?(igniter, "rel/env.sh.eex")
+      assert_unchanged(igniter, ".env")
+    end
   end
 
   test "running it twice changes nothing" do

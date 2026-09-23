@@ -314,18 +314,56 @@ defmodule WorkbenchIgniter.Features.Precommit do
   # inside the container, where that is `/app/src` — a path the host
   # would `cd` into and not find. A dot is true on both sides of the
   # mount.
+  #
+  # At the end of the file, after what phx.new wrote: Igniter puts a new
+  # `config` right under `import Config` (its `after:` does not move
+  # that), where it would open dev.exs with a library the project met
+  # last. So the block is opened at the end first, and every key after
+  # it lands inside it.
   defp configure_git_hooks(igniter) do
+    configure = fn igniter, path, value ->
+      Igniter.Project.Config.configure(igniter, "dev.exs", :git_hooks, path, value)
+    end
+
     igniter
-    |> Igniter.Project.Config.configure("dev.exs", :git_hooks, [:auto_install], false)
-    |> Igniter.Project.Config.configure("dev.exs", :git_hooks, [:verbose], true)
-    |> Igniter.Project.Config.configure("dev.exs", :git_hooks, [:project_path], ".")
-    |> Igniter.Project.Config.configure("dev.exs", :git_hooks, [:mix_path], "sh #{@runner}")
-    |> Igniter.Project.Config.configure(
-      "dev.exs",
-      :git_hooks,
+    |> Igniter.include_or_create_file("config/dev.exs", "import Config\n")
+    |> Igniter.update_elixir_file("config/dev.exs", &open_at_the_end/1)
+    |> configure.([:verbose], true)
+    |> configure.([:project_path], ".")
+    |> configure.([:mix_path], "sh #{@runner}")
+    |> configure.(
       [:hooks, :pre_commit, :tasks],
       {:code, Sourceror.parse_string!(~s([{:cmd, "sh #{@hook}"}]))}
     )
+  end
+
+  # `config :git_hooks` after the file's last statement, unless the
+  # file configures the library already: then its keys go there.
+  defp open_at_the_end(zipper) do
+    case Igniter.Code.Function.move_to_function_call_in_current_scope(
+           zipper,
+           :config,
+           [2, 3],
+           &Igniter.Code.Function.argument_equals?(&1, 0, :git_hooks)
+         ) do
+      {:ok, _} ->
+        {:ok, zipper}
+
+      :error ->
+        last =
+          case zipper.node do
+            {:__block__, _, [_ | _]} ->
+              zipper |> Sourceror.Zipper.down() |> Sourceror.Zipper.rightmost()
+
+            _ ->
+              zipper
+          end
+
+        {:ok,
+         Igniter.Code.Common.add_code(last, "config :git_hooks, auto_install: false",
+           placement: :after
+         )}
+    end
   end
 
   # --- the way in -------------------------------------------------------------

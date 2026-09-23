@@ -41,5 +41,5 @@ defmodule Mix.Tasks.Workbench.Install.DbAdmin do
   def info(argv, composing_task), do: DbAdmin.info(argv, composing_task)
 
   @impl Igniter.Mix.Task
-  def igniter(igniter), do: DbAdmin.install(igniter)
+  def igniter(igniter), do: WorkbenchIgniter.Feature.install(DbAdmin, igniter)
 end

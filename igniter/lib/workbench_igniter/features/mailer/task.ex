@@ -27,5 +27,5 @@ defmodule Mix.Tasks.Workbench.Install.Mailer do
   def info(argv, composing_task), do: Mailer.info(argv, composing_task)
 
   @impl Igniter.Mix.Task
-  def igniter(igniter), do: Mailer.install(igniter)
+  def igniter(igniter), do: WorkbenchIgniter.Feature.install(Mailer, igniter)
 end

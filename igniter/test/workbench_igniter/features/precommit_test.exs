@@ -47,6 +47,34 @@ defmodule WorkbenchIgniter.Features.PrecommitTest do
       assert config =~ ~s(tasks: [{:cmd, "sh .githooks/pre-commit"}])
     end
 
+    # Igniter's own place is right under `import Config`: the project's
+    # dev.exs would open with a library it met last.
+    test "writes the configuration at the end of dev.exs, after what was there" do
+      config =
+        test_project(
+          files: %{
+            "config/dev.exs" => """
+            import Config
+
+            config :test, TestWeb.Endpoint, http: [port: 4000]
+
+            config :phoenix_live_view, debug_heex_annotations: true
+            """
+          }
+        )
+        |> Igniter.compose_task("workbench.install.precommit", [])
+        |> apply_igniter!()
+        |> Map.get(:assigns)
+        |> get_in([:test_files, "config/dev.exs"])
+
+      [before, git_hooks] = String.split(config, "config :git_hooks", parts: 2)
+
+      assert before =~ "config :test, TestWeb.Endpoint"
+      assert before =~ "config :phoenix_live_view"
+      refute git_hooks =~ ~r/^config /m
+      assert git_hooks =~ ~s(tasks: [{:cmd, "sh .githooks/pre-commit"}])
+    end
+
     test "writes the default check into the cartridge's own block" do
       hook = install() |> apply_igniter!() |> hook()
 
@@ -105,6 +133,29 @@ defmodule WorkbenchIgniter.Features.PrecommitTest do
 
       # One block, not two.
       assert hook |> String.split("# >>> precommit") |> length() == 2
+    end
+
+    # check/4 places a block by its stage only when it is born: one
+    # already in the file is replaced where it stands, so the suite a
+    # second run adds joins the block above the divider, not below it.
+    test "a slow check added to a block born fast stays in the block, above the divider" do
+      hook =
+        install()
+        |> apply_igniter!()
+        |> Igniter.compose_task("workbench.install.precommit", ~w(--checks test))
+        |> apply_igniter!()
+        |> hook()
+
+      [before_slow, after_slow] = String.split(hook, "# --- slow:")
+
+      assert before_slow =~ """
+             mix format --check-formatted
+             mix test
+             # <<< precommit
+             """
+
+      refute after_slow =~ "precommit"
+      refute after_slow =~ "mix test"
     end
 
     test "says back the checks the project carries" do

@@ -46,5 +46,5 @@ defmodule Mix.Tasks.Workbench.Install.Ash do
   def info(argv, composing_task), do: Ash.info(argv, composing_task)
 
   @impl Igniter.Mix.Task
-  def igniter(igniter), do: Ash.install(igniter)
+  def igniter(igniter), do: WorkbenchIgniter.Feature.install(Ash, igniter)
 end

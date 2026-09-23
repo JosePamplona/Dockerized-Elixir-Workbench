@@ -33,5 +33,5 @@ defmodule Mix.Tasks.Workbench.Install.ChiefsSetup do
   def info(argv, composing_task), do: ChiefsSetup.info(argv, composing_task)
 
   @impl Igniter.Mix.Task
-  def igniter(igniter), do: ChiefsSetup.install(igniter)
+  def igniter(igniter), do: WorkbenchIgniter.Feature.install(ChiefsSetup, igniter)
 end

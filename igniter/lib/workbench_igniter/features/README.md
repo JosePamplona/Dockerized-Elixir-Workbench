@@ -18,7 +18,7 @@ into one patch set.
 **The design rule for a collection's options**: an option must be a
 decision the collection itself owns — explainable on the box in one
 line without naming a member's switch (chiefs_setup's `--interface`
-qualifies; a `--coverage-theme` would not, it is coverage's `--theme`).
+qualifies; a `--coverage-theme` would not, it is coverage's `--html-theme`).
 Re-exposing a member's option is how the one-type-of-cartridge
 simplification would rot back into a second type: whoever needs the
 member's option inserts the member directly. The argv a recipe hands a
@@ -36,7 +36,8 @@ group ([dashboard_extras](dashboard_extras/) → [credo](credo/) →
 and [health_endpoint](health_endpoint/) — in the order their marks build on
 each other. [auth0](auth0/), [openai](openai/) and [stripe](stripe/)
 (*pending*: manifest only) stay à la carte: they need external
-accounts, as does [guidelines](guidelines/), which needs the team's URL.
+accounts, as did [guidelines](guidelines/), archived for the same
+reason — it needs the team's URL.
 
 ## The house's settings
 
@@ -113,7 +114,7 @@ Dep-only cartridges have no `priv/features/<feature>/` directory:
 | --- | --- | --- |
 | [credo](credo/) | `{:credo, "~> 1.7", only: [:dev, :test], runtime: false}`, and with `--githook` its line in the pre-commit hook (composes [precommit](precommit/)) | chiefs_setup |
 | [mock](mock/) | `{:mock, "~> 0.3", only: :test}` | chiefs_setup (also composed by health_endpoint and enhancements; coverage moved to test_doubles on 2026-09-20, and the last of the three takes it off the shelf) |
-| [test_doubles](test_doubles/) | `{:mimic, "~> 2.0", only: :test}`, `{:mox, "~> 1.2", only: :test}` or `{:hammox, "~> 1.0", only: :test}` with `--type-check`, by `--double` | chiefs_setup (also composed by coverage, with `--double mimic`) |
+| [test_doubles](test_doubles/) | `{:mimic, "~> 2.0", only: :test}`, `{:mox, "~> 1.2", only: :test}` or `{:hammox, "~> 1.0", only: :test}` with `--type-check`, by `--double` | chiefs_setup (coverage's `--exdoc` builds on it with Mimic since 2026-09-22, where it used to compose it) |
 | [exdebug](exdebug/) | `{:ex_debug, "~> 1.0"}` | chiefs_setup |
 | [dashboard_extras](dashboard_extras/) | `:os_mon` in `extra_applications`, and the extras of the project's database: `ecto_psql_extras`, `ecto_mysql_extras` or `ecto_sqlite3_extras` (none on SQL Server or without a database) | chiefs_setup |
 | [test_data](test_data/) | `{:faker, "~> 0.19", only: :test}` and, by the line: on Ecto `{:ex_machina, "~> 2.8", only: :test}`, `test/support/factory.ex` and the test that inserts every factory; on Ash `test/support/generator.ex` (`Ash.Generator`) | no one (`wb.sh add test_data`) |
@@ -170,13 +171,27 @@ the option's value. k6 and monitoring are inserted by hand.
 endpoint, no dependency, no router change. Installed by hand with
 `wb.sh add health_probe`.
 
-[guidelines](guidelines/) puts the team's coding conventions in the
-project's own documentation, downloaded from `--url`. It builds on
-exdoc (`requires`) and **appends** its page to the two lists exdoc's
-`docs:` block keeps, the way clustering appends to a release script it
-does not own. It is the only installer that reaches the network, which
-is why it is a box and not an option of exdoc: inserting the
-documentation site should not depend on someone's URL being up.
+[dbschema](dbschema/) (*archived*) is the database's own page in the
+project's documentation, off a [DbSchema](https://dbschema.com) export:
+the `mix db` task that formats it, a sample export to start from
+(`--combo`), and the page with the model diagram in both themes — two
+images, `#gh-light-mode-only` and `#gh-dark-mode-only`, which ExDoc
+hides one of per theme, so the site needs no script. It builds on ecto,
+not on exdoc: the page is written either way and **listed** in the site
+only when the project has one, the way [changelog](changelog/) lists its
+own. [enhancements](enhancements/) composes it when the project has a
+database.
+
+[guidelines](guidelines/) (*archived*) puts the team's coding
+conventions in the project's own documentation, downloaded from
+`--url`. It builds on exdoc (`requires`) and **appends** its page to
+the two lists exdoc's `docs:` block keeps, the way clustering appends
+to a release script it does not own. It is the only installer that
+reaches the network, which is why it is a box and not an option of
+exdoc: inserting the documentation site should not depend on someone's
+URL being up. Archived on 2026-09-22 for the reason it was always à la
+carte: the URL is one only the team has, and a shelf a project is
+picked from cannot hand it one.
 
 ## Base cartridges
 
@@ -250,7 +265,9 @@ opens on the app's port (rest `/dev/swagger`, mailer
 the two dashboard pages it lights, health_probe
 `{path}/live` and `{path}/ready`), the pages its tool writes on disk
 for the reader (exdoc `doc/`, coverage `cover/`: `{:output, dir,
-index}`, served by the console off the workspace, the app up or not)
+index}`, served by the console off the workspace, the app up or not,
+with `build:` — the project's own Mix task that writes the page, which
+the console offers where it is not there yet)
 and the *tabs* it turns on (clustering → Cluster). The catalog carries
 it as `console`; the console shows the
 doors of what is inserted and nothing of what is not. There is no
@@ -307,10 +324,30 @@ which cartridges have one and why.
 * `option_docs/0` - one line per option: the task's "## Options"
   section is rendered from it (`WorkbenchIgniter.Feature.options_doc/1`
   in the task's `@moduledoc`), and so is the help beside a form field.
+* `formats/0` - the shape a string option's value has to have, where
+  the type cannot say it: `:url` (exdoc's repository and website,
+  guidelines' page), `:version` (changelog's first release),
+  `:dns_name` (clustering's query), `:route` (health_probe's prefix),
+  `{:integer, range}` (coverage's minimum). Declared once and read
+  twice: `WorkbenchIgniter.Feature.install/2` — what every `task.ex`
+  calls — refuses a value that does not hold its shape before anything
+  is written, with the same sentence for every cartridge, and the
+  catalog carries it, so the console's form asks for that shape and
+  says which it is under the flag (`url`, where an unshaped string says
+  `text`). A value left empty is not checked: empty is *unasked*, and
+  what unasked means is the cartridge's own. A word the cartridge
+  itself lists is not a format — that is `choices/0`, checked against
+  its own list.
 * `detected/0` - the options whose default the installer reads off the
-  project (exdoc's name, repository, module groups): no default in the
-  schema, `detected` in the catalog, and a form's field says *read off
-  the project* where it would show a default.
+  project (changelog's first version, clustering's DNS name, exdoc's
+  name, repository, module groups): no default in the schema,
+  `detected` in the catalog.
+* `detect/1` - how each of those is found: the value it takes on this
+  project, `{map, igniter}` with exactly `detected/0`'s keys, `nil`
+  where the project says nothing. The installer takes its defaults from
+  it, `mix workbench.status` carries it per cartridge as `detected`, and
+  the console's form shows it as the field's placeholder — so the
+  default a reader sees is the one the insert writes.
 * `rerun/0` - what a second run does: `:noop` (the guard skips it) or
   `:adds` (every option a piece the installer adds when missing).
 * `state/1` - what the project carries of its options, read off the

@@ -74,6 +74,13 @@ defmodule WorkbenchIgniter.Features.DbAdminTest do
         refute content =~ "['host']"
       end)
     end
+
+    test "on MySQL: the state says it back" do
+      installed = on(:myxql) |> install(~w(--admin phpmyadmin)) |> apply_igniter!()
+
+      assert {%{admin: ["phpmyadmin"]}, _} = DbAdmin.state(installed)
+      assert DbAdmin.services(elem(DbAdmin.state(installed), 0)) == ["phpmyadmin"]
+    end
   end
 
   describe "what each admin builds on" do
@@ -228,6 +235,24 @@ defmodule WorkbenchIgniter.Features.DbAdminTest do
       assert [issue] = install(phx_test_project(), ~w(--admin phpmyadmin)).issues
       assert issue =~ "--admin phpmyadmin builds on ecto with database mysql"
       assert issue =~ "this project's database is postgres"
+    end
+
+    test "the same admin twice is one admin, one file" do
+      igniter = install(phx_test_project(), ~w(--admin pgadmin,pgadmin))
+
+      assert igniter.issues == []
+      assert_creates(igniter, "pgadmin/servers.json")
+      assert {%{admin: ["pgadmin"]}, _} = igniter |> apply_igniter!() |> DbAdmin.state()
+    end
+
+    test "an unknown admin beside a known one refuses the whole run, and names the unknown" do
+      igniter = install(phx_test_project(), ~w(--admin adminer,dbeaver))
+
+      assert igniter.issues == [
+               "--admin takes pgadmin, phpmyadmin, adminer, cloudbeaver, got: dbeaver"
+             ]
+
+      refute Igniter.exists?(igniter, "adminer/login.php")
     end
 
     test "an unknown admin is named" do

@@ -40,5 +40,5 @@ defmodule Mix.Tasks.Workbench.Install.VersionManager do
   def info(argv, composing_task), do: VersionManager.info(argv, composing_task)
 
   @impl Igniter.Mix.Task
-  def igniter(igniter), do: VersionManager.install(igniter)
+  def igniter(igniter), do: WorkbenchIgniter.Feature.install(VersionManager, igniter)
 end

@@ -54,6 +54,9 @@ defmodule WorkbenchIgniter.Features.TestDoubles do
     }
   ]
   @names Enum.map(@doubles, & &1.name)
+
+  # A copy with no options: the one `--type-check` turns into a typed one.
+  @untyped_copy ~r/Mimic\.copy\(([\w.]+)\)/
   @default "mimic"
 
   # `--type-check` on the Mox side is a different package: Hammox wraps
@@ -148,7 +151,9 @@ defmodule WorkbenchIgniter.Features.TestDoubles do
 
     case Enum.reject(doubles, &(&1 in @names)) do
       [] ->
-        Enum.reduce(doubles, igniter, &add_double(&2, &1, typed?))
+        doubles
+        |> Enum.reduce(igniter, &add_double(&2, &1, typed?))
+        |> type_copies(typed? and "mimic" in doubles)
 
       unknown ->
         Igniter.add_issue(
@@ -164,6 +169,41 @@ defmodule WorkbenchIgniter.Features.TestDoubles do
   defp add(igniter, dep), do: Igniter.Project.Deps.add_dep(igniter, dep, on_exists: :skip)
 
   defp installed_deps, do: [:mimic, :mox, :hammox]
+
+  # `--type-check` on the Mimic side is an option of each copy, and
+  # Mimic has no setting of its own for it: the copies the test helper
+  # carries are the only place the project keeps it. So the switch types
+  # every untyped copy there — any cartridge's block — and those copies
+  # are what state/1 reads back and what copy/4 follows. A helper with
+  # no copy yet has nowhere to keep it; with Hammox in, its dependency
+  # does, and alone the run says so rather than pretend.
+  defp typed(content),
+    do: Regex.replace(@untyped_copy, content, "Mimic.copy(\\1, type_check: true)")
+
+  defp type_copies(igniter, false), do: igniter
+
+  defp type_copies(igniter, true) do
+    {content, igniter} = file_content(igniter, @helper)
+    {%{type_check: kept?}, igniter} = state(igniter)
+
+    cond do
+      is_binary(content) and Regex.match?(@untyped_copy, content) ->
+        Igniter.update_file(igniter, @helper, fn source ->
+          Rewrite.Source.update(source, :content, &typed/1)
+        end)
+
+      kept? ->
+        igniter
+
+      true ->
+        Igniter.add_notice(
+          igniter,
+          "--type-check on Mimic is an option of each Mimic.copy/2, and #{@helper} " <>
+            "has no copy yet: nothing is type-checked, and the copies cartridges add " <>
+            "come out unchecked. Run it again with --type-check once they are there."
+        )
+    end
+  end
 
   # --- the way in -------------------------------------------------------------
 

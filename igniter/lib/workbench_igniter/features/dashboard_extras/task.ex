@@ -33,5 +33,5 @@ defmodule Mix.Tasks.Workbench.Install.DashboardExtras do
   def info(argv, composing_task), do: DashboardExtras.info(argv, composing_task)
 
   @impl Igniter.Mix.Task
-  def igniter(igniter), do: DashboardExtras.install(igniter)
+  def igniter(igniter), do: WorkbenchIgniter.Feature.install(DashboardExtras, igniter)
 end

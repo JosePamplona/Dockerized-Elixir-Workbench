@@ -39,6 +39,7 @@ defmodule WorkbenchIgniter.Features do
     Features.Graphql,
     Features.Coverage,
     Features.Exdoc,
+    Features.Dbschema,
     Features.Guidelines,
     Features.Enhancements,
     Features.Auth0,
@@ -236,15 +237,21 @@ defmodule WorkbenchIgniter.Features do
   Every catalog entry with `installed`: whether the given project
   carries the cartridge, asked of the cartridge itself (`installed?/1`)
   — and, when it does, `state`: what it carries of the options
-  (`state/1`, meaningful for an `:adds` cartridge). Returns the igniter
-  too, as the checks include files in it.
+  (`state/1`, meaningful for an `:adds` cartridge) — and `detected`:
+  the defaults it would read off this project (`detect/1`). Returns the
+  igniter too, as the checks include files in it.
   """
   @spec status(Igniter.t()) :: {[map()], Igniter.t()}
   def status(igniter) do
     Enum.map_reduce(catalog(), igniter, fn feature, igniter ->
       {installed?, igniter} = feature.installed?(igniter)
       {state, igniter} = if installed?, do: feature.state(igniter), else: {%{}, igniter}
-      {entry(feature) |> Map.put(:installed, installed?) |> Map.put(:state, state), igniter}
+      {detected, igniter} = feature.detect(igniter)
+
+      {entry(feature)
+       |> Map.put(:installed, installed?)
+       |> Map.put(:state, state)
+       |> Map.put(:detected, detected), igniter}
     end)
   end
 
@@ -337,27 +344,47 @@ defmodule WorkbenchIgniter.Features do
   defp door({label, path}), do: door({label, path, []})
 
   defp door({label, path, opts}) do
-    when_ =
-      case Keyword.get(opts, :when) do
-        nil -> nil
-        {:with, value} -> %{with: value}
-        {:cartridge, name} -> %{cartridge: name}
-      end
+    when_ = condition(Keyword.get(opts, :when))
 
     case path do
       {:output, dir, index} ->
-        %{label: label, path: dir <> "/", output: %{dir: dir, index: index}, when: when_}
+        %{
+          label: label,
+          path: dir <> "/",
+          output: %{dir: dir, index: index, build: build(Keyword.get(opts, :build))},
+          when: when_
+        }
 
       path ->
         %{label: label, path: path, when: when_}
     end
   end
 
+  defp format(nil), do: nil
+  defp format({:integer, %Range{first: first, last: last}}), do: "integer #{first}..#{last}"
+  defp format(name) when is_atom(name), do: to_string(name)
+
+  defp condition(nil), do: nil
+  defp condition({:with, value}), do: %{with: value}
+  defp condition({:option, key}), do: %{option: to_string(key)}
+  defp condition({:cartridge, name}), do: %{cartridge: name}
+
+  # How a page on disk is made: the project's Mix tasks that write it,
+  # in the order they are tried, each with the condition that makes it
+  # the one. `[]` for a page the cartridge does not say how to build.
+  defp build(nil), do: []
+  defp build(task) when is_binary(task), do: [%{task: task, when: nil}]
+  defp build(candidates) when is_list(candidates), do: Enum.map(candidates, &candidate/1)
+
+  defp candidate(task) when is_binary(task), do: %{task: task, when: nil}
+  defp candidate({task, opts}), do: %{task: task, when: condition(Keyword.get(opts, :when))}
+
   defp options(nil, _feature), do: []
 
   defp options(%Igniter.Mix.Task.Info{schema: schema, defaults: defaults}, feature) do
     choices = feature.choices()
     docs = feature.option_docs()
+    formats = feature.formats()
 
     for {key, type} <- schema || [] do
       {open, values} =
@@ -385,6 +412,9 @@ defmodule WorkbenchIgniter.Features do
         conditions: on.conditions,
         open: open,
         detected: key in feature.detected(),
+        # The shape the value has to have, where the type does not say
+        # it: a form asks for that shape and says which it is.
+        format: format(Keyword.get(formats, key)),
         doc: Keyword.get(docs, key)
       }
     end

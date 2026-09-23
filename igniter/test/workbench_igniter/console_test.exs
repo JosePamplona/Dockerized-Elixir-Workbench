@@ -16,15 +16,32 @@ defmodule WorkbenchIgniter.ConsoleTest do
 
     # A page on disk: what the tool writes, served by the console off
     # the workspace, whether the app runs or not.
+    # A page on disk also says how it is made: the project's own Mix
+    # task, which the console offers where the page is not there yet.
     assert by.("exdoc").doors == [
-             %{label: "docs", path: "doc/", output: %{dir: "doc", index: "index.html"}, when: nil}
+             %{
+               label: "docs",
+               path: "doc/",
+               output: %{dir: "doc", index: "index.html", build: [%{task: "docs", when: nil}]},
+               when: nil
+             }
            ]
 
+    # Two commands, the first whose condition holds: `mix cover` is
+    # there when the box went in with `--md-report`, which plants it, and
+    # without it ExCoveralls' own task writes the same page.
     assert by.("coverage").doors == [
              %{
                label: "coverage",
                path: "cover/",
-               output: %{dir: "cover", index: "excoveralls.html"},
+               output: %{
+                 dir: "cover",
+                 index: "excoveralls.html",
+                 build: [
+                   %{task: "cover", when: %{option: "md_report"}},
+                   %{task: "coveralls.html", when: nil}
+                 ]
+               },
                when: nil
              }
            ]
@@ -47,8 +64,14 @@ defmodule WorkbenchIgniter.ConsoleTest do
   test "every route starts with a slash or an {option}; an output is a relative dir" do
     for feature <- Features.catalog(), door <- Features.entry(feature).console.doors do
       case door do
-        %{output: %{dir: dir}} ->
+        %{output: %{dir: dir, build: build}} ->
           assert {:ok, ^dir} = Path.safe_relative(dir), "#{feature.name()}: #{dir}"
+
+          # The command is a Mix task of the project, one word: the
+          # console runs `./wb.sh mix <task>` and nothing else.
+          for %{task: task} <- build do
+            assert task =~ ~r/^[a-z][\w.]*$/, "#{feature.name()}: #{task}"
+          end
 
         %{path: path} ->
           assert String.starts_with?(path, ["/", "{"]), "#{feature.name()}: #{path}"

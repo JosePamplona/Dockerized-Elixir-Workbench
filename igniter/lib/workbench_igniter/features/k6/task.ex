@@ -23,5 +23,5 @@ defmodule Mix.Tasks.Workbench.Install.K6 do
   def info(argv, composing_task), do: K6.info(argv, composing_task)
 
   @impl Igniter.Mix.Task
-  def igniter(igniter), do: K6.install(igniter)
+  def igniter(igniter), do: WorkbenchIgniter.Feature.install(K6, igniter)
 end

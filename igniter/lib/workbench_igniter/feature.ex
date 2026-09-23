@@ -127,13 +127,51 @@ defmodule WorkbenchIgniter.Feature do
   @type choice :: [value()] | [{atom(), [value()]}] | {:open, [value()] | [{atom(), [value()]}]}
 
   @doc """
+  The shape a string option's value has to have, by schema key — the
+  option's *format*, which the type cannot say: `:url` (exdoc's
+  repository and website, guidelines' page), `:version` (changelog's
+  first release), `:dns_name` (clustering's query), `:route`
+  (health_probe's prefix) or `{:integer, range}` (coverage's minimum).
+
+  It is a fact of the option, declared once and read twice: the
+  installer refuses a value that does not hold it — one message for
+  every cartridge, `check_formats/2` before `install/1` — and the
+  catalog carries it, so a form asks for that shape (a URL field, a
+  number) and says which it is under the flag, where an unshaped string
+  says `text`. A value the reader leaves empty is not checked: empty is
+  *unasked*, and what unasked means is the cartridge's own.
+
+  Empty by default: most options are a word the cartridge itself lists
+  (`choices/0`), which it checks against that list.
+  """
+  @callback formats() :: [{atom(), format()}]
+
+  @typedoc "What a value has to look like — see `c:formats/0`."
+  @type format :: :url | :version | :dns_name | :route | {:integer, Range.t()}
+
+  @doc """
   The options whose default is read off the project when not given —
-  exdoc's name, repository and module groups — by their schema key.
-  They carry no default in the schema, since the value is the
-  project's; the catalog marks them `detected`, and a form says so
-  where it would show a default. Empty by default.
+  changelog's first version, clustering's DNS name, exdoc's name,
+  repository and module groups — by their schema key. They carry no
+  default in the schema, since the value is the project's; the catalog
+  marks them `detected`, and `detect/1` says how each is found. Empty
+  by default.
   """
   @callback detected() :: [atom()]
+
+  @doc """
+  The value each `detected/0` option takes on this project when it is
+  not given, read the way the installer reads it — the installer takes
+  its defaults from here, so what a form shows as the default is what
+  the insert would write. Exactly `detected/0`'s keys; `nil` where the
+  project says nothing and the installer falls back to a placeholder
+  or refuses. Read off the project's source only: nothing is compiled
+  or written. `mix workbench.status` carries it per cartridge as
+  `detected`, and the console's form shows each as the field's
+  placeholder. Same shape as `state/1`: the returned igniter must not
+  be discarded.
+  """
+  @callback detect(igniter :: Igniter.t()) :: {map(), Igniter.t()}
 
   @doc """
   One line per option of the installer, keyed as in the `info/2` schema:
@@ -246,7 +284,8 @@ defmodule WorkbenchIgniter.Feature do
       cartridge is in, a health endpoint as much as a docs page:
       `{label, path}` or `{label, path, when: condition}`, shown only
       when the condition holds: `{:with, value}` (the cartridge's
-      `state/1` reports the value under `:with`), `{:cartridge, name}`
+      `state/1` reports the value under `:with`), `{:option, key}` (its
+      `state/1` reports that option on), `{:cartridge, name}`
       (that cartridge is in). `{option}` in a path is the option's value
       as `state/1` reports it, or its default. The console reads them
       and calls them; it asks nothing of the project for its own sake —
@@ -255,7 +294,16 @@ defmodule WorkbenchIgniter.Feature do
       `{label, {:output, dir, index}}`: what a tool of the project
       writes for its reader (`{"docs", {:output, "doc", "index.html"}}`),
       which the console serves off the workspace on an origin of its
-      own, so the project needs no route for it (console/PLAN.md).
+      own, so the project needs no route for it (console/PLAN.md). A
+      page on disk says how it is made, `build:`: the Mix task of the
+      project that writes it (`build: "docs"`), so the console can
+      offer it where the page is not there yet — it runs
+      `./wb.sh mix <task>`, the project's own command, and never learns
+      one of its own. Several, `[{task, when: condition}, …]`, when
+      which command writes it depends on what the project carries
+      (coverage: `mix cover` where it was inserted with `--exdoc`, which
+      is what plants that task, `mix coveralls.html` otherwise); the first whose condition holds
+      is the one offered.
     * `tabs:` — screens the console shows only with this cartridge:
       `:cluster`.
 
@@ -343,7 +391,13 @@ defmodule WorkbenchIgniter.Feature do
       def option_docs, do: []
 
       @impl WorkbenchIgniter.Feature
+      def formats, do: []
+
+      @impl WorkbenchIgniter.Feature
       def detected, do: []
+
+      @impl WorkbenchIgniter.Feature
+      def detect(igniter), do: {%{}, igniter}
 
       @impl WorkbenchIgniter.Feature
       def rerun, do: :noop
@@ -380,7 +434,9 @@ defmodule WorkbenchIgniter.Feature do
                      members: 1,
                      choices: 0,
                      option_docs: 0,
+                     formats: 0,
                      detected: 0,
+                     detect: 1,
                      rerun: 0,
                      state: 1
 
@@ -552,6 +608,93 @@ defmodule WorkbenchIgniter.Feature do
   end
 
   @doc """
+  The cartridge's installer, run the way every insert runs it: the
+  values checked against the shapes the manifest declares
+  (`c:formats/0`), and `install/1` only when they hold. The one place
+  a cross-cutting check goes, so a cartridge's own installer is what it
+  writes and nothing else; every `task.ex` calls this.
+
+  A value that does not hold its shape ends the run with an issue — the
+  same sentence whichever cartridge and whichever option — and nothing
+  is written: `WorkbenchIgniter.Task` exits non-zero on an issue, so
+  `wb.sh add` makes no commit.
+  """
+  @spec install(module(), Igniter.t()) :: Igniter.t()
+  def install(feature, igniter) do
+    case check_formats(feature, igniter.args.options) do
+      [] -> feature.install(igniter)
+      issues -> Enum.reduce(issues, igniter, &Igniter.add_issue(&2, &1))
+    end
+  end
+
+  @doc """
+  What the given options break of the cartridge's declared shapes, one
+  sentence each: the option, the shape it takes and the value that is
+  not it. An option not given, or given empty, is not checked — empty
+  is unasked, and what unasked means is the cartridge's own.
+  """
+  @spec check_formats(module(), keyword()) :: [String.t()]
+  def check_formats(feature, opts) do
+    for {key, format} <- feature.formats(),
+        value = opts[key],
+        is_binary(value),
+        String.trim(value) != "",
+        not holds_format?(value, format) do
+      flag = "--" <> String.replace(to_string(key), "_", "-")
+      "#{flag} takes #{shape(format)}, and #{inspect(value)} is not one."
+    end
+  end
+
+  defp shape(:url), do: "a URL (https://example.com/page)"
+  defp shape(:version), do: "a version (1.2.3)"
+  defp shape(:dns_name), do: "a DNS name (app.default.svc.cluster.local)"
+  defp shape(:route), do: "a path (/health)"
+
+  defp shape({:integer, %Range{first: first, last: last}}),
+    do: "a whole number from #{first} to #{last}"
+
+  # A browsable address: the scheme the browser opens it with, and a
+  # host to open. Nothing of the rest is judged — a path, a port and a
+  # query are the address's own business.
+  defp holds_format?(value, :url) do
+    case URI.parse(String.trim(value)) do
+      %URI{scheme: scheme, host: host} when scheme in ["http", "https"] ->
+        is_binary(host) and host != "" and not String.contains?(value, [" ", "\n", "\r", "\""])
+
+      _ ->
+        false
+    end
+  end
+
+  # What Mix compiles as a project's version, which is what a changelog
+  # opens at and what `mix version` writes back.
+  defp holds_format?(value, :version), do: match?({:ok, _}, Version.parse(String.trim(value)))
+
+  # Labels of letters, digits and dashes, each starting and ending in
+  # one of the first two, up to the 253 a name is allowed.
+  defp holds_format?(value, :dns_name) do
+    value = String.trim(value)
+
+    String.length(value) <= 253 and
+      Regex.match?(
+        ~r|^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$|,
+        value
+      )
+  end
+
+  # Segments a URL carries as they are: no space, no query, no fragment.
+  # The slashes around them are the cartridge's to trim.
+  defp holds_format?(value, :route),
+    do: Regex.match?(~r|^/*([A-Za-z0-9._~-]+/*)*$|, String.trim(value))
+
+  defp holds_format?(value, {:integer, range}) do
+    case Integer.parse(String.trim(value)) do
+      {number, ""} -> number in range
+      _ -> false
+    end
+  end
+
+  @doc """
   What `feature.requires/0` asks for and the project lacks, in that
   order: each requirement asked of the required cartridge's own
   `installed?/1`, and, when it names a state, of its `state/1`.
@@ -671,7 +814,10 @@ defmodule WorkbenchIgniter.Feature do
   @doc """
   What is lacking, said after "NAME builds on": "html, not in the
   project yet. Insert that first: ./wb.sh add html"; "ecto with
-  database postgres, and this project's database is mysql."; and, with
+  database postgres, and this project's database is mysql." — with the
+  line that tops it up where the box adds its pieces on a second run
+  ("coverage with exdoc, and this project's exdoc is off. Add it with:
+  ./wb.sh add coverage --exdoc"); and, with
   both kinds, "html with live and mailer: this project's live is off,
   and mailer is not in yet. Insert that first: ./wb.sh add html --live,
   then ./wb.sh add mailer".
@@ -687,7 +833,14 @@ defmodule WorkbenchIgniter.Feature do
         named <> ", not in the project yet. Insert that first: " <> remedies(absent)
 
       {[], _} ->
-        named <> ", and this project's " <> found_all(short) <> "."
+        # A box that adds its pieces on a second run can be topped up
+        # without going out first, so the line that does it is worth
+        # saying; one whose options are fixed at the insert has no line
+        # to offer, and the reading of the project is the whole answer.
+        named <>
+          ", and this project's " <>
+          found_all(short) <>
+          "." <> if(addable?(short), do: " Add it with: " <> remedies(short), else: "")
 
       _ ->
         named <>
@@ -699,6 +852,17 @@ defmodule WorkbenchIgniter.Feature do
     end
   end
 
+  # Whether every box short of its state adds pieces on a second run
+  # (`rerun/0`): asking it of the cartridge, as everything else here.
+  defp addable?(short) do
+    Enum.all?(short, fn {:short, name, _state, _key, _found} ->
+      case WorkbenchIgniter.Features.named(name) do
+        nil -> false
+        feature -> feature.rerun() == :adds
+      end
+    end)
+  end
+
   defp found_all(short),
     do:
       Enum.map_join(short, " and ", fn {:short, _, _, key, found} ->
@@ -708,6 +872,8 @@ defmodule WorkbenchIgniter.Feature do
   defp remedies(shortfalls),
     do: shortfalls |> Enum.map(&remedy/1) |> Enum.uniq() |> Enum.join(", then ")
 
+  defp found([]), do: "none"
+  defp found(values) when is_list(values), do: Enum.join(values, " and ")
   defp found(nil), do: "not set"
   defp found(false), do: "off"
   defp found(true), do: "on"
@@ -753,7 +919,13 @@ defmodule WorkbenchIgniter.Feature do
     {missing ++ short, igniter}
   end
 
-  # A list asks for any one of its values.
+  # A list asks for any one of its values, and a state answered with a
+  # list — a `:csv` option: test_doubles' doubles, db_admin's admins —
+  # is met when it carries what was asked.
+  defp met?(found, expected) when is_list(found) and is_list(expected),
+    do: Enum.any?(found, &(&1 in expected))
+
+  defp met?(found, expected) when is_list(found), do: expected in found
   defp met?(found, expected) when is_list(expected), do: found in expected
   defp met?(found, expected), do: found == expected
 

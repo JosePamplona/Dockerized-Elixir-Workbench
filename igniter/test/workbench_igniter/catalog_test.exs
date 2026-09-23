@@ -24,7 +24,7 @@ defmodule WorkbenchIgniter.CatalogTest do
   # collection first, then the cartridges, then the base ones.
   @cartridges ~w(chiefs_setup ansi version_manager toolchain changelog
                  dashboard_extras credo mock test_doubles exdebug rest graphql
-                 coverage exdoc guidelines enhancements auth0 openai health_endpoint stripe
+                 coverage exdoc dbschema guidelines enhancements auth0 openai health_endpoint stripe
                  precommit test_data clustering health_probe ash specdd db_admin k6 monitoring
                  mailer gettext ecto esbuild tailwind html dashboard)
   # The chiefs_setup recipe with its default choices, in insertion order.
@@ -90,7 +90,7 @@ defmodule WorkbenchIgniter.CatalogTest do
     end
 
     test "reads the version off the cartridge changelog" do
-      assert %{version: %{version: "0.2.0", date: "2026-09-20"}} =
+      assert %{version: %{version: "0.2.1", date: "2026-09-22"}} =
                Features.entry(Features.HealthProbe)
 
       assert %{version: nil} = Features.entry(Features.Rest)
@@ -144,17 +144,85 @@ defmodule WorkbenchIgniter.CatalogTest do
 
       assert %{choices: nil, multiple: false} = by.(:example)
 
-      theme = Enum.find(Features.entry(Features.Coverage).options, &(&1.name == :theme))
+      theme = Enum.find(Features.entry(Features.Coverage).options, &(&1.name == :html_theme))
       assert %{open: false} = theme
 
-      assert [%{value: "exdoc-ish", doc: "mimics" <> _}, %{value: "custom", doc: _}] =
+      # The default first, as the shelf's other lists read.
+      assert [%{value: "custom", doc: "the workbench's own" <> _}, %{value: "exdoc-ish", doc: _}] =
                theme.choices
+
+      # The shape the value takes, where the type does not say it: the
+      # catalog carries it, so a form can ask for that shape.
+      by_name = fn feature, key ->
+        Enum.find(Features.entry(feature).options, &(&1.name == key))
+      end
+
+      assert by_name.(Features.Exdoc, :repo_url).format == "url"
+      assert by_name.(Features.Exdoc, :project_name).format == nil
+      assert by_name.(Features.Changelog, :init_version).format == "version"
+      assert by_name.(Features.Coverage, :minimum_coverage).format == "integer 0..100"
+      assert by_name.(Features.HealthProbe, :path).format == "route"
 
       # A default read off the project is marked, and has no value here.
       exdoc = Features.entry(Features.named("exdoc")).options
       detected = for o <- exdoc, o.detected, do: o.name
       assert detected == [:project_name, :repo_url, :module_groups]
       assert Enum.all?(exdoc, &(not &1.detected or is_nil(&1.default)))
+    end
+
+    # The one cross-cutting check: the shapes the manifest declares are
+    # checked before anything is written, in one place, for every box.
+    test "every installer's shell goes through the format check" do
+      for feature <- Features.catalog(), not feature.pending?() do
+        source =
+          feature.task()
+          |> Mix.Task.get!()
+          |> then(& &1.__info__(:compile)[:source])
+          |> File.read!()
+
+        assert source =~ "WorkbenchIgniter.Feature.install(",
+               "#{feature.name()}'s task calls install/1 directly: the formats are never checked"
+      end
+    end
+
+    test "a declared format is checked, and an empty value is unasked" do
+      check = &WorkbenchIgniter.Feature.check_formats/2
+
+      # A URL the browser opens, and what is not one.
+      assert check.(Features.Exdoc, repo_url: "https://github.com/acme/app") == []
+      assert check.(Features.Exdoc, repo_url: "http://localhost:4000/r") == []
+      assert [issue] = check.(Features.Exdoc, repo_url: "github.com/acme/app")
+
+      assert issue ==
+               ~s|--repo-url takes a URL (https://example.com/page), and "github.com/acme/app" is not one.|
+
+      assert [_] = check.(Features.Exdoc, homepage_url: "javascript:alert(1)")
+      assert [_, _] = check.(Features.Exdoc, repo_url: "nope", homepage_url: "nope")
+
+      # Unasked, and asked with nothing: the cartridge's own business.
+      assert check.(Features.Exdoc, []) == []
+      assert check.(Features.Exdoc, repo_url: "") == []
+      assert check.(Features.Exdoc, repo_url: "   ") == []
+
+      assert check.(Features.Changelog, init_version: "1.2.3-rc.1") == []
+      assert [_] = check.(Features.Changelog, init_version: "1.2")
+
+      assert check.(Features.Clustering, dns_query: "app.default.svc.cluster.local") == []
+      assert [_] = check.(Features.Clustering, dns_query: ~s|app"internal|)
+      assert [_] = check.(Features.Clustering, dns_query: "two names")
+
+      assert check.(Features.Coverage, minimum_coverage: "0") == []
+      assert check.(Features.Coverage, minimum_coverage: "100") == []
+      assert [_] = check.(Features.Coverage, minimum_coverage: "101")
+      assert [_] = check.(Features.Coverage, minimum_coverage: "85.5")
+
+      # Every spelling of a prefix health_probe takes, and one it does not.
+      for path <- ~w(/health status /api/v1/healthz //up// /) do
+        assert check.(Features.HealthProbe, path: path) == []
+      end
+
+      assert [_] = check.(Features.HealthProbe, path: "/health check")
+      assert [_] = check.(Features.HealthProbe, path: "/health?ready")
     end
 
     test "documents its options from the cartridge, into the task's moduledoc" do
@@ -177,7 +245,7 @@ defmodule WorkbenchIgniter.CatalogTest do
       {:docs_v1, _, _, _, %{"en" => doc}, _, _} =
         Code.fetch_docs(Mix.Tasks.Workbench.Install.Coverage)
 
-      assert doc =~ "* `--theme` - HTML report theme, one of `custom`, `exdoc-ish`:"
+      assert doc =~ "* `--html-theme` - The HTML report's theme, one of `custom`,"
 
       assert %{options: [%{name: :path, doc: "Prefix of the two probe routes" <> _}]} =
                Features.entry(Features.HealthProbe)
@@ -247,11 +315,12 @@ defmodule WorkbenchIgniter.CatalogTest do
       end
     end
 
-    test "the Phoenix line and the two superseded boxes are the retired ones" do
+    test "the Phoenix line and the superseded boxes are the retired ones" do
       retired = for f <- Features.catalog(), f.archived?(), do: f.name()
 
       assert Enum.sort(retired) ==
-               ~w(ansi auth0 chiefs_setup enhancements graphql health_endpoint mock openai rest toolchain)
+               ~w(ansi auth0 chiefs_setup dbschema enhancements graphql guidelines
+                  health_endpoint mock openai rest toolchain)
     end
 
     test "an archived box says so in the facts column, with the others" do
@@ -284,7 +353,7 @@ defmodule WorkbenchIgniter.CatalogTest do
 
       assert output =~ ~r/^mailer +\S+ +base +You want to see the mail/m
       assert output =~ ~r/^stripe +- +pending +Your users should be able to pay/m
-      assert output =~ ~r/^health_probe +v0\.2\.0 +Your platform polls/m
+      assert output =~ ~r/^health_probe +v0\.2\.1 +Your platform polls/m
       assert output =~ ~r/^test_data +v0\.1\.1 +Your tests need records/m
     end
   end
@@ -310,7 +379,10 @@ defmodule WorkbenchIgniter.CatalogTest do
           Enum.reduce(
             prereqs(@feature.name()) ++ [@feature.task()],
             phx_test_project(),
-            fn task, igniter -> Igniter.compose_task(igniter, task, args(task)) end
+            fn
+              {task, argv}, igniter -> Igniter.compose_task(igniter, task, argv)
+              task, igniter -> Igniter.compose_task(igniter, task, args(task))
+            end
           )
 
         installed =
@@ -343,7 +415,20 @@ defmodule WorkbenchIgniter.CatalogTest do
     defp prereqs("guidelines"), do: ["workbench.install.exdoc"]
     # Their --githook writes into precommit's hook (the runs below).
     defp prereqs("credo"), do: ["workbench.install.precommit"]
-    defp prereqs("coverage"), do: ["workbench.install.precommit"]
+    # --changelog lists the file the changelog box writes, and
+    # --coverage the report `mix cover` writes (coverage's --exdoc).
+    defp prereqs("exdoc"),
+      do: [
+        "workbench.install.changelog",
+        "workbench.install.test_doubles",
+        {"workbench.install.coverage", ["--md-report"]}
+      ]
+
+    # --githook writes into precommit's hook, and --exdoc stands on the
+    # doubles its task's tests use.
+    defp prereqs("coverage"),
+      do: ["workbench.install.precommit", "workbench.install.test_doubles"]
+
     defp prereqs(_name), do: []
 
     # The arguments an installer cannot do without. guidelines takes the
@@ -362,7 +447,10 @@ defmodule WorkbenchIgniter.CatalogTest do
     # stand on in turn. A cartridge that inserts more than it declares
     # fails above. The collection is the exception: every member of its
     # recipe, which the status lists in catalog order, not the recipe's.
-    defp others_installed("chiefs_setup"), do: Enum.filter(@cartridges, &(&1 in @picks))
+    # enhancements composes dbschema, which is nobody's pick of its own.
+    defp others_installed("chiefs_setup"),
+      do: Enum.filter(@cartridges, &(&1 in ["dbschema" | @picks]))
+
     defp others_installed(name), do: Enum.filter(@cartridges, &(&1 in stands_on(name)))
 
     defp stands_on(name) do
@@ -404,22 +492,21 @@ defmodule WorkbenchIgniter.CatalogTest do
          %{project_name: "Probe", auth0: true, openai: true, health: true}}
       ],
       "coverage" => [
-        # --build runs the suite once; cover/ is gitignored.
-        {~w(--minimum-coverage 90 --interface graphql --exdoc --theme custom --githook --build),
+        {~w(--minimum-coverage 90 --file-column-width 128
+            --ignore-files mix_tasks,lib/probe/legacy --md-report --html-theme exdoc-ish --githook),
          %{
            minimum_coverage: "90",
-           interface: "graphql",
-           exdoc: true,
-           theme: "custom",
-           githook: true,
-           build: nil
+           file_column_width: "128",
+           ignore_files: ~w(mix_tasks lib/probe/legacy),
+           md_report: true,
+           html_theme: "exdoc-ish",
+           githook: true
          }}
       ],
       "exdoc" => [
-        # --build runs mix docs once.
         {~w(--project-name Probe --repo-url https://example.com/acme/probe
             --homepage-url https://probe.example.com --app-logo --module-groups contexts
-            --no-readme --coverage --build),
+            --no-readme --changelog --coverage),
          %{
            project_name: "Probe",
            repo_url: "https://example.com/acme/probe",
@@ -427,26 +514,29 @@ defmodule WorkbenchIgniter.CatalogTest do
            app_logo: true,
            module_groups: "contexts",
            readme: false,
-           coverage: true,
-           build: nil
+           changelog: true,
+           coverage: true
          }}
       ],
       # The page is the download; the URL is kept nowhere.
       "guidelines" => [{~w(--url http://localhost:1/guide.md), %{url: nil}}],
+      "dbschema" => [{~w(--combo auth0_openai), %{combo: "auth0_openai"}}],
       "enhancements" => [
-        # graphql: the REST group is not written, so --interface and
-        # --health leave nothing to read; --stripe never does (its
-        # diagrams are auth0's).
+        # graphql: the REST group is not written, so nothing of the
+        # collection is there to read — --interface, --auth0, --openai
+        # and --health all leave their mark on it, and the DbSchema
+        # export is dbschema's to answer for. --stripe never marks
+        # anything: Stripe's objects are not in the database.
         {~w(--project-name Probe --id-type binary_id --timestamps utc_datetime_usec
             --interface graphql --exdoc --auth0 --openai --stripe --health),
          %{
-           project_name: "Probe",
+           project_name: nil,
            id_type: "binary_id",
            timestamps: "utc_datetime_usec",
            interface: nil,
            exdoc: true,
-           auth0: true,
-           openai: true,
+           auth0: nil,
+           openai: nil,
            stripe: nil,
            health: nil
          }},
@@ -535,8 +625,9 @@ defmodule WorkbenchIgniter.CatalogTest do
   describe "composes" do
     test "names, off the installer's info, the cartridges it inserts along" do
       assert %{composes: ["mock"]} = Features.entry(Features.HealthEndpoint)
-      assert %{composes: ["test_doubles"]} = Features.entry(Features.Coverage)
-      assert %{composes: ["mock"]} = Features.entry(Features.Enhancements)
+      # coverage inserts nothing: its `--exdoc` builds on test_doubles.
+      assert %{composes: []} = Features.entry(Features.Coverage)
+      assert %{composes: ["mock", "dbschema"]} = Features.entry(Features.Enhancements)
       assert %{composes: []} = Features.entry(Features.Credo)
       assert %{composes: []} = Features.entry(Features.Stripe)
     end

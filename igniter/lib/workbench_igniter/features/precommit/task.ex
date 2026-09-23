@@ -51,5 +51,5 @@ defmodule Mix.Tasks.Workbench.Install.Precommit do
   def info(argv, composing_task), do: Precommit.info(argv, composing_task)
 
   @impl Igniter.Mix.Task
-  def igniter(igniter), do: Precommit.install(igniter)
+  def igniter(igniter), do: WorkbenchIgniter.Feature.install(Precommit, igniter)
 end

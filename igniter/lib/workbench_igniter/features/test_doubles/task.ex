@@ -44,5 +44,5 @@ defmodule Mix.Tasks.Workbench.Install.TestDoubles do
   def info(argv, composing_task), do: TestDoubles.info(argv, composing_task)
 
   @impl Igniter.Mix.Task
-  def igniter(igniter), do: TestDoubles.install(igniter)
+  def igniter(igniter), do: WorkbenchIgniter.Feature.install(TestDoubles, igniter)
 end

@@ -20,7 +20,8 @@ defmodule Mix.Tasks.Workbench.Status do
 
   * `--json` - One JSON object, `{"app": ..., "phx": {...}, "cartridges": [...],
     "services": [...], "birth": {...} | null, "deployments": {...}}`
-    — `services` are the compose services the installed cartridges ask
+    — each cartridge carries `detected`, the defaults it would read off
+    this project for the options it does not fix (`detect/1`); `services` are the compose services the installed cartridges ask
     the workspace for (`postgres`, `pgadmin`, `grafana`…), what `mix workbench.compose`
     bakes in, and each installed cartridge carries `compose`: the services
     it brings, by their name in the file, with the port each `listens` on

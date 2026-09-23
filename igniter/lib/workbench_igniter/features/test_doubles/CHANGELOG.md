@@ -5,6 +5,20 @@ it. Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) applied to
 what the cartridge *installs*.
 
+## v0.1.1 - (2026-09-22)
+
+### Fixed
+
+- **`--double mimic --type-check` leaves the switch where the project
+  keeps it.** On the Mimic side the switch is an option of each
+  `Mimic.copy/2`, and Mimic has no setting of its own for it; without
+  Hammox the run wrote nothing, the state read `type_check: false` and
+  every later copy came out unchecked. The run now types the untyped
+  copies the test helper carries, any cartridge's block, and those are
+  what the state and the next copies read. A helper with no copy yet
+  has nowhere to keep it: the run says so in a notice, and a second
+  run once the copies are there types them.
+
 ## v0.1.0 - (2026-09-20)
 
 ### Added

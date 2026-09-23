@@ -4,6 +4,18 @@
 The cartridge's own versions, over what it installs in a project —
 independent of the workbench release that ships it.
 
+## v0.1.2 - (2026-09-22)
+
+### Fixed
+
+- The configuration goes at the end of `config/dev.exs`, after what
+  the project had. Igniter writes a new `config` right under
+  `import Config`, so dev.exs opened with `config :git_hooks`, a
+  library the project met last, above the endpoint phx.new configures
+  first. The installer now opens the block after the file's last
+  statement and every key lands inside it; a dev.exs that configures
+  git_hooks already keeps its block where it is.
+
 ## v0.1.1 - (2026-09-21)
 
 ### Fixed

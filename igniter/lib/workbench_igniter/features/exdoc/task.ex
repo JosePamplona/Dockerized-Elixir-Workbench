@@ -36,5 +36,5 @@ defmodule Mix.Tasks.Workbench.Install.Exdoc do
   def info(argv, composing_task), do: Exdoc.info(argv, composing_task)
 
   @impl Igniter.Mix.Task
-  def igniter(igniter), do: Exdoc.install(igniter)
+  def igniter(igniter), do: WorkbenchIgniter.Feature.install(Exdoc, igniter)
 end

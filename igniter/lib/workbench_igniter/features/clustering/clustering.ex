@@ -79,10 +79,31 @@ defmodule WorkbenchIgniter.Features.Clustering do
     }
   end
 
+  # The value goes into a `.env` line between double quotes: a name is
+  # a name, and a quote or a space would end the line early.
+  @impl true
+  def formats, do: [dns_query: :dns_name]
+
+  # The DNS name, unasked: Kubernetes' for the app.
+  @impl true
+  def detected, do: [:dns_query]
+
+  @impl true
+  def detect(igniter) do
+    app_name = Igniter.Project.Application.app_name(igniter)
+    {%{dns_query: "#{app_name}.default.svc.cluster.local"}, igniter}
+  end
+
   @doc "Installer body, run by the mix task shell as its `igniter/1`."
   def install(igniter) do
-    app_name = Igniter.Project.Application.app_name(igniter)
-    dns_query = igniter.args.options[:dns_query] || default_dns_query(app_name)
+    {detected, igniter} = detect(igniter)
+
+    # An empty value is a field left blank, not a name: the default.
+    dns_query =
+      case String.trim(igniter.args.options[:dns_query] || "") do
+        "" -> detected.dns_query
+        given -> given
+      end
 
     igniter
     |> release_templates()
@@ -92,8 +113,6 @@ defmodule WorkbenchIgniter.Features.Clustering do
       ~s|DNS_CLUSTER_QUERY="#{dns_query}"|
     )
   end
-
-  defp default_dns_query(app_name), do: "#{app_name}.default.svc.cluster.local"
 
   # --- rel/*.eex --------------------------------------------------------------
 

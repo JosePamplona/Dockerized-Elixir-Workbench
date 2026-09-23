@@ -26,5 +26,5 @@ defmodule Mix.Tasks.Workbench.Install.Tailwind do
   def info(argv, composing_task), do: Tailwind.info(argv, composing_task)
 
   @impl Igniter.Mix.Task
-  def igniter(igniter), do: Tailwind.install(igniter)
+  def igniter(igniter), do: WorkbenchIgniter.Feature.install(Tailwind, igniter)
 end

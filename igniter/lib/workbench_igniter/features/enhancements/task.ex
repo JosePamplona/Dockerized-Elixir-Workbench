@@ -13,8 +13,8 @@ defmodule Mix.Tasks.Workbench.Install.Enhancements do
   the dep-only cartridges):
 
   * Ecto group (unless `--no-ecto`): `MyApp.Helper` and `MyApp.Schema`
-    (with `ecto_enum` and `html_entities` deps), the `mix db` task, and
-    the DbSchema diagram sources under `assets/db_schema/`
+    (with the `ecto_enum` dep), and the dbschema cartridge composed for
+    the database's page and its `mix db` task
   * REST group (`--interface rest`): enhanced `error_json.ex` view with
     changeset rendering, and a Postman collection for the enabled features
   * base unit testing: application/telemetry/page/dashboard/mailbox and
@@ -34,5 +34,5 @@ defmodule Mix.Tasks.Workbench.Install.Enhancements do
   def info(argv, composing_task), do: Enhancements.info(argv, composing_task)
 
   @impl Igniter.Mix.Task
-  def igniter(igniter), do: Enhancements.install(igniter)
+  def igniter(igniter), do: WorkbenchIgniter.Feature.install(Enhancements, igniter)
 end

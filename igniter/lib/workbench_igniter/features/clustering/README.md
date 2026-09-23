@@ -85,6 +85,10 @@ logs nothing and simply finds no peers.
 | --- | --- |
 | `--dns-query` | `<app>.default.svc.cluster.local` |
 
+An empty `--dns-query` is taken as not given, and gets the default. A
+value carrying a double quote or a line break is refused: it goes
+between the quotes of a `.env` line, and would end it early.
+
 ## Variable ownership
 
 `DNS_CLUSTER_QUERY`, `RELEASE_DISTRIBUTION` and `RELEASE_NODE` used to
@@ -258,3 +262,18 @@ Only the release's boot environment is set up here. For strategies
 beyond DNS — gossip, EPMD, Kubernetes API — see
 [libcluster](https://hexdocs.pm/libcluster); it plugs into the same
 supervision tree and does not conflict with this cartridge.
+
+## Contents
+
+| File | Role |
+| --- | --- |
+| `📁 lib/workbench_igniter/features/clustering/` | The cartridge: its code and its papers |
+| `├── 📄 clustering.ex` | `rel/env.sh.eex`, its three siblings, `DNS_CLUSTER_QUERY` |
+| `├── 📄 task.ex` | The Mix task `wb.sh add` runs |
+| `├── 📄 README.md` | What it installs, and how it runs |
+| `├── 📄 NEED.md` | The need, the line the shelf shows |
+| `├── 📄 CHANGELOG.md` | Its versions, apart from the workbench's |
+| `└── 📄 DESIGN.md` | Why DNSCluster, the boot script, what was measured |
+|  |  |
+| `📁 test/workbench_igniter/features/` |  |
+| `└── 📄 clustering_test.exs` | The rel templates, the exports, `--dns-query` |

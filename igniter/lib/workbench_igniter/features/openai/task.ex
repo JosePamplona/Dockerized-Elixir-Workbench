@@ -39,5 +39,5 @@ defmodule Mix.Tasks.Workbench.Install.Openai do
   def info(argv, composing_task), do: Openai.info(argv, composing_task)
 
   @impl Igniter.Mix.Task
-  def igniter(igniter), do: Openai.install(igniter)
+  def igniter(igniter), do: WorkbenchIgniter.Feature.install(Openai, igniter)
 end

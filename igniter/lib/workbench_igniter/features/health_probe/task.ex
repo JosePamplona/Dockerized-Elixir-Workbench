@@ -61,5 +61,5 @@ defmodule Mix.Tasks.Workbench.Install.HealthProbe do
   def info(argv, composing_task), do: HealthProbe.info(argv, composing_task)
 
   @impl Igniter.Mix.Task
-  def igniter(igniter), do: HealthProbe.install(igniter)
+  def igniter(igniter), do: WorkbenchIgniter.Feature.install(HealthProbe, igniter)
 end

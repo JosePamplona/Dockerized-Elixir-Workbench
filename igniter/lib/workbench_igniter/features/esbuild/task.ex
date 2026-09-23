@@ -26,5 +26,5 @@ defmodule Mix.Tasks.Workbench.Install.Esbuild do
   def info(argv, composing_task), do: Esbuild.info(argv, composing_task)
 
   @impl Igniter.Mix.Task
-  def igniter(igniter), do: Esbuild.install(igniter)
+  def igniter(igniter), do: WorkbenchIgniter.Feature.install(Esbuild, igniter)
 end

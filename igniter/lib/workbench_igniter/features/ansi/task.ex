@@ -18,5 +18,5 @@ defmodule Mix.Tasks.Workbench.Install.Ansi do
   def info(argv, composing_task), do: Ansi.info(argv, composing_task)
 
   @impl Igniter.Mix.Task
-  def igniter(igniter), do: Ansi.install(igniter)
+  def igniter(igniter), do: WorkbenchIgniter.Feature.install(Ansi, igniter)
 end

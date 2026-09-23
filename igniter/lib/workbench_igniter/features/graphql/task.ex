@@ -29,5 +29,5 @@ defmodule Mix.Tasks.Workbench.Install.Graphql do
   def info(argv, composing_task), do: Graphql.info(argv, composing_task)
 
   @impl Igniter.Mix.Task
-  def igniter(igniter), do: Graphql.install(igniter)
+  def igniter(igniter), do: WorkbenchIgniter.Feature.install(Graphql, igniter)
 end

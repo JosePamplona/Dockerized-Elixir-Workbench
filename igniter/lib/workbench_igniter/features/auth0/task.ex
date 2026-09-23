@@ -42,5 +42,5 @@ defmodule Mix.Tasks.Workbench.Install.Auth0 do
   def info(argv, composing_task), do: Auth0.info(argv, composing_task)
 
   @impl Igniter.Mix.Task
-  def igniter(igniter), do: Auth0.install(igniter)
+  def igniter(igniter), do: WorkbenchIgniter.Feature.install(Auth0, igniter)
 end

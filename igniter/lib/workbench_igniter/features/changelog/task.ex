@@ -39,5 +39,5 @@ defmodule Mix.Tasks.Workbench.Install.Changelog do
   def info(argv, composing_task), do: Changelog.info(argv, composing_task)
 
   @impl Igniter.Mix.Task
-  def igniter(igniter), do: Changelog.install(igniter)
+  def igniter(igniter), do: WorkbenchIgniter.Feature.install(Changelog, igniter)
 end

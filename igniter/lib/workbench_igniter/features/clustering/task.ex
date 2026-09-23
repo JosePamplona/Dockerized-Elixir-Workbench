@@ -43,5 +43,5 @@ defmodule Mix.Tasks.Workbench.Install.Clustering do
   def info(argv, composing_task), do: Clustering.info(argv, composing_task)
 
   @impl Igniter.Mix.Task
-  def igniter(igniter), do: Clustering.install(igniter)
+  def igniter(igniter), do: WorkbenchIgniter.Feature.install(Clustering, igniter)
 end

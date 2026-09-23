@@ -26,5 +26,5 @@ defmodule Mix.Tasks.Workbench.Install.Monitoring do
   def info(argv, composing_task), do: Monitoring.info(argv, composing_task)
 
   @impl Igniter.Mix.Task
-  def igniter(igniter), do: Monitoring.install(igniter)
+  def igniter(igniter), do: WorkbenchIgniter.Feature.install(Monitoring, igniter)
 end

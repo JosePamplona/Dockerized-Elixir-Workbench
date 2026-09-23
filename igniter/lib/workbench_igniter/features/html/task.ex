@@ -26,5 +26,5 @@ defmodule Mix.Tasks.Workbench.Install.Html do
   def info(argv, composing_task), do: Html.info(argv, composing_task)
 
   @impl Igniter.Mix.Task
-  def igniter(igniter), do: Html.install(igniter)
+  def igniter(igniter), do: WorkbenchIgniter.Feature.install(Html, igniter)
 end

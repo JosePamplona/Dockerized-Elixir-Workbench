@@ -26,5 +26,5 @@ defmodule Mix.Tasks.Workbench.Install.Dashboard do
   def info(argv, composing_task), do: Dashboard.info(argv, composing_task)
 
   @impl Igniter.Mix.Task
-  def igniter(igniter), do: Dashboard.install(igniter)
+  def igniter(igniter), do: WorkbenchIgniter.Feature.install(Dashboard, igniter)
 end

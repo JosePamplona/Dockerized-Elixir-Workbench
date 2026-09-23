@@ -55,6 +55,12 @@ side it only pays in a project that writes `@spec`s, and on the Mimic
 side it validates against a third party's typespecs, which may be
 looser than the test wants.
 
+Mimic has no setting of its own for it, so on that side the copies are
+where the project keeps the switch: `--type-check` types every copy
+the test helper already carries, and the copies written after follow
+them. With no copy yet and no Hammox, there is nowhere to keep it, and
+the run says so; run it again once the copies are there.
+
 ## What it installs
 
 * `{:mimic, "~> 2.0", only: :test}` with `--double mimic` (the default).

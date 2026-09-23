@@ -33,6 +33,20 @@ defmodule WorkbenchIgniter.Features.TestDoublesTest do
       """)
     end
 
+    test "the default never brings Mox nor Hammox, and Mox untyped never brings Hammox" do
+      mimic = test_project() |> Igniter.compose_task(@task, []) |> apply_igniter!()
+      mix = mimic.assigns[:test_files]["mix.exs"]
+
+      refute mix =~ "{:mox,"
+      refute mix =~ "{:hammox,"
+      assert {%{double: ["mimic"], type_check: false}, _} = TestDoubles.state(mimic)
+
+      mox = test_project() |> Igniter.compose_task(@task, ~w(--double mox)) |> apply_igniter!()
+
+      refute mox.assigns[:test_files]["mix.exs"] =~ "{:hammox,"
+      assert {%{double: ["mox"], type_check: false}, _} = TestDoubles.state(mox)
+    end
+
     test "both, comma-separated, and a second run adds the other" do
       both =
         test_project()
@@ -131,6 +145,46 @@ defmodule WorkbenchIgniter.Features.TestDoublesTest do
              |> apply_igniter!()
              |> then(& &1.assigns[:test_files][@helper]) =~
                "Hammox.defmock(MyApp.OpenAI.Mock, for: MyApp.OpenAI.Client)"
+    end
+
+    # Mimic keeps --type-check nowhere but on each copy: without Hammox,
+    # the copies the helper carries are the project's only record of it.
+    test "--double mimic --type-check alone types the copies there, and the later ones follow" do
+      igniter =
+        test_project(files: %{@helper => "ExUnit.start()\n"})
+        |> Igniter.compose_task(@task, [])
+        |> apply_igniter!()
+        |> TestDoubles.copy("coverage", ["File"])
+        |> apply_igniter!()
+        |> Igniter.compose_task(@task, ~w(--double mimic --type-check))
+        |> apply_igniter!()
+
+      assert igniter.assigns[:test_files][@helper] =~ "Mimic.copy(File, type_check: true)"
+      refute igniter.assigns[:test_files]["mix.exs"] =~ "{:hammox,"
+      assert {%{double: ["mimic"], type_check: true}, _} = TestDoubles.state(igniter)
+
+      assert igniter
+             |> TestDoubles.copy("health_endpoint", ["System"])
+             |> apply_igniter!()
+             |> then(& &1.assigns[:test_files][@helper]) =~
+               "Mimic.copy(System, type_check: true)"
+    end
+
+    test "--double mimic --type-check with no copy yet says it has nowhere to keep it" do
+      igniter =
+        test_project(files: %{@helper => "ExUnit.start()\n"})
+        |> Igniter.compose_task(@task, ~w(--double mimic --type-check))
+
+      assert_has_notice(igniter, &(&1 =~ "has no copy yet: nothing is type-checked"))
+
+      # Said, not pretended: the state and the next copy stay untyped.
+      igniter = apply_igniter!(igniter)
+      assert {%{type_check: false}, _} = TestDoubles.state(igniter)
+
+      assert igniter
+             |> TestDoubles.copy("coverage", ["File"])
+             |> apply_igniter!()
+             |> then(& &1.assigns[:test_files][@helper]) =~ "Mimic.copy(File)\n"
     end
 
     test "forget/2 takes one cartridge's block away and leaves the other's" do

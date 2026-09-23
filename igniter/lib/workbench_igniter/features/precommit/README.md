@@ -34,7 +34,7 @@ not the formatter.
 
 ## What it installs
 
-* `{:git_hooks, "~> 0.7", only: :dev, runtime: false}` in the project deps.
+* `config :git_hooks` at the end of `config/dev.exs`: `auto_install: false`, `verbose`,
 * `config :git_hooks` in `config/dev.exs`: `auto_install: false`, `verbose`,
   `project_path: "."`, `mix_path: "sh .githooks/mix"` and one hook,
   `pre_commit`, whose one task is the script below. No cartridge ever

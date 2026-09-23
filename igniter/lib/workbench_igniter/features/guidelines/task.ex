@@ -31,5 +31,5 @@ defmodule Mix.Tasks.Workbench.Install.Guidelines do
   def info(argv, composing_task), do: Guidelines.info(argv, composing_task)
 
   @impl Igniter.Mix.Task
-  def igniter(igniter), do: Guidelines.install(igniter)
+  def igniter(igniter), do: WorkbenchIgniter.Feature.install(Guidelines, igniter)
 end

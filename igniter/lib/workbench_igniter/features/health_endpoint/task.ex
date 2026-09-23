@@ -38,5 +38,5 @@ defmodule Mix.Tasks.Workbench.Install.HealthEndpoint do
   def info(argv, composing_task), do: HealthEndpoint.info(argv, composing_task)
 
   @impl Igniter.Mix.Task
-  def igniter(igniter), do: HealthEndpoint.install(igniter)
+  def igniter(igniter), do: WorkbenchIgniter.Feature.install(HealthEndpoint, igniter)
 end

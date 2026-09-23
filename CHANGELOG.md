@@ -16,6 +16,43 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **An option's shape is a fact of the box, checked in one place.** A
+  value's *type* was all the workbench knew — a switch, a list, a
+  string — so a URL, a version and a percentage were all «text»: the
+  form asked for them with the same field, and each cartridge checked
+  its own, or did not (exdoc wrote whatever was given as its
+  `source_url`). A cartridge now declares `formats/0` — `:url`,
+  `:version`, `:dns_name`, `:route`, `{:integer, range}` — and the
+  shape is read twice. The installer refuses a value that does not hold
+  it before anything is written, in one place and one sentence for
+  every box (`--repo-url takes a URL (https://example.com/page), and
+  "github.com/acme/app" is not one.`): every `task.ex` now calls
+  `WorkbenchIgniter.Feature.install/2`, the shell where a cross-cutting
+  check belongs, so a cartridge's own installer stays what it writes.
+  And the catalog carries it, so the console's field is a URL field, a
+  number takes a numeric keyboard, and the line under the flag says
+  `url` or `integer 0..100` where it used to say `text`. An empty field
+  is not checked: empty is unasked, and what unasked means is the
+  cartridge's own. coverage's and clustering's hand-written refusals of
+  this morning are gone, replaced by the shape they were checking.
+
+- **A default read off the project is shown as its value.** Five
+  options have no fixed default: the installer reads it off the project
+  — changelog's `--init-version` (the version `mix.exs` has),
+  clustering's `--dns-query` (`<app>.default.svc.cluster.local`),
+  exdoc's `--project-name`, `--repo-url` and `--module-groups`. The form
+  said *read off the project* where the value should be. A cartridge now
+  says how each is found, `detect/1` beside `detected/0`: the value the
+  option takes on this project, `nil` where the project says nothing.
+  The installer takes its defaults from it, `mix workbench.status`
+  carries it per cartridge as `detected`, and the console puts it in the
+  field as the placeholder with a *read off the project* tag (a choice
+  wears the *default* tag), so the default a reader sees is the one the
+  insert writes. Where nothing is read — exdoc's repository with no
+  `source_url` and no git origin — the field still says where it would
+  come from. The catalog test holds every cartridge to exactly its
+  `detected/0` keys, none of them with a fixed default.
+
 - **The knock bell is lit for the pages on disk too.** A page a tool
   writes (exdoc's `doc/`) is served by the console, not by the app, so
   it answers with the app down. Services & Doors and the shelf's
@@ -1121,6 +1158,30 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   says how to run the same checks before pushing.
 
 ### Updated
+
+- **Every option is tried both ways.** The shelf was read option by
+  option against its tests, and what only had its positive case got the
+  negative one: `--build` (coverage and exdoc) queues `mix docs`,
+  `mix cover` and, with Ecto, `ecto.create`/`ecto.migrate`, and queues
+  nothing unasked; without `--exdoc` coverage plants no `mix cover`
+  task, without `--coverage` exdoc lists no report page; test_doubles
+  unasked brings neither Mox nor Hammox; changelog's badge is `nil`
+  where there is no README to carry it, and says so; exdoc's
+  `--module-groups` asked for wins over the line the project is on, and
+  `--no-readme` on a project with no changelog keeps the Project group
+  as the slot a changelog opened later is listed in. db_admin answers
+  for phpMyAdmin through `state/1`, refuses a list with one unknown
+  admin whole, and takes the same admin twice as one. Three refusals
+  are new, each where a value was taken and written unchecked:
+  coverage's `--minimum-coverage` (a whole 0..100, or `coveralls.json`
+  is not JSON) and `--interface` (`rest` or `graphql`), and clustering's
+  `--dns-query`, where a quote or a line break would break the `.env`
+  line it goes in; an empty `--dns-query` is a field left blank, so the
+  default stands. And one fix: `--double mimic --type-check` left no
+  mark at all — Mimic keeps type checking on each `Mimic.copy/2`, so
+  the run types the copies the test helper carries, which is what
+  `state/1` and later copies read, and says so when there is no copy
+  yet to keep it on.
 
 - **A box's options are one component, and a need is a door.** The
   install form drew an option two ways: a switch or a text as `.field`,
@@ -2290,6 +2351,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   own; what has happened to the project belongs beside what it is.
 
 ### Fixed
+
+- **precommit v0.1.2 writes its configuration at the end of
+  `config/dev.exs`.** Igniter puts a new `config` right under
+  `import Config` (its `after:` option does not move that), so dev.exs
+  opened with `config :git_hooks` above the endpoint. The installer
+  opens the block after the file's last statement, and every key lands
+  in it.
 
 - **precommit v0.1.1: the dependency compiles in a workspace, and the
   hook runs where the project is.** git_hooks installs the hook while

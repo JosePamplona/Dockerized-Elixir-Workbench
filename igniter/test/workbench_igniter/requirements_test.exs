@@ -13,6 +13,24 @@ defmodule WorkbenchIgniter.RequirementsTest do
   alias WorkbenchIgniter.Features
 
   describe "said and remedied" do
+    # A box short of the state can be topped up when it adds its pieces
+    # on a second run; one whose options are fixed at the insert has no
+    # line to offer, and saying one would send the reader nowhere.
+    test "what is lacking, and the line that fixes it where there is one" do
+      short_coverage = {:short, "coverage", [exdoc: true], :exdoc, false}
+      short_ecto = {:short, "ecto", [database: "postgres"], :database, "mysql"}
+
+      assert Feature.lacking([short_coverage]) ==
+               "coverage with exdoc, and this project's exdoc is off. " <>
+                 "Add it with: ./wb.sh add coverage --exdoc"
+
+      assert Feature.lacking([short_ecto]) ==
+               "ecto with database postgres, and this project's database is mysql."
+
+      assert Feature.lacking([{:absent, "precommit", []}]) ==
+               "precommit, not in the project yet. Insert that first: ./wb.sh add precommit"
+    end
+
     test "a name, a name with a state, booleans either way" do
       assert Feature.describe("ecto") == "ecto"
       assert Feature.describe({"ecto", []}) == "ecto"
@@ -115,6 +133,43 @@ defmodule WorkbenchIgniter.RequirementsTest do
 
       assert {[{:admin, "cloudbeaver", [{:short, "ecto", _, :database, "sqlite3"}]}], _} =
                missing(sqlite, "cloudbeaver")
+    end
+  end
+
+  # A `:csv` option answers with a list, so a requirement on such a box
+  # asks about one of several: db_admin's admins, test_doubles' doubles.
+  # Nothing on the shelf requires db_admin today; the reading is held
+  # here so the box that does gets it right.
+  describe "a state a box answers with a list" do
+    defmodule NeedsPgadmin do
+      @moduledoc false
+      def name, do: "needs_pgadmin"
+      def requires, do: [{"db_admin", admin: "pgadmin"}]
+    end
+
+    defp on(argv) do
+      phx_test_project()
+      |> Igniter.compose_task("workbench.install.db_admin", argv)
+      |> apply_igniter!()
+    end
+
+    test "is met when it carries what was asked, whatever else it carries" do
+      assert {[], _} = Feature.missing_requirements(on(~w(--admin pgadmin)), NeedsPgadmin)
+      assert {[], _} = Feature.missing_requirements(on(~w(--admin pgadmin,adminer)), NeedsPgadmin)
+    end
+
+    test "is short when it carries other values, and says which they are" do
+      assert {[{:short, "db_admin", [admin: "pgadmin"], :admin, ["adminer"]}], _} =
+               Feature.missing_requirements(on(~w(--admin adminer)), NeedsPgadmin)
+
+      # The refusal names them as the project has them, and offers the
+      # line that adds the one asked: db_admin adds its admins.
+      assert Feature.lacking([{:short, "db_admin", [admin: "pgadmin"], :admin, ["adminer"]}]) ==
+               "db_admin with admin pgadmin, and this project's admin is adminer. " <>
+                 "Add it with: ./wb.sh add db_admin --admin pgadmin"
+
+      assert Feature.lacking([{:short, "db_admin", [admin: "pgadmin"], :admin, []}]) =~
+               "this project's admin is none"
     end
   end
 

@@ -37,5 +37,5 @@ defmodule Mix.Tasks.Workbench.Install.Credo do
   def info(argv, composing_task), do: Credo.info(argv, composing_task)
 
   @impl Igniter.Mix.Task
-  def igniter(igniter), do: Credo.install(igniter)
+  def igniter(igniter), do: WorkbenchIgniter.Feature.install(Credo, igniter)
 end

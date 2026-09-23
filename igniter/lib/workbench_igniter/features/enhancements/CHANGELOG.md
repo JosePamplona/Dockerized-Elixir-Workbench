@@ -11,6 +11,27 @@ Backfilled at the version below, its first: the cartridge shipped
 before a changelog was part of the anatomy, and gets one on its next
 change, as the features index says.
 
+## v1.2.0 - (2026-09-22)
+
+### Removed
+
+- **The database half of the Ecto group.** The `mix db` task, its test,
+  the `html_entities` dependency, the DbSchema export under
+  `assets/db_schema/` and the page and diagrams under `guides/` are
+  [dbschema](../dbschema/)'s box now. `ecto_enum` stays.
+
+### Changed
+
+- **The Ecto group composes `workbench.install.dbschema`** with the
+  combo `--auth0`, `--openai` and `--stripe` choose, so a project with a
+  database gets everything it got before, from the box that owns it.
+- **`state/1` reads the Postman collection alone.** `--auth0` and
+  `--openai` were read off the DbSchema model *or* the collection; the
+  model is not this cartridge's to read any more, so they are read off
+  the collection, and `--project-name` with them. On an install without
+  the REST group there is no collection and the four say `nil` — which
+  is the truth: nothing of enhancements marks them.
+
 ## v1.1.0 - (2026-09-21)
 
 ### Updated

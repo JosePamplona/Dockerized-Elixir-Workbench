@@ -11,6 +11,119 @@ Backfilled at the version below, its first: the cartridge shipped
 before a changelog was part of the anatomy, and gets one on its next
 change, as the features index says.
 
+## v0.7.0 - (2026-09-22)
+
+### Changed
+
+- **`--changelog` builds on the changelog cartridge, and is off by
+  default.** The option lists a file another box writes, so it asks for
+  that box the way credo's `--githook` asks for precommit: without it
+  the run is refused naming it, and the console draws the option unlit
+  with a door to that box. Off by default, so `add exdoc` still works
+  on any project; with it on, the file is there and the entries go in
+  live — the commented slot v0.5.0 wrote for the changelog is gone with
+  the case that needed it. The other order is unchanged: a changelog
+  opened after the site lists its own page.
+- **`--coverage` builds on the coverage cartridge with `--md-report`**,
+  the flag that plants the `mix cover` task which writes the page this
+  lists (`{"coverage", md_report: true}`). Asked for without it, the run
+  is refused naming it and saying which half is missing — the box, or
+  the flag. The page itself is no longer planted here: `TESTING.md` is
+  coverage's file, and this box does with it what it does with the
+  README — lists it live when it is there, and leaves its two entries
+  commented out when it is not.
+- **`--readme` reads the file.** It is on by default still, and nobody
+  owns `README.md` — `phx.new` writes it and the shelf has no box that
+  would — so with none there the two entries are written commented out,
+  the slot one written later takes, and `main: "readme"` is left out
+  with them: `mix docs` stops on an extra whose file is missing as much
+  as on a `main:` that names no page. `state/1` reads the live entry
+  alone.
+
+## v0.6.0 - (2026-09-22)
+
+### Removed
+
+- **`--build`.** The insert wrote files and queued `mix docs` behind
+  them; the console's docs door now offers *build* where the site is
+  not there, running the same command as a job whose output the reader
+  watches — and `./wb.sh mix docs` was always the other way. An option
+  that only queued a command the box already names (`afterwards/0`,
+  `build:` in its door) was a third place saying it, and the one that
+  reported nothing back: it left no mark, so `state/1` answered `nil`
+  for it.
+
+## v0.5.0 - (2026-09-22)
+
+### Added
+
+- **`--changelog`, on by default: the changelog is a page of the site
+  because the insert says so, not because the file happened to be
+  there.** With a `CHANGELOG.md` the extra and the `Project` group's
+  entry are written live, as before. Without one they are written
+  **commented out** — the slot where the page goes, the way
+  `source_url` and `homepage_url` wait for a repository and a website:
+  `mix docs`, which stops on an extra whose file is missing, never
+  reads a comment, and the reader of `mix.exs` sees the place kept.
+  `--no-changelog` leaves neither entry, whatever the project keeps.
+- **`uncomment_page/4`, beside `list_page/4`.** It fills the slot: the
+  commented entries go and `list_page/4` writes them live. The
+  [changelog](../changelog/) cartridge calls it when it opens a
+  changelog on a project that already has the site, and lists nothing
+  when the site is in with `--no-changelog`. `list_page/4`'s contract
+  is unchanged — guidelines calls it for its own page.
+
+### Changed
+
+- `state/1` answers `changelog:` off the **live** entry: a commented
+  slot is a place kept, not a page the site lists.
+
+- **`--repo-url` and `--homepage-url` are checked before they are
+  written.** Both are declared `:url` (`formats/0`), so a value that is
+  not an address a browser opens ends the run instead of landing in
+  `mix.exs`, where it made every source link a 404 and sent the
+  sidebar's logo nowhere. The console asks for them with a URL field.
+
+## v0.4.1 - (2026-09-22)
+
+### Removed
+
+- **The database page.** `guides/database.md` is no longer planted as a
+  placeholder, no longer listed among the extras and under Support, and
+  the project's Ecto is no longer read here at all. It is
+  [dbschema](../dbschema/)'s page: that cartridge writes it, and lists
+  it in this site when there is one, the way changelog lists its own.
+  This cartridge knew a page would be overwritten by a task it did not
+  install, which is one box reasoning about another. A project that
+  already carries the page and the listing keeps both.
+
+## v0.4.0 - (2026-09-22)
+
+### Removed
+
+- **The theme script.** `guides/js/themedImage.js`, the
+  `before_closing_head_tag`/`before_closing_body_tag` functions of
+  `mix.exs` and the `"guides/js" => "/assets"` asset entry are gone.
+  ExDoc has done this itself since v0.27: it hides an image whose URL
+  carries `#gh-dark-mode-only` in the light theme and one with
+  `#gh-light-mode-only` in the dark one — GitHub's own fragment, so the
+  page reads right in the repository too. The script also named one
+  pair of files, the database model's, so it served one page and no
+  other. A project that carries the script keeps working; its mix.exs
+  can drop the two functions and the file with them. The README says
+  how to write a two-theme image now.
+
+## v0.3.1 - (2026-09-22)
+
+### Changed
+
+- **`--homepage-url` unasked is a placeholder, commented**, the way
+  `source_url` is when no repository is found:
+  `# homepage_url: "https://example.com",` in the `docs:` block, so the
+  key waits where it goes instead of being absent. The sidebar still
+  opens the docs' main page until it is filled in; `state/1` reads only
+  the live line, so the placeholder says back no website.
+
 ## v0.3.0 - (2026-09-21)
 
 ### Added

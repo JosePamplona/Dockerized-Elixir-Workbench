@@ -16,6 +16,62 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **dbschema: the database's page is a box of its own** (*archived*,
+  v0.1.0). What a project showed of its database was split across two
+  boxes that had no business with it: exdoc planted and listed
+  `guides/database.md` for any project with Ecto, and the archived
+  enhancements planted the `mix db` task, its test and the DbSchema
+  export. One box owns it now — the task that turns a
+  [DbSchema](https://dbschema.com) export into an ExDoc page, the
+  sample export to start from (`--combo`, the shapes the Phoenix line's
+  boxes gave that database) and the page with its model diagram. It
+  builds on ecto, not on exdoc: the page is written either way, and
+  listed in the site only when the project has one, the way changelog
+  lists its own — so exdoc knows nothing about databases and
+  enhancements composes this box when the project has one, which leaves
+  what it installed unchanged. Archived on arrival: DbSchema is a
+  desktop tool outside the workbench and this only dresses its export,
+  and the reference project is on Ash, whose diagrams come from Ash.
+  The page now names two images with GitHub's own URL fragments, so
+  each theme hides the other's.
+
+- **An option's shape is a fact of the box, checked in one place.** A
+  value's *type* was all the workbench knew — a switch, a list, a
+  string — so a URL, a version and a percentage were all «text»: the
+  form asked for them with the same field, and each cartridge checked
+  its own, or did not (exdoc wrote whatever was given as its
+  `source_url`). A cartridge now declares `formats/0` — `:url`,
+  `:version`, `:dns_name`, `:route`, `{:integer, range}` — and the
+  shape is read twice. The installer refuses a value that does not hold
+  it before anything is written, in one place and one sentence for
+  every box (`--repo-url takes a URL (https://example.com/page), and
+  "github.com/acme/app" is not one.`): every `task.ex` now calls
+  `WorkbenchIgniter.Feature.install/2`, the shell where a cross-cutting
+  check belongs, so a cartridge's own installer stays what it writes.
+  And the catalog carries it, so the console's field is a URL field, a
+  number takes a numeric keyboard, and the line under the flag says
+  `url` or `integer 0..100` where it used to say `text`. An empty field
+  is not checked: empty is unasked, and what unasked means is the
+  cartridge's own. coverage's and clustering's hand-written refusals of
+  this morning are gone, replaced by the shape they were checking.
+
+- **A default read off the project is shown as its value.** Five
+  options have no fixed default: the installer reads it off the project
+  — changelog's `--init-version` (the version `mix.exs` has),
+  clustering's `--dns-query` (`<app>.default.svc.cluster.local`),
+  exdoc's `--project-name`, `--repo-url` and `--module-groups`. The form
+  said *read off the project* where the value should be. A cartridge now
+  says how each is found, `detect/1` beside `detected/0`: the value the
+  option takes on this project, `nil` where the project says nothing.
+  The installer takes its defaults from it, `mix workbench.status`
+  carries it per cartridge as `detected`, and the console puts it in the
+  field as the placeholder with a *read off the project* tag (a choice
+  wears the *default* tag), so the default a reader sees is the one the
+  insert writes. Where nothing is read — exdoc's repository with no
+  `source_url` and no git origin — the field still says where it would
+  come from. The catalog test holds every cartridge to exactly its
+  `detected/0` keys, none of them with a fixed default.
+
 - **An option's shape is a fact of the box, checked in one place.** A
   value's *type* was all the workbench knew — a switch, a list, a
   string — so a URL, a version and a percentage were all «text»: the
@@ -1158,6 +1214,74 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   says how to run the same checks before pushing.
 
 ### Updated
+
+- **exdoc v0.3.1: `--homepage-url` unasked is a placeholder,
+  commented**, as `source_url` is when no repository is found: the key
+  waits in the `docs:` block where it goes.
+
+- **exdoc v0.4.0 and v0.4.1: the theme script is gone, and the database
+  with it.** ExDoc hides an image whose URL carries `#gh-dark-mode-only`
+  in the light theme and one with `#gh-light-mode-only` in the dark one
+  — GitHub's own fragment — and has since v0.27, so the
+  `guides/js/themedImage.js` this planted in every project, the
+  `before_closing_*_tag` functions that loaded it and its asset entry
+  are out: what ExDoc does already is not worth a file in every
+  project. The script also named one pair of files, the database
+  model's, so it served one page and no other. v0.4.1 hands the
+  database page to dbschema.
+
+- **exdoc v0.5.0: `--changelog`**, on by default. The site's changelog
+  page was a reading — listed if `CHANGELOG.md` happened to be there —
+  and is a decision now: on with a changelog, the two entries are
+  written live as before; on without one, they are written **commented
+  out**, the slot a changelog opened later takes, as `source_url` and
+  `homepage_url` are; off, the site leaves the page out whatever the
+  project keeps. The changelog box reads that decision instead of
+  guessing (v0.5.1): it fills the slot when it opens a changelog, adds
+  nothing to a site that said no, and says which flag said it.
+
+- **exdoc v0.7.0: a page is listed when its file has an owner.**
+  `--changelog` lists a file another box writes, so it asks for that
+  box the way credo's `--githook` asks for precommit: without the
+  changelog cartridge in, the run is refused naming it, and the console
+  draws the option unlit with a door to that box. It is **off by
+  default**, so `add exdoc` still works on any project, and with it on
+  the file is there — the commented slot v0.5.0 wrote for a changelog
+  that was not there yet is gone with the case that needed it. The
+  other order is the changelog box's own (v0.5.2): built after the
+  site, it lists its page itself, as it did before the option existed.
+  `--coverage` follows the same rule one box further out: it lists the
+  Test Suite Report page, which `mix cover` writes, which the coverage
+  box plants with *its* `--exdoc` — so the requirement carries that
+  state (`{"coverage", exdoc: true}`) and the refusal says which half
+  is missing, the box or the flag. `--readme` keeps the slot instead,
+  because nobody owns `README.md` —
+  `phx.new` writes it and the shelf deliberately has no box that would
+  — so with none there the two entries and `main: "readme"` wait
+  commented out, and `mix docs` builds.
+- **Every option is tried both ways.** The shelf was read option by
+  option against its tests, and what only had its positive case got the
+  negative one: `--build` (coverage and exdoc) queues `mix docs`,
+  `mix cover` and, with Ecto, `ecto.create`/`ecto.migrate`, and queues
+  nothing unasked; without `--exdoc` coverage plants no `mix cover`
+  task, without `--coverage` exdoc lists no report page; test_doubles
+  unasked brings neither Mox nor Hammox; changelog's badge is `nil`
+  where there is no README to carry it, and says so; exdoc's
+  `--module-groups` asked for wins over the line the project is on, and
+  `--no-readme` on a project with no changelog keeps the Project group
+  as the slot a changelog opened later is listed in. db_admin answers
+  for phpMyAdmin through `state/1`, refuses a list with one unknown
+  admin whole, and takes the same admin twice as one. Three refusals
+  are new, each where a value was taken and written unchecked:
+  coverage's `--minimum-coverage` (a whole 0..100, or `coveralls.json`
+  is not JSON) and `--interface` (`rest` or `graphql`), and clustering's
+  `--dns-query`, where a quote or a line break would break the `.env`
+  line it goes in; an empty `--dns-query` is a field left blank, so the
+  default stands. And one fix: `--double mimic --type-check` left no
+  mark at all — Mimic keeps type checking on each `Mimic.copy/2`, so
+  the run types the copies the test helper carries, which is what
+  `state/1` and later copies read, and says so when there is no copy
+  yet to keep it on.
 
 - **Every option is tried both ways.** The shelf was read option by
   option against its tests, and what only had its positive case got the
@@ -2351,6 +2475,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   own; what has happened to the project belongs beside what it is.
 
 ### Fixed
+
+- **precommit v0.1.2 writes its configuration at the end of
+  `config/dev.exs`.** Igniter puts a new `config` right under
+  `import Config` (its `after:` option does not move that), so dev.exs
+  opened with `config :git_hooks` above the endpoint. The installer
+  opens the block after the file's last statement, and every key lands
+  in it.
 
 - **precommit v0.1.2 writes its configuration at the end of
   `config/dev.exs`.** Igniter puts a new `config` right under

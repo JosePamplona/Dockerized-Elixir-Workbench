@@ -64,6 +64,20 @@ defmodule WorkbenchIgniter.Features.Changelog do
     }
   end
 
+  # Mix compiles no project whose version `Version` cannot parse.
+  @impl true
+  def formats, do: [init_version: :version]
+
+  # Where the history opens, unasked: the version mix.exs has.
+  @impl true
+  def detected, do: [:init_version]
+
+  @impl true
+  def detect(igniter) do
+    {version, igniter} = mix_project_value(igniter, :version)
+    {%{init_version: version}, igniter}
+  end
+
   # The task and the badge are pieces: a second run with the switch
   # adds the one missing, and never moves the version.
   @impl true
@@ -104,7 +118,7 @@ defmodule WorkbenchIgniter.Features.Changelog do
   @doc "Installer body, run by the mix task shell as its `igniter/1`."
   def install(igniter) do
     opts = igniter.args.options
-    {current, igniter} = mix_project_value(igniter, :version)
+    {%{init_version: current}, igniter} = detect(igniter)
 
     # The mark guards the version and the changelog: a project that
     # already keeps a changelog keeps its own version too — the two are
@@ -173,8 +187,29 @@ defmodule WorkbenchIgniter.Features.Changelog do
   # other order. Once only: a second run finds it listed.
   defp list_in_docs(igniter) do
     case Exdoc.lists_pages?(igniter) do
-      {true, igniter} -> Exdoc.list_page(igniter, @changelog, "Changelog", :Project)
+      {true, igniter} -> list_page(igniter)
       {false, igniter} -> igniter
+    end
+  end
+
+  # The page goes in the site the project has: a slot exdoc left — the
+  # two entries commented out, which an older edition wrote — is the
+  # page's place kept, so opening the changelog fills it; a page already
+  # listed is left alone; and a site with neither gets the entries
+  # appended, which is what this did before the option existed. exdoc's
+  # own `--changelog` is for a site built after a changelog: it needs
+  # this box in, and refuses without it.
+  defp list_page(igniter) do
+    case Exdoc.uncomment_page(igniter, @changelog, "Changelog", :Project) do
+      {true, igniter} ->
+        igniter
+
+      {false, igniter} ->
+        {%{changelog: listed?}, igniter} = Exdoc.state(igniter)
+
+        if listed?,
+          do: igniter,
+          else: Exdoc.list_page(igniter, @changelog, "Changelog", :Project)
     end
   end
 

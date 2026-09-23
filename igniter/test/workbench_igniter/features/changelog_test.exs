@@ -66,10 +66,24 @@ defmodule WorkbenchIgniter.Features.ChangelogTest do
       assert files["mix.exs"] =~ "version: @version"
     end
 
+    # The shape is declared (`formats/0`) and refused before anything is
+    # written, with the sentence every cartridge refuses with.
     test "a version Mix would not compile is refused" do
       phx_test_project()
       |> Igniter.compose_task("workbench.install.changelog", ["--init-version", "1.2"])
-      |> assert_has_issue(&(&1 =~ "--init-version 1.2: not a version Mix accepts"))
+      |> assert_has_issue(
+        &(&1 =~ ~s|--init-version takes a version (1.2.3), and "1.2" is not one|)
+      )
+    end
+
+    # The version read off mix.exs goes through no flag, so the
+    # installer's own guard is what catches it.
+    test "a version mix.exs carries that Version cannot read is refused too" do
+      mix = String.replace(@attribute_mix, ~s|@version "2.3.1"|, ~s|@version "two"|)
+
+      test_project(files: %{"mix.exs" => mix})
+      |> Igniter.compose_task("workbench.install.changelog", [])
+      |> assert_has_issue(&(&1 =~ "not a version Mix accepts"))
     end
 
     test "a version that cannot be read asks for --init-version" do
@@ -153,7 +167,7 @@ defmodule WorkbenchIgniter.Features.ChangelogTest do
       assert_unchanged(igniter, "CHANGELOG.md")
     end
 
-    test "state reads the two back, nil for the badge without a README" do
+    test "state reads the two back" do
       installed =
         phx_test_project()
         |> Igniter.compose_task("workbench.install.changelog", ~w(--mix-task --readme-badge))
@@ -168,6 +182,49 @@ defmodule WorkbenchIgniter.Features.ChangelogTest do
         |> apply_igniter!()
 
       assert {%{mix_task: false, readme_badge: false}, _} = Changelog.state(bare)
+    end
+  end
+
+  describe "a second run" do
+    test "--mix-task adds the task to a project that already keeps a changelog" do
+      igniter =
+        phx_test_project()
+        |> Igniter.compose_task("workbench.install.changelog", [])
+        |> apply_igniter!()
+        |> Igniter.compose_task("workbench.install.changelog", ~w(--mix-task))
+
+      assert_has_notice(igniter, &(&1 =~ "CHANGELOG.md already exists"))
+      assert_creates(igniter, "lib/mix/tasks/version.ex")
+      assert_creates(igniter, "test/mix/tasks/version_test.exs")
+      assert_unchanged(igniter, "CHANGELOG.md")
+
+      assert {%{mix_task: true}, _} = igniter |> apply_igniter!() |> Changelog.state()
+    end
+  end
+
+  defp without_readme do
+    phx_test_project() |> Igniter.rm("README.md") |> apply_igniter!()
+  end
+
+  describe "without a README" do
+    test "the badge reads nil: there is no README to carry it" do
+      installed =
+        without_readme()
+        |> Igniter.compose_task("workbench.install.changelog", [])
+        |> apply_igniter!()
+
+      assert {%{readme_badge: nil}, _} = Changelog.state(installed)
+    end
+
+    test "--readme-badge says there is nowhere to put it, and writes no README" do
+      igniter =
+        without_readme()
+        |> Igniter.compose_task("workbench.install.changelog", ~w(--readme-badge))
+
+      assert_has_notice(igniter, &(&1 =~ "README.md not found: no badge to put the version on."))
+      refute Igniter.exists?(igniter, "README.md")
+      # The changelog opens all the same.
+      assert_creates(igniter, "CHANGELOG.md")
     end
   end
 
@@ -206,7 +263,8 @@ defmodule WorkbenchIgniter.Features.ChangelogTest do
         |> Igniter.compose_task("workbench.install.exdoc", [])
         |> apply_igniter!()
 
-      refute mix_exs.(igniter) =~ "CHANGELOG.md"
+      # exdoc leaves the entries commented out: the slot, not a listing.
+      refute mix_exs.(igniter) =~ ~r/^\s*\{"CHANGELOG\.md"/m
 
       igniter =
         igniter
@@ -224,6 +282,30 @@ defmodule WorkbenchIgniter.Features.ChangelogTest do
         |> apply_igniter!()
 
       assert length(String.split(mix_exs.(again), ~s|"CHANGELOG.md"|)) == 3
+      refute mix_exs.(again) =~ "# {\"CHANGELOG.md\""
+      assert {:ok, _} = Code.string_to_quoted(mix_exs.(again))
+    end
+
+    # exdoc's own `--changelog` is for a site built after a changelog —
+    # it needs this box in. A site built before one lists nothing, and
+    # this box puts its page in when it opens the file.
+    test "a site built before the changelog gets the page when it is opened" do
+      igniter =
+        phx_test_project()
+        |> Igniter.compose_task("workbench.install.exdoc", [])
+        |> apply_igniter!()
+
+      refute files(igniter)["mix.exs"] =~ "CHANGELOG.md"
+
+      mix_exs =
+        igniter
+        |> Igniter.compose_task("workbench.install.changelog", [])
+        |> files()
+        |> Map.get("mix.exs")
+
+      assert mix_exs =~ ~s|{"CHANGELOG.md", [title: "Changelog"]}|
+      assert [_, project] = Regex.run(~r/Project: \[(.*?)\]/s, mix_exs)
+      assert project =~ ~s|"CHANGELOG.md"|
     end
 
     test "without a docs site mix.exs gets no docs block" do

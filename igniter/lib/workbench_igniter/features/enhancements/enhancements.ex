@@ -1,15 +1,17 @@
 defmodule WorkbenchIgniter.Features.Enhancements do
   @moduledoc """
-  Workbench project enhancements: base schema, helpers, the db mix
-  tasks and the extended test suite.
+  Workbench project enhancements: base schema, helpers and the extended
+  test suite.
 
   Full feature cartridge: manifest, install logic and the EEx templates it
   renders live in this directory; the
   `Mix.Tasks.Workbench.Install.Enhancements` shell in `task.ex` delegates
-  here. The DbSchema diagrams and Postman collections it plants are
-  selected by feature combo (auth0/openai/stripe/health) and live in
-  `priv/features/enhancements/assets/`, embedded verbatim with
-  `embed_assets/1`.
+  here. The Postman collections it plants are selected by feature combo
+  (auth0/openai/health) and live in `priv/features/enhancements/assets/`,
+  embedded verbatim with `embed_assets/1`. The database's page, `mix db`
+  and the DbSchema export are `WorkbenchIgniter.Features.Dbschema`'s
+  since 2026-09-22; a project with Ecto gets them because this composes
+  that installer, with the combo its own flags choose.
 
   Ordering: composed before auth0, whose User schema uses the `MyApp.Schema`
   module this feature generates.
@@ -42,10 +44,11 @@ defmodule WorkbenchIgniter.Features.Enhancements do
       exdoc:
         "The exdoc feature is composed too: `MyApp.Schema` carries the `@moduledoc` sections its pages read.",
       auth0:
-        "The auth0 feature is composed too: the DbSchema diagrams and Postman collection of that combo, the User fixtures, and the `MyApp.Schema` bits its User schema uses.",
+        "The auth0 feature is composed too: the Postman collection of that combo, the User fixtures, the `MyApp.Schema` bits its User schema uses, and the DbSchema export dbschema plants.",
       openai:
-        "The openai feature is composed too: the diagrams and Postman collection of that combo, and the assistant fixtures.",
-      stripe: "The stripe feature is composed too: the DbSchema diagrams of that combo.",
+        "The openai feature is composed too: the Postman collection of that combo, the assistant fixtures, and the DbSchema export dbschema plants.",
+      stripe:
+        "The stripe feature is composed too. It adds no table of its own — Stripe keeps its objects at Stripe — so the export dbschema plants is auth0's, under the Stripe name.",
       health: "The health_endpoint feature is composed too: the Postman collection of that combo."
     ]
   end
@@ -55,7 +58,7 @@ defmodule WorkbenchIgniter.Features.Enhancements do
     %Igniter.Mix.Task.Info{
       group: :workbench_igniter,
       example: @example,
-      composes: ["workbench.install.mock"],
+      composes: ["workbench.install.mock", "workbench.install.dbschema"],
       schema: [
         project_name: :string,
         id_type: :string,
@@ -91,39 +94,31 @@ defmodule WorkbenchIgniter.Features.Enhancements do
   # the key and timestamp types and --exdoc's `@before_compile` off
   # `MyApp.Schema`; --interface off the error view, which renders
   # `%{error: …}` where phx.new's renders `%{errors: %{detail: …}}`;
-  # --auth0 and --openai off the tables in the DbSchema model or the
-  # sections of the Postman collection, --health off the collection
-  # alone; --project-name off the model's page or the collection. Where
-  # none of those files is there the option left no mark: `nil`.
-  # --stripe leaves none anywhere: its diagrams are the auth0 ones.
+  # --auth0, --openai and --health off the sections of the Postman
+  # collection, and --project-name off its name. Where none of those
+  # files is there the option left no mark: `nil`. --stripe leaves none
+  # anywhere. The DbSchema model is no longer read here: the export and
+  # the database page are dbschema's box since 2026-09-22, and its own
+  # `--combo` says what they carry.
   @impl true
   def state(igniter) do
     app_name = Igniter.Project.Application.app_name(igniter)
     {schema, igniter} = file_content(igniter, "lib/#{app_name}/schema.ex")
     {error_json, igniter} = file_content(igniter, "lib/#{app_name}_web/controllers/error_json.ex")
-    {dbs, igniter} = file_content(igniter, "assets/db_schema/database.dbs")
-    {model_page, igniter} = file_content(igniter, "guides/database.md")
     {postman, igniter} = file_content(igniter, "#{app_name}.postman_collection.json")
 
     has? = fn content, text -> content && String.contains?(content, text) end
-    # true/false where a file could carry the mark, nil where none is there.
-    either = fn {a, mark_a}, {b, mark_b} ->
-      if a || b, do: has?.(a, mark_a) || has?.(b, mark_b) || false
-    end
 
     {%{
-       project_name:
-         capture(model_page, ~r/\A#\s*([^\n]*?)(?: - Entity-Relationship Diagram)?\s*$/m) ||
-           capture(postman, ~r/"name":\s*"([^"]*)"/),
+       project_name: capture(postman, ~r/"name":\s*"([^"]*)"/),
        id_type: schema && id_type_option(capture(schema, ~r/@primary_key \{:id, ([\w.:]+),/)),
        timestamps: capture(schema, ~r/@timestamps_opts \[type: :(\w+)\]/),
        interface: error_json && if(has?.(error_json, "%{error: message}"), do: "rest"),
        exdoc: schema && String.contains?(schema, "@before_compile"),
-       auth0: either.({dbs, ~s|<table name="users"|}, {postman, "User Operations"}),
-       openai:
-         either.({dbs, ~s|<table name="conversations"|}, {postman, "Conversation Operations"}),
+       auth0: has?.(postman, "User Operations"),
+       openai: has?.(postman, "Conversation Operations"),
        stripe: nil,
-       health: postman && String.contains?(postman, "Development Operations")
+       health: has?.(postman, "Development Operations")
      }, igniter}
   end
 
@@ -213,14 +208,14 @@ defmodule WorkbenchIgniter.Features.Enhancements do
     if opts[:ecto] do
       igniter
       |> Igniter.Project.Deps.add_dep({:ecto_enum, "~> 1.4"}, on_exists: :skip)
-      |> Igniter.Project.Deps.add_dep({:html_entities, "~> 0.5"}, on_exists: :skip)
       |> generators_config(assigns[:app_name], opts)
       |> plant("helper.eex", "lib/#{dirs.app}/helper.ex", assigns)
       |> plant("helper_test.eex", "test/#{dirs.app}/helper_test.exs", assigns)
       |> plant("schema.eex", "lib/#{dirs.app}/schema.ex", assigns)
-      |> plant("db_task.eex", "lib/mix/tasks/db.ex", assigns)
-      |> plant("db_task_test.eex", "test/mix/tasks/db_test.exs", assigns)
-      |> db_schema_diagrams(assigns, opts)
+      # The database page, `mix db` and the DbSchema export are
+      # dbschema's box since 2026-09-22; what this used to plant itself
+      # it now asks for, with the combo its own flags choose.
+      |> Igniter.compose_task("workbench.install.dbschema", ["--combo", diagram_combo(opts)])
     else
       igniter
     end
@@ -252,53 +247,9 @@ defmodule WorkbenchIgniter.Features.Enhancements do
     )
   end
 
-  @db_schema_files ~w(
-    database.dbs
-    light/MainLayout.svg
-    light/database.md
-    dark/MainLayout.svg
-    dark/database.md
-  )
-
-  defp db_schema_diagrams(igniter, assigns, opts) do
-    combo = diagram_combo(opts)
-
-    igniter
-    |> then(fn igniter ->
-      Enum.reduce(@db_schema_files, igniter, fn file, igniter ->
-        plant_diagram(igniter, combo, file, "assets/db_schema/#{file}", assigns)
-      end)
-    end)
-    |> initial_db_docs(combo, assigns, opts)
-  end
-
-  # Plants the files `mix db` would generate, so ExDoc has real database
-  # pages (instead of a placeholder) and the db task tests — which mock
-  # the copy — find their input files. Always planted with the ecto group:
-  # the db task targets guides/ even when the ExDoc feature is off.
-  defp initial_db_docs(igniter, combo, assigns, _opts) do
-    igniter
-    |> plant_diagram(
-      combo,
-      "light/MainLayout.svg",
-      "guides/images/model-light.svg",
-      assigns
-    )
-    |> plant_diagram(combo, "dark/MainLayout.svg", "guides/images/model-dark.svg", assigns)
-    |> plant_diagram(combo, "light/database.md", "guides/database.md", assigns)
-  end
-
-  defp plant_diagram(igniter, combo, file, target, assigns) do
-    today = Date.utc_today() |> Date.to_iso8601()
-
-    content =
-      asset("db_schema/#{combo}/#{file}")
-      |> String.replace("%{project_name}", assigns[:project_name])
-      |> String.replace(~r/DbSchema\.com © \d{4}-\d{2}-\d{2}/, "DbSchema.com © #{today}")
-
-    Igniter.create_new_file(igniter, target, content, on_exists: :overwrite)
-  end
-
+  # Which sample export dbschema plants: the shape of the database this
+  # install's flags describe. Stripe keeps its objects at Stripe, so it
+  # adds no table of its own — the export is auth0's, under its name.
   defp diagram_combo(opts) do
     if opts[:auth0] do
       ~w(auth0 openai stripe)a

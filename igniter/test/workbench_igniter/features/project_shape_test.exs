@@ -33,29 +33,6 @@ defmodule WorkbenchIgniter.Features.ProjectShapeTest do
     assert with_["test/test_web/controllers/mailbox_controller_test.exs"]
   end
 
-  test "exdoc: no database page on a project without Ecto" do
-    igniter =
-      project(~w(--no-ecto))
-      |> Igniter.compose_task("workbench.install.exdoc", [
-        "--project-name",
-        "Test",
-        "--repo-url",
-        "https://example.com/r"
-      ])
-
-    refute files(igniter)["guides/database.md"]
-
-    assert files(
-             project([])
-             |> Igniter.compose_task("workbench.install.exdoc", [
-               "--project-name",
-               "Test",
-               "--repo-url",
-               "https://example.com/r"
-             ])
-           )["guides/database.md"]
-  end
-
   test "the schemas no longer take the phx.new shape" do
     for feature <- [
           WorkbenchIgniter.Features.Enhancements,

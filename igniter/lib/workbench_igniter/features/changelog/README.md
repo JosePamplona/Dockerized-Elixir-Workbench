@@ -93,6 +93,11 @@ The rest are amenities, each on request:
 And one without asking: when `mix.exs` keeps a docs site — a `docs:`
 block with `extras:`, as [exdoc](../exdoc/) writes it — the changelog
 is listed among its pages, in the `Project` group beside the README.
+The order does not matter. A site built before the changelog lists
+nothing of it, and opening one puts its page in — which is this
+paragraph. A site built after can list it itself, with exdoc's
+`--changelog`, an option that builds on this box; and a slot an older
+exdoc left commented out is filled rather than appended to.
 
 ## Options
 

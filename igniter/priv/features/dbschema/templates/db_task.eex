@@ -125,7 +125,17 @@ defmodule Mix.Tasks.Db do
       "### Main Layout"  <> _rest -> [] # "## 📂 Entity-Relationship Diagram"
       "#####"     <> _rest = line -> [String.replace(line, "#####", "###"), ""]
       "Generated using"  <> _rest -> []
-      "![img]"           <> _rest -> ["", "![img](./images/#{@light_target})"]
+      # Both themes, the way ExDoc does it: it hides the image whose URL
+      # fragment is #gh-dark-mode-only in the light theme and the
+      # #gh-light-mode-only one in the dark. `guides/images` is mapped to
+      # the site's /assets by the docs config.
+      "![img]"           <> _rest ->
+        [
+          "",
+          "![img](./assets/#{@light_target}#gh-light-mode-only)",
+          "",
+          "![img](./assets/#{@dark_target}#gh-dark-mode-only)"
+        ]
       "### Table public." <> rest ->
         [
           "<!-- tabs-close -->",

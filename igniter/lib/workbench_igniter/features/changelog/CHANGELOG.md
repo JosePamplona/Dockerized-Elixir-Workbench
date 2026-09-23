@@ -5,6 +5,38 @@ it. Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) applied to
 what the cartridge *installs*.
 
+## v0.5.2 - (2026-09-22)
+
+### Changed
+
+- **The page goes in whenever the site does not list it.** exdoc's
+  `--changelog` now builds on this box and is off by default (its
+  v0.7.0), so a site built before a changelog lists nothing of it —
+  and this box puts its page in when it opens the file, which is what
+  it did before the option existed. A slot an older exdoc left
+  commented out is still filled rather than appended to; a page already
+  listed is still left alone. The notice about `--no-changelog` is
+  gone with the case it described.
+
+## v0.5.1 - (2026-09-22)
+
+### Changed
+
+- **The docs site decides whether the changelog is one of its pages.**
+  exdoc v0.5.0 made it an option (`--changelog`, on by default), so
+  this cartridge reads that decision off the `docs:` block instead of
+  listing the page whenever there is one: the slot exdoc leaves when
+  the project had no changelog yet — the two entries commented out — is
+  filled with the live entries; an entry already listed is left alone;
+  and a site inserted with `--no-changelog` gets nothing, with a notice
+  saying so. A `docs:` block the project wrote itself is appended to as
+  before.
+
+- **`--init-version` is declared `:version`** (`formats/0`), so the
+  shape is refused in the one place every cartridge's options are
+  checked, with the same sentence. The installer keeps its own guard
+  for the version it reads off `mix.exs`, which goes through no flag.
+
 ## v0.5.0 - (2026-09-21)
 
 ### Added

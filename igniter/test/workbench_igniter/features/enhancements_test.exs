@@ -14,19 +14,33 @@ defmodule WorkbenchIgniter.Features.EnhancementsTest do
   end
 
   describe "mix workbench.install.enhancements" do
-    test "ecto group: helper, schema, deps, db task and diagram sources" do
+    test "ecto group: helper, schema and the ecto_enum dep" do
       files = installed(["--project-name", "Lorem Ipsum"])
 
       assert files["lib/test/helper.ex"] =~ "defmodule Test.Helper do"
       assert files["test/test/helper_test.exs"] =~ "defmodule Test.HelperTest do"
       assert files["lib/test/schema.ex"] =~ "defmodule Test.Schema do"
+      assert files["mix.exs"] =~ "{:ecto_enum,"
+    end
+
+    test "the ecto group composes dbschema, with the combo its flags choose" do
+      files = installed(["--auth0", "--openai"])
+
       assert files["lib/mix/tasks/db.ex"] =~ "defmodule Mix.Tasks.Db do"
       assert files["test/mix/tasks/db_test.exs"]
-      assert files["mix.exs"] =~ "{:ecto_enum,"
       assert files["mix.exs"] =~ "{:html_entities,"
-      assert files["assets/db_schema/database.dbs"] =~ "Lorem Ipsum"
-      assert files["assets/db_schema/light/MainLayout.svg"]
-      assert files["assets/db_schema/dark/database.md"]
+      assert files["assets/db_schema/database.dbs"] =~ ~s|<table name="conversations"|
+      assert files["guides/database.md"]
+
+      # Without a database there is no export and no page.
+      without =
+        WorkbenchIgniter.TestProject.new(~w(--no-ecto))
+        |> Igniter.compose_task("workbench.install.enhancements", [])
+        |> apply_igniter!()
+        |> Map.get(:assigns)
+        |> Map.get(:test_files)
+
+      refute without["lib/mix/tasks/db.ex"]
     end
 
     test "schema uses the configured id and timestamp types" do

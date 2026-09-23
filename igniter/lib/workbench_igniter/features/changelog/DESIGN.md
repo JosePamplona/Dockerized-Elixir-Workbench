@@ -1,7 +1,7 @@
 # changelog — Design
 
-*Revision: cartridge v0.5.0 (2026-09-21). Sources consulted on that
-date; quotations are verbatim from the page as read then.*
+*Revision: cartridge v0.5.1 (2026-09-22). Sources consulted at v0.5.0
+(2026-09-21); quotations are verbatim from the page as read then.*
 
 ## Abstract
 
@@ -235,20 +235,33 @@ task, whose pattern reads the doubled form back.
 
 A changelog is read by the people who read the docs, and ExDoc lists
 what a project wants read as `extras:`. The two cartridges can come in
-either order, so each covers one: exdoc lists `CHANGELOG.md` when the
-file is there as it writes the block, and this one lists it when the
-block is there as it opens the file. Rejected: exdoc listing it always,
-as it did until its v0.2.0 — `mix docs` stops on an extra whose file is
-missing, so a project without this cartridge had a docs site that did
-not build. Rejected too: this cartridge writing a `docs:` block of its
-own when there is none; a docs site is exdoc's to open.
+either order, so each covers one: exdoc's `--changelog` decides the
+page as it writes the block, and this one takes the place it left as it
+opens the file. Rejected: exdoc listing it always, as it did until its
+v0.2.0 — `mix docs` stops on an extra whose file is missing, so a
+project without this cartridge had a docs site that did not build.
+Rejected too: this cartridge writing a `docs:` block of its own when
+there is none; a docs site is exdoc's to open.
 
-The listing is exdoc's code (`Exdoc.list_page/4`, which guidelines uses
-for its page too): the block's shape belongs to the cartridge that
-writes it. An entry already there, bare or with its options, is found
-by the page's name, so a second run adds nothing; a block without a
-`Project` group gets the page and no group, since a group nobody asked
-for would move the project's own pages in the sidebar.
+The two orders are covered one each (exdoc v0.7.0): a site built after
+a changelog lists the page itself, with `--changelog`, an option that
+builds on this box and is refused without it; a site built before one
+lists nothing, and this puts the page in when it opens the file. What
+this writes is read off the block, never decided for it (v0.5.1):
+
+* the two entries **commented out** — a slot an exdoc of v0.5.0 or
+  v0.6.0 left — are replaced by the live ones;
+* an entry already live is left alone, so a second run adds nothing;
+* anything else gets the entries appended, which is what this did
+  before the option existed — a site that does not list the page, and
+  a `docs:` block exdoc did not write.
+
+The writing is exdoc's code (`Exdoc.uncomment_page/4` and
+`Exdoc.list_page/4`, which guidelines uses for its page too): the
+block's shape belongs to the cartridge that writes it. An entry already
+there, bare or with its options, is found by the page's name; a block
+without a `Project` group gets the page and no group, since a group
+nobody asked for would move the project's own pages in the sidebar.
 
 ### 3.9 What is deliberately absent
 

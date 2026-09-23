@@ -1,6 +1,6 @@
 # exdoc — Design
 
-Revision: cartridge v0.2.0 (2026-09-21)
+Revision: cartridge v0.5.0 (2026-09-22)
 
 *Written at v0.2.0, the change that gave the cartridge its papers.
 ExDoc is quoted from its own source at 0.40.4, as `mix deps.get`
@@ -50,16 +50,20 @@ already writes.
 
 ## 2. Background
 
-**ExDoc's hooks are where the theme goes.** The workbench theme is a
-script in every page, which ExDoc offers through
+**An image for each theme is ExDoc's own.** Since v0.27 (2022) its
+stylesheet hides `img[src*="#gh-dark-mode-only"]` in the light theme
+and `#gh-light-mode-only` in the dark one, the fragment GitHub reads
+too, so a page names both files and the theme picks. v0.1.0 to v0.3.1
+planted a script for it instead (`themedImage.js`, injected through
+`:before_closing_body_tag`), written before that release and kept since
+out of habit; it also named one pair of files, the database model's, so
+it worked for one page and nothing else. It is gone in v0.4.0, with the
+`before_closing_*_tag` functions that carried it: what ExDoc does
+already is not worth a file in every project. The `:before_closing_*`
+hooks stay available for a theme that needs code, which none of the
+shelf does.
 
-> `:before_closing_body_tag` - a function that takes as argument an
-> atom specifying the formatter being used (`:html` or `:epub`) and
-> returns a literal HTML string to be included just before the closing
-> body tag (`</body>`). … Useful to inject custom assets, such as
-> Javascript. [1]
-
-and the files those scripts load travel with the site through
+The files a page loads travel with the site through
 
 > `:assets` - A map of source => target directories that will be copied
 > as is to the output path. It defaults to an empty map. [1]
@@ -156,7 +160,7 @@ declares a door of the output kind — `{"docs", {:output, "doc",
 `assets/exdoc/`, and in a Phoenix application `assets/` is the release
 build's input: `phx.gen.release`'s Dockerfile copies the directory into
 its builder stage and tailwind scans it for classes. The config and the
-theme script are a dev tool's code, unlinted and untested, and the
+config is a dev tool's code, unlinted and untested, and the
 placeholder logo is 1.9 MB; none of it belongs on that path, even where
 it does not reach the release itself. Of 23 dependencies read on
 2026-09-21, the libraries keep their logo under `assets/` (bandit,
@@ -204,26 +208,76 @@ hold wherever the site is served — the console's `/docs/`, or
 has a door of its own, coverage's `cover/`, for a project without the
 site.
 
-**The changelog is listed when there is one.** v0.1.0 listed
+**A page is listed when its file has an owner** (v0.7.0). v0.1.0 listed
 `CHANGELOG.md` always, and `mix docs` stops on it: *could not read file
-"CHANGELOG.md": no such file or directory*, found in the probe (§4). A
-project keeps a changelog through the changelog cartridge or by hand,
-in either order with this one, so the two cover one order each: this
-installer lists the file when it is there, changelog lists it when the
-block is there. The code that appends to the block is here,
-`list_page/4`, because the block's shape is this cartridge's; changelog
-and guidelines call it. Rejected: planting a placeholder changelog, as
-this cartridge does for `TESTING.md` — a changelog is a history the
-project keeps, and one this cartridge made up would be the first entry
-of it.
+"CHANGELOG.md": no such file or directory*, found in the probe (§4).
+v0.2.0 to v0.4.1 listed it when the file happened to be there — the
+site's table of contents as a reading of the working directory at
+insert time. v0.5.0 made it an option on by default with a commented
+slot for the file that was not there yet. What that left unsaid is who
+writes the file, and the two pages answer differently:
+
+* **The changelog is the changelog box's.** `--changelog` builds on it
+  (`requires` on the option's value, as credo's `--githook` builds on
+  precommit): asked for without that box, the run is refused naming it,
+  and the console draws the option unlit with a door to that box. So
+  the option is **off by default** — `add exdoc` on any project still
+  works — and when it is on the file is there, so the entries go in
+  live and there is no slot to write. The other order is the changelog
+  box's own: inserted after the site, it lists its page itself, which
+  is what it did before the option existed.
+* **The report page is the coverage box's**, one box further out:
+  `--coverage` lists `TESTING.md`, which `mix cover` writes, which the
+  coverage box plants with *its* `--exdoc`. So the requirement carries
+  that state — `{"coverage", exdoc: true}` — and a project with
+  coverage in without it is told so, with the line that tops it up
+  (that box adds its pieces on a second run). The placeholder
+  `TESTING.md` stays: the box is in, the task is there, and the file
+  arrives when the suite first runs — the placeholder is what keeps
+  `mix docs` building until then, which is the same reason it was
+  planted before.
+* **The README is nobody's box.** `phx.new` writes it, a hand rewrites
+  it, and the shelf deliberately has no cartridge that would (a
+  generated README would have to know every cartridge — the features
+  index says so). So `--readme` stays on by default and reads the file:
+  with a `README.md` the two entries are live and the site opens on it
+  (`main: "readme"`); without one they are written **commented out**,
+  the way `source_url` and `homepage_url` are when nothing is found,
+  and `main:` is left out with them — `mix docs` stops on an extra
+  whose file is missing and on a `main:` that names no page, and a
+  comment it never reads. Both lines are whole lines, so the list's
+  comma goes into the comment with them (and the formatter then drops
+  it), and the lists stay valid — asserted by parsing the generated
+  `mix.exs` in each shape. `state/1` answers the **live** entry alone;
+  a comment is a slot, not a listing.
+
+The code that writes into the block is here, because the block's shape
+is this cartridge's: `list_page/4`, which changelog and guidelines call,
+and beside it `uncomment_page/4`, which fills a slot. Filling a slot is
+a function of its own rather than a step of `list_page/4` for two
+reasons: the two answer different questions — *the site kept a place for
+this page* against *the site does not list this page yet* — and
+guidelines, whose `:Support` page never had a slot, must not have an
+entry resurrected out of a comment somebody wrote for their own reasons.
+It drops the commented lines and calls `list_page/4` for the live ones
+rather than taking the `# ` off, because the formatter drops the comma
+before a trailing comment: an uncommented line would land in the list
+with no comma before it, and `mix.exs` would not parse.
+
+Rejected: planting a placeholder changelog, as this cartridge does for
+`TESTING.md` — a changelog is a history the project keeps, and one this
+cartridge made up would be the first entry of it.
 
 **The sidebar links where it is told.** ExDoc's sidebar takes its link
 from one option, `<% url = config.homepage_url || "#{config.main}.html"
 %>` [6], for the project's name and its logo alike. v0.1.0 wrote the
 repository there, so the logo opened GitHub; the repository has its own
 option, `source_url`, and its own links, the source of each function.
-`--homepage-url` is the website, written only when given; unasked the
-sidebar opens the docs' main page.
+`--homepage-url` is the website, written live only when given; unasked
+the line is written commented with a placeholder, as `source_url` is
+when no repository is found, so the key waits where it goes, and the
+sidebar opens the docs' main page until it is filled in. Live, the
+placeholder would send the logo to example.com.
 
 **The logo is asked for.** `--app-logo` plants the placeholder and the
 `logo:` that names it, off by default. ExDoc requires the file behind
@@ -249,8 +303,8 @@ then the application's own modules and the web layer) or `none`
 and any other `layers`: the line the project is on decides, as its Ecto
 decides the database page.
 
-The groups are functions of `mix.exs`, written after the project's own
-as `before_closing_*_tag` are, because two things a literal cannot say
+The groups are functions of `mix.exs`, written after the project's own,
+because two things a literal cannot say
 decide them: a module's behaviours — a live view and a change are named
 like anything else — and, for `contexts`, the directories of `lib/<app>/`
 as they are when the docs are built, so the context added next month is
@@ -300,15 +354,22 @@ ExDoc's own footer) and the line waits to be filled in. `authors:`,
 which is the URL's owner, is left out with it. Under `Igniter.Test` the remote is not read at
 all: the suite runs inside the workbench's repository.
 
-**The database page is read off the project, not asked.** A project
-with Ecto gets `database.md` among the extras (a placeholder until
-enhancements' `mix db` writes it); one without gets none. The fact is
-`WorkbenchIgniter.PhxDelta`'s, the same one the base cartridges read.
+**The database page is no longer here** (v0.4.1). It was read off the
+project — a project with Ecto got `database.md` among the extras, a
+placeholder until `mix db` wrote it — which made this cartridge reason
+about a page a task it does not install would overwrite. It belongs to
+[dbschema](../dbschema/), which writes the page and lists it here with
+`list_page/4` when there is a site, the way changelog lists its own.
 
-**`--build` is queued, off by default.** `mix docs` needs the
-dependencies fetched and compiled, which happens after the patch set is
-applied; queued with `Igniter.add_task/3` it runs then. Off, because the
-insert is otherwise seconds and this is a full compile.
+**The insert does not build the site** (v0.6.0). `--build` queued
+`mix docs` behind the patch set, because the task needs the
+dependencies fetched and compiled, which happens after the files land.
+It is gone: the box already names the command twice — `afterwards/0`
+for the reader and `build:` on its door for the console — and the door
+runs it as a job, whose output the reader watches, where the queued
+task ran inside an insert whose log nobody reads for that. An option
+that leaves no mark (`state/1` answered `nil` for it) and only queues a
+command the box already names is a third place saying the same thing.
 
 ## 4. Evaluation
 

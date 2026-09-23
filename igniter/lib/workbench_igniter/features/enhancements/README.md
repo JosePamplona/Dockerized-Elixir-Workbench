@@ -45,18 +45,17 @@ here.
 
 ## What it installs
 
-* **Ecto group** (when the project has Ecto): `ecto_enum` and `html_entities`
-  deps; the generators and migration configuration `--id-type` and
+* **Ecto group** (when the project has Ecto): the `ecto_enum` dep;
+  the generators and migration configuration `--id-type` and
   `--timestamps` decide (`migration_primary_key`, `migration_timestamps`
   and `generators: [timestamp_type: :utc_datetime_usec]` in
   `config.exs`) — the same policy `MyApp.Schema` carries, written where
   `mix phx.gen.*` reads it, so the tables cannot drift from the schemas;
-  `MyApp.Helper` and `MyApp.Schema` (+ tests); the `mix db` task;
-  and the DbSchema diagrams under the project's `assets/db_schema/`,
-  picking the combo for the enabled features (`none`, `auth0`,
-  `auth0_openai`, …). It also plants the files `mix db` would generate
-  (`guides/database.md` and the model SVGs under `guides/images/`) so ExDoc has real pages
-  from the start.
+  and `MyApp.Helper` and `MyApp.Schema` (+ tests). It also composes
+  [dbschema](../dbschema/) with the combo the enabled features make
+  (`none`, `auth0`, `auth0_openai`, …), which is what brings the
+  `mix db` task, the DbSchema export under `assets/db_schema/` and the
+  database's page — they were this cartridge's until v1.2.0.
 * **REST group** (`--interface rest`): enhanced `error_json.ex` (changeset
   error rendering) and the Postman collection for the enabled features
   combo (auth0/openai/health).
@@ -77,9 +76,8 @@ task moved to changelog.)
 | --- | --- |
 | `enhancements.ex` | Manifest + logic |
 | `task.ex` | `Mix.Tasks.Workbench.Install.Enhancements` shell |
-| `templates/*.eex` (14) | Helper/Schema, the db task, error_json, base tests, fixtures, mock_helper |
+| `templates/*.eex` (12) | Helper/Schema, error_json, base tests, fixtures, mock_helper |
 
-| `assets/db_schema/<combo>/` | DbSchema diagram sources (verbatim), one set per auth0/openai/stripe combo |
 | `assets/postman/<combo>.postman_collection.json` | Postman collections (verbatim), one per auth0/openai/health combo |
 
 `asset/1` reads the set matching the enabled feature combo.

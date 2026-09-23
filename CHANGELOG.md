@@ -16,6 +16,116 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **A box says what it puts in the project's `mix.exs`, and the box
+  shows it.** The packages a cartridge installs lived in eighteen
+  `add_dep` calls scattered through the installers, plus a table in the
+  features index kept by hand — which had already drifted. A box
+  declares them now, `deps/1`, with the shape `services/1` has: given
+  the project's state it answers what that project carries of it
+  (test_doubles' `--double mimic` is one package, `mimic,mox` two),
+  given `:any` every package it may ever bring. The suite reads each
+  installer's own source and holds the two together, so a package added
+  and not declared fails the build.
+
+  The console's **Box** screen gains a third panel under Specs,
+  **Packages** — where the box already says what it opens and what
+  containers it raises, since a package it puts in `mix.exs` is the
+  same kind of fact, and the Installation screen stays about the act of
+  installing. It is named for what it lists and not for the callback
+  that answers it: Specs already says *brings*, of the containers, and
+  two panels on one screen cannot wear the same word. Each package's
+  name opens its page on hex.pm and the version the lock resolved opens
+  that version's documentation, which costs no reading at all: they are
+  addresses, not answers.
+  Before the box is in, the panel is what an insert *would* add, read off the
+  manifest — the answer to "what does this cost me" without inserting
+  anything. Once it is in, it is what the project does with it: what
+  the box brings, what `mix.exs` pins today and what `mix.lock`
+  resolved, the last two read off the project by `mix workbench.status`
+  where it already runs. A pin that is not the box's wears the house's
+  warn and says why — *an insert older than the box* — which is exactly
+  the drift that left exdoc pinned to `~> 0.38` while its papers quoted
+  0.40.4. Nothing here reaches the network: what hex.pm says of a
+  package (its latest release, how long since, how many downloads) is a
+  reading of the ecosystem and not of the project, and it belongs to
+  the console at read time, never to an installer — the shelf archived
+  a box for reaching the network at insert time.
+
+  That reading is here too, on a press. Beside each package the section
+  now has what hex.pm says of it: the latest stable release, **how long
+  since it was published** — the fact that says whether a dependency is
+  alive — and how much it is downloaded, with the release that is the
+  version the project runs marked so nobody compares two versions by
+  eye. It is `Console.Hex` over `:httpc`, the client the console
+  already uses for the same host — the call being a function `read/2`
+  takes, so the suite holds what is read out of hex's own answer,
+  captured from its package endpoint, without a test ever calling
+  hex.pm: a test that reached the network would fail when a train goes
+  into a tunnel, and would tell somebody else's service how often this
+  suite runs. The double earned its place on its first run, catching a
+  `Jason.DecodeError` struct going into the reader's message where a
+  sentence belongs. The readings are held in `Console.Bench` by package
+  name under the rule the stacks and the installers follow: no clock,
+  nothing at mount, only a reader pressing, and a package another box
+  already brought answered from memory. Unasked the column is unlit;
+  when hex does not answer it says *not read* with the reason. Checked
+  against hex itself: `ex_doc` 0.40.4 19 days ago, `excoveralls` 0.18.5
+  a year ago, and a package nobody publishes carrying its 404.
+
+  The panel is a **table with a header**, not a line of prose per
+  package: every column is a fact read off a different place — the box,
+  `mix.exs`, `mix.lock`, hex.pm — and a reader who wants to know
+  whether anything here is stale compares down a column, which prose
+  does not let them do. What was a tooltip is a cell. Each name wears
+  **hex's own mark**, as its owners drew it, so the link says where it
+  goes before it is read: vendored at
+  `console/priv/static/images/vendor/hex.svg` with its provenance
+  beside it, never hot-linked, because hex serves that asset under a
+  content-hashed URL that will stop resolving. The press that costs the
+  internet is the same **reload square** the configuration's Docker and
+  phx_new fields already use — one gesture for "go ask", wherever the
+  console asks. In a narrow drawer the table keeps its names whole and
+  scrolls sideways inside the panel, instead of breaking `ex_doc` into
+  `ex_do/c` and pushing the versions one under the other. The columns
+  are the same whether the box is in or not: what the box asks for and
+  what the project pins are two different readings and never share a
+  cell, so **mix.exs** and **locked** stand unlit with their reason —
+  *the box is not in: nothing pins it yet* — instead of leaving the
+  table for a reader to compare against one they saw a moment ago. The
+  two version cells carry a class of their own, `asks`: the sheet's
+  `.req` is a flex row, and a `display:flex` on a `<td>` takes it out
+  of the table's columns — which is what put the pin under the box's
+  requirement in the same column and left *downloads* empty, every
+  value one place to the left of its header. Each header is **where its
+  reading comes from** — `cartridge`, `mix.exs`, `locked`, `latest` —
+  because four version columns beside each other are four different
+  questions, and a column named after the callback that answers it
+  says nothing to the reader. A version is all a cell carries: the
+  tuple's own options (`only: [:dev, :test], runtime: false`) are
+  noise in a table of versions, and the panel wears no legend either.
+  The newest release says itself against the one the project runs
+  (*hex.pm's newest release — and the one this project runs*, or
+  *…; this project runs 0.38.2*), where before the
+  cell claimed to be the version installed and left the reader to
+  guess what the other three were.
+
+- **A dependency is named one way, everywhere: `.pkg-ref`.** The
+  packages table drew its own link — hex's mark, the name, the address
+  — and a mention of a package anywhere else drew whatever the page
+  felt like: the Phoenix installer's help line ended in a bare URL, the
+  Birth paper wrote `phx.new 1.8.14` as text. A dependency is a thing
+  of the world the reader can go and read about, exactly as a cartridge
+  is a drawer they can open, so it gets the house's notation beside
+  `.cart-ref` and `.door-ref`: the mark, the name in mono, the page on
+  hex.pm — or, given a version, that version's documentation on
+  hexdocs. The mark is what says it is a link, dimmed until it is
+  hovered so a column of them does not shout, and it goes bare where
+  the line already wears one. It lives where the notation lives
+  (`assets/design/build.py` → `components.css`, both projections) and
+  is `ConsoleWeb.Refs.pkg_ref/1` in the console, so a page that names a
+  package cannot name it a second way. In: the Packages panel, the
+  `PHX_NEW_VERSION` field's help, and the Birth paper's installer.
+
 - **coverage v0.7.0: `--file-column-width`, defaulting to 80.** How
   wide the file column of ExCoveralls' terminal table is. It looks
   cosmetic and is not: a path longer than the column is cut, and with
@@ -1210,6 +1320,49 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   says how to run the same checks before pushing.
 
 ### Updated
+
+- **exdoc v0.8.0 and the two papers, read against the tools as they are
+  today.** The boxes changed a great deal this week and their DESIGN
+  papers had grown by accretion — a paragraph per change, each with its
+  version — so they read as a second changelog instead of saying what
+  the box is and why it has this shape. Both were read back: coverage's
+  abstract still said that what the report leaves out is *read off the
+  project rather than asked*, the opposite of what `--ignore-files`
+  does, and exdoc's was framed around what v0.2.0 decided and cited a
+  database page that is dbschema's since Monday. They now open on the
+  decisions that hold — for exdoc, *a page is listed when its file has
+  an owner*; for coverage, five, including that the Markdown report is
+  this box's to name and own.
+
+  Checked online against hex.pm and both repositories, which corrected
+  one claim and turned up one staleness. The claim: `mix docs` stops on
+  an extra whose file is missing (true, an unrescued `File.Error`), but
+  a `main:` naming a page nobody listed is **not validated at all** —
+  the index quietly redirects to a page that is not there. The rule the
+  box follows is unchanged; its reason is now the right one. The
+  staleness: the pin was `~> 0.38` while the paper quoted 0.40.4.
+  exdoc installs `~> 0.40` now, verified in a probe — the site builds,
+  and `mix docs` adds a Markdown tree and `llms.txt` beside the HTML,
+  which are ExDoc's defaults and stay as its author set them. Also
+  written down where a reader will need them: ExDoc's themed-image
+  fragment is undocumented outside its stylesheet, and ExCoveralls has
+  not shipped since January 2025 — which does not change the choice,
+  but is why the exit is written down beside it.
+
+- **coverage v0.10.0: `--ignore-files` takes the groups the box knows,
+  and no other value**, and its options are tried both ways. The option
+  also took a path of the reader's own, which made the form offer a
+  free text field beside the four groups for a value the box could
+  neither check nor explain: an entry of `skip_files` is a regex, and a
+  regex the box did not write is one it cannot say anything about. A
+  project that wants another path out of the report edits its own
+  `coveralls.json`, and `state/1` still reads that path back as the
+  path it is — the reading of the project never depended on the option.
+  Reading coverage's and exdoc's options one by one afterwards turned
+  up what the day's rewrites had swept away with the text they sat in:
+  `--minimum-coverage` had lost both its cases, and `--md-report` its
+  negative. They are back, with `--coverage`, `--app-logo` and
+  `--project-name` answering `state/1` both ways.
 
 - **coverage v0.9.0: `--exdoc` is `--md-report`, and the report page is
   coverage's.** The flag named another cartridge, which is the one thing

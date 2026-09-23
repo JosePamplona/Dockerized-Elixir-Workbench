@@ -39,7 +39,7 @@ defmodule ConsoleWeb.BoxInstallTest do
       box: box,
       status: status,
       catalog: [box],
-      screen: "install",
+      screen: Keyword.get(opts, :screen, "install"),
       paper: "readme",
       papers: [],
       args: Keyword.get(opts, :args, %{}),
@@ -266,6 +266,217 @@ defmodule ConsoleWeb.BoxInstallTest do
       put_in(status, ["project", "cartridges"], [%{"name" => "test_doubles", "installed" => true}])
 
     assert {"by hand", _, _} = ConsoleWeb.Cartridges.origin(alone, box)
+  end
+
+  # The box's third panel: the packages it puts in the project's
+  # mix.exs, before it is in and after.
+  describe "Packages" do
+    @box_with_deps %{
+      "name" => "exdoc",
+      "options" => [],
+      "requires" => [],
+      "offers" => [],
+      "console" => %{"doors" => [], "tabs" => []},
+      "deps" => [
+        %{
+          "name" => "ex_doc",
+          "requirement" => "~> 0.40",
+          "opts" => %{"only" => ":dev", "runtime" => "false"}
+        }
+      ]
+    }
+
+    test "not in: the packages an insert would add, off the manifest" do
+      html =
+        screen(@box_with_deps, %{"exists" => true, "project" => %{"cartridges" => []}},
+          screen: "box"
+        )
+
+      assert html =~ "ex_doc"
+      assert html =~ "~&gt; 0.40"
+      # The tuple's own options are noise in a table of versions.
+      refute html =~ "only: :dev"
+      # What the project would do with it is a column of its own, standing
+      # unlit with its reason, never one missing from the table.
+      assert html =~ ">mix.exs</th>"
+      assert html =~ "locked"
+      assert html =~ "the box is not in: nothing pins it yet"
+      assert html =~ "the box is not in: no lock resolved it yet"
+    end
+
+    test "in: what the project pins and what its lock resolved, with an older insert marked" do
+      status = %{
+        "exists" => true,
+        "project" => %{
+          "cartridges" => [
+            %{
+              "name" => "exdoc",
+              "installed" => true,
+              "deps" => [
+                %{
+                  "name" => "ex_doc",
+                  "declared" => "~> 0.40",
+                  "pinned" => "~> 0.38",
+                  "locked" => "0.38.2"
+                }
+              ]
+            }
+          ]
+        }
+      }
+
+      html = screen(@box_with_deps, status, screen: "box")
+
+      # The table says it all: the panel carries no legend of any kind.
+      refute html =~ "insert would put in mix.exs"
+      assert html =~ "0.38.2"
+      # The pin that is not the box's is marked, and says why.
+      assert html =~ ~r/class="asks warn"/
+      assert html =~ "an insert older than the box"
+    end
+  end
+
+  describe "Packages, and what hex says" do
+    @exdoc_box %{
+      "name" => "exdoc",
+      "options" => [],
+      "requires" => [],
+      "offers" => [],
+      "console" => %{"doors" => [], "tabs" => []},
+      "deps" => [%{"name" => "ex_doc", "requirement" => "~> 0.40", "opts" => %{}}]
+    }
+
+    defp with_hex(hex) do
+      render_component(&ConsoleWeb.Box.box/1,
+        box: @exdoc_box,
+        status: %{"exists" => true, "project" => %{"cartridges" => []}},
+        catalog: [@exdoc_box],
+        screen: "box",
+        paper: "readme",
+        papers: [],
+        args: %{},
+        packages: hex,
+        now: ~U[2026-09-23 12:00:00Z]
+      )
+    end
+
+    test "unasked, the column says nothing was read and the button offers to ask" do
+      html = with_hex(%{})
+
+      assert html =~ ~s(phx-click="packages_ask")
+      assert html =~ ~s(phx-value-names="ex_doc")
+      assert html =~ ~s|phx-click="packages_ask"|
+      # The name opens the package's own page, with hex's own mark
+      # before it — an address, which costs no reading at all.
+      assert html =~ ~s|href="https://hex.pm/packages/ex_doc"|
+      assert html =~ ~s|src="/images/vendor/hex.svg"|
+      # Every fact has a column of its own, and the ones nobody asked
+      # for say so rather than standing empty.
+      assert html =~ "the newest stable release on hex.pm, whatever this project runs"
+      assert html =~ ~s|<span class="unlit">–</span>|
+    end
+
+    test "read, it says the latest release and how long since" do
+      html =
+        with_hex(%{
+          "ex_doc" => %{
+            latest: "0.40.4",
+            released_at: "2026-09-03T06:00:00.000000Z",
+            downloads: 97_802_365
+          }
+        })
+
+      assert html =~ "0.40.4"
+      assert html =~ "20 days ago"
+      assert html =~ "97.8M"
+      # The box is not in, so the newest release is only that.
+      assert html =~ "hex.pm&#39;s newest release"
+      refute html =~ "and the one this project runs"
+    end
+
+    test "the newest release says itself against the one the project runs" do
+      status = %{
+        "exists" => true,
+        "project" => %{
+          "cartridges" => [
+            %{
+              "name" => "exdoc",
+              "installed" => true,
+              "deps" => [
+                %{
+                  "name" => "ex_doc",
+                  "declared" => "~> 0.40",
+                  "pinned" => "~> 0.40",
+                  "locked" => "0.40.4"
+                }
+              ]
+            }
+          ]
+        }
+      }
+
+      said = %{
+        "ex_doc" => %{
+          latest: "0.40.4",
+          released_at: "2026-09-03T06:00:00.000000Z",
+          downloads: 97_802_365
+        }
+      }
+
+      html =
+        render_component(&ConsoleWeb.Box.box/1,
+          box: @exdoc_box,
+          status: status,
+          catalog: [@exdoc_box],
+          screen: "box",
+          paper: "readme",
+          papers: [],
+          args: %{},
+          packages: said,
+          now: ~U[2026-09-23 12:00:00Z]
+        )
+
+      assert html =~ "hex.pm&#39;s newest release — and the one this project runs"
+
+      # An older lock reads the other way, naming what the project runs.
+      older =
+        put_in(status, ["project", "cartridges"], [
+          %{
+            "name" => "exdoc",
+            "installed" => true,
+            "deps" => [
+              %{
+                "name" => "ex_doc",
+                "declared" => "~> 0.40",
+                "pinned" => "~> 0.40",
+                "locked" => "0.38.2"
+              }
+            ]
+          }
+        ])
+
+      html =
+        render_component(&ConsoleWeb.Box.box/1,
+          box: @exdoc_box,
+          status: older,
+          catalog: [@exdoc_box],
+          screen: "box",
+          paper: "readme",
+          papers: [],
+          args: %{},
+          packages: said,
+          now: ~U[2026-09-23 12:00:00Z]
+        )
+
+      assert html =~ "this project runs 0.38.2"
+    end
+
+    test "a package hex could not answer for says so, and nothing is blank" do
+      html = with_hex(%{"ex_doc" => %{error: "hex.pm has no such package"}})
+
+      assert html =~ "not read"
+      assert html =~ "hex.pm has no such package"
+    end
   end
 
   test "with nothing to read the line is the bare verb" do

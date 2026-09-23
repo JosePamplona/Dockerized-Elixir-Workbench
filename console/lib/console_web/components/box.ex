@@ -8,6 +8,7 @@ defmodule ConsoleWeb.Box do
   use Phoenix.Component
   import ConsoleWeb.Refs
   import ConsoleWeb.Ribbon, only: [ribbon: 1]
+  import ConsoleWeb.Square, only: [square: 1]
   alias ConsoleWeb.Cartridges
   alias ConsoleWeb.Record
 
@@ -37,6 +38,10 @@ defmodule ConsoleWeb.Box do
   attr :diff, :any,
     default: nil,
     doc: "what the cartridge wrote (Console.Diffs), :loading, || nil"
+
+  attr :packages, :map, default: %{}, doc: "what hex said of each package, by name"
+  attr :packages_asking, :boolean, default: false
+  attr :packages_error, :any, default: nil
 
   def box(assigns) do
     c = Cartridges.carried(assigns.status, assigns.box["name"]) || assigns.box
@@ -103,6 +108,10 @@ defmodule ConsoleWeb.Box do
       />
       <.sheet
         :if={@screen == "box"}
+        packages={@packages}
+        packages_asking={@packages_asking}
+        packages_error={@packages_error}
+        now={@now}
         box={@box}
         c={@c}
         status={@status}
@@ -242,6 +251,171 @@ defmodule ConsoleWeb.Box do
     </div>
     """
   end
+
+  # The packages the box puts in the project's `mix.exs` — *packages*
+  # and not *brings*, which is what the Specs above call the containers
+  # it raises: two panels of one screen never share a word. Before it
+  # is in, the
+  # packages it may bring, off the manifest (`deps/1` with `:any`): a
+  # reader sees what an insert would add without inserting. Once it is
+  # in, the ones this project carries of it, each with what the box
+  # brings, what `mix.exs` pins today and what `mix.lock` resolved — the
+  # three differ on a project whose insert is older than the box, and the
+  # difference is the row's own reading.
+  attr :box, :map, required: true
+  attr :c, :map, required: true
+  attr :installed, :boolean, required: true
+  attr :hex, :map, default: %{}, doc: "what hex said of each package, by name"
+  attr :hex_asking, :boolean, default: false
+  attr :hex_error, :any, default: nil
+  attr :now, :any, default: nil
+
+  defp packages(assigns) do
+    carried = assigns.installed && assigns.c["deps"]
+    declared = assigns.box["deps"] || []
+    rows = if(carried && carried != [], do: carried, else: nil)
+    names = Enum.map(rows || declared, & &1["name"])
+    now = assigns.now || DateTime.utc_now()
+
+    assigns =
+      assign(assigns,
+        names: names,
+        now: now,
+        rows: for(row <- rows || declared, do: package_row(row, assigns.hex, now, rows != nil))
+      )
+
+    ~H"""
+    <div :if={@rows != []} class="packages">
+      <div class="log-cap">
+        <span class="label">Packages</span>
+        <%!-- What hex says of a package is a reading of the ecosystem,
+              not of the project: it costs the internet, so it happens
+              because somebody pressed for it, never on its own. The
+              same square the configuration's two fields carry for the
+              same kind of reading — the Docker tags and the phx_new
+              releases — so one gesture means one thing everywhere. --%>
+        <.square
+          mark="reload"
+          size="small"
+          label="Ask hex for these packages"
+          class="ask"
+          phx-click="packages_ask"
+          phx-value-names={Enum.join(@names, ",")}
+          disabled={@hex_asking}
+          aria-busy={to_string(@hex_asking)}
+          title={
+            if @hex_asking,
+              do: "asking hex…",
+              else:
+                "ask hex.pm for each package: its latest release, when it was published, and how much it is downloaded"
+          }
+        />
+        <span :if={@hex_error} class="note bad">{@hex_error}</span>
+      </div>
+
+      <div class="scroll">
+        <table class="rows pkgs">
+          <thead>
+            <tr>
+              <th title="the package this box puts in the project's mix.exs — its name opens its page on hex.pm">
+                package
+              </th>
+              <th title="the version this box asks for: the requirement its installer writes">
+                cartridge
+              </th>
+              <th title="the version the project's mix.exs asks for today">mix.exs</th>
+              <th title="the version the project actually runs, as mix.lock resolved it — it opens that version's documentation">
+                locked
+              </th>
+              <th title="the newest stable release on hex.pm, whatever this project runs">
+                latest
+              </th>
+              <th title="when that newest release was published: the reading that says whether the package is alive">
+                released
+              </th>
+              <th title="how many times hex.pm has served it, all versions">downloads</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr :for={r <- @rows}>
+              <td><.pkg_ref name={r.name} /></td>
+              <td class="asks">{r.brings}</td>
+              <td
+                class={["asks", r.carried? && r.pinned != r.brings && "warn"]}
+                title={
+                  cond do
+                    not r.carried? ->
+                      "the box is not in: nothing pins it yet"
+
+                    r.pinned != r.brings ->
+                      "the project pins #{r.pinned || "nothing"}, where the box brings #{r.brings} — an insert older than the box"
+
+                    true ->
+                      "what mix.exs asks for"
+                  end
+                }
+              >
+                <span :if={!r.carried?} class="unlit">–</span>
+                <span :if={r.carried?}>{r.pinned || "—"}</span>
+              </td>
+              <td class="v" title={if(!r.carried?, do: "the box is not in: no lock resolved it yet")}>
+                <span :if={!r.carried?} class="unlit">–</span>
+                <.pkg_ref :if={r.carried? && r.locked} name={r.name} version={r.locked} mark={false} />
+                <span :if={r.carried? && !r.locked}>—</span>
+              </td>
+              <td
+                class={["v", r.latest && r.latest == r.locked && "good"]}
+                title={latest_says(r)}
+              >
+                <span :if={!r.asked?} class="unlit">–</span>
+                <span :if={r.why} class="bad" title={r.why}>not read</span>
+                {r.latest}
+              </td>
+              <td class="v">{r.ago}<span :if={!r.asked?} class="unlit">–</span></td>
+              <td class="v">{r.downloads}<span :if={!r.asked?} class="unlit">–</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    """
+  end
+
+  # hex's newest release, said against what the project runs: the same
+  # number in two columns is a question a reader should not have to ask.
+  defp latest_says(%{latest: nil}), do: nil
+
+  defp latest_says(%{latest: latest, locked: locked}) when latest == locked,
+    do: "hex.pm's newest release — and the one this project runs"
+
+  defp latest_says(%{latest: latest, locked: locked}) when is_binary(locked),
+    do: "hex.pm's newest release; this project runs #{locked}"
+
+  defp latest_says(_row), do: "hex.pm's newest release"
+
+  # One package as the table reads it: what the box brings, what the
+  # project does with it, and what hex said if anybody asked.
+  defp package_row(row, hex, now, carried?) do
+    said = hex[row["name"]] || %{}
+
+    %{
+      name: row["name"],
+      brings: row["declared"] || row["requirement"],
+      pinned: row["pinned"],
+      locked: row["locked"],
+      latest: said[:latest],
+      ago: said[:released_at] && Console.Hex.ago(said[:released_at], now),
+      downloads: said[:downloads] && downloads_said(said[:downloads]),
+      why: said[:error],
+      asked?: said != %{},
+      carried?: carried?
+    }
+  end
+
+  # A download count a reader can take in: 97.8M, not 97802365.
+  defp downloads_said(n) when n >= 1_000_000, do: "#{Float.round(n / 1_000_000, 1)}M"
+  defp downloads_said(n) when n >= 1_000, do: "#{div(n, 1000)}k"
+  defp downloads_said(n), do: to_string(n)
 
   attr :name, :string, required: true
   attr :here, :boolean, default: false
@@ -495,6 +669,15 @@ defmodule ConsoleWeb.Box do
             args={@args}
             recipe={@recipe}
             installed={@installed}
+          />
+          <.packages
+            box={@box}
+            c={@c}
+            installed={@installed}
+            hex={@packages}
+            hex_asking={@packages_asking}
+            hex_error={@packages_error}
+            now={@now}
           />
         </div>
       </div>

@@ -10,17 +10,21 @@ defmodule Console.Bench do
   Every arrival is broadcast on the `"bench"` topic:
   `{:bench, :status, status}`, `{:bench, :catalog, catalog}`,
   `{:bench, :stacks, tags}`, `{:bench, :installers, releases}`,
+  `{:bench, :packages, readings}`,
   `{:bench, :expand, name, argv, plan}`, `{:bench, :error, key, why}`.
 
-  The stacks and the installers are the two readings that are not about
-  this machine at all: the usable `hexpm/elixir` images, five pages of
-  Docker Hub's API, and the `phx_new` releases hex publishes. They are
-  never read on their own — not at boot, not when the drawer that
-  shows them opens — only when the reader presses the button beside the
-  field, and then they are held here for every page until pressed again.
-  No clock refreshes them: a reading that costs the internet happens
-  when somebody asks for it, and that way there is never a call the
-  reader did not cause.
+  The stacks, the installers and the packages are the readings that are
+  not about this machine at all: the usable `hexpm/elixir` images, five
+  pages of Docker Hub's API; the `phx_new` releases hex publishes; and
+  what hex says of the packages a box brings (`Console.Hex`). They are
+  never read on their own — not at boot, not when the screen that shows
+  them opens — only when the reader presses the button beside them, and
+  then they are held here for every page until pressed again. No clock
+  refreshes them: a reading that costs the internet happens when
+  somebody asks for it, and that way there is never a call the reader
+  did not cause. The packages are kept by name, so a box whose
+  dependency another box already brought is answered from memory and
+  only the names nobody has asked for are fetched.
 
   The catalog is the workbench's, not the workspace's: it is read once
   and kept until a `new` or `delete`, or until the features directory of
@@ -36,6 +40,7 @@ defmodule Console.Bench do
             catalog: nil,
             stacks: nil,
             installers: nil,
+            packages: %{},
             features_stamp: nil,
             expands: %{},
             in_flight: %{},
@@ -57,6 +62,9 @@ defmodule Console.Bench do
 
   @doc "The Phoenix installers as last read, or nil while nobody has asked."
   def installers, do: GenServer.call(__MODULE__, :installers)
+
+  @doc "What hex said of each package asked for so far, by name; `%{}` before anybody asks."
+  def packages, do: GenServer.call(__MODULE__, :packages)
 
   @doc "Whether a reading of `key` (:status or :catalog) is in flight."
   def reading?(key), do: GenServer.call(__MODULE__, {:reading?, key})
@@ -101,6 +109,7 @@ defmodule Console.Bench do
 
   def handle_call(:stacks, _from, state), do: {:reply, state.stacks, state}
   def handle_call(:installers, _from, state), do: {:reply, state.installers, state}
+  def handle_call(:packages, _from, state), do: {:reply, state.packages, state}
 
   def handle_call({:reading?, key}, _from, state),
     do: {:reply, Map.has_key?(state.in_flight, key), state}
@@ -169,6 +178,13 @@ defmodule Console.Bench do
         {:installers, {:ok, releases}} ->
           broadcast({:bench, :installers, releases})
           %{state | installers: releases, errors: Map.delete(state.errors, :installers)}
+
+        # Kept by name and merged: what was read before stays, and a
+        # second press over the same names replaces those readings.
+        {:packages, readings} ->
+          packages = Map.merge(state.packages, readings)
+          broadcast({:bench, :packages, packages})
+          %{state | packages: packages, errors: Map.delete(state.errors, :packages)}
 
         {{:expand, name, argv}, {:ok, plan}} ->
           broadcast({:bench, :expand, name, argv, plan})
@@ -261,6 +277,13 @@ defmodule Console.Bench do
     do: put_in(state.in_flight[:stacks], Task.async(fn -> {:stacks, Workbench.stacks()} end))
 
   # hex, one call for the list and one per release, in this BEAM.
+  defp start(state, :packages, names),
+    do:
+      put_in(
+        state.in_flight[:packages],
+        Task.async(fn -> {:packages, Console.Hex.read(List.wrap(names))} end)
+      )
+
   defp start(state, :installers, _),
     do:
       put_in(

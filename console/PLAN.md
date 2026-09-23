@@ -37,6 +37,32 @@ made of two contracts and one verb, and documents, config, diffs and
 logs do not fit in that sentence. Either the sentence grows or the
 contracts do.
 
+**What hex says of a package, asked for.** The Box screen's third
+panel, under Specs — beside what the box opens and what it raises —
+reads the project — what the box brings, what `mix.exs`
+pins, what `mix.lock` resolved — off `mix workbench.status`, offline.
+Beside it, on a press, what hex.pm says of each package: its latest
+stable release, how long since that was published, how much it is
+downloaded (`Console.Hex`, `:httpc`, the client `Console.Installers`
+already uses for the same host). It is held in `Console.Bench` by
+package name, under the rule the stacks and the installers already
+follow — no clock, no read at mount, only a reader pressing — so a
+package another box already brought is answered from memory. The panel
+is a table with a header — package, brings, pins, locked, latest,
+released, downloads — because each column is read off a different place
+and a reader compares down a column, where a tooltip can only be read
+one at a time. The three hex columns are unlit until somebody asks, say
+*not read* with the reason when hex does not answer, and the latest is
+marked when it is the version the project runs. The name carries hex's
+own mark — vendored under `priv/static/images/vendor/` with its note,
+not hot-linked from a hashed asset that changes under us — and opens
+the package's page; the locked version opens that version's
+documentation. The reading is asked for with the square the
+configuration already carries for the Docker tags and the phx_new
+releases. The date is the reading that matters: it is what
+says whether a dependency is alive, and it is the fact a paper
+otherwise carries by hand.
+
 **Open.** Which. The recommendation is: facts about the *workspace* go
 through `wb.sh` (it already knows how to ask the igniter package on the
 project, and the console must not grow a second opinion about what is

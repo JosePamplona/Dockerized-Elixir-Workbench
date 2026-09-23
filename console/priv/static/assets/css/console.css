@@ -1017,6 +1017,52 @@ form.insert .opts{display:grid}
    the note under the line, as the Danger zone's is. */
 .install .foot{margin-top:12px}
 .install .foot .cmd{flex:1;min-width:240px}
+/* Brings: what the box puts in the project's mix.exs. One row per
+   package — its name, what the box brings, what the project pins and
+   what the lock resolved — read as a column each, mono, because every
+   one of them is read off a file. A pin that is not the box's wears
+   the house's warn: the insert is older than the box. Offered (the box
+   is not in) the last column is the tuple's own options instead. */
+/* Under Specs on the box's own screen: the packages are what the box
+   brings, like its doors and its containers — not a step of installing
+   it. A table and not a row of chips, because every column is a fact
+   read off a different place — the manifest, mix.exs, mix.lock, hex —
+   and a reader compares them down the column, not across a tooltip.
+   The name opens the package on hex and the locked version opens that
+   version's documentation; the mark before the name is what says so,
+   in place of an underline, which in a table cell stretches the width
+   of the column and underlines nothing. */
+/* The table keeps its shape in a narrow drawer: the panel scrolls
+   sideways rather than letting the cells wrap, because a version
+   broken over two lines — or a package name cut mid-word, which the
+   `overflow-wrap:anywhere` every `table.rows` carries would do — is
+   not a fact a reader can read. A column of numbers is only a column
+   while it is one line each. */
+.packages{display:grid;gap:6px;margin-top:18px;min-width:0}
+.packages .scroll{overflow-x:auto;overscroll-behavior-x:contain}
+table.rows.pkgs{font-size:12px;min-width:max-content}
+table.rows.pkgs td:first-child,table.rows.pkgs th:first-child{white-space:nowrap;overflow-wrap:normal;padding-right:12px}
+table.rows.pkgs th{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:10.5px;color:var(--muted);text-align:left;padding-bottom:6px;border-bottom:1px solid var(--line)}
+table.rows.pkgs th:not(:first-child),table.rows.pkgs td:not(:first-child){text-align:right;padding-left:12px;white-space:nowrap}
+table.rows.pkgs td{padding:6px 0}
+table.rows.pkgs td .unlit{color:var(--line)}
+table.rows.pkgs td .bad{color:var(--bad)}
+/* A cell is a cell: .req is a flex row inside the sheet, which would
+   take these two out of the table's columns. */
+table.rows.pkgs td{display:table-cell}
+table.rows.pkgs td.asks{color:var(--muted)}
+table.rows.pkgs td.asks.warn{color:var(--warn)}
+table.rows.pkgs td.v{color:var(--soft);font-variant-numeric:tabular-nums}
+table.rows.pkgs td.v.good{color:var(--good)}
+/* The mention itself is the house's .pkg-ref (components.css); the
+   table only says how a cell of them reads. */
+table.rows.pkgs td.v .pkg-ref{color:var(--soft);font-size:inherit}
+table.rows.pkgs td.v .pkg-ref:hover,table.rows.pkgs td.v .pkg-ref:focus-visible{color:var(--accent)}
+table.rows.pkgs td .pkg-ref{font-size:inherit}
+.packages .log-cap{gap:8px}
+.packages .log-cap .note.bad{color:var(--bad)}
+.packages .log-cap .sq.ask{margin-left:auto}
+
 .install .foot .note{flex-basis:100%;margin:0}
 form.insert.locked .opt input{opacity:.55}
 /* Specs — the box's own facts, a table where the need above is prose.

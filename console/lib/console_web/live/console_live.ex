@@ -89,6 +89,9 @@ defmodule ConsoleWeb.ConsoleLive do
         stacks_asking: Bench.reading?(:stacks),
         stacks_error: Bench.error(:stacks),
         installers: Bench.installers(),
+        packages: Bench.packages(),
+        packages_asking: Bench.reading?(:packages),
+        packages_error: Bench.error(:packages),
         installers_asking: Bench.reading?(:installers),
         installers_error: Bench.error(:installers),
         probes: %{},
@@ -311,6 +314,13 @@ defmodule ConsoleWeb.ConsoleLive do
 
     {:noreply, socket}
   end
+
+  def handle_info({:bench, :packages, readings}, socket),
+    do:
+      {:noreply, assign(socket, packages: readings, packages_asking: false, packages_error: nil)}
+
+  def handle_info({:bench, :error, :packages, why}, socket),
+    do: {:noreply, assign(socket, packages_asking: false, packages_error: why)}
 
   def handle_info({:bench, key, _} = msg, socket) when key in [:stacks, :installers],
     do: Drawer.info(msg, socket)
@@ -632,6 +642,15 @@ defmodule ConsoleWeb.ConsoleLive do
   # The box in hand: its face, its options, and what it asks of wb.sh.
   def handle_event(event, params, socket) when event in ~w(flip options insert eject),
     do: Hand.event(event, params, socket)
+
+  # What hex says of the packages the box in hand brings. Asked for, as
+  # every reading that costs the internet is (Console.Bench): the names
+  # already read are answered from memory, and only the rest are fetched.
+  def handle_event("packages_ask", %{"names" => names}, socket) do
+    wanted = String.split(names, ",", trim: true)
+    Bench.refresh(:packages, wanted -- Map.keys(socket.assigns.packages))
+    {:noreply, assign(socket, packages_asking: true, packages_error: nil)}
+  end
 
   # A line to run — from a button or from the command line: a verb the
   # console knows (Console.Verbs), never a free-form argv. The two verbs
@@ -1137,6 +1156,9 @@ defmodule ConsoleWeb.ConsoleLive do
       asking={@stop_ask}
       stoppable={@stoppable}
       diff={@diff}
+      packages={@packages}
+      packages_asking={@packages_asking}
+      packages_error={@packages_error}
     />
     """
   end

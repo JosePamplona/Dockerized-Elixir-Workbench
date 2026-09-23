@@ -180,11 +180,16 @@ defmodule Mix.Tasks.Workbench.Status do
   end
 
   # mix.exs's own list: the package and the requirement it asks for,
-  # which a dep given by path or git does not have.
+  # which a dep given by path or git does not have. Read off the file
+  # and not `Mix.Project.config()`, which is the project as it was when
+  # Mix pushed it — in the resident (`workbench.serve`) that is the
+  # project of an hour ago, and a package inserted since would read as
+  # pinned by nobody.
   defp pinned_deps do
-    Map.new(Mix.Project.config()[:deps] || [], fn dep ->
-      {elem(dep, 0), if(tuple_size(dep) > 1 and is_binary(elem(dep, 1)), do: elem(dep, 1))}
-    end)
+    case File.read("mix.exs") do
+      {:ok, text} -> WorkbenchIgniter.MixFile.requirements(text)
+      {:error, _} -> %{}
+    end
   end
 
   defp dep_reading(dep, pinned, locked) do
@@ -199,7 +204,11 @@ defmodule Mix.Tasks.Workbench.Status do
   end
 
   # The lock's entry for a package from hex: `{:hex, :ex_doc, "0.40.4", …}`.
-  defp locked_version(entry) when is_tuple(entry) and tuple_size(entry) > 2 do
+  # A package from git is locked to a commit and not to a version —
+  # `{:git, url, sha, …}` — and a sha is not a version to read, nor one
+  # hexdocs has a page for.
+  defp locked_version(entry)
+       when is_tuple(entry) and tuple_size(entry) > 2 and elem(entry, 0) == :hex do
     version = elem(entry, 2)
     if is_binary(version), do: version
   end

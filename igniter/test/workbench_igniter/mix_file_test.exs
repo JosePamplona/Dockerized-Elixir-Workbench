@@ -184,6 +184,38 @@ defmodule WorkbenchIgniter.MixFileTest do
     end
   end
 
+  describe "requirements/1" do
+    test "what mix.exs asks for of each package, and nothing for a git or path dep" do
+      text = """
+      defmodule Lorem.MixProject do
+        use Mix.Project
+
+        defp deps do
+          [
+            {:phoenix, "~> 1.8.0"},
+            {:excoveralls, "~> 0.18", only: :test},
+            {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+            {:heroicons, github: "tailwindlabs/heroicons", tag: "v2.2.0", app: false},
+            {:workbench_igniter, path: "../../igniter"}
+          ]
+        end
+      end
+      """
+
+      assert MixFile.requirements(text) == %{
+               phoenix: "~> 1.8.0",
+               excoveralls: "~> 0.18",
+               credo: "~> 1.7",
+               heroicons: nil,
+               workbench_igniter: nil
+             }
+    end
+
+    test "a mix.exs whose deps are not a list literal asks for nothing" do
+      assert MixFile.requirements("defmodule M do\nend\n") == %{}
+    end
+  end
+
   defp issues(igniter), do: Igniter.prepare_for_write(igniter).issues
 
   defp rewritten(igniter) do

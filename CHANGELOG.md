@@ -109,6 +109,20 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   cell claimed to be the version installed and left the reader to
   guess what the other three were.
 
+- **What `mix.exs` pins, read off `mix.exs`.** The Packages panel said
+  *the project pins nothing* of a package the project plainly pins:
+  excoveralls, inserted after the console's resident
+  (`mix workbench.serve`) had started. The pins were read from
+  `Mix.Project.config()`, which is the project as it was when Mix
+  pushed it — in a process that answers for hours, that is the project
+  of hours ago, and everything inserted since reads as pinned by
+  nobody. They are read off the file now, through the module that owns
+  it (`WorkbenchIgniter.MixFile.requirements/1`), as the lock already
+  was. The lock's own reading learns the same lesson from the other
+  side: a package from git is locked to a commit, not to a version, so
+  `heroicons`' sha no longer poses as one — nor as a hexdocs page that
+  does not exist.
+
 - **A base cartridge's packages, read off its own insert commit.** The
   seven base boxes declare no package and cannot: what `mailer` or
   `ecto` brings arrives inside the `phx.new` delta, at whatever version

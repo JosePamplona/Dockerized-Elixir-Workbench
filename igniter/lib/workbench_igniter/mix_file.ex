@@ -79,6 +79,26 @@ defmodule WorkbenchIgniter.MixFile do
     }
   end
 
+  @doc """
+  What `mix.exs` asks for of each package: `%{name => requirement}`,
+  and `nil` for a dependency given by path or git, which has no version
+  to ask for. Read off the file, never off `Mix.Project.config()`,
+  which is the project as it was when Mix pushed it: in a long-running
+  process a package inserted since would read as pinned by nobody.
+  """
+  @spec requirements(String.t()) :: %{atom() => String.t() | nil}
+  def requirements(text) do
+    %{deps: deps} = read(text)
+    Map.new(deps, fn {name, dep} -> {name, requirement_of(dep)} end)
+  end
+
+  defp requirement_of({_name, requirement}) when is_binary(requirement), do: requirement
+
+  defp requirement_of({:{}, _, [_name, requirement | _]}) when is_binary(requirement),
+    do: requirement
+
+  defp requirement_of(_dep), do: nil
+
   # The last expression of the function's body, or nil.
   defp body_of(ast, name) do
     {_, found} =

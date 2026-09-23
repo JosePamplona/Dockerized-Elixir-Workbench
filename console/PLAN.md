@@ -697,8 +697,17 @@ port now, the one the browser sees (`CONSOLE_PUBLIC_PORT`, which
 beside the routes (violet, on the app's port) and the ports (blue, the
 compose's). It is green (`addr-output`): a page on disk, which answers
 whether the app runs or not. It is not knocked: what it has to say is
-when it was built, read off the index's mtime, attached where a route
-has its HTTP code. Unlit, with the reason, while nothing is built. The
+when it was built — the whole stamp and nothing more,
+`2026-09-22 18:18 +0200`, read off the index's mtime and attached where a route has its HTTP code: a page
+on disk is read against the project of that moment, and the hour alone
+left the day to be guessed, and the clock it was on. The offset is the
+machine's own at that moment, summer time included: the same mtime read
+local and UTC, their difference. Unlit, with the reason, while nothing is
+built — and in the reading's place, the one thing to do: **build**
+(the word *built* beside the stamp was the same fact said twice: a
+stamp is there or the button is),
+which runs the command the cartridge names (`build:` in its door,
+`./wb.sh mix docs`) as a job. The
 listener serves `/<label>/` from the dirs the inserted cartridges
 declare, and nothing else of the workspace — `.env` is in it.
 
@@ -711,8 +720,13 @@ declare, and nothing else of the workspace — `.env` is in it.
   `state/1` reporting where the output lands — exdoc reads `mix.exs`,
   coverage reads its json — as a fact and not an option, which the
   Record's parameters column has to learn to tell apart.
-* **Building it from the door.** An unlit door says *nothing built*; the
-  command that builds it is the cartridge's to name, a job to run.
+* ~~**Building it from the door.**~~ *Done on 2026-09-22:* a door on
+  disk carries `build:`, the Mix task of the project that writes it —
+  exdoc `docs`, coverage `cover` where the docs site takes the report
+  and `coveralls.html` otherwise, the first whose condition holds. The
+  unlit door shows it as a button and runs `./wb.sh mix <task>`; the
+  workbench never invents a command, and no cartridge learns one for
+  the console's sake.
 * ~~**The boxes.**~~ *Done on 2026-09-21:* exdoc v0.2.0 plants no
   router, controller or `doc/` dummies, and dropped `--version` and
   `--auth0` (the token page needs the app's origin; auth0 is archived);

@@ -25,6 +25,19 @@ defmodule ConsoleWeb.CartridgesTest do
       refute Cartridges.holds?(@status, @ash, %{"when" => %{"with" => "ash_cloak"}})
     end
 
+    # coverage's `mix cover` is planted by its own --exdoc, and whether
+    # the exdoc cartridge is in says nothing about that file.
+    test "an option condition reads what the cartridge was inserted with" do
+      coverage = %{"name" => "coverage", "state" => %{"exdoc" => true, "githook" => false}}
+
+      assert Cartridges.holds?(@status, coverage, %{"when" => %{"option" => "exdoc"}})
+      refute Cartridges.holds?(@status, coverage, %{"when" => %{"option" => "githook"}})
+
+      refute Cartridges.holds?(@status, %{"name" => "coverage"}, %{
+               "when" => %{"option" => "exdoc"}
+             })
+    end
+
     test "a cartridge condition asks whether that one is in" do
       assert Cartridges.holds?(@status, @ash, %{"when" => %{"cartridge" => "rest"}})
       refute Cartridges.holds?(@status, @ash, %{"when" => %{"cartridge" => "graphql"}})
@@ -32,6 +45,34 @@ defmodule ConsoleWeb.CartridgesTest do
   end
 
   describe "satisfies?/3: a requirement's state, off the status" do
+    # A `:csv` option answers with a list: coverage's `--md-report`
+    # asks test_doubles for Mimic among its doubles, and the console
+    # shut the switch on a project that had it.
+    @doubles %{
+      "project" => %{
+        "cartridges" => [
+          %{
+            "name" => "test_doubles",
+            "installed" => true,
+            "state" => %{"double" => ["mimic", "mox"]}
+          }
+        ]
+      }
+    }
+
+    test "a state answered with a list is met when it carries the value asked" do
+      assert Cartridges.satisfies?(@doubles, "test_doubles", %{"double" => "mimic"})
+      assert Cartridges.satisfies?(@doubles, "test_doubles", %{"double" => "mox"})
+      refute Cartridges.satisfies?(@doubles, "test_doubles", %{"double" => "hammox"})
+
+      one =
+        put_in(@doubles, ["project", "cartridges"], [
+          %{"name" => "test_doubles", "installed" => true, "state" => %{"double" => ["mox"]}}
+        ])
+
+      refute Cartridges.satisfies?(one, "test_doubles", %{"double" => "mimic"})
+    end
+
     @on_mysql %{
       "project" => %{
         "cartridges" => [

@@ -33,7 +33,17 @@ defmodule ConsoleWeb.Cartridges do
     end
   end
 
-  # A list asks for any one of its values (`database` postgres, mysql or mssql).
+  # The same reading as the installer's (`WorkbenchIgniter.Feature`): a
+  # list asks for any one of its values (`database` postgres, mysql or
+  # mssql), and a state the project answers with a list — a `:csv`
+  # option: test_doubles' doubles, db_admin's admins — is met when it
+  # carries what was asked. Without this the console shut an option
+  # whose box was in and whose state held, and the insert would have
+  # taken it.
+  defp met?(found, expected) when is_list(found) and is_list(expected),
+    do: Enum.any?(found, &(&1 in expected))
+
+  defp met?(found, expected) when is_list(found), do: expected in found
   defp met?(found, expected) when is_list(expected), do: found in expected
   defp met?(found, expected), do: found == expected
 
@@ -57,7 +67,13 @@ defmodule ConsoleWeb.Cartridges do
   def carried(status, name),
     do: Enum.find(get_in(status, ["project", "cartridges"]) || [], &(&1["name"] == name))
 
-  @doc "The insert commit of a cartridge, when it went in by commit."
+  @doc "Every insert commit of a cartridge still standing, newest first."
+  def inserts(nil, _name), do: []
+
+  def inserts(status, name),
+    do: Enum.filter(get_in(status, ["git", "inserts"]) || [], &(&1["feature"] == name))
+
+  @doc "The latest insert commit of a cartridge, when it went in by commit."
   def insert(nil, _name), do: nil
 
   def insert(status, name),
@@ -113,6 +129,12 @@ defmodule ConsoleWeb.Cartridges do
   # the condition itself is read by its key; an item without one holds.
   def holds?(status, c, %{"when" => condition}), do: holds?(status, c, condition)
   def holds?(_status, c, %{"with" => value}), do: value in (get_in(c, ["state", "with"]) || [])
+
+  # The cartridge's own option, as the project reports it: `--exdoc` is
+  # what plants coverage's `mix cover`, and whether the exdoc cartridge
+  # is in says nothing about that file.
+  def holds?(_status, c, %{"option" => key}), do: !!get_in(c, ["state", key])
+
   def holds?(status, _c, %{"cartridge" => name}), do: installed?(status, name)
   def holds?(_, _, _), do: true
 
@@ -143,9 +165,34 @@ defmodule ConsoleWeb.Cartridges do
       get_in(status, ["project", "phx", c["name"]]) == true ->
         {"from birth", "off", "came with the project: phx.new generated it — nothing to eject"}
 
+      composer = composer(status, c) ->
+        {"with #{composer["name"]}", "off",
+         "came in with #{composer["name"]}'s insert (#{String.slice(composer["sha"], 0, 7)} — " <>
+           "#{composer["subject"]}): its files are in that commit, and ejecting " <>
+           "#{composer["name"]} takes them back"}
+
       true ->
         {"by hand", "off", "inserted by hand: no commit to eject"}
     end
+  end
+
+  @doc """
+  The cartridge that brought this one in, when it has no insert of its
+  own: one that is in by commit and declares it among what its
+  installer composes (`composes`, off the manifest) — coverage's
+  `--exdoc` brings test_doubles, health_endpoint brings mock. The
+  entry with its insert's sha and subject; `nil` when nobody claims it.
+  """
+  def composer(status, c) do
+    Enum.find_value(get_in(status, ["project", "cartridges"]) || [], fn other ->
+      with true <- other["installed"],
+           true <- c["name"] in (other["composes"] || []),
+           %{} = i <- insert(status, other["name"]) do
+        Map.merge(i, %{"name" => other["name"]})
+      else
+        _ -> nil
+      end
+    end)
   end
 
   @doc "What is true of a box: not done, archived, a collection of N, base."

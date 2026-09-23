@@ -84,11 +84,11 @@ defmodule ConsoleWeb.ConsoleLive.Hand do
         |> start_async({:diff, box["name"]}, fn -> Diffs.collection(ws, inserts) end)
 
       true ->
-        insert = Cartridges.insert(status, box["name"])
+        inserts = Cartridges.inserts(status, box["name"])
 
         socket
         |> assign(diff: :loading)
-        |> start_async({:diff, box["name"]}, fn -> Diffs.cartridge(ws, insert) end)
+        |> start_async({:diff, box["name"]}, fn -> Diffs.inserted(ws, inserts) end)
     end
   end
 

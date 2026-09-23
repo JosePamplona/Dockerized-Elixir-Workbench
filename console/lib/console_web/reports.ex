@@ -56,10 +56,30 @@ defmodule ConsoleWeb.Reports do
     |> Enum.uniq_by(& &1.label)
   end
 
-  @doc "When an output's index was written, local time; nil while it is not on disk."
+  @doc """
+  When an output's index was written, in the machine's own time zone —
+  the offset carried with it, since the console and whoever reads it
+  need not be in the same one. `nil` while it is not on disk.
+  """
   def built(root, %{dir: dir, index: index}) when is_binary(root) do
-    case File.stat(Path.join([root, dir, index]), time: :local) do
-      {:ok, %File.Stat{type: :regular, mtime: mtime}} -> NaiveDateTime.from_erl!(mtime)
+    path = Path.join([root, dir, index])
+
+    with {:ok, %File.Stat{type: :regular, mtime: local}} <- File.stat(path, time: :local),
+         {:ok, %File.Stat{mtime: posix}} <- File.stat(path, time: :posix) do
+      utc = DateTime.from_unix!(posix)
+      # The same moment read twice, local and UTC: their difference is
+      # the offset in force then — summer time included, which a zone
+      # name alone would not say.
+      offset = NaiveDateTime.diff(NaiveDateTime.from_erl!(local), DateTime.to_naive(utc))
+
+      %{
+        DateTime.add(utc, offset)
+        | utc_offset: offset,
+          std_offset: 0,
+          zone_abbr: "",
+          time_zone: "Etc/Unknown"
+      }
+    else
       _ -> nil
     end
   end

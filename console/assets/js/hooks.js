@@ -255,6 +255,69 @@ export const Folds = {
   },
 }
 
+// --- a url field: the scheme written for you, and our own complaint -------------
+// An option declared `:url` (formats/0) is refused without a scheme, and
+// typing "https://" is the part nobody wants to type. The field opens
+// with it and takes it back when nothing else was written, so a reader
+// who tabs through leaves no half-address behind. Neither move is sent:
+// the server hears the field when a key is pressed, and "https://"
+// alone is not an answer. A pasted address that brings its own scheme
+// replaces the one waiting instead of doubling it.
+//
+// The complaint is ours too. Left to the browser it is the browser's
+// sentence in the browser's language ("Introduce una URL" on a Spanish
+// one), which says neither what shape is wanted nor that the installer
+// takes two schemes and no others; `setCustomValidity` replaces it with
+// the rule the insert will hold the value to, in the console's language.
+const SCHEME = /^https?:\/\//i
+const ADDRESS = /^https?:\/\/[^\s"']+$/i
+const SAYS =
+  "This is a full address, scheme and all — http://example.com or https://example.com/page. " +
+  "Only http:// and https:// are taken, and the rest cannot carry spaces or quotes."
+const PREFIX = "https://"
+export const UrlField = {
+  mounted() {
+    const el = this.el
+    // Empty is unasked, and what unasked means is the cartridge's: the
+    // field complains about what is written, never about nothing.
+    const judge = () => el.setCustomValidity(el.value === "" || ADDRESS.test(el.value) ? "" : SAYS)
+
+    // The scheme is written on focus, and the caret belongs after it.
+    // A click places its own caret where the pointer landed — after the
+    // focus event, so between the characters just written, and the next
+    // keystroke would land inside "https://". `fresh` is that moment
+    // and nothing else: while it lasts the caret is put back at the end
+    // (on the frame after, so the click's own placing is already done),
+    // and the first keystroke or a blur ends it, so a reader editing
+    // what they wrote is never pushed around.
+    let fresh = false
+    const end = () => { if (fresh) el.setSelectionRange(el.value.length, el.value.length) }
+
+    el.addEventListener("focus", () => {
+      if (el.value === "") { el.value = PREFIX; fresh = true }
+      if (fresh) requestAnimationFrame(end)
+      judge()
+    })
+
+    el.addEventListener("mouseup", () => { if (fresh) requestAnimationFrame(end) })
+
+    el.addEventListener("blur", () => {
+      fresh = false
+      if (SCHEME.test(el.value) && el.value.replace(SCHEME, "") === "") el.value = ""
+      judge()
+    })
+
+    el.addEventListener("input", () => {
+      fresh = false
+      const doubled = el.value.match(/^https?:\/\/(https?:\/\/.*)$/i)
+      if (doubled) { el.value = doubled[1]; el.setSelectionRange(el.value.length, el.value.length) }
+      judge()
+    })
+
+    judge()
+  },
+}
+
 // --- the rail's width: dragged, nudged with the arrows, reset with a double click, kept
 const RAIL_KEY = "wb-console-rail", RAIL_MIN = 300, RAIL_MAX_SHARE = 0.5, RAIL_DEFAULT = 380
 export const Rail = {

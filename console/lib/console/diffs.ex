@@ -30,6 +30,26 @@ defmodule Console.Diffs do
   end
 
   @doc """
+  A cartridge's diff across every insert of it still standing, newest
+  first — the status's order. A cartridge goes in more than once when a
+  later insert adds an option (`rerun: :adds`: changelog's `--mix-task`,
+  db_admin's second admin), and each insert is its own commit, so each
+  stays its own here: other cartridges' commits may sit between them,
+  and a range would carry those too. `inserts` are the status's
+  `git.inserts` entries of this cartridge.
+  """
+  def inserted(workspace, inserts) do
+    picks = Enum.map(inserts, &cartridge(workspace, &1))
+
+    %{
+      picks: picks,
+      files: Enum.flat_map(picks, & &1.files),
+      added: Enum.sum(Enum.map(picks, & &1.added)),
+      removed: Enum.sum(Enum.map(picks, & &1.removed))
+    }
+  end
+
+  @doc """
   A collection's diff: the range its members' commits span, when they
   are contiguous in the log, with who touched each file; otherwise the
   fact that they are not, and how many commits sit between.

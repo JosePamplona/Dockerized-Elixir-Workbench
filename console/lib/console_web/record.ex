@@ -392,10 +392,11 @@ defmodule ConsoleWeb.Record do
     output = %{dir: Cartridges.fill_path(o["dir"], c), index: o["index"]}
     built = Reports.built(status["workspace"], output)
     port = Reports.port()
+    shut = not Cartridges.holds?(status, c, d)
 
     why =
       cond do
-        not Cartridges.holds?(status, c, d) -> shut_why(d)
+        shut -> shut_why(d)
         is_nil(port) -> "the console serves no pages here"
         is_nil(built) -> "nothing built in #{output.dir}/ yet"
         true -> nil
@@ -408,8 +409,23 @@ defmodule ConsoleWeb.Record do
       port: nil,
       href: if(is_nil(why), do: "http://localhost:#{port}/#{d["label"]}/"),
       why: why,
-      read: built && {"built " <> built_when(built), ""}
+      read: built && {built_when(built), ""},
+      # Nothing there yet, and the cartridge says which of the project's
+      # Mix tasks writes it: the door offers that command instead of a
+      # reading. The workbench never invents one — `./wb.sh mix <task>`
+      # is the project's own.
+      build: if(is_nil(built) and not shut, do: build_task(status, c, o))
     }
+  end
+
+  # The first command whose condition holds — coverage's `mix cover`
+  # where the docs site takes the report, ExCoveralls' own task
+  # otherwise.
+  defp build_task(status, c, o) do
+    case Enum.find(o["build"] || [], &Cartridges.holds?(status, c, &1)) do
+      %{"task" => task} -> task
+      nil -> nil
+    end
   end
 
   # A route the cartridge opens on the app's port: shut by its condition,
@@ -438,7 +454,8 @@ defmodule ConsoleWeb.Record do
       port: port,
       href: href,
       why: why,
-      read: read(reads, href)
+      read: read(reads, href),
+      build: nil
     }
   end
 
@@ -448,13 +465,13 @@ defmodule ConsoleWeb.Record do
       else: "only with #{d["when"]["cartridge"]} inserted"
   end
 
-  # Today's build by its time, an older one by its day: the reading is
-  # how fresh the page is, not a timestamp to copy.
-  defp built_when(built) do
-    if NaiveDateTime.to_date(built) == NaiveDateTime.to_date(NaiveDateTime.local_now()),
-      do: Calendar.strftime(built, "%H:%M"),
-      else: Calendar.strftime(built, "%-d %b")
-  end
+  # The whole stamp — date, time and the offset it was read in: a page
+  # on disk is read against what the project was when it was written,
+  # and "18:18" left the reader to guess which day that was (today's,
+  # if they did not look twice) and whose clock it was on. The stamp
+  # says "built" by being there: where there is none the door offers
+  # *build* in its place, and the two are never both.
+  defp built_when(built), do: Calendar.strftime(built, "%Y-%m-%d %H:%M %z")
 
   # The services a cartridge brings to the workspace, as `docker compose
   # ps` sees them now — what they are is the cartridge's to say, in the

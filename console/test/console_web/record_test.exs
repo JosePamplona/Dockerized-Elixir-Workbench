@@ -171,7 +171,11 @@ defmodule ConsoleWeb.RecordTest do
           %{
             "label" => "docs",
             "path" => "doc/",
-            "output" => %{"dir" => "doc", "index" => "index.html"}
+            "output" => %{
+              "dir" => "doc",
+              "index" => "index.html",
+              "build" => [%{"task" => "docs", "when" => nil}]
+            }
           }
         ]
       }
@@ -460,9 +464,17 @@ defmodule ConsoleWeb.RecordTest do
       Enum.find(Record.page(status, @catalog).cartridges, &(&1.c["name"] == "exdoc")).addresses
     end
 
-    # Nothing built: shut, with the reason, and not for the app.
-    assert [%{kind: "output", path: "doc/", href: nil, why: "nothing built in doc/ yet"}] =
-             docs.(with_exdoc)
+    # Nothing built: shut, with the reason, and not for the app — with
+    # the command that would write it, which the cartridge names.
+    assert [
+             %{
+               kind: "output",
+               path: "doc/",
+               href: nil,
+               why: "nothing built in doc/ yet",
+               build: "docs"
+             }
+           ] = docs.(with_exdoc)
 
     File.mkdir_p!(Path.join(ws, "doc"))
     File.write!(Path.join(ws, "doc/index.html"), "")
@@ -470,8 +482,13 @@ defmodule ConsoleWeb.RecordTest do
     # Built: open on the pages' own port, its reading when it was built —
     # with the app down as much as up, and no knock calls it.
     for status <- [with_exdoc, Map.put(with_exdoc, "deployment", nil)] do
-      assert [%{href: "http://localhost:4101/docs/", why: nil, read: {"built " <> _, ""}}] =
+      assert [%{href: "http://localhost:4101/docs/", why: nil, read: {stamp, ""}, build: nil}] =
                docs.(status)
+
+      # The whole stamp and nothing else: which project wrote it, and on
+      # whose clock — the offset the machine read it in. That there is
+      # one is what says it was built.
+      assert stamp =~ ~r/^\d{4}-\d{2}-\d{2} \d{2}:\d{2} [+-]\d{4}$/
     end
 
     refute "http://localhost:4101/docs/" in Record.hrefs(Record.page(with_exdoc, @catalog))

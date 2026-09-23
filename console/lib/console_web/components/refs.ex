@@ -70,7 +70,9 @@ defmodule ConsoleWeb.Refs do
   port, `:4001/dev/mailbox`, the port
   dimmed. `read` is what the address answered when the console called
   it, `{text, chip class}`, attached inside the border; nil when nothing
-  called it.
+  called it. `build` takes its place on a page that is not there yet:
+  the Mix task the cartridge says writes it, as the one thing to press
+  — the same plate, pressable, running `./wb.sh mix <task>` as a job.
   """
   attr :label, :string, required: true
   attr :path, :string, required: true
@@ -81,6 +83,10 @@ defmodule ConsoleWeb.Refs do
   attr :kind, :string, default: "route", values: ~w(route port inside output)
   attr :port, :any, default: nil
   attr :read, :any, default: nil
+
+  attr :build, :any,
+    default: nil,
+    doc: "the Mix task that would write this page, when it is not there"
 
   def door_ref(assigns) do
     assigns = assign(assigns, open: assigns.href && !assigns.why)
@@ -104,7 +110,14 @@ defmodule ConsoleWeb.Refs do
       ><b>{@label}</b><span><em :if={@port}>:{@port}</em>{@path}</span><i
         :if={@read}
         class={["read", elem(@read, 1)]}
-      >{elem(@read, 0)}</i></span>
+      >{elem(@read, 0)}</i><button
+        :if={!@read && @build}
+        type="button"
+        class="read build"
+        phx-click="run"
+        phx-value-args={"mix " <> @build}
+        title={"./wb.sh mix #{@build} — writes this page in the workspace, as a job"}
+      >build</button></span>
       <.cart_ref :if={@who} name={@who} installed={@who_installed} />
     </span>
     """

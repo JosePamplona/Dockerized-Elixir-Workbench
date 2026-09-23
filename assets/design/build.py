@@ -282,8 +282,17 @@ def components_css():
                     the host (database:5432) — the layer kept, the opening not
        .door-output green, addr-output: a page a tool wrote on disk (doc/,
                     cover/), served by the console on an origin of its own;
-                    written as the dir it is read from, its reading when it
-                    was built — never knocked, it answers with the app down
+                    written as the dir it is read from, its reading the whole
+                    stamp of when it was built and nothing more
+                    (2026-09-22 18:18 +0200: a page is read against the project
+                    of that moment, and an hour alone left the day and the
+                    clock to be guessed; that there IS a stamp is what says it
+                    was built, and where there is none the door offers build) — never knocked, it
+                    answers with the app down. Where the page is not there
+                    yet, the reading's place takes the one thing to do
+                    instead: .read.build, the same plate pressable, which
+                    runs the command the cartridge names (./wb.sh mix docs)
+                    and is the only door that does something other than open
      (prefixed, because `.console` is the LiveView console's own root.)
      A route is written on its port — <span><em>:4001</em>/dev/mailbox</span>,
      the port dimmed — because it rides on one; a port is written whole.
@@ -520,6 +529,8 @@ def components_css():
 .door-ref .read.warn{background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--warn)}
 .door-ref .read.bad{background:color-mix(in srgb,var(--bad) 16%,transparent);color:var(--bad)}
 .door-ref .read.busy::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex:none;animation:chip-pulse 1s infinite}
+.door-ref .read.build{border-top:0;border-right:0;border-bottom:0;cursor:pointer;color:var(--ink);text-transform:none}
+.door-ref .read.build:hover,.door-ref .read.build:focus-visible{background:var(--ink);color:var(--surface);outline:none}
 .commit-ref{display:inline-block;font-family:var(--mono);font-size:11.5px;letter-spacing:0;text-transform:none;color:var(--ink);padding:1px 7px;border:1px solid var(--line);border-radius:2px;background:none;text-decoration:none;cursor:pointer}
 .commit-ref:hover,.commit-ref:focus-visible{border-color:var(--ink);outline:none}
 .chip{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;font-family:var(--mono);font-weight:500;font-size:11px;padding:2px 8px;border-radius:3px;border:0;background:var(--surface-2);color:var(--muted)}

@@ -73,4 +73,39 @@ defmodule ConsoleWeb.JobButtonTest do
     assert html =~ ~s(phx-value-what="images")
     assert html =~ ~s(title="asks first")
   end
+
+  # The one door that does something other than open: a page on disk
+  # that is not there yet offers the command that writes it, in the
+  # reading's own place.
+  test "a page not built yet wears its build command where the reading goes" do
+    html =
+      render_component(&door_ref/1,
+        label: "docs",
+        path: "doc/",
+        kind: "output",
+        why: "nothing built in doc/ yet",
+        build: "docs"
+      )
+
+    assert html =~ ~s(class="read build")
+    assert html =~ ~s(phx-click="run")
+    assert html =~ ~s(phx-value-args="mix docs")
+    assert html =~ "./wb.sh mix docs"
+    assert html =~ ">build</button>"
+  end
+
+  test "a page that is built wears its stamp, and no command" do
+    html =
+      render_component(&door_ref/1,
+        label: "docs",
+        path: "doc/",
+        kind: "output",
+        href: "http://localhost:4101/docs/",
+        read: {"2026-09-22 18:18 +0200", ""},
+        build: "docs"
+      )
+
+    assert html =~ "2026-09-22 18:18 +0200"
+    refute html =~ "read build"
+  end
 end

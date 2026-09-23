@@ -132,6 +132,142 @@ defmodule ConsoleWeb.BoxInstallTest do
     assert Box.argv(box, %{"minimum" => "90"}) == ["--minimum", "90"]
   end
 
+  test "a default read off the project shows the value the status read for it" do
+    box = %{
+      "name" => "exdoc",
+      "options" => [
+        %{"name" => "repo_url", "type" => "string", "detected" => true},
+        %{"name" => "project_name", "type" => "string", "detected" => true},
+        %{
+          "name" => "module_groups",
+          "type" => "string",
+          "detected" => true,
+          "choices" => [%{"value" => "layers"}, %{"value" => "ash"}]
+        }
+      ]
+    }
+
+    status = %{
+      "exists" => true,
+      "project" => %{
+        "cartridges" => [
+          %{
+            "name" => "exdoc",
+            "installed" => false,
+            "detected" => %{
+              "repo_url" => "https://github.com/acme/lorem",
+              "project_name" => nil,
+              "module_groups" => "ash"
+            }
+          }
+        ]
+      }
+    }
+
+    html = screen(box, status)
+
+    # The value the insert would write, as the placeholder, and where
+    # it comes from as the tag; never filled in.
+    assert html =~ ~r{id="opt-repo_url"[^>]*placeholder="https://github.com/acme/lorem"}
+    refute html =~ ~r{id="opt-repo_url"[^>]*value=}
+    assert html =~ "read off the project"
+    # Nothing read: the field says where it would come from.
+    assert html =~ ~r{id="opt-project_name"[^>]*placeholder="read off the project"}
+    # A choice read off the project carries the default's tag.
+    assert html =~ ~r{value="ash".*?tag def">default<}s
+    refute html =~ ~r{value="layers"[^<]*<[^>]*>[^<]*<span[^>]*tag def">default<}
+    # Empty, the flag stays out: the installer reads the same value.
+    assert Box.argv(box, %{"repo_url" => ""}) == []
+  end
+
+  test "an option with a declared shape asks for that shape, and says which it is" do
+    box = %{
+      "name" => "exdoc",
+      "options" => [
+        %{"name" => "repo_url", "type" => "string", "format" => "url"},
+        %{"name" => "minimum", "type" => "string", "format" => "integer 0..100"},
+        %{"name" => "project_name", "type" => "string"}
+      ]
+    }
+
+    html = screen(box, %{"exists" => true, "project" => %{"cartridges" => []}})
+
+    # The field is a URL field, and the flag says `url` where an
+    # unshaped string says `text`.
+    assert html =~ ~r{<input type="url"[^>]*id="opt-repo_url"[^>]*placeholder="url"}
+    assert html =~ "a URL (https://example.com/page)"
+    # The browser is held to the installer's rule, not its own looser
+    # one (`type="url"` takes `ftp://…`), and the field writes the
+    # scheme for the reader.
+    assert html =~ ~s|pattern="https?://.+"|
+    assert html =~ ~s|phx-hook="UrlField"|
+    assert html =~ ~s(<span class="kind">url</span>)
+    assert html =~ ~r{<input type="text" inputmode="numeric"[^>]*id="opt-minimum"}
+    assert html =~ ~s(<span class="kind">integer 0..100</span>)
+    assert html =~ ~r{<input type="text" id="opt-project_name"[^>]*placeholder="string"}
+    assert html =~ ~s(<span class="kind">text</span>)
+  end
+
+  # The box wraps what it is given, so the markup's own newlines and
+  # indentation would be read as part of the command: the line is built
+  # whole and interpolated once.
+  test "the command box holds the line and nothing else" do
+    html =
+      screen(@box, %{"exists" => true, "project" => %{"cartridges" => []}},
+        args: %{"database" => "mysql"}
+      )
+
+    assert html =~ ~s(<div class="cmd">./wb.sh add ecto --database mysql</div>)
+
+    archived =
+      screen(Map.put(@box, "archived", "2026-09-20: covered by another box"), %{
+        "exists" => true,
+        "project" => %{"cartridges" => []}
+      })
+
+    assert archived =~ ~s(<div class="cmd">./wb.sh add --archived ecto</div>)
+  end
+
+  # A cartridge another box's installer brings in (coverage --exdoc
+  # brings test_doubles) has no insert of its own, and used to read as
+  # inserted by hand: the commit that carries its files is the other
+  # box's, and the box says so.
+  test "a cartridge that rode in with another box names the insert that carries it" do
+    status = %{
+      "exists" => true,
+      "git" => %{
+        "repo" => true,
+        "clean" => true,
+        "inserts" => [
+          %{
+            "sha" => "d2ec4831234567",
+            "feature" => "coverage",
+            "subject" => "Insert coverage --exdoc",
+            "date" => "2026-09-22 10:00:00 +0200"
+          }
+        ]
+      },
+      "project" => %{
+        "cartridges" => [
+          %{"name" => "coverage", "installed" => true, "composes" => ["test_doubles"]},
+          %{"name" => "test_doubles", "installed" => true}
+        ]
+      }
+    }
+
+    box = %{"name" => "test_doubles", "options" => []}
+
+    assert {"with coverage", "off", why} = ConsoleWeb.Cartridges.origin(status, box)
+    assert why =~ "d2ec483" and why =~ "Insert coverage --exdoc"
+    assert ConsoleWeb.Box.files_unlit(box, status) =~ "came in with coverage's insert"
+
+    # Nobody claims it: inserted by hand, as before.
+    alone =
+      put_in(status, ["project", "cartridges"], [%{"name" => "test_doubles", "installed" => true}])
+
+    assert {"by hand", _, _} = ConsoleWeb.Cartridges.origin(alone, box)
+  end
+
   test "with nothing to read the line is the bare verb" do
     # Born with the project, or inserted by a hand that left no commit.
     assert Box.line_argv(@box, %{}, nil, true) == []

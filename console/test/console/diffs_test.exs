@@ -52,6 +52,28 @@ defmodule Console.DiffsTest do
     end
   end
 
+  test "a cartridge inserted twice shows both commits, each its own" do
+    ins = inserts()
+
+    case ins |> Enum.group_by(& &1["feature"]) |> Enum.find(fn {_, i} -> length(i) > 1 end) do
+      nil ->
+        # No cartridge inserted twice in the workspace: one insert reads
+        # as one pick, the same as the commit alone.
+        with [insert | _] <- ins do
+          d = Diffs.inserted(@ws, [insert])
+          assert [%{sha: sha}] = d.picks
+          assert sha == insert["sha"]
+          assert d.files == hd(d.picks).files
+        end
+
+      {_feature, twice} ->
+        d = Diffs.inserted(@ws, twice)
+        assert Enum.map(d.picks, & &1.sha) == Enum.map(twice, & &1["sha"])
+        assert d.added == Enum.sum(Enum.map(d.picks, & &1.added))
+        assert length(d.files) == Enum.sum(Enum.map(d.picks, &length(&1.files)))
+    end
+  end
+
   test "a collection's range is honest only when contiguous, and says who touched what" do
     ins = inserts()
 

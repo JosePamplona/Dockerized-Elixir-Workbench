@@ -974,8 +974,15 @@ form.insert .opts{display:grid}
 .opt .line .name{white-space:nowrap}
 .opt .line .gloss{font-family:var(--serif);font-size:12.5px;color:var(--muted);line-height:1.35}
 .opt .line .gloss::before{content:"— "}
-.opt .line input[type=text]{font-family:var(--mono);font-size:13px;padding:5px 8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;width:100%}
-.opt .line.other input[type=text]{border-style:dashed;font-size:12.5px}
+/* Every field of the form, whatever an option's shape made it — a text,
+   a url (`formats/0`) — so the house's face does not depend on the
+   type attribute. Only the boxes above are left out. */
+.opt .line input:not([type=checkbox]):not([type=radio]){font-family:var(--mono);font-size:13px;padding:5px 8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;width:100%}
+.opt .line.other input{border-style:dashed;font-size:12.5px}
+/* What the browser itself judges, said in the house's bad: a url that is
+   no url, while it is being written. :user-invalid, so an empty field
+   the reader has not touched is not red. */
+.opt .line input:user-invalid{border-color:var(--bad)}
 .opt .gl{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:11px;color:var(--muted);margin-top:4px}
 .opt .gl:first-child{margin-top:0}
 .opt .doc{font-size:12.5px;color:var(--muted);margin:0;max-width:60ch;line-height:1.45}
@@ -995,7 +1002,13 @@ form.insert .opts{display:grid}
    it steps out of the accent the house gives every other control. */
 .opt .line.has input{accent-color:var(--muted)}
 @media (max-width:640px){.opt{grid-template-columns:1fr;gap:6px}}
-.cmd{font-family:var(--mono);font-size:12.5px;background:var(--surface);border:1px solid var(--line);padding:8px 10px;border-radius:2px;overflow-x:auto;white-space:nowrap}
+/* The line a verb would run. It keeps the width it has and wraps when
+   the line outgrows it — a second line, never a scrollbar: a command is
+   read whole before it is pressed, and a long option (a url) used to
+   push the rest of it out of sight. It breaks at the spaces between the
+   words, and inside a word only when one word is wider than the box.
+   The wrapped lines hang under the first, clear of the `$`. */
+.cmd{font-family:var(--mono);font-size:12.5px;background:var(--surface);border:1px solid var(--line);padding:8px 10px 8px calc(10px + 2ch);border-radius:2px;white-space:pre-wrap;overflow-wrap:anywhere;text-indent:-2ch}
 .cmd::before{content:"$ ";color:var(--muted)}
 .go{justify-self:start;font-family:var(--cond);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:13px;background:var(--accent);color:var(--accent-ink);padding:9px 16px;border-radius:2px;box-shadow:0 2px 0 rgba(0,0,0,.25)}
 .go[disabled]{box-shadow:none}

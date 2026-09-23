@@ -220,6 +220,7 @@ defmodule ConsoleWeb.Board do
           port={a.port}
           who={c["name"]}
           read={a.read}
+          build={a[:build]}
         />
       </div>
     </section>

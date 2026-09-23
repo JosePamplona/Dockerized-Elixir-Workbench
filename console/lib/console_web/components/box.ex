@@ -125,7 +125,7 @@ defmodule ConsoleWeb.Box do
   @doc """
   Why the Files screen is dark: the box is not done, a collection's
   picks are not in, or the cartridge was not inserted by commit — what
-  it wrote is read off its commit, && there is none.
+  it wrote is read off its commits, one per insert, && there is none.
   """
   def files_unlit(box, status) do
     cond do
@@ -139,6 +139,9 @@ defmodule ConsoleWeb.Box do
 
       Cartridges.insert(status, box["name"]) ->
         nil
+
+      composer = Cartridges.composer(status, box) ->
+        "it came in with #{composer["name"]}'s insert: its files are in that commit"
 
       true ->
         "not inserted yet: what it wrote is read off its commit"
@@ -190,18 +193,35 @@ defmodule ConsoleWeb.Box do
               />
             <% else %>
               <.pick
+                :for={p <- @diff.picks}
                 name={@box["name"]}
                 here={true}
-                sha={@diff.sha}
-                date={@diff.date}
-                subject={@diff.subject}
-                added={@diff.added}
-                removed={@diff.removed}
-                files={length(@diff.files)}
+                sha={p.sha}
+                date={p.date}
+                subject={p.subject}
+                added={p.added}
+                removed={p.removed}
+                files={length(p.files)}
               />
             <% end %>
           </div>
           <%= cond do %>
+            <% not @box["collection"] && length(@diff.picks) > 1 -> %>
+              <%!-- One sheet per insert: the commits are apart in the log,
+                    so no range reads them as one. --%>
+              <%= for {p, k} <- Enum.with_index(@diff.picks) do %>
+                <span class="label" title={p.subject}>
+                  Files · {String.slice(p.sha, 0, 7)} {p.subject}
+                </span>
+                <div class={["files", length(p.files) > 12 && "many"]}>
+                  <.file
+                    :for={{f, i} <- Enum.with_index(p.files)}
+                    f={f}
+                    i={k * 1000 + i}
+                    status={@status}
+                  />
+                </div>
+              <% end %>
             <% @diff.files != [] -> %>
               <span class="label">Files</span>
               <div class={["files", length(@diff.files) > 12 && "many"]}>
@@ -791,6 +811,7 @@ defmodule ConsoleWeb.Box do
             locked={@locked}
             installed={@installed}
             c_state={@c["state"] || %{}}
+            detected={(@c || %{})["detected"] || %{}}
             from_insert={@from_insert}
             inserted_args={@inserted_args}
             by_hand={@locked && @insert == nil}
@@ -807,10 +828,7 @@ defmodule ConsoleWeb.Box do
               here and cannot run now: a dirty tree, a cartridge missing,
               nothing to revert. --%>
         <div :if={@can_insert} class="foot">
-          <div class="cmd">
-            ./wb.sh add {if @box["archived"], do: "--archived "}{@box["name"]}{if @argv != [],
-              do: " " <> Enum.join(@argv, " ")}
-          </div>
+          <div class="cmd">{insert_line(@box, @argv)}</div>
           <.job_button
             label={
               cond do
@@ -934,13 +952,15 @@ defmodule ConsoleWeb.Box do
   attr :from_insert, :boolean
   attr :inserted_args, :list
   attr :by_hand, :boolean, doc: "locked with no Insert commit to read the value off"
+  attr :detected, :map, default: %{}, doc: "the defaults the project gives, off the status"
 
   defp option(assigns) do
-    o = assigns.o
+    o = with_detected(assigns.o, assigns.detected)
     grouped = match?([%{"group" => _} | _], o["choices"])
 
     assigns =
       assign(assigns,
+        o: o,
         flag: "--" <> String.replace(o["name"], "_", "-"),
         kind: kind(o),
         groups:
@@ -990,7 +1010,12 @@ defmodule ConsoleWeb.Box do
           <% true -> %>
             <div class="line txt">
               <input
-                type="text"
+                type={input_type(@o)}
+                inputmode={input_mode(@o)}
+                pattern={input_pattern(@o)}
+                title={format_says(@o)}
+                spellcheck={input_type(@o) == "url" && "false"}
+                phx-hook={input_type(@o) == "url" && "UrlField"}
                 id={"opt-#{@o["name"]}"}
                 name={"opt[#{@o["name"]}]"}
                 value={text_value(@o, @args, @c_state, @from_insert, @inserted_args)}
@@ -1008,14 +1033,52 @@ defmodule ConsoleWeb.Box do
     """
   end
 
+  # The shape the value has to have, where the manifest declares one
+  # (`formats/0`): the field asks for it — a URL field is a URL field in
+  # every browser — and the browser checks it before the installer does,
+  # which refuses it all the same.
+  defp input_type(%{"format" => "url"}), do: "url"
+  defp input_type(_o), do: "text"
+
+  defp input_mode(%{"format" => "integer" <> _}), do: "numeric"
+  defp input_mode(_o), do: nil
+
+  # `type="url"` alone takes any scheme (`ftp://…`): the pattern is the
+  # rule the installer holds it to, http or https with something after.
+  defp input_pattern(%{"format" => "url"}), do: "https?://.+"
+  defp input_pattern(%{"format" => "version"}), do: "\\d+\\.\\d+\\.\\d+.*"
+  defp input_pattern(%{"format" => "integer " <> _}), do: "\\d{1,3}"
+
+  defp input_pattern(%{"format" => "dns_name"}),
+    do: "[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)*"
+
+  defp input_pattern(%{"format" => "route"}), do: "/*([A-Za-z0-9._~-]+/*)*"
+  defp input_pattern(_o), do: nil
+
+  # What the shape is, in the words the installer refuses with.
+  defp format_says(%{"format" => format}) when is_binary(format) do
+    case format do
+      "url" -> "a URL (https://example.com/page)"
+      "version" -> "a version (1.2.3)"
+      "dns_name" -> "a DNS name (app.default.svc.cluster.local)"
+      "route" -> "a path (/health)"
+      "integer " <> range -> "a whole number from #{String.replace(range, "..", " to ")}"
+      other -> other
+    end
+  end
+
+  defp format_says(_o), do: nil
+
   # What kind of answer the option takes, said under its flag: the one
-  # place a list that also takes values of its own says so.
+  # place a list that also takes values of its own says so. A text with
+  # a declared shape says the shape instead — `url`, not `text`.
   defp kind(o) do
     base =
       cond do
         o["choices"] && o["multiple"] -> "several"
         o["choices"] -> "one of"
         o["type"] == "boolean" -> "switch"
+        is_binary(o["format"]) -> String.replace(o["format"], "_", " ")
         true -> "text"
       end
 
@@ -1026,8 +1089,23 @@ defmodule ConsoleWeb.Box do
     end
   end
 
+  # A default the installer reads off the project (`detected`) becomes
+  # the option's default here when the status says it for this project
+  # (`detect/1`), so the field, the choice's tag and the rest read it as
+  # any other; `read` remembers where it came from.
+  defp with_detected(%{"detected" => true} = o, detected) do
+    case detected[o["name"]] do
+      nil -> o
+      value -> Map.merge(o, %{"default" => value, "read" => true})
+    end
+  end
+
+  defp with_detected(o, _detected), do: o
+
   # A text's default, when it is one the manifest knows: one the
-  # installer reads off the project is said by the placeholder alone.
+  # installer reads off the project is the placeholder's, and its tag
+  # says where it comes from; unread, the placeholder alone says so.
+  defp text_default(%{"read" => true}), do: "read off the project"
   defp text_default(%{"detected" => true}), do: nil
 
   defp text_default(o) do
@@ -1213,13 +1291,17 @@ defmodule ConsoleWeb.Box do
   # The default is shown, never filled in: an empty field is the
   # default (`text_argv/3` leaves the flag out), and one the reader typed
   # reads as theirs. A default the installer reads off the project
-  # (`detected`) is not known here, so the field says where it comes
-  # from; without a default it says its type.
-  defp placeholder(%{"detected" => true}), do: "read off the project"
+  # (`detected`) is the value the status read for this project; when it
+  # read none — no project, or nothing there — the field says where it
+  # would come from. Without a default it says its type.
+  defp placeholder(%{"detected" => true} = o) when not is_map_key(o, "read"),
+    do: "read off the project"
 
   defp placeholder(o) do
     case o["default"] do
-      default when default in [nil, "", []] -> o["type"]
+      # Nothing to show: what it takes, the declared shape where there
+      # is one (`url`) and the bare type where there is not.
+      default when default in [nil, "", []] -> o["format"] || o["type"]
       default -> default |> List.wrap() |> Enum.join(",")
     end
   end
@@ -1381,6 +1463,19 @@ defmodule ConsoleWeb.Box do
       true ->
         "Inserted by hand: no commit to revert"
     end
+  end
+
+  # The line the insert is, built here and not in the template: the
+  # box wraps what it is given (`white-space: pre-wrap`, so a long
+  # option breaks instead of scrolling out of sight), which means the
+  # markup's own newlines and indentation would be part of the command
+  # as it reads.
+  defp insert_line(box, argv) do
+    Enum.join(
+      ["./wb.sh add", if(box["archived"], do: "--archived"), box["name"] | argv]
+      |> Enum.reject(&is_nil/1),
+      " "
+    )
   end
 
   # The line the eject is: a collection's is one revert per cartridge,

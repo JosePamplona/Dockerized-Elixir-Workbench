@@ -1,7 +1,10 @@
 defmodule Console.Project do
   @moduledoc """
-  The project's own papers, off the workspace: Birth, `.env`,
-  README.md, CHANGELOG.md, and its git as Changes and History. The
+  The project's own papers, off the workspace: Birth, Mix, `.env`,
+  README.md, CHANGELOG.md, and its git as Changes and History. Mix is
+  `mix.exs` read as what it is (`WorkbenchIgniter.MixFile`, the module
+  that owns the file): what `def project` says, and every package the
+  project carries, off the status. The
   `.env` travels masked — a secret, a token, a password, a key, and the
   credentials inside a URL are replaced before the text leaves this
   module, so no page ever carries them. Three are no file: Birth is
@@ -23,6 +26,7 @@ defmodule Console.Project do
     {"record", "Birth", nil},
     {"history", "History", nil},
     {"pending", "Changes", nil},
+    {"mix", "Mix", "mix.exs"},
     {"env", ".env", ".env"},
     {"readme", "README", "README.md"},
     {"changelog", "CHANGELOG", "CHANGELOG.md"}
@@ -53,7 +57,7 @@ defmodule Console.Project do
   end
 
   @doc """
-  Which of the six the workspace has, off the status: the files it
+  Which of the seven the workspace has, off the status: the files it
   holds, Birth whenever there is a project, Changes and History
   whenever there is a repository. Nothing without a status.
   """
@@ -82,6 +86,35 @@ defmodule Console.Project do
   def render(_workspace, "pending"), do: %{git: "pending"}
   def render(_workspace, "history"), do: %{git: "history"}
 
+  # What `def project` says, as the project wrote it: each keyword and
+  # its code, coloured as Elixir — `Mix.env() == :prod` stays an
+  # expression. `deps:` is the table under it, not a line. And each dependency's options, the
+  # table's own column, as plain text: what follows its name and
+  # requirement, less where a git one comes from, which its name and
+  # version already say.
+  def render(workspace, "mix") do
+    with {:ok, text} <- File.read(Path.join(workspace, "mix.exs")),
+         {:ok, _} <- Code.string_to_quoted(text) do
+      mix = WorkbenchIgniter.MixFile.read(text)
+
+      spec =
+        for {key, code} <- mix.project,
+            key != :deps,
+            do: {to_string(key), elixir(formatted(code))}
+
+      options =
+        for {name, code} <- mix.deps,
+            options = options(code),
+            options != [],
+            into: %{},
+            do: {to_string(name), one_a_line(options)}
+
+      %{mix: %{spec: spec, options: options}}
+    else
+      _ -> nil
+    end
+  end
+
   def render(workspace, "env") do
     case File.read(Path.join(workspace, ".env")) do
       {:ok, text} -> %{env: text |> mask() |> String.split("\n")}
@@ -98,6 +131,106 @@ defmodule Console.Project do
       |> Papers.booklet("p-", file)
     else
       _ -> nil
+    end
+  end
+
+  @git_source [:git, :github, :tag, :branch, :ref]
+
+  defp options(code) do
+    options = WorkbenchIgniter.MixFile.options_of(code)
+
+    if WorkbenchIgniter.MixFile.git_of(code),
+      do: Keyword.drop(options, @git_source),
+      else: options
+  end
+
+  # Each option on a line of its own, as a keyword list is written
+  # once it no longer fits one: `only: :test,` then `runtime: false`.
+  defp one_a_line(options) do
+    Enum.map_join(options, ",\n", fn option -> [option] |> Macro.to_string() |> unbracket() end)
+  end
+
+  # The keyword list's own brackets, and only those: `[only: [:dev, :test]]`
+  # keeps the inner list's.
+  defp unbracket("[" <> rest), do: String.slice(rest, 0..-2//1)
+  defp unbracket(text), do: text
+
+  # The code the way `mix format` would write it, so a long value —
+  # `docs:` is a page of options — breaks where the project's own file
+  # would, and not wherever the column runs out.
+  defp formatted(code) do
+    code |> Macro.to_string() |> Code.format_string!() |> IO.iodata_to_binary()
+  end
+
+  # Coloured by the lexer the Files sheet uses, one HTML string: the
+  # page wraps it in a `.src` that says it is Elixir.
+  defp elixir(code) do
+    case Console.Highlight.lines("mix.exs", code) do
+      {_, lines} when is_list(lines) -> Enum.join(lines, "\n")
+      _ -> code |> Phoenix.HTML.html_escape() |> Phoenix.HTML.safe_to_string()
+    end
+  end
+
+  @doc """
+  Which cartridge put each package in `mix.exs`, and what it asks for:
+  `%{name => reading}`, keyed as a package's row is (`ConsoleWeb.Packages.row/4`).
+  `"by"` is `{:boxes, names}` — what an installed box declares, or for
+  a base box what its insert commit added — `:born` for what the first
+  commit already listed (phx.new, and the workbench's own dependency),
+  and `:hand` for the rest. With a box come `"declared"`, the version it
+  asks for, and for a base box `"read"` and `"from"`: read off its insert,
+  at the phx.new stamped then. Read off git, so it runs apart from the
+  page (`start_async`).
+  """
+  def brought_by(nil), do: %{}
+
+  def brought_by(%{"workspace" => workspace} = status) when is_binary(workspace) do
+    boxes = by_box(workspace, status)
+    born = born_with(workspace, status)
+
+    for dep <- get_in(status, ["project", "deps"]) || [], into: %{} do
+      {dep["name"],
+       boxes[dep["name"]] || %{"by" => if(dep["name"] in born, do: :born, else: :hand)}}
+    end
+  end
+
+  def brought_by(_status), do: %{}
+
+  # Each package the installed boxes put in mix.exs: the boxes, and what
+  # the first of them asks for.
+  defp by_box(workspace, status) do
+    for c <- get_in(status, ["project", "cartridges"]) || [],
+        c["installed"],
+        dep <- box_packages(workspace, status, c),
+        reduce: %{} do
+      acc ->
+        Map.update(acc, dep["name"], Map.put(dep, "by", {:boxes, [c["name"]]}), fn seen ->
+          %{seen | "by" => {:boxes, elem(seen["by"], 1) ++ [c["name"]]}}
+        end)
+    end
+  end
+
+  # What mix.exs listed at the first commit.
+  defp born_with(workspace, status) do
+    case get_in(status, ["project", "birth", "sha"]) do
+      sha when is_binary(sha) -> Console.Diffs.packages_at(workspace, sha)
+      _ -> []
+    end
+  end
+
+  # What a box put in mix.exs and asks for: what it declares, or — a
+  # base box, which declares none — what its insert commit added.
+  defp box_packages(workspace, status, c) do
+    case c["deps"] do
+      [_ | _] = deps ->
+        for d <- deps, do: %{"name" => d["name"], "declared" => d["declared"]}
+
+      _ ->
+        inserts = ConsoleWeb.Cartridges.inserts(status, c["name"])
+
+        for dep <- Console.Diffs.packages_of(workspace, inserts) do
+          %{"name" => dep.name, "declared" => dep.requirement, "read" => true, "from" => dep.from}
+        end
     end
   end
 

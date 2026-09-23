@@ -276,13 +276,19 @@ defmodule Console.Bench do
   defp start(state, :stacks, _),
     do: put_in(state.in_flight[:stacks], Task.async(fn -> {:stacks, Workbench.stacks()} end))
 
-  # hex, one call for the list and one per release, in this BEAM.
-  defp start(state, :packages, names),
-    do:
-      put_in(
-        state.in_flight[:packages],
-        Task.async(fn -> {:packages, Console.Hex.read(List.wrap(names))} end)
-      )
+  # hex, one call per package, and GitHub for the ones that come from a
+  # repository there — named `name=owner/repo` — in this BEAM, together.
+  defp start(state, :packages, names) do
+    {repos, hex} = names |> List.wrap() |> Enum.split_with(&String.contains?(&1, "="))
+    repos = for r <- repos, [name, repo] = String.split(r, "=", parts: 2), do: {name, repo}
+
+    put_in(
+      state.in_flight[:packages],
+      Task.async(fn ->
+        {:packages, Map.merge(Console.Hex.read(hex), Console.GitHub.read(repos))}
+      end)
+    )
+  end
 
   defp start(state, :installers, _),
     do:

@@ -90,6 +90,16 @@ defmodule Console.Diffs do
     |> Enum.uniq_by(& &1.name)
   end
 
+  @doc """
+  The names of the packages `mix.exs` lists at a commit — the first
+  one, for what the project was born with. Empty where the commit has
+  no `mix.exs` that reads as code.
+  """
+  def packages_at(workspace, rev) do
+    for {name, _code} <- WorkbenchIgniter.MixFile.read(mix_exs_at(workspace, rev)).deps,
+        do: to_string(name)
+  end
+
   # mix.exs as a commit holds it; empty where it does not, or does not
   # read as code — an empty file has no dependencies to take away.
   defp mix_exs_at(workspace, rev) do

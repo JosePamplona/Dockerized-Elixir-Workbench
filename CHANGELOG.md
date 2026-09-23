@@ -16,6 +16,30 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **The project's Mix paper.** Project gains a paper between Changes
+  and .env: `mix.exs` read as what it is (`MixFile`, the module that
+  owns the file). On top, **Specs**: every keyword of `def project` in
+  a code box, the key dim and the value coloured as Elixir, laid out
+  the way `mix format` writes it. Under it, **Packages**: every
+  dependency the project carries, in the Box's own table — now one
+  component, `ConsoleWeb.Packages`, that both draw. Here it carries
+  each package's options as `mix.exs` writes them, one to a line; the
+  version its cartridge asks for, with mix.exs marked where the project
+  pins another; and last, who brought it — the cartridge, read off what
+  a box declares or off a base box's insert commit, or where it came
+  from when none did: born with the project, or by hand. Who brought
+  it is read off git apart from the page, and the paper reads again on
+  every status, so an insert shows without leaving it.
+
+- **GitHub is asked what hex is asked.** The table's one button asked
+  hex.pm for the latest release, its day and the downloads, and left a
+  package from git unlit. It asks GitHub now for the ones that come
+  from a repository there (`Console.GitHub`): the latest release, or
+  the newest tag, dated by its commit, for a repository that publishes
+  none — heroicons is one. Downloads stay unlit with the reason: GitHub
+  counts none of a repository. Without a token GitHub allows sixty
+  requests an hour, and a row whose allowance ran out says until when.
+
 - **A box says what it puts in the project's `mix.exs`, and the box
   shows it.** The packages a cartridge installs lived in eighteen
   `add_dep` calls scattered through the installers, plus a table in the
@@ -1389,6 +1413,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   says how to run the same checks before pushing.
 
 ### Updated
+
+- **The daemon's box is headed Specs,** as the Mix paper heads what
+  `def project` says: the reader knows what the box is before reading it.
 
 - **A base box's packages say where they come from, under the table.**
   The version a base cartridge brings is read off its insert commit,

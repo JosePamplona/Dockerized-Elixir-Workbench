@@ -266,6 +266,27 @@ defmodule WorkbenchIgniter.MixFileTest do
     end
   end
 
+  describe "options_of/1" do
+    test "what follows a dependency's name and requirement, as code" do
+      %{deps: deps} =
+        MixFile.read("""
+        defp deps do
+          [
+            {:phoenix, "~> 1.8.0"},
+            {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+            {:heroicons, github: "tailwindlabs/heroicons", tag: "v2.2.0"}
+          ]
+        end
+        """)
+
+      options = Map.new(deps, fn {name, dep} -> {name, MixFile.options_of(dep)} end)
+
+      assert options.phoenix == []
+      assert options.credo == [only: [:dev, :test], runtime: false]
+      assert options.heroicons == [github: "tailwindlabs/heroicons", tag: "v2.2.0"]
+    end
+  end
+
   defp issues(igniter), do: Igniter.prepare_for_write(igniter).issues
 
   defp rewritten(igniter) do

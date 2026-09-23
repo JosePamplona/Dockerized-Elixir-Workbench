@@ -53,4 +53,112 @@ defmodule Console.ProjectTest do
     assert Project.carried(%{"exists" => false, "workspace" => dir}) == []
     assert Project.carried(nil) == []
   end
+
+  test "Mix is carried with a mix.exs, between Changes and .env", %{dir: dir} do
+    File.write!(Path.join(dir, "mix.exs"), "defmodule M do\nend\n")
+    File.write!(Path.join(dir, ".env"), "PORT=4000\n")
+    status = %{"exists" => true, "workspace" => dir, "git" => %{"repo" => true}}
+    assert Project.carried(status) == ~w(record history pending mix env)
+  end
+
+  test "Mix says what def project says, coloured, and each package's options", %{dir: dir} do
+    File.write!(Path.join(dir, "mix.exs"), """
+    defmodule Lorem.MixProject do
+      use Mix.Project
+
+      def project do
+        [
+          app: :lorem,
+          version: "0.1.0",
+          elixir: "~> 1.15",
+          start_permanent: Mix.env() == :prod,
+          deps: deps()
+        ]
+      end
+
+      defp deps do
+        [
+          {:phoenix, "~> 1.8.0"},
+          {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+          {:heroicons, github: "tailwindlabs/heroicons", tag: "v2.2.0", app: false}
+        ]
+      end
+    end
+    """)
+
+    %{mix: mix} = Project.render(dir, "mix")
+
+    # Every keyword but deps, which is the table, coloured as Elixir.
+    assert Enum.map(mix.spec, &elem(&1, 0)) == ~w(app version elixir start_permanent)
+    assert {"start_permanent", html} = List.last(mix.spec)
+    assert html =~ ~s(<span class="ss">:prod</span>)
+
+    # The options, less where a git package comes from; none for phoenix.
+    assert Map.keys(mix.options) |> Enum.sort() == ["credo", "heroicons"]
+    # One to a line, as written, the inner list whole.
+    assert mix.options["credo"] == "only: [:dev, :test],\nruntime: false"
+    refute mix.options["heroicons"] =~ "github"
+    assert mix.options["heroicons"] =~ "app"
+  end
+
+  test "who put each package in mix.exs: a box, the first commit, or a hand", %{dir: dir} do
+    git = fn args -> System.cmd("git", ["-C", dir | args], stderr_to_stdout: true) end
+    git.(["init", "--quiet"])
+    git.(["config", "user.email", "t@example.com"])
+    git.(["config", "user.name", "T"])
+
+    deps = fn list ->
+      "defp deps do\n  [\n" <>
+        Enum.map_join(list, ",\n", &"    {:#{&1}, \"~> 1.0\"}") <> "\n  ]\nend\n"
+    end
+
+    File.write!(Path.join(dir, "mix.exs"), deps.(~w(phoenix)))
+    git.(["add", "."])
+    git.(["commit", "--quiet", "-m", "Born"])
+    {born, 0} = git.(["rev-parse", "HEAD"])
+
+    File.write!(Path.join(dir, "mix.exs"), deps.(~w(phoenix swoosh)))
+    git.(["commit", "--quiet", "-am", "Insert mailer"])
+    {mailer, 0} = git.(["rev-parse", "HEAD"])
+
+    File.write!(Path.join(dir, "mix.exs"), deps.(~w(phoenix swoosh credo tidewave)))
+    git.(["commit", "--quiet", "-am", "Insert credo, and a hand"])
+
+    status = %{
+      "workspace" => dir,
+      "git" => %{"inserts" => [%{"feature" => "mailer", "sha" => String.trim(mailer)}]},
+      "project" => %{
+        "birth" => %{"sha" => String.trim(born)},
+        "cartridges" => [
+          %{"name" => "mailer", "installed" => true, "deps" => []},
+          %{
+            "name" => "credo",
+            "installed" => true,
+            "deps" => [%{"name" => "credo", "declared" => "~> 1.7"}]
+          }
+        ],
+        "deps" => Enum.map(~w(phoenix swoosh credo tidewave), &%{"name" => &1})
+      }
+    }
+
+    by = Project.brought_by(status)
+
+    assert Map.new(by, fn {name, reading} -> {name, reading["by"]} end) == %{
+             "phoenix" => :born,
+             "swoosh" => {:boxes, ["mailer"]},
+             "credo" => {:boxes, ["credo"]},
+             "tidewave" => :hand
+           }
+
+    # What the cartridge asks for comes along: a base box's off its
+    # insert, marked as read there; a declaring box's its own pin.
+    assert %{"declared" => "~> 1.0", "read" => true} = by["swoosh"]
+    assert by["credo"]["declared"] == "~> 1.7"
+  end
+
+  test "no mix.exs, or one that does not read as code, is no Mix page", %{dir: dir} do
+    assert Project.render(dir, "mix") == nil
+    File.write!(Path.join(dir, "mix.exs"), "defmodule M do\n")
+    assert Project.render(dir, "mix") == nil
+  end
 end

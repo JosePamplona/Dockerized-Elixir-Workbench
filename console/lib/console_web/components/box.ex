@@ -8,8 +8,8 @@ defmodule ConsoleWeb.Box do
   use Phoenix.Component
   import ConsoleWeb.Refs
   import ConsoleWeb.Ribbon, only: [ribbon: 1]
-  import ConsoleWeb.Square, only: [square: 1]
   alias ConsoleWeb.Cartridges
+  alias ConsoleWeb.Packages
   alias ConsoleWeb.Record
 
   @screens [{"box", "Box"}, {"manual", "Manual"}, {"install", "Installation"}, {"files", "Files"}]
@@ -308,169 +308,17 @@ defmodule ConsoleWeb.Box do
       end
 
     now = assigns.now || DateTime.utc_now()
-    built = for row <- rows || declared, do: package_row(row, assigns.hex, now, rows != nil)
 
-    # Hex is asked only of what it has: a package from git is not there.
     assigns =
       assign(assigns,
         nothing: nothing,
-        names: for(r <- built, !r.git, do: r.name),
-        now: now,
-        rows: built,
-        footnote: footnote(built)
+        rows: for(row <- rows || declared, do: Packages.row(row, assigns.hex, now, rows != nil))
       )
 
     ~H"""
-    <div :if={@rows != [] or @nothing} class="packages">
-      <div class="log-cap">
-        <span class="label">Packages</span>
-        <span :if={@nothing} class="note unlit">{@nothing}</span>
-        <%!-- What hex says of a package is a reading of the ecosystem,
-              not of the project: it costs the internet, so it happens
-              because somebody pressed for it, never on its own. The
-              same square the configuration's two fields carry for the
-              same kind of reading — the Docker tags and the phx_new
-              releases — so one gesture means one thing everywhere. --%>
-        <.square
-          :if={@rows != []}
-          mark="reload"
-          size="small"
-          label="Ask hex for these packages"
-          class="ask"
-          phx-click="packages_ask"
-          phx-value-names={Enum.join(@names, ",")}
-          disabled={@hex_asking}
-          aria-busy={to_string(@hex_asking)}
-          title={
-            if @hex_asking,
-              do: "asking hex…",
-              else:
-                "ask hex.pm for each package: its latest release, when it was published, and how much it is downloaded"
-          }
-        />
-        <span :if={@hex_error} class="note bad">{@hex_error}</span>
-      </div>
-
-      <div :if={@rows != []} class="scroll">
-        <table class="rows pkgs">
-          <thead>
-            <tr>
-              <th title="the package this box puts in the project's mix.exs — its name opens its page on hex.pm">
-                package
-              </th>
-              <th title="the version this box asks for: the requirement its installer writes">
-                cartridge
-              </th>
-              <th title="the version the project's mix.exs asks for today">mix.exs</th>
-              <th title="the version the project actually runs, as mix.lock resolved it — it opens that version's documentation">
-                locked
-              </th>
-              <th title="the newest stable release on hex.pm, whatever this project runs">
-                latest
-              </th>
-              <th title="when that newest release was published: the reading that says whether the package is alive">
-                released
-              </th>
-              <th title="how many times hex.pm has served it, all versions">downloads</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr :for={r <- @rows}>
-              <td><.pkg_ref name={r.name} git={r.git} /></td>
-              <td
-                class="asks"
-                title={
-                  r.read? &&
-                    "read off this box's insert commit: it declares no package of its own — what it brings arrives inside the phx.new delta, generated at the phx.new the project stamped then"
-                }
-              >
-                {r.brings}<span :if={r.read?} class="fn">*</span>
-              </td>
-              <td
-                class={["asks", r.carried? && r.pinned != r.brings && "warn"]}
-                title={
-                  cond do
-                    not r.carried? ->
-                      "the box is not in: nothing pins it yet"
-
-                    r.pinned != r.brings ->
-                      "the project pins #{r.pinned || "nothing"}, where the box brings #{r.brings} — an insert older than the box"
-
-                    true ->
-                      "what mix.exs asks for"
-                  end
-                }
-              >
-                <span :if={!r.carried?} class="unlit">–</span>
-                <span :if={r.carried?}>{r.pinned || "—"}</span>
-              </td>
-              <td class="v" title={if(!r.carried?, do: "the box is not in: no lock resolved it yet")}>
-                <span :if={!r.carried?} class="unlit">–</span>
-                <.pkg_ref
-                  :if={r.carried? && r.locked}
-                  name={r.name}
-                  version={r.locked}
-                  git={r.git}
-                  mark={false}
-                />
-                <span :if={r.carried? && !r.locked}>—</span>
-              </td>
-              <td
-                class={["v", r.latest && r.latest == r.locked && "good"]}
-                title={latest_says(r)}
-              >
-                <span :if={!r.asked?} class="unlit">–</span>
-                <span :if={r.why} class="bad" title={r.why}>not read</span>
-                {r.latest}
-              </td>
-              <td class="v" title={r.off_hex}>
-                {r.ago}<span :if={!r.asked?} class="unlit">–</span>
-              </td>
-              <td class="v" title={r.off_hex}>
-                {r.downloads}<span :if={!r.asked?} class="unlit">–</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <p :if={@footnote} class="fn-note"><span class="fn">*</span>{@footnote}</p>
-    </div>
+    <Packages.table rows={@rows} nothing={@nothing} hex_asking={@hex_asking} hex_error={@hex_error} />
     """
   end
-
-  # What the mark in the cartridge column means, said once under the
-  # table: the rows read off an insert commit, and the phx.new that
-  # generated what the commit wrote — one version, or the few when
-  # inserts made at different ones share the panel.
-  defp footnote(rows) do
-    case for(r <- rows, r.read?, do: r.from) do
-      [] ->
-        nil
-
-      froms ->
-        at =
-          case froms |> Enum.reject(&is_nil/1) |> Enum.uniq() do
-            [] -> "phx.new"
-            versions -> "phx.new " <> Enum.join(versions, ", ")
-          end
-
-        "The box does not install this package itself: it comes with #{at}, " <>
-          "and the version is the one that installer writes."
-    end
-  end
-
-  # hex's newest release, said against what the project runs: the same
-  # number in two columns is a question a reader should not have to ask.
-  defp latest_says(%{off_hex: why}) when is_binary(why), do: why
-  defp latest_says(%{latest: nil}), do: nil
-
-  defp latest_says(%{latest: latest, locked: locked}) when latest == locked,
-    do: "hex.pm's newest release — and the one this project runs"
-
-  defp latest_says(%{latest: _latest, locked: locked}) when is_binary(locked),
-    do: "hex.pm's newest release; this project runs #{locked}"
-
-  defp latest_says(_row), do: "hex.pm's newest release"
 
   # A base cartridge declares no package: its own arrive inside the
   # `phx.new` delta, at whatever version that installer writes. What it
@@ -487,7 +335,7 @@ defmodule ConsoleWeb.Box do
         "declared" => dep.requirement,
         "pinned" => project[name]["pinned"],
         "locked" => project[name]["locked"],
-        "git" => git_said(dep[:git]) || project[name]["git"],
+        "git" => Packages.git_said(dep[:git]) || project[name]["git"],
         "read" => true,
         "from" => dep[:from]
       }
@@ -495,45 +343,6 @@ defmodule ConsoleWeb.Box do
   end
 
   defp off_the_insert(_read, _mix), do: []
-
-  # One package as the table reads it: what the box brings, what the
-  # project does with it, and what hex said if anybody asked.
-  defp package_row(row, hex, now, carried?) do
-    said = hex[row["name"]] || %{}
-    git = git_said(row["git"])
-
-    %{
-      name: row["name"],
-      git: git,
-      off_hex: git && "not on hex: it comes from git, so hex has nothing to say of it",
-      brings: row["declared"] || row["requirement"] || held_to(git),
-      read?: row["read"] == true,
-      from: row["from"],
-      pinned: row["pinned"],
-      locked: row["locked"],
-      latest: said[:latest],
-      ago: said[:released_at] && Console.Hex.ago(said[:released_at], now),
-      downloads: said[:downloads] && downloads_said(said[:downloads]),
-      why: said[:error],
-      asked?: said != %{},
-      carried?: carried?
-    }
-  end
-
-  # Where a package from git comes from, keyed as the status's JSON
-  # keys it: Diffs reads it off a commit with atom keys.
-  defp git_said(%{} = git), do: Map.new(git, fn {k, v} -> {to_string(k), v} end)
-  defp git_said(_git), do: nil
-
-  # What a package from git is held to, in the place a version goes:
-  # its tag, or failing that the branch or ref mix.exs names.
-  defp held_to(%{} = git), do: git["tag"] || git["branch"] || git["ref"]
-  defp held_to(_git), do: nil
-
-  # A download count a reader can take in: 97.8M, not 97802365.
-  defp downloads_said(n) when n >= 1_000_000, do: "#{Float.round(n / 1_000_000, 1)}M"
-  defp downloads_said(n) when n >= 1_000, do: "#{div(n, 1000)}k"
-  defp downloads_said(n), do: to_string(n)
 
   attr :name, :string, required: true
   attr :here, :boolean, default: false

@@ -139,12 +139,18 @@ defmodule WorkbenchIgniter.MixFile do
     end
   end
 
-  defp options_of({_name, options}) when is_list(options), do: keywords(options)
+  @doc """
+  The options one dependency is given, as code (`read/1`): what follows
+  its name and requirement — `only:`, `runtime:`, `github:`, `tag:`…
+  Empty for a dependency that has none.
+  """
+  @spec options_of(Macro.t()) :: [entry()]
+  def options_of({_name, options}) when is_list(options), do: keywords(options)
 
-  defp options_of({:{}, _, [_name, _requirement, options]}) when is_list(options),
+  def options_of({:{}, _, [_name, _requirement, options]}) when is_list(options),
     do: keywords(options)
 
-  defp options_of(_dep), do: []
+  def options_of(_dep), do: []
 
   defp github_url(repo) when is_binary(repo), do: "https://github.com/#{repo}.git"
   defp github_url(_repo), do: nil

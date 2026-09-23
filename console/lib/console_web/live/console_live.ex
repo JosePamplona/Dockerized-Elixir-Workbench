@@ -80,6 +80,7 @@ defmodule ConsoleWeb.ConsoleLive do
         pdeploy: nil,
         pcomposes: [],
         ppage: nil,
+        mix_by: %{},
         preads: %{},
         wb: nil,
         wbpaper: "readme",
@@ -225,10 +226,19 @@ defmodule ConsoleWeb.ConsoleLive do
 
     if manual?(params) and paper == socket.assigns.ppaper,
       do: socket,
-      else: assign(socket, ppaper: paper, ppage: Project.render(ws, paper))
+      else: socket |> assign(ppaper: paper, ppage: Project.render(ws, paper)) |> ask_mix_by(paper)
   end
 
   defp take_paper(socket, _params), do: socket
+
+  # Who put each package in mix.exs is read off git — the base boxes'
+  # insert commits, the first commit — so it is asked apart from the page.
+  defp ask_mix_by(socket, "mix") do
+    status = socket.assigns.status
+    start_async(socket, :mix_by, fn -> Project.brought_by(status) end)
+  end
+
+  defp ask_mix_by(socket, _paper), do: socket
 
   # The compose file open under its row on the Deploy tab: the one the
   # URL names, when it is baked; none otherwise — the reader opens one.
@@ -449,11 +459,14 @@ defmodule ConsoleWeb.ConsoleLive do
       do: Logs.follow(status["compose_project"], restart: socket.assigns.restart_logs)
   end
 
-  # The project's paper, read again when it was never read or the workspace moved.
+  # The project's paper, read again when it was never read or the workspace
+  # moved — and Mix on every status, since a job that inserted a box
+  # changed mix.exs and the table under it already follows the status.
   defp reread_paper(socket, moved?) do
-    if socket.assigns.tab == "project" and (is_nil(socket.assigns.ppage) or moved?),
-      do: take_paper(socket, %{"paper" => socket.assigns.ppaper}),
-      else: socket
+    if socket.assigns.tab == "project" and
+         (is_nil(socket.assigns.ppage) or moved? or socket.assigns.ppaper == "mix"),
+       do: take_paper(socket, %{"paper" => socket.assigns.ppaper}),
+       else: socket
   end
 
   # A Files screen opened before the status was here asks now.
@@ -479,6 +492,8 @@ defmodule ConsoleWeb.ConsoleLive do
   def handle_async({:knock, :read}, {:exit, _}, socket),
     do: {:noreply, assign(socket, preads: %{})}
 
+  def handle_async(:mix_by, {:ok, by}, socket), do: {:noreply, assign(socket, mix_by: by)}
+  def handle_async(:mix_by, {:exit, _why}, socket), do: {:noreply, socket}
   def handle_async({:diff, _} = key, result, socket), do: Hand.async(key, result, socket)
   def handle_async({:deps, _} = key, result, socket), do: Hand.async(key, result, socket)
   def handle_async({:dk, _} = key, result, socket), do: Docker.async(key, result, socket)
@@ -649,8 +664,16 @@ defmodule ConsoleWeb.ConsoleLive do
   # every reading that costs the internet is (Console.Bench): the names
   # already read are answered from memory, and only the rest are fetched.
   def handle_event("packages_ask", %{"names" => names}, socket) do
-    wanted = String.split(names, ",", trim: true)
-    Bench.refresh(:packages, wanted -- Map.keys(socket.assigns.packages))
+    # A package from GitHub comes as `name=owner/repo`; what was read is
+    # kept by name, and only what was not is asked.
+    read = socket.assigns.packages
+
+    wanted =
+      names
+      |> String.split(",", trim: true)
+      |> Enum.reject(&Map.has_key?(read, hd(String.split(&1, "="))))
+
+    Bench.refresh(:packages, wanted)
     {:noreply, assign(socket, packages_asking: true, packages_error: nil)}
   end
 
@@ -1080,6 +1103,10 @@ defmodule ConsoleWeb.ConsoleLive do
               jobs={@jobs}
               busy={@busy}
               reading={@reading}
+              hex={@packages}
+              hex_asking={@packages_asking}
+              hex_error={@packages_error}
+              by={@mix_by}
             />
           </section>
 

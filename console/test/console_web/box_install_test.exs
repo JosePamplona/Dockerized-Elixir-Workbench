@@ -376,7 +376,7 @@ defmodule ConsoleWeb.BoxInstallTest do
       assert html =~ "0.38.2"
       # The pin that is not the box's is marked, and says why.
       assert html =~ ~r/class="asks warn"/
-      assert html =~ "an insert older than the box"
+      assert html =~ "an insert older than the cartridge"
     end
   end
 
@@ -455,7 +455,7 @@ defmodule ConsoleWeb.BoxInstallTest do
       refute html =~ "gone"
     end
 
-    test "a package from git is its repository: the tag for a version, GitHub for its pages, hex left out" do
+    test "a package from git is its repository: the tag for a version, GitHub for its pages and its releases" do
       base = %{
         "name" => "tailwind",
         "options" => [],
@@ -513,9 +513,9 @@ defmodule ConsoleWeb.BoxInstallTest do
       assert html =~ ~s|href="https://github.com/tailwindlabs/heroicons/tree/v2.2.0"|
       assert html =~ "icons.svg#github"
       refute html =~ "hex.pm/packages/heroicons"
-      # Hex has nothing to say of it, and is not asked.
-      assert html =~ "not on hex: it comes from git"
-      assert html =~ ~s(phx-value-names="tailwind")
+      # GitHub is asked of it, by the same button, and counts no downloads.
+      assert html =~ ~s(phx-value-names="tailwind,heroicons=tailwindlabs/heroicons")
+      assert html =~ "GitHub counts no downloads of a repository"
     end
 
     test "unasked, the column says nothing was read and the button offers to ask" do
@@ -530,7 +530,9 @@ defmodule ConsoleWeb.BoxInstallTest do
       assert html =~ ~s|src="/images/vendor/hex.svg"|
       # Every fact has a column of its own, and the ones nobody asked
       # for say so rather than standing empty.
-      assert html =~ "the newest stable release on hex.pm, whatever this project runs"
+      assert html =~
+               "the newest stable release — on hex.pm, or on GitHub for a package from there — whatever this project runs"
+
       assert html =~ ~s|<span class="unlit">–</span>|
     end
 

@@ -1,14 +1,17 @@
 defmodule ConsoleWeb.ProjectScreen do
   @moduledoc """
   The project's own papers: Birth — what the project is, which is what
-  it was born as, drawn off the status — then the .env with its secrets masked, README,
-  CHANGELOG, and the workspace's git as Changes and History.
+  it was born as, drawn off the status — then Mix, what `mix.exs` says
+  and every package the project carries, the .env with its secrets
+  masked, README, CHANGELOG, and the workspace's git as Changes and
+  History.
   """
   use Phoenix.Component
   import ConsoleWeb.Ribbon, only: [ribbon: 1]
   import ConsoleWeb.RecordSheet, only: [record_sheet: 1]
   import ConsoleWeb.GitScreen, only: [git_pending: 1, git_history: 1]
   alias ConsoleWeb.GitScreen
+  alias ConsoleWeb.Packages
 
   attr :carried, :list, required: true
   attr :paper, :string, required: true
@@ -21,6 +24,13 @@ defmodule ConsoleWeb.ProjectScreen do
   attr :jobs, :list, default: []
   attr :busy, :boolean, default: false, doc: "a deploy job is in flight"
   attr :reading, :any, default: false, doc: "a status in flight: :fast, :full, or false"
+  attr :hex, :map, default: %{}, doc: "what hex said of each package, by name"
+  attr :hex_asking, :boolean, default: false
+  attr :hex_error, :any, default: nil
+
+  attr :by, :map,
+    default: %{},
+    doc: "who put each package in mix.exs, Console.Project.brought_by/1"
 
   def project_screen(assigns) do
     ~H"""
@@ -63,6 +73,24 @@ defmodule ConsoleWeb.ProjectScreen do
         busy={@busy}
         stale={@reading == :full}
       />
+      <div :if={@page && @page[:mix]} class="dkdoc mix">
+        <%!-- def project, a line a keyword, set as the Docker screen sets
+              what the daemon says of itself: a code box, the key dim and
+              the value coloured as the Elixir it is. --%>
+        <div class="log-cap"><span class="label">Specs</span></div>
+        <code class="code-box spec"><span :for={{key, html} <- @page.mix.spec} class="ln"><span class="k">{key}</span><span
+          class="v src"
+          data-lang="elixir"
+        >{Phoenix.HTML.raw(html)}</span></span></code>
+        <Packages.table
+          rows={mix_rows(@status, @hex, @by)}
+          brought
+          options={@page.mix.options}
+          nothing="mix.exs lists no package"
+          hex_asking={@hex_asking}
+          hex_error={@hex_error}
+        />
+      </div>
       <div :if={@page && @page[:git] && @gt} class="dkdoc git">
         <.git_pending :if={@page[:git] == "pending"} gt={@gt} status={@status} jobs={@jobs} />
         <.git_history :if={@page[:git] == "history"} gt={@gt} status={@status} />
@@ -72,6 +100,19 @@ defmodule ConsoleWeb.ProjectScreen do
       </div>
     </div>
     """
+  end
+
+  # Every package the project carries, as the status read mix.exs and
+  # mix.lock, with who brought it and what that cartridge asks for — read
+  # off git apart from the page, `:reading` until it answers.
+  defp mix_rows(status, hex, by) do
+    now = DateTime.utc_now()
+
+    for dep <- get_in(status || %{}, ["project", "deps"]) || [] do
+      dep
+      |> Map.merge(by[dep["name"]] || %{"by" => :reading})
+      |> Packages.row(hex, now, true)
+    end
   end
 
   # The ribbon's sublabel: the file a paper is; for the drawn ones what

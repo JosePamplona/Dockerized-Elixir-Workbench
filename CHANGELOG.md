@@ -14,6 +14,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+## v0.12.0 - (2026-09-23)
+
 ### Added
 
 - **The project's Mix paper.** Project gains a paper between Changes

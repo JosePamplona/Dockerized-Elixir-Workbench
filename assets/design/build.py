@@ -263,6 +263,18 @@ def components_css():
      .unknown no such cartridge (dashed, struck, no link)
      Never gold: the accent belongs to the stamp. On a printed back
      plate use the state-free bare form — a plate knows no project.
+   .pkg-ref — a mention of an Elixir package: hex's own mark, then the
+     name in mono, because it is a name read off mix.exs. The mark is
+     what says it is a link — no underline, nothing that stretches —
+     and it is dimmed until the mention is hovered, so a column of them
+     does not shout. It goes wherever a dependency is named, and it
+     addresses one of two places: the package's page on hex.pm (the
+     name), or one version's documentation on hexdocs (the version,
+     `.pkg-ref.bare`, which drops the mark where the row already wears
+     one). A cartridge is mentioned with .cart-ref and a package with
+     this: the first opens a drawer in this console, the second leaves
+     for somebody else's site, and the reader should never have to
+     press to learn which.
    .door-ref — an address: a route the project offers on the app's port
      (exdoc's /dev/docs, mailer's /dev/mailbox, health_probe's
      {path}/live) or a port the compose publishes for a service
@@ -512,6 +524,13 @@ def components_css():
 .cart-ref.in::before{background:var(--good);border-color:var(--good)}
 .cart-ref:hover:not(.unknown),.cart-ref:focus-visible:not(.unknown){border-color:var(--ink);outline:none}
 .cart-ref.unknown{border-style:dashed;text-decoration:line-through;cursor:default;opacity:.7}
+/* A package of the ecosystem: hex's mark carries the link, so nothing
+   is underlined and nothing stretches. The mark is an <img> and not a
+   sprite symbol, because it is six fixed colours and takes none of ours. */
+.pkg-ref{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;font-family:var(--mono);font-size:12px;color:var(--ink);text-decoration:none;background:none;border:0;padding:0;cursor:pointer}
+.pkg-ref:hover,.pkg-ref:focus-visible{color:var(--accent);outline:none}
+.pkg-ref .mark{width:12px;height:11px;flex:none;opacity:.55;transition:opacity 120ms}
+.pkg-ref:hover .mark,.pkg-ref:focus-visible .mark{opacity:1}
 .door-ref{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;color:var(--ink);text-decoration:none;padding:3px 9px;border:1px solid var(--line);border-radius:2px;background:none;cursor:pointer}
 .door-ref b{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:11px;color:var(--muted)}
 .door-ref span{font-family:var(--mono);font-size:12px}

@@ -58,6 +58,53 @@ defmodule ConsoleWeb.Refs do
   end
 
   @doc """
+  A mention of an Elixir package, the one way the console names a
+  dependency: hex's own mark, the name in mono, and the address of the
+  package's page on hex.pm. With `version` it addresses that version's
+  documentation on hexdocs instead, and prints the version. `path` goes
+  after the package's page (`"versions"`). `mark` is false where the
+  row already wears one — one mark says "this line is a package", two
+  say nothing more. It leaves for somebody else's site, which is what
+  tells it apart from a mention of a cartridge (`cart_ref/1`, a drawer
+  in this console).
+  """
+  attr :name, :string, required: true
+  attr :version, :string, default: nil, doc: "that version's docs, and what it prints"
+  attr :path, :string, default: nil, doc: "under the package's page on hex.pm"
+  attr :label, :string, default: nil, doc: "what it prints, when neither name nor version"
+  attr :mark, :boolean, default: true
+  attr :title, :string, default: nil
+  attr :class, :any, default: nil
+
+  def pkg_ref(assigns) do
+    assigns =
+      assign(assigns,
+        href:
+          if(assigns.version,
+            do: "https://hexdocs.pm/#{assigns.name}/#{assigns.version}",
+            else: "https://hex.pm/packages/#{assigns.name}#{assigns.path && "/#{assigns.path}"}"
+          ),
+        says: assigns.label || assigns.version || assigns.name
+      )
+
+    ~H"""
+    <a
+      class={["pkg-ref", !@mark && "bare", @class]}
+      href={@href}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={
+        @title ||
+          if(@version,
+            do: "the documentation of #{@name} #{@version}",
+            else: "#{@name} on hex.pm"
+          )
+      }
+    ><img :if={@mark} class="mark" src="/images/vendor/hex.svg" alt="" width="12" height="11" />{@says}</a>
+    """
+  end
+
+  @doc """
   An address: the label first, then the address in mono. Who opened it
   goes beside as a mention, never inside. `why` is the reason there is
   nothing to press, and it takes the href with it. `kind` is the layer

@@ -598,8 +598,7 @@ defmodule ConsoleWeb.WorkbenchDrawer do
         </.chip>
       </div>
       <p class="help">
-        <.prose text={@f.help} />
-        <.prose text=" Every release is at https://hex.pm/packages/phx_new/versions." />
+        <.prose text={@f.help} /> Every release is at <.pkg_ref name="phx_new" path="versions" />.
         <span :if={@error} class="bad">hex did not answer: {@error}</span>
         <span :if={!@error and @list == [] and !@asking}>The releases are not here yet — the console asks hex only when you press the button.</span>
       </p>

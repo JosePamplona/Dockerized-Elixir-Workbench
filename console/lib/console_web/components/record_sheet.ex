@@ -95,7 +95,7 @@ defmodule ConsoleWeb.RecordSheet do
           <tr>
             <td class="k">installer</td>
             <td>
-              phx.new {@birth.installer.born}
+              <.pkg_ref name="phx_new" label={"phx.new #{@birth.installer.born}"} />
               <.chip
                 :if={@birth.installer.now}
                 class="warn"

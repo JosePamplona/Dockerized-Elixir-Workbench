@@ -63,7 +63,8 @@ defmodule ConsoleWeb.ConsoleLive.Hand do
         pending_box: nil
       )
 
-    if screen == "files", do: ask_diff(socket, box), else: socket
+    socket = if screen == "files", do: ask_diff(socket, box), else: socket
+    ask_read_deps(socket, box)
   end
 
   # What the cartridge wrote, read off the workspace's git in the
@@ -89,6 +90,34 @@ defmodule ConsoleWeb.ConsoleLive.Hand do
         socket
         |> assign(diff: :loading)
         |> start_async({:diff, box["name"]}, fn -> Diffs.inserted(ws, inserts) end)
+    end
+  end
+
+  # What a box that declares no package put in the project's mix.exs,
+  # read off its own insert commit. Only for a box that is in and
+  # declares none — the base cartridges, whose packages arrive inside
+  # the phx.new delta: everywhere else the manifest already says it,
+  # and a reading of git would be a second opinion. A box in without a
+  # commit was born with the project (`:born`), and there is nothing
+  # to read: the panel says that instead of standing empty.
+  def ask_read_deps(socket, box) do
+    status = socket.assigns.status
+    ws = status && status["workspace"]
+    c = Cartridges.carried(status, box["name"])
+    inserts = Cartridges.inserts(status, box["name"])
+    own? = ws && c && c["installed"] && (box["deps"] || []) == []
+
+    cond do
+      own? && inserts != [] ->
+        socket
+        |> assign(read_deps: :loading)
+        |> start_async({:deps, box["name"]}, fn -> Diffs.packages_of(ws, inserts) end)
+
+      own? ->
+        assign(socket, read_deps: :born)
+
+      true ->
+        assign(socket, read_deps: [])
     end
   end
 
@@ -173,6 +202,14 @@ defmodule ConsoleWeb.ConsoleLive.Hand do
       do: {:noreply, assign(socket, diff: diff)},
       else: {:noreply, socket}
   end
+
+  def async({:deps, name}, {:ok, read}, socket) do
+    if socket.assigns.box && socket.assigns.box["name"] == name,
+      do: {:noreply, assign(socket, read_deps: read)},
+      else: {:noreply, socket}
+  end
+
+  def async({:deps, _}, {:exit, _why}, socket), do: {:noreply, assign(socket, read_deps: [])}
 
   def async({:diff, _}, {:exit, why}, socket),
     do:

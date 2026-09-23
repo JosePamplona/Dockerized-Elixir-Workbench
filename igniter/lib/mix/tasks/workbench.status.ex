@@ -136,10 +136,26 @@ defmodule Mix.Tasks.Workbench.Status do
       app: app,
       phx: phx,
       cartridges: cartridges,
+      deps: project_deps(),
       services: services,
       birth: birth,
       deployments: Deployments.read(File.cwd!(), services)
     }
+  end
+
+  # Every package the project carries, with what mix.exs asks for and
+  # what mix.lock resolved. The cartridges' own readings are the same
+  # two facts narrowed to what a box declares; this is the whole list,
+  # for the packages nobody declares — a base cartridge's arrive inside
+  # the phx.new delta, so what it brought is read off its insert commit
+  # and matched against the project here.
+  defp project_deps do
+    pinned = pinned_deps()
+    locked = Mix.Dep.Lock.read()
+
+    for {name, requirement} <- pinned do
+      %{name: to_string(name), pinned: requirement, locked: locked_version(locked[name])}
+    end
   end
 
   # What each installed cartridge put in the project's mix.exs, beside
@@ -151,11 +167,7 @@ defmodule Mix.Tasks.Workbench.Status do
   # read here, where this task runs inside the project, and nowhere
   # else: the catalog carries only what a box declares.
   defp with_deps(cartridges) do
-    pinned =
-      Map.new(Mix.Project.config()[:deps] || [], fn dep ->
-        {elem(dep, 0), if(tuple_size(dep) > 1 and is_binary(elem(dep, 1)), do: elem(dep, 1))}
-      end)
-
+    pinned = pinned_deps()
     locked = Mix.Dep.Lock.read()
 
     Enum.map(cartridges, fn cartridge ->
@@ -164,6 +176,14 @@ defmodule Mix.Tasks.Workbench.Status do
       brought = if cartridge.installed and feature, do: feature.deps(cartridge.state), else: []
 
       Map.put(cartridge, :deps, for(dep <- brought, do: dep_reading(dep, pinned, locked)))
+    end)
+  end
+
+  # mix.exs's own list: the package and the requirement it asks for,
+  # which a dep given by path or git does not have.
+  defp pinned_deps do
+    Map.new(Mix.Project.config()[:deps] || [], fn dep ->
+      {elem(dep, 0), if(tuple_size(dep) > 1 and is_binary(elem(dep, 1)), do: elem(dep, 1))}
     end)
   end
 

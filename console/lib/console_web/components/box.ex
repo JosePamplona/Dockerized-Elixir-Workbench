@@ -40,6 +40,11 @@ defmodule ConsoleWeb.Box do
     doc: "what the cartridge wrote (Console.Diffs), :loading, || nil"
 
   attr :packages, :map, default: %{}, doc: "what hex said of each package, by name"
+
+  attr :read_deps, :any,
+    default: [],
+    doc: "what this box's insert commit put in mix.exs, read off git"
+
   attr :packages_asking, :boolean, default: false
   attr :packages_error, :any, default: nil
 
@@ -109,6 +114,7 @@ defmodule ConsoleWeb.Box do
       <.sheet
         :if={@screen == "box"}
         packages={@packages}
+        read_deps={@read_deps}
         packages_asking={@packages_asking}
         packages_error={@packages_error}
         now={@now}
@@ -270,24 +276,53 @@ defmodule ConsoleWeb.Box do
   attr :hex_error, :any, default: nil
   attr :now, :any, default: nil
 
+  attr :read_deps, :any,
+    default: [],
+    doc: "the packages this box's insert commit put in mix.exs, for a box that declares none"
+
+  attr :mix, :list, default: [], doc: "every package the project carries, pinned and locked"
+
   defp packages(assigns) do
     carried = assigns.installed && assigns.c["deps"]
     declared = assigns.box["deps"] || []
+
+    own = assigns.installed and declared == []
+
+    carried =
+      if carried in [nil, []] and assigns.installed,
+        do: off_the_insert(assigns.read_deps, assigns.mix),
+        else: carried
+
     rows = if(carried && carried != [], do: carried, else: nil)
+
+    # A base cartridge that declares none and whose insert commit says
+    # nothing was not inserted: the project was born with the flag, and
+    # there is no commit to read. The panel says so rather than leaving
+    # the reader to wonder whether the box costs nothing.
+    nothing =
+      cond do
+        not own or rows != nil or assigns.read_deps == :loading -> nil
+        assigns.read_deps == :born -> "born with the project: no insert commit to read them off"
+        assigns.read_deps == [] -> "its insert commit put no package in mix.exs"
+        true -> "what its insert commit added is not in mix.exs any more"
+      end
+
     names = Enum.map(rows || declared, & &1["name"])
     now = assigns.now || DateTime.utc_now()
 
     assigns =
       assign(assigns,
+        nothing: nothing,
         names: names,
         now: now,
         rows: for(row <- rows || declared, do: package_row(row, assigns.hex, now, rows != nil))
       )
 
     ~H"""
-    <div :if={@rows != []} class="packages">
+    <div :if={@rows != [] or @nothing} class="packages">
       <div class="log-cap">
         <span class="label">Packages</span>
+        <span :if={@nothing} class="note unlit">{@nothing}</span>
         <%!-- What hex says of a package is a reading of the ecosystem,
               not of the project: it costs the internet, so it happens
               because somebody pressed for it, never on its own. The
@@ -295,6 +330,7 @@ defmodule ConsoleWeb.Box do
               same kind of reading — the Docker tags and the phx_new
               releases — so one gesture means one thing everywhere. --%>
         <.square
+          :if={@rows != []}
           mark="reload"
           size="small"
           label="Ask hex for these packages"
@@ -313,7 +349,7 @@ defmodule ConsoleWeb.Box do
         <span :if={@hex_error} class="note bad">{@hex_error}</span>
       </div>
 
-      <div class="scroll">
+      <div :if={@rows != []} class="scroll">
         <table class="rows pkgs">
           <thead>
             <tr>
@@ -339,7 +375,15 @@ defmodule ConsoleWeb.Box do
           <tbody>
             <tr :for={r <- @rows}>
               <td><.pkg_ref name={r.name} /></td>
-              <td class="asks">{r.brings}</td>
+              <td
+                class="asks"
+                title={
+                  r.read? &&
+                    "read off this box's insert commit: it declares no package of its own — what it brings arrives inside the phx.new delta"
+                }
+              >
+                {r.brings}<span :if={r.read?} class="off">*</span>
+              </td>
               <td
                 class={["asks", r.carried? && r.pinned != r.brings && "warn"]}
                 title={
@@ -393,6 +437,28 @@ defmodule ConsoleWeb.Box do
 
   defp latest_says(_row), do: "hex.pm's newest release"
 
+  # A base cartridge declares no package: its own arrive inside the
+  # `phx.new` delta, at whatever version that installer writes. What it
+  # brought is read off its insert commit instead (`Console.Diffs`) and
+  # matched against the project's own list, so nothing is kept by hand
+  # and a name the project no longer carries is not claimed. A project
+  # born with the flag has no insert commit, so it has nothing here.
+  defp off_the_insert(read, mix) when is_list(read) and read != [] do
+    project = Map.new(mix, &{&1["name"], &1})
+
+    for %{name: name} = dep <- read, project[name] do
+      %{
+        "name" => name,
+        "declared" => dep.requirement,
+        "pinned" => project[name]["pinned"],
+        "locked" => project[name]["locked"],
+        "read" => true
+      }
+    end
+  end
+
+  defp off_the_insert(_read, _mix), do: []
+
   # One package as the table reads it: what the box brings, what the
   # project does with it, and what hex said if anybody asked.
   defp package_row(row, hex, now, carried?) do
@@ -401,6 +467,7 @@ defmodule ConsoleWeb.Box do
     %{
       name: row["name"],
       brings: row["declared"] || row["requirement"],
+      read?: row["read"] == true,
       pinned: row["pinned"],
       locked: row["locked"],
       latest: said[:latest],
@@ -677,6 +744,8 @@ defmodule ConsoleWeb.Box do
             hex={@packages}
             hex_asking={@packages_asking}
             hex_error={@packages_error}
+            read_deps={@read_deps}
+            mix={get_in(@status, ["project", "deps"]) || []}
             now={@now}
           />
         </div>

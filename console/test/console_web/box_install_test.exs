@@ -360,6 +360,55 @@ defmodule ConsoleWeb.BoxInstallTest do
       )
     end
 
+    test "a box that declares none says what its insert commit put in mix.exs" do
+      base = %{
+        "name" => "mailer",
+        "options" => [],
+        "requires" => [],
+        "offers" => [],
+        "base" => true,
+        "console" => %{"doors" => [], "tabs" => []},
+        "deps" => []
+      }
+
+      status = %{
+        "exists" => true,
+        "project" => %{
+          "cartridges" => [%{"name" => "mailer", "installed" => true, "deps" => []}],
+          "deps" => [
+            %{"name" => "swoosh", "pinned" => "~> 1.16", "locked" => "1.19.7"},
+            %{"name" => "phoenix", "pinned" => "~> 1.8.0", "locked" => "1.8.14"}
+          ]
+        }
+      }
+
+      html =
+        render_component(&ConsoleWeb.Box.box/1,
+          box: base,
+          status: status,
+          catalog: [base],
+          screen: "box",
+          paper: "readme",
+          papers: [],
+          args: %{},
+          packages: %{},
+          read_deps: [
+            %{name: "swoosh", requirement: "~> 1.16"},
+            %{name: "gone", requirement: "~> 1.0"}
+          ],
+          now: ~U[2026-09-23 12:00:00Z]
+        )
+
+      # What the commit wrote is the cartridge's own column, and it says
+      # where it was read; the project's two columns come from mix.exs
+      # and mix.lock as they do for any other box.
+      assert html =~ "swoosh"
+      assert html =~ "1.19.7"
+      assert html =~ "read off this box&#39;s insert commit"
+      # A name the project no longer carries is not claimed.
+      refute html =~ "gone"
+    end
+
     test "unasked, the column says nothing was read and the button offers to ask" do
       html = with_hex(%{})
 

@@ -50,6 +50,51 @@ defmodule Console.Diffs do
   end
 
   @doc """
+  The packages an insert put in the project's `mix.exs`, read off its
+  own commit: `%{name, requirement}`, newest insert first. A base
+  cartridge declares none — its packages arrive inside the `phx.new`
+  delta, whatever that installer writes — so what it brought is read
+  where it was written, and nothing is kept by hand. A project born
+  with the flag has no insert commit, and so nothing to read: that is
+  what the panel says instead of guessing.
+  `inserts` are the status's entries of that cartridge.
+  """
+  def packages_of(_workspace, []), do: []
+
+  def packages_of(workspace, inserts) do
+    inserts
+    |> Enum.flat_map(fn %{"sha" => sha} ->
+      lines =
+        workspace
+        |> git(["show", "--format=", "--unified=0", sha, "--", "mix.exs"])
+        |> String.split("\n")
+
+      # A package on both faces of the patch was already there: the
+      # line was rewritten, most often the comma the insert put after
+      # the dep that used to be last. What the insert brought is what
+      # only the new face has.
+      was = for l <- lines, String.starts_with?(l, "-"), d <- dep_line(l), do: d.name
+
+      for l <- lines,
+          String.starts_with?(l, "+"),
+          dep <- dep_line(l),
+          dep.name not in was,
+          do: dep
+    end)
+    |> Enum.uniq_by(& &1.name)
+  end
+
+  # A line of mix.exs's own list: `{:swoosh, "~> 1.16"}`, or a package
+  # given by git or path, which has no requirement to read.
+  defp dep_line(line) do
+    case Regex.run(~r/^[-+]\s*\{:([a-z][a-z0-9_]*),\s*(?:"([^"]+)")?/, line) do
+      [_, name] -> [%{name: name, requirement: nil}]
+      [_, name, requirement] -> [%{name: name, requirement: requirement}]
+      nil -> []
+    end
+  end
+
+  @doc """
   A collection's diff: the range its members' commits span, when they
   are contiguous in the log, with who touched each file; otherwise the
   fact that they are not, and how many commits sit between.

@@ -109,6 +109,32 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   cell claimed to be the version installed and left the reader to
   guess what the other three were.
 
+- **A base cartridge's packages, read off its own insert commit.** The
+  seven base boxes declare no package and cannot: what `mailer` or
+  `ecto` brings arrives inside the `phx.new` delta, at whatever version
+  that installer writes, so a list kept in the manifest would be a
+  second opinion drifting one Phoenix release at a time. The insert
+  wrote those lines into `mix.exs` in a commit of its own, and that is
+  where they are read — `Console.Diffs.packages_of/2`, the additions of
+  the commit's `mix.exs` minus the names its own removals carry, which
+  is the comma the insert put after the dep that used to be last. What
+  the project does with them is the same two readings every other box
+  gets: `mix workbench.status` now reports the project's whole
+  dependency list, `mix.exs`'s pin and `mix.lock`'s resolution, and the
+  panel matches the commit's names against it — so a package the
+  project no longer carries is not claimed. The cartridge column wears
+  a `*` and says it was read off the insert, never declared.
+
+  It follows from where the packages are: **a base box in because it
+  was born with the flag has no insert commit, and so nothing to
+  read**. The panel says exactly that — *born with the project: no
+  insert commit to read them off* — rather than standing empty, which
+  the reader would take for "this box costs nothing". Checked against
+  the workspace: gettext, tailwind (with `heroicons` and `daisyui`,
+  which are git deps and carry no requirement), esbuild, html, mailer,
+  ecto and dashboard each answer their own packages, and none answers
+  another's.
+
 - **A dependency is named one way, everywhere: `.pkg-ref`.** The
   packages table drew its own link — hex's mark, the name, the address
   — and a mention of a package anywhere else drew whatever the page

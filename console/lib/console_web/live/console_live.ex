@@ -73,6 +73,7 @@ defmodule ConsoleWeb.ConsoleLive do
         args: %{},
         recipe: nil,
         diff: nil,
+        read_deps: [],
         face: "front",
         ppaper: "record",
         back: "/deploy",
@@ -479,6 +480,7 @@ defmodule ConsoleWeb.ConsoleLive do
     do: {:noreply, assign(socket, preads: %{})}
 
   def handle_async({:diff, _} = key, result, socket), do: Hand.async(key, result, socket)
+  def handle_async({:deps, _} = key, result, socket), do: Hand.async(key, result, socket)
   def handle_async({:dk, _} = key, result, socket), do: Docker.async(key, result, socket)
   def handle_async({:gt, _} = key, result, socket), do: Git.async(key, result, socket)
 
@@ -1156,6 +1158,7 @@ defmodule ConsoleWeb.ConsoleLive do
       asking={@stop_ask}
       stoppable={@stoppable}
       diff={@diff}
+      read_deps={@read_deps}
       packages={@packages}
       packages_asking={@packages_asking}
       packages_error={@packages_error}

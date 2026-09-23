@@ -60,11 +60,12 @@ defmodule WorkbenchIgniter.Features.TestData do
   @impl true
   def requires, do: ["ecto"]
 
-  # Each piece — a dependency, a file, the helper's block — is added
-  # when missing, so a project that took the old exmachina box gets the
-  # rest on a second run.
+  # Every piece — a dependency, a file, the helper's block — is added
+  # when missing, so a project that took the old exmachina box gets
+  # the rest on a second run. It takes no options: what it adds is
+  # whatever the project is short of.
   @impl true
-  def rerun, do: :adds
+  def adds, do: :all
 
   # The mark: Faker, on either line — or ExMachina, which a project that
   # took the old exmachina box carries alone.

@@ -109,6 +109,35 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   cell claimed to be the version installed and left the reader to
   guess what the other three were.
 
+- **A form asks only for what a second insert can still put in
+  (`adds/0`).** The box in hand offered every option of a cartridge
+  that was already inserted, and *Add to cartridge* with it: the reader
+  set coverage's minimum, pressed, and the job came back saying
+  `coveralls.json` already exists and nothing was done. The shell has
+  always known better — the installer's guard refuses on arrival — and
+  an interface that offers what the tool refuses is lying to the hand
+  that presses.
+
+  `rerun: :adds` was too coarse to fix it: coverage does add on a
+  second run, but only the `mix cover` task and the hook block; the
+  theme, the minimum, the ignored files and the column width were
+  fixed when it went in. So the box says which, in a word of its own:
+  **`adds/0`** — `:none`, `:all`, or the option keys a second insert
+  still adds — and `rerun/0` is derived from it, so the two can never
+  disagree. The suite holds it against each box's own schema: a key
+  that is no option of it would lock a field nobody can see, and a box
+  with no options at all can only answer `:none` or `:all`.
+
+  The form follows: locked whole, with no verb to press, where nothing
+  can be added (which is what the reader asked for); open on the named
+  pieces alone and locked on the rest, with the line saying *what it
+  went in with is fixed; `--md-report` && `--githook` are the pieces it
+  still adds*; and open as before for a collection, for ash and for a
+  box with no options, where inserting again inserts what is missing.
+  The eleven that answer something other than `:none`: ash, changelog,
+  chiefs_setup, coverage, credo, dashboard_extras, db_admin, html,
+  precommit, test_data, test_doubles.
+
 - **What `mix.exs` pins, read off `mix.exs`.** The Packages panel said
   *the project pins nothing* of a package the project plainly pins:
   excoveralls, inserted after the console's resident

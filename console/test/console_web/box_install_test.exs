@@ -85,12 +85,56 @@ defmodule ConsoleWeb.BoxInstallTest do
   end
 
   test "in and rerunnable: both feet, each with its own line" do
-    box = Map.put(@box, "rerun", "adds")
+    box = @box |> Map.put("rerun", "adds") |> Map.put("adds", "all")
     html = screen(box, in_project("ecto"))
     assert html =~ "./wb.sh add ecto"
     assert html =~ "./wb.sh eject ecto"
     assert html =~ "Add to cartridge"
     assert html =~ ">Eject</button>"
+  end
+
+  # coverage's shape: the report was fixed at the insert, the mix task
+  # and the hook block are pieces a second run still puts in.
+  @coverage %{
+    "name" => "coverage",
+    "rerun" => "adds",
+    "adds" => ["md_report", "githook"],
+    "requires" => [],
+    "offers" => [],
+    "console" => %{"doors" => [], "tabs" => []},
+    "deps" => [],
+    "options" => [
+      %{"name" => "html_theme", "type" => "string", "default" => "custom"},
+      %{"name" => "md_report", "type" => "boolean", "default" => false},
+      %{"name" => "githook", "type" => "boolean", "default" => false}
+    ]
+  }
+
+  test "in and only some options addable: those take input and the rest do not" do
+    html = screen(@coverage, in_project("coverage"), screen: "install")
+
+    # The form is not locked whole: there is something to add.
+    refute html =~ ~s(class="insert locked")
+    assert html =~ "Add to cartridge"
+    assert html =~ "--md-report &amp;&amp; --githook are the pieces it still adds"
+
+    # One input per option, and only the two pieces are movable.
+    fixed = html |> String.split(~s(name="opt[html_theme]")) |> Enum.at(1) || ""
+    assert String.slice(fixed, 0, 200) =~ "disabled"
+
+    for piece <- ~w(md_report githook) do
+      [_, after_it | _] = String.split(html, ~s(id="opt-#{piece}"))
+      refute String.slice(after_it, 0, 120) =~ "disabled"
+    end
+  end
+
+  test "in and nothing a second run adds: no form to fill and no verb to press" do
+    box = @coverage |> Map.put("rerun", "noop") |> Map.put("adds", "none")
+    html = screen(box, in_project("coverage"), screen: "install")
+
+    assert html =~ ~s(class="insert locked")
+    refute html =~ "Add to cartridge"
+    refute html =~ "./wb.sh add coverage"
   end
 
   test "in from birth, with no Insert commit, the fields read what the project reports" do
@@ -393,8 +437,8 @@ defmodule ConsoleWeb.BoxInstallTest do
           args: %{},
           packages: %{},
           read_deps: [
-            %{name: "swoosh", requirement: "~> 1.16"},
-            %{name: "gone", requirement: "~> 1.0"}
+            %{name: "swoosh", requirement: "~> 1.16", from: "1.8.14"},
+            %{name: "gone", requirement: "~> 1.0", from: "1.8.14"}
           ],
           now: ~U[2026-09-23 12:00:00Z]
         )
@@ -405,6 +449,8 @@ defmodule ConsoleWeb.BoxInstallTest do
       assert html =~ "swoosh"
       assert html =~ "1.19.7"
       assert html =~ "read off this box&#39;s insert commit"
+      assert html =~ ~s(<span class="fn">*</span>)
+      assert html =~ "it comes with phx.new 1.8.14"
       # A name the project no longer carries is not claimed.
       refute html =~ "gone"
     end
@@ -580,6 +626,7 @@ defmodule ConsoleWeb.BoxInstallTest do
   @db_admin %{
     "name" => "db_admin",
     "rerun" => "adds",
+    "adds" => ["admin"],
     "requires" => ["ecto"],
     "options" => [
       %{
@@ -631,6 +678,7 @@ defmodule ConsoleWeb.BoxInstallTest do
   @credo %{
     "name" => "credo",
     "rerun" => "adds",
+    "adds" => ["githook"],
     "requires" => [],
     "options" => [
       %{

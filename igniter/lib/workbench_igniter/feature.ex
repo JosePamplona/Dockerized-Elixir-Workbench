@@ -193,6 +193,36 @@ defmodule WorkbenchIgniter.Feature do
   @callback rerun() :: :noop | :adds
 
   @doc """
+  What a second run can still put in, option by option: `:none` —
+  nothing, so inserting it again changes nothing (the default) —,
+  `:all`, when whatever it is asked for is a piece it adds while
+  missing (ash: every option is a package; a collection: every option
+  picks members; a cartridge with no options at all, which a second run
+  completes), or the keys of the options a second run still adds, the
+  rest having been fixed when it was inserted.
+
+  It is what a form is locked by: a cartridge in whose `adds/0` is
+  `:none` takes no more input at all, and one that names keys takes
+  input on those alone. `rerun/0` is derived from it, so the two can
+  never say different things.
+
+      # coverage: the report and its theme were fixed at the insert;
+      # the mix task and the hook block are added when missing.
+      @impl WorkbenchIgniter.Feature
+      def adds, do: [:md_report, :githook]
+  """
+  @callback adds() :: :none | :all | [atom()]
+
+  @doc """
+  `rerun/0` off `adds/0`: a cartridge that adds nothing on a second run
+  is a no-op, and one that adds anything runs again. Derived so the two
+  can never say different things.
+  """
+  @spec rerun_of(:none | :all | [atom()]) :: :noop | :adds
+  def rerun_of(:none), do: :noop
+  def rerun_of(_adds), do: :adds
+
+  @doc """
   What the project carries of the cartridge's options, read off the
   project. Required of every cartridge whose `info/2` declares a
   schema: the answer has exactly the schema's keys, one value per
@@ -419,7 +449,10 @@ defmodule WorkbenchIgniter.Feature do
       def detect(igniter), do: {%{}, igniter}
 
       @impl WorkbenchIgniter.Feature
-      def rerun, do: :noop
+      def adds, do: :none
+
+      @impl WorkbenchIgniter.Feature
+      def rerun, do: WorkbenchIgniter.Feature.rerun_of(adds())
 
       @impl WorkbenchIgniter.Feature
       def state(igniter), do: {%{}, igniter}
@@ -461,6 +494,7 @@ defmodule WorkbenchIgniter.Feature do
                      detected: 0,
                      detect: 1,
                      rerun: 0,
+                     adds: 0,
                      state: 1
 
       # The cartridge directory name names its `priv/features/<name>/`

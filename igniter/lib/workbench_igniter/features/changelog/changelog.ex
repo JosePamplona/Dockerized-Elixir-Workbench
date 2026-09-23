@@ -78,10 +78,11 @@ defmodule WorkbenchIgniter.Features.Changelog do
     {%{init_version: version}, igniter}
   end
 
-  # The task and the badge are pieces: a second run with the switch
-  # adds the one missing, and never moves the version.
+  # The history and the version it opens at are written once — a
+  # second run must not move the number under a written history — and
+  # the task and the badge are pieces it adds when missing.
   @impl true
-  def rerun, do: :adds
+  def adds, do: [:mix_task, :readme_badge]
 
   # The mark: the changelog. The version in mix.exs is no mark — every
   # project has one, `phx.new` saw to that.

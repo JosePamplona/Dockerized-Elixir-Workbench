@@ -254,7 +254,7 @@ defmodule WorkbenchIgniter.Features.Ash do
   # Every option is a package, and a run queues only the packages
   # mix.exs lacks: running again with more options grows the install.
   @impl true
-  def rerun, do: :adds
+  def adds, do: :all
 
   # What the project carries, read off mix.exs: the data layer whose
   # package is in (`none` when Ash is in without one), the APIs and the

@@ -866,7 +866,8 @@ defmodule ConsoleWeb.Box do
       cond do
         e["pending"] -> nil
         e["collection"] -> "inserting it again inserts what is missing"
-        e["rerun"] == "adds" -> "inserting it again adds to what is in"
+        is_list(e["adds"]) -> "inserting it again adds " <> flags_said(e["adds"])
+        e["adds"] == "all" -> "inserting it again adds to what is in"
         true -> "inserting it again changes nothing"
       end
 
@@ -920,7 +921,7 @@ defmodule ConsoleWeb.Box do
   defp brings(assigns) do
     have = if assigns.installed, do: assigns.c["compose"] || [], else: []
     inside = MapSet.new(have, & &1["service"])
-    locked = assigns.installed and assigns.box["rerun"] != "adds"
+    locked = assigns.installed and (assigns.box["adds"] || "none") == "none"
 
     rest =
       for o <- assigns.box["offers"] || [], not MapSet.member?(inside, o["service"]), do: o
@@ -1003,7 +1004,13 @@ defmodule ConsoleWeb.Box do
 
   defp install(assigns) do
     insert = Cartridges.insert(assigns.status, assigns.box["name"])
-    locked = assigns.installed && assigns.box["rerun"] != "adds"
+    # What a second insert can still put in, the box's own word: "none"
+    # — the form takes no more input at all —, "all", or the options it
+    # still adds, the rest having been fixed when it went in. A field
+    # nobody can move is a field that must not be offered: the job it
+    # would send is one the installer refuses on arrival.
+    adds = assigns.box["adds"] || "none"
+    locked = assigns.installed && adds == "none"
     clean = is_nil(assigns.status) || get_in(assigns.status, ["git", "clean"]) != false
     missing = missing(assigns.box, assigns.args, assigns.status)
     left = if assigns.box["collection"], do: members_left(assigns), else: nil
@@ -1038,10 +1045,11 @@ defmodule ConsoleWeb.Box do
         from_insert: insert != nil,
         # Insertable while it is not in, and still while it is when
         # inserting again adds to what is there (`rerun: adds`).
-        can_insert: !assigns.installed || assigns.box["rerun"] == "adds",
+        can_insert: !assigns.installed || adds != "none",
+        adds: adds,
         full:
           assigns.installed && !assigns.box["collection"] &&
-            nothing_to_add?(assigns.box, assigns.c || %{}, assigns.status)
+            nothing_to_add?(assigns.box, assigns.c || %{}, assigns.status, adds)
       )
 
     ~H"""
@@ -1060,7 +1068,7 @@ defmodule ConsoleWeb.Box do
             o={o}
             args={@args}
             status={@status}
-            locked={@locked}
+            locked={@locked || (@installed && not addable?(@adds, o))}
             installed={@installed}
             c_state={@c["state"] || %{}}
             detected={(@c || %{})["detected"] || %{}}
@@ -1506,8 +1514,8 @@ defmodule ConsoleWeb.Box do
   # either in or builds on what the project lacks — db_admin with every
   # admin its database allows. An open field or a switch can always say
   # something new, so a box with one never counts as full.
-  defp nothing_to_add?(box, c, status) do
-    options = box["options"] || []
+  defp nothing_to_add?(box, c, status, adds) do
+    options = for o <- box["options"] || [], addable?(adds, o), do: o
     state = c["state"] || %{}
 
     options != [] and
@@ -1516,6 +1524,16 @@ defmodule ConsoleWeb.Box do
           Enum.all?(choices(o), &(has?(o, &1, state) or lacks(&1, status) != []))
       end)
   end
+
+  @doc """
+  Whether an option can still be moved on a box that is in: what the
+  box says a second insert adds (`adds/0`), which is "all", "none" or
+  the names of the options it still puts in.
+  """
+  def addable?("all", _o), do: true
+  def addable?("none", _o), do: false
+  def addable?(names, o) when is_list(names), do: o["name"] in names
+  def addable?(_adds, _o), do: false
 
   # What the reader has just said wins; then what the project reports of
   # the cartridge (`state/1`) — a base cartridge in from birth has no
@@ -1752,8 +1770,11 @@ defmodule ConsoleWeb.Box do
       a.full ->
         "every value this project allows is in: nothing left to add"
 
-      a.installed && a.box["rerun"] == "adds" ->
-        "every option is a package: what is in stays, what you add is queued"
+      a.installed && is_list(a.box["adds"]) ->
+        "what it went in with is fixed; #{flags_said(a.box["adds"])} are the pieces it still adds"
+
+      a.installed && a.box["adds"] == "all" ->
+        "every option is a piece: what is in stays, what you add is queued"
 
       !a.installed && a.missing != [] ->
         "builds on #{Enum.join(a.missing, " && ")}, not in the project yet"
@@ -1762,6 +1783,10 @@ defmodule ConsoleWeb.Box do
         ""
     end
   end
+
+  # Option names as the form writes them: --md-report && --githook.
+  defp flags_said(names),
+    do: Enum.map_join(names, " && ", &"--#{String.replace(&1, "_", "-")}")
 
   defp eject_note(a) do
     cond do

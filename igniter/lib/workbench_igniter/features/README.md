@@ -359,8 +359,15 @@ which cartridges have one and why.
   it, `mix workbench.status` carries it per cartridge as `detected`, and
   the console's form shows it as the field's placeholder — so the
   default a reader sees is the one the insert writes.
-* `rerun/0` - what a second run does: `:noop` (the guard skips it) or
-  `:adds` (every option a piece the installer adds when missing).
+* `adds/0` - what a second run can still put in: `:none` (nothing — the
+  guard skips everything, and the console locks the whole form and
+  offers no verb), `:all` (whatever it is asked: a collection, a box
+  whose every option is a piece, a box with no options at all), or the
+  option keys it still adds while the rest were fixed when it went in
+  (coverage: `[:md_report, :githook]`). The console's form takes input
+  on those alone, so it never offers what the installer would refuse.
+* `rerun/0` - what a second run does, `:noop` or `:adds`, derived from
+  `adds/0`: the two cannot say different things.
 * `state/1` - what the project carries of its options, read off the
   project: exactly the schema's keys, each with what was found (a
   string, a list, `true`/`false`), or `nil` for an option that leaves

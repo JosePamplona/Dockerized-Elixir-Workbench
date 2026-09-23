@@ -46,7 +46,7 @@ defmodule WorkbenchIgniter.Features.Html do
   # live is a piece: a second run with it adds it where html is in
   # without it, and never touches what is there.
   @impl true
-  def rerun, do: :adds
+  def adds, do: [:live]
 
   # The mark: the first thing --no-html leaves out.
   @impl true

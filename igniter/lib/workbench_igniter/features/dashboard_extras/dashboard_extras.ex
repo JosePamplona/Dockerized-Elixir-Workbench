@@ -57,10 +57,10 @@ defmodule WorkbenchIgniter.Features.DashboardExtras do
   @impl true
   def requires, do: ["dashboard"]
 
-  # Each half is a piece the installer adds when missing: a project that
-  # gains a database later runs it again for the database's page.
+  # It takes no options: a second run is how Ecto Stats arrives on a
+  # project that took this box before its database.
   @impl true
-  def rerun, do: :adds
+  def adds, do: :all
 
   # The pages it lights, where the dashboard serves them. Ecto Stats is
   # a door only with a database in the project.

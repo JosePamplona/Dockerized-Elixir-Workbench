@@ -30,6 +30,7 @@ defmodule ConsoleWeb.BoxBringsTest do
   @box %{
     "name" => "db_admin",
     "rerun" => "adds",
+    "adds" => ["admin"],
     "summary" => "the database admin in the browser",
     "options" => [
       %{

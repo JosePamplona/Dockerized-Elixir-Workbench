@@ -136,9 +136,10 @@ defmodule WorkbenchIgniter.Features.DbAdmin do
   @impl true
   def requires, do: ["ecto"]
 
-  # Each admin is a piece the installer adds when missing.
+  # Each admin is a piece: a second run writes the ones the project
+  # lacks and leaves the ones it has.
   @impl true
-  def rerun, do: :adds
+  def adds, do: [:admin]
 
   # The mark: the file of any admin.
   @impl true

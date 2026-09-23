@@ -58,9 +58,10 @@ defmodule WorkbenchIgniter.Features.Credo do
   @impl true
   def choices, do: [githook: [{true, "the check before the commit", ["precommit"]}]]
 
-  # The hook line is a piece the installer adds when missing.
+  # The dependency is in or it is not; the hook block is the piece a
+  # second run puts in when it is missing.
   @impl true
-  def rerun, do: :adds
+  def adds, do: [:githook]
 
   # The mark: the dependency itself.
   @impl true

@@ -93,6 +93,11 @@ defmodule WorkbenchIgniter.Features do
       need: need(feature.need()),
       version: version(feature.version()),
       rerun: feature.rerun(),
+      # What a second insert can still put in (`adds/0`): "none",
+      # "all", or the options it still adds while the rest were fixed
+      # when the box went in — what a form in a project that carries
+      # the box may still be asked.
+      adds: adds(feature.adds()),
       requires: WorkbenchIgniter.Feature.requires_names(feature),
       # The state a requirement asks for, by name (ecto with database
       # postgres); `%{}` when the names are enough.
@@ -143,6 +148,12 @@ defmodule WorkbenchIgniter.Features do
   # The recipe a collection's default choices give, for the catalog:
   # each member with the argv its installer gets. [] for a plain
   # cartridge.
+  # `adds/0` as a reader downstream takes it: a word, or the option
+  # names as the form knows them.
+  defp adds(:none), do: "none"
+  defp adds(:all), do: "all"
+  defp adds(keys) when is_list(keys), do: Enum.map(keys, &to_string/1)
+
   defp members(_feature, nil), do: []
 
   defp members(feature, %Igniter.Mix.Task.Info{defaults: defaults}) do

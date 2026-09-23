@@ -170,6 +170,38 @@ defmodule WorkbenchIgniter.CatalogTest do
       assert Enum.all?(exdoc, &(not &1.detected or is_nil(&1.default)))
     end
 
+    # What a second insert can still put in is the box's own word
+    # (`adds/0`), and `rerun/0` is derived from it: a form is locked by
+    # this, so a key that is not an option of the box would lock a
+    # field nobody can see.
+    test "what a second run adds is this box's options, and rerun says the same" do
+      for feature <- Features.catalog(), not feature.pending?() do
+        adds = feature.adds()
+        keys = Keyword.keys(feature.info([], nil).schema || [])
+
+        assert feature.rerun() == if(adds == :none, do: :noop, else: :adds),
+               "#{feature.name()}: rerun/0 and adds/0 disagree"
+
+        if is_list(adds) do
+          assert adds != [], "#{feature.name()}: adds/0 is an empty list; say :none"
+
+          assert adds -- keys == [],
+                 "#{feature.name()}: adds/0 names #{inspect(adds -- keys)}, which is no option of it"
+        end
+      end
+    end
+
+    # A box with no options at all cannot name any, so what it adds on a
+    # second run is all of it or nothing.
+    test "a box without options answers :none or :all" do
+      for feature <- Features.catalog(),
+          not feature.pending?(),
+          (feature.info([], nil).schema || []) == [] do
+        assert feature.adds() in [:none, :all],
+               "#{feature.name()}: takes no options, so adds/0 cannot name any"
+      end
+    end
+
     # A box says what it puts in the project's mix.exs, and the source
     # of its installer is the check: every package an `add_dep` names
     # is declared, and nothing is declared that the installer does not

@@ -111,9 +111,10 @@ defmodule WorkbenchIgniter.Features.TestDoubles do
     [double: for(double <- @doubles, do: {double.name, double.doc})]
   end
 
-  # Each double is a piece the installer adds when missing.
+  # Each double is a piece the installer adds when missing, and the
+  # typed copies come with the double they belong to.
   @impl true
-  def rerun, do: :adds
+  def adds, do: [:double, :type_check]
 
   # The mark: the dependency of either double.
   @impl true

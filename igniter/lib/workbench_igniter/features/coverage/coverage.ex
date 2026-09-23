@@ -213,12 +213,11 @@ defmodule WorkbenchIgniter.Features.Coverage do
     }
   end
 
-  # The `mix cover` task and the hook block are pieces the installer
-  # adds when they are missing; the rest of the options — the minimum,
-  # the theme, what the report leaves out — are fixed at the insert,
-  # since they are the json and the template it wrote.
+  # The json, the theme and the report's shape were fixed at the
+  # insert; the mix cover task and the hook block are pieces a second
+  # run puts in when they are missing.
   @impl true
-  def rerun, do: :adds
+  def adds, do: [:md_report, :githook]
 
   # The mark: the coveralls.json the installer writes.
   @impl true

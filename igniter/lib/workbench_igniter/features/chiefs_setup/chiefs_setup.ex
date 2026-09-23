@@ -82,10 +82,11 @@ defmodule WorkbenchIgniter.Features.ChiefsSetup do
     ]
   end
 
-  # Running it again inserts the picks that are missing; the choice made
-  # at first insert stays (the other interface is never swapped in).
+  # A collection inserts members: running it again with another
+  # choice inserts the member that choice picks, and the members
+  # already in are skipped by their own installers.
   @impl true
-  def rerun, do: :adds
+  def adds, do: :all
 
   @doc "Task metadata, exposed unchanged through the mix task shell."
   def info(_argv, _composing_task) do

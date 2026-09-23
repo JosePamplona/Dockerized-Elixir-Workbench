@@ -135,7 +135,7 @@ defmodule WorkbenchIgniter.Features.Precommit do
 
   # Each check is a piece the installer adds when missing.
   @impl true
-  def rerun, do: :adds
+  def adds, do: [:checks]
 
   @impl true
   def afterwards,

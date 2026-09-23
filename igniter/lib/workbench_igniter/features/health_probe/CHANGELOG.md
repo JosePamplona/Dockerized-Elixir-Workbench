@@ -7,6 +7,16 @@ what the cartridge *installs*: a change in the generated files' shape or
 routes is a minor, a change that breaks a project already carrying them
 (a renamed module, a moved route) is a major.
 
+## v0.2.1 - (2026-09-22)
+
+### Changed
+
+- **`--path` is declared `:route`** (`formats/0`): path segments,
+  whatever slashes are put around them — `/health`, `status`, `//up//`
+  and `/` all still read as they did — and a value carrying a space, a
+  query or a fragment is refused instead of being written into a route
+  nobody can call.
+
 ## v0.2.0 - (2026-09-20)
 
 ### Changed

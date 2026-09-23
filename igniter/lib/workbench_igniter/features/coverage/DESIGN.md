@@ -134,31 +134,105 @@ project's documentation; and `custom`, the original workbench report,
 kept because it was the box's only face before the docs existed and a
 project already carrying it should not be told its report is wrong.
 Adding a theme is adding a directory: `@themes` is the directory
-listing, `--theme` validates against it, and `themes/0` is what the
+listing, `--html-theme` validates against it, and `themes/0` is what the
 console offers. The rejected alternative was one theme — the argument
 for it is that two faces is two things to maintain, and the answer is
 that the second is three files of `.eex` nobody has had to touch since
 the first, while the project that chose it would have had its report
 changed under it by an upgrade.
 
-**What is left out of the report is read, not asked.** `skip_files`
-always drops `deps` and `test`; the two that vary are the API interface
-folder and the components folder, and both are facts about the project:
-`--interface graphql` means the `open_api` directory is not there to
-skip, and whether the project has html is read off it
-(`WorkbenchIgniter.PhxDelta.facts/1`), never asked. This is the "no
-contract back" rule applied to an option: the workbench reads what the
-project has instead of asking the project to declare it.
+**What the report leaves out is a decision, in groups** (v0.6.0).
+Until then it was read, and through the wrong question: `--interface
+rest|graphql` decided one entry of `skip_files` — the `open_api`
+folder — and the components folder came off whether the project had
+html. That made the box reason about an API it does not install, and
+it left the reader nothing to say about the rest of the report: a
+project that wanted its Mix tasks or a legacy directory out had to
+edit `coveralls.json` by hand, and the box would then report a state
+it did not recognise.
 
-**`"file_column_width": 128`**, which looks like a cosmetic setting and
-is not. The `mix cover` task parses the coverage rows out of the
-terminal output to build its table; ExCoveralls' default column truncates
-long paths, and a truncated path is a row the parser cannot match to a
-file. The width is a consequence of the task, and the suite asserts it
-so a later tidy-up does not quietly break the report.
+`--ignore-files` is the option instead, comma-separated, each value a
+**group** the box knows or a path of the reader's own. The groups come
+from reading what Elixir projects actually skip [6][7][8]: the wiring
+`phx.new` writes and no test asserts (`application.ex`, `<app>_web.ex`,
+`endpoint.ex`, `telemetry.ex`, `gettext.ex`, `repo.ex`, `mailer.ex`,
+`release.ex`, `router.ex`, `channels/user_socket.ex`), the generated
+components, the project's own Mix tasks and an API specification's
+modules. They are groups and not a list of paths because the reader
+picks by *reason* — "the wiring", "the generated components" — and the
+paths behind each are the box's to keep current with `phx.new`.
+
+Three rules keep it honest:
+
+* **`deps` and `test` are not options.** Neither is the project's code
+  under test, and no project wants them counted, so they are written
+  always — which is what the file did before.
+* **Only the paths the project has are written.** A group names ten
+  files; a project without a socket or a mailer gets neither line, so
+  `coveralls.json` reads as the project it belongs to instead of as a
+  template. A directory cannot be tested for existence the same way, so
+  it is written as asked, except `components`, whose
+  `components/layouts.ex` witnesses it — the reading of the project
+  that `--interface` used to do badly, kept where it belongs.
+* **A path of the reader's own is written as it is**, and read back as
+  itself, because `skip_files` entries are regexes matched against each
+  file's path [2]: the box has no better idea than the reader about
+  `lib/my_app/legacy`.
+
+**What is not a group**, and why: `priv/repo/migrations`, which several
+projects list [7]. Migrations are compiled by `Ecto.Migrator` while
+`mix test`'s alias runs, before `cover` starts, so they are not in the
+report to begin with; a group for them would be a line that never does
+anything. A reader who does see them names the path, which is the
+escape hatch working as intended. Nor is `test/support`: the blanket
+`test` entry already covers it.
+
+**`none` is how the option says nothing.** Igniter hands a `:csv`
+option nobody answered as `[]`, which is also what an empty answer
+looks like, so the default (`boilerplate,components`) cannot be told
+from an explicit "skip nothing" in the parsed options. Rather than read
+the raw argv, the box takes `[]` as unanswered and gives `none` its own
+meaning — the same shape exdoc's `--module-groups none` has.
+
+**`file_column_width` is an option, and not a cosmetic one** (v0.7.0).
+The `mix cover` task parses the coverage rows out of the terminal
+output to build its table; a path wider than the column is cut, and a
+cut path is a row the parser cannot match to a file — the report loses
+it. ExCoveralls' own default, 40, cuts almost every Phoenix path; the
+box wrote 128 always, which never cuts and makes a wide terminal the
+price. The default is **80** now, which holds a stock project's
+longest paths (`lib/<app>_web/components/core_components.ex` is in the
+fifties), and the projects whose modules sit deeper say so with
+`--file-column-width`. The shape is declared (`{:integer, 40..999}`),
+so a value that is not a width is refused before the file is written,
+and below 40 there is nothing to gain over the tool's own default. The
+suite asserts both ends, so a later tidy-up does not quietly break the
+report.
+
+**The option is named for what it writes, not for who reads it**
+(v0.9.0). It was `--exdoc`, which named another box — the one rule a
+cartridge's papers keep, *a cartridge never names the boxes that pick
+it*, broken in the one place a reader looks first. What the flag plants
+is a task that writes the report **as Markdown**, so it is
+`--md-report`: `TESTING.md` at the project's root, which any reader of
+the repository opens, whether or not the project has a documentation
+site. Whether that page is *listed* in a site is the site's business,
+and exdoc's `--coverage` decides it — reading the file, live when it is
+there and commented out when it is not, the way it reads the README.
+The page that waits until the first run moved here with the same
+argument: the file is this box's, so the box that owns it plants it.
+
+**The default theme is `custom`** (v0.9.0). The two themes are not
+better and worse but *for* different places: `custom` is the
+workbench's own report, which reads on its own wherever it is opened,
+and `exdoc-ish` mimics the ExDoc pages so a report read inside a
+documentation site blends into it. `exdoc-ish` was the default while
+the box assumed the report would be read in that site — the same
+assumption `--exdoc` carried in its name. A box that does not know
+whether the project has a site defaults to the report that needs none.
 
 **`mix cover` is a task in the project, not in the workbench.** With
-`--exdoc` the cartridge plants `lib/mix/tasks/cover.ex`, an ExUnit
+`--md-report` the cartridge plants `lib/mix/tasks/cover.ex`, an ExUnit
 formatter and their tests, and the task writes `TESTING.md` — execution
 board, coverage table, per-module sections — for ExDoc's site, where it
 links the HTML report by a relative path (exdoc copies the coverage
@@ -175,11 +249,21 @@ workbench does not ask for.
 task would have written instead of writing it. `mock` did that
 VM-wide, which cost the file `async: true`; Mimic's double lives in the
 process that asks for it, so the tests are concurrent again. The
-cartridge composes `test_doubles --double mimic` and registers `File` in
-**its own block** of `test/test_helper.exs` (`WorkbenchIgniter.BlockFile`),
-so another cartridge's copies stand in the same file untouched. Not
-Mox: `File` is nobody's module to declare a behaviour for, and Mox wants
-a behaviour and an injected module.
+doubles are **test_doubles' box**, and since v0.8.0 the option builds on
+it instead of inserting it: `--md-report` carries
+`{"test_doubles", double: "mimic"}` as its requirement, so a project
+without that box — or with Mox alone — is told which box and which
+double, and the insert makes no commit. The same move `--githook` made
+onto precommit (v0.4.0), for the same three reasons: one insert is one
+cartridge and one commit, so nothing rides inside another box's; the
+choice of doubling library is the reader's and belongs to the box whose
+option it is; and what a project carries of a box is then that box's to
+report, not something to infer from who composed whom. What this
+cartridge does keep is the registration — `File` in **its own block** of
+`test/test_helper.exs` (`WorkbenchIgniter.BlockFile`), through
+`TestDoubles.copy/4` — so another cartridge's copies stand in the same
+file untouched. Not Mox: `File` is nobody's module to declare a
+behaviour for, and Mox wants a behaviour and an injected module.
 
 **`--githook` writes in a file this cartridge does not own.** The
 pre-commit hook, `.githooks/pre-commit`, is the **precommit** cartridge's:
@@ -218,16 +302,17 @@ The other alternative, eject and insert again, costs the project its
 edited `coveralls.json` and its report template for the sake of one
 line.
 
-**`--build` is queued, not inline.** Running the suite once at insert
-time is what gives the report numbers before anyone opens it, but `mix
-cover` needs the dependencies compiled and, on a project with Ecto, a
-test database — so the installer queues `ecto.create`, `ecto.migrate`
-and `mix cover` rather than running them inside the patch set, and the
-workspace's compose must actually carry a database (`./wb.sh bake`).
-Off by default, and `afterwards/0` names the command for whoever leaves
-it off. Its `state/1` value is `nil` on purpose: the option is a one-shot
-action whose output is gitignored, so the project keeps no mark of it,
-and `nil` says so instead of guessing.
+**The insert does not run the suite** (v0.5.0). `--build` queued
+`ecto.create`, `ecto.migrate` and `mix cover` behind the patch set, to
+give the report numbers before anyone opened it. Two things were wrong
+with hanging it on the insert: the run needs a database the workspace's
+compose may not carry yet (`./wb.sh bake` first), and its output went
+into an insert's log, which nobody reads for a coverage number. The
+console's coverage door runs the same command as a job instead — `mix
+cover` where `--md-report` planted it, `mix coveralls.html` otherwise
+(`build:`) — and `afterwards/0` names it for the shell. The option also
+left no mark for `state/1` to read, which is what an option that is a
+one-shot action always does.
 
 ## 4. Evaluation
 
@@ -235,7 +320,7 @@ Verified in the cartridge's suite: the dependency and the `mix.exs`
 entries; `coveralls.json` with its defaults, its output dir, its
 template path and the two `skip_files` entries that vary; the untruncated
 column width; both themes planted from their directories and an unknown
-theme refused; `--exdoc` planting the task, its formatter, its tests,
+theme refused; `--md-report` planting the task, its formatter, its tests,
 the Mimic dependency and the cartridge's block of the test helper, with
 `TESTING.md` gitignored; the no-op notice on a second run; the recipe
 `chiefs_setup` composes it with. For `--githook`: the precommit cartridge
@@ -292,3 +377,18 @@ measurement.
    `check/4`; its DESIGN.md carries the crossing into the container.
 5. `WorkbenchIgniter.Features.Credo` — the same option from the other
    side, and the argument for a line that passes on the first commit.
+6. ExCoveralls — README, `skip_files`: "Path should contain a string
+   that can be compiled to Elixir regex", matched against the file's
+   path; the default `coveralls.json` shipped in
+   `lib/conf/coveralls.json` carries no `skip_files` at all. Read
+   2026-09-22 from the repository.
+7. What Phoenix projects skip, read 2026-09-22: dwyl's phoenix-chat
+   example (`test/`, `application.ex`, `<app>_web.ex`, `telemetry.ex`,
+   `components/core_components.ex`, `channels/user_socket.ex`) and
+   *Code hygiene with Elixir* (the same, plus `router.ex` and the error
+   helpers) — "files such as application.ex, telemetry.ex,
+   core_components.ex and user_socket.ex are ignored because they are
+   not relevant for the functionality of the project".
+8. parroty/excoveralls issue #89, *Files to ignore on a Phoenix
+   project*: the question asked in 2018 and never answered with a list,
+   which is why every project writes its own.

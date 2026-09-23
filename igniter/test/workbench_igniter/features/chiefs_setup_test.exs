@@ -22,7 +22,7 @@ defmodule WorkbenchIgniter.Features.ChiefsSetupTest do
                {"test_doubles", []},
                {"exdebug", []},
                {"rest", ["--health"]},
-               {"coverage", ["--exdoc"]},
+               {"coverage", ["--md-report"]},
                {"exdoc", ["--coverage"]},
                {"enhancements", ["--interface", "rest", "--exdoc", "--health"]},
                {"health_endpoint", []}

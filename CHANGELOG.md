@@ -16,6 +16,95 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **coverage v0.6.0: `--ignore-files`, what the report leaves out.**
+  The box asked the wrong question: `--interface rest|graphql` decided
+  one entry of `skip_files` — an API specification's folder — which
+  made a coverage box reason about an API it does not install, and left
+  the reader nothing to say about the rest of the report. The option is
+  what is left out now, comma-separated, each value a **group** the box
+  knows or a path of your own: `boilerplate` (the wiring `phx.new`
+  writes and no test asserts: the application, `<app>_web.ex`, the
+  endpoint, the router, telemetry, gettext, the repo, the mailer, the
+  release, the socket), `components`, `mix_tasks`, `open_api`, or
+  `lib/my_app/legacy` — an entry is a regex excoveralls matches against
+  each file's path, so a path of the reader's own is as good as a
+  group's. Default `boilerplate,components`; `none` counts every file
+  the project compiles; `deps` and `test` go always, as before. The
+  groups come from reading what Elixir projects skip in the wild, which
+  the box's DESIGN now cites, and two of them it refuses to invent:
+  `priv/repo/migrations` is compiled before `cover` starts, so it is
+  never in the report, and `test/support` is already under the blanket
+  `test`. **Only the paths the project has are written** — a project
+  with no socket gets no line for one — so `coveralls.json` reads as
+  the project it belongs to and `state/1` says the groups back.
+
+- **coverage v0.7.0: `--file-column-width`, defaulting to 80.** How
+  wide the file column of ExCoveralls' terminal table is. It looks
+  cosmetic and is not: a path longer than the column is cut, and with
+  `--exdoc` the `mix cover` task reads that table to build the report's
+  own, so a cut path is a file the report loses. The box wrote 128
+  always — never cutting, at the price of a wide terminal in every
+  project. 80 holds a stock project's longest paths
+  (`lib/<app>_web/components/core_components.ex` is in the fifties) and
+  a project whose modules sit deeper raises it. A whole number from 40
+  to 999 is its declared shape, refused before the file is written;
+  below 40 there is nothing to gain over ExCoveralls' own default.
+- **dbschema: the database's page is a box of its own** (*archived*,
+  v0.1.0). What a project showed of its database was split across two
+  boxes that had no business with it: exdoc planted and listed
+  `guides/database.md` for any project with Ecto, and the archived
+  enhancements planted the `mix db` task, its test and the DbSchema
+  export. One box owns it now — the task that turns a
+  [DbSchema](https://dbschema.com) export into an ExDoc page, the
+  sample export to start from (`--combo`, the shapes the Phoenix line's
+  boxes gave that database) and the page with its model diagram. It
+  builds on ecto, not on exdoc: the page is written either way, and
+  listed in the site only when the project has one, the way changelog
+  lists its own — so exdoc knows nothing about databases and
+  enhancements composes this box when the project has one, which leaves
+  what it installed unchanged. Archived on arrival: DbSchema is a
+  desktop tool outside the workbench and this only dresses its export,
+  and the reference project is on Ash, whose diagrams come from Ash.
+  The page now names two images with GitHub's own URL fragments, so
+  each theme hides the other's.
+
+- **An option's shape is a fact of the box, checked in one place.** A
+  value's *type* was all the workbench knew — a switch, a list, a
+  string — so a URL, a version and a percentage were all «text»: the
+  form asked for them with the same field, and each cartridge checked
+  its own, or did not (exdoc wrote whatever was given as its
+  `source_url`). A cartridge now declares `formats/0` — `:url`,
+  `:version`, `:dns_name`, `:route`, `{:integer, range}` — and the
+  shape is read twice. The installer refuses a value that does not hold
+  it before anything is written, in one place and one sentence for
+  every box (`--repo-url takes a URL (https://example.com/page), and
+  "github.com/acme/app" is not one.`): every `task.ex` now calls
+  `WorkbenchIgniter.Feature.install/2`, the shell where a cross-cutting
+  check belongs, so a cartridge's own installer stays what it writes.
+  And the catalog carries it, so the console's field is a URL field, a
+  number takes a numeric keyboard, and the line under the flag says
+  `url` or `integer 0..100` where it used to say `text`. An empty field
+  is not checked: empty is unasked, and what unasked means is the
+  cartridge's own. coverage's and clustering's hand-written refusals of
+  this morning are gone, replaced by the shape they were checking.
+
+- **A default read off the project is shown as its value.** Five
+  options have no fixed default: the installer reads it off the project
+  — changelog's `--init-version` (the version `mix.exs` has),
+  clustering's `--dns-query` (`<app>.default.svc.cluster.local`),
+  exdoc's `--project-name`, `--repo-url` and `--module-groups`. The form
+  said *read off the project* where the value should be. A cartridge now
+  says how each is found, `detect/1` beside `detected/0`: the value the
+  option takes on this project, `nil` where the project says nothing.
+  The installer takes its defaults from it, `mix workbench.status`
+  carries it per cartridge as `detected`, and the console puts it in the
+  field as the placeholder with a *read off the project* tag (a choice
+  wears the *default* tag), so the default a reader sees is the one the
+  insert writes. Where nothing is read — exdoc's repository with no
+  `source_url` and no git origin — the field still says where it would
+  come from. The catalog test holds every cartridge to exactly its
+  `detected/0` keys, none of them with a fixed default.
+
 - **dbschema: the database's page is a box of its own** (*archived*,
   v0.1.0). What a project showed of its database was split across two
   boxes that had no business with it: exdoc planted and listed
@@ -1214,6 +1303,129 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   says how to run the same checks before pushing.
 
 ### Updated
+
+- **clustering, health_probe, exdoc and coverage draw their Contents as
+  the tree**, the table with 📁 and 📄 the features index describes
+  (ecto is the model); clustering had none. coverage's named a test file
+  that was renamed with the box.
+- **credo's README sends the reader to the guide.** What the tool
+  flags is argued in prose in the [Elixir Style
+  Guide](https://github.com/rrrene/elixir-style-guide), Credo's own —
+  its author's, "the basis for Credo" — and its sections are the four
+  the tool reports under. The box now says so: when a check fires and
+  the reason is not obvious, that page is where it is settled, with the
+  example beside the rule.
+
+- **coverage v0.8.0: `--exdoc` builds on test_doubles instead of
+  inserting it.** The `mix cover` task's own tests stand on a double of
+  `File` — Mimic's side of that box — and until now this cartridge
+  composed `test_doubles --double mimic`: a box nobody picked rode
+  inside coverage's commit (the confusion the origin chip had to explain
+  this morning), and the choice of doubling library was made for the
+  reader by a box whose subject is coverage. The option carries
+  `{"test_doubles", double: "mimic"}` as its requirement now, so a
+  project without that box — or with Mox alone — is refused naming the
+  box and the double, with `./wb.sh add test_doubles` as the line that
+  fixes it. It is the same move `--githook` made onto precommit: one
+  insert is one cartridge and one commit, the choice belongs to the box
+  whose option it is, and what a project carries of a box is that box's
+  to report. What coverage keeps is registering `File` in its own block
+  of the test helper. A requirement can now read a state a box answers
+  with a list (`double: ["mimic", "mox"]` carries `mimic`), which
+  db_admin's admins will read the same way.
+
+- **coverage v0.9.0: `--exdoc` is `--md-report`, and the report page is
+  coverage's.** The flag named another cartridge, which is the one thing
+  a box's papers never do — and it named it in the place a reader looks
+  first. What it plants is the task that writes the report **as
+  Markdown**: `TESTING.md` at the project's root, which any reader of
+  the repository opens, site or no site. The page that waits until the
+  first run moved here with it, since the file is this box's. Whether a
+  documentation site *lists* that page is the site's business, and
+  exdoc's `--coverage` decides it the way it decides the README's:
+  listed live when the report is there, its two entries commented out
+  when it is not. Its requirement follows the rename
+  (`{"coverage", md_report: true}`). And the theme option is
+  `--html-theme`, since the box writes two reports now and a bare
+  `--theme` no longer said which it dresses: it defaults to `custom`,
+  the workbench's own report, which reads on its own wherever it is
+  opened, with `exdoc-ish` — the ExDoc pages' look, for a report read
+  inside a site — second, the default first as every list here reads.
+  `exdoc-ish` was the default while the box assumed there was a site,
+  the same assumption its other option's name carried.
+
+  The report's own name stays `TESTING.md`: a name says what the file
+  is for whoever opens it, not which command wrote it, and that page is
+  the suite's report — the execution board, the per-module tables and
+  the failures — with coverage as one section inside it.
+
+- **exdoc v0.3.1: `--homepage-url` unasked is a placeholder,
+  commented**, as `source_url` is when no repository is found: the key
+  waits in the `docs:` block where it goes.
+
+- **exdoc v0.4.0 and v0.4.1: the theme script is gone, and the database
+  with it.** ExDoc hides an image whose URL carries `#gh-dark-mode-only`
+  in the light theme and one with `#gh-light-mode-only` in the dark one
+  — GitHub's own fragment — and has since v0.27, so the
+  `guides/js/themedImage.js` this planted in every project, the
+  `before_closing_*_tag` functions that loaded it and its asset entry
+  are out: what ExDoc does already is not worth a file in every
+  project. The script also named one pair of files, the database
+  model's, so it served one page and no other. v0.4.1 hands the
+  database page to dbschema.
+
+- **exdoc v0.5.0: `--changelog`**, on by default. The site's changelog
+  page was a reading — listed if `CHANGELOG.md` happened to be there —
+  and is a decision now: on with a changelog, the two entries are
+  written live as before; on without one, they are written **commented
+  out**, the slot a changelog opened later takes, as `source_url` and
+  `homepage_url` are; off, the site leaves the page out whatever the
+  project keeps. The changelog box reads that decision instead of
+  guessing (v0.5.1): it fills the slot when it opens a changelog, adds
+  nothing to a site that said no, and says which flag said it.
+
+- **exdoc v0.7.0: a page is listed when its file has an owner.**
+  `--changelog` lists a file another box writes, so it asks for that
+  box the way credo's `--githook` asks for precommit: without the
+  changelog cartridge in, the run is refused naming it, and the console
+  draws the option unlit with a door to that box. It is **off by
+  default**, so `add exdoc` still works on any project, and with it on
+  the file is there — the commented slot v0.5.0 wrote for a changelog
+  that was not there yet is gone with the case that needed it. The
+  other order is the changelog box's own (v0.5.2): built after the
+  site, it lists its page itself, as it did before the option existed.
+  `--coverage` follows the same rule one box further out: it lists the
+  Test Suite Report page, which `mix cover` writes, which the coverage
+  box plants with *its* `--exdoc` — so the requirement carries that
+  state (`{"coverage", exdoc: true}`) and the refusal says which half
+  is missing, the box or the flag. `--readme` keeps the slot instead,
+  because nobody owns `README.md` —
+  `phx.new` writes it and the shelf deliberately has no box that would
+  — so with none there the two entries and `main: "readme"` wait
+  commented out, and `mix docs` builds.
+- **Every option is tried both ways.** The shelf was read option by
+  option against its tests, and what only had its positive case got the
+  negative one: `--build` (coverage and exdoc) queues `mix docs`,
+  `mix cover` and, with Ecto, `ecto.create`/`ecto.migrate`, and queues
+  nothing unasked; without `--exdoc` coverage plants no `mix cover`
+  task, without `--coverage` exdoc lists no report page; test_doubles
+  unasked brings neither Mox nor Hammox; changelog's badge is `nil`
+  where there is no README to carry it, and says so; exdoc's
+  `--module-groups` asked for wins over the line the project is on, and
+  `--no-readme` on a project with no changelog keeps the Project group
+  as the slot a changelog opened later is listed in. db_admin answers
+  for phpMyAdmin through `state/1`, refuses a list with one unknown
+  admin whole, and takes the same admin twice as one. Three refusals
+  are new, each where a value was taken and written unchecked:
+  coverage's `--minimum-coverage` (a whole 0..100, or `coveralls.json`
+  is not JSON) and `--interface` (`rest` or `graphql`), and clustering's
+  `--dns-query`, where a quote or a line break would break the `.env`
+  line it goes in; an empty `--dns-query` is a field left blank, so the
+  default stands. And one fix: `--double mimic --type-check` left no
+  mark at all — Mimic keeps type checking on each `Mimic.copy/2`, so
+  the run types the copies the test helper carries, which is what
+  `state/1` and later copies read, and says so when there is no copy
+  yet to keep it on.
 
 - **exdoc v0.3.1: `--homepage-url` unasked is a placeholder,
   commented**, as `source_url` is when no repository is found: the key
@@ -2476,6 +2688,24 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **coverage v0.6.1: a second run with `--exdoc` plants the `mix cover`
+  task the first left out.** The box says `rerun: :adds`, and only the
+  hook block was a piece it added: `--exdoc` on a project that already
+  had `coveralls.json` was skipped in silence, so the only way to get
+  the task was to eject the box and insert it again. A refusal that
+  reads *this project's exdoc is off* now has a line that fixes it, and
+  the workbench says it: `lacking/1` offers the `wb.sh add` line for a
+  box short of a required state when that box adds its pieces on a
+  second run, and says nothing where the options are fixed at the
+  insert and the line would send the reader nowhere.
+
+- **precommit v0.1.2 writes its configuration at the end of
+  `config/dev.exs`.** Igniter puts a new `config` right under
+  `import Config` (its `after:` option does not move that), so dev.exs
+  opened with `config :git_hooks` above the endpoint. The installer
+  opens the block after the file's last statement, and every key lands
+  in it.
+
 - **precommit v0.1.2 writes its configuration at the end of
   `config/dev.exs`.** Igniter puts a new `config` right under
   `import Config` (its `after:` option does not move that), so dev.exs
@@ -2917,6 +3147,21 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   lines that took turns at 19 and 20.
 
 ### Removed
+
+- **`--build` is gone, from exdoc (v0.6.0) and coverage (v0.5.0).** It
+  queued the command behind the insert — `mix docs`; `ecto.create`,
+  `ecto.migrate` and `mix cover` — so the page had something in it on
+  first boot. The door builds it now, as a job whose output is read as
+  it happens, where the queued task ran inside an insert's log that
+  nobody reads for that; `./wb.sh mix docs` and `./wb.sh mix cover`
+  were always the other way, and the box names them in `afterwards/0`.
+  It was also the one option that left no mark, so `state/1` answered
+  `nil` for it: a one-shot action wearing an option's clothes.
+- **guidelines is archived** (v0.2.1). It installs a page downloaded
+  from a URL only the team has — the reason it was always à la carte —
+  and a shelf a project is picked from cannot hand it one. Its papers
+  stay on the shelf, and `wb.sh add --archived guidelines --url URL`
+  still puts it in for a team that has the URL.
 
 - **The pgadmin and adminer boxes**, merged into db_admin (Added,
   above). Their files in a project are the new box's marks, so nothing

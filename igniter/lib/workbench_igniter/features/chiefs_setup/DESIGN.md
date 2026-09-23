@@ -39,7 +39,7 @@ and reintroduces the special box the change exists to remove.
 **The one-input frontier.** A collection's option must be a decision
 the collection owns, explainable on the box without naming a member's
 switch (`--interface` qualifies; `--coverage-theme` does not — it is
-coverage's `--theme`, set by inserting coverage). This is the rule
+coverage's `--html-theme`, set by inserting coverage). This is the rule
 that keeps option creep from rebuilding setup under another name.
 
 **Argv is recipe, not forwarding.** A member's argv tells it which

@@ -5,6 +5,21 @@ it. Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) applied to
 what the cartridge *installs*.
 
+## v0.2.1 - (2026-09-22)
+
+### Changed
+
+- **Archived.** The box installs a page from a URL only the team has,
+  and a shelf a project is picked from cannot hand it one — the reason
+  it was always à la carte. It keeps its papers on the shelf, shows as
+  retired, and `wb.sh add --archived guidelines --url URL` still puts
+  it in for a team that has the URL.
+
+- **`--url` is declared `:url`** (`formats/0`): the page is downloaded
+  from it, and a value that is not an address the browser opens now
+  ends the run with a sentence instead of a request that fails over the
+  network. The console asks for it with a URL field.
+
 ## v0.2.0 - (2026-09-21)
 
 ### Updated

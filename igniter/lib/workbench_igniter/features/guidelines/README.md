@@ -2,6 +2,10 @@
 
 The team's coding conventions as a page of the project's own docs.
 
+* **Archived** (2026-09-22): the page is a download from a URL only the
+  team has, and a shelf a project is picked from cannot hand it one.
+  The box stays for the reading, and `wb.sh add --archived guidelines
+  --url URL` still inserts it for a team that has that URL.
 * **Task**: `mix workbench.install.guidelines`
 * **Inserted by**: `wb.sh add guidelines --url URL`. The URL is the
   team's, and there is no sensible default.

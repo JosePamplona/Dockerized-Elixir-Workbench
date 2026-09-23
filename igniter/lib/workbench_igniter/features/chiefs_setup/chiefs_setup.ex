@@ -55,7 +55,7 @@ defmodule WorkbenchIgniter.Features.ChiefsSetup do
       {"test_doubles", []},
       {"exdebug", []},
       interface_member(interface),
-      {"coverage", ["--exdoc"]},
+      {"coverage", ["--md-report"]},
       {"exdoc", ["--coverage"]},
       {"enhancements", ["--interface", interface, "--exdoc", "--health"]},
       {"health_endpoint", []}

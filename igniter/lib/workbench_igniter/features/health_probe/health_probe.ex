@@ -51,6 +51,11 @@ defmodule WorkbenchIgniter.Features.HealthProbe do
     ]
   end
 
+  # The prefix the two probes answer under: path segments, whatever
+  # slashes are put around them (`normalize_path/1` trims those).
+  @impl true
+  def formats, do: [path: :route]
+
   @doc "Task metadata, exposed unchanged through the mix task shell."
   def info(_argv, _composing_task) do
     %Igniter.Mix.Task.Info{

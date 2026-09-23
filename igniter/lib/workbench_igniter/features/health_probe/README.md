@@ -123,11 +123,17 @@ touched and a notice says so.
 
 | File | Role |
 | --- | --- |
-| `health_probe.ex` | Manifest + logic (`info/2`, `install/1`) |
-| `task.ex` | `Mix.Tasks.Workbench.Install.HealthProbe` shell |
-| `CHANGELOG.md` | The cartridge's own version history |
-| `DESIGN.md` | Why it is shaped like this, with sources |
-| `priv/features/health_probe/templates/plug.eex` | The plug |
-| `priv/features/health_probe/templates/plug_test.eex` | Its test |
-
-Cartridge test: `test/workbench_igniter/features/health_probe_test.exs`.
+| `📁 lib/workbench_igniter/features/health_probe/` | The cartridge: its code and its papers |
+| `├── 📄 health_probe.ex` | The plug, its test, first in the endpoint |
+| `├── 📄 task.ex` | The Mix task `wb.sh add` runs |
+| `├── 📄 README.md` | What it installs, and how it runs |
+| `├── 📄 NEED.md` | The need, the line the shelf shows |
+| `├── 📄 CHANGELOG.md` | Its versions, apart from the workbench's |
+| `└── 📄 DESIGN.md` | Why a plug, and what each probe answers |
+|  |  |
+| `📁 priv/features/health_probe/templates/` | What it writes into the project |
+| `├── 📄 plug.eex` | The plug: liveness and readiness |
+| `└── 📄 plug_test.eex` | The plug's own test |
+|  |  |
+| `📁 test/workbench_igniter/features/` |  |
+| `└── 📄 health_probe_test.exs` | The plug run, on every shape and `--path` |

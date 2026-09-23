@@ -10,6 +10,137 @@ Backfilled at the version below, its first: the cartridge shipped
 before a changelog was part of the anatomy, and gets one on its next
 change, as the features index says.
 
+## v0.9.0 - (2026-09-22)
+
+### Changed
+
+- **`--exdoc` is `--md-report`, and the report page is this box's.**
+  The flag named another cartridge, which is the one thing a box's
+  papers never do; what it plants is the task that writes the report as
+  Markdown — `TESTING.md` at the project's root, which any reader of
+  the repository opens, site or no site. The page that waits until the
+  first run is planted here too, since the file is this box's. Whether
+  a documentation site *lists* it is the site's business: exdoc's
+  `--coverage` reads the file and lists it, or leaves its entry
+  commented out until the report is written.
+- **`--theme` is `--html-theme`.** The box writes two reports now — the
+  HTML one ExCoveralls renders and the Markdown one `mix cover` writes
+  (`--md-report`) — so a bare `--theme` no longer says which it dresses.
+  It defaults to `custom`, the workbench's own report, which
+  reads on its own wherever it is opened; `exdoc-ish` mimics the ExDoc
+  pages, for a project whose report is read inside a documentation
+  site; it was the default while the box assumed there was one. The two
+  are listed in that order now — the default first, as every list of
+  values on the shelf reads — so the form offers them the same way.
+
+## v0.8.0 - (2026-09-22)
+
+### Changed
+
+- **`--exdoc` builds on test_doubles instead of inserting it.** The
+  `mix cover` task's own tests stand on a double of `File`, which is
+  Mimic's side of that box; until now this cartridge composed
+  `test_doubles --double mimic`, so a box nobody picked rode inside
+  this one's commit and the choice of doubling library was made for the
+  reader. The option now carries `{"test_doubles", double: "mimic"}` as
+  its requirement: without that box, or with Mox alone, the run is
+  refused naming the box and the double, and `./wb.sh add test_doubles`
+  is the line it gives. It is the same move `--githook` made onto
+  precommit in v0.4.0. What stays is the registration of `File` in this
+  cartridge's own block of the test helper.
+
+## v0.7.0 - (2026-09-22)
+
+### Added
+
+- **`--file-column-width`, and its default is 80.** How wide the file
+  column of ExCoveralls' terminal table is: a path longer than it is
+  cut, and with `--exdoc` the `mix cover` task reads that table to
+  build the report's own, so a cut path is a file the report loses. The
+  box wrote 128 always — never cutting, at the price of a wide terminal
+  for every project. 80 holds a stock project's longest paths and
+  leaves the choice where it belongs; a project with deeper modules
+  raises it, and a whole number from 40 to 999 is the shape
+  (`formats/0`), refused before anything is written.
+
+## v0.6.1 - (2026-09-22)
+
+### Fixed
+
+- **A second run with `--exdoc` plants the `mix cover` task the first
+  left out.** The box says `rerun: :adds`, and only the hook block was
+  a piece it added: `--exdoc` on a project that already had
+  `coveralls.json` was skipped in silence, so the only way to get the
+  task was to eject the box and insert it again. Now the task, its
+  formatter and its test go in when they are missing, and the notice
+  names what a second run is still putting in instead of saying
+  *skipping* alone.
+
+## v0.6.0 - (2026-09-22)
+
+### Added
+
+- **`--ignore-files`: what the report leaves out, said in groups.**
+  Comma-separated, each value a group the box knows — `boilerplate`
+  (the wiring `phx.new` writes: the application, `<app>_web.ex`, the
+  endpoint, the router, telemetry, gettext, the repo, the mailer, the
+  release and the socket), `components`, `mix_tasks`, `open_api` — or a
+  path of your own, which is a regex excoveralls matches against each
+  file's path. Default `boilerplate,components`; `none` counts every
+  file the project compiles. `deps` and `test` are left out always, as
+  they were. Only the paths the project has are written, so
+  `coveralls.json` reads as the project it belongs to, and `state/1`
+  says the groups back — a path added by hand reads back as itself.
+
+### Removed
+
+- **`--interface`.** It decided one entry of `skip_files`, the
+  `open_api` folder, by asking which API the project speaks — a
+  question about a box this one does not install, and one that left
+  the reader nothing to say about the rest of the report.
+  `--ignore-files open_api` is the same answer, beside the others.
+
+## v0.5.0 - (2026-09-22)
+
+### Removed
+
+- **`--build`.** It queued the suite — and, on a project with Ecto,
+  `ecto.create` and `ecto.migrate` before it — so the report had
+  numbers on first boot. The console's coverage door offers *build*
+  now, running the box's own command as a job; the database it needs is
+  the deployment's business, which `./wb.sh up` settles, and a run that
+  could only work after a `bake` was a poor thing to hang on an insert.
+  `./wb.sh mix cover` remains the other way.
+
+## v0.4.2 - (2026-09-22)
+
+### Added
+
+- **The report's door says how it is made.** The box's `console/0`
+  door now carries `build:` — `mix cover` where *this box* went in with
+  `--exdoc`, which is what plants that task (`when: {:option, :exdoc}`,
+  read off `state/1`, not off whether the exdoc cartridge is in, which
+  says nothing about that file), and ExCoveralls' own
+  `mix coveralls.html` otherwise — so the console can offer it where
+  `cover/` is empty, and runs the project's own command instead of one
+  of its making. Both run in the test env without being told: `cli/0`'s
+  `preferred_envs`, which this box writes, says so.
+
+## v0.4.1 - (2026-09-22)
+
+### Fixed
+
+- **`--minimum-coverage` takes a whole percentage from 0 to 100, and
+  refuses anything else** before a file is written — declared as the
+  option's shape (`formats: [minimum_coverage: {:integer, 0..100}]`)
+  and checked where every cartridge's options are. The value went into
+  `coveralls.json` bare, so `abc` left a file excoveralls cannot parse
+  and `101` a gate no suite passes. It is written as parsed: `080`
+  lands as `80`.
+- **`--interface` takes `rest` or `graphql`, and refuses anything
+  else**, naming the two. Every value but `rest` meant `graphql`
+  silently, so a typo dropped the `open_api` skip without a word.
+
 ## v0.4.0 - (2026-09-21)
 
 ### Changed

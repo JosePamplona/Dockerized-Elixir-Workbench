@@ -39,6 +39,16 @@ defmodule WorkbenchIgniter.Features.Guidelines do
     [url: "URL of the markdown to download as the project's coding guidelines page."]
   end
 
+  # The page is downloaded from it: an address that is not one fails
+  # late, over the network, with the request's own words.
+  @impl true
+  def archived,
+    do:
+      "2026-09-22: it installs a page from a URL only the team has, which no project of the shelf's line can be given"
+
+  @impl true
+  def formats, do: [url: :url]
+
   @doc "Task metadata, exposed unchanged through the mix task shell."
   def info(_argv, _composing_task) do
     %Igniter.Mix.Task.Info{

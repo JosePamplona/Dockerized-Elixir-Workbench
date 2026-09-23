@@ -8,6 +8,14 @@ defmodule WorkbenchIgniter.Features.CoverageTest do
   alias WorkbenchIgniter.Features.Coverage
   alias WorkbenchIgniter.Features.Precommit
 
+  # `--exdoc` plants a task whose tests stand on Mimic: the doubles are
+  # test_doubles' box, which the option builds on.
+  defp with_doubles(igniter \\ phx_test_project()) do
+    igniter
+    |> Igniter.compose_task("workbench.install.test_doubles", [])
+    |> apply_igniter!()
+  end
+
   describe "mix workbench.install.coverage" do
     test "adds the dependency and the mix.exs coverage configuration" do
       phx_test_project()
@@ -35,8 +43,21 @@ defmodule WorkbenchIgniter.Features.CoverageTest do
       # The standard `cover/` output dir, already in phx.new's .gitignore.
       assert json =~ ~s|"output_dir": "cover"|
       assert json =~ ~s|"template_path": "test/coverage/template"|
-      assert json =~ ~s|"test_web/open_api"|
-      assert json =~ ~s|"test_web/components"|
+
+      # What it leaves out unasked: the box's own two, the wiring
+      # phx.new writes, and the generated components — each written
+      # only where the project has the file.
+      assert json =~ ~s|"deps"|
+      assert json =~ ~s|"test"|
+      assert json =~ ~s|"lib/test/application.ex"|
+      assert json =~ ~s|"lib/test_web/endpoint.ex"|
+      assert json =~ ~s|"lib/test_web/router.ex"|
+      assert json =~ ~s|"lib/test_web/components"|
+      # Not this project's: it has no such file to leave out.
+      refute json =~ "channels/user_socket.ex"
+      refute json =~ "open_api"
+      refute json =~ "lib/mix/tasks"
+      assert Jason.decode!(json)["skip_files"]
     end
 
     test "the report's templates live under test/, never assets/" do
@@ -71,55 +92,155 @@ defmodule WorkbenchIgniter.Features.CoverageTest do
         )
         |> apply_igniter!()
 
-      assert {%{theme: "custom"}, _} = Coverage.state(igniter)
+      assert {%{html_theme: "custom"}, _} = Coverage.state(igniter)
     end
 
-    test "--exdoc plants the cover task and its tests" do
+    test "--md-report plants the cover task, its tests and the page until it runs" do
       igniter =
-        phx_test_project()
-        |> Igniter.compose_task("workbench.install.coverage", ["--exdoc"])
+        with_doubles()
+        |> Igniter.compose_task("workbench.install.coverage", ["--md-report"])
         |> apply_igniter!()
 
       files = igniter.assigns[:test_files]
 
       assert files["lib/mix/tasks/cover.ex"] =~ "defmodule Mix.Tasks.Cover do"
       assert files["test/mix/tasks/cover_test.exs"] =~ "defmodule Mix.Tasks.CoverTest do"
-      # The cover task tests use Mock.
+      # The double the task's tests stand on is test_doubles', which the
+      # option builds on: this box only registers its own copy.
       assert files["mix.exs"] =~ "{:mimic,"
 
       # Its block of the shared test helper, and nobody else's.
       assert files["test/test_helper.exs"] =~ "# >>> coverage"
       assert files["test/test_helper.exs"] =~ "Mimic.copy(File)"
-      # The generated reports are not source files.
+      # The report is this box's file now: the page until `mix cover`
+      # writes it, and gitignored, since the report is generated.
+      assert files["TESTING.md"] =~ "mix cover"
       assert files[".gitignore"] =~ "/TESTING.md"
       refute files[".gitignore"] =~ "COVERAGE.md"
     end
 
-    test "keeps file paths untruncated for the mix cover parser" do
-      igniter =
+    # The task's tests call `Mimic.copy(File)`: the doubles are
+    # test_doubles' box, and this option builds on it instead of
+    # inserting it — one insert, one cartridge.
+    test "--md-report needs test_doubles with Mimic, and says so" do
+      refused =
         phx_test_project()
+        |> Igniter.compose_task("workbench.install.coverage", ["--md-report"])
+
+      assert_has_issue(refused, &(&1 =~ "--md-report builds on test_doubles with double mimic"))
+      assert_has_issue(refused, &(&1 =~ "./wb.sh add test_doubles"))
+      refute Igniter.exists?(refused, "coveralls.json")
+
+      # Mox alone is not the double it needs: the box is in, and short.
+      mox_only =
+        phx_test_project()
+        |> Igniter.compose_task("workbench.install.test_doubles", ["--double", "mox"])
+        |> apply_igniter!()
+        |> Igniter.compose_task("workbench.install.coverage", ["--md-report"])
+
+      assert_has_issue(mox_only, &(&1 =~ "this project's double is mox"))
+    end
+
+    # The cover task parses the terminal coverage rows: a column
+    # narrower than a path truncates it, and a truncated path is a row
+    # the parser cannot match to a file. 80 is the default, wider than
+    # ExCoveralls' own 40; a project with deeper paths asks for more.
+    test "the file column is as wide as it was asked for, and 80 unasked" do
+      json = fn argv ->
+        phx_test_project()
+        |> Igniter.compose_task("workbench.install.coverage", argv)
+        |> apply_igniter!()
+        |> Map.get(:assigns)
+        |> get_in([:test_files, "coveralls.json"])
+      end
+
+      assert json.([]) =~ ~s|"file_column_width": 80|
+      assert json.(["--file-column-width", "128"]) =~ ~s|"file_column_width": 128|
+
+      {state, _igniter} =
+        phx_test_project()
+        |> Igniter.compose_task("workbench.install.coverage", ["--file-column-width", "160"])
+        |> apply_igniter!()
+        |> Coverage.state()
+
+      assert state.file_column_width == "160"
+    end
+
+    test "a file column that is not a whole number of characters is refused" do
+      for bad <- ~w(wide 39 1000 80.5) do
+        igniter =
+          phx_test_project()
+          |> Igniter.compose_task("workbench.install.coverage", ["--file-column-width", bad])
+
+        assert_has_issue(
+          igniter,
+          &(&1 =~ "--file-column-width takes a whole number from 40 to 999")
+        )
+
+        refute Igniter.exists?(igniter, "coveralls.json")
+      end
+    end
+
+    test "a group writes only the paths the project has" do
+      json =
+        WorkbenchIgniter.TestProject.new(~w(--no-html))
         |> Igniter.compose_task("workbench.install.coverage", [])
         |> apply_igniter!()
+        |> Map.get(:assigns)
+        |> get_in([:test_files, "coveralls.json"])
 
-      # The cover task parses the terminal coverage rows: a narrow column
-      # would truncate long paths and break the report links.
-      assert igniter.assigns[:test_files]["coveralls.json"] =~
-               ~s|"file_column_width": 128|
-    end
-
-    test "--interface graphql, and a project without html, drop their skip_files entries" do
-      igniter =
-        WorkbenchIgniter.TestProject.new(~w(--no-html))
-        |> Igniter.compose_task("workbench.install.coverage", ["--interface", "graphql"])
-        |> apply_igniter!()
-
-      json = igniter.assigns[:test_files]["coveralls.json"]
-
-      refute json =~ "open_api"
+      # No html, so no components to leave out — and the wiring it does
+      # have is still there.
       refute json =~ "components"
+      assert json =~ ~s|"lib/test_web/endpoint.ex"|
     end
 
-    test "plants the exdoc-ish report theme by default" do
+    test "--ignore-files names the groups, and a path of your own goes in as it is" do
+      json =
+        phx_test_project()
+        |> Igniter.compose_task(
+          "workbench.install.coverage",
+          ["--ignore-files", "open_api,mix_tasks,lib/test/legacy"]
+        )
+        |> apply_igniter!()
+        |> Map.get(:assigns)
+        |> get_in([:test_files, "coveralls.json"])
+
+      skipped = Jason.decode!(json)["skip_files"]
+
+      # A directory nobody can witness is written as asked; a path of
+      # the reader's own is written as it is; what was not asked for is
+      # not there, the two the box always leaves out aside.
+      assert skipped == ~w(deps test lib/test_web/open_api lib/mix/tasks lib/test/legacy)
+    end
+
+    test "--ignore-files none counts everything the project compiles" do
+      skipped =
+        phx_test_project()
+        |> Igniter.compose_task("workbench.install.coverage", ["--ignore-files", "none"])
+        |> apply_igniter!()
+        |> Map.get(:assigns)
+        |> get_in([:test_files, "coveralls.json"])
+        |> Jason.decode!()
+        |> Map.get("skip_files")
+
+      assert skipped == ~w(deps test)
+    end
+
+    test "says back the groups it was inserted with, and the paths of its own" do
+      {state, _igniter} =
+        phx_test_project()
+        |> Igniter.compose_task(
+          "workbench.install.coverage",
+          ["--ignore-files", "boilerplate,open_api,lib/test/legacy"]
+        )
+        |> apply_igniter!()
+        |> Coverage.state()
+
+      assert state.ignore_files == ~w(boilerplate open_api lib/test/legacy)
+    end
+
+    test "plants the workbench's own report theme by default" do
       igniter =
         phx_test_project()
         |> Igniter.compose_task("workbench.install.coverage", [])
@@ -128,20 +249,20 @@ defmodule WorkbenchIgniter.Features.CoverageTest do
       files = igniter.assigns[:test_files]
 
       # Same target path whatever the theme: coveralls.json points there.
-      assert files["test/coverage/template/coverage.html.eex"] =~ ~s|class="sidebar-projectName"|
-      assert files["test/coverage/template/_style.html.eex"] =~ "--sidebarBackground"
-      assert files["test/coverage/template/_script.html.eex"] =~ "ex_doc:settings"
+      assert files["test/coverage/template/coverage.html.eex"] =~ "Test Coverage Overview"
+      assert {%{html_theme: "custom"}, _} = Coverage.state(igniter)
     end
 
-    test "--theme custom plants the original report theme" do
+    test "--html-theme exdoc-ish plants the theme that mimics the docs" do
       igniter =
         phx_test_project()
-        |> Igniter.compose_task("workbench.install.coverage", ["--theme", "custom"])
+        |> Igniter.compose_task("workbench.install.coverage", ["--html-theme", "exdoc-ish"])
         |> apply_igniter!()
 
       files = igniter.assigns[:test_files]
 
-      assert files["test/coverage/template/coverage.html.eex"] =~ "Test Coverage Overview"
+      assert files["test/coverage/template/coverage.html.eex"] =~ ~s|class="sidebar-projectName"|
+      assert files["test/coverage/template/_style.html.eex"] =~ "--sidebarBackground"
       assert Map.has_key?(files, "test/coverage/template/_script.html.eex")
       assert Map.has_key?(files, "test/coverage/template/_style.html.eex")
     end
@@ -149,7 +270,7 @@ defmodule WorkbenchIgniter.Features.CoverageTest do
     test "rejects an unknown theme" do
       igniter =
         phx_test_project()
-        |> Igniter.compose_task("workbench.install.coverage", ["--theme", "nope"])
+        |> Igniter.compose_task("workbench.install.coverage", ["--html-theme", "nope"])
 
       assert Enum.any?(igniter.issues, &(&1 =~ "Unknown coverage report theme \"nope\""))
       assert Enum.any?(igniter.issues, &(&1 =~ "custom, exdoc-ish"))
@@ -157,6 +278,26 @@ defmodule WorkbenchIgniter.Features.CoverageTest do
 
     test "lists the themes from the asset directories" do
       assert WorkbenchIgniter.Features.Coverage.themes() == ["custom", "exdoc-ish"]
+    end
+
+    # `rerun: :adds`: the json and the theme are fixed at the insert,
+    # but the task and the hook are pieces, added when missing.
+    test "a second run with --md-report plants the cover task the first left out" do
+      igniter =
+        with_doubles()
+        |> Igniter.compose_task("workbench.install.coverage", [])
+        |> apply_igniter!()
+
+      refute Igniter.exists?(igniter, "lib/mix/tasks/cover.ex")
+
+      added =
+        igniter
+        |> Igniter.compose_task("workbench.install.coverage", ["--md-report"])
+        |> apply_igniter!()
+
+      assert Igniter.exists?(added, "lib/mix/tasks/cover.ex")
+      assert Igniter.exists?(added, "lib/mix/tasks/cover/formatter.ex")
+      assert {%{md_report: true}, _} = Coverage.state(added)
     end
 
     test "is a no-op with a notice when already installed" do
@@ -272,6 +413,18 @@ defmodule WorkbenchIgniter.Features.CoverageTest do
       assert hook =~ "mix credo"
       assert hook =~ "mix format --check-formatted"
     end
+  end
+
+  # The insert writes files and never runs the suite: the report is
+  # made from its door in the console, or with `./wb.sh mix cover`.
+  test "the insert queues no run of its own" do
+    igniter =
+      WorkbenchIgniter.TestProject.new()
+      |> Igniter.compose_task("workbench.install.coverage", [])
+
+    refute Enum.any?(igniter.tasks, &match?({"cover", _}, &1))
+    refute Enum.any?(igniter.tasks, &match?({"coveralls" <> _, _}, &1))
+    refute Enum.any?(igniter.tasks, &match?({"ecto." <> _, _}, &1))
   end
 
   describe "composition through chiefs_setup" do

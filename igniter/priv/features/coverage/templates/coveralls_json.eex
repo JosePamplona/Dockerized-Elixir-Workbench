@@ -5,16 +5,9 @@
     "minimum_coverage": <%= @minimum_coverage %>
   },
   "terminal_options": {
-    "file_column_width": 128
+    "file_column_width": <%= @file_column_width %>
   },
-  "skip_files": [
-<%= if @rest do %>
-    "<%= @app_name %>_web/open_api",
-<% end %>
-<%= if @html do %>
-    "<%= @app_name %>_web/components",
-<% end %>
-    "deps",
-    "test"
+  "skip_files": [<%= for {path, i} <- Enum.with_index(@skip_files) do %>
+    "<%= path %>"<%= if i < length(@skip_files) - 1, do: "," %><% end %>
   ]
 }

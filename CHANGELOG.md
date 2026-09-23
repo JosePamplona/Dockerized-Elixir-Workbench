@@ -1361,6 +1361,20 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **`./wb.sh console` stays in the terminal; `console up` leaves it
+  running.** Bare, the console started detached and returned, and its
+  output was one more command away (`console logs`), its end another
+  (`console down`). Now bare `console` starts it and follows its output
+  here, and Ctrl+C — or the terminal closing, or the container stopping
+  on its own — takes the container down with it. `console up` is what
+  bare used to be: started, the address printed, the prompt back, as
+  the workbench's own `up` does. The two starts that never have a
+  terminal — the helper container that starts the console again from
+  inside it, and the page's **Start again** button — ask for `console
+  up`, and the page's hints name it. A failed `docker run` or a
+  workspace directory that could not be made now stops with an error
+  instead of passing in silence.
+
 - **exdoc v0.8.0 and the two papers, read against the tools as they are
   today.** The boxes changed a great deal this week and their DESIGN
   papers had grown by accretion — a paragraph per change, each with its

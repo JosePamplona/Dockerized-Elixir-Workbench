@@ -33,8 +33,8 @@ The unsuffixed file is the *development* one for compose and the *production* on
 The workbench has a face: a Phoenix LiveView page that shows the workspace — containers, deployments, git, what is inserted — and drives this script from the browser, cartridges included. It runs as a container of its own, with Docker's socket and the workbench mounted:
 
 ```sh
-./wb.sh console          # http://localhost:4100 — the first run compiles it (./wb.sh console logs)
-./wb.sh console down
+./wb.sh console          # http://localhost:4100, its output here; Ctrl+C takes it down
+./wb.sh console up       # the same, left running (./wb.sh console logs, ./wb.sh console down)
 ```
 
 Every command it runs is a job in its tray, with the output and exit code `wb.sh` gave, in colour: the console runs this script on a pipe, where mix, hex, git and compose would go plain, so it sets `WB_ANSI=always` and the script asks them for colour anyway. From a terminal, or unset, nothing changes. See [console/README.md](console/README.md).

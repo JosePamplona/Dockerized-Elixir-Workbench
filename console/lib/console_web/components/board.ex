@@ -124,8 +124,8 @@ defmodule ConsoleWeb.Board do
         <button
           class="btn mini"
           phx-click="run"
-          phx-value-args="console"
-          title="./wb.sh console — the console comes up again for this workspace, on the same address; this page reconnects on its own"
+          phx-value-args="console up"
+          title="./wb.sh console up — the console comes up again for this workspace, on the same address; this page reconnects on its own"
         >
           Start again
         </button>

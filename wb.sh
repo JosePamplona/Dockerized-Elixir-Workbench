@@ -1949,7 +1949,9 @@
     command_content \
       "Run the console, a LiveView page that shows the workspace and drives" \
       "this script, as a container on 127.0.0.1, first free port from 4100." \
-      "  up      Start it, building the workbench image if missing (default)." \
+      "Bare, it starts it and follows its output; Ctrl+C takes it down." \
+      "The workbench image is built first if missing." \
+      "  up      Start it and return; it keeps running." \
       "  down    Stop it." \
       "  logs    Follow its output." \
       "  build   Build the workbench image again."
@@ -2564,6 +2566,11 @@ if [ $# -gt 0 ]; then
 
     case "$1" in
       ""|up)
+        # Bare, it stays in the foreground: its output here, and Ctrl+C
+        # (or the terminal closing) takes it down. 'up' leaves it running
+        # and returns, as the workbench's own 'up' does.
+        CONSOLE_FOLLOW=false
+        [ -z "${1:-}" ] && CONSOLE_FOLLOW=true
         # The console runs on the workbench's image; built once, it serves
         # an empty workspace too, where 'new' is the first act.
         ensure_workbench_image || terminate "The workbench image did not build."
@@ -2582,7 +2589,7 @@ if [ $# -gt 0 ]; then
             --volume "$WORKBENCH_PATH:$WORKBENCH_PATH" \
             --workdir "$WORKBENCH_PATH" \
             --env HOME=/home/elixir \
-            "$WORKBENCH_IMAGE" sh -c "sleep 2; ./$(basename "$0") console" > /dev/null && \
+            "$WORKBENCH_IMAGE" sh -c "sleep 2; ./$(basename "$0") console up" > /dev/null && \
           echo "The console starts again in a moment, for ${B}$WORKSPACE_PATH${R}," \
             "on the same address: this page reconnects on its own."
           exit 0
@@ -2602,7 +2609,9 @@ if [ $# -gt 0 ]; then
           "$WORKBENCH_IMAGE" stat -c %g /var/run/docker.sock)
         # The workspace's directory and its two mount points made here,
         # as this user: a bind mount's missing target lands root-owned.
-        mkdir -p "$WORKSPACE_PATH" && ensure_build_volumes && \
+        if ! { mkdir -p "$WORKSPACE_PATH" && ensure_build_volumes; }; then
+          terminate "The workspace's directory or build volumes could not be made."
+        fi
         docker run --detach \
           --name "$CONSOLE_NAME" \
           --user "$(id -u):$(id -g)" \
@@ -2632,9 +2641,21 @@ if [ $# -gt 0 ]; then
           --env "REPORTS_PUBLIC_PORT=$REPORTS_PORT" \
           --publish "127.0.0.1:$CONSOLE_PORT:4000" \
           --publish "127.0.0.1:$REPORTS_PORT:4001" \
-          "$WORKBENCH_IMAGE" sh -c "mix deps.get && mix phx.server" > /dev/null && \
-        echo "The console is coming up on ${B}http://localhost:$CONSOLE_PORT${R}" \
-          "(first run compiles it: ./$(basename "$0") console logs)." ;;
+          "$WORKBENCH_IMAGE" sh -c "mix deps.get && mix phx.server" > /dev/null || \
+          terminate "The console did not start."
+        if [[ "$CONSOLE_FOLLOW" == true ]]; then
+          echo "The console is coming up on ${B}http://localhost:$CONSOLE_PORT${R}" \
+            "(Ctrl+C takes it down)."
+          # Whichever way the following ends — Ctrl+C, the terminal gone,
+          # the container stopping on its own — the container goes with it.
+          trap 'docker rm -f "$CONSOLE_NAME" > /dev/null 2>&1; echo; echo "Console down."; exit 0' INT TERM HUP
+          docker logs --follow "$CONSOLE_NAME"
+          docker rm -f "$CONSOLE_NAME" > /dev/null 2>&1
+          echo "Console down."
+        else
+          echo "The console is coming up on ${B}http://localhost:$CONSOLE_PORT${R}" \
+            "(first run compiles it: ./$(basename "$0") console logs)."
+        fi ;;
       down)  docker rm -f "$CONSOLE_NAME" > /dev/null 2>&1 && echo "Console down." || echo "The console was not up." ;;
       logs)  docker logs --follow "$CONSOLE_NAME" ;;
       build)

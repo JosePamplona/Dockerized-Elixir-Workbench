@@ -314,7 +314,7 @@ defmodule ConsoleWeb.DockerScreen do
     # The console restarts itself: `docker restart` on its own container
     # keeps the image, the mounts, the env and the port, and this page
     # reconnects when it is back. A new image or another workspace is
-    # a recreate — ./wb.sh console, from the host — and the console says
+    # a recreate — ./wb.sh console up, from the host — and the console says
     # so where it applies (rebind). Since 2026-09-16; it was refused.
     why =
       cond do
@@ -343,7 +343,7 @@ defmodule ConsoleWeb.DockerScreen do
               why
 
             assigns.c.console? ->
-              "docker restart #{assigns.c.name} — the console restarts itself, and this page reconnects in seconds; a new image or another workspace wants ./wb.sh console, from the host"
+              "docker restart #{assigns.c.name} — the console restarts itself, and this page reconnects in seconds; a new image or another workspace wants ./wb.sh console up, from the host"
 
             true ->
               "./wb.sh restart --deploy #{assigns.deployment || "dev"} #{assigns.c.service} — the same service, the same image, up again; the deployment stays whole"

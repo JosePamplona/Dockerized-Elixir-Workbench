@@ -136,7 +136,9 @@ defmodule ConsoleWeb.DockerScreen do
     <%!-- The daemon's box, with its controls in a strip under it, the way
           the Logs screen and a job's output carry theirs (2026-09-16):
           the lines the daemon says of itself and of its disk, and beneath
-          them the scope and, on Containers, Stats. --%>
+          them the scope and, on Containers, Stats. Headed "Specs", as the
+          Mix paper heads what def project says. --%>
+    <div class="log-cap"><span class="label">Specs</span></div>
     <div class="viewport daemon">
       <code :if={@dk.daemon} class="code-box daemon"><span
         :for={{k, v} <- daemon_lines(@dk)}

@@ -173,9 +173,12 @@ defmodule ConsoleWeb.BoxInstallTest do
     }
 
     html = screen(box, status)
-    assert html =~ "needs ecto with database mysql"
-    refute html =~ "needs ecto with database postgres"
-    refute html =~ ~r/needs ecto</
+    # The need is the cartridge's own mention, a door to its box, with
+    # the state it asks beside it: ecto is in, on another database.
+    assert html =~ ~r{class="cart-ref in"[^>]*phx-value-name="ecto"}
+    assert html =~ "with database mysql"
+    refute html =~ "with database postgres"
+    assert html =~ "builds on ecto with database mysql, which this project lacks"
   end
 
   @db_admin %{
@@ -223,8 +226,8 @@ defmodule ConsoleWeb.BoxInstallTest do
     refute html =~ ~s(class="in">in<)
     # The one the database does not serve says why, in its own class —
     # not the need paper's, whose panel it used to borrow.
-    assert html =~ ~s(class="lacks")
-    assert html =~ ~s(class="in lacks")
+    assert html =~ ~s(class="line lacks")
+    assert html =~ ~s(class="tag lacks")
     refute html =~ ~s(<label class="need")
   end
 
@@ -256,8 +259,11 @@ defmodule ConsoleWeb.BoxInstallTest do
   test "a switch that builds on a cartridge the project lacks is unlit, and says why" do
     html = screen(@credo, with_cartridges([%{"name" => "precommit", "installed" => false}]))
     assert html =~ ~r{id="opt-githook"[^>]*disabled}
-    assert html =~ ~s(class="in lacks")
-    assert html =~ "needs precommit"
+    # On the switch's own line, not beside its flag, and as a mention.
+    assert html =~
+             ~r{<label[^>]*class="line sw lacks"[^>]*>.*class="tag lacks">needs<.*phx-value-name="precommit"}s
+
+    assert html =~ "builds on precommit, which this project lacks"
   end
 
   test "with the cartridge in, the switch is lit" do
@@ -268,7 +274,7 @@ defmodule ConsoleWeb.BoxInstallTest do
       )
 
     refute html =~ ~r{id="opt-githook"[^>]*disabled}
-    refute html =~ "needs precommit"
+    refute html =~ ~s(class="tag lacks")
   end
 
   test "a switch turned on names what it builds on" do

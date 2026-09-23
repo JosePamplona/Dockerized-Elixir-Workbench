@@ -951,34 +951,50 @@ pre .ln{display:block}
 .sheet .req{display:flex;flex-wrap:wrap;gap:6px}
 .sheet .req .chip{color:var(--ink)}
 form.insert{display:grid;gap:14px;border:1px solid var(--line);border-radius:3px;padding:14px;background:var(--surface-2)}
-form.insert #d-fields{display:grid;gap:0}
-form.insert #d-fields>.field{padding:14px 0;border-top:1px solid var(--line)}
-form.insert #d-fields>.field:first-child{padding-top:4px;border-top:0}
-form.insert #d-fields>.field:last-child{padding-bottom:6px}
 form.insert .label{margin-bottom:-4px}
-.field{display:grid;grid-template-columns:150px minmax(0,1fr);gap:10px;align-items:center}
-.field label{font-family:var(--mono);font-size:12.5px}
-.field input[type=text]{font-family:var(--mono);font-size:13px;padding:6px 8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;width:100%}
-.field .doc{grid-column:2;font-size:12.5px;color:var(--muted);margin:2px 0 0;max-width:60ch;line-height:1.45}
-.field .doc code{font-family:var(--mono);font-size:.9em;background:var(--surface-2);padding:0 .3em;border-radius:2px}
-.field input[type=checkbox],.field input[type=radio]{width:15px;height:15px;margin:0}
-.field.stack{align-items:start}
-.field.stack>label{padding-top:2px}
-/* One choice per line, its comment beside it; a plain list of names
-   (no comments) goes in two columns so a long one stays a list. */
-.choices{display:grid;grid-template-columns:1fr;gap:10px 16px;font-family:var(--mono);font-size:12.5px}
-.choices.plain{gap:6px 16px}
-.choices.plain{grid-template-columns:1fr 1fr}
-.choices label{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:0 8px;align-items:baseline}
-.choices label input{align-self:center}
-.choices label .doc{font-family:var(--serif);font-size:12.5px;color:var(--muted);line-height:1.35}
-.choices label .doc::before{content:"— "}
-.choices label .in.def{color:var(--soft)}
-.groups{display:grid;gap:8px}
-.groups .g{display:grid;grid-template-columns:96px minmax(0,1fr);gap:8px;align-items:start}
-.groups .g .gl{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:11px;color:var(--muted);padding-top:3px}
-.other{display:flex;gap:8px;align-items:center;font-family:var(--mono);font-size:12px;color:var(--muted)}
-.other input[type=text]{font-family:var(--mono);font-size:12.5px;padding:4px 8px;border:1px dashed var(--line);background:var(--surface);color:var(--ink);border-radius:2px;flex:1;max-width:320px}
+/* One option per row, whatever its shape: the key — its flag, and under
+   it the kind of answer it takes — and its answers, one line per control.
+   A line reads control · name · tags · — note in every shape; a switch
+   has no name and a text no note. A tag sits on the line of the control
+   it shuts, never in the key: that is where the eye is before the click,
+   and the key's 150px no longer breaks under a long need. */
+form.insert .opts{display:grid}
+.opt{display:grid;grid-template-columns:150px minmax(0,1fr);gap:10px;align-items:start;padding:12px 0;border-top:1px solid var(--line)}
+.opt:first-child{border-top:0;padding-top:2px}
+.opt:last-child{padding-bottom:2px}
+.opt .key{display:grid;gap:2px;padding-top:1px}
+.opt .flag{font-family:var(--mono);font-size:12.5px;color:var(--ink)}
+.opt .kind{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--soft)}
+.opt .answers{display:grid;gap:8px;min-width:0}
+.opt .line{display:grid;grid-template-columns:auto auto auto minmax(0,1fr);justify-content:start;gap:0 8px;align-items:center;font-family:var(--mono);font-size:12.5px}
+.opt .line.sw{grid-template-columns:auto auto minmax(0,1fr)}
+.opt .line.txt{grid-template-columns:minmax(0,40ch) auto}
+.opt .line.other{grid-template-columns:minmax(0,54ch)}
+.opt .line input[type=checkbox],.opt .line input[type=radio]{width:15px;height:15px;margin:0}
+.opt .line .name{white-space:nowrap}
+.opt .line .gloss{font-family:var(--serif);font-size:12.5px;color:var(--muted);line-height:1.35}
+.opt .line .gloss::before{content:"— "}
+.opt .line input[type=text]{font-family:var(--mono);font-size:13px;padding:5px 8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;width:100%}
+.opt .line.other input[type=text]{border-style:dashed;font-size:12.5px}
+.opt .gl{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:11px;color:var(--muted);margin-top:4px}
+.opt .gl:first-child{margin-top:0}
+.opt .doc{font-size:12.5px;color:var(--muted);margin:0;max-width:60ch;line-height:1.45}
+.opt .doc code{font-family:var(--mono);font-size:.9em;background:var(--surface-2);padding:0 .3em;border-radius:2px}
+/* The tags: `needs` and the cartridges it names, each its own mention
+   — a door to that box — with the state it asks; or the default. */
+.opt .tags{display:inline-flex;flex-wrap:wrap;gap:4px 6px;align-items:center}
+.opt .tags:empty{display:none}
+.opt .tag{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:9.5px;color:var(--muted);border:1px solid var(--line);padding:0 4px;border-radius:2px;white-space:nowrap;line-height:1.5}
+.opt .tag.lacks{color:var(--warn);border-color:var(--warn)}
+.opt .tag.def{color:var(--soft)}
+.opt .req{display:inline-flex;gap:6px;align-items:center}
+.opt .by{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:9.5px;color:var(--soft);white-space:nowrap}
+.opt .line.lacks .name{color:var(--muted)}
+.opt .line.has{color:var(--muted)}
+/* Set, but not by the reader: this one the project already carries, so
+   it steps out of the accent the house gives every other control. */
+.opt .line.has input{accent-color:var(--muted)}
+@media (max-width:640px){.opt{grid-template-columns:1fr;gap:6px}}
 .cmd{font-family:var(--mono);font-size:12.5px;background:var(--surface);border:1px solid var(--line);padding:8px 10px;border-radius:2px;overflow-x:auto;white-space:nowrap}
 .cmd::before{content:"$ ";color:var(--muted)}
 .go{justify-self:start;font-family:var(--cond);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:13px;background:var(--accent);color:var(--accent-ink);padding:9px 16px;border-radius:2px;box-shadow:0 2px 0 rgba(0,0,0,.25)}
@@ -989,7 +1005,7 @@ form.insert .label{margin-bottom:-4px}
 .install .foot{margin-top:12px}
 .install .foot .cmd{flex:1;min-width:240px}
 .install .foot .note{flex-basis:100%;margin:0}
-form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
+form.insert.locked .opt input{opacity:.55}
 /* Specs — the box's own facts, a table where the need above is prose.
    Same panel as .need, without its accent edge: that one is the voice
    of the developer, this one the manifest's. */
@@ -1007,13 +1023,6 @@ form.insert.locked .field input,form.insert.locked .field select{opacity:.55}
 .specs .by{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:9.5px;color:var(--soft);white-space:nowrap}
 .specs .path{font-family:var(--mono);font-size:12px;color:var(--ink)}
 .specs .note,.specs .after{font-size:12.5px;color:var(--muted);font-style:italic}
-.field .in.lacks{color:var(--warn);border-color:var(--warn)}
-.choices label.lacks>span:first-of-type{color:var(--muted)}
-.field .in{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:9.5px;color:var(--muted);border:1px solid var(--line);padding:0 4px;border-radius:2px;margin-left:6px}
-.choices label.has{color:var(--muted)}
-/* Set, but not by the reader: this one the project already carries, so
-   it steps out of the accent the house gives every other control. */
-.choices label.has input{accent-color:var(--muted)}
 /* The rail's Git rows wrap their value under the right edge: a long commit
    subject or signer must not widen the grid's track and scroll the rail. */
 .git{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;font-family:var(--mono);font-size:12px}

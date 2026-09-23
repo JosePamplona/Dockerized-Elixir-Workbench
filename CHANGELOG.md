@@ -1122,6 +1122,34 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **A box's options are one component, and a need is a door.** The
+  install form drew an option two ways: a switch or a text as `.field`,
+  with what the option needs (credo's `--githook` on precommit) inside
+  the flag's 150px label, where a long need broke the line; a list as
+  `.choices`, with what a value needs (db_admin's `pgadmin` on ecto with
+  postgres) after the value. One `<.option>` in `box.ex` now draws all
+  six shapes of the shelf's 33 options (switch, text, one of, several,
+  and several with values of their own, grouped or not). The key is the
+  flag, with the kind of answer under it (`switch`, `text`, `one of`,
+  `several`, `· or others`, which nothing said before). The answers are
+  one line per control, always control · name · tags · — note, and a
+  tag sits on the line of the control it shuts, whether the option or
+  the value asks for the cartridge. `needs` is followed by each
+  cartridge's own `.cart-ref`, a door to its box with its real dot, and
+  the state it asks beside it (`with database mysql`), so the form
+  shows how the cartridges hang together. The default is a tag in every
+  shape (`default`, `default off`, `default /health`), and a list of
+  several shows it too (ash's `--data-layer postgres`). Also: a hairline
+  between options (the old rule aimed at a `#d-fields` that no form
+  had), text fields capped at 40ch, «other» as the list's last line,
+  and a group a caption inside the answers instead of a 96px column.
+  What the project has is still said by the box checked and shut, with
+  no tag. The manifests' «Default: …» sentences stay, since `--help`
+  reads them. Settled on a decision page with today's form and two
+  candidates, the tags on the control's line or in a rail at the
+  right; the rail put `needs precommit` ~600px from its box. Verified
+  in the console on db_admin, ecto, ash, changelog and health_probe.
+
 - **coveralls is `coverage`: the box named for the need, not the
   dependency.** The old name was ExCoveralls', and it also read like
   the coveralls.io service, which the box never talks to. With the

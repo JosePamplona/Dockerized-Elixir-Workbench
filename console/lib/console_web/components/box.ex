@@ -781,116 +781,20 @@ defmodule ConsoleWeb.Box do
         phx-submit="insert"
       >
         <span class="label">Options</span>
-        <div>
+        <div class="opts">
           <p :if={@box["options"] == []} class="nothing">This cartridge takes no options.</p>
-          <%= for o <- @box["options"] do %>
-            <% flag = "--" <> String.replace(o["name"], "_", "-") %>
-            <%= if o["choices"] do %>
-              <div class="field stack">
-                <label>{flag}<span :if={o["multiple"]}> (several)</span></label>
-                <div>
-                  <% grouped = match?([%{"group" => _} | _], o["choices"]) %>
-                  <div class={[grouped && "groups", !grouped && "choices"]}>
-                    <%= for g <- (if grouped, do: o["choices"], else: [%{"group" => nil, "values" => o["choices"]}]) do %>
-                      <div :if={grouped} class="g">
-                        <span class="gl">{String.replace(to_string(g["group"]), "_", " ")}</span>
-                        <div class="choices">
-                          <.choice
-                            :for={c <- g["values"]}
-                            o={o}
-                            c={c}
-                            flag={flag}
-                            args={@args}
-                            status={@status}
-                            locked={@locked}
-                            installed={@installed}
-                            c_state={@c["state"] || %{}}
-                          />
-                        </div>
-                      </div>
-                      <.choice
-                        :for={c <- g["values"]}
-                        :if={!grouped}
-                        o={o}
-                        c={c}
-                        flag={flag}
-                        args={@args}
-                        status={@status}
-                        locked={@locked}
-                        installed={@installed}
-                        c_state={@c["state"] || %{}}
-                      />
-                    <% end %>
-                  </div>
-                  <div :if={o["open"]} class="other">
-                    other:
-                    <input
-                      type="text"
-                      name={"other[#{o["name"]}]"}
-                      value={@args["other:#{o["name"]}"]}
-                      placeholder={
-                        if o["multiple"],
-                          do: "name, name — anything the installer takes",
-                          else: "another value"
-                      }
-                      disabled={@locked}
-                    />
-                  </div>
-                  <p :if={o["doc"]} class="doc">{o["doc"]}</p>
-                </div>
-              </div>
-            <% else %>
-              <%!-- A switch that builds on a cartridge (credo's --githook
-                    on precommit) is unlit while the project lacks it,
-                    and says why — unless the project already carries it
-                    on, which the box then says checked. --%>
-              <% need =
-                if (@c["state"] || %{})[o["name"]] == true, do: [], else: lacks(o, @status) %>
-              <div class="field">
-                <label for={"opt-#{o["name"]}"}>{flag}<span
-                  :if={need != []}
-                  class="in lacks"
-                >needs {Enum.join(need, " + ")}</span></label>
-                <%!-- A form sends nothing for an unchecked box: the "off"
-                      before it is what says a switch was turned off, which
-                      matters for one on by default (html's --live). --%>
-                <input
-                  :if={o["type"] == "boolean"}
-                  type="hidden"
-                  name={"opt[#{o["name"]}]"}
-                  value="off"
-                  disabled={@locked}
-                />
-                <input
-                  :if={o["type"] == "boolean"}
-                  type="checkbox"
-                  id={"opt-#{o["name"]}"}
-                  name={"opt[#{o["name"]}]"}
-                  checked={
-                    need == [] && checked?(o, @args, @c["state"] || %{}, @from_insert, @inserted_args)
-                  }
-                  disabled={@locked || need != []}
-                  title={
-                    need != [] && "builds on #{Enum.join(need, " and ")}, which this project lacks"
-                  }
-                />
-                <input
-                  :if={o["type"] != "boolean"}
-                  type="text"
-                  id={"opt-#{o["name"]}"}
-                  name={"opt[#{o["name"]}]"}
-                  value={text_value(o, @args, @c["state"] || %{}, @from_insert, @inserted_args)}
-                  placeholder={
-                    if @locked && @insert == nil,
-                      do: "inserted by hand: value unknown",
-                      else: placeholder(o)
-                  }
-                  disabled={@locked}
-                />
-                <p :if={o["doc"]} class="doc">{o["doc"]}</p>
-              </div>
-            <% end %>
-          <% end %>
+          <.option
+            :for={o <- @box["options"]}
+            o={o}
+            args={@args}
+            status={@status}
+            locked={@locked}
+            installed={@installed}
+            c_state={@c["state"] || %{}}
+            from_insert={@from_insert}
+            inserted_args={@inserted_args}
+            by_hand={@locked && @insert == nil}
+          />
         </div>
         <%!-- One foot per verb, each with the line it is: a cartridge
               that is not in can be inserted, one that is in can be
@@ -1013,9 +917,164 @@ defmodule ConsoleWeb.Box do
     """
   end
 
+  # One option, whatever its shape: the key (its flag and what kind of
+  # answer it takes) and the body, one line per control. A line reads
+  # control · name · tags · — note in every shape: a switch is a list of
+  # one with no name, a text is a line with a field. A tag sits on the
+  # line of the control it shuts, whether the option asks for the
+  # cartridge (credo's --githook) or one of its values does (db_admin's
+  # pgadmin); the key never carries one. The option's doc is always the
+  # last line of its answers.
+  attr :o, :map, required: true
+  attr :args, :map, required: true
+  attr :status, :map
+  attr :locked, :boolean
+  attr :installed, :boolean
+  attr :c_state, :map
+  attr :from_insert, :boolean
+  attr :inserted_args, :list
+  attr :by_hand, :boolean, doc: "locked with no Insert commit to read the value off"
+
+  defp option(assigns) do
+    o = assigns.o
+    grouped = match?([%{"group" => _} | _], o["choices"])
+
+    assigns =
+      assign(assigns,
+        flag: "--" <> String.replace(o["name"], "_", "-"),
+        kind: kind(o),
+        groups:
+          if(grouped,
+            do: o["choices"],
+            else: [%{"group" => nil, "values" => o["choices"] || []}]
+          )
+      )
+
+    ~H"""
+    <div class="opt">
+      <div class="key">
+        <span class="flag">{@flag}</span>
+        <span class="kind">{@kind}</span>
+      </div>
+      <div class="answers">
+        <%= cond do %>
+          <% @o["choices"] -> %>
+            <%= for g <- @groups do %>
+              <span :if={g["group"]} class="gl">{String.replace(to_string(g["group"]), "_", " ")}</span>
+              <.choice
+                :for={c <- g["values"]}
+                o={@o}
+                c={c}
+                args={@args}
+                status={@status}
+                locked={@locked}
+                installed={@installed}
+                c_state={@c_state}
+              />
+            <% end %>
+            <div :if={@o["open"]} class="line other">
+              <input
+                type="text"
+                name={"other[#{@o["name"]}]"}
+                value={@args["other:#{@o["name"]}"]}
+                placeholder={
+                  if @o["multiple"],
+                    do: "other: name, name — anything the installer takes",
+                    else: "other: another value"
+                }
+                disabled={@locked}
+              />
+            </div>
+          <% @o["type"] == "boolean" -> %>
+            <.switch {assigns} />
+          <% true -> %>
+            <div class="line txt">
+              <input
+                type="text"
+                id={"opt-#{@o["name"]}"}
+                name={"opt[#{@o["name"]}]"}
+                value={text_value(@o, @args, @c_state, @from_insert, @inserted_args)}
+                placeholder={
+                  if @by_hand, do: "inserted by hand: value unknown", else: placeholder(@o)
+                }
+                disabled={@locked}
+              />
+              <.tags need={[]} default={!@installed && text_default(@o)} status={@status} />
+            </div>
+        <% end %>
+        <p :if={@o["doc"]} class="doc">{@o["doc"]}</p>
+      </div>
+    </div>
+    """
+  end
+
+  # What kind of answer the option takes, said under its flag: the one
+  # place a list that also takes values of its own says so.
+  defp kind(o) do
+    base =
+      cond do
+        o["choices"] && o["multiple"] -> "several"
+        o["choices"] -> "one of"
+        o["type"] == "boolean" -> "switch"
+        true -> "text"
+      end
+
+    cond do
+      !o["open"] -> base
+      o["multiple"] -> base <> " · or others"
+      true -> base <> " · or another"
+    end
+  end
+
+  # A text's default, when it is one the manifest knows: one the
+  # installer reads off the project is said by the placeholder alone.
+  defp text_default(%{"detected" => true}), do: nil
+
+  defp text_default(o) do
+    case o["default"] do
+      default when default in [nil, "", []] -> nil
+      default -> "default " <> (default |> List.wrap() |> Enum.join(","))
+    end
+  end
+
+  # A switch that builds on a cartridge (credo's --githook on precommit)
+  # is unlit while the project lacks it, and says why on its own line —
+  # unless the project already carries it on, which the box then says
+  # checked.
+  defp switch(assigns) do
+    o = assigns.o
+
+    need = if assigns.c_state[o["name"]] == true, do: [], else: lacks(o, assigns.status)
+
+    assigns =
+      assign(assigns,
+        need: need,
+        default:
+          !assigns.installed && is_boolean(o["default"]) &&
+            "default #{if o["default"], do: "on", else: "off"}"
+      )
+
+    ~H"""
+    <label class={["line sw", @need != [] && "lacks"]} for={"opt-#{@o["name"]}"}>
+      <%!-- A form sends nothing for an unchecked box: the "off" before it
+            is what says a switch was turned off, which matters for one on
+            by default (html's --live). --%>
+      <input type="hidden" name={"opt[#{@o["name"]}]"} value="off" disabled={@locked} />
+      <input
+        type="checkbox"
+        id={"opt-#{@o["name"]}"}
+        name={"opt[#{@o["name"]}]"}
+        checked={@need == [] && checked?(@o, @args, @c_state, @from_insert, @inserted_args)}
+        disabled={@locked || @need != []}
+        title={@need != [] && builds_on(@need)}
+      />
+      <.tags need={@need} default={@default} status={@status} />
+    </label>
+    """
+  end
+
   attr :o, :map, required: true
   attr :c, :map, required: true
-  attr :flag, :string, required: true
   attr :args, :map, required: true
   attr :status, :map
   attr :locked, :boolean
@@ -1038,42 +1097,73 @@ defmodule ConsoleWeb.Box do
         has: has,
         group_locked: group_locked,
         chosen: chosen,
-        default: !o["multiple"] && c["value"] == o["default"] && !assigns.installed
+        default: c["value"] in List.wrap(o["default"]) && !assigns.installed && "default"
       )
 
     ~H"""
-    <label class={[@has && "has", @need != [] && "lacks"]}>
+    <label class={["line", @has && "has", @need != [] && "lacks"]}>
       <input
         type={if @o["multiple"], do: "checkbox", else: "radio"}
         name={if @o["multiple"], do: "opt[#{@o["name"]}][]", else: "opt[#{@o["name"]}]"}
         value={@c["value"]}
         checked={@has || @chosen}
         disabled={@has || @group_locked || @locked || @need != []}
-        title={@need != [] && "builds on #{Enum.join(@need, " and ")}, which this project lacks"}
+        title={@need != [] && builds_on(@need)}
       />
+      <span class="name">{@c["value"]}</span>
       <%!-- What the project has is said by the box checked and shut, as
             it is when the whole form is locked; a tag only says why a
             box is shut that is not checked. --%>
-      <span>{@c["value"]}<span
-        :if={!@has && @need != []}
-        class="in lacks"
-      >needs {Enum.join(@need, " + ")}</span><span
-        :if={!@has && @need == [] && @default}
-        class="in def"
-      >default</span></span>
-      <span class="doc">{@c["doc"]}</span>
+      <.tags need={if @has, do: [], else: @need} default={!@has && @default} status={@status} />
+      <span :if={@c["doc"]} class="gloss">{@c["doc"]}</span>
     </label>
     """
   end
 
-  # What the value builds on and the project lacks, said with the
-  # state it asks: `ecto with database mysql` when ecto is in and on
-  # another database, not a bare `ecto` the project already has.
+  # A line's tags: what it builds on and the project lacks, each as the
+  # cartridge's own mention — a door to its box, so the form shows how
+  # the cartridges hang together — with the state it asks beside it;
+  # or, when nothing shuts it, its default. The mention's dot is the
+  # cartridge's own state: ecto in on mysql is in, and what pgadmin
+  # lacks is said by the `with` beside it. Never both: a shut control's
+  # default is not an answer it can give.
+  attr :need, :list, required: true
+  attr :default, :any, required: true
+  attr :status, :map
+
+  defp tags(assigns) do
+    ~H"""
+    <span class="tags">
+      <%= if @need != [] do %>
+        <span class="tag lacks">needs</span>
+        <span :for={{name, condition} <- @need} class="req"><.cart_ref
+          name={name}
+          installed={Cartridges.installed?(@status, name)}
+        /><span :if={condition != %{}} class="by">with {Cartridges.state_said(condition)}</span></span>
+      <% else %>
+        <span :if={@default} class="tag def">{@default}</span>
+      <% end %>
+    </span>
+    """
+  end
+
+  defp builds_on(need) do
+    names =
+      Enum.map_join(need, " and ", fn {name, condition} ->
+        Cartridges.requirement(name, condition)
+      end)
+
+    "builds on #{names}, which this project lacks"
+  end
+
+  # What the value builds on and the project lacks, with the state it
+  # asks: `{ecto, database mysql}` when ecto is in and on another
+  # database, not a bare `ecto` the project already has.
   defp lacks(c, status) do
     for name <- c["requires"] || [],
         condition = get_in(c, ["conditions", name]) || %{},
         not Cartridges.satisfies?(status, name, condition),
-        do: Cartridges.requirement(name, condition)
+        do: {name, condition}
   end
 
   defp has?(o, c, state) do

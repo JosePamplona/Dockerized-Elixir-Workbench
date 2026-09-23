@@ -99,6 +99,11 @@ defmodule WorkbenchIgniter.Features.Coverage do
   @spec themes() :: [String.t()]
   def themes, do: @themes
 
+  # The report tool. The doubles the `mix cover` task's tests use are
+  # test_doubles' box, which `--md-report` builds on.
+  @impl true
+  def deps(_state), do: [{:excoveralls, "~> 0.18", only: :test}]
+
   @impl true
   def task, do: "workbench.install.coverage"
 
@@ -141,17 +146,19 @@ defmodule WorkbenchIgniter.Features.Coverage do
         {true, "the mix cover task, and the Markdown report it writes",
          [{"test_doubles", double: "mimic"}]}
       ],
-      ignore_files:
-        {:open,
-         [
-           {"boilerplate",
-            "the wiring `phx.new` writes and no test asserts: the application, the endpoint, the router, telemetry, gettext, the repo, the mailer, the release and the socket"},
-           {"components", "the generated components and layouts of `lib/<app>_web/components/`"},
-           {"mix_tasks",
-            "the project's own Mix tasks, `lib/mix/tasks/` — a developer's commands, not the app"},
-           {"open_api", "an API specification's modules, `lib/<app>_web/open_api/`"},
-           {@nothing, "nothing of the project: every file it compiles is counted"}
-         ]},
+      # A closed list: what the box knows how to leave out, and nothing
+      # else. A project that wants another path out of the report edits
+      # its own `coveralls.json`, which is a file it owns — the box
+      # would only be writing what it cannot read back as a decision.
+      ignore_files: [
+        {"boilerplate",
+         "the wiring `phx.new` writes and no test asserts: the application, the endpoint, the router, telemetry, gettext, the repo, the mailer, the release and the socket"},
+        {"components", "the generated components and layouts of `lib/<app>_web/components/`"},
+        {"mix_tasks",
+         "the project's own Mix tasks, `lib/mix/tasks/` — a developer's commands, not the app"},
+        {"open_api", "an API specification's modules, `lib/<app>_web/open_api/`"},
+        {@nothing, "nothing of the project: every file it compiles is counted"}
+      ],
       # The hook is precommit's: its block goes in a file that box owns.
       githook: [{true, "the suite before the commit", ["precommit"]}]
     ]
@@ -167,7 +174,7 @@ defmodule WorkbenchIgniter.Features.Coverage do
       file_column_width:
         "How wide the file column of the terminal table is, in characters — ExCoveralls' `file_column_width`. A path longer than the column is cut, and `mix cover` reads that table to build the report's own, so a cut path is a file the report loses. Default: `80`; ExCoveralls' own is 40, and a project with deep module paths wants more.",
       ignore_files:
-        "What the report leaves out, comma-separated: the groups above, or any path of your own, which is a regex excoveralls matches against each file's path (`lib/my_app/legacy`). `deps` and `test` are left out always. Default: `#{Enum.join(@default_groups, ",")}`; `#{@nothing}` counts everything the project compiles.",
+        "What the report leaves out, comma-separated: the groups above, and no other value. `deps` and `test` are left out always. Default: `#{Enum.join(@default_groups, ",")}`; `#{@nothing}` counts everything the project compiles. A path of the project's own goes in its `coveralls.json`, which is the project's file to edit.",
       html_theme:
         "The HTML report's theme, one of #{Enum.map_join(themes(), ", ", &"`#{&1}`")}: `custom` is the workbench's own report, `exdoc-ish` mimics the ExDoc pages (sidebar, light/dark theme, fonts) so the report blends into a documentation site. Default: `custom`.",
       md_report:
@@ -314,6 +321,15 @@ defmodule WorkbenchIgniter.Features.Coverage do
         )
         |> plant_cover_task(opts)
         |> githook(opts[:githook])
+
+      # `[]` is truthy: the clause is the comparison, not the binding.
+      (unknown = Enum.reject(asked(opts[:ignore_files]), &(&1 in @group_names))) != [] ->
+        Igniter.add_issue(
+          igniter,
+          "--ignore-files takes the groups this box knows, and #{Enum.map_join(unknown, ", ", &inspect/1)} " <>
+            "is not one of them: #{Enum.join(@group_names ++ [@nothing], ", ")}. " <>
+            "A path of your own goes in the project's coveralls.json."
+        )
 
       opts[:html_theme] not in @themes ->
         Igniter.add_issue(

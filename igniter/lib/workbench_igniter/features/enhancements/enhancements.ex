@@ -28,6 +28,10 @@ defmodule WorkbenchIgniter.Features.Enhancements do
     do:
       "2026-09-20: the Phoenix line's — its Ecto generators and schema config fight Ash's domain"
 
+  # The Ecto group's, and only on a project with Ecto.
+  @impl true
+  def deps(_state), do: [{:ecto_enum, "~> 1.4"}]
+
   @impl true
   def task, do: "workbench.install.enhancements"
 

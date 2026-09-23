@@ -145,6 +145,40 @@ defmodule WorkbenchIgniter.Features.CoverageTest do
     # narrower than a path truncates it, and a truncated path is a row
     # the parser cannot match to a file. 80 is the default, wider than
     # ExCoveralls' own 40; a project with deeper paths asks for more.
+    test "the minimum the suite is held to: the flag, else 80" do
+      igniter =
+        phx_test_project()
+        |> Igniter.compose_task("workbench.install.coverage", ["--minimum-coverage", "92"])
+        |> apply_igniter!()
+
+      assert igniter.assigns[:test_files]["coveralls.json"] =~ ~s|"minimum_coverage": 92|
+      assert {%{minimum_coverage: "92"}, _} = Coverage.state(igniter)
+
+      unasked =
+        phx_test_project()
+        |> Igniter.compose_task("workbench.install.coverage", [])
+        |> apply_igniter!()
+
+      assert {%{minimum_coverage: "80"}, _} = Coverage.state(unasked)
+    end
+
+    # It goes into the json as a bare number: `abc` leaves a file
+    # excoveralls cannot parse, and 101 a gate no suite passes.
+    test "a minimum that is not a whole percentage is refused, and nothing is written" do
+      for bad <- ~w(abc 101 -1 85.5) do
+        igniter =
+          phx_test_project()
+          |> Igniter.compose_task("workbench.install.coverage", ["--minimum-coverage", bad])
+
+        assert_has_issue(
+          igniter,
+          &(&1 =~ "--minimum-coverage takes a whole number from 0 to 100")
+        )
+
+        refute Igniter.exists?(igniter, "coveralls.json")
+      end
+    end
+
     test "the file column is as wide as it was asked for, and 80 unasked" do
       json = fn argv ->
         phx_test_project()
@@ -195,12 +229,12 @@ defmodule WorkbenchIgniter.Features.CoverageTest do
       assert json =~ ~s|"lib/test_web/endpoint.ex"|
     end
 
-    test "--ignore-files names the groups, and a path of your own goes in as it is" do
+    test "--ignore-files names the groups, and only the groups" do
       json =
         phx_test_project()
         |> Igniter.compose_task(
           "workbench.install.coverage",
-          ["--ignore-files", "open_api,mix_tasks,lib/test/legacy"]
+          ["--ignore-files", "open_api,mix_tasks"]
         )
         |> apply_igniter!()
         |> Map.get(:assigns)
@@ -208,10 +242,25 @@ defmodule WorkbenchIgniter.Features.CoverageTest do
 
       skipped = Jason.decode!(json)["skip_files"]
 
-      # A directory nobody can witness is written as asked; a path of
-      # the reader's own is written as it is; what was not asked for is
-      # not there, the two the box always leaves out aside.
-      assert skipped == ~w(deps test lib/test_web/open_api lib/mix/tasks lib/test/legacy)
+      # A directory nobody can witness is written as asked; what was not
+      # asked for is not there, the two the box always leaves out aside.
+      assert skipped == ~w(deps test lib/test_web/open_api lib/mix/tasks)
+    end
+
+    # The list is closed: the box writes what it knows how to read back,
+    # and a path of the project's own goes in the project's own file.
+    test "a value that is not a group is refused, and nothing is written" do
+      igniter =
+        phx_test_project()
+        |> Igniter.compose_task(
+          "workbench.install.coverage",
+          ["--ignore-files", "boilerplate,lib/test/legacy"]
+        )
+
+      assert_has_issue(igniter, &(&1 =~ ~s|--ignore-files takes the groups this box knows|))
+      assert_has_issue(igniter, &(&1 =~ ~s|"lib/test/legacy" is not one of them|))
+      assert_has_issue(igniter, &(&1 =~ "coveralls.json"))
+      refute Igniter.exists?(igniter, "coveralls.json")
     end
 
     test "--ignore-files none counts everything the project compiles" do
@@ -227,17 +276,30 @@ defmodule WorkbenchIgniter.Features.CoverageTest do
       assert skipped == ~w(deps test)
     end
 
-    test "says back the groups it was inserted with, and the paths of its own" do
-      {state, _igniter} =
+    test "says back the groups it was inserted with, and a path the project added by hand" do
+      igniter =
         phx_test_project()
         |> Igniter.compose_task(
           "workbench.install.coverage",
-          ["--ignore-files", "boilerplate,open_api,lib/test/legacy"]
+          ["--ignore-files", "boilerplate,open_api"]
         )
         |> apply_igniter!()
-        |> Coverage.state()
 
-      assert state.ignore_files == ~w(boilerplate open_api lib/test/legacy)
+      assert {%{ignore_files: ~w(boilerplate open_api)}, _} = Coverage.state(igniter)
+
+      # The state reads the file, not the insert: a path the project
+      # wrote into its own coveralls.json reads back as the path it is.
+      edited =
+        igniter
+        |> Igniter.update_file("coveralls.json", fn source ->
+          Rewrite.Source.update(source, :content, fn content ->
+            String.replace(content, ~s|    "deps",|, ~s|    "lib/test/legacy",\n    "deps",|)
+          end)
+        end)
+        |> apply_igniter!()
+
+      assert {%{ignore_files: ~w(boilerplate open_api lib/test/legacy)}, _} =
+               Coverage.state(edited)
     end
 
     test "plants the workbench's own report theme by default" do
@@ -282,6 +344,25 @@ defmodule WorkbenchIgniter.Features.CoverageTest do
 
     # `rerun: :adds`: the json and the theme are fixed at the insert,
     # but the task and the hook are pieces, added when missing.
+    test "without --md-report, no task, no page and nothing ignored for it" do
+      files =
+        phx_test_project()
+        |> Igniter.compose_task("workbench.install.coverage", [])
+        |> apply_igniter!()
+        |> Map.get(:assigns)
+        |> Map.get(:test_files)
+
+      refute Map.has_key?(files, "lib/mix/tasks/cover.ex")
+      refute Map.has_key?(files, "lib/mix/tasks/cover/formatter.ex")
+      refute Map.has_key?(files, "test/mix/tasks/cover_test.exs")
+      refute Map.has_key?(files, "TESTING.md")
+      refute files[".gitignore"] =~ "TESTING.md"
+      # The doubles are another box's: unasked, this one asks for none
+      # and writes no block in the helper phx.new left.
+      refute files["mix.exs"] =~ "{:mimic,"
+      refute files["test/test_helper.exs"] =~ "coverage"
+    end
+
     test "a second run with --md-report plants the cover task the first left out" do
       igniter =
         with_doubles()

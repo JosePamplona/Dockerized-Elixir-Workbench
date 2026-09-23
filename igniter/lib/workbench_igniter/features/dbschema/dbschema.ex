@@ -59,6 +59,10 @@ defmodule WorkbenchIgniter.Features.Dbschema do
     do:
       "2026-09-22: DbSchema is a desktop tool outside the workbench and this only dresses its export; the reference project is on Ash, whose diagrams come from Ash itself"
 
+  # `mix db` decodes the entities DbSchema writes into its Markdown.
+  @impl true
+  def deps(_state), do: [{:html_entities, "~> 0.5"}]
+
   @impl true
   def task, do: "workbench.install.dbschema"
 

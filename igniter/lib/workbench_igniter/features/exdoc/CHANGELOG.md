@@ -11,6 +11,21 @@ Backfilled at the version below, its first: the cartridge shipped
 before a changelog was part of the anatomy, and gets one on its next
 change, as the features index says.
 
+## v0.8.0 - (2026-09-23)
+
+### Changed
+
+- **The pin is `~> 0.40`.** It was `~> 0.38` while the box's own design
+  paper quoted ExDoc at 0.40.4, and `~> 0.38` resolves to neither 0.39
+  nor 0.40. Since 0.40 `mix docs` writes three formats into `doc/`: the
+  HTML site the console serves, a Markdown tree with `llms.txt` — its
+  table of contents for whoever reads the project with a language model
+  — and the EPUB it always wrote. They are ExDoc's own defaults and the
+  box leaves them alone; `doc/` is gitignored, so nothing the project
+  carries changes. Verified in a probe: a stock `phx.new` project with
+  this cartridge in builds its site on 0.40.4, past the validations
+  0.39 and 0.40 added for extras, reserved filenames and `:assets`.
+
 ## v0.7.0 - (2026-09-22)
 
 ### Changed
@@ -36,9 +51,10 @@ change, as the features index says.
   owns `README.md` — `phx.new` writes it and the shelf has no box that
   would — so with none there the two entries are written commented out,
   the slot one written later takes, and `main: "readme"` is left out
-  with them: `mix docs` stops on an extra whose file is missing as much
-  as on a `main:` that names no page. `state/1` reads the live entry
-  alone.
+  with them: `mix docs` stops on an extra whose file is missing, and a
+  `main:` naming a page nobody listed is not validated at all — the
+  site's index redirects to a page that is not there. `state/1` reads
+  the live entry alone.
 
 ## v0.6.0 - (2026-09-22)
 

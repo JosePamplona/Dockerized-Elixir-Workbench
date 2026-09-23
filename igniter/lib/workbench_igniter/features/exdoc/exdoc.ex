@@ -43,6 +43,9 @@ defmodule WorkbenchIgniter.Features.Exdoc do
   @example "mix workbench.install.exdoc --project-name \"Lorem Ipsum\" --coverage"
 
   @impl true
+  def deps(_state), do: [{:ex_doc, "~> 0.40", only: :dev, runtime: false}]
+
+  @impl true
   def task, do: "workbench.install.exdoc"
 
   @impl true
@@ -394,7 +397,7 @@ defmodule WorkbenchIgniter.Features.Exdoc do
 
       {false, igniter} ->
         igniter
-        |> Igniter.Project.Deps.add_dep({:ex_doc, "~> 0.38", only: :dev, runtime: false},
+        |> Igniter.Project.Deps.add_dep({:ex_doc, "~> 0.40", only: :dev, runtime: false},
           on_exists: :skip
         )
         |> configure_mix_project(app_module, web_module, opts)

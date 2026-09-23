@@ -1,6 +1,6 @@
 # exdoc — Design
 
-Revision: cartridge v0.5.0 (2026-09-22)
+Revision: cartridge v0.7.0 (2026-09-22)
 
 *Written at v0.2.0, the change that gave the cartridge its papers.
 ExDoc is quoted from its own source at 0.40.4, as `mix deps.get`
@@ -12,14 +12,23 @@ options' documentation; `lib/ex_doc/formatter.ex`, the asset copy).*
 A project's reference documentation is best written where the code is
 — `@moduledoc`, `@doc` — and rendered by ExDoc, which every Elixir
 library already uses. This cartridge sets ExDoc up for an application
-rather than a library: the curated pages beside the modules (README,
-changelog, the database diagram, the test suite report), the module
-groups an application needs, the workbench's theme. What v0.2.0
-decides is who **serves** the result. v0.1.0 planted a controller, a
-static pipeline and `/dev/docs` routes in the project's router, so the
-app served its own docs, in dev, while it ran. Since v0.2.0 the project
-serves nothing: `mix docs` writes `doc/`, and the console serves that
-directory off the workspace on an origin of its own.
+rather than a library: the curated pages beside the modules, the module
+groups an application needs, the site's sources where they belong.
+
+Two decisions shape it. The first is who **serves** the result: v0.1.0
+planted a controller, a static pipeline and `/dev/docs` routes in the
+project's router, so the app served its own docs while it ran; since
+v0.2.0 the project serves nothing — `mix docs` writes `doc/`, and the
+console serves that directory off the workspace on an origin of its
+own. The second is which pages the site lists, and it took four
+versions to say it plainly: **a page is listed when its file has an
+owner**. The changelog is the changelog box's, so `--changelog` builds
+on it; the test suite report is coverage's, so `--coverage` builds on
+that box's `--md-report`; the README is nobody's, so it is read and its
+entries wait commented out when there is none. What the box used to do
+instead — list a file because it happened to be there, plant pages
+nobody owned, carry a database page and a theme script of its own — is
+gone, each with its reason recorded below.
 
 ## 1. Problem
 
@@ -53,7 +62,12 @@ already writes.
 **An image for each theme is ExDoc's own.** Since v0.27 (2022) its
 stylesheet hides `img[src*="#gh-dark-mode-only"]` in the light theme
 and `#gh-light-mode-only` in the dark one, the fragment GitHub reads
-too, so a page names both files and the theme picks. v0.1.0 to v0.3.1
+too, so a page names both files and the theme picks. It is worth saying
+that this is **undocumented**: the rule lives in `assets/css/_html.css`
+and is named nowhere a reader would look — not the README, not the
+`ExDoc` moduledoc, not the CHANGELOG [7]. The box's own README is
+where a project on this shelf learns it. In EPUB the dark image is
+hidden always (`_epub.css`), which is right for a printed book. v0.1.0 to v0.3.1
 planted a script for it instead (`themedImage.js`, injected through
 `:before_closing_body_tag`), written before that release and kept since
 out of habit; it also named one pair of files, the database model's, so
@@ -134,6 +148,22 @@ read-only and limited to the directories the inserted cartridges
 declare [3].
 
 ## 3. Design
+
+**The pin follows the tool** (v0.8.0). It was `~> 0.38` while this
+paper quoted ExDoc at 0.40.4, which is the kind of contradiction a
+paper is written to catch; checked against hex.pm on 2026-09-23, the
+latest is 0.40.4 (2026-09-03) and `~> 0.38` resolves to neither 0.39
+nor 0.40 [7]. The pin is `~> 0.40` now, and what comes with it was run
+in a probe before it was believed: a stock `phx.new` project with this
+cartridge as a path dependency builds its site, and `mix docs` says
+what it wrote — `doc/index.html`, which the console serves, a Markdown
+tree with `llms.txt` beside it, and the EPUB. The two new formats are
+0.40's defaults, and the box leaves them: a cartridge installs a tool
+as its author wrote it, and `doc/` is gitignored, so what the project
+carries does not change. The validations 0.39 and 0.40 added — an
+`:extras` entry that is not what ExDoc expects, an extra with a
+reserved filename, `:assets` given a string — pass: this box writes a
+map for the assets and names no reserved page.
 
 **ExDoc, and no alternative was weighed.** It is the ecosystem's
 documentation tool, HexDocs is its output, and the reader of an Elixir
@@ -243,9 +273,14 @@ writes the file, and the two pages answer differently:
   with a `README.md` the two entries are live and the site opens on it
   (`main: "readme"`); without one they are written **commented out**,
   the way `source_url` and `homepage_url` are when nothing is found,
-  and `main:` is left out with them — `mix docs` stops on an extra
-  whose file is missing and on a `main:` that names no page, and a
-  comment it never reads. Both lines are whole lines, so the list's
+  and `main:` is left out with them. The two failures are not the same,
+  and only one of them is loud: `mix docs` **stops** on an extra whose
+  file is missing (`File.read!` in `ExDoc.Extras`, an unrescued
+  `File.Error`), while a `main:` naming a page nobody listed is not
+  validated at all [7] — `index.html` redirects to a page that is not
+  there, and the site is quietly broken. The loud one is why the entry
+  waits commented, which ExDoc never reads; the quiet one is why
+  `main:` goes out with it. Both lines are whole lines, so the list's
   comma goes into the comment with them (and the formatter then drops
   it), and the lists stay valid — asserted by parsing the generated
   `mix.exs` in each shape. `state/1` answers the **live** entry alone;
@@ -384,12 +419,19 @@ no `cover/` yet builds the site without the report. In a second probe
 from the same birth, exdoc alone: `mix.exs` names neither a changelog
 nor a logo and `mix docs` builds; `workbench.install.changelog` then
 lists `CHANGELOG.md` among the extras and in the `Project` group, and
-the next `mix docs` has `changelog.html`. The cartridge suite asserts
-the router untouched, no controller and nothing under `doc/`, the mark
-on a v0.1.0 project, the logo only when asked, the changelog in both
-orders and once on a second run, the module groups by the project's
-line and by the flag, an unknown preset refused, and the options
-`state/1` reads back.
+the next `mix docs` has `changelog.html`. The cartridge suite asserts, option by option and both ways: the router
+untouched, no controller and nothing under `doc/`, the mark on a v0.1.0
+project, the name and the repository found or asked for and the
+placeholder commented out, the website live or commented, the logo only
+when asked, the module groups by the project's line and by the flag
+with an unknown preset refused, the README listed or waiting in its
+slot with `main:` going out with it, the changelog refused without its
+box and listed with it — and in the other order, listed by the box that
+opens the file — the report page refused without coverage's
+`--md-report` and listed with it, live where the report is there and
+commented where it is not, nothing of it without `--coverage`, no run
+queued by the insert, and every one of those answered back by
+`state/1`.
 
 The module groups were built with `mix docs` and read back off the
 sidebar ExDoc wrote (`doc/dist/sidebar_items-*.js`). In the probe, with
@@ -414,14 +456,18 @@ which the hooks also serve.
 
 ## 5. Limitations
 
-* **`README.md` is listed by default.** phx.new writes it, and a
-  project that deletes it has a site that stops as the changelog's did
-  before v0.2.0 (§3). `--no-readme` (v0.3.0) leaves it out, for a README
-  written for the repository's front page rather than the docs'; the
-  site then drops `main: "readme"` and opens on ExDoc's own default,
-  the API reference. The page is not read off the file: the README is
-  there at insert time in nearly every project, and the choice is what
-  the site's first page should be.
+* **`README.md` is listed by default, and read.** phx.new writes it, so
+  the site opens on it; `--no-readme` (v0.3.0) leaves it out, for a
+  README written for the repository's front page rather than the docs',
+  and the site then drops `main: "readme"` and opens on ExDoc's own
+  default, the API reference. With the option on and no README there —
+  a project that deleted it — the two entries and `main:` are written
+  commented out (v0.7.0), which is the slot the other pages get: `mix
+  docs` stops on an extra whose file is missing as much as on a `main:`
+  naming no page, and it never reads a comment. Nobody fills that slot
+  automatically, because no box on the shelf writes a README: the one
+  that would have to know every cartridge is the coupling this
+  structure exists to remove.
 * **An output dir moved by the project is not followed.** A `docs:
   [output: …]` other than `doc` leaves the console's door reading
   *nothing built*. `state/1` could report it; the console's plan
@@ -452,3 +498,12 @@ which the hooks also serve.
 6. ExDoc 0.40.4,
    `lib/ex_doc/formatter/html/templates/sidebar_template.eex`, line 8,
    read on 2026-09-21.
+7. A check of this paper's claims against ExDoc as published, on
+   2026-09-23, by a subagent of this session: hex.pm's API for the
+   released versions, and the repository for `assets/css/_html.css`
+   (the themed image's rule and its silence, commit `e1da25c1` of
+   2021-12-07, first released in v0.27.0), `lib/ex_doc/extras.ex` (the
+   `File.read!` that stops on a missing extra) and
+   `lib/ex_doc/formatter/html.ex` (the only `:main` guard, which is
+   `"index"`). The sidebar's link and `:assets`' shape were confirmed
+   there too, as this paper had them.

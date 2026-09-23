@@ -40,6 +40,9 @@ defmodule WorkbenchIgniter.Features.Monitoring do
   def datasource_file, do: @datasource
 
   @impl true
+  def deps(_state), do: [{:prom_ex, "~> 1.12"}]
+
+  @impl true
   def task, do: "workbench.install.monitoring"
 
   @doc "Task metadata, exposed unchanged through the mix task shell."

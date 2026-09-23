@@ -1,7 +1,7 @@
 # Cartridge: exdoc
 
-ExDoc's documentation site for the project, with per-feature extra pages
-(the test suite report, the database diagram), served by the console.
+ExDoc's documentation site for the project, with the pages the other
+boxes write listed beside the modules, served by the console.
 
 * **Task**: `mix workbench.install.exdoc`
 * **Inserted by**: `wb.sh add exdoc`
@@ -23,22 +23,37 @@ controller and no environment for it, and the docs can be read with the
 app down. Anyone running the workbench has the full documentation one
 click away, always matching the version of the code they are on.
 
-The site is also where the other features surface what they produce,
-making it the project's reading hub: the README and changelog, the coding
-style guide ([guidelines](../guidelines/)), the database diagram that
-`enhancements` generates, and the test and coverage reports that
-`mix cover` refreshes. A new team member can onboard from a single place
-instead of chasing scattered documents.
+The site is also where the other boxes surface what they produce,
+making it the project's reading hub: the README, the changelog
+([changelog](../changelog/)), the test suite report
+([coverage](../coverage/)'s `mix cover`) and the database's page
+([dbschema](../dbschema/)). A new team member can onboard from a single
+place instead of chasing scattered documents.
+
+**A page is listed when its file has an owner.** That is the rule the
+options follow: `--changelog` and `--coverage` build on the box that
+writes the file and are refused without it, and `--readme` reads the
+file, since no box writes a README. A page whose file is not there yet
+is written **commented out** — the slot where it goes — because
+`mix docs` stops on an extra whose file is missing and never reads a
+comment. A box that opens a file later lists its own page.
 
 ## What it installs
 
-* Dep `{:ex_doc, "~> 0.38", only: :dev, runtime: false}`.
+* Dep `{:ex_doc, "~> 0.40", only: :dev, runtime: false}`. Since 0.40
+  `mix docs` writes three formats into `doc/`: the HTML site the
+  console serves, a Markdown tree and `llms.txt` — its table of
+  contents for whoever reads the project with a language model — and
+  the EPUB it always wrote. They are ExDoc's defaults and the box
+  leaves them as its author set them; `doc/` is gitignored, and the
+  door still opens `index.html`.
 * `mix.exs`: `name` — the one it has, or the app's name in words,
   `lorem_ipsum` as `Lorem Ipsum` —, `source_url` — the one it has, or
   the `origin` of the project's own git repository, or a placeholder
-  commented out until it is filled in —
-  and the full `docs` section (assets,
-  feature-conditional extras and groups, regex-based module groups).
+  commented out until it is filled in — and the whole `docs` section:
+  the assets copied into the site, the extras and their groups (each
+  live or commented, per the rule above), and the module groups the
+  preset writes as functions of `mix.exs`.
 * With `--homepage-url`, the website the sidebar's name and logo link
   to; without it the line is written commented, a placeholder to fill
   in, as `source_url` is, and until then they open the docs' main page,

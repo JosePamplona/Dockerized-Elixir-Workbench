@@ -21,6 +21,9 @@ defmodule WorkbenchIgniter.Features.Auth0 do
       "2026-09-20: the Phoenix line's sign-in, and it needs an outside account — on Ash it is `ash --auth password`"
 
   @impl true
+  def deps(_state), do: [{:auth0_jwks, "~> 0.3"}]
+
+  @impl true
   def task, do: "workbench.install.auth0"
 
   # The User schema builds on the MyApp.Schema base that enhancements

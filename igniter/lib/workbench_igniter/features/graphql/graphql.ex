@@ -16,6 +16,14 @@ defmodule WorkbenchIgniter.Features.Graphql do
   def archived, do: "2026-09-20: the Phoenix line's API — on Ash it is `ash --api graphql`"
 
   @impl true
+  def deps(_state),
+    do: [
+      {:absinthe, "~> 1.7"},
+      {:absinthe_plug, "~> 1.5"},
+      {:absinthe_error_payload, "~> 1.1"}
+    ]
+
+  @impl true
   def task, do: "workbench.install.graphql"
 
   @impl true

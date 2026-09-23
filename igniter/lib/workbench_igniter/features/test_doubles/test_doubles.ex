@@ -67,6 +67,20 @@ defmodule WorkbenchIgniter.Features.TestDoubles do
   @doc "The dependency each double is installed as, untyped: `%{\"mimic\" => {:mimic, …}}`."
   def deps, do: Map.new(@doubles, &{&1.name, &1.dep})
 
+  # What each double is, and what `--type-check` asks for instead of
+  # Mox: Hammox wraps it. `:any` is every package the box may bring.
+  @impl true
+  def deps(:any), do: Enum.map(@doubles, & &1.dep) ++ [@typed_mox]
+
+  def deps(state) do
+    doubles = List.wrap(state[:double])
+    typed? = state[:type_check] == true
+
+    for %{name: name, dep: dep} <- @doubles, name in doubles do
+      if name == "mox" and typed?, do: @typed_mox, else: dep
+    end
+  end
+
   @impl true
   def task, do: "workbench.install.test_doubles"
 

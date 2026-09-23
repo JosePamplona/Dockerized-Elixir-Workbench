@@ -97,6 +97,10 @@ defmodule WorkbenchIgniter.Features do
       # The state a requirement asks for, by name (ecto with database
       # postgres); `%{}` when the names are enough.
       conditions: WorkbenchIgniter.Feature.conditions(feature),
+      # What it puts in the project's mix.exs, every package it may
+      # bring (`deps/1` with `:any`): the shelf shows it before anybody
+      # inserts anything.
+      deps: Enum.map(feature.deps(:any), &dep/1),
       # The cartridges its installer inserts along, off the `composes`
       # its `info/2` declares to Igniter (health_endpoint brings mock in for
       # its tests): the other way a cartridge stands on another, and
@@ -363,6 +367,17 @@ defmodule WorkbenchIgniter.Features do
   defp format(nil), do: nil
   defp format({:integer, %Range{first: first, last: last}}), do: "integer #{first}..#{last}"
   defp format(name) when is_atom(name), do: to_string(name)
+
+  # A dependency as the catalog carries it: the package, what it is
+  # pinned to, and the options the tuple gives (`only`, `runtime`).
+  defp dep({name, requirement}), do: %{name: to_string(name), requirement: requirement, opts: %{}}
+
+  defp dep({name, requirement, opts}),
+    do: %{
+      name: to_string(name),
+      requirement: requirement,
+      opts: Map.new(opts, fn {k, v} -> {k, inspect(v)} end)
+    }
 
   defp condition(nil), do: nil
   defp condition({:with, value}), do: %{with: value}

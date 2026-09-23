@@ -10,6 +10,20 @@ Backfilled at the version below, its first: the cartridge shipped
 before a changelog was part of the anatomy, and gets one on its next
 change, as the features index says.
 
+## v0.10.0 - (2026-09-22)
+
+### Changed
+
+- **`--ignore-files` takes the groups this box knows, and no other
+  value.** It also took a path of the reader's own, which made the form
+  offer a free text field beside the four groups for a value the box
+  could neither check nor explain — an entry of `skip_files` is a
+  regex, and a regex the box did not write is one it cannot say
+  anything about. A value that is not a group is refused now, naming
+  them; a project that wants another path out of the report edits its
+  own `coveralls.json`, and `state/1` still reads that path back as the
+  path it is.
+
 ## v0.9.0 - (2026-09-22)
 
 ### Changed

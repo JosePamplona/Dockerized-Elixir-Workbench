@@ -32,7 +32,7 @@ defmodule WorkbenchIgniter.Features.ExdocTest do
 
       mix_exs = igniter.assigns[:test_files]["mix.exs"]
 
-      assert mix_exs =~ ~s|{:ex_doc, "~> 0.38", only: :dev, runtime: false}|
+      assert mix_exs =~ ~s|{:ex_doc, "~> 0.40", only: :dev, runtime: false}|
       assert mix_exs =~ ~s|name: "Lorem Ipsum"|
       assert mix_exs =~ ~s|source_url: "https://github.com/acme/lorem"|
       assert mix_exs =~ ~s|authors: ["acme"]|
@@ -326,6 +326,24 @@ defmodule WorkbenchIgniter.Features.ExdocTest do
       assert state.(phx_test_project(), []).readme == true
       # The slot is no listing: the site has no such page yet.
       assert state.(Igniter.rm(phx_test_project(), "README.md"), []).readme == false
+
+      # The report page, both ways: the box that writes it is in, and
+      # the site was told to list it or was not.
+      with_report =
+        phx_test_project()
+        |> Igniter.compose_task("workbench.install.test_doubles", [])
+        |> apply_igniter!()
+        |> Igniter.compose_task("workbench.install.coverage", ["--md-report"])
+        |> apply_igniter!()
+
+      assert state.(with_report, ["--coverage"]).coverage == true
+      assert state.(with_report, []).coverage == false
+
+      # The logo and the name, which the mark alone does not say.
+      assert state.(phx_test_project(), ["--app-logo"]).app_logo == true
+      assert state.(phx_test_project(), []).app_logo == false
+      assert state.(phx_test_project(), ["--project-name", "Lorem"]).project_name == "Lorem"
+      assert state.(phx_test_project(), []).project_name == "Test"
     end
 
     test "the README opens the site, unless --no-readme leaves it out" do

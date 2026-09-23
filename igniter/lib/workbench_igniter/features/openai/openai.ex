@@ -20,6 +20,9 @@ defmodule WorkbenchIgniter.Features.Openai do
     do: "2026-09-20: it needs an outside account, which a portfolio project cannot carry"
 
   @impl true
+  def deps(_state), do: [{:finch, "~> 0.18"}]
+
+  @impl true
   def task, do: "workbench.install.openai"
 
   # Assistants belong to users: what it installs builds on the Accounts

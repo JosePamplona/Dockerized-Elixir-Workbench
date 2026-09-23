@@ -324,6 +324,17 @@ which cartridges have one and why.
 * `option_docs/0` - one line per option: the task's "## Options"
   section is rendered from it (`WorkbenchIgniter.Feature.options_doc/1`
   in the task's `@moduledoc`), and so is the help beside a form field.
+* `deps/1` - the packages the box puts in the project's `mix.exs`, as
+  the tuples the installer writes. Given the project's state it answers
+  the ones that project carries of it (test_doubles' `--double mimic`
+  is one package, `mimic,mox` two); given `:any`, every package it may
+  bring, which is what the shelf shows **before** anybody inserts it.
+  The suite reads each installer's source and holds the two together,
+  so a package added to an installer and not declared fails the build
+  — which is also how the table below stops drifting. What a project
+  *pins* and what its lock *resolved* are not here: those are the
+  project's own, read off `mix.exs` and `mix.lock` by
+  `mix workbench.status`, which puts them beside this.
 * `formats/0` - the shape a string option's value has to have, where
   the type cannot say it: `:url` (exdoc's repository and website,
   guidelines' page), `:version` (changelog's first release),

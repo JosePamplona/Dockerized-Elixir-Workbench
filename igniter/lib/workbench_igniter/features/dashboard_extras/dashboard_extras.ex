@@ -43,6 +43,14 @@ defmodule WorkbenchIgniter.Features.DashboardExtras do
   @doc "The extras dependency for each of ecto's databases that has one."
   def extras, do: @extras
 
+  # LiveDashboard's Ecto Stats needs the extras package of the database
+  # the project is on, which is ecto's state and not this box's — and
+  # this box takes no option, so its own state says nothing. It answers
+  # the three that exist, and which one the project carries is read off
+  # the project's own deps.
+  @impl true
+  def deps(_state), do: Map.values(@extras)
+
   @impl true
   def task, do: "workbench.install.dashboard_extras"
 

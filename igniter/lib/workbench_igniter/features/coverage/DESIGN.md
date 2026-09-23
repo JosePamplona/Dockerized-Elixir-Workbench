@@ -1,23 +1,28 @@
 # coverage — Design
 
-Revision: cartridge v0.4.0 (2026-09-21)
+Revision: cartridge v0.10.0 (2026-09-22)
 
 ## Abstract
 
 Coverage for a workbench project: the ExCoveralls dependency, a
-`coveralls.json` the project owns, an HTML report the cartridge plants
-as a *template* in the project's own tree, a `mix cover` task that folds
-the numbers into the documentation, and — with `--githook` — the suite
-run before every commit.
+`coveralls.json` the project owns, and two reports — the HTML one
+ExCoveralls renders from a template this box plants in the project's
+own tree, and, with `--md-report`, the Markdown one `mix cover` writes
+at the project's root for whoever reads the repository. With
+`--githook`, the suite runs before every commit.
 
-Four decisions carried the box, and each had a live alternative. The
+Five decisions carried the box, and each had a live alternative. The
 first is why a dependency at all, when Elixir has had line coverage
-built in for years. The second is that the report is planted as source
-the project may edit, in one of two themes, instead of being served from
-the cartridge. The third is that what is left out of the report is
-*read off the project* rather than asked. The fourth is where the
-pre-commit line lives, which is the same answer credo's box gives from
-the other side.
+built in for years. The second is that the HTML report is planted as
+source the project may edit, in one of two themes, instead of being
+served from the cartridge. The third is that what the report leaves out
+is *asked*, in groups the box knows and can read back, and that only
+the paths the project actually has are written. The fourth is that the
+Markdown report is named and owned here — the option says what it
+writes (`--md-report`), not who reads it, and the page it leaves is
+this box's file — while whether a documentation site *lists* that page
+belongs to the site. The fifth is where the pre-commit line lives,
+which is the same answer credo's box gives from the other side.
 
 ## 1. Problem
 
@@ -48,6 +53,17 @@ module that exports `start/2`" [1].
 So the platform gives a percentage per module in the terminal, a
 threshold, and a non-zero exit below it. What it does not give is a
 report anybody outside the terminal can read.
+
+**The library is dormant, and that is a fact of the choice.** Its last
+release is 0.18.5 of 2025-01-26, and its repository's last commit is
+the same day: about twenty months of silence when this was checked
+against hex.pm on 2026-09-23 [6]. The pin `~> 0.18` is therefore
+current and likely to stay current for the wrong reason. It does not
+change the decision — the library works, its output is a file the
+project owns, and nothing here depends on it growing — but it is why
+§5 keeps the exit written down: what the box installs of it is a
+dependency, a `coveralls.json` and a template, and a project that ever
+had to leave would keep all three as its own files.
 
 **ExCoveralls is such a tool module.** 0.18.1 (parroty, read 2026-09-20
 from `deps/excoveralls` in the workspace): "An Elixir library that
@@ -86,9 +102,12 @@ number is a recommendation anybody defends; 80 is this cartridge's, and
 ## 3. Design
 
 **ExCoveralls, and not the built-in `--cover`.** The platform's coverage
-is a terminal summary. This box exists for the two things a summary
-cannot be: a page a reviewer opens on a link, and a file a pipeline
-keeps. `mix test --cover` would answer the *measurement* and leave the
+is a terminal summary — and it has grown: `:test_coverage` today takes
+`:summary` with its `:threshold`, `:ignore_modules`, `:export` and
+`:output` [1], which is the gate and the exclusion list this box also
+writes. The overlap is real and worth saying plainly. What the
+platform still does not give is the two things a summary cannot be: a
+page a reviewer opens on a link, and a file a pipeline keeps. `mix test --cover` would answer the *measurement* and leave the
 report to be written by hand in every project the workbench makes, which
 is exactly the plumbing a cartridge is for. The dependency is
 `{:excoveralls, "~> 0.18", only: :test}`, and `test_coverage: [tool:
@@ -173,10 +192,16 @@ Three rules keep it honest:
   it is written as asked, except `components`, whose
   `components/layouts.ex` witnesses it — the reading of the project
   that `--interface` used to do badly, kept where it belongs.
-* **A path of the reader's own is written as it is**, and read back as
-  itself, because `skip_files` entries are regexes matched against each
-  file's path [2]: the box has no better idea than the reader about
-  `lib/my_app/legacy`.
+* **The list is closed** (v0.10.0). It took a path of the reader's own
+  too, written as given — a fifth kind of value the form had to offer
+  as a free text field beside the four groups, and one the box could
+  neither check nor explain: `skip_files` entries are regexes [2], and
+  a regex the box did not write is a regex it cannot say anything
+  about. What the box offers is what it knows how to build and read
+  back; a project that wants another path out of the report edits its
+  own `coveralls.json`, which is its file, and `state/1` still reads
+  that path back as the path it is — the reading of the project, which
+  never depended on the option.
 
 **What is not a group**, and why: `priv/repo/migrations`, which several
 projects list [7]. Migrations are compiled by `Ecto.Migrator` while
@@ -315,14 +340,22 @@ one-shot action always does.
 
 ## 4. Evaluation
 
-Verified in the cartridge's suite: the dependency and the `mix.exs`
-entries; `coveralls.json` with its defaults, its output dir, its
-template path and the two `skip_files` entries that vary; the untruncated
-column width; both themes planted from their directories and an unknown
-theme refused; `--md-report` planting the task, its formatter, its tests,
-the Mimic dependency and the cartridge's block of the test helper, with
-`TESTING.md` gitignored; the no-op notice on a second run; the recipe
-`chiefs_setup` composes it with. For `--githook`: the precommit cartridge
+Verified in the cartridge's suite, option by option and both ways:
+the dependency and the `mix.exs` entries; `coveralls.json` with its
+defaults, its output dir and its template path; the minimum given, the
+minimum unasked and a minimum that is not a whole percentage refused;
+the file column given, unasked and refused outside 40..999; each group
+of `--ignore-files` written with only the paths the project has, `none`
+counting everything, a value that is not a group refused, and the state
+read back — groups as groups, and a path the project added to its own
+`coveralls.json` as the path it is; both themes planted from their
+directories and an unknown theme refused; `--md-report` planting the
+task, its formatter, its tests, the page that waits and the block of
+the test helper, with `TESTING.md` gitignored — and, without it, none
+of that and no doubles asked for; the refusal when test_doubles is not
+in, or is in without Mimic; a second run planting the task the first
+left out; the no-op notice; the recipe `chiefs_setup` composes it
+with. For `--githook`: the precommit cartridge
 coming with it, the block and its line, the block being born below the
 divider, `state/1` saying it back, a second run adding it to a project
 installed without it, and an eject leaving credo's block and the box's
@@ -352,6 +385,13 @@ measurement.
   the app's folder" [2]. The workbench makes single-app projects, so the
   cartridge writes one `coveralls.json` at the root and says nothing
   about umbrellas.
+* **The library has not shipped since January 2025.** Nothing here
+  depends on it changing, and its output is the project's own file, so
+  the exit is cheap if one is ever needed: the project keeps its
+  `coveralls.json`, its template and its `mix cover` task, and what
+  changes is the tool that reads them. Elixir's own `:test_coverage`
+  has meanwhile grown a threshold and an `:ignore_modules` (§3), which
+  is where that exit would begin.
 * **The threshold is one number for the whole project**, which is what
   ExCoveralls offers; there is no per-module minimum, so a project with
   one well-tested half sits above the line while the other half is
@@ -379,8 +419,13 @@ measurement.
 6. ExCoveralls — README, `skip_files`: "Path should contain a string
    that can be compiled to Elixir regex", matched against the file's
    path; the default `coveralls.json` shipped in
-   `lib/conf/coveralls.json` carries no `skip_files` at all. Read
-   2026-09-22 from the repository.
+   `lib/conf/coveralls.json` carries no `skip_files` at all, and its
+   `file_column_width` is 40. Read 2026-09-22 from the repository, and
+   checked again on 2026-09-23 against hex.pm and the sources by a
+   subagent of this session: the pattern is matched with
+   `Regex.match?/2` against the coverage entry's `:name`, the relative
+   source path (`lib/excoveralls/stats.ex`); the latest release is
+   0.18.5 of 2025-01-26, which is also the repository's last commit.
 7. What Phoenix projects skip, read 2026-09-22: dwyl's phoenix-chat
    example (`test/`, `application.ex`, `<app>_web.ex`, `telemetry.ex`,
    `components/core_components.ex`, `channels/user_socket.ex`) and

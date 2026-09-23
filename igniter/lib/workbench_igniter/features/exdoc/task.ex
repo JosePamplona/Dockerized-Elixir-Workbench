@@ -10,7 +10,7 @@ defmodule Mix.Tasks.Workbench.Install.Exdoc do
 
   Igniter port of the workbench `implement_exdoc` feature:
 
-  * adds `{:ex_doc, "~> 0.38", only: :dev, runtime: false}` to the deps
+  * adds `{:ex_doc, "~> 0.40", only: :dev, runtime: false}` to the deps
   * configures `name`, `source_url` and the full `docs` section in
     `mix.exs` (assets, extras, groups and regex-based module groups),
     plus the `before_closing_*_tag` helper functions

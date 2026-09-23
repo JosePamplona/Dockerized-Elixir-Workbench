@@ -32,6 +32,9 @@ defmodule WorkbenchIgniter.Features.Credo do
   def check_command, do: @check
 
   @impl true
+  def deps(_state), do: [@dep]
+
+  @impl true
   def task, do: "workbench.install.credo"
 
   @doc "Task metadata, exposed unchanged through the mix task shell."

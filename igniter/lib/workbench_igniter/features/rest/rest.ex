@@ -49,6 +49,9 @@ defmodule WorkbenchIgniter.Features.Rest do
   def archived, do: "2026-09-20: the Phoenix line's API — on Ash it is `ash --api json_api`"
 
   @impl true
+  def deps(_state), do: [{:open_api_spex, "~> 3.21"}]
+
+  @impl true
   def task, do: "workbench.install.rest"
 
   @impl true

@@ -312,6 +312,25 @@ defmodule WorkbenchIgniter.Feature do
   @callback console() :: keyword()
 
   @doc """
+  The dependencies the cartridge puts in the project's `mix.exs`, as
+  the tuples `Igniter.Project.Deps.add_dep/3` is given — the same shape
+  the installer writes, so the declaration and the writing cannot drift
+  (the suite reads the installer's source and holds them together).
+
+  Asked with the project's state (`state/1`) it answers the ones that
+  project carries of it: test_doubles' `--double mimic,mox` is two
+  packages and `--double mox` is one. Asked with `:any` it answers
+  every package it may ever bring, which is what the shelf shows for a
+  box nobody has inserted yet — *this is what it would add*. A
+  cartridge that brings none says nothing, the default.
+
+  What a project actually pins and what its lock file resolved are not
+  here: those are the project's own, read off `mix.exs` and
+  `mix.lock` by `mix workbench.status`, which puts them beside this.
+  """
+  @callback deps(state :: map() | :any) :: [tuple()]
+
+  @doc """
   The compose services the cartridge needs the workspace to run, by
   name, given what the project carries of it (`state/1`): the workbench
   bakes them into the workspace's compose (`mix workbench.compose`,
@@ -415,6 +434,9 @@ defmodule WorkbenchIgniter.Feature do
       def console, do: []
 
       @impl WorkbenchIgniter.Feature
+      def deps(_state), do: []
+
+      @impl WorkbenchIgniter.Feature
       def services(_state), do: []
 
       @impl WorkbenchIgniter.Feature
@@ -424,6 +446,7 @@ defmodule WorkbenchIgniter.Feature do
       def ejected(_root), do: []
 
       defoverridable requires: 0,
+                     deps: 1,
                      services: 1,
                      compose: 1,
                      ejected: 1,

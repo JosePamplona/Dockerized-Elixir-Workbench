@@ -170,6 +170,58 @@ defmodule WorkbenchIgniter.CatalogTest do
       assert Enum.all?(exdoc, &(not &1.detected or is_nil(&1.default)))
     end
 
+    # A box says what it puts in the project's mix.exs, and the source
+    # of its installer is the check: every package an `add_dep` names
+    # is declared, and nothing is declared that the installer does not
+    # write. The list in the features index is read the same way.
+    test "every dependency an installer adds is one the cartridge declares" do
+      for feature <- Features.catalog(), not feature.pending?() do
+        source = feature.__info__(:compile)[:source] |> File.read!()
+
+        written =
+          ~r/add_dep\(\s*(?:igniter,\s*)?\{:(\w+),/
+          |> Regex.scan(source)
+          |> Enum.map(fn [_, name] -> name end)
+          |> Enum.sort()
+          |> Enum.uniq()
+
+        declared = for dep <- feature.deps(:any), do: to_string(elem(dep, 0))
+
+        assert written -- declared == [],
+               "#{feature.name()} adds #{inspect(written -- declared)}, which deps/1 does not declare"
+      end
+    end
+
+    test "what a box may bring, and what a project's own state brings of it" do
+      # Every package the box may ever put in, for a shelf that shows it
+      # before anybody inserts anything.
+      assert Features.Coverage.deps(:any) == [{:excoveralls, "~> 0.18", only: :test}]
+      assert Features.Exdoc.deps(:any) == [{:ex_doc, "~> 0.40", only: :dev, runtime: false}]
+
+      assert Features.Credo.deps(:any) == [
+               {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
+             ]
+
+      assert Features.DbAdmin.deps(:any) == []
+
+      # And what the project carries of it, where an option decides.
+      doubles = Features.TestDoubles
+
+      assert doubles.deps(:any) == [
+               {:mimic, "~> 2.0", only: :test},
+               {:mox, "~> 1.2", only: :test},
+               {:hammox, "~> 1.0", only: :test}
+             ]
+
+      assert doubles.deps(%{double: ["mimic"], type_check: false}) ==
+               [{:mimic, "~> 2.0", only: :test}]
+
+      assert doubles.deps(%{double: ["mimic", "mox"], type_check: true}) ==
+               [{:mimic, "~> 2.0", only: :test}, {:hammox, "~> 1.0", only: :test}]
+
+      assert doubles.deps(%{double: [], type_check: false}) == []
+    end
+
     # The one cross-cutting check: the shapes the manifest declares are
     # checked before anything is written, in one place, for every box.
     test "every installer's shell goes through the format check" do
@@ -493,11 +545,11 @@ defmodule WorkbenchIgniter.CatalogTest do
       ],
       "coverage" => [
         {~w(--minimum-coverage 90 --file-column-width 128
-            --ignore-files mix_tasks,lib/probe/legacy --md-report --html-theme exdoc-ish --githook),
+            --ignore-files mix_tasks,open_api --md-report --html-theme exdoc-ish --githook),
          %{
            minimum_coverage: "90",
            file_column_width: "128",
-           ignore_files: ~w(mix_tasks lib/probe/legacy),
+           ignore_files: ~w(mix_tasks open_api),
            md_report: true,
            html_theme: "exdoc-ish",
            githook: true

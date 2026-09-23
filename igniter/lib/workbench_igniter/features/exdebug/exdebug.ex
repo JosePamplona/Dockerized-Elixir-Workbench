@@ -22,6 +22,9 @@ defmodule WorkbenchIgniter.Features.Exdebug do
   def dep, do: @dep
 
   @impl true
+  def deps(_state), do: [@dep]
+
+  @impl true
   def task, do: "workbench.install.exdebug"
 
   @doc "Task metadata, exposed unchanged through the mix task shell."

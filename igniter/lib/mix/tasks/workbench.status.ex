@@ -21,7 +21,11 @@ defmodule Mix.Tasks.Workbench.Status do
   * `--json` - One JSON object, `{"app": ..., "phx": {...}, "cartridges": [...],
     "services": [...], "birth": {...} | null, "deployments": {...}}`
     — each cartridge carries `detected`, the defaults it would read off
-    this project for the options it does not fix (`detect/1`); `services` are the compose services the installed cartridges ask
+    this project for the options it does not fix (`detect/1`), and
+    `deps`, what it put in `mix.exs`: the box's own pin (`declared`),
+    what the project asks for today (`pinned`) and what `mix.lock`
+    resolved (`locked`), so an insert older than the box reads as the
+    difference it is; `services` are the compose services the installed cartridges ask
     the workspace for (`postgres`, `pgadmin`, `grafana`…), what `mix workbench.compose`
     bakes in, and each installed cartridge carries `compose`: the services
     it brings, by their name in the file, with the port each `listens` on
@@ -96,6 +100,8 @@ defmodule Mix.Tasks.Workbench.Status do
     {cartridges, igniter} = Features.status(Igniter.new())
     {services, igniter} = Features.services(igniter)
 
+    cartridges = with_deps(cartridges)
+
     # What each installed cartridge brings to the compose, asked of the
     # cartridge (`compose/1`): nobody downstream knows a service by name.
     cartridges =
@@ -135,6 +141,50 @@ defmodule Mix.Tasks.Workbench.Status do
       deployments: Deployments.read(File.cwd!(), services)
     }
   end
+
+  # What each installed cartridge put in the project's mix.exs, beside
+  # what the project does with it: `declared` is the box's own pin
+  # (`deps/1`, given what the project carries of its options), `pinned`
+  # is what mix.exs asks for today — the two differ on a project whose
+  # insert is older than the box — and `locked` is the version
+  # `mix.lock` resolved, which is the one the project runs. Both are
+  # read here, where this task runs inside the project, and nowhere
+  # else: the catalog carries only what a box declares.
+  defp with_deps(cartridges) do
+    pinned =
+      Map.new(Mix.Project.config()[:deps] || [], fn dep ->
+        {elem(dep, 0), if(tuple_size(dep) > 1 and is_binary(elem(dep, 1)), do: elem(dep, 1))}
+      end)
+
+    locked = Mix.Dep.Lock.read()
+
+    Enum.map(cartridges, fn cartridge ->
+      feature = Enum.find(Features.catalog(), &(&1.name() == cartridge.name))
+
+      brought = if cartridge.installed and feature, do: feature.deps(cartridge.state), else: []
+
+      Map.put(cartridge, :deps, for(dep <- brought, do: dep_reading(dep, pinned, locked)))
+    end)
+  end
+
+  defp dep_reading(dep, pinned, locked) do
+    name = elem(dep, 0)
+
+    %{
+      name: to_string(name),
+      declared: if(is_binary(elem(dep, 1)), do: elem(dep, 1)),
+      pinned: Map.get(pinned, name),
+      locked: locked_version(locked[name])
+    }
+  end
+
+  # The lock's entry for a package from hex: `{:hex, :ex_doc, "0.40.4", …}`.
+  defp locked_version(entry) when is_tuple(entry) and tuple_size(entry) > 2 do
+    version = elem(entry, 2)
+    if is_binary(version), do: version
+  end
+
+  defp locked_version(_entry), do: nil
 
   defp birth_line(nil),
     do: "Born: no first commit to read — not a project born in a workspace."

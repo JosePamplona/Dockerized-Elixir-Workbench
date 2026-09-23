@@ -32,9 +32,9 @@ The cartridge also writes the report as **Markdown**: `mix cover`
 project's root — execution result board, coverage table and per-module
 sections in one page — which any reader of the repository opens, and
 which a documentation site lists if the project has one (that listing
-is [exdoc](../exdoc/)'s `--coverage`, not this box's business). Test results stop being something only
-the person who ran them sees and become part of what the project shows
-about itself.
+is [exdoc](../exdoc/)'s `--coverage`, not this box's business). Test
+results stop being something only the person who ran them sees and
+become part of what the project shows about itself.
 
 ## What it installs
 
@@ -84,12 +84,12 @@ instead of skipped along with the rest.
   build the report's own — so a cut path is a file the report loses. A
   project with deep module paths asks for more; ExCoveralls' own
   default is 40.
-* `--ignore-files` - What the report leaves out, comma-separated. Each
-  value is a group below or a path of your own, which is a regex
-  excoveralls matches against each file's path
-  (`--ignore-files boilerplate,lib/my_app/legacy`). `deps` and `test`
-  go always. Default: `boilerplate,components`; `none` counts
-  everything the project compiles.
+* `--ignore-files` - What the report leaves out, comma-separated: the
+  groups below, and no other value. `deps` and `test` go always.
+  Default: `boilerplate,components`; `none` counts everything the
+  project compiles. A path of your own goes in the project's own
+  `coveralls.json` — an entry there is a regex excoveralls matches
+  against each file's path, and the box reads it back as what it is.
 
   | Group | What it leaves out | Why |
   | --- | --- | --- |

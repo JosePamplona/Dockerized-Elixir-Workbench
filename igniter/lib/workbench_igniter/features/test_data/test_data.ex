@@ -38,6 +38,14 @@ defmodule WorkbenchIgniter.Features.TestData do
   @doc "The dependencies of each line: `:ecto` and `:ash`."
   def deps, do: %{ecto: [@ex_machina, @faker], ash: [@faker]}
 
+  # The line the project is on decides — Ash generates its records and
+  # only Faker rides along; on Ecto, ExMachina builds them — and the
+  # box takes no option, so its state cannot say which. It answers both
+  # packages, and which of them the project carries is read off the
+  # project's own deps.
+  @impl true
+  def deps(_state), do: deps().ecto |> Enum.concat(deps().ash) |> Enum.uniq()
+
   @impl true
   def task, do: "workbench.install.test_data"
 

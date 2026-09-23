@@ -1414,6 +1414,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **Birth's cartridge column closes the row at the right edge,** as
+  the Mix paper's brought by does.
+
 - **The daemon's box is headed Specs,** as the Mix paper heads what
   `def project` says: the reader knows what the box is before reading it.
 

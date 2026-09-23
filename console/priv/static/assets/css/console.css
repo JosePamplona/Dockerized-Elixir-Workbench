@@ -1555,6 +1555,8 @@ form.insert.locked .opt input{opacity:.55}
 .record table.rows.flags th a.src:hover,.record table.rows.flags th a.src:focus-visible{text-decoration:underline;outline:none}
 .record table.rows.flags td.doc{font-family:var(--serif);font-size:13.5px;line-height:1.45;color:var(--muted)}
 .record table.rows.flags td:last-child{color:inherit}
+/* The cartridge closes the row at the right edge, as Mix's brought by does. */
+.record table.rows.flags th.by,.record table.rows.flags td.by{text-align:right}
 /* A fact drawn as a checkbox, never a control: the reader cannot toggle it.
    No `disabled` — that dims it as a control not yet usable — and no inline
    handler, which the CSP would not run: the input takes no pointer and no

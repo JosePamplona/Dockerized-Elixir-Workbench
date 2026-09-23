@@ -153,7 +153,7 @@ defmodule ConsoleWeb.RecordSheet do
                 }
               >in phx.new's words</a>
             </th>
-            <th>cartridge</th>
+            <th class="by">cartridge</th>
           </tr>
         </thead>
         <tbody>
@@ -184,7 +184,9 @@ defmodule ConsoleWeb.RecordSheet do
               </.chip>
             </td>
             <td class="doc">{f.doc}</td>
-            <td><.cart_ref :if={f.cartridge} name={f.cartridge} installed={f.installed} /></td>
+            <td class="by">
+              <.cart_ref :if={f.cartridge} name={f.cartridge} installed={f.installed} />
+            </td>
           </tr>
         </tbody>
       </table>

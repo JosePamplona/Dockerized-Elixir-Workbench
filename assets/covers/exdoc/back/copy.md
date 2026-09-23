@@ -2,38 +2,50 @@
 
 Set in the front's register (hospitable). Every string here is
 composited as typeset text, never generated, so it can be any size and
-is exact.
+is exact. The blurb comes from the cartridge's NEED.md — its sentence,
+its Before, its After and its Not for; the features and the
+requirements from its README and DESIGN.md — the decisions with what
+each one buys; the install line from its README. The version is not
+here: the tool reads it off the cartridge's CHANGELOG.md. The badge is
+the front's.
 
 ## Headline
 
-THE CODE EXPLAINS ITSELF
+OPEN ALL HOURS
 
 ## Blurb
 
-ExDoc reads the docs written alongside the code — module and function
-docs — plus a set of curated pages, and renders them as a browsable,
-searchable site. The app serves it itself while you develop, at
-`/dev/docs`, always matching the code you are on. A new team member
-onboards from one place.
+Your modules carry docs nobody opens, and the pages worth reading live
+nowhere. This cartridge sets ExDoc up for an application: `mix docs`
+builds the site from the code itself, with the README, the changelog
+and the test report beside the modules, and the console opens it —
+whether the app is running or not. Publishing to HexDocs is another
+step.
 
 ## Features
 
-- `{:ex_doc, "~> 0.38"}` in the deps, dev only
-- Served by the app itself at `/dev/docs`
-- README, changelog, style guide, diagram, reports
+- Built from the code, so it never drifts
+- A page listed once its box writes it
+- Modules grouped by layer, or by Ash role
+- The console serves it; the project serves nothing
 
 ## Requirements
 
-REQUIRES: DOCKER, ONE WORKBENCH · ENABLED BY `--exdoc`
+REQUIRES: EX_DOC 0.40, IN DEV ONLY
+WRITES HTML, MARKDOWN AND EPUB
+
+## Install
+
+`./wb.sh add exdoc`
 
 ## Badge
 
-DEV ONLY
+3 FORMATS
 
 ## Screenshots
 
-1. `shot-1.png` — the site's home, at `/dev/docs`
-2. `shot-2.png` — a module page, read off the code
+1. `shot-1.png` — It opens on the README, every page listed.
+2. `shot-2.png` — The test report, one more page of the docs.
 
 ## Legal
 

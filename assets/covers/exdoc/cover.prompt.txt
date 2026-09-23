@@ -1,3 +1,31 @@
+MANUAL HERO. art/hero.jpg was made by the author in conversation with
+the image generator, and is the source: it cannot be regenerated, only
+continued. It started from the prompt at the foot of this file (the big
+box PC era, the university reading room, 2026-09-22), and what came back
+left the era block behind: a bright, warm-lit hall under a coffered
+vault, a city and airships through the far arch, faint circuit lines on
+the walls and the floor, and the lockup in a plain gilt serif instead of
+extruded fantasy capitals.
+
+--- log of the changes asked of the image, each one before its take ---
+
+(the turns of the first session were not kept here)
+
+--- second turn, with the padded canvas from covers.py pad ---
+
+The flat grey border around this picture is blank. Paint it by
+continuing the picture outward into it on every side, to the edges —
+the coffered vault continues above to the top edge, the dark navy front
+of the desk and the patterned blue carpet continue below to the bottom
+edge, and in the thin strip at each side the same things run on to the
+edge at the same heights: the vault, the arched windows, the gallery's
+balustrade, the bookcases and the carpet. Keep the picture inside
+exactly as it is, pixel for pixel and at its full size — the small
+"3 FORMATS" flash in its top right corner included — and add nothing
+new: no figure, no object, no lettering.
+
+--- the prompt it started from ---
+
 Mid-1990s PC game cover art. Dense oil-painted illustration in the
 fully-rendered style of the 256-colour era: deep chiaroscuro, heavy
 detail carried down into the shadows, dramatic single-source lighting,
@@ -9,59 +37,70 @@ illustration, and the illustration is all there is — not a product
 photograph, not a box or a board: no bevel, no lip, no rim of light, no
 edge, no shadow, no surface behind it, no margin of any colour around
 it. Proportions 4:5 portrait. Every position below is measured from
-the edges of the image.
+the edges of the image. The ground of the illustration, edge to edge,
+is one tone that reads clearly lighter or darker in value than Elixir
+violet (#4B275F).
 
-Hero illustration, dense oil painting: a vaulted library at night, one
-great oak reading desk in the foreground filling the lower half of the
-image, and on it one enormous open tome lit by one oil lamp standing at
-its right — the lamp the single source of light, the vault behind
-falling into chiaroscuro with the spines of shelved books carried down
-into the shadow as texture. On the tome's open pages, an illuminated
-diagram in red and gold ink: boxes joined by ruled lines, drawn as
-ornament, no words in it. Hanging from the desk's front edge on a
-chain, one brass plate engraved with the address
+Hero illustration, dense oil painting: the great reading room of an
+old university library at night, empty, with one place laid out for
+whoever comes in. The ground of the painting is the hall's deep warm
+brown-black shadow, edge to edge, far darker than violet.
 
-    /dev/docs
+The hall recedes straight away from the viewer to a vanishing point at
+0.50 of the width and 0.40 of the height down. Overhead, a coffered
+barrel vault of dark carved oak and plaster runs back into the dark,
+and from the top edge of the image down to a fifth of the height it is
+an even field of dark coffers across the whole width, low in detail,
+lit by nothing. Down both sides of the hall, from 0.20 to 0.62 of the
+height down, run two storeys of oak bookcases with a gallery and a
+turned wooden balustrade between them, packed with bound volumes that
+stand in bands of one colour each — a run of oxblood, a run of bottle
+green, a run of navy, a run of ochre — the gilt on their spines
+catching the light in small points. Above the bookcases, tall
+round-arched windows, three on each side, show the deep blue night.
+Down the middle of the hall, long oak reading tables stand in two rows,
+receding, each with a row of brass reading lamps with green glass
+shades, all of them dark.
 
-in the era's extruded lettering at foreground size, one line, a
-forward slash, the word dev, a forward slash, the word docs. The dark
-of the vault continues to the top edge of the image, the oak of the
-desk to the bottom edge, and the shadowed shelves to both side edges.
+The one light is the lamp on the nearest table: a brass reading lamp
+with a green glass shade, its shade centred at 0.34 of the width and
+0.52 of the height down, throwing a warm pool of light onto the
+tabletop and leaving the rest of the hall to fall away into the browns.
 
-Title lockup across the lower part of the image, over the oak of the
-desk's front: "EXDOC" set large in extruded fantasy lettering with a
-hard bevel, gold catching the lamp's light, centred on the width and
-two thirds of the width wide; and beneath it, in smaller capitals of
-the same lettering, the subtitle "ONE URL AWAY".
+The nearest table runs across the image from 0.10 to 0.90 of the
+width, its top surface at 0.62 of the height down, a wooden chair
+pulled out from it at the left as if for someone about to sit. At its
+centre, at 0.54 of the width, lies one great book open toward the
+viewer, 0.36 of the width across, its two pages bright in the lamplight
+and covered in fine grey lines of print too small to read, with one
+small engraved diagram on the right-hand page. Laid out beside it for
+the reader, three smaller volumes, each its own object: at 0.20 of the
+width, a closed ledger bound in dark red leather with a brass clasp; at
+0.80 of the width, a slim report bound in green cloth, lying open on a
+page of short horizontal bars in green ink; and at 0.68 of the width,
+just behind the great book, a folded sheet opened out, drawn with a
+plan of small rectangles joined by straight lines.
+
+The front of the table falls into deep shadow toward the bottom edge.
+The bottom fifth of the image is that shadow, low in detail, and the
+lockup sits on it.
+
+Title lockup across the lower part of the image, over that shadow:
+"EXDOC" on one line, set large in extruded fantasy capitals with a
+hard bevel, gilt, catching the lamp's warm light, centred on the width
+and three quarters of the width wide; and beneath it, in smaller
+capitals of the same lettering, the subtitle "READ FROM THE SOURCE".
 
 In the top right corner of the image, a small rectangular flash in the
-era's lettering, reading "DEV ONLY" in white capitals at foreground
-size on a vermilion ground.
+same lettering reading "3 FORMATS" at foreground size, its centre at
+0.84 of the width and 0.08 of the height down.
 
-In the bottom right corner of the image, printed on the cover, one
-small round vermilion flash carrying the white silhouette of a floppy
-disk and no words.
+The title, the subtitle and the flash are all the lettering in the
+image.
 
-The address on the plate, the title, the subtitle and the flash are
-all the lettering in the image.
+The top left of the artwork is composed as a quiet area: low detail,
+no focal element, an even field of tone — the dark coffers of the
+vault, far from the lamp.
 
-The top left of the image is composed as a quiet area: low detail, no
-focal element, the even dark of the vault.
-
-Palette: the ground of the composition, edge to edge, is one tone that
-reads clearly lighter or darker in value than Elixir violet (#4B275F);
-the violet appears in the composition in details, as a secondary
-colour, and not as the ground. CRT phosphor haze in the background.
 Every mark on the face is printed illustration or type, and the marks
 named above are all of them.
-Accent: vermilion ink (#D9432B), the red of the diagram and of the
-flashes.
-
---- second turn, with art/padded.jpg from covers.py pad ---
-
-The flat grey border around this picture is blank. Paint it by
-continuing the picture outward into it on every side, to the edges —
-the dark of the vault continues above to the top edge, the oak of the
-desk's front continues below to the bottom edge, and the shadowed
-shelves continue to both side edges. Keep the picture inside exactly
-as it is, and add nothing new: no figure, no object, no lettering.

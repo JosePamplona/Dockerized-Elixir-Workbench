@@ -9,7 +9,7 @@ Test coverage with ExCoveralls, the workbench HTML report and the
   [test_doubles](../test_doubles/) with Mimic, and `--githook` on
   [precommit](../precommit/).
 * **Options**: `[--ignore-files <g,…>]` `[--minimum-coverage <n>]`
-  `[--file-column-width <n>]` `[--theme <t>]` `[--md-report]` `[--githook]`
+  `[--file-column-width <n>]` `[--html-theme <t>]` `[--md-report]` `[--githook]`
 
 ## Description
 

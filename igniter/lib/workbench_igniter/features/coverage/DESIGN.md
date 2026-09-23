@@ -128,11 +128,10 @@ the `.eex` templates into `test/coverage/template/` and points
 in place. The reason is ownership: a report is a page with the project's
 name on it, and the templates are `.eex` whose tags belong to the target
 project, so they are planted verbatim. Two themes, one directory each:
-`exdoc-ish`, the default, which mimics the ExDoc pages — sidebar,
-light/dark, the same fonts — so the report reads as one more page of the
-project's documentation; and `custom`, the original workbench report,
-kept because it was the box's only face before the docs existed and a
-project already carrying it should not be told its report is wrong.
+`custom`, the original workbench report and the default (below, v0.9.0),
+which reads on its own wherever it is opened; and `exdoc-ish`, which
+mimics the ExDoc pages — sidebar, light/dark, the same fonts — so the
+report reads as one more page of the project's documentation.
 Adding a theme is adding a directory: `@themes` is the directory
 listing, `--html-theme` validates against it, and `themes/0` is what the
 console offers. The rejected alternative was one theme — the argument

@@ -92,20 +92,23 @@ defmodule ConsoleWeb.Cartridges do
     state = c["State"] || ""
     code = c["ExitCode"]
 
-    # Health is read only while the container runs: Docker stops probing
-    # a stopped one and keeps the last answer, so an app that crashed
-    # reads `unhealthy` next to its `Exited (1)`.
-    cond do
-      state == "running" and health == "healthy" -> {"healthy", "good"}
-      state == "running" and health == "starting" -> {"starting", "warn busy"}
-      state == "running" and health == "unhealthy" -> {"unhealthy", "bad"}
-      state == "running" -> {"running", "good"}
-      state == "exited" and code in [0, nil] -> {"exited", "off"}
-      state == "exited" -> {"exited #{code}", "bad"}
-      state in ["created", "paused", "restarting"] -> {state, "warn"}
-      true -> {state, "bad"}
-    end
+    reading(state, health, code)
   end
+
+  # Health is read only while the container runs: Docker stops probing
+  # a stopped one and keeps the last answer, so an app that crashed
+  # reads `unhealthy` next to its `Exited (1)`.
+  defp reading("running", "healthy", _code), do: {"healthy", "good"}
+  defp reading("running", "starting", _code), do: {"starting", "warn busy"}
+  defp reading("running", "unhealthy", _code), do: {"unhealthy", "bad"}
+  defp reading("running", _health, _code), do: {"running", "good"}
+  defp reading("exited", _health, code) when code in [0, nil], do: {"exited", "off"}
+  defp reading("exited", _health, code), do: {"exited #{code}", "bad"}
+
+  defp reading(state, _health, _code) when state in ["created", "paused", "restarting"],
+    do: {state, "warn"}
+
+  defp reading(state, _health, _code), do: {state, "bad"}
 
   @doc "Whether the app is up: an app container running, whichever deployment."
   def app_up?(nil), do: false

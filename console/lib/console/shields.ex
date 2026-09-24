@@ -267,65 +267,75 @@ defmodule Console.Shields do
 
   # css-color-converter's `fromString`, as far as red, green and blue:
   # a name, hex with its `#`, `rgb()` in its four spellings, `hsl()`.
-  defp rgb(colour) do
-    cond do
-      Map.has_key?(@css, colour) ->
-        @css[colour]
+  defp rgb(colour),
+    do: @css[colour] || hex6(colour) || hex3(colour) || rgb_fn(colour) || hsl_fn(colour)
 
-      m =
-          Regex.run(
-            ~r/^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})?$/,
-            colour
-          ) ->
-        m |> Enum.slice(1, 3) |> Enum.map(&String.to_integer(&1, 16)) |> List.to_tuple()
+  defp hex6(colour) do
+    case Regex.run(
+           ~r/^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})?$/,
+           colour
+         ) do
+      nil -> nil
+      m -> m |> Enum.slice(1, 3) |> Enum.map(&String.to_integer(&1, 16)) |> List.to_tuple()
+    end
+  end
 
-      m = Regex.run(~r/^#([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])?$/, colour) ->
-        m |> Enum.slice(1, 3) |> Enum.map(&String.to_integer(&1 <> &1, 16)) |> List.to_tuple()
+  defp hex3(colour) do
+    case Regex.run(~r/^#([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])?$/, colour) do
+      nil -> nil
+      m -> m |> Enum.slice(1, 3) |> Enum.map(&String.to_integer(&1 <> &1, 16)) |> List.to_tuple()
+    end
+  end
 
-      m =
-          Regex.run(
-            ~r/^rgba?\(\s*(\d+%?)\s*,\s*(\d+%?)\s*,\s*(\d+%?)(?:\s*,\s*(?:0|1|0?\.\d+|\d+%))?\s*\)$/,
-            colour
-          ) ||
-            Regex.run(
-              ~r/^rgba?\(\s*(\d+%?)\s+(\d+%?)\s+(\d+%?)(?:\s*\/\s*(?:0|1|0?\.\d+|\d+%))?\s*\)$/,
-              colour
-            ) ->
-        parts = Enum.slice(m, 1, 3)
-        percents = Enum.count(parts, &String.ends_with?(&1, "%"))
+  # `rgb()` and `rgba()`, with commas or with spaces and a slash.
+  defp rgb_fn(colour) do
+    m =
+      Regex.run(
+        ~r/^rgba?\(\s*(\d+%?)\s*,\s*(\d+%?)\s*,\s*(\d+%?)(?:\s*,\s*(?:0|1|0?\.\d+|\d+%))?\s*\)$/,
+        colour
+      ) ||
+        Regex.run(
+          ~r/^rgba?\(\s*(\d+%?)\s+(\d+%?)\s+(\d+%?)(?:\s*\/\s*(?:0|1|0?\.\d+|\d+%))?\s*\)$/,
+          colour
+        )
 
-        if percents in [0, 3] do
-          parts
-          |> Enum.map(fn part ->
-            {n, rest} = Integer.parse(part)
-            value = if rest == "%", do: trunc(n * 255 / 100), else: n
-            value |> min(255) |> max(0)
-          end)
-          |> List.to_tuple()
-        end
+    if m, do: channels(Enum.slice(m, 1, 3))
+  end
 
-      m =
-          Regex.run(
-            ~r/^hsla?\(\s*(\d+)(deg|rad|grad|turn)?\s*,\s*(\d+)%\s*,\s*(\d+)%(?:\s*,\s*(?:0|1|0?\.\d+|\d+%))?\s*\)$/,
-            colour
-          ) ->
-        [_, h, unit, s, l | _] = m
-        h = String.to_integer(h)
+  # Three numbers or three percentages, never a mix.
+  defp channels(parts) do
+    if Enum.count(parts, &String.ends_with?(&1, "%")) in [0, 3] do
+      parts |> Enum.map(&channel/1) |> List.to_tuple()
+    end
+  end
 
-        degrees =
-          case unit do
-            "rad" -> h * 180 / :math.pi()
-            "grad" -> h * 0.9
-            "turn" -> h * 360
-            _ -> h
-          end
+  defp channel(part) do
+    {n, rest} = Integer.parse(part)
+    value = if rest == "%", do: trunc(n * 255 / 100), else: n
+    value |> min(255) |> max(0)
+  end
 
-        hsl_to_rgb(degrees, String.to_integer(s), String.to_integer(l))
+  defp hsl_fn(colour) do
+    case Regex.run(
+           ~r/^hsla?\(\s*(\d+)(deg|rad|grad|turn)?\s*,\s*(\d+)%\s*,\s*(\d+)%(?:\s*,\s*(?:0|1|0?\.\d+|\d+%))?\s*\)$/,
+           colour
+         ) do
+      [_, h, unit, s, l | _] ->
+        hsl_to_rgb(
+          degrees(String.to_integer(h), unit),
+          String.to_integer(s),
+          String.to_integer(l)
+        )
 
-      true ->
+      nil ->
         nil
     end
   end
+
+  defp degrees(h, "rad"), do: h * 180 / :math.pi()
+  defp degrees(h, "grad"), do: h * 0.9
+  defp degrees(h, "turn"), do: h * 360
+  defp degrees(h, _unit), do: h
 
   defp hsl_to_rgb(h, s, l) do
     hp = h / 60
@@ -441,12 +451,7 @@ defmodule Console.Shields do
     has_label = label != "" or label_colour != nil
     label_colour = if has_label, do: label_colour || "#555", else: colour
 
-    {height, margin, shadow?} =
-      case style do
-        "plastic" -> {18, -10, true}
-        "flat" -> {20, 0, true}
-        "flat-square" -> {20, 0, false}
-      end
+    {height, margin, shadow?} = metrics(style)
 
     label_width = if label == "", do: 0, else: odd_width(label)
     left = if has_label, do: label_width + 10, else: 0
@@ -454,66 +459,73 @@ defmodule Console.Shields do
     message_margin = left - if(message == "", do: 0, else: 1) + if(has_label, do: 0, else: 1)
     right = message_width + 10
     width = left + right
-
-    text = fn content, left_margin, ground, text_width ->
-      if content == "" do
-        ""
-      else
-        {ink, shade} = inks(ground)
-        x = 10 * left_margin + 5 * text_width + 50
-        y = 140 + margin
-        len = 10 * text_width
-        fill = if ink == "#fff", do: "", else: ~s| fill="#{ink}"|
-        t = xml(content)
-
-        if shadow? do
-          ~s|<g transform="scale(.1)"><g aria-hidden="true" fill="#{shade}">| <>
-            ~s|<text x="#{x}" y="#{y + 10}" fill-opacity=".8" filter="url(#blur)" textLength="#{len}">#{t}</text>| <>
-            ~s|<text x="#{x}" y="#{y + 10}" fill-opacity=".3" textLength="#{len}">#{t}</text></g>| <>
-            ~s|<text x="#{x}" y="#{y}" textLength="#{len}"#{fill}>#{t}</text></g>|
-        else
-          ~s|<text x="#{x}" y="#{y}" textLength="#{len}" transform="scale(.1)"#{fill}>#{t}</text>|
-        end
-      end
-    end
+    y = 140 + margin
 
     rects =
       ~s|<rect width="#{left}" height="#{height}" fill="#{xml(label_colour)}"/>| <>
         ~s|<rect x="#{left}" width="#{right}" height="#{height}" fill="#{xml(colour)}"/>|
 
-    gradient = ~s|<rect width="#{width}" height="#{height}" fill="url(#s)"/>|
-    blur = ~s|<filter id="blur"><feGaussianBlur stdDeviation="16"/></filter>|
-
-    clip = fn rx ->
-      ~s|<clipPath id="r"><rect width="#{width}" height="#{height}" rx="#{rx}"/></clipPath>|
-    end
-
-    body =
-      case style do
-        "flat" ->
-          blur <>
-            ~s|<linearGradient id="s" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/>| <>
-            ~s|<stop offset="1" stop-opacity=".1"/></linearGradient>| <>
-            clip.(3) <> ~s|<g clip-path="url(#r)">| <> rects <> gradient <> "</g>"
-
-        "plastic" ->
-          blur <>
-            ~s|<linearGradient id="s" x2="0" y2="100%"><stop offset="0" stop-color="#fff" stop-opacity=".7"/>| <>
-            ~s|<stop offset=".1" stop-color="#aaa" stop-opacity=".1"/><stop offset=".9" stop-color="#000" stop-opacity=".3"/>| <>
-            ~s|<stop offset="1" stop-color="#000" stop-opacity=".5"/></linearGradient>| <>
-            clip.(4) <> ~s|<g clip-path="url(#r)">| <> rects <> gradient <> "</g>"
-
-        "flat-square" ->
-          ~s|<g shape-rendering="crispEdges">| <> rects <> "</g>"
-      end
-
     foreground =
       ~s|<g fill="#fff" text-anchor="middle" font-family="#{@font_family}" text-rendering="geometricPrecision" font-size="110">| <>
-        text.(label, 1, label_colour, label_width) <>
-        text.(message, message_margin, colour, message_width) <> "</g>"
+        badge_text(label, {1, label_width, y, shadow?}, label_colour) <>
+        badge_text(message, {message_margin, message_width, y, shadow?}, colour) <> "</g>"
 
-    svg(width, height, label, message, body <> foreground)
+    svg(width, height, label, message, body(style, width, height, rects) <> foreground)
   end
+
+  # Each style's height, the margin its text sits at, and whether the
+  # text casts a shadow.
+  defp metrics("plastic"), do: {18, -10, true}
+  defp metrics("flat"), do: {20, 0, true}
+  defp metrics("flat-square"), do: {20, 0, false}
+
+  # One half's text on its ground, shadowed or not.
+  defp badge_text("", _at, _ground), do: ""
+
+  defp badge_text(content, {left_margin, text_width, y, shadow?}, ground) do
+    {ink, shade} = inks(ground)
+    x = 10 * left_margin + 5 * text_width + 50
+    len = 10 * text_width
+    fill = if ink == "#fff", do: "", else: ~s| fill="#{ink}"|
+    t = xml(content)
+
+    if shadow? do
+      ~s|<g transform="scale(.1)"><g aria-hidden="true" fill="#{shade}">| <>
+        ~s|<text x="#{x}" y="#{y + 10}" fill-opacity=".8" filter="url(#blur)" textLength="#{len}">#{t}</text>| <>
+        ~s|<text x="#{x}" y="#{y + 10}" fill-opacity=".3" textLength="#{len}">#{t}</text></g>| <>
+        ~s|<text x="#{x}" y="#{y}" textLength="#{len}"#{fill}>#{t}</text></g>|
+    else
+      ~s|<text x="#{x}" y="#{y}" textLength="#{len}" transform="scale(.1)"#{fill}>#{t}</text>|
+    end
+  end
+
+  @blur ~s|<filter id="blur"><feGaussianBlur stdDeviation="16"/></filter>|
+
+  # The grounds under the text, by style.
+  defp body("flat-square", _width, _height, rects),
+    do: ~s|<g shape-rendering="crispEdges">| <> rects <> "</g>"
+
+  defp body("flat", width, height, rects) do
+    @blur <>
+      ~s|<linearGradient id="s" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/>| <>
+      ~s|<stop offset="1" stop-opacity=".1"/></linearGradient>| <>
+      clip(width, height, 3) <>
+      ~s|<g clip-path="url(#r)">| <> rects <> gradient(width, height) <> "</g>"
+  end
+
+  defp body("plastic", width, height, rects) do
+    @blur <>
+      ~s|<linearGradient id="s" x2="0" y2="100%"><stop offset="0" stop-color="#fff" stop-opacity=".7"/>| <>
+      ~s|<stop offset=".1" stop-color="#aaa" stop-opacity=".1"/><stop offset=".9" stop-color="#000" stop-opacity=".3"/>| <>
+      ~s|<stop offset="1" stop-color="#000" stop-opacity=".5"/></linearGradient>| <>
+      clip(width, height, 4) <>
+      ~s|<g clip-path="url(#r)">| <> rects <> gradient(width, height) <> "</g>"
+  end
+
+  defp gradient(width, height), do: ~s|<rect width="#{width}" height="#{height}" fill="url(#s)"/>|
+
+  defp clip(width, height, rx),
+    do: ~s|<clipPath id="r"><rect width="#{width}" height="#{height}" rx="#{rx}"/></clipPath>|
 
   # All caps, the message bold, and the letters spaced: the widths are
   # Verdana 10px's, plus 1.25 for each UTF-16 unit — badge-maker counts

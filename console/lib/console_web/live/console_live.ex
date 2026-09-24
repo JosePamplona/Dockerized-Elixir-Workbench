@@ -367,11 +367,7 @@ defmodule ConsoleWeb.ConsoleLive do
     # A new job brings the tray back if the reader had put it away.
     socket = if known, do: socket, else: assign(socket, tray_hidden: false)
 
-    # A job you just asked for is a job you are watching: it comes unfolded.
-    open =
-      if job.state in [:queued, :pending] and not MapSet.member?(socket.assigns.open_jobs, job.id),
-        do: MapSet.put(socket.assigns.open_jobs, job.id),
-        else: socket.assigns.open_jobs
+    open = unfold(socket.assigns.open_jobs, job)
 
     # The question goes away with what it was about.
     asking =
@@ -1192,4 +1188,10 @@ defmodule ConsoleWeb.ConsoleLive do
     />
     """
   end
+
+  # A job you just asked for is a job you are watching: it comes unfolded.
+  defp unfold(open, %{state: state, id: id}) when state in [:queued, :pending],
+    do: MapSet.put(open, id)
+
+  defp unfold(open, _job), do: open
 end

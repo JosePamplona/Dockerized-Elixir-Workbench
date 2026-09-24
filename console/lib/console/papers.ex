@@ -182,11 +182,7 @@ defmodule Console.Papers do
   """
   def outside_images(html) do
     Regex.replace(~r/<img src="(https?:[^"]+)"([^>]*?)\s*\/?>/, html, fn _whole, src, rest ->
-      alt =
-        case Regex.run(~r/alt="([^"]*)"/, rest) do
-          [_, alt] -> alt
-          _ -> ""
-        end
+      alt = alt(rest)
 
       case Console.Shields.badge(unescape(src)) do
         {:ok, badge} ->
@@ -195,13 +191,25 @@ defmodule Console.Papers do
             ~s(title="#{escape(badge.alt)} — a shields.io badge, drawn here from its own address: the console loads no image from outside" />)
 
         :error ->
-          host = URI.parse(unescape(src)).host || "outside"
-
-          ~s(<a class="outside-img" href="#{src}" target="_blank" rel="noopener noreferrer" ) <>
-            ~s(title="an image at #{escape(host)}, not loaded: the console loads no image from outside">) <>
-            "#{if alt == "", do: escape(host), else: alt}</a>"
+          outside_link(src, alt)
       end
     end)
+  end
+
+  # An outside image not loaded: a link to it, wearing its alt.
+  defp outside_link(src, alt) do
+    host = URI.parse(unescape(src)).host || "outside"
+
+    ~s(<a class="outside-img" href="#{src}" target="_blank" rel="noopener noreferrer" ) <>
+      ~s(title="an image at #{escape(host)}, not loaded: the console loads no image from outside">) <>
+      "#{if alt == "", do: escape(host), else: alt}</a>"
+  end
+
+  defp alt(attrs) do
+    case Regex.run(~r/alt="([^"]*)"/, attrs) do
+      [_, alt] -> alt
+      _ -> ""
+    end
   end
 
   defp escape(text), do: text |> Phoenix.HTML.html_escape() |> Phoenix.HTML.safe_to_string()

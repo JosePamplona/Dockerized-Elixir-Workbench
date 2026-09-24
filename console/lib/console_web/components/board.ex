@@ -470,46 +470,8 @@ defmodule ConsoleWeb.Board do
   def deploy_button(assigns) do
     running = assigns.status["deployment"]
     cmd = ConsoleWeb.Deploy.cmdline(assigns.verb, assigns.name, "")
-
-    why =
-      cond do
-        assigns.status["exists"] != true ->
-          "the workspace is empty: Deploy → Project creates one"
-
-        assigns.busy ->
-          "a job is running"
-
-        not assigns.baked ->
-          "not baked: Bake writes its compose file first"
-
-        assigns.verb == "down" and not assigns.present ->
-          "nothing to take down: no containers of this deployment"
-
-        assigns.verb == "stop" and running != assigns.name ->
-          "not up: nothing to stop"
-
-        true ->
-          nil
-      end
-
-    replaces = assigns.verb == "up" && running && running != assigns.name
-
-    title =
-      why ||
-        cmd <>
-          cond do
-            replaces ->
-              " — #{running} is running and goes down: one deployment at a time"
-
-            assigns.verb == "stop" ->
-              " — stops its containers and keeps them, for a fast Up again"
-
-            assigns.verb == "down" ->
-              " — removes its containers and network; the volumes stay"
-
-            true ->
-              ""
-          end
+    why = deploy_why(assigns, running)
+    title = why || cmd <> deploy_says(assigns.verb, running, assigns.name)
 
     assigns = assign(assigns, why: why, title: title, cmd: cmd)
 
@@ -523,6 +485,41 @@ defmodule ConsoleWeb.Board do
     />
     """
   end
+
+  # Why the verb cannot run now, nil when it can.
+  defp deploy_why(assigns, running) do
+    cond do
+      assigns.status["exists"] != true ->
+        "the workspace is empty: Deploy → Project creates one"
+
+      assigns.busy ->
+        "a job is running"
+
+      not assigns.baked ->
+        "not baked: Bake writes its compose file first"
+
+      assigns.verb == "down" and not assigns.present ->
+        "nothing to take down: no containers of this deployment"
+
+      assigns.verb == "stop" and running != assigns.name ->
+        "not up: nothing to stop"
+
+      true ->
+        nil
+    end
+  end
+
+  # What the verb does, after its command line in the title.
+  defp deploy_says("up", running, name) when running not in [nil, false] and running != name,
+    do: " — #{running} is running and goes down: one deployment at a time"
+
+  defp deploy_says("stop", _running, _name),
+    do: " — stops its containers and keeps them, for a fast Up again"
+
+  defp deploy_says("down", _running, _name),
+    do: " — removes its containers and network; the volumes stay"
+
+  defp deploy_says(_verb, _running, _name), do: ""
 
   # Each container's way in, its log lines. No new power: the Logs
   # screen already does it, and this is the row saying which of them is

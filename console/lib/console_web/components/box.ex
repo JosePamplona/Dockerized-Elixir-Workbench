@@ -11,6 +11,7 @@ defmodule ConsoleWeb.Box do
   alias ConsoleWeb.Cartridges
   alias ConsoleWeb.Packages
   alias ConsoleWeb.Record
+  alias Phoenix.LiveView.JS
 
   @screens [{"box", "Box"}, {"manual", "Manual"}, {"install", "Installation"}, {"files", "Files"}]
 
@@ -283,29 +284,11 @@ defmodule ConsoleWeb.Box do
   attr :mix, :list, default: [], doc: "every package the project carries, pinned and locked"
 
   defp packages(assigns) do
-    carried = assigns.installed && assigns.c["deps"]
     declared = assigns.box["deps"] || []
-
     own = assigns.installed and declared == []
+    rows = carried(assigns)
 
-    carried =
-      if carried in [nil, []] and assigns.installed,
-        do: off_the_insert(assigns.read_deps, assigns.mix),
-        else: carried
-
-    rows = if(carried && carried != [], do: carried, else: nil)
-
-    # A base cartridge that declares none and whose insert commit says
-    # nothing was not inserted: the project was born with the flag, and
-    # there is no commit to read. The panel says so rather than leaving
-    # the reader to wonder whether the box costs nothing.
-    nothing =
-      cond do
-        not own or rows != nil or assigns.read_deps == :loading -> nil
-        assigns.read_deps == :born -> "born with the project: no insert commit to read them off"
-        assigns.read_deps == [] -> "its insert commit put no package in mix.exs"
-        true -> "what its insert commit added is not in mix.exs any more"
-      end
+    nothing = if own and rows == nil, do: nothing(assigns.read_deps)
 
     now = assigns.now || DateTime.utc_now()
 
@@ -325,6 +308,28 @@ defmodule ConsoleWeb.Box do
     />
     """
   end
+
+  # The packages the project carries for the box, nil for none: its
+  # status's, or, when that has none, the ones read off its insert commit.
+  defp carried(%{installed: true} = assigns) do
+    carried =
+      if assigns.c["deps"] in [nil, []],
+        do: off_the_insert(assigns.read_deps, assigns.mix),
+        else: assigns.c["deps"]
+
+    if carried != [], do: carried
+  end
+
+  defp carried(_assigns), do: nil
+
+  # A base cartridge that declares none and whose insert commit says
+  # nothing was not inserted: the project was born with the flag, and
+  # there is no commit to read. The panel says so rather than leaving
+  # the reader to wonder whether the box costs nothing.
+  defp nothing(:loading), do: nil
+  defp nothing(:born), do: "born with the project: no insert commit to read them off"
+  defp nothing([]), do: "its insert commit put no package in mix.exs"
+  defp nothing(_read), do: "what its insert commit added is not in mix.exs any more"
 
   # A box that declares no package has them written by something else:
   # a base cartridge's arrive inside the `phx.new` delta, ash's through
@@ -397,9 +402,9 @@ defmodule ConsoleWeb.Box do
     # caret at its far end fold as well — LiveView fires the binding closest
     # to the click, so the path's stays the path's.
     toggle =
-      Phoenix.LiveView.JS.toggle_attribute({"hidden", "hidden"}, to: "##{id}-b")
-      |> Phoenix.LiveView.JS.toggle_class("open", to: "##{id}")
-      |> Phoenix.LiveView.JS.toggle_attribute({"aria-expanded", "true", "false"},
+      JS.toggle_attribute({"hidden", "hidden"}, to: "##{id}-b")
+      |> JS.toggle_class("open", to: "##{id}")
+      |> JS.toggle_attribute({"aria-expanded", "true", "false"},
         to: "##{id} .ft"
       )
 
@@ -421,7 +426,7 @@ defmodule ConsoleWeb.Box do
         <span :if={@f.born || @f.gone} class="mark">{if @f.born, do: "new", else: "gone"}</span>
         <%!-- A mention's click is its own: the empty binding stops it here, so
               the row does not fold under a cartridge the reader is opening. --%>
-        <span :if={@shown != []} class="refs" phx-click={%Phoenix.LiveView.JS{}}>
+        <span :if={@shown != []} class="refs" phx-click={%JS{}}>
           <.cart_ref :for={n <- @shown} name={n} installed={true} />
           <span :if={@rest > 0} class="more" title={"and " <> Enum.join(Enum.drop(@by, 3), ", ")}>+{@rest}</span>
         </span>
@@ -448,8 +453,8 @@ defmodule ConsoleWeb.Box do
           style={"--gut:#{Console.Diffs.gutter(@f.rows)}ch"}
         >
           <div :if={String.downcase(Path.extname(@f.path)) == ".svg" && not @f.gone} class="switch">
-            <button type="button" class="on" aria-pressed="true" phx-click={Phoenix.LiveView.JS.remove_class("drawn", to: "##{@id}-src") |> Phoenix.LiveView.JS.add_class("on", to: "##{@id}-src .switch button:first-child") |> Phoenix.LiveView.JS.remove_class("on", to: "##{@id}-src .switch button:last-child")}>code</button>
-            <button type="button" aria-pressed="false" phx-click={Phoenix.LiveView.JS.add_class("drawn", to: "##{@id}-src") |> Phoenix.LiveView.JS.remove_class("on", to: "##{@id}-src .switch button:first-child") |> Phoenix.LiveView.JS.add_class("on", to: "##{@id}-src .switch button:last-child")}>drawing</button>
+            <button type="button" class="on" aria-pressed="true" phx-click={JS.remove_class("drawn", to: "##{@id}-src") |> JS.add_class("on", to: "##{@id}-src .switch button:first-child") |> JS.remove_class("on", to: "##{@id}-src .switch button:last-child")}>code</button>
+            <button type="button" aria-pressed="false" phx-click={JS.add_class("drawn", to: "##{@id}-src") |> JS.remove_class("on", to: "##{@id}-src .switch button:first-child") |> JS.add_class("on", to: "##{@id}-src .switch button:last-child")}>drawing</button>
           </div>
           <div class="rows"><.row :for={r <- @f.rows} r={r} /></div>
           <div :if={String.downcase(Path.extname(@f.path)) == ".svg" && not @f.gone} class="shot drawing"><img class="drawn" src={"/blob/#{@f.tip}/#{@f.path}"} alt={@f.path} /></div>
@@ -794,14 +799,15 @@ defmodule ConsoleWeb.Box do
       for o <- assigns.box["offers"] || [], not MapSet.member?(inside, o["service"]), do: o
 
     for(service <- have, do: {service, nil}) ++
-      for o <- rest do
-        cond do
-          locked -> {o, locked_out(o, assigns.box, assigns.c)}
-          chosen?(o, assigns.args) -> {o, nil}
-          true -> {o, unlit(o)}
-        end
-      end
+      for(o <- rest, do: {o, why_not(o, locked, assigns)})
   end
+
+  # Why an offer the project lacks is not there: nil when the form as
+  # filled brings it.
+  defp why_not(offer, true, assigns), do: locked_out(offer, assigns.box, assigns.c)
+
+  defp why_not(offer, false, assigns),
+    do: if(chosen?(offer, assigns.args), do: nil, else: unlit(offer))
 
   # Why it is not there and no switch will bring it: the cartridge is
   # in and its form is locked, so what it went in with decided this.
@@ -869,6 +875,21 @@ defmodule ConsoleWeb.Box do
 
   # --- Installation -------------------------------------------------------------
 
+  defp clean?(nil), do: true
+  defp clean?(status), do: get_in(status, ["git", "clean"]) != false
+
+  # In, and nothing an insert could still add.
+  defp full?(%{installed: true, box: box} = assigns, adds),
+    do: !box["collection"] && nothing_to_add?(box, assigns.c || %{}, assigns.status, adds)
+
+  defp full?(_assigns, _adds), do: false
+
+  # A collection's members still to insert and the ones an eject takes.
+  defp left_and_going(%{box: %{"collection" => c}} = assigns) when c not in [nil, false],
+    do: {members_left(assigns), ejectable(assigns)}
+
+  defp left_and_going(_assigns), do: {nil, []}
+
   defp install(assigns) do
     insert = Cartridges.insert(assigns.status, assigns.box["name"])
     # What a second insert can still put in, the box's own word: "none"
@@ -878,10 +899,9 @@ defmodule ConsoleWeb.Box do
     # would send is one the installer refuses on arrival.
     adds = assigns.box["adds"] || "none"
     locked = assigns.installed && adds == "none"
-    clean = is_nil(assigns.status) || get_in(assigns.status, ["git", "clean"]) != false
+    clean = clean?(assigns.status)
     missing = missing(assigns.box, assigns.args, assigns.status)
-    left = if assigns.box["collection"], do: members_left(assigns), else: nil
-    going = if assigns.box["collection"], do: ejectable(assigns), else: []
+    {left, going} = left_and_going(assigns)
 
     blockers =
       eject_blockers(
@@ -914,9 +934,7 @@ defmodule ConsoleWeb.Box do
         # inserting again adds to what is there (`rerun: adds`).
         can_insert: !assigns.installed || adds != "none",
         adds: adds,
-        full:
-          assigns.installed && !assigns.box["collection"] &&
-            nothing_to_add?(assigns.box, assigns.c || %{}, assigns.status, adds)
+        full: full?(assigns, adds)
       )
 
     ~H"""
@@ -1200,19 +1218,20 @@ defmodule ConsoleWeb.Box do
   # place a list that also takes values of its own says so. A text with
   # a declared shape says the shape instead — `url`, not `text`.
   defp kind(o) do
-    base =
-      cond do
-        o["choices"] && o["multiple"] -> "several"
-        o["choices"] -> "one of"
-        o["type"] == "boolean" -> "switch"
-        is_binary(o["format"]) -> String.replace(o["format"], "_", " ")
-        true -> "text"
-      end
-
     cond do
-      !o["open"] -> base
-      o["multiple"] -> base <> " · or others"
-      true -> base <> " · or another"
+      !o["open"] -> base_kind(o)
+      o["multiple"] -> base_kind(o) <> " · or others"
+      true -> base_kind(o) <> " · or another"
+    end
+  end
+
+  defp base_kind(o) do
+    cond do
+      o["choices"] && o["multiple"] -> "several"
+      o["choices"] -> "one of"
+      o["type"] == "boolean" -> "switch"
+      is_binary(o["format"]) -> String.replace(o["format"], "_", " ")
+      true -> "text"
     end
   end
 
@@ -1652,19 +1671,21 @@ defmodule ConsoleWeb.Box do
       a.full ->
         "every value this project allows is in: nothing left to add"
 
-      a.installed && is_list(a.box["adds"]) ->
-        "what it went in with is fixed; #{flags_said(a.box["adds"])} are the pieces it still adds"
-
-      a.installed && a.box["adds"] == "all" ->
-        "every option is a piece: what is in stays, what you add is queued"
-
-      !a.installed && a.missing != [] ->
-        "builds on #{Enum.join(a.missing, " && ")}, not in the project yet"
-
       true ->
-        ""
+        adding_note(a.installed, a.box["adds"], a.missing)
     end
   end
+
+  defp adding_note(true, adds, _missing) when is_list(adds),
+    do: "what it went in with is fixed; #{flags_said(adds)} are the pieces it still adds"
+
+  defp adding_note(true, "all", _missing),
+    do: "every option is a piece: what is in stays, what you add is queued"
+
+  defp adding_note(false, _adds, [_ | _] = missing),
+    do: "builds on #{Enum.join(missing, " && ")}, not in the project yet"
+
+  defp adding_note(_installed, _adds, _missing), do: ""
 
   # Option names as the form writes them: --md-report && --githook.
   defp flags_said(names),
@@ -1675,11 +1696,8 @@ defmodule ConsoleWeb.Box do
       a.blockers != [] ->
         Enum.join(a.blockers, "; ") <> ": eject those first"
 
-      a.box["collection"] && a.going != [] ->
-        "takes its #{length(a.going)} cartridge#{if length(a.going) == 1, do: "", else: "s"} out, newest first — one revert each"
-
       a.box["collection"] ->
-        "the box leaves no commit of its own, && none of its cartridges has one either"
+        collection_eject_note(a.going)
 
       a.locked && a.insert ->
         "inserted once, with these options (from its commit); eject to change them"
@@ -1691,6 +1709,14 @@ defmodule ConsoleWeb.Box do
         ""
     end
   end
+
+  defp collection_eject_note([]),
+    do: "the box leaves no commit of its own, && none of its cartridges has one either"
+
+  defp collection_eject_note([_]), do: "takes its 1 cartridge out, newest first — one revert each"
+
+  defp collection_eject_note(going),
+    do: "takes its #{length(going)} cartridges out, newest first — one revert each"
 
   # --- Manual -------------------------------------------------------------------
 

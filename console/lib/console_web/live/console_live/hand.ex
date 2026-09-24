@@ -103,9 +103,8 @@ defmodule ConsoleWeb.ConsoleLive.Hand do
   def ask_read_deps(socket, box) do
     status = socket.assigns.status
     ws = status && status["workspace"]
-    c = Cartridges.carried(status, box["name"])
     inserts = Cartridges.inserts(status, box["name"])
-    own? = ws && c && c["installed"] && (box["deps"] || []) == []
+    own? = ws && own_packages?(status, box)
 
     cond do
       own? && inserts != [] ->
@@ -119,6 +118,12 @@ defmodule ConsoleWeb.ConsoleLive.Hand do
       true ->
         assign(socket, read_deps: [])
     end
+  end
+
+  # In, and declaring no package of its own.
+  defp own_packages?(status, box) do
+    c = Cartridges.carried(status, box["name"])
+    c && c["installed"] && (box["deps"] || []) == []
   end
 
   defp ask_recipe(socket, %{"collection" => true} = box, args) do

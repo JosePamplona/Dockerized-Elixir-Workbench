@@ -359,6 +359,14 @@ defmodule ConsoleWeb.DockerScreen do
     """
   end
 
+  defp restart_says(%{console?: true} = c, _deployment),
+    do:
+      "docker restart #{c.name} — the console restarts itself, and this page reconnects in seconds; a new image or another workspace wants ./wb.sh console up, from the host"
+
+  defp restart_says(c, deployment),
+    do:
+      "./wb.sh restart --deploy #{deployment || "dev"} #{c.service} — the same service, the same image, up again; the deployment stays whole"
+
   # Restart: the one act on a single container that leaves the deployment whole.
   attr :c, :map, required: true
   attr :mine, :boolean, required: true
@@ -399,17 +407,7 @@ defmodule ConsoleWeb.DockerScreen do
     assigns =
       assign(assigns,
         why: why,
-        title:
-          cond do
-            why ->
-              why
-
-            assigns.c.console? ->
-              "docker restart #{assigns.c.name} — the console restarts itself, and this page reconnects in seconds; a new image or another workspace wants ./wb.sh console up, from the host"
-
-            true ->
-              "./wb.sh restart --deploy #{assigns.deployment || "dev"} #{assigns.c.service} — the same service, the same image, up again; the deployment stays whole"
-          end
+        title: why || restart_says(assigns.c, assigns.deployment)
       )
 
     ~H"""

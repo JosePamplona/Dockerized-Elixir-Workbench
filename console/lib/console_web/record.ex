@@ -93,7 +93,6 @@ defmodule ConsoleWeb.Record do
     born_phx = b["phx"] || %{}
     now_args = Console.Project.born(status["workspace"]) || %{}
     born_args = b["dockerfile"] || %{}
-    generator = now_phx["generator"] || %{}
 
     dockerfile =
       for {key, label} <- [{"ELIXIR", "elixir"}, {"OTP", "erlang"}, {"DEBIAN", "debian"}] do
@@ -105,80 +104,10 @@ defmodule ConsoleWeb.Record do
         }
       end
 
-    cap_flag = fn cap ->
-      flag(
-        "no-#{cap}",
-        born_phx[cap] == false,
-        nil,
-        cartridge_of(cap),
-        moved(born_phx[cap], now_phx[cap])
-      )
-    end
-
     flags =
-      [
-        flag("app", true, born_phx["app"], nil),
-        flag("module", true, born_phx["module"], nil),
-        flag(
-          "adapter",
-          true,
-          born_phx["adapter"],
-          nil,
-          moved(born_phx["adapter"], now_phx["adapter"]),
-          "bandit"
-        ),
-        # Ecto's own flag first, then the two that only mean something with it.
-        cap_flag.("ecto"),
-        flag(
-          "database",
-          true,
-          born_phx["database"],
-          "ecto",
-          moved(born_phx["database"], now_phx["database"]),
-          "postgres"
-        ),
-        flag(
-          "binary-id",
-          born_phx["binary_id"] == true,
-          nil,
-          "ecto",
-          moved(born_phx["binary_id"], now_phx["binary_id"])
-        )
-      ] ++
-        Enum.map(@caps -- ["ecto"], cap_flag) ++
-        [
-          flag(
-            "no-agents-md",
-            born_phx["agents_md"] == false,
-            nil,
-            nil,
-            moved(born_phx["agents_md"], now_phx["agents_md"])
-          )
-        ]
-
-    flags =
-      Enum.map(flags, fn f ->
-        f = Map.put(f, :installed, f.cartridge && Cartridges.installed?(status, f.cartridge))
-
-        case moot(f.name, born_phx, now_phx) do
-          nil ->
-            Map.put(f, :moot, nil)
-
-          # What made it moot has come in since — Ecto, the HTML views, a
-          # base cartridge each: the flag was still not given, and the row
-          # says what the fact is now against a birth that had none. The
-          # birth's reading carries phx.new's default database under
-          # --no-ecto, which is no database: today's is the news.
-          :since ->
-            now = if f.name == "database", do: now_phx["database"], else: f.now
-
-            %{f | used: false, arg: nil, default: nil, now: now && to_string(now)}
-            |> Map.put(:moot, nil)
-
-          why ->
-            %{f | used: false, arg: nil, default: nil, now: nil} |> Map.put(:moot, why)
-        end
-      end)
+      born_phx
+      |> born_flags(now_phx)
+      |> Enum.map(&with_moot(&1, born_phx, now_phx, status))
 
     %{
       sha: b["sha"],
@@ -189,20 +118,106 @@ defmodule ConsoleWeb.Record do
       image:
         "hexpm/elixir:#{born_args["ELIXIR"]}-erlang-#{born_args["OTP"]}-debian-#{born_args["DEBIAN"]}",
       docs: phx_new_docs(born_args["PHX_NEW"]),
-      installer: %{
-        born: born_args["PHX_NEW"],
-        now: moved(born_args["PHX_NEW"], now_args["PHX_NEW"]),
-        at_hand: generator["installer"],
-        in_sync: is_nil(generator["installer"]) or generator["installer"] == generator["project"]
-      },
+      installer: installer(born_args["PHX_NEW"], now_args["PHX_NEW"], now_phx["generator"]),
       flags: flags,
       moved:
         Enum.count(dockerfile, & &1.now) + Enum.count(flags, & &1.now) +
-          if(born_args["PHX_NEW"] != now_args["PHX_NEW"] and now_args["PHX_NEW"], do: 1, else: 0)
+          if(moved(born_args["PHX_NEW"], now_args["PHX_NEW"]), do: 1, else: 0)
     }
   end
 
   defp birth(_project, _status), do: nil
+
+  # The phx_new the project was born with, the one stamped now, and the
+  # one at hand to generate with.
+  defp installer(born, now, generator) do
+    generator = generator || %{}
+
+    %{
+      born: born,
+      now: moved(born, now),
+      at_hand: generator["installer"],
+      in_sync: is_nil(generator["installer"]) or generator["installer"] == generator["project"]
+    }
+  end
+
+  # The flags phx.new was given at birth, each against today's fact.
+  defp born_flags(born_phx, now_phx) do
+    cap_flag = fn cap ->
+      flag(
+        "no-#{cap}",
+        born_phx[cap] == false,
+        nil,
+        cartridge_of(cap),
+        moved(born_phx[cap], now_phx[cap])
+      )
+    end
+
+    [
+      flag("app", true, born_phx["app"], nil),
+      flag("module", true, born_phx["module"], nil),
+      flag(
+        "adapter",
+        true,
+        born_phx["adapter"],
+        nil,
+        moved(born_phx["adapter"], now_phx["adapter"]),
+        "bandit"
+      ),
+      # Ecto's own flag first, then the two that only mean something with it.
+      cap_flag.("ecto"),
+      flag(
+        "database",
+        true,
+        born_phx["database"],
+        "ecto",
+        moved(born_phx["database"], now_phx["database"]),
+        "postgres"
+      ),
+      flag(
+        "binary-id",
+        born_phx["binary_id"] == true,
+        nil,
+        "ecto",
+        moved(born_phx["binary_id"], now_phx["binary_id"])
+      )
+    ] ++
+      Enum.map(@caps -- ["ecto"], cap_flag) ++
+      [
+        flag(
+          "no-agents-md",
+          born_phx["agents_md"] == false,
+          nil,
+          nil,
+          moved(born_phx["agents_md"], now_phx["agents_md"])
+        )
+      ]
+  end
+
+  # A flag another flag made moot says so, and why; one made moot at
+  # birth whose cause came in since reads today's fact.
+  defp with_moot(f, born_phx, now_phx, status) do
+    f = Map.put(f, :installed, f.cartridge && Cartridges.installed?(status, f.cartridge))
+
+    case moot(f.name, born_phx, now_phx) do
+      nil ->
+        Map.put(f, :moot, nil)
+
+      # What made it moot has come in since — Ecto, the HTML views, a
+      # base cartridge each: the flag was still not given, and the row
+      # says what the fact is now against a birth that had none. The
+      # birth's reading carries phx.new's default database under
+      # --no-ecto, which is no database: today's is the news.
+      :since ->
+        now = if f.name == "database", do: now_phx["database"], else: f.now
+
+        %{f | used: false, arg: nil, default: nil, now: now && to_string(now)}
+        |> Map.put(:moot, nil)
+
+      why ->
+        %{f | used: false, arg: nil, default: nil, now: nil} |> Map.put(:moot, why)
+    end
+  end
 
   # A flag another flag makes moot, as phx.new's own generator binds them
   # (Phx.New.Generator.put_binding/1): the database and the id type only
@@ -418,16 +433,6 @@ defmodule ConsoleWeb.Record do
     }
   end
 
-  # The first command whose condition holds — coverage's `mix cover`
-  # where the docs site takes the report, ExCoveralls' own task
-  # otherwise.
-  defp build_task(status, c, o) do
-    case Enum.find(o["build"] || [], &Cartridges.holds?(status, c, &1)) do
-      %{"task" => task} -> task
-      nil -> nil
-    end
-  end
-
   # A route the cartridge opens on the app's port: shut by its condition,
   # or by the app being down, or open with its address and what it answered.
   defp route(status, c, d, port, up, reads) do
@@ -457,6 +462,16 @@ defmodule ConsoleWeb.Record do
       read: read(reads, href),
       build: nil
     }
+  end
+
+  # The first command whose condition holds — coverage's `mix cover`
+  # where the docs site takes the report, ExCoveralls' own task
+  # otherwise.
+  defp build_task(status, c, o) do
+    case Enum.find(o["build"] || [], &Cartridges.holds?(status, c, &1)) do
+      %{"task" => task} -> task
+      nil -> nil
+    end
   end
 
   defp shut_why(%{"when" => %{"option" => key} = w}) do
@@ -655,7 +670,6 @@ defmodule ConsoleWeb.Record do
   def deployments(status), do: deployments(status, status["project"] || %{})
 
   defp deployments(status, project) do
-    ws = status["workspace"]
     up_one = status["deployment"]
     reported = project["deployments"] || %{}
 
@@ -669,81 +683,71 @@ defmodule ConsoleWeb.Record do
           do: {b["service"], ":#{b["listens"]}"}
 
     for deploy <- @deploys do
-      d = reported[deploy] || %{}
-      baked = d["baked"] == true or get_in(status, ["baked", deploy]) == true
-      up = up_one == deploy
-      services = d["services"] || []
-
-      published =
-        if(baked and ws, do: published(Path.join(ws, @files[deploy])), else: %{})
-        |> claimed(services, inside)
-
-      present = Enum.any?(status["containers"] || [], &(of_deployment(&1) == deploy))
-
-      %{
-        deploy: deploy,
-        file: @files[deploy],
-        baked: baked,
-        present: present,
-        in_sync: d["in_sync"],
-        stray: d["stray"] || [],
-        missing: d["missing"] || [],
-        # up: running. stopped: its containers are there, stopped — a Stop,
-        # for a fast Up again. down: no containers at all. Nothing when
-        # the file is not baked.
-        status:
-          cond do
-            not baked -> nil
-            up -> "up"
-            present -> "stopped"
-            true -> "down"
-          end,
-        services:
-          for name <- services do
-            container =
-              if(up, do: Enum.find(status["containers"] || [], &(&1["Service"] == name)))
-
-            read = container && container_read(container)
-            why = if(up, do: nil, else: "the deployment is down")
-
-            case published[name] do
-              [_ | _] = ports ->
-                for p <- ports,
-                    do: %{
-                      label: name,
-                      path: "localhost:#{p}",
-                      kind: "port",
-                      port: nil,
-                      href: up && "http://localhost:#{p}",
-                      why: why,
-                      read: read
-                    }
-
-              _ ->
-                path =
-                  if(deploy == "scaled" and inside[name],
-                    do: name <> inside[name],
-                    else: inside[name] || ""
-                  )
-
-                # Not published: a port inside the pod, no door on the host.
-                [
-                  %{
-                    label: name,
-                    path: path,
-                    kind: "inside",
-                    port: nil,
-                    href: nil,
-                    why: why,
-                    read: read
-                  }
-                ]
-            end
-          end
-          |> List.flatten()
-      }
+      deployment(deploy, reported[deploy] || %{}, status, up_one == deploy, inside)
     end
   end
+
+  defp deployment(deploy, d, status, up, inside) do
+    ws = status["workspace"]
+    baked = d["baked"] == true or get_in(status, ["baked", deploy]) == true
+    services = d["services"] || []
+    containers = status["containers"] || []
+
+    published =
+      if(baked and ws, do: published(Path.join(ws, @files[deploy])), else: %{})
+      |> claimed(services, inside)
+
+    present = Enum.any?(containers, &(of_deployment(&1) == deploy))
+    at = %{deploy: deploy, up: up, containers: containers, inside: inside}
+
+    %{
+      deploy: deploy,
+      file: @files[deploy],
+      baked: baked,
+      present: present,
+      in_sync: d["in_sync"],
+      stray: d["stray"] || [],
+      missing: d["missing"] || [],
+      status: deploy_status(baked, up, present),
+      services: Enum.flat_map(services, &service_doors(&1, published[&1], at))
+    }
+  end
+
+  # up: running. stopped: its containers are there, stopped — a Stop,
+  # for a fast Up again. down: no containers at all. Nothing when the
+  # file is not baked.
+  defp deploy_status(false, _up, _present), do: nil
+  defp deploy_status(true, true, _present), do: "up"
+  defp deploy_status(true, false, true), do: "stopped"
+  defp deploy_status(true, false, false), do: "down"
+
+  # A service's doors: one per port it publishes, or, published none,
+  # the port it listens on inside the pod, with no door on the host.
+  defp service_doors(name, ports, at) do
+    container = if at.up, do: Enum.find(at.containers, &(&1["Service"] == name))
+    read = container && container_read(container)
+    why = if(at.up, do: nil, else: "the deployment is down")
+    door = %{label: name, port: nil, why: why, read: read}
+
+    case ports do
+      [_ | _] ->
+        for p <- ports,
+            do:
+              Map.merge(door, %{
+                path: "localhost:#{p}",
+                kind: "port",
+                href: at.up && "http://localhost:#{p}"
+              })
+
+      _ ->
+        [Map.merge(door, %{path: inside_path(name, at), kind: "inside", href: nil})]
+    end
+  end
+
+  defp inside_path(name, %{deploy: "scaled", inside: inside}) when is_map_key(inside, name),
+    do: name <> inside[name]
+
+  defp inside_path(name, %{inside: inside}), do: inside[name] || ""
 
   # Which deployment a container belongs to, as `wb.sh workspace_deployment`
   # tells them apart: a replica is the scaled one, a release image the
@@ -765,17 +769,15 @@ defmodule ConsoleWeb.Record do
   # whatever the topology: with a network a container, publisher and
   # listener are one. A port no service claims stays with its publisher.
   defp claimed(published, services, inside) do
-    Enum.reduce(published, %{}, fn {publisher, pairs}, acc ->
-      Enum.reduce(pairs, acc, fn {host, port}, acc ->
-        owner =
-          Enum.find(services, publisher, fn name ->
-            name != publisher and inside[name] == ":" <> port
-          end)
-
+    for {publisher, pairs} <- published, {host, port} <- pairs, reduce: %{} do
+      acc ->
+        owner = owner(services, publisher, inside, port)
         Map.update(acc, owner, [host], &(&1 ++ [host]))
-      end)
-    end)
+    end
   end
+
+  defp owner(services, publisher, inside, port),
+    do: Enum.find(services, publisher, &(&1 != publisher and inside[&1] == ":" <> port))
 
   # The ports each service publishes, off the compose file: `- 4001:4000`
   # under `ports:`, as `{host, container}` pairs — read where every

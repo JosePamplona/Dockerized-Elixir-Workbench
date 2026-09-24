@@ -233,6 +233,19 @@ defmodule Console.Docker do
 
   # --- images -----------------------------------------------------------------
 
+  # One `image<TAB>/name` line of inspect onto the users by short ID.
+  defp add_user(line, acc) do
+    case String.split(line, "\t", parts: 2) do
+      [image, name] ->
+        short = image |> String.replace_prefix("sha256:", "") |> String.slice(0, 12)
+        name = String.trim_leading(name, "/")
+        Map.update(acc, short, [name], &(&1 ++ [name]))
+
+      _ ->
+        acc
+    end
+  end
+
   @doc """
   Where an image's name has a page: Docker Hub for a name with no
   registry — `postgres:16` is an official image, `hub.docker.com/_/postgres`;
@@ -249,21 +262,19 @@ defmodule Console.Docker do
         "https://mcr.microsoft.com/en-us/artifact/mar/#{Enum.join(path, "/")}/about"
 
       [first | _] = parts ->
-        cond do
-          String.contains?(first, ".") or String.contains?(first, ":") or first == "localhost" ->
-            nil
-
-          length(parts) == 1 and hub_official?(first) ->
-            "https://hub.docker.com/_/#{first}"
-
-          length(parts) == 2 ->
-            "https://hub.docker.com/r/#{repo}"
-
-          true ->
-            nil
-        end
+        if registry?(first), do: nil, else: hub_url(parts, repo)
     end
   end
+
+  # A first segment that names a host rather than a Hub account.
+  defp registry?(first),
+    do: String.contains?(first, ".") or String.contains?(first, ":") or first == "localhost"
+
+  defp hub_url([name], _repo),
+    do: if(hub_official?(name), do: "https://hub.docker.com/_/#{name}")
+
+  defp hub_url([_, _], repo), do: "https://hub.docker.com/r/#{repo}"
+  defp hub_url(_parts, _repo), do: nil
 
   # The tag comes off the last segment alone: a registry's port is not a tag.
   defp strip_tag(repo) do
@@ -296,22 +307,7 @@ defmodule Console.Docker do
          {out, 0} <- docker(["container", "inspect", "--format", "{{.Image}}\t{{.Name}}" | ids]) do
       out
       |> String.split("\n", trim: true)
-      |> Enum.reduce(%{}, fn line, acc ->
-        case String.split(line, "\t", parts: 2) do
-          [image, name] ->
-            short = image |> String.replace_prefix("sha256:", "") |> String.slice(0, 12)
-
-            Map.update(
-              acc,
-              short,
-              [String.trim_leading(name, "/")],
-              &(&1 ++ [String.trim_leading(name, "/")])
-            )
-
-          _ ->
-            acc
-        end
-      end)
+      |> Enum.reduce(%{}, &add_user/2)
     else
       _ -> %{}
     end

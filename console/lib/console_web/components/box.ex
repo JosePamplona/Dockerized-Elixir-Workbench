@@ -1,8 +1,8 @@
 defmodule ConsoleWeb.Box do
   @moduledoc """
   The box in hand: a drawer over the page with four screens — what the
-  box is, the papers it carries, how it goes in, && what it wrote.
-  Which box && which screen live in the URL (`?box=rest&screen=manual
+  box is, the papers it carries, how it goes in, and what it wrote.
+  Which box and which screen live in the URL (`?box=rest&screen=manual
   &paper=design`), so the browser's back is the trail back.
   """
   use Phoenix.Component
@@ -69,7 +69,7 @@ defmodule ConsoleWeb.Box do
         </div>
         <.link class="btn" patch={@back || "/#{@tab}"}>Put back</.link>
         <.ribbon
-          label="The box && what comes inside it"
+          label="The box and what comes inside it"
           selected={@screen}
           items={
             for {key, label} <- @screens,
@@ -141,7 +141,7 @@ defmodule ConsoleWeb.Box do
   @doc """
   Why the Files screen is dark: the box is not done, a collection's
   picks are not in, or the cartridge was not inserted by commit — what
-  it wrote is read off its commits, one per insert, && there is none.
+  it wrote is read off its commits, one per insert, and there is none.
   """
   def files_unlit(box, status) do
     cond do
@@ -192,7 +192,7 @@ defmodule ConsoleWeb.Box do
               added={@diff.added}
               removed={@diff.removed}
               files={length(@diff.files)}
-              title={@diff.range <> " — read off the range, not the column added up. The column is what each pick did; this is what the project was left with. A file several picks touch is one file, && a line one pick wrote && a later one took out was never there at the start nor at the end."}
+              title={@diff.range <> " — read off the range, not the column added up. The column is what each pick did; this is what the project was left with. A file several picks touch is one file, and a line one pick wrote and a later one took out was never there at the start nor at the end."}
             />
             <%= if @box["collection"] do %>
               <.pick
@@ -440,7 +440,7 @@ defmodule ConsoleWeb.Box do
       </div>
       <div id={"#{@id}-b"} hidden>
         <p :if={@f.treatment == :omit} class="none">
-          left out on purpose: its lines run past a thousand characters && nobody reads them
+          left out on purpose: its lines run past a thousand characters and nobody reads them
         </p>
         <div :if={@f.treatment == :image && not @f.gone} class="shot">
           <img src={"/blob/#{@f.tip}/#{@f.path}"} alt={@f.path} />
@@ -1561,7 +1561,7 @@ defmodule ConsoleWeb.Box do
       else: [flag, if(v =~ ~r/\s/, do: inspect(v), else: v)]
   end
 
-  # Everything the insert as asked builds on && the project lacks, each
+  # Everything the insert as asked builds on and the project lacks, each
   # said with the state it asks for ("ecto with database postgres").
   defp missing(box, args, status) do
     own = for n <- box["requires"] || [], do: {n, condition(box, n)}
@@ -1613,7 +1613,7 @@ defmodule ConsoleWeb.Box do
         !MapSet.member?(out, c["name"]),
         on = Enum.filter(c["requires"] || [], &MapSet.member?(out, &1)),
         on != [] do
-      "#{c["name"]} builds on #{Enum.join(on, " && ")}"
+      "#{c["name"]} builds on #{Enum.join(on, " and ")}"
     end
   end
 
@@ -1683,13 +1683,13 @@ defmodule ConsoleWeb.Box do
     do: "every option is a piece: what is in stays, what you add is queued"
 
   defp adding_note(false, _adds, [_ | _] = missing),
-    do: "builds on #{Enum.join(missing, " && ")}, not in the project yet"
+    do: "builds on #{Enum.join(missing, " and ")}, not in the project yet"
 
   defp adding_note(_installed, _adds, _missing), do: ""
 
-  # Option names as the form writes them: --md-report && --githook.
+  # Option names as the form writes them: --md-report and --githook.
   defp flags_said(names),
-    do: Enum.map_join(names, " && ", &"--#{String.replace(&1, "_", "-")}")
+    do: Enum.map_join(names, " and ", &"--#{String.replace(&1, "_", "-")}")
 
   defp eject_note(a) do
     cond do
@@ -1711,7 +1711,7 @@ defmodule ConsoleWeb.Box do
   end
 
   defp collection_eject_note([]),
-    do: "the box leaves no commit of its own, && none of its cartridges has one either"
+    do: "the box leaves no commit of its own, and none of its cartridges has one either"
 
   defp collection_eject_note([_]), do: "takes its 1 cartridge out, newest first — one revert each"
 

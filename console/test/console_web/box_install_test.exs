@@ -116,7 +116,7 @@ defmodule ConsoleWeb.BoxInstallTest do
     # The form is not locked whole: there is something to add.
     refute html =~ ~s(class="insert locked")
     assert html =~ "Add to cartridge"
-    assert html =~ "--md-report &amp;&amp; --githook are the pieces it still adds"
+    assert html =~ "--md-report and --githook are the pieces it still adds"
 
     # One input per option, and only the two pieces are movable.
     fixed = html |> String.split(~s(name="opt[html_theme]")) |> Enum.at(1) || ""

@@ -1,7 +1,9 @@
 # ash — Design
 
-*Revision: cartridge v0.2.0 (2026-08-29). Sources consulted on that
-date; quotations are verbatim from the file or page as read then.*
+*Revision: cartridge v0.5.0 (2026-09-24): §2.6 and §3.8 read the
+installed sources on that date. The rest: cartridge v0.2.0
+(2026-08-29), sources consulted on that date; quotations are verbatim
+from the file or page as read then.*
 
 ## Abstract
 
@@ -149,6 +151,64 @@ Read in full: `ash.install` [12], `ash_postgres.install` [13],
   `apple`, `auth0`, `microsoft`, `okta`, `slack`, `oidc`, `oauth2`,
   `dynamic_oidc`, `webauthn` [16].
 
+### 2.6 The whole command, read in the installed sources
+
+Read on 2026-09-24 in the `deps/` of a workspace that carries every
+option (igniter 0.8.4, ash 3.33.10, ash_postgres 2.7.3, ash_phoenix
+2.3.25, ash_authentication 4.15.0, ash_authentication_phoenix 2.17.4,
+spark 2.13.1) [18]. What §2.2–§2.4 found in 0.8.3 holds; this is the
+rest of the run.
+
+**One igniter, one write.** `igniter.install` resolves each bare
+package against Hex (the latest stable release, written `~> MAJOR.0`,
+or `~> 0.MINOR` below 1.0), writes `mix.exs`, and runs `deps.get` and
+`deps.compile` *before* any installer: a `<package>.install` task only
+exists once its package is compiled [19]. It then threads one igniter
+through every installer, in argv order, each handed the whole flags
+argv, and ends in one `do_or_dry_run`: one write, then the queued
+tasks [19].
+
+**Three ways a package the command did not name gets in** [19]:
+
+* `installs:` in an installer's `Info` — igniter.install adds the
+  package, fetches it, compiles it and *runs its installer*, before the
+  one that asked for it, to any depth (ash_oban and oban_web ask for
+  `oban`; ash_double_entry for `ash_money`).
+* `adds_deps:` — added and fetched, its installer never run
+  (ash_json_api asks for `open_api_spex`).
+* `Igniter.Project.Deps.add_dep/3` inside an installer's body — only
+  the in-memory `mix.exs` changes; it is written in the final write,
+  and fetched by the `deps.get` that runs before the queued tasks (and
+  again by the one `./wb.sh add` runs after the insert).
+
+**No installer.** A package without `<package>.install` — ash_archival,
+ash_paper_trail, ash_cloak, cloak — stays in `mix.exs`; the run prints
+it under "did not exist or could not be found" and goes on [19].
+
+**Prompts `--yes` does not answer.** `Owl.IO.select` in
+`AshPostgres.Igniter.select_repo/2` when more than one `AshPostgres.Repo`
+exists, and ash_authentication_phoenix's `Mix.shell().yes?/1` (§2.5).
+Neither is reached here: one repo, and ash_authentication's installer
+runs first and writes the modules the other looks for.
+
+**What each package the insert commit carries came from**, the
+workspace's commit read against the sources:
+
+| Package | Added by | Source |
+| --- | --- | --- |
+| the ones named in the command | igniter.install, at Hex's latest | [19] |
+| `sourceror` | `spark.install`, which `ash.install` composes: `add_dep` when missing | [20] |
+| `picosat_elixir` | `Ash.Policy.Authorizer`'s install hook, run when `ash.extend` gives a resource the authorizer (ash_authentication's User and Token): picosat, or `simple_sat` on Windows, when neither is a dep | [21] |
+| `bcrypt_elixir` | `ash_authentication.add_strategy password`: `add_dep` | [16] |
+| `ex_money_sql` | `ash_money.add_to_ash_postgres`, which `ash_money.install` composes when `ash_postgres` is in | [22] |
+| `req_llm` | `ash_ai.install`: `add_dep`, unless `--no-req-llm` | [22] |
+| `absinthe_phoenix` | ash_graphql's `setup_phoenix`: `add_dep` | [22] |
+| `open_api_spex` | ash_json_api's `adds_deps` | [22] |
+| `oban` | ash_oban's and oban_web's `installs` | [22] |
+
+`cloak` is not among them: nothing adds it; the site's Encryption
+option names it before `ash_cloak` (§3.7), and so does the command.
+
 ## 3. Design
 
 ### 3.1 Queue the site's command; do not run installers in-process
@@ -287,6 +347,28 @@ Presets (*LiveView*, *React*) and `phoenix` are skipped; the packages
 the site offers and the cartridge does not (`appsignal`,
 `opentelemetry`, marked "Installer coming soon" on the site) are
 reported as such, not hidden.
+### 3.8 Where each package came from, in the cartridge's words
+
+The console reads a box that declares no package off its insert commit,
+and marked what it read with one line: *it comes with phx.new*. True of
+a base cartridge, false of ash. Only the cartridge knows what it ran, so
+it says it (`origins/2`, given the options the insert went in with and
+the packages the commit added), and the console numbers the notes under
+the table.
+
+Ash gives two. The packages the command named carry that the options
+named them in the `mix igniter.install` it runs, and that the command
+added them. The note names the command and not its argv: an early take
+rebuilt it whole, and the note came out as long as the table, saying
+again what the row says (the package) and what the insert's line says
+(the options). The rest
+carry that they were added *at the request of* the installer of a
+package the command named. Not *by* it: §2.6 finds three ways — the
+installer's own `add_dep`, its `installs`/`adds_deps` that
+igniter.install honours, and a hook of Ash's that an installer's
+`ash.extend` sets off. The note does not name the installer: the commit
+does not say which one, and a guess from a table kept by hand would go
+stale with the first release that moves a dependency.
 
 ## 4. Evaluation
 
@@ -364,6 +446,18 @@ strategy but `password`.
   mix.exs and install?". That is the same behaviour every other
   cartridge has under `add`.
 
+* `ash.install --example` generates `Support.Ticket` and
+  `Support.Representative` without `--extend postgres` [20]: the
+  example resources live in no table. They show the DSL; they do not
+  persist.
+* `ash_phoenix.install` deletes from an existing `AGENTS.md` the
+  `phoenix:ecto` block and the *Form handling* section [20]: phx.new's
+  advice for an Ecto project, replaced by nothing. The cartridge installs
+  it as its author wrote it.
+* The queued `ash.codegen` writes the migrations and their snapshots;
+  nothing applies them. `mix ash.setup` does, through the `setup` alias
+  ash_postgres rewrote (§2.5).
+
 ## References
 
 Read in full on 2026-08-28 unless marked otherwise.
@@ -417,3 +511,19 @@ Read in full on 2026-08-28 unless marked otherwise.
     passes `--framework react`, `double_entry` requires `money`, the
     API-key option adds `ash_authentication` alone — reconciled in
     §3.7 (cartridge v0.2.0).
+18. The installed sources, copied from the `deps` volume of a workspace
+    inserted with every option (`Insert ash --data-layer postgres --api
+    json_api,graphql,typescript --auth password,magic_link,api_key
+    --with tidewave,ash_ai,…,cinder --example`), read 2026-09-24.
+19. Igniter 0.8.4, `Mix.Tasks.Igniter.Install`,
+    `Igniter.Util.Install` (`run_installers`, `get_deps!`),
+    `Igniter.Util.Info` (`compose_install_and_validate!`, `installs`,
+    `adds_deps`), `Igniter.Project.Deps` (the Hex lookup and the
+    requirement) and `Igniter.Util.Version` — `deps/igniter/lib/`.
+20. ash 3.33.10 `ash.install`, spark 2.13.1 `spark.install`,
+    ash_phoenix 2.3.25 `ash_phoenix.install` — `deps/*/lib/mix/tasks/`.
+21. ash 3.33.10, `Ash.Policy.Authorizer.install/5` —
+    `deps/ash/lib/ash/policy/authorizer/authorizer.ex`.
+22. The installers of ash_money (`ash_money.add_to_ash_postgres`),
+    ash_ai, ash_graphql (`lib/igniter.ex`), ash_json_api, ash_oban and
+    oban_web — `deps/*/lib/`.

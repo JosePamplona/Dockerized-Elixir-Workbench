@@ -91,6 +91,37 @@ too): OAuth providers want their client ids in `.env`, `ash_oban`
 wants a queue, `tidewave` and `live_debugger` are dev-only and their
 installers set `only: :dev` themselves.
 
+## What each installer writes
+
+The queued command runs every package's installer on one igniter, in
+the command's order, and writes once; then `mix ash.codegen` writes the
+migrations, which `mix ash.setup` applies. What the project gets, read
+in the installers' sources (the versions and lines are in
+[DESIGN.md](DESIGN.md) §2.6):
+
+| Installer | What the project gets |
+| --- | --- |
+| `ash` | `consolidate_protocols: Mix.env() != :dev`, the formatter's section order, Ash's config defaults; `spark.install` adds `sourceror` and the Spark formatter plugin. With `--example`, the `Support` domain with `Ticket` and `Representative` — without a data layer: they live in no table |
+| `ash_postgres` | `Repo` turned into an `AshPostgres.Repo` in place (`installed_extensions`, `min_pg_version`, `prefer_transaction?`), the `setup` and `test` aliases on `ash.setup`; dev, test and runtime config left alone |
+| `ash_phoenix` | `AshPhoenix.Plug.CheckCodegenStatus` after the code reloader; the Ecto and *Form handling* sections taken out of `AGENTS.md` |
+| `ash_authentication` | the `Accounts` domain with `User`, `Token` and `Secrets`, the token signing secret in config, `citext` in the repo, its supervisor; per strategy: `password` (with `bcrypt_elixir`, confirmation and reset senders on the project's Mailer), `magic_link`, `api_key` (an `ApiKey` resource and a plug in `:api`) |
+| `ash_authentication_phoenix` | `AuthController`, `LiveUserAuth`, the DaisyUI overrides, the auth routes in the router, `@source` in `app.css` |
+| `ash_json_api` | its own router, at `/api/json`, with Swagger UI and the OpenAPI spec; `open_api_spex` |
+| `ash_graphql` | a schema and a socket at `/gql`, GraphiQL at `/gql/playground`; `absinthe_phoenix` |
+| `ash_typescript` | with `--framework react`: `package.json`, tsconfig, the SPA layout, `/ash-typescript`, the `/rpc` routes (empty, see below) |
+| `ash_ai` | the dev MCP at `/ash_ai/mcp`; `req_llm` |
+| `ash_admin` | `/admin` in the dev routes |
+| `ash_oban`, `oban_web` | `oban` and its installer (the `add_oban` migration, config, the supervision child), the cron plugin, `/oban` in the dev routes |
+| `ash_money`, `ash_double_entry` | the money type; `ex_money_sql` and its repo extension; the `Ledger` domain with `Account`, `Balance`, `Transfer` |
+| `tidewave`, `live_debugger`, `cinder` | Tidewave's plug in dev; the debugger's tags in `root.html.heex`; Cinder's CSS in `app.css` |
+| `usage_rules`, `req_llm`, `llm_db` | a notice, nothing written |
+| `ash_archival`, `ash_paper_trail`, `ash_cloak`, `cloak`, `ash_events`, `ash_state_machine` | the package (and a formatter import, for the last two): no installer, or one that configures nothing more |
+
+Packages the command did not name come in at the request of these
+installers (`picosat_elixir` through Ash's policy authorizer, when a
+resource first takes it): the console's Packages table says which is
+which, one note each.
+
 ## Keeping up with the site
 
 Every table above, and the one-line comments the catalog shows beside

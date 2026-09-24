@@ -23,6 +23,10 @@ already carrying what that command installed is a major.
   the `mix igniter.install` it runs. The ones that command did not name carry that they came in
   at the request of the installer of a package it named. The console's
   Packages table says each under its own number.
+- README: *What each installer writes*, installer by installer.
+  DESIGN §2.6: the whole command read in the installed sources, and
+  where each package of the insert commit came from; §3.8: why the
+  notes are the cartridge's.
 
 ### Changed
 

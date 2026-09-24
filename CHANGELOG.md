@@ -44,6 +44,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `workbench.setup` leaves an existing `.env` alone, and now its
   `.env.sample` too: both files are the project's own.
 
+### Fixed
+
+- **The resident no longer compiles what it then fails to see.** The
+  console's resident ran `mix do deps.get, deps.compile,
+  workbench.serve` in one BEAM. After a stack change, when that run
+  had to rebuild the dependencies, Elixir 1.18 answered `module
+  Igniter is not available` with every `.beam` on disk, and the
+  resident answered that to every question until it was restarted:
+  `pitchers` "could not be read". The dependencies are now compiled by
+  a Mix of their own, with its stdin closed, before `exec mix
+  workbench.serve`. That costs one Mix boot more, once per resident.
+
 ## v0.12.0 - (2026-09-23)
 
 ### Added

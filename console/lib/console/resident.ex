@@ -162,8 +162,15 @@ defmodule Console.Resident do
     project = Workbench.project(ws)
     # deps.get and deps.compile first: the package's own dependencies
     # are only fetched, and compiled, with the workbench mounted, which
-    # the app service never has. Incremental: a second once done.
-    mix = ["do", "deps.get,", "deps.compile,", "workbench.serve"]
+    # the app service never has. Incremental: a second once done. In a
+    # Mix of their own, before the resident's: a BEAM that has just
+    # rebuilt a dependency's ebin may not see its modules (seen on
+    # Elixir 1.18, 2026-09-23: `Igniter is not available` after a
+    # stack change, with every .beam on disk), and the resident would
+    # answer that to every question until restarted. One Mix boot more,
+    # once per resident. Its stdin closed: the questions are the
+    # resident's, even one sent before it said it was ready.
+    script = "mix do deps.get, deps.compile < /dev/null && exec mix workbench.serve"
 
     if mounted_here?(ws, project) do
       # The workspace as the app service sees it: /app/src, with the
@@ -184,7 +191,8 @@ defmodule Console.Resident do
         {~c"MIX_DEPS_PATH", false}
       ]
 
-      {System.find_executable("mix"), mix, [cd: System.fetch_env!("WORKSPACE_MOUNT"), env: env]}
+      {System.find_executable("sh"), ["-c", script],
+       [cd: System.fetch_env!("WORKSPACE_MOUNT"), env: env]}
     else
       {System.find_executable("docker"),
        [
@@ -204,7 +212,9 @@ defmodule Console.Resident do
          "-w",
          "/app/src",
          Workbench.image(ws),
-         "mix" | mix
+         "sh",
+         "-c",
+         script
        ], []}
     end
   end

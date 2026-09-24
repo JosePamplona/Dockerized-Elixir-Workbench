@@ -544,21 +544,23 @@ defmodule WorkbenchIgniter.PhxDelta do
         drop_placeholder(igniter, path, placeholder)
       end)
 
-    Enum.reduce(changed, igniter, fn {path, {base, theirs}}, igniter ->
-      case ours do
-        # A file the project has not moved from what phx.new wrote is
-        # what phx.new writes with the capability, as phx.new writes it:
-        # the guarantee, and the case that matters. Operations and
-        # merges below are for a file the project has moved.
-        %{^path => own} ->
-          if untouched?(path, own, base),
-            do: as_phx_new(igniter, path, own, theirs),
-            else: moved(igniter, path, own, base, theirs, capability)
+    Enum.reduce(changed, igniter, &apply_changed(&2, &1, ours, capability))
+  end
 
-        _ ->
-          Igniter.create_new_file(igniter, path, theirs)
-      end
-    end)
+  defp apply_changed(igniter, {path, {base, theirs}}, ours, capability) do
+    case ours do
+      # A file the project has not moved from what phx.new wrote is
+      # what phx.new writes with the capability, as phx.new writes it:
+      # the guarantee, and the case that matters. Operations and
+      # merges below are for a file the project has moved.
+      %{^path => own} ->
+        if untouched?(path, own, base),
+          do: as_phx_new(igniter, path, own, theirs),
+          else: moved(igniter, path, own, base, theirs, capability)
+
+      _ ->
+        Igniter.create_new_file(igniter, path, theirs)
+    end
   end
 
   defp moved(igniter, path, own, base, theirs, capability) do

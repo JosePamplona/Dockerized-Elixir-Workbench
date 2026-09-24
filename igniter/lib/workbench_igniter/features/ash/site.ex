@@ -185,15 +185,7 @@ defmodule WorkbenchIgniter.Features.Ash.Site do
 
         gone =
           for pkg <- packages, pkg not in listed do
-            case Enum.find(by_title, fn {t, ks} ->
-                   t != title and Enum.any?(ks, &(pkg in (site[&1][:adds] || [])))
-                 end) do
-              {other, _} ->
-                {:diff, "section «#{title}» (#{option}): #{pkg} moved to «#{other}» on the site"}
-
-              nil ->
-                {:diff, "section «#{title}» (#{option}): the site no longer lists #{pkg}"}
-            end
+            gone(pkg, "section «#{title}» (#{option})", title, by_title, site)
           end
 
         added =
@@ -208,6 +200,17 @@ defmodule WorkbenchIgniter.Features.Ash.Site do
         end
     end
   end
+
+  # A package the section no longer lists: moved to another section, or
+  # dropped from the site.
+  defp gone(pkg, section, title, by_title, site) do
+    case Enum.find(by_title, fn {t, ks} -> t != title and offers?(ks, pkg, site) end) do
+      {other, _} -> {:diff, "#{section}: #{pkg} moved to «#{other}» on the site"}
+      nil -> {:diff, "#{section}: the site no longer lists #{pkg}"}
+    end
+  end
+
+  defp offers?(keys, pkg, site), do: Enum.any?(keys, &(pkg in (site[&1][:adds] || [])))
 
   # The strategies the site offers, each one `--auth` must know. An
   # option with no strategy is `compare/1`'s to report, as waiting.

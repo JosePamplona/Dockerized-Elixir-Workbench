@@ -114,32 +114,28 @@ defmodule WorkbenchIgniter.RouterFile do
       children = statements(body)
 
       with {:ok, items} <- items(children, offs, text) do
-        last = if items == [], do: head_end, else: List.last(items).stop
-        tail = binary_part(text, last, max(end_start - last, 0))
-
-        tail_item =
-          if String.trim(tail) == "",
-            do: [],
-            else: [
-              %{
-                key: :tail,
-                start: last + leading_space(tail),
-                stop: end_start - 1,
-                block: nil
-              }
-            ]
+        last = items |> List.last(%{stop: head_end}) |> Map.fetch!(:stop)
 
         {:ok,
          %{
            start: start,
            stop: stop,
            head_end: head_end,
-           items: items ++ tail_item
+           items: items ++ tail_item(text, last, end_start)
          }}
       end
     else
       _ -> :error
     end
+  end
+
+  # What sits between the last item and the `end` line, when anything does.
+  defp tail_item(text, last, end_start) do
+    tail = binary_part(text, last, max(end_start - last, 0))
+
+    if String.trim(tail) == "",
+      do: [],
+      else: [%{key: :tail, start: last + leading_space(tail), stop: end_start - 1, block: nil}]
   end
 
   defp do_block([{{:__block__, _, [:do]}, _} = kw]), do: [kw]
@@ -150,26 +146,7 @@ defmodule WorkbenchIgniter.RouterFile do
   defp statements(stmt), do: [stmt]
 
   defp items(nodes, offs, text) do
-    items =
-      Enum.map(nodes, fn node ->
-        range = Sourceror.get_range(node, include_comments: true)
-
-        item = %{
-          key: key(node),
-          start: offset(offs, range.start),
-          stop: offset(offs, range.end),
-          block: nil
-        }
-
-        if block?(node) do
-          case block(node, offs, text) do
-            {:ok, b} -> %{item | block: b}
-            :error -> :error
-          end
-        else
-          item
-        end
-      end)
+    items = Enum.map(nodes, &item(&1, offs, text))
 
     keys = for %{key: k} <- items, do: k
 
@@ -177,6 +154,25 @@ defmodule WorkbenchIgniter.RouterFile do
       :error in items -> :error
       length(Enum.uniq(keys)) != length(keys) -> :error
       true -> {:ok, items}
+    end
+  end
+
+  defp item(node, offs, text) do
+    range = Sourceror.get_range(node, include_comments: true)
+
+    item = %{
+      key: key(node),
+      start: offset(offs, range.start),
+      stop: offset(offs, range.end),
+      block: nil
+    }
+
+    with true <- block?(node),
+         {:ok, b} <- block(node, offs, text) do
+      %{item | block: b}
+    else
+      false -> item
+      :error -> :error
     end
   end
 
@@ -281,54 +277,8 @@ defmodule WorkbenchIgniter.RouterFile do
       |> Enum.reject(fn {item, _} -> Map.has_key?(bm, item.key) or Map.has_key?(om, item.key) end)
       |> Enum.map(fn {item, i} -> add_op(item, i, t, texts, o, om, t_keys, kept) end)
 
-    others =
-      Enum.flat_map(b.items, fn bi ->
-        oi = om[bi.key]
-        ti = tm[bi.key]
-        same_bt = ti && same?(texts.b, bi, texts.t, ti)
-
-        cond do
-          same_bt ->
-            {[], []} |> ops()
-
-          is_nil(oi) and is_nil(ti) ->
-            ops({[], []})
-
-          is_nil(oi) and bi.key == :tail ->
-            ops({[], []})
-
-          is_nil(oi) ->
-            ops({[], [notice(path, bi.key, :gone)]})
-
-          same?(texts.o, oi, texts.b, bi) and is_nil(ti) ->
-            ops({[remove(o, oi)], []})
-
-          is_nil(ti) ->
-            ops({[], [notice(path, bi.key, :kept)]})
-
-          whole? and same?(texts.o, oi, texts.b, bi) ->
-            ops({[replace(oi, texts.t, ti)], []})
-
-          oi.block && bi.block && ti.block ->
-            {s, n} =
-              walk(
-                put_text(oi.block, texts.o),
-                put_text(bi.block, texts.b),
-                put_text(ti.block, texts.t),
-                texts,
-                whole?,
-                path ++ [bi.key]
-              )
-
-            ops({s, n})
-
-          same?(texts.o, oi, texts.b, bi) ->
-            ops({[replace(oi, texts.t, ti)], []})
-
-          true ->
-            ops({[], [notice(path, bi.key, :changed)]})
-        end
-      end)
+    ctx = %{o: o, texts: texts, whole?: whole?, path: path}
+    others = Enum.map(b.items, &item_ops(&1, om[&1.key], tm[&1.key], ctx))
 
     {hs, hn} = head
     splices = hs ++ Enum.map(adds, & &1) ++ Enum.flat_map(others, &elem(&1, 0))
@@ -336,7 +286,49 @@ defmodule WorkbenchIgniter.RouterFile do
     {splices, notices}
   end
 
-  defp ops(pair), do: [pair]
+  # What becomes of an item base has: kept, taken away, replaced by
+  # theirs, walked into, or left with a notice.
+  defp item_ops(bi, oi, ti, %{texts: texts} = ctx) do
+    cond do
+      ti && same?(texts.b, bi, texts.t, ti) -> {[], []}
+      is_nil(oi) -> missing_ops(bi, ti, ctx.path)
+      is_nil(ti) and same?(texts.o, oi, texts.b, bi) -> {[remove(ctx.o, oi)], []}
+      is_nil(ti) -> {[], [notice(ctx.path, bi.key, :kept)]}
+      true -> changed_ops(bi, oi, ti, ctx)
+    end
+  end
+
+  # An item ours no longer has: nothing to do when theirs dropped it too,
+  # or it is the tail.
+  defp missing_ops(_bi, nil, _path), do: {[], []}
+  defp missing_ops(%{key: :tail}, _ti, _path), do: {[], []}
+  defp missing_ops(bi, _ti, path), do: {[], [notice(path, bi.key, :gone)]}
+
+  # An item all three have, and theirs changed.
+  defp changed_ops(bi, oi, ti, %{texts: texts} = ctx) do
+    untouched = same?(texts.o, oi, texts.b, bi)
+
+    cond do
+      ctx.whole? and untouched ->
+        {[replace(oi, texts.t, ti)], []}
+
+      oi.block && bi.block && ti.block ->
+        walk(
+          put_text(oi.block, texts.o),
+          put_text(bi.block, texts.b),
+          put_text(ti.block, texts.t),
+          texts,
+          ctx.whole?,
+          ctx.path ++ [bi.key]
+        )
+
+      untouched ->
+        {[replace(oi, texts.t, ti)], []}
+
+      true ->
+        {[], [notice(ctx.path, bi.key, :changed)]}
+    end
+  end
 
   defp put_text(block, text), do: Map.put(block, :text, text)
 
@@ -367,27 +359,24 @@ defmodule WorkbenchIgniter.RouterFile do
     body = slice(texts.t, item.start, item.stop) |> without_paragraphs(kept)
     last? = i == length(t.items) - 1 or (i == length(t.items) - 2 and List.last(t_keys) == :tail)
 
+    at = add_at(item.key == :tail or last?, before, o, om)
+    {at, at, gap <> body}
+  end
+
+  # Where an added item goes in ours: after its last item when it ends
+  # theirs, else after the nearest item before it that ours has — the
+  # one right before it first —, else under the head.
+  defp add_at(at_end?, before, o, om) do
     o_body = Enum.reject(o.items, &(&1.key == :tail))
 
-    at =
-      cond do
-        item.key == :tail or (last? and o_body != []) ->
-          case List.last(o_body) do
-            nil -> o.head_end
-            last -> last.stop
-          end
-
-        match?([_ | _], before) and Map.has_key?(om, hd(before)) ->
-          om[hd(before)].stop
-
-        true ->
-          case Enum.find(before, &Map.has_key?(om, &1)) do
-            nil -> o.head_end
-            k -> om[k].stop
-          end
+    if at_end? and o_body != [] do
+      List.last(o_body).stop
+    else
+      case Enum.find(before, &Map.has_key?(om, &1)) do
+        nil -> o.head_end
+        k -> om[k].stop
       end
-
-    {at, at, gap <> body}
+    end
   end
 
   # The comment paragraphs of a text: runs of comment lines, trimmed.
@@ -416,7 +405,7 @@ defmodule WorkbenchIgniter.RouterFile do
       |> Enum.chunk_by(&(String.trim(&1) == ""))
       |> Enum.chunk_every(2)
       |> Enum.reject(fn [para | _] ->
-        MapSet.member?(kept, para |> Enum.map(&String.trim/1) |> Enum.join("\n"))
+        MapSet.member?(kept, Enum.map_join(para, "\n", &String.trim/1))
       end)
       |> List.flatten()
 

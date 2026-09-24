@@ -103,25 +103,29 @@ defmodule WorkbenchIgniter.Features.Auth0 do
             Igniter.add_notice(igniter, "Auth0 is already installed, skipping.")
 
           {false, igniter} ->
-            # An Accounts context that is not this cartridge's — Ash's
-            # domain, the project's own — would be overwritten by the
-            # templates: refused, naming it, rather than planted over.
-            case Igniter.Project.Module.module_exists(igniter, accounts) do
-              {true, igniter} ->
-                Igniter.add_issue(
-                  igniter,
-                  "#{inspect(accounts)} already exists and is not Auth0's " <>
-                    "(Ash's authentication writes one): auth0 would overwrite it. " <>
-                    "Not inserted."
-                )
-
-              {false, igniter} ->
-                install(igniter, app_module, opts)
-            end
+            install_unless_taken(igniter, accounts, app_module, opts)
         end
 
       {missing, igniter} ->
         WorkbenchIgniter.Feature.refuse(igniter, __MODULE__, missing)
+    end
+  end
+
+  # An Accounts context that is not this cartridge's — Ash's domain, the
+  # project's own — would be overwritten by the templates: refused,
+  # naming it, rather than planted over.
+  defp install_unless_taken(igniter, accounts, app_module, opts) do
+    case Igniter.Project.Module.module_exists(igniter, accounts) do
+      {true, igniter} ->
+        Igniter.add_issue(
+          igniter,
+          "#{inspect(accounts)} already exists and is not Auth0's " <>
+            "(Ash's authentication writes one): auth0 would overwrite it. " <>
+            "Not inserted."
+        )
+
+      {false, igniter} ->
+        install(igniter, app_module, opts)
     end
   end
 

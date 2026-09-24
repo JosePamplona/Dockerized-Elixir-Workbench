@@ -93,7 +93,7 @@ defmodule WorkbenchIgniter.Features.DbAdmin do
     "mssql" => {"sqlserver", "microsoft"}
   }
 
-  @doc "The file each admin is written as, and marked by: `%{\"pgadmin\" => \"pgadmin/servers.json\", …}`."
+  @doc ~s(The file each admin is written as, and marked by: `%{"pgadmin" => "pgadmin/servers.json", …}`.)
   def files, do: Map.new(@admins, &{&1.name, &1.file})
 
   @impl true

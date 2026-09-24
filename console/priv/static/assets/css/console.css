@@ -1806,8 +1806,6 @@ header.band ::selection{background:color-mix(in srgb,var(--board-ink) 15%,transp
    options are plain, as the file writes them, and read from the left
    like the name; who brought it closes the row at the right edge, as
    the numbers do. */
-.pdocs .dkdoc.mix .code-box.spec{--key-w:17ch}
-.pdocs .dkdoc.mix .code-box.spec .v{white-space:pre-wrap}
 table.rows.pkgs th.opts,table.rows.pkgs td.opts{text-align:left}
 table.rows.pkgs th.by,table.rows.pkgs td.by{text-align:right}
 table.rows.pkgs td.by{white-space:nowrap}

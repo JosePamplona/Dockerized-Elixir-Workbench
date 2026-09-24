@@ -63,6 +63,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   showed it; IBM Plex Mono is now loaded at 700 too, and Flexi IBM VGA,
   which has one weight, gets the browser's.
 
+### Removed
+
+- **The Mix paper's Specs.** `def project` in a code box over the
+  packages table, keyword by keyword and coloured as Elixir, is gone:
+  the paper is the packages table. `Project.render(_, "mix")` reads
+  only the dependencies' options now, and the formatting and colouring
+  that served the Specs alone went with them.
+
 ### Fixed
 
 - **One code box, one indent.** The daemon's Specs stood 31px in and

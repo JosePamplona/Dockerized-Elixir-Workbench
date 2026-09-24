@@ -86,21 +86,15 @@ defmodule Console.Project do
   def render(_workspace, "pending"), do: %{git: "pending"}
   def render(_workspace, "history"), do: %{git: "history"}
 
-  # What `def project` says, as the project wrote it: each keyword and
-  # its code, coloured as Elixir — `Mix.env() == :prod` stays an
-  # expression. `deps:` is the table under it, not a line. And each dependency's options, the
-  # table's own column, as plain text: what follows its name and
-  # requirement, less where a git one comes from, which its name and
-  # version already say.
+  # The Mix paper is the packages table (the Specs of `def project` over
+  # it were taken off on 2026-09-24): what this reads is each
+  # dependency's options, the table's own column, as plain text — what
+  # follows its name and requirement, less where a git one comes from,
+  # which its name and version already say.
   def render(workspace, "mix") do
     with {:ok, text} <- File.read(Path.join(workspace, "mix.exs")),
          {:ok, _} <- Code.string_to_quoted(text) do
       mix = WorkbenchIgniter.MixFile.read(text)
-
-      spec =
-        for {key, code} <- mix.project,
-            key != :deps,
-            do: {to_string(key), elixir(formatted(code))}
 
       options =
         for {name, code} <- mix.deps,
@@ -109,7 +103,7 @@ defmodule Console.Project do
             into: %{},
             do: {to_string(name), one_a_line(options)}
 
-      %{mix: %{spec: spec, options: options}}
+      %{mix: %{options: options}}
     else
       _ -> nil
     end
@@ -154,22 +148,6 @@ defmodule Console.Project do
   # keeps the inner list's.
   defp unbracket("[" <> rest), do: String.slice(rest, 0..-2//1)
   defp unbracket(text), do: text
-
-  # The code the way `mix format` would write it, so a long value —
-  # `docs:` is a page of options — breaks where the project's own file
-  # would, and not wherever the column runs out.
-  defp formatted(code) do
-    code |> Macro.to_string() |> Code.format_string!() |> IO.iodata_to_binary()
-  end
-
-  # Coloured by the lexer the Files sheet uses, one HTML string: the
-  # page wraps it in a `.src` that says it is Elixir.
-  defp elixir(code) do
-    case Console.Highlight.lines("mix.exs", code) do
-      {_, lines} when is_list(lines) -> Enum.join(lines, "\n")
-      _ -> code |> Phoenix.HTML.html_escape() |> Phoenix.HTML.safe_to_string()
-    end
-  end
 
   @doc """
   Which cartridge put each package in `mix.exs`, and what it asks for:

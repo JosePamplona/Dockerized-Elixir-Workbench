@@ -36,10 +36,6 @@ defmodule ConsoleWeb.ProjectScreenTest do
         paper: "mix",
         page: %{
           mix: %{
-            spec: [
-              {"app", ~s(<span class="ss">:lorem</span>)},
-              {"start_permanent", ~s(<span class="ss">:prod</span>)}
-            ],
             options: %{"heroicons" => "app: false,\ndepth: 1"}
           }
         },
@@ -52,11 +48,8 @@ defmodule ConsoleWeb.ProjectScreenTest do
         }
       )
 
-    # def project in a code box, as Docker sets the daemon's lines: the
-    # key, and the value coloured as Elixir.
-    assert html =~ ~s(<code class="code-box spec">)
-    assert html =~ ~s(<span class="k">start_permanent</span>)
-    assert html =~ ~r|class="v src"\s+data-lang="elixir"\s*><span class="ss">:prod</span>|
+    # The packages table alone: def project's Specs are not drawn.
+    refute html =~ "code-box"
     # Who brought each, last, and its options.
     assert html =~ "brought by"
     assert html =~ ~s(phx-value-name="mailer")

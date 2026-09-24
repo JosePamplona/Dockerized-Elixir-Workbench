@@ -88,10 +88,8 @@ defmodule Console.ProjectTest do
 
     %{mix: mix} = Project.render(dir, "mix")
 
-    # Every keyword but deps, which is the table, coloured as Elixir.
-    assert Enum.map(mix.spec, &elem(&1, 0)) == ~w(app version elixir start_permanent)
-    assert {"start_permanent", html} = List.last(mix.spec)
-    assert html =~ ~s(<span class="ss">:prod</span>)
+    # The options alone: def project's keywords are no longer read.
+    assert Map.keys(mix) == [:options]
 
     # The options, less where a git package comes from; none for phoenix.
     assert Map.keys(mix.options) |> Enum.sort() == ["credo", "heroicons"]

@@ -74,14 +74,6 @@ defmodule ConsoleWeb.ProjectScreen do
         stale={@reading == :full}
       />
       <div :if={@page && @page[:mix]} class="dkdoc mix">
-        <%!-- def project, a line a keyword, set as the Docker screen sets
-              what the daemon says of itself: a code box, the key dim and
-              the value coloured as the Elixir it is. --%>
-        <div class="log-cap"><span class="label">Specs</span></div>
-        <code class="code-box spec"><span :for={{key, html} <- @page.mix.spec} class="ln"><span class="k">{key}</span><span
-          class="v src"
-          data-lang="elixir"
-        >{Phoenix.HTML.raw(html)}</span></span></code>
         <Packages.table
           rows={mix_rows(@status, @hex, @by)}
           brought

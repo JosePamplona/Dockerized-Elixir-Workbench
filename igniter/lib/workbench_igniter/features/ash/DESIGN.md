@@ -242,7 +242,7 @@ table:
 happens in the queued task's turn, which is why the diff is empty and
 the output is not.*
 
-### 3.2 The site's sections as options, `--with` open
+### 3.2 The site's sections as options, each closed
 
 The options are the site's rows, not a raw package list: `--data-layer`
 (several of a closed set, as the site's checkboxes — a resource picks
@@ -253,11 +253,22 @@ packages, `ash_authentication` *before* `ash_authentication_phoenix`,
 because the Phoenix installer's fallback is a prompt (§2.5) that hung
 the first real run of this cartridge, while listed first
 `ash_authentication.install` runs with `--auth-strategy` and the
-question never comes up), and `--with` for the *Advanced Options* — an open list, because each of
-those is a package name with its own installer and the site adds to
-the catalogue faster than a cartridge would. The alternative, one flag
-per advanced checkbox, was rejected as fifteen flags that would each
-be one string.
+question never comes up), and one option per section of the *Advanced
+Options* — `--ai`, `--finance`, `--automation`, `--security`,
+`--dev-tools`, `--components` — each closed on the packages the site
+offers there, in the site's order; a package a section does not offer
+is an error naming the ones it does. One flag per advanced checkbox was
+rejected as fifteen flags that would each be one string; one flag per
+section is the site's own grouping, and six.
+
+Until cartridge v0.5.0 the *Advanced Options* were one open `--with`,
+because the site adds to its catalogue faster than a cartridge would.
+`mix workbench.ash.site` answered that on 2026-09-24: of what the site
+offers, the cartridge lacked only `appsignal` and `opentelemetry`, both
+marked "Installer coming soon". The open field then only took packages
+the site does not offer, which is `mix igniter.install <package>`'s
+job, not this cartridge's; and a section the site adds is a report of
+that same check, and an option here.
 
 ### 3.3 `ash` first, always; `ash_phoenix` always
 
@@ -275,7 +286,8 @@ Packages already declared in `mix.exs` are left out of the queued
 command (`Igniter.Project.Deps.has_dep?/2` per package, on the name
 part of a `org/package@version` spec); when none is left nothing is
 queued and a notice says so. This makes a re-run with the same options
-a no-op and a run with `--with more` queue only `more`. `installed?/1`
+a no-op and a run with more (`--dev-tools ash_admin`) queue only the
+new ones. `installed?/1`
 reads the `ash` dependency — always the first package, and the one
 every other needs. The one deviation from the cartridge anatomy: that
 mark is planted by the queued command, not by the patch set, so the
@@ -334,12 +346,11 @@ Double Entry option requires Money, so `ash_money` precedes
 `--framework react`; and its API-keys option adds `ash_authentication`
 alone, the Phoenix half only coming with a strategy that has pages.
 The cartridge does the same now (`@companions`, `flags/1`,
-`auth_packages/1`), keeping `--with` as package names: a companion is
+`auth_packages/1`), keeping the sections' values as package names: a companion is
 what the command puts in *beside* the package named, in the site's
 order. The alternative — offering the site's feature keys (`oban`,
-`cloak`) instead of packages — was rejected: `--with` is open to any
-package with an installer, and a key that stands for two packages
-would be a second vocabulary for the same thing.
+`cloak`) instead of packages — was rejected: a key that stands for two
+packages would be a second vocabulary for the same thing.
 
 What keeps this true is `mix workbench.ash.site` (`site.ex`): it
 fetches the map and compares it with the tables, option by option.

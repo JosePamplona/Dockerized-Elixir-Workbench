@@ -30,6 +30,19 @@ already carrying what that command installed is a major.
 
 ### Changed
 
+- `--with` is six options, one per section of the site's *Advanced
+  Options*: `--ai`, `--finance`, `--automation`, `--security`,
+  `--dev-tools`, `--components`, each closed on the packages the site
+  offers there and queued in the site's order. A package a section
+  does not offer is refused, naming the ones it does. The open field is
+  gone: `mix workbench.ash.site` found the cartridge lacking only
+  `appsignal` and `opentelemetry`, whose installers the site marks
+  "coming soon", so the field only took packages the site does not
+  offer, which is `mix igniter.install`'s job. `state` reports the
+  packages by section, and the `admin` and `oban` doors read
+  `dev_tools` and `automation`. An insert made with `--with` keeps its
+  line; its packages read as brought by the installers in the Packages
+  notes, since the option is not parsed any more.
 - `state` reports `auth` as the strategies the user resource declares
   (`password`, `remember_me`, `magic_link`, …), read off its
   `strategies do` block, where it said `true` whenever

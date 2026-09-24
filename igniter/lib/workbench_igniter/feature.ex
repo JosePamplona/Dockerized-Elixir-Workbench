@@ -98,8 +98,9 @@ defmodule WorkbenchIgniter.Feature do
   `OptionParser` types say `:string` or `:csv`; this says which strings.
   A plain list is closed — the installer rejects anything else, the
   same list its validation reads. `{:open, list}` is a suggestion: the
-  option takes other values too (`--with` takes any package). A list of
-  `{group, values}` pairs keeps the values in sections. A value is a
+  option takes other values too (ash's `--auth` hands any strategy to
+  ash_authentication). A list of `{group, values}` pairs keeps the
+  values in sections. A value is a
   string, a `{value, doc}` pair when one line can say what it does, or
   `{value, doc, requires}` when choosing it builds on other cartridges
   (ash's `--auth password` on live and mailer): the installer refuses
@@ -108,7 +109,7 @@ defmodule WorkbenchIgniter.Feature do
   the form shows it beside the choice.
 
       [data_layer: [{"postgres", "ash_postgres"}, {"none", "no data layer"}],
-       with: {:open, [ai: ~w(tidewave ash_ai)]}]
+       auth: {:open, ~w(password magic_link)}]
 
   A boolean switch has one value worth declaring, `true`, and declares
   it only for what turning it on builds on: credo's `--githook` writes

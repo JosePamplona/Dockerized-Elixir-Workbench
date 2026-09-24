@@ -49,8 +49,8 @@ defmodule WorkbenchIgniter.ConsoleTest do
     # Each behind the option that brings the package whose installer
     # writes the route; `/sign-in` with any strategy but api_key alone.
     assert [
-             %{label: "admin", path: "/admin", when: %{option: "with", value: "ash_admin"}},
-             %{label: "oban", path: "/oban", when: %{option: "with", value: "ash_oban"}},
+             %{label: "admin", path: "/admin", when: %{option: "dev_tools", value: "ash_admin"}},
+             %{label: "oban", path: "/oban", when: %{option: "automation", value: "ash_oban"}},
              %{label: "sign in", path: "/sign-in", when: %{option: "auth", value: pages}},
              %{label: "swagger", when: %{option: "api", value: "json_api"}},
              %{label: "openapi", path: "/api/json/open_api"},

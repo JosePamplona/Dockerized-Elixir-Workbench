@@ -68,23 +68,30 @@ the workbench only makes Phoenix projects.
 | Data layer: Postgres / SQLite / CSV | `--data-layer postgres,sqlite,csv` (several, as the site's checkboxes; default `postgres`; `none` alone for no data layer) | `ash_postgres`, `ash_sqlite`, `ash_csv` |
 | Web: JSON:API, GraphQL, TypeScript | `--api json_api,graphql,typescript` | `ash_json_api`, `ash_graphql`, `ash_typescript` (handed `--framework react`, as the site does; its installer hooks `npm install` into `assets.setup`, which the workbench's and the project's images carry node and npm for) |
 | Authentication: Password, Magic Link, API Keys, OAuth2 | `--auth password,magic_link,api_key,oauth2,…` | `ash_authentication`, `ash_authentication_phoenix`, with `--auth-strategy <list>`; API keys alone bring `ash_authentication` only, as on the site |
-| Advanced Options | `--with pkg,pkg` | any package with an installer |
+| Advanced Options, by section | `--ai`, `--finance`, `--automation`, `--security`, `--dev-tools`, `--components` | the packages the site offers in that section (below) |
 | — | `--example` | `ash.install --example`: the guide's example resources |
 
 `--auth` takes whatever `ash_authentication.add_strategy` does:
 `password`, `magic_link`, `otp`, `api_key`, `totp`, `recovery_code`,
 `github`, `google`, `apple`, `auth0`, `microsoft`, `okta`, `slack`,
 `oidc`, `oauth2`, `dynamic_oidc`, `webauthn`. The site's *Advanced
-Options*, by section, as the packages they stand for:
+Options*, one option per section, each closed on the packages the site
+offers there (anything else is refused, naming them), and queued in the
+site's order:
 
-| Section | Packages |
-| --- | --- |
-| AI | `tidewave`, `ash_ai`, `usage_rules` |
-| Finance | `ash_money`, `ash_double_entry` (brings `ash_money` first, as the site requires) |
-| Automation | `ash_oban` (with `oban_web`, as the site adds it), `ash_state_machine`, `ash_events` |
-| Safety & Security | `ash_archival`, `ash_paper_trail`, `ash_cloak` (with `cloak` before it, as the site adds it) |
-| Dev Tools | `live_debugger`, `ash_admin` |
-| UI Components | `mishka_chelekom`, `cinder` |
+| Section | Option | Packages |
+| --- | --- | --- |
+| AI | `--ai` | `tidewave`, `ash_ai`, `usage_rules` |
+| Finance | `--finance` | `ash_money`, `ash_double_entry` (brings `ash_money` first, as the site requires) |
+| Automation | `--automation` | `ash_oban` (with `oban_web`, as the site adds it), `ash_state_machine`, `ash_events` |
+| Safety & Security | `--security` | `ash_archival`, `ash_paper_trail`, `ash_cloak` (with `cloak` before it, as the site adds it) |
+| Dev Tools | `--dev-tools` | `live_debugger`, `ash_admin` |
+| UI Components | `--components` | `mishka_chelekom`, `cinder` |
+
+What the site offers besides — `appsignal`, `opentelemetry` — has no
+installer yet ("coming soon", the site says); `mix workbench.ash.site`
+reports it. Any other package with an installer is
+`mix igniter.install <package>`'s, not this cartridge's.
 
 Some of them need manual setup after the installer (the site says so
 too): OAuth providers want their client ids in `.env`, `ash_oban`
@@ -176,7 +183,7 @@ as its author wrote it and does not patch it.
 
 Packages already declared in `mix.exs` are left out of the command;
 when none is left, nothing is queued and a notice says so. So a re-run
-with the same options is a no-op, and a run with more (`--with
+with the same options is a no-op, and a run with more (`--dev-tools
 ash_admin` on a project that has Ash) queues only the new ones. The
 `.env` entry is appended once (the key is its mark). The mark `status`
 reads is the `ash` dependency.

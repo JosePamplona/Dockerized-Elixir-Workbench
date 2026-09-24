@@ -128,19 +128,17 @@ defmodule WorkbenchIgniter.CatalogTest do
 
       assert %{doc: nil} = Enum.find(by.(:auth).choices, &(&1.value == "webauthn"))
 
+      # The site's Advanced Options, one closed option per section.
       assert %{
                choices: [
-                 %{
-                   group: :ai,
-                   values: [
-                     %{value: "tidewave", doc: "Speed up development" <> _},
-                     %{value: "ash_ai", doc: "First class support" <> _} | _
-                   ]
-                 }
-                 | _
+                 %{value: "tidewave", doc: "Speed up development" <> _},
+                 %{value: "ash_ai", doc: "First class support" <> _} | _
                ],
-               open: true
-             } = by.(:with)
+               open: false,
+               multiple: true
+             } = by.(:ai)
+
+      refute by.(:with)
 
       assert %{choices: nil, multiple: false} = by.(:example)
 
@@ -350,7 +348,7 @@ defmodule WorkbenchIgniter.CatalogTest do
         |> Igniter.Project.Deps.add_dep({:ash_admin, "~> 0.13"})
         |> apply_igniter!()
 
-      assert {%{data_layer: ["postgres"], api: ["json_api"], with: ["ash_admin"]}, _} =
+      assert {%{data_layer: ["postgres"], api: ["json_api"], dev_tools: ["ash_admin"]}, _} =
                Features.Ash.state(project)
 
       assert {state, _} = Features.Ash.state(phx_test_project())

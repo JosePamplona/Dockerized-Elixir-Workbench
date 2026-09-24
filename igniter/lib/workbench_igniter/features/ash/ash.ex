@@ -36,7 +36,7 @@ defmodule WorkbenchIgniter.Features.Ash do
   | `--data-layer postgres` (default) / `sqlite` / `csv` / `none` | `ash_postgres` / `ash_sqlite` / `ash_csv` / — |
   | `--api json_api,graphql,typescript` | `ash_json_api`, `ash_graphql`, `ash_typescript` |
   | `--auth password,magic_link,…` | `ash_authentication`, `ash_authentication_phoenix`, with `--auth-strategy <list>` |
-  | `--with pkg,pkg` | any further package, as ash-hq's *Advanced Options* |
+  | `--ai`, `--finance`, `--automation`, `--security`, `--dev-tools`, `--components` | ash-hq's *Advanced Options*, one option per section, each a closed list of the packages the site offers there |
   | `--example` | passed to `ash.install`, which generates the example resources |
 
   `ash` and `ash_phoenix` are always in: the workbench only makes
@@ -75,15 +75,29 @@ defmodule WorkbenchIgniter.Features.Ash do
                       oauth2 dynamic_oidc webauthn)
 
   # ash-hq.org's Advanced Options, by section, as the packages they
-  # stand for. For the docs and the catalog only: `--with` takes any
-  # package, these are the ones the site offers.
+  # stand for: one option per section, named after it, closed on the
+  # packages the site offers there — what it offers besides has no
+  # installer yet (`mix workbench.ash.site` says when that changes).
+  # In the site's order, which is the command's.
   @advanced [
     ai: ~w(tidewave ash_ai usage_rules),
     finance: ~w(ash_money ash_double_entry),
     automation: ~w(ash_oban ash_state_machine ash_events),
-    safety_and_security: ~w(ash_archival ash_paper_trail ash_cloak),
+    security: ~w(ash_archival ash_paper_trail ash_cloak),
     dev_tools: ~w(live_debugger ash_admin),
-    ui_components: ~w(mishka_chelekom cinder)
+    components: ~w(mishka_chelekom cinder)
+  ]
+
+  # Each section's title on the site, the `data-category` its home page
+  # groups the features by: what `mix workbench.ash.site` finds them
+  # under, and what each option's line names.
+  @section_titles [
+    ai: "AI",
+    finance: "Finance",
+    automation: "Automation",
+    security: "Safety & Security",
+    dev_tools: "Dev Tools",
+    components: "UI Components"
   ]
 
   # What the site's command puts in beside a package, in the site's
@@ -105,7 +119,7 @@ defmodule WorkbenchIgniter.Features.Ash do
   @needs_live ~w(ash_admin live_debugger cinder mishka_chelekom ash_oban)
   @sends_email ~w(password magic_link otp)
 
-  @doc "A --with package with what the site's command adds beside it, in order."
+  @doc "An advanced package with what the site's command adds beside it, in order."
   def expand(pkg) do
     {before, after_} = Map.get(@companions, pkg, {[], []})
     before ++ [pkg] ++ after_
@@ -113,6 +127,9 @@ defmodule WorkbenchIgniter.Features.Ash do
 
   @doc "ash-hq.org's Advanced Options, by section, as package names."
   def advanced, do: @advanced
+
+  @doc "Each advanced section's title on the site, by the option that stands for it."
+  def section_titles, do: @section_titles
 
   # What each option says of itself on ash-hq.org: the first sentence
   # of the tooltip its installer widget shows on hover — the first
@@ -189,17 +206,16 @@ defmodule WorkbenchIgniter.Features.Ash do
   defp with_doc(pkg),
     do: {pkg, @tooltips[pkg], if(pkg in @needs_live, do: [{"html", live: true}], else: [])}
 
-  # The values the options take: the two the installer checks, closed,
-  # each with the package it stands for; the two it hands down, open,
-  # with what the site offers.
+  # The values the options take: closed, each with the package it
+  # stands for, but the strategies, which the installer hands down to
+  # ash_authentication unchecked.
   @impl true
   def choices do
     [
       data_layer: Enum.map(@data_layers, fn {name, pkg} -> {name, tagline(pkg)} end),
       api: Enum.map(@apis, fn {name, pkg} -> {name, tagline(pkg)} end),
-      auth: {:open, Enum.map(@auth_strategies, &strategy_doc/1)},
-      with: {:open, for({group, pkgs} <- @advanced, do: {group, Enum.map(pkgs, &with_doc/1)})}
-    ]
+      auth: {:open, Enum.map(@auth_strategies, &strategy_doc/1)}
+    ] ++ for({section, pkgs} <- @advanced, do: {section, Enum.map(pkgs, &with_doc/1)})
   end
 
   @impl true
@@ -213,8 +229,8 @@ defmodule WorkbenchIgniter.Features.Ash do
   def console do
     [
       doors: [
-        {"admin", "/admin", when: {:option, :with, "ash_admin"}},
-        {"oban", "/oban", when: {:option, :with, "ash_oban"}},
+        {"admin", "/admin", when: {:option, :dev_tools, "ash_admin"}},
+        {"oban", "/oban", when: {:option, :automation, "ash_oban"}},
         {"sign in", "/sign-in", when: {:option, :auth, @auth_strategies -- ["api_key"]}},
         {"swagger", "/api/json/swaggerui", when: {:option, :api, "json_api"}},
         {"openapi", "/api/json/open_api", when: {:option, :api, "json_api"}},
@@ -240,8 +256,12 @@ defmodule WorkbenchIgniter.Features.Ash do
         "Comma-separated: `json_api`, `graphql`, `typescript` (`ash_json_api`, `ash_graphql`, `ash_typescript`).",
       auth:
         "Comma-separated authentication strategies: `ash_authentication` and `ash_authentication_phoenix`, handed `--auth-strategy`. One of `password`, `magic_link`, `api_key`, `otp`, `totp`, `github`, `google`, `auth0`, `oauth2`, `oidc`, … (the list is the installer's).",
-      with:
-        "Comma-separated further packages, as the site's *Advanced Options*: #{advanced() |> Keyword.values() |> List.flatten() |> Enum.join(", ")}. Any package with an Igniter installer works.",
+      ai: said(:ai, ""),
+      finance: said(:finance, " (`ash_double_entry` brings `ash_money` first)"),
+      automation: said(:automation, " (`ash_oban` brings `oban_web`)"),
+      security: said(:security, " (`ash_cloak` brings `cloak` first)"),
+      dev_tools: said(:dev_tools, ""),
+      components: said(:components, ""),
       example: "Passed to `ash.install`: generates the example resources of the Ash guide."
     ]
   end
@@ -255,7 +275,12 @@ defmodule WorkbenchIgniter.Features.Ash do
         data_layer: :csv,
         api: :csv,
         auth: :csv,
-        with: :csv,
+        ai: :csv,
+        finance: :csv,
+        automation: :csv,
+        security: :csv,
+        dev_tools: :csv,
+        components: :csv,
         example: :boolean
       ],
       defaults: [data_layer: "postgres"]
@@ -274,7 +299,7 @@ defmodule WorkbenchIgniter.Features.Ash do
 
   # What the project carries, read off mix.exs: the data layer whose
   # package is in (`none` when Ash is in without one), the APIs and the
-  # advanced packages present. The authentication strategies live in
+  # advanced packages present, by section. The authentication strategies live in
   # the resource, not in the deps: they are read off the user resource
   # (`strategies_in/1`).
   @impl true
@@ -291,9 +316,11 @@ defmodule WorkbenchIgniter.Features.Ash do
       %{
         data_layer: data_layer,
         api: for({name, pkg} <- @apis, has.(pkg), do: name),
-        auth: auth,
-        with: for({_group, pkgs} <- @advanced, pkg <- pkgs, has.(pkg), do: pkg)
+        auth: auth
       }
+      |> Map.merge(
+        Map.new(@advanced, fn {section, pkgs} -> {section, Enum.filter(pkgs, has)} end)
+      )
       |> Enum.reject(fn {_, v} -> v in [nil, false, []] end)
       |> Map.new()
 
@@ -393,8 +420,9 @@ defmodule WorkbenchIgniter.Features.Ash do
   @doc """
   The packages the options ask for, in the order they go to
   `mix igniter.install`: `ash`, the data layer, `ash_phoenix`, the APIs,
-  authentication, then `--with`. Unknown data layers and APIs are an
-  error; `--auth` and `--with` are validated by Ash's own installers.
+  authentication, then the advanced sections in the site's order.
+  Unknown data layers, APIs and advanced packages are an error; `--auth`
+  is validated by ash_authentication's own installer.
   """
   @spec packages(keyword()) :: {:ok, [String.t()]} | {:error, String.t()}
   def packages(opts) do
@@ -403,14 +431,15 @@ defmodule WorkbenchIgniter.Features.Ash do
       if(opts[:data_layer] in [nil, []], do: ["postgres"], else: List.wrap(opts[:data_layer]))
 
     with {:ok, data_layers} <- data_layers(chosen),
-         {:ok, apis} <- apis(opts[:api] || []) do
+         {:ok, apis} <- apis(opts[:api] || []),
+         {:ok, advanced} <- advanced(opts) do
       packages =
         ["ash"] ++
           data_layers ++
           ["ash_phoenix"] ++
           apis ++
           auth_packages(opts[:auth] || []) ++
-          Enum.flat_map(opts[:with] || [], &expand/1)
+          Enum.flat_map(advanced, &expand/1)
 
       {:ok, Enum.uniq(packages)}
     end
@@ -444,7 +473,7 @@ defmodule WorkbenchIgniter.Features.Ash do
         Igniter.add_notice(igniter, """
         mix.exs already carries every Ash package asked for \
         (#{Enum.join(present, ", ")}): nothing to install. To add \
-        another one, run `mix workbench.install.ash --with <package>` \
+        another one, run `mix workbench.install.ash --dev-tools ash_admin` \
         or `mix igniter.install <package>` directly.\
         """)
 
@@ -520,6 +549,33 @@ defmodule WorkbenchIgniter.Features.Ash do
          "Unknown --api #{Enum.join(unknown, ", ")}. One of: #{Enum.map_join(@apis, ", ", &elem(&1, 0))}."}
     end
   end
+
+  # The advanced packages asked for, section by section in the site's
+  # order; a package a section does not offer is an error that names
+  # the ones it does.
+  defp advanced(opts) do
+    Enum.reduce_while(@advanced, {:ok, []}, fn {section, offered}, {:ok, acc} ->
+      asked = opts[section] || []
+
+      case asked -- offered do
+        [] ->
+          {:cont, {:ok, acc ++ Enum.filter(offered, &(&1 in asked))}}
+
+        unknown ->
+          {:halt,
+           {:error,
+            "Unknown --#{switch(section)} #{Enum.join(unknown, ", ")}. One of: #{Enum.join(offered, ", ")}."}}
+      end
+    end)
+  end
+
+  defp switch(section), do: section |> to_string() |> String.replace("_", "-")
+
+  # A section's option line: the site's title and its packages.
+  defp said(section, note),
+    do:
+      "Comma-separated, the site's *#{@section_titles[section]}* section: " <>
+        Enum.map_join(@advanced[section], ", ", &"`#{&1}`") <> note <> "."
 
   # ash_authentication first, then its Phoenix half: the Phoenix
   # installer looks for the Accounts domain and, not finding it, *asks*

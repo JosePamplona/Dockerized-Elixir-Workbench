@@ -41,10 +41,9 @@ defmodule WorkbenchIgniter.Features.AshTest do
       assert by["github"] == ["html"]
       assert by["api_key"] == []
 
-      with_ = Enum.find(WorkbenchIgniter.Features.entry(Ash).options, &(&1.name == :with))
-      values = Enum.flat_map(with_.choices, & &1.values)
-      assert Enum.find(values, &(&1.value == "ash_admin")).requires == ["html"]
-      assert Enum.find(values, &(&1.value == "ash_money")).requires == []
+      options = Map.new(WorkbenchIgniter.Features.entry(Ash).options, &{&1.name, &1})
+      assert Enum.find(options.dev_tools.choices, &(&1.value == "ash_admin")).requires == ["html"]
+      assert Enum.find(options.finance.choices, &(&1.value == "ash_money")).requires == []
     end
 
     test "refuses a strategy that needs live and a mailer the project lacks, naming them" do
@@ -60,7 +59,7 @@ defmodule WorkbenchIgniter.Features.AshTest do
       args = queued(install(~w(--auth api_key), bare(~w(--no-live --no-mailer))))
       assert Enum.take(args, 4) == ~w(ash ash_postgres ash_phoenix ash_authentication)
       refute "ash_authentication_phoenix" in args
-      assert "ash_admin" in queued(install(~w(--auth password --with ash_admin)))
+      assert "ash_admin" in queued(install(~w(--auth password --dev-tools ash_admin)))
     end
   end
 
@@ -72,19 +71,21 @@ defmodule WorkbenchIgniter.Features.AshTest do
     test "maps the site's choices to packages, in order" do
       args =
         install(
-          ~w(--data-layer sqlite --api json_api,graphql --auth password,magic_link --with ash_admin,ash_oban)
+          ~w(--data-layer sqlite --api json_api,graphql --auth password,magic_link --dev-tools ash_admin --automation ash_oban)
         )
         |> queued()
 
       assert args ==
-               ~w(ash ash_sqlite ash_phoenix ash_json_api ash_graphql ash_authentication ash_authentication_phoenix ash_admin ash_oban oban_web --auth-strategy password,magic_link)
+               ~w(ash ash_sqlite ash_phoenix ash_json_api ash_graphql ash_authentication ash_authentication_phoenix ash_oban oban_web ash_admin --auth-strategy password,magic_link)
     end
 
     # What the site's command adds beside a package, read off its feature
     # map (DESIGN.md [17]): the companions, in the site's order.
     test "puts in what the site puts in beside a package" do
-      assert queued(install(~w(--with ash_cloak,ash_double_entry,ash_oban))) ==
-               ~w(ash ash_postgres ash_phoenix cloak ash_cloak ash_money ash_double_entry ash_oban oban_web)
+      assert queued(
+               install(~w(--security ash_cloak --finance ash_double_entry --automation ash_oban))
+             ) ==
+               ~w(ash ash_postgres ash_phoenix ash_money ash_double_entry ash_oban oban_web cloak ash_cloak)
     end
 
     test "hands ash_typescript the site's --framework react" do
@@ -184,6 +185,22 @@ defmodule WorkbenchIgniter.Features.AshTest do
       assert igniter.tasks == []
       assert Enum.any?(igniter.issues, &(&1 =~ "Unknown --api soap."))
     end
+
+    test "a package a section does not offer is an issue that names the ones it does" do
+      igniter = install(~w(--dev-tools ash_admin,phoenix_storybook))
+
+      assert igniter.tasks == []
+
+      assert Enum.any?(
+               igniter.issues,
+               &(&1 =~ "Unknown --dev-tools phoenix_storybook. One of: live_debugger, ash_admin.")
+             )
+    end
+
+    test "a section takes its packages in the site's order, whatever order they are given in" do
+      assert queued(install(~w(--ai usage_rules,tidewave))) ==
+               ~w(ash ash_postgres ash_phoenix tidewave usage_rules)
+    end
   end
 
   describe "packages already in mix.exs" do
@@ -203,10 +220,10 @@ defmodule WorkbenchIgniter.Features.AshTest do
       assert_unchanged(igniter)
     end
 
-    test "`org/package@version` specs are matched by their package name" do
+    test "an advanced package already there is left out too" do
       igniter = phx_test_project() |> with_deps([:ash_admin])
 
-      assert queued(install(~w(--with acme/ash_admin@1.2), igniter)) ==
+      assert queued(install(~w(--dev-tools ash_admin), igniter)) ==
                ~w(ash ash_postgres ash_phoenix)
     end
   end

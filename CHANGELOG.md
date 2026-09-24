@@ -78,6 +78,20 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   showed it; IBM Plex Mono is now loaded at 700 too, and Flexi IBM VGA,
   which has one weight, gets the browser's.
 
+- **ash's Advanced Options are six options, one per section of the
+  site.** `--with` took any package, with the site's fifteen as
+  suggestions, and the form showed them in six groups with a free field
+  at the end. `--ai`, `--finance`, `--automation`, `--security`,
+  `--dev-tools` and `--components` are the site's sections, each closed
+  on the packages the site offers there. A package a section does not
+  offer is refused, naming the ones it does. The free field went with
+  `--with`: `mix workbench.ash.site` found that the site offers nothing
+  the cartridge lacks but `appsignal` and `opentelemetry`, whose
+  installers it marks "coming soon". A package the site does not offer
+  is `mix igniter.install`'s job, not the Ash cartridge's. The doors
+  read the new keys (`admin` on `dev_tools`, `oban` on `automation`),
+  and SCRIPT.md's reference project uses them.
+
 ### Removed
 
 - **The Mix paper's Specs.** `def project` in a code box over the

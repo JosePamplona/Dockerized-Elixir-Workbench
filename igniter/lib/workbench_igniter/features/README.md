@@ -279,7 +279,7 @@ way (settled 2026-09-08).
 
 [ash](ash/) is the fourth: the Ash framework, configured with the
 choices of ash-hq.org's installer for an existing app (`--data-layer`,
-`--api`, `--auth`, `--with`, `--example`) and installed by the command
+`--api`, `--auth`, one option per *Advanced Options* section, `--example`) and installed by the command
 that site generates, `mix igniter.install <packages> <flags>`, queued
 to run once the patch set is applied — every Ash package carries its
 own installer, and the cartridge writes no file itself. Installed by

@@ -559,7 +559,7 @@ defmodule ConsoleWeb.Record do
   # What follows the flag: its values when the cartridge declares them in
   # `choices/0` — the enum the OptionParser type cannot say — else the
   # type. An open choice takes other values too, so it ends in `…`; a
-  # long one (ash's --with, dozens by group) shows four and the count,
+  # long one (ash's --auth, seventeen strategies) shows four and the count,
   # the whole list in the title.
   @shown 4
   defp offered_type(o) do

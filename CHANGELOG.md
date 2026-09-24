@@ -46,6 +46,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **One code box, one indent.** The daemon's Specs stood 31px in and
+  the Mix paper's 18px: `.ln` is also the log's line, and brought the
+  log's padding into every `.code-box` but the Mix paper, which had
+  taken it out for itself. The shared rule now takes it out, and holds
+  the key column as a grid for both, so a value that wraps stays under
+  its value. Each screen only says how wide its keys are (`--key-w`:
+  13ch for the daemon, 17ch for `def project`).
+
 - **The resident no longer compiles what it then fails to see.** The
   console's resident ran `mix do deps.get, deps.compile,
   workbench.serve` in one BEAM. After a stack change, when that run

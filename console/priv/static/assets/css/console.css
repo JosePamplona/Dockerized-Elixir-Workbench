@@ -1806,8 +1806,7 @@ header.band ::selection{background:color-mix(in srgb,var(--board-ink) 15%,transp
    options are plain, as the file writes them, and read from the left
    like the name; who brought it closes the row at the right edge, as
    the numbers do. */
-.pdocs .dkdoc.mix .code-box.spec .ln{display:grid;grid-template-columns:17ch minmax(0,1fr);padding:0}
-.pdocs .dkdoc.mix .code-box.spec .k{min-width:0}
+.pdocs .dkdoc.mix .code-box.spec{--key-w:17ch}
 .pdocs .dkdoc.mix .code-box.spec .v{white-space:pre-wrap}
 table.rows.pkgs th.opts,table.rows.pkgs td.opts{text-align:left}
 table.rows.pkgs th.by,table.rows.pkgs td.by{text-align:right}
@@ -1828,14 +1827,17 @@ table.rows.pkgs td.opts{white-space:pre}
    themselves, named once for a few lines that are not a log. */
 .code-box{display:block;font-family:var(--code-face,var(--mono));font-size:var(--code-size,12px);line-height:round(calc(var(--code-size,12px) * var(--code-leading,1.5)),1px);background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:8px 14px;white-space:normal;overflow-wrap:anywhere}
 /* Its lines are `.ln`, a key and a value each — the template's own
-   air between them is not the box's — and the key is a column of nine
-   cells, dim, so the values stand in a line of their own. */
-.code-box .ln{display:block;white-space:pre-wrap}
-.code-box .k{display:inline-block;min-width:9ch;color:var(--term-dim)}
+   air between them is not the box's — and the key is a column, nine
+   cells unless the screen says (--key-w), dim, so the values stand in
+   a line of their own and a value that wraps stays in it. `.ln` is the
+   log's line too, and its padding is the log's: not here, or the box's
+   padding and the line's add up (the daemon's keys stood 31px in, the
+   Mix paper's 18px, until 2026-09-24). */
+.code-box .ln{display:grid;grid-template-columns:var(--key-w,9ch) minmax(0,1fr);gap:0;padding:0;white-space:pre-wrap}
+.code-box .k{min-width:0;color:var(--term-dim)}
 /* The daemon's box is a viewport like the Logs screen's: the lines, and the controls in a strip under them. Inside it the code box keeps its type and its ink and loses its own frame, which the viewport draws. `build cache` is the widest key. */
 .docker .viewport.daemon{grid-template-rows:auto auto;flex:none}
-.docker .viewport.daemon .code-box{border:0;border-radius:0}
-.docker .viewport.daemon .code-box .k{min-width:13ch}
+.docker .viewport.daemon .code-box{border:0;border-radius:0;--key-w:13ch}
 .docker .viewport.daemon .nothing{margin:0;padding:8px 14px}
 .dtab .badge{font-family:var(--mono);font-size:10.5px;padding:1px 6px;border-radius:999px;background:var(--surface-2);color:var(--muted);letter-spacing:0}
 .dtab .badge.bad{background:var(--bad);color:#fff}

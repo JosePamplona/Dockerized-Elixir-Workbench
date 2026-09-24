@@ -478,10 +478,10 @@ defmodule Console.Docker do
   end
 
   @doc """
-  The daemon as lines the Docker screen sets as code, a key and its
-  value each: the version and platform, the host's CPUs and memory, the
-  storage driver and its root, the OS and the kernel. Nil when the
-  daemon does not answer.
+  What the daemon says of itself, as it says it: the version and
+  platform, the host's CPUs and memory (bytes), the storage driver and
+  its root, the OS and the kernel. The Docker screen sets them. Nil when
+  the daemon does not answer.
   """
   def daemon do
     with {v, 0} <-
@@ -494,13 +494,16 @@ defmodule Console.Docker do
              "{{.NCPU}}\t{{.MemTotal}}\t{{.Driver}}\t{{.DockerRootDir}}\t{{.OperatingSystem}}\t{{.KernelVersion}}"
            ]),
          [cpus, mem, driver, root, os, kernel] <- fields(i) do
-      [
-        {"docker", "#{version} · #{platform}"},
-        {"host", "#{cpus} CPU · #{human(String.to_integer(mem))}"},
-        {"storage", "#{driver} in #{root}"},
-        {"os", os},
-        {"kernel", kernel}
-      ]
+      %{
+        version: version,
+        platform: platform,
+        cpus: cpus,
+        mem: String.to_integer(mem),
+        driver: driver,
+        root: root,
+        os: os,
+        kernel: kernel
+      }
     else
       _ -> nil
     end

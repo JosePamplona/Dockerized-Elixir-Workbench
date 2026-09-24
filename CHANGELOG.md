@@ -44,6 +44,25 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `workbench.setup` leaves an existing `.env` alone, and now its
   `.env.sample` too: both files are the project's own.
 
+### Updated
+
+- **The daemon's Specs read by weight.** The Docker screen's box was
+  plain ink under dim keys, `docker system df`'s columns in its own
+  order (`35 · 18.16GB · 9 in use · 9.891GB (54%) reclaimable`). The
+  machine comes first — os, kernel, docker, host, storage — and a blank
+  line parts it from the disk, which now reads as a sentence: `9/35 in
+  use · 18.16GB with 54% reclaimable (9.891GB)`. The figure that
+  matters is bold, what qualifies it dim (the OS's edition in parentheses, the kernel, the
+  platform, the storage), the in-use ratio blue and a size's unit
+  golden and not bold, from the source palette so both themes have them. The build
+  cache is the one kind `system df` gives no percentage for; it is
+  worked out of the two sizes and truncated, as `docker` does the
+  others. `Console.Docker.daemon/0` returns the daemon's fields as they
+  come, and the screen sets them. Bold is 700: Fira Code and Tamzen
+  carry only 400 and 700, and a 500 fell back to their 400, so no face
+  showed it; IBM Plex Mono is now loaded at 700 too, and Flexi IBM VGA,
+  which has one weight, gets the browser's.
+
 ### Fixed
 
 - **One code box, one indent.** The daemon's Specs stood 31px in and

@@ -1838,6 +1838,17 @@ table.rows.pkgs td.opts{white-space:pre}
 /* The daemon's box is a viewport like the Logs screen's: the lines, and the controls in a strip under them. Inside it the code box keeps its type and its ink and loses its own frame, which the viewport draws. `build cache` is the widest key. */
 .docker .viewport.daemon{grid-template-rows:auto auto;flex:none}
 .docker .viewport.daemon .code-box{border:0;border-radius:0;--key-w:13ch}
+/* Its values by weight (2026-09-24): the figure that matters bold,
+   what qualifies it dim, the in-use ratio blue and a size's unit
+   golden, from the source palette so both themes have them. Bold is
+   700: Fira Code and Tamzen carry only 400 and 700, and a 500 fell back
+   to their 400 — no bold at all; Plex is loaded at 700 for it. A blank
+   line parts the machine from the disk. */
+.code-box .v .b{font-weight:700}
+.code-box .v .d{color:var(--term-dim)}
+.code-box .v .q{color:var(--t-const)}
+.code-box .v .u{color:var(--t-mod)}
+.code-box .ln.gap{min-height:1lh}
 .docker .viewport.daemon .nothing{margin:0;padding:8px 14px}
 .dtab .badge{font-family:var(--mono);font-size:10.5px;padding:1px 6px;border-radius:999px;background:var(--surface-2);color:var(--muted);letter-spacing:0}
 .dtab .badge.bad{background:var(--bad);color:#fff}

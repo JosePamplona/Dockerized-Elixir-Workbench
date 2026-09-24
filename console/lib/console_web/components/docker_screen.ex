@@ -136,14 +136,18 @@ defmodule ConsoleWeb.DockerScreen do
     <%!-- The daemon's box, with its controls in a strip under it, the way
           the Logs screen and a job's output carry theirs (2026-09-16):
           the lines the daemon says of itself and of its disk, and beneath
-          them the scope and, on Containers, Stats. Headed "Specs", as the
-          Mix paper heads what def project says. --%>
+          them the scope and, on Containers, Stats. Headed "Specs". --%>
     <div class="log-cap"><span class="label">Specs</span></div>
     <div class="viewport daemon">
-      <code :if={@dk.daemon} class="code-box daemon"><span
-        :for={{k, v} <- daemon_lines(@dk)}
-        class="ln"
-      ><span class="k">{k}</span>{v}</span></code>
+      <code :if={@dk.daemon} class="code-box daemon"><%= for line <- daemon_lines(@dk) do %>
+        <span
+          :if={is_nil(line)}
+          class="ln gap"
+        ></span><span :if={line} class="ln"><span class="k">{elem(line, 0)}</span><span class="v"><span
+          :for={{class, text} <- elem(line, 1)}
+          class={class}
+        >{text}</span></span></span>
+      <% end %></code>
       <p :if={!@dk.daemon} class="nothing">Reading the daemon…</p>
       <div class="toolbar controls">
         <span class="label">Scope</span>
@@ -179,29 +183,85 @@ defmodule ConsoleWeb.DockerScreen do
     """
   end
 
-  # The daemon's lines with the disk's after `storage`, where the root
-  # is named: one a kind — images, containers, volumes, build cache —
-  # with the count, the size, how many are in use and what is
-  # reclaimable, as `system df` says; one line saying it is being
-  # measured until it is. It was a table under Volumes until 2026-09-16,
-  # and the disk is the daemon's, not the volumes'.
-  defp daemon_lines(%{daemon: daemon, df: df}) do
-    Enum.flat_map(daemon, fn
-      {"storage", _} = kv -> [kv | disk_lines(df)]
-      kv -> [kv]
-    end)
+  # The daemon's box: the machine — os, kernel, docker, host, storage —
+  # a blank line, then the disk, one kind a line (images, containers,
+  # volumes, build cache). Each value is a list of pieces, `{class,
+  # text}`, set by weight and not by syntax (2026-09-24): the figure that
+  # matters `b`old, what qualifies it `d`im, the in-use ratio blue
+  # (`q`), a size's unit golden and not bold (`u`); the words between stay ink. `nil`
+  # for the blank line.
+  defp daemon_lines(%{daemon: d, df: df}) do
+    {os, edition} = os_parts(d.os)
+    {mem, mem_unit} = size_parts(Console.Docker.human(d.mem))
+
+    [
+      {"os", [{"b", os} | if(edition, do: [{nil, " "}, {"d", edition}], else: [])]},
+      {"kernel", [{"d", d.kernel}]},
+      {"docker", [{"b", d.version}, {nil, " · "}, {"d", d.platform}]},
+      {"host", [{"b", d.cpus}, {nil, " CPU · "}, {"b", mem}, {"u", mem_unit}, {nil, " RAM"}]},
+      {"storage", [{"d", "#{d.driver} in #{d.root}"}]},
+      nil
+      | disk_lines(df)
+    ]
   end
 
-  defp disk_lines(nil), do: [{"disk", "measuring: docker system df takes seconds…"}]
+  defp disk_lines(nil), do: [{"disk", [{"d", "measuring: docker system df takes seconds…"}]}]
 
-  defp disk_lines(df),
-    do:
-      for(
-        r <- df,
-        do:
-          {disk_kind(r.type),
-           "#{r.total} · #{r.size} · #{r.active} in use · #{r.reclaimable} reclaimable"}
-      )
+  defp disk_lines(df) do
+    for r <- df do
+      {size, unit} = size_parts(r.size)
+      {free, free_unit} = size_parts(r.reclaimable)
+
+      {disk_kind(r.type),
+       [{"q b", r.active}, {"q", "/#{r.total}"}, {nil, " in use · "}, {"b", size}, {"u", unit}] ++
+         [
+           {nil, " with #{reclaimable_pct(r)}% reclaimable ("},
+           {"b", free},
+           {"u", free_unit},
+           {nil, ")"}
+         ]}
+    end
+  end
+
+  # The OS's name, and the edition it carries in parentheses apart.
+  defp os_parts(os) do
+    case Regex.run(~r/^(.*?)\s*(\(.*\))$/u, os) do
+      [_, name, edition] -> {name, edition}
+      _ -> {os, nil}
+    end
+  end
+
+  # "18.16GB", "9.891GB (54%)", "33.6 GB": the figure and its unit.
+  defp size_parts(text) do
+    case Regex.run(~r/^([\d.]+)\s*([A-Za-z]+)/, text) do
+      [_, n, unit] -> {n, unit}
+      _ -> {text, ""}
+    end
+  end
+
+  # What `system df` says in its parentheses, or, where it says none —
+  # the build cache — the same figure worked out of the two sizes, as it
+  # works out the others: truncated.
+  defp reclaimable_pct(r) do
+    case Regex.run(~r/\((\d+)%\)/, r.reclaimable) do
+      [_, pct] -> pct
+      _ -> computed_pct(bytes(r.reclaimable), bytes(r.size))
+    end
+  end
+
+  defp computed_pct(_free, size) when size == 0, do: "0"
+  defp computed_pct(free, size), do: to_string(trunc(free / size * 100))
+
+  @units %{"B" => 1, "kB" => 1.0e3, "KB" => 1.0e3, "MB" => 1.0e6, "GB" => 1.0e9, "TB" => 1.0e12}
+
+  defp bytes(text) do
+    {n, unit} = size_parts(text)
+
+    case Float.parse(n) do
+      {v, _} -> v * Map.get(@units, unit, 1)
+      :error -> 0
+    end
+  end
 
   defp disk_kind("Local Volumes"), do: "volumes"
   defp disk_kind(type), do: String.downcase(type)

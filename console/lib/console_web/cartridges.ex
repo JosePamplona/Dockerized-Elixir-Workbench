@@ -124,11 +124,21 @@ defmodule ConsoleWeb.Cartridges do
         do: {c, item}
   end
 
-  # A door's `when`: with an option value, or with another cartridge in.
-  # The item is unwrapped once — only a map that carries a `when` — and
-  # the condition itself is read by its key; an item without one holds.
+  # A door's `when`: with an option on or at a value, or with another
+  # cartridge in. The item is unwrapped once — only a map that carries a
+  # `when` — and the condition itself is read by its key; an item
+  # without one holds.
   def holds?(status, c, %{"when" => condition}), do: holds?(status, c, condition)
-  def holds?(_status, c, %{"with" => value}), do: value in (get_in(c, ["state", "with"]) || [])
+
+  # An option at a value, read as a requirement's state is: ash's
+  # `--api` answers with a list, and `/sign-in` asks for any one of the
+  # strategies that bring pages.
+  def holds?(_status, c, %{"option" => key, "value" => value}) do
+    case get_in(c, ["state", key]) do
+      nil -> false
+      found -> met?(found, value)
+    end
+  end
 
   # The cartridge's own option, as the project reports it: `--exdoc` is
   # what plants coverage's `mix cover`, and whether the exdoc cartridge

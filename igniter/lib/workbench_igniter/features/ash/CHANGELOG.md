@@ -7,6 +7,26 @@ what the cartridge *installs*: a change in the command it queues or in
 the options that build it is a minor, a change that breaks a project
 already carrying what that command installed is a major.
 
+## v0.5.0 - (2026-09-24)
+
+### Added
+
+- Six doors beside `admin`, each behind the option that brings its
+  package: `oban` (`/oban`, with `ash_oban`), `sign in` (`/sign-in`,
+  with a strategy that has pages), `swagger` and `openapi`
+  (`/api/json/swaggerui`, `/api/json/open_api`, with `json_api`),
+  `graphiql` (`/gql/playground`, with `graphql`) and `typescript`
+  (`/ash-typescript`, with `typescript`). Checked against a project
+  carrying every package: all seven answer 200.
+
+### Changed
+
+- `state` reports `auth` as the strategies the user resource declares
+  (`password`, `remember_me`, `magic_link`, …), read off its
+  `strategies do` block, where it said `true` whenever
+  `ash_authentication` was in. API keys alone have no sign-in page, and
+  the door has to tell.
+
 ## v0.4.0 - (2026-08-30)
 
 ### Changed

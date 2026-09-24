@@ -240,8 +240,8 @@ defmodule WorkbenchIgniter.Feature do
   `mix workbench.status` carries it, the console's Inserted list shows
   it as the line the cartridge went in with, a door's `{option}` path
   is filled from it (and falls back to the default when it is `nil`),
-  and `services/1` and `console/0`'s `{:with, value}` condition read
-  it. Same shape as `installed?/1`: the returned igniter must not be
+  and `services/1` and `console/0`'s `{:option, key, value}` condition
+  read it. Same shape as `installed?/1`: the returned igniter must not be
   discarded. The catalog test installs every cartridge with non-default
   values and checks the answer against the schema.
   """
@@ -313,10 +313,11 @@ defmodule WorkbenchIgniter.Feature do
     * `doors:` — routes the project answers on the app's port once the
       cartridge is in, a health endpoint as much as a docs page:
       `{label, path}` or `{label, path, when: condition}`, shown only
-      when the condition holds: `{:with, value}` (the cartridge's
-      `state/1` reports the value under `:with`), `{:option, key}` (its
-      `state/1` reports that option on), `{:cartridge, name}`
-      (that cartridge is in). `{option}` in a path is the option's value
+      when the condition holds: `{:option, key}` (its `state/1`
+      reports that option on), `{:option, key, value}` (its `state/1`
+      reports that value for it — among its values, for a `:csv`
+      option; a list of values asks for any one of them, as in
+      `requires/0`), `{:cartridge, name}` (that cartridge is in). `{option}` in a path is the option's value
       as `state/1` reports it, or its default. The console reads them
       and calls them; it asks nothing of the project for its own sake —
       a route exists for the project's reasons, and the workbench only

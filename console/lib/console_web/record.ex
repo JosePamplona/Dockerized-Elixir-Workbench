@@ -459,11 +459,26 @@ defmodule ConsoleWeb.Record do
     }
   end
 
-  defp shut_why(d) do
-    if d["when"]["with"],
-      do: "only with --with #{d["when"]["with"]}",
-      else: "only with #{d["when"]["cartridge"]} inserted"
+  defp shut_why(%{"when" => %{"option" => key} = w}) do
+    flag = "--" <> String.replace(key, "_", "-")
+
+    case w["value"] do
+      nil ->
+        "only with #{flag}"
+
+      # Any one of them: ash's `/sign-in` takes every strategy but one.
+      [value] ->
+        "only with #{flag} #{value}"
+
+      values when is_list(values) ->
+        "only with #{flag} #{values |> Enum.take(3) |> Enum.join(", ")}, …"
+
+      value ->
+        "only with #{flag} #{value}"
+    end
   end
+
+  defp shut_why(d), do: "only with #{d["when"]["cartridge"]} inserted"
 
   # The whole stamp — date, time and the offset it was read in: a page
   # on disk is read against what the project was when it was written,

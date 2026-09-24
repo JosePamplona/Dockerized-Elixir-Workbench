@@ -504,6 +504,51 @@ defmodule ConsoleWeb.RecordTest do
              Record.offered(Enum.find(@catalog, &(&1["name"] == "exdoc")))
   end
 
+  test "a door behind an option's value is shut with the flag that opens it" do
+    ash = %{
+      "name" => "ash",
+      "installed" => true,
+      "base" => false,
+      "state" => %{"api" => ["graphql"], "auth" => ["api_key"]}
+    }
+
+    status = update_in(@status, ["project", "cartridges"], &[ash | &1])
+
+    catalog = [
+      %{
+        "name" => "ash",
+        "console" => %{
+          "doors" => [
+            %{
+              "label" => "graphiql",
+              "path" => "/gql/playground",
+              "when" => %{"option" => "api", "value" => "graphql"}
+            },
+            %{
+              "label" => "swagger",
+              "path" => "/api/json/swaggerui",
+              "when" => %{"option" => "api", "value" => "json_api"}
+            },
+            %{
+              "label" => "sign in",
+              "path" => "/sign-in",
+              "when" => %{"option" => "auth", "value" => ~w(password magic_link otp totp)}
+            }
+          ]
+        }
+      }
+      | @catalog
+    ]
+
+    row = Enum.find(Record.page(status, catalog, %{}).cartridges, &(&1.c["name"] == "ash"))
+
+    assert [
+             %{label: "graphiql", why: nil, href: "http://localhost:4001/gql/playground"},
+             %{label: "swagger", why: "only with --api json_api", href: nil},
+             %{label: "sign in", why: "only with --auth password, magic_link, otp, …"}
+           ] = row.addresses
+  end
+
   test "no project, no plan" do
     assert Record.page(nil, @catalog) == nil
     assert Record.page(%{"exists" => false}, @catalog) == nil

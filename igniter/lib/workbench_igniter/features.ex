@@ -391,8 +391,8 @@ defmodule WorkbenchIgniter.Features do
     }
 
   defp condition(nil), do: nil
-  defp condition({:with, value}), do: %{with: value}
   defp condition({:option, key}), do: %{option: to_string(key)}
+  defp condition({:option, key, value}), do: %{option: to_string(key), value: value}
   defp condition({:cartridge, name}), do: %{cartridge: name}
 
   # How a page on disk is made: the project's Mix tasks that write it,

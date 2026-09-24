@@ -218,6 +218,70 @@ defmodule WorkbenchIgniter.Features.AshTest do
     end
   end
 
+  describe "state/1" do
+    # The user resource as ash_authentication.install writes it, trimmed.
+    @user """
+    defmodule Test.Accounts.User do
+      use Ash.Resource, extensions: [AshAuthentication]
+
+      authentication do
+        tokens do
+          enabled? true
+        end
+
+        strategies do
+          password :password do
+            identity_field :email
+
+            resettable do
+              password_reset_action_name :reset_password_with_token
+            end
+          end
+
+          remember_me :remember_me
+
+          magic_link do
+            identity_field :email
+          end
+
+          # api keys
+          api_key :api_key do
+            api_key_relationship :valid_api_keys
+          end
+        end
+      end
+    end
+    """
+
+    test "reads the strategies off the user resource, in order" do
+      assert Ash.strategies_in(@user) == ~w(password remember_me magic_link api_key)
+      assert Ash.strategies_in("defmodule A do\nend\n") == []
+    end
+
+    test "reports auth with the resource's strategies, and none without ash_authentication" do
+      igniter =
+        phx_test_project()
+        |> with_deps([:ash, :ash_postgres, :ash_json_api, :ash_authentication])
+        |> Igniter.create_new_file("lib/test/accounts/user.ex", @user)
+        |> apply_igniter!()
+
+      assert {%{
+                data_layer: ["postgres"],
+                api: ["json_api"],
+                auth: ~w(password remember_me magic_link api_key)
+              }, _} = Ash.state(igniter)
+
+      assert {state, _} = phx_test_project() |> with_deps([:ash]) |> Ash.state()
+      assert state == %{data_layer: ["none"]}
+    end
+
+    test "leaves auth out when the resource is not where the installer puts it" do
+      igniter = phx_test_project() |> with_deps([:ash, :ash_authentication])
+      assert {state, _} = Ash.state(igniter)
+      refute Map.has_key?(state, :auth)
+    end
+  end
+
   describe "the manifest" do
     test "is a plain cartridge in the catalog, picked by no collection" do
       assert Ash in WorkbenchIgniter.Features.catalog()

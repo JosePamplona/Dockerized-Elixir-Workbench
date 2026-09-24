@@ -205,8 +205,24 @@ defmodule WorkbenchIgniter.Features.Ash do
   @impl true
   def task, do: "workbench.install.ash"
 
+  # The routes the packages' own installers write in the router, each
+  # behind the option that brings its package: `/oban` is oban_web's,
+  # which comes with ash_oban; `/sign-in` is ash_authentication_phoenix's
+  # default, there with every strategy but api_key (`auth_packages/1`).
   @impl true
-  def console, do: [doors: [{"admin", "/admin", when: {:with, "ash_admin"}}]]
+  def console do
+    [
+      doors: [
+        {"admin", "/admin", when: {:option, :with, "ash_admin"}},
+        {"oban", "/oban", when: {:option, :with, "ash_oban"}},
+        {"sign in", "/sign-in", when: {:option, :auth, @auth_strategies -- ["api_key"]}},
+        {"swagger", "/api/json/swaggerui", when: {:option, :api, "json_api"}},
+        {"openapi", "/api/json/open_api", when: {:option, :api, "json_api"}},
+        {"graphiql", "/gql/playground", when: {:option, :api, "graphql"}},
+        {"typescript", "/ash-typescript", when: {:option, :api, "typescript"}}
+      ]
+    ]
+  end
 
   @impl true
   def afterwards,
@@ -258,9 +274,9 @@ defmodule WorkbenchIgniter.Features.Ash do
 
   # What the project carries, read off mix.exs: the data layer whose
   # package is in (`none` when Ash is in without one), the APIs and the
-  # advanced packages present, and whether authentication is in at
-  # all — its strategies live in the resource, not in the deps, so more
-  # of them go through `mix ash_authentication.add_strategy`, not here.
+  # advanced packages present. The authentication strategies live in
+  # the resource, not in the deps: they are read off the user resource
+  # (`strategies_in/1`).
   @impl true
   def state(igniter) do
     has = &Igniter.Project.Deps.has_dep?(igniter, String.to_atom(&1))
@@ -268,17 +284,55 @@ defmodule WorkbenchIgniter.Features.Ash do
 
     data_layer = if ash?, do: layers_in(has)
 
+    {auth, igniter} =
+      if has.("ash_authentication"), do: strategies(igniter), else: {nil, igniter}
+
     state =
       %{
         data_layer: data_layer,
         api: for({name, pkg} <- @apis, has.(pkg), do: name),
-        auth: has.("ash_authentication"),
+        auth: auth,
         with: for({_group, pkgs} <- @advanced, pkg <- pkgs, has.(pkg), do: pkg)
       }
       |> Enum.reject(fn {_, v} -> v in [nil, false, []] end)
       |> Map.new()
 
     {state, igniter}
+  end
+
+  # The resource ash_authentication.install writes, at its default
+  # name; nil when it is not there (the installer's `--user` named it
+  # otherwise), which says the strategies could not be read.
+  defp strategies(igniter) do
+    user = Igniter.Project.Module.module_name(igniter, "Accounts.User")
+
+    case Igniter.Project.Module.find_module(igniter, user) do
+      {:ok, {igniter, source, _zipper}} ->
+        {strategies_in(Rewrite.Source.get(source, :content)), igniter}
+
+      {:error, igniter} ->
+        {nil, igniter}
+    end
+  end
+
+  @doc """
+  The strategies a resource's `strategies do` block declares, by the
+  name of their call, in order: `password`, `magic_link`, `api_key`,
+  `github`… — `remember_me` too, which the password strategy brings.
+  """
+  @spec strategies_in(String.t()) :: [String.t()]
+  def strategies_in(content) do
+    case Regex.run(~r/^( *)strategies do\n(.*?)^\1end$/ms, content) do
+      [_, indent, block] ->
+        ~r/^#{indent}  (\w+)/m
+        |> Regex.scan(block)
+        |> Enum.map(fn [_, name] -> name end)
+        |> Enum.uniq()
+        |> List.delete("end")
+
+      nil ->
+        []
+    end
   end
 
   # The layers whose package is in; Ash in without any of them is "none".

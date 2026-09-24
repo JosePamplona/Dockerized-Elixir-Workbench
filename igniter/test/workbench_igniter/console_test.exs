@@ -46,7 +46,20 @@ defmodule WorkbenchIgniter.ConsoleTest do
              }
            ]
 
-    assert by.("ash").doors == [%{label: "admin", path: "/admin", when: %{with: "ash_admin"}}]
+    # Each behind the option that brings the package whose installer
+    # writes the route; `/sign-in` with any strategy but api_key alone.
+    assert [
+             %{label: "admin", path: "/admin", when: %{option: "with", value: "ash_admin"}},
+             %{label: "oban", path: "/oban", when: %{option: "with", value: "ash_oban"}},
+             %{label: "sign in", path: "/sign-in", when: %{option: "auth", value: pages}},
+             %{label: "swagger", when: %{option: "api", value: "json_api"}},
+             %{label: "openapi", path: "/api/json/open_api"},
+             %{label: "graphiql", path: "/gql/playground", when: %{value: "graphql"}},
+             %{label: "typescript", path: "/ash-typescript", when: %{value: "typescript"}}
+           ] = by.("ash").doors
+
+    assert "password" in pages and "api_key" not in pages
+
     assert Enum.map(by.("rest").doors, & &1.path) == ["/dev/swagger", "/dev/openapi"]
 
     # A health endpoint is a door like any other: the project's route,

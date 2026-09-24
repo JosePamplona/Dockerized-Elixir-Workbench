@@ -46,6 +46,21 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **Ash opens the doors its packages write.** The console showed one
+  Ash door, `/admin`. The routes that Ash's own installers write are
+  now doors too, each behind the option that brings it: `/oban`,
+  `/sign-in`, `/api/json/swaggerui`, `/api/json/open_api`,
+  `/gql/playground` and `/ash-typescript`. A door's condition can now
+  name a value, `{:option, key, value}`. It reads the value off the
+  cartridge's `state` the way a requirement does: one of a list's
+  values, or a value in a `:csv` option's list. That condition replaces
+  `{:with, value}`, which was its special case. A shut door says the
+  flag that opens it (`only with --api json_api`). `/sign-in` asks for
+  a strategy with pages, so ash's `state` now reads the strategies off
+  the user resource. While checking `/ash-typescript`, a probe showed
+  that `ash_typescript` 0.18.2's installer writes its RPC routes with
+  an empty path. The ash README records it with the two-line fix.
+
 - **The daemon's Specs read by weight.** The Docker screen's box was
   plain ink under dim keys, `docker system df`'s columns in its own
   order (`35 · 18.16GB · 9 in use · 9.891GB (54%) reclaimable`). The

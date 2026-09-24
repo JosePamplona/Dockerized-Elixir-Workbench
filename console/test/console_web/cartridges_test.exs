@@ -20,9 +20,16 @@ defmodule ConsoleWeb.CartridgesTest do
       assert Cartridges.holds?(@status, @ash, %{"path" => "/oban"})
     end
 
-    test "a with condition reads the cartridge's own options" do
-      assert Cartridges.holds?(@status, @ash, %{"when" => %{"with" => "ash_oban"}})
-      refute Cartridges.holds?(@status, @ash, %{"when" => %{"with" => "ash_cloak"}})
+    test "an option at a value reads the cartridge's own state, a list for any one" do
+      with_ = &%{"when" => %{"option" => "with", "value" => &1}}
+
+      assert Cartridges.holds?(@status, @ash, with_.("ash_oban"))
+      refute Cartridges.holds?(@status, @ash, with_.("ash_cloak"))
+      assert Cartridges.holds?(@status, @ash, with_.(["ash_cloak", "ash_oban"]))
+
+      refute Cartridges.holds?(@status, @ash, %{
+               "when" => %{"option" => "api", "value" => "graphql"}
+             })
     end
 
     # coverage's `mix cover` is planted by its own --exdoc, and whether

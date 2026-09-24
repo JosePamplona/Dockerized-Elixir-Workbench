@@ -112,6 +112,35 @@ list of what to update by hand, in `ash.ex`'s tables and the DESIGN
 reference. Run it before a release of the cartridge, and whenever the
 site announces a new package.
 
+## In the console
+
+The routes the packages' own installers write in the router, each shown
+while the project carries what brings it:
+
+| Door | Route | While the project has |
+| --- | --- | --- |
+| admin | `/admin` | `ash_admin` (dev routes) |
+| oban | `/oban` | `ash_oban`, which brings `oban_web` (dev routes) |
+| sign in | `/sign-in` | a strategy with pages: any but `api_key` |
+| swagger, openapi | `/api/json/swaggerui`, `/api/json/open_api` | `json_api` |
+| graphiql | `/gql/playground` | `graphql` |
+| typescript | `/ash-typescript` | `typescript` |
+
+The strategies are read off the user resource `ash_authentication.install`
+writes (`<App>.Accounts.User`, its `strategies do` block), not off the
+deps; a resource the installer's `--user` named otherwise reads as none.
+
+`ash_typescript` 0.18.2 (the latest, 2026-09-24) writes its two RPC
+routes with an empty path: `post "", AshTypescriptRpcController, :run`
+and `:validate`. Its installer reads `:run_endpoint` from the
+application environment, where the config it has just written is not
+loaded yet. `POST /rpc/run` then answers 404 and the generated
+`assets/js/ash_rpc.ts` calls it. The `/ash-typescript` page renders all
+the same: it makes no RPC call. The fix is the project's two lines —
+`post "/rpc/run", …` and `post "/rpc/validate", …`, as
+`config/config.exs` declares them; the cartridge installs the package
+as its author wrote it and does not patch it.
+
 ## Idempotency
 
 Packages already declared in `mix.exs` are left out of the command;

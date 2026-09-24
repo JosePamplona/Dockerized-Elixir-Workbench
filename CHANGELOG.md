@@ -14,6 +14,36 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+### Added
+
+- **`./wb.sh adopt` takes in a project made elsewhere.** A Phoenix
+  project copied into a workspace — `pitchers`, from 2024, the first
+  one — had no `docker-compose.yml`, and everything reads the
+  workspace off that file: its name, its image, its ports. Nothing
+  could be done with it. `adopt` does what `new` does after `phx.new`,
+  on the project as it is: it commits the project as found when it has
+  no repository (`Import APP as found`), then registers the package,
+  runs `workbench.setup`, writes the production `Dockerfile` only when
+  there is none — and only warns when it cannot: phoenix 1.7's
+  `phx.gen.release` asks hex for `debian-bullseye` images alone, which
+  the newer OTPs are not built on, and only `up --deploy prod` needs
+  that file — stamps `Dockerfile.local` and bakes the compose, as
+  one commit (`Adopt APP`), undone whole if a step fails. The
+  workspace is named by the project's own `app:` in `mix.exs`, never by
+  `config.conf`'s name for the next project, and so is a workspace
+  with no compose yet in every other command. The stack is
+  `config.conf`'s, weighed against the `elixir:` the project asks for;
+  below the 1.18 floor `adopt` warns and asks instead of refusing,
+  since a project written for 1.17 may compile on nothing newer, and
+  the risk (two `deps.get` at once on the shared `deps/`) is one the
+  reader can keep clear of.
+  The phx_new the base cartridges take their delta with is unknown for
+  a project born elsewhere. It is read off the phoenix `mix.lock`
+  locks, which is the Phoenix the delta will be merged into, and it is
+  stamped like a generated project's (`--phx-new` names another).
+  `workbench.setup` leaves an existing `.env` alone, and now its
+  `.env.sample` too: both files are the project's own.
+
 ## v0.12.0 - (2026-09-23)
 
 ### Added

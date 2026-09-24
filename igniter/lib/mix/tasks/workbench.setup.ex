@@ -30,6 +30,9 @@ defmodule Mix.Tasks.Workbench.Setup do
     inside the pod — or the path of the SQLite file on its volume
   * adds `.env` to `.gitignore` — that file carries the generated secret
 
+  A project that already has a `.env` (one `wb.sh adopt` takes in) keeps
+  it, and its `.env.sample` too: neither file is written.
+
   Everything the retired opinionated setup used to do is deliberately
   absent: the initial version, the base config (ANSI colors,
   `:utc_datetime_usec` generators, migration types, `dev_routes` in
@@ -101,7 +104,16 @@ defmodule Mix.Tasks.Workbench.Setup do
 
   # --- .env / .env.sample -----------------------------------------------------
 
+  # A project that already has its .env — one adopted, not generated
+  # here — keeps both files as they are: its sample is its own, and
+  # overwriting it would put the workbench's words in the project's.
   defp create_env_files(igniter, app_name, opts) do
+    if Igniter.exists?(igniter, ".env"),
+      do: igniter,
+      else: plant_env_files(igniter, app_name, opts)
+  end
+
+  defp plant_env_files(igniter, app_name, opts) do
     # The adapter the project was generated with, read off its driver —
     # the same reading the ecto cartridge and the status make.
     {facts, igniter} = WorkbenchIgniter.PhxDelta.facts(igniter)
@@ -129,12 +141,6 @@ defmodule Mix.Tasks.Workbench.Setup do
       sample_assigns,
       on_exists: :overwrite
     )
-    # Secrets are generated once: an existing .env is never overwritten.
-    |> WorkbenchIgniter.plant_template(
-      "env.eex",
-      ".env",
-      env_assigns,
-      on_exists: :skip
-    )
+    |> WorkbenchIgniter.plant_template("env.eex", ".env", env_assigns, on_exists: :skip)
   end
 end

@@ -151,6 +151,19 @@
         sed -n 's/^ARG PHX_NEW="\(.*\)"$/\1/p' \
           "$WORKSPACE_PATH/$LOCAL_DOCKERFILE" 2> /dev/null | head -n 1
       )
+    # A project with no compose was not created here — it is 'adopt''s
+    # to take in — and names itself by its own mix.exs: the app is the
+    # compose project and the image to be, never config.conf's name for
+    # the next project.
+    elif [[ "$EXISTING_PROJECT" == true ]] && [ "$1" != "new" ]; then
+      PROJECT_APP=$(
+        sed -n 's/^ *app: :\([a-z0-9_]*\),.*/\1/p' "$WORKSPACE_PATH/$MIX_FILE" | head -n 1
+      )
+      if [ -n "$PROJECT_APP" ]; then
+        ELIXIR_PROJECT_NAME="$PROJECT_APP"
+        APP_NAME="${PROJECT_APP//_/-}"
+        LOCAL_IMAGE="$APP_NAME:local"
+      fi
     fi
     # The workbench's image, where its own work on a workspace runs —
     # generation, cartridges, git, the catalog — and the console: shared
@@ -516,6 +529,20 @@
         "Elixir $1 is below the workbench's floor, $ELIXIR_FLOOR: since 1.18 Mix locks" \
         "the build and deps directories, which the workbench relies on to compile the" \
         "workspace from two sides. Pick a newer stack: ./$(basename "$0") stacks"
+  }
+
+  # warn_stack_floor <ELIXIR_VERSION>
+    # The floor as a warning, for 'adopt': a project made elsewhere may
+    # not compile on anything newer than the Elixir it was written for,
+    # and the risk below the floor is one the reader can steer clear of
+    # — never two deps.get at once. Asks before going on (--yes goes on).
+  warn_stack_floor() {
+    [[ "$(printf '%s\n' "$ELIXIR_FLOOR" "$1" | sort -V | head -n 1)" == "$ELIXIR_FLOOR" ]] || \
+      confirm \
+        "Elixir $1 is below the workbench's floor, $ELIXIR_FLOOR: Mix locks the build and" \
+        "deps directories only since 1.18, and the workbench compiles the workspace from" \
+        "two sides that share deps/. Below it, never run 'add', 'status' or the console" \
+        "while the app is fetching its dependencies (on boot), or deps/ can be corrupted."
   }
 
   # stack_satisfies <REQUIREMENT>
@@ -1910,6 +1937,15 @@
       "                      sets a standing one)." \
       "  PHX_NEW_OPTIONS     Any flag of 'mix phx.new'."
 
+    print_command "adopt [--phx-new VERSION]"
+    command_content \
+      "Take in a Phoenix project that was not generated here: the one already" \
+      "in the workspace, as it is. Commits it as found when it has no" \
+      "repository, then adds what 'new' adds after phx.new, as one commit" \
+      "('Adopt APP'). Its .env, and any Dockerfile, stay its own." \
+      "  --phx-new VERSION   The installer the base cartridges take their delta" \
+      "                      with (default: the phoenix mix.lock locks)."
+
     print_command "add [--archived] FEATURE [OPTIONS...]"
     command_content \
       "Insert a cartridge as one commit ('Insert FEATURE …'), the services it" \
@@ -2210,6 +2246,38 @@
     bake_compose "$LOCAL_IMAGE" "$LOCAL_DOCKERFILE" "$COMPOSE_FILE"
   }
 
+  # adopt_project
+    # Body of the 'adopt' command: what 'new' adds after phx.new, on a
+    # project that was not generated here. The workspace's history
+    # first — the project as it was found, when it had no repository —
+    # so that the workbench's part is one commit of its own, which the
+    # reader can see and revert. A step that fails leaves the tree at
+    # that commit.
+  adopt_project() {
+    if [ -d "$WORKSPACE_PATH/.git" ]
+    then require_clean_workspace adopt
+    else workspace_commit "Import $ELIXIR_PROJECT_NAME as found" || return 1
+    fi
+
+    # The package goes on the `deps:` line, as on a generated project;
+    # a mix.exs spelled otherwise gets nothing, and says so.
+    grep -q 'deps() ++ workbench_dep()' "$WORKSPACE_PATH/$MIX_FILE" || register_igniter_package
+    if ! grep -q 'deps() ++ workbench_dep()' "$WORKSPACE_PATH/$MIX_FILE"; then
+      undo_failed_insert adopt
+      terminate \
+        "$MIX_FILE has no 'deps: deps(),' line in its project/0, which is where" \
+        "the workbench's package goes. Add '++ workbench_dep()' to its deps by hand."
+    fi
+
+    if entrypoint_run workbench_adopt "${SETUP_FLAGS[@]}" && \
+       create_local_dockerfile && \
+       cp "$SCRIPTS_DIR/$LOCAL_DOCKERFILE" "$WORKSPACE_PATH/$LOCAL_DOCKERFILE" && \
+       bake_compose "$LOCAL_IMAGE" "$LOCAL_DOCKERFILE" "$COMPOSE_FILE"
+    then workspace_commit "Adopt $ELIXIR_PROJECT_NAME"
+    else undo_failed_insert adopt; return 1
+    fi
+  }
+
 # SCRIPT =======================================================================
 
 if [ $# -gt 0 ]; then
@@ -2270,6 +2338,63 @@ if [ $# -gt 0 ]; then
     build_setup_flags "$@" && \
     create_project workbench_setup "$@" && \
     workspace_commit "New project: $ELIXIR_PROJECT_NAME"
+
+  elif [[ "$1" == "adopt" ]]; then
+    shift
+
+    PHX_NEW_VERSION=""
+    while [ $# -gt 0 ]; do
+      case "$1" in
+        --phx-new) PHX_NEW_VERSION="$2"; shift 2 ;;
+        --phx-new=*) PHX_NEW_VERSION="${1#*=}"; shift ;;
+        *) args_error "Unknown option '$1'. Try: ./$(basename "$0") adopt [--phx-new VERSION]" ;;
+      esac
+    done
+
+    [[ "$EXISTING_PROJECT" == true ]] || terminate \
+      "There is no project in $WORKSPACE_PATH to adopt (no $MIX_FILE)." \
+      "Put one there, or generate one: ./$(basename "$0") new"
+    [ ! -f "$WORKSPACE_PATH/$COMPOSE_FILE" ] || terminate \
+      "The project in $WORKSPACE_PATH already runs in the workbench: it has its $COMPOSE_FILE."
+    [ -n "${PROJECT_APP:-}" ] || terminate \
+      "$MIX_FILE names no app ('app: :name,' in project/0), and the workspace is named after it."
+
+    # The stack is config.conf's, as for 'new', and has to be one the
+    # project runs on: what its mix.exs asks of Elixir is weighed
+    # against it as phx_new's requirement is. Below the floor it warns
+    # instead of refusing (warn_stack_floor).
+    warn_stack_floor "$ELIXIR_VERSION"
+    ELIXIR_REQUIREMENT=$(sed -n 's/^ *elixir: "\([^"]*\)",.*/\1/p' "$WORKSPACE_PATH/$MIX_FILE" | head -n 1)
+    [ -z "$ELIXIR_REQUIREMENT" ] || stack_satisfies "$ELIXIR_REQUIREMENT" || terminate \
+      "$PROJECT_APP asks for Elixir $ELIXIR_REQUIREMENT, and this stack is $ELIXIR_VERSION." \
+      "Pick one it runs on: ./$(basename "$0") stacks"
+
+    # Nobody knows which phx_new generated a project made elsewhere,
+    # and the base cartridges take their delta with one. The Phoenix it
+    # runs on is the closest answer, and the better one: the delta is
+    # merged into the project as it is now, not as it was born. The
+    # answer is stamped into Dockerfile.local like a generated one's.
+    if [ -z "$PHX_NEW_VERSION" ]; then
+      PHX_NEW_VERSION=$(
+        sed -n 's/^ *"phoenix": {:hex, :phoenix, "\([^"]*\)".*/\1/p' \
+          "$WORKSPACE_PATH/mix.lock" 2> /dev/null | head -n 1
+      )
+      [ -n "$PHX_NEW_VERSION" ] || terminate \
+        "mix.lock locks no phoenix, so there is no Phoenix to read the installer off." \
+        "Name one: ./$(basename "$0") adopt --phx-new VERSION"
+      echo "Phoenix installer: ${B}phx_new $PHX_NEW_VERSION${R} (the phoenix mix.lock" \
+        "locks; --phx-new names another)."
+    fi
+    resolve_installer
+
+    ECTO_FLAG=()
+    grep -q '{:ecto_sql,' "$WORKSPACE_PATH/$MIX_FILE" || ECTO_FLAG=(--no-ecto)
+    APP_PORT=$(first_free_port 4000)
+
+    build_setup_flags "${ECTO_FLAG[@]}" && \
+    ensure_build_volumes && \
+    ensure_workbench_image && \
+    adopt_project
 
   elif [[ "$1" == "add" ]]; then
     shift

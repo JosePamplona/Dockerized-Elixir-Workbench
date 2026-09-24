@@ -53,6 +53,22 @@ defmodule Mix.Tasks.Workbench.SetupTest do
       assert igniter.assigns[:test_files][".env"] == "EXISTING=true\n"
     end
 
+    test "an existing .env keeps its sample as it is, or absent" do
+      igniter =
+        phx_test_project(files: %{".env" => "EXISTING=true\n", ".env.sample" => "MINE=1\n"})
+        |> Igniter.compose_task("workbench.setup", [])
+        |> apply_igniter!()
+
+      assert igniter.assigns[:test_files][".env.sample"] == "MINE=1\n"
+
+      igniter =
+        phx_test_project(files: %{".env" => "EXISTING=true\n"})
+        |> Igniter.compose_task("workbench.setup", [])
+        |> apply_igniter!()
+
+      refute igniter.assigns[:test_files][".env.sample"]
+    end
+
     test "writes the connection of the adapter the project was generated with" do
       igniter =
         WorkbenchIgniter.TestProject.new(

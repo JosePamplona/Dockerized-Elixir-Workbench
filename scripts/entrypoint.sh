@@ -90,6 +90,27 @@ if [ $# -gt 0 ]; then echo "[$HOSTNAME]$0($#): $*"; fi
     # distributed release actually needs.
     mix phx.gen.release --docker
 
+  elif [ "$1" == "workbench_adopt" ]; then
+    shift
+
+    # 'workbench_setup' on a project generated elsewhere. Its lock was
+    # made without the workbench's package, so deps.get resolves that
+    # in. The production Dockerfile only when it has none: one it has
+    # is its own, and phx.gen.release asks before each file it would
+    # replace (stdin closed: it keeps them). A Dockerfile it cannot
+    # write does not stop the adoption: only 'up --deploy prod' needs
+    # it, and the project's own Phoenix may not know the images there
+    # are now (phoenix 1.7 asks hex for debian-bullseye alone, which
+    # the newer OTPs are not built on).
+    mix deps.get && \
+    mix workbench.setup "$@" --yes && \
+    if [ -f Dockerfile ]; then true
+    elif ! mix phx.gen.release --docker < /dev/null; then
+      echo "⚠️  ${B}Warning${R} phx.gen.release wrote no production Dockerfile (above: why)."
+      echo "The workspace runs without it; 'up --deploy prod' needs one, written by hand"
+      echo "or by 'mix phx.gen.release --docker' on a Phoenix that knows today's images."
+    fi
+
   elif [ "$1" == "expand" ]; then
     shift
     if [ $# -ge 1 ]; then

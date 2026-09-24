@@ -131,24 +131,63 @@ which, one note each.
 
 ## Keeping up with the site
 
-Every table above, and the one-line comments the catalog shows beside
-each choice, come from the feature map that drives the site's *Get
-Your Installer* — not from its HTML but from its app bundle
-(`/assets/app-*.js`; [DESIGN.md](DESIGN.md) [17]). The site moves;
-the cartridge does not know when. So it can ask:
+**What it is for.** Every option of this cartridge copies a choice of
+ash-hq.org's *Get Your Installer*: the packages each one puts in the
+command, the arguments it passes, the one-line description the catalog
+shows, and the section it sits in — which names `--ai`, `--finance` and
+the rest. The site changes on its own schedule and nobody tells the
+cartridge. `mix workbench.ash.site` reads the site as it is today and
+says, line by line, where the cartridge stopped copying it.
+
+**How to use it.** From `igniter/`, with the network:
 
 ```sh
 mix workbench.ash.site
 ```
 
-fetches the map as it is today and reports, per option, whether the
-cartridge would put the same packages and arguments in the command and
-shows the same tooltip, plus the options the site has that the
-cartridge does not (presets like *LiveView* and *React* are skipped:
-they are bundles of the others). It writes nothing — the report is the
-list of what to update by hand, in `ash.ex`'s tables and the DESIGN
-reference. Run it before a release of the cartridge, and whenever the
-site announces a new package.
+It writes nothing. Run it before releasing a new version of the
+cartridge, and whenever the site announces a package. CI also runs it
+every Monday and on demand (`.github/workflows/ash-site.yml`, *Run
+workflow*), apart from the build: a red run is a to-do list, not a
+broken commit.
+
+**What it reads.** Two things the site serves: the home page, whose
+widget groups the features in sections (`<div data-category="AI">`,
+one `<label id="feature-…">` each), and the app bundle it links
+(`/assets/app-*.js`), whose feature map gives each feature its
+packages, arguments and tooltip ([DESIGN.md](DESIGN.md) [17]).
+
+**What it checks**, each line marked:
+
+| Mark | Meaning |
+| --- | --- |
+| `ok` | A feature the cartridge puts in the command with the same packages, arguments and tooltip as the site. A section whose packages are exactly the ones its option offers (*Web* for `--api`, *Data Layers* for `--data-layer`, each *Advanced Options* section for its option). A strategy of the site's *Authentication* that `--auth` knows. |
+| `..` | What the site offers with its installer "coming soon" (`appsignal`, `opentelemetry` today): nothing to follow yet. The day the installer lands the tooltip changes, and the line turns into a `!!`. |
+| `!!` | A difference to act on: a feature whose packages, arguments or tooltip changed; one the site offers and the cartridge does not; a package a section added, stopped listing, or moved to another section; a section opened or closed; a strategy `--auth` does not list. |
+
+It exits 1 when there is a `!!`, 0 otherwise. A session today ends:
+
+```text
+  ok  section «Dev Tools» (--dev-tools): as the site
+  ..  appsignal: the site offers it (adds appsignal, ash_appsignal), the cartridge does not — its installer: coming soon, the site says
+38 as the site, 2 waiting for an installer, 0 to look at.
+```
+
+**What to do with a `!!`.** Update the table it names in `ash.ex` —
+`@data_layers`, `@apis`, `@advanced` and `@section_titles`,
+`@companions`, `@tooltips` — and the reference [17] in DESIGN.md, then
+run it again until it says `0 to look at`. A new section is a new
+option (`info/2`, `option_docs/0`, `choices/0` pick it up from
+`@advanced`).
+
+**What it does not check.** The order the site lists features in:
+the map's `order` field repeats numbers and puts Money at 999, so it
+says nothing reliable, and the cartridge's order is its own
+(ash_authentication before its Phoenix half, DESIGN.md §2.5). And
+`--auth`'s full list: the site offers four strategies, `--auth` knows
+the seventeen `ash_authentication.add_strategy` accepts — that list is
+the installer's, not the site's. Presets like *LiveView* and *React*
+are skipped: they are bundles of the others.
 
 ## In the console
 
@@ -231,7 +270,7 @@ hung on a prompt — see [DESIGN.md](DESIGN.md) §3.2 for what it taught.
 | --- | --- |
 | `ash.ex` | Manifest + logic (`info/2`, `install/1`, `packages/1`, `flags/1`) |
 | `task.ex` | `Mix.Tasks.Workbench.Install.Ash` shell |
-| `site.ex` | `mix workbench.ash.site`: the site's feature map against the cartridge's tables |
+| `site.ex` | `mix workbench.ash.site`: the site's feature map and sections against the cartridge's tables |
 | `CHANGELOG.md` | The cartridge's own version history |
 | `DESIGN.md` | Why it queues a command instead of composing installers, with sources |
 

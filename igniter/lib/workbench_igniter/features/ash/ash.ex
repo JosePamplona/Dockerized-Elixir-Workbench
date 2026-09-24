@@ -184,6 +184,8 @@ defmodule WorkbenchIgniter.Features.Ash do
   def data_layers, do: @data_layers
   @doc false
   def apis, do: @apis
+  @doc false
+  def auth_strategies, do: @auth_strategies
 
   defp tagline(nil), do: "no data layer — alone"
   defp tagline(pkg), do: if(line = @tooltips[pkg], do: "#{pkg} · #{line}", else: pkg)

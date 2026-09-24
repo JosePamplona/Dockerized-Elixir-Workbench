@@ -1,0 +1,42 @@
+# The ash cartridge follows ash-hq.org's installer: its options, their
+# packages, the sections they are grouped by. The site changes on its
+# own schedule, so once a week this job reads it and compares
+# (mix workbench.ash.site). A red run is a list of what to update by
+# hand in the cartridge, not a broken build: it runs apart from CI and
+# never on a push, since it depends on the network and on a site that
+# is not ours.
+name: ash-hq.org
+
+on:
+  schedule:
+    - cron: "0 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  site:
+    name: The ash cartridge against ash-hq.org
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: igniter
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: erlef/setup-beam@v1
+        id: beam
+        with:
+          version-file: igniter/.tool-versions
+          version-type: strict
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            igniter/deps
+            igniter/_build
+          key: igniter-site-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ hashFiles('igniter/mix.lock') }}
+
+      - run: mix deps.get
+      - run: mix workbench.ash.site

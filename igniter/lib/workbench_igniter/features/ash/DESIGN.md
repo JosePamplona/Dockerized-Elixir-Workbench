@@ -358,6 +358,19 @@ Presets (*LiveView*, *React*) and `phoenix` are skipped; the packages
 the site offers and the cartridge does not (`appsignal`,
 `opentelemetry`, marked "Installer coming soon" on the site) are
 reported as such, not hidden.
+
+Since v0.5.0 the options are the site's sections (§3.2), and a section
+is not in the map: it is the home page's `data-category`, each with
+its features' labels in page order [23]. The check reads it too, and
+goes both ways: a package the site added to a section, stopped listing
+or moved to another, a section opened or closed, and each strategy of
+*Authentication* against `--auth`'s list. What waits for an installer
+("coming soon") is reported apart and does not fail the run, so a
+weekly CI job (`.github/workflows/ash-site.yml`) can run it: a red run
+means something to follow. The map's `order` field is not compared —
+it repeats numbers (12, 16, 17) and puts Money at 999 — so order is
+compared nowhere; the cartridge's own order has its reasons (§2.5).
+
 ### 3.8 Where each package came from, in the cartridge's words
 
 The console reads a box that declares no package off its insert commit,
@@ -538,3 +551,9 @@ Read in full on 2026-08-28 unless marked otherwise.
 22. The installers of ash_money (`ash_money.add_to_ash_postgres`),
     ash_ai, ash_graphql (`lib/igniter.ex`), ash_json_api, ash_oban and
     oban_web — `deps/*/lib/`.
+23. ash-hq.org, the home page's installer widget — <https://ash-hq.org/>,
+    read 2026-09-24: `<div data-category="AI">`, `"Finance"`,
+    `"Automation"`, `"Safety &amp; Security"`, `"Dev Tools"`,
+    `"UI Components"` (and `"Web"`, `"Data Layers"`,
+    `"Authentication"`), each holding its features as
+    `<label id="feature-KEY">`.

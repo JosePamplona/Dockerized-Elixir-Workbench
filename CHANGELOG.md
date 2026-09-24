@@ -78,6 +78,21 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   showed it; IBM Plex Mono is now loaded at 700 too, and Flexi IBM VGA,
   which has one weight, gets the browser's.
 
+- **`mix workbench.ash.site` checks both ways, and runs every week.**
+  It compared each feature of ash-hq.org with what the ash cartridge
+  would put in the command, going from the site to the cartridge only:
+  a package the site dropped went unsaid, and it did not read sections,
+  which are now what the options are named after. It reads the home
+  page's sections too and reports a package a section added, stopped
+  listing or moved, a section opened or closed, and a strategy the site
+  offers that `--auth` does not know. What the site marks "Installer
+  coming soon" (appsignal, opentelemetry) is reported as waiting and no
+  longer fails the run, so `.github/workflows/ash-site.yml` runs it
+  every Monday and on demand, apart from the build. The map's `order`
+  field is not compared: it repeats numbers and puts Money at 999. The
+  ash README says what the check is for, how to run it, how to read its
+  three marks and what to do with a difference.
+
 - **ash's Advanced Options are six options, one per section of the
   site.** `--with` took any package, with the site's fifteen as
   suggestions, and the form showed them in six groups with a free field

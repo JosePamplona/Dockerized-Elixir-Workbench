@@ -209,7 +209,9 @@ deps; a resource the installer's `--user` named otherwise reads as none.
 
 `ash_typescript` 0.18.2 (the latest, 2026-09-24) writes its two RPC
 routes with an empty path: `post "", AshTypescriptRpcController, :run`
-and `:validate`. Its installer reads `:run_endpoint` from the
+and `:validate` (reported upstream as
+[ash_typescript#95](https://github.com/ash-project/ash_typescript/issues/95),
+open on 2026-09-24). Its installer reads `:run_endpoint` from the
 application environment, where the config it has just written is not
 loaded yet. `POST /rpc/run` then answers 404 and the generated
 `assets/js/ash_rpc.ts` calls it. The `/ash-typescript` page renders all

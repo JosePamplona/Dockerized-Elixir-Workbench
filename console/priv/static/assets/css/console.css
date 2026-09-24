@@ -993,6 +993,8 @@ form.insert .opts{display:grid}
 .opt .tags:empty{display:none}
 .opt .tag{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:9.5px;color:var(--muted);border:1px solid var(--line);padding:0 4px;border-radius:2px;white-space:nowrap;line-height:1.5}
 .opt .tag.lacks{color:var(--warn);border-color:var(--warn)}
+.opt .tag.advises{color:var(--warn);border-color:var(--warn);border-style:dashed}
+.opt .doc.advice{border-left:2px solid var(--warn);padding-left:8px}
 .opt .tag.def{color:var(--soft)}
 .opt .req{display:inline-flex;gap:6px;align-items:center}
 .opt .by{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:9.5px;color:var(--soft);white-space:nowrap}

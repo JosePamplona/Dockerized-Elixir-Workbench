@@ -94,6 +94,10 @@ and the role of each file; the general index is
     — the default — means a plain cartridge.
   - `requires/0` — the cartridges it builds on (openai on auth0): the
     installer refuses, naming them, until they are in.
+  - `advises/0` — what a switch works fully only with, and why (html's
+    `--live` with esbuild): never refused; the installer adds a notice
+    while the project lacks it, and the console says it beside the
+    switch, lit.
   - `origins/2` — where the packages its insert commit added came
     from, when it does not declare them: one note per origin, in its
     own words, given the options the insert went in with (ash: the

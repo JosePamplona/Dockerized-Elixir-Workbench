@@ -436,6 +436,7 @@ defmodule WorkbenchIgniter.Features do
         choices: choice_list(values),
         requires: on.requires,
         conditions: on.conditions,
+        advises: advice(Keyword.get(feature.advises(), key)),
         open: open,
         detected: key in feature.detected(),
         # The shape the value has to have, where the type does not say
@@ -444,6 +445,15 @@ defmodule WorkbenchIgniter.Features do
         doc: Keyword.get(docs, key)
       }
     end
+  end
+
+  # What a switch works fully only with, as a value's requirements are
+  # carried, and why: nil for a switch with none.
+  defp advice(nil), do: nil
+
+  defp advice({requires, why}) do
+    %{choice_value({true, nil, requires}) | doc: why}
+    |> Map.delete(:value)
   end
 
   # Every value as %{value, doc, requires}, doc nil when the cartridge

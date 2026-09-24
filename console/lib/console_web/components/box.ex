@@ -1245,15 +1245,22 @@ defmodule ConsoleWeb.Box do
   # A switch that builds on a cartridge (credo's --githook on precommit)
   # is unlit while the project lacks it, and says why on its own line —
   # unless the project already carries it on, which the box then says
-  # checked.
+  # checked. One that works fully only with a cartridge the project
+  # lacks (html's --live without esbuild) stays lit and, turned on, says
+  # what it works with and why on the line under it.
   defp switch(assigns) do
     o = assigns.o
 
     need = if assigns.c_state[o["name"]] == true, do: [], else: lacks(o, assigns.status)
 
+    on =
+      need == [] &&
+        checked?(o, assigns.args, assigns.c_state, assigns.from_insert, assigns.inserted_args)
+
     assigns =
       assign(assigns,
         need: need,
+        advice: if(on && o["advises"], do: lacks(o["advises"], assigns.status), else: []),
         default:
           !assigns.installed && is_boolean(o["default"]) &&
             "default #{if o["default"], do: "on", else: "off"}"
@@ -1274,7 +1281,15 @@ defmodule ConsoleWeb.Box do
         title={@need != [] && builds_on(@need)}
       />
       <.tags need={@need} default={@default} status={@status} />
+      <span :if={@advice != []} class="tags" title={@o["advises"]["doc"]}>
+        <span class="tag advises">works with</span>
+        <span :for={{name, _condition} <- @advice} class="req"><.cart_ref
+          name={name}
+          installed={false}
+        /></span>
+      </span>
     </label>
+    <p :if={@advice != []} class="doc advice">{@o["advises"]["doc"]}.</p>
     """
   end
 

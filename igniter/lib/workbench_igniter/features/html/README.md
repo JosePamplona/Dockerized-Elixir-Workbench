@@ -64,7 +64,9 @@ lives in `assets/js/app.js`, which exists only with a bundler, and
 `phx.new`'s static placeholder for a project without one is a comment.
 On such a project LiveView is configured and served and nothing in the
 browser connects to it until esbuild is in — the same as `phx.new
---no-esbuild` with live; the insert says so in a notice.
+--no-esbuild` with live. It is advice, not a requirement (`advises/0`):
+the insert says so in a notice, and the console beside the `--live`
+switch, which stays lit.
 
 On a project without [esbuild](../esbuild/) and [tailwind](../tailwind/)
 the page gets what `phx.new --no-assets` gives: the markup with its

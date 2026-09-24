@@ -61,6 +61,21 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   that `ash_typescript` 0.18.2's installer writes its RPC routes with
   an empty path. The ash README records it with the two-line fix.
 
+- **A switch can say what it works fully with, without refusing.**
+  html's `--live` on a project without esbuild configures LiveView and
+  leaves the browser nothing to connect with: the `LiveSocket` lives in
+  `assets/js/app.js`, which only esbuild brings. That was said in a
+  notice in the job's log, after the insert, where it is easy to miss.
+  Making esbuild a requirement would refuse what `phx.new --no-esbuild`
+  makes, and what another bundler serves, and would turn `add html`
+  (live on by default) into a refusal on such a project. A cartridge
+  now declares it as advice (`advises/0`: the cartridges, and why). The
+  installer says it in one shared notice (`Feature.advise/3`), the
+  catalog carries it on the option as `advises`, and the console shows
+  it beside the switch while the project lacks it: a dashed *works
+  with* tag, the cartridge, and the reason on the line under it. The
+  switch stays lit.
+
 - **The daemon's Specs read by weight.** The Docker screen's box was
   plain ink under dim keys, `docker system df`'s columns in its own
   order (`35 · 18.16GB · 9 in use · 9.891GB (54%) reclaimable`). The

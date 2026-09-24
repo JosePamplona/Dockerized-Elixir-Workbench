@@ -241,7 +241,12 @@ add, the remedy is that run, `./wb.sh add html --live`. The catalog carries the 
 `requires` and the states as `conditions`, and the console's box says
 both under Needs. A single value can say it too — `{value, doc,
 requires}` in `choices/0` (ash's `--auth password` on live and mailer,
-each of db_admin's admins on its databases) — with the same resolver and refusal, and the list beside the value. A state
+each of db_admin's admins on its databases) — with the same resolver and refusal, and the list beside the value. What a switch
+only works *fully* with is not a requirement: `advises/0` (html's
+`--live` with esbuild, whose `LiveSocket` lives in the `app.js` only
+esbuild brings) refuses nothing, since `phx.new` makes that project
+too; the installer says it in a notice and the console beside the
+switch, still lit. A state
 can also *shape* a box instead of gating it, when it selects among
 equivalents: [dashboard_extras](dashboard_extras/) reads ecto's
 `state/1` for the database and installs that server's extras —

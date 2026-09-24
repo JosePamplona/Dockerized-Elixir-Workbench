@@ -191,4 +191,33 @@ defmodule WorkbenchIgniter.RequirementsTest do
       assert %{requires: [], conditions: %{}} = Features.entry(Features.Html)
     end
   end
+
+  describe "advice" do
+    test "a switch's advice is a notice while the project lacks it, never an issue" do
+      without =
+        phx_test_project()
+        |> Igniter.Project.Deps.remove_dep(:esbuild)
+        |> apply_igniter!()
+        |> Feature.advise(Features.Html, live: true)
+
+      assert without.issues == []
+
+      assert [
+               "--live is in without esbuild: the LiveSocket lives in assets/js/app.js, " <>
+                 "which only esbuild brings, and without it the browser never connects. " <>
+                 "Add it with: ./wb.sh add esbuild"
+             ] = without.notices
+
+      assert Feature.advise(phx_test_project(), Features.Html, live: true).notices == []
+      assert Feature.advise(without, Features.Html, live: false).notices == without.notices
+    end
+
+    test "the catalog carries it on the switch, apart from what it requires" do
+      assert %{options: [%{name: :live, requires: [], advises: advises}]} =
+               Features.entry(Features.Html)
+
+      assert %{requires: ["esbuild"], conditions: %{}, doc: "the LiveSocket" <> _} = advises
+      assert %{options: [%{advises: nil}]} = Features.entry(Features.DbAdmin)
+    end
+  end
 end

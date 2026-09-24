@@ -798,6 +798,48 @@ defmodule ConsoleWeb.BoxInstallTest do
     assert ConsoleWeb.Box.value_requires(@credo, %{"githook" => "off"}, %{}) == []
   end
 
+  # html's --live works fully only with esbuild, and is never refused.
+  @html %{
+    "name" => "html",
+    "rerun" => "adds",
+    "adds" => ["live"],
+    "requires" => [],
+    "options" => [
+      %{
+        "name" => "live",
+        "type" => "boolean",
+        "default" => true,
+        "choices" => nil,
+        "requires" => [],
+        "conditions" => %{},
+        "advises" => %{
+          "requires" => ["esbuild"],
+          "conditions" => %{},
+          "doc" => "the LiveSocket lives in assets/js/app.js, which only esbuild brings"
+        }
+      }
+    ]
+  }
+
+  test "a switch that works fully only with a cartridge the project lacks stays lit, and says so" do
+    html = screen(@html, with_cartridges([%{"name" => "esbuild", "installed" => false}]))
+    refute html =~ ~r{id="opt-live"[^>]*disabled}
+    refute html =~ ~s(class="tag lacks")
+    assert html =~ ~r{class="tag advises">works with<.*phx-value-name="esbuild"}s
+    assert html =~ "the LiveSocket lives in assets/js/app.js, which only esbuild brings."
+  end
+
+  test "with the cartridge in, the switch says nothing more" do
+    html =
+      screen(
+        @html,
+        with_cartridges([%{"name" => "esbuild", "installed" => true, "state" => %{}}])
+      )
+
+    refute html =~ "tag advises"
+    refute html =~ "only esbuild brings"
+  end
+
   test "rerunnable with a value still free: Add to cartridge, lit" do
     html = screen(@db_admin, with_admins(["pgadmin"]))
     assert html =~ "Add to cartridge"

@@ -266,6 +266,24 @@ defmodule WorkbenchIgniter.Feature do
   """
   @callback requires() :: [requirement()]
   @type requirement :: String.t() | {String.t(), keyword()}
+
+  @doc """
+  What a switch works fully only with, without refusing it: by schema
+  key, the cartridges turning it on is incomplete without, and why, in
+  one line. html's `--live` configures LiveView on any project, and the
+  browser connects to it through the `LiveSocket` in `assets/js/app.js`,
+  which only esbuild brings:
+
+      [live: {["esbuild"], "the LiveSocket lives in assets/js/app.js, which only esbuild brings"}]
+
+  Unlike a requirement, it refuses nothing: `phx.new --no-esbuild`
+  with live is a project `phx.new` makes, and another bundler can serve
+  the client. The installer adds a notice while the project lacks it
+  (`advise/3`); the catalog carries it as the option's `advises`, and
+  the console says it beside the switch, the switch still lit. Empty by
+  default.
+  """
+  @callback advises() :: [{atom(), {[requirement()], String.t()}}]
   @typedoc """
   What a requirement lacks in the project: the cartridge is not in
   (`:absent`, with the state it was asked for), or it is in and one key
@@ -482,6 +500,9 @@ defmodule WorkbenchIgniter.Feature do
       def requires, do: []
 
       @impl WorkbenchIgniter.Feature
+      def advises, do: []
+
+      @impl WorkbenchIgniter.Feature
       def afterwards, do: nil
 
       @impl WorkbenchIgniter.Feature
@@ -503,6 +524,7 @@ defmodule WorkbenchIgniter.Feature do
       def ejected(_root), do: []
 
       defoverridable requires: 0,
+                     advises: 0,
                      deps: 1,
                      origins: 2,
                      services: 1,
@@ -921,6 +943,37 @@ defmodule WorkbenchIgniter.Feature do
   def refuse_values(igniter, missing) do
     Enum.reduce(missing, igniter, fn {key, value, shortfalls}, igniter ->
       Igniter.add_issue(igniter, "#{switch_said(key, value)} builds on " <> lacking(shortfalls))
+    end)
+  end
+
+  @doc """
+  One notice per switch turned on whose `advises/0` the project lacks,
+  what it lacks and the line that brings it:
+
+      --live is in without esbuild: the LiveSocket lives in
+      assets/js/app.js, which only esbuild brings. Add it with:
+      ./wb.sh add esbuild
+
+  `opts` are the installer's options, with the switches' defaults in.
+  """
+  @spec advise(Igniter.t(), module(), keyword()) :: Igniter.t()
+  def advise(igniter, feature, opts) do
+    Enum.reduce(feature.advises(), igniter, fn {key, {requires, why}}, igniter ->
+      case Keyword.get(opts, key) == true && shortfalls(igniter, feature, requires) do
+        {[_ | _] = gone, igniter} ->
+          Igniter.add_notice(
+            igniter,
+            "#{switch_said(key, true)} is in without " <>
+              Enum.map_join(gone, " and ", &describe/1) <>
+              ": #{why}. Add it with: " <> remedies(gone)
+          )
+
+        {[], igniter} ->
+          igniter
+
+        false ->
+          igniter
+      end
     end)
   end
 

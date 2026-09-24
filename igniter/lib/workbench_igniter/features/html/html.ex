@@ -43,6 +43,17 @@ defmodule WorkbenchIgniter.Features.Html do
     }
   end
 
+  # The LiveSocket is esbuild's to bring: live is served and configured
+  # without it, and nothing in the browser connects (as `phx.new
+  # --no-esbuild` with live). Said, never refused.
+  @impl true
+  def advises,
+    do: [
+      live:
+        {["esbuild"],
+         "the LiveSocket lives in assets/js/app.js, which only esbuild brings, and without it the browser never connects"}
+    ]
+
   # live is a piece: a second run with it adds it where html is in
   # without it, and never touches what is there.
   @impl true
@@ -89,18 +100,9 @@ defmodule WorkbenchIgniter.Features.Html do
     else
       igniter = PhxDelta.apply(igniter, :live, %{})
 
-      # The LiveSocket lives in assets/js/app.js, which only esbuild
-      # brings; phx.new's static placeholder for a project without a
-      # bundler is a comment. Served, configured, and not connected to.
-      if facts.esbuild or igniter.issues != [] do
-        igniter
-      else
-        Igniter.add_notice(
-          igniter,
-          "live is in, but the browser has nothing to connect with: the LiveSocket lives in " <>
-            "assets/js/app.js, which esbuild brings (./wb.sh add esbuild)."
-        )
-      end
+      if igniter.issues == [],
+        do: WorkbenchIgniter.Feature.advise(igniter, __MODULE__, live: true),
+        else: igniter
     end
   end
 end

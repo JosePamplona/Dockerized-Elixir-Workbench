@@ -4,6 +4,16 @@ Versioned on its own, independently of the workbench release that ships
 it; semver over what `phx.new` generates for it at the installer's
 version, as [mailer](../mailer/CHANGELOG.md) says.
 
+## Unreleased
+
+### Updated
+
+- `--live` without esbuild is said before the insert as well as after
+  it: the manifest declares it (`advises/0`, esbuild, and why), the
+  catalog carries it on the switch, and the console shows it beside
+  the switch, still lit. The notice is the shared one (`advise/3`):
+  "--live is in without esbuild: … Add it with: ./wb.sh add esbuild".
+
 ## v0.3.0 - (2026-09-19)
 
 ### Updated

@@ -87,6 +87,16 @@ defmodule WorkbenchIgniter.Features.BaseCartridgesTest do
     assert files["lib/test_web/controllers/page_controller.ex"]
     # html and live, as phx.new generates them by default
     assert files["config/config.exs"] =~ "config :phoenix_live_view"
+    refute Enum.any?(igniter.notices, &(&1 =~ "without esbuild"))
+  end
+
+  test "html with live and no esbuild: inserted, and the notice says what the browser lacks" do
+    igniter =
+      project(~w(--no-html --no-esbuild)) |> Igniter.compose_task("workbench.install.html", [])
+
+    assert igniter.issues == []
+    assert files(igniter)["config/config.exs"] =~ "config :phoenix_live_view"
+    assert Enum.any?(igniter.notices, &(&1 =~ "--live is in without esbuild"))
   end
 
   test "html --no-live: html alone, as phx.new --no-live generates it" do

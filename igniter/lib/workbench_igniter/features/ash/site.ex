@@ -119,7 +119,8 @@ defmodule WorkbenchIgniter.Features.Ash.Site do
   each a list of one-line reports: `waiting` is what the site offers
   and marks "Installer coming soon" — nothing to install yet, so
   nothing to follow; the day its installer lands the tooltip changes and
-  it becomes a difference. An empty `differences` means the cartridge
+  it becomes a difference — and the authentication option it offers
+  with no strategy (OAuth2), which `--auth` has nothing to pass for. An empty `differences` means the cartridge
   is current.
   """
   def compare(site) do
@@ -135,8 +136,7 @@ defmodule WorkbenchIgniter.Features.Ash.Site do
   against the packages of the option that stands for it — a package the
   site added there, one it no longer lists or moved to another section,
   a section it opened or closed. Authentication: every strategy the site
-  offers is one `--auth` knows (the rest of `--auth`'s list is
-  `ash_authentication.add_strategy`'s, not the site's). `sections` is
+  it names is one `--auth` knows. `sections` is
   `sections/1`, `site` is `parse/1`.
   """
   def compare_sections(sections, site) do
@@ -209,11 +209,10 @@ defmodule WorkbenchIgniter.Features.Ash.Site do
     end
   end
 
-  # The strategies the site offers, each one `--auth` must know.
+  # The strategies the site offers, each one `--auth` must know. An
+  # option with no strategy is `compare/1`'s to report, as waiting.
   defp auth_reports(keys, site) do
-    for key <- keys, f = site[key], f do
-      strategy = strategy(f.args)
-
+    for key <- keys, f = site[key], f, strategy = strategy(f.args) do
       if strategy in Ash.auth_strategies(),
         do: {:ok, "section «Authentication»: #{strategy} as the site"},
         else:
@@ -227,6 +226,12 @@ defmodule WorkbenchIgniter.Features.Ash.Site do
     case ours(key, f) do
       :skip ->
         {oks, waiting, diffs}
+
+      :no_strategy ->
+        line =
+          "#{key}: the site installs #{Enum.join(f.adds, ", ")} with no strategy, which `ash_authentication.add_strategy` has none for yet"
+
+        {oks, waiting ++ [line], diffs}
 
       {:not_offered, _} ->
         line =
@@ -268,7 +273,8 @@ defmodule WorkbenchIgniter.Features.Ash.Site do
   # What the cartridge would do for a site feature: {our value, the
   # packages the command gets, the args, the key of the tooltip the
   # catalog shows for it}, :skip for what is always in or a preset,
-  # :not_offered for what the cartridge has no option for.
+  # :not_offered for what the cartridge has no option for, :no_strategy
+  # for an authentication option that names no strategy.
   defp ours(key, f) do
     layers = Ash.data_layers() |> Enum.reject(&is_nil(elem(&1, 1)))
     apis = Ash.apis()
@@ -285,8 +291,9 @@ defmodule WorkbenchIgniter.Features.Ash.Site do
         {elem(api, 0), [elem(api, 1)], api_args(elem(api, 0)), elem(api, 1)}
 
       String.starts_with?(hd(f.adds), "ash_authentication") ->
-        strategy = strategy(f.args)
-        {strategy, Ash.auth_packages([strategy]), f.args, strategy}
+        if strategy = strategy(f.args),
+          do: {strategy, Ash.auth_packages([strategy]), f.args, strategy},
+          else: :no_strategy
 
       main = Enum.find(f.adds, &(&1 in advanced)) ->
         {main, Ash.expand(main), [], main}
@@ -300,9 +307,10 @@ defmodule WorkbenchIgniter.Features.Ash.Site do
   defp api_args("typescript"), do: ["--framework react"]
   defp api_args(_api), do: []
 
-  # The site's --auth-strategy; oauth2 when it names none.
+  # The site's --auth-strategy; nil when it names none, as its OAuth2
+  # option, which installs the package alone.
   defp strategy(["--auth-strategy " <> s]), do: s
-  defp strategy(_args), do: "oauth2"
+  defp strategy(_args), do: nil
 end
 
 defmodule Mix.Tasks.Workbench.Ash.Site do

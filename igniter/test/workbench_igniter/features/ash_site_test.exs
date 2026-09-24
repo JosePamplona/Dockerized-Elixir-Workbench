@@ -76,6 +76,24 @@ defmodule WorkbenchIgniter.Features.Ash.SiteTest do
     refute Enum.any?(diffs, &(&1 =~ "appsignal"))
   end
 
+  test "an authentication option with no strategy waits, and is no difference" do
+    oauth =
+      String.replace(
+        @bundle,
+        "appsignal:{",
+        ~S|oauth:{requires:["phoenix"],adds:["ash_authentication"],tooltip:`<p>Sign in using an external service.</p>`},appsignal:{|
+      )
+
+    {oks, waiting, diffs} = oauth |> Site.parse() |> Site.compare()
+
+    assert Enum.any?(
+             waiting,
+             &(&1 =~ "oauth: the site installs ash_authentication with no strategy")
+           )
+
+    refute Enum.any?(oks ++ diffs, &(&1 =~ "oauth"))
+  end
+
   # The home page's widget, one label per feature inside its section, as
   # the site serves it (read 2026-09-24), cut to what the reading needs.
   defp section(title, keys) do
@@ -152,7 +170,7 @@ defmodule WorkbenchIgniter.Features.Ash.SiteTest do
     assert diffs == []
     assert "section «Dev Tools» (--dev-tools): as the site" in oks
     assert "section «Web» (--api): as the site" in oks
-    assert "section «Authentication»: oauth2 as the site" in oks
+    assert "section «Authentication»: api_key as the site" in oks
   end
 
   test "a package the site moved, dropped or added, a section it opened or closed" do

@@ -7,6 +7,18 @@ what the cartridge *installs*: a change in the command it queues or in
 the options that build it is a minor, a change that breaks a project
 already carrying what that command installed is a major.
 
+## v0.5.1 - (2026-09-24)
+
+### Fixed
+
+- `--auth` offers what the released `ash_authentication.add_strategy`
+  accepts: `password`, `magic_link`, `api_key`. Its list had been read
+  from `main`, and every other strategy (`auth0`, `github`, `oauth2`,
+  `otp`…) stopped the insert with "Invalid strategy provided".
+- `mix workbench.ash.site` reports the site's OAuth2 option, which
+  installs `ash_authentication` with no strategy, as waiting (`..`)
+  instead of matching it to an `oauth2` strategy.
+
 ## v0.5.0 - (2026-09-24)
 
 ### Added

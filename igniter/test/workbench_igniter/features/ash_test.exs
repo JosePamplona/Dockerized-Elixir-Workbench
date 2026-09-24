@@ -38,7 +38,6 @@ defmodule WorkbenchIgniter.Features.AshTest do
       by = Map.new(auth.choices, &{&1.value, &1.requires})
       assert by["password"] == ["html", "mailer"]
       assert by["magic_link"] == ["html", "mailer"]
-      assert by["github"] == ["html"]
       assert by["api_key"] == []
 
       options = Map.new(WorkbenchIgniter.Features.entry(Ash).options, &{&1.name, &1})

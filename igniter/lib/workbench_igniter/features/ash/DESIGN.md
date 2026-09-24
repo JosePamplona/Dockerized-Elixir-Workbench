@@ -1,7 +1,8 @@
 # ash — Design
 
-*Revision: cartridge v0.5.0 (2026-09-24): §2.6 and §3.8 read the
-installed sources on that date. The rest: cartridge v0.2.0
+*Revision: cartridge v0.5.1 (2026-09-24): §2.5's strategies and [16]
+read in the released `add_strategy`. v0.5.0 (2026-09-24): §2.6 and
+§3.8 read the installed sources on that date. The rest: cartridge v0.2.0
 (2026-08-29), sources consulted on that date; quotations are verbatim
 from the file or page as read then.*
 
@@ -146,10 +147,12 @@ Read in full: `ash.install` [12], `ash_postgres.install` [13],
   > now?"
 
   through `Mix.shell().yes?/1`, which `--yes` does not answer.
-* The strategies `add_strategy` accepts are `password`, `magic_link`,
-  `otp`, `api_key`, `totp`, `recovery_code`, `github`, `google`,
-  `apple`, `auth0`, `microsoft`, `okta`, `slack`, `oidc`, `oauth2`,
-  `dynamic_oidc`, `webauthn` [16].
+* The strategies the released `add_strategy` accepts are `password`,
+  `magic_link` and `api_key` (`@strategies`); any other stops it with
+  "Invalid strategy provided" [16]. The site's OAuth2 option passes no
+  strategy at all: it installs the package alone [17]. Until v0.5.1
+  this list was read from `main`, which carries strategies not yet
+  released, and `--auth` offered all of them.
 
 ### 2.6 The whole command, read in the installed sources
 
@@ -454,10 +457,11 @@ strategy but `password`.
 * `ash_postgres.install` sets `min_pg_version/0` to `16.0.0` when it
   cannot detect the server [13]; the workspace's `postgres:latest`
   satisfies it, an older pinned image would not.
-* OAuth strategies need client ids the installer cannot know. Which
+* OAuth strategies are not in the released `add_strategy` [16]. The
+  day they are, they need client ids the installer cannot know: which
   environment variables the generated config reads, and so what
   `.env.sample` should carry beside `TOKEN_SIGNING_SECRET`, is the
-  first thing to establish for a v0.2.0.
+  first thing to establish then.
 * A project generated with `--no-ecto` and `--data-layer postgres`
   will get `ash_postgres.install`'s own repo and config; not tried.
 * `ash_authentication_phoenix.install` asks through
@@ -522,8 +526,11 @@ Read in full on 2026-08-28 unless marked otherwise.
     <https://raw.githubusercontent.com/team-alembic/ash_authentication/main/lib/mix/tasks/ash_authentication.install.ex>.
 15. `Mix.Tasks.AshAuthenticationPhoenix.Install`, `main` —
     <https://raw.githubusercontent.com/team-alembic/ash_authentication_phoenix/main/lib/mix/tasks/ash_authentication_phoenix.install.ex>.
-16. `Mix.Tasks.AshAuthentication.AddStrategy`, `main` —
-    <https://raw.githubusercontent.com/team-alembic/ash_authentication/main/lib/mix/tasks/ash_authentication.add_strategy.ex>.
+16. `Mix.Tasks.AshAuthentication.AddStrategy`, as released: 4.14.2
+    in a workspace's `deps/`, `@strategies`, read 2026-09-24 —
+    <https://hex.pm/packages/ash_authentication>. Read first on `main`
+    (<https://raw.githubusercontent.com/team-alembic/ash_authentication/main/lib/mix/tasks/ash_authentication.add_strategy.ex>),
+    whose list is not released.
 17. ash-hq.org, the installer widget's feature map in the site's app
     bundle — `/assets/app-69827d3ab630e9afe6bb67e913d94655.js`, read
     2026-08-29. One entry per option with `adds` (the packages it puts

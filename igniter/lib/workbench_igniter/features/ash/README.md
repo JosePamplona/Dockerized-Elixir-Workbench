@@ -67,14 +67,14 @@ the workbench only makes Phoenix projects.
 | --- | --- | --- |
 | Data layer: Postgres / SQLite / CSV | `--data-layer postgres,sqlite,csv` (several, as the site's checkboxes; default `postgres`; `none` alone for no data layer) | `ash_postgres`, `ash_sqlite`, `ash_csv` |
 | Web: JSON:API, GraphQL, TypeScript | `--api json_api,graphql,typescript` | `ash_json_api`, `ash_graphql`, `ash_typescript` (handed `--framework react`, as the site does; its installer hooks `npm install` into `assets.setup`, which the workbench's and the project's images carry node and npm for) |
-| Authentication: Password, Magic Link, API Keys, OAuth2 | `--auth password,magic_link,api_key,oauth2,…` | `ash_authentication`, `ash_authentication_phoenix`, with `--auth-strategy <list>`; API keys alone bring `ash_authentication` only, as on the site |
+| Authentication: Password, Magic Link, API Keys | `--auth password,magic_link,api_key` | `ash_authentication`, `ash_authentication_phoenix`, with `--auth-strategy <list>`; API keys alone bring `ash_authentication` only, as on the site |
 | Advanced Options, by section | `--ai`, `--finance`, `--automation`, `--security`, `--dev-tools`, `--components` | the packages the site offers in that section (below) |
 | — | `--example` | `ash.install --example`: the guide's example resources |
 
-`--auth` takes whatever `ash_authentication.add_strategy` does:
-`password`, `magic_link`, `otp`, `api_key`, `totp`, `recovery_code`,
-`github`, `google`, `apple`, `auth0`, `microsoft`, `okta`, `slack`,
-`oidc`, `oauth2`, `dynamic_oidc`, `webauthn`. The site's *Advanced
+`--auth` takes whatever the released `ash_authentication.add_strategy`
+does: `password`, `magic_link`, `api_key`. The site's OAuth2 option
+installs the package with no strategy, and `add_strategy` has none for
+it yet, so `--auth` does not offer it. The site's *Advanced
 Options*, one option per section, each closed on the packages the site
 offers there (anything else is refused, naming them), and queued in the
 site's order:
@@ -234,8 +234,8 @@ reads is the `ash` dependency.
 Some choices build on cartridges the site takes for granted, because
 it assumes a default `phx.new` project: every `--auth` strategy but
 `api_key` installs `ash_authentication_phoenix`, whose LiveViews need
-**html with LiveView** (`{"html", live: true}`); `password`,
-`magic_link` and `otp` generate senders that deliver with the project's
+**html with LiveView** (`{"html", live: true}`); `password`
+and `magic_link` generate senders that deliver with the project's
 Mailer, so they need **mailer** too; and `ash_admin`, `live_debugger`,
 `cinder`, `mishka_chelekom` and `ash_oban` (it brings `oban_web`) need
 LiveView the same way. The cartridge says so beside each value in the

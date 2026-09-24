@@ -67,12 +67,10 @@ defmodule WorkbenchIgniter.Features.Ash do
     {"typescript", "ash_typescript"}
   ]
 
-  # What `ash_authentication.add_strategy` accepts today, for the
-  # catalog: `--auth` hands the list down unchecked, so a new strategy
-  # works before it is listed here.
-  @auth_strategies ~w(password magic_link otp api_key totp recovery_code
-                      github google apple auth0 microsoft okta slack oidc
-                      oauth2 dynamic_oidc webauthn)
+  # What the released `ash_authentication.add_strategy` accepts, for
+  # the catalog: `--auth` hands the list down unchecked, so a new
+  # strategy works before it is listed here.
+  @auth_strategies ~w(password magic_link api_key)
 
   # ash-hq.org's Advanced Options, by section, as the packages they
   # stand for: one option per section, named after it, closed on the
@@ -117,7 +115,7 @@ defmodule WorkbenchIgniter.Features.Ash do
   # strategies whose generated senders deliver with the project's
   # Mailer. The site assumes a default phx.new project and says nothing.
   @needs_live ~w(ash_admin live_debugger cinder mishka_chelekom ash_oban)
-  @sends_email ~w(password magic_link otp)
+  @sends_email ~w(password magic_link)
 
   @doc "An advanced package with what the site's command adds beside it, in order."
   def expand(pkg) do
@@ -151,7 +149,6 @@ defmodule WorkbenchIgniter.Features.Ash do
     "password" => "Allow users to log in with email & password.",
     "magic_link" => "Send users a link in their email to sign in and register.",
     "api_key" => "Generate and authenticate with API keys.",
-    "oauth2" => "Sign in using an external service.",
     "tidewave" =>
       "Speed up development with AI assistants that understand your web application, how it runs, and what it delivers.",
     "ash_ai" => "First class support for a wide array of LLM tools.",
@@ -175,9 +172,6 @@ defmodule WorkbenchIgniter.Features.Ash do
     "cinder" => "A powerful data collection component for Ash resources in Phoenix LiveView."
   }
 
-  # The site's OAuth2 option names these as its premade configurations.
-  @oauth_providers ~w(github google apple auth0 oidc slack)
-
   @doc false
   def tooltips, do: @tooltips
   @doc false
@@ -191,18 +185,11 @@ defmodule WorkbenchIgniter.Features.Ash do
   defp tagline(pkg), do: if(line = @tooltips[pkg], do: "#{pkg} · #{line}", else: pkg)
 
   defp strategy_doc(name) do
-    doc =
-      cond do
-        doc = @tooltips[name] -> doc
-        name in @oauth_providers -> "one of the site's premade OAuth2 configurations"
-        true -> nil
-      end
-
     requires =
       if(name == "api_key", do: [], else: [{"html", live: true}]) ++
         if(name in @sends_email, do: ["mailer"], else: [])
 
-    {name, doc, requires}
+    {name, @tooltips[name], requires}
   end
 
   defp with_doc(pkg),
@@ -257,7 +244,7 @@ defmodule WorkbenchIgniter.Features.Ash do
       api:
         "Comma-separated: `json_api`, `graphql`, `typescript` (`ash_json_api`, `ash_graphql`, `ash_typescript`).",
       auth:
-        "Comma-separated authentication strategies: `ash_authentication` and `ash_authentication_phoenix`, handed `--auth-strategy`. One of `password`, `magic_link`, `api_key`, `otp`, `totp`, `github`, `google`, `auth0`, `oauth2`, `oidc`, … (the list is the installer's).",
+        "Comma-separated authentication strategies: `ash_authentication` and `ash_authentication_phoenix`, handed `--auth-strategy`. `password`, `magic_link`, `api_key` (the list is the installer's).",
       ai: said(:ai, ""),
       finance: said(:finance, " (`ash_double_entry` brings `ash_money` first)"),
       automation: said(:automation, " (`ash_oban` brings `oban_web`)"),

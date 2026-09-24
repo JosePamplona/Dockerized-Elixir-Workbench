@@ -22,7 +22,12 @@ defmodule Console.Resident do
   It is started on the first question, restarted when it dies, and
   dropped when the workspace changes — `new`, `delete`, or config.conf
   naming another path: the next question starts a fresh one on the
-  project that is there.
+  project that is there. It is started again, too, when the project's
+  `mix.exs` or `mix.lock` changed under it — an insert that brings a
+  dependency or a compiler, an eject that takes one away, a hand edit:
+  its BEAM loaded the dependencies it booted with, and would fail to
+  compile code that needs another (`exit: {:shutdown, 1}`) until
+  restarted. The questions waiting are asked of the new one.
   """
   use GenServer
 
@@ -36,7 +41,8 @@ defmodule Console.Resident do
             waiting: :queue.new(),
             current: nil,
             ready: false,
-            workspace: nil
+            workspace: nil,
+            deps: nil
 
   def start_link(opts), do: GenServer.start_link(__MODULE__, opts, name: __MODULE__)
 
@@ -51,7 +57,7 @@ defmodule Console.Resident do
 
   @impl true
   def handle_call({:ask, request}, from, state) do
-    state = state |> follow_workspace() |> ensure_started()
+    state = state |> follow_workspace() |> follow_deps() |> ensure_started()
 
     if state.port do
       state = %{state | waiting: :queue.in({request, from}, state.waiting)}
@@ -135,7 +141,7 @@ defmodule Console.Resident do
           [:binary, :exit_status, :stderr_to_stdout, {:line, 65_536}, args: args] ++ opts
         )
 
-      %{state | port: port, workspace: ws, ready: false}
+      %{state | port: port, workspace: ws, ready: false, deps: deps_stamp(ws)}
     else
       state
     end
@@ -150,6 +156,36 @@ defmodule Console.Resident do
   end
 
   defp follow_workspace(state), do: state
+
+  # A resident whose project changed its dependencies since it booted —
+  # mix.exs or mix.lock — is started again, the questions it held kept
+  # for the new one: the one it was answering too, since the old BEAM
+  # would have answered it with the dependencies it had.
+  defp follow_deps(%{port: port, workspace: ws, deps: deps} = state) when port != nil do
+    if deps_stamp(ws) == deps do
+      state
+    else
+      waiting =
+        if state.current, do: :queue.in_r(state.current, state.waiting), else: state.waiting
+
+      close_port(state.port)
+      %__MODULE__{waiting: waiting}
+    end
+  end
+
+  defp follow_deps(state), do: state
+
+  @doc false
+  # What the resident booted with, of the two files that say which
+  # dependencies and compilers a project has.
+  def deps_stamp(ws) do
+    for file <- ~w(mix.exs mix.lock) do
+      case File.read(Path.join(ws, file)) do
+        {:ok, content} -> :erlang.md5(content)
+        {:error, _} -> nil
+      end
+    end
+  end
 
   # Here, when this container mounts this very workspace at /app/src;
   # else a container on the workbench's image, with the two mounts
@@ -233,11 +269,7 @@ defmodule Console.Resident do
   defp close(%{port: nil} = state), do: state
 
   defp close(state) do
-    try do
-      Port.close(state.port)
-    rescue
-      _ -> :ok
-    end
+    close_port(state.port)
 
     for {_, from} <- :queue.to_list(state.waiting),
         do: GenServer.reply(from, {:error, "the resident was dropped"})
@@ -246,5 +278,11 @@ defmodule Console.Resident do
       do: GenServer.reply(elem(state.current, 1), {:error, "the resident was dropped"})
 
     %__MODULE__{}
+  end
+
+  defp close_port(port) do
+    Port.close(port)
+  rescue
+    _ -> :ok
   end
 end

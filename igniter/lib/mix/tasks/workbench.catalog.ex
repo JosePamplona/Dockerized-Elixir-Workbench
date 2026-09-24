@@ -6,7 +6,7 @@ defmodule Mix.Tasks.Workbench.Catalog do
   @moduledoc """
   #{@shortdoc}
 
-      mix workbench.catalog [--json] [--covers DIR]
+      mix workbench.catalog [--json [--brief]] [--covers DIR]
 
   Reads the registry (`WorkbenchIgniter.Features.catalog/0`): every
   cartridge in shelf order, each with its name, task, one-line summary,
@@ -31,6 +31,8 @@ defmodule Mix.Tasks.Workbench.Catalog do
   ## Options
 
   * `--json` - One JSON array instead of the table, for tools.
+  * `--brief` - The array in the words a tool keeps in its context
+    window (`brief/1`), on one line: a sixth of `--json`.
   * `--covers DIR` - The covers directory (`assets/covers/` of the
     workbench). Each entry then says which of its sealed covers exist,
     as paths relative to that directory.
@@ -38,7 +40,7 @@ defmodule Mix.Tasks.Workbench.Catalog do
 
   alias WorkbenchIgniter.Features
 
-  @switches [json: :boolean, covers: :string]
+  @switches [json: :boolean, brief: :boolean, covers: :string]
 
   @impl Mix.Task
   def run(argv) do
@@ -46,9 +48,11 @@ defmodule Mix.Tasks.Workbench.Catalog do
 
     entries = read(opts[:covers])
 
-    if opts[:json],
-      do: IO.puts(Jason.encode!(entries, pretty: true)),
-      else: IO.puts(table(entries))
+    cond do
+      opts[:brief] -> IO.puts(Jason.encode!(Enum.map(entries, &brief/1)))
+      opts[:json] -> IO.puts(Jason.encode!(entries, pretty: true))
+      true -> IO.puts(table(entries))
+    end
   end
 
   @doc "Every entry of the catalog, with its covers when a directory is given."
@@ -68,6 +72,42 @@ defmodule Mix.Tasks.Workbench.Catalog do
       end
 
     Map.put(entry, :covers, covers)
+  end
+
+  @doc """
+  The entry in the words a tool keeps in its context window — an agent
+  choosing a box before it runs `add`: the name, the version, the facts
+  (`pending`, `archived`, `base`, `collection` with its members' names),
+  the need's line, what it requires, and each option as name, type,
+  default, the values it takes and whether it takes several. The
+  papers, the option docs, the packages, the menus of services and the
+  covers stay in the full entry: what a page draws, not what a tool
+  decides on.
+  """
+  def brief(entry) do
+    %{
+      name: entry.name,
+      version: entry.version && entry.version.version,
+      summary: entry.summary,
+      need: entry.need && entry.need.line,
+      pending: entry.pending,
+      archived: entry.archived,
+      base: entry.base,
+      collection: entry.collection,
+      members: Enum.map(entry.members, & &1.name),
+      requires: entry.requires,
+      options: Enum.map(entry.options, &brief_option/1)
+    }
+  end
+
+  defp brief_option(option) do
+    %{
+      name: option.name,
+      type: option.type,
+      default: option.default,
+      choices: option.choices && Enum.map(option.choices, & &1.value),
+      multiple: option.multiple
+    }
   end
 
   @doc false

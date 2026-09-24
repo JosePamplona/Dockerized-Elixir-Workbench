@@ -188,9 +188,9 @@ it, for tools as much as for people — `wb.sh catalog` and `wb.sh status`
 are their front:
 
 ```sh
-mix workbench.catalog [--json] [--covers DIR]  # every cartridge's manifest: name, version,
-                                               # summary, collection members, installer options
-mix workbench.status  [--json]                 # the same, plus 'installed' for this project
+mix workbench.catalog [--json [--brief]] [--covers DIR]  # every cartridge's manifest: name, version,
+                                                         # summary, collection members, installer options
+mix workbench.status  [--json]                           # the same, plus 'installed' for this project
 ```
 
 `status` asks each cartridge (`installed?/1`); nothing is compiled or

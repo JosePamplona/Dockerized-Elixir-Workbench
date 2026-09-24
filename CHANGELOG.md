@@ -16,6 +16,31 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **`--brief`: the two readings in the words a tool keeps.** An agent
+  driving the workbench from a shell reads the workspace before it
+  acts, and the shelf before it picks a box, and pays for both by the
+  token: `status --json` was 153 KB and a minute (the raw rows of
+  `compose ps` with every label of the project, then Mix booted in a
+  container for `project`), `catalog --json` 134 KB and half a minute
+  (every NEED, every option's doc, every menu, the covers). The weight
+  is not the transport, it is the shape: the same JSON through an MCP
+  would cost the same. So the contracts grew a projection, not a
+  door. `status --json --fast --brief` answers in tenths of a second
+  with the containers as service, state, health, status and ports and
+  without `addresses` and `homes`, which only the console's terminals
+  read: 2 KB, measured on a project of four containers.
+  `catalog --json --brief` (`Mix.Tasks.Workbench.Catalog.brief/1`) is
+  one line of name, version, the facts, the need's line, `requires`,
+  and each option as name, type, default, values and `multiple`:
+  20 KB. Its half minute stays, being the Mix boot and not the
+  answer; the reading that is fast is the console's resident, and a
+  door on the console for agents (an MCP, which also gates the
+  destructive verbs) is the next step if one is wanted, not this one.
+  The `:erpc` road of `console/PLAN.md` was checked and stays retired
+  (2026-09-06): the resident answers with the app down, and the
+  distributed dev node it needed is the wrong shape. `CLAUDE.md` names
+  the two readings for the agents that work here.
+
 - **`./wb.sh adopt` takes in a project made elsewhere.** A Phoenix
   project copied into a workspace — `pitchers`, from 2024, the first
   one — had no `docker-compose.yml`, and everything reads the

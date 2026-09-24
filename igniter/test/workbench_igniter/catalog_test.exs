@@ -18,6 +18,7 @@ defmodule WorkbenchIgniter.CatalogTest do
   import ExUnit.CaptureIO
   import Igniter.Test
 
+  alias Mix.Tasks.Workbench.Catalog
   alias WorkbenchIgniter.Features
 
   # Every cartridge there is, by directory name, in shelf order: the
@@ -104,6 +105,42 @@ defmodule WorkbenchIgniter.CatalogTest do
                Features.entry(Features.Stripe)
     end
 
+    # The brief entry is what a tool decides on, in a context window
+    # it pays for by the token: no papers, no docs, no menus, no covers.
+    test "the brief entry is the words a tool keeps" do
+      brief = Catalog.brief(Features.entry(Features.HealthProbe))
+      assert %{name: "health_probe", version: "0.2.1", options: [option]} = brief
+
+      assert option == %{
+               name: :path,
+               type: :string,
+               default: "/health",
+               choices: nil,
+               multiple: false
+             }
+
+      assert brief.need == Features.entry(Features.HealthProbe).need.line
+      refute Map.has_key?(brief, :deps) or Map.has_key?(brief, :offers)
+
+      ash = Catalog.brief(Features.entry(Features.Ash))
+
+      assert %{choices: ~w(postgres sqlite csv none), multiple: true} =
+               Enum.find(ash.options, &(&1.name == :data_layer))
+
+      assert %{collection: true, members: ["ansi" | _], archived: "2026-09-20" <> _} =
+               Catalog.brief(Features.entry(Features.ChiefsSetup))
+
+      assert %{version: nil, pending: true} = Catalog.brief(Features.entry(Features.Stripe))
+
+      # One JSON array of every cartridge on one line, a sixth of the
+      # full one (20 KB against 127 KB, measured 2026-09-24).
+      brief = capture_io(fn -> Catalog.run(["--brief"]) end)
+      full = capture_io(fn -> Catalog.run(["--json"]) end)
+      assert Enum.map(Jason.decode!(brief), & &1["name"]) == @cartridges
+      assert length(String.split(String.trim(brief), "\n")) == 1
+      assert byte_size(brief) * 5 < byte_size(full)
+    end
+
     test "carries the values an option takes, closed or open, flat or in sections" do
       options = Features.entry(Features.Ash).options
       by = fn name -> Enum.find(options, &(&1.name == name)) end
@@ -126,7 +163,7 @@ defmodule WorkbenchIgniter.CatalogTest do
                multiple: true
              } = by.(:auth)
 
-      assert %{doc: nil} = Enum.find(by.(:auth).choices, &(&1.value == "webauthn"))
+      assert values.(by.(:auth)) == ~w(password magic_link api_key)
 
       # The site's Advanced Options, one closed option per section.
       assert %{

@@ -1475,6 +1475,23 @@
       ps --all --format "${1:-json}" 2>/dev/null
   }
 
+  # workspace_containers_brief
+    # The same containers in the five words a tool acts on: service,
+    # state, health, the status line, the published ports. The raw rows
+    # of 'compose ps' carry every label of the project and are most of
+    # 'status --json'. The fields travel separated by 0x1f, not a tab:
+    # a tab is whitespace to 'read', and two in a row — an empty health
+    # — would fold into one and shift every field after it.
+  workspace_containers_brief() {
+    local service state health status ports
+    workspace_containers $'{{.Service}}\x1f{{.State}}\x1f{{.Health}}\x1f{{.Status}}\x1f{{.Ports}}' | \
+    while IFS=$'\x1f' read -r service state health status ports; do
+      printf '{"service": %s, "state": %s, "health": %s, "status": %s, "ports": %s}\n' \
+        "$(json_string "$service")" "$(json_string "$state")" "$(json_string "$health")" \
+        "$(json_string "$status")" "$(json_string "$ports")"
+    done | json_array
+  }
+
   # json_string <TEXT>
     # TEXT as a JSON string literal. The control characters are escaped
     # too, not only the backslash and the quote: a cartridge's NEED.md
@@ -1550,7 +1567,7 @@
     )"
   }
 
-  # status_json [--fast]
+  # status_json [--fast] [--brief]
     # The workspace as one JSON object: whether it holds a project, where
     # it is, its ports, which deployments were baked, which one is up,
     # the containers of its compose project with their addresses, its
@@ -1560,10 +1577,24 @@
     # out ('project' is then null, as it is when there is no project),
     # for the readings that follow an up or a down, where nothing about
     # the cartridges could have changed.
+    # '--brief' is the same answer in the words a tool keeps in its
+    # context window — an agent reading the workspace before it acts:
+    # the containers as service, state, health and ports instead of the
+    # raw rows of 'compose ps' (every label of the project: five sixths
+    # of the answer), and no 'addresses' or 'homes', which only the
+    # console's terminals read. Everything else, 'git.inserts' first, is
+    # what such a reader acts on, and stays.
     # Without a project it still answers, with 'exists' false, so the
     # console can draw the empty workspace instead of an error.
   status_json() {
-    local port published project
+    local port published project flag fast=false brief=false
+    for flag in "$@"; do
+      case "$flag" in
+        --fast)  fast=true ;;
+        --brief) brief=true ;;
+        *)       args_error invalid ;;
+      esac
+    done
     if [ "$EXISTING_PROJECT" != true ]; then
       printf '{\n'
       printf '  "exists": false,\n'
@@ -1573,8 +1604,10 @@
       printf '  "baked": {"dev": false, "prod": false, "scaled": false},\n'
       printf '  "deployment": null,\n'
       printf '  "containers": [],\n'
-      printf '  "addresses": {},\n'
-      printf '  "homes": {},\n'
+      if [ "$brief" = false ]; then
+        printf '  "addresses": {},\n'
+        printf '  "homes": {},\n'
+      fi
       printf '  "git": %s,\n' "$(git_json)"
       printf '  "project": null\n'
       printf '}\n'
@@ -1584,7 +1617,7 @@
     # The services' ports by the port each listens on, '"5050": 5051':
     # which service that is, 'project' says.
     published=$(workspace_published | awk '{printf "%s\"%s\": %s", (NR > 1 ? ", " : ""), $1, $2}')
-    if [[ "$1" == "--fast" ]]
+    if [ "$fast" = true ]
     then project=""
     else project=$(reader_igniter workbench.status --json 2>/dev/null | json_answer); fi
 
@@ -1603,9 +1636,13 @@
     printf '    "scaled": %s\n' "$([ -f "$WORKSPACE_PATH/$SCALED_COMPOSE_FILE" ] && echo true || echo false)"
     printf '  },\n'
     printf '  "deployment": %s,\n' "$(d=$(workspace_deployment); [ -n "$d" ] && json_string "$d" || echo null)"
-    printf '  "containers": %s,\n' "$(workspace_containers | json_array)"
-    printf '  "addresses": %s,\n' "$(workspace_addresses)"
-    printf '  "homes": %s,\n' "$(workspace_homes)"
+    if [ "$brief" = true ]; then
+      printf '  "containers": %s,\n' "$(workspace_containers_brief)"
+    else
+      printf '  "containers": %s,\n' "$(workspace_containers | json_array)"
+      printf '  "addresses": %s,\n' "$(workspace_addresses)"
+      printf '  "homes": %s,\n' "$(workspace_homes)"
+    fi
     printf '  "git": %s,\n' "$(git_json)"
     printf '  "project": %s\n' "${project:-null}"
     printf '}\n'
@@ -2011,11 +2048,13 @@
       "                        pending changes')." \
       "  --message-file PATH   Read title and body from PATH."
 
-    print_command "catalog [--json]"
+    print_command "catalog [--json [--brief]]"
     command_content \
       "List the workbench's cartridges: name, version, how each is enabled," \
       "what it installs." \
-      "  --json   One JSON array, with each installer's options and covers."
+      "  --json   One JSON array, with each installer's options and covers." \
+      "  --brief  The array a tool keeps in its context: name, version, facts," \
+      "           need, requires, and each option's name, type, default, values."
 
     print_command "config set KEY=VALUE [KEY=VALUE...]"
     command_content \
@@ -2029,12 +2068,14 @@
       "  --json     One JSON array of {name, argv}." \
       "  --archived Draw the plan of a retired cartridge too."
 
-    print_command "status [--json [--fast]]"
+    print_command "status [--json [--fast] [--brief]]"
     command_content \
       "Report the workspace: ports, deployments baked and up, containers and" \
       "their addresses, git, and the cartridges the project carries." \
       "  --json   One JSON object; 'exists' false on an empty workspace." \
-      "  --fast   Skip asking the cartridges (no Mix boot; 'project' null)."
+      "  --fast   Skip asking the cartridges (no Mix boot; 'project' null)." \
+      "  --brief  Containers as service, state, health, ports; no addresses" \
+      "           or homes. With --fast, the reading for an agent's context."
 
     print_command "up [--deploy TARGET] [--replicas N] [--no-balancer]"
     command_content \
@@ -2881,7 +2922,8 @@ if [ $# -gt 0 ]; then
     then CATALOG_READER=workspace_igniter
     else CATALOG_READER=package_igniter; fi
     case "$1" in
-      --json) $CATALOG_READER workbench.catalog --json \
+      --json) [[ -z "$2" || "$2" == "--brief" ]] || args_error invalid
+              $CATALOG_READER workbench.catalog --json ${2:+"$2"} \
                 --covers /app/workbench/assets/covers 2>/dev/null | json_answer ;;
       "")     $CATALOG_READER workbench.catalog ;;
       *)      args_error invalid ;;
@@ -2890,7 +2932,7 @@ if [ $# -gt 0 ]; then
   elif [[ "$1" == "status" ]]; then
     shift
     case "$1" in
-      --json) status_json "$2" ;;
+      --json) shift; status_json "$@" ;;
       "")     if [[ "$EXISTING_PROJECT" == true ]]
               then status_report
               else terminate "There is no project in $WORKSPACE_PATH."; fi ;;

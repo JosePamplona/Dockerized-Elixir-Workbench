@@ -37,6 +37,7 @@ mix test test/workbench_igniter/features/credo_test.exs:42   # one test
 mix test --only exhaustive   # igniter, excluded by default: ~1 hour. Run it in the background with no timeout (a cut-off run reports "0 tests, 0 failures")
 ```
 
+- To read the workspace or the shelf from an agent: `./wb.sh status --json --fast --brief` (tenths of a second, 2 KB) and `./wb.sh catalog --json --brief` (one line, 20 KB). The full contracts are the console's: `status --json` boots Mix in a container (about a minute) and `catalog --json` carries every paper and option doc (130 KB).
 - Export `DOCKER_CONTEXT=default` before `./wb.sh`, `docker compose` or the console's tests. The workspaces run on the native engine, and the shell's `desktop-linux` context shows nothing running.
 - Console on the host: `PORT=<free port> mix phx.server` from `console/`. 4000 is taken, and the user may already have a console on 4123/4125, so check `ss -ltn` first. Run it with the sandbox disabled and stdin from `/dev/null`, or the BEAM dies when it spawns a second child. On boot it rewrites `config.conf`: back that file up first. It reads the catalog once at boot, so restart it after editing a manifest. After editing `console/assets/js/hooks.js`, run `mix esbuild console`.
 - To see generated code compile in a real project: `MIX_ENV=test mix phx.new <scratch>/probe --no-install` from `igniter/`, copy `igniter/.tool-versions` into it, add `{:workbench_igniter, path: …}`, then run `mix workbench.install.<name> --yes < /dev/null`.

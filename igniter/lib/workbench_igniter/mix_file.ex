@@ -223,7 +223,7 @@ defmodule WorkbenchIgniter.MixFile do
   deps` ends in, when the project lacks it. The issues are the file's
   (`Igniter.prepare_for_write/1` lifts them, `mix.exs:` before each).
   """
-  @spec apply(Igniter.t(), String.t(), String.t(), String.t()) :: Igniter.t()
+  @spec apply(Igniter.t(), String.t(), String.t(), atom() | String.t()) :: Igniter.t()
   def apply(igniter, base, theirs, capability) do
     base_read = read(base)
     delta = diff(base, theirs)

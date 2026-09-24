@@ -89,7 +89,15 @@ defmodule WorkbenchIgniter.Features.Precommit do
   @defaults for c <- @checks, c.default, do: c.name
 
   @doc "The checks the box installs itself, in the order they run."
-  @spec checks() :: [%{name: String.t(), command: String.t(), doc: String.t()}]
+  @spec checks() :: [
+          %{
+            name: String.t(),
+            command: String.t(),
+            doc: String.t(),
+            stage: :fast | :slow,
+            default: boolean()
+          }
+        ]
   def checks, do: @checks
 
   @doc "The file every cartridge's checks stand in."

@@ -94,6 +94,12 @@ and the role of each file; the general index is
     — the default — means a plain cartridge.
   - `requires/0` — the cartridges it builds on (openai on auth0): the
     installer refuses, naming them, until they are in.
+  - `origins/2` — where the packages its insert commit added came
+    from, when it does not declare them: one note per origin, in its
+    own words, given the options the insert went in with (ash: the
+    `mix igniter.install` it ran, and what the installers of those
+    packages added). A base cartridge's default says the `phx.new`
+    delta; the console numbers the notes under the Packages table.
   - `installed?/1` — whether the target project already carries it,
     read off the *same mark the installer's guard reads* (a module, a
     file, a dependency), so `mix workbench.status` and a re-run of the

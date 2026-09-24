@@ -33,14 +33,20 @@ defmodule ConsoleWeb.Packages do
   attr :hex_error, :any, default: nil
   attr :class, :any, default: nil
 
+  attr :id, :string,
+    default: "pkgs",
+    doc: "the prefix of the notes' anchors: one per table on a page"
+
   def table(assigns) do
     assigns =
       assign(assigns,
         # Hex is asked of what it has, GitHub of its repositories — as
         # `name=owner/repo` — and a git host elsewhere of nothing.
         names: for(r <- assigns.rows, name = asked_as(r), do: name),
-        footnote: assigns.cartridge && footnote(assigns.rows)
+        notes: if(assigns.cartridge, do: notes(assigns.rows), else: [])
       )
+
+    assigns = assign(assigns, marks: Map.new(Enum.with_index(assigns.notes, 1)))
 
     ~H"""
     <div :if={@rows != [] or @nothing} class={["packages", @class]}>
@@ -123,11 +129,12 @@ defmodule ConsoleWeb.Packages do
                 :if={@cartridge}
                 class="asks"
                 title={
-                  r.read? &&
-                    "read off this box's insert commit: it declares no package of its own — what it brings arrives inside the phx.new delta, generated at the phx.new the project stamped then"
+                  r.read? && "read off this box's insert commit: it declares no package of its own"
                 }
               >
-                {r.brings}<span :if={r.read?} class="fn">*</span>
+                {r.brings}<sup :if={r.read? && @marks[r.note]} class="fn" title={r.note}><a href={"##{@id}-note-#{@marks[r.note]}"}>{@marks[
+                  r.note
+                ]}</a></sup>
                 <span
                   :if={!r.brings}
                   class="unlit"
@@ -171,7 +178,9 @@ defmodule ConsoleWeb.Packages do
           </tbody>
         </table>
       </div>
-      <p :if={@footnote} class="fn-note"><span class="fn">*</span>{@footnote}</p>
+      <p :for={{note, n} <- Enum.with_index(@notes, 1)} id={"#{@id}-note-#{n}"} class="fn-note">
+        <sup class="fn">{n}</sup><.said text={note} />
+      </p>
     </div>
     """
   end
@@ -223,26 +232,34 @@ defmodule ConsoleWeb.Packages do
 
   defp pinned_says(_row), do: "what mix.exs asks for"
 
-  # What the mark in the cartridge column means, said once under the
-  # table: the rows read off an insert commit, and the phx.new that
-  # generated what the commit wrote — one version, or the few when
-  # inserts made at different ones share the panel.
-  defp footnote(rows) do
-    case for(r <- rows, r.read?, do: r.from) do
-      [] ->
-        nil
+  # What the marks in the cartridge column mean, each said once under
+  # the table: where the rows read off an insert commit came from, in
+  # the words of the box that brought them (`Console.Diffs`). Numbered
+  # in the order the rows first carry them, so a table with one origin
+  # shows ¹ alone and one with several shows no number without its note.
+  defp notes(rows), do: for(r <- rows, r.read?, r.note, uniq: true, do: r.note)
 
-      froms ->
-        at =
-          case froms |> Enum.reject(&is_nil/1) |> Enum.uniq() do
-            [] -> "phx.new"
-            versions -> "phx.new " <> Enum.join(versions, ", ")
-          end
+  attr :text, :string, required: true
 
-        "The box does not install this package itself: it comes with #{at}, " <>
-          "and the version is the one that installer writes."
-    end
+  # A note as its box wrote it: what stands between backticks is a
+  # command, set as code. Built here and not in the template, where the
+  # formatter would put a space on each side of the code.
+  defp said(assigns) do
+    parts =
+      (assigns.text || "")
+      |> String.split("`")
+      |> Enum.with_index()
+      |> Enum.map(fn
+        {part, i} when rem(i, 2) == 1 -> ["<code>", escape(part), "</code>"]
+        {part, _i} -> escape(part)
+      end)
+
+    assigns = assign(assigns, html: Phoenix.HTML.raw(parts))
+
+    ~H"{@html}"
   end
+
+  defp escape(text), do: text |> Phoenix.HTML.html_escape() |> Phoenix.HTML.safe_to_string()
 
   # hex's newest release, said against what the project runs: the same
   # number in two columns is a question a reader should not have to ask.
@@ -288,7 +305,7 @@ defmodule ConsoleWeb.Packages do
       by: row["by"],
       brings: brings(row, git),
       read?: row["read"] == true,
-      from: row["from"],
+      note: row["note"],
       pinned: row["pinned"],
       locked: row["locked"],
       latest: said[:latest],

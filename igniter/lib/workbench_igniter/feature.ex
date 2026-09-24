@@ -362,6 +362,25 @@ defmodule WorkbenchIgniter.Feature do
   @callback deps(state :: map() | :any) :: [tuple()]
 
   @doc """
+  Where the packages an insert put in `mix.exs` came from, when the
+  cartridge does not write them itself: one note per origin, each the
+  sentence a reader is told and the packages it covers. `opts` are the
+  options the insert went in with (its argv, parsed against the
+  installer's schema, defaults in); `insert` is what its commit says —
+  `added`, the packages it put in `mix.exs`, and `phx_new`, the version
+  the project stamped at that commit.
+
+  The cartridge says exactly what happened, since only it knows: ash
+  queues `mix igniter.install`, which adds the packages the command
+  names, and each of their installers may add more. A base cartridge's
+  packages arrive inside the `phx.new` delta, and that is the default
+  (`base_origins/2`); any other says nothing. A package no note covers
+  is said plainly by `origins/3`, so no row is left without a reason.
+  """
+  @callback origins(opts :: keyword(), insert :: insert()) :: [{String.t(), [String.t()]}]
+  @type insert :: %{added: [String.t()], phx_new: String.t() | nil}
+
+  @doc """
   The compose services the cartridge needs the workspace to run, by
   name, given what the project carries of it (`state/1`): the workbench
   bakes them into the workspace's compose (`mix workbench.compose`,
@@ -471,6 +490,9 @@ defmodule WorkbenchIgniter.Feature do
       def deps(_state), do: []
 
       @impl WorkbenchIgniter.Feature
+      def origins(_opts, insert), do: WorkbenchIgniter.Feature.base_origins(__MODULE__, insert)
+
+      @impl WorkbenchIgniter.Feature
       def services(_state), do: []
 
       @impl WorkbenchIgniter.Feature
@@ -481,6 +503,7 @@ defmodule WorkbenchIgniter.Feature do
 
       defoverridable requires: 0,
                      deps: 1,
+                     origins: 2,
                      services: 1,
                      compose: 1,
                      ejected: 1,
@@ -785,6 +808,83 @@ defmodule WorkbenchIgniter.Feature do
         {gone, igniter} -> {missing ++ [{key, value, gone}], igniter}
       end
     end)
+  end
+
+  @doc """
+  Each package an insert put in `mix.exs`, with the note that says
+  where it came from: `%{name => sentence}`. `argv` is the insert's, as
+  its commit subject carries it; parsed against the installer's schema
+  with its defaults in, it is the cartridge's `origins/2` opts. A
+  package the cartridge does not account for gets the plain sentence,
+  which is true of any: it is in the commit and the box declares it not.
+  """
+  @spec origins(module(), [String.t()], insert()) :: %{String.t() => String.t()}
+  def origins(feature, argv, %{added: added} = insert) do
+    said =
+      for {sentence, names} <- feature.origins(insert_opts(feature, argv), insert),
+          name <- names,
+          name in added,
+          into: %{},
+          do: {name, sentence}
+
+    for name <- added, into: %{} do
+      {name,
+       said[name] ||
+         "The cartridge declares no package: this one arrived with its insert commit."}
+    end
+  end
+
+  defp insert_opts(feature, argv) do
+    case feature.pending?() do
+      true ->
+        []
+
+      false ->
+        info = feature.info([], nil)
+        # OptionParser knows no `:csv`: kept, and split on the commas.
+        csv = for {key, :csv} <- info.schema, do: key
+
+        switches =
+          for {key, type} <- info.schema, do: {key, if(type == :csv, do: :keep, else: type)}
+
+        {parsed, _rest, _invalid} =
+          OptionParser.parse(argv, strict: switches, aliases: info.aliases)
+
+        opts = Enum.reduce(csv, parsed, &split_csv/2)
+
+        Keyword.merge(info.defaults, opts)
+    end
+  end
+
+  # A `:csv` switch kept once per time it was given, as one list.
+  defp split_csv(key, parsed) do
+    case Keyword.get_values(parsed, key) do
+      [] ->
+        parsed
+
+      values ->
+        Keyword.put(parsed, key, Enum.flat_map(values, &String.split(&1, ",", trim: true)))
+    end
+  end
+
+  @doc """
+  The default `origins/2`: a base cartridge's packages arrive inside
+  the `phx.new` delta (`WorkbenchIgniter.PhxDelta`), generated at the
+  version the project stamped then; any other cartridge says nothing.
+  """
+  @spec base_origins(module(), insert()) :: [{String.t(), [String.t()]}]
+  def base_origins(feature, %{added: added, phx_new: phx_new}) do
+    if String.to_atom(feature.name()) in WorkbenchIgniter.PhxDelta.capabilities() do
+      at = if phx_new, do: "phx.new " <> phx_new, else: "phx.new"
+
+      [
+        {"The cartridge does not install this package itself: it comes with #{at} — the difference " <>
+           "between the project generated with the flag and without it — and the version is " <>
+           "the one that installer writes.", added}
+      ]
+    else
+      []
+    end
   end
 
   @doc "The names `requires/0` asks for, without their states."

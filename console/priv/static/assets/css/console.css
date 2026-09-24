@@ -1052,6 +1052,12 @@ table.rows.pkgs td .bad{color:var(--bad)}
 table.rows.pkgs td{display:table-cell}
 table.rows.pkgs td.asks{color:var(--muted)}
 table.rows.pkgs td.asks.warn{color:var(--warn)}
+/* A mark is the way to its note: the note's muted mono, never the
+   accent, underlined only under the pointer; the note it lands on
+   takes the ink, so the eye finds which line it was. */
+table.rows.pkgs .fn a{color:inherit;text-decoration:none}
+table.rows.pkgs .fn a:hover,table.rows.pkgs .fn a:focus-visible{text-decoration:underline}
+.packages .fn-note:target{color:var(--ink)}
 table.rows.pkgs td.v{color:var(--soft);font-variant-numeric:tabular-nums}
 table.rows.pkgs td.v.good{color:var(--good)}
 /* The mention itself is the house's .pkg-ref (components.css); the

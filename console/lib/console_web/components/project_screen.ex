@@ -75,6 +75,7 @@ defmodule ConsoleWeb.ProjectScreen do
       />
       <div :if={@page && @page[:mix]} class="dkdoc mix">
         <Packages.table
+          id="mix-pkgs"
           rows={mix_rows(@status, @hex, @by)}
           brought
           options={@page.mix.options}

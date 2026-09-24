@@ -245,6 +245,27 @@ defmodule WorkbenchIgniter.Features.BaseCartridgesTest do
     assert_unchanged(igniter)
   end
 
+  test "a base cartridge's packages came with the phx.new the project stamped at the insert" do
+    notes =
+      WorkbenchIgniter.Feature.origins(Features.Mailer, [], %{
+        added: ~w(swoosh req),
+        phx_new: "1.8.14"
+      })
+
+    assert notes["swoosh"] =~ "it comes with phx.new 1.8.14"
+    assert notes["req"] == notes["swoosh"]
+  end
+
+  test "a box that accounts for none of its packages says so plainly" do
+    notes =
+      WorkbenchIgniter.Feature.origins(Features.Credo, [], %{added: ~w(credo), phx_new: "1.8.14"})
+
+    assert notes == %{
+             "credo" =>
+               "The cartridge declares no package: this one arrived with its insert commit."
+           }
+  end
+
   test "each is a no-op with a notice when in" do
     for task <- ~w(esbuild tailwind html dashboard) do
       phx_test_project()

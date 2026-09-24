@@ -343,6 +343,32 @@ defmodule WorkbenchIgniter.Features.Ash do
     end
   end
 
+  # The packages this box's commit carries, and where each came from:
+  # the ones the queued command named, and the ones the installers of
+  # those packages added on their own (the SAT solver Ash's policy
+  # authorizer asks for when a resource first takes it, ash_authentication's
+  # bcrypt, ash_oban's oban…). The note names the command and not its
+  # argv: the row says the package, and the insert's line the options.
+  @impl true
+  def origins(opts, %{added: added}) do
+    case packages(opts) do
+      {:ok, packages} ->
+        named = for spec <- packages, name = to_string(dep_name(spec)), name in added, do: name
+
+        [
+          {"The cartridge does not install this package itself: its options name it in the " <>
+             "`mix igniter.install` it runs, the command ash-hq.org gives for an existing app, " <>
+             "and that command added it at the version hex resolved then.", named},
+          {"Neither the cartridge nor its command names this package: it was added at the request " <>
+             "of the installer of a package that command named, at the version that installer asks for.",
+           added -- named}
+        ]
+
+      {:error, _message} ->
+        []
+    end
+  end
+
   @doc "Installer body, run by the mix task shell as its `igniter/1`."
   def install(igniter) do
     opts = igniter.args.options

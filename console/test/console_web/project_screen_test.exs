@@ -44,7 +44,12 @@ defmodule ConsoleWeb.ProjectScreenTest do
         by: %{
           "phoenix" => %{"by" => :born},
           "swoosh" => %{"by" => {:boxes, ["mailer"]}, "declared" => "~> 1.16"},
-          "heroicons" => %{"by" => {:boxes, ["tailwind"]}, "declared" => nil, "read" => true}
+          "heroicons" => %{
+            "by" => {:boxes, ["tailwind"]},
+            "declared" => nil,
+            "read" => true,
+            "note" => "it comes with phx.new"
+          }
         }
       )
 
@@ -62,8 +67,10 @@ defmodule ConsoleWeb.ProjectScreenTest do
     assert html =~ "~&gt; 1.16"
     assert length(Regex.scan(~r/class="asks warn"/, html)) == 1
     assert html =~ "where the cartridge brings ~&gt; 1.16"
-    # A base box's version read off its insert carries the mark.
-    assert html =~ ~s(<span class="fn">*</span>)
+    # A box's package read off its insert carries the mark of its note.
+    assert html =~
+             ~s(<sup class="fn" title="it comes with phx.new"><a href="#mix-pkgs-note-1">1</a></sup>)
+
     assert html =~ ~s|href="https://hexdocs.pm/phoenix/1.8.14"|
     assert html =~ ~s|href="https://github.com/tailwindlabs/heroicons/tree/v2.2.0"|
     # Hex is asked of what it has, GitHub of its repositories.

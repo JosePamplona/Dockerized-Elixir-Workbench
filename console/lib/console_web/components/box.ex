@@ -316,12 +316,19 @@ defmodule ConsoleWeb.Box do
       )
 
     ~H"""
-    <Packages.table rows={@rows} nothing={@nothing} hex_asking={@hex_asking} hex_error={@hex_error} />
+    <Packages.table
+      id="box-pkgs"
+      rows={@rows}
+      nothing={@nothing}
+      hex_asking={@hex_asking}
+      hex_error={@hex_error}
+    />
     """
   end
 
-  # A base cartridge declares no package: its own arrive inside the
-  # `phx.new` delta, at whatever version that installer writes. What it
+  # A box that declares no package has them written by something else:
+  # a base cartridge's arrive inside the `phx.new` delta, ash's through
+  # the command it queues. What it
   # brought is read off its insert commit instead (`Console.Diffs`) and
   # matched against the project's own list, so nothing is kept by hand
   # and a name the project no longer carries is not claimed. A project
@@ -337,7 +344,7 @@ defmodule ConsoleWeb.Box do
         "locked" => project[name]["locked"],
         "git" => Packages.git_said(dep[:git]) || project[name]["git"],
         "read" => true,
-        "from" => dep[:from]
+        "note" => dep[:note]
       }
     end
   end

@@ -88,6 +88,46 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **A box's Packages table says where each unlisted package came from,
+  in the box's own words.** A box that declares no package has its
+  packages read off its insert commit, and the table marked them with
+  `*`. The line under it always said they came with phx.new. That is
+  true of a base cartridge. It is false of ash: ash queues `mix
+  igniter.install`, and a package's installer can add more
+  (`bcrypt_elixir` from ash_authentication's password strategy,
+  `picosat_elixir` from Ash's policy authorizer when the user resource
+  takes it). Only the cartridge knows what it ran, so a
+  cartridge now says it: `origins/2` takes the options the insert went
+  in with, as its commit subject carries them, and what the commit
+  added, and returns one note per origin with the packages it covers.
+  The default is the base cartridges' (the `phx.new` delta, at the
+  version stamped at that commit). Ash gives two: *its options name
+  it in the `mix igniter.install` it runs* (the command, not its argv:
+  the row and the insert's line say the rest), and *added at the request of
+  the installer of a package that command named* (its own `add_dep`,
+  its `installs`, or a hook of Ash's its `ash.extend` sets off; the ash
+  DESIGN §2.6 has the table). A package no note covers gets a plain
+  sentence, so no row goes without one. `Feature.origins/3` parses the
+  argv against the installer's schema and is what `Console.Diffs`
+  asks, per insert. The marks are superscript numbers now, one per
+  note, numbered in the order the rows first carry them, and each note
+  is said once under the table with its command set as code. Each mark
+  is a link to its note, and the note it lands on takes the ink. `*`,
+  `**`, `***` stop reading well past two, and `[1]` beside a version
+  reads like its syntax.
+
+- **The console reads the project again after an insert that brings
+  dependencies.** After `html --live` on a fresh project, the aside
+  said `the project could not be read: exit: {:shutdown, 1}`, and kept
+  saying it. The resident, the BEAM that answers `status` and `expand`,
+  had loaded the dependencies the project booted with. The insert
+  added `phoenix_live_view` and its compiler to `mix.exs`, and every
+  recompile before an answer failed on what that BEAM never loaded.
+  Only a change of workspace restarted it. Now it keeps a stamp of
+  `mix.exs` and `mix.lock` and starts again when either changed,
+  whether an insert, an eject or a hand edit changed them. The
+  questions it held, the one in flight included, go to the new one.
+  A box that brings no dependency keeps the warm resident.
 - **One code box, one indent.** The daemon's Specs stood 31px in and
   the Mix paper's 18px: `.ln` is also the log's line, and brought the
   log's padding into every `.code-box` but the Mix paper, which had

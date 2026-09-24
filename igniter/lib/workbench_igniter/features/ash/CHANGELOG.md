@@ -18,6 +18,11 @@ already carrying what that command installed is a major.
   `graphiql` (`/gql/playground`, with `graphql`) and `typescript`
   (`/ash-typescript`, with `typescript`). Checked against a project
   carrying every package: all seven answer 200.
+- `origins/2`: where each package in its insert commit came from. The
+  ones the queued command named carry that the options named them in
+  the `mix igniter.install` it runs. The ones that command did not name carry that they came in
+  at the request of the installer of a package it named. The console's
+  Packages table says each under its own number.
 
 ### Changed
 

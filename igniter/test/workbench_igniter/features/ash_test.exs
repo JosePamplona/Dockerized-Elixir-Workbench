@@ -282,6 +282,39 @@ defmodule WorkbenchIgniter.Features.AshTest do
     end
   end
 
+  describe "origins/2" do
+    # What an insert's commit added, as ash went in with these options:
+    # the packages its command named, and what their installers added.
+    @added ~w(ash ash_postgres ash_phoenix ash_authentication ash_authentication_phoenix picosat_elixir bcrypt_elixir)
+
+    test "the packages the options named carry the command; the rest, its installers" do
+      notes =
+        WorkbenchIgniter.Feature.origins(Ash, ~w(--auth password --example), %{
+          added: @added,
+          phx_new: "1.8.14"
+        })
+
+      for name <- ~w(ash ash_postgres ash_phoenix ash_authentication ash_authentication_phoenix) do
+        assert notes[name] =~ "its options name it in the `mix igniter.install` it runs"
+      end
+
+      for name <- ~w(picosat_elixir bcrypt_elixir) do
+        assert notes[name] =~ "at the request of the installer of a package that command named"
+      end
+    end
+
+    test "the note names the command, not its argv: the row and the insert's line say the rest" do
+      notes =
+        WorkbenchIgniter.Feature.origins(Ash, ~w(--data-layer sqlite --auth password), %{
+          added: ~w(ash_sqlite),
+          phx_new: nil
+        })
+
+      refute notes["ash_sqlite"] =~ "ash_sqlite"
+      refute notes["ash_sqlite"] =~ "--auth-strategy"
+    end
+  end
+
   describe "the manifest" do
     test "is a plain cartridge in the catalog, picked by no collection" do
       assert Ash in WorkbenchIgniter.Features.catalog()

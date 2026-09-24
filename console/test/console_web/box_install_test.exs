@@ -437,8 +437,8 @@ defmodule ConsoleWeb.BoxInstallTest do
           args: %{},
           packages: %{},
           read_deps: [
-            %{name: "swoosh", requirement: "~> 1.16", from: "1.8.14"},
-            %{name: "gone", requirement: "~> 1.0", from: "1.8.14"}
+            %{name: "swoosh", requirement: "~> 1.16", note: "it comes with `phx.new 1.8.14`"},
+            %{name: "gone", requirement: "~> 1.0", note: "it comes with `phx.new 1.8.14`"}
           ],
           now: ~U[2026-09-23 12:00:00Z]
         )
@@ -449,8 +449,13 @@ defmodule ConsoleWeb.BoxInstallTest do
       assert html =~ "swoosh"
       assert html =~ "1.19.7"
       assert html =~ "read off this box&#39;s insert commit"
-      assert html =~ ~s(<span class="fn">*</span>)
-      assert html =~ "it comes with phx.new 1.8.14"
+      # The mark is the number of the box's note, said once under the
+      # table, its command set as code.
+      assert html =~
+               ~s(<sup class="fn" title="it comes with `phx.new 1.8.14`"><a href="#box-pkgs-note-1">1</a></sup>)
+
+      assert html =~ ~r{<code[^>]*>phx.new 1.8.14</code>}
+      refute html =~ ~s(<sup class="fn">2</sup>)
       # A name the project no longer carries is not claimed.
       refute html =~ "gone"
     end
@@ -496,12 +501,12 @@ defmodule ConsoleWeb.BoxInstallTest do
           args: %{},
           packages: %{},
           read_deps: [
-            %{name: "tailwind", requirement: "~> 0.3", git: nil, from: "1.8.14"},
+            %{name: "tailwind", requirement: "~> 0.3", git: nil, note: "phx.new"},
             %{
               name: "heroicons",
               requirement: nil,
               git: %{url: git["url"], repo: git["repo"], tag: "v2.2.0", branch: nil, ref: nil},
-              from: "1.8.14"
+              note: "phx.new"
             }
           ],
           now: ~U[2026-09-23 12:00:00Z]

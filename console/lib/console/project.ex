@@ -156,8 +156,8 @@ defmodule Console.Project do
   a base box what its insert commit added — `:born` for what the first
   commit already listed (phx.new, and the workbench's own dependency),
   and `:hand` for the rest. With a box come `"declared"`, the version it
-  asks for, and for a base box `"read"` and `"from"`: read off its insert,
-  at the phx.new stamped then. Read off git, so it runs apart from the
+  asks for, and for a box that declares none `"read"` and `"note"`: read
+  off its insert, with where the box says it came from. Read off git, so it runs apart from the
   page (`start_async`).
   """
   def brought_by(nil), do: %{}
@@ -197,7 +197,7 @@ defmodule Console.Project do
   end
 
   # What a box put in mix.exs and asks for: what it declares, or — a
-  # base box, which declares none — what its insert commit added.
+  # box that declares none — what its insert commit added.
   defp box_packages(workspace, status, c) do
     case c["deps"] do
       [_ | _] = deps ->
@@ -207,7 +207,7 @@ defmodule Console.Project do
         inserts = ConsoleWeb.Cartridges.inserts(status, c["name"])
 
         for dep <- Console.Diffs.packages_of(workspace, inserts) do
-          %{"name" => dep.name, "declared" => dep.requirement, "read" => true, "from" => dep.from}
+          %{"name" => dep.name, "declared" => dep.requirement, "read" => true, "note" => dep.note}
         end
     end
   end

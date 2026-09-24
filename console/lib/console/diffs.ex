@@ -51,24 +51,26 @@ defmodule Console.Diffs do
 
   @doc """
   The packages an insert put in the project's `mix.exs`, read off its
-  own commit: `%{name, requirement, git, from}`, newest insert first;
-  `git` is where a package from git comes from (`MixFile.git_of/1`). A base
-  cartridge declares none — its packages arrive inside the `phx.new`
-  delta, whatever that installer writes — so what it brought is read
-  where it was written, and nothing is kept by hand. A project born
-  with the flag has no insert commit, and so nothing to read: that is
-  what the panel says instead of guessing. Each package carries the
-  `phx.new` the delta was generated at (`from`): the `PHX_NEW` the
-  project's `Dockerfile.local` stamped at that same commit, which is
-  the one `PhxDelta` generates at — read there and not today, since the
-  stamp moves when the project upgrades and the insert does not.
-  `inserts` are the status's entries of that cartridge.
+  own commit: `%{name, requirement, git, note}`, newest insert first;
+  `git` is where a package from git comes from (`MixFile.git_of/1`). A
+  box that declares no package has its packages written by something
+  else — a base cartridge's arrive inside the `phx.new` delta, ash's
+  through the `mix igniter.install` it queues — so what it brought is
+  read where it was written, and nothing is kept by hand. A project
+  born with the flag has no insert commit, and so nothing to read: that
+  is what the panel says instead of guessing. `note` is where the
+  package came from, in the cartridge's own words
+  (`WorkbenchIgniter.Feature.origins/3`), given the argv the insert went
+  in with and the `phx.new` the project's `Dockerfile.local` stamped at
+  that same commit — read there and not today, since the stamp moves
+  when the project upgrades and the insert does not. `inserts` are the
+  status's entries of that cartridge.
   """
   def packages_of(_workspace, []), do: []
 
   def packages_of(workspace, inserts) do
     inserts
-    |> Enum.flat_map(fn %{"sha" => sha} ->
+    |> Enum.flat_map(fn %{"sha" => sha} = insert ->
       # mix.exs before the insert and after it, read as code: what the
       # insert brought is the dependencies only the new one has. By the
       # tree and not by the line, so a dependency written over several
@@ -76,18 +78,35 @@ defmodule Console.Diffs do
       # whole, and a line rewritten only for its comma is no new one.
       before = mix_exs_at(workspace, sha <> "^")
       now = mix_exs_at(workspace, sha)
-      from = phx_new_at(workspace, sha)
+      deps = WorkbenchIgniter.MixFile.diff(before, now).deps
+      notes = notes(insert, Enum.map(deps, &to_string(elem(&1, 0))), phx_new_at(workspace, sha))
 
-      for {name, code} <- WorkbenchIgniter.MixFile.diff(before, now).deps do
+      for {name, code} <- deps do
         %{
           name: to_string(name),
           requirement: WorkbenchIgniter.MixFile.requirement_of(code),
           git: WorkbenchIgniter.MixFile.git_of(code),
-          from: from
+          note: notes[to_string(name)]
         }
       end
     end)
     |> Enum.uniq_by(& &1.name)
+  end
+
+  # Where each package came from, asked of the cartridge the insert is
+  # of: only it knows what it ran. One the workbench does not know any
+  # more says nothing.
+  defp notes(insert, added, phx_new) do
+    case WorkbenchIgniter.Features.named(insert["feature"]) do
+      nil ->
+        %{}
+
+      feature ->
+        WorkbenchIgniter.Feature.origins(feature, insert["argv"] || [], %{
+          added: added,
+          phx_new: phx_new
+        })
+    end
   end
 
   @doc """

@@ -148,3 +148,15 @@ entry 3's sealed cover is `hero-manual-3-sealed.jpg`. The hero is cut
 from the expansion at the same +33+157, 988×1226 (`cut` finds it at
 1.00), and the cover is stamped with the options in the cover record,
 unchanged.
+
+### 5 — the floor behind the title (2026-09-25)
+
+Made by the author in the editor, recorded after the fact. A local
+retouch of entry 4: only the floor band behind the lockup changed
+(x 436 to the right edge, y 1148–1276 of the expansion, at most 14 of
+255), the sunlit tiles taken from pink toward a neutral cream. Nothing
+moved.
+
+The expansion as it arrived is `_archived/art/hero-manual-5-expanded.png`;
+entry 4's sealed cover is `hero-manual-4-sealed.jpg`. Cut at the same
++33+157, 988×1226 (1.00) and stamped with the recorded options.

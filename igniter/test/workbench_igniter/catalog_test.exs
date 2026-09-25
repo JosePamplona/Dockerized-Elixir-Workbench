@@ -187,8 +187,11 @@ defmodule WorkbenchIgniter.CatalogTest do
       assert %{open: false} = theme
 
       # The default first, as the shelf's other lists read.
-      assert [%{value: "custom", doc: "the workbench's own" <> _}, %{value: "exdoc-ish", doc: _}] =
-               theme.choices
+      assert [
+               %{value: "default", doc: "ExCoveralls' own" <> _},
+               %{value: "custom", doc: "the workbench's own" <> _},
+               %{value: "exdoc-ish", doc: _}
+             ] = theme.choices
 
       # The shape the value takes, where the type does not say it: the
       # catalog carries it, so a form can ask for that shape.
@@ -401,7 +404,7 @@ defmodule WorkbenchIgniter.CatalogTest do
       {:docs_v1, _, _, _, %{"en" => doc}, _, _} =
         Code.fetch_docs(Mix.Tasks.Workbench.Install.Coverage)
 
-      assert doc =~ "* `--html-theme` - The HTML report's theme, one of `custom`,"
+      assert doc =~ "* `--html-theme` - The HTML report's theme, one of `default`,"
 
       assert %{options: [%{name: :path, doc: "Prefix of the two probe routes" <> _}]} =
                Features.entry(Features.HealthProbe)

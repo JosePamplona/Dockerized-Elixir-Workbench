@@ -1,7 +1,7 @@
 # Cartridge: coverage
 
-Test coverage with ExCoveralls, the workbench HTML report and the
-`mix cover` task.
+Test coverage with ExCoveralls, its HTML report (the tool's own or a
+workbench theme) and the `mix cover` task.
 
 * **Task**: `mix workbench.install.coverage`
 * **Inserted by**: `wb.sh add coverage`
@@ -43,15 +43,19 @@ become part of what the project shows about itself.
   `preferred_envs` (`cover`, `coveralls`,
   `coveralls.detail|post|html|cobertura` → `:test`).
 * `coveralls.json`: output to the standard `cover/` dir (already
-  gitignored by phx.new), report template path, minimum coverage and
-  the list of what the report leaves out (`--ignore-files`).
-* The chosen HTML report theme (`--html-theme`) under `test/coverage/template/`
-  — dev-tool source, kept out of `assets/`, the release build's input.
-  Themes live in `priv/features/coverage/assets/template/<theme>/`, one
-  directory each with the
-  three files excoveralls renders (`coverage.html.eex`, `_script.html.eex`,
-  `_style.html.eex`); adding a theme is adding a directory:
-  * `custom` (default) — the workbench's own report.
+  gitignored by phx.new), minimum coverage, the list of what the report
+  leaves out (`--ignore-files`) and, with a theme, the report template
+  path.
+* The HTML report (`--html-theme`). By default, ExCoveralls' own: nothing
+  is planted and `coveralls.json` carries no `template_path`. A theme is
+  planted under `test/coverage/template/` — dev-tool source, kept out of
+  `assets/`, the release build's input. Themes live in
+  `priv/features/coverage/assets/template/<theme>/`, one directory each
+  with the three files excoveralls renders (`coverage.html.eex`,
+  `_script.html.eex`, `_style.html.eex`); adding a theme is adding a
+  directory:
+  * `default` (default) — ExCoveralls' own report, as the tool writes it.
+  * `custom` — the workbench's own report.
   * `exdoc-ish` — mimics the ExDoc pages: same layout, palette, light/dark
     theme (synced through ExDoc's own `ex_doc:settings` key), Lato and
     Remixicon picked up from `doc/dist/` when the docs are built, file
@@ -85,29 +89,30 @@ instead of skipped along with the rest.
   project with deep module paths asks for more; ExCoveralls' own
   default is 40.
 * `--ignore-files` - What the report leaves out, comma-separated: the
-  groups below, and no other value. `deps` and `test` go always.
-  Default: `boilerplate,components`; `none` counts everything the
-  project compiles. A path of your own goes in the project's own
+  groups below, and no other value. Default:
+  `deps,test,boilerplate,components`. A path of your own goes in the project's own
   `coveralls.json` — an entry there is a regex excoveralls matches
   against each file's path, and the box reads it back as what it is.
 
   | Group | What it leaves out | Why |
   | --- | --- | --- |
+  | `deps` | `deps/` | the dependencies: other people's code, which the suite does not test |
+  | `test` | `test/` | the tests themselves and their support modules, which are not the code under test |
   | `boilerplate` | `application.ex`, `release.ex`, `repo.ex`, `mailer.ex`, `<app>_web.ex`, `endpoint.ex`, `telemetry.ex`, `gettext.ex`, `router.ex`, `channels/user_socket.ex` | the wiring `phx.new` writes: no branch of it is a test's subject, and its uncovered lines are the same ones in every project |
   | `components` | `lib/<app>_web/components/` | the generated components and layouts — markup, and a lot of it |
   | `mix_tasks` | `lib/mix/tasks/` | the developer's own commands, which the app never runs |
   | `open_api` | `lib/<app>_web/open_api/` | a specification's modules: data, written out |
-  | `none` | — | nothing: every file the project compiles is counted |
 
   **Only the paths the project has are written.** A group names files;
   the ones that are not there are left out of the file, so
   `coveralls.json` reads as the project it belongs to. A directory is
   written as asked, except `components`, which the project's own
   `components/layouts.ex` witnesses.
-* `--html-theme` - The HTML report's theme: `custom` | `exdoc-ish`. Default: `custom`,
-  the workbench's own report, which reads on its own wherever it is
-  opened; `exdoc-ish` is for a project whose report is read inside a
-  documentation site, where it blends in.
+* `--html-theme` - The HTML report's theme: `default` | `custom` | `exdoc-ish`.
+  Default: `default`, ExCoveralls' own report, which plants no template;
+  `custom` is the workbench's own report, which reads on its own
+  wherever it is opened; `exdoc-ish` is for a project whose report is
+  read inside a documentation site, where it blends in.
 * `--md-report` - Install `mix cover`, the task that runs the suite and
   writes the report **as Markdown**: `TESTING.md` at the project's root,
   which any reader of the repository opens, and which a documentation
@@ -140,7 +145,7 @@ uses, which the deployment settles (`./wb.sh up`).
 | `├── 📄 README.md` | What it installs, and how it runs |
 | `├── 📄 NEED.md` | The need, the line the shelf shows |
 | `├── 📄 CHANGELOG.md` | Its versions, apart from the workbench's |
-| `└── 📄 DESIGN.md` | Why this tool, the two themes, the hook |
+| `└── 📄 DESIGN.md` | Why this tool, the themes, the hook |
 |  |  |
 | `📁 priv/features/coverage/` | What it writes into the project |
 | `├── 📁 templates/` |  |
@@ -151,7 +156,7 @@ uses, which the deployment settles (`./wb.sh up`).
 | `    ├── 📄 cover_test.exs` | The task's own test |
 | `    ├── 📄 TESTING.md` | The report page until `mix cover` writes it |
 | `    └── 📁 template/` | The HTML report, one directory per `--html-theme` |
-| `        ├── 📁 custom/` | The workbench's own, the default |
+| `        ├── 📁 custom/` | The workbench's own |
 | `        │   ├── 📄 coverage.html.eex` | The page (its `<%= %>` are the project's) |
 | `        │   ├── 📄 _script.html.eex` | Its script |
 | `        │   └── 📄 _style.html.eex` | Its style |

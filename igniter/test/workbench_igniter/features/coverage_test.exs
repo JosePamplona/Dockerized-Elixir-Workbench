@@ -42,11 +42,12 @@ defmodule WorkbenchIgniter.Features.CoverageTest do
       assert json =~ ~s|"minimum_coverage": 80|
       # The standard `cover/` output dir, already in phx.new's .gitignore.
       assert json =~ ~s|"output_dir": "cover"|
-      assert json =~ ~s|"template_path": "test/coverage/template"|
+      # ExCoveralls' own report: no template to point at.
+      refute json =~ "template_path"
 
-      # What it leaves out unasked: the box's own two, the wiring
-      # phx.new writes, and the generated components — each written
-      # only where the project has the file.
+      # What it leaves out unasked: the dependencies, the tests, the
+      # wiring phx.new writes, and the generated components — each
+      # written only where the project has the file.
       assert json =~ ~s|"deps"|
       assert json =~ ~s|"test"|
       assert json =~ ~s|"lib/test/application.ex"|
@@ -65,8 +66,11 @@ defmodule WorkbenchIgniter.Features.CoverageTest do
 
       igniter =
         before
-        |> Igniter.compose_task("workbench.install.coverage", [])
+        |> Igniter.compose_task("workbench.install.coverage", ["--html-theme", "custom"])
         |> apply_igniter!()
+
+      assert igniter.assigns[:test_files]["coveralls.json"] =~
+               ~s|"template_path": "test/coverage/template"|
 
       planted =
         Map.keys(igniter.assigns[:test_files]) --
@@ -243,8 +247,8 @@ defmodule WorkbenchIgniter.Features.CoverageTest do
       skipped = Jason.decode!(json)["skip_files"]
 
       # A directory nobody can witness is written as asked; what was not
-      # asked for is not there, the two the box always leaves out aside.
-      assert skipped == ~w(deps test lib/test_web/open_api lib/mix/tasks)
+      # asked for is not there.
+      assert skipped == ~w(lib/test_web/open_api lib/mix/tasks)
     end
 
     # The list is closed: the box writes what it knows how to read back,
@@ -263,17 +267,24 @@ defmodule WorkbenchIgniter.Features.CoverageTest do
       refute Igniter.exists?(igniter, "coveralls.json")
     end
 
-    test "--ignore-files none counts everything the project compiles" do
-      skipped =
+    test "deps and test are groups like the rest, and read back by name" do
+      igniter =
         phx_test_project()
-        |> Igniter.compose_task("workbench.install.coverage", ["--ignore-files", "none"])
+        |> Igniter.compose_task("workbench.install.coverage", ["--ignore-files", "test,deps"])
         |> apply_igniter!()
-        |> Map.get(:assigns)
-        |> get_in([:test_files, "coveralls.json"])
-        |> Jason.decode!()
-        |> Map.get("skip_files")
 
-      assert skipped == ~w(deps test)
+      skipped =
+        igniter.assigns[:test_files]["coveralls.json"] |> Jason.decode!() |> Map.get("skip_files")
+
+      assert skipped == ~w(test deps)
+      assert {%{ignore_files: ~w(deps test)}, _} = Coverage.state(igniter)
+
+      unasked =
+        phx_test_project()
+        |> Igniter.compose_task("workbench.install.coverage", [])
+        |> apply_igniter!()
+
+      assert {%{ignore_files: ~w(deps test boilerplate components)}, _} = Coverage.state(unasked)
     end
 
     test "says back the groups it was inserted with, and a path the project added by hand" do
@@ -293,7 +304,11 @@ defmodule WorkbenchIgniter.Features.CoverageTest do
         igniter
         |> Igniter.update_file("coveralls.json", fn source ->
           Rewrite.Source.update(source, :content, fn content ->
-            String.replace(content, ~s|    "deps",|, ~s|    "lib/test/legacy",\n    "deps",|)
+            String.replace(
+              content,
+              ~s|    "lib/test_web/open_api"|,
+              ~s|    "lib/test_web/open_api",\n    "lib/test/legacy"|
+            )
           end)
         end)
         |> apply_igniter!()
@@ -302,10 +317,20 @@ defmodule WorkbenchIgniter.Features.CoverageTest do
                Coverage.state(edited)
     end
 
-    test "plants the workbench's own report theme by default" do
+    test "plants no report theme by default: the report is ExCoveralls' own" do
       igniter =
         phx_test_project()
         |> Igniter.compose_task("workbench.install.coverage", [])
+        |> apply_igniter!()
+
+      refute Enum.any?(Map.keys(igniter.assigns[:test_files]), &(&1 =~ "coverage/template"))
+      assert {%{html_theme: "default"}, _} = Coverage.state(igniter)
+    end
+
+    test "--html-theme custom plants the workbench's own report" do
+      igniter =
+        phx_test_project()
+        |> Igniter.compose_task("workbench.install.coverage", ["--html-theme", "custom"])
         |> apply_igniter!()
 
       files = igniter.assigns[:test_files]
@@ -335,11 +360,11 @@ defmodule WorkbenchIgniter.Features.CoverageTest do
         |> Igniter.compose_task("workbench.install.coverage", ["--html-theme", "nope"])
 
       assert Enum.any?(igniter.issues, &(&1 =~ "Unknown coverage report theme \"nope\""))
-      assert Enum.any?(igniter.issues, &(&1 =~ "custom, exdoc-ish"))
+      assert Enum.any?(igniter.issues, &(&1 =~ "default, custom, exdoc-ish"))
     end
 
-    test "lists the themes from the asset directories" do
-      assert WorkbenchIgniter.Features.Coverage.themes() == ["custom", "exdoc-ish"]
+    test "lists ExCoveralls' own report, then the themes from the asset directories" do
+      assert WorkbenchIgniter.Features.Coverage.themes() == ["default", "custom", "exdoc-ish"]
     end
 
     # `rerun: :adds`: the json and the theme are fixed at the insert,

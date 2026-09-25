@@ -44,10 +44,12 @@ defmodule WorkbenchIgniter.Features.Coverage do
   # Report themes: one directory per theme under the cartridge's
   # `priv/features/coverage/assets/template/`, each holding the three
   # files excoveralls renders. Adding a theme is adding a directory; the
-  # option validates against this list.
+  # option validates against this list. `default` has no directory: it
+  # is ExCoveralls' own report, so nothing is planted and coveralls.json
+  # carries no `template_path`.
   @themes_dir WorkbenchIgniter.Feature.priv_dir(__ENV__.file, "assets/template")
-  @themes @themes_dir |> File.ls!() |> Enum.sort()
-  @default_theme "custom"
+  @default_theme "default"
+  @themes [@default_theme | @themes_dir |> File.ls!() |> Enum.sort()]
   @report_template_files ~w(coverage.html.eex _script.html.eex _style.html.eex)
 
   # The groups `--ignore-files` takes, each a set of paths the report
@@ -58,11 +60,12 @@ defmodule WorkbenchIgniter.Features.Coverage do
   #
   # The choice of groups is the reading of what projects skip (DESIGN):
   # the wiring phx.new writes and no test asserts, the generated
-  # components, the developer's own Mix tasks and an API spec's modules.
-  # `deps` and `test` are not groups: neither is the project's code
-  # under test, and no project wants them counted.
-  @always ~w(deps test)
+  # components, the developer's own Mix tasks and an API spec's modules
+  # — and first the two no project wants counted, the dependencies and
+  # the tests themselves, which are not the code under test.
   @groups [
+    deps: [{"deps", nil}],
+    test: [{"test", nil}],
     boilerplate: [
       "lib/{app}/application.ex",
       "lib/{app}/release.ex",
@@ -79,17 +82,13 @@ defmodule WorkbenchIgniter.Features.Coverage do
     # to say whether the project has it: layouts.ex is what `phx.new`
     # writes with html. The two below have no witness to read — an API
     # spec's modules and the project's Mix tasks are named by whoever
-    # wrote them — so they are written as asked.
+    # wrote them — so they are written as asked, like `deps` and `test`.
     components: [{"lib/{app}_web/components", "lib/{app}_web/components/layouts.ex"}],
     mix_tasks: [{"lib/mix/tasks", nil}],
     open_api: [{"lib/{app}_web/open_api", nil}]
   ]
   @group_names Enum.map(@groups, fn {name, _} -> to_string(name) end)
-  @default_groups ~w(boilerplate components)
-  # Igniter hands a `:csv` nobody answered as `[]`, which is also what
-  # an empty answer is: the default cannot be told from it, so it is
-  # applied here, and `none` is how a reader says *count everything*.
-  @nothing "none"
+  @default_groups ~w(deps test boilerplate components)
 
   @doc "The line `--githook` puts in the pre-commit hook."
   @spec check_command() :: String.t()
@@ -134,6 +133,7 @@ defmodule WorkbenchIgniter.Features.Coverage do
     [
       # The default first, as every list of values here reads.
       html_theme: [
+        {"default", "ExCoveralls' own report, as the tool writes it: nothing is planted"},
         {"custom", "the workbench's own report, which reads on its own wherever it is opened"},
         {"exdoc-ish",
          "mimics the ExDoc pages (sidebar, light/dark theme, fonts), so the report blends into a documentation site"}
@@ -151,13 +151,14 @@ defmodule WorkbenchIgniter.Features.Coverage do
       # its own `coveralls.json`, which is a file it owns — the box
       # would only be writing what it cannot read back as a decision.
       ignore_files: [
+        {"deps", "the dependencies, `deps/`"},
+        {"test", "the tests themselves and their support modules, `test/`"},
         {"boilerplate",
          "the wiring `phx.new` writes and no test asserts: the application, the endpoint, the router, telemetry, gettext, the repo, the mailer, the release and the socket"},
         {"components", "the generated components and layouts of `lib/<app>_web/components/`"},
         {"mix_tasks",
          "the project's own Mix tasks, `lib/mix/tasks/` — a developer's commands, not the app"},
-        {"open_api", "an API specification's modules, `lib/<app>_web/open_api/`"},
-        {@nothing, "nothing of the project: every file it compiles is counted"}
+        {"open_api", "an API specification's modules, `lib/<app>_web/open_api/`"}
       ],
       # The hook is precommit's: its block goes in a file that box owns.
       githook: [{true, "the suite before the commit", ["precommit"]}]
@@ -174,9 +175,9 @@ defmodule WorkbenchIgniter.Features.Coverage do
       file_column_width:
         "How wide the file column of the terminal table is, in characters — ExCoveralls' `file_column_width`. A path longer than the column is cut, and `mix cover` reads that table to build the report's own, so a cut path is a file the report loses. Default: `80`; ExCoveralls' own is 40, and a project with deep module paths wants more.",
       ignore_files:
-        "What the report leaves out, comma-separated: the groups above, and no other value. `deps` and `test` are left out always. Default: `#{Enum.join(@default_groups, ",")}`; `#{@nothing}` counts everything the project compiles. A path of the project's own goes in its `coveralls.json`, which is the project's file to edit.",
+        "What the report leaves out, comma-separated: the groups above, and no other value. Default: `#{Enum.join(@default_groups, ",")}`. A path of the project's own goes in its `coveralls.json`, which is the project's file to edit.",
       html_theme:
-        "The HTML report's theme, one of #{Enum.map_join(themes(), ", ", &"`#{&1}`")}: `custom` is the workbench's own report, `exdoc-ish` mimics the ExDoc pages (sidebar, light/dark theme, fonts) so the report blends into a documentation site. Default: `custom`.",
+        "The HTML report's theme, one of #{Enum.map_join(themes(), ", ", &"`#{&1}`")}: `default` is ExCoveralls' own report and plants nothing, `custom` is the workbench's own report, `exdoc-ish` mimics the ExDoc pages (sidebar, light/dark theme, fonts) so the report blends into a documentation site. Default: `default`.",
       md_report:
         "Plants `mix cover`, the task that runs the suite and writes the report as Markdown — `TESTING.md` at the project's root, a page any reader of the repository opens, and the one a documentation site lists (exdoc's `--coverage`). Its own tests stand on a double of `File`, so it builds on the test_doubles cartridge with Mimic among its doubles: insert it first (`./wb.sh add test_doubles`).",
       githook:
@@ -189,7 +190,7 @@ defmodule WorkbenchIgniter.Features.Coverage do
   def option_notes do
     [
       ignore_files:
-        "`deps` and `test` are left out always. A path of the project's own goes in its `coveralls.json`, which is the project's file to edit."
+        "A path of the project's own goes in its `coveralls.json`, which is the project's file to edit."
     ]
   end
 
@@ -235,8 +236,9 @@ defmodule WorkbenchIgniter.Features.Coverage do
   # What the project carries, read off what the install wrote: the
   # minimum and what the report leaves out off coveralls.json, the
   # `mix cover` task --md-report plants, and the theme by matching the
-  # planted report template against the cartridge's own — `nil` once
-  # the project has edited it.
+  # planted report template against the cartridge's own — `default`
+  # where coveralls.json points at no template, `nil` once the project
+  # has edited it.
   @impl true
   def state(igniter) do
     app_name = Igniter.Project.Application.app_name(igniter)
@@ -249,7 +251,20 @@ defmodule WorkbenchIgniter.Features.Coverage do
 
     minimum = number(json, "minimum_coverage")
 
-    theme = report && Enum.find(@themes, &(asset("template/#{&1}/coverage.html.eex") == report))
+    theme =
+      cond do
+        is_binary(json) and not (json =~ ~r/"template_path"/) ->
+          @default_theme
+
+        report ->
+          Enum.find(
+            @themes -- [@default_theme],
+            &(asset("template/#{&1}/coverage.html.eex") == report)
+          )
+
+        true ->
+          nil
+      end
 
     {%{
        minimum_coverage: minimum,
@@ -272,8 +287,7 @@ defmodule WorkbenchIgniter.Features.Coverage do
   # What the report leaves out, as it was asked for: a group whose
   # paths are all there is that group's name, and what is left over is
   # itself — a path the project added by hand reads back as the path it
-  # is. `deps` and `test` are the box's own and say nothing about the
-  # insert. `nil` with no file to read.
+  # is. `nil` with no file to read.
   defp ignored(nil, _app_name), do: nil
 
   defp ignored(json, app_name) do
@@ -284,7 +298,7 @@ defmodule WorkbenchIgniter.Features.Coverage do
       end
 
     {names, rest} =
-      Enum.reduce(@groups, {[], skipped -- @always}, fn {name, paths}, {names, rest} ->
+      Enum.reduce(@groups, {[], skipped}, fn {name, paths}, {names, rest} ->
         paths =
           for path <- paths,
               {written, _witness} = written_and_witness(path, app_name),
@@ -335,7 +349,7 @@ defmodule WorkbenchIgniter.Features.Coverage do
         Igniter.add_issue(
           igniter,
           "--ignore-files takes the groups this box knows, and #{Enum.map_join(unknown, ", ", &inspect/1)} " <>
-            "is not one of them: #{Enum.join(@group_names ++ [@nothing], ", ")}. " <>
+            "is not one of them: #{Enum.join(@group_names, ", ")}. " <>
             "A path of your own goes in the project's coveralls.json."
         )
 
@@ -418,27 +432,21 @@ defmodule WorkbenchIgniter.Features.Coverage do
 
   # --- coveralls.json ---------------------------------------------------------
 
-  # What the report leaves out, in the order it is written: what the
-  # box always leaves out, then each asked-for group — only the paths
-  # the project actually has, so the file reads as the project it is —
-  # and then whatever else was asked for, a path of the reader's own.
-  # A group name the project has no file for writes nothing; nothing is
-  # refused, since a path is a regex and a regex that matches nothing is
-  # not a mistake.
-  # What was asked for: nothing answered is the default set, and
-  # `none` is the answer that leaves everything counted.
+  # What the report leaves out, in the order it is written: each
+  # asked-for group — only the paths the project actually has, so the
+  # file reads as the project it is. A group the project has no file for
+  # writes nothing.
+  # What was asked for: Igniter hands a `:csv` nobody answered as `[]`,
+  # which is also what an empty answer is, so both are the default set.
   defp asked(values) do
-    values = (values || []) |> Enum.map(&String.trim/1) |> Enum.reject(&(&1 == "")) |> Enum.uniq()
-
-    cond do
-      values == [] -> @default_groups
-      @nothing in values -> []
-      true -> values
+    case (values || []) |> Enum.map(&String.trim/1) |> Enum.reject(&(&1 == "")) |> Enum.uniq() do
+      [] -> @default_groups
+      values -> values
     end
   end
 
   defp skip_files(igniter, app_name, asked) do
-    Enum.reduce(asked, {@always, igniter}, &asked_for(&1, &2, app_name))
+    Enum.reduce(asked, {[], igniter}, &asked_for(&1, &2, app_name))
   end
 
   # One value of the option: a group, whose paths are read one by one,
@@ -486,7 +494,8 @@ defmodule WorkbenchIgniter.Features.Coverage do
       template("coveralls_json.eex",
         app_name: to_string(app_name),
         output_dir: @output_dir,
-        template_path: @template_path,
+        # ExCoveralls' own report is the one it finds with no path.
+        template_path: opts[:html_theme] != @default_theme && @template_path,
         # Written as parsed, so `080` lands as JSON's `80`.
         minimum_coverage: whole(opts[:minimum_coverage]),
         file_column_width: whole(opts[:file_column_width]),
@@ -515,7 +524,10 @@ defmodule WorkbenchIgniter.Features.Coverage do
   # --- excoveralls HTML report theme -----------------------------------------
 
   # The chosen theme's files land flat under `test/coverage/template/`,
-  # the `template_path` coveralls.json points excoveralls at.
+  # the `template_path` coveralls.json points excoveralls at. The
+  # default theme is the tool's own, and plants nothing.
+  defp plant_report_template(igniter, @default_theme), do: igniter
+
   defp plant_report_template(igniter, theme) do
     Enum.reduce(@report_template_files, igniter, fn file, igniter ->
       Igniter.create_new_file(

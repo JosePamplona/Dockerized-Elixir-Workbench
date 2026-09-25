@@ -71,6 +71,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **coverage v0.11.0: ExCoveralls' own report by default, and `deps`
+  and `test` are groups.** `--html-theme` grew `default`, which plants
+  no template and writes no `template_path`, so the report is the one
+  the tool renders; it is the new default, and `custom` and
+  `exdoc-ish` are asked for by name. `--ignore-files` lost `none` and
+  gained `deps` and `test` as its first groups, both in the default:
+  they were written always and were not options, and the form's note
+  about them was the one thing it said that was not about
+  `coveralls.json`.
+
 - **An Ash data layer builds on the project's Ecto database.** `add
   ash --data-layer postgres,sqlite` on the SQLite workspace `_003`
   stopped at *Repo module LoroIpsum.Repo existed, but was not an

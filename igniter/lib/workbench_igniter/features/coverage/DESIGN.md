@@ -1,21 +1,21 @@
 # coverage — Design
 
-Revision: cartridge v0.10.0 (2026-09-22)
+Revision: cartridge v0.11.0 (2026-09-25)
 
 ## Abstract
 
 Coverage for a workbench project: the ExCoveralls dependency, a
 `coveralls.json` the project owns, and two reports — the HTML one
-ExCoveralls renders from a template this box plants in the project's
-own tree, and, with `--md-report`, the Markdown one `mix cover` writes
+ExCoveralls renders, its own or from a theme this box plants in the
+project's own tree, and, with `--md-report`, the Markdown one `mix cover` writes
 at the project's root for whoever reads the repository. With
 `--githook`, the suite runs before every commit.
 
 Five decisions carried the box, and each had a live alternative. The
 first is why a dependency at all, when Elixir has had line coverage
-built in for years. The second is that the HTML report is planted as
-source the project may edit, in one of two themes, instead of being
-served from the cartridge. The third is that what the report leaves out
+built in for years. The second is that the HTML report is the tool's own
+unless a theme is asked for, and a theme is planted as source the
+project may edit instead of being served from the cartridge. The third is that what the report leaves out
 is *asked*, in groups the box knows and can read back, and that only
 the paths the project actually has are written. The fourth is that the
 Markdown report is named and owned here — the option says what it
@@ -141,18 +141,20 @@ for a reader to learn, where `test/` already says what it holds.
 `state/1` reads the theme wherever `coveralls.json`'s `template_path`
 points, so an older project, or one that moved them, still says it.
 
-**The report is planted, in one of two themes.** The cartridge writes
-the `.eex` templates into `test/coverage/template/` and points
-`template_path` at them, instead of leaving ExCoveralls' bundled report
-in place. The reason is ownership: a report is a page with the project's
-name on it, and the templates are `.eex` whose tags belong to the target
-project, so they are planted verbatim. Two themes, one directory each:
-`custom`, the original workbench report and the default (below, v0.9.0),
-which reads on its own wherever it is opened; and `exdoc-ish`, which
+**A theme is planted; the default is none** (v0.11.0). With a theme, the
+cartridge writes the `.eex` templates into `test/coverage/template/` and
+points `template_path` at them. The reason is ownership: a report is a
+page with the project's name on it, and the templates are `.eex` whose
+tags belong to the target project, so they are planted verbatim. The
+default, `default`, plants nothing and writes no `template_path`: the
+report is ExCoveralls' own, as its author wrote it, and the project
+carries no templates it did not ask for. Two themes, one directory each:
+`custom`, the original workbench report, which reads on its own
+wherever it is opened; and `exdoc-ish`, which
 mimics the ExDoc pages — sidebar, light/dark, the same fonts — so the
 report reads as one more page of the project's documentation.
-Adding a theme is adding a directory: `@themes` is the directory
-listing, `--html-theme` validates against it, and `themes/0` is what the
+Adding a theme is adding a directory: `@themes` is `default` and the
+directory listing, `--html-theme` validates against it, and `themes/0` is what the
 console offers. The rejected alternative was one theme — the argument
 for it is that two faces is two things to maintain, and the answer is
 that the second is three files of `.eex` nobody has had to touch since
@@ -171,7 +173,8 @@ it did not recognise.
 
 `--ignore-files` is the option instead, comma-separated, each value a
 **group** the box knows or a path of the reader's own. The groups come
-from reading what Elixir projects actually skip [6][7][8]: the wiring
+from reading what Elixir projects actually skip [6][7][8]: the
+dependencies and the tests themselves, the wiring
 `phx.new` writes and no test asserts (`application.ex`, `<app>_web.ex`,
 `endpoint.ex`, `telemetry.ex`, `gettext.ex`, `repo.ex`, `mailer.ex`,
 `release.ex`, `router.ex`, `channels/user_socket.ex`), the generated
@@ -182,9 +185,11 @@ paths behind each are the box's to keep current with `phx.new`.
 
 Three rules keep it honest:
 
-* **`deps` and `test` are not options.** Neither is the project's code
-  under test, and no project wants them counted, so they are written
-  always — which is what the file did before.
+* **`deps` and `test` are groups like the rest** (v0.11.0). Neither is
+  the project's code under test, and no project wants them counted, so
+  both are in the default; until then they were written always and were
+  not options, which made the form's note about them the one thing it
+  said that was not about `coveralls.json`.
 * **Only the paths the project has are written.** A group names ten
   files; a project without a socket or a mailer gets neither line, so
   `coveralls.json` reads as the project it belongs to instead of as a
@@ -211,12 +216,14 @@ anything. A reader who does see them names the path, which is the
 escape hatch working as intended. Nor is `test/support`: the blanket
 `test` entry already covers it.
 
-**`none` is how the option says nothing.** Igniter hands a `:csv`
+**An empty answer is the default** (v0.11.0). Igniter hands a `:csv`
 option nobody answered as `[]`, which is also what an empty answer
-looks like, so the default (`boilerplate,components`) cannot be told
-from an explicit "skip nothing" in the parsed options. Rather than read
-the raw argv, the box takes `[]` as unanswered and gives `none` its own
-meaning — the same shape exdoc's `--module-groups none` has.
+looks like, so the default (`deps,test,boilerplate,components`) cannot
+be told from an explicit "skip nothing" in the parsed options. Until
+v0.11.0 `none` was the value that said it; it went with `deps` and
+`test` becoming groups, since counting the dependencies and the tests
+is a report no project wants. A project that does edits its own
+`coveralls.json`.
 
 **`file_column_width` is an option, and not a cosmetic one** (v0.7.0).
 The `mix cover` task parses the coverage rows out of the terminal
@@ -246,14 +253,17 @@ there and commented out when it is not, the way it reads the README.
 The page that waits until the first run moved here with the same
 argument: the file is this box's, so the box that owns it plants it.
 
-**The default theme is `custom`** (v0.9.0). The two themes are not
+**The default theme is ExCoveralls' own** (v0.11.0). From v0.9.0 to
+v0.11.0 it was `custom`, and before that `exdoc-ish`. The two themes are not
 better and worse but *for* different places: `custom` is the
 workbench's own report, which reads on its own wherever it is opened,
 and `exdoc-ish` mimics the ExDoc pages so a report read inside a
 documentation site blends into it. `exdoc-ish` was the default while
 the box assumed the report would be read in that site — the same
 assumption `--exdoc` carried in its name. A box that does not know
-whether the project has a site defaults to the report that needs none.
+whether the project has a site defaults to the report that needs none
+— and a box that installs a tool installs it as its author wrote it,
+so the report that needs nothing planted is the tool's own.
 
 **`mix cover` is a task in the project, not in the workbench.** With
 `--md-report` the cartridge plants `lib/mix/tasks/cover.ex`, an ExUnit
@@ -345,11 +355,11 @@ the dependency and the `mix.exs` entries; `coveralls.json` with its
 defaults, its output dir and its template path; the minimum given, the
 minimum unasked and a minimum that is not a whole percentage refused;
 the file column given, unasked and refused outside 40..999; each group
-of `--ignore-files` written with only the paths the project has, `none`
-counting everything, a value that is not a group refused, and the state
+of `--ignore-files` written with only the paths the project has, `deps` and
+`test` read back by name, a value that is not a group refused, and the state
 read back — groups as groups, and a path the project added to its own
-`coveralls.json` as the path it is; both themes planted from their
-directories and an unknown theme refused; `--md-report` planting the
+`coveralls.json` as the path it is; no template planted by default,
+both themes planted from their directories and an unknown theme refused; `--md-report` planting the
 task, its formatter, its tests, the page that waits and the block of
 the test helper, with `TESTING.md` gitignored — and, without it, none
 of that and no doubles asked for; the refusal when test_doubles is not

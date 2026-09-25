@@ -10,6 +10,26 @@ Backfilled at the version below, its first: the cartridge shipped
 before a changelog was part of the anatomy, and gets one on its next
 change, as the features index says.
 
+## v0.11.0 - (2026-09-25)
+
+### Changed
+
+- **`--html-theme default` is the new default: ExCoveralls' own
+  report.** Nothing is planted under `test/coverage/template/` and
+  `coveralls.json` carries no `template_path`, so the report is the
+  one the tool renders. `custom` and `exdoc-ish` are asked for by name.
+  `state/1` reads `default` off a `coveralls.json` with no
+  `template_path`.
+- **`deps` and `test` are `--ignore-files` groups, first in the list
+  and in the default** (`deps,test,boilerplate,components`). Until now
+  they were written always and were not options. The option's note
+  speaks only of `coveralls.json`.
+
+### Removed
+
+- `--ignore-files none`. An empty answer is the default set; a project
+  that wants everything counted edits its own `coveralls.json`.
+
 ## v0.10.1 - (2026-09-24)
 
 ### Changed

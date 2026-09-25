@@ -114,3 +114,21 @@ place `cut` had found the first one (+33+157, 988×1226), and
 `art/hero.jpg` is that crop; `cut` finds it at 1.00. The expansion
 before it is `_archived/art/hero-manual-1-expanded.jpg`. The `[C]` tag
 is deep green on the green slate, dimmer than the other four; accepted.
+
+### 3 — the board in chalk (2026-09-25)
+
+Made by the author outside the repository with no entry written here
+first; this entry records it after the fact. Sent to the expansion
+again, and it came back at its 1057×1488 with only the board changed
+(the rest within JPEG noise). The ruled table is gone: the five
+categories are written in chalk, lowercase, each after its initial in
+a coloured chalk capital, the initials in the mark's colours top to
+bottom. The order now reads C, D, F, **W, R** — `warnings` above
+`readability`, coral on the W and blue on the R — where the mark's bars
+and entry 2 had R fourth and W fifth. Open, for the author's eye.
+
+The expansion as it arrived is `_archived/art/hero-manual-3-expanded.png`;
+the one before it (entry 2) is `hero-manual-2-expanded.jpg`, with its
+sealed cover as `hero-manual-2-sealed.jpg`. The hero is cut from the
+expansion at the same +33+157, 988×1226 (`cut` finds it at 1.00), and
+the cover is stamped with the options in the cover record, unchanged.

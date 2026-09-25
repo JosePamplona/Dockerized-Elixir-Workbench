@@ -132,3 +132,19 @@ the one before it (entry 2) is `hero-manual-2-expanded.jpg`, with its
 sealed cover as `hero-manual-2-sealed.jpg`. The hero is cut from the
 expansion at the same +33+157, 988×1226 (`cut` finds it at 1.00), and
 the cover is stamped with the options in the cover record, unchanged.
+
+### 4 — the grade (2026-09-25)
+
+Made by the author outside the repository, in the editor
+(`class.xcf`), with no entry written here first; recorded after the
+fact. The same 1057×1488 expansion with nothing moved: the whole image
+regraded, cooler and less saturated, toward the violet — the warm
+sunlight on the floor goes pink, the blue chair and bin go violet
+(mean difference 6.2 of 255, at most 32, spread over the whole face).
+The board reads as entry 3 left it.
+
+The expansion as it arrived is `_archived/art/hero-manual-4-expanded.png`;
+entry 3's sealed cover is `hero-manual-3-sealed.jpg`. The hero is cut
+from the expansion at the same +33+157, 988×1226 (`cut` finds it at
+1.00), and the cover is stamped with the options in the cover record,
+unchanged.

@@ -63,14 +63,11 @@ migration, not a flag — eject and insert again, then migrate by hand.
 ## After inserting
 
 The workspace's `docker-compose.yml` was baked for the project as it
-was, without a database service. Two commands finish the job:
-
-```sh
-./wb.sh bake     # bakes docker-compose.yml again, with the server the adapter needs (a commit)
-./wb.sh setup    # creates and seeds the database
-```
-
-`wb.sh add ecto` says so when it is done. With `--database sqlite3`
+was, without a database service. `wb.sh add ecto` bakes it again in
+the insert's own commit, with the server the adapter needs. The
+database itself is created by the app container: it runs `mix setup`
+at every boot, and phx.new's `setup` alias runs `ecto.setup` (create,
+migrate, seeds). So the next `./wb.sh up` finishes the job. With `--database sqlite3`
 there is no server: the dev compose stays as it was (the file lives
 beside the source), and the prod compose gets a `data` volume for it
 and the migrator; the scaled deployment refuses SQLite, since replicas

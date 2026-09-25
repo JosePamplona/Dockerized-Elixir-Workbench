@@ -102,6 +102,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   one. Reproduced on a SQLite probe; on a Postgres probe `--automation
   ash_events --auth password` exits 0 with the repo turned.
 
+- **ecto's line after the insert says what happens.** It, the task's
+  doc, the cartridge's README and the workbench README sent the reader
+  to a `./wb.sh setup` that `wb.sh` never had, and the README to a
+  separate `./wb.sh bake`. `wb.sh add` bakes the database server into
+  the compose in the insert's own commit (`rebake_composes`), and the
+  app container's `mix setup`, which runs `ecto.setup`, creates the
+  database at the next `./wb.sh up`. ecto v0.3.1.
+
 - **The drawer is 50px wider.** The box's and the workbench's drawer
   (one `.drawer`) grew from 1040px to 1090px, 25px on each side. The
   left column keeps its 320px, so the air goes to the papers, their

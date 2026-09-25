@@ -68,7 +68,7 @@ defmodule WorkbenchIgniter.Features.Ecto do
   @impl true
   def afterwards,
     do:
-      "The database is in the workspace's compose, in this same commit; ./wb.sh setup creates it."
+      "The database is in the workspace's compose, in this same commit; the app container's `mix setup` creates it at the next ./wb.sh up."
 
   @impl true
   def option_docs do

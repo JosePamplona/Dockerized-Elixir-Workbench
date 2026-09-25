@@ -33,8 +33,9 @@ defmodule Mix.Tasks.Workbench.Install.Ecto do
 
   The workspace's compose was baked for the project as it was: without
   a database service. `./wb.sh add` bakes it again in the insert's own
-  commit, with the server the project now expects, and `./wb.sh setup`
-  creates the database.
+  commit, with the server the project now expects. The app container
+  runs `mix setup` at every boot, and `ecto.setup` in it creates the
+  database at the next `./wb.sh up`.
   """
 
   @impl Igniter.Mix.Task

@@ -41,7 +41,9 @@ defmodule WorkbenchIgniter.CatalogTest do
       assert for(e <- Enum.map(Features.catalog(), &Features.entry/1), e.base, do: e.name) ==
                @in_by_default
 
-      assert Features.entry(Features.Ecto).afterwards =~ "./wb.sh setup"
+      assert Features.entry(Features.Ecto).afterwards =~
+               "`mix setup` creates it at the next ./wb.sh up"
+
       assert Features.entry(Features.Mailer).afterwards == nil
       assert Features.named("credo") == Features.Credo
       assert Features.named("nope") == nil

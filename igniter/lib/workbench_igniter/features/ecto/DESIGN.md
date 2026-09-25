@@ -1,6 +1,9 @@
 # ecto — Design
 
-*Revision: cartridge v0.2.0 (2026-08-30). Sources consulted on that
+*Revision: cartridge v0.3.1 (2026-09-25): the step after the insert
+is the compose baked in the insert's commit and `mix setup` at the app
+container's boot; `./wb.sh setup` never existed. The rest: cartridge
+v0.2.0 (2026-08-30). Sources consulted on that
 date; quotations are verbatim from the file or page as read then. The
 mechanism as installed is in the [README](README.md); the engine is
 argued in the [mailer paper](../mailer/DESIGN.md) §2.3–§2.7 and

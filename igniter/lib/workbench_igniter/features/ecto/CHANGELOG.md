@@ -4,6 +4,17 @@ Versioned on its own, independently of the workbench release that ships
 it; semver over what `phx.new` generates for Ecto at the installer's
 version plus the `.env` entry, as [mailer](../mailer/CHANGELOG.md) says.
 
+## v0.3.1 - (2026-09-25)
+
+### Fixed
+
+- The line after the insert, the task's doc and the README say what
+  happens: `wb.sh add` bakes the database server into the compose in
+  the insert's own commit, and the app container's `mix setup` creates
+  the database at the next `./wb.sh up`. They sent the reader to a
+  `./wb.sh setup` that `wb.sh` never had, and the README to a separate
+  `./wb.sh bake`.
+
 ## v0.3.0 - (2026-09-19)
 
 ### Updated

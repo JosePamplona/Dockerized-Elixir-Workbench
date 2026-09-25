@@ -183,7 +183,7 @@ body.rail-off .console{display:none}
    the same fault: two edges rounded by different arithmetic, and a slit
    of the content between them. A row that must not move is a row of the
    frame, not an element of the document. */
-.screen{min-width:0;display:flex;flex-direction:column;height:100%;overflow:hidden;min-height:0}
+.screen{min-width:0;display:flex;flex-direction:column;height:100%;overflow:clip;min-height:0}
 /* A box that scrolls is also the box its absolutes are placed in: a .sr
    label (position:absolute) deep in a long screen was placed against
    .app instead, past its foot, and the whole page grew a scrollbar the
@@ -546,7 +546,7 @@ table.carts td .pairs{grid-template-columns:max-content}
    bar — the screen is a flex column, so the panel flexes and nothing is
    computed from viewport heights (the bar's height counted twice once
    turned the screen's scroll on). */
-#panel-logs.on,#panel-terminal.on,#panel-jobs.on{display:flex;flex-direction:column;min-height:0;overflow:hidden;padding-bottom:22px}
+#panel-logs.on,#panel-terminal.on,#panel-jobs.on{display:flex;flex-direction:column;min-height:0;overflow:clip;padding-bottom:22px}
 .logs{display:grid;grid-template-rows:auto auto minmax(0,1fr);gap:10px;flex:1;min-height:0}
 .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .toolbar .sep{width:1px;height:22px;background:var(--line);margin:0 4px}
@@ -752,6 +752,13 @@ pre .ln{display:block}
    a cartridge goes in. */
 .scrim{position:fixed;inset:0;background:rgba(10,4,14,.42);backdrop-filter:blur(1.5px);opacity:0;pointer-events:none;transition:opacity .2s;z-index:5}
 .scrim.on{opacity:1;pointer-events:auto}
+/* A frame clips, it never scrolls: `overflow:clip`, not `hidden`. A
+   hidden box is still a scroll container, and a jump to an anchor —
+   a footnote's mark, `#box-pkgs-note-1` — scrolls every container
+   between it and the page, the ones with no scrollbar too: the drawer
+   rode up 160px, left a gap at its foot, and nothing could bring it
+   back (2026-09-24). The drawer, its Interface pane, the screen and the
+   full-height panels are frames. */
 /* Whole pixels. `inset:0; margin:auto` split the room's leftover in
    halves, and 94vw is seldom whole: the drawer landed at x.03, and with
    it every code block inside — a bitmap face drawn half a pixel off is
@@ -763,7 +770,7 @@ pre .ln{display:block}
   background:var(--surface);border:1px solid var(--line);border-radius:4px;
   transform:translateY(14px) scale(.985);opacity:0;pointer-events:none;
   transition:transform .22s cubic-bezier(.2,.7,.2,1),opacity .18s;
-  overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,.45);display:grid;grid-template-rows:auto minmax(0,1fr);z-index:6
+  overflow:clip;box-shadow:0 30px 70px rgba(0,0,0,.45);display:grid;grid-template-rows:auto minmax(0,1fr);z-index:6
 }
 .drawer.on{transform:none;opacity:1;pointer-events:auto}
 @media (max-width:700px){.drawer{--dw:100vw;--dh:100vh;border-radius:0;border:0}}
@@ -872,7 +879,7 @@ pre .ln{display:block}
    clipped, options and runs out of reach on a short window. */
 .drawer > .booklet,.drawer > .install,.drawer > .body{min-height:0;overflow:auto}
 /* The Interface pane does not scroll as a whole: its controls column does, and the miniature fills the height. */
-.drawer > .ui{min-height:0;overflow:hidden}
+.drawer > .ui{min-height:0;overflow:clip}
 .booklet[hidden]{display:none}
 .booklet.notoc{grid-template-columns:minmax(0,1fr)}
 .booklet .toc{position:sticky;top:0;align-self:start;display:grid;gap:6px;font-family:var(--cond);font-weight:600;letter-spacing:.06em;font-size:12.5px;text-transform:uppercase;border-left:1px solid var(--line);padding-left:12px}

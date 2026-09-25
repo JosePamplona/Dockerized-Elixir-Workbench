@@ -173,6 +173,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **A footnote's mark no longer lifts the drawer off its frame.**
+  Clicking a mark in a Packages table (`¹`, a jump to
+  `#box-pkgs-note-1`) scrolled every container between it and the page,
+  the drawer too: it had `overflow:hidden`, which clips but is still a
+  scroll container, so it rode up 160px, left a gap at its foot and had
+  no scrollbar to come back with. The frames that must never scroll —
+  the drawer, its Interface pane, the screen and the full-height panels
+  — clip with `overflow:clip` now, which is no scroll container: the
+  jump moves only the pane that scrolls, in the drawer and on the
+  Project tab.
+
 - **A box's Packages table says where each unlisted package came from,
   in the box's own words.** A box that declares no package has its
   packages read off its insert commit, and the table marked them with

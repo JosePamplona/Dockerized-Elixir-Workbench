@@ -78,7 +78,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   summary counted as doors. The head now counts each on its own, `3
   services · 2 doors · 1 page`, and the rows come in that order: the
   services, the routes, the pages, each in the cartridges' own order
-  (a page was among the routes of its cartridge). Two changes go with it. A service's
+  (a page was among the routes of its cartridge). The addresses column
+  of the shelf's Inserted table, and the Record's row, keep the same
+  order within each cartridge. Two changes go with it. A service's
   web face at its root — pgAdmin, Adminer, CloudBeaver, Grafana — was
   listed twice, as its port on the Services line and again as a
   violet door `/` on that port, knocked over HTTP: the door is gone.

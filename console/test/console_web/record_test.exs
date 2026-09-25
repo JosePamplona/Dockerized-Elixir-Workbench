@@ -507,6 +507,38 @@ defmodule ConsoleWeb.RecordTest do
              Record.offered(Enum.find(@catalog, &(&1["name"] == "exdoc")))
   end
 
+  # The column reads as the rail does: the services, the routes, the
+  # pages — whatever order the cartridge declared its doors in.
+  test "a cartridge's addresses come as services, routes, pages" do
+    e = %{
+      "name" => "coverage",
+      "compose" => [%{"service" => "k6", "listens" => 6565}],
+      "console" => %{
+        "doors" => [
+          %{
+            "label" => "coverage",
+            "path" => "cover/",
+            "output" => %{"dir" => "cover", "index" => "excoveralls.html"}
+          },
+          %{"label" => "report", "path" => "/dev/coverage"}
+        ]
+      }
+    }
+
+    assert Enum.map(Record.offered(e).addresses, &{&1.kind, &1.label}) ==
+             [{"port", "k6"}, {"route", "report"}, {"output", "coverage"}]
+
+    status =
+      @status
+      |> Map.put("workspace", "/nowhere")
+      |> update_in(["project", "cartridges"], &[Map.put(e, "installed", true) | &1])
+
+    row = Enum.find(Record.page(status, [e | @catalog]).cartridges, &(&1.c["name"] == "coverage"))
+
+    assert Enum.map(row.addresses, &{&1.kind, &1.label}) ==
+             [{"inside", "k6"}, {"route", "report"}, {"output", "coverage"}]
+  end
+
   test "a door behind an option's value is shut with the flag that opens it" do
     ash = %{
       "name" => "ash",

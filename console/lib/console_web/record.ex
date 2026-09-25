@@ -335,9 +335,14 @@ defmodule ConsoleWeb.Record do
   def door(status, c, d, reads \\ %{}),
     do: route(status, c, d, get_in(status, ["ports", "app"]), Cartridges.app_up?(status), reads)
 
+  # In the rail's order — the services, the routes, the pages — each
+  # group in the order the cartridge declares (2026-09-25; a page sat
+  # among its cartridge's routes).
   defp addresses(status, c, e, port, up, reads) do
-    services(c, status, reads) ++
-      for(d <- get_in(e, ["console", "doors"]) || [], do: route(status, c, d, port, up, reads))
+    doors =
+      for d <- get_in(e, ["console", "doors"]) || [], do: route(status, c, d, port, up, reads)
+
+    services(c, status, reads) ++ Enum.sort_by(doors, &(&1.kind == "output"))
   end
 
   @doc """
@@ -565,15 +570,14 @@ defmodule ConsoleWeb.Record do
           "dev" in (b["deploys"] || ["dev"]),
           do: shut.(b["service"], listens(b), "port")
         ) ++
-          for(
-            d <- get_in(e, ["console", "doors"]) || [],
-            do:
-              shut.(
-                d["label"],
-                Cartridges.fill_path(d["path"], e),
-                if(d["output"], do: "output", else: "route")
-              )
-          )
+          (for d <- get_in(e, ["console", "doors"]) || [] do
+             shut.(
+               d["label"],
+               Cartridges.fill_path(d["path"], e),
+               if(d["output"], do: "output", else: "route")
+             )
+           end
+           |> Enum.sort_by(&(&1.kind == "output")))
     }
   end
 

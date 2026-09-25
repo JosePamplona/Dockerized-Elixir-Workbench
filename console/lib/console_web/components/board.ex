@@ -1,7 +1,7 @@
 defmodule ConsoleWeb.Board do
   @moduledoc """
   The rail: the configured workspace, as the status says it — the name
-  and the path, then what answers (Services & Doors), what is baked and
+  and the path, then what answers (Services, Doors & Pages), what is baked and
   up (Deployments, Containers), what is in it (Cartridges), and last
   Git, which is what has happened to it rather than what it is
   (2026-09-10).
@@ -153,33 +153,47 @@ defmodule ConsoleWeb.Board do
     deployment = Enum.find(rows, &(&1.deploy == (up || "dev"))) || %{services: []}
     entry = fn c -> Enum.find(assigns.catalog, &(&1["name"] == c["name"])) || c end
 
+    # The doors are what a cartridge declares (`console: doors:`), read
+    # as the Record reads them. A service's web face at its root —
+    # pgAdmin, Grafana — is the same address as its port on the host,
+    # which the Services line already opens, so it is not a door here
+    # (2026-09-25); the Record's row keeps it.
+    # In the head's order: the routes, then the pages, each in the
+    # order the cartridges are in (a stable sort keeps it).
     doors =
       for c <- Cartridges.installed(assigns.status),
-          a <- Record.addresses(assigns.status, c, entry.(c), assigns.reads),
-          a.kind in ["route", "output"],
-          do: {c, a}
+          d <- get_in(entry.(c), ["console", "doors"]) || [],
+          do: {c, Record.door(assigns.status, c, d, assigns.reads)}
+
+    doors = Enum.sort_by(doors, &(elem(&1, 1).kind == "output"))
+
+    services = Enum.filter(deployment.services, &(&1.kind == "port"))
+    pages = Enum.count(doors, &(elem(&1, 1).kind == "output"))
 
     assigns =
       assign(assigns,
-        # A row is a door on the host: a port the compose publishes, or a
-        # route. A port inside the pod (`database :5432`), the pod itself,
-        # the one-shot `migrate`, are on Containers and on the Deployments
-        # sheet, which is the whole map, solid and hollow; the rail is the
-        # bell. Since 2026-09-16; the inside ports had a hollow row here.
-        services: Enum.filter(deployment.services, &(&1.kind == "port")),
+        # A row is a door on the host: a port the compose publishes, a
+        # route, or a page on disk. A port inside the pod (`database :5432`),
+        # the pod itself, the one-shot `migrate`, are on Containers and on
+        # the Deployments sheet, which is the whole map, solid and hollow;
+        # the rail is the bell. Since 2026-09-16; the inside ports had a
+        # hollow row here.
+        services: services,
         deployment: up || "dev",
         up: up != nil,
         knock: Record.knockable?(up != nil, Enum.map(doors, &elem(&1, 1))),
         doors: doors,
         sum:
-          (fn n ->
-             "#{n} service#{if n == 1, do: "", else: "s"} · #{length(doors)} door#{if length(doors) == 1, do: "", else: "s"}"
-           end).(Enum.count(deployment.services, &(&1.kind == "port")))
+          Enum.map_join(
+            [{length(services), "service"}, {length(doors) - pages, "door"}, {pages, "page"}],
+            " · ",
+            fn {n, word} -> "#{n} #{word}#{if n == 1, do: "", else: "s"}" end
+          )
       )
 
     ~H"""
     <section class={folded?(@folded, "doors") && "folded"}>
-      <.head key="doors" name="Services & Doors" label={@sum} folded={@folded}>
+      <.head key="doors" name="Services, Doors & Pages" label={@sum} folded={@folded}>
         <.square
           :if={@knock}
           mark="bell"
@@ -228,7 +242,7 @@ defmodule ConsoleWeb.Board do
   end
 
   # The three deployments as the Record draws them — baked, up —
-  # with the row's one action beside. The services go in Services & Doors:
+  # with the row's one action beside. The services go in Services, Doors & Pages:
   # a port face does not fit in a sixth column of a 380px rail.
   # What comes off the project — in sync or not, the cartridges in —
   # is the last full reading's until the next lands: while one is in

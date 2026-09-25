@@ -251,7 +251,7 @@ defmodule ConsoleWeb.ConsoleLive do
   defp take_compose(socket, _named), do: assign(socket, pcomposes: [], pdeploy: nil)
 
   # A knock: every open route called once, and what each answered kept
-  # for the whole page — the rail's Services & Doors and the Record's
+  # for the whole page — the rail's Services, Doors & Pages and the Record's
   # addresses share it. With the app down there is no route to call, and
   # the knock still goes: the round from :asking to its answer renders
   # the pages on disk again, which are read off the disk as they render.

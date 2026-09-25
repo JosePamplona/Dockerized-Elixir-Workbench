@@ -425,11 +425,12 @@ defmodule ConsoleWeb.Record do
       href: if(is_nil(why), do: "http://localhost:#{port}/#{d["label"]}/"),
       why: why,
       read: built && {built_when(built), ""},
-      # Nothing there yet, and the cartridge says which of the project's
-      # Mix tasks writes it: the door offers that command instead of a
-      # reading. The workbench never invents one — `./wb.sh mix <task>`
-      # is the project's own.
-      build: if(is_nil(built) and not shut, do: build_task(status, c, o))
+      # The cartridge says which of the project's Mix tasks writes it,
+      # and the door offers that command whether the page is there or
+      # not: nothing built, it is the one thing to press; built, it is
+      # the rebuild, beside the stamp (2026-09-25). The workbench never
+      # invents one — `./wb.sh mix <task>` is the project's own.
+      build: if(not shut, do: build_task(status, c, o))
     }
   end
 
@@ -495,21 +496,26 @@ defmodule ConsoleWeb.Record do
 
   defp shut_why(d), do: "only with #{d["when"]["cartridge"]} inserted"
 
-  # The whole stamp — date, time and the offset it was read in: a page
-  # on disk is read against what the project was when it was written,
-  # and "18:18" left the reader to guess which day that was (today's,
-  # if they did not look twice) and whose clock it was on. The stamp
-  # says "built" by being there: where there is none the door offers
-  # *build* in its place, and the two are never both.
-  defp built_when(built), do: Calendar.strftime(built, "%Y-%m-%d %H:%M %z")
+  # The day and the time, on the machine's own clock (`Reports.built/2`
+  # reads the mtime local): a page on disk is read against what the
+  # project was when it was written, and "18:18" left the reader to
+  # guess which day that was. The offset went with it until 2026-09-25;
+  # the reader's clock is the machine's, so it said nothing they did not
+  # know. The stamp says "built" by being there; *build* is beside it
+  # whether or not, since a page is written again as often as the
+  # project moves.
+  defp built_when(built), do: Calendar.strftime(built, "%Y-%m-%d %H:%M")
 
   # The services a cartridge brings to the workspace, as `docker compose
   # ps` sees them now — what they are is the cartridge's to say, in the
   # status (`compose`: each by name, with the port it listens on and the
-  # ones the host publishes). One the compose publishes on the host —
-  # pgAdmin, Grafana: a web face — is a door: the reader opens it, and
-  # the knock reads what it answers. The rest are ports inside.
-  defp services(c, status, reads) do
+  # ones the host publishes). Each is written as the service it is, the
+  # way the rail's Services line writes it: published on the host,
+  # `pgadmin localhost:5051`, a blue port the reader opens while its
+  # container runs; not published, `database :5432`, the port inside.
+  # Its reading is its container's, never a call: it was a violet door
+  # at its root, knocked over HTTP, until 2026-09-25.
+  defp services(c, status, _reads) do
     # As the dev deployment has them: a release's one-shots are not
     # something the project has running beside it.
     for b <- c["compose"] || [], "dev" in (b["deploys"] || ["dev"]) do
@@ -519,7 +525,7 @@ defmodule ConsoleWeb.Record do
         end)
 
       if is_integer(host),
-        do: door_of(status, b["service"], host, reads),
+        do: door_of(status, b["service"], host),
         else: port_of(status, b["service"], listens(b))
     end
   end
@@ -627,10 +633,9 @@ defmodule ConsoleWeb.Record do
     }
   end
 
-  # A service's web face on the host's port: open while its container
-  # runs, and read like a route — pgAdmin and Grafana answer a redirect
-  # at the root, which is an answer.
-  defp door_of(status, service, port, reads) do
+  # A service's port on the host: open while its container runs, read
+  # as its container reads (healthy, running).
+  defp door_of(status, service, port) do
     container = Enum.find(status["containers"] || [], &(&1["Service"] == service))
 
     why =
@@ -640,16 +645,14 @@ defmodule ConsoleWeb.Record do
         true -> nil
       end
 
-    href = if is_nil(why), do: "http://localhost:#{port}/"
-
     %{
       label: service,
-      path: "/",
-      kind: "route",
-      port: port,
-      href: href,
+      path: "localhost:#{port}",
+      kind: "port",
+      port: nil,
+      href: if(is_nil(why), do: "http://localhost:#{port}"),
       why: why,
-      read: read(reads, href)
+      read: container && container_read(container)
     }
   end
 

@@ -373,7 +373,10 @@ defmodule ConsoleWeb.RecordTest do
     assert %{deploy: "scaled", baked: false, status: nil, services: []} = scaled
   end
 
-  test "a service's port published on the host is a door: opened, and knocked" do
+  # The service as the rail's Services line writes it, published or
+  # not, read off its container: it was a violet door at its root,
+  # knocked over HTTP, until 2026-09-25.
+  test "a service's port published on the host is a port: opened, read off its container" do
     # pgAdmin in, its container up, the compose publishing 5050.
     status =
       @status
@@ -410,16 +413,16 @@ defmodule ConsoleWeb.RecordTest do
     assert [
              %{
                label: "pgadmin",
-               path: "/",
-               kind: "route",
-               port: 5050,
-               href: "http://localhost:5050/",
-               read: {"302", "good"}
+               path: "localhost:5050",
+               kind: "port",
+               port: nil,
+               href: "http://localhost:5050",
+               read: {"running", "good"}
              }
            ] =
              pg.addresses
 
-    assert "http://localhost:5050/" in Record.hrefs(page)
+    refute "http://localhost:5050/" in Record.hrefs(page)
 
     # Its container stopped: the door is shut by that, and not called.
     stopped =
@@ -480,15 +483,15 @@ defmodule ConsoleWeb.RecordTest do
     File.write!(Path.join(ws, "doc/index.html"), "")
 
     # Built: open on the pages' own port, its reading when it was built —
-    # with the app down as much as up, and no knock calls it.
+    # with the app down as much as up, and no knock calls it. The
+    # command stays: build is the rebuild too.
     for status <- [with_exdoc, Map.put(with_exdoc, "deployment", nil)] do
-      assert [%{href: "http://localhost:4101/docs/", why: nil, read: {stamp, ""}, build: nil}] =
+      assert [%{href: "http://localhost:4101/docs/", why: nil, read: {stamp, ""}, build: "docs"}] =
                docs.(status)
 
-      # The whole stamp and nothing else: which project wrote it, and on
-      # whose clock — the offset the machine read it in. That there is
-      # one is what says it was built.
-      assert stamp =~ ~r/^\d{4}-\d{2}-\d{2} \d{2}:\d{2} [+-]\d{4}$/
+      # The day and the time on the machine's clock, nothing else: which
+      # project wrote it. That there is one is what says it was built.
+      assert stamp =~ ~r/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/
     end
 
     refute "http://localhost:4101/docs/" in Record.hrefs(Record.page(with_exdoc, @catalog))

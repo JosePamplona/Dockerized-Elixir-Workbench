@@ -294,17 +294,21 @@ def components_css():
                     the host (database:5432) — the layer kept, the opening not
        .door-output green, addr-output: a page a tool wrote on disk (doc/,
                     cover/), served by the console on an origin of its own;
-                    written as the dir it is read from, its reading the whole
-                    stamp of when it was built and nothing more
-                    (2026-09-22 18:18 +0200: a page is read against the project
-                    of that moment, and an hour alone left the day and the
-                    clock to be guessed; that there IS a stamp is what says it
-                    was built, and where there is none the door offers build) — never knocked, it
-                    answers with the app down. Where the page is not there
-                    yet, the reading's place takes the one thing to do
-                    instead: .read.build, the same plate pressable, which
-                    runs the command the cartridge names (./wb.sh mix docs)
-                    and is the only door that does something other than open
+                    written as the dir it is read from, its reading the day
+                    and time it was built on the machine's clock and nothing
+                    more (2026-09-22 18:18: a page is read against the project
+                    of that moment, and an hour alone left the day to be
+                    guessed; the offset it carried said nothing the reader did
+                    not know, and went on 2026-09-25; that there IS a stamp is
+                    what says it was built) — never knocked, it answers with the app
+                    down. After the reading, the one thing to do: .read.build,
+                    a button on the same plate, which runs the command the
+                    cartridge names (./wb.sh mix docs) — alone while nothing
+                    is built, beside the stamp once it is, since a page is
+                    written again as often as the project moves (2026-09-25).
+                    The only door that does something other than open. Because
+                    a button may not sit inside an <a>, the plate is a span
+                    and the link is its name and address, laid flat on it.
      (prefixed, because `.console` is the LiveView console's own root.)
      A route is written on its port — <span><em>:4001</em>/dev/mailbox</span>,
      the port dimmed — because it rides on one; a port is written whole.
@@ -541,11 +545,14 @@ def components_css():
 .pkg-ref:hover,.pkg-ref:focus-visible{color:var(--accent);outline:none}
 .pkg-ref .mark{width:12px;height:11px;flex:none;opacity:.55;transition:opacity 120ms}
 .pkg-ref:hover .mark,.pkg-ref:focus-visible .mark{opacity:1}
-.door-ref{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;color:var(--ink);text-decoration:none;padding:3px 9px;border:1px solid var(--line);border-radius:2px;background:none;cursor:pointer}
+.door-ref{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;color:var(--ink);text-decoration:none;padding:3px 9px;border:1px solid var(--line);border-radius:2px;background:none}
+/* The link is the name and the address, laid flat on the plate: a button (build) may follow them, and no <a> may hold one. */
+.door-ref>a{display:contents;color:inherit;text-decoration:none;cursor:pointer}
 .door-ref b{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:11px;color:var(--muted)}
 .door-ref span{font-family:var(--mono);font-size:12px}
 .door-ref span em{font-style:normal;color:var(--soft)}
-.door-ref:hover:not(.unlit),.door-ref:focus-visible:not(.unlit){border-color:var(--ink);outline:none}
+.door-ref:hover:not(.unlit),.door-ref:has(>a:focus-visible){border-color:var(--ink);outline:none}
+.door-ref>a:focus-visible{outline:none}
 /* The layer square: the logs' 8px service swatch, saying which layer answers. */
 .door-ref::before{content:"";width:8px;height:8px;border-radius:2px;flex:none;background:var(--addr-route)}
 .door-ref.door-port::before{background:var(--addr-port)}
@@ -558,6 +565,8 @@ def components_css():
 .door-ref .read.warn{background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--warn)}
 .door-ref .read.bad{background:color-mix(in srgb,var(--bad) 16%,transparent);color:var(--bad)}
 .door-ref .read.busy::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex:none;animation:chip-pulse 1s infinite}
+/* Two readings side by side (a stamp, then build) share one edge: the second gives the flex gap back. */
+.door-ref .read+.read{margin-left:-8px}
 .door-ref .read.build{border-top:0;border-right:0;border-bottom:0;cursor:pointer;color:var(--ink);text-transform:none}
 .door-ref .read.build:hover,.door-ref .read.build:focus-visible{background:var(--ink);color:var(--surface);outline:none}
 .commit-ref{display:inline-block;font-family:var(--mono);font-size:11.5px;letter-spacing:0;text-transform:none;color:var(--ink);padding:1px 7px;border:1px solid var(--line);border-radius:2px;background:none;text-decoration:none;cursor:pointer}

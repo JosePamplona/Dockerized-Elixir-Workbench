@@ -71,6 +71,39 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **The rail's Services & Doors is Services, Doors & Pages, and
+  says so in its head.** The section had three kinds of row and named
+  two: the ports the compose publishes, the routes the cartridges
+  declare, and the pages on disk the console serves — which its
+  summary counted as doors. The head now counts each on its own, `3
+  services · 2 doors · 1 page`, and the rows come in that order: the
+  services, the routes, the pages, each in the cartridges' own order
+  (a page was among the routes of its cartridge). Two changes go with it. A service's
+  web face at its root — pgAdmin, Adminer, CloudBeaver, Grafana — was
+  listed twice, as its port on the Services line and again as a
+  violet door `/` on that port, knocked over HTTP: the door is gone.
+  The rail lists only what a cartridge declares (`console: doors:`),
+  and the cartridge's row — the shelf's Inserted, the Record — writes
+  the service as the Services line does, whether it is reachable or
+  not: `pgadmin localhost:5051`, a blue port, open while its container
+  runs and read off that container, beside `database :5432`, the port
+  inside. And a page's
+  **build** stays once the page is built: it was the reading's
+  stand-in while nothing was there, and now it sits after the stamp
+  as the rebuild, since a page is written again as often as the
+  project moves. A button may not sit inside an `<a>`, so the door's
+  plate is a span and the link is its name and address, laid flat on
+  it (`display: contents`); the reading and the button are the plate's
+  own. The page's stamp drops its offset, `2026-09-25 16:25` and not
+  `2026-09-25 16:25 -0600`: the mtime is read on the machine's own
+  clock, which is the reader's, so the offset said nothing they did
+  not know and took a third of the plate. Two holes in the plate go
+  with it: the second reading (build after the stamp) gives the flex
+  gap back, so the two share one edge, and a service with no port to
+  write no longer renders an empty address that took a gap of its
+  own. Nothing else about the door changes: the four layers, the
+  attached reading, unlit with its reason.
+
 - **coverage v0.11.0: ExCoveralls' own report by default, and `deps`
   and `test` are groups.** `--html-theme` grew `default`, which plants
   no template and writes no `template_path`, so the report is the one

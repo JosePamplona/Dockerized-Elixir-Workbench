@@ -723,17 +723,19 @@ port now, the one the browser sees (`CONSOLE_PUBLIC_PORT`, which
 beside the routes (violet, on the app's port) and the ports (blue, the
 compose's). It is green (`addr-output`): a page on disk, which answers
 whether the app runs or not. It is not knocked: what it has to say is
-when it was built — the whole stamp and nothing more,
-`2026-09-22 18:18 +0200`, read off the index's mtime and attached where a route has its HTTP code: a page
-on disk is read against the project of that moment, and the hour alone
-left the day to be guessed, and the clock it was on. The offset is the
-machine's own at that moment, summer time included: the same mtime read
-local and UTC, their difference. Unlit, with the reason, while nothing is
-built — and in the reading's place, the one thing to do: **build**
-(the word *built* beside the stamp was the same fact said twice: a
-stamp is there or the button is),
-which runs the command the cartridge names (`build:` in its door,
-`./wb.sh mix docs`) as a job. The
+when it was built — the day and the time and nothing more,
+`2026-09-22 18:18`, read off the index's mtime on the machine's own
+clock and attached where a route has its HTTP code: a page on disk is
+read against the project of that moment, and the hour alone left the
+day to be guessed. It carried the offset too until 2026-09-25 (the same
+mtime read local and UTC, their difference), which said nothing the
+reader did not know: the clock is theirs. Unlit, with the reason, while nothing is
+built — and after the reading, the one thing to do: **build**
+(the word *built* beside the stamp was the same fact said twice: the
+stamp is there or it is not), which runs the command the cartridge
+names (`build:` in its door, `./wb.sh mix docs`) as a job. Built, the
+button stays beside the stamp as the rebuild (2026-09-25): a page is
+written again as often as the project moves. The
 listener serves `/<label>/` from the dirs the inserted cartridges
 declare, and nothing else of the workspace — `.env` is in it.
 

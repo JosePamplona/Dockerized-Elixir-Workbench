@@ -94,18 +94,24 @@ defmodule ConsoleWeb.JobButtonTest do
     assert html =~ ">build</button>"
   end
 
-  test "a page that is built wears its stamp, and no command" do
+  # Built, the door opens on its name and address, wears the stamp, and
+  # keeps the command beside it: a page is written again as often as
+  # the project moves, so build is the rebuild too (2026-09-25).
+  test "a page that is built wears its stamp, and its command after it" do
     html =
       render_component(&door_ref/1,
         label: "docs",
         path: "doc/",
         kind: "output",
         href: "http://localhost:4101/docs/",
-        read: {"2026-09-22 18:18 +0200", ""},
+        read: {"2026-09-22 18:18", ""},
         build: "docs"
       )
 
-    assert html =~ "2026-09-22 18:18 +0200"
-    refute html =~ "read build"
+    assert html =~ ~s(<a href="http://localhost:4101/docs/" target="_blank"><b>docs</b>)
+    assert html =~ "2026-09-22 18:18"
+    assert html =~ ~s(phx-value-args="mix docs")
+    assert html =~ ">build</button>"
+    refute html =~ "unlit"
   end
 end

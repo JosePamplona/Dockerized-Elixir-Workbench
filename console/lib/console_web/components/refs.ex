@@ -161,9 +161,10 @@ defmodule ConsoleWeb.Refs do
   port, `:4001/dev/mailbox`, the port
   dimmed. `read` is what the address answered when the console called
   it, `{text, chip class}`, attached inside the border; nil when nothing
-  called it. `build` takes its place on a page that is not there yet:
-  the Mix task the cartridge says writes it, as the one thing to press
-  — the same plate, pressable, running `./wb.sh mix <task>` as a job.
+  called it. `build` is a page's, there or not: the Mix task the
+  cartridge says writes it, a button on the same plate after the
+  reading, running `./wb.sh mix <task>` as a job — the one thing to
+  press while nothing is built, the rebuild beside the stamp once it is.
   """
   attr :label, :string, required: true
   attr :path, :string, required: true
@@ -180,34 +181,37 @@ defmodule ConsoleWeb.Refs do
     doc: "the Mix task that would write this page, when it is not there"
 
   def door_ref(assigns) do
-    assigns = assign(assigns, open: assigns.href && !assigns.why)
+    # A service with no port to write (`listens` unknown) has an empty
+    # address: not written, or the empty span takes the plate's gap and
+    # the label ends in twice the room.
+    assigns =
+      assign(assigns,
+        open: assigns.href && !assigns.why,
+        addr: assigns.port || assigns.path != ""
+      )
 
     ~H"""
     <span class="pair">
-      <a
-        :if={@open}
-        class={["door-ref", "door-" <> @kind]}
-        href={@href}
-        target="_blank"
-        title={door_title(@who, @path, @why)}
-      ><b>{@label}</b><span><em :if={@port}>:{@port}</em>{@path}</span><i
-        :if={@read}
-        class={["read", elem(@read, 1)]}
-      >{elem(@read, 0)}</i></a>
+      <%!-- One plate, three things on it: the address, which is the link
+            while it is open; its reading; and, on a page, the command
+            that writes it — a button, which no `<a>` may hold, so the
+            plate is a span and the link is its name and address
+            (2026-09-25; the whole plate was the link before). --%>
       <span
-        :if={!@open}
-        class={["door-ref", "door-" <> @kind, @why && "unlit"]}
+        class={["door-ref", "door-" <> @kind, !@open && @why && "unlit"]}
         title={door_title(@who, @path, @why)}
-      ><b>{@label}</b><span><em :if={@port}>:{@port}</em>{@path}</span><i
+      ><a :if={@open} href={@href} target="_blank"><b>{@label}</b><span :if={@addr}><em :if={@port}>:{@port}</em>{@path}</span></a><b :if={
+        !@open
+      }>{@label}</b><span :if={!@open and @addr}><em :if={@port}>:{@port}</em>{@path}</span><i
         :if={@read}
         class={["read", elem(@read, 1)]}
       >{elem(@read, 0)}</i><button
-        :if={!@read && @build}
+        :if={@build}
         type="button"
         class="read build"
         phx-click="run"
         phx-value-args={"mix " <> @build}
-        title={"./wb.sh mix #{@build} — writes this page in the workspace, as a job"}
+        title={"./wb.sh mix #{@build} — writes this page in the workspace again, as a job"}
       >build</button></span>
       <.cart_ref :if={@who} name={@who} installed={@who_installed} />
     </span>
@@ -215,7 +219,11 @@ defmodule ConsoleWeb.Refs do
   end
 
   defp door_title(who, path, why),
-    do: Enum.join(Enum.reject([who && "#{who}:", path, why && "— #{why}"], &(!&1)), " ")
+    do:
+      Enum.join(
+        Enum.reject([who && "#{who}:", path, why && "— #{why}"], &(&1 in [nil, false, ""])),
+        " "
+      )
 
   @doc """
   A mention of a commit: the short sha, boxed because it opens History on

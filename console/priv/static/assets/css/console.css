@@ -758,7 +758,7 @@ pre .ln{display:block}
    a blur. The width and height are rounded down, then the corner is:
    the box's runs, the papers' blocks and the diffs all start on the grid. */
 .drawer{
-  --dw:round(down,min(1040px,94vw),1px);--dh:round(down,min(88vh,920px),1px);
+  --dw:round(down,min(1090px,94vw),1px);--dh:round(down,min(88vh,920px),1px);
   position:fixed;left:round(down,calc((100vw - var(--dw)) / 2),1px);top:round(down,calc((100vh - var(--dh)) / 2),1px);margin:0;width:var(--dw);height:var(--dh);
   background:var(--surface);border:1px solid var(--line);border-radius:4px;
   transform:translateY(14px) scale(.985);opacity:0;pointer-events:none;
@@ -954,8 +954,10 @@ form.insert{display:grid;gap:14px;border:1px solid var(--line);border-radius:3px
 form.insert .label{margin-bottom:-4px}
 /* One option per row, whatever its shape: the key — its flag, and under
    it the kind of answer it takes — and its answers, one line per control.
-   A line reads control · name · tags · — note in every shape; a switch
-   has no name and a text no note. A tag sits on the line of the control
+   A line reads control · name · tags in every shape; a switch has no
+   name. What helps an answer is under it, in one voice: a value's doc
+   under its line, a field's under the field, an option's note under
+   all its values. A tag sits on the line of the control
    it shuts, never in the key: that is where the eye is before the click,
    and the key's 150px no longer breaks under a long need. */
 form.insert .opts{display:grid}
@@ -972,8 +974,6 @@ form.insert .opts{display:grid}
 .opt .line.other{grid-template-columns:minmax(0,54ch)}
 .opt .line input[type=checkbox],.opt .line input[type=radio]{width:15px;height:15px;margin:0}
 .opt .line .name{white-space:nowrap}
-.opt .line .gloss{font-family:var(--serif);font-size:12.5px;color:var(--muted);line-height:1.35}
-.opt .line .gloss::before{content:"— "}
 /* Every field of the form, whatever an option's shape made it — a text,
    a url (`formats/0`) — so the house's face does not depend on the
    type attribute. Only the boxes above are left out. */
@@ -986,6 +986,10 @@ form.insert .opts{display:grid}
 .opt .gl{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:11px;color:var(--muted);margin-top:4px}
 .opt .gl:first-child{margin-top:0}
 .opt .doc{font-size:12.5px;color:var(--muted);margin:0;max-width:60ch;line-height:1.45}
+/* A value's doc hangs under its name, past the box, close to its line. */
+.opt .doc.of{padding-left:23px;margin-top:-5px}
+/* A link in a doc is the papers' link: the house's accent, underlined. */
+.opt .doc a{color:var(--accent);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
 .opt .doc code{font-family:var(--mono);font-size:.9em;background:var(--surface-2);padding:0 .3em;border-radius:2px}
 /* The tags: `needs` and the cartridges it names, each its own mention
    — a door to that box — with the state it asks; or the default. */

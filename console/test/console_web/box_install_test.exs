@@ -693,6 +693,82 @@ defmodule ConsoleWeb.BoxInstallTest do
     assert html =~ "builds on ecto with database mysql, which this project lacks"
   end
 
+  test "an option with values: each value's doc under it, the note under them all, not the option's doc" do
+    box = %{
+      "name" => "ash",
+      "options" => [
+        %{
+          "name" => "data_layer",
+          "type" => "csv",
+          "multiple" => true,
+          "doc" => "Comma-separated: `postgres`, `sqlite`.",
+          "note" => "Left out, no data layer.",
+          "choices" => [
+            %{"value" => "postgres", "doc" => "via `ash_postgres`", "requires" => []},
+            %{"value" => "sqlite", "doc" => nil, "requires" => []}
+          ]
+        }
+      ]
+    }
+
+    html = screen(box, %{"exists" => true, "git" => %{"repo" => true, "clean" => true}})
+
+    assert html =~
+             ~r{<span class="name">postgres</span>.*?</label>\s*<p[^>]*class="doc of">via <code>ash_postgres</code></p>}s
+
+    refute html =~ ~r{<span class="name">sqlite</span>.*?</label>\s*<p[^>]*class="doc of">}s
+    assert html =~ ~s(<p class="doc">Left out, no data layer.</p>)
+    refute html =~ "Comma-separated"
+  end
+
+  test "an address in a value's doc is a link, named by its host" do
+    box = %{
+      "name" => "ash",
+      "options" => [
+        %{
+          "name" => "auth",
+          "type" => "csv",
+          "multiple" => true,
+          "choices" => [
+            %{
+              "value" => "oauth2",
+              "doc" => "Configured by hand, https://ash-authentication.hexdocs.pm/oauth2.html",
+              "requires" => [],
+              "conditions" => %{}
+            }
+          ]
+        }
+      ]
+    }
+
+    html = screen(box, %{"exists" => true, "git" => %{"repo" => true, "clean" => true}})
+
+    assert html =~
+             ~s(Configured by hand, <a href="https://ash-authentication.hexdocs.pm/oauth2.html" target="_blank")
+
+    assert html =~ ~s(>ash-authentication.hexdocs.pm</a>)
+  end
+
+  test "an address in an option's doc is a link too, the sentence's punctuation left out" do
+    box = %{
+      "name" => "ash",
+      "options" => [
+        %{
+          "name" => "auth",
+          "type" => "string",
+          "doc" =>
+            "Configured by hand (https://hexdocs.pm/a.html). See https://hexdocs.pm/b.html."
+        }
+      ]
+    }
+
+    html = screen(box, %{"exists" => true, "git" => %{"repo" => true, "clean" => true}})
+
+    assert html =~ ~s|(<a href="https://hexdocs.pm/a.html"|
+    assert html =~ ~s|hexdocs.pm</a>). See <a href="https://hexdocs.pm/b.html"|
+    assert html =~ ~s|hexdocs.pm</a>.</p>|
+  end
+
   @db_admin %{
     "name" => "db_admin",
     "rerun" => "adds",

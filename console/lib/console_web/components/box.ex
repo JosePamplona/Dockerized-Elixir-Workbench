@@ -1172,7 +1172,13 @@ defmodule ConsoleWeb.Box do
               <.tags need={[]} default={!@installed && text_default(@o)} status={@status} />
             </div>
         <% end %>
-        <p :if={@o["doc"]} class="doc">{@o["doc"]}</p>
+        <%!-- An option with values is helped by each value's own doc,
+              under its input, and by its note, when it has one, under
+              them all: the option's doc lists those values, and is the
+              command line's. One without values has one input, and its
+              doc is that input's. --%>
+        <p :if={@o["choices"] && @o["note"]} class="doc">{linked(@o["note"])}</p>
+        <p :if={!@o["choices"] && @o["doc"]} class="doc">{linked(@o["doc"])}</p>
       </div>
     </div>
     """
@@ -1354,10 +1360,41 @@ defmodule ConsoleWeb.Box do
             it is when the whole form is locked; a tag only says why a
             box is shut that is not checked. --%>
       <.tags need={if @has, do: [], else: @need} default={!@has && @default} status={@status} />
-      <span :if={@c["doc"]} class="gloss">{@c["doc"]}</span>
     </label>
+    <p :if={@c["doc"]} class="doc of">{linked(@c["doc"])}</p>
     """
   end
+
+  # A cartridge's line of text as the form shows it: its `code` as code,
+  # its addresses as links named by their host — an option or a value
+  # that needs reading elsewhere (ash's `oauth2`, configured by hand)
+  # says where. The address stops before a closing parenthesis or a
+  # final full stop, which are the sentence's.
+  defp linked(text) do
+    ~r{`[^`]+`|https?://[^\s)`]+[^\s).,;:`]}
+    |> Regex.split(text, include_captures: true)
+    |> Enum.map(fn
+      "`" <> code ->
+        ["<code>", esc(String.trim_trailing(code, "`")), "</code>"]
+
+      "http" <> _ = url ->
+        [
+          ~s(<a href="),
+          esc(url),
+          ~s(" target="_blank" rel="noopener noreferrer" title="),
+          esc(url),
+          ~s(">),
+          esc(URI.parse(url).host),
+          "</a>"
+        ]
+
+      part ->
+        esc(part)
+    end)
+    |> Phoenix.HTML.raw()
+  end
+
+  defp esc(text), do: text |> Phoenix.HTML.html_escape() |> Phoenix.HTML.safe_to_string()
 
   # A line's tags: what it builds on and the project lacks, each as the
   # cartridge's own mention — a door to its box, so the form shows how

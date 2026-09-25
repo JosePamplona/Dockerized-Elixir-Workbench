@@ -71,6 +71,22 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **An insert form's help is one voice, under what it helps.** An
+  option with values said itself twice: each value's gloss on its
+  line, then the option's own line under them all, which listed the
+  same values again. That line is the command line's (`option_docs/0`
+  renders `mix help`'s "## Options"), and the form had grown it
+  alongside the glosses case by case. Now each value's doc sits under
+  its input, in the doc's own face, and the option's line is gone from
+  the form. What an option says that no value can goes in a new,
+  optional `option_notes/0`, shown under the values: four options have
+  one (ash's `--data-layer`, coverage's `--ignore_files`, precommit's
+  `--checks`, db_admin's `--admin`), and the catalog test holds that a
+  note belongs to an option with values. An option with no values
+  keeps its doc under its one field. A doc's `code` reads as code and
+  its addresses are links, the papers' links, named by their host:
+  ash's `oauth2` points at its DSL, to be configured by hand.
+
 - **Ash opens the doors its packages write.** The console showed one
   Ash door, `/admin`. The routes that Ash's own installers write are
   now doors too, each behind the option that brings it: `/oban`,

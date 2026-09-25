@@ -65,16 +65,19 @@ the workbench only makes Phoenix projects.
 
 | ash-hq.org | Option | Packages |
 | --- | --- | --- |
-| Data layer: Postgres / SQLite / CSV | `--data-layer postgres,sqlite,csv` (several, as the site's checkboxes; default `postgres`; `none` alone for no data layer) | `ash_postgres`, `ash_sqlite`, `ash_csv` |
+| Data layer: Postgres / SQLite / CSV | `--data-layer postgres,sqlite,csv` (several, as the site's checkboxes; left out, no data layer) | `ash_postgres`, `ash_sqlite`, `ash_csv` |
 | Web: JSON:API, GraphQL, TypeScript | `--api json_api,graphql,typescript` | `ash_json_api`, `ash_graphql`, `ash_typescript` (handed `--framework react`, as the site does; its installer hooks `npm install` into `assets.setup`, which the workbench's and the project's images carry node and npm for) |
-| Authentication: Password, Magic Link, API Keys | `--auth password,magic_link,api_key` | `ash_authentication`, `ash_authentication_phoenix`, with `--auth-strategy <list>`; API keys alone bring `ash_authentication` only, as on the site |
+| Authentication: Password, Magic Link, API Keys, OAuth2 | `--auth password,magic_link,api_key,oauth2` | `ash_authentication`, `ash_authentication_phoenix`, with `--auth-strategy <list>`; API keys alone bring `ash_authentication` only, as on the site; `oauth2` brings both with no strategy |
 | Advanced Options, by section | `--ai`, `--finance`, `--automation`, `--security`, `--dev-tools`, `--components` | the packages the site offers in that section (below) |
 | — | `--example` | `ash.install --example`: the guide's example resources |
 
-`--auth` takes whatever the released `ash_authentication.add_strategy`
-does: `password`, `magic_link`, `api_key`. The site's OAuth2 option
-installs the package with no strategy, and `add_strategy` has none for
-it yet, so `--auth` does not offer it. The site's *Advanced
+`--auth` takes what the released `ash_authentication.add_strategy`
+does — `password`, `magic_link`, `api_key` — and `oauth2`, the site's
+OAuth2 option: it installs `ash_authentication` and
+`ash_authentication_phoenix` with no strategy, since `add_strategy`
+has none for it, and leaves the provider to configure by hand, as
+[the OAuth2 strategy's DSL](https://ash-authentication.hexdocs.pm/dsl-ashauthentication-strategy-oauth2.html)
+describes: its client id, secret and URLs. The site's *Advanced
 Options*, one option per section, each closed on the packages the site
 offers there (anything else is refused, naming them), and queued in the
 site's order:

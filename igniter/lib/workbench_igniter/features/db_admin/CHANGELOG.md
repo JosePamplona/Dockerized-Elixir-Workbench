@@ -5,6 +5,14 @@ it. Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) applied to
 what the cartridge *installs*.
 
+## v0.2.1 - (2026-09-24)
+
+### Changed
+
+- `--admin` carries a note for the form: no default, at least one is
+  required. The form shows each admin's doc under it and this under
+  them all, in place of the option's command-line line.
+
 ## v0.2.0 - (2026-09-21)
 
 ### Changed

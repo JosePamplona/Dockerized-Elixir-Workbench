@@ -1,7 +1,8 @@
 # ash — Design
 
-*Revision: cartridge v0.5.1 (2026-09-24): §2.5's strategies and [16]
-read in the released `add_strategy`. v0.5.0 (2026-09-24): §2.6 and
+*Revision: cartridge v0.6.0 (2026-09-24): §3.2's data layer has no
+default and no `none`, and `--auth` is closed. v0.5.1 (2026-09-24):
+§2.5's strategies and [16] read in the released `add_strategy`. v0.5.0 (2026-09-24): §2.6 and
 §3.8 read the installed sources on that date. The rest: cartridge v0.2.0
 (2026-08-29), sources consulted on that date; quotations are verbatim
 from the file or page as read then.*
@@ -150,9 +151,11 @@ Read in full: `ash.install` [12], `ash_postgres.install` [13],
 * The strategies the released `add_strategy` accepts are `password`,
   `magic_link` and `api_key` (`@strategies`); any other stops it with
   "Invalid strategy provided" [16]. The site's OAuth2 option passes no
-  strategy at all: it installs the package alone [17]. Until v0.5.1
-  this list was read from `main`, which carries strategies not yet
-  released, and `--auth` offered all of them.
+  strategy at all: it installs the packages alone [17], and the
+  provider is configured by hand [24]. `--auth oauth2` does the same:
+  it brings both packages and keeps `oauth2` out of `--auth-strategy`.
+  Until v0.5.1 this list was read from `main`, which carries
+  strategies not yet released, and `--auth` offered all of them.
 
 ### 2.6 The whole command, read in the installed sources
 
@@ -249,7 +252,9 @@ the output is not.*
 
 The options are the site's rows, not a raw package list: `--data-layer`
 (several of a closed set, as the site's checkboxes — a resource picks
-its own layer — with `none` standing alone; an error otherwise), `--api`
+its own layer; none given is Ash with no data layer, which the site
+calls unchecking Postgres, and until v0.6.0 took `none` against a
+`postgres` default), `--api`
 (closed set), `--auth`
 (the strategies, validated by `add_strategy` [16], not here — and two
 packages, `ash_authentication` *before* `ash_authentication_phoenix`,
@@ -402,7 +407,7 @@ stale with the first release that moves a dependency.
 **Unit tests** (`test/workbench_igniter/features/ash_test.exs`, 14
 cases, in-memory Phoenix project): the default command; the mapping
 of every option to its packages in order; repeated `:csv` switches;
-`--data-layer none`; `--example` and `--yes` handed down; no file
+no data layer without `--data-layer`; `--example` and `--yes` handed down; no file
 touched; the notice; unknown `--data-layer` / `--api` as issues with
 nothing queued; present packages left out, the no-op notice, and the
 `org/package@version` match; `installed?/1`; the manifest. The catalog
@@ -457,11 +462,11 @@ strategy but `password`.
 * `ash_postgres.install` sets `min_pg_version/0` to `16.0.0` when it
   cannot detect the server [13]; the workspace's `postgres:latest`
   satisfies it, an older pinned image would not.
-* OAuth strategies are not in the released `add_strategy` [16]. The
-  day they are, they need client ids the installer cannot know: which
-  environment variables the generated config reads, and so what
-  `.env.sample` should carry beside `TOKEN_SIGNING_SECRET`, is the
-  first thing to establish then.
+* `--auth oauth2` installs no strategy: the `oauth2` block, its client
+  id, secret and URLs, are written by hand [24]. `.env.sample` carries
+  nothing for them; the day `add_strategy` has the strategy, which
+  environment variables its config reads is the first thing to
+  establish.
 * A project generated with `--no-ecto` and `--data-layer postgres`
   will get `ash_postgres.install`'s own repo and config; not tried.
 * `ash_authentication_phoenix.install` asks through
@@ -564,3 +569,5 @@ Read in full on 2026-08-28 unless marked otherwise.
     `"UI Components"` (and `"Web"`, `"Data Layers"`,
     `"Authentication"`), each holding its features as
     `<label id="feature-KEY">`.
+24. AshAuthentication, the OAuth2 strategy's DSL —
+    <https://ash-authentication.hexdocs.pm/dsl-ashauthentication-strategy-oauth2.html>.

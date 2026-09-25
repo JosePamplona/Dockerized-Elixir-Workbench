@@ -109,6 +109,9 @@ defmodule WorkbenchIgniter.Features.DbAdmin do
   end
 
   @impl true
+  def option_notes, do: [admin: "No default: at least one is required."]
+
+  @impl true
   def option_docs do
     [
       admin:

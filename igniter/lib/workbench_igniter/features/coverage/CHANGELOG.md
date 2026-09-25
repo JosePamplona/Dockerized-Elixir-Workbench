@@ -10,6 +10,16 @@ Backfilled at the version below, its first: the cartridge shipped
 before a changelog was part of the anatomy, and gets one on its next
 change, as the features index says.
 
+## v0.10.1 - (2026-09-24)
+
+### Changed
+
+- `--ignore_files` carries a note for the form, what none of its
+  groups can say: `deps` and `test` are left out always, and a path of
+  the project's own goes in its `coveralls.json`. The form shows each
+  group's doc under it and this under them all, in place of the
+  option's command-line line.
+
 ## v0.10.0 - (2026-09-22)
 
 ### Changed

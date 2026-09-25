@@ -328,7 +328,12 @@ which cartridges have one and why.
   form shows beside it (ash: the package each choice stands for).
 * `option_docs/0` - one line per option: the task's "## Options"
   section is rendered from it (`WorkbenchIgniter.Feature.options_doc/1`
-  in the task's `@moduledoc`), and so is the help beside a form field.
+  in the task's `@moduledoc`), and so is the help under a form field
+  that has no values to choose from; an option with values is helped by
+  each value's own doc.
+* `option_notes/0` - what an option says that none of its values can
+  (what leaving it out means, what is out of it always): a form shows
+  it under the option's values. Most options have none.
 * `deps/1` - the packages the box puts in the project's `mix.exs`, as
   the tuples the installer writes. Given the project's state it answers
   the ones that project carries of it (test_doubles' `--double mimic`

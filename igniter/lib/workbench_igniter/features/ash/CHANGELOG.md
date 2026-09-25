@@ -7,6 +7,31 @@ what the cartridge *installs*: a change in the command it queues or in
 the options that build it is a minor, a change that breaks a project
 already carrying what that command installed is a major.
 
+## v0.6.0 - (2026-09-24)
+
+### Changed
+
+- `--data-layer` has no default and no `none`: left out, Ash goes in
+  with no data layer, and a data layer is one the reader named. It
+  took `postgres` when not given, which made `none` the only way to
+  leave it out. A bare `mix workbench.install.ash` queues `ash
+  ash_phoenix`; `--data-layer none` is now an unknown value.
+- `state` reports no `data_layer` for Ash in without one, where it
+  said `["none"]`.
+- `--auth` is a closed list: the catalog no longer marks it open, so a
+  form offers its strategies and no field for another one that
+  `add_strategy` would refuse.
+- `--auth oauth2` is back, as the site's OAuth2 option does it: both
+  packages and no strategy, since `add_strategy` has none for it
+  (v0.5.1 had dropped it for that). Its line in the catalog says the
+  provider is configured by hand and links the OAuth2 strategy's DSL;
+  `mix workbench.ash.site` matches the site's option to it again.
+- The form's help, one line per value: `--data-layer` carries a note,
+  "Left out, Ash goes in with no data layer", and an advanced package
+  the site's command brings a companion with says so in its own line
+  (`ash_double_entry` brings `ash_money` too), which only the option's
+  command-line line said.
+
 ## v0.5.1 - (2026-09-24)
 
 ### Fixed

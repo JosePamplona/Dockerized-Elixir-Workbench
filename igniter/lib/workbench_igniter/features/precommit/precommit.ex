@@ -137,6 +137,10 @@ defmodule WorkbenchIgniter.Features.Precommit do
   end
 
   @impl true
+  def option_notes,
+    do: [checks: "A cartridge's own check is its option, not one of these (`credo --githook`)."]
+
+  @impl true
   def choices do
     [checks: for(check <- @checks, do: {check.name, check.doc})]
   end

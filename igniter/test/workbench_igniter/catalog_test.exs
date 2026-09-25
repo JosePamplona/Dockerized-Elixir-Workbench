@@ -124,7 +124,7 @@ defmodule WorkbenchIgniter.CatalogTest do
 
       ash = Catalog.brief(Features.entry(Features.Ash))
 
-      assert %{choices: ~w(postgres sqlite csv none), multiple: true} =
+      assert %{choices: ~w(postgres sqlite csv), multiple: true} =
                Enum.find(ash.options, &(&1.name == :data_layer))
 
       assert %{collection: true, members: ["ansi" | _], archived: "2026-09-20" <> _} =
@@ -148,22 +148,24 @@ defmodule WorkbenchIgniter.CatalogTest do
       values = fn o -> Enum.map(o.choices, & &1.value) end
 
       assert %{open: false, multiple: true} = by.(:data_layer)
-      assert values.(by.(:data_layer)) == ~w(postgres sqlite csv none)
+      assert values.(by.(:data_layer)) == ~w(postgres sqlite csv)
 
       assert %{value: "postgres", doc: "ash_postgres · The swiss army knife" <> _} =
                hd(by.(:data_layer).choices)
 
-      assert %{value: "none", doc: "no data layer — alone"} = List.last(by.(:data_layer).choices)
       assert %{open: false, multiple: true} = by.(:api)
       assert values.(by.(:api)) == ~w(json_api graphql typescript)
 
       assert %{
                choices: [%{value: "password", doc: "Allow users to log in" <> _} | _],
-               open: true,
+               open: false,
                multiple: true
              } = by.(:auth)
 
-      assert values.(by.(:auth)) == ~w(password magic_link api_key)
+      assert values.(by.(:auth)) == ~w(password magic_link api_key oauth2)
+
+      assert %{doc: "Sign in using an external service. Installs the packages" <> _} =
+               Enum.find(by.(:auth).choices, &(&1.value == "oauth2"))
 
       # The site's Advanced Options, one closed option per section.
       assert %{
@@ -342,6 +344,39 @@ defmodule WorkbenchIgniter.CatalogTest do
 
       assert [_] = check.(Features.HealthProbe, path: "/health check")
       assert [_] = check.(Features.HealthProbe, path: "/health?ready")
+    end
+
+    test "a note is an option's, one with values to choose from, and the form gets it" do
+      for feature <- Features.catalog(), not feature.pending?() do
+        keys = Keyword.keys(feature.info([], nil).schema || [])
+
+        for {key, note} <- feature.option_notes() do
+          assert key in keys, "#{feature.name()} notes --#{key}, which its schema lacks"
+
+          assert Keyword.has_key?(feature.choices(), key),
+                 "#{feature.name()}'s --#{key} has no values to note beside"
+
+          assert is_binary(note) and note != ""
+        end
+      end
+
+      options = Features.entry(Features.Ash).options
+      assert Enum.find(options, &(&1.name == :data_layer)).note =~ "no data layer"
+      assert Enum.find(options, &(&1.name == :api)).note == nil
+
+      assert %{doc: "A data type for representing money $$$$."} =
+               Enum.find(
+                 Enum.find(options, &(&1.name == :finance)).choices,
+                 &(&1.value == "ash_money")
+               )
+
+      assert %{doc: "Moving money around?" <> rest} =
+               Enum.find(
+                 Enum.find(options, &(&1.name == :finance)).choices,
+                 &(&1.value == "ash_double_entry")
+               )
+
+      assert rest =~ "Brings `ash_money` too."
     end
 
     test "documents its options from the cartridge, into the task's moduledoc" do

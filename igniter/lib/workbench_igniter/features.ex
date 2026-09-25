@@ -410,6 +410,7 @@ defmodule WorkbenchIgniter.Features do
   defp options(%Igniter.Mix.Task.Info{schema: schema, defaults: defaults}, feature) do
     choices = feature.choices()
     docs = feature.option_docs()
+    notes = feature.option_notes()
     formats = feature.formats()
 
     for {key, type} <- schema || [] do
@@ -442,7 +443,9 @@ defmodule WorkbenchIgniter.Features do
         # The shape the value has to have, where the type does not say
         # it: a form asks for that shape and says which it is.
         format: format(Keyword.get(formats, key)),
-        doc: Keyword.get(docs, key)
+        doc: Keyword.get(docs, key),
+        # What the option says that none of its values can.
+        note: Keyword.get(notes, key)
       }
     end
   end

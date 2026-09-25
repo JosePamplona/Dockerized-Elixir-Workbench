@@ -33,7 +33,7 @@ defmodule WorkbenchIgniter.Features.Ash do
 
   | Option | Packages |
   | --- | --- |
-  | `--data-layer postgres` (default) / `sqlite` / `csv` / `none` | `ash_postgres` / `ash_sqlite` / `ash_csv` / — |
+  | `--data-layer postgres,sqlite,csv` (none given: no data layer) | `ash_postgres`, `ash_sqlite`, `ash_csv` |
   | `--api json_api,graphql,typescript` | `ash_json_api`, `ash_graphql`, `ash_typescript` |
   | `--auth password,magic_link,…` | `ash_authentication`, `ash_authentication_phoenix`, with `--auth-strategy <list>` |
   | `--ai`, `--finance`, `--automation`, `--security`, `--dev-tools`, `--components` | ash-hq's *Advanced Options*, one option per section, each a closed list of the packages the site offers there |
@@ -57,8 +57,7 @@ defmodule WorkbenchIgniter.Features.Ash do
   @data_layers [
     {"postgres", "ash_postgres"},
     {"sqlite", "ash_sqlite"},
-    {"csv", "ash_csv"},
-    {"none", nil}
+    {"csv", "ash_csv"}
   ]
 
   @apis [
@@ -67,10 +66,14 @@ defmodule WorkbenchIgniter.Features.Ash do
     {"typescript", "ash_typescript"}
   ]
 
-  # What the released `ash_authentication.add_strategy` accepts, for
-  # the catalog: `--auth` hands the list down unchecked, so a new
-  # strategy works before it is listed here.
-  @auth_strategies ~w(password magic_link api_key)
+  # What the released `ash_authentication.add_strategy` accepts, and
+  # `oauth2`, the site's OAuth2 option: it installs the packages with no
+  # strategy — add_strategy has none for it —, and the provider is
+  # configured by hand. `add_strategy` validates what `--auth` hands it.
+  @auth_strategies ~w(password magic_link api_key oauth2)
+  @by_hand ~w(oauth2)
+
+  @oauth2_docs "https://ash-authentication.hexdocs.pm/dsl-ashauthentication-strategy-oauth2.html"
 
   # ash-hq.org's Advanced Options, by section, as the packages they
   # stand for: one option per section, named after it, closed on the
@@ -149,6 +152,7 @@ defmodule WorkbenchIgniter.Features.Ash do
     "password" => "Allow users to log in with email & password.",
     "magic_link" => "Send users a link in their email to sign in and register.",
     "api_key" => "Generate and authenticate with API keys.",
+    "oauth2" => "Sign in using an external service.",
     "tidewave" =>
       "Speed up development with AI assistants that understand your web application, how it runs, and what it delivers.",
     "ash_ai" => "First class support for a wide array of LLM tools.",
@@ -181,7 +185,6 @@ defmodule WorkbenchIgniter.Features.Ash do
   @doc false
   def auth_strategies, do: @auth_strategies
 
-  defp tagline(nil), do: "no data layer — alone"
   defp tagline(pkg), do: if(line = @tooltips[pkg], do: "#{pkg} · #{line}", else: pkg)
 
   defp strategy_doc(name) do
@@ -189,21 +192,35 @@ defmodule WorkbenchIgniter.Features.Ash do
       if(name == "api_key", do: [], else: [{"html", live: true}]) ++
         if(name in @sends_email, do: ["mailer"], else: [])
 
-    {name, @tooltips[name], requires}
+    {name, strategy_gloss(name), requires}
   end
 
-  defp with_doc(pkg),
-    do: {pkg, @tooltips[pkg], if(pkg in @needs_live, do: [{"html", live: true}], else: [])}
+  defp strategy_gloss("oauth2"),
+    do:
+      "#{@tooltips["oauth2"]} Installs the packages with no strategy: the provider is configured by hand, #{@oauth2_docs}"
 
-  # The values the options take: closed, each with the package it
-  # stands for, but the strategies, which the installer hands down to
-  # ash_authentication unchecked.
+  defp strategy_gloss(name), do: @tooltips[name]
+
+  defp with_doc(pkg),
+    do: {pkg, advanced_gloss(pkg), if(pkg in @needs_live, do: [{"html", live: true}], else: [])}
+
+  # The site's line, and the packages the site's command puts in beside
+  # it, which the value brings too.
+  defp advanced_gloss(pkg) do
+    case expand(pkg) -- [pkg] do
+      [] -> @tooltips[pkg]
+      also -> "#{@tooltips[pkg]} Brings #{Enum.map_join(also, " and ", &"`#{&1}`")} too."
+    end
+  end
+
+  # The values the options take, closed: each with the package it
+  # stands for, the strategies with what they build on.
   @impl true
   def choices do
     [
       data_layer: Enum.map(@data_layers, fn {name, pkg} -> {name, tagline(pkg)} end),
       api: Enum.map(@apis, fn {name, pkg} -> {name, tagline(pkg)} end),
-      auth: {:open, Enum.map(@auth_strategies, &strategy_doc/1)}
+      auth: Enum.map(@auth_strategies, &strategy_doc/1)
     ] ++ for({section, pkgs} <- @advanced, do: {section, Enum.map(pkgs, &with_doc/1)})
   end
 
@@ -240,11 +257,11 @@ defmodule WorkbenchIgniter.Features.Ash do
   def option_docs do
     [
       data_layer:
-        "Comma-separated, as the site's checkboxes — a resource picks its own: `postgres` (default), `sqlite`, `csv` (`ash_postgres`, `ash_sqlite`, `ash_csv`); `none`, alone, for no data layer.",
+        "Comma-separated, as the site's checkboxes — a resource picks its own: `postgres`, `sqlite`, `csv` (`ash_postgres`, `ash_sqlite`, `ash_csv`). Left out, Ash goes in with no data layer.",
       api:
         "Comma-separated: `json_api`, `graphql`, `typescript` (`ash_json_api`, `ash_graphql`, `ash_typescript`).",
       auth:
-        "Comma-separated authentication strategies: `ash_authentication` and `ash_authentication_phoenix`, handed `--auth-strategy`. `password`, `magic_link`, `api_key` (the list is the installer's).",
+        "Comma-separated authentication strategies: `ash_authentication` and `ash_authentication_phoenix`, handed `--auth-strategy`: `password`, `magic_link`, `api_key`. `oauth2` installs both packages with no strategy, and the provider is configured by hand (https://ash-authentication.hexdocs.pm/dsl-ashauthentication-strategy-oauth2.html).",
       ai: said(:ai, ""),
       finance: said(:finance, " (`ash_double_entry` brings `ash_money` first)"),
       automation: said(:automation, " (`ash_oban` brings `oban_web`)"),
@@ -254,6 +271,10 @@ defmodule WorkbenchIgniter.Features.Ash do
       example: "Passed to `ash.install`: generates the example resources of the Ash guide."
     ]
   end
+
+  # What an option says that none of its values can, under them in a form.
+  @impl true
+  def option_notes, do: [data_layer: "Left out, Ash goes in with no data layer."]
 
   @doc "Task metadata, exposed unchanged through the mix task shell."
   def info(_argv, _composing_task) do
@@ -271,8 +292,7 @@ defmodule WorkbenchIgniter.Features.Ash do
         dev_tools: :csv,
         components: :csv,
         example: :boolean
-      ],
-      defaults: [data_layer: "postgres"]
+      ]
     }
   end
 
@@ -287,7 +307,7 @@ defmodule WorkbenchIgniter.Features.Ash do
   def adds, do: :all
 
   # What the project carries, read off mix.exs: the data layer whose
-  # package is in (`none` when Ash is in without one), the APIs and the
+  # package is in (none when Ash is in without one), the APIs and the
   # advanced packages present, by section. The authentication strategies live in
   # the resource, not in the deps: they are read off the user resource
   # (`strategies_in/1`).
@@ -296,7 +316,7 @@ defmodule WorkbenchIgniter.Features.Ash do
     has = &Igniter.Project.Deps.has_dep?(igniter, String.to_atom(&1))
     ash? = has.("ash")
 
-    data_layer = if ash?, do: layers_in(has)
+    data_layer = if ash?, do: for({name, pkg} <- @data_layers, has.(pkg), do: name)
 
     {auth, igniter} =
       if has.("ash_authentication"), do: strategies(igniter), else: {nil, igniter}
@@ -348,14 +368,6 @@ defmodule WorkbenchIgniter.Features.Ash do
 
       nil ->
         []
-    end
-  end
-
-  # The layers whose package is in; Ash in without any of them is "none".
-  defp layers_in(has) do
-    case for({name, pkg} <- @data_layers, pkg, has.(pkg), do: name) do
-      [] -> ["none"]
-      layers -> layers
     end
   end
 
@@ -415,11 +427,7 @@ defmodule WorkbenchIgniter.Features.Ash do
   """
   @spec packages(keyword()) :: {:ok, [String.t()]} | {:error, String.t()}
   def packages(opts) do
-    # A :csv switch not given parses as [], not nil: the default is ours.
-    chosen =
-      if(opts[:data_layer] in [nil, []], do: ["postgres"], else: List.wrap(opts[:data_layer]))
-
-    with {:ok, data_layers} <- data_layers(chosen),
+    with {:ok, data_layers} <- data_layers(List.wrap(opts[:data_layer] || [])),
          {:ok, apis} <- apis(opts[:api] || []),
          {:ok, advanced} <- advanced(opts) do
       packages =
@@ -442,7 +450,7 @@ defmodule WorkbenchIgniter.Features.Ash do
   """
   @spec flags(keyword()) :: [String.t()]
   def flags(opts) do
-    auth = opts[:auth] || []
+    auth = (opts[:auth] || []) -- @by_hand
 
     List.flatten([
       if(auth != [], do: ["--auth-strategy", Enum.join(auth, ",")], else: []),
@@ -510,21 +518,16 @@ defmodule WorkbenchIgniter.Features.Ash do
     do: "\n\nAlready in mix.exs, left out of the command: #{Enum.join(present, ", ")}."
 
   # The data layers are independent on the site — each a checkbox, a
-  # resource picks its own — so several go in, in the site's order;
-  # `none` stands alone.
+  # resource picks its own — so several go in, in the site's order, and
+  # none checked is Ash with no data layer.
   defp data_layers(names) do
-    unknown = Enum.reject(names, &List.keymember?(@data_layers, &1, 0))
+    case Enum.reject(names, &List.keymember?(@data_layers, &1, 0)) do
+      [] ->
+        {:ok, for({name, pkg} <- @data_layers, name in names, do: pkg)}
 
-    cond do
-      unknown != [] ->
+      unknown ->
         {:error,
          "Unknown --data-layer #{Enum.join(unknown, ", ")}. One of: #{Enum.map_join(@data_layers, ", ", &elem(&1, 0))}."}
-
-      "none" in names and length(names) > 1 ->
-        {:error, "--data-layer none stands alone: it means no data layer."}
-
-      true ->
-        {:ok, for({name, pkg} <- @data_layers, pkg, name in names, do: pkg)}
     end
   end
 

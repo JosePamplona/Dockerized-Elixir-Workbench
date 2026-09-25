@@ -83,7 +83,7 @@ defmodule Console.DiffsPackagesTest do
 
   test "ash's packages: the ones its command named, and the ones their installers added",
        %{dir: dir, sha: sha} do
-    ash = %{"sha" => sha, "feature" => "ash", "argv" => ["--data-layer", "none"]}
+    ash = %{"sha" => sha, "feature" => "ash", "argv" => []}
     notes = Map.new(Console.Diffs.packages_of(dir, [ash]), &{&1.name, &1.note})
 
     # None of these three is ash's own: its command named none of them.

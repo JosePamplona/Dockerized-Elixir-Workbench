@@ -98,8 +98,7 @@ defmodule WorkbenchIgniter.Feature do
   `OptionParser` types say `:string` or `:csv`; this says which strings.
   A plain list is closed — the installer rejects anything else, the
   same list its validation reads. `{:open, list}` is a suggestion: the
-  option takes other values too (ash's `--auth` hands any strategy to
-  ash_authentication). A list of `{group, values}` pairs keeps the
+  option takes other values too, and a form offers a field for them. A list of `{group, values}` pairs keeps the
   values in sections. A value is a
   string, a `{value, doc}` pair when one line can say what it does, or
   `{value, doc, requires}` when choosing it builds on other cartridges
@@ -109,7 +108,7 @@ defmodule WorkbenchIgniter.Feature do
   the form shows it beside the choice.
 
       [data_layer: [{"postgres", "ash_postgres"}, {"none", "no data layer"}],
-       auth: {:open, ~w(password magic_link)}]
+       auth: [{"password", "email and password", [{"html", live: true}, "mailer"]}]]
 
   A boolean switch has one value worth declaring, `true`, and declares
   it only for what turning it on builds on: credo's `--githook` writes
@@ -178,9 +177,20 @@ defmodule WorkbenchIgniter.Feature do
   One line per option of the installer, keyed as in the `info/2` schema:
   what it does, its default, its values. The one source of the task's
   "## Options" section — `options_doc/1` renders it into the task's
-  `@moduledoc` — and of the help a form shows beside each field.
+  `@moduledoc` — and of the help a form shows under a field with no
+  values to choose from (a value's own doc helps the others).
   """
   @callback option_docs() :: [{atom(), String.t()}]
+
+  @doc """
+  What an option says that none of its values can, keyed as in the
+  `info/2` schema: what leaving it out means, what is out of it always.
+  A form shows each value's own doc under its input, and this, when an
+  option has one, under them all; `option_docs/0` stays the command
+  line's, which lists the values the form already shows. Most options
+  have none.
+  """
+  @callback option_notes() :: [{atom(), String.t()}]
 
   @doc """
   What a second run does on a project that already carries the
@@ -479,6 +489,9 @@ defmodule WorkbenchIgniter.Feature do
       def option_docs, do: []
 
       @impl WorkbenchIgniter.Feature
+      def option_notes, do: []
+
+      @impl WorkbenchIgniter.Feature
       def formats, do: []
 
       @impl WorkbenchIgniter.Feature
@@ -537,6 +550,7 @@ defmodule WorkbenchIgniter.Feature do
                      members: 1,
                      choices: 0,
                      option_docs: 0,
+                     option_notes: 0,
                      formats: 0,
                      detected: 0,
                      detect: 1,

@@ -4,6 +4,15 @@
 The cartridge's own versions, over what it installs in a project —
 independent of the workbench release that ships it.
 
+## v0.1.3 - (2026-09-24)
+
+### Changed
+
+- `--checks` carries a note for the form, what none of the checks can
+  say: a cartridge's own check is its option, not one of these
+  (`credo --githook`). The form shows each check's doc under it and
+  this under them all, in place of the option's command-line line.
+
 ## v0.1.2 - (2026-09-22)
 
 ### Fixed

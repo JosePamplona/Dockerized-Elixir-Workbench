@@ -184,6 +184,15 @@ defmodule WorkbenchIgniter.Features.Coverage do
     ]
   end
 
+  # What an option says that none of its values can, under them in a form.
+  @impl true
+  def option_notes do
+    [
+      ignore_files:
+        "`deps` and `test` are left out always. A path of the project's own goes in its `coveralls.json`, which is the project's file to edit."
+    ]
+  end
+
   @impl true
   def afterwards,
     do:

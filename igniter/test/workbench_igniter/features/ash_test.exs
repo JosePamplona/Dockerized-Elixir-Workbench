@@ -39,6 +39,7 @@ defmodule WorkbenchIgniter.Features.AshTest do
       assert by["password"] == ["html", "mailer"]
       assert by["magic_link"] == ["html", "mailer"]
       assert by["api_key"] == []
+      assert by["oauth2"] == ["html"]
 
       options = Map.new(WorkbenchIgniter.Features.entry(Ash).options, &{&1.name, &1})
       assert Enum.find(options.dev_tools.choices, &(&1.value == "ash_admin")).requires == ["html"]
@@ -56,15 +57,15 @@ defmodule WorkbenchIgniter.Features.AshTest do
 
     test "api_key alone asks for nothing; the rest is fine on a default project" do
       args = queued(install(~w(--auth api_key), bare(~w(--no-live --no-mailer))))
-      assert Enum.take(args, 4) == ~w(ash ash_postgres ash_phoenix ash_authentication)
+      assert Enum.take(args, 3) == ~w(ash ash_phoenix ash_authentication)
       refute "ash_authentication_phoenix" in args
       assert "ash_admin" in queued(install(~w(--auth password --dev-tools ash_admin)))
     end
   end
 
   describe "the command" do
-    test "defaults to ash, postgres and phoenix" do
-      assert queued(install()) == ~w(ash ash_postgres ash_phoenix)
+    test "with no option, ash and phoenix, with no data layer" do
+      assert queued(install()) == ~w(ash ash_phoenix)
     end
 
     test "maps the site's choices to packages, in order" do
@@ -84,41 +85,50 @@ defmodule WorkbenchIgniter.Features.AshTest do
       assert queued(
                install(~w(--security ash_cloak --finance ash_double_entry --automation ash_oban))
              ) ==
-               ~w(ash ash_postgres ash_phoenix ash_money ash_double_entry ash_oban oban_web cloak ash_cloak)
+               ~w(ash ash_phoenix ash_money ash_double_entry ash_oban oban_web cloak ash_cloak)
     end
 
     test "hands ash_typescript the site's --framework react" do
       assert queued(install(~w(--api typescript))) ==
-               ~w(ash ash_postgres ash_phoenix ash_typescript --framework react)
+               ~w(ash ash_phoenix ash_typescript --framework react)
+    end
+
+    test "oauth2 brings both packages and no strategy: the provider is configured by hand" do
+      assert queued(install(~w(--auth oauth2))) ==
+               ~w(ash ash_phoenix ash_authentication ash_authentication_phoenix)
+
+      assert queued(install(~w(--auth password,oauth2))) ==
+               ~w(ash ash_phoenix ash_authentication ash_authentication_phoenix --auth-strategy password)
     end
 
     test "API keys alone bring ash_authentication without its Phoenix half" do
       assert queued(install(~w(--auth api_key))) ==
-               ~w(ash ash_postgres ash_phoenix ash_authentication --auth-strategy api_key)
+               ~w(ash ash_phoenix ash_authentication --auth-strategy api_key)
 
       assert queued(install(~w(--auth api_key,password))) ==
-               ~w(ash ash_postgres ash_phoenix ash_authentication ash_authentication_phoenix --auth-strategy api_key,password)
+               ~w(ash ash_phoenix ash_authentication ash_authentication_phoenix --auth-strategy api_key,password)
     end
 
     test "accepts repeated csv switches" do
       assert queued(install(~w(--api json_api --api typescript))) ==
-               ~w(ash ash_postgres ash_phoenix ash_json_api ash_typescript --framework react)
+               ~w(ash ash_phoenix ash_json_api ash_typescript --framework react)
     end
 
-    test "--data-layer takes several, in the site's order; none stands alone" do
+    test "--data-layer takes several, in the site's order" do
       assert queued(install(~w(--data-layer csv,postgres))) ==
                ~w(ash ash_postgres ash_csv ash_phoenix)
-
-      assert Enum.any?(install(~w(--data-layer postgres,none)).issues, &(&1 =~ "stands alone"))
     end
 
-    test "--data-layer none leaves the data layer out" do
-      assert queued(install(~w(--data-layer none))) == ~w(ash ash_phoenix)
+    test "none is a value no more: an unknown data layer" do
+      assert Enum.any?(
+               install(~w(--data-layer none)).issues,
+               &(&1 =~ "Unknown --data-layer none")
+             )
     end
 
     test "--example and --yes are handed down" do
       assert queued(install(~w(--example --yes))) ==
-               ~w(ash ash_postgres ash_phoenix --example --yes)
+               ~w(ash ash_phoenix --example --yes)
     end
 
     test "touches no file" do
@@ -131,7 +141,7 @@ defmodule WorkbenchIgniter.Features.AshTest do
       assert Enum.any?(
                igniter.notices,
                &(&1 =~
-                   "mix igniter.install ash ash_postgres ash_phoenix ash_authentication ash_authentication_phoenix --auth-strategy password")
+                   "mix igniter.install ash ash_phoenix ash_authentication ash_authentication_phoenix --auth-strategy password")
              )
     end
   end
@@ -198,7 +208,7 @@ defmodule WorkbenchIgniter.Features.AshTest do
 
     test "a section takes its packages in the site's order, whatever order they are given in" do
       assert queued(install(~w(--ai usage_rules,tidewave))) ==
-               ~w(ash ash_postgres ash_phoenix tidewave usage_rules)
+               ~w(ash ash_phoenix tidewave usage_rules)
     end
   end
 
@@ -206,7 +216,8 @@ defmodule WorkbenchIgniter.Features.AshTest do
     test "are left out of the command" do
       igniter = phx_test_project() |> with_deps([:ash, :ash_phoenix])
 
-      assert queued(install(~w(--api graphql), igniter)) == ~w(ash_postgres ash_graphql)
+      assert queued(install(~w(--data-layer postgres --api graphql), igniter)) ==
+               ~w(ash_postgres ash_graphql)
     end
 
     test "when nothing is left, nothing is queued and a notice says so" do
@@ -222,8 +233,7 @@ defmodule WorkbenchIgniter.Features.AshTest do
     test "an advanced package already there is left out too" do
       igniter = phx_test_project() |> with_deps([:ash_admin])
 
-      assert queued(install(~w(--dev-tools ash_admin), igniter)) ==
-               ~w(ash ash_postgres ash_phoenix)
+      assert queued(install(~w(--dev-tools ash_admin), igniter)) == ~w(ash ash_phoenix)
     end
   end
 
@@ -288,7 +298,7 @@ defmodule WorkbenchIgniter.Features.AshTest do
               }, _} = Ash.state(igniter)
 
       assert {state, _} = phx_test_project() |> with_deps([:ash]) |> Ash.state()
-      assert state == %{data_layer: ["none"]}
+      assert state == %{}
     end
 
     test "leaves auth out when the resource is not where the installer puts it" do
@@ -305,10 +315,14 @@ defmodule WorkbenchIgniter.Features.AshTest do
 
     test "the packages the options named carry the command; the rest, its installers" do
       notes =
-        WorkbenchIgniter.Feature.origins(Ash, ~w(--auth password --example), %{
-          added: @added,
-          phx_new: "1.8.14"
-        })
+        WorkbenchIgniter.Feature.origins(
+          Ash,
+          ~w(--data-layer postgres --auth password --example),
+          %{
+            added: @added,
+            phx_new: "1.8.14"
+          }
+        )
 
       for name <- ~w(ash ash_postgres ash_phoenix ash_authentication ash_authentication_phoenix) do
         assert notes[name] =~ "its options name it in the `mix igniter.install` it runs"

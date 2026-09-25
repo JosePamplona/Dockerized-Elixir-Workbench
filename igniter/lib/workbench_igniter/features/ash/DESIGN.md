@@ -188,7 +188,7 @@ tasks [19].
   and fetched by the `deps.get` that runs before the queued tasks (and
   again by the one `./wb.sh add` runs after the insert).
 
-**No installer.** A package without `<package>.install` — ash_archival,
+**No installer.** A package without `<package>.install` — ash_csv, ash_archival,
 ash_paper_trail, ash_cloak, cloak — stays in `mix.exs`; the run prints
 it under "did not exist or could not be found" and goes on [19].
 

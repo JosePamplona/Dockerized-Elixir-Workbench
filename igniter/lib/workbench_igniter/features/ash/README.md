@@ -125,7 +125,7 @@ in the installers' sources (the versions and lines are in
 | `ash_money`, `ash_double_entry` | the money type; `ex_money_sql` and its repo extension; the `Ledger` domain with `Account`, `Balance`, `Transfer` |
 | `tidewave`, `live_debugger`, `cinder` | Tidewave's plug in dev; the debugger's tags in `root.html.heex`; Cinder's CSS in `app.css` |
 | `usage_rules`, `req_llm`, `llm_db` | a notice, nothing written |
-| `ash_archival`, `ash_paper_trail`, `ash_cloak`, `cloak`, `ash_events`, `ash_state_machine` | the package (and a formatter import, for the last two): no installer, or one that configures nothing more |
+| `ash_csv`, `ash_archival`, `ash_paper_trail`, `ash_cloak`, `cloak`, `ash_events`, `ash_state_machine` | the package (and a formatter import, for the last two): no installer, or one that configures nothing more |
 
 Packages the command did not name come in at the request of these
 installers (`picosat_elixir` through Ash's policy authorizer, when a

@@ -37,9 +37,10 @@ defmodule Mix.Tasks.Workbench.Install.Ash do
 
   ## Requirements
 
-  The Ash installers need the network (Hex) and a Postgres the
-  `ash_postgres` repo can reach when `mix ash.setup` runs afterwards —
-  which is what `./wb.sh setup` does.
+  The Ash installers need the network (Hex). A database data layer
+  needs the ecto cartridge on its database (`postgres` or `sqlite3`),
+  and the database is created when `mix ash.setup` runs: the app
+  container's `mix setup`, which Ash turns into it, at every boot.
   """
 
   @impl Igniter.Mix.Task

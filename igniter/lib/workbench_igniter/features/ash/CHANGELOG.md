@@ -7,6 +7,31 @@ what the cartridge *installs*: a change in the command it queues or in
 the options that build it is a minor, a change that breaks a project
 already carrying what that command installed is a major.
 
+## v0.7.0 - (2026-09-25)
+
+### Changed
+
+- `--data-layer postgres` builds on ecto with `postgres`, and `sqlite`
+  on ecto with `sqlite3`. The form shows the value that does not match
+  the project unlit, with the reason, and the installer refuses it
+  before anything is fetched. The two installers turn the same
+  `<App>.Repo` into their own: asked together, `ash_sqlite.install`
+  stopped on the repo `ash_postgres.install` had just turned, and
+  `postgres` on a SQLite project left an `AshPostgres.Repo` with no
+  Postgres configured. A project has one Ecto database, so the two
+  never go in together now. On a project without Ecto, `./wb.sh add
+  ecto` comes first. `csv` asks for nothing.
+- `--automation ash_events` builds on ecto with `postgres` and brings
+  the `postgres` data layer, placed with the data layers, before
+  authentication. Its `ash_postgres` dependency is not optional, and
+  once loaded it made `ash_authentication.install` create a Postgres
+  `<App>.Repo` over a SQLite one: *repo.ex: File already exists*. The
+  site says nothing of it; the value's line does now.
+- The line after the insert says what does happen: the app container's
+  `mix setup`, which Ash turns into `ash.setup`, creates the database
+  at the next `./wb.sh up`. It named a `./wb.sh setup` that does not
+  exist.
+
 ## v0.6.1 - (2026-09-24)
 
 ### Fixed

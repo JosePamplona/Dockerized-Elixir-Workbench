@@ -33,7 +33,7 @@ defmodule WorkbenchIgniter.Features.Ash do
 
   | Option | Packages |
   | --- | --- |
-  | `--data-layer postgres,sqlite,csv` (none given: no data layer) | `ash_postgres`, `ash_sqlite`, `ash_csv` |
+  | `--data-layer postgres,sqlite,csv` (none given: no data layer; postgres on ecto with `postgres`, sqlite on ecto with `sqlite3`) | `ash_postgres`, `ash_sqlite`, `ash_csv` |
   | `--api json_api,graphql,typescript` | `ash_json_api`, `ash_graphql`, `ash_typescript` |
   | `--auth password,magic_link,…` | `ash_authentication`, `ash_authentication_phoenix`, with `--auth-strategy <list>` |
   | `--ai`, `--finance`, `--automation`, `--security`, `--dev-tools`, `--components` | ash-hq's *Advanced Options*, one option per section, each a closed list of the packages the site offers there |
@@ -59,6 +59,14 @@ defmodule WorkbenchIgniter.Features.Ash do
     {"sqlite", "ash_sqlite"},
     {"csv", "ash_csv"}
   ]
+
+  # The Ecto database a data layer takes over, as the ecto cartridge
+  # names it. Both installers turn the project's `<App>.Repo` into
+  # their own (`use AshPostgres.Repo`, `use AshSqlite.Repo`), dropping
+  # its adapter, and fail on a repo the other one already turned: so
+  # each asks for Ecto on its own database, which also keeps postgres
+  # and sqlite from going in together — a project has one.
+  @data_layer_databases %{"postgres" => "postgres", "sqlite" => "sqlite3"}
 
   @apis [
     {"json_api", "ash_json_api"},
@@ -118,6 +126,17 @@ defmodule WorkbenchIgniter.Features.Ash do
   # strategies whose generated senders deliver with the project's
   # Mailer. The site assumes a default phx.new project and says nothing.
   @needs_live ~w(ash_admin live_debugger cinder mishka_chelekom ash_oban)
+
+  # The data layer an advanced package cannot run without, which the
+  # site does not say. ash_events takes Postgres advisory locks and
+  # reads its repo off AshPostgres, and its `ash_postgres` dependency
+  # is not optional. Loaded, that dependency makes ash_authentication's
+  # installer pick the Postgres repo, which it creates when none is an
+  # `AshPostgres.Repo` — over a SQLite repo, "repo.ex: File already
+  # exists". So the package brings the data layer, in the data layers'
+  # place of the command (before authentication, so the repo is turned
+  # first), and builds on that layer's Ecto database.
+  @data_layer_of %{"ash_events" => "postgres"}
   @sends_email ~w(password magic_link)
 
   @doc "An advanced package with what the site's command adds beside it, in order."
@@ -187,6 +206,13 @@ defmodule WorkbenchIgniter.Features.Ash do
 
   defp tagline(pkg), do: if(line = @tooltips[pkg], do: "#{pkg} · #{line}", else: pkg)
 
+  defp data_layer_doc({name, pkg}) do
+    case @data_layer_databases[name] do
+      nil -> {name, tagline(pkg)}
+      database -> {name, tagline(pkg), [{"ecto", database: database}]}
+    end
+  end
+
   defp strategy_doc(name) do
     requires =
       if(name == "api_key", do: [], else: [{"html", live: true}]) ++
@@ -201,15 +227,29 @@ defmodule WorkbenchIgniter.Features.Ash do
 
   defp strategy_gloss(name), do: @tooltips[name]
 
-  defp with_doc(pkg),
-    do: {pkg, advanced_gloss(pkg), if(pkg in @needs_live, do: [{"html", live: true}], else: [])}
+  defp with_doc(pkg) do
+    requires =
+      if(pkg in @needs_live, do: [{"html", live: true}], else: []) ++
+        case @data_layer_of[pkg] do
+          nil -> []
+          layer -> [{"ecto", database: @data_layer_databases[layer]}]
+        end
+
+    {pkg, advanced_gloss(pkg), requires}
+  end
 
   # The site's line, and the packages the site's command puts in beside
   # it, which the value brings too.
   defp advanced_gloss(pkg) do
-    case expand(pkg) -- [pkg] do
-      [] -> @tooltips[pkg]
-      also -> "#{@tooltips[pkg]} Brings #{Enum.map_join(also, " and ", &"`#{&1}`")} too."
+    line =
+      case expand(pkg) -- [pkg] do
+        [] -> @tooltips[pkg]
+        also -> "#{@tooltips[pkg]} Brings #{Enum.map_join(also, " and ", &"`#{&1}`")} too."
+      end
+
+    case @data_layer_of[pkg] do
+      nil -> line
+      layer -> "#{line} Runs on #{layer} only: brings the `#{layer}` data layer too."
     end
   end
 
@@ -218,7 +258,7 @@ defmodule WorkbenchIgniter.Features.Ash do
   @impl true
   def choices do
     [
-      data_layer: Enum.map(@data_layers, fn {name, pkg} -> {name, tagline(pkg)} end),
+      data_layer: Enum.map(@data_layers, &data_layer_doc/1),
       api: Enum.map(@apis, fn {name, pkg} -> {name, tagline(pkg)} end),
       auth: Enum.map(@auth_strategies, &strategy_doc/1)
     ] ++ for({section, pkgs} <- @advanced, do: {section, Enum.map(pkgs, &with_doc/1)})
@@ -249,7 +289,7 @@ defmodule WorkbenchIgniter.Features.Ash do
   @impl true
   def afterwards,
     do:
-      "With a database data layer on a project born without Ecto, the database goes into the workspace's compose in the insert's own commit; ./wb.sh setup creates it."
+      "With a database data layer, the app container's `mix setup`, which Ash turns into `ash.setup`, creates the database and runs Ash's migrations at the next ./wb.sh up."
 
   # The installer's options, one line each: the task's "## Options"
   # section and the help a form shows are rendered from here.
@@ -257,14 +297,18 @@ defmodule WorkbenchIgniter.Features.Ash do
   def option_docs do
     [
       data_layer:
-        "Comma-separated, as the site's checkboxes — a resource picks its own: `postgres`, `sqlite`, `csv` (`ash_postgres`, `ash_sqlite`, `ash_csv`). Left out, Ash goes in with no data layer.",
+        "Comma-separated, as the site's checkboxes — a resource picks its own: `postgres`, `sqlite`, `csv` (`ash_postgres`, `ash_sqlite`, `ash_csv`). `postgres` builds on ecto with `postgres` and `sqlite` on ecto with `sqlite3`, so the two never go in together. Left out, Ash goes in with no data layer.",
       api:
         "Comma-separated: `json_api`, `graphql`, `typescript` (`ash_json_api`, `ash_graphql`, `ash_typescript`).",
       auth:
         "Comma-separated authentication strategies: `ash_authentication` and `ash_authentication_phoenix`, handed `--auth-strategy`: `password`, `magic_link`, `api_key`. `oauth2` installs both packages with no strategy, and the provider is configured by hand (https://ash-authentication.hexdocs.pm/dsl-ashauthentication-strategy-oauth2.html).",
       ai: said(:ai, ""),
       finance: said(:finance, " (`ash_double_entry` brings `ash_money` first)"),
-      automation: said(:automation, " (`ash_oban` brings `oban_web`)"),
+      automation:
+        said(
+          :automation,
+          " (`ash_oban` brings `oban_web`; `ash_events` runs on Postgres only and brings the `postgres` data layer)"
+        ),
       security: said(:security, " (`ash_cloak` brings `cloak` first)"),
       dev_tools: said(:dev_tools, ""),
       components: said(:components, ""),
@@ -450,7 +494,7 @@ defmodule WorkbenchIgniter.Features.Ash do
   """
   @spec packages(keyword()) :: {:ok, [String.t()]} | {:error, String.t()}
   def packages(opts) do
-    with {:ok, data_layers} <- data_layers(List.wrap(opts[:data_layer] || [])),
+    with {:ok, data_layers} <- data_layers(List.wrap(opts[:data_layer] || []) ++ brought(opts)),
          {:ok, apis} <- apis(opts[:api] || []),
          {:ok, advanced} <- advanced(opts) do
       packages =
@@ -544,9 +588,10 @@ defmodule WorkbenchIgniter.Features.Ash do
   defp skipped(present),
     do: "\n\nAlready in mix.exs, left out of the command: #{Enum.join(present, ", ")}."
 
-  # The data layers are independent on the site — each a checkbox, a
-  # resource picks its own — so several go in, in the site's order, and
-  # none checked is Ash with no data layer.
+  # The data layers are checkboxes on the site — a resource picks its
+  # own — so several go in, in the site's order, and none checked is
+  # Ash with no data layer. Postgres and SQLite never meet: each builds
+  # on Ecto with its own database (`@data_layer_databases`).
   defp data_layers(names) do
     case Enum.reject(names, &List.keymember?(@data_layers, &1, 0)) do
       [] ->
@@ -591,6 +636,14 @@ defmodule WorkbenchIgniter.Features.Ash do
   defp switch(section), do: section |> to_string() |> String.replace("_", "-")
 
   # A section's option line: the site's title and its packages.
+  # The data layers the advanced packages asked for bring (`@data_layer_of`).
+  defp brought(opts) do
+    for {section, _} <- @advanced,
+        pkg <- opts[section] || [],
+        layer = @data_layer_of[pkg],
+        do: layer
+  end
+
   defp said(section, note),
     do:
       "Comma-separated, the site's *#{@section_titles[section]}* section: " <>

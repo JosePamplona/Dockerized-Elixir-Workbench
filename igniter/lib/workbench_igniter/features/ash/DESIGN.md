@@ -1,6 +1,7 @@
 # ash — Design
 
-*Revision: cartridge v0.6.0 (2026-09-24): §3.2's data layer has no
+*Revision: cartridge v0.7.0 (2026-09-25): §3.9, a database data layer
+builds on Ecto with its own database, and ash_events brings Postgres. v0.6.0 (2026-09-24): §3.2's data layer has no
 default and no `none`, and `--auth` is closed. v0.5.1 (2026-09-24):
 §2.5's strategies and [16] read in the released `add_strategy`. v0.5.0 (2026-09-24): §2.6 and
 §3.8 read the installed sources on that date. The rest: cartridge v0.2.0
@@ -254,7 +255,8 @@ The options are the site's rows, not a raw package list: `--data-layer`
 (several of a closed set, as the site's checkboxes — a resource picks
 its own layer; none given is Ash with no data layer, which the site
 calls unchecking Postgres, and until v0.6.0 took `none` against a
-`postgres` default), `--api`
+`postgres` default; since v0.7.0 `postgres` and `sqlite` each build
+on Ecto with their own database, §3.9), `--api`
 (closed set), `--auth`
 (the strategies, validated by `add_strategy` [16], not here — and two
 packages, `ash_authentication` *before* `ash_authentication_phoenix`,
@@ -402,6 +404,62 @@ igniter.install honours, and a hook of Ash's that an installer's
 does not say which one, and a guess from a table kept by hand would go
 stale with the first release that moves a dependency.
 
+### 3.9 A database data layer builds on Ecto with its database
+
+The site's data layers are checkboxes, and until v0.7.0 the cartridge
+took them as independent. They are not independent where the repo is
+concerned. `ash_postgres.install` and `ash_sqlite.install` both default
+`--repo` to `<App>.Repo`. Each turns a `use Ecto.Repo` there into its
+own `use` and drops the `adapter:`. Each accepts a repo already its
+own. Anything else is an issue: *Repo module … existed, but was not an
+`Ecto.Repo` or an `AshSqlite.Repo`*. Two consequences, both seen on
+2026-09-25 on a workspace born with SQLite and on a `phx.new --database
+sqlite3` probe:
+
+* `--data-layer postgres,sqlite`: the Postgres installer runs first
+  (the site's order) and turns the repo, and the SQLite one stops on
+  it. `--repo` does not separate them, because `igniter.install` hands
+  one argv to every installer and both read it.
+* `--data-layer postgres` on a SQLite project goes through and
+  leaves an `AshPostgres.Repo` pointing at a database the project does
+  not configure.
+
+So `postgres` requires `{"ecto", database: "postgres"}` and `sqlite`
+requires `{"ecto", database: "sqlite3"}`, the per-value requirement
+db_admin's pgAdmin already uses. It covers both: a project has one
+Ecto database, so at most one of the two holds, and a layer on the
+wrong database is refused with the project's database named. The
+console shows the other unlit, with the reason. It also retires a path
+nobody had tried (§5): on a project born `--no-ecto`, `ash_postgres`
+set its own repo and config up, apart from the workbench's wiring. Now
+`./wb.sh add ecto` comes first, and the repo Ash turns is the one
+wired to the workbench's `DATABASE_URL`. `csv` needs no repo and asks
+for nothing. This departs from the site, which lets both boxes be
+checked. The site assumes a default `phx.new` project, as with
+the LiveView and mailer requirements (README, *Requirements*).
+
+The same repo is behind a second failure, from an advanced package.
+`--data-layer sqlite --auth password` goes through on a SQLite probe.
+Add `--automation ash_events` and `ash_authentication.install` fails
+with *lib/…/repo.ex: File already exists*. ash_events 0.8.2 depends on
+`ash_postgres` without `optional`: it takes Postgres advisory locks and
+reads its repo with `AshPostgres.DataLayer.Info.repo/1`. With
+ash_postgres compiled, ash_authentication 4.15.0 takes its Postgres
+branch (a `cond` on `Code.ensure_loaded?(AshPostgres.Igniter)`, fixed
+when it compiles) and calls `AshPostgres.Igniter.select_repo(generate?:
+true)`. That finds no `use AshPostgres.Repo` and creates `<App>.Repo`
+over the SQLite one. The site's feature map gives ash_events no
+`requires` (read 2026-09-25). So the cartridge says it
+(`@data_layer_of`): `ash_events` builds on ecto with `postgres`, and
+brings the `postgres` data layer into the data layers' place of the
+command. There `ash_postgres.install` turns the repo before the
+authentication installers look for one. Requiring the database alone
+is not enough: on a Postgres project without `--data-layer postgres`,
+the Ecto repo is still not an `AshPostgres.Repo`, and the same
+creation follows. Tried on a Postgres probe: `--automation ash_events
+--auth password` queues `ash ash_postgres …`, the repo is turned, and
+the run exits 0.
+
 ## 4. Evaluation
 
 **Unit tests** (`test/workbench_igniter/features/ash_test.exs`, 14
@@ -467,8 +525,6 @@ strategy but `password`.
   nothing for them; the day `add_strategy` has the strategy, which
   environment variables its config reads is the first thing to
   establish.
-* A project generated with `--no-ecto` and `--data-layer postgres`
-  will get `ash_postgres.install`'s own repo and config; not tried.
 * `ash_authentication_phoenix.install` asks through
   `Mix.shell().yes?/1` when it finds no Accounts domain (§2.5). The
   cartridge avoids the question by ordering; an `--accounts` that does

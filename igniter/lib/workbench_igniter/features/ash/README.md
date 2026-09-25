@@ -65,7 +65,7 @@ the workbench only makes Phoenix projects.
 
 | ash-hq.org | Option | Packages |
 | --- | --- | --- |
-| Data layer: Postgres / SQLite / CSV | `--data-layer postgres,sqlite,csv` (several, as the site's checkboxes; left out, no data layer) | `ash_postgres`, `ash_sqlite`, `ash_csv` |
+| Data layer: Postgres / SQLite / CSV | `--data-layer postgres,sqlite,csv` (several, as the site's checkboxes; left out, no data layer; `postgres` and `sqlite` each on the project's Ecto database, so never together) | `ash_postgres`, `ash_sqlite`, `ash_csv` |
 | Web: JSON:API, GraphQL, TypeScript | `--api json_api,graphql,typescript` | `ash_json_api`, `ash_graphql`, `ash_typescript` (handed `--framework react`, as the site does; its installer hooks `npm install` into `assets.setup`, which the workbench's and the project's images carry node and npm for) |
 | Authentication: Password, Magic Link, API Keys, OAuth2 | `--auth password,magic_link,api_key,oauth2` | `ash_authentication`, `ash_authentication_phoenix`, with `--auth-strategy <list>`; API keys alone bring `ash_authentication` only, as on the site; `oauth2` brings both with no strategy |
 | Advanced Options, by section | `--ai`, `--finance`, `--automation`, `--security`, `--dev-tools`, `--components` | the packages the site offers in that section (below) |
@@ -244,15 +244,36 @@ Mailer, so they need **mailer** too; and `ash_admin`, `live_debugger`,
 LiveView the same way. The cartridge says so beside each value in the
 catalog (`requires`, with the state in `conditions`) and refuses,
 naming what to insert first — `./wb.sh add html --live` on a project
-born `--no-live` — while the project lacks it. `--data-layer
-postgres` needs no Ecto cartridge — `ash_postgres` sets the repo up
-itself — but a project born `--no-ecto` then has a database its compose
-lacks: `./wb.sh add` says so and `./wb.sh bake` puts it in.
+born `--no-live` — while the project lacks it.
+
+`--data-layer postgres` needs **ecto with `postgres`**, and `sqlite`
+needs **ecto with `sqlite3`**. Both installers take the project's
+`<App>.Repo` and turn it into their own (`use AshPostgres.Repo`,
+`use AshSqlite.Repo`), dropping its adapter. On a project born with
+SQLite, `postgres` would point its repo at a Postgres the project does
+not configure. Asked together, `ash_sqlite.install` finds the repo
+`ash_postgres.install` has just turned and stops: *Repo module …
+existed, but was not an `Ecto.Repo` or an `AshSqlite.Repo`*. A project
+has one Ecto database, so the two never go in together, and the one
+that does not match shows unlit with the reason. On a project born
+`--no-ecto`, `./wb.sh add ecto --database postgres` (or `sqlite3`)
+comes first: the database then arrives with the workbench's wiring
+and its compose service. `csv` needs nothing.
+
+`--automation ash_events` runs on Postgres only: it takes Postgres
+advisory locks and reads its repo off AshPostgres, and its
+`ash_postgres` dependency is not optional. The site does not say so.
+The value needs **ecto with `postgres`** and brings the `postgres` data
+layer in the data layers' place of the command. Left to itself on a
+SQLite project, the loaded `ash_postgres` made ash_authentication's
+installer create a Postgres repo over the SQLite one: *lib/…/repo.ex:
+File already exists*.
 
 The queued command needs the network (Hex) — `./wb.sh add` runs it in
 the toolchain container, which has it — and a Postgres the repo can
-reach when `mix ash.setup` runs afterwards, which is what `./wb.sh
-setup` does. Ash 3 wants Postgres ≥ 16 for the extensions
+reach when `mix ash.setup` runs afterwards: the app container runs
+`mix setup` at every boot, and Ash's installer turns that alias into
+`ash.setup`. Ash 3 wants Postgres ≥ 16 for the extensions
 `ash_postgres.install` declares (`ash-functions`, `citext`); the
 workspace's image is `postgres:latest`.
 

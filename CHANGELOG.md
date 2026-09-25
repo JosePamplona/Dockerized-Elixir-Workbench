@@ -71,6 +71,37 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **An Ash data layer builds on the project's Ecto database.** `add
+  ash --data-layer postgres,sqlite` on the SQLite workspace `_003`
+  stopped at *Repo module LoroIpsum.Repo existed, but was not an
+  `Ecto.Repo` or an `AshSqlite.Repo`*. Both installers default to
+  `<App>.Repo` and turn it into their own. The Postgres one runs first
+  and turns it, so the SQLite one no longer recognises it. `--repo`
+  cannot tell them apart, since one argv goes to every installer. The
+  cartridge took the site's checkboxes as independent. Now `postgres`
+  requires `{"ecto", database: "postgres"}` and `sqlite` requires
+  `{"ecto", database: "sqlite3"}`, the per-value requirement pgAdmin
+  already uses. At most one holds on a project, the other shows unlit
+  with the reason, and a layer on the wrong database is refused before
+  anything is fetched. This also closes `postgres` on a SQLite project,
+  which went through and left an `AshPostgres.Repo` with no Postgres
+  configured. Reproduced on a `phx.new --database sqlite3` probe:
+  `ash_sqlite` alone turns the repo cleanly; after `ash_postgres` it
+  fails with the same issue. ash v0.7.0.
+
+- **`ash_events` brings Postgres.** `--data-layer sqlite` with
+  authentication went through on its own, but with `--automation
+  ash_events` it stopped at *lib/loro_ipsum/repo.ex: File already
+  exists*. ash_events depends on `ash_postgres` without `optional`.
+  Once it is loaded, ash_authentication's installer takes its Postgres
+  branch, finds no `AshPostgres.Repo` and creates `<App>.Repo` over the
+  SQLite one. The site gives ash_events no requirement. The cartridge
+  now makes the value build on ecto with `postgres` and bring the
+  `postgres` data layer, in the command's data-layer place, so
+  `ash_postgres.install` turns the repo before authentication looks for
+  one. Reproduced on a SQLite probe; on a Postgres probe `--automation
+  ash_events --auth password` exits 0 with the repo turned.
+
 - **The drawer is 50px wider.** The box's and the workbench's drawer
   (one `.drawer`) grew from 1040px to 1090px, 25px on each side. The
   left column keeps its 320px, so the air goes to the papers, their

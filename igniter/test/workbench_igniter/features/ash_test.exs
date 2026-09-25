@@ -24,6 +24,14 @@ defmodule WorkbenchIgniter.Features.AshTest do
 
   defp files(igniter), do: igniter.assigns[:test_files]
 
+  # A phx.new project on another adapter: its driver in place of postgrex.
+  defp on(driver) do
+    phx_test_project()
+    |> Igniter.Project.Deps.remove_dep(:postgrex)
+    |> Igniter.Project.Deps.add_dep({driver, "~> 0.1"})
+    |> apply_igniter!()
+  end
+
   defp with_deps(igniter, deps) do
     deps
     |> Enum.reduce(igniter, &Igniter.Project.Deps.add_dep(&2, {&1, "~> 1.0"}))
@@ -71,7 +79,8 @@ defmodule WorkbenchIgniter.Features.AshTest do
     test "maps the site's choices to packages, in order" do
       args =
         install(
-          ~w(--data-layer sqlite --api json_api,graphql --auth password,magic_link --dev-tools ash_admin --automation ash_oban)
+          ~w(--data-layer sqlite --api json_api,graphql --auth password,magic_link --dev-tools ash_admin --automation ash_oban),
+          on(:ecto_sqlite3)
         )
         |> queued()
 
@@ -86,6 +95,65 @@ defmodule WorkbenchIgniter.Features.AshTest do
                install(~w(--security ash_cloak --finance ash_double_entry --automation ash_oban))
              ) ==
                ~w(ash ash_phoenix ash_money ash_double_entry ash_oban oban_web cloak ash_cloak)
+    end
+
+    test "a database data layer builds on ecto with its own database" do
+      data_layer =
+        Enum.find(WorkbenchIgniter.Features.entry(Ash).options, &(&1.name == :data_layer))
+
+      by = Map.new(data_layer.choices, &{&1.value, &1.requires})
+      assert by == %{"postgres" => ["ecto"], "sqlite" => ["ecto"], "csv" => []}
+
+      assert queued(install(~w(--data-layer sqlite,csv), on(:ecto_sqlite3))) ==
+               ~w(ash ash_sqlite ash_csv ash_phoenix)
+    end
+
+    test "refuses a data layer on another database, before anything is queued" do
+      igniter = install(~w(--data-layer postgres), on(:ecto_sqlite3))
+      assert [issue] = igniter.issues
+      assert issue =~ "--data-layer postgres builds on ecto with database postgres"
+      assert issue =~ "this project's database is sqlite3"
+      assert igniter.tasks == []
+    end
+
+    test "postgres and sqlite never go in together: a project has one database" do
+      igniter = install(~w(--data-layer postgres,sqlite))
+      assert [issue] = igniter.issues
+      assert issue =~ "--data-layer sqlite builds on ecto with database sqlite3"
+      assert igniter.tasks == []
+    end
+
+    test "a database data layer on a project without Ecto asks for it first" do
+      igniter = install(~w(--data-layer postgres), bare(~w(--no-ecto)))
+      assert [issue] = igniter.issues
+      assert issue =~ "--data-layer postgres builds on ecto"
+      assert issue =~ "./wb.sh add ecto"
+      assert igniter.tasks == []
+
+      assert queued(install(~w(--data-layer csv), bare(~w(--no-ecto)))) ==
+               ~w(ash ash_csv ash_phoenix)
+    end
+
+    test "ash_events brings the postgres data layer, before authentication" do
+      assert queued(install(~w(--automation ash_events --auth password))) ==
+               ~w(ash ash_postgres ash_phoenix ash_authentication ash_authentication_phoenix ash_events --auth-strategy password)
+
+      assert queued(install(~w(--data-layer postgres --automation ash_events))) ==
+               ~w(ash ash_postgres ash_phoenix ash_events)
+
+      automation =
+        Enum.find(WorkbenchIgniter.Features.entry(Ash).options, &(&1.name == :automation))
+
+      events = Enum.find(automation.choices, &(&1.value == "ash_events"))
+      assert events.requires == ["ecto"]
+      assert events.doc =~ "Runs on postgres only"
+    end
+
+    test "ash_events is refused on a SQLite project, and beside the sqlite data layer" do
+      igniter = install(~w(--data-layer sqlite --automation ash_events), on(:ecto_sqlite3))
+      assert [issue] = igniter.issues
+      assert issue =~ "--automation ash_events builds on ecto with database postgres"
+      assert igniter.tasks == []
     end
 
     test "hands ash_typescript the site's --framework react" do

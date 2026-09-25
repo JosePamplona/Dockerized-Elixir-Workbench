@@ -7,6 +7,28 @@ what the cartridge *installs*: a change in the command it queues or in
 the options that build it is a minor, a change that breaks a project
 already carrying what that command installed is a major.
 
+## v0.6.1 - (2026-09-24)
+
+### Fixed
+
+- The queued command fails when an installer reports issues. It is
+  `mix workbench.igniter_install` now, with the same argv as `mix
+  igniter.install`. Igniter alone printed the issues, wrote none of the
+  installers' files, left the packages in `mix.exs` and exited with
+  zero, so the insert was committed with the packages alone.
+- `--api typescript` is refused, with both paths in the message, on a
+  project whose app has a digit after an underscore (`:lorem_ipsum_2`).
+  ash_typescript's installer looks for the web layer under the
+  underscored web module (`lib/lorem_ipsum2_web/`), not where phx.new
+  put it (`lib/lorem_ipsum_2_web/`), and stops at `root.html.heex`.
+- `--components mishka_chelekom` finishes when run from the console.
+  Its installer draws an Owl spinner whenever ANSI is on, and the
+  console turns ANSI on over a pipe. With no terminal, Owl's LiveScreen
+  never starts, and the spinner's stop died of a 5 s timeout waiting
+  for a render. The queued task now stands a LiveScreen up on a device
+  that reports 80×24 and prints nothing, so the spinner draws nowhere
+  and the rest of the output keeps its colours.
+
 ## v0.6.0 - (2026-09-24)
 
 ### Changed

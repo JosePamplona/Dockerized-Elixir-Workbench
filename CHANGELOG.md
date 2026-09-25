@@ -180,6 +180,52 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **An Ash insert whose installers failed is no longer committed as
+  done.** `add ash` on the workspace `Lorem Ipsum 2` said the insert
+  landed, and its commit held only `mix.exs`, `mix.lock` and
+  `.env.sample`. ash queues `mix igniter.install`, and when one of the
+  installers it runs reports an issue, Igniter prints the issues,
+  writes none of their files and exits with zero:
+  `Igniter.Util.Install.install/2` drops the `:issues` it gets back.
+  The packages were already in `mix.exs` by then. `add` read the zero
+  as success. `WorkbenchIgniter.Task` already fails the workbench's own
+  tasks on issues; the queued command was Igniter's and got around it.
+  ash now queues `mix workbench.igniter_install` with the same argv. It
+  runs `igniter.install` under a shell that passes everything through
+  and notes Igniter's `Issues:` list, then exits with 1, so `add`
+  undoes the insert and makes no commit. Tried on a phx.new probe: exit
+  1 with the issue, exit 0 for `ash ash_phoenix`.
+
+- **`add ash --components mishka_chelekom` finishes from the
+  console.** It died with `exited in: GenServer.call({:via, Registry,
+  {Owl.WidgetsRegistry, :my_spinner}}, {:stop, …}, 5000) … time out`.
+  The console runs `wb.sh` on a pipe with `WB_ANSI=always`, which
+  turns on Elixir's `ansi_enabled` for colour. mishka's installer
+  starts an Owl spinner whenever `IO.ANSI.enabled?()` is true. Owl
+  starts its `LiveScreen` only when `:io.columns()` answers, which a
+  pipe does not, and the spinner's stop waits for a render from that
+  missing process until the call times out. Turning ANSI off would
+  have taken the colours from the whole Ash install, since every
+  installer runs in the one `igniter.install` process.
+  `workbench.igniter_install` instead starts a `LiveScreen` of its own
+  when ANSI is on and there is no terminal, on a device that reports
+  80×24 and discards what it gets. The spinner draws nowhere, and
+  everything else prints as before, in colour. Reproduced with Owl
+  0.13.1 alone, then tried on the phx.new probe: `mishka_chelekom`
+  with ANSI forced over a pipe installs and exits 0.
+
+- **`add ash --api typescript` says why it cannot go in, before
+  anything is fetched.** The issue in that insert was ash_typescript's
+  (0.18): *Required lib/lorem_ipsum2_web/components/layouts/root.html.heex
+  but it did not exist*. Its installer finds the web layer at `lib/` +
+  the underscored web module, and phx.new puts it at `lib/<app>_web`.
+  The two part when the app has a digit after an underscore:
+  `:lorem_ipsum_2` is `LoremIpsum2Web`, which underscores back to
+  `lorem_ipsum2_web`. The cartridge compares the two and refuses the
+  value with the paths in the message. The console does not yet show
+  the value unlit on such a project: the refusal comes when the insert
+  runs.
+
 - **A footnote's mark no longer lifts the drawer off its frame.**
   Clicking a mark in a Packages table (`¹`, a jump to
   `#box-pkgs-note-1`) scrolled every container between it and the page,

@@ -17,8 +17,8 @@ defmodule WorkbenchIgniter.Features.AshTest do
 
   defp queued(igniter) do
     case igniter.tasks do
-      [{"igniter.install", args}] -> args
-      other -> flunk("expected one queued igniter.install, got #{inspect(other)}")
+      [{"workbench.igniter_install", args}] -> args
+      other -> flunk("expected one queued workbench.igniter_install, got #{inspect(other)}")
     end
   end
 
@@ -91,6 +91,20 @@ defmodule WorkbenchIgniter.Features.AshTest do
     test "hands ash_typescript the site's --framework react" do
       assert queued(install(~w(--api typescript))) ==
                ~w(ash ash_phoenix ash_typescript --framework react)
+    end
+
+    test "refuses --api typescript where ash_typescript would not find the web layer" do
+      # :lorem_ipsum_2 is LoremIpsum2Web, which underscores to lorem_ipsum2_web.
+      igniter = install(~w(--api json_api,typescript), phx_test_project(app_name: :lorem_ipsum_2))
+      assert [issue] = igniter.issues
+      assert issue =~ "--api typescript cannot go into this project"
+      assert issue =~ "lib/lorem_ipsum2_web/"
+      assert issue =~ "lib/lorem_ipsum_2_web/"
+      assert igniter.tasks == []
+
+      # The same name without typescript is fine.
+      assert queued(install(~w(--api json_api), phx_test_project(app_name: :lorem_ipsum_2))) ==
+               ~w(ash ash_phoenix ash_json_api)
     end
 
     test "oauth2 brings both packages and no strategy: the provider is configured by hand" do

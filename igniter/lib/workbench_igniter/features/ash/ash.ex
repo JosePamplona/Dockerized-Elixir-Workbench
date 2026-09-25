@@ -403,18 +403,41 @@ defmodule WorkbenchIgniter.Features.Ash do
 
     case WorkbenchIgniter.Feature.missing_option_requirements(igniter, __MODULE__, opts) do
       {[], igniter} ->
-        case packages(opts) do
-          {:ok, packages} ->
-            igniter
-            |> queue(packages, opts)
-            |> token_signing_secret(opts[:auth] || [])
-
-          {:error, message} ->
-            Igniter.add_issue(igniter, message)
+        with {:ok, packages} <- packages(opts),
+             :ok <- typescript_finds_the_web(igniter, opts[:api] || []) do
+          igniter
+          |> queue(packages, opts)
+          |> token_signing_secret(opts[:auth] || [])
+        else
+          {:error, message} -> Igniter.add_issue(igniter, message)
         end
 
       {missing, igniter} ->
         WorkbenchIgniter.Feature.refuse_values(igniter, missing)
+    end
+  end
+
+  # ash_typescript's installer (0.18) writes and edits the web layer at
+  # `lib/` + the underscored web module, where phx.new put it at
+  # `lib/<app>_web`. The two part when the app has a digit after an
+  # underscore: `:lorem_ipsum_2` is `LoremIpsum2Web`, which underscores
+  # back to `lorem_ipsum2_web`. There the installer stops at the first
+  # file it needs, `root.html.heex`, with nothing of Ash written, so the
+  # option is refused before anything is fetched.
+  defp typescript_finds_the_web(igniter, apis) do
+    app = Igniter.Project.Application.app_name(igniter)
+    web = Igniter.Libs.Phoenix.web_module(igniter)
+    where = web |> inspect() |> Macro.underscore()
+
+    if "typescript" in apis and where != "#{app}_web" do
+      {:error,
+       "--api typescript cannot go into this project: ash_typescript's installer looks for " <>
+         "its web files under lib/#{where}/ (#{inspect(web)} underscored), and phx.new put " <>
+         "them under lib/#{app}_web/ (the app, :#{app}). A digit after an underscore in the " <>
+         "app's name is where the two part: the installer would stop at the first file it " <>
+         "needs, with nothing of Ash written."}
+    else
+      :ok
     end
   end
 
@@ -478,7 +501,9 @@ defmodule WorkbenchIgniter.Features.Ash do
         args = missing ++ flags(opts)
 
         igniter
-        |> Igniter.add_task("igniter.install", args)
+        # Through the workbench's task, which fails where Igniter
+        # reports issues and exits with zero (its moduledoc).
+        |> Igniter.add_task("workbench.igniter_install", args)
         |> Igniter.add_notice("""
         Ash is installed by Igniter itself, once this patch set is \
         applied — the same command ash-hq.org generates for an existing \
@@ -489,7 +514,9 @@ defmodule WorkbenchIgniter.Features.Ash do
         It adds the packages to mix.exs, fetches and compiles them and \
         runs each package's own installer, so the files Ash writes \
         (domain, resources, config, migrations) show up in that \
-        command's output, not in this diff.\
+        command's output, not in this diff. It runs through \
+        `mix workbench.igniter_install`, which fails when an installer \
+        reports issues, where Igniter alone exits with zero.\
         #{skipped(present)}
         """)
     end

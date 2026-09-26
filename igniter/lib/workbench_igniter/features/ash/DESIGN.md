@@ -546,6 +546,28 @@ strategy but `password`.
 * The queued `ash.codegen` writes the migrations and their snapshots;
   nothing applies them. `mix ash.setup` does, through the `setup` alias
   ash_postgres rewrote (§2.5).
+* **A workaround to remove: the RPC endpoints written ahead of
+  `ash_typescript.install`.** The installer (0.18.2, still 0.18.3)
+  writes the RPC routes off `Application.get_env(:ash_typescript,
+  :run_endpoint)` and `:validate_endpoint`, values it writes to
+  `config.exs` in the same pass, so unloaded, so `nil`: `post ""`
+  twice, the second clause never matching and the generated client's
+  POSTs to `/rpc/run` and `/rpc/validate` without a route (`_004`,
+  2026-09-25). Reported upstream as ash-project/ash_typescript#95 [25],
+  open, with the fix agreed in the thread and nobody's PR yet. With
+  `--api typescript` the cartridge writes the two entries, the
+  installer's own defaults through its own `configure_new`, in its
+  patch set: the queued command is a mix process of its own, which
+  loads `config.exs` at boot, so the installer finds them and writes
+  the routes it meant to, and leaves the config alone. Nothing of the
+  tool is replaced. `rpc_endpoints_ahead/2` and its test are marked
+  WORKAROUND: drop them the day #95 is closed and the fixed release is
+  what hex resolves — the entries they write are then the installer's
+  again, and a project that carries them already loses nothing.
+  Tried on a phx.new probe (2026-09-25, `mix workbench.install.ash
+  --api typescript --yes`, ash_typescript 0.18.3): the router got
+  `post "/rpc/run"` and `post "/rpc/validate"`, `mix phx.routes` lists
+  both, `mix compile --force` warns of nothing.
 
 ## References
 
@@ -627,3 +649,10 @@ Read in full on 2026-08-28 unless marked otherwise.
     `<label id="feature-KEY">`.
 24. AshAuthentication, the OAuth2 strategy's DSL —
     <https://ash-authentication.hexdocs.pm/dsl-ashauthentication-strategy-oauth2.html>.
+25. ash_typescript, issue #95 *Igniter installation of ash_typescript
+    always creates invalid routes* —
+    <https://github.com/ash-project/ash_typescript/issues/95>, opened
+    2026-09-15, read 2026-09-25: open, the maintainer agrees with the
+    proposed fix (`add_rpc_routes` in
+    `lib/mix/tasks/ash_typescript.install.ex`); 0.18.3, released
+    2026-09-25, still reads the env.

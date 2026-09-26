@@ -283,6 +283,16 @@ defmodule WorkbenchIgniter.Features.AshTest do
       assert Enum.any?(igniter.notices, &(&1 =~ "nodejs and npm in its builder stage"))
     end
 
+    # WORKAROUND for ash-project/ash_typescript#95: goes with rpc_endpoints_ahead/2.
+    test "writes the RPC endpoints to config.exs ahead of the installer, which reads them off the env" do
+      install(~w(--api typescript))
+      |> assert_has_patch("config/config.exs", """
+      + | config :ash_typescript, run_endpoint: "/rpc/run", validate_endpoint: "/rpc/validate"
+      """)
+
+      install(~w(--api json_api)) |> assert_unchanged("config/config.exs")
+    end
+
     test "a project without a Dockerfile owes nothing" do
       igniter = install(~w(--api typescript))
       assert igniter.issues == []

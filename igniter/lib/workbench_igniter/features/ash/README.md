@@ -82,6 +82,17 @@ manifests alone go in first, so the npm layer still caches on them. A
 Dockerfile that is not Phoenix's is left alone, with a notice that
 says what it owes.
 
+Also with `typescript`, until [ash_typescript#95](https://github.com/ash-project/ash_typescript/issues/95)
+is fixed: `config :ash_typescript, run_endpoint: "/rpc/run",
+validate_endpoint: "/rpc/validate"` goes into `config/config.exs`
+before the installer runs. Its installer reads those two off the
+application env to write the routes, and writes them to the config in
+the same pass, so it found nothing and wrote `post ""` twice: a
+compile warning, and no route for the generated client's POSTs. The
+values are the installer's own defaults, written with its own
+`configure_new`; it finds them and leaves them. The workaround goes
+the day the fix ships.
+
 `--auth` takes what the released `ash_authentication.add_strategy`
 does — `password`, `magic_link`, `api_key` — and `oauth2`, the site's
 OAuth2 option: it installs `ash_authentication` and

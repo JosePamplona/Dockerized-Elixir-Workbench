@@ -264,6 +264,23 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **Ash's TypeScript RPC routes come out with their paths.** `_004`'s
+  prod compile warned that `post "", AshTypescriptRpcController,
+  :validate` could never match: ash_typescript's installer had written
+  both RPC routes as `post ""`. It reads `:run_endpoint` and
+  `:validate_endpoint` off the application env, values it writes to
+  `config.exs` in the same pass, so unloaded, so `nil`; the generated
+  client's POSTs to `/rpc/run` and `/rpc/validate` had no route.
+  Upstream knows: ash-project/ash_typescript#95, open since
+  2026-09-15, the fix agreed and unwritten, 0.18.3 (2026-09-25) still
+  has it. ash 0.8.0 writes the two entries, the installer's own
+  defaults through its own `configure_new`, in its patch set, ahead
+  of the queued command: that command is a mix process of its own,
+  loads `config.exs` at boot, and the installer finds them. **A
+  workaround, marked so in the code, the test and the papers, to
+  remove when #95 closes and hex resolves the fixed release.** `_004`'s
+  router was corrected by hand.
+
 - **`up -e prod` with Ash's TypeScript: the release image builds
   again.** `_004`'s `migrate` service stopped at `RUN mix assets.setup`
   with `:enoent` on `npm`. ash_typescript's installer hooks `npm

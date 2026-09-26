@@ -7,6 +7,24 @@ what the cartridge *installs*: a change in the command it queues or in
 the options that build it is a minor, a change that breaks a project
 already carrying what that command installed is a major.
 
+## v0.8.0 - (2026-09-25)
+
+### Added
+
+- `--api typescript` writes `config :ash_typescript, run_endpoint:
+  "/rpc/run", validate_endpoint: "/rpc/validate"` ahead of the queued
+  command. **A workaround, to remove when
+  [ash_typescript#95](https://github.com/ash-project/ash_typescript/issues/95)
+  is fixed** (open; 0.18.3 still has it): the installer reads the two
+  off the application env to write the RPC routes, and writes them to
+  the config in the same pass, so both routes came out `post ""`: the
+  compile warned that the second clause could never match, and the
+  generated client's POSTs to `/rpc/run` and `/rpc/validate` had no
+  route (`_004`, 2026-09-25). The queued command is a mix process of
+  its own and loads `config.exs` at boot, so the installer finds the
+  values and writes the routes it meant to. They are its own defaults,
+  written with its own `configure_new`, which then leaves them.
+
 ## v0.7.1 - (2026-09-25)
 
 ### Fixed

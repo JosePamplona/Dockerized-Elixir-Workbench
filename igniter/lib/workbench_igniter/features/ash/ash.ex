@@ -453,6 +453,7 @@ defmodule WorkbenchIgniter.Features.Ash do
           |> queue(packages, opts)
           |> token_signing_secret(opts[:auth] || [])
           |> npm_in_the_release(opts[:api] || [])
+          |> rpc_endpoints_ahead(opts[:api] || [])
         else
           {:error, message} -> Igniter.add_issue(igniter, message)
         end
@@ -593,6 +594,39 @@ defmodule WorkbenchIgniter.Features.Ash do
     if "typescript" in apis,
       do: WorkbenchIgniter.Dockerfile.npm(igniter),
       else: igniter
+  end
+
+  # WORKAROUND for ash-project/ash_typescript#95 (open, 2026-09-25;
+  # still in 0.18.3): ash_typescript's installer writes the RPC routes
+  # off `Application.get_env(:ash_typescript, :run_endpoint)` and
+  # `:validate_endpoint`, which it writes to config.exs in the same
+  # pass — unloaded, so nil, so `post ""` twice: the second clause
+  # never matches and the generated client's POSTs to /rpc/run and
+  # /rpc/validate have no route. The queued command runs as its own
+  # mix process, which loads config.exs at boot: written here, ahead
+  # of it, with the installer's own defaults and its own
+  # `configure_new`, the installer finds them and writes the routes it
+  # meant to, and leaves the config as it is. Nothing of the tool is
+  # replaced, only its config brought forward. Remove when the issue
+  # is closed and the fixed version is what hex resolves.
+  defp rpc_endpoints_ahead(igniter, apis) do
+    if "typescript" in apis do
+      igniter
+      |> Igniter.Project.Config.configure_new(
+        "config.exs",
+        :ash_typescript,
+        [:run_endpoint],
+        "/rpc/run"
+      )
+      |> Igniter.Project.Config.configure_new(
+        "config.exs",
+        :ash_typescript,
+        [:validate_endpoint],
+        "/rpc/validate"
+      )
+    else
+      igniter
+    end
   end
 
   defp skipped([]), do: ""

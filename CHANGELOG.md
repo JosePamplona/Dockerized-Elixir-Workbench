@@ -90,6 +90,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **New Project opens with the workspace, and the compose file's strip
+  says only its name.** The card asked for a name and then said where
+  it would go; it says where first, with the chip that tells the reader
+  whether anything is there — `empty`, or `existing project`, which is
+  what Create would overwrite. The name follows. And the strip over a
+  compose file dropped *read only: wb.sh alone writes the workspace ·
+  secrets masked*: a box with nothing to type in does not have to say
+  it cannot be typed in, and the masking shows itself, on the line it
+  masks.
+
 - **The rail's Deployments is which one is up, and the one act on it.**
   The compose file's column — baked, out of sync, not baked — and Bake
   came off that table: whether each file is written, what it has

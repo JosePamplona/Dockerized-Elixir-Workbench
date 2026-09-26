@@ -165,7 +165,11 @@ defmodule ConsoleWeb.Deploy do
         </.link>
       </h3>
       <form class="form" id="new-project" phx-change="new_form" phx-submit="new_submit">
-        <.given label="project name" value={@conf["PROJECT_NAME"]} />
+        <%!-- The workspace first (2026-09-26): it is the row that says
+              whether there is anything here and what Create would
+              overwrite, so it is what the reader checks before they
+              read a name, and the chip beside it is the card's own
+              warning. --%>
         <.given label="workspace" value={@conf["WORKSPACE_PATH"]}>
           <:mark>
             <.chip
@@ -180,6 +184,7 @@ defmodule ConsoleWeb.Deploy do
             </.chip>
           </:mark>
         </.given>
+        <.given label="project name" value={@conf["PROJECT_NAME"]} />
         <.given
           label="elixir"
           value={@conf["ELIXIR_VERSION"]}

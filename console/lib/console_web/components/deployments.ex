@@ -370,9 +370,11 @@ defmodule ConsoleWeb.Deployments do
   end
 
   # The file under its row, in a code box with a strip that names it:
-  # the file whose eye is pressed, one at a time and none until pressed,
-  # read only — wb.sh alone writes the workspace — and the secrets
-  # masked. The box is as tall as the reader left it: the jobs' grip
+  # the file whose eye is pressed, one at a time and none until pressed.
+  # It is read only — wb.sh alone writes the workspace — and the secrets
+  # in it are masked; the strip said both in a note until 2026-09-26,
+  # and a box with no way to type in it does not have to say it cannot
+  # be typed in. The box is as tall as the reader left it: the jobs' grip
   # under it, the JobOut hook, kept in this browser. It read under
   # Docker's Deploys until 2026-09-09; the files are the workspace's,
   # so they read here.
@@ -390,7 +392,6 @@ defmodule ConsoleWeb.Deployments do
         <span :if={@chosen} class="fname" title={"the #{@chosen.key} deployment's compose file"}>
           {@chosen.file}
         </span>
-        <span :if={@chosen} class="note">read only: wb.sh alone writes the workspace · secrets masked</span>
       </div>
       <pre :if={@chosen} class="env yaml out"><.yaml_line :for={line <- @chosen.lines} line={line} /></pre>
       <div

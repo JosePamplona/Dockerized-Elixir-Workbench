@@ -702,12 +702,13 @@ defmodule ConsoleWeb.Box do
       </span>
       <span :if={@brings != []} class="k">Brings</span>
       <span :if={@brings != []} class="v stack">
-        <span :for={{service, why} <- @brings} class={["req", why && "unlit"]} title={why}>
+        <span :for={{service, why, read} <- @brings} class={["req", why && "unlit"]} title={why}>
           <span class="svc" style={"--svc:#{ConsoleWeb.Services.role_color(service["role"])}"}>
             {service["service"]}
           </span>
           <span :if={service["listens"]} class="path">:{service["listens"]}</span>
           <span class="by">{Enum.join(service["deploys"] || [], " · ")}</span>
+          <.state_read :if={read} read={elem(read, 0)} title={elem(read, 1)} />
         </span>
       </span>
       <span :if={@doors != []} class="k">Opens</span>
@@ -793,8 +794,25 @@ defmodule ConsoleWeb.Box do
     rest =
       for o <- assigns.box["offers"] || [], not MapSet.member?(inside, o["service"]), do: o
 
-    for(service <- have, do: {service, nil}) ++
-      for(o <- rest, do: {o, why_not(o, locked, assigns)})
+    for(service <- have, do: {service, nil, reading(service, assigns.status)}) ++
+      for(o <- rest, do: {o, why_not(o, locked, assigns), nil})
+  end
+
+  # What that container is doing right now, in the words the rail's
+  # Containers table and a service's plate use (2026-09-26). Only while
+  # a deployment is up, because only then are the containers the ones
+  # this project raised; a service this box brings on a deployment that
+  # is not the one up is simply not among them, and says nothing. A box
+  # that is not in has none of this: there is nothing of it running, and
+  # the row's own `why` is the whole answer.
+  defp reading(service, status) do
+    with true <- Cartridges.app_up?(status),
+         c when is_map(c) <-
+           Enum.find(status["containers"] || [], &(&1["Service"] == service["service"])) do
+      {Cartridges.container_reading(c), c["Status"]}
+    else
+      _ -> nil
+    end
   end
 
   # Why an offer the project lacks is not there: nil when the form as

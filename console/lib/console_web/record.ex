@@ -705,7 +705,14 @@ defmodule ConsoleWeb.Record do
       |> claimed(services, inside)
 
     present = Enum.any?(containers, &(of_deployment(&1) == deploy))
-    at = %{deploy: deploy, up: up, containers: containers, inside: inside}
+
+    at = %{
+      deploy: deploy,
+      up: up,
+      mine: mine?(up, present, status["deployment"]),
+      containers: containers,
+      inside: inside
+    }
 
     %{
       deploy: deploy,
@@ -720,6 +727,14 @@ defmodule ConsoleWeb.Record do
     }
   end
 
+  # Whose the containers of the status are: one deployment is up at a
+  # time, so they are this row's while it is the one up — and, with
+  # nothing up, the row whose leftovers they are, which is what makes a
+  # `stopped` row able to say `exited 1` of a service.
+  defp mine?(true, _present, _up_one), do: true
+  defp mine?(false, present, nil), do: present
+  defp mine?(false, _present, _up_one), do: false
+
   # up: running. stopped: its containers are there, stopped — a Stop,
   # for a fast Up again. down: no containers at all. Nothing when the
   # file is not baked.
@@ -730,11 +745,31 @@ defmodule ConsoleWeb.Record do
 
   # A service's doors: one per port it publishes, or, published none,
   # the port it listens on inside the pod, with no door on the host.
+  #
+  # The reading is this row's containers', `at.mine` (2026-09-26): the
+  # row that is up, or, with nothing up, the row whose leftovers they
+  # are. It was `at.up` alone, which took the reading away exactly
+  # where it says most — `stopped`, `exited 1`, a deployment that came
+  # down badly — and the row then said only *the deployment is down*,
+  # which is a word about the deployment and not about this service.
+  #
+  # Not the container of that name, whichever it is: the names repeat,
+  # `database`, `app` and `pod` are in all three, and with `dev` up the
+  # `prod` row would read `dev`'s as its own. Nor `of_deployment/1`,
+  # which tells them apart by the image and so puts the scaled
+  # deployment's `balancer` and `database` — nginx, postgres — in dev.
   defp service_doors(name, ports, at) do
-    container = if at.up, do: Enum.find(at.containers, &(&1["Service"] == name))
+    container = if at.mine, do: Enum.find(at.containers, &(&1["Service"] == name))
     read = container && container_read(container)
     why = if(at.up, do: nil, else: "the deployment is down")
-    door = %{label: name, port: nil, why: why, read: read}
+
+    door = %{
+      label: name,
+      port: nil,
+      why: why,
+      read: read,
+      read_title: container && container["Status"]
+    }
 
     case ports do
       [_ | _] ->

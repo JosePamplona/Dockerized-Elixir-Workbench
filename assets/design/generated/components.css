@@ -59,7 +59,10 @@
      A route is written on its port — <span><em>:4001</em>/dev/mailbox</span>,
      the port dimmed — because it rides on one; a port is written whole.
      What answered when it was called goes *inside* the border, attached
-     at the right edge: <i class="read good">200</i> — the chip's plate and
+     at the right edge: <i class="read good">200</i> — the same .read
+     the Containers table and a cartridge's Brings row wear since
+     2026-09-26, one vocabulary for every state a reader meets, which
+     free-standing keeps its own hairline — the chip's plate and
      voice (mono, lower case, a 16% tint) behind the border's own 1px
      line, so a reading in a wrapping row can never drift to the wrong
      door. Absent when nothing called it; .busy while asking. A port's
@@ -304,13 +307,19 @@
 .door-ref.door-port::before{background:var(--addr-port)}
 .door-ref.door-inside::before{background:none;box-shadow:inset 0 0 0 2px var(--addr-port)}
 .door-ref.door-output::before{background:var(--addr-output)}
-/* The reading, attached inside the border: the chip's plate behind the box's own line. */
+/* The reading: one plate and one voice for every state a reader meets
+   (2026-09-26) — a door's answer attached inside its border, a
+   container's state in the rail's Containers table, the containers a
+   cartridge brings on its own screen. Free-standing it wears its own
+   hairline; inside a door it gives it up for the box's, below. */
+.read{display:inline-flex;align-items:center;gap:5px;padding:2px 7px;border:1px solid var(--line);border-radius:2px;font-family:var(--mono);font-style:normal;font-weight:500;font-size:11px;background:var(--surface-2);color:var(--muted)}
+.read.good{background:color-mix(in srgb,var(--good) 16%,transparent);color:var(--good)}
+.read.warn{background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--warn)}
+.read.bad{background:color-mix(in srgb,var(--bad) 16%,transparent);color:var(--bad)}
+.read.busy::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex:none;animation:chip-pulse 1s infinite}
+/* Attached inside the border: the chip's plate behind the box's own line. */
 .door-ref:has(.read){padding-right:0}
-.door-ref .read{display:inline-flex;align-items:center;gap:5px;align-self:stretch;margin:-3px 0 -3px 1px;padding:3px 8px;border-left:1px solid var(--line);border-radius:0 2px 2px 0;font-family:var(--mono);font-style:normal;font-weight:500;font-size:11px;background:var(--surface-2);color:var(--muted)}
-.door-ref .read.good{background:color-mix(in srgb,var(--good) 16%,transparent);color:var(--good)}
-.door-ref .read.warn{background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--warn)}
-.door-ref .read.bad{background:color-mix(in srgb,var(--bad) 16%,transparent);color:var(--bad)}
-.door-ref .read.busy::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex:none;animation:chip-pulse 1s infinite}
+.door-ref .read{align-self:stretch;margin:-3px 0 -3px 1px;padding:3px 8px;border:0;border-left:1px solid var(--line);border-radius:0 2px 2px 0}
 /* Two readings side by side (a stamp, then build) share one edge: the second gives the flex gap back. */
 .door-ref .read+.read{margin-left:-8px}
 .door-ref .read.build{border-top:0;border-right:0;border-bottom:0;cursor:pointer;color:var(--ink);text-transform:none}

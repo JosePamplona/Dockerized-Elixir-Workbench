@@ -226,6 +226,7 @@ defmodule ConsoleWeb.Deployments do
                       kind={a.kind}
                       port={a.kind == "route" && a.port}
                       read={a.read}
+                      read_title={a[:read_title]}
                     />
                   </span>
                 </td>

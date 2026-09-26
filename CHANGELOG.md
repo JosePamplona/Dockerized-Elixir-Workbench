@@ -90,6 +90,34 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **One reading, one element: the state of a container is written the
+  same way everywhere.** The rail's Containers table wore a `.chip` and
+  a service's plate an `.read`, and both came off the same function
+  (`Cartridges.container_reading/1`), so a reader met `healthy`,
+  `exited 1` and `stopped` in two faces and learnt the vocabulary
+  twice. There is one component now, `Refs.state_read/1`, in three
+  places: the Containers table, the plate of a service or a door, and
+  the containers a cartridge raises on its own screen — where the row
+  said only *which* containers the box brings and now says what each
+  one is doing. Docker's own `Status` line, which only the chip
+  carried, comes with it in the title. In the design system `.read`
+  splits in two: free-standing it keeps its own hairline, and inside a
+  door it gives it up for the box's, as it always had.
+
+- **A deployment that is not up says what its containers are doing.**
+  A service's plate read its container only while its own deployment
+  was the one up, so a `stopped` row — a Stop, a deployment that came
+  down badly — went silent and said *the deployment is down*, a word
+  about the deployment and not about that service. It reads them
+  whenever they are its own: the row that is up, or, with nothing up,
+  the row whose leftovers they are (`Record.mine?/3`). The guard was
+  doing a second job, and that one is kept: the service names repeat
+  across the three files — `database`, `app` and `pod` are in all
+  three — so with `dev` up the `prod` row must not read `dev`'s
+  container as its own. `of_deployment/1` cannot tell them apart here,
+  since it goes by the image and would put the scaled deployment's
+  nginx and postgres in dev.
+
 - **The rail reads what is up before what answers.** Services, Doors &
   Pages stood over Deployments and Containers; it reads under them
   since 2026-09-26. An address answers because something is up, so the

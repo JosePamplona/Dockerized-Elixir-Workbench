@@ -237,7 +237,64 @@ defmodule ConsoleWeb.BoxBringsTest do
     end
   end
 
+  defp up_with(name, services, containers) do
+    carrying(name, services)
+    |> Map.merge(%{"deployment" => "dev", "containers" => containers})
+  end
+
+  defp reads(html) do
+    html
+    |> LazyHTML.from_fragment()
+    |> LazyHTML.query(".specs .req")
+    |> Enum.flat_map(fn item ->
+      case item |> LazyHTML.query(".read") |> LazyHTML.text() |> String.trim() do
+        "" -> []
+        words -> [{item |> LazyHTML.query(".svc") |> LazyHTML.text() |> String.trim(), words}]
+      end
+    end)
+    |> Map.new()
+  end
+
   test "a box that raises nothing has no row" do
     refute sheet(%{"name" => "credo"}, on_shelf()) =~ "Brings"
+  end
+
+  describe "what the container is doing" do
+    # Since 2026-09-26 the row carries the reading the rail's Containers
+    # table and a service's plate carry, in the one element all three
+    # wear: the same words off the same function, so a reader learns the
+    # vocabulary once.
+    test "each container the box raised says what it is doing" do
+      html =
+        sheet(
+          @box,
+          up_with("db_admin", ["adminer", "pgadmin"], [
+            %{
+              "Service" => "adminer",
+              "State" => "running",
+              "Health" => "healthy",
+              "Status" => "Up 2 hours (healthy)"
+            },
+            %{"Service" => "pgadmin", "State" => "exited", "ExitCode" => 1}
+          ])
+        )
+
+      assert reads(html) == %{"adminer" => "healthy", "pgadmin" => "exited 1"}
+
+      # Docker's own line comes with it, as it does on the rail.
+      assert html =~ ~s|title="Up 2 hours (healthy)"|
+    end
+
+    test "with nothing up there is nothing to read: the containers are not this project's" do
+      html = sheet(@box, carrying("db_admin", ["adminer"]))
+      assert reads(html) == %{}
+    end
+
+    test "a box on the shelf has nothing running of its own" do
+      html = sheet(@box, on_shelf())
+      assert reads(html) == %{}
+      # Its offers are still there, unlit with the reason.
+      assert map_size(lit(html)) == 2
+    end
   end
 end

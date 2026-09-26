@@ -149,6 +149,33 @@ defmodule ConsoleWeb.Refs do
   end
 
   @doc """
+  A reading attached to whatever names the thing read: `{words, chip
+  class}` as `Cartridges.container_reading/1` gives it — `healthy`,
+  `running`, `starting`, `exited`, `exited 1`, `stopped` — or what a
+  door answered when the console called it. Nothing at all when there
+  is nothing to say, which is not the same as a thing that is down: a
+  container that is not there has no reading, and the `why` beside it
+  says so.
+
+  One element for every place a state is read (2026-09-26): the plate
+  of a service or a door, the Containers table on the rail, and the
+  containers a cartridge brings on its own screen. They came off the
+  same function already and wore two different faces, a `.chip` on the
+  table and this on the plate, so a reader learnt the same vocabulary
+  twice. `title` is the long form where there is one — a container's
+  `Status`, which is Docker's own line, and the only thing the chip
+  had that this did not.
+  """
+  attr :read, :any, default: nil, doc: "`{words, chip class}`, or nil for nothing to say"
+  attr :title, :any, default: nil
+
+  def state_read(assigns) do
+    ~H"""
+    <i :if={@read} class={["read", elem(@read, 1)]} title={@title}>{elem(@read, 0)}</i>
+    """
+  end
+
+  @doc """
   An address: the label first, then the address in mono. Who opened it
   goes beside as a mention, never inside. `why` is the reason there is
   nothing to press, and it takes the href with it. `kind` is the layer
@@ -176,6 +203,10 @@ defmodule ConsoleWeb.Refs do
   attr :port, :any, default: nil
   attr :read, :any, default: nil
 
+  attr :read_title, :any,
+    default: nil,
+    doc: "what the reading says at length: a container's own `Status` line, Docker's words"
+
   attr :build, :any,
     default: nil,
     doc: "the Mix task that would write this page, when it is not there"
@@ -202,10 +233,10 @@ defmodule ConsoleWeb.Refs do
         title={door_title(@who, @path, @why)}
       ><a :if={@open} href={@href} target="_blank"><b>{@label}</b><span :if={@addr}><em :if={@port}>:{@port}</em>{@path}</span></a><b :if={
         !@open
-      }>{@label}</b><span :if={!@open and @addr}><em :if={@port}>:{@port}</em>{@path}</span><i
-        :if={@read}
-        class={["read", elem(@read, 1)]}
-      >{elem(@read, 0)}</i><button
+      }>{@label}</b><span :if={!@open and @addr}><em :if={@port}>:{@port}</em>{@path}</span><.state_read
+        read={@read}
+        title={@read_title}
+      /><button
         :if={@build}
         type="button"
         class="read build"

@@ -349,6 +349,38 @@ defmodule ConsoleWeb.TabsTest do
     refute render_patch(view, "/deploy") =~ "Who is connected?"
   end
 
+  # One vocabulary for a state, in one element: the Containers table wore
+  # a `.chip` and a service's plate a `.read`, off the same function
+  # (`Cartridges.container_reading/1`), so the reader met the same words
+  # in two faces. Since 2026-09-26 both are `.read` — and Docker's own
+  # line, which only the chip carried, comes with it.
+  test "the rail reads a container's state in the element a service's plate wears", %{conn: conn} do
+    arrives(
+      status([
+        %{
+          "Service" => "app",
+          "State" => "running",
+          "Health" => "healthy",
+          "Image" => "x:local",
+          "Status" => "Up 2 hours (healthy)"
+        },
+        %{"Service" => "migrate", "State" => "exited", "ExitCode" => 1, "Image" => "x:local"}
+      ])
+    )
+
+    {:ok, _view, html} = live(conn, "/deploy")
+    [table] = Regex.run(~r{<table[^>]*id="containers".*?</table>}s, html)
+
+    assert table =~ ~s(class="read good")
+    assert table =~ ">healthy<"
+    assert table =~ ~s(class="read bad")
+    assert table =~ ">exited 1<"
+    assert table =~ ~s|title="Up 2 hours (healthy)"|
+
+    # And no chip left in it: the two faces were the whole point.
+    refute table =~ "chip"
+  end
+
   test "the Docker screen is lit before any project is, and opens on its containers", %{
     conn: conn
   } do

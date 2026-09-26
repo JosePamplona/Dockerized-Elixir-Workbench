@@ -227,6 +227,7 @@ defmodule ConsoleWeb.Board do
           why={a.why}
           kind={a.kind}
           read={a.read}
+          read_title={a[:read_title]}
         />
         <.door_ref
           :for={{c, a} <- @doors}
@@ -568,10 +569,14 @@ defmodule ConsoleWeb.Board do
           <td class="k" title={c["Image"]}>
             {c["Service"]}<span class="hint">{short_image(c["Image"])}</span>
           </td>
+          <%!-- The same reading the plate of a service wears, in the
+                same element (2026-09-26): it was a `.chip` here and an
+                `.read` there, off the one function, so the reader met
+                the same words in two faces. Docker's own line stays on
+                it, which is what the chip had and the plate did
+                not. --%>
           <td class="st">
-            <.chip class={elem(Cartridges.container_reading(c), 1)} title={c["Status"]}>
-              {elem(Cartridges.container_reading(c), 0)}
-            </.chip>
+            <.state_read read={Cartridges.container_reading(c)} title={c["Status"]} />
           </td>
           <td class="act">
             <button

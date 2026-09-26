@@ -367,9 +367,37 @@ defmodule ConsoleWeb.RecordTest do
 
     # Stopped: the containers are there, none running — dev after a Stop.
     stopped = Map.put(@status, "deployment", nil)
-    assert %{status: "stopped", present: true} = Enum.at(Record.deployments(stopped), 0)
+    [dev_stopped | _] = Record.deployments(stopped)
+    assert %{status: "stopped", present: true} = dev_stopped
 
+    # And with nothing up, the row whose leftovers they are reads them:
+    # a service says what its container is doing — `exited 1` is what
+    # the reader came for — where until 2026-09-26 the row went silent
+    # and said only that the deployment was down.
+    stopped_badly =
+      update_in(stopped["containers"], fn cs ->
+        for c <- cs do
+          if c["Service"] == "app",
+            do: %{c | "State" => "exited", "Health" => ""} |> Map.put("ExitCode", 1),
+            else: c
+        end
+      end)
+
+    [dev_badly | _] = Record.deployments(stopped_badly)
+
+    assert Enum.find(dev_badly.services, &(&1.label == "app")).read == {"exited 1", "bad"}
+    assert Enum.find(dev_badly.services, &(&1.label == "app")).why == "the deployment is down"
+
+    # The names repeat across the three files: with `dev` up, the `prod`
+    # row must not read `dev`'s `app` and `database` as its own.
     assert Enum.all?(prod.services, &(&1.why == "the deployment is down" and is_nil(&1.read)))
+
+    # The same while another deployment is the one up, not only while
+    # none is: the containers of the status are the running one's.
+    prod_while_dev_up =
+      Enum.find(Record.deployments(@status), &(&1.deploy == "prod"))
+
+    assert Enum.all?(prod_while_dev_up.services, &is_nil(&1.read))
     assert %{deploy: "scaled", baked: false, status: nil, services: []} = scaled
   end
 

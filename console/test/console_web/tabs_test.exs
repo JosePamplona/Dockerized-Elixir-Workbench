@@ -300,12 +300,15 @@ defmodule ConsoleWeb.TabsTest do
 
     # Three rows, none baked, and every eye and button unlit with the one reason.
     assert length(Regex.scan(~r/>\s*not baked\s*</, sheet)) == 3
-    assert length(Regex.scan(~r/class="sq eye unlit"/, sheet)) == 4
+    assert length(Regex.scan(~r/class="sq small eye unlit"/, sheet)) == 3
     assert sheet =~ "the workspace is empty: Deploy → Project creates one"
-    refute sheet =~ ~s(class="sq eye")
+    refute sheet =~ ~s(class="sq small eye")
 
-    # The fourth is the scaled row's own: the cluster reads under it,
-    # unlit while that deployment is not up.
+    # And the scaled row's own square, which reads the cluster under it,
+    # unlit while that deployment is not up. It is the field's size, not
+    # the file eye's: it stands on the row's own cell, under --replicas
+    # and balancer, and not on a line of the table.
+    assert length(Regex.scan(~r/class="sq eye unlit"/, sheet)) == 1
     assert sheet =~ "the replicas as nodes"
     assert sheet =~ "scaled is not up: Up it, under the table, and its replicas read here"
     refute sheet =~ ~s(href="/deploy?cluster=1")

@@ -90,6 +90,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **The eye of the compose file column is the small square.** It stands
+  on a line of a table beside a chip, not on a field of its own, which
+  is the size the jobs bar and a card's row cogs already use: 22px
+  where it was 28.
+
 - **One width for every verb at the foot of the Deploy screen.** Create
   project, Up, Stop, Down and Delete the project are the same gesture
   five times down one screen — a line of `wb.sh`, and the button that

@@ -356,12 +356,16 @@ defmodule ConsoleWeb.Deployments do
   attr :why, :any, default: nil, doc: "unlit, with the reason, while the file is not baked"
 
   # The eye: read this file in a box under its row; pressed again, it
-  # closes. The square icon button the knock bell wears, with an eye.
+  # closes. The square icon button the knock bell wears, with an eye —
+  # small since 2026-09-26: it stands on a line of a table beside a
+  # chip, not on a field of its own, which is the size the jobs bar and
+  # the cogs of a card's rows already use.
   defp eye(assigns) do
     ~H"""
     <.square
       :if={@baked}
       mark="eye"
+      size="small"
       label={"Read #{@file}"}
       class="eye"
       patch={if @open, do: "/deploy", else: "/deploy?compose=#{@deploy}"}
@@ -371,6 +375,7 @@ defmodule ConsoleWeb.Deployments do
     <.square
       :if={!@baked}
       mark="eye"
+      size="small"
       label={"Read #{@file}"}
       class="eye unlit"
       aria-disabled="true"

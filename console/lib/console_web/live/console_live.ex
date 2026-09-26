@@ -77,7 +77,6 @@ defmodule ConsoleWeb.ConsoleLive do
         ppaper: "record",
         back: "/deploy",
         pdeploy: nil,
-        pcluster: false,
         pcomposes: [],
         ppage: nil,
         mix_by: %{},
@@ -96,7 +95,6 @@ defmodule ConsoleWeb.ConsoleLive do
         packages_error: Bench.error(:packages),
         installers_asking: Bench.reading?(:installers),
         installers_error: Bench.error(:installers),
-        probes: %{},
         term: Term.initial(),
         view: "covers",
         jobs: Jobs.list(),
@@ -171,7 +169,7 @@ defmodule ConsoleWeb.ConsoleLive do
          |> assign(tab: tab)
          |> Hand.take(params)
          |> take_paper(params)
-         |> take_compose(params["compose"], params["cluster"])
+         |> take_compose(params["compose"])
          |> Drawer.take(params)
          |> Docker.take(params)
          |> Git.take(params)
@@ -240,17 +238,15 @@ defmodule ConsoleWeb.ConsoleLive do
 
   defp ask_mix_by(socket, _paper), do: socket
 
-  # The boxes open under the rows of the Deploy tab: the compose file
-  # the URL names, when it is baked, or the cluster under the scaled
-  # row — one at a time, none until the reader opens one.
-  defp take_compose(%{assigns: %{tab: "deploy"}} = socket, named, cluster) do
+  # The compose file open under its row on the Deploy tab: the one the
+  # URL names, when it is baked; none otherwise — the reader opens one.
+  defp take_compose(%{assigns: %{tab: "deploy"}} = socket, named) do
     composes = Console.Docker.composes(socket.assigns.status)
     open = Enum.find_value(composes, &(&1.key == named and &1.lines != nil and &1.key))
-    assign(socket, pcomposes: composes, pdeploy: open, pcluster: cluster == "1")
+    assign(socket, pcomposes: composes, pdeploy: open)
   end
 
-  defp take_compose(socket, _named, _cluster),
-    do: assign(socket, pcomposes: [], pdeploy: nil, pcluster: false)
+  defp take_compose(socket, _named), do: assign(socket, pcomposes: [], pdeploy: nil)
 
   # A knock: every open route called once, and what each answered kept
   # for the whole page — the rail's Services, Doors & Pages and the Record's
@@ -323,7 +319,7 @@ defmodule ConsoleWeb.ConsoleLive do
       |> reask_diff(moved?)
       |> assign(preads: %{})
       # And the compose files under Deploy: a bake may have rewritten one.
-      |> then(&take_compose(&1, &1.assigns.pdeploy, (&1.assigns.pcluster && "1") || nil))
+      |> then(&take_compose(&1, &1.assigns.pdeploy))
 
     {:noreply, socket}
   end
@@ -476,13 +472,6 @@ defmodule ConsoleWeb.ConsoleLive do
   end
 
   @impl true
-  def handle_async({:probe, key}, {:ok, lines}, socket),
-    do: {:noreply, assign(socket, probes: Map.put(socket.assigns.probes, key, lines))}
-
-  def handle_async({:probe, key}, {:exit, why}, socket),
-    do:
-      {:noreply,
-       assign(socket, probes: Map.put(socket.assigns.probes, key, ["failed: " <> inspect(why)]))}
 
   def handle_async({:knock, :read}, {:ok, reads}, socket),
     do: {:noreply, assign(socket, preads: reads)}
@@ -605,46 +594,14 @@ defmodule ConsoleWeb.ConsoleLive do
   def handle_event("installers_ask", params, socket),
     do: Drawer.event("installers_ask", params, socket)
 
-  # --- the cluster's probes, run by the console ---
-  def handle_event("knock", _params, socket), do: {:noreply, knock(socket)}
-
-  def handle_event("probe", %{"key" => key}, socket) when key in ~w(answers peers) do
-    status = socket.assigns.status
-    key = String.to_existing_atom(key)
-
-    fun =
-      case key do
-        :answers ->
-          fn -> Console.Cluster.answers(status["ports"]["app"]) end
-
-        :peers ->
-          first =
-            status["containers"]
-            |> Enum.filter(&Regex.match?(~r/^app\d+$/, &1["Service"]))
-            |> Enum.map(& &1["Service"])
-            |> Enum.sort()
-            |> List.first()
-
-          fn ->
-            Console.Cluster.peers(
-              status["compose_project"],
-              first,
-              get_in(status, ["project", "app"]) || "app"
-            )
-          end
-      end
-
-    {:noreply,
-     socket
-     |> assign(probes: Map.put(socket.assigns.probes, key, :asking))
-     |> start_async({:probe, key}, fun)}
-  end
-
   # The Git screen, the Docker screen, the terminal: each one's events
   # go to the module that keeps its state.
   def handle_event("git_" <> _ = event, params, socket), do: Git.event(event, params, socket)
   def handle_event("dk_" <> _ = event, params, socket), do: Docker.event(event, params, socket)
   def handle_event("term_" <> _ = event, params, socket), do: Term.event(event, params, socket)
+
+  # The bell of Services, Doors & Pages: every open route called once.
+  def handle_event("knock", _params, socket), do: {:noreply, knock(socket)}
 
   # A container's own lines: the Logs screen, with that service alone
   # lit. The filter lives in the client — the hook holds the buffer — so
@@ -1054,8 +1011,6 @@ defmodule ConsoleWeb.ConsoleLive do
               composes={@pcomposes}
               deploy={@pdeploy}
               reading={@reading}
-              cluster={@pcluster}
-              probes={@probes}
             />
           </section>
 

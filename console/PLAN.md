@@ -123,12 +123,17 @@ that table is invented in the mock, and the status's containers carry
 only Service, State, Health and Image. Either the fast status carries
 the published ports (`compose ps` has them) and the address (`inspect`
 has it), or the reading is built on its two probes and nothing else.
-Decide which before drawing the table. *Settled: the status carries
-both — `containers[].Publishers` and `addresses` — and the two probes
-are the console's own (`Console.Cluster`). It was a screen on the rail,
-and since 2026-09-25 it is the box the `scaled` row of Deploy opens:
-the only tab a cartridge lit was the only tab dark without one, and
-half of what it said that row already said.*
+Decide which before drawing the table. *Settled by dropping the
+question (2026-09-26): the console does not read the cluster at all.
+It was a screen on the rail, a box under the `scaled` row for a day,
+and then gone. Four of the five things it showed are elsewhere — the
+addresses and the published ports on Docker and on the Deploy sheet,
+the rpc shell on Terminal, `Node.list()` two keystrokes into an
+`app1 · rpc` session — and the fifth, four requests through the
+balancer reading `X-Served-By`, is a demonstration and not a reading:
+it needs a scaled deployment up, which is what the reader it was for
+does not have. Its cost was the console running commands of its own,
+outside the jobs it hands to `wb.sh` — the one place it did.*
 
 **NEED has two owners.** The catalog already carries `need` (`line`,
 `body`), and the mock parses NEED.md itself into the four parts the Box
@@ -421,8 +426,8 @@ only under `Node.list(:hidden)`), `app2` never hears of it, and
 `observer` and Livebook's attached runtime do, and for this reason:
 everything that iterates `Node.list()` — `pg` and Phoenix.PubSub with
 it, `:global`, a quorum count, LiveDashboard's node picker, the
-console's own reading of the cluster — must not see a node that is not
-a replica.
+anything that counts replicas — must not see a node that is not a
+replica.
 
 The clustering cartridge does not collide with this, and it is worth
 writing down why, because the two look like they should. It is
@@ -841,13 +846,11 @@ before the word `installer` is spent on the verb in the help text.
    saved through `wb.sh config set`, the stacks asked once, the manual
    and changelog, and Console with the frame in the client; the
    terminal line by line on a Port (`iex` verified without a tty; `rpc`
-   for a release); the cluster off the status's addresses and its two
-   probes run by the console (*who answers* is covered over the wire
-   since 2026-09-26, against a server that answers as the balancer
-   does — that is what caught it raising on every answer that carried
-   the header — and both were run that day against four replicas
-   really up); the figure viewer in the client, one shape, since a
-   drawing is an `<img>`.
+   for a release, which is where `Node.list()` is asked since the
+   console stopped reading the cluster itself); the cluster off the
+   status's addresses and its two probes run by the console — retired
+   whole on 2026-09-26, see *The cluster has no data* above; the figure
+   viewer in the client, one shape, since a drawing is an `<img>`.
 
 What is not built yet stays on the screen as `.unlit`, with the reason —
 as the mock already does with Project and Cluster. A tab that is missing

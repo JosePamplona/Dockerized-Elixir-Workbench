@@ -14,9 +14,9 @@ defmodule ConsoleWeb.Doors do
 
   The addresses are the reader's — `localhost` and the published port,
   what their browser opens — and the console calls the same door by the
-  name it has for the host (`Console.Cluster.host/0`: `APP_HOST`, which
-  is `host.docker.internal` inside its container, where `localhost` is
-  the console itself), naming `localhost` in the request as the browser
+  name it has for the host (`host/0`: `APP_HOST`, which is
+  `host.docker.internal` inside its container, where `localhost` is the
+  console itself), naming `localhost` in the request as the browser
   would, so a `force_ssl` endpoint answers as it answers the reader.
   """
   def read(hrefs) do
@@ -32,8 +32,15 @@ defmodule ConsoleWeb.Doors do
     |> Map.new()
   end
 
+  @doc """
+  The name the console has for the host the reader's browser calls
+  `localhost`. It lived in `Console.Cluster` until that screen was
+  retired on 2026-09-26, and this was its only other reader.
+  """
+  def host, do: System.get_env("APP_HOST") || "localhost"
+
   defp call(href) do
-    url = String.replace_prefix(href, "http://localhost:", "http://#{Console.Cluster.host()}:")
+    url = String.replace_prefix(href, "http://localhost:", "http://#{host()}:")
 
     case :httpc.request(
            :get,

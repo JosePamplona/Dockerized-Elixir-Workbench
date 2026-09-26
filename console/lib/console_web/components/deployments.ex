@@ -38,7 +38,6 @@ defmodule ConsoleWeb.Deployments do
   import ConsoleWeb.Refs
   import ConsoleWeb.Square, only: [square: 1]
   import ConsoleWeb.Board, only: [bake_button: 1, build_button: 1, deploy_button: 1]
-  import ConsoleWeb.Cluster, only: [cluster_sheet: 1]
 
   # What comes off the project — in sync or not, the drift — is the last
   # full reading's until the next lands, and a fast status meanwhile
@@ -81,12 +80,6 @@ defmodule ConsoleWeb.Deployments do
     doc: "the same for the scaled row's Bake, whichever row is picked"
 
   attr :clustering, :any, default: false, doc: "the clustering cartridge is in"
-
-  attr :cluster, :boolean,
-    default: false,
-    doc: "the cluster box is open under the scaled row, one box at a time with the files'"
-
-  attr :probes, :map, default: %{}, doc: "the cluster's two probes: nil, :asking, or lines"
 
   def deployments_sheet(assigns) do
     # Without a project the three rows are there, not baked, every
@@ -158,9 +151,6 @@ defmodule ConsoleWeb.Deployments do
                   <div :if={d.deploy == "scaled"} class="opts">
                     --replicas <input type="number" name="replicas" min="1" value={@pick.replicas} />
                     <label><input type="checkbox" name="balancer" checked={@pick.balancer} /> balancer</label>
-                  </div>
-                  <div :if={d.deploy == "scaled"} class="opts">
-                    <.nodes open={@cluster} up={d.status == "up"} />
                   </div>
                 </td>
                 <td class="file">
@@ -259,11 +249,6 @@ defmodule ConsoleWeb.Deployments do
               </tr>
               <tr :if={@deploy == d.deploy} class="fbox">
                 <td colspan="6"><.file_sheet composes={@composes} deploy={d.deploy} /></td>
-              </tr>
-              <tr :if={@cluster and d.deploy == "scaled"} class="fbox">
-                <td colspan="6">
-                  <.cluster_sheet status={@status} probes={@probes} clustering={@clustering} />
-                </td>
               </tr>
             <% end %>
           </tbody>
@@ -381,38 +366,6 @@ defmodule ConsoleWeb.Deployments do
       aria-disabled="true"
       title={@why}
     />
-    """
-  end
-
-  attr :open, :boolean, required: true
-  attr :up, :boolean, required: true
-
-  # The scaled row's second reading, the eye's idiom on the row's own
-  # cell: the replicas as nodes, and the two probes that they answer one
-  # by one and found each other — the Cluster tab until 2026-09-25
-  # (`ConsoleWeb.Cluster`). One box at a time under the table, so it
-  # patches the bare tab and a file's eye closes it. Unlit, with the
-  # reason, while scaled is not up: there are no nodes to read.
-  defp nodes(assigns) do
-    ~H"""
-    <.square
-      :if={@up}
-      mark="chevron"
-      label="Read the cluster: the replicas as nodes"
-      class="eye"
-      patch={if @open, do: "/deploy", else: "/deploy?cluster=1"}
-      aria-pressed={to_string(@open)}
-      title={if @open, do: "close the cluster", else: "read the replicas as nodes under this row"}
-    />
-    <.square
-      :if={!@up}
-      mark="chevron"
-      label="Read the cluster: the replicas as nodes"
-      class="eye unlit"
-      aria-disabled="true"
-      title="scaled is not up: Up it, under the table, and its replicas read here"
-    />
-    <span class="note">the replicas as nodes</span>
     """
   end
 

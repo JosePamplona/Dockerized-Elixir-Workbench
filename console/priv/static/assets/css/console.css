@@ -418,20 +418,6 @@ table.rows tr.new{animation:seat 1.2s ease-out}
 .term .in .p{color:var(--accent);white-space:nowrap}
 .term .in input{flex:1;font-family:var(--code-face,var(--mono));font-size:var(--code-size,12.5px);padding:4px 0;border:0;background:transparent;color:var(--term-ink);min-width:0;outline:none}
 .term .in input::placeholder{color:var(--term-dim)}
-.cluster{display:grid;gap:14px;align-content:start}
-.cluster table{border-collapse:collapse;width:100%;font-family:var(--mono);font-size:12.5px}
-.cluster th{text-align:left;font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--line)}
-.cluster td{padding:6px 8px;border-bottom:1px solid var(--line)}
-/* The state of the cluster in one line: two chips and the caveat. It had
-   no rule of its own, so the three ran together — a grid cell's children
-   do not space themselves. */
-.cluster .now{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
-.cluster .probe{border:1px solid var(--line);background:var(--surface);border-radius:3px;padding:12px 14px;display:grid;gap:8px}
-.cluster .probe h3{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:13px}
-/* Every row of buttons on this screen, not only the probes': the one that
-   offers to bring the scaled deployment up is outside them, and it was
-   the one touching its own caption. */
-.cluster .acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .note{font-size:13px;color:var(--muted);font-style:italic;margin:0}
 /* What comes off the project while a full status is in flight: the last
    reading's, dimmed with the reason in the title — unlit, not asserted,
@@ -1122,7 +1108,7 @@ form.insert.locked .opt input{opacity:.55}
 .log{font-family:var(--code-face,var(--mono));font-size:var(--code-size,12px);line-height:var(--code-leading,1.55);background:var(--term);color:var(--term-ink);border-radius:3px;padding:12px 14px;min-height:120px;max-height:260px;overflow:auto;white-space:pre-wrap;border:1px solid var(--term-line)}
 .log .dim{color:var(--term-dim)}.log .add{color:var(--ansi-green)}.log .upd{color:var(--ansi-yellow)}.log .ok{color:var(--accent);font-weight:500}
 /* What an empty window says is the window's, not the stylesheet's: the
-   install screen and the cluster's probes each say what will land here. */
+   install screen says what will land here. */
 .log:empty::before{content:attr(data-empty)}
 .log-cap{display:flex;justify-content:space-between;align-items:baseline}
 /* The list of jobs — .jobs-list, on the Jobs screen and in a box's
@@ -1699,7 +1685,7 @@ section.danger .foot>.btn,section.danger .foot>.confirm{grid-area:1/2}
 .deployments table.rows.deps td .pairs .door-ref .read{flex:1 0 100%;margin:1px 0 0;padding:0;border:0;background:none;border-radius:0}}
 /* The eye before the file's chip: the row's own way to open the file in the box under. */
 .deployments table.rows.deps td.file .fl{display:inline-flex;align-items:center;gap:var(--cell)}
-.deployments table.rows.deps td.file .sq[aria-pressed="true"],.deployments table.rows.deps td.k .sq[aria-pressed="true"]{color:var(--ink);background:var(--ground);border-color:var(--ink)}
+.deployments table.rows.deps td.file .sq[aria-pressed="true"]{color:var(--ink);background:var(--ground);border-color:var(--ink)}
 /* The file under the deployments: a strip that names it, then the YAML sheet. */
 .deployments table.rows.deps tr.fbox td{padding:0 var(--cell) 14px;border-top:0}
 .deployments .fsheet{margin-top:0}
@@ -1711,15 +1697,6 @@ section.danger .foot>.btn,section.danger .foot>.confirm{grid-area:1/2}
 .deployments .fsheet pre.env.yaml{margin:0;max-height:var(--job-out,60vh)}
 .deployments .fsheet .ograb{margin:-4px 0 0}
 .deployments table.rows.deps .drift{display:inline-flex;flex-wrap:wrap;gap:6px;vertical-align:middle}
-/* The cluster reads in a box under the scaled row since 2026-09-25 (it
-   was a screen of the rail), so its own table of nodes is nested inside
-   the deployments' one — and the cell rules above, written for the rows
-   of deployments, reach any cell under them. These give the nodes their
-   own back: the border under each row, not over it, and the cell that
-   is a reading, not a row of four buttons. */
-.deployments table.rows.deps .cluster th{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:bottom}
-.deployments table.rows.deps .cluster td{padding:6px 8px;border-top:0;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap}
-.deployments table.rows.deps .cluster tbody tr:first-child td{border-top:0}
 
 /* --- figures: a hint on hover, a viewer on click --------------------------- */
 .fig{position:relative;margin:0 0 1.2em}

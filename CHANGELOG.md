@@ -370,6 +370,28 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Removed
 
+- **The cluster's reading, whole: the box, its two probes, and
+  `Console.Cluster`.** It was the Cluster tab, then for a day the box
+  the `scaled` row opened, and it is gone. Of the five things it
+  showed, four are already elsewhere in the console: the replica
+  addresses and their published ports on the Docker screen and on the
+  Deploy sheet's own rows, the `rpc console` button on Terminal, and
+  `Node.list()` two keystrokes into an `app1 · rpc` session there. The
+  fifth — four requests through the balancer, reading the `X-Served-By`
+  nginx adds — has no other path in the console, but it is a
+  demonstration and not a reading: it says nothing until a scaled
+  deployment is up, which is exactly what the reader it was meant to
+  convince does not have. What convinces them is the clustering
+  cartridge's own papers.
+
+  What goes with it is worth more than the screen: `Console.Cluster`
+  was the one place the console ran commands of its own — an
+  `:httpc` round and a `docker compose exec` — outside the jobs it
+  hands to `wb.sh`. That exception is now closed. `host/0`, its only
+  part with a second reader, moved to `ConsoleWeb.Doors`, which is what
+  called it. The `probe` event, its two `handle_async` answers and the
+  `probes` assign go too, and `/deploy?cluster=1` is no longer a URL.
+
 - **The Cluster tab, and the `tabs:` contract under it.** It was the
   eighth row of the rail and the only one a cartridge lit — clustering's
   `console: [tabs: [:cluster]]` — so it was also the only one dark

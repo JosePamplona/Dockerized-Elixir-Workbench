@@ -47,7 +47,9 @@
                     guessed; the offset it carried said nothing the reader did
                     not know, and went on 2026-09-25; that there IS a stamp is
                     what says it was built) — never knocked, it answers with the app
-                    down. After the reading, the one thing to do: .read.build,
+                    down. After the reading, the one thing to do: .read.build
+                    — *build* while there is no page, *rebuild* once
+                    there is, which the stamp beside it already says,
                     a button on the same plate, which runs the command the
                     cartridge names (./wb.sh mix docs) — alone while nothing
                     is built, beside the stamp once it is, since a page is
@@ -55,6 +57,10 @@
                     The only door that does something other than open. Because
                     a button may not sit inside an <a>, the plate is a span
                     and the link is its name and address, laid flat on it.
+     The whole plate is the hit area, not the words on it: the link's
+     name stretches over the plate (`>a>b::after`), so the square, the
+     padding and the reading open it too, and only the build button
+     stands above.
      (prefixed, because `.console` is the LiveView console's own root.)
      A route is written on its port — <span><em>:4001</em>/dev/mailbox</span>,
      the port dimmed — because it rides on one; a port is written whole.
@@ -294,9 +300,19 @@
 .pkg-ref:hover,.pkg-ref:focus-visible{color:var(--accent);outline:none}
 .pkg-ref .mark{width:12px;height:11px;flex:none;opacity:.55;transition:opacity 120ms}
 .pkg-ref:hover .mark,.pkg-ref:focus-visible .mark{opacity:1}
-.door-ref{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;color:var(--ink);text-decoration:none;padding:3px 9px;border:1px solid var(--line);border-radius:2px;background:none}
+.door-ref{position:relative;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;color:var(--ink);text-decoration:none;padding:3px 9px;border:1px solid var(--line);border-radius:2px;background:none}
 /* The link is the name and the address, laid flat on the plate: a button (build) may follow them, and no <a> may hold one. */
 .door-ref>a{display:contents;color:inherit;text-decoration:none;cursor:pointer}
+/* The whole plate opens it, not the two words on it (2026-09-26). The
+   link is `display:contents` so its name and address sit in the plate's
+   own flex row, which leaves it no box of its own — and so no hit area
+   beyond those two children: the padding, the gap, the square and the
+   reading were all dead, under a border that lit on hover as if they
+   were not. The link's name carries the hit area for the plate instead,
+   stretched over it. Only the build button rises above it: it is the
+   one thing on a plate that does something other than open it. */
+.door-ref>a>b::after{content:"";position:absolute;inset:0;border-radius:2px}
+.door-ref .read.build{position:relative;z-index:1}
 .door-ref b{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:11px;color:var(--muted)}
 .door-ref span{font-family:var(--mono);font-size:12px}
 .door-ref span em{font-style:normal;color:var(--soft)}

@@ -227,7 +227,13 @@ defmodule ConsoleWeb.Refs do
             while it is open; its reading; and, on a page, the command
             that writes it — a button, which no `<a>` may hold, so the
             plate is a span and the link is its name and address
-            (2026-09-25; the whole plate was the link before). --%>
+            (2026-09-25; the whole plate was the link before).
+
+            The button says which of the two it is (2026-09-26): *build*
+            while there is no page, *rebuild* once there is. A page's
+            reading is the stamp of when it was written, and the two
+            come off the same `built` in `Record` — a page with a stamp
+            is a page on disk — so the reading is what the word reads. --%>
       <span
         class={["door-ref", "door-" <> @kind, !@open && @why && "unlit"]}
         title={door_title(@who, @path, @why)}
@@ -242,8 +248,10 @@ defmodule ConsoleWeb.Refs do
         class="read build"
         phx-click="run"
         phx-value-args={"mix " <> @build}
-        title={"./wb.sh mix #{@build} — writes this page in the workspace again, as a job"}
-      >build</button></span>
+        title={
+          "./wb.sh mix #{@build} — writes this page in the workspace#{if @read, do: " again"}, as a job"
+        }
+      >{if @read, do: "rebuild", else: "build"}</button></span>
       <.cart_ref :if={@who} name={@who} installed={@who_installed} />
     </span>
     """

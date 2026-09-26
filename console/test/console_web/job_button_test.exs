@@ -111,7 +111,9 @@ defmodule ConsoleWeb.JobButtonTest do
     assert html =~ ~s(<a href="http://localhost:4101/docs/" target="_blank"><b>docs</b>)
     assert html =~ "2026-09-22 18:18"
     assert html =~ ~s(phx-value-args="mix docs")
-    assert html =~ ">build</button>"
+    # The page is there, so the button offers the second press, not the
+    # first (2026-09-26): `ConsoleWeb.DoorRefTest` holds the two words.
+    assert html =~ ">rebuild</button>"
     refute html =~ "unlit"
   end
 end

@@ -90,6 +90,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **A page's button says which of the two presses it is.** It read
+  *build* whether or not the page was there, so a reader looking at
+  `coverage cover/ 2026-09-25 15:32` was offered a verb for a page that
+  is in front of them. *build* while there is none, *rebuild* once
+  there is — and the title follows, *writes this page in the
+  workspace*, *…again* only when there is one to write over. The stamp
+  beside it is what says it: a page's reading and its button come off
+  the one `built` in `Record.route/6`, so a page with a stamp is a page
+  on disk.
+
 - **New Project opens with the workspace, and the compose file's strip
   says only its name.** The card asked for a name and then said where
   it would go; it says where first, with the chip that tells the reader
@@ -432,6 +442,23 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   that served the Specs alone went with them.
 
 ### Fixed
+
+- **A door's plate was pressable on its two words only.** The whole
+  plate lit on hover — `.door-ref:hover` puts the ink in its border —
+  and then most of it did nothing: the link inside is
+  `display:contents`, so that its name and address sit in the plate's
+  own flex row, which leaves it no box of its own and so no hit area
+  beyond those two children. The padding, the 8px gap, the coloured
+  square that says what kind of address it is, and the reading attached
+  at the right edge were all dead, under a border that said otherwise.
+  The link's name carries the hit area now, stretched over the plate
+  (`>a>b::after`), and only the build button rises above it — the one
+  thing on a plate that does something other than open it. Measured
+  with `elementFromPoint` on every corner of a plate: the square, the
+  corner, the border and the name all open it, the build button is
+  still its own, and an unlit plate stays dead throughout. It is five
+  screens' worth of one component: the rail, the Deploy sheet, a
+  cartridge's box, the shelf and Docker.
 
 - **"Ask four times" raised on every answer it was written to read.**
   The cluster's first probe asks the balancer four times and names the

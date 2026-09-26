@@ -16,6 +16,25 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **`JOB_NICENESS`: the compile cedes the CPU.** With the console in
+  its container, an `add` compiles *inside* that container, beside the
+  console (`toolchain_here`), with nothing between it and every core:
+  an `add ash` held seven to nine of twelve for two and a half minutes
+  (measured 2026-09-25 on a probe console), then the resident compiled
+  again for the status. On a host already at work — the browser, an
+  editor, the compositor — the page reading the job went slow and its
+  socket dropped; the server never did (navigation 19–42 ms through
+  the job, no long tasks), and the reconnect that followed fetched the
+  backlog of every open pane again, which is what looked like the
+  console being slow. `config.conf` now says how a compile is
+  scheduled, `JOB_NICENESS` (0–19, 10 by default): wb.sh puts `nice
+  -n N` in front of what compiles here (`entrypoint_here`: new, add,
+  expand) and the same proportion as `--cpu-shares` on a run in a
+  container of its own, and the console's resident does the same for
+  its own `deps.compile` and `workbench.serve`. The readers — status,
+  git — stay at 0: short, and waited on. 0 is the old behaviour. The
+  drawer shows it under Git, "every compile".
+
 - **`--brief`: the two readings in the words a tool keeps.** An agent
   driving the workbench from a shell reads the workspace before it
   acts, and the shelf before it picks a box, and pays for both by the

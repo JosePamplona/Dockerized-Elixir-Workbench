@@ -356,6 +356,32 @@
     # gives it WORKSPACE_MOUNT_PATH, and nothing else does.
   in_console() { [ -n "${WORKSPACE_MOUNT_PATH:-}" ]; }
 
+  # Jobs -----------------------------------------------------------------------
+
+    # The CPU priority of what compiles: JOB_NICENESS (config.conf), a
+    # Linux niceness from 0 to 19, 10 when the file does not say. A
+    # compile takes every core it finds — an 'add ash' held seven to
+    # nine of twelve for minutes (2026-09-25) — and in the console's
+    # container it runs beside the console itself, on the same cores
+    # as the browser reading it; at the same priority the page went
+    # slow and its socket dropped. Niced, the compiler still takes
+    # every idle core and gives way the moment something else asks.
+    # NICE_CMD goes in front of the mix that compiles here
+    # (entrypoint_here); a run in a container of its own gets the same
+    # proportion as CPU shares, the cgroup's weight (1024 at 0, about
+    # 110 at 10 — the kernel's own table for nice, 1.25 per step).
+    # Only what compiles: the readers (status, git) stay at 0, they are
+    # short and the console waits on them. Negative would need root.
+    JOB_NICENESS="${JOB_NICENESS:-10}"
+    [[ "$JOB_NICENESS" =~ ^[0-9]+$ ]] && [ "$JOB_NICENESS" -le 19 ] || \
+      terminate "JOB_NICENESS must be 0 to 19 in $SCRIPT_CONFIG_FILE, not '$JOB_NICENESS'."
+    NICE_CMD=()
+    CPU_SHARES_FLAG=()
+    if [ "$JOB_NICENESS" -gt 0 ]; then
+      NICE_CMD=(nice -n "$JOB_NICENESS")
+      CPU_SHARES_FLAG=(--cpu-shares "$(awk "BEGIN { printf \"%d\", 1024 / (1.25 ^ $JOB_NICENESS) }")")
+    fi
+
   # port_held <PORT>
     # Whether host port PORT is taken. From the host, a connect to its
     # loopback says so, whoever holds it. From the console's container
@@ -1178,6 +1204,7 @@
       ensure_build_volumes && ensure_workbench_image || return 1
       docker run \
         "${tty_flags[@]}" \
+        "${CPU_SHARES_FLAG[@]}" \
         "${COLOR_ENV[@]/#/--env=}" \
         --name "${APP_NAME}_workbench_${name}_$$" \
         --rm \
@@ -1191,10 +1218,12 @@
   # entrypoint_here [ARGS...]
     # The entrypoint run in this container. It works from /app, where the
     # workspace is 'src' — WORKSPACE_MOUNT — as in a container of its
-    # own; the workbench, at its host path here, is named by it.
+    # own; the workbench, at its host path here, is named by it. Niced
+    # (JOB_NICENESS): it compiles beside the console, on the console's
+    # cores.
   entrypoint_here() {
     (cd "$(dirname "$WORKSPACE_MOUNT")" && \
-     toolchain_env bash "$WORKBENCH_PATH/scripts/entrypoint.sh" "$@")
+     toolchain_env "${NICE_CMD[@]}" bash "$WORKBENCH_PATH/scripts/entrypoint.sh" "$@")
   }
 
   # workspace_igniter <TASK> [ARGS...]

@@ -206,7 +206,11 @@ defmodule Console.Resident do
     # answer that to every question until restarted. One Mix boot more,
     # once per resident. Its stdin closed: the questions are the
     # resident's, even one sent before it said it was ready.
-    script = "mix do deps.get, deps.compile < /dev/null && exec mix workbench.serve"
+    # Niced as the jobs are (JOB_NICENESS, config.conf): what it
+    # compiles after an insert is the same compile, on the same cores
+    # as the console and the browser reading it.
+    nice = nice_prefix()
+    script = "#{nice}mix do deps.get, deps.compile < /dev/null && exec #{nice}mix workbench.serve"
 
     if mounted_here?(ws, project) do
       # The workspace as the app service sees it: /app/src, with the
@@ -234,24 +238,27 @@ defmodule Console.Resident do
        [
          "run",
          "-i",
-         "--rm",
-         "--name",
-         "#{project.name}_workbench_serve_#{:os.getpid()}",
-         "-v",
-         "#{ws}:/app/src",
-         "-v",
-         "#{dir}:/app/workbench:ro",
-         "-v",
-         "#{project.name}_workbench_build:/app/src/_build",
-         "-v",
-         "#{project.name}_deps:/app/src/deps",
-         "-w",
-         "/app/src",
-         Workbench.image(ws),
-         "sh",
-         "-c",
-         script
-       ], []}
+         "--rm"
+       ] ++
+         cpu_shares() ++
+         [
+           "--name",
+           "#{project.name}_workbench_serve_#{:os.getpid()}",
+           "-v",
+           "#{ws}:/app/src",
+           "-v",
+           "#{dir}:/app/workbench:ro",
+           "-v",
+           "#{project.name}_workbench_build:/app/src/_build",
+           "-v",
+           "#{project.name}_deps:/app/src/deps",
+           "-w",
+           "/app/src",
+           Workbench.image(ws),
+           "sh",
+           "-c",
+           script
+         ], []}
     end
   end
 
@@ -264,6 +271,40 @@ defmodule Console.Resident do
       System.get_env("WORKSPACE_MOUNT_PATH") == ws and
       System.get_env("WORKSPACE_MOUNT_PROJECT") == project.name and
       System.get_env("WORKSPACE_MOUNT_IMAGE") == Workbench.image(ws)
+  end
+
+  # JOB_NICENESS as wb.sh reads it: 0 to 19, 10 when config.conf does
+  # not say, and 0 — no nice at all — when it says something else,
+  # which wb.sh refuses on its side.
+  @doc false
+  def niceness do
+    case Console.Config.values(Workbench.config())["JOB_NICENESS"] do
+      nil -> 10
+      value -> parse_niceness(value)
+    end
+  end
+
+  defp parse_niceness(value) do
+    case Integer.parse(String.trim(value)) do
+      {n, ""} when n in 0..19 -> n
+      _ -> 0
+    end
+  end
+
+  defp nice_prefix do
+    case niceness() do
+      0 -> ""
+      n -> "nice -n #{n} "
+    end
+  end
+
+  # The same proportion as CPU shares for a run in a container of its
+  # own: the cgroup weight the kernel gives that niceness (1.25 per step).
+  defp cpu_shares do
+    case niceness() do
+      0 -> []
+      n -> ["--cpu-shares", Integer.to_string(trunc(1024 / :math.pow(1.25, n)))]
+    end
   end
 
   defp close(%{port: nil} = state), do: state

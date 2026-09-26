@@ -34,6 +34,7 @@ defmodule ConsoleWeb.WorkbenchDrawer do
     "ERLANG_VERSION" => "new",
     "DEBIAN_VERSION" => "new",
     "GIT_IDENTITY" => "every commit",
+    "JOB_NICENESS" => "every compile",
     "NGINX_IMAGE_VERSION" => "scaled deploy"
   }
   # A service's image tag, whichever service: `NAME_IMAGE_VERSION` is

@@ -44,7 +44,7 @@ defmodule ConsoleWeb.Board do
     </section>
     <%= if @status do %>
       <.workspace status={@status} rebind={@rebind} />
-      <.deployments status={@status} busy={@busy} folded={@folded} stale={@reading == :full} />
+      <.deployments status={@status} busy={@busy} folded={@folded} />
       <.containers status={@status} busy={@busy} folded={@folded} />
       <.services_doors status={@status} catalog={@catalog} folded={@folded} reads={@reads} />
       <.inserted status={@status} catalog={@catalog} folded={@folded} stale={@reading == :full} />
@@ -280,43 +280,30 @@ defmodule ConsoleWeb.Board do
         owner:
           assigns.status["deployment"] ||
             (Enum.find(rows, & &1.present) || %{}) |> Map.get(:deploy),
-        sum: deployments_sum(rows, assigns.status["deployment"]),
-        why: @stale_why,
-        not_baked:
-          if(assigns.status["exists"] == true,
-            do: "Bake, or Up, writes it",
-            else: "the workspace is empty: Deploy → Project creates one"
-          )
+        sum: deployments_sum(rows, assigns.status["deployment"])
       )
 
     ~H"""
     <section class={folded?(@folded, "deployments") && "folded"}>
       <.head key="deployments" name="Deployments" label={@sum} folded={@folded} />
       <table class="rows" id="deployments">
-        <tr class="hd">
-          <th></th>
-          <th title="the deployment's compose file: baked, out of sync with the project, or not baked yet">
-            compose file
-          </th>
-          <th>status</th>
-          <th></th>
-        </tr>
+        <%!-- The compose file's column and Bake came off this table on
+              2026-09-26. The rail is the glance: which deployment is up,
+              and the one act on it. Whether each file is baked, out of
+              sync and by what, the file itself under its row, and the
+              Bake that writes it are the Deploy screen's sheet, which
+              has the width to say it — and the rail's own head still
+              counts them (`3 baked · scaled up`), so the fact is not
+              lost, only the column.
+
+              The head row went with them. `status` was the one column
+              title anywhere on the rail — Containers and Cartridges
+              have none — and of the three cells it held, two were
+              already empty. A rail of three tables says what its rows
+              are by its section's name and by the rows themselves. --%>
         <%= for d <- @rows do %>
           <tr>
             <td class="k">{d.deploy}</td>
-            <td class={["st", @stale && "stale"]} title={@stale && @why}>
-              <.chip :if={!d.baked} class="off" title={@not_baked}>
-                not baked
-              </.chip>
-              <.chip
-                :if={d.baked && d.in_sync == false}
-                class="warn"
-                title="the file no longer says what the cartridges ask for: bake writes it again"
-              >
-                out of sync
-              </.chip>
-              <.chip :if={d.baked && d.in_sync != false} class="good">baked</.chip>
-            </td>
             <td>
               <.chip :if={d.status == "up"} class="good">up</.chip>
               <.chip
@@ -331,7 +318,6 @@ defmodule ConsoleWeb.Board do
               </.chip>
             </td>
             <td class="act">
-              <.bake_button name={d.deploy} status={@status} busy={@busy} baked={d.baked} />
               <%!-- Stop and Down are on the row whose containers they
                     would act on, and nowhere else (Stop was already,
                     Down since 2026-09-26). Not unlit on the other two:

@@ -90,6 +90,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **The rail's Deployments is which one is up, and the one act on it.**
+  The compose file's column — baked, out of sync, not baked — and Bake
+  came off that table: whether each file is written, what it has
+  drifted from, the file itself under its row and the Bake that writes
+  it are the Deploy screen's sheet, which has the width to say it. The
+  section's own head still counts them (`3 baked · scaled up`), so the
+  fact stays on the rail; only the column goes. Three columns left of
+  four, and with Stop and Down already on the row that owns the
+  containers, a row now reads: the name, what it is doing, and the one
+  verb it has. The head row went with them: `status` was the one column
+  title anywhere on the rail — Containers and Cartridges have none —
+  and of the three cells that row held, two were already empty.
+
 - **The eye of the compose file column is the small square.** It stands
   on a line of a table beside a chip, not on a field of its own, which
   is the size the jobs bar and a card's row cogs already use: 22px

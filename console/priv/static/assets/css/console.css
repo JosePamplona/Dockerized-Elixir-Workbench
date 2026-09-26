@@ -385,8 +385,6 @@ table.rows tr.new{animation:seat 1.2s ease-out}
 #slots td.og .commit-ref{margin-left:6px}
 .git .row .head .commit-ref{margin-right:8px}
 #deployments td.k{white-space:nowrap}
-#deployments tr.hd th{text-align:left;font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);padding:0 10px 4px 0;border-bottom:1px solid var(--line)}
-#deployments tr.hd + tr td{border-top:0}
 
 /* The box holds its own controls, under the command line on the terminal and under the lines on Logs: a strip of the surface with the house's buttons on it, and the screen keeps the ground. The row of controls above the box is gone with this (2026-09-12). */
 .term .viewport{grid-template-rows:auto minmax(0,1fr) auto auto;min-height:0}

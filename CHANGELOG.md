@@ -90,6 +90,22 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **The rail reads what is up before what answers.** Services, Doors &
+  Pages stood over Deployments and Containers; it reads under them
+  since 2026-09-26. An address answers because something is up, so the
+  rail says what is baked and up first and what that opens after it —
+  and the reader who came to press a door passes the row that tells
+  them why it is dark. The sections fold by their own key, so nothing
+  a reader had folded away moved with them.
+
+- **The row's verbs read down, not across.** Bake, Build, Stop and
+  Down folded onto as many lines as the cell had width for, so the same
+  four buttons broke differently on each row of the deployments sheet
+  and the column's edge moved as a row grew or shrank. They are a
+  column now, one width, the same shape on every row and at every
+  window — and the cell is as narrow as the widest word, which the
+  services column gets back.
+
 - **The rail's Services & Doors is Services, Doors & Pages, and
   says so in its head.** The section had three kinds of row and named
   two: the ports the compose publishes, the routes the cartridges

@@ -1652,18 +1652,16 @@ section.danger .foot>.btn,section.danger .foot>.confirm{grid-area:1/2}
 /* The name of the service and its reading are whole or not at all: the
    address is the one that gives way. */
 .deployments table.rows.deps td .pairs .door-ref>b,.deployments table.rows.deps td .pairs .door-ref>a>b,.deployments table.rows.deps td .pairs .door-ref .read{flex:none}
-/* The buttons stack when the row runs out of width: three of them in a
-   line is what the row wants, not what it needs, and services is the
-   column that was paying for it. Nothing measures anything — the cell
-   asks for the three in a line and settles for less, which is what a
-   table column does on its own once the line is allowed to break. They
-   keep the right edge as they fold. */
-.deployments table.rows.deps td.act{white-space:normal;text-align:right}
-/* The air between them is the buttons' own margin, on the line the
-   rail's own table gives them: an inline-block hands the line its
-   margin box, so this is the gap the reader sees between two stacked
-   buttons and nothing else. */
-.deployments table.rows.deps td.act .btn.mini{margin-block:4px}
+/* The row's verbs read down, not across (2026-09-26): one under the
+   next, in the order the columns before them are read — Bake, Build,
+   Stop, Down. They folded onto as many lines as the width allowed
+   until then, so the same four buttons broke differently on each row
+   and the column's edge moved as a row went up or down. A column of
+   one width is the same shape on every row, whatever the window, and
+   the cell is as narrow as the widest word: what a line of them was
+   taking, the services get. */
+.deployments table.rows.deps td.act{white-space:nowrap;text-align:right;display:flex;flex-direction:column;align-items:stretch;gap:4px}
+.deployments table.rows.deps td.act .btn.mini{margin-block:0;text-align:center}
 .deployments{container-type:inline-size}
 /* Narrow: the target column gives first — its prose only takes another
    line — and the addresses close up, so the name of the service and

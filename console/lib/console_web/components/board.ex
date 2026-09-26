@@ -1,10 +1,14 @@
 defmodule ConsoleWeb.Board do
   @moduledoc """
   The rail: the configured workspace, as the status says it — the name
-  and the path, then what answers (Services, Doors & Pages), what is baked and
-  up (Deployments, Containers), what is in it (Cartridges), and last
-  Git, which is what has happened to it rather than what it is
-  (2026-09-10).
+  and the path, then what is baked and up (Deployments, Containers),
+  then what answers (Services, Doors & Pages), what is in it
+  (Cartridges), and last Git, which is what has happened to it rather
+  than what it is (2026-09-10).
+
+  Services, Doors & Pages read above the two until 2026-09-26: an
+  address answers because something is up, so it reads under what is
+  up, not over it.
   """
   use Phoenix.Component
   import ConsoleWeb.Refs
@@ -40,9 +44,9 @@ defmodule ConsoleWeb.Board do
     </section>
     <%= if @status do %>
       <.workspace status={@status} rebind={@rebind} />
-      <.services_doors status={@status} catalog={@catalog} folded={@folded} reads={@reads} />
       <.deployments status={@status} busy={@busy} folded={@folded} stale={@reading == :full} />
       <.containers status={@status} busy={@busy} folded={@folded} />
+      <.services_doors status={@status} catalog={@catalog} folded={@folded} reads={@reads} />
       <.inserted status={@status} catalog={@catalog} folded={@folded} stale={@reading == :full} />
       <.git status={@status} folded={@folded} />
       <p :if={@error} class="note">{@error}</p>

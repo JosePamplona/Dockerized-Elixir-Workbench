@@ -90,6 +90,27 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **The three verbs of a deployment read down at the foot, each with
+  the line it runs.** Stop and Down were on every row of the
+  Deployments sheet — four buttons on each of three rows, of which at
+  most one pair could ever do anything, since only one deployment is up
+  at a time and Stop is lit on that one alone. And `down` never was a
+  row's verb: `wb.sh` runs it with `--remove-orphans`, which *"clears
+  the project, orphans of other deployments included"*, so pressed on
+  the `prod` row with `scaled` up it took `scaled`'s containers with
+  it — a button standing in a row whose name the command does not
+  honour. The foot now holds the three, one line each, the command on
+  the left and the button at the right edge: `./wb.sh up --deploy
+  scaled`, `stop`, `down`. Two subjects live there, so each button
+  names its own — Up is the row picked above, Stop and Down are
+  whatever is up (`Replace scaled with dev`, `Stop scaled`, `Down
+  scaled`). Bake and Build stay on the rows, which is what they are:
+  one file and one image each, and they work on a row that is not up.
+  The rail follows — Stop was already on the running row alone, and
+  Down joins it there — with the same rule: not unlit on the other
+  rows, because unlit is for a verb a row could have, and this one
+  would act on another row's containers.
+
 - **One reading, one element: the state of a container is written the
   same way everywhere.** The rail's Containers table wore a `.chip` and
   a service's plate an `.read`, and both came off the same function

@@ -1639,7 +1639,16 @@ section.danger .foot>.btn,section.danger .foot>.confirm{grid-area:1/2}
 /* The row picked wears the picker's old ground. */
 .deployments table.rows.deps tr.on td.k{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
 /* The foot is the Project card's: the command line taking the width, the buttons at its right. */
-.deployments .foot{margin-top:6px}
+/* The three verbs of a deployment read down, one line each: the command
+   on the left and the button at the right edge, the same shape three
+   times, so the reader reads the commands as a column and presses
+   across (2026-09-26). The foot was one line — Up alone — while Stop
+   and Down sat on every row. */
+.deployments .foot{margin-top:6px;display:grid;gap:8px}
+.deployments .foot .fline{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+/* The buttons of the three lines share one edge: the widest sets it, so
+   the column of commands ends where the column of verbs begins. */
+.deployments .foot .fline>.btn{min-width:var(--foot-verb,170px);justify-content:center}
 .deployments table.rows.deps td.sync{white-space:normal}
 /* Services is the column that gives: with the three buttons always
    there, the addresses would push past the row and paint over them.

@@ -94,8 +94,17 @@ defmodule ConsoleWeb.Deployments do
     # the project's.
     empty = is_nil(assigns.status) or assigns.status["exists"] != true
 
+    # Whose containers Stop and Down would act on: the deployment that is
+    # up, or, with nothing up, the one whose containers are still there.
+    # Neither verb is the picked row's — Up is.
+    owner =
+      Enum.find(assigns.rows, &(&1.deploy == assigns.running)) ||
+        Enum.find(assigns.rows, & &1.present) ||
+        Enum.find(assigns.rows, &(&1.deploy == assigns.pickname))
+
     assigns =
       assign(assigns,
+        owner: owner,
         why: @stale_why,
         targets: @targets,
         empty: empty,
@@ -246,21 +255,6 @@ defmodule ConsoleWeb.Deployments do
                     extra={(d.deploy == "scaled" && @scaled_extra) || ""}
                     form="deploy-pick"
                   />
-                  <.deploy_button
-                    verb="stop"
-                    name={d.deploy}
-                    status={@status}
-                    busy={@busy}
-                    baked={d.baked}
-                  />
-                  <.deploy_button
-                    verb="down"
-                    name={d.deploy}
-                    status={@status}
-                    busy={@busy}
-                    baked={d.baked}
-                    present={d.present}
-                  />
                 </td>
               </tr>
               <tr :if={@deploy == d.deploy} class="fbox">
@@ -275,46 +269,81 @@ defmodule ConsoleWeb.Deployments do
           </tbody>
         </table>
       </form>
-      <div class="foot">
-        <div class="cmds">
-          <div class="cmd">./wb.sh up --deploy {@pickname}{@extra}</div>
-        </div>
-        <%!-- The verb of the row picked: what it runs is composed out of
-              the picker above — the radio, --replicas, balancer — so it
-              sends that form and the server writes the line from what is
-              in it. What it carries is only what it says.
+      <%!-- The three verbs of a deployment, one under the next, each on
+            its own line with the line of `wb.sh` it is: the command on
+            the left, the button at the right edge, so the reader reads
+            down the three commands and presses across.
 
-              Build stood beside it until 2026-09-10, when it went to the
-              CLI, and since 2026-09-11 it is each row's, beside Bake:
-              the image built with nothing going down. The flags
-              `docker compose build` takes — `--no-cache` and the rest —
-              stay the CLI's, where Tab completes them from the catalog. --%>
-        <.job_button
-          label={
-            if @running && @running != @pickname,
-              do: "Replace #{@running} with #{@pickname}",
-              else: "Up #{@pickname}"
-          }
-          class="primary"
-          form="deploy-pick"
-          name="do"
-          value="up"
-          args={"up --deploy #{@pickname}#{@extra}"}
-          why={
-            cond do
-              @busy -> "a job is running"
-              @empty -> "the workspace is empty: create a project first"
-              @running == @pickname -> "#{@running} is up: its row stops it, or takes it down"
-              true -> nil
-            end
-          }
-          title={
-            if @running,
-              do:
-                "./wb.sh up --deploy #{@pickname}#{@extra} — one deployment at a time: #{@running} goes down",
-              else: nil
-          }
-        />
+            Stop and Down were on every row until 2026-09-26 — four
+            buttons on each of three rows, of which at most one pair
+            could ever do anything, since only one deployment is up at a
+            time. And `down` never was a row's verb: `wb.sh` runs it
+            with `--remove-orphans`, which "clears the project, orphans
+            of other deployments included", so pressed on the `prod` row
+            with `scaled` up it took `scaled`'s containers with it.
+
+            The foot holds two subjects, so each button names its own:
+            Up is the row picked above, Stop and Down are whatever is up
+            — `Replace scaled with dev`, `Stop scaled`, `Down scaled`.
+            Bake and Build stay on the rows, where one file and one
+            image each is exactly what they are, and where they work on
+            a row that is not up. --%>
+      <div class="foot">
+        <div class="fline">
+          <div class="cmds">
+            <div class="cmd">./wb.sh up --deploy {@pickname}{@extra}</div>
+          </div>
+          <%!-- The verb of the row picked: what it runs is composed out of
+                the picker above — the radio, --replicas, balancer — so it
+                sends that form and the server writes the line from what is
+                in it. What it carries is only what it says.
+
+                Build stood beside it until 2026-09-10, when it went to the
+                CLI, and since 2026-09-11 it is each row's, beside Bake:
+                the image built with nothing going down. The flags
+                `docker compose build` takes — `--no-cache` and the rest —
+                stay the CLI's, where Tab completes them from the catalog. --%>
+          <.job_button
+            label={
+              if @running && @running != @pickname,
+                do: "Replace #{@running} with #{@pickname}",
+                else: "Up #{@pickname}"
+            }
+            class="primary"
+            form="deploy-pick"
+            name="do"
+            value="up"
+            args={"up --deploy #{@pickname}#{@extra}"}
+            why={
+              cond do
+                @busy -> "a job is running"
+                @empty -> "the workspace is empty: create a project first"
+                @running == @pickname -> "#{@running} is up: Stop and Down are under this"
+                true -> nil
+              end
+            }
+            title={
+              if @running,
+                do:
+                  "./wb.sh up --deploy #{@pickname}#{@extra} — one deployment at a time: #{@running} goes down",
+                else: nil
+            }
+          />
+        </div>
+        <div :for={verb <- ~w(stop down)} class="fline">
+          <div class="cmds">
+            <div class="cmd">{ConsoleWeb.Deploy.cmdline(verb, @owner.deploy, "")}</div>
+          </div>
+          <.deploy_button
+            verb={verb}
+            name={@owner.deploy}
+            status={@status}
+            busy={@busy}
+            baked={@owner.baked}
+            present={@owner.present}
+            named={true}
+          />
+        </div>
       </div>
     </section>
     """

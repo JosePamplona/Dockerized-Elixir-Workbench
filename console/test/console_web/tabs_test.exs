@@ -349,6 +349,32 @@ defmodule ConsoleWeb.TabsTest do
     refute render_patch(view, "/deploy") =~ "Who is connected?"
   end
 
+  # Stop and Down came off the rows on 2026-09-26: only one deployment is
+  # up at a time, so at most one row's Stop was ever lit, and `down`
+  # clears the whole project — orphans of the other deployments included
+  # — so it never acted on the row it sat in. At the foot they name what
+  # they act on, since Up there is the row picked and these are not.
+  test "Stop and Down stand at the foot of the sheet, naming what is up", %{conn: conn} do
+    arrives(
+      status([running("app1"), running("balancer")])
+      |> Map.merge(%{"deployment" => "scaled", "baked" => %{"scaled" => true}})
+    )
+
+    {:ok, _view, html} = live(conn, "/deploy")
+    [sheet] = Regex.run(~r{<section[^>]*class="deployments"[^>]*>.*?</section>}s, html)
+    [foot] = Regex.run(~r{<div class="foot">.*?</div>\s*</section>}s, sheet <> "</section>")
+
+    assert foot =~ "Stop scaled"
+    assert foot =~ "Down scaled"
+
+    # And the rows keep only what is theirs: one file, one image each.
+    [rows] = Regex.run(~r{<tbody>.*?</tbody>}s, sheet)
+    assert rows =~ ">Bake<"
+    assert rows =~ ">Build<"
+    refute rows =~ ">Stop<"
+    refute rows =~ ">Down<"
+  end
+
   # One vocabulary for a state, in one element: the Containers table wore
   # a `.chip` and a service's plate a `.read`, off the same function
   # (`Cartridges.container_reading/1`), so the reader met the same words

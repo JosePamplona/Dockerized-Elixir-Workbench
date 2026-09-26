@@ -274,6 +274,12 @@ defmodule ConsoleWeb.Board do
     assigns =
       assign(assigns,
         rows: rows,
+        # Whose the containers are, and so whose Stop and Down are: the
+        # deployment up, or, with nothing up, the one whose are still
+        # there.
+        owner:
+          assigns.status["deployment"] ||
+            (Enum.find(rows, & &1.present) || %{}) |> Map.get(:deploy),
         sum: deployments_sum(rows, assigns.status["deployment"]),
         why: @stale_why,
         not_baked:
@@ -326,20 +332,30 @@ defmodule ConsoleWeb.Board do
             </td>
             <td class="act">
               <.bake_button name={d.deploy} status={@status} busy={@busy} baked={d.baked} />
+              <%!-- Stop and Down are on the row whose containers they
+                    would act on, and nowhere else (Stop was already,
+                    Down since 2026-09-26). Not unlit on the other two:
+                    unlit is for a verb this row could have, and these
+                    are not this row's at all — `down` clears the whole
+                    project, so on a row that owns no containers the
+                    button would act on another row's. The Deployments
+                    sheet says the same at its foot, where there is room
+                    to name what they act on. --%>
               <.deploy_button
+                :if={d.deploy == @owner}
+                verb="stop"
+                name={d.deploy}
+                status={@status}
+                busy={@busy}
+              />
+              <.deploy_button
+                :if={d.deploy == @owner}
                 verb="down"
                 name={d.deploy}
                 status={@status}
                 busy={@busy}
                 baked={d.baked}
                 present={d.present}
-              />
-              <.deploy_button
-                :if={@status["deployment"] == d.deploy}
-                verb="stop"
-                name={d.deploy}
-                status={@status}
-                busy={@busy}
               />
               <.deploy_button
                 :if={@status["deployment"] != d.deploy}
@@ -470,21 +486,30 @@ defmodule ConsoleWeb.Board do
     """
   end
 
-  # The row's one action, in the row's own words. Another deployment up
-  # is the ordinary case: Up replaces it, and the title says so. The
-  # other way is Stop, not Down: the containers stay for a fast Up
-  # again; `down`, which removes them, stays a command of the shell.
+  # One of the three verbs of a deployment, in the words of wherever it
+  # stands. Another deployment up is the ordinary case: Up replaces it,
+  # and the title says so. The other way is Stop, not Down: the
+  # containers stay for a fast Up again.
   #
-  # A verb the row cannot do now is unlit with the reason, not hidden
-  # (2026-09-10): the three slots stay put down the table, and a row
-  # says what it could do, not only what it can. Up and Stop share one
-  # slot — the same question, and the row's state answers which.
+  # A verb it cannot do now is unlit with the reason, not hidden
+  # (2026-09-10): it says what it could do, not only what it can.
+  #
+  # Stop and Down came off the rows of the Deployments sheet on
+  # 2026-09-26 and stand at its foot, where they name what they act on
+  # (`named`): only one deployment is up at a time, so at most one row's
+  # Stop was ever lit, and `down` clears the whole project — orphans of
+  # the other deployments included — so it never was a row's verb.
   attr :verb, :string, required: true, values: ~w(up stop down)
   attr :present, :boolean, default: true, doc: "the deployment has containers: what down removes"
   attr :baked, :boolean, default: true, doc: "its compose file is in the workspace"
   attr :name, :string, required: true
   attr :status, :map, required: true
   attr :busy, :boolean, default: false
+
+  attr :named, :boolean,
+    default: false,
+    doc:
+      "the deployment's name on the button's face: away from its row, it must say what it acts on"
 
   def deploy_button(assigns) do
     running = assigns.status["deployment"]
@@ -496,7 +521,10 @@ defmodule ConsoleWeb.Board do
 
     ~H"""
     <.job_button
-      label={%{"up" => "Up", "stop" => "Stop", "down" => "Down"}[@verb]}
+      label={
+        %{"up" => "Up", "stop" => "Stop", "down" => "Down"}[@verb] <>
+          if(@named, do: " " <> @name, else: "")
+      }
       class="mini"
       args={String.replace_prefix(@cmd, "./wb.sh ", "")}
       title={@title}

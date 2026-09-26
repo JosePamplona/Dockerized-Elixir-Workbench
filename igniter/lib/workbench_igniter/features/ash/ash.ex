@@ -452,6 +452,7 @@ defmodule WorkbenchIgniter.Features.Ash do
           igniter
           |> queue(packages, opts)
           |> token_signing_secret(opts[:auth] || [])
+          |> npm_in_the_release(opts[:api] || [])
         else
           {:error, message} -> Igniter.add_issue(igniter, message)
         end
@@ -581,6 +582,17 @@ defmodule WorkbenchIgniter.Features.Ash do
       ~s|TOKEN_SIGNING_SECRET="#{WorkbenchIgniter.secret_key_base()}"|,
       ~s|TOKEN_SIGNING_SECRET=""|
     )
+  end
+
+  # ash_typescript's installer hooks `npm install` into `assets.setup`,
+  # a step Phoenix's production Dockerfile runs on a builder with no
+  # node, before `COPY assets`: the release build stopped there with
+  # :enoent (_004, 2026-09-25). The dev image carries node and npm;
+  # the release's Dockerfile is Phoenix's, and takes them here.
+  defp npm_in_the_release(igniter, apis) do
+    if "typescript" in apis,
+      do: WorkbenchIgniter.Dockerfile.npm(igniter),
+      else: igniter
   end
 
   defp skipped([]), do: ""

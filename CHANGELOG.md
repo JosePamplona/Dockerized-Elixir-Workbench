@@ -264,6 +264,22 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **`up -e prod` with Ash's TypeScript: the release image builds
+  again.** `_004`'s `migrate` service stopped at `RUN mix assets.setup`
+  with `:enoent` on `npm`. ash_typescript's installer hooks `npm
+  install` into `assets.setup`, and Phoenix's production `Dockerfile`
+  runs that step on a builder with no node, before `COPY assets` (on
+  purpose: in a phx.new project it only downloads the esbuild and
+  tailwind binaries, so the layer caches ahead of the code). The dev
+  image and the workbench's carry node and npm; the release's
+  Dockerfile is Phoenix's own and took nothing. ash 0.7.1 patches it
+  with `--api typescript`: `nodejs npm` in the builder's `apt-get
+  install`, and `COPY assets/package*.json assets/` before `RUN mix
+  assets.setup`, so the npm layer caches on the manifests alone
+  (`WorkbenchIgniter.Dockerfile.npm/1`, the file's owning module). A
+  Dockerfile that is not Phoenix's is left alone with a notice. A
+  project that already carries the insert needs the two lines by hand.
+
 - **An Ash insert whose installers failed is no longer committed as
   done.** `add ash` on the workspace `Lorem Ipsum 2` said the insert
   landed, and its commit held only `mix.exs`, `mix.lock` and

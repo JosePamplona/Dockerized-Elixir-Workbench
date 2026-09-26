@@ -34,6 +34,82 @@ defmodule WorkbenchIgniter.Dockerfile do
     end
   end
 
+  @apt "--no-install-recommends build-essential git \\\n"
+  @setup "RUN mix assets.setup\n"
+  @manifests "COPY assets/package*.json assets/\n"
+
+  @doc """
+  What the production image owes once `npm install` is hooked into
+  `assets.setup`, as ash_typescript's installer does: nodejs and npm in
+  the builder stage, and the package manifests copied before `RUN mix
+  assets.setup`. Phoenix runs that step before `COPY assets` on
+  purpose — in a phx.new project it only downloads the esbuild and
+  tailwind binaries, so the layer caches ahead of the code — and its
+  builder installs no node; both held until a package hooked in a step
+  that needs `assets/package.json`. The manifests alone go in first,
+  so the npm layer still caches on them and not on every asset.
+
+  Phoenix's own Dockerfile (`stack/1`) with the assets steps in it is
+  patched, once; anything else is left alone with a notice that says
+  what it owes. A project without a Dockerfile owes nothing.
+  """
+  @spec npm(Igniter.t()) :: Igniter.t()
+  def npm(igniter) do
+    if Igniter.exists?(igniter, "Dockerfile") do
+      igniter = Igniter.include_existing_file(igniter, "Dockerfile")
+      content = igniter.rewrite |> Rewrite.source!("Dockerfile") |> Rewrite.Source.get(:content)
+      npm(igniter, phoenixs_with_assets?(content))
+    else
+      igniter
+    end
+  end
+
+  defp npm(igniter, true) do
+    Igniter.update_file(
+      igniter,
+      "Dockerfile",
+      &Rewrite.Source.update(&1, :content, fn content -> with_npm(content) end)
+    )
+  end
+
+  defp npm(igniter, false) do
+    Igniter.add_notice(igniter, """
+    The Dockerfile is not phx.gen.release's, or carries no assets steps, \
+    so it was left alone. ash_typescript's installer hooks `npm install` \
+    into `assets.setup`: the production image needs nodejs and npm in its \
+    builder stage, and assets/package.json copied in before `RUN mix \
+    assets.setup` (Phoenix copies assets/ after it).\
+    """)
+  end
+
+  defp phoenixs_with_assets?(content),
+    do:
+      stack(content) != nil and String.contains?(content, @apt) and
+        String.contains?(content, @setup)
+
+  defp with_npm(content) do
+    content =
+      if String.contains?(content, "nodejs"),
+        do: content,
+        else:
+          String.replace(
+            content,
+            @apt,
+            "--no-install-recommends build-essential git nodejs npm \\\n"
+          )
+
+    if String.contains?(content, @manifests) do
+      content
+    else
+      String.replace(
+        content,
+        @setup,
+        "# ash_typescript hooks `npm install` into assets.setup: the manifests\n" <>
+          "# go in first, so the npm layer caches on them alone.\n" <> @manifests <> @setup
+      )
+    end
+  end
+
   @doc """
   The stack as Phoenix's `Dockerfile.eex` binds it, for the `template`
   at hand: up to Phoenix 1.8.13 the Debian image was

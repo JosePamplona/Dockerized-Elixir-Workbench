@@ -66,10 +66,21 @@ the workbench only makes Phoenix projects.
 | ash-hq.org | Option | Packages |
 | --- | --- | --- |
 | Data layer: Postgres / SQLite / CSV | `--data-layer postgres,sqlite,csv` (several, as the site's checkboxes; left out, no data layer; `postgres` and `sqlite` each on the project's Ecto database, so never together) | `ash_postgres`, `ash_sqlite`, `ash_csv` |
-| Web: JSON:API, GraphQL, TypeScript | `--api json_api,graphql,typescript` | `ash_json_api`, `ash_graphql`, `ash_typescript` (handed `--framework react`, as the site does; its installer hooks `npm install` into `assets.setup`, which the workbench's and the project's images carry node and npm for) |
+| Web: JSON:API, GraphQL, TypeScript | `--api json_api,graphql,typescript` | `ash_json_api`, `ash_graphql`, `ash_typescript` (handed `--framework react`, as the site does; its installer hooks `npm install` into `assets.setup`, which the workbench's and the project's dev images carry node and npm for; the release's `Dockerfile` takes them here, see below) |
 | Authentication: Password, Magic Link, API Keys, OAuth2 | `--auth password,magic_link,api_key,oauth2` | `ash_authentication`, `ash_authentication_phoenix`, with `--auth-strategy <list>`; API keys alone bring `ash_authentication` only, as on the site; `oauth2` brings both with no strategy |
 | Advanced Options, by section | `--ai`, `--finance`, `--automation`, `--security`, `--dev-tools`, `--components` | the packages the site offers in that section (below) |
 | — | `--example` | `ash.install --example`: the guide's example resources |
+
+With `typescript`, the production `Dockerfile` (Phoenix's, from
+`phx.gen.release`) is patched, once: `nodejs npm` join the builder's
+`apt-get install`, and `COPY assets/package*.json assets/` goes in
+before `RUN mix assets.setup`. Phoenix runs that step before `COPY
+assets` on purpose (in a phx.new project it only downloads the esbuild
+and tailwind binaries, so the layer caches ahead of the code), and its
+builder has no node; ash_typescript's `npm install` needs both. The
+manifests alone go in first, so the npm layer still caches on them. A
+Dockerfile that is not Phoenix's is left alone, with a notice that
+says what it owes.
 
 `--auth` takes what the released `ash_authentication.add_strategy`
 does — `password`, `magic_link`, `api_key` — and `oauth2`, the site's

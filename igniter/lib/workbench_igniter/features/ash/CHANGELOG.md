@@ -7,6 +7,22 @@ what the cartridge *installs*: a change in the command it queues or in
 the options that build it is a minor, a change that breaks a project
 already carrying what that command installed is a major.
 
+## v0.7.1 - (2026-09-25)
+
+### Fixed
+
+- `--api typescript` patches the production `Dockerfile` for the `npm
+  install` ash_typescript's installer hooks into `assets.setup`:
+  `nodejs npm` in the builder's `apt-get install`, and `COPY
+  assets/package*.json assets/` before `RUN mix assets.setup`. The
+  release build stopped at that step with `:enoent` (`_004`,
+  2026-09-25): Phoenix's builder installs no node, and copies `assets/`
+  after `assets.setup`, a step that in a phx.new project only downloads
+  the bundler binaries. Only Phoenix's own Dockerfile with the assets
+  steps in it is touched, once; another is left alone with a notice
+  that says what it owes. The README said both of the project's images
+  carried node: only the dev one did.
+
 ## v0.7.0 - (2026-09-25)
 
 ### Changed

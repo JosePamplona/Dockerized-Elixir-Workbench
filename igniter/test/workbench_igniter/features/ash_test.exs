@@ -228,6 +228,68 @@ defmodule WorkbenchIgniter.Features.AshTest do
     end
   end
 
+  describe "--api typescript and the release's Dockerfile" do
+    # ash_typescript's installer hooks `npm install` into `assets.setup`,
+    # which Phoenix's Dockerfile runs on a builder with no node, before
+    # `COPY assets`: the production build stopped there (_004, 2026-09-25).
+    defp born, do: WorkbenchIgniter.TestProject.new()
+
+    test "the builder takes nodejs and npm, and the manifests go in before assets.setup" do
+      igniter = install(~w(--api typescript), born())
+      assert igniter.issues == []
+
+      igniter
+      |> assert_has_patch("Dockerfile", """
+      - |  && apt-get install -y --no-install-recommends build-essential git \\
+      + |  && apt-get install -y --no-install-recommends build-essential git nodejs npm \\
+      """)
+      |> assert_has_patch("Dockerfile", """
+      + | COPY assets/package*.json assets/
+        | RUN mix assets.setup
+      """)
+
+      dockerfile = files(apply_igniter!(igniter))["Dockerfile"]
+
+      # The manifests land before the step that reads them, and assets/ after it, as Phoenix has it.
+      assert [_, setup, assets] =
+               String.split(
+                 dockerfile,
+                 ~r/COPY assets\/package\*\.json assets\/|COPY assets assets/
+               )
+
+      assert setup =~ "RUN mix assets.setup"
+      assert assets =~ "RUN mix assets.deploy"
+    end
+
+    test "once: a Dockerfile already carrying them is left as it is" do
+      again =
+        install(~w(--api typescript), born())
+        |> apply_igniter!()
+        |> Igniter.Project.Deps.remove_dep(:ash)
+        |> apply_igniter!()
+
+      assert_unchanged(install(~w(--api typescript), again), "Dockerfile")
+    end
+
+    test "without typescript, the Dockerfile is not touched" do
+      install(~w(--api json_api,graphql), born()) |> assert_unchanged("Dockerfile")
+    end
+
+    test "a Dockerfile that is not phx.gen.release's is left alone, and a notice says what it owes" do
+      own = WorkbenchIgniter.TestProject.new([], %{"Dockerfile" => "FROM elixir:1.19\n"})
+      igniter = install(~w(--api typescript), own)
+
+      assert_unchanged(igniter, "Dockerfile")
+      assert Enum.any?(igniter.notices, &(&1 =~ "nodejs and npm in its builder stage"))
+    end
+
+    test "a project without a Dockerfile owes nothing" do
+      igniter = install(~w(--api typescript))
+      assert igniter.issues == []
+      refute Enum.any?(igniter.notices, &(&1 =~ "builder stage"))
+    end
+  end
+
   describe "--auth" do
     test "writes TOKEN_SIGNING_SECRET to .env, generated, and blank to .env.sample" do
       files = install(~w(--auth password)) |> apply_igniter!() |> files()

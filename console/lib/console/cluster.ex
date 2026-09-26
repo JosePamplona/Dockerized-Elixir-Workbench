@@ -35,13 +35,21 @@ defmodule Console.Cluster do
     end
   end
 
-  # The replica that answered, off the header nginx adds.
-  defp served_by(headers) do
-    for {k, v} <- headers,
-        String.downcase(to_string(k)) == "x-served-by",
-        do:
-          to_string(v)
-          |> Enum.join(", ")
+  @doc """
+  The replica that answered, off the header nginx adds — `""` where the
+  answer carries none, which is what the line above trims away.
+
+  `:httpc` hands its headers back as charlists, so each value is read as
+  one and the join is over the *list of headers*, not over a value. It
+  read `to_string(v) |> Enum.join(", ")` until 2026-09-26, which is
+  `Enum.join/2` given a binary: it raised for every answer that carried
+  the header — the only answer the probe exists to read — and never for
+  one that did not, which is why nothing had seen it.
+  """
+  def served_by(headers) do
+    headers
+    |> Enum.filter(fn {k, _v} -> String.downcase(to_string(k)) == "x-served-by" end)
+    |> Enum.map_join(", ", fn {_k, v} -> to_string(v) end)
   end
 
   def peers(project, service, app) do

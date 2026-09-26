@@ -842,8 +842,11 @@ before the word `installer` is spent on the verb in the help text.
    and changelog, and Console with the frame in the client; the
    terminal line by line on a Port (`iex` verified without a tty; `rpc`
    for a release); the cluster off the status's addresses and its two
-   probes run by the console (not yet seen against a scaled
-   deployment); the figure viewer in the client, one shape, since a
+   probes run by the console (*who answers* is covered over the wire
+   since 2026-09-26, against a server that answers as the balancer
+   does — that is what caught it raising on every answer that carried
+   the header — and both were run that day against four replicas
+   really up); the figure viewer in the client, one shape, since a
    drawing is an `<img>`.
 
 What is not built yet stays on the screen as `.unlit`, with the reason —

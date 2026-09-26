@@ -306,6 +306,26 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **"Ask four times" raised on every answer it was written to read.**
+  The cluster's first probe asks the balancer four times and names the
+  replica each request landed on, off the `x-served-by` header nginx
+  adds. `Console.Cluster.served_by/1` read it as `to_string(v) |>
+  Enum.join(", ")` — which is `Enum.join/2` given a binary, since
+  `:httpc` hands each header value over as a charlist and `to_string/1`
+  had already made it a string. It raised for every answer that carried
+  the header, and for no answer that lacked one: with the balancer down
+  the comprehension was empty and the line read `HTTP 200`, so the only
+  run that could fail was the one the probe exists for. The join is
+  over the headers now, not over a value, and `served_by/1` is public
+  with four tests on it — three over the wire, against a server that
+  answers as the balancer does, with the header, without it, and not at
+  all. It had never been seen against a scaled deployment up
+  (`console/PLAN.md`), which is exactly how it survived. Both probes
+  were run against one on 2026-09-26, four replicas behind the
+  balancer: the four requests landed on four different replicas
+  (`172.25.0.3` through `.6`), and `Node.list()` on the first answered
+  with the other three.
+
 - **Ash's TypeScript RPC routes come out with their paths.** `_004`'s
   prod compile warned that `post "", AshTypescriptRpcController,
   :validate` could never match: ash_typescript's installer had written

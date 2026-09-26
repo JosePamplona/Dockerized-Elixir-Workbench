@@ -275,6 +275,29 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Removed
 
+- **The Cluster tab, and the `tabs:` contract under it.** It was the
+  eighth row of the rail and the only one a cartridge lit — clustering's
+  `console: [tabs: [:cluster]]` — so it was also the only one dark
+  unless a box was in, which is what a screen at the top of the rail
+  should never be: the other seven are the bench's, there before any
+  project is. Half of what it said the `scaled` row of the deployments
+  sheet already said — the services, their ports, up or down — and its
+  one button was that row's *Up scaled* a second time. What only it had
+  are the two probes, which are the whole point: that the replicas
+  answer one by one behind the balancer (`X-Served-By` off four
+  requests) and that they found each other as nodes (`Node.list()`
+  through the release's `rpc`). Those now read where the reader just
+  pressed Up — a box under the `scaled` row, opened by a square beside
+  the file's eye, unlit with the reason while that deployment is not up
+  — and one box at a time under the table, so a file's eye closes it
+  (`/deploy?cluster=1`, as `?compose=scaled` already worked). The
+  `tabs:` key is gone from `Feature.console/0`, from the catalog
+  (`Features.console/1`) and from the Box screen's *Lights* row: a
+  cartridge contributes doors and nothing else, which is eleven
+  cartridges' worth of one contract instead of two, one of which had a
+  single user. `Console.Cluster` — the two probes the console runs
+  itself — is unchanged.
+
 - **The Mix paper's Specs.** `def project` in a code box over the
   packages table, keyword by keyword and coloured as Elixir, is gone:
   the paper is the packages table. `Project.render(_, "mix")` reads

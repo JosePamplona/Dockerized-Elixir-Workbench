@@ -70,8 +70,7 @@ defmodule WorkbenchIgniter.ConsoleTest do
              %{label: "ready", path: "{path}/ready", when: nil}
            ]
 
-    assert by.("clustering").tabs == [:cluster]
-    assert by.("credo") == %{doors: [], tabs: []}
+    assert by.("credo") == %{doors: []}
   end
 
   test "every route starts with a slash or an {option}; an output is a relative dir" do

@@ -1681,7 +1681,7 @@ section.danger .foot>.btn,section.danger .foot>.confirm{grid-area:1/2}
 .deployments table.rows.deps td .pairs .door-ref .read{flex:1 0 100%;margin:1px 0 0;padding:0;border:0;background:none;border-radius:0}}
 /* The eye before the file's chip: the row's own way to open the file in the box under. */
 .deployments table.rows.deps td.file .fl{display:inline-flex;align-items:center;gap:var(--cell)}
-.deployments table.rows.deps td.file .sq[aria-pressed="true"]{color:var(--ink);background:var(--ground);border-color:var(--ink)}
+.deployments table.rows.deps td.file .sq[aria-pressed="true"],.deployments table.rows.deps td.k .sq[aria-pressed="true"]{color:var(--ink);background:var(--ground);border-color:var(--ink)}
 /* The file under the deployments: a strip that names it, then the YAML sheet. */
 .deployments table.rows.deps tr.fbox td{padding:0 var(--cell) 14px;border-top:0}
 .deployments .fsheet{margin-top:0}
@@ -1693,6 +1693,15 @@ section.danger .foot>.btn,section.danger .foot>.confirm{grid-area:1/2}
 .deployments .fsheet pre.env.yaml{margin:0;max-height:var(--job-out,60vh)}
 .deployments .fsheet .ograb{margin:-4px 0 0}
 .deployments table.rows.deps .drift{display:inline-flex;flex-wrap:wrap;gap:6px;vertical-align:middle}
+/* The cluster reads in a box under the scaled row since 2026-09-25 (it
+   was a screen of the rail), so its own table of nodes is nested inside
+   the deployments' one — and the cell rules above, written for the rows
+   of deployments, reach any cell under them. These give the nodes their
+   own back: the border under each row, not over it, and the cell that
+   is a reading, not a row of four buttons. */
+.deployments table.rows.deps .cluster th{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:bottom}
+.deployments table.rows.deps .cluster td{padding:6px 8px;border-top:0;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap}
+.deployments table.rows.deps .cluster tbody tr:first-child td{border-top:0}
 
 /* --- figures: a hint on hover, a viewer on click --------------------------- */
 .fig{position:relative;margin:0 0 1.2em}

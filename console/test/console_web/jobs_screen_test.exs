@@ -65,7 +65,7 @@ defmodule ConsoleWeb.JobsScreenTest do
     alias ConsoleWeb.JobsScreen
     jobs = [job("a", :done, exit: 0)]
 
-    for tab <- ~w(deploy shelf project docker cluster),
+    for tab <- ~w(deploy shelf project docker),
         do: assert(JobsScreen.tray_shown?(tab, jobs))
 
     refute JobsScreen.tray_shown?("jobs", jobs)

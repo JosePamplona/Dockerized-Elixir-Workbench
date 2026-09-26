@@ -1,7 +1,7 @@
 defmodule ConsoleWeb.ConsoleLive do
   @moduledoc """
   The console: the workspace on the left, the screens on the right —
-  Deploy, Jobs, Terminal, Logs, Cartridges, Project, Cluster, Docker —
+  Deploy, Jobs, Terminal, Logs, Cartridges, Project, Docker —
   and the jobs tray at the bottom. Everything it shows comes from the status,
   the catalog and `config.conf`; everything it does is `wb.sh` as a
   job. Where the reader is — the screen — lives in the URL.
@@ -18,7 +18,7 @@ defmodule ConsoleWeb.ConsoleLive do
   alias ConsoleWeb.ConsoleLive.{Docker, Drawer, Git, Hand, Term}
   alias ConsoleWeb.Doors
   alias ConsoleWeb.Record
-  import ConsoleWeb.{Board, Shelf, ProjectScreen, WorkbenchDrawer, Cluster}
+  import ConsoleWeb.{Board, Shelf, ProjectScreen, WorkbenchDrawer}
   import ConsoleWeb.Band, only: [state: 1, errands: 1]
   import ConsoleWeb.DockerScreen, only: [docker_screen: 1]
   import ConsoleWeb.LogsScreen, only: [logs_screen: 1]
@@ -35,7 +35,6 @@ defmodule ConsoleWeb.ConsoleLive do
     {"terminal", "Terminal"},
     {"project", "Project"},
     {"shelf", "Cartridges"},
-    {"cluster", "Cluster"},
     # Last, and never unlit: the daemon is there before any project is.
     {"docker", "Docker"}
   ]
@@ -78,6 +77,7 @@ defmodule ConsoleWeb.ConsoleLive do
         ppaper: "record",
         back: "/deploy",
         pdeploy: nil,
+        pcluster: false,
         pcomposes: [],
         ppage: nil,
         mix_by: %{},
@@ -171,7 +171,7 @@ defmodule ConsoleWeb.ConsoleLive do
          |> assign(tab: tab)
          |> Hand.take(params)
          |> take_paper(params)
-         |> take_compose(params["compose"])
+         |> take_compose(params["compose"], params["cluster"])
          |> Drawer.take(params)
          |> Docker.take(params)
          |> Git.take(params)
@@ -240,15 +240,17 @@ defmodule ConsoleWeb.ConsoleLive do
 
   defp ask_mix_by(socket, _paper), do: socket
 
-  # The compose file open under its row on the Deploy tab: the one the
-  # URL names, when it is baked; none otherwise — the reader opens one.
-  defp take_compose(%{assigns: %{tab: "deploy"}} = socket, named) do
+  # The boxes open under the rows of the Deploy tab: the compose file
+  # the URL names, when it is baked, or the cluster under the scaled
+  # row — one at a time, none until the reader opens one.
+  defp take_compose(%{assigns: %{tab: "deploy"}} = socket, named, cluster) do
     composes = Console.Docker.composes(socket.assigns.status)
     open = Enum.find_value(composes, &(&1.key == named and &1.lines != nil and &1.key))
-    assign(socket, pcomposes: composes, pdeploy: open)
+    assign(socket, pcomposes: composes, pdeploy: open, pcluster: cluster == "1")
   end
 
-  defp take_compose(socket, _named), do: assign(socket, pcomposes: [], pdeploy: nil)
+  defp take_compose(socket, _named, _cluster),
+    do: assign(socket, pcomposes: [], pdeploy: nil, pcluster: false)
 
   # A knock: every open route called once, and what each answered kept
   # for the whole page — the rail's Services, Doors & Pages and the Record's
@@ -321,7 +323,7 @@ defmodule ConsoleWeb.ConsoleLive do
       |> reask_diff(moved?)
       |> assign(preads: %{})
       # And the compose files under Deploy: a bake may have rewritten one.
-      |> then(&take_compose(&1, &1.assigns.pdeploy))
+      |> then(&take_compose(&1, &1.assigns.pdeploy, (&1.assigns.pcluster && "1") || nil))
 
     {:noreply, socket}
   end
@@ -833,22 +835,6 @@ defmodule ConsoleWeb.ConsoleLive do
         else: "this workspace has no project — Deploy → Project creates one"
       )
 
-  defp unlit("cluster", %{status: status, catalog: catalog}) do
-    lit =
-      Cartridges.contributions(status, catalog, "tabs")
-      |> Enum.any?(fn {_, t} -> t == "cluster" end)
-
-    lights =
-      catalog
-      |> Enum.filter(&("cluster" in (get_in(&1, ["console", "tabs"]) || [])))
-      |> Enum.map(& &1["name"])
-
-    if lit,
-      do: nil,
-      else:
-        "no cartridge lights this screen yet — #{Enum.join(lights, " or ")} does: insert it from Cartridges"
-  end
-
   defp unlit("terminal", %{status: status}),
     do:
       if(project?(status),
@@ -1068,6 +1054,8 @@ defmodule ConsoleWeb.ConsoleLive do
               composes={@pcomposes}
               deploy={@pdeploy}
               reading={@reading}
+              cluster={@pcluster}
+              probes={@probes}
             />
           </section>
 
@@ -1104,10 +1092,6 @@ defmodule ConsoleWeb.ConsoleLive do
               hex_error={@packages_error}
               by={@mix_by}
             />
-          </section>
-
-          <section :if={@tab == "cluster"} class="panel on" role="tabpanel">
-            <.cluster status={@status} probes={@probes} pick={@pick} />
           </section>
 
           <section :if={@tab == "docker"} class="panel fill on" id="panel-docker" role="tabpanel">

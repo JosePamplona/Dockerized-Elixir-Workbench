@@ -272,8 +272,10 @@ the two dashboard pages it lights, health_probe
 for the reader (exdoc `doc/`, coverage `cover/`: `{:output, dir,
 index}`, served by the console off the workspace, the app up or not,
 with `build:` — the project's own Mix task that writes the page, which
-the console offers where it is not there yet)
-and the *tabs* it turns on (clustering → Cluster). The catalog carries
+the console offers where it is not there yet). It carried the *tabs* a
+cartridge turned on too (clustering → Cluster) until 2026-09-25, when
+that screen became a box under the Deploy screen's `scaled` row: a
+cartridge adds doors and nothing else. The catalog carries
 it as `console`; the console shows the
 doors of what is inserted and nothing of what is not. There is no
 separate kind for a health endpoint: it is a route the project has for

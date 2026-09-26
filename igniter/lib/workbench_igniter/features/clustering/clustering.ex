@@ -52,9 +52,6 @@ defmodule WorkbenchIgniter.Features.Clustering do
   def task, do: "workbench.install.clustering"
 
   @impl true
-  def console, do: [tabs: [:cluster]]
-
-  @impl true
   def afterwards,
     do:
       "See it work: ./wb.sh up --deploy scaled brings the replicas up behind the balancer (the release image is rebuilt on each deploy)."

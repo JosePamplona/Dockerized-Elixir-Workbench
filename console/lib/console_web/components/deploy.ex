@@ -5,7 +5,8 @@ defmodule ConsoleWeb.Deploy do
   `ConsoleWeb.Deployments`: one row per deployment, picked on its row,
   each compose file baked or not, in sync or drifted, up, stopped or
   down, with Stop, Down and Bake on its row, the file itself in a box,
-  and Up and Build of the picked one under the table, and last the
+  and Up and Build of the picked one under the table, the cluster under
+  the scaled row in a box of its own, and last the
   Danger box, whose only verb is the one that cannot be taken back.
   Every button is a `wb.sh` line handed to the `run` event; the two
   that cannot be taken back come back as a pending job, and the box
@@ -31,6 +32,8 @@ defmodule ConsoleWeb.Deploy do
   attr :composes, :list, default: [], doc: "the compose files, for the deployments sheet"
   attr :deploy, :any, default: nil, doc: "which compose file the deployments sheet shows"
   attr :reading, :any, default: false, doc: "a status in flight: :fast, :full, or false"
+  attr :cluster, :boolean, default: false, doc: "the cluster box is open under the scaled row"
+  attr :probes, :map, default: %{}, doc: "the cluster's two probes: nil, :asking, or lines"
 
   def deploy(assigns) do
     running = assigns.status && assigns.status["deployment"]
@@ -59,6 +62,8 @@ defmodule ConsoleWeb.Deploy do
       running={@running}
       extra={@extra}
       clustering={@clustering}
+      cluster={@cluster}
+      probes={@probes}
     />
     <.danger status={@status} jobs={@jobs} />
     """

@@ -20,7 +20,7 @@ defmodule ConsoleWeb.BoxBringsTest do
     "compose" => [],
     "offers" => [],
     "options" => [],
-    "console" => %{"doors" => [], "tabs" => []}
+    "console" => %{"doors" => []}
   }
 
   defp box(fields), do: Map.merge(@manifest, fields)

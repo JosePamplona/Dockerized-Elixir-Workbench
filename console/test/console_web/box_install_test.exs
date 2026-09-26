@@ -101,7 +101,7 @@ defmodule ConsoleWeb.BoxInstallTest do
     "adds" => ["md_report", "githook"],
     "requires" => [],
     "offers" => [],
-    "console" => %{"doors" => [], "tabs" => []},
+    "console" => %{"doors" => []},
     "deps" => [],
     "options" => [
       %{"name" => "html_theme", "type" => "string", "default" => "custom"},
@@ -320,7 +320,7 @@ defmodule ConsoleWeb.BoxInstallTest do
       "options" => [],
       "requires" => [],
       "offers" => [],
-      "console" => %{"doors" => [], "tabs" => []},
+      "console" => %{"doors" => []},
       "deps" => [
         %{
           "name" => "ex_doc",
@@ -386,7 +386,7 @@ defmodule ConsoleWeb.BoxInstallTest do
       "options" => [],
       "requires" => [],
       "offers" => [],
-      "console" => %{"doors" => [], "tabs" => []},
+      "console" => %{"doors" => []},
       "deps" => [%{"name" => "ex_doc", "requirement" => "~> 0.40", "opts" => %{}}]
     }
 
@@ -411,7 +411,7 @@ defmodule ConsoleWeb.BoxInstallTest do
         "requires" => [],
         "offers" => [],
         "base" => true,
-        "console" => %{"doors" => [], "tabs" => []},
+        "console" => %{"doors" => []},
         "deps" => []
       }
 
@@ -467,7 +467,7 @@ defmodule ConsoleWeb.BoxInstallTest do
         "requires" => [],
         "offers" => [],
         "base" => true,
-        "console" => %{"doors" => [], "tabs" => []},
+        "console" => %{"doors" => []},
         "deps" => []
       }
 

@@ -117,13 +117,18 @@ it: `deployment: "dev" | "prod" | "scaled" | null`. In the same spirit,
 of its insert commit; `git.inserts[].argv` costs the status nothing and
 spares the console a parser of commit subjects.
 
-**The Cluster screen has no data.** Replica addresses, node names, the
+**The cluster has no data.** Replica addresses, node names, the
 host port of each replica, who is connected to whom — every value on
 that table is invented in the mock, and the status's containers carry
 only Service, State, Health and Image. Either the fast status carries
 the published ports (`compose ps` has them) and the address (`inspect`
-has it), or the screen is built on its two probes and nothing else.
-Decide which before drawing the table.
+has it), or the reading is built on its two probes and nothing else.
+Decide which before drawing the table. *Settled: the status carries
+both — `containers[].Publishers` and `addresses` — and the two probes
+are the console's own (`Console.Cluster`). It was a screen on the rail,
+and since 2026-09-25 it is the box the `scaled` row of Deploy opens:
+the only tab a cartridge lit was the only tab dark without one, and
+half of what it said that row already said.*
 
 **NEED has two owners.** The catalog already carries `need` (`line`,
 `body`), and the mock parses NEED.md itself into the four parts the Box
@@ -416,8 +421,8 @@ only under `Node.list(:hidden)`), `app2` never hears of it, and
 `observer` and Livebook's attached runtime do, and for this reason:
 everything that iterates `Node.list()` — `pg` and Phoenix.PubSub with
 it, `:global`, a quorum count, LiveDashboard's node picker, the
-console's own Cluster screen — must not see a node that is not a
-replica.
+console's own reading of the cluster — must not see a node that is not
+a replica.
 
 The clustering cartridge does not collide with this, and it is worth
 writing down why, because the two look like they should. It is

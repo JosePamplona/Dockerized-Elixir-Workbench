@@ -722,11 +722,6 @@ defmodule ConsoleWeb.Box do
           read={a.read}
         />
       </span>
-      <span :if={(@console["tabs"] || []) != []} class="k">Lights</span>
-      <span :if={(@console["tabs"] || []) != []} class="v"><span
-        :for={t <- @console["tabs"]}
-        class="w"
-      >{t}</span></span>
       <span :if={@box["afterwards"]} class="k">After</span>
       <span :if={@box["afterwards"]} class="v"><span class="after">{@box["afterwards"]}</span></span>
     </div>

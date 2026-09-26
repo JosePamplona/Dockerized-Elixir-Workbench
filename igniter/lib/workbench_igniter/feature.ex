@@ -364,10 +364,12 @@ defmodule WorkbenchIgniter.Feature do
       (coverage: `mix cover` where it was inserted with `--exdoc`, which
       is what plants that task, `mix coveralls.html` otherwise); the first whose condition holds
       is the one offered.
-    * `tabs:` — screens the console shows only with this cartridge:
-      `:cluster`.
 
-  Empty by default. The catalog carries it as `console`.
+  Empty by default. There was a `tabs:` too until 2026-09-25 — screens
+  the console showed only with this cartridge, which only clustering
+  ever used: its Cluster tab is a box under the scaled row of the
+  Deploy screen now, and a cartridge contributes doors and nothing
+  else. The catalog carries it as `console`.
   """
   @callback console() :: keyword()
 

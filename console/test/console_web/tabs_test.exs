@@ -300,9 +300,53 @@ defmodule ConsoleWeb.TabsTest do
 
     # Three rows, none baked, and every eye and button unlit with the one reason.
     assert length(Regex.scan(~r/>\s*not baked\s*</, sheet)) == 3
-    assert length(Regex.scan(~r/class="sq eye unlit"/, sheet)) == 3
+    assert length(Regex.scan(~r/class="sq eye unlit"/, sheet)) == 4
     assert sheet =~ "the workspace is empty: Deploy → Project creates one"
     refute sheet =~ ~s(class="sq eye")
+
+    # The fourth is the scaled row's own: the cluster reads under it,
+    # unlit while that deployment is not up.
+    assert sheet =~ "the replicas as nodes"
+    assert sheet =~ "scaled is not up: Up it, under the table, and its replicas read here"
+    refute sheet =~ ~s(href="/deploy?cluster=1")
+  end
+
+  # The Cluster tab was retired on 2026-09-25: the replicas as nodes,
+  # and the two probes that only they can answer, read in a box under
+  # the scaled row — where the reader just pressed Up.
+  test "the cluster reads under the scaled row, opened by its own square", %{conn: conn} do
+    arrives(
+      status([running("app1"), running("app2"), running("balancer")])
+      |> Map.merge(%{
+        "deployment" => "scaled",
+        "baked" => %{"scaled" => true},
+        "ports" => %{"app" => 4001},
+        "addresses" => %{"app1" => "172.18.0.3", "app2" => "172.18.0.4"},
+        "project" => %{"app" => "lorem_ipsum"}
+      })
+    )
+
+    {:ok, view, html} = live(conn, "/deploy")
+
+    # Closed, the square is lit and says where it goes; no box yet.
+    assert html =~ ~s(href="/deploy?cluster=1")
+    refute html =~ "Who is connected?"
+
+    html = view |> element(~s(a[href="/deploy?cluster=1"])) |> render_click()
+
+    # The replicas as nodes, and the two probes.
+    assert html =~ "2 replicas"
+    assert html =~ "balancer on :4001"
+    assert html =~ "172.18.0.3"
+    assert html =~ "lorem_ipsum@172.18.0.4"
+    assert html =~ "Who answers?"
+    assert html =~ "Who is connected?"
+
+    # Pressed again it closes, and a file's eye closes it too: one box at
+    # a time under the table.
+    assert html =~ ~s(aria-pressed="true")
+    refute render_patch(view, "/deploy?compose=scaled") =~ "Who is connected?"
+    refute render_patch(view, "/deploy") =~ "Who is connected?"
   end
 
   test "the Docker screen is lit before any project is, and opens on its containers", %{

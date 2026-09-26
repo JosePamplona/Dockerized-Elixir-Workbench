@@ -90,6 +90,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **One width for every verb at the foot of the Deploy screen.** Create
+  project, Up, Stop, Down and Delete the project are the same gesture
+  five times down one screen — a line of `wb.sh`, and the button that
+  runs it — and each was as wide as its own words: 111, 170, 170, 170,
+  134 (measured 2026-09-26). They share a floor now, `--verb`, so the
+  commands before them end at one edge and the buttons read as one
+  column. 170px holds even the longest label the screen can produce,
+  `Replace scaled with dev`, on one line. The New Project card's inset
+  came down to the `16px 18px` the two cards under it wear — it was
+  `18px 20px`, so its button stood 2px left of theirs and the three
+  right edges of the screen never quite met.
+
 - **The three verbs of a deployment read down at the foot, each with
   the line it runs.** Stop and Down were on every row of the
   Deployments sheet — four buttons on each of three rows, of which at

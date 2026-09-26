@@ -621,7 +621,11 @@ pre .ln{display:block}
 /* One column: the card is the form. It was two while the second held
    the collection to insert afterwards — that offer is gone, and an
    empty column is not a layout. */
-.newcard{border:1px solid var(--line);background:var(--surface);border-radius:3px;padding:18px 20px;display:grid;grid-template-columns:minmax(0,1fr);gap:18px;margin-bottom:18px}
+/* The same inset as the two cards under it, Deployments and Danger: it
+   was 18px 20px against their 16px 18px, so its foot's button stood
+   2px left of theirs and the three right edges of the screen never
+   quite met (2026-09-26). */
+.newcard{border:1px solid var(--line);background:var(--surface);border-radius:3px;padding:16px 18px;display:grid;grid-template-columns:minmax(0,1fr);gap:18px;margin-bottom:18px}
 /* The two cards of this screen carry the same heading; only the new
    project's also has to hold a chip out at its right edge. */
 .newcard h3,.deployment h3{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:18px}
@@ -650,7 +654,17 @@ pre .ln{display:block}
    colour is not its. */
 .newcard .flags{display:flex;flex-wrap:wrap;gap:6px 14px;font-family:var(--mono);font-size:12.5px}
 .newcard .flags label{display:inline-flex;gap:6px;align-items:center}
+/* Every foot of the Deploy screen is the same gesture: a line of
+   `wb.sh`, and the button that runs it. Create, Up, Stop, Down, Delete
+   — so they share a floor and the commands before them all end at the
+   same edge (2026-09-26). It was three widths down one screen: 111 for
+   Create, 170 for the three verbs, 134 for Delete, each button as wide
+   as its own words. Only a label that outgrows the floor moves it, and
+   there is one — `Replace scaled with dev`, the button whose words
+   change with the row the reader picks. */
+.screen{--verb:170px}
 .newcard .foot,.deployments .foot,section.danger .foot,.install .foot{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.newcard .foot>.btn,.deployments .foot .fline>.btn,section.danger .foot>.btn,section.danger .foot>.confirm{min-width:var(--verb);justify-content:center}
 .newcard .foot .cmds,.deployments .foot .cmds{flex:1;min-width:240px;display:grid;gap:3px}
 .newcard .foot .cmd,.deployments .foot .cmd,section.danger .foot .cmd,.install .foot .cmd{min-width:0}
 .confirm{font-family:var(--serif);font-size:13.5px;color:var(--bad);display:none;gap:8px;align-items:center}
@@ -1646,9 +1660,8 @@ section.danger .foot>.btn,section.danger .foot>.confirm{grid-area:1/2}
    and Down sat on every row. */
 .deployments .foot{margin-top:6px;display:grid;gap:8px}
 .deployments .foot .fline{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-/* The buttons of the three lines share one edge: the widest sets it, so
-   the column of commands ends where the column of verbs begins. */
-.deployments .foot .fline>.btn{min-width:var(--foot-verb,170px);justify-content:center}
+/* The three lines' buttons share the edge every foot of this screen
+   shares: `--verb`, over by the feet themselves. */
 .deployments table.rows.deps td.sync{white-space:normal}
 /* Services is the column that gives: with the three buttons always
    there, the addresses would push past the row and paint over them.

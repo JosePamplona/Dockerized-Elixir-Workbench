@@ -1638,7 +1638,11 @@ span.fact{display:inline-block;line-height:0}
 span.fact input{accent-color:var(--accent);width:14px;height:14px;margin:0;vertical-align:middle;pointer-events:none}
 .record .cmdblock{display:grid;gap:8px;margin:14px 0 22px}
 .record .cmdblock .thead{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);padding-bottom:6px;border-bottom:1px solid var(--line)}
-.record .cmd{margin:0;font-family:var(--mono);font-size:12px;line-height:1.6;background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:10px 14px;white-space:pre-wrap;overflow-wrap:anywhere}
+/* The same hanging indent as every .cmd: the padding here overrode the
+   generic one and left its text-indent, so the `$` sat against the
+   border and the wrapped lines hung under it, not under the command
+   (2026-09-27). */
+.record .cmd{margin:0;font-family:var(--mono);font-size:12px;line-height:1.6;background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:10px 14px 10px calc(14px + 2ch);white-space:pre-wrap;overflow-wrap:anywhere}
 /* Danger: the tab's last box, and the only one in it is the verb that
    cannot be taken back. Its ground is the card's, its rule is the bad
    colour, and its note says what goes before the hand is near it —

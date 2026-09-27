@@ -427,6 +427,14 @@ defmodule ConsoleWeb.TabsTest do
     assert form =~ ~s(phx-change="new_form")
     assert html =~ ~s(data-phx-component=)
 
+    # Create stands outside the form and names it to submit it. The card
+    # took `new-project` for its own wrapper when it became a component,
+    # and the button went on naming that: it pointed at a div and
+    # submitted nothing (2026-09-27).
+    [create] = Regex.run(~r{<button[^>]*>\s*Create project\s*</button>}s, html)
+    assert create =~ ~s(form="new-project-form")
+    assert create =~ ~s(type="submit")
+
     # And what it carries is what runs: the name typed into it.
     html =
       view |> element("#new-project-form") |> render_change(%{"name" => "Bakery Co"})

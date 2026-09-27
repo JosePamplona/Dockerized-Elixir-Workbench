@@ -98,6 +98,10 @@ defmodule ConsoleWeb.NewProject do
     ~H"""
     <div class={["newcard", fold_class(@folded, "newproject")]}>
       <.card_head key="newproject" name="New Project" folded={@folded} />
+      <%!-- The form carries its own id, which the Create button outside it
+            names to submit it. It was `new-project` until the card became
+            a component and took that id for its wrapper: the button then
+            pointed at a div and submitted nothing (2026-09-27). --%>
       <form
         class="form"
         id="new-project-form"
@@ -298,7 +302,7 @@ defmodule ConsoleWeb.NewProject do
           :if={!@pending}
           label={if @busy, do: "Creating…", else: "Create project"}
           class="primary"
-          form="new-project"
+          form="new-project-form"
           args={String.replace_prefix(@cmd, "./wb.sh ", "")}
           why={@busy && "a job is running"}
         />

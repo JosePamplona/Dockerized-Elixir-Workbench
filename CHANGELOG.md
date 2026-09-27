@@ -561,6 +561,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **Create project submitted nothing.** The button stands outside the
+  form and names it to submit it, and the form's id changed when the
+  card became a component: the card took `new-project` for its own
+  wrapper, so the button was naming a div. Nothing was wrong with what
+  it would have run — the line under it was right all along — and
+  nothing happened when it was pressed. Both ends say
+  `new-project-form` now, and a test holds the button to the form's id,
+  which is the one thing a rename like that breaks silently.
+
 - **A base cartridge left out kept its switches ticked.** They went
   dim, which is right, and stayed on, which is not: the flag is not in
   the command at all, so a ticked box was saying the opposite of what

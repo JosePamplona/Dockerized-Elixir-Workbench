@@ -9,7 +9,7 @@ html,body{height:100%}
 /* The page is a grid — the band, then the rest — so no height is ever
    100vh minus a hardcoded pixel count: a fractional zoom rounded that
    into a one-pixel slit under the jobs bar. */
-body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--serif);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;display:grid;grid-template-rows:auto minmax(0,1fr);overflow:hidden}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--serif);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;display:grid;grid-template-rows:auto auto minmax(0,1fr);overflow:hidden}
 /* The console is a LiveView, and a LiveView comes wrapped in a div of
    its own. That div was the body's only grid row: it took its height
    from its content, the two rows below it never applied, and the whole
@@ -157,10 +157,25 @@ header.band .mock{border:1px solid rgba(255,255,255,.35);padding:3px 8px;border-
    a grid row, so moving it is the row order; the rail is a grid column,
    so hiding it is one template and swapping sides is another plus the
    border, which always faces the screen. */
-body.band-bottom{grid-template-rows:minmax(0,1fr) auto}
-body.band-bottom header.band{grid-row:2;border-bottom:0;border-top:3px solid transparent}
+body.band-bottom{grid-template-rows:minmax(0,1fr) auto auto}
+body.band-bottom header.band{grid-row:3;border-bottom:0;border-top:3px solid transparent}
 body.band-bottom header.band::after{bottom:auto;top:-3px}
 body.band-bottom .app{grid-row:1}
+/* The warning keeps the band's company, on the side the screen is: the
+   row between the two, whichever way round they are. */
+body.band-bottom .rebind{grid-row:2;border-top:1px solid var(--bad);border-bottom:0}
+/* The console was started for another workspace, or for a project by
+   another name (2026-09-27): a row across the frame, against the band,
+   in the house's bad. It is the one condition true of the whole console
+   at once — every job's mix and git runs in a container of its own —
+   and it said so in a note inside the rail until then, which is where
+   it was missed. Nothing is disabled with it: the console works whole,
+   only slower, and greying out what still works would be the unlit rule
+   backwards. */
+.rebind{grid-row:2;display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;padding:8px 28px;background:color-mix(in srgb,var(--bad) 12%,var(--ground));border-bottom:1px solid var(--bad);color:var(--ink);font-family:var(--serif);font-size:13.5px}
+.rebind .what{flex:1;min-width:280px}
+.rebind .mono{font-family:var(--mono);font-size:12.5px;color:var(--bad)}
+.rebind .btn{flex:none}
 body.rail-right .app{grid-template-columns:minmax(0,1fr) var(--rail)}
 body.rail-right .console{order:2;border-right:0;border-left:1px solid var(--line)}
 body.rail-off .app{grid-template-columns:minmax(0,1fr)}

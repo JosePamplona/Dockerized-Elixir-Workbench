@@ -2,8 +2,62 @@ defmodule ConsoleWeb.Band do
   @moduledoc """
   The band's middle: what the console is doing, as a dot and a word,
   and the errands — what it is fetching from outside — that word names.
+  And the row that keeps the band company when the console was started
+  for something other than what `config.conf` names now.
   """
   use Phoenix.Component
+
+  @doc """
+  The console was started for another workspace, or for a project by
+  another name: a row across the frame, against the band, since
+  2026-09-27 — it was a note inside the rail until then, which is a
+  local place for the one condition true of the whole console at once.
+
+  What it says depends on which of the two it is, because they are not
+  the same thing and only one of them is about volumes:
+
+    * another workspace — the console has that directory bind-mounted,
+      and this one is not in the container at all;
+    * the same workspace, another name — the console holds that name's
+      build volumes, `<name>_build` and `<name>_deps`, which are the
+      ones the compose of the project it was started for owns. The
+      project here owns others.
+
+  Either way a job's mix and git run in a container of their own, which
+  is slower and nothing else: nothing is disabled with this. Starting
+  again binds the console to this workspace, on the same address.
+  """
+  attr :rebind, :map,
+    required: true,
+    doc: "the mount as `Console.Workbench.rebind/0` reads it, `moved` and all"
+
+  def rebind(assigns) do
+    assigns = assign(assigns, moved?: assigns.rebind.moved)
+
+    ~H"""
+    <div class="rebind" role="status">
+      <span class="what">
+        <b>Jobs run in a container of their own — slower.</b>
+        <%= if @moved? do %>
+          This console was started for the workspace <span class="mono">{@rebind.workspace}</span>
+          and has that one mounted, not this one, so mix and git cannot run in it.
+        <% else %>
+          This console was started for <span class="mono">{@rebind.project}</span>,
+          and holds that project's build volumes — <span class="mono">{@rebind.project}_build</span>
+          and <span class="mono">{@rebind.project}_deps</span>. The project here owns
+          others, so mix and git cannot run in it.
+        <% end %>
+        Starting again binds it to this workspace, on the same address.
+      </span>
+      <ConsoleWeb.Refs.job_button
+        label="Start again"
+        class="mini"
+        args="console up"
+        title="./wb.sh console up — the console comes up again for this workspace, on the same address; this page reconnects on its own"
+      />
+    </div>
+    """
+  end
 
   @doc """
   What the console is doing, in the band's middle: a dot and a word.

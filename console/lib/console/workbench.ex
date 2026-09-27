@@ -152,8 +152,14 @@ defmodule Console.Workbench do
   @doc """
   What `./wb.sh console` mounted this container for, against what
   config.conf names now: `nil` when they agree — or when the console
-  runs by hand, with no mount — and the mount's `%{workspace:, project:}`
-  when they do not. The same three checks `wb.sh` makes
+  runs by hand, with no mount — and the mount's
+  `%{workspace:, project:, moved:}` when they do not. `moved` is which
+  of the two it is, and they are not the same thing: another workspace
+  means this one is not in the container at all, and the same workspace
+  under another name means the build volumes it holds are another
+  project's. The band says one or the other (`ConsoleWeb.Band.rebind/1`),
+  so the comparison is made here, once, where the two values already
+  are. The same three checks `wb.sh` makes
   (`toolchain_here`) and the resident (`mounted_here?`): while they
   fail every mix and git of a job runs in a container of its own, and
   the console has to be started again to run them here.
@@ -169,7 +175,7 @@ defmodule Console.Workbench do
     cond do
       is_nil(System.get_env("WORKSPACE_MOUNT")) -> nil
       mount.workspace == ws and mount.project == project(ws).name -> nil
-      true -> mount
+      true -> Map.put(mount, :moved, mount.workspace != ws)
     end
   end
 

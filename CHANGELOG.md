@@ -90,6 +90,37 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **The console started for another project says so across the frame.**
+  It is the one condition true of the whole console at once — every mix
+  and git of a job runs in a container of its own, which is why a job
+  that took seconds takes minutes — and it said so in a `.note` inside
+  the rail's Workspace section, a local place for a global thing, where
+  it was missed. It is a row against the band now, in the house's
+  `--bad`, with *Start again* at its edge: under the band when the band
+  is on top, over it when the reader put the band at the foot
+  (`body.band-bottom`), so it always faces the screen. It says the
+  consequence first and the mechanism after, and the rail's note is
+  gone: one voice for one condition.
+
+  And it says *which* of the two it is, because they are not the same
+  thing and only one of them is about volumes. Another workspace: the
+  console has that directory bind-mounted and this one is not in the
+  container at all. The same workspace under another name — what a
+  reader meets after creating a project from the card — and it holds
+  that name's build volumes, `<name>_build` and `<name>_deps`, which
+  the compose of the project it was started for owns; the project here
+  owns others. The band names them. The comparison is made in
+  `Workbench.rebind/0`, which already had both values, and travels as
+  `moved`.
+
+  Nothing is disabled with it. In this state the console works whole —
+  Docker, Logs, Terminal, the papers, the shelf, the status, every
+  verb — and what changed is *where* a job's mix runs. Grey out what
+  still works and the unlit rule runs backwards: it is for a verb the
+  reader cannot have, not for one that is merely slower. A test counts
+  what cannot be pressed with the warning up and without it, and the
+  two are equal.
+
 - **`./wb.sh new --name "My App"`, and the name moves up beside the
   workspace.** The creating command takes the name for one creation;
   without the flag, `PROJECT_NAME` in `config.conf` names it as it

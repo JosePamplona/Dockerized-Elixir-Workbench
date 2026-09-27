@@ -121,19 +121,6 @@ defmodule ConsoleWeb.Board do
       <span class="label">Workspace</span>
       <p class="name">{@status["compose_project"] || "no project"}</p>
       <div class="path mono">{@status["workspace"]}</div>
-      <p :if={@rebind} class="note">
-        This console was started for <span class="mono">{@rebind.project}</span>
-        at <span class="mono">{@rebind.workspace}</span>.
-        Until it starts again for this workspace, every mix and git of a job runs in a container of its own.
-        <button
-          class="btn mini"
-          phx-click="run"
-          phx-value-args="console up"
-          title="./wb.sh console up — the console comes up again for this workspace, on the same address; this page reconnects on its own"
-        >
-          Start again
-        </button>
-      </p>
     </section>
     """
   end

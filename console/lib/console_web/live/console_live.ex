@@ -14,7 +14,7 @@ defmodule ConsoleWeb.ConsoleLive do
   use ConsoleWeb, :live_view
 
   alias Console.{Bench, Events, Jobs, Logs, Project, Terminals, Verbs, Workbench}
-  alias ConsoleWeb.{Box, Cartridges, Deploy, DockerScreen, GitScreen, Refs}
+  alias ConsoleWeb.{Band, Box, Cartridges, Deploy, DockerScreen, GitScreen, Refs}
   alias ConsoleWeb.ConsoleLive.{Docker, Drawer, Git, Hand, Term}
   alias ConsoleWeb.Doors
   alias ConsoleWeb.Record
@@ -877,6 +877,24 @@ defmodule ConsoleWeb.ConsoleLive do
         </.link>
       </div>
     </header>
+
+    <%!-- The one thing that is true of the whole console at once: it was
+          started for another workspace, or for a project by another
+          name, so every mix and git of a job runs in a container of its
+          own — slower, and nothing else. It said so in a note inside
+          the rail's Workspace section until 2026-09-27, which is a
+          local place for a global condition, and it was the one message
+          that explains why every job suddenly takes minutes.
+
+          Nothing is disabled with it. The console in this state works
+          whole — Docker, Logs, Terminal, the papers, the shelf, the
+          status — and what changed is where a job's mix runs. Greying
+          out what still works would be the unlit rule backwards.
+
+          It sits against the band, on the side the screen is: under it
+          when the band is on top, over it when the reader put the band
+          at the foot (`body.band-bottom`). --%>
+    <Band.rebind :if={@rebind} rebind={@rebind} />
 
     <%!-- What colour each service is drawn in, for the hooks that paint in
          the browser (the logs): a role's, asked of ConsoleWeb.Services. --%>

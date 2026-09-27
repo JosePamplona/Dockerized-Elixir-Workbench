@@ -57,6 +57,34 @@ defmodule ConsoleWeb.NewCommandTest do
     assert Deploy.new_command([], p) == "./wb.sh new --name Bakery --adapter cowboy"
   end
 
+  # A base cartridge left out takes its own switches with it: the flags
+  # are not in the command at all, so the boxes read off and not merely
+  # dim (2026-09-27, when they stayed ticked while going nowhere). What
+  # the reader had set is kept, so ticking the cartridge back on finds
+  # it as it was — which is why the card merges what the form sends
+  # over what it remembers, and every switch carries an "off" of its
+  # own so that nothing stale can survive being turned off.
+  test "a cartridge left out takes its flags out of the line" do
+    catalog = [
+      %{
+        "name" => "html",
+        "base" => true,
+        "requires" => [],
+        "options" => [%{"name" => "live", "type" => "boolean", "default" => true}]
+      }
+    ]
+
+    # In, and the switch turned off: the line says so.
+    p = newp(name: "Bakery", gen: %{"live" => "off"})
+    assert "--no-live" in Deploy.new_args(catalog, p)
+
+    # Out, and neither the cartridge's flag nor its switch is there.
+    out = newp(name: "Bakery", gen: %{"live" => "off"}, out: MapSet.new(["html"]))
+    args = Deploy.new_args(catalog, out)
+    assert "--no-html" in args
+    refute "--no-live" in args
+  end
+
   # The line is the list, said: whatever the card carries, the two must
   # be the same command, or the reader is shown one thing and another is
   # run.

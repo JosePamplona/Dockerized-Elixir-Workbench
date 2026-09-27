@@ -561,6 +561,26 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **A base cartridge left out kept its switches ticked.** They went
+  dim, which is right, and stayed on, which is not: the flag is not in
+  the command at all, so a ticked box was saying the opposite of what
+  would run. It happened because the switch was still live at the
+  moment the cartridge was unticked, so the form sent it on and the
+  card stored it. They read off with their cartridge now.
+
+  Two things had to move with that, and the second only showed up on
+  the way back. A switch and its hidden `off` both go quiet when the
+  cartridge is out — disabled, so neither is sent — and the card merges
+  what the form sends over what it remembers rather than replacing it,
+  because a disabled field sends nothing and the memory is all there
+  is. For the merge to be safe every switch carries an `off` of its
+  own, not only those on by default: what the form does not send has to
+  mean *nobody touched me*, never *off*, or a switch turned off would
+  come back on. Walked through in the browser: html out, `--live`
+  reads off; html back, it returns as it was, including a `--no-live`
+  the reader had chosen; and `--binary-id`, which is off by default,
+  still turns on and off and survives the round trip.
+
 - **The screen was as tall as its content, and the rail ended with it.**
   The row the warning band took was added to the frame's grid without
   placing what was already in it, so the screen auto-placed into that

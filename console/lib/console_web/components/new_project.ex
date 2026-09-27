@@ -64,7 +64,11 @@ defmodule ConsoleWeb.NewProject do
 
     %{
       out: out,
-      gen: params["gen"] || %{},
+      # Merged, not replaced: a disabled field sends nothing, and the
+      # card's memory of it is all there is (2026-09-27). Every switch
+      # sends an "off" of its own while it is enabled, so nothing stale
+      # can survive a reader turning one off.
+      gen: Map.merge(socket.assigns.newp.gen, params["gen"] || %{}),
       name: params["name"] || "",
       default: socket.assigns.newp.default
     }
@@ -227,8 +231,20 @@ defmodule ConsoleWeb.NewProject do
                 <%!-- A base cartridge's own phx.new flags: ecto's database and
                     ids, html's live. A switch is labelled with its flag and
                     checked when on, whatever its default; one on by default
-                    carries an "off" before its box, since a form sends nothing
-                    for an unchecked one, and the command says --no-live. --%>
+                    carries an "off" before its box, since a form sends
+                    nothing for an unchecked one, and the command says
+                    --no-live. Every switch carries one, not only those
+                    (2026-09-27): what the form does not send is what the
+                    card remembers, so a switch that says nothing must
+                    mean "nobody turned me off" and not "off".
+
+                    With the cartridge left out its switches read off, and
+                    not merely dim: the flag is not in the command at all,
+                    and a ticked box that is going nowhere says the
+                    opposite. Both the box and its hidden "off" go quiet
+                    with it — disabled, so neither is sent — and what the
+                    reader had set is what they find when they tick the
+                    cartridge back on. --%>
                 <span :if={e["options"] != []} class="subs">
                   <%= for o <- e["options"] do %>
                     <% flag = "--" <> String.replace(o["name"], "_", "-") %>
@@ -247,16 +263,16 @@ defmodule ConsoleWeb.NewProject do
                         </select>
                       <% else %>
                         <input
-                          :if={o["default"] == true}
                           type="hidden"
                           name={"gen[#{o["name"]}]"}
                           value="off"
+                          disabled={out}
                         />
                         <input
                           type="checkbox"
                           name={"gen[#{o["name"]}]"}
                           disabled={out}
-                          checked={switch_on?(o, @newp.gen[o["name"]])}
+                          checked={not out and switch_on?(o, @newp.gen[o["name"]])}
                           title={o["doc"]}
                         /> {flag}
                       <% end %>

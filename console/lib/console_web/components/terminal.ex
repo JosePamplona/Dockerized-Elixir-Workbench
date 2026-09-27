@@ -44,21 +44,6 @@ defmodule ConsoleWeb.Terminal do
       data-open={to_string(@open)}
       data-key={"#{@target.name} #{@shell}"}
     >
-      <div class="logmeta">
-        <span>{@cmd}</span><span>{cond do
-          @open ->
-            "session on #{@target.name} · #{@shell}#{others(@live - 1)}"
-
-          match?({:ended, _}, @state) ->
-            "session ended (exit #{elem(@state, 1)}) on #{@target.name} · #{@shell}#{others(@live)}"
-
-          is_nil(@status) ->
-            "reading the workspace…"
-
-          true ->
-            "no session#{others(@live)} · docker exec -i, line by line, no tty"
-        end}</span>
-      </div>
       <div class="viewport">
         <%!-- The containers on top, alone: where a session opens. Each one
               wears its sessions — live, or ended with its trail — and none
@@ -127,6 +112,23 @@ defmodule ConsoleWeb.Terminal do
             }
           >Open a session</button>
         </div>
+      </div>
+      <%!-- The meta line under the box (2026-09-27; it sat above): the
+            command and the session, read after the screen, not before. --%>
+      <div class="logmeta">
+        <span>{@cmd}</span><span>{cond do
+          @open ->
+            "session on #{@target.name} · #{@shell}#{others(@live - 1)}"
+
+          match?({:ended, _}, @state) ->
+            "session ended (exit #{elem(@state, 1)}) on #{@target.name} · #{@shell}#{others(@live)}"
+
+          is_nil(@status) ->
+            "reading the workspace…"
+
+          true ->
+            "no session#{others(@live)} · docker exec -i, line by line, no tty"
+        end}</span>
       </div>
     </div>
     """

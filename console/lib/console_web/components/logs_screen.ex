@@ -12,9 +12,6 @@ defmodule ConsoleWeb.LogsScreen do
   def logs_screen(assigns) do
     ~H"""
     <div class="logs logsp" id="logs" phx-hook="Logs" phx-update="ignore">
-      <div class="logmeta">
-        <span id="log-count"></span><span>docker compose logs --follow · the last 500 lines when the stream starts, then live · capped at 2 000 lines in the page</span>
-      </div>
       <div class="viewport">
         <%!-- The services on top, alone: which of them show. Empty until a
               service has written a line — the strip hides itself then. --%>
@@ -38,6 +35,10 @@ defmodule ConsoleWeb.LogsScreen do
           <button class="btn" id="ts" type="button" aria-pressed="true">Timestamps</button>
           <button class="btn" id="clear" type="button">Clear</button>
         </div>
+      </div>
+      <%!-- The meta line under the box (2026-09-27; it sat above). --%>
+      <div class="logmeta">
+        <span id="log-count"></span><span>docker compose logs --follow · the last 500 lines when the stream starts, then live · capped at 2 000 lines in the page</span>
       </div>
     </div>
     """

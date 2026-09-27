@@ -430,8 +430,8 @@ table.rows tr.new{animation:seat 1.2s ease-out}
 .term .screen{grid-row:2}
 .term .in{grid-row:3}
 .term .controls:not(.top){grid-row:4}
-/* Two rows now, the meta line and the box — .logs still says three for the Jobs screen, whose command line stays above. */
-.logs.logsp,.logs.term{grid-template-rows:auto minmax(0,1fr)}
+/* Two rows, the box and the meta line under it (2026-09-27; above until then) — .logs still says three for the Jobs screen, whose command line stays above. */
+.logs.logsp,.logs.term{grid-template-rows:minmax(0,1fr) auto}
 .viewport .toolbar.controls,.out .toolbar.controls{padding:8px 14px;border-top:1px solid var(--line);background:var(--surface);color:var(--ink);white-space:normal}
 .logsp .newpill{bottom:calc(14px + 47px)}
 .term .screen{padding:10px 14px;min-height:0}

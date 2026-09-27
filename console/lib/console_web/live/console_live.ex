@@ -61,6 +61,7 @@ defmodule ConsoleWeb.ConsoleLive do
         tab: "deploy",
         status: status,
         rebind: Workbench.rebind(),
+        off_disk: off_disk(status),
         catalog: catalog,
         config: Workbench.config(),
         version: Workbench.version(),
@@ -108,7 +109,6 @@ defmodule ConsoleWeb.ConsoleLive do
         filter: nil,
         reading: (is_nil(status) or Bench.reading?(:status)) && :full,
         pick: %{target: nil, replicas: 4, balancer: true},
-        newp: %{out: MapSet.new(), gen: %{}},
         restart_logs: false,
         folded: MapSet.new(),
         dk: DockerScreen.initial(recent_events(socket)),
@@ -248,6 +248,21 @@ defmodule ConsoleWeb.ConsoleLive do
 
   defp take_compose(socket, _named), do: assign(socket, pcomposes: [], pdeploy: nil)
 
+  # What the Deploy screen reads off the workspace's own files: the three
+  # deployments as `Record` draws them (their compose files, for the
+  # ports each publishes) and the stack the project was born on (its
+  # `Dockerfile.local`). Read when a status arrives, which is when those
+  # files can have changed — a bake, a new, an up — and not on every
+  # render: they sat in the card's body, so every checkbox of the New
+  # Project form read them again on its way through the server
+  # (`born/1` alone measured 6.5 ms, 2026-09-27).
+  defp off_disk(status) do
+    %{
+      rows: Record.deployments(status || %{}),
+      born: status && status["exists"] == true && Console.Project.born(status["workspace"])
+    }
+  end
+
   # A knock: every open route called once, and what each answered kept
   # for the whole page — the rail's Services, Doors & Pages and the Record's
   # addresses share it. With the app down there is no route to call, and
@@ -305,6 +320,7 @@ defmodule ConsoleWeb.ConsoleLive do
       socket
       |> assign(
         status: status,
+        off_disk: off_disk(status),
         reading: false,
         error: nil,
         restart_logs: false,
@@ -729,20 +745,6 @@ defmodule ConsoleWeb.ConsoleLive do
      if(line, do: run(socket, String.replace_prefix(line, "./wb.sh ", "")), else: socket)}
   end
 
-  def handle_event("new_form", params, socket),
-    do: {:noreply, assign(socket, newp: newp_from(params, socket.assigns.catalog))}
-
-  # Create is the form submitted, and the line is built from what it
-  # carries — never read off the button: a command rendered onto it and
-  # a click in the same instant as the last change ran the command as it
-  # was before that change (2026-09-07: --database mssql chosen, a bare
-  # `new` run).
-  def handle_event("new_submit", params, socket) do
-    newp = newp_from(params, socket.assigns.catalog)
-    cmd = Deploy.new_command(socket.assigns.catalog, newp)
-    {:noreply, socket |> assign(newp: newp) |> run(String.replace_prefix(cmd, "./wb.sh ", ""))}
-  end
-
   # The picker as the reader left it: the target, the replicas, the
   # balancer. A change writes it, and a submit reads it again — the two
   # events carry the same fields.
@@ -761,14 +763,6 @@ defmodule ConsoleWeb.ConsoleLive do
   end
 
   # The card's form as state: the base cartridges left out, the flags.
-  defp newp_from(params, catalog) do
-    ins = params["in"] || %{}
-
-    out =
-      for e <- Cartridges.base(catalog), ins[e["name"]] != "on", into: MapSet.new(), do: e["name"]
-
-    %{out: out, gen: params["gen"] || %{}}
-  end
 
   defp run(socket, line) do
     case Verbs.parse(line) do
@@ -1025,10 +1019,11 @@ defmodule ConsoleWeb.ConsoleLive do
               config={@config}
               jobs={@jobs}
               pick={@pick}
-              newp={@newp}
               composes={@pcomposes}
               deploy={@pdeploy}
               reading={@reading}
+              folded={@folded}
+              off_disk={@off_disk}
             />
           </section>
 

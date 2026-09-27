@@ -652,6 +652,10 @@ pre .ln{display:block}
 .newcard .frow{display:grid;grid-template-columns:130px minmax(0,1fr);gap:10px;align-items:center}
 .newcard .frow label{font-family:var(--mono);font-size:12.5px}
 .newcard .frow input[type=text]{font-family:var(--mono);font-size:13px;padding:6px 8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;width:100%;max-width:520px}
+/* The project's name, asked here since 2026-09-26: a field as wide as a
+   name, not as wide as the card. Full width it outweighed every reading
+   beside it — `1.20.4`, `29.1.1` — which are the rows it is read with. */
+.newcard .frow .ro input[type=text]{width:24ch;max-width:100%}
 .newcard .flags select{font-family:var(--mono);font-size:12px;margin-left:4px;padding:2px 4px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px}
 /* A base cartridge left out is left out, not unknown. The strike this
    used to draw belongs to `.cart-ref.unknown`, which the house keeps for

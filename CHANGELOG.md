@@ -90,6 +90,32 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **A flag on the New Project card stops costing the whole screen.**
+  Every tick of a checkbox goes to the server, because the server is
+  what decides which of the others go dark — `--database` with ecto,
+  `--live` with html — so the round trip is inherent. What was not is
+  what it dragged: the card was part of the Deploy screen's template,
+  so each tick re-rendered the deployments sheet and the Danger box
+  too, and that render read the workspace off disk — `Project.born/1`
+  (the project's `Dockerfile.local`, **6.5 ms** measured against a real
+  project) and `Record.deployments/1` (the three compose files).
+
+  Both are read now when a status arrives, which is when those files
+  can have changed — a bake, a new, an up — and carried as `off_disk`.
+  And the card is a component of its own, `ConsoleWeb.NewProject`: the
+  form answers to it, so what the reader is composing never leaves the
+  card and the rest of the screen is not touched. Measured on the same
+  page: **5 ms → 385 µs** in the server, 29 ms → 6–19 ms from the click
+  to the line changing.
+
+- **The Record's link stands with the chip that says there is a
+  project.** It was *what it is* in the New Project card's head; it is
+  *Detail* on the workspace row, after the `existing project` chip. The
+  two come and go together — both are rendered exactly when the
+  workspace holds a project — so the chip says there is one and the
+  link opens it, on the row that is about it, instead of a head that is
+  about creating the next.
+
 - **The Deploy screen's three cards fold, and the base cartridges read
   down.** New Project, Deployments and Danger fold to their head — the
   rail's fold at a card's size, the same `fold_section` event, the same

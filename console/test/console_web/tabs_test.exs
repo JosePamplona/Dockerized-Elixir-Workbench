@@ -366,6 +366,75 @@ defmodule ConsoleWeb.TabsTest do
     refute table =~ "chip"
   end
 
+  # The Record's link left the card's head on 2026-09-27 and stands by
+  # the chip that says there is a project: the two come and go together
+  # — both are there exactly when the workspace holds one — so the chip
+  # says there is a project and the link opens it, on the row that is
+  # about it.
+  test "the project's Detail link stands with the chip, not in the card's head", %{conn: conn} do
+    arrives(Map.merge(status([]), %{"exists" => true, "project" => %{"app" => "lorem_ipsum"}}))
+    {:ok, _view, html} = live(conn, "/deploy")
+
+    # Not in the head any more, where it read "what it is".
+    [head] = Regex.run(~r{<h3[^>]*>.*?New Project.*?</h3>}s, html)
+    refute head =~ "Detail"
+    refute head =~ "what it is"
+
+    # And on the workspace row: after the chip that says there is a
+    # project, before the row that asks for a name.
+    chip = :binary.match(html, "existing project") |> elem(0)
+    link = :binary.match(html, "/project?paper=record") |> elem(0)
+    next_row = :binary.match(html, "project name") |> elem(0)
+
+    assert chip < link and link < next_row
+    assert html =~ "Detail"
+  end
+
+  # The Deploy screen's three cards fold to their head since 2026-09-27,
+  # the rail's fold at a card's size. Each key is its own: the rail's
+  # Deployments section and this sheet are two things with one name.
+  test "the three cards of Deploy fold, each by its own key", %{conn: conn} do
+    {:ok, view, html} = live(conn, "/deploy")
+
+    for key <- ~w(newproject sheet danger) do
+      assert html =~ ~s(phx-value-key="#{key}")
+    end
+
+    # Danger lost the word "zone": the box is the danger.
+    assert html =~ ">Danger</span>"
+    refute html =~ "Danger zone"
+
+    # Folding the sheet leaves the rail's section of the same name alone.
+    html = view |> element(~s(.deployments h3 .foldsq)) |> render_click()
+
+    assert html =~ ~s(class="deployments folded")
+    [rail] = Regex.run(~r{<aside[^>]*id="rail".*?</aside>}s, html)
+    refute rail =~ "folded"
+  end
+
+  # The New Project card is a component of its own since 2026-09-27, and
+  # the form answers to it (`phx-target`): a flag's round trip no longer
+  # re-renders the deployments sheet or the Danger box, neither of which
+  # a flag can change. What the reader is composing lives in the card
+  # and never leaves it until Create.
+  test "the card answers for its own form, and the line follows it", %{conn: conn} do
+    arrives(status([]))
+    {:ok, view, html} = live(conn, "/deploy")
+
+    # The form is the component's, not the page's.
+    [form] = Regex.run(~r{<form[^>]*id="new-project-form"[^>]*>}, html)
+    assert form =~ "phx-target="
+    assert form =~ ~s(phx-change="new_form")
+    assert html =~ ~s(data-phx-component=)
+
+    # And what it carries is what runs: the name typed into it.
+    html =
+      view |> element("#new-project-form") |> render_change(%{"name" => "Bakery Co"})
+
+    # The quotes come through escaped, as any attribute-safe text does.
+    assert html =~ "./wb.sh new --name &quot;Bakery Co&quot;"
+  end
+
   test "the Docker screen is lit before any project is, and opens on its containers", %{
     conn: conn
   } do

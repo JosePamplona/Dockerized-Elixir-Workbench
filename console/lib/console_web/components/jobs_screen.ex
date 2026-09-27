@@ -45,7 +45,45 @@ defmodule ConsoleWeb.JobsScreen do
 
     ~H"""
     <div class="logs jobsp">
+      <%!-- The meta line is the list's caption and its one control — how
+            many, what state, collapse them all — so it heads the list
+            and stays put while the list scrolls, as a rail section's
+            heading does; the command line is under the list (2026-09-27;
+            the line was typed above the list, and the meta line sat at
+            the foot for a day). --%>
+      <div :if={@jobs != []} class="logmeta">
+        <span>{length(@jobs)} job{if length(@jobs) == 1, do: "", else: "s"} · {if @running > 0,
+          do: "#{@running} running",
+          else: "idle"}{if @failed > 0, do: " · #{@failed} failed"}</span>
+        <span :if={@unfolded > 0}><button class="lk" phx-click="fold_all">{if @unfolded == 1,
+          do: "collapse it",
+          else: "collapse all"}</button></span>
+        <span :if={@unfolded == 0}>click a job to unfold its output</span>
+      </div>
+      <%!-- The list of jobs is the framed list a box's Runs are: one way to
+            meet a pile of jobs, wherever it is met (2026-09-12). --%>
+      <div class="viewport light">
+        <p :if={@jobs == []} class="nothing">
+          No jobs yet. Every command the console runs is a job — its output, its exit code, how long it took. Insert a cartridge, deploy, or type one below.
+        </p>
+        <div :if={@jobs != []} class="lines jobs-list" id="jobs" phx-hook="JobOut">
+          <.job_row
+            :for={j <- @jobs}
+            j={j}
+            open={MapSet.member?(@open, j.id)}
+            now={@now}
+            asking={@asking}
+            stoppable={@stoppable}
+          />
+        </div>
+      </div>
+      <%!-- What Tab could complete to, when it could not decide: a line
+            over the field, as wide as the field, in the flow of the form
+            (2026-09-27; it was a toast floating over the page, in the
+            heading's voice, gone after six seconds). The hook fills it
+            and clears it on the next keystroke; empty, it takes no room. --%>
       <form class="toolbar cli" phx-submit="cli">
+        <div class="hint" id="cli-help" hidden aria-live="polite"></div>
         <span class="p">$ ./wb.sh</span>
         <input
           type="text"
@@ -61,32 +99,6 @@ defmodule ConsoleWeb.JobsScreen do
         <span class="sep"></span>
         <button class="btn" type="button" phx-click="jobs_clear">Clear done</button>
       </form>
-      <div :if={@jobs != []} class="logmeta">
-        <span>{length(@jobs)} job{if length(@jobs) == 1, do: "", else: "s"} · {if @running > 0,
-          do: "#{@running} running",
-          else: "idle"}{if @failed > 0, do: " · #{@failed} failed"}</span>
-        <span :if={@unfolded > 0}><button class="lk" phx-click="fold_all">{if @unfolded == 1,
-          do: "collapse it",
-          else: "collapse all"}</button></span>
-        <span :if={@unfolded == 0}>click a job to unfold its output</span>
-      </div>
-      <%!-- The list of jobs is the framed list a box's Runs are: one way to
-            meet a pile of jobs, wherever it is met (2026-09-12). --%>
-      <div class="viewport light">
-        <p :if={@jobs == []} class="nothing">
-          No jobs yet. Every command the console runs is a job — its output, its exit code, how long it took. Insert a cartridge, deploy, or type one above.
-        </p>
-        <div :if={@jobs != []} class="lines jobs-list" id="jobs" phx-hook="JobOut">
-          <.job_row
-            :for={j <- @jobs}
-            j={j}
-            open={MapSet.member?(@open, j.id)}
-            now={@now}
-            asking={@asking}
-            stoppable={@stoppable}
-          />
-        </div>
-      </div>
     </div>
     """
   end

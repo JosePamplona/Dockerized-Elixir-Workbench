@@ -44,13 +44,22 @@ export const Cli = {
   mounted() {
     const words = JSON.parse(this.el.dataset.words || "{}")
     const history = new History()
+    // The candidates Tab could not choose between, on the line over the
+    // field (#cli-help, the form's): there until the next key, as a
+    // shell leaves them above the prompt. A toast over the page until
+    // 2026-09-27, gone on its own after six seconds.
+    const help = document.getElementById("cli-help")
+    const say = text => { if (!help) return; help.textContent = text || ""; help.hidden = !text }
+    this.el.addEventListener("input", () => say(""))
     this.el.addEventListener("keydown", ev => {
-      if (ev.key === "Enter") { history.push(this.el.value); /* the form submits */ setTimeout(() => { this.el.value = "" }, 0) }
-      else if (ev.key === "ArrowUp") { ev.preventDefault(); this.el.value = history.up(this.el.value) }
-      else if (ev.key === "ArrowDown") { ev.preventDefault(); this.el.value = history.down(this.el.value) }
+      if (ev.key === "Enter") { say(""); history.push(this.el.value); /* the form submits */ setTimeout(() => { this.el.value = "" }, 0) }
+      else if (ev.key === "ArrowUp") { ev.preventDefault(); say(""); this.el.value = history.up(this.el.value) }
+      else if (ev.key === "ArrowDown") { ev.preventDefault(); say(""); this.el.value = history.down(this.el.value) }
+      else if (ev.key === "Escape") { say("") }
       else if (ev.key === "Tab") {
         ev.preventDefault()
-        this.el.value = completeLine(this.el.value, new Trie(cliWords(words, this.el.value)), msg => toast(msg, 6600))
+        say("")
+        this.el.value = completeLine(this.el.value, new Trie(cliWords(words, this.el.value)), say)
       }
     })
   },
@@ -410,14 +419,6 @@ export const Rail = {
   },
   updated() { this.again && this.again(); this.paintToggle && this.paintToggle() },
   destroyed() { removeEventListener("resize", this.resize); removeEventListener("resize", this.paintToggle) },
-}
-
-let toastTimer = null
-export function toast(text, ms = 2200) {
-  let t = document.getElementById("toast")
-  if (!t) { t = document.createElement("div"); t.id = "toast"; t.className = "toast"; document.body.append(t) }
-  t.textContent = text; t.classList.add("on")
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("on"), ms)
 }
 
 // --- the logs: the server pushes lines, the hook keeps and filters them ------

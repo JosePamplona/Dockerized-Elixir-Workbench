@@ -130,8 +130,11 @@ defmodule ConsoleWeb.JobsScreenTest do
              ~r/<div class="toolbar controls"[^>]*>\s*<span class="say">it stopped here<\/span>/
 
     assert html =~ ~r/<button[^>]*class="btn"[^>]*phx-click="retry"[^>]*>Run it again<\/button>/
-    # The one link left is the header's fold, not a job's verb.
-    refute html =~ ~r/class="out">.*class="lk"/s
+    # The one link left is the meta line's fold, not a job's verb: look
+    # inside the output, where the meta line is not.
+    [out] = Regex.run(~r/class="out">.*?class="ograb"/s, html)
+    refute out =~ ~s(class="lk")
+    assert html =~ ~s(class="lk")
   end
 
   test "a job waiting for a word keeps its own words" do

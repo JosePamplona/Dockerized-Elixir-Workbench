@@ -33,7 +33,10 @@ defmodule Console.Terminals do
     )
   end
 
-  @doc "Every page listens: `{:terminal, key, :live | {:ended, code} | :closed}`."
+  @doc """
+  Every page listens: `{:terminal, key, :live | {:ended, code} | :closed}`,
+  and `{:terminal, key, {:cwd, dir}}` when a session's bash moves.
+  """
   def subscribe, do: Phoenix.PubSub.subscribe(Console.PubSub, @topic)
 
   @doc false
@@ -110,8 +113,9 @@ defmodule Console.Terminals do
   end
 
   @doc """
-  What there is: `%{key => %{state: :live | {:ended, code}, target: t, shell: s}}`,
-  the target as the Terminal component built it — so a session on a
+  What there is: `%{key => %{state: :live | {:ended, code}, target: t, shell: s, cwd: dir | nil}}`,
+  the target as the Terminal component built it, and where its bash last
+  said it stands — so a session on a
   container that has since left the status still knows where it is.
   """
   def list do
@@ -177,7 +181,8 @@ defmodule Console.Terminals.Session do
     do: %{
       state: state,
       target: Keyword.fetch!(opts, :target),
-      shell: Keyword.fetch!(opts, :shell)
+      shell: Keyword.fetch!(opts, :shell),
+      cwd: nil
     }
 
   @impl true
@@ -268,8 +273,22 @@ defmodule Console.Terminals.Session do
     end
   end
 
-  def handle_info({port, {:data, {_, line}}}, %{port: port} = state),
-    do: {:noreply, put(state, Console.ANSI.to_html(line), nil)}
+  # Where bash stands, said after each move (`ConsoleWeb.Terminal.tracked/1`):
+  # kept off the screen — what came before it on the line, from a
+  # printf with no newline, stays — and told to every page for its prompt.
+  def handle_info({port, {:data, {_, line}}}, %{port: port} = state) do
+    case Regex.run(~r/\e\]wb-cwd;([^\a]*)\a$/, line, return: :index) do
+      [{at, _}, {from, len}] ->
+        dir = binary_part(line, from, len)
+        Registry.update_value(Console.Terminals.Registry, state.key, &%{&1 | cwd: dir})
+        Terminals.broadcast(state.key, {:cwd, dir})
+        rest = binary_part(line, 0, at)
+        {:noreply, if(rest == "", do: state, else: put(state, Console.ANSI.to_html(rest), nil))}
+
+      nil ->
+        {:noreply, put(state, Console.ANSI.to_html(line), nil)}
+    end
+  end
 
   def handle_info({port, {:exit_status, code}}, %{port: port} = state) do
     Registry.update_value(Console.Terminals.Registry, state.key, &%{&1 | state: {:ended, code}})

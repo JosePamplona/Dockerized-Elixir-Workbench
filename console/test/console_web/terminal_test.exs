@@ -109,13 +109,14 @@ defmodule ConsoleWeb.TerminalTest do
 
     assert ["compose", "--project-name", "lorem_ipsum", "exec", "-T" | _] = argv
     assert exec == ["compose", "--project-name", "lorem_ipsum", "exec", "-T", "app"]
-    assert List.last(argv) == "bash"
+    assert Enum.take(argv, -3) == Terminal.tracked(["bash"])
 
     # iex attaches to the app's node by its short name; the container completes the host.
     {"lorem_ipsum", argv, _} = Terminal.argv(s, app, "iex")
     assert ["sh", "-c", colours, "sh", "iex", "--remsh", "lorem_ipsum"] = Enum.take(argv, -7)
     # The app's node is told to colour IEx's results before iex attaches, by an rpc.
     assert colours =~ "--rpc-eval lorem_ipsum 'IEx.configure(colors: [enabled: true])'"
+
     assert String.ends_with?(colours, ~S(exec "$@"))
     assert Terminal.command(s, app, "iex") =~ "exec -T -w /app/src app iex --remsh lorem_ipsum"
   end
@@ -160,7 +161,7 @@ defmodule ConsoleWeb.TerminalTest do
 
     assert argv ==
              ~w(compose --project-name lorem_ipsum exec -T) ++
-               colour() ++ ~w(-w /app/src app) ++ Terminal.announced(~w(bash))
+               colour() ++ ~w(-w /app/src app) ++ Terminal.announced(Terminal.tracked(~w(bash)))
 
     assert {_, argv, _} = Terminal.argv(s, db, "psql")
 
@@ -193,6 +194,11 @@ defmodule ConsoleWeb.TerminalTest do
     assert Terminal.prompt(db, "bash", s) == "root@database:/# "
     assert Terminal.prompt(db, "psql", s) == "psql> "
     assert Terminal.prompt(pga, "sh", s) == "pgadmin@pgadmin:/pgadmin4$ "
+
+    # Once the session's bash has said where it stands, that is where it is.
+    assert Terminal.prompt(app, "bash", s, "/tmp") == "elixir@app:/tmp$ "
+    assert Terminal.prompt(db, "bash", s, "/var/lib") == "root@database:/var/lib# "
+    assert Terminal.prompt(app, "iex", s, "/tmp") == "iex> "
 
     # A container no cartridge brought offers no session, and wears the plainest colour.
     refute "cache" in Enum.map(Terminal.targets(s), & &1.name)

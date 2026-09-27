@@ -51,7 +51,8 @@ defmodule ConsoleWeb.ConsoleLive.Term do
 
   def event("term_line", %{"line" => line}, socket) do
     {_targets, target, shell} = Terminal.resolve(socket.assigns.status, socket.assigns.term)
-    prompt = Terminal.prompt(target, shell, socket.assigns.status)
+    cwd = Terminal.cwd(socket.assigns.term.sessions, target, shell)
+    prompt = Terminal.prompt(target, shell, socket.assigns.status, cwd)
     escaped = line |> Phoenix.HTML.html_escape() |> Phoenix.HTML.safe_to_string()
     Terminals.send_line({target.name, shell}, line, prompt <> escaped)
     {:noreply, socket}
@@ -132,6 +133,13 @@ defmodule ConsoleWeb.ConsoleLive.Term do
   # A session changed state, this page's or another's: the marks on
   # the buttons follow; one opened or closed under this screen — from
   # another page, or this one — is attached again, or left.
+  # A session's bash moved: its prompt follows.
+  def info({:terminal, key, {:cwd, dir}}, socket) do
+    t = socket.assigns.term
+    sessions = Map.replace_lazy(t.sessions, key, &Map.put(&1, :cwd, dir))
+    {:noreply, assign(socket, term: %{t | sessions: sessions})}
+  end
+
   def info({:terminal, key, state}, socket) do
     t = socket.assigns.term
 

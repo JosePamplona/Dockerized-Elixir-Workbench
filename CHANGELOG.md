@@ -561,6 +561,21 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **The terminal's prompt stayed where the session began.** It was
+  derived from what the image or the compose declare — `/app/src` for
+  the dev app, the image's workdir for a service — and a `cd` left it
+  saying so. A pipe has no prompt and bash on one prints none, so where
+  it stands is known only from inside: the session's bash now defines
+  `cd`, `pushd` and `popd` to print where they land on a line the
+  session reads and never shows (on fd 9, so `cd x >/dev/null` still
+  says it; the main shell's moves only, not a subshell's or a script's),
+  and says where it starts. The session keeps it in its Registry entry
+  and tells the pages, and the prompt, the echoed line included, reads
+  it. The functions reach the bash that reads the lines by `export -f`,
+  which the `sh` wrapper (dash) would strip, so bash defines them and
+  execs bash on the same PID. A service whose only shell is `sh` keeps
+  the declared directory.
+
 - **Create project submitted nothing.** The button stands outside the
   form and names it to submit it, and the form's id changed when the
   card became a component: the card took `new-project` for its own

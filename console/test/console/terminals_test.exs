@@ -90,6 +90,39 @@ defmodule Console.TerminalsTest do
     refute Enum.any?(lines, fn {html, _} -> html =~ "wb-pid" end)
   end
 
+  # A pipe shows no prompt: bash says where it stands on each move, on
+  # a line the screen never gets, and the session's entry carries it.
+  test "a cd moves the session's cwd, and its line stays off the screen" do
+    key = {"probe", "bash"}
+    dir = System.tmp_dir!() |> Path.expand()
+    ["sh" | argv] = ConsoleWeb.Terminal.announced(ConsoleWeb.Terminal.tracked(["bash"]))
+
+    {:ok, _} =
+      Terminals.open(key,
+        exe: System.find_executable("sh"),
+        argv: argv,
+        target: @target,
+        shell: "bash",
+        head: "h"
+      )
+
+    assert {:ok, _} = Terminals.attach(key)
+    assert_receive {:terminal, ^key, {:cwd, _}}, 2000
+
+    Terminals.send_line(key, "cd #{dir} >/dev/null; (cd /); bash -c 'cd /'; echo here", "$ cd")
+    assert_receive {:terminal, ^key, {:cwd, ^dir}}, 2000
+    assert_receive {:term, ^key, {:line, "here", nil}}, 2000
+    refute_received {:terminal, ^key, {:cwd, "/"}}
+    assert %{cwd: ^dir} = Terminals.list()[key]
+
+    Terminals.send_line(key, "cd /nope", "$ cd /nope")
+    assert_receive {:term, ^key, {:line, "bash: cd: /nope: No such file or directory", nil}}, 2000
+
+    {:ok, %{lines: lines}} = Terminals.attach(key)
+    refute Enum.any?(lines, fn {html, _} -> html =~ "wb-" end)
+    Terminals.close(key)
+  end
+
   # A remote shell that reads EOF stops the node it is on: an iex is
   # sent SIGTERM and waited for before its port — its stdin — is closed.
   # `env` stands in for `docker exec`, here on the host.

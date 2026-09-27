@@ -79,7 +79,7 @@ defmodule ConsoleWeb.Terminal do
         </div>
         <div class="lines screen" id="term-screen" phx-update="ignore"></div>
         <form :if={@open} class="in" phx-submit="term_line">
-          <span class="p">{prompt(@target, @shell, @status)}</span><input
+          <span class="p">{prompt(@target, @shell, @status, cwd(@term.sessions, @target, @shell))}</span><input
             type="text"
             name="line"
             id="term-input"
@@ -278,7 +278,12 @@ defmodule ConsoleWeb.Terminal do
   defp svc_color(_status, %{kind: :workbench}), do: "var(--svc-network)"
   defp svc_color(status, %{name: name}), do: Services.color(status, name)
 
-  def prompt(target, shell, status) do
+  @doc """
+  The prompt the input wears. `cwd` is where the session's bash says it
+  is (`tracked/1`): what the image or the compose declare is only where
+  a session starts, and a `cd` leaves it behind.
+  """
+  def prompt(target, shell, status, cwd \\ nil) do
     app = get_in(status, ["project", "app"]) || "app"
 
     cond do
@@ -289,14 +294,17 @@ defmodule ConsoleWeb.Terminal do
         "#{app} rpc> "
 
       target.oneoff ->
-        "elixir@#{target.name}:/app/src$ "
+        "elixir@#{target.name}:#{cwd || "/app/src"}$ "
 
       # Who and where a session is, the container says (the status's
       # `homes`); the dev app is entered where its source is mounted.
       true ->
-        Services.prompt(status, target.name, shell, List.last(workdir_args(target)))
+        Services.prompt(status, target.name, shell, cwd || List.last(workdir_args(target)))
     end
   end
+
+  @doc "Where the session on this target and shell says it is, if it has said."
+  def cwd(sessions, target, shell), do: get_in(sessions, [{target.name, shell}, :cwd])
 
   @doc "The docker command the session runs, in words."
   def command(status, target, shell) do
@@ -350,7 +358,7 @@ defmodule ConsoleWeb.Terminal do
       name =
         "#{status["compose_project"] || "app"}_workbench_term_#{System.unique_integer([:positive])}"
 
-      cmd = if shell == "iex", do: ["iex", "-S", "mix"], else: ["bash"]
+      cmd = if shell == "iex", do: ["iex", "-S", "mix"], else: tracked(["bash"])
 
       {app,
        ["run", "-i", "--rm", "--name", name | @colour] ++
@@ -362,7 +370,8 @@ defmodule ConsoleWeb.Terminal do
       {app,
        compose ++
          ["exec", "-T" | @colour] ++
-         workdir_args(target) ++ [target.name | announced(coloured(run(shell, app, target), app))],
+         workdir_args(target) ++
+         [target.name | announced(coloured(tracked(run(shell, app, target)), app))],
        compose ++ ["exec", "-T", target.name]}
     end
   end
@@ -376,6 +385,29 @@ defmodule ConsoleWeb.Terminal do
   """
   def announced(cmd),
     do: ["sh", "-c", ~S(printf '\033]wb-pid;%s\007\n' "$$"; exec "$@"), "sh" | cmd]
+
+  # A pipe has no prompt, and bash on one prints none: where it stands
+  # after a `cd` is known only from inside. So its moves — cd, pushd,
+  # popd, the main shell's and not a subshell's or a script's — print
+  # where they land on a line the session reads and never shows, on an
+  # fd of its own so `cd x >/dev/null` still says it; and it says where
+  # it starts. The functions travel into the bash that reads the lines
+  # by `export -f`, which dash, the `sh` of `announced/1`, would strip:
+  # so bash defines them and execs bash, on the same PID. An exported
+  # function's errors are signed `environment: line 0:`; bash signs them
+  # again.
+  @where ~S"""
+  __wb_where() { [ "$BASHPID" != "$WB_SHELL" ] || printf '\033]wb-cwd;%s\007\n' "$PWD" >&9; }
+  __wb_moved() { "$@" 2>/dev/null && __wb_where && return; local r=$?; ("$@" 2>&1 >/dev/null) | sed "s/^environment: line [0-9]*: /bash: /" >&2; return $r; }
+  cd() { __wb_moved builtin cd "$@"; }
+  pushd() { __wb_moved builtin pushd "$@"; }
+  popd() { __wb_moved builtin popd "$@"; }
+  export -f __wb_where __wb_moved cd pushd popd; export WB_SHELL=$$; exec 9>&1; __wb_where; exec bash
+  """
+
+  @doc "bash, telling the session where it stands each time it moves; anything else as it is."
+  def tracked(["bash"]), do: ["bash", "-c", @where]
+  def tracked(cmd), do: cmd
 
   # Only the dev app is entered where its source is mounted: a release
   # has none, and neither postgres nor pgAdmin has ever heard of /app/src.

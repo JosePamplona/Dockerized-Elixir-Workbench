@@ -700,15 +700,28 @@ defmodule ConsoleWeb.Box do
           /><span :if={m["argv"] != []}>{Enum.join(m["argv"], " ")}</span></span>
         <% end %>
       </span>
+      <%!-- Each container on the plate its address wears everywhere else
+            (2026-09-27): the Inserted row's, the rail's, Opens' below.
+            It wore a face of its own here — the rail's Services dot in
+            the role's colour, the port inside beside it — so the same
+            pgAdmin was a blue door on the list and a coloured dot on
+            the box, and only the list could open it. The plate keeps
+            the door's rules for its colour, blue for a port with the
+            square hollow inside the pod, and the deployments it enters
+            follow it, which no address says. --%>
       <span :if={@brings != []} class="k">Brings</span>
       <span :if={@brings != []} class="v stack">
-        <span :for={{service, why, read} <- @brings} class={["req", why && "unlit"]} title={why}>
-          <span class="svc" style={"--svc:#{ConsoleWeb.Services.role_color(service["role"])}"}>
-            {service["service"]}
-          </span>
-          <span :if={service["listens"]} class="path">:{service["listens"]}</span>
-          <span class="by">{Enum.join(service["deploys"] || [], " · ")}</span>
-          <.state_read :if={read} read={elem(read, 0)} title={elem(read, 1)} />
+        <span :for={{face, deploys} <- @brings} class="req">
+          <.door_ref
+            label={face.label}
+            path={face.path}
+            href={face.href}
+            why={face.why}
+            kind={face.kind}
+            read={face.read}
+            read_title={face.read_title}
+          />
+          <span class="by">{Enum.join(deploys || [], " · ")}</span>
         </span>
       </span>
       <span :if={@doors != []} class="k">Opens</span>
@@ -769,14 +782,18 @@ defmodule ConsoleWeb.Box do
   defp members(%{box: %{"collection" => true}, recipe: recipe}) when is_list(recipe), do: recipe
   defp members(%{box: box}), do: box["members"] || []
 
-  # The containers the box raises: `[{service, why}]`, `why` the reason
-  # it is unlit and `nil` when it is lit.
+  # The containers the box raises: `[{face, deploys}]`, the face as
+  # `Record` reads a service for the Inserted row, and the deployments
+  # it enters. An offer the form is not holding is shut with the reason
+  # as its `why`; one it is holding has none, and no door yet either.
   #
   # Once it is in, the project says it — the carried cartridge's
   # `compose` is the real thing, engine and all, and nothing here has
-  # to guess. On the shelf there is no project to ask, so the row reads
-  # the manifest's menu (`offers`) and lights what the form is holding:
-  # it moves with the switches, as Needs and Inserts do.
+  # to guess; the plate then reads as the row's, open on the host while
+  # its container runs, with what it is doing. On the shelf there is
+  # no project to ask, so the row reads the manifest's menu (`offers`)
+  # and lights what the form is holding: it moves with the switches, as
+  # Needs and Inserts do.
   #
   # Either way the rest of the menu stays, unlit. A cartridge that can
   # be run again to add more — `rerun: adds`, as db_admin is — lights
@@ -794,25 +811,8 @@ defmodule ConsoleWeb.Box do
     rest =
       for o <- assigns.box["offers"] || [], not MapSet.member?(inside, o["service"]), do: o
 
-    for(service <- have, do: {service, nil, reading(service, assigns.status)}) ++
-      for(o <- rest, do: {o, why_not(o, locked, assigns), nil})
-  end
-
-  # What that container is doing right now, in the words the rail's
-  # Containers table and a service's plate use (2026-09-26). Only while
-  # a deployment is up, because only then are the containers the ones
-  # this project raised; a service this box brings on a deployment that
-  # is not the one up is simply not among them, and says nothing. A box
-  # that is not in has none of this: there is nothing of it running, and
-  # the row's own `why` is the whole answer.
-  defp reading(service, status) do
-    with true <- Cartridges.app_up?(status),
-         c when is_map(c) <-
-           Enum.find(status["containers"] || [], &(&1["Service"] == service["service"])) do
-      {Cartridges.container_reading(c), c["Status"]}
-    else
-      _ -> nil
-    end
+    for(b <- have, do: {Record.service(assigns.status, b), b["deploys"]}) ++
+      for(o <- rest, do: {Record.offered_service(o, why_not(o, locked, assigns)), o["deploys"]})
   end
 
   # Why an offer the project lacks is not there: nil when the form as
@@ -845,17 +845,8 @@ defmodule ConsoleWeb.Box do
   end
 
   # Why it is not lit: the switches that would bring it, in the words
-  # the reader would type.
-  defp unlit(offer) do
-    said =
-      (offer["with"] || [])
-      |> Enum.group_by(& &1["option"], & &1["value"])
-      |> Enum.map_join(" · ", fn {option, values} ->
-        "--#{String.replace(option, "_", "-")} #{Enum.join(values, ", ")}"
-      end)
-
-    if said == "", do: nil, else: "only with #{said}"
-  end
+  # the reader would type — the shelf's list says the same of it.
+  defp unlit(offer), do: Record.only_with(offer)
 
   @doc "What each chosen value builds on: [{\"--flag value\", [names], conditions}]."
   def value_requires(box, args, _status),

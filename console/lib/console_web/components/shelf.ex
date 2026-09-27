@@ -322,6 +322,7 @@ defmodule ConsoleWeb.Shelf do
       kind={@a.kind}
       port={@a.kind == "route" && @a.port}
       read={@a.read}
+      read_title={@a[:read_title]}
       build={@a[:build]}
     />
     """

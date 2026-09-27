@@ -90,6 +90,40 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **A box's Brings is the plate every address wears.** The Specs of a
+  box said the containers it raises in a face of its own — the rail's
+  Services dot in the role's colour, the port inside beside it — while
+  the Inserted list drew the same pgAdmin as a blue door on
+  `localhost:5051`, open while its container ran. Two faces for one
+  address, and only the list could open it. Brings now draws each
+  container with `Refs.door_ref/1` off the same `Record` reading the
+  list uses (`Record.service/2`, the row's builder, made public as
+  `Record.door/3` was for Opens): a door on the host where the compose
+  publishes it, a hollow port inside where it does not, its reading on
+  the plate, and shut with the plate's reason when it is not there —
+  "the deployment is down", or, for a release's one-shot while dev
+  runs, "not in the dev deployment", which the row had called down.
+  The colour follows the door's rules, blue for a port, and the role's
+  colour goes: the same container was two colours in two places. What
+  the row alone said stays — the deployments each enters, after the
+  plate, and on the shelf the menu of `offers`, lit by the switches the
+  form holds and shut with the switch that would bring the rest. The
+  shelf's list gains the same distinction: a service the compose does
+  not publish was a door there whichever, and is a port inside now, as
+  on the Inserted row.
+
+  The two tables show every service now, too. The shelf's list read
+  the catalog's `compose` — what comes with nothing chosen — and ecto
+  and db_admin, whose every container hangs on a choice, showed none:
+  it reads the menu (`offers`) as Brings does, each shut with the
+  switch that brings it after "not inserted" (`Record.only_with/1`,
+  one wording for both). The Inserted row kept to the dev deployment,
+  on the argument that a release's one-shot is not something the
+  project has running beside it; but ecto's migrate is a container the
+  cartridge brings, and a reader who did not see it wondered where it
+  went. Every one is on the row, and the rail's Cartridges section,
+  shut with the deployment it is in.
+
 - **A flag on the New Project card stops costing the whole screen.**
   Every tick of a checkbox goes to the server, because the server is
   what decides which of the others go dark — `--database` with ecto,

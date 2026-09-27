@@ -535,12 +535,77 @@ defmodule ConsoleWeb.RecordTest do
              Record.offered(Enum.find(@catalog, &(&1["name"] == "exdoc")))
   end
 
+  # The shelf's list reads the whole menu of a box, as its Brings does:
+  # ecto with nothing chosen brings nothing, and the list showed it with
+  # no service at all until 2026-09-27. Each one shut, and the one that
+  # waits on a switch says which.
+  test "a box not in offers every service on its menu, with the switch that brings it" do
+    ecto = %{
+      "name" => "ecto",
+      "compose" => [],
+      "offers" => [
+        %{
+          "service" => "database",
+          "listens" => nil,
+          "published" => [],
+          "deploys" => ["dev", "prod"],
+          "with" => [
+            %{"option" => "database", "value" => "postgres"},
+            %{"option" => "database", "value" => "mysql"}
+          ]
+        },
+        %{"service" => "migrate", "listens" => nil, "deploys" => ["prod"], "with" => []}
+      ]
+    }
+
+    assert Enum.map(Record.offered(ecto).addresses, &{&1.label, &1.kind, &1.why}) == [
+             {"database", "inside", "not inserted, only with --database postgres, mysql"},
+             {"migrate", "inside", "not inserted"}
+           ]
+  end
+
+  # Once in, every service the project has is on the row, the ones of
+  # another deployment shut with the deployment they are in: ecto's
+  # migrate is prod's, and the row left it out until 2026-09-27.
+  test "a one-shot of another deployment is on the row, shut" do
+    c = %{
+      "name" => "ecto",
+      "installed" => true,
+      "compose" => [
+        %{
+          "service" => "database",
+          "listens" => 5432,
+          "published" => [5432],
+          "deploys" => ["dev", "prod"]
+        },
+        %{"service" => "migrate", "listens" => nil, "deploys" => ["prod", "scaled"]}
+      ]
+    }
+
+    status = %{
+      "deployment" => "dev",
+      "ports" => %{"app" => 4001, "published" => %{"5432" => 5433}},
+      "containers" => [%{"Service" => "database", "State" => "running", "Health" => "healthy"}],
+      "project" => %{"cartridges" => [c]}
+    }
+
+    assert Enum.map(Record.addresses(status, c, c), &{&1.label, &1.kind, &1.href, &1.why}) == [
+             {"database", "port", "http://localhost:5433", nil},
+             {"migrate", "inside", nil, "not in the dev deployment"}
+           ]
+  end
+
   # The column reads as the rail does: the services, the routes, the
-  # pages — whatever order the cartridge declared its doors in.
+  # pages — whatever order the cartridge declared its doors in. A
+  # service the compose publishes on the host is a door, one it does
+  # not is a port inside, on the shelf as on the Inserted row (it was
+  # a door whichever until 2026-09-27).
   test "a cartridge's addresses come as services, routes, pages" do
     e = %{
       "name" => "coverage",
-      "compose" => [%{"service" => "k6", "listens" => 6565}],
+      # The catalog's menu, and the project's compose once it is in.
+      "offers" => [%{"service" => "k6", "listens" => 6565, "published" => [6565]}],
+      "compose" => [%{"service" => "k6", "listens" => 6565, "published" => [6565]}],
       "console" => %{
         "doors" => [
           %{

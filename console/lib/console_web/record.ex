@@ -520,31 +520,91 @@ defmodule ConsoleWeb.Record do
   # container runs; not published, `database :5432`, the port inside.
   # Its reading is its container's, never a call: it was a violet door
   # at its root, knocked over HTTP, until 2026-09-25.
-  defp services(c, status, _reads) do
-    # As the dev deployment has them: a release's one-shots are not
-    # something the project has running beside it.
-    for b <- c["compose"] || [], "dev" in (b["deploys"] || ["dev"]) do
-      host =
-        Enum.find_value(b["published"] || [], fn internal ->
-          get_in(status, ["ports", "published", to_string(internal)])
-        end)
+  # Every one, whichever deployment it enters (2026-09-27): a release's
+  # one-shot is not something the project has running beside it, and
+  # the row left it out for that until now — but ecto's migrate is a
+  # container the cartridge brings, and a reader who does not see it
+  # here wonders where it went. It is shut with the deployment it is in.
+  defp services(c, status, _reads), do: for(b <- c["compose"] || [], do: service(status, b))
 
+  @doc """
+  One service a cartridge brings, as its row reads it: the box's Brings
+  shows the same (2026-09-27; it wore a face of its own, the rail's
+  Services dot in the role's colour, from the day it was drawn). Off
+  the project's `compose` entry: a door on the host where the compose
+  publishes it, a port inside where it does not. A service of another
+  deployment than the one up — a release's one-shot while dev runs —
+  has no container here, and the plate says which deployment it is in
+  rather than calling the deployment down.
+  """
+  def service(status, b) do
+    host =
+      Enum.find_value(b["published"] || [], fn internal ->
+        get_in(status, ["ports", "published", to_string(internal)])
+      end)
+
+    face =
       if is_integer(host),
         do: door_of(status, b["service"], host),
         else: port_of(status, b["service"], listens(b))
-    end
+
+    up = status["deployment"]
+
+    if is_nil(face.read) and is_binary(up) and up not in (b["deploys"] || ["dev"]),
+      do: %{face | href: nil, why: "not in the #{up} deployment"},
+      else: face
+  end
+
+  @doc """
+  A service a cartridge would bring, as the row of a box that is not in
+  draws it: shut, with `why` as the reason — "not inserted" on the
+  shelf's list, the switch that brings it on the box's Brings. The
+  compose's menu says whether the host would publish it (a door) or
+  not (a port inside), and the port it listens on when that does not
+  hang on a choice.
+  """
+  def offered_service(b, why) do
+    %{
+      label: b["service"],
+      path: listens(b),
+      kind: if((b["published"] || []) == [], do: "inside", else: "port"),
+      port: nil,
+      href: nil,
+      why: why,
+      read: nil,
+      read_title: nil
+    }
   end
 
   defp listens(%{"listens" => port}) when is_integer(port), do: ":#{port}"
   defp listens(_), do: ""
 
   @doc """
+  The switches that would bring an offered service, in the words the
+  reader would type — "only with --database postgres, mysql" — or nil
+  for one that comes whatever is chosen.
+  """
+  def only_with(offer) do
+    said =
+      (offer["with"] || [])
+      |> Enum.group_by(& &1["option"], & &1["value"])
+      |> Enum.map_join(" · ", fn {option, values} ->
+        "--#{String.replace(option, "_", "-")} #{Enum.join(values, ", ")}"
+      end)
+
+    if said == "", do: nil, else: "only with #{said}"
+  end
+
+  @doc """
   What a cartridge that is not in would take and open, off its catalog
   entry: its parameters as `[{flag, type, title}]` — the title says its
   doc, its default and its choices — and its addresses as the Inserted
   row draws them, every one shut: a door is read, never hidden, and
-  this one is not in yet. The database ecto asks for hangs on the engine
-  picked at insert, so it is not among them.
+  this one is not in yet. The services are the whole menu (`offers`,
+  since 2026-09-27; it read `compose`, what comes with nothing chosen,
+  and ecto and db_admin showed none): one that waits on a choice says
+  the switch that brings it after "not inserted", in the words the
+  box's Brings uses.
   """
   def offered(e) do
     shut = fn label, path, kind ->
@@ -566,9 +626,12 @@ defmodule ConsoleWeb.Record do
         end,
       addresses:
         for(
-          b <- e["compose"] || [],
-          "dev" in (b["deploys"] || ["dev"]),
-          do: shut.(b["service"], listens(b), "port")
+          b <- e["offers"] || e["compose"] || [],
+          do:
+            offered_service(
+              b,
+              Enum.join(["not inserted", only_with(b)] |> Enum.reject(&is_nil/1), ", ")
+            )
         ) ++
           (for d <- get_in(e, ["console", "doors"]) || [] do
              shut.(
@@ -633,7 +696,8 @@ defmodule ConsoleWeb.Record do
       port: nil,
       href: nil,
       why: if(up, do: nil, else: "the deployment is down"),
-      read: container && container_read(container)
+      read: container && container_read(container),
+      read_title: container && container["Status"]
     }
   end
 
@@ -656,7 +720,8 @@ defmodule ConsoleWeb.Record do
       port: nil,
       href: if(is_nil(why), do: "http://localhost:#{port}"),
       why: why,
-      read: container && container_read(container)
+      read: container && container_read(container),
+      read_title: container && container["Status"]
     }
   end
 

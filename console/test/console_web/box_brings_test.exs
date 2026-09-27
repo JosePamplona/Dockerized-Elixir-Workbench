@@ -110,25 +110,29 @@ defmodule ConsoleWeb.BoxBringsTest do
 
   # The row as the reader meets it: each container by name, `:lit` or
   # unlit with the reason it wears. Read off the markup and not off the
-  # assigns, because the unlit rule is a thing the page says.
+  # assigns, because the unlit rule is a thing the page says. Each is
+  # a plate, the one every address wears (2026-09-27), and the reason
+  # is on its title after the address.
+  defp plates(html),
+    do:
+      html
+      |> LazyHTML.from_fragment()
+      |> LazyHTML.query(".specs .req .door-ref")
+      |> Enum.to_list()
+
+  defp name(plate), do: plate |> LazyHTML.query("b") |> LazyHTML.text() |> String.trim()
+
   defp lit(html) do
-    html
-    |> LazyHTML.from_fragment()
-    |> LazyHTML.query(".specs .req")
-    |> Enum.flat_map(fn item ->
-      case item |> LazyHTML.query(".svc") |> LazyHTML.text() |> String.trim() do
-        "" -> []
-        name -> [{name, state(item)}]
-      end
-    end)
-    |> Map.new()
+    Map.new(plates(html), &{name(&1), state(&1)})
   end
 
-  defp state(item) do
-    if "unlit" in (item |> LazyHTML.attribute("class") |> List.first("") |> String.split()),
-      do: {:unlit, item |> LazyHTML.attribute("title") |> List.first()},
+  defp state(plate) do
+    if "unlit" in (plate |> LazyHTML.attribute("class") |> List.first("") |> String.split()),
+      do: {:unlit, plate |> LazyHTML.attribute("title") |> List.first() |> after_dash()},
       else: :lit
   end
+
+  defp after_dash(title), do: title |> String.split("— ", parts: 2) |> List.last()
 
   describe "on the shelf" do
     test "lights what the form is holding and says the switch for the rest" do
@@ -166,23 +170,35 @@ defmodule ConsoleWeb.BoxBringsTest do
       assert html =~ "dev · prod · scaled"
     end
 
-    test "wears its own role's colour, which no project is there to say" do
-      # The role travels with the offer, so the shelf draws it right.
-      # Asked of the project instead, every one of these would come
-      # back the plainest: the project carries none of them.
-      assert sheet(@always, on_shelf()) =~ "--svc:var(--svc-observability)"
-      assert sheet(@box, on_shelf()) =~ "--svc:var(--svc-devtools)"
+    test "wears the plate every address wears, by the door's rules" do
+      # A port inside the pod, hollow: the menu publishes none of these
+      # on the host. It wore its role's colour until 2026-09-27; the
+      # plate has its own rules for colour, and this is the plate.
+      html = sheet(@always, on_shelf())
+      assert [plate] = plates(html)
+      assert plate |> LazyHTML.attribute("class") |> List.first() =~ "door-inside"
+      refute html =~ "--svc:"
+    end
+
+    test "a container the compose would publish is a door on the host, shut" do
+      published = put_in(@always, ["offers", Access.at(0), "published"], [3000])
+      assert [plate] = plates(sheet(published, on_shelf()))
+      assert plate |> LazyHTML.attribute("class") |> List.first() =~ "door-port"
+      assert plate |> LazyHTML.query("a") |> Enum.empty?()
     end
   end
 
   describe "once it is in" do
+    # What the project has reads as the Inserted row reads it: with no
+    # deployment up, shut because the deployment is down — the plate's
+    # words, not the form's. The rest of the menu still wears its switch.
     test "repeats what the project has, whatever the manifest promised" do
       # The project carries one admin; the other is still addable, so
       # it stays in the row wearing its switch.
       html = sheet(@box, carrying("db_admin", ["adminer"], rerun: "adds"))
 
       assert lit(html) == %{
-               "adminer" => :lit,
+               "adminer" => {:unlit, "the deployment is down"},
                "pgadmin" => {:unlit, "only with --admin pgadmin"}
              }
     end
@@ -221,7 +237,7 @@ defmodule ConsoleWeb.BoxBringsTest do
       status = carrying("ecto", ["volume_init"], state: %{"database" => "sqlite3"})
 
       assert lit(sheet(ecto, status)) == %{
-               "volume_init" => :lit,
+               "volume_init" => {:unlit, "the deployment is down"},
                "database" => {:unlit, "ecto is in with database sqlite3"}
              }
     end
@@ -231,7 +247,7 @@ defmodule ConsoleWeb.BoxBringsTest do
       html = sheet(locked, carrying("db_admin", ["adminer"]))
 
       assert lit(html) == %{
-               "adminer" => :lit,
+               "adminer" => {:unlit, "the deployment is down"},
                "pgadmin" => {:unlit, "only with --admin pgadmin"}
              }
     end
@@ -244,12 +260,11 @@ defmodule ConsoleWeb.BoxBringsTest do
 
   defp reads(html) do
     html
-    |> LazyHTML.from_fragment()
-    |> LazyHTML.query(".specs .req")
-    |> Enum.flat_map(fn item ->
-      case item |> LazyHTML.query(".read") |> LazyHTML.text() |> String.trim() do
+    |> plates()
+    |> Enum.flat_map(fn plate ->
+      case plate |> LazyHTML.query(".read") |> LazyHTML.text() |> String.trim() do
         "" -> []
-        words -> [{item |> LazyHTML.query(".svc") |> LazyHTML.text() |> String.trim(), words}]
+        words -> [{name(plate), words}]
       end
     end)
     |> Map.new()
@@ -288,6 +303,47 @@ defmodule ConsoleWeb.BoxBringsTest do
     test "with nothing up there is nothing to read: the containers are not this project's" do
       html = sheet(@box, carrying("db_admin", ["adminer"]))
       assert reads(html) == %{}
+
+      assert lit(html) == %{
+               "adminer" => {:unlit, "the deployment is down"},
+               "pgadmin" => {:unlit, "only with --admin pgadmin"}
+             }
+    end
+
+    test "a published container is the door the Inserted row opens, on the box too" do
+      # The same plate as on the list: open on the host while its
+      # container runs, its port the published one, its reading inside.
+      status =
+        up_with("db_admin", ["pgadmin"], [
+          %{"Service" => "pgadmin", "State" => "running", "Health" => "healthy"}
+        ])
+        |> put_in(["project", "cartridges", Access.at(0), "compose"], [
+          %{"service" => "pgadmin", "listens" => 80, "published" => [80], "deploys" => ["dev"]}
+        ])
+        |> Map.put("ports", %{"app" => 4001, "published" => %{"80" => 5051}})
+
+      html = sheet(@box, status)
+      assert [plate] = Enum.filter(plates(html), &(name(&1) == "pgadmin"))
+      assert plate |> LazyHTML.attribute("class") |> List.first() =~ "door-port"
+
+      assert plate |> LazyHTML.query("a") |> LazyHTML.attribute("href") == [
+               "http://localhost:5051"
+             ]
+
+      assert html =~ "localhost:5051"
+      assert reads(html) == %{"pgadmin" => "healthy"}
+    end
+
+    test "a one-shot of another deployment says so while dev is up" do
+      status =
+        up_with("ecto", ["volume_init"], [])
+        |> put_in(["project", "cartridges", Access.at(0), "compose"], [
+          %{"service" => "volume_init", "listens" => nil, "deploys" => ["prod"]}
+        ])
+
+      assert lit(sheet(%{"name" => "ecto"}, status)) == %{
+               "volume_init" => {:unlit, "not in the dev deployment"}
+             }
     end
 
     test "a box on the shelf has nothing running of its own" do

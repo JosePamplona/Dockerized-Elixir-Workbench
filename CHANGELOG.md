@@ -90,6 +90,32 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **The Deploy screen's three cards fold, and the base cartridges read
+  down.** New Project, Deployments and Danger fold to their head — the
+  rail's fold at a card's size, the same `fold_section` event, the same
+  set on the server and the same memory of it in the browser, so a
+  reader who has met one has met them all (`ConsoleWeb.Folds`). Each
+  key is its own: the rail's Deployments section and this sheet are two
+  things with one name, and fold apart.
+
+  A folded card keeps the box it had, 16 all round: the fold took the
+  rail's `padding-bottom:10px` with it at first, which reads right where
+  a section has no border and wrong inside a frame, where the head then
+  sits off-centre — more air over it than under (measured 17 against
+  11).
+
+  *Danger zone* is **Danger**. The box is the danger; *zone* was a
+  second word for the border it already has.
+
+  And the eight base cartridges are one per line, each cartridge's flags
+  following the cartridge itself. Nothing lines them up: they belong to
+  the box before them and to nothing on the lines above. They ran on as a
+  paragraph of boxes that wrapped wherever the card's width ended, so
+  finding one meant reading them all. What shares a line now is what
+  belongs to that cartridge — ecto's `--database` and `--binary-id`,
+  html's `--live` — because those are its own switches and not
+  cartridges of their own, and reading them apart would say they were.
+
 - **The console started for another project says so across the frame.**
   It is the one condition true of the whole console at once — every mix
   and git of a job runs in a container of its own, which is why a job
@@ -508,6 +534,23 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   that served the Specs alone went with them.
 
 ### Fixed
+
+- **The screen was as tall as its content, and the rail ended with it.**
+  The row the warning band took was added to the frame's grid without
+  placing what was already in it, so the screen auto-placed into that
+  row — height auto — and the fraction went to an empty row beneath:
+  with little on the screen the rail stopped mid-window and read as
+  cut. The three are placed now, and an absent warning takes no row
+  (measured: `56px 0px 844px` in a 900px window, and `844px 0px 56px`
+  with the band at the foot). The two placements tie on specificity, so
+  the foot's are written in the same shape rather than left to which
+  rule comes last.
+
+- **A card's chevron did not turn.** The rule asked for a `section h2`,
+  which is the rail's head; the Deploy screen's cards are an `h3`, so
+  their fold had no transition and no rotation. It asks for the square
+  itself now, wherever it stands — the rail's head, the Interface
+  groups', a card's — and the two copies of it went.
 
 - **A status read while a project was being born was not JSON.** A
   project has a `mix.exs` before it has a compose — the window inside

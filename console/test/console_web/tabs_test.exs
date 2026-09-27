@@ -139,7 +139,7 @@ defmodule ConsoleWeb.TabsTest do
     arrives(%{"exists" => true, "workspace" => ws, "containers" => []})
     {:ok, _view, html} = live(conn, "/deploy")
 
-    [card] = Regex.run(~r{<div[^>]*class="newcard".*?</form>}s, html)
+    [card] = Regex.run(~r{<div[^>]*class="newcard[^"]*".*?</form>}s, html)
     # The whole card, so the count below sees every stack row.
     assert card =~ "base cartridges"
     assert card =~ "born on 0.0.1"
@@ -160,8 +160,8 @@ defmodule ConsoleWeb.TabsTest do
 
     {:ok, _view, html} = live(conn, "/deploy")
 
-    [card] = Regex.run(~r{<div[^>]*class="newcard".*?</form>}s, html)
-    [danger] = Regex.run(~r{<section[^>]*class="danger".*?</section>}s, html)
+    [card] = Regex.run(~r{<div[^>]*class="newcard[^"]*".*?</form>}s, html)
+    [danger] = Regex.run(~r{<section[^>]*class="danger[^"]*".*?</section>}s, html)
     [foot] = Regex.run(~r{<div class="foot">.*?</button>\s*</div>}s, html)
 
     # The card creates and says so; what it cannot undo is not in its foot.
@@ -180,7 +180,7 @@ defmodule ConsoleWeb.TabsTest do
   test "with the workspace empty the delete is unlit, with its reason", %{conn: conn} do
     arrives(%{"exists" => false, "workspace" => "/w", "containers" => []})
     {:ok, _view, html} = live(conn, "/deploy")
-    [danger] = Regex.run(~r{<section[^>]*class="danger".*?</section>}s, html)
+    [danger] = Regex.run(~r{<section[^>]*class="danger[^"]*".*?</section>}s, html)
 
     assert danger =~ "unlit"
     assert danger =~ "the workspace is empty: nothing to delete"
@@ -222,7 +222,7 @@ defmodule ConsoleWeb.TabsTest do
     arrives(%{"exists" => true, "workspace" => "/w", "containers" => [], "baked" => %{}})
     {:ok, _view, html} = live(conn, "/deploy")
 
-    [sheet] = Regex.run(~r{<section[^>]*class="deployments".*?</section>}s, html)
+    [sheet] = Regex.run(~r{<section[^>]*class="deployments[^"]*".*?</section>}s, html)
 
     assert sheet =~ ~s(<form id="deploy-pick" phx-change="pick" phx-submit="deploy_run">)
 
@@ -292,7 +292,7 @@ defmodule ConsoleWeb.TabsTest do
     arrives(%{"exists" => false, "workspace" => "/w", "containers" => []})
     {:ok, _view, html} = live(conn, "/deploy")
 
-    [sheet] = Regex.run(~r{<section[^>]*class="deployments"[^>]*>.*?</section>}s, html)
+    [sheet] = Regex.run(~r{<section[^>]*class="deployments[^"]*"[^>]*>.*?</section>}s, html)
 
     for deploy <- ~w(dev prod scaled) do
       assert sheet =~ ~s(name="target" value="#{deploy}")
@@ -320,7 +320,7 @@ defmodule ConsoleWeb.TabsTest do
     )
 
     {:ok, _view, html} = live(conn, "/deploy")
-    [sheet] = Regex.run(~r{<section[^>]*class="deployments"[^>]*>.*?</section>}s, html)
+    [sheet] = Regex.run(~r{<section[^>]*class="deployments[^"]*"[^>]*>.*?</section>}s, html)
     [foot] = Regex.run(~r{<div class="foot">.*?</div>\s*</section>}s, sheet <> "</section>")
 
     assert foot =~ "Stop scaled"

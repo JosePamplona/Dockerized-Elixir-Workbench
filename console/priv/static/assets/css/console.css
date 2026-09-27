@@ -10,6 +10,17 @@ html,body{height:100%}
    100vh minus a hardcoded pixel count: a fractional zoom rounded that
    into a one-pixel slit under the jobs bar. */
 body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--serif);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;display:grid;grid-template-rows:auto auto minmax(0,1fr);overflow:hidden}
+/* Each of the three takes the row it is meant for, and the middle one —
+   the warning, which is there only when the console was started for
+   something else — takes none when it is absent. Placed, not flowed:
+   auto-placement put the screen in the warning's row (2026-09-27), so
+   the screen was as tall as its content and the fraction went to an
+   empty row under it — the rail ended mid-window and read as cut. */
+body>[data-phx-main]>header.band{grid-row:1}
+body>[data-phx-main]>.app{grid-row:3}
+/* The band at the foot swaps the two, and says so in the same shape:
+   the two placements would otherwise tie on specificity and be settled
+   by which came last in this file. */
 /* The console is a LiveView, and a LiveView comes wrapped in a div of
    its own. That div was the body's only grid row: it took its height
    from its content, the two rows below it never applied, and the whole
@@ -158,9 +169,10 @@ header.band .mock{border:1px solid rgba(255,255,255,.35);padding:3px 8px;border-
    so hiding it is one template and swapping sides is another plus the
    border, which always faces the screen. */
 body.band-bottom{grid-template-rows:minmax(0,1fr) auto auto}
-body.band-bottom header.band{grid-row:3;border-bottom:0;border-top:3px solid transparent}
+body.band-bottom>[data-phx-main]>header.band{grid-row:3}
+body.band-bottom header.band{border-bottom:0;border-top:3px solid transparent}
 body.band-bottom header.band::after{bottom:auto;top:-3px}
-body.band-bottom .app{grid-row:1}
+body.band-bottom>[data-phx-main]>.app{grid-row:1}
 /* The warning keeps the band's company, on the side the screen is: the
    row between the two, whichever way round they are. */
 body.band-bottom .rebind{grid-row:2;border-top:1px solid var(--bad);border-bottom:0}
@@ -274,8 +286,12 @@ section h2:has(.sq){align-items:center}
 section h2[phx-click]{cursor:pointer}
 section h2 .sq{margin-left:4px}
 section h2 .sq.foldsq{margin-left:auto}
-section h2 .sq.foldsq svg{transition:transform .12s}
-section h2 .sq.foldsq[aria-expanded="false"] svg{transform:rotate(-90deg)}
+/* The chevron turns where it stands, whichever head it is on: the
+   rail's h2, the Interface groups', and the Deploy cards' h3
+   (2026-09-27, when the cards began to fold and their chevron sat
+   still — the rule had asked for a `section h2`). */
+.sq.foldsq svg{transition:transform .12s}
+.sq.foldsq[aria-expanded="false"] svg{transform:rotate(-90deg)}
 /* A bell rings rather than turns while the knock is out. */
 section h2 .sq[aria-busy="true"] svg,.record .sq[aria-busy="true"] svg,.shelfp .sq[aria-busy="true"] svg{animation:knock-ring .6s ease-in-out infinite;transform-origin:50% 20%}
 @keyframes knock-ring{0%,100%{transform:rotate(0)}25%{transform:rotate(-14deg)}75%{transform:rotate(14deg)}}
@@ -643,12 +659,35 @@ pre .ln{display:block}
    exists must not wear it because the reader unticked a box. The box is
    the state; the label goes quiet with it, and the reference keeps the
    face the house gives every mention of a cartridge. */
+/* One line per base cartridge (2026-09-27): eight of them ran on as a
+   paragraph of boxes that wrapped wherever the card's width ended, and
+   finding one meant reading them all. A cartridge's own flags keep its
+   line — ecto's --database and --binary-id, html's --live — because
+   they are that cartridge's switches and not cartridges of their own. */
+.newcard .flags.bases{display:grid;gap:7px}
+.newcard .flags.bases .base{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
+/* A cartridge's flags follow the cartridge, and nothing lines them up:
+   they belong to the box before them and to nothing on the lines above
+   (2026-09-27). The names were padded to a column of 150px first, then
+   118, and both said the flags were a column of their own. */
 .newcard .bases label.out{color:var(--muted)}
 .newcard .bases .subs{display:inline-flex;gap:6px 14px;align-items:center;flex-wrap:wrap}
 .newcard .bases label.sub{margin-left:-2px;padding-left:10px;border-left:1px solid var(--line);color:var(--muted)}
 .newcard .bases label.sub.out{color:var(--muted)}
 .newcard .frow .ro{font-family:var(--mono);font-size:12.5px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .newcard .frow .ro a:not(.sq){font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:11px;color:var(--accent)}
+/* The Deploy screen's three cards fold to their head, the rail's fold
+   at a card's size (2026-09-27): the same square, the same event, the
+   same memory in the browser. A folded card is its head alone, and the
+   head keeps no air under it. */
+.newcard.folded>:not(h3),.deployments.folded>:not(h3),section.danger.folded>:not(h3){display:none}
+/* A folded card keeps the box it had: 16 all round. The rail's folded
+   sections take 10 under the head, which reads right where a section
+   has no border of its own — and wrong inside a frame, where the head
+   then sits off-centre in it (2026-09-27). */
+.newcard h3,.deployments h3,section.danger h3{cursor:pointer;user-select:none}
+.newcard h3 .name,.deployments h3 .name,section.danger h3 .name{margin-right:auto}
+.newcard h3 .foldsq,.deployments h3 .foldsq,section.danger h3 .foldsq{flex:none}
 /* The cog is a square icon button, the eye's own face: the row's link
    colour is not its. */
 .newcard .flags{display:flex;flex-wrap:wrap;gap:6px 14px;font-family:var(--mono);font-size:12.5px}
@@ -1396,8 +1435,6 @@ form.insert.locked .opt input{opacity:.55}
 .ui .group > section + section{margin-top:18px}
 .ui .group > .ghead{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:15px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
 .ui .group > .ghead .sq.foldsq{margin-left:auto}
-.ui .group > .ghead .sq.foldsq svg{transition:transform .12s}
-.ui .group > .ghead .sq.foldsq[aria-expanded="false"] svg{transform:rotate(-90deg)}
 .ui .group.folded > :not(.ghead){display:none}
 .ui .group:not(.folded){padding-bottom:10px}
 .ui h5{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:13px;padding-bottom:5px;border-bottom:1px solid var(--line)}
@@ -1639,8 +1676,14 @@ section.danger .foot>.btn,section.danger .foot>.confirm{grid-area:1/2}
 .deployments table.rows.deps tbody tr:first-child td{border-top:0}
 /* The target's cell: the radio and the name on one line, what the
    deployment is under them in the reading face, scaled's options under
-   that. Wide enough for two lines of the sentence, no wider. */
-.deployments table.rows.deps td.k{width:240px;white-space:normal;vertical-align:top;font-family:inherit;font-weight:400;letter-spacing:0;text-transform:none;font-size:inherit;padding-left:calc(var(--cell) + 4px)}
+   that. Twice what two lines of the sentence took (2026-09-26), the room
+   the sync diff column left when it folded into the file's: the prose
+   reads in fewer lines and the row stands lower. */
+/* The target's share of the table, not a count of pixels (2026-09-27):
+   it was 480px and fell to 180 the moment the container crossed 760,
+   so the column held still and then jumped. A share moves with the
+   table, and the prose under the name rewraps as it goes. */
+.deployments table.rows.deps td.k{width:40%;white-space:normal;vertical-align:top;font-family:inherit;font-weight:400;letter-spacing:0;text-transform:none;font-size:inherit;padding-left:calc(var(--cell) + 4px)}
 .deployments table.rows.deps th:first-child{padding-left:calc(var(--cell) + 4px)}
 .deployments .pickt{display:inline-flex;gap:8px;align-items:center;cursor:pointer;font-family:var(--cond);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:13px}
 .deployments .pickt input{margin:0}
@@ -1661,7 +1704,6 @@ section.danger .foot>.btn,section.danger .foot>.confirm{grid-area:1/2}
 .deployments .foot .fline{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 /* The three lines' buttons share the edge every foot of this screen
    shares: `--verb`, over by the feet themselves. */
-.deployments table.rows.deps td.sync{white-space:normal}
 /* Services is the column that gives: with the three buttons always
    there, the addresses would push past the row and paint over them.
    Their path shortens with an ellipsis — the whole one is in the
@@ -1681,15 +1723,19 @@ section.danger .foot>.btn,section.danger .foot>.confirm{grid-area:1/2}
    one width is the same shape on every row, whatever the window, and
    the cell is as narrow as the widest word: what a line of them was
    taking, the services get. */
-.deployments table.rows.deps td.act{white-space:nowrap;text-align:right;display:flex;flex-direction:column;align-items:stretch;gap:4px}
-.deployments table.rows.deps td.act .btn.mini{margin-block:0;text-align:center}
+/* The cell stays a table cell and hugs its buttons; they read down in a
+   column of their own, never wider than the foot's verbs (`--verb`):
+   as a flex box the cell took a share of the slack with the services,
+   and its buttons grew with it (2026-09-26). */
+.deployments table.rows.deps td.act{width:1%;white-space:nowrap}
+.deployments table.rows.deps td.act .verbs{display:flex;flex-direction:column;align-items:stretch;gap:4px;max-width:var(--verb);margin-left:auto}
+.deployments table.rows.deps td.act .btn.mini{margin-block:0;justify-content:center;text-align:center}
 .deployments{container-type:inline-size}
 /* Narrow: the target column gives first — its prose only takes another
    line — and the addresses close up, so the name of the service and
    its reading stay whole. The address itself shortens to an ellipsis;
    the whole one is in the title, as it always was. */
-@container (max-width:760px){.deployments table.rows.deps td.k{width:180px}
-.deployments table.rows.deps td .pairs .door-ref{min-width:0;gap:6px;padding-left:6px}
+@container (max-width:760px){.deployments table.rows.deps td .pairs .door-ref{min-width:0;gap:6px;padding-left:6px}
 .deployments table.rows.deps td .pairs .door-ref .read+.read{margin-left:-6px}
 .deployments table.rows.deps td .pairs .door-ref .read{padding:3px 6px}}
 /* Narrower than that the reading no longer fits beside the name: it
@@ -1710,7 +1756,10 @@ section.danger .foot>.btn,section.danger .foot>.confirm{grid-area:1/2}
 /* The box's cap is the reader's, as a job's: the grip under it moves --job-out, 60vh until dragged. */
 .deployments .fsheet pre.env.yaml{margin:0;max-height:var(--job-out,60vh)}
 .deployments .fsheet .ograb{margin:-4px 0 0}
-.deployments table.rows.deps .drift{display:inline-flex;flex-wrap:wrap;gap:6px;vertical-align:middle}
+/* The drift stands where the file's chip does, and folds under itself
+   past a few chips rather than widen the file's column into the services. */
+.deployments table.rows.deps .drift{display:inline-flex;flex-wrap:wrap;gap:6px;vertical-align:middle;white-space:nowrap;max-width:18em}
+.deployments table.rows.deps td.file .state{display:inline-flex}
 
 /* --- figures: a hint on hover, a viewer on click --------------------------- */
 .fig{position:relative;margin:0 0 1.2em}

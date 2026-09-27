@@ -38,6 +38,7 @@ defmodule ConsoleWeb.Deployments do
   import ConsoleWeb.Refs
   import ConsoleWeb.Square, only: [square: 1]
   import ConsoleWeb.Board, only: [bake_button: 1, build_button: 1, deploy_button: 1]
+  import ConsoleWeb.Folds, only: [card_head: 1, fold_class: 2]
 
   # What comes off the project — in sync or not, the drift — is the last
   # full reading's until the next lands, and a fast status meanwhile
@@ -80,6 +81,7 @@ defmodule ConsoleWeb.Deployments do
     doc: "the same for the scaled row's Bake, whichever row is picked"
 
   attr :clustering, :any, default: false, doc: "the clustering cartridge is in"
+  attr :folded, :any, default: nil, doc: "the section keys folded away, a MapSet"
 
   def deployments_sheet(assigns) do
     # Without a project the three rows are there, not baked, every
@@ -109,20 +111,23 @@ defmodule ConsoleWeb.Deployments do
       )
 
     ~H"""
-    <section class="deployments">
-      <h3 title="the compose files baked into the workspace, one per deployment: the topology each brings up — pick one on its row, and Up it under the table">
-        Deployments
-      </h3>
+    <section class={["deployments", fold_class(@folded, "sheet")]}>
+      <%!-- Its own key, not the rail's `deployments`: the rail's section
+            and this sheet are two things with one name, and a reader
+            folding one does not mean the other. --%>
+      <.card_head
+        key="sheet"
+        name="Deployments"
+        folded={@folded}
+        title="the compose files baked into the workspace, one per deployment: the topology each brings up — pick one on its row, and Up it under the table"
+      />
       <form id="deploy-pick" phx-change="pick" phx-submit="deploy_run">
         <table class="rows deps">
           <thead>
             <tr>
               <th title="the deployment: pick it here, and Up it under the table">target</th>
-              <th title="the deployment's compose file, baked into the workspace, out of sync with the project, or not baked yet">
+              <th title="the deployment's compose file: baked into the workspace, or not baked yet; drifted, what it declares that no cartridge asks for any more (+) and what a cartridge asks for that it lacks (−)">
                 compose file
-              </th>
-              <th title="what the file declares that no cartridge asks for any more (+), and what a cartridge asks for that the file lacks (−); nothing when the file says what the cartridges ask">
-                sync diff
               </th>
               <th>status</th>
               <th title="the services the compose file declares; with the deployment up, what docker compose ps says of each">
@@ -168,37 +173,49 @@ defmodule ConsoleWeb.Deployments do
                           )
                       }
                     />
-                    <span class={@stale && "stale"} title={@stale && @why}>
+                    <%!-- The file's state and its drift are one reading
+                          (2026-09-26): the + and − chips are what "out of
+                          sync" meant, so they stand in its place, and the
+                          words come back only when the file drifted in
+                          something neither names. --%>
+                    <span class={["state", @stale && "stale"]} title={@stale && @why}>
                       <.chip :if={!d.baked} class="off" title={@not_baked}>
                         not baked
                       </.chip>
+                      <span
+                        :if={d.baked && (d.stray != [] or d.missing != [])}
+                        class="drift"
+                        title={sync_title(d)}
+                      >
+                        <.chip
+                          :for={s <- d.stray}
+                          class="warn"
+                          title="declared in the file, but no cartridge asks for it any more: bake writes it again"
+                        >
+                          +{s}
+                        </.chip>
+                        <.chip
+                          :for={m <- d.missing}
+                          class="warn"
+                          title="asked for by a cartridge, not in the file: bake writes it again"
+                        >
+                          −{m}
+                        </.chip>
+                      </span>
                       <.chip
-                        :if={d.baked && d.in_sync == false}
+                        :if={d.baked && d.in_sync == false && d.stray == [] && d.missing == []}
                         class="warn"
                         title="the file no longer says what the cartridges ask for: bake writes it again"
                       >
                         out of sync
                       </.chip>
-                      <.chip :if={d.baked && d.in_sync != false} class="good">baked</.chip>
+                      <.chip
+                        :if={d.baked && d.in_sync != false && d.stray == [] && d.missing == []}
+                        class="good"
+                      >
+                        baked
+                      </.chip>
                     </span>
-                  </span>
-                </td>
-                <td class={["sync", @stale && "stale"]} title={@stale && @why}>
-                  <span :if={d.stray != [] or d.missing != []} class="drift" title={sync_title(d)}>
-                    <.chip
-                      :for={s <- d.stray}
-                      class="warn"
-                      title="declared in the file, but no cartridge asks for it any more"
-                    >
-                      +{s}
-                    </.chip>
-                    <.chip
-                      :for={m <- d.missing}
-                      class="warn"
-                      title="asked for by a cartridge, not in the file"
-                    >
-                      −{m}
-                    </.chip>
                   </span>
                 </td>
                 <td class="st">
@@ -230,25 +247,27 @@ defmodule ConsoleWeb.Deployments do
                   </span>
                 </td>
                 <td class="act">
-                  <.bake_button
-                    name={d.deploy}
-                    status={@status}
-                    busy={@busy}
-                    baked={d.baked}
-                    extra={(d.deploy == "scaled" && @scaled_extra) || ""}
-                    form="deploy-pick"
-                  />
-                  <.build_button
-                    name={d.deploy}
-                    status={@status}
-                    busy={@busy}
-                    extra={(d.deploy == "scaled" && @scaled_extra) || ""}
-                    form="deploy-pick"
-                  />
+                  <div class="verbs">
+                    <.bake_button
+                      name={d.deploy}
+                      status={@status}
+                      busy={@busy}
+                      baked={d.baked}
+                      extra={(d.deploy == "scaled" && @scaled_extra) || ""}
+                      form="deploy-pick"
+                    />
+                    <.build_button
+                      name={d.deploy}
+                      status={@status}
+                      busy={@busy}
+                      extra={(d.deploy == "scaled" && @scaled_extra) || ""}
+                      form="deploy-pick"
+                    />
+                  </div>
                 </td>
               </tr>
               <tr :if={@deploy == d.deploy} class="fbox">
-                <td colspan="6"><.file_sheet composes={@composes} deploy={d.deploy} /></td>
+                <td colspan="5"><.file_sheet composes={@composes} deploy={d.deploy} /></td>
               </tr>
             <% end %>
           </tbody>

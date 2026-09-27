@@ -90,6 +90,41 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **`./wb.sh new --name "My App"`, and the name moves up beside the
+  workspace.** The creating command takes the name for one creation;
+  without the flag, `PROJECT_NAME` in `config.conf` names it as it
+  always did. The card's line says which — it read `./wb.sh new` bare
+  before, without a word about what it was going to create — and the
+  card asks for the name in a field that opens with the file's value.
+
+  The line itself moves out of the creation section and up under
+  `WORKSPACE_PATH`: where the next project goes and what it is called
+  are one thing. What is left takes the title it always deserved,
+  **Workbench images** — the four settings name and build the image
+  every command runs on, `dew-ex{ELIXIR}-erl{ERLANG}-phx{PHX_NEW}:{workbench}`,
+  and the project's own dev image is built from the same stack.
+  *Project creation configuration* said less than they do.
+
+  It was taken out of the file altogether for a day, and put back: the
+  console needs the name **before** there is a project. It mounts
+  `<project>_build` and `<project>_deps` — the volumes the compose will
+  own — so that mix and git run in its own process, and started for a
+  workspace with no project it cannot know the name the project is
+  about to get. Every creation from the card then ended with *this
+  console was started for another project*, which is true and was
+  unavoidable. The setting is the same shape as its neighbour
+  `PHX_NEW_VERSION`, which the file already defends in those words: it
+  says what the next project gets, and the workspace remembers what it
+  got.
+
+  A name is checked before anything is built (a letter first, then
+  letters, digits, spaces, `-` or `_`), and the derivation is unchanged:
+  `Lorem Ipsum` is `lorem_ipsum` and `lorem-ipsum:local`. The name is
+  the one argument with a space in it and `Verbs.parse/1` splits a line
+  on spaces, so Create runs a list of arguments while the line on the
+  card says the same thing with the name in quotes; six tests hold the
+  two forms together.
+
 - **A page's button says which of the two presses it is.** It read
   *build* whether or not the page was there, so a reader looking at
   `coverage cover/ 2026-09-25 15:32` was offered a verb for a page that
@@ -442,6 +477,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   that served the Specs alone went with them.
 
 ### Fixed
+
+- **A status read while a project was being born was not JSON.** A
+  project has a `mix.exs` before it has a compose — the window inside
+  `new`, between `phx.new` and the bake — and `compose_project_name()`
+  ran `sed` over the file that is not there yet, unguarded: its
+  complaint goes to stderr, which a reader captures along with the JSON
+  it asked for, and the console said *not JSON:* with the message
+  inside it. In the same reading `baked.dev` was printed `true`
+  outright, because a project was there; it is read off the file now,
+  like its two neighbours. Both are older than the flag that surfaced
+  them — `wb.sh` at HEAD fails the same way on the same workspace.
 
 - **A door's plate was pressable on its two words only.** The whole
   plate lit on hover — `.door-ref:hover` puts the ink in its border —

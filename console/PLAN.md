@@ -93,7 +93,9 @@ comment — *the console proper asks `workbench.expand`*. It needs `wb.sh
 expand NAME [args] --json`.
 
 **`config.conf` has no verb.** The mock stages the save. The New project
-card reads `PROJECT_NAME`, `WORKSPACE_PATH` and the stack from there, and
+card reads `PROJECT_NAME`, `WORKSPACE_PATH` and the stack from there —
+the name is a field on the card since 2026-09-26, `./wb.sh new --name`,
+and opens with the file's — and
 the workbench drawer edits it as a form. **Decided (2026-09-02):** `wb.sh
 config set KEY=VALUE`, on the writer `stacks use TAG` already has — one
 writer for a file `wb.sh` parses, and the save lands in the tray as a job

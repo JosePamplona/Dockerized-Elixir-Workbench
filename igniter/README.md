@@ -252,7 +252,7 @@ one alone.
       [ecto](lib/workbench_igniter/features/ecto/README.md#contents);
       a flat two-column list of files is the pre-2026-09-19 shape and
       is not it.
-- [ ] Manual validation: `./wb.sh new`, then `./wb.sh add <feature>` on
+- [ ] Manual validation: `./wb.sh new --name "…"`, then `./wb.sh add <feature>` on
       the created project.
 
 Possible future step: moving the package to its own git repo, so projects

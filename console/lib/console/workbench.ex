@@ -47,7 +47,8 @@ defmodule Console.Workbench do
   compose project, and the prefix of its `_build` and `deps` volumes —
   and `image`, its dev image. Read off the workspace's own compose when
   it has one, the record of its creation, and derived from config.conf's
-  PROJECT_NAME otherwise, the way `new` will name it.
+  PROJECT_NAME otherwise, the way `new` will name it — which is also the
+  name the console started its own toolchain for.
   """
   def project(ws \\ workspace()) do
     compose = if ws, do: File.read(Path.join(ws, "docker-compose.yml")), else: :none

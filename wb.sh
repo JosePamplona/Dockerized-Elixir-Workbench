@@ -102,8 +102,26 @@
     fi
 
     # Elixir project files - - - - - - - - - - - - - - - - - - - - - - - - - -
-    LOWER_CASE=$( echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' )
-    ELIXIR_PROJECT_NAME=$( echo "$LOWER_CASE" | tr ' ' '_' )
+    # What a name comes to: the app and module of the Elixir project, the
+    # compose project, the dev image. 'new' calls it again once --name
+    # has been read, which is the only place a name is given at all
+    # (2026-09-26): config.conf named the next project until then, and
+    # went on naming it after the project existed and had a name of its
+    # own.
+    # A workspace with no project has no name either, and there is no
+    # file naming the next one any more: the derived names fall back to
+    # 'app' so that what is named after them stays a name a daemon
+    # takes — the build volumes are "${ELIXIR_PROJECT_NAME}_build", and
+    # empty made '_build', which Docker refuses (a volume starts with a
+    # letter or a digit). It is the fallback the console already used.
+    # PROJECT_NAME itself stays empty, which is what 'new' asks about.
+    name_project() {
+      LOWER_CASE=$( echo "${PROJECT_NAME:-app}" | tr '[:upper:]' '[:lower:]' )
+      ELIXIR_PROJECT_NAME=$( echo "$LOWER_CASE" | tr ' ' '_' )
+      APP_NAME=$( echo "$LOWER_CASE" | tr ' ' '-' )
+      LOCAL_IMAGE="$APP_NAME:local"
+    }
+    name_project
     MIX_FILE="mix.exs"
     EXISTING_PROJECT=$(
       [ -f "$WORKSPACE_PATH/$MIX_FILE" ] && echo true || echo false
@@ -111,11 +129,10 @@
 
   # Docker ---------------------------------------------------------------------
 
-    APP_NAME=$( echo "$LOWER_CASE" | tr ' ' '-' )
-    # The workspace's own dev image name, the app's: built from the
-    # project's Dockerfile.local by its compose, with the workbench or
-    # without. The workbench's own runs never use it (WORKBENCH_IMAGE).
-    LOCAL_IMAGE="$APP_NAME:local"
+    # APP_NAME and LOCAL_IMAGE are name_project's, above: the workspace's
+    # own dev image name, the app's, built from the project's
+    # Dockerfile.local by its compose, with the workbench or without. The
+    # workbench's own runs never use it (WORKBENCH_IMAGE).
     # The installer setting (config.conf), kept apart from the version
     # resolved below: the setting says what the NEXT project is generated
     # with, PHX_NEW_VERSION says what THIS workspace was. Only 'new'
@@ -1492,7 +1509,12 @@
     # The compose project every deployment of the workspace shares (the
     # 'name:' its compose files carry).
   compose_project_name() {
-    sed -n 's/^name: //p' "$WORKSPACE_PATH/$COMPOSE_FILE" | head -n 1
+    # Quiet when the file is not there: a project has a mix.exs before
+    # it has a compose — the window inside 'new', between phx.new and
+    # the bake — and sed's complaint went to stderr, which a reader
+    # captures along with the JSON it asked for ('not JSON:' in the
+    # console, 2026-09-27).
+    sed -n 's/^name: //p' "$WORKSPACE_PATH/$COMPOSE_FILE" 2> /dev/null | head -n 1
   }
 
   # workspace_containers [FORMAT]
@@ -1660,7 +1682,10 @@
     printf '  "compose_project": %s,\n' "$(json_string "$(compose_project_name)")"
     printf '  "ports": {"app": %s, "published": {%s}},\n' "${port:-null}" "$published"
     printf '  "baked": {\n'
-    printf '    "dev": true,\n'
+    # Read, not asserted: it said true because a project was there, and
+    # a project is there before its compose is (2026-09-27).
+    printf '    "dev": %s,\n' "$([ -f "$WORKSPACE_PATH/$COMPOSE_FILE" ] && echo true || echo false)"
+
     printf '    "prod": %s,\n' "$([ -f "$WORKSPACE_PATH/$PROD_COMPOSE_FILE" ] && echo true || echo false)"
     printf '    "scaled": %s\n' "$([ -f "$WORKSPACE_PATH/$SCALED_COMPOSE_FILE" ] && echo true || echo false)"
     printf '  },\n'
@@ -1992,12 +2017,18 @@
       "  USER    GitHub user name." \
       "  TOKEN   A classic personal access token."
 
-    print_command "new [--phx-new VERSION] [PHX_NEW_OPTIONS...]"
+    print_command "new [--name NAME] [--phx-new VERSION] [PHX_NEW_OPTIONS...]"
     command_content \
       "Generate a Phoenix project in the workspace and make its first commit:" \
       "stock phx.new plus what the workbench needs to run it (mix" \
       "workbench.setup, phx.gen.release --docker, the workspace's" \
       "Dockerfile.local and compose). Features come later, with 'add'." \
+      "  --name NAME         The project's name for this creation: the app and" \
+      "                      module derive from it, and so do the workspace's" \
+      "                      images and its compose project. Capitalised, spaces" \
+      "                      between words ('My App'). Default: PROJECT_NAME in" \
+      "                      config.conf, which is also what the console starts" \
+      "                      its toolchain for." \
       "  --phx-new VERSION   Phoenix installer to use (default: the newest hex" \
       "                      has for this stack; PHX_NEW_VERSION in config.conf" \
       "                      sets a standing one)." \
@@ -2391,10 +2422,26 @@ if [ $# -gt 0 ]; then
       case "$1" in
         --phx-new) PHX_NEW_VERSION="$2"; shift 2 ;;
         --phx-new=*) PHX_NEW_VERSION="${1#*=}"; shift ;;
+        --name) PROJECT_NAME="$2"; shift 2 ;;
+        --name=*) PROJECT_NAME="${1#*=}"; shift ;;
         *) PHX_NEW_ARGS+=("$1"); shift ;;
       esac
     done
     set -- "${PHX_NEW_ARGS[@]}"
+
+    # The name of the project to be, and the only command that takes
+    # one: --name for this creation, PROJECT_NAME (config.conf, or the
+    # environment for a run) otherwise. The flag was required for a day
+    # (2026-09-26) while the setting was gone; it came back because the
+    # console needs the name before there is a project — it mounts
+    # '<project>_build' and '<project>_deps', the volumes the compose
+    # will own, to run mix and git in its own process.
+    [ -n "$PROJECT_NAME" ] || args_error \
+      "No project name. Set PROJECT_NAME in config.conf, or name one:" \
+      "./$(basename "$0") new --name \"My App\""
+    echo "$PROJECT_NAME" | grep -qE '^[A-Za-z][A-Za-z0-9 _-]*$' || terminate \
+      "Not a project name: '$PROJECT_NAME' (a letter first, then letters, digits, spaces, - or _)."
+    name_project
     require_stack_floor "$ELIXIR_VERSION"
     resolve_installer
 
@@ -2978,7 +3025,7 @@ if [ $# -gt 0 ]; then
     case "$1" in
       set)
         shift
-        [ $# -gt 0 ] || args_error "Missing assignments. Try: ./$(basename "$0") config set PROJECT_NAME=\"My App\""
+        [ $# -gt 0 ] || args_error "Missing assignments. Try: ./$(basename "$0") config set ELIXIR_VERSION=\"1.19.6\""
         for ASSIGNMENT in "$@"; do
           KEY="${ASSIGNMENT%%=*}"; VALUE="${ASSIGNMENT#*=}"
           echo "$KEY" | grep -qE '^[A-Z][A-Z0-9_]*$' || terminate "Not a key: '$KEY' (KEY=VALUE, keys are UPPER_CASE)."

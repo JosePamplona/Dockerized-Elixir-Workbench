@@ -367,9 +367,10 @@ exception reaches its group at the end.
 
 **The name is found, not asked.** The site is titled with `name:` from
 `mix.exs`; the one the project has is kept, and without one the app's
-name is made words — `lorem_ipsum` is *Lorem Ipsum*, which is also
-where the workbench's `PROJECT_NAME` came from. v0.1.0 capitalized the
-atom whole (*Lorem_ipsum*). An acronym comes out as a word (`my_api` is
+name is made words — `lorem_ipsum` is *Lorem Ipsum*, which is the walk
+back of the one the project was given: the workbench turns a name into
+an app (`PROJECT_NAME`, or `./wb.sh new --name`), and this reads the app
+as a name again. v0.1.0 capitalized the atom whole (*Lorem_ipsum*). An acronym comes out as a word (`my_api` is
 *My Api*); `--project-name` says it otherwise.
 
 **The repository is found, and only the project's own.** `source_url:`

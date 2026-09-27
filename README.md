@@ -47,7 +47,7 @@ Every command it runs is a job in its tray, with the output and exit code `wb.sh
     sudo chmod +x wb.sh
     ```
 
-1. Modify the `./config.conf` file in order to configure the project name and creation specifications.
+1. Modify the `./config.conf` file in order to configure the project name, the workspace and the stack the images are built from.
   For complete configuration instruccions consult: [Configuration File](./CONFIG.md).
 
 1. Make sure [Docker Desktop](https://www.docker.com/products/docker-desktop/) is running before running any script command.
@@ -57,14 +57,14 @@ Every command it runs is a job in its tray, with the output and exit code `wb.sh
 1. Run the following command:
 
     ```sh
-    ./wb.sh new
+    ./wb.sh new --name "Lorem Ipsum"
     ```
 
     This command generates a **vanilla** project into the workspace: a stock `phx.new` project plus only what the workspace needs to boot it — the endpoint bound to `0.0.0.0`, the `.env`/`.env.sample` files the compose `env_file` requires, and the `.env` entry in `.gitignore`. It also runs `mix phx.gen.release --docker`, which `phx.new` does not: the production `Dockerfile` it generates is what `up --env prod` builds from. Finally it bakes the workspace's own `docker-compose.yml` and `Dockerfile.local`.
 
     It can accept all option flags from the task `mix phx.new` like `--no-html` or `--no-ecto` (Full task [phx.new](https://hexdocs.pm/phoenix/Mix.Tasks.Phx.New.html) documentation).
 
-    `config.conf` only names the project, the workspace and the stack versions: they shape the project generation and the images, not the Elixir configuration. Everything else — docs, coverage, API, checks — arrives afterwards as cartridges with the `add` command, one at a time.
+    `--name` names this creation; without it, `PROJECT_NAME` in `config.conf` does. The app and module derive from it, and so do the workspace's images and its compose project — and once the project exists, its own compose is what every later command reads. `config.conf` names the next project, the workspace and the stack versions: they shape the project generation and the images, not the Elixir configuration. Everything else — docs, coverage, API, checks — arrives afterwards as cartridges with the `add` command, one at a time.
 
 ## Deployment
 

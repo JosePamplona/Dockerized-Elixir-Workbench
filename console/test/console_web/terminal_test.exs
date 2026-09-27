@@ -115,7 +115,9 @@ defmodule ConsoleWeb.TerminalTest do
     {"lorem_ipsum", argv, _} = Terminal.argv(s, app, "iex")
     assert ["sh", "-c", colours, "sh", "iex", "--remsh", "lorem_ipsum"] = Enum.take(argv, -7)
     # The app's node is told to colour IEx's results before iex attaches, by an rpc.
-    assert colours =~ "--rpc-eval lorem_ipsum 'IEx.configure(colors: [enabled: true])'"
+    # On a node no remsh has reached yet, IEx's config server is not up: :iex is started first.
+    assert colours =~
+             "--rpc-eval lorem_ipsum 'Application.ensure_all_started(:iex); IEx.configure(colors: [enabled: true])'"
 
     assert String.ends_with?(colours, ~S(exec "$@"))
     assert Terminal.command(s, app, "iex") =~ "exec -T -w /app/src app iex --remsh lorem_ipsum"

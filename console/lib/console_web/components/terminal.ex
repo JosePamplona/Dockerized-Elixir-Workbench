@@ -421,12 +421,16 @@ defmodule ConsoleWeb.Terminal do
   # attaching, the app's node is told to colour, IEx's own setting and
   # nothing else on it (not `ansi_enabled`, which would colour its
   # Logger lines too), through an rpc that leaves no VM behind. Then
-  # `exec` hands the announced PID to iex.
+  # `exec` hands the announced PID to iex. `IEx.configure/1` goes through
+  # IEx's config server, which a node booted by `mix phx.server` does
+  # not run until the first remsh starts `:iex` on it: before that the
+  # call exits, silenced, and the first session came out plain while
+  # the next ones had colour. So the rpc starts `:iex` first.
   defp coloured(["iex" | _] = cmd, app) do
     [
       "sh",
       "-c",
-      ~s|elixir --sname "wb_cfg_$$" --rpc-eval #{app} 'IEx.configure(colors: [enabled: true])' >/dev/null 2>&1; exec "$@"|,
+      ~s|elixir --sname "wb_cfg_$$" --rpc-eval #{app} 'Application.ensure_all_started(:iex); IEx.configure(colors: [enabled: true])' >/dev/null 2>&1; exec "$@"|,
       "sh" | cmd
     ]
   end

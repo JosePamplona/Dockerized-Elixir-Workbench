@@ -561,6 +561,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **The first iex of a freshly booted app came out plain.** Before a
+  remsh attaches, an rpc tells the app's node to colour IEx's results,
+  `IEx.configure(colors: [enabled: true])`. That call goes through
+  IEx's config server, and a node booted by `mix phx.server` does not
+  run it until the first remsh starts `:iex` there: the rpc exited
+  with `no process`, silenced by its `>/dev/null`, and the first
+  session was plain while every later one, on a node the first had
+  left with `:iex` running, had colour. The rpc starts `:iex` first
+  (reproduced against a bare named node: the old call exits, the new
+  one leaves `colors: [enabled: true]` on it).
+
 - **The terminal's prompt stayed where the session began.** It was
   derived from what the image or the compose declare — `/app/src` for
   the dev app, the image's workdir for a service — and a `cd` left it

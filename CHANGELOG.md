@@ -28,6 +28,50 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   the schedule does not know it, and otherwise carries its standing
   (`lts · until 2028-04-30`).
 
+### Updated
+
+- **Node from NodeSource, by the major `config.conf` names.** The
+  shared first step of the two Dockerfiles (`scripts/Dockerfile.seed.local`,
+  `scripts/Dockerfile.workbench`) took Node and npm from Debian since
+  2026-09-17, for the `npm install` ash_typescript's installer hooks
+  into `assets.setup`. Debian's `npm` unpacks every dependency of npm
+  as a package of its own: measured on the base image on 2026-09-28,
+  the step went from 111 packages, 112 MB and 140 s without Node to
+  658 packages, 239 MB and 521 s with Debian's `nodejs npm`, and the
+  layer from 582 MB to 1.2 GB — most of a fresh workbench build. The
+  same node with npm inside is one package on NodeSource, which
+  makes the step 124 packages, 158 MB and 103 s (the difference with
+  140 s is the network between runs); the whole workbench image, from
+  scratch on an idle machine with the base pulled, builds in 102 s,
+  the shared step 64 s of it. Node stays in the shared step,
+  in both images from the start, because the workbench cannot know
+  whether the project to come picks `ash --api typescript`, and
+  `mix setup` runs `assets.setup` at every boot of the app's
+  container. Its major is `NODE_VERSION` in `config.conf`, the fourth
+  part of the stack and the one that is not hexpm's tag (24, LTS
+  until April 2028; NodeSource names its repositories by major and
+  rolls the rest, so it is a major, not an exact version): stamped
+  into the workspace's `Dockerfile.local` as `ARG NODE` beside the
+  other three, passed to the workbench image's build, and in that
+  image's name — `dew-exELIXIR-erlOTP-nodeNODE-phxVERSION:WORKBENCH` —
+  so a change in the config builds a new image instead of doing
+  nothing until someone removes the old one. The console names the
+  image the same way, reads `NODE` off the stamp beside the other
+  three, and shows it on the New Project card. A `config.conf` from
+  before the line is told what to add when a build or a bake reads
+  it. The production `Dockerfile` ash patches for `--api typescript`
+  still takes Debian's `nodejs npm` in Phoenix's builder: Phoenix's
+  file, for its own session.
+
+- The mailer's README shows how to see the mailbox work: a mail sent
+  from IEx on the node that serves the page (`./wb.sh iex`, or the
+  console's Terminal on `app`), read at the *mailbox* door — and why
+  a VM of its own (`iex -S mix`) would show nothing there.
+
+## v0.13.0 - (2026-09-28)
+
+### Added
+
 - **The console runs as a release.** `./wb.sh console` and `console
   up` start the console on an image of its own,
   `console/Dockerfile`: the workbench's image with the console
@@ -137,44 +181,6 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `.env.sample` too: both files are the project's own.
 
 ### Updated
-
-- **Node from NodeSource, by the major `config.conf` names.** The
-  shared first step of the two Dockerfiles (`scripts/Dockerfile.seed.local`,
-  `scripts/Dockerfile.workbench`) took Node and npm from Debian since
-  2026-09-17, for the `npm install` ash_typescript's installer hooks
-  into `assets.setup`. Debian's `npm` unpacks every dependency of npm
-  as a package of its own: measured on the base image on 2026-09-28,
-  the step went from 111 packages, 112 MB and 140 s without Node to
-  658 packages, 239 MB and 521 s with Debian's `nodejs npm`, and the
-  layer from 582 MB to 1.2 GB — most of a fresh workbench build. The
-  same node with npm inside is one package on NodeSource, which
-  makes the step 124 packages, 158 MB and 103 s (the difference with
-  140 s is the network between runs); the whole workbench image, from
-  scratch on an idle machine with the base pulled, builds in 102 s,
-  the shared step 64 s of it. Node stays in the shared step,
-  in both images from the start, because the workbench cannot know
-  whether the project to come picks `ash --api typescript`, and
-  `mix setup` runs `assets.setup` at every boot of the app's
-  container. Its major is `NODE_VERSION` in `config.conf`, the fourth
-  part of the stack and the one that is not hexpm's tag (24, LTS
-  until April 2028; NodeSource names its repositories by major and
-  rolls the rest, so it is a major, not an exact version): stamped
-  into the workspace's `Dockerfile.local` as `ARG NODE` beside the
-  other three, passed to the workbench image's build, and in that
-  image's name — `dew-exELIXIR-erlOTP-nodeNODE-phxVERSION:WORKBENCH` —
-  so a change in the config builds a new image instead of doing
-  nothing until someone removes the old one. The console names the
-  image the same way, reads `NODE` off the stamp beside the other
-  three, and shows it on the New Project card. A `config.conf` from
-  before the line is told what to add when a build or a bake reads
-  it. The production `Dockerfile` ash patches for `--api typescript`
-  still takes Debian's `nodejs npm` in Phoenix's builder: Phoenix's
-  file, for its own session.
-
-- The mailer's README shows how to see the mailbox work: a mail sent
-  from IEx on the node that serves the page (`./wb.sh iex`, or the
-  console's Terminal on `app`), read at the *mailbox* door — and why
-  a VM of its own (`iex -S mix`) would show nothing there.
 
 - **Changes is the Project tab's last paper.** Birth, History, Mix,
   .env, README, CHANGELOG, Changes. History stays beside Birth, where

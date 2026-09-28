@@ -30,6 +30,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **The console's logs come out in colour.** `config :elixir,
+  ansi_enabled: true` in the console's `config.exs`: Elixir turns
+  colour off when its output is not a terminal, and the console's is
+  a pipe — its container's log — so `./wb.sh console` and `console
+  logs` showed Logger's lines plain. Forced on, they read as they do
+  under `mix phx.server` on a terminal.
+
 - **The mark is redrawn in Inkscape, with rounded corners.** The
   bench's legs and top, the screen's plate and the three drawers now
   end in a 25-unit radius, in a 900-unit box; DEW and the prompt are

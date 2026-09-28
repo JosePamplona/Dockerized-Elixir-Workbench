@@ -7,6 +7,8 @@
 # General application configuration
 import Config
 
+config :elixir, ansi_enabled: true
+
 config :console,
   generators: [timestamp_type: :utc_datetime]
 

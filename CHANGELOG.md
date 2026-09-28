@@ -28,6 +28,42 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   the schedule does not know it, and otherwise carries its standing
   (`lts · until 2028-04-30`).
 
+- **The console runs as a release.** `./wb.sh console` and `console
+  up` start the console on an image of its own,
+  `console/Dockerfile`: the workbench's image with the console
+  compiled into it as a release (`MIX_ENV=prod`, `mix release`), built
+  once for the sources as they are and started in seconds — nothing
+  fetched or compiled at start, and no code of the console compiled
+  through the bind mount any more, which was the first of the fixed
+  rules of `console/PLAN.md` (the second step of its order: volumes,
+  release, node). The image is named off the workbench's
+  (`dew-console-STACK-phxVERSION:WORKBENCH-HASH`), the hash over what
+  `.dockerignore` lets into the context — `console/` and `igniter/`
+  without tests, build output or the cartridges' papers, which the
+  console reads off the mount, so a paper edited costs no build, and
+  over the workbench's path, which the image is good for alone; a
+  source that changed is a new tag, built on the next start, and the
+  old tags of the same version go once the new console runs. The
+  sources are compiled at the workbench's host path, where the console
+  mounts them: the package reads a cartridge's version and need at run
+  time off the directory it was compiled in. The release carries
+  `:mix` (the catalog is a Mix task called in this BEAM), reads its
+  origin check and the reports port from `config/runtime.exs`, and no
+  longer forces SSL: it serves 127.0.0.1 over plain HTTP. `console
+  dev` keeps the mode the console ran in until now, `mix phx.server` on
+  the mounted sources with its build and deps volumes, for work on the
+  console or the package; the start-again from inside comes back in the
+  mode it was started in. `console build` builds both images. Found on
+  the first `new` from the release (2026-09-28): ERTS puts the release's
+  own `erts-*/bin` first on the BEAM's PATH and exports where it lives
+  (ROOTDIR, BINDIR, EMU, PROGNAME), so the job's `mix` found the
+  release's `erl`, whose root has no `start.boot`, and died booting
+  ("cannot get bootfile"). `Console.Application` now scrubs the
+  release's runtime from the environment at boot — those four, the
+  RELEASE_* variables and the PATH entries under RELEASE_ROOT — since
+  every process the console starts inherits it; under `console dev`
+  nothing is set and nothing is touched.
+
 - **`JOB_NICENESS`: the compile cedes the CPU.** With the console in
   its container, an `add` compiles *inside* that container, beside the
   console (`toolchain_here`), with nothing between it and every core:

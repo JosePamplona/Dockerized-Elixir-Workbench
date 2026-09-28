@@ -39,11 +39,11 @@ if config_env() == :dev do
 end
 
 if config_env() == :prod do
-  # The secret key base is used to sign/encrypt cookies and other secrets.
-  # A default value is used in config/dev.exs and config/test.exs but you
-  # want to use a different value for prod and you most likely don't want
-  # to check this value into version control, so we use an environment
-  # variable instead.
+  # The release, as './wb.sh console' runs it: on 0.0.0.0 inside the
+  # container, published on 127.0.0.1 by Docker, on the first free port
+  # from 4100 — CONSOLE_PUBLIC_PORT, the port the browser sees while the
+  # container listens on PORT. The secret is made by wb.sh at each start
+  # and kept nowhere: a console is one session, and its cookies with it.
   secret_key_base =
     System.get_env("SECRET_KEY_BASE") ||
       raise """
@@ -51,50 +51,23 @@ if config_env() == :prod do
       You can generate one by calling: mix phx.gen.secret
       """
 
-  host = System.get_env("PHX_HOST") || "example.com"
-
-  config :console, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
+  public_port = System.get_env("CONSOLE_PUBLIC_PORT") || System.get_env("PORT") || "4000"
 
   config :console, ConsoleWeb.Endpoint,
-    url: [host: host, port: 443, scheme: "https"],
-    http: [
-      # Enable IPv6 and bind on all interfaces.
-      # Set it to  {0, 0, 0, 0, 0, 0, 0, 1} for local network only access.
-      # See the documentation on https://bandit.hexdocs.pm/Bandit.html#t:options/0
-      # for details about using IPv6 vs IPv4 and loopback vs public addresses.
-      ip: {0, 0, 0, 0, 0, 0, 0, 0}
-    ],
+    url: [host: "localhost", port: String.to_integer(public_port), scheme: "http"],
+    http: [ip: {0, 0, 0, 0}, port: String.to_integer(System.get_env("PORT") || "4000")],
+    # The console runs wb.sh with --yes over Docker's socket, and
+    # `delete` wipes a workspace: no page the reader visits while the
+    # console is up may open its socket. The port is part of the check —
+    # the project's pages are served on the port beside this one, the
+    # same host, and "//localhost" alone would let them in.
+    check_origin: ["//localhost:#{public_port}", "//127.0.0.1:#{public_port}"],
     secret_key_base: secret_key_base
 
-  # ## SSL Support
-  #
-  # To get SSL working, you will need to add the `https` key
-  # to your endpoint configuration:
-  #
-  #     config :console, ConsoleWeb.Endpoint,
-  #       https: [
-  #         ...,
-  #         port: 443,
-  #         cipher_suite: :strong,
-  #         keyfile: System.get_env("SOME_APP_SSL_KEY_PATH"),
-  #         certfile: System.get_env("SOME_APP_SSL_CERT_PATH")
-  #       ]
-  #
-  # The `cipher_suite` is set to `:strong` to support only the
-  # latest and more secure SSL ciphers. This means old browsers
-  # and clients may not be supported. You can set it to
-  # `:compatible` for wider support.
-  #
-  # `:keyfile` and `:certfile` expect an absolute path to the key
-  # and cert in disk or a relative path inside priv, for example
-  # "priv/ssl/server.key". For all supported SSL configuration
-  # options, see https://plug.hexdocs.pm/Plug.SSL.html#configure/1
-  #
-  # We also recommend setting `force_ssl` in your config/prod.exs,
-  # ensuring no data is ever sent via http, always redirecting to https:
-  #
-  #     config :console, ConsoleWeb.Endpoint,
-  #       force_ssl: [hsts: true]
-  #
-  # Check `Plug.SSL` for all available options in `force_ssl`.
+  # The project's docs and coverage report, on their own origin
+  # (ConsoleWeb.Reports): the port beside the console's, published on
+  # 127.0.0.1 like it.
+  config :console, :reports,
+    ip: {0, 0, 0, 0},
+    port: String.to_integer(System.get_env("REPORTS_PORT") || "4001")
 end

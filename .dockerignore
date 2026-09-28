@@ -1,0 +1,33 @@
+# The console image's build context: './wb.sh console' builds
+# console/Dockerfile from the workbench's root — the package is a path
+# dependency beside the console — and this is what goes in — the console and the package it depends on, nothing else. Not
+# the workspaces, not git, not what Mix and the checks wrote, not the
+# tests, and not a cartridge's papers: the console reads those off the
+# mount at run time (Console.Papers, and the package's version/0 and
+# need/0 read the cartridge's directory), so editing one costs no build.
+# console_sources_hash in wb.sh hashes this same set to name the image:
+# keep the two lists in step.
+*
+!console
+!igniter
+console/_build
+console/deps
+console/cover
+console/doc
+console/tmp
+console/test
+console/erl_crash.dump
+console/priv/plts
+console/priv/static/assets/js
+console/priv/static/cache_manifest.json
+console/assets/node_modules
+igniter/_build
+igniter/deps
+igniter/test
+igniter/erl_crash.dump
+igniter/priv/plts
+igniter/lib/workbench_igniter/features/*/README.md
+igniter/lib/workbench_igniter/features/*/NEED.md
+igniter/lib/workbench_igniter/features/*/DESIGN.md
+igniter/lib/workbench_igniter/features/*/CHANGELOG.md
+**/_archived

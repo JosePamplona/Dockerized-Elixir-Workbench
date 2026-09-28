@@ -72,6 +72,10 @@
     LOCAL_DOCKERFILE="Dockerfile.local"
     LOCAL_DOCKERFILE_SEED="Dockerfile.seed.local"
     WORKBENCH_DOCKERFILE="Dockerfile.workbench"
+    # The console's, in its own directory as a project's is; built
+    # from the workbench's root, its context (the package is a path
+    # dependency beside it).
+    CONSOLE_DOCKERFILE="console/Dockerfile"
     COMPOSE_FILE="docker-compose.yml"
     # The entrypoint script runs from the mounted workbench (workdir /app).
     CONTAINER_ENTRYPOINT=(bash workbench/scripts/entrypoint.sh)
@@ -2146,16 +2150,19 @@
       "  toggle    Switch to the other one." \
       "  NAME      Switch to that context."
 
-    print_command "console [up | down | logs | build]"
+    print_command "console [up | dev | down | logs | build]"
     command_content \
       "Run the console, a LiveView page that shows the workspace and drives" \
       "this script, as a container on 127.0.0.1, first free port from 4100." \
       "Bare, it starts it and follows its output; Ctrl+C takes it down." \
-      "The workbench image is built first if missing." \
+      "It runs as a release on its own image, built first if missing" \
+      "(minutes), and again when console/ or igniter/ changed." \
       "  up      Start it and return; it keeps running." \
+      "  dev     mix phx.server on the mounted sources, reloading on change," \
+      "          for work on the console or the package; its output here." \
       "  down    Stop it." \
       "  logs    Follow its output." \
-      "  build   Build the workbench image again."
+      "  build   Build the workbench image and the console's again."
 
     print_command "bake [--deploy TARGET] [--replicas N] [--no-balancer]"
     command_content \
@@ -2387,6 +2394,82 @@
       echo "No workbench image $WORKBENCH_IMAGE yet: building it first (minutes)."
       resolve_installer && build_workbench_image
     } >&2
+  }
+
+  # console_sources_hash
+    # What the console's image is built from, in one word: a hash of
+    # the sources console/Dockerfile copies — the same set
+    # .dockerignore lets into the build context, so keep the two lists
+    # in step — over their contents, so a `git checkout` that changes
+    # nothing names the same image. Not the tests, not what Mix wrote,
+    # and not a cartridge's papers, which the console reads off the
+    # mount at run time: editing one costs no build. The workbench's
+    # path goes in too: the sources are compiled at that path and the
+    # image is good for it alone. Tenths of a second.
+  console_sources_hash() {
+    ( cd "$WORKBENCH_PATH" && \
+      { echo "$WORKBENCH_PATH"; \
+      find console igniter .dockerignore \
+        \( -path console/_build -o -path console/deps -o -path console/cover \
+           -o -path console/doc -o -path console/tmp -o -path console/test \
+           -o -path console/priv/plts -o -path console/priv/static/assets/js \
+           -o -path console/assets/node_modules \
+           -o -path igniter/_build -o -path igniter/deps -o -path igniter/test \
+           -o -path igniter/priv/plts -o -name _archived \) -prune \
+        -o -type f ! -name erl_crash.dump ! -path console/priv/static/cache_manifest.json \
+           ! -regex '.*/features/[^/]*/\(README\|NEED\|DESIGN\|CHANGELOG\)\.md' -print0 | \
+      LC_ALL=C sort -z | xargs -0 sha256sum; } | sha256sum | cut -c 1-12 )
+  }
+
+  # console_image
+    # The console's image, named off the workbench's: the same stack
+    # and installer in the repository, with 'console' after 'dew',
+    # and the workbench's version and the sources' hash as the tag —
+    # dew-console-exELIXIR-erlOTP-phxVERSION:WORKBENCH-HASH. It is the
+    # workbench's image with the console compiled into it as a release
+    # (console/Dockerfile), so one per workbench image, and a
+    # source that changed is another tag.
+  console_image() {
+    local hash
+    hash=$(console_sources_hash) || return 1
+    CONSOLE_IMAGE="$IMAGE_REPOSITORY-console-${WORKBENCH_IMAGE#"$IMAGE_REPOSITORY-"}-$hash"
+  }
+
+  # build_console_image
+    # The console's image, off console/Dockerfile, with the
+    # workbench's root as the context (.dockerignore narrows it to the
+    # console and the package) and its absolute path as an argument:
+    # the sources are compiled at that path, where the console mounts
+    # them at run time (the Dockerfile says why).
+  build_console_image() {
+    ( cd "$WORKBENCH_PATH" && \
+      docker build \
+        --build-arg WORKBENCH_IMAGE="$WORKBENCH_IMAGE" \
+        --build-arg WORKBENCH_PATH="$WORKBENCH_PATH" \
+        --file "$CONSOLE_DOCKERFILE" --tag "$CONSOLE_IMAGE" . )
+  }
+
+  # ensure_console_image
+    # The console's image for the sources as they are, built when the
+    # daemon has none. What it says goes to stderr, as
+    # ensure_workbench_image's does.
+  ensure_console_image() {
+    console_image || return 1
+    docker image inspect "$CONSOLE_IMAGE" > /dev/null 2>&1 && return
+    {
+      echo "No console image for the sources as they are: building $CONSOLE_IMAGE (minutes)."
+      build_console_image
+    } >&2
+  }
+
+  # prune_console_images
+    # The console images this version built for other sources: gone,
+    # once the console runs on the current one. One in use by a
+    # container that still runs is refused by Docker and goes next time.
+  prune_console_images() {
+    docker images --format '{{.Repository}}:{{.Tag}}' "${CONSOLE_IMAGE%%:*}" 2> /dev/null | \
+      grep "^${CONSOLE_IMAGE%%:*}:$IMAGE_TAG-" | grep -v "^$CONSOLE_IMAGE\$" | \
+      xargs -r docker rmi > /dev/null 2>&1 || true
   }
 
   # create_project <SETUP_COMMAND> [PHOENIX_NEW_OPTIONS...]
@@ -2857,6 +2940,16 @@ if [ $# -gt 0 ]; then
     # relative paths in config.conf and the composes' bind mounts mean
     # the same thing to the daemon whichever side asks. It runs as this
     # user, in the socket's group, and shells out to wb.sh as jobs.
+    # Two ways to run it. Bare and 'up' run the release: the console's
+    # own image (console/Dockerfile), the workbench's with the
+    # console compiled in, built once for the sources as they are —
+    # nothing fetched or compiled at start, up in seconds, and no code
+    # compiled through the bind mount. 'dev' runs `mix phx.server` on
+    # the mounted sources instead, reloading on change, with its build
+    # and deps in two volumes of its own: for whoever works on the
+    # console or the package, whose catalog is read in this BEAM. A
+    # manifest edited under the release keeps what the image was built
+    # with until the next up.
     # The workspace is mounted a second time, at /app/src with its build
     # and deps volumes over it — the arrangement the app service and
     # every one-off container have — and WORKSPACE_MOUNT says so: the
@@ -2864,7 +2957,7 @@ if [ $# -gt 0 ]; then
     # in this container instead of starting another (toolchain_here),
     # and the resident (the project's own BEAM, beside the console)
     # compiles from the app's own source path into the app's own
-    # volumes, and finds what it compiled. The console's own build
+    # volumes, and finds what it compiled. The dev console's own build
     # lives apart, under /app/console, and keeps MIX_BUILD_ROOT /
     # MIX_DEPS_PATH: its source has no fixed mount point, so there is
     # no path in the image for a volume to take its ownership from.
@@ -2879,23 +2972,34 @@ if [ $# -gt 0 ]; then
     CONSOLE_DIR="$WORKBENCH_PATH/console"
 
     case "$1" in
-      ""|up)
-        # Bare, it stays in the foreground: its output here, and Ctrl+C
-        # (or the terminal closing) takes it down. 'up' leaves it running
-        # and returns, as the workbench's own 'up' does.
+      ""|up|dev)
+        # Bare and 'dev' stay in the foreground: their output here, and
+        # Ctrl+C (or the terminal closing) takes the console down. 'up'
+        # leaves it running and returns, as the workbench's own 'up'
+        # does — and so does any of them run with CONSOLE_DETACHED set,
+        # which is how the helper below starts it again.
+        console_mode=release
+        [[ "${1:-}" == dev ]] && console_mode=dev
         CONSOLE_FOLLOW=false
-        [ -z "${1:-}" ] && CONSOLE_FOLLOW=true
-        # The console runs on the workbench's image; built once, it serves
+        [[ "${1:-}" != up ]] && [ -z "${CONSOLE_DETACHED:-}" ] && CONSOLE_FOLLOW=true
+        # The images: the workbench's, which both modes run wb.sh on,
+        # and the console's own for the release. Built once, they serve
         # an empty workspace too, where 'new' is the first act.
         ensure_workbench_image || terminate "The workbench image did not build."
+        if [[ "$console_mode" == release ]]; then
+          ensure_console_image || terminate "The console image did not build."
+        fi
         # From inside the console — the job its page runs to bind it to
         # the workspace config.conf names now — this container cannot
         # replace itself: removing it would end the job that asked. A
         # helper container on this same image, the socket and the
         # workbench mounted, runs this very command from outside a
-        # moment later, once the job has ended. The port is kept
-        # (below), so the page reconnects where it is.
+        # moment later, once the job has ended, in the mode this console
+        # runs in (CONSOLE_MODE, set below). The port is kept (below),
+        # so the page reconnects where it is.
         if [ -n "$WORKSPACE_MOUNT" ]; then
+          console_word=up
+          [[ "${CONSOLE_MODE:-}" == dev ]] && console_word=dev
           docker run --detach --rm \
             --user "$(id -u):$(id -g)" \
             --group-add "$(stat -c %g /var/run/docker.sock)" \
@@ -2903,7 +3007,8 @@ if [ $# -gt 0 ]; then
             --volume "$WORKBENCH_PATH:$WORKBENCH_PATH" \
             --workdir "$WORKBENCH_PATH" \
             --env HOME=/home/elixir \
-            "$WORKBENCH_IMAGE" sh -c "sleep 2; ./$(basename "$0") console up" > /dev/null && \
+            --env CONSOLE_DETACHED=1 \
+            "$WORKBENCH_IMAGE" sh -c "sleep 2; ./$(basename "$0") console $console_word" > /dev/null && \
           echo "The console starts again in a moment, for ${B}$WORKSPACE_PATH${R}," \
             "on the same address: this page reconnects on its own."
           exit 0
@@ -2926,37 +3031,52 @@ if [ $# -gt 0 ]; then
         if ! { mkdir -p "$WORKSPACE_PATH" && ensure_build_volumes; }; then
           terminate "The workspace's directory or build volumes could not be made."
         fi
-        docker run --detach \
-          --name "$CONSOLE_NAME" \
-          --user "$(id -u):$(id -g)" \
-          --group-add "$SOCKET_GID" \
-          --volume /var/run/docker.sock:/var/run/docker.sock \
-          --volume "$WORKBENCH_PATH:$WORKBENCH_PATH" \
-          --volume workbench_console_build:/app/console/build \
-          --volume workbench_console_deps:/app/console/deps \
-          --volume "$WORKSPACE_PATH:/app/src" \
-          --volume "$WORKBENCH_BUILD_VOLUME:/app/src/_build" \
-          --volume "${ELIXIR_PROJECT_NAME}_deps:/app/src/deps" \
-          --env WORKSPACE_MOUNT=/app/src \
-          --env "WORKSPACE_MOUNT_PATH=$WORKSPACE_PATH" \
-          --env "WORKSPACE_MOUNT_PROJECT=$ELIXIR_PROJECT_NAME" \
-          --env "WORKSPACE_MOUNT_IMAGE=$WORKBENCH_IMAGE" \
-          --env MIX_BUILD_ROOT=/app/console/build \
-          --env MIX_DEPS_PATH=/app/console/deps \
-          --env "WORKBENCH_PATH=$WORKBENCH_PATH" \
-          --add-host host.docker.internal:host-gateway \
-          --env APP_HOST=host.docker.internal \
-          --workdir "$CONSOLE_DIR" \
-          --env HOME=/home/elixir \
-          --env "WORKBENCH_DIR=$WORKBENCH_PATH" \
-          --env "WORKBENCH_PATH=$WORKBENCH_PATH" \
-          --env PORT=4000 \
-          --env "CONSOLE_PUBLIC_PORT=$CONSOLE_PORT" \
-          --env "REPORTS_PUBLIC_PORT=$REPORTS_PORT" \
-          --publish "127.0.0.1:$CONSOLE_PORT:4000" \
-          --publish "127.0.0.1:$REPORTS_PORT:4001" \
-          "$WORKBENCH_IMAGE" sh -c "mix deps.get && mix phx.server" > /dev/null || \
+        console_run=(
+          --name "$CONSOLE_NAME"
+          --user "$(id -u):$(id -g)"
+          --group-add "$SOCKET_GID"
+          --volume /var/run/docker.sock:/var/run/docker.sock
+          --volume "$WORKBENCH_PATH:$WORKBENCH_PATH"
+          --volume "$WORKSPACE_PATH:/app/src"
+          --volume "$WORKBENCH_BUILD_VOLUME:/app/src/_build"
+          --volume "${ELIXIR_PROJECT_NAME}_deps:/app/src/deps"
+          --env WORKSPACE_MOUNT=/app/src
+          --env "WORKSPACE_MOUNT_PATH=$WORKSPACE_PATH"
+          --env "WORKSPACE_MOUNT_PROJECT=$ELIXIR_PROJECT_NAME"
+          --env "WORKSPACE_MOUNT_IMAGE=$WORKBENCH_IMAGE"
+          --env "WORKBENCH_PATH=$WORKBENCH_PATH"
+          --env "WORKBENCH_DIR=$WORKBENCH_PATH"
+          --add-host host.docker.internal:host-gateway
+          --env APP_HOST=host.docker.internal
+          --workdir "$CONSOLE_DIR"
+          --env HOME=/home/elixir
+          --env "CONSOLE_MODE=$console_mode"
+          --env PORT=4000
+          --env "CONSOLE_PUBLIC_PORT=$CONSOLE_PORT"
+          --env "REPORTS_PUBLIC_PORT=$REPORTS_PORT"
+          --publish "127.0.0.1:$CONSOLE_PORT:4000"
+          --publish "127.0.0.1:$REPORTS_PORT:4001"
+        )
+        if [[ "$console_mode" == dev ]]; then
+          console_run+=(
+            --volume workbench_console_build:/app/console/build
+            --volume workbench_console_deps:/app/console/deps
+            --env MIX_BUILD_ROOT=/app/console/build
+            --env MIX_DEPS_PATH=/app/console/deps
+            "$WORKBENCH_IMAGE" sh -c "mix deps.get && mix phx.server"
+          )
+        else
+          # The release asks for the secret its cookies are signed with,
+          # and gets a fresh one each start: a console is one session.
+          console_run+=(
+            --env PHX_SERVER=true
+            --env "SECRET_KEY_BASE=$(head -c 64 /dev/urandom | base64 | tr -d '\n')"
+            "$CONSOLE_IMAGE" /app/console/release/bin/console start
+          )
+        fi
+        docker run --detach "${console_run[@]}" > /dev/null || \
           terminate "The console did not start."
+        [[ "$console_mode" == release ]] && prune_console_images
         if [[ "$CONSOLE_FOLLOW" == true ]]; then
           echo "The console is coming up on ${B}http://localhost:$CONSOLE_PORT${R}" \
             "(Ctrl+C takes it down)."
@@ -2966,16 +3086,20 @@ if [ $# -gt 0 ]; then
           docker logs --follow "$CONSOLE_NAME"
           docker rm -f "$CONSOLE_NAME" > /dev/null 2>&1
           echo "Console down."
-        else
+        elif [[ "$console_mode" == dev ]]; then
           echo "The console is coming up on ${B}http://localhost:$CONSOLE_PORT${R}" \
             "(first run compiles it: ./$(basename "$0") console logs)."
+        else
+          echo "The console is coming up on ${B}http://localhost:$CONSOLE_PORT${R}" \
+            "(./$(basename "$0") console logs follows it)."
         fi ;;
       down)  docker rm -f "$CONSOLE_NAME" > /dev/null 2>&1 && echo "Console down." || echo "The console was not up." ;;
       logs)  docker logs --follow "$CONSOLE_NAME" ;;
       build)
-        # The image again, from the seed as it is now: the installer the
-        # workspace was made with, or the one 'new' would pick.
-        resolve_installer && build_workbench_image ;;
+        # The images again: the workbench's from the seed as it is now —
+        # the installer the workspace was made with, or the one 'new'
+        # would pick — and the console's on top of it.
+        resolve_installer && build_workbench_image && console_image && build_console_image ;;
       *)     args_error invalid ;;
     esac
 

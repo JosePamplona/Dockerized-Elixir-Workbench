@@ -775,6 +775,55 @@ declare, and nothing else of the workspace — `.env` is in it.
   `/dev/docs` alike. No `exdoc_tied` copy: git keeps v0.1.0.
 * **Symlinks** under an output dir are followed.
 
+## The console is a release, landed on 2026-09-27
+
+The second step of the order settled on 2026-09-02 (volumes, release,
+node). `./wb.sh console` and `console up` run the console as a release
+on an image of its own, `console/Dockerfile`: two stages, both
+on the workbench's image — the first compiles the console and the
+package with `MIX_ENV=prod` and runs `mix release`, the second copies
+the release to `/app/console/release`. The image stays the workbench's,
+not a slim runtime, because the console runs `wb.sh` in its own
+container (*The console is the toolchain*, above): the mix and git of a
+job and the resident want the toolchain there. What the release changes
+is the console's own start — nothing fetched, nothing compiled, the
+page up in seconds — and that no code of the console compiles through
+the bind mount any more, which was the first of the four fixed rules.
+
+Two things the build had to get right. The sources are compiled **at
+the workbench's host path** (`WORKBENCH_PATH`, a build argument), not
+under `/app`: the package reads a cartridge's `CHANGELOG.md` and
+`NEED.md` at run time off the directory it was compiled in
+(`WorkbenchIgniter.Feature`, `@cartridge_dir`), and the console mounts
+the workbench at that same path — compiled anywhere else, every box
+would come up with no version and no need. And the release carries
+`:mix`: the catalog is the package's Mix task called in this BEAM, and
+each box's summary is its task's `@shortdoc`.
+
+The image is named off the workbench's, `dew-console-STACK-phxVERSION`,
+tagged with the workbench's version and a hash of the sources the
+`.dockerignore` lets into the context — `console/` and `igniter/`
+without the tests, what Mix wrote, and the cartridges' papers, which
+the console reads off the mount, so editing one costs no build — and
+of the workbench's path, since the image is good for that path alone. A
+source that changed is a new tag, built on the next start; the old tags
+of the same version go once the new console runs. `console dev` keeps
+the mode the console ran in until now, `mix phx.server` on the mounted
+sources with its two volumes, for work on the console or the package.
+The start-again from inside the console comes back in the mode it was
+started in (`CONSOLE_MODE`). One thing the release brought with it: its
+runtime leaks into every process the console starts — ERTS puts the
+release's `erts-*/bin` first on PATH and exports ROOTDIR, BINDIR, EMU
+and PROGNAME — so a job's `mix` booted the release's `erl` and died on
+a missing `start.boot`. `Console.Application` scrubs those, the
+RELEASE_* variables and the PATH entries under RELEASE_ROOT at boot;
+there is no other place, since jobs, the resident, git and docker all
+inherit the VM's environment.
+
+Left for the third step, the node: the release runs with the default
+`sname`, not yet `-hidden` on the workspace's network, and the resident
+still answers the two questions.
+
 ## Open — one word, two things: *installer*
 
 `wb.sh installers` is the verb for the Phoenix generators: the stable

@@ -7,10 +7,12 @@ Logs, Project, Cartridges — the shelf of boxes), and the jobs tray at
 the bottom, where every command lands with its output and exit code.
 
 ```sh
-./wb.sh console          # builds its image if missing, starts it: http://localhost:4100 (first free port from 4100)
-./wb.sh console logs     # follows its output (the first run compiles it)
+./wb.sh console          # builds its image if missing (minutes), starts it: http://localhost:4100 (first free port from 4100)
+./wb.sh console up       # the same, left running
+./wb.sh console dev      # mix phx.server on the mounted sources, reloading on change (the first run compiles it)
+./wb.sh console logs     # follows its output
 ./wb.sh console down
-./wb.sh console build    # the workbench image again, from the seed as it is now
+./wb.sh console build    # the workbench image again, from the seed as it is now, and the console's on top of it
 ```
 
 ## How it runs
@@ -21,8 +23,24 @@ buildx and compose plugins), with two mounts: Docker's
 socket, and the workbench itself **at the same absolute path as on the
 host** — the relative paths of `config.conf` and the composes' bind
 mounts then mean the same thing to the daemon whichever side asks. It
-runs as the host user, in the socket's group, with the source mounted
-and `mix phx.server` reloading on change.
+runs as the host user, in the socket's group.
+
+Two ways. Bare and `up` run it as a **release**, on the console's own
+image (`console/Dockerfile`): the workbench's image with the
+console compiled into it, built once for the sources as they are — the
+tag carries the workbench's version and a hash of `console/`,
+`igniter/` and the workbench's path (`.dockerignore` says what counts;
+a cartridge's papers do not, the console reads them off the mount) —
+so it starts in seconds,
+fetches and compiles nothing, and nothing is compiled through the bind
+mount. A source that changed is another image, built on the next
+start, and the old one goes. The image stays the workbench's because
+the console runs `wb.sh` inside its own container, mix and git
+included. `dev` runs `mix phx.server` on the mounted sources instead,
+reloading on change, its build and deps in two volumes of its own: for
+whoever works on the console or on the package, whose catalog is read
+in this BEAM — under the release, a manifest edited keeps what the image
+was built with until the next start.
 
 ## What it is made of
 

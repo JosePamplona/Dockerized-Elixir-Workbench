@@ -27,7 +27,12 @@ defmodule Console.MixProject do
       mod: {Console.Application, []},
       # :inets and :ssl are what Console.Installers asks hex with — OTP's
       # own client, so the console carries no HTTP dependency for it.
-      extra_applications: [:logger, :runtime_tools, :inets, :ssl]
+      # :mix because the catalog is read in this BEAM off the package's
+      # Mix tasks (Console.Catalog → Mix.Tasks.Workbench.Catalog, and
+      # each box's summary is its task's @shortdoc, Mix.Task.shortdoc/1):
+      # a release carries no Mix unless asked, and the console runs as
+      # one (console/Dockerfile).
+      extra_applications: [:logger, :runtime_tools, :inets, :ssl, :mix]
     ]
   end
 

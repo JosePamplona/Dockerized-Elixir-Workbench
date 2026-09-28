@@ -19,17 +19,22 @@ defmodule Console.Project do
   alias Console.Papers
 
   # The ribbon's order, and so the first paper taken: what the project
-  # is, then what has happened to it, then what it holds — the git two
-  # moved up beside the Record on 2026-09-10, from the tail where they
-  # landed when Git stopped being a tab of its own.
+  # is, then what has happened to it, then what it holds, and last what
+  # has not happened yet. History moved up beside the Record on
+  # 2026-09-10, from the tail where the git two landed when Git stopped
+  # being a tab of its own, and Changes went with it; Changes went back
+  # to the tail on 2026-09-27, alone: it is not a record but the one
+  # paper about the future — the tree git does not have, with the verb
+  # that puts it there — and its count is a notice, which reads at the
+  # edge of the row, not in the middle of it.
   @papers [
     {"record", "Birth", nil},
     {"history", "History", nil},
-    {"pending", "Changes", nil},
     {"mix", "Mix", "mix.exs"},
     {"env", ".env", ".env"},
     {"readme", "README", "README.md"},
-    {"changelog", "CHANGELOG", "CHANGELOG.md"}
+    {"changelog", "CHANGELOG", "CHANGELOG.md"},
+    {"pending", "Changes", nil}
   ]
 
   def papers, do: @papers

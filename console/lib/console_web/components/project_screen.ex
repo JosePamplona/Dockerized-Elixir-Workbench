@@ -1,10 +1,10 @@
 defmodule ConsoleWeb.ProjectScreen do
   @moduledoc """
   The project's own papers: Birth — what the project is, which is what
-  it was born as, drawn off the status — then Mix, what `mix.exs` says
-  and every package the project carries, the .env with its secrets
-  masked, README, CHANGELOG, and the workspace's git as Changes and
-  History.
+  it was born as, drawn off the status — then History, what has
+  happened to it, then Mix, what `mix.exs` says and every package the
+  project carries, the .env with its secrets masked, README, CHANGELOG,
+  and last Changes, what the tree holds that git does not yet.
   """
   use Phoenix.Component
   import ConsoleWeb.Ribbon, only: [ribbon: 1]

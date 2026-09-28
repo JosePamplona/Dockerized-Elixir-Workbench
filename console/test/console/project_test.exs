@@ -48,17 +48,17 @@ defmodule Console.ProjectTest do
        %{dir: dir} do
     File.write!(Path.join(dir, "README.md"), "# Lorem\n")
     status = %{"exists" => true, "workspace" => dir, "git" => %{"repo" => true}}
-    assert Project.carried(status) == ~w(record history pending readme)
+    assert Project.carried(status) == ~w(record history readme pending)
     assert Project.carried(put_in(status, ["git", "repo"], false)) == ~w(record readme)
     assert Project.carried(%{"exists" => false, "workspace" => dir}) == []
     assert Project.carried(nil) == []
   end
 
-  test "Mix is carried with a mix.exs, between Changes and .env", %{dir: dir} do
+  test "Mix is carried with a mix.exs, between History and .env; Changes is last", %{dir: dir} do
     File.write!(Path.join(dir, "mix.exs"), "defmodule M do\nend\n")
     File.write!(Path.join(dir, ".env"), "PORT=4000\n")
     status = %{"exists" => true, "workspace" => dir, "git" => %{"repo" => true}}
-    assert Project.carried(status) == ~w(record history pending mix env)
+    assert Project.carried(status) == ~w(record history mix env pending)
   end
 
   test "Mix says what def project says, coloured, and each package's options", %{dir: dir} do

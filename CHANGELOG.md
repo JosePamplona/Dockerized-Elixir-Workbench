@@ -90,6 +90,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **Changes is the Project tab's last paper.** Birth, History, Mix,
+  .env, README, CHANGELOG, Changes. History stays beside Birth, where
+  the two git papers went on 2026-09-10 — what has happened to the
+  project belongs beside what it is — and Changes alone goes back to
+  the tail: it is not a record but the one paper about what has not
+  happened yet, the tree git does not have, with the verb that puts it
+  there; and its count of files is a notice, which reads at the edge
+  of the row and not in the middle of it. A reader who thinks "git"
+  finds the two apart, and each says on its sublabel what it is read
+  off — HEAD's sha, the tree's count — and a commit in History or a
+  job still opens Changes by its address.
+
 - **The three compose files are born with the project, and `up` writes
   none of them.** `new` baked and committed `docker-compose.yml` alone;
   `docker-compose.prod.yml` and `docker-compose.scaled.yml` were born

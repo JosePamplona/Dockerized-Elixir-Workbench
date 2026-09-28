@@ -724,7 +724,7 @@ pre .ln{display:block}
 /* The box sits to the bar as a job's output sits to its row on the Jobs
    screen: the row's 7px under the line, and the row's 8px over the box
    — the block's own padding went double with the bar's. */
-.tray>.job{grid-row:1;grid-column:1/-1;cursor:auto;padding-top:0;padding-bottom:0}
+.tray>.job{--jy:0;grid-row:1;grid-column:1/-1;cursor:auto}
 .tray.open .bar{padding-top:7px}
 /* Above the box and not under it, and its line on the box's own edge:
    the bar it belongs to is at the foot. */
@@ -774,7 +774,7 @@ pre .ln{display:block}
 /* The columns keep their air; the row below does not need as much. The
    output belongs to the line above it — half the gap says so, and 14px
    read as a gap between two things rather than one unfolding. */
-.job{display:grid;grid-template-columns:auto 1fr auto auto;column-gap:14px;row-gap:7px;align-items:center;padding:8px 28px;border-top:1px solid var(--line);font-family:var(--mono);font-size:12px;line-height:1.5;cursor:pointer}
+.job{--jx:28px;--jy:8px;display:grid;grid-template-columns:auto 1fr auto auto;column-gap:14px;row-gap:7px;align-items:center;padding:var(--jy) var(--jx);border-top:1px solid var(--line);font-family:var(--mono);font-size:12px;line-height:1.5}
 .job:first-child{border-top:0}
 /* The job's trigger is a control of its own, so the caret can be drawn
    from its aria-expanded like every other fold — and so the output below
@@ -782,10 +782,17 @@ pre .ln{display:block}
    It spans the row and carries the row's own columns, which leaves the
    grid above it for the mock, whose jobs are built by its own script. */
 .job .jt{grid-column:1/-1;display:grid;grid-template-columns:auto auto 1fr auto auto;column-gap:14px;align-items:center}
+/* The trigger is the whole row, gutter included (2026-09-27): it sat
+   inside the row's padding, so 16 of a closed row's 37px and the 12px
+   at each side hit the div behind it, which wore the pointer and did
+   nothing. The button takes the padding back with negative margins,
+   in the row's own measures, so the tray's 28px and the list's 12px
+   follow; width auto so it stretches over both sides, where .fold's
+   100% is the content box alone. The div no longer promises a click. */
+.job .jt{width:auto;margin:calc(-1 * var(--jy)) calc(-1 * var(--jx));padding:var(--jy) var(--jx)}
 /* The job's number, first on its row and on the tray's bar: the reader's
    count, `#7`, beside the chip. */
 .job .n,.tray .bar .n{font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:3ch}
-.job .jt ~ .out{cursor:auto}
 .job .cmdline{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .job .dur{color:var(--muted);font-variant-numeric:tabular-nums}
 /* The leading is rounded to a pixel: the drawer's ratio times a bitmap
@@ -1201,7 +1208,7 @@ form.insert.locked .opt input{opacity:.55}
 .runs{display:grid;gap:8px}
 .runs .nothing{margin:0;font-family:var(--serif);font-style:italic;font-size:13.5px;color:var(--muted)}
 .lines.jobs-list{padding:0;overflow:visible;border:1px solid var(--line);border-radius:3px}
-.jobs-list .job{padding:8px 12px}
+.jobs-list .job{--jx:12px}
 /* --- Installation: what the cartridge wrote --------------------------------
    Its own screen, the drawer's full width, one scroll. */
 .install{padding:22px 32px 60px;display:grid;gap:12px;align-content:start}

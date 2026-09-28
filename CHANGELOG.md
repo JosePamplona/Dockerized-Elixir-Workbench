@@ -90,6 +90,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- The mailer's README shows how to see the mailbox work: a mail sent
+  from IEx on the node that serves the page (`./wb.sh iex`, or the
+  console's Terminal on `app`), read at the *mailbox* door — and why
+  a VM of its own (`iex -S mix`) would show nothing there.
+
 - **Changes is the Project tab's last paper.** Birth, History, Mix,
   .env, README, CHANGELOG, Changes. History stays beside Birth, where
   the two git papers went on 2026-09-10 — what has happened to the

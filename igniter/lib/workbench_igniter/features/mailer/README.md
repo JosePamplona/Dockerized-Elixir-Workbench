@@ -43,6 +43,34 @@ reported with `phx.new`'s version of the file beside it. The router is
 not merged as text: its routes, scopes and pipelines go in as
 operations, beside the project's own.
 
+## Seeing it work
+
+With the project up (`./wb.sh up`), attach IEx to the node that serves
+it — `./wb.sh iex` from a shell, or the console's Terminal on `app`
+with `iex` — and send a mail:
+
+```elixir
+import Swoosh.Email
+
+MyApp.Mailer.deliver(
+  new()
+  |> to("john@doe.com")
+  |> from("noreply@example.com")
+  |> subject("Testing")
+  |> text_body("You can be sure the mailbox works.")
+)
+```
+
+`{:ok, %{id: …}}` comes back, and the mail is at `/dev/mailbox` — the
+*mailbox* door on the console's Project tab — with its headers and its
+body. Nothing left the machine: the `Local` adapter keeps the mails in
+the VM's memory. That is also why the mail has to leave from the node
+that serves the page: both ways above attach to it with `--remsh`,
+while an `iex -S mix` in a shell of its own is a second VM with an
+empty mailbox of its own, and the door shows nothing. The console's
+Terminal takes one line per Enter; IEx keeps asking with `...>` until
+the expression closes.
+
 ## Options
 
 None. `phx.new` has none for it.

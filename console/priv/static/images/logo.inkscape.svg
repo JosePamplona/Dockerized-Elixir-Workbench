@@ -162,7 +162,7 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      inkscape:zoom="0.125"
-     inkscape:cx="-408"
+     inkscape:cx="-412"
      inkscape:cy="-292"
      inkscape:window-width="1920"
      inkscape:window-height="1008"
@@ -172,86 +172,8 @@
      inkscape:current-layer="g35" />
   <g
      inkscape:groupmode="layer"
-     id="g30"
-     inkscape:label="new"
-     style="display:none">
-    <rect
-       style="display:none;fill:#b524ff;fill-opacity:0.568851;stroke-width:1.70509"
-       id="rect26"
-       width="900"
-       height="75"
-       x="-900"
-       y="0"
-       transform="rotate(-90)" />
-    <path
-       id="path26"
-       style="display:inline;fill:#b524ff;fill-opacity:0.550955;stroke-width:1.16052"
-       d="m -450,25 c 0,-13.85 -11.15,-25 -25,-25 h -25 c -13.85,0 -25,11.15 -25,25 V 50 H -872.20508 C -887.60346,50 -900,61.15 -900,75 v 25 c 0,13.85 12.39654,25 27.79492,25 H -825 v 650 h -47.47852 C -887.72583,775 -900,786.15 -900,800 v 25 c 0,13.85 12.27417,25 27.52148,25 H -525 v 25 c 0,13.85 11.15,25 25,25 h 25 c 13.85,0 25,-11.15 25,-25 z m -75,100 V 775 H -750 V 125 Z"
-       transform="rotate(-90)" />
-    <path
-       style="display:inline;fill:#b524ff;fill-opacity:0.550955;stroke-width:1.1025"
-       id="path27"
-       width="800"
-       height="430"
-       x="50"
-       y="0"
-       sodipodi:type="rect"
-       inkscape:path-effect="#path-effect31"
-       d="M 99.990855,0 H 800.00223 A 49.997769,49.997769 45 0 1 850,49.997769 V 430 H 50 V 49.990855 A 49.990855,49.990855 135 0 1 99.990855,0 Z" />
-    <text
-       xml:space="preserve"
-       style="font-size:347.826px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';writing-mode:lr-tb;direction:ltr;display:inline;fill:#ffffff;fill-opacity:1;stroke-width:1.8116"
-       x="178.26088"
-       y="245.65211"
-       id="text27"><tspan
-         sodipodi:role="line"
-         id="tspan27"
-         x="178.26088"
-         y="245.65211"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:347.826px;font-family:Tamzen8x16;-inkscape-font-specification:'Tamzen8x16 Bold';fill:#ffffff;fill-opacity:1;stroke-width:1.8116">DEW</tspan></text>
-    <text
-       xml:space="preserve"
-       style="font-size:197.333px;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans';writing-mode:lr-tb;direction:ltr;display:inline;fill:#ffffff;fill-opacity:1;stroke-width:1.02778"
-       x="187.66669"
-       y="375.99982"
-       id="text28"><tspan
-         sodipodi:role="line"
-         id="tspan28"
-         x="187.66669"
-         y="375.99982"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:197.333px;font-family:Tamzen8x16;-inkscape-font-specification:'Tamzen8x16 Bold';fill:#ffffff;fill-opacity:1;stroke-width:1.02778">&gt;_</tspan></text>
-    <rect
-       style="display:inline;fill:#b524ff;fill-opacity:0.54902;stroke-width:0.986547"
-       id="rect28"
-       width="115"
-       height="115"
-       x="190"
-       y="610"
-       rx="25"
-       ry="25" />
-    <rect
-       style="display:inline;fill:#b524ff;fill-opacity:0.54902;stroke-width:0.986547"
-       id="rect29"
-       width="115"
-       height="115"
-       x="600"
-       y="610"
-       ry="25"
-       rx="25" />
-    <rect
-       style="display:inline;fill:#b524ff;fill-opacity:0.54902;stroke-width:0.977968"
-       id="rect30"
-       width="150"
-       height="150"
-       x="375"
-       y="575"
-       rx="25"
-       ry="25" />
-  </g>
-  <g
-     inkscape:groupmode="layer"
      id="g35"
-     inkscape:label="new copia"
+     inkscape:label="logo"
      style="display:inline">
     <rect
        style="display:none;fill:#b524ff;fill-opacity:0.568851;stroke-width:1.70509"

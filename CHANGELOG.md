@@ -90,6 +90,29 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **The three compose files are born with the project, and `up` writes
+  none of them.** `new` baked and committed `docker-compose.yml` alone;
+  `docker-compose.prod.yml` and `docker-compose.scaled.yml` were born
+  on their first `up --deploy`, which baked them on its way and left
+  them uncommitted — and a cartridge inserted before that first up
+  carried its services into the dev file only, since `add` and `eject`
+  rebake the files that exist. `new` and `adopt` bake all three now
+  (`bake_release_composes`), in the birth commit, so every Insert
+  carries its services into the three and every eject takes them out
+  of the three, and `compose_is_ours` already owned a file whose last
+  commit is the birth. With that, `up` and `build` stop writing: each
+  deployment goes up or is built as baked, as dev always was, and
+  `--replicas` and `--no-balancer` are `bake`'s alone — `up --deploy
+  scaled --replicas 3` is refused with the bake line to run first.
+  Unasked, a bake keeps the scaled shape the file has, read off it
+  (`read_scaled_shape`, which the message after an up reads its ports
+  with too); a file that is behind is what the status and the
+  console's Deploy tab already say, with Bake on its row. A workspace
+  born before this has no prod or scaled file until `bake --deploy`
+  writes it, and `up` says so with that line (it said `up --deploy`).
+  The console's Up and Build lines lose the shape; Bake keeps it, and
+  the reason on an unbaked row is "Bake writes it".
+
 - **A box's Brings is the plate every address wears.** The Specs of a
   box said the containers it raises in a face of its own — the rail's
   Services dot in the role's colour, the port inside beside it — while

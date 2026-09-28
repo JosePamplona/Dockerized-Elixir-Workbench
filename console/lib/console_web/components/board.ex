@@ -404,6 +404,7 @@ defmodule ConsoleWeb.Board do
   # the project's Dockerfile.local, which `up` never rebuilds (the next
   # up recreates the containers with it), or the release image prod and
   # scaled share, which `up --deploy` builds again on its own way up.
+  # It builds the file as baked (2026-09-27; it baked it on the way).
   # Built here, nothing goes down: a build that fails leaves the
   # deployment that is up as it was. It stood in the foot beside Up
   # until 2026-09-10 and went to the CLI; back on 2026-09-11, on the
@@ -414,16 +415,12 @@ defmodule ConsoleWeb.Board do
   attr :status, :map, required: true
   attr :busy, :boolean, default: false
 
-  attr :extra, :string,
-    default: "",
-    doc: "scaled's --replicas and --no-balancer, when they differ"
-
   attr :form, :string,
     default: nil,
     doc: "the picker it stands in, when it stands in one: pressed, it sends the form"
 
   def build_button(assigns) do
-    cmd = ConsoleWeb.Deploy.cmdline("build", assigns.name, assigns.extra)
+    cmd = ConsoleWeb.Deploy.cmdline("build", assigns.name, "")
 
     why =
       cond do
@@ -439,7 +436,7 @@ defmodule ConsoleWeb.Board do
             do:
               " — builds the dev image again from the project's Dockerfile.local, without deploying: the next Up recreates the containers with it",
             else:
-              " — builds the release image #{if assigns.name == "scaled", do: "every replica shares", else: "the prod deployment runs"}, without deploying; nothing goes down, and the file is baked on the way"
+              " — builds the release image #{if assigns.name == "scaled", do: "every replica shares", else: "the prod deployment runs"} as its file is baked, without deploying; nothing goes down"
           ) <>
           " · --no-cache and the other docker compose build flags are the CLI's"
 

@@ -32,7 +32,7 @@ defmodule ConsoleWeb.Deploy do
   @doc "The generation-only flags of phx.new, for the card that offers them."
   def gen_flags, do: @gen_flags
 
-  @doc "`--replicas N --no-balancer`, only when they differ from what `up` assumes."
+  @doc "`--replicas N --no-balancer`, only when they differ from what a bake assumes at birth."
   def scaled_extra(pick) do
     if(pick.replicas && pick.replicas != 4, do: " --replicas #{pick.replicas}", else: "") <>
       if(pick.balancer == false, do: " --no-balancer", else: "")
@@ -55,8 +55,7 @@ defmodule ConsoleWeb.Deploy do
         cmdline(verb, name, extra.(name))
 
       ["up"] ->
-        name = pick.target || "dev"
-        cmdline("up", name, extra.(name))
+        cmdline("up", pick.target || "dev", "")
 
       _ ->
         nil
@@ -65,14 +64,17 @@ defmodule ConsoleWeb.Deploy do
 
   @doc """
   The command a deploy verb becomes. dev is the default deployment, so
-  only the others name themselves; only the verbs that bake a file —
-  up, build, bake — carry its options. Written once: the rail's buttons put this in
-  their title, and a title that drifts from the command is worse than none.
+  only the others name themselves; only the verb that writes a file —
+  bake — carries the scaled shape (2026-09-27; up and build baked the
+  file on their way and took it too, and left the tree dirty: they
+  deploy and build what is baked now). Written once: the rail's
+  buttons put this in their title, and a title that drifts from the
+  command is worse than none.
   """
   def cmdline(verb, name, extra) do
     "./wb.sh #{verb}" <>
       if(name == "dev" and verb not in ["up", "build"], do: "", else: " --deploy #{name}") <>
-      if(verb in ["up", "build", "bake"], do: extra, else: "")
+      if(verb == "bake", do: extra, else: "")
   end
 
   attr :status, :map, default: nil
@@ -97,7 +99,6 @@ defmodule ConsoleWeb.Deploy do
       assign(assigns,
         running: running,
         pickname: pick,
-        extra: if(pick == "scaled", do: scaled_extra(assigns.pick), else: ""),
         clustering: assigns.status && Cartridges.installed?(assigns.status, "clustering")
       )
 
@@ -123,7 +124,6 @@ defmodule ConsoleWeb.Deploy do
       scaled_extra={scaled_extra(@pick)}
       pickname={@pickname}
       running={@running}
-      extra={@extra}
       clustering={@clustering}
       folded={@folded}
     />

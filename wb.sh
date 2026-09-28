@@ -7,9 +7,9 @@
 # `mix workbench.setup` and `mix workbench.install.*` tasks.
 #
 # The workbench lives permanently in this directory; projects are generated
-# into WORKSPACE_PATH (config.conf). Each workspace owns its
-# docker-compose.yml — baked with real values (name, ports, images) at
-# creation — which is the source of truth for its orchestration: several
+# into WORKSPACE_PATH (config.conf). Each workspace owns its three
+# compose files — baked with real values (name, ports, images) at
+# creation — which are the source of truth for its orchestration: several
 # workspaces can run simultaneously without port conflicts. The workbench
 # is mounted read-only at /app/workbench so the igniter tasks are available
 # inside the containers.
@@ -468,7 +468,7 @@
           "Port $port, which $(basename "$file") publishes, is held by the '$holder' workspace's containers." \
           "Take that one down (./$(basename "$0") down there), or give this workspace another port:" \
           "change $port in the file's port line ($free is free) and run up again — the prod and" \
-          "scaled files take the app port from docker-compose.yml on their next up."
+          "scaled files take the app port from docker-compose.yml on their next bake."
       else
         terminate \
           "Port $port, which $(basename "$file") publishes, is held by a process on this host." \
@@ -662,8 +662,11 @@
   }
 
   # compose_file_for <ENV>
-    # Compose file each environment deploys with. dev is the workspace's
-    # own docker-compose.yml; prod and scaled are baked on demand.
+    # Compose file each environment deploys with: the workspace's own
+    # docker-compose.yml, docker-compose.prod.yml and
+    # docker-compose.scaled.yml, all three baked at its birth
+    # (2026-09-27; prod and scaled were baked by their first up, and
+    # left uncommitted).
   compose_file_for() {
     case "$1" in
       scaled)  echo "$SCALED_COMPOSE_FILE" ;;
@@ -674,8 +677,9 @@
 
   # resolve_compose_file <ENV>
     # Sets COMPOSE_TARGET to the environment's compose file, or
-    # terminates when it has not been baked yet (no deployment of that
-    # environment ever ran). It assigns instead of echoing on purpose:
+    # terminates when it is not there (a workspace born before the three
+    # were baked at birth, or a file removed by hand): 'bake' writes it.
+    # It assigns instead of echoing on purpose:
     # called from a command substitution, 'terminate' would only exit the
     # subshell and its message would be captured as the file name.
   resolve_compose_file() {
@@ -683,7 +687,7 @@
 
     [ -f "$COMPOSE_TARGET" ] || terminate \
       "This workspace has no '$1' deployment ($(basename "$COMPOSE_TARGET")" \
-      "does not exist). Create it with: ./$(basename "$0") up --deploy $1"
+      "does not exist). Bake it with: ./$(basename "$0") bake --deploy $1"
   }
 
   # app_is_running [FILE] [SERVICE]
@@ -943,8 +947,7 @@
     file="$SCALED_COMPOSE_FILE"
     if [ -f "$WORKSPACE_PATH/$file" ]; then
       if compose_is_ours "$file"; then
-        REPLICAS=$(grep -c '^  app[0-9][0-9]*:$' "$WORKSPACE_PATH/$file")
-        if grep -q '^  balancer:$' "$WORKSPACE_PATH/$file"; then BALANCER=true; else BALANCER=false; fi
+        REPLICAS=""; BALANCER=""; read_scaled_shape
         bake_scaled_compose || COMPOSES_LEFT+=( "$file" )
       else COMPOSES_LEFT+=( "$file" ); fi
     fi
@@ -1767,8 +1770,8 @@
   }
 
   # bake_prod_compose
-    # Generates the workspace's production compose file (used by the
-    # 'up --deploy prod' and 'build --deploy prod' commands): same seed and
+    # Generates the workspace's production compose file (at birth, on
+    # every insert and eject, and by 'bake --deploy prod'): same seed and
     # application port as the dev compose, versioned production image,
     # the one-shot 'migrate' service the app waits for (bake_compose
     # keeps it for this Dockerfile), and — the production image being
@@ -1792,32 +1795,82 @@
   }
 
   # parse_deploy_args [ARGS...]
-    # Reads the options 'up' and 'build' share into DEPLOY_ARG,
+    # Reads the options 'up', 'build' and 'bake' share into DEPLOY_ARG,
     # REPLICAS and BALANCER, leaving everything it did
     # not consume in DEPLOY_REST (passed through to docker compose).
     # --replicas and --balancer only shape how the scaled compose file
-    # is baked, so 'logs', 'ps', 'stop' and 'down' never need them: the
-    # file they act on is the same either way.
+    # is baked, so they are 'bake's alone (2026-09-27): 'up' and 'build'
+    # act on the file as it is, and refuse them (SHAPE_GIVEN) rather than
+    # silently deploying another shape than the one baked. Unasked, the
+    # shape stays the file's (read_scaled_shape), the default for a file
+    # that is not there yet.
   parse_deploy_args() {
     DEPLOY_ARG=dev
-    REPLICAS=$DEFAULT_REPLICAS
-    BALANCER=true
+    REPLICAS=""
+    BALANCER=""
+    SHAPE_GIVEN=""
     DEPLOY_REST=()
 
     while [ $# -gt 0 ]; do
       case "$1" in
         --deploy)      DEPLOY_ARG="$2";          shift 2 ;;
         -e|--env)      env_flag_error ;;
-        --replicas)    REPLICAS="$2"; shift 2 ;;
-        --balancer)    BALANCER=true;  shift ;;
-        --no-balancer) BALANCER=false; shift ;;
+        --replicas)    REPLICAS="$2"; SHAPE_GIVEN="--replicas"; shift 2 ;;
+        --balancer)    BALANCER=true; SHAPE_GIVEN="--balancer"; shift ;;
+        --no-balancer) BALANCER=false; SHAPE_GIVEN="--no-balancer"; shift ;;
         *)             DEPLOY_REST+=( "$1" );  shift ;;
       esac
     done
 
+    read_scaled_shape
+
     case "$REPLICAS" in
       ''|*[!0-9]*|0) args_error "--replicas expects a positive integer." ;;
     esac
+  }
+
+  # read_scaled_shape
+    # The shape of the scaled deployment — REPLICAS, BALANCER — as its
+    # file has it, for what was not asked on the line: as many replicas
+    # as it declares, the balancer if it has one. With no file, the
+    # defaults. Then its ports, for the message after an up: the
+    # balancer's and each replica's (BALANCER_PORT, REPLICA_PORTS), read
+    # off the file the way bake_scaled_compose keeps them.
+  read_scaled_shape() {
+    local file="$WORKSPACE_PATH/$SCALED_COMPOSE_FILE"
+    if [ -f "$file" ]; then
+      [ -n "$REPLICAS" ] || REPLICAS=$(grep -c '^  app[0-9][0-9]*:$' "$file")
+      if [ -z "$BALANCER" ]; then
+        if grep -q '^  balancer:$' "$file"; then BALANCER=true; else BALANCER=false; fi
+      fi
+      mapfile -t REPLICA_PORTS < <(sed -n "s/^ *- \([0-9]*\):$APP_INTERNAL_PORT\$/\1/p" "$file")
+      BALANCER_PORT=$(sed -n 's/^ *- \([0-9]*\):80$/\1/p' "$file" | head -n 1)
+    else
+      REPLICA_PORTS=(); BALANCER_PORT=""
+    fi
+    [ -n "$REPLICAS" ] || REPLICAS=$DEFAULT_REPLICAS
+    [ -n "$BALANCER" ] || BALANCER=true
+  }
+
+  # refuse_shape <VERB>
+    # 'up' and 'build' take no --replicas or --balancer: the shape is
+    # baked, and they deploy or build the file as it is.
+  refuse_shape() {
+    [ -z "$SHAPE_GIVEN" ] || args_error \
+      "$SHAPE_GIVEN is bake's, not $1's: the scaled deployment is $1's as baked." \
+      "Shape it first: ./$(basename "$0") bake --deploy scaled [--replicas N] [--no-balancer]"
+  }
+
+  # bake_release_composes
+    # The prod and scaled compose files, as 'new' and 'adopt' bake them
+    # with the dev one (2026-09-27): a derived file that exists from
+    # birth is one every Insert carries its services into and every
+    # eject takes them out of, and one no 'up' has to write — and leave
+    # uncommitted — on the way. The scaled file takes the default shape.
+  bake_release_composes() {
+    REPLICAS=$DEFAULT_REPLICAS
+    BALANCER=true
+    bake_prod_compose && bake_scaled_compose
   }
 
   # bake_scaled_compose
@@ -2094,11 +2147,12 @@
       "Write the workspace's compose file again for the project as it is," \
       "with the services its cartridges ask for, keeping its ports, as one" \
       "commit. 'add' and 'eject' do it on their own; this is for a compose you" \
-      "edited by hand (which they leave alone) or a config.conf that changed." \
-      "Dockerfile.local is baked again when the seed moved. Needs a clean tree." \
+      "edited by hand (which they leave alone), a config.conf that changed, or" \
+      "another shape of the scaled deployment. Dockerfile.local is baked again" \
+      "when the seed moved. Needs a clean tree." \
       "  --deploy TARGET   Deployment to bake: dev, prod, scaled (default: dev)." \
-      "  --replicas N      Replicas of the scaled deployment (default: 4)." \
-      "  --no-balancer     No nginx front in the scaled deployment."
+      "  --replicas N      Replicas of the scaled deployment (as baked; 4 at birth)." \
+      "  --no-balancer     No nginx front in the scaled deployment (as baked)."
 
     print_command "commit [MESSAGE | --message-file PATH]"
     command_content \
@@ -2137,15 +2191,13 @@
       "  --brief  Containers as service, state, health, ports; no addresses" \
       "           or homes. With --fast, the reading for an agent's context."
 
-    print_command "up [--deploy TARGET] [--replicas N] [--no-balancer]"
+    print_command "up [--deploy TARGET]"
     command_content \
-      "Bring a deployment up, detached." \
+      "Bring a deployment up, detached, as its compose file is baked." \
       "  --deploy TARGET   dev (default); prod, the release image with the" \
-      "                    migrations run first; scaled, N release replicas" \
-      "                    behind nginx, a BEAM cluster with the 'clustering'" \
-      "                    cartridge in." \
-      "  --replicas N      Replicas of the scaled deployment (default: 4)." \
-      "  --no-balancer     Publish the replicas' ports, no nginx front."
+      "                    migrations run first; scaled, the release replicas" \
+      "                    behind nginx as 'bake --deploy scaled' shaped them," \
+      "                    a BEAM cluster with the 'clustering' cartridge in."
 
     print_command "build [--deploy TARGET] [OPTIONS...]"
     command_content \
@@ -2339,12 +2391,14 @@
     # the compose build points at it, and its first up builds it —
     # sharing the workbench image's first layers, so in seconds.
     cp "$SCRIPTS_DIR/$LOCAL_DOCKERFILE" "$WORKSPACE_PATH/$LOCAL_DOCKERFILE" && \
-    # The workspace owns its orchestration: compose with real values.
-    # Its build points to the project-owned Dockerfile.local. The
-    # production deployment never touches this file: 'up --deploy prod'
-    # bakes docker-compose.prod.yml from the same seed with the
-    # production Dockerfile.
-    bake_compose "$LOCAL_IMAGE" "$LOCAL_DOCKERFILE" "$COMPOSE_FILE"
+    # The workspace owns its orchestration: the three compose files
+    # with real values, the dev one building the project-owned
+    # Dockerfile.local, prod and scaled running the release image off
+    # the production Dockerfile phx.gen.release wrote. All three are the
+    # birth commit's (2026-09-27; prod and scaled were their first up's,
+    # uncommitted).
+    bake_compose "$LOCAL_IMAGE" "$LOCAL_DOCKERFILE" "$COMPOSE_FILE" && \
+    bake_release_composes
   }
 
   # adopt_project
@@ -2373,7 +2427,8 @@
     if entrypoint_run workbench_adopt "${SETUP_FLAGS[@]}" && \
        create_local_dockerfile && \
        cp "$SCRIPTS_DIR/$LOCAL_DOCKERFILE" "$WORKSPACE_PATH/$LOCAL_DOCKERFILE" && \
-       bake_compose "$LOCAL_IMAGE" "$LOCAL_DOCKERFILE" "$COMPOSE_FILE"
+       bake_compose "$LOCAL_IMAGE" "$LOCAL_DOCKERFILE" "$COMPOSE_FILE" && \
+       bake_release_composes
     then workspace_commit "Adopt $ELIXIR_PROJECT_NAME"
     else undo_failed_insert adopt; return 1
     fi
@@ -2917,11 +2972,13 @@ if [ $# -gt 0 ]; then
 
       # --deploy prod|scaled: that file alone, written again for the
       # project as it is now — its ports kept, the services its
-      # cartridges ask for — and committed, as the dev file is below.
-      # The release image the file names is not built here: that is
-      # 'build --deploy', or up's. Until 2026-09-10 the two were baked
-      # only on the way to their own up or build, and the console's Bake
-      # button had to build the image to rewrite a YAML.
+      # cartridges ask for, the scaled shape as asked or as the file has
+      # it — and committed, as the dev file is below. The release image
+      # the file names is not built here: that is 'build --deploy', or
+      # up's. Until 2026-09-10 the two were baked only on the way to
+      # their own up or build, and the console's Bake button had to
+      # build the image to rewrite a YAML; since 2026-09-27 this is the
+      # one verb that writes them after birth, with add and eject.
       if [[ "$DEPLOY_ARG" == "prod" ]]; then
         bake_prod_compose && \
         if workspace_dirty; then
@@ -3060,25 +3117,31 @@ if [ $# -gt 0 ]; then
     if [[ "$EXISTING_PROJECT" == true ]]; then
       parse_deploy_args "$@"
 
+      refuse_shape up
+
       # Every deployment of a workspace shares one compose project, but
       # not the same services: dev has 'app', prod adds 'migrate', the
-      # scaled one has app1..N plus balancer and migrate, and
-      # --replicas/--no-balancer change that set between runs. Without --remove-orphans the containers of
-      # the previous shape stay up, unmanaged and invisible to 'ps'.
+      # scaled one has app1..N plus balancer and migrate, and a bake with
+      # another --replicas/--no-balancer changes that set between runs.
+      # Without --remove-orphans the containers of the previous shape
+      # stay up, unmanaged and invisible to 'ps'. No file is written on
+      # the way (2026-09-27): each deployment goes up as baked, as dev
+      # always did, and a file that is behind is 'bake's to mend — the
+      # status and the console say when one is.
       if [[ "$DEPLOY_ARG" == "scaled" ]]; then
-        bake_scaled_compose && \
-        check_ports "$WORKSPACE_PATH/$SCALED_COMPOSE_FILE" && \
+        resolve_compose_file scaled && \
+        check_ports "$COMPOSE_TARGET" && \
         docker compose \
-          --file "$WORKSPACE_PATH/$SCALED_COMPOSE_FILE" \
+          --file "$COMPOSE_TARGET" \
           "$COMPOSE_COMMAND" --detach --build --remove-orphans && \
         scaled_deployed_message
 
       elif [[ "$DEPLOY_ARG" == "prod" ]]; then
-        bake_prod_compose && \
-        refuse_old_pod "$WORKSPACE_PATH/$PROD_COMPOSE_FILE" && \
-        check_ports "$WORKSPACE_PATH/$PROD_COMPOSE_FILE" && \
+        resolve_compose_file prod && \
+        refuse_old_pod "$COMPOSE_TARGET" && \
+        check_ports "$COMPOSE_TARGET" && \
         docker compose \
-          --file "$WORKSPACE_PATH/$PROD_COMPOSE_FILE" \
+          --file "$COMPOSE_TARGET" \
           "$COMPOSE_COMMAND" --detach --build --remove-orphans && \
         deployed_message
 
@@ -3096,20 +3159,22 @@ if [ $# -gt 0 ]; then
     if [[ "$EXISTING_PROJECT" == true ]]; then
       parse_deploy_args "$@"
 
+      refuse_shape build
+
       if [[ "$DEPLOY_ARG" == "scaled" ]]; then
         # Said before building: whether the image comes out distributed is
         # decided by rel/env.sh.eex, which mix release bakes into it, so
         # installing the feature afterwards means building again.
         clustering_warning
         # Every replica shares one image: building app1 builds them all.
-        bake_scaled_compose && \
+        resolve_compose_file scaled && \
         docker compose \
-          --file "$WORKSPACE_PATH/$SCALED_COMPOSE_FILE" build app1 "${DEPLOY_REST[@]}"
+          --file "$COMPOSE_TARGET" build app1 "${DEPLOY_REST[@]}"
 
       elif [[ "$DEPLOY_ARG" == "prod" ]]; then
-        bake_prod_compose && \
+        resolve_compose_file prod && \
         docker compose \
-          --file "$WORKSPACE_PATH/$PROD_COMPOSE_FILE" build app "${DEPLOY_REST[@]}"
+          --file "$COMPOSE_TARGET" build app "${DEPLOY_REST[@]}"
 
       else
         # Rebuilds the workspace's own dev image (APP:local) from its

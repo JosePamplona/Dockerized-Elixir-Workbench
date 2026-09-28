@@ -74,11 +74,10 @@ defmodule ConsoleWeb.Deployments do
   attr :pick, :map, required: true, doc: "target, replicas, balancer — the reader's choice"
   attr :pickname, :string, required: true, doc: "the deployment picked: the row with the radio on"
   attr :running, :any, default: nil, doc: "the deployment that is up, if one"
-  attr :extra, :string, default: "", doc: "--replicas N --no-balancer, when they differ"
 
   attr :scaled_extra, :string,
     default: "",
-    doc: "the same for the scaled row's Bake, whichever row is picked"
+    doc: "--replicas N --no-balancer for the scaled row's Bake, when they differ from birth's"
 
   attr :clustering, :any, default: false, doc: "the clustering cartridge is in"
   attr :folded, :any, default: nil, doc: "the section keys folded away, a MapSet"
@@ -106,7 +105,7 @@ defmodule ConsoleWeb.Deployments do
         not_baked:
           if(empty,
             do: "the workspace is empty: Deploy → Project creates one",
-            else: "Bake, or Up, writes it"
+            else: "Bake writes it"
           )
       )
 
@@ -256,13 +255,7 @@ defmodule ConsoleWeb.Deployments do
                       extra={(d.deploy == "scaled" && @scaled_extra) || ""}
                       form="deploy-pick"
                     />
-                    <.build_button
-                      name={d.deploy}
-                      status={@status}
-                      busy={@busy}
-                      extra={(d.deploy == "scaled" && @scaled_extra) || ""}
-                      form="deploy-pick"
-                    />
+                    <.build_button name={d.deploy} status={@status} busy={@busy} form="deploy-pick" />
                   </div>
                 </td>
               </tr>
@@ -295,7 +288,7 @@ defmodule ConsoleWeb.Deployments do
       <div class="foot">
         <div class="fline">
           <div class="cmds">
-            <div class="cmd">./wb.sh up --deploy {@pickname}{@extra}</div>
+            <div class="cmd">./wb.sh up --deploy {@pickname}</div>
           </div>
           <%!-- The verb of the row picked: what it runs is composed out of
                 the picker above — the radio, --replicas, balancer — so it
@@ -317,7 +310,7 @@ defmodule ConsoleWeb.Deployments do
             form="deploy-pick"
             name="do"
             value="up"
-            args={"up --deploy #{@pickname}#{@extra}"}
+            args={"up --deploy #{@pickname}"}
             why={
               cond do
                 @busy -> "a job is running"
@@ -329,7 +322,7 @@ defmodule ConsoleWeb.Deployments do
             title={
               if @running,
                 do:
-                  "./wb.sh up --deploy #{@pickname}#{@extra} — one deployment at a time: #{@running} goes down",
+                  "./wb.sh up --deploy #{@pickname} — one deployment at a time: #{@running} goes down",
                 else: nil
             }
           />

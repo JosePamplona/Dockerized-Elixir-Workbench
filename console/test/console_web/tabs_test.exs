@@ -191,7 +191,8 @@ defmodule ConsoleWeb.TabsTest do
 
     # The row picked and its options, as the form sends them.
     pick = %{target: "scaled", replicas: 6, balancer: false}
-    assert Deploy.line("up", pick) == "./wb.sh up --deploy scaled --replicas 6 --no-balancer"
+    # up deploys the scaled file as baked (2026-09-27): the shape is bake's.
+    assert Deploy.line("up", pick) == "./wb.sh up --deploy scaled"
 
     # Only scaled carries them, and dev names nothing: it is the default.
     assert Deploy.line("up", %{target: "dev", replicas: 6, balancer: false}) ==
@@ -209,8 +210,7 @@ defmodule ConsoleWeb.TabsTest do
     # A row's own Build, the same way: dev names itself, as up does.
     assert Deploy.line("build dev", pick) == "./wb.sh build --deploy dev"
 
-    assert Deploy.line("build scaled", pick) ==
-             "./wb.sh build --deploy scaled --replicas 6 --no-balancer"
+    assert Deploy.line("build scaled", pick) == "./wb.sh build --deploy scaled"
 
     # Nothing else runs anything — the foot's bare build went on 2026-09-10.
     assert Deploy.line("build", pick) == nil

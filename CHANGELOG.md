@@ -16,6 +16,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **The console checks `NODE_VERSION` the way it checks the stack and
+  the installer.** The field is a select over the Node majors, read on
+  the button and never on its own: where each stands today from Node's
+  own release schedule (`nodejs/Release`, `schedule.json`), grouped
+  with the active LTS line first, and whether NodeSource has a
+  repository for it, one call per major (`Console.Nodes`, in this BEAM
+  like `Console.Installers`). A major NodeSource has not got is listed
+  unlit and says so, since the images' build stops at apt on it; the
+  major config.conf names is marked when NodeSource has not got it or
+  the schedule does not know it, and otherwise carries its standing
+  (`lts · until 2028-04-30`).
+
 - **`JOB_NICENESS`: the compile cedes the CPU.** With the console in
   its container, an `add` compiles *inside* that container, beside the
   console (`toolchain_here`), with nothing between it and every core:

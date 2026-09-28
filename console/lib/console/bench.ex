@@ -10,12 +10,14 @@ defmodule Console.Bench do
   Every arrival is broadcast on the `"bench"` topic:
   `{:bench, :status, status}`, `{:bench, :catalog, catalog}`,
   `{:bench, :stacks, tags}`, `{:bench, :installers, releases}`,
-  `{:bench, :packages, readings}`,
+  `{:bench, :nodes, majors}`, `{:bench, :packages, readings}`,
   `{:bench, :expand, name, argv, plan}`, `{:bench, :error, key, why}`.
 
-  The stacks, the installers and the packages are the readings that are
-  not about this machine at all: the usable `hexpm/elixir` images, five
-  pages of Docker Hub's API; the `phx_new` releases hex publishes; and
+  The stacks, the installers, the Node majors and the packages are the
+  readings that are not about this machine at all: the usable
+  `hexpm/elixir` images, five pages of Docker Hub's API; the `phx_new`
+  releases hex publishes; the Node majors the schedule lists and
+  NodeSource has (`Console.Nodes`); and
   what hex says of the packages a box brings (`Console.Hex`). They are
   never read on their own — not at boot, not when the screen that shows
   them opens — only when the reader presses the button beside them, and
@@ -40,6 +42,7 @@ defmodule Console.Bench do
             catalog: nil,
             stacks: nil,
             installers: nil,
+            nodes: nil,
             packages: %{},
             features_stamp: nil,
             expands: %{},
@@ -62,6 +65,9 @@ defmodule Console.Bench do
 
   @doc "The Phoenix installers as last read, or nil while nobody has asked."
   def installers, do: GenServer.call(__MODULE__, :installers)
+
+  @doc "The Node majors as last read, or nil while nobody has asked."
+  def nodes, do: GenServer.call(__MODULE__, :nodes)
 
   @doc "What hex said of each package asked for so far, by name; `%{}` before anybody asks."
   def packages, do: GenServer.call(__MODULE__, :packages)
@@ -109,6 +115,7 @@ defmodule Console.Bench do
 
   def handle_call(:stacks, _from, state), do: {:reply, state.stacks, state}
   def handle_call(:installers, _from, state), do: {:reply, state.installers, state}
+  def handle_call(:nodes, _from, state), do: {:reply, state.nodes, state}
   def handle_call(:packages, _from, state), do: {:reply, state.packages, state}
 
   def handle_call({:reading?, key}, _from, state),
@@ -178,6 +185,10 @@ defmodule Console.Bench do
         {:installers, {:ok, releases}} ->
           broadcast({:bench, :installers, releases})
           %{state | installers: releases, errors: Map.delete(state.errors, :installers)}
+
+        {:nodes, {:ok, majors}} ->
+          broadcast({:bench, :nodes, majors})
+          %{state | nodes: majors, errors: Map.delete(state.errors, :nodes)}
 
         # Kept by name and merged: what was read before stays, and a
         # second press over the same names replaces those readings.
@@ -296,6 +307,10 @@ defmodule Console.Bench do
         state.in_flight[:installers],
         Task.async(fn -> {:installers, Console.Installers.list()} end)
       )
+
+  # Node's schedule on GitHub, and one HEAD per major at NodeSource, in this BEAM.
+  defp start(state, :nodes, _),
+    do: put_in(state.in_flight[:nodes], Task.async(fn -> {:nodes, Console.Nodes.list()} end))
 
   defp read_status(:fast), do: Workbench.status(:fast)
 

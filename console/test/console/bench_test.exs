@@ -33,6 +33,7 @@ defmodule Console.BenchTest do
     # question every page asks before deciding whether to wait.
     refute Bench.reading?(:stacks)
     refute Bench.reading?(:installers)
+    refute Bench.reading?(:nodes)
   end
 
   test "a fast reading keeps the cartridges, and a delete takes them with it" do

@@ -138,6 +138,93 @@ defmodule ConsoleWeb.ConfigFormTest do
     })
   end
 
+  # --- the Node row ----------------------------------------------------------
+
+  @majors [
+    %{
+      "major" => "26",
+      "state" => "current",
+      "lts" => true,
+      "codename" => nil,
+      "until" => "2029-04-30",
+      "nodesource" => true
+    },
+    %{
+      "major" => "25",
+      "state" => "end of life",
+      "lts" => false,
+      "codename" => nil,
+      "until" => "2026-06-01",
+      "nodesource" => true
+    },
+    %{
+      "major" => "24",
+      "state" => "lts",
+      "lts" => true,
+      "codename" => "Krypton",
+      "until" => "2028-04-30",
+      "nodesource" => true
+    },
+    %{
+      "major" => "22",
+      "state" => "maintenance",
+      "lts" => true,
+      "codename" => "Jod",
+      "until" => "2027-04-30",
+      "nodesource" => false
+    }
+  ]
+
+  defp nodes_arrive(view) do
+    send(Process.whereis(Console.Bench), {make_ref(), {:nodes, {:ok, @majors}}})
+    assert_receive {:bench, :nodes, _}
+    render(view)
+  end
+
+  test "the majors are grouped by where each stands, the LTS line first", %{view: view} do
+    html = nodes_arrive(view)
+
+    assert ["LTS, active", "current, LTS to come", "LTS, maintenance", "end of life"] ==
+             Regex.scan(~r/<optgroup label="([^"]+)"/, html)
+             |> Enum.map(&List.last/1)
+             |> Enum.filter(
+               &(&1 in [
+                   "LTS, active",
+                   "current, LTS to come",
+                   "current, never LTS",
+                   "LTS, maintenance",
+                   "maintenance",
+                   "end of life"
+                 ])
+             )
+
+    assert html =~ "24 · Krypton — until 2028-04-30"
+    # A major NodeSource has not got is there, unlit, and says so.
+    assert html =~ "22 · Jod — until 2027-04-30 (not on NodeSource)"
+  end
+
+  test "a major NodeSource has not got is marked, one the schedule has not got too, and one it has is not",
+       %{view: view} do
+    nodes_arrive(view)
+
+    # The chip's title, not its label: the option for 22 says "not on
+    # NodeSource" whichever major is picked.
+    assert pick_node(view, "22") =~ "NodeSource has no node_22.x repository"
+    assert pick_node(view, "99") =~ "no such major"
+    html = pick_node(view, "24")
+    refute html =~ "NodeSource has no node_"
+    refute html =~ "no such major"
+    assert html =~ "lts · until 2028-04-30"
+  end
+
+  defp pick_node(view, major) do
+    render_change(view, "cfg_change", %{
+      "_target" => ["cfg", "NODE_VERSION"],
+      "cfg" => %{"NODE_VERSION" => major},
+      "stack" => ""
+    })
+  end
+
   test "picking a stack still sets the three at once", %{view: view} do
     html =
       render_change(view, "cfg_change", %{

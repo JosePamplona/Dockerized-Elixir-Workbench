@@ -75,6 +75,9 @@ defmodule ConsoleWeb.WorkbenchDrawer do
   attr :installers, :any, default: nil
   attr :installers_asking, :boolean, default: false
   attr :installers_error, :string, default: nil
+  attr :nodes, :any, default: nil
+  attr :nodes_asking, :boolean, default: false
+  attr :nodes_error, :string, default: nil
   attr :page, :map, default: nil
   attr :jobs, :list, default: []
 
@@ -115,6 +118,9 @@ defmodule ConsoleWeb.WorkbenchDrawer do
         installers={@installers}
         installers_asking={@installers_asking}
         installers_error={@installers_error}
+        nodes={@nodes}
+        nodes_asking={@nodes_asking}
+        nodes_error={@nodes_error}
         jobs={@jobs}
       />
       <div :if={@wb == "manual"} class="papers">
@@ -213,12 +219,21 @@ defmodule ConsoleWeb.WorkbenchDrawer do
                   error={@installers_error}
                   elixir={Console.Config.values(@config)["ELIXIR_VERSION"]}
                 />
+                <.node_row
+                  :if={f.key == "NODE_VERSION"}
+                  f={f}
+                  edits={@edits}
+                  nodes={@nodes}
+                  asking={@nodes_asking}
+                  error={@nodes_error}
+                />
                 <.field
                   :if={
                     f.key not in [
                       "ELIXIR_VERSION",
                       "ERLANG_VERSION",
                       "DEBIAN_VERSION",
+                      "NODE_VERSION",
                       "PHX_NEW_VERSION"
                     ]
                   }
@@ -607,6 +622,127 @@ defmodule ConsoleWeb.WorkbenchDrawer do
     </div>
     """
   end
+
+  # The Node row: the majors Node's own release schedule has released,
+  # grouped by where each stands today — the LTS line first, since that
+  # is the one to name — and whether NodeSource, where both images take
+  # Node from, has a repository for it. Read in this BEAM
+  # (`Console.Nodes`) when the button is pressed, like the installers.
+  # A major NodeSource has not got is listed and unlit, never hidden:
+  # the build would stop at apt, and the option says so.
+  attr :f, :map, required: true
+  attr :edits, :map, required: true
+  attr :nodes, :any, default: nil
+  attr :asking, :boolean, default: false
+  attr :error, :string, default: nil
+
+  defp node_row(assigns) do
+    cur = Map.get(assigns.edits, "NODE_VERSION", assigns.f.value)
+    list = if is_list(assigns.nodes), do: assigns.nodes, else: []
+
+    groups =
+      list
+      |> Enum.group_by(&node_group/1)
+      |> Enum.sort_by(fn {{rank, _}, _} -> rank end)
+      |> Enum.map(fn {{_, label}, majors} -> {label, majors} end)
+
+    # The major config.conf names, in the list NodeSource and the
+    # schedule just answered. Set membership, not an opinion; until the
+    # button is pressed there is no list and nothing is claimed.
+    known = Enum.find(list, &(&1["major"] == cur))
+    stray = cur not in [nil, ""] and list != [] and (known == nil or not known["nodesource"])
+
+    assigns =
+      assign(assigns, cur: cur, list: list, groups: groups, known: known, stray: stray)
+
+    ~H"""
+    <div class={["row", Map.has_key?(@edits, "NODE_VERSION") && "changed"]}>
+      <label for="cfg-NODE_VERSION">NODE_VERSION<.chip class="new">new</.chip></label>
+      <div class="stackline">
+        <div class="fetch">
+          <select id="cfg-NODE_VERSION" name="cfg[NODE_VERSION]">
+            <option :if={@cur not in [nil, ""] and !@known} value={@cur} selected>{@cur}</option>
+            <optgroup :for={{label, majors} <- @groups} label={label}>
+              <option
+                :for={m <- majors}
+                value={m["major"]}
+                selected={m["major"] == @cur}
+                disabled={!m["nodesource"]}
+              >
+                {node_option(m)}
+              </option>
+            </optgroup>
+          </select>
+          <.square
+            mark="reload"
+            label="Ask Node and NodeSource for the majors"
+            phx-click="nodes_ask"
+            disabled={@asking}
+            aria-busy={to_string(@asking)}
+            aria-controls="cfg-NODE_VERSION"
+            title={
+              if @asking,
+                do: "asking…",
+                else:
+                  "ask for the Node majors — the schedule from nodejs/Release, and one call per major to NodeSource, under a second"
+            }
+          />
+        </div>
+        <.chip
+          :if={@stray and @known != nil}
+          class="bad"
+          title={"NodeSource has no node_#{@cur}.x repository: the images' build stops at apt"}
+        >
+          not on NodeSource
+        </.chip>
+        <.chip
+          :if={@stray and @known == nil}
+          class="bad"
+          title={"Node's schedule has no major #{@cur}"}
+        >
+          no such major
+        </.chip>
+        <.chip
+          :if={@known != nil and @known["nodesource"]}
+          class="off"
+          title="where this major stands in Node's release schedule today"
+        >
+          {node_standing(@known)}
+        </.chip>
+      </div>
+      <p class="help">
+        <.prose text={@f.help} />
+        Every line is at https://nodejs.org/en/about/previous-releases and what NodeSource carries at https://github.com/nodesource/distributions.
+        <span :if={@error} class="bad">not answered: {@error}</span>
+        <span :if={!@error and @list == [] and !@asking}>The majors are not here yet — the console asks only when you press the button.</span>
+      </p>
+    </div>
+    """
+  end
+
+  # Where a major stands, as the select groups it; the rank is the order
+  # of the groups, the line to name first.
+  defp node_group(%{"state" => "lts"}), do: {0, "LTS, active"}
+  defp node_group(%{"state" => "current", "lts" => true}), do: {1, "current, LTS to come"}
+  defp node_group(%{"state" => "current"}), do: {2, "current, never LTS"}
+  defp node_group(%{"state" => "maintenance", "lts" => true}), do: {3, "LTS, maintenance"}
+  defp node_group(%{"state" => "maintenance"}), do: {4, "maintenance"}
+  defp node_group(_), do: {5, "end of life"}
+
+  defp node_option(m) do
+    "#{m["major"]}" <>
+      if(m["codename"], do: " · #{m["codename"]}", else: "") <>
+      if(m["until"], do: " — until #{m["until"]}", else: "") <>
+      if(m["nodesource"], do: "", else: " (not on NodeSource)")
+  end
+
+  defp node_standing(%{"state" => "end of life", "until" => until}),
+    do: "end of life since #{until}"
+
+  defp node_standing(%{"state" => state, "until" => until}) when is_binary(until),
+    do: "#{state} · until #{until}"
+
+  defp node_standing(%{"state" => state}), do: state
 
   # A line of config.conf as a page reads it: its addresses are links and
   # the rest is what it says. The file is the workbench's own, but the

@@ -1,8 +1,9 @@
 defmodule ConsoleWeb.ConsoleLive.Drawer do
   @moduledoc """
   The workbench's drawer, off the page: which of its papers the URL
-  opens, the config as a form with its edits, and the two fields that
-  go out to the internet — the stacks and the installers.
+  opens, the config as a form with its edits, and the three fields that
+  go out to the internet — the stacks, the installers and the Node
+  majors.
   """
   import Phoenix.Component, only: [assign: 2]
 
@@ -70,6 +71,11 @@ defmodule ConsoleWeb.ConsoleLive.Drawer do
     {:noreply, assign(socket, installers_asking: true, installers_error: nil)}
   end
 
+  def event("nodes_ask", _, socket) do
+    Bench.refresh(:nodes)
+    {:noreply, assign(socket, nodes_asking: true, nodes_error: nil)}
+  end
+
   def event("cfg_reload", _, socket), do: {:noreply, assign(socket, cfg_edits: %{})}
 
   def event("cfg_raw", _, socket),
@@ -88,8 +94,8 @@ defmodule ConsoleWeb.ConsoleLive.Drawer do
 
   # --- what arrives ---------------------------------------------------------
 
-  # The stacks and the installers, asked for by pressing the button
-  # beside their field.
+  # The stacks, the installers and the Node majors, asked for by
+  # pressing the button beside their field.
   def info({:bench, :stacks, tags}, socket),
     do: {:noreply, assign(socket, stacks: tags, stacks_asking: false, stacks_error: nil)}
 
@@ -103,4 +109,10 @@ defmodule ConsoleWeb.ConsoleLive.Drawer do
 
   def info({:bench, :error, :installers, why}, socket),
     do: {:noreply, assign(socket, installers_asking: false, installers_error: why)}
+
+  def info({:bench, :nodes, majors}, socket),
+    do: {:noreply, assign(socket, nodes: majors, nodes_asking: false, nodes_error: nil)}
+
+  def info({:bench, :error, :nodes, why}, socket),
+    do: {:noreply, assign(socket, nodes_asking: false, nodes_error: why)}
 end

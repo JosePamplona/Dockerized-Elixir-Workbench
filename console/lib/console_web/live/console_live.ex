@@ -96,6 +96,9 @@ defmodule ConsoleWeb.ConsoleLive do
         packages_error: Bench.error(:packages),
         installers_asking: Bench.reading?(:installers),
         installers_error: Bench.error(:installers),
+        nodes: Bench.nodes(),
+        nodes_asking: Bench.reading?(:nodes),
+        nodes_error: Bench.error(:nodes),
         term: Term.initial(),
         view: "covers",
         jobs: Jobs.list(),
@@ -347,11 +350,12 @@ defmodule ConsoleWeb.ConsoleLive do
   def handle_info({:bench, :error, :packages, why}, socket),
     do: {:noreply, assign(socket, packages_asking: false, packages_error: why)}
 
-  def handle_info({:bench, key, _} = msg, socket) when key in [:stacks, :installers],
+  def handle_info({:bench, key, _} = msg, socket) when key in [:stacks, :installers, :nodes],
     do: Drawer.info(msg, socket)
 
-  def handle_info({:bench, :error, key, _} = msg, socket) when key in [:stacks, :installers],
-    do: Drawer.info(msg, socket)
+  def handle_info({:bench, :error, key, _} = msg, socket)
+      when key in [:stacks, :installers, :nodes],
+      do: Drawer.info(msg, socket)
 
   def handle_info({:bench, :catalog, catalog}, socket) do
     socket = assign(socket, catalog: catalog)
@@ -609,6 +613,8 @@ defmodule ConsoleWeb.ConsoleLive do
 
   def handle_event("installers_ask", params, socket),
     do: Drawer.event("installers_ask", params, socket)
+
+  def handle_event("nodes_ask", params, socket), do: Drawer.event("nodes_ask", params, socket)
 
   # The Git screen, the Docker screen, the terminal: each one's events
   # go to the module that keeps its state.
@@ -1110,6 +1116,9 @@ defmodule ConsoleWeb.ConsoleLive do
       installers={@installers}
       installers_asking={@installers_asking}
       installers_error={@installers_error}
+      nodes={@nodes}
+      nodes_asking={@nodes_asking}
+      nodes_error={@nodes_error}
       page={@wbpage}
       jobs={@jobs}
     />

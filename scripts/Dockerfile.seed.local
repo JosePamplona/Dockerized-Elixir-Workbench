@@ -41,13 +41,27 @@ FROM ${TOOLCHAIN_IMAGE} AS toolchain
 
 # Build dependencies: build-essential for the NIFs, git for the
 # dependencies Phoenix fetches from GitHub (heroicons, daisyUI),
-# inotify-tools for the live reload, and Debian's nodejs and npm for
-# the JavaScript dependencies a project takes on beyond the esbuild and
-# tailwind binaries Phoenix ships as Elixir packages — ash_typescript's
+# inotify-tools for the live reload, and Node for the packages a
+# project takes from the npm registry, beyond the esbuild and tailwind
+# binaries Phoenix ships as Elixir packages — ash_typescript's
 # installer, for one, hooks `npm install` into `assets.setup`, which
-# `mix setup` runs at every boot of this container.
-RUN apt-get update -y && \
-    apt-get install -y build-essential git inotify-tools nodejs npm && \
+# `mix setup` runs at every boot of this container. Node comes from
+# NodeSource, by the major config.conf names (NODE_VERSION), as one
+# package with npm inside. Debian's `npm` unpacks every dependency of
+# npm as a package of its own — 640 of them, six minutes and 400 MB on
+# this layer (2026-09-28: 521 s against 103 s for this step without
+# it). Its key and its list go in the way Docker's own do in the
+# workbench's Dockerfile.
+ARG NODE="%{node_version}"
+RUN test -n "${NODE}" || { echo "NODE is required: --build-arg NODE=MAJOR" >&2; exit 1; } && \
+    apt-get update -y && \
+    apt-get install -y build-essential git inotify-tools ca-certificates curl && \
+    install -m 0755 -d /etc/apt/keyrings && \
+    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key -o /etc/apt/keyrings/nodesource.asc && \
+    echo "deb [signed-by=/etc/apt/keyrings/nodesource.asc] https://deb.nodesource.com/node_${NODE}.x nodistro main" \
+      > /etc/apt/sources.list.d/nodesource.list && \
+    apt-get update -y && \
+    apt-get install -y nodejs && \
     apt-get clean && \
     rm -f /var/lib/apt/lists/*_*
 

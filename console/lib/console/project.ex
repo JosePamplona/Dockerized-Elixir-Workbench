@@ -52,7 +52,7 @@ defmodule Console.Project do
   def born(workspace) do
     case File.read(Path.join(workspace, "Dockerfile.local")) do
       {:ok, text} ->
-        ~r/^ARG\s+(ELIXIR|OTP|DEBIAN|PHX_NEW)="([^"]*)"/m
+        ~r/^ARG\s+(ELIXIR|OTP|DEBIAN|NODE|PHX_NEW)="([^"]*)"/m
         |> Regex.scan(text)
         |> Map.new(fn [_, key, value] -> {key, value} end)
 

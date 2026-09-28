@@ -1,4 +1,4 @@
-# The workbench's image (dew-exELIXIR-erlOTP-phxVERSION:WORKBENCH — the
+# The workbench's image (dew-exELIXIR-erlOTP-nodeNODE-phxVERSION:WORKBENCH — the
 # stack and the installer name it, the workbench's version tags it):
 # where the workbench does its own work on a workspace —
 # 'new' generates the project here, 'add' and 'expand' run the
@@ -12,11 +12,12 @@
 # Built straight from this file, with the stack and the installer as
 # build arguments: wb.sh passes them from config.conf and the workspace's
 # stamp, so there is nothing to bake and no version written here to go
-# stale. They have no defaults on purpose. Built by hand, pass all four:
+# stale. They have no defaults on purpose. Built by hand, pass all five:
 #
 #   docker build --file Dockerfile.workbench \
 #     --build-arg ELIXIR=1.19.6 --build-arg OTP=28.5.0.6 \
-#     --build-arg DEBIAN=trixie-20260824-slim --build-arg PHX_NEW=1.8.13 .
+#     --build-arg DEBIAN=trixie-20260824-slim --build-arg NODE=24 \
+#     --build-arg PHX_NEW=1.8.13 .
 #
 # Without the stack, FROM names no image and the build stops there.
 # Its first steps are the project seed's, word for word and in the same
@@ -32,8 +33,18 @@ FROM ${TOOLCHAIN_IMAGE} AS toolchain
 
 # --- The project seed's steps, shared --------------------------------------
 
-RUN apt-get update -y && \
-    apt-get install -y build-essential git inotify-tools nodejs npm && \
+# Node from NodeSource, by major (NODE_VERSION in config.conf): the
+# seed says why, and why not Debian's npm.
+ARG NODE
+RUN test -n "${NODE}" || { echo "NODE is required: --build-arg NODE=MAJOR" >&2; exit 1; } && \
+    apt-get update -y && \
+    apt-get install -y build-essential git inotify-tools ca-certificates curl && \
+    install -m 0755 -d /etc/apt/keyrings && \
+    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key -o /etc/apt/keyrings/nodesource.asc && \
+    echo "deb [signed-by=/etc/apt/keyrings/nodesource.asc] https://deb.nodesource.com/node_${NODE}.x nodistro main" \
+      > /etc/apt/sources.list.d/nodesource.list && \
+    apt-get update -y && \
+    apt-get install -y nodejs && \
     apt-get clean && \
     rm -f /var/lib/apt/lists/*_*
 

@@ -180,6 +180,11 @@ defmodule ConsoleWeb.NewProject do
           warn={born_arg(@born, "DEBIAN", "debian", @conf["DEBIAN_VERSION"])}
         />
         <.given
+          label="node"
+          value={@conf["NODE_VERSION"]}
+          warn={born_arg(@born, "NODE", "node", @conf["NODE_VERSION"])}
+        />
+        <.given
           label="installer"
           value={installer(@conf)}
           muted="the newest phx.new that runs on this stack"

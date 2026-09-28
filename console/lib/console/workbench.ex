@@ -76,10 +76,11 @@ defmodule Console.Workbench do
 
   @doc """
   The workbench's image for a workspace, named the way `wb.sh` names it:
-  `dew-exELIXIR-erlOTP-phxVERSION:WORKBENCH` — the stack and the
-  installer in the repository, the workbench's version as the tag. The
-  stack is config.conf's; the installer is the one stamped in the
-  workspace's `Dockerfile.local`, else the one config.conf names, else
+  `dew-exELIXIR-erlOTP-nodeNODE-phxVERSION:WORKBENCH` — the stack and
+  the installer in the repository, the workbench's version as the tag.
+  The stack is config.conf's, Node's major included; the installer is
+  the one stamped in the workspace's `Dockerfile.local`, else the one
+  config.conf names, else
   the newest this daemon already has for the stack at this version.
   Where the workbench's own runs go — a terminal with nothing running,
   the resident away from its mount — and never the app's dev image,
@@ -98,7 +99,7 @@ defmodule Console.Workbench do
   that version, asked only when neither names an installer.
   """
   def image_tag(conf, born, version, repositories) do
-    stack = "ex#{conf["ELIXIR_VERSION"]}-erl#{conf["ERLANG_VERSION"]}"
+    stack = "ex#{conf["ELIXIR_VERSION"]}-erl#{conf["ERLANG_VERSION"]}-node#{conf["NODE_VERSION"]}"
 
     phx =
       present((born || %{})["PHX_NEW"]) || present(conf["PHX_NEW_VERSION"]) ||

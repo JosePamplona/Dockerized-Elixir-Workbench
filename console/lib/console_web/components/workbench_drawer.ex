@@ -33,6 +33,7 @@ defmodule ConsoleWeb.WorkbenchDrawer do
     "ELIXIR_VERSION" => "new",
     "ERLANG_VERSION" => "new",
     "DEBIAN_VERSION" => "new",
+    "NODE_VERSION" => "new",
     "GIT_IDENTITY" => "every commit",
     "JOB_NICENESS" => "every compile",
     "NGINX_IMAGE_VERSION" => "scaled deploy"

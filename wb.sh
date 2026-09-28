@@ -185,8 +185,10 @@
     # The workbench's image, where its own work on a workspace runs —
     # generation, cartridges, git, the catalog — and the console: shared
     # by every workspace of the same stack and installer. Named
-    # dew-exELIXIR-erlOTP-phxVERSION:WORKBENCH (since 2026-09-15): the
-    # stack and the installer name the repository, so 'docker images'
+    # dew-exELIXIR-erlOTP-nodeNODE-phxVERSION:WORKBENCH (since
+    # 2026-09-15; Node in it since 2026-09-28, the one part of the
+    # stack that is not hexpm's tag): the stack and the installer name
+    # the repository, so 'docker images'
     # lists one line per pair, and the workbench's own version is the
     # tag, so a new workbench builds its own and an old one keeps what
     # it ran on. Another installer is another image, and a workspace
@@ -198,7 +200,7 @@
     # decides. None built yet, the name carries no installer and nothing
     # answers to it: 'console' and 'new' resolve one first.
     IMAGE_REPOSITORY="dew"
-    IMAGE_STACK="ex${ELIXIR_VERSION}-erl${ERLANG_VERSION}"
+    IMAGE_STACK="ex${ELIXIR_VERSION}-erl${ERLANG_VERSION}-node${NODE_VERSION}"
     IMAGE_TAG="$WORKBENCH_VERSION"
     if [ -n "$PHX_NEW_VERSION" ]
     then WORKBENCH_IMAGE="$IMAGE_REPOSITORY-$IMAGE_STACK-phx$PHX_NEW_VERSION:$IMAGE_TAG"
@@ -713,9 +715,21 @@
     find "$WORKSPACE_PATH" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
   }
 
+  # require_node_version
+    # The Node major both images install (NODE_VERSION, since
+    # 2026-09-28): a config.conf from before the line has none, and the
+    # image name and the seed's stamp would carry 'node' with nothing
+    # after it. Said here, where a build or a bake is about to read it.
+  require_node_version() {
+    [ -n "$NODE_VERSION" ] || terminate \
+      "NODE_VERSION is not set in config.conf: the major of the Node the images" \
+      "carry, from NodeSource (24). Add 'export NODE_VERSION=\"24\"' below DEBIAN_VERSION."
+  }
+
   # create_local_dockerfile
     # Bakes the local (dev toolchain) dockerfile from its seed.
   create_local_dockerfile() {
+    require_node_version
     local seed_path="$SCRIPTS_DIR/$LOCAL_DOCKERFILE_SEED"
     local file_path="$SCRIPTS_DIR/$LOCAL_DOCKERFILE"
 
@@ -724,6 +738,7 @@
     sed -i "s/%{elixir_version}/$ELIXIR_VERSION/" "$file_path"
     sed -i "s/%{erlang_version}/$ERLANG_VERSION/" "$file_path"
     sed -i "s/%{debian_version}/$DEBIAN_VERSION/" "$file_path"
+    sed -i "s/%{node_version}/$NODE_VERSION/" "$file_path"
     sed -i "s/%{phx_new_version}/$PHX_NEW_VERSION/" "$file_path"
     sed -i "s/%{app_name}/$ELIXIR_PROJECT_NAME/" "$file_path"
   }
@@ -2345,11 +2360,13 @@
     # The workbench's image, off scripts/Dockerfile.workbench: the stack
     # and the installer as build arguments, and the UID/GID of this user.
   build_workbench_image() {
+    require_node_version
     ( cd "$SCRIPTS_DIR" && \
       docker build \
         --build-arg ELIXIR="$ELIXIR_VERSION" \
         --build-arg OTP="$ERLANG_VERSION" \
         --build-arg DEBIAN="$DEBIAN_VERSION" \
+        --build-arg NODE="$NODE_VERSION" \
         --build-arg PHX_NEW="$PHX_NEW_VERSION" \
         --build-arg UID="$(id -u)" \
         --build-arg GID="$(id -g)" \

@@ -35,6 +35,7 @@ cd console && mix format --check-formatted && mix credo --strict && mix dialyzer
 mix test test/workbench_igniter/features/credo_test.exs      # one cartridge
 mix test test/workbench_igniter/features/credo_test.exs:42   # one test
 mix test --only exhaustive   # igniter, excluded by default: ~1 hour. Run it in the background with no timeout (a cut-off run reports "0 tests, 0 failures")
+mix test --only network:ash_hq   # igniter, excluded by default: the ash cartridge against ash-hq.org live. `:network` is every test that reads a third party; its value names the resource
 ```
 
 - To read the workspace or the shelf from an agent: `./wb.sh status --json --fast --brief` (tenths of a second, 2 KB) and `./wb.sh catalog --json --brief` (one line, 20 KB). The full contracts are the console's: `status --json` boots Mix in a container (about a minute) and `catalog --json` carries every paper and option doc (130 KB).

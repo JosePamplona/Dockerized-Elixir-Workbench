@@ -7,6 +7,20 @@ what the cartridge *installs*: a change in the command it queues or in
 the options that build it is a minor, a change that breaks a project
 already carrying what that command installed is a major.
 
+## v0.8.1 - (2026-09-29)
+
+### Changed
+
+- The check against ash-hq.org is three tests, `ash_hq_test.exs`,
+  tagged `network: :ash_hq`, and `mix workbench.ash.site` is gone.
+  `mix test` excludes the `:network` group — every test that reads a
+  third party — and `mix test --only network:ash_hq` runs these alone,
+  as the weekly job now does (`.github/workflows/ash-site.yml`). The
+  comparison is the same (`site.ex` keeps `fetch/0` and the two
+  comparisons), the report reads the same, and a difference is now a
+  failing test with the `!!` lines as its message. README, *Keeping up
+  with the site*; DESIGN §3.7.
+
 ## v0.8.0 - (2026-09-25)
 
 ### Added

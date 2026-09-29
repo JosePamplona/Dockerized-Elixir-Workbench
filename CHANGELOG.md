@@ -14,6 +14,25 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+### Updated
+
+- **The tests that read a third party are a group of their own,
+  `:network`, and the check against ash-hq.org is its first member.**
+  `mix workbench.ash.site` fetched the site's installer and compared
+  it with the ash cartridge, on a runner of its own and a weekly job
+  (`.github/workflows/ash-site.yml`). It is now three tests in
+  `ash_hq_test.exs`, tagged `network: :ash_hq`, and the task is gone.
+  The igniter's `test_helper` excludes `:network` beside
+  `:exhaustive`, so `mix test` and CI stay off the network; the tag's
+  value names the resource, so `mix test --only network:ash_hq` runs
+  one third party's tests and `--only network` runs them all, which is
+  what the weekly job runs now. The group takes no credentials: what
+  needs a key is not in it. The next members are the ones the shelf
+  already reads by hand — the Elixir image's tags, hex.pm for
+  Phoenix's version. The precommit cartridge's `test` check stays
+  `mix test`: which groups a project's suite leaves out is its
+  `test_helper`'s business, not the hook's. ash CHANGELOG v0.8.1.
+
 ### Removed
 
 - **`RELEASE_PLAN.md` and `SCRIPT.md` leave the repository for

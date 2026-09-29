@@ -119,6 +119,16 @@ defmodule WorkbenchIgniter.Grown do
   defp unsalted(content), do: Regex.replace(@secret, content, "\\1\"…\"")
 end
 
-# `:exhaustive` walks every order the base cartridges can go in (grown_vs_born_test):
-# minutes on every core, so by name only — `mix test --only exhaustive`.
-ExUnit.start(exclude: [:exhaustive])
+# Two groups run by name only:
+#
+# * `:exhaustive` walks every order the base cartridges can go in
+#   (grown_vs_born_test): minutes on every core — `mix test --only
+#   exhaustive`.
+# * `:network` reads a third party's public resource and checks it
+#   still answers as the cartridge that copied it expects. The tag's
+#   value names the resource, so one can be run alone: `network:
+#   :ash_hq` is ash-hq.org's installer against the ash cartridge
+#   (ash_hq_test) — `mix test --only network:ash_hq`, or `--only
+#   network` for them all. No credentials: what needs a key is not in
+#   this group.
+ExUnit.start(exclude: [:exhaustive, :network])

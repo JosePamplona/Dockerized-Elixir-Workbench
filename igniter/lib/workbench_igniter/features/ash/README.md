@@ -114,8 +114,8 @@ site's order:
 | UI Components | `--components` | `mishka_chelekom`, `cinder` |
 
 What the site offers besides — `appsignal`, `opentelemetry` — has no
-installer yet ("coming soon", the site says); `mix workbench.ash.site`
-reports it. Any other package with an installer is
+installer yet ("coming soon", the site says); the check against the
+site (below) reports it. Any other package with an installer is
 `mix igniter.install <package>`'s, not this cartridge's.
 
 Some of them need manual setup after the installer (the site says so
@@ -161,13 +161,16 @@ ash-hq.org's *Get Your Installer*: the packages each one puts in the
 command, the arguments it passes, the one-line description the catalog
 shows, and the section it sits in — which names `--ai`, `--finance` and
 the rest. The site changes on its own schedule and nobody tells the
-cartridge. `mix workbench.ash.site` reads the site as it is today and
-says, line by line, where the cartridge stopped copying it.
+cartridge. Three tests read the site as it is today and say, line by
+line, where the cartridge stopped copying it
+(`test/workbench_igniter/features/ash_hq_test.exs`, tagged `network:
+:ash_hq`: `mix test` leaves them out, as it does every test that reads
+a third party).
 
 **How to use it.** From `igniter/`, with the network:
 
 ```sh
-mix workbench.ash.site
+mix test --only network:ash_hq
 ```
 
 It writes nothing. Run it before releasing a new version of the
@@ -190,7 +193,8 @@ packages, arguments and tooltip ([DESIGN.md](DESIGN.md) [17]).
 | `..` | What the site offers with its installer "coming soon" (`appsignal`, `opentelemetry` today): nothing to follow yet. The day the installer lands the tooltip changes, and the line turns into a `!!`. |
 | `!!` | A difference to act on: a feature whose packages, arguments or tooltip changed; one the site offers and the cartridge does not; a package a section added, stopped listing, or moved to another section; a section opened or closed; a strategy `--auth` does not list. |
 
-It exits 1 when there is a `!!`, 0 otherwise. A session today ends:
+A test fails when there is a `!!`, with those lines as its message;
+the `ok` and `..` lines are printed as it runs. A session today ends:
 
 ```text
   ok  section «Dev Tools» (--dev-tools): as the site
@@ -201,7 +205,7 @@ It exits 1 when there is a `!!`, 0 otherwise. A session today ends:
 **What to do with a `!!`.** Update the table it names in `ash.ex` —
 `@data_layers`, `@apis`, `@advanced` and `@section_titles`,
 `@companions`, `@tooltips` — and the reference [17] in DESIGN.md, then
-run it again until it says `0 to look at`. A new section is a new
+run them again until they say `0 to look at`. A new section is a new
 option (`info/2`, `option_docs/0`, `choices/0` pick it up from
 `@advanced`).
 
@@ -318,7 +322,7 @@ hung on a prompt — see [DESIGN.md](DESIGN.md) §3.2 for what it taught.
 | --- | --- |
 | `ash.ex` | Manifest + logic (`info/2`, `install/1`, `packages/1`, `flags/1`) |
 | `task.ex` | `Mix.Tasks.Workbench.Install.Ash` shell |
-| `site.ex` | `mix workbench.ash.site`: the site's feature map and sections against the cartridge's tables |
+| `site.ex` | The site's feature map and sections against the cartridge's tables, for `ash_hq_test.exs` (`mix test --only network:ash_hq`) |
 | `CHANGELOG.md` | The cartridge's own version history |
 | `DESIGN.md` | Why it queues a command instead of composing installers, with sources |
 

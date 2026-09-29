@@ -86,7 +86,7 @@ defmodule WorkbenchIgniter.Features.Ash do
   # ash-hq.org's Advanced Options, by section, as the packages they
   # stand for: one option per section, named after it, closed on the
   # packages the site offers there — what it offers besides has no
-  # installer yet (`mix workbench.ash.site` says when that changes).
+  # installer yet (ash_hq_test says when that changes).
   # In the site's order, which is the command's.
   @advanced [
     ai: ~w(tidewave ash_ai usage_rules),
@@ -98,8 +98,8 @@ defmodule WorkbenchIgniter.Features.Ash do
   ]
 
   # Each section's title on the site, the `data-category` its home page
-  # groups the features by: what `mix workbench.ash.site` finds them
-  # under, and what each option's line names.
+  # groups the features by: what ash_hq_test finds them under, and
+  # what each option's line names.
   @section_titles [
     ai: "AI",
     finance: "Finance",

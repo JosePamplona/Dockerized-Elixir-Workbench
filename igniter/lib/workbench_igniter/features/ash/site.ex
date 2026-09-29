@@ -10,9 +10,10 @@ defmodule WorkbenchIgniter.Features.Ash.Site do
   shows — were read off that map (DESIGN.md [17]) and go stale the day
   the site changes. The sections the options are named after are not in
   the map but in the home page, each a `data-category` with its
-  features' labels inside. `mix workbench.ash.site` fetches both and
-  says what differs; `parse/1`, `sections/1` and the two comparisons
-  work on text, so a test can run them without the network.
+  features' labels inside. `fetch/0` reads both off the network for
+  `ash_hq_test.exs` (`mix test --only network:ash_hq`), which says what
+  differs; `parse/1`, `sections/1` and the two comparisons work on
+  text, so the rest of the suite runs them without it.
   """
 
   alias WorkbenchIgniter.Features.Ash
@@ -307,77 +308,4 @@ defmodule WorkbenchIgniter.Features.Ash.Site do
   # option installs the packages alone.
   defp strategy(["--auth-strategy " <> s]), do: s
   defp strategy(_args), do: "oauth2"
-end
-
-defmodule Mix.Tasks.Workbench.Ash.Site do
-  use Mix.Task
-
-  @shortdoc "Compares the ash cartridge with ash-hq.org's installer, as it is today"
-
-  @moduledoc """
-  #{@shortdoc}
-
-      mix workbench.ash.site
-
-  Fetches the home page and the feature map that drives the site's
-  *Get Your Installer* (its app bundle) and reports, one line each:
-
-    * `ok` — a feature the cartridge puts in the command with the same
-      packages, arguments and tooltip as the site; a section whose
-      packages are the ones its option offers; a strategy of the site
-      that `--auth` knows.
-    * `..` — what the site offers with its installer "coming soon":
-      nothing to follow yet.
-    * `!!` — a difference: a feature whose packages, arguments or
-      tooltip changed, one the site offers and the cartridge does not,
-      a package the site added to a section, stopped listing or moved,
-      a section opened or closed, a strategy `--auth` does not list.
-
-  Exits 1 when there is a `!!`, 0 otherwise, so a scheduled job can
-  run it. Nothing is written: the report is what to update by hand, in
-  the cartridge's tables and its DESIGN.md reference [17].
-  """
-
-  @impl Mix.Task
-  def run(_argv) do
-    Application.ensure_all_started(:req)
-
-    alias WorkbenchIgniter.Features.Ash.Site
-
-    case Site.fetch() do
-      {:ok, home, js} ->
-        site = Site.parse(js)
-        {oks, waiting, diffs} = Site.compare(site)
-        {section_oks, section_diffs} = home |> Site.sections() |> Site.compare_sections(site)
-
-        # The map says nothing about cardinality; the command builder does.
-        {layers_ok, layers_diff} =
-          if Site.data_layers_independent?(js),
-            do:
-              {[
-                 "data layers: independent checkboxes on the site, as the cartridge's --data-layer (several)"
-               ], []},
-            else:
-              {[],
-               [
-                 "data layers: the site's command builder changed — are the layers still independent checkboxes? The cartridge's --data-layer takes several"
-               ]}
-
-        oks = oks ++ section_oks ++ layers_ok
-        diffs = diffs ++ section_diffs ++ layers_diff
-
-        Enum.each(oks, &Mix.shell().info("  ok  " <> &1))
-        Enum.each(waiting, &Mix.shell().info("  ..  " <> &1))
-        Enum.each(diffs, &Mix.shell().info("  !!  " <> &1))
-
-        Mix.shell().info(
-          "#{length(oks)} as the site, #{length(waiting)} waiting for an installer, #{length(diffs)} to look at."
-        )
-
-        if diffs != [], do: exit({:shutdown, 1})
-
-      {:error, why} ->
-        Mix.raise(why)
-    end
-  end
 end

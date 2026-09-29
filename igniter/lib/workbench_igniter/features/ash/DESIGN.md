@@ -362,8 +362,9 @@ order. The alternative — offering the site's feature keys (`oban`,
 `cloak`) instead of packages — was rejected: a key that stands for two
 packages would be a second vocabulary for the same thing.
 
-What keeps this true is `mix workbench.ash.site` (`site.ex`): it
-fetches the map and compares it with the tables, option by option.
+What keeps this true is the check against the site (`site.ex`, run
+by `ash_hq_test.exs`): it fetches the map and compares it with the
+tables, option by option.
 Presets (*LiveView*, *React*) and `phoenix` are skipped; the packages
 the site offers and the cartridge does not (`appsignal`,
 `opentelemetry`, marked "Installer coming soon" on the site) are
@@ -377,7 +378,12 @@ or moved to another, a section opened or closed, and each strategy of
 *Authentication* against `--auth`'s list. What waits for an installer
 ("coming soon") is reported apart and does not fail the run, so a
 weekly CI job (`.github/workflows/ash-site.yml`) can run it: a red run
-means something to follow. The map's `order` field is not compared —
+means something to follow. It was a Mix task of its own
+(`mix workbench.ash.site`) until 2026-09-29, when it became three
+tests tagged `network: :ash_hq`, which `mix test` excludes and
+`mix test --only network:ash_hq` runs: the same comparison, on the
+suite's own runner instead of a second one, in the group every test
+that reads a third party belongs to. The map's `order` field is not compared —
 it repeats numbers (12, 16, 17) and puts Money at 999 — so order is
 compared nowhere; the cartridge's own order has its reasons (§2.5).
 
@@ -515,8 +521,8 @@ strategy but `password`.
 * The *Existing App* command of the site was inferred (§2.1) until
   its feature map was read [17] and the four differences reconciled
   (§3.7). The map is what to re-read when the site changes:
-  `mix workbench.ash.site` does it and reports the differences; it
-  does not update anything.
+  `mix test --only network:ash_hq` does it and reports the
+  differences; it does not update anything.
 * `ash_postgres.install` sets `min_pg_version/0` to `16.0.0` when it
   cannot detect the server [13]; the workspace's `postgres:latest`
   satisfies it, an older pinned image would not.

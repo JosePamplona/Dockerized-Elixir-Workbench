@@ -322,8 +322,8 @@ the option:
 > JPEG or SVG. [1]
 
 so the two go in together or not at all. Off, because the placeholder
-is 1.9 MB with somebody else's name on it, committed into the project
-to be replaced; the site without a logo is ExDoc's own. `state/1` reads
+carries somebody else's name, committed into the project to be
+replaced (and was 1.9 MB until 2026-09-29; 256 px and 73 KB since); the site without a logo is ExDoc's own. `state/1` reads
 the `logo:` line, not the file: the file is a binary copied after the
 patch set is applied, where the project's rewrite never sees it.
 

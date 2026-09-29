@@ -11,6 +11,16 @@ Backfilled at the version below, its first: the cartridge shipped
 before a changelog was part of the anatomy, and gets one on its next
 change, as the features index says.
 
+## v0.9.1 - (2026-09-29)
+
+### Changed
+
+- **The placeholder logo is 256 px.** `images/app-logo.png` was
+  1254 px and 1.9 MB, most of the weight of the box and of every
+  project that took `--app-logo`; it is 73 KB now, the same picture
+  at the size a sidebar shows it. The option's line and the DESIGN say
+  the new size.
+
 ## v0.9.0 - (2026-09-29)
 
 ### Added

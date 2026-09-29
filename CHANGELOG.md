@@ -51,6 +51,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **exdoc v0.9.1: the placeholder logo is 256 px.** It was 1254 px
+  and 1.9 MB — the reason `--app-logo` is off by default said so —
+  and is 73 KB now, the same picture at the size a sidebar shows it.
+
 - **A tab leads back to where its screen was left.** Project on Mix,
   a look at Docker, back to Project: it opened on Birth, and Docker
   came back on Containers, while the shelf alone kept its filter — not

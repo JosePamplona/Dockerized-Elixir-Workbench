@@ -71,7 +71,7 @@ defmodule WorkbenchIgniter.Features.Exdoc do
       output:
         "Where `mix docs` writes the site — ExDoc's `output`, a directory inside the project. Default: `doc`, which phx.new gitignores. Under `priv/static/` the app serves the site itself, as its own static files, and the console serves it off the workspace either way.",
       app_logo:
-        "Plant a placeholder logo (`guides/images/app-logo.png`) and name it the site's `logo:`, to be replaced by the project's own. Off by default: it is a 1.9 MB image with somebody else's name on it.",
+        "Plant a placeholder logo (`guides/images/app-logo.png`) and name it the site's `logo:`, to be replaced by the project's own. Off by default: it is somebody else's name on the site until it is replaced (256 px, 73 KB since 2026-09-29; it was 1.9 MB).",
       module_groups:
         "How the sidebar groups the modules, one of #{Enum.map_join(@module_groups, ", ", &"`#{&1}`")}. Default: read off the project — `ash` when it depends on Ash, `layers` otherwise.",
       readme:

@@ -41,8 +41,8 @@ grid, orthogonal connectors, masked labels clear of their stroke, arrows
 under boxes, two accents at most, a legend strip — with the house's skin:
 `build.py` reads `assets/design/tokens.json` and writes the colours into
 each SVG as custom properties under a `prefers-color-scheme` media query,
-so **one file reads on light and dark ground** — on GitHub, in the
-console, in the mock. The skill's own style guide is the `workbench`
+so **one file reads on light and dark ground** — on GitHub and in the
+console. The skill's own style guide is the `workbench`
 profile the repository's `.diagram-design` marker names, generated from
 the same tokens by `assets/design/build.py`.
 
@@ -54,5 +54,5 @@ it would add a hundred kilobytes to each figure for a case the console
 does not have.
 
 A cartridge's diagram is referenced from its document by relative path
-(`../../../../../assets/diagrams/<cartridge>/<name>.svg`); the mock's
-build inlines it, the console will serve it.
+(`../../../../../assets/diagrams/<cartridge>/<name>.svg`); the console
+serves it as an image (`/figures/`).

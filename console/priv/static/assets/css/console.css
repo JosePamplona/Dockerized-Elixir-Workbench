@@ -1,5 +1,5 @@
-/* The console's stylesheet — the one both pages read: the LiveView console serves it
-   as it is, mock/build.py inlines it into mock/workbench-console.html. The colours
+/* The console's stylesheet, written by hand and served as it is (until 2026-09-29
+   the retired mock inlined the same file, which some comments below recall). The colours
    and type it uses are the house's tokens (assets/design, generated as tokens.css
    and components.css beside this file). */
 [hidden]{display:none!important}

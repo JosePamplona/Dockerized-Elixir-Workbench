@@ -208,6 +208,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Removed
 
+- **The mock, archived.** `mock/` — the console's static maquette,
+  its generator and the captures of test_28 it was built from — was
+  retired on 2026-09-05 and stayed tracked: ten files, 7.6 MB, most of
+  it the built page with the covers in base64, in every clone for
+  nobody. It goes to `_archived/`, out of git, which keeps it in
+  history; the plan that read it as a specification is archived beside
+  it. With it goes `mix console.highlight`, whose only caller was the
+  mock's build, and every mention that spoke of it as alive: the design
+  tokens' consumers table, the diagrams' notes, the root layout's and
+  the policy's comments, the console's README. The papers' historical
+  mentions — what the mock got wrong about escaping, how it drew the
+  terminal — stay as the reasons they are.
+
 - **`scripts/PLAN.md`, closed and archived.** The compose plan of
   2026-09-06 — the bake moved from `sed` in `wb.sh` to a plan rendered
   by templates in one Mix task, the services declared by the cartridges

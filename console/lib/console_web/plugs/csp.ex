@@ -5,7 +5,7 @@ defmodule ConsoleWeb.Plugs.CSP do
   `onload=` that gets through a renderer — a cartridge's README, an
   option's doc — does not run even then. Styles allow inline
   attributes (`style="--svc:…"` is how a log line takes its service's
-  colour) and the type comes from Google Fonts, as in the mock. Images
+  colour) and the type comes from Google Fonts. Images
   may be `data:` (a drawing put in an `<img>` as its own text) and
   `blob:`. Nothing may frame the console.
 

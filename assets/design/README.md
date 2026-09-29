@@ -40,18 +40,18 @@ Three layers, the same three the covers have:
 
 | Consumer | Projection | How |
 | --- | --- | --- |
-| The console, both of them | `generated/tokens.css`, `generated/components.css` | `mock/build.py` puts them in the page in place of a hand-written `:root{}`; `build.py` writes the same two into `console/priv/static/assets/css/`, where the LiveView console links them beside `console.css`, and `--check` keeps the copies honest |
+| The console | `generated/tokens.css`, `generated/components.css` | `build.py` writes the two into `console/priv/static/assets/css/`, where the console links them beside `console.css`, and `--check` keeps the copies honest |
 | The diagram-design skill | `generated/diagram-design.md` → `~/.diagram-design/profiles/workbench.md` | `build.py` installs the profile and writes `.diagram-design` (`profile: workbench`) at the repository root; the skill resolves it before every diagram. The mapping from the house's roles to the skill's (`paper ← ground`, `rule ← line`, `link`, the type roles) lives in `build.py` with its reasons |
 | The cartridges' diagrams (`assets/diagrams/`) | the SVGs they export | drawn through the skill, so the house comes in with the profile |
-| The tab, in both consoles | `console/priv/static/favicon.svg` | `build.py` writes it from `logo.svg` and the board's two colours; the LiveView console links it and `mock/build.py` carries a base64 copy inside the single-file page. `favicon.ico` beside it is the fallback for what does not take an SVG icon, rendered from the SVG once and committed — it changes only when the mark does, and the command that made it is in `build.py` |
+| The tab | `console/priv/static/favicon.svg` | `build.py` writes it from `logo.svg` and the board's two colours; the console links it. `favicon.ico` beside it is the fallback for what does not take an SVG icon, rendered from the SVG once and committed — it changes only when the mark does, and the command that made it is in `build.py` |
 | The covers | nothing, for now | `covers.py` keeps its constants; reading violet and gold from here is a four-line change for the next cover |
 
 ## The components
 
 Beyond colour and type, the house has its notation, projected to
 `generated/components.css` and consumed everywhere a cartridge shows its
-face or the console reports a reading — the console mock, the LiveView
-console, the box-back plates. Two of them name a cartridge, two name an
+face or the console reports a reading — the console and the box-back
+plates. Two of them name a cartridge, two name an
 address on the app's port, and the split inside each pair is the same
 one: a bordered box is a door you press.
 

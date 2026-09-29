@@ -26,7 +26,7 @@ erl_crash.dump
 console-*.tar
 
 # Ignore assets that are produced by build tools — but not the stylesheets:
-# console.css is written by hand (the one file the mock and the console share)
+# console.css is written by hand
 # and tokens.css and components.css are projected there by assets/design/build.py,
 # which --check keeps honest. Nothing builds them at the console's side.
 # Nor the fonts: the faces the drawer offers travel with the repository

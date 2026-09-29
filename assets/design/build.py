@@ -17,8 +17,7 @@ Reads tokens.json — the one source — and writes, marked as generated:
                                 port the compose publishes — with what it
                                 answered attached), the commit ref and the
                                 stamp (the golden state seal) — consumed by
-                                the console mock, the LiveView console and
-                                the box-back plates
+                                the console and the box-back plates
   ../../console/priv/static/favicon.svg
   ../../console/priv/static/images/icons.svg   the sprite of marks, from icons/*.svg
                                 the tab's mark: the workbench's own logo.svg

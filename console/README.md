@@ -101,9 +101,8 @@ ground, the clock, the wb.sh line's history and Tab completion — in
 
 Styles: one stylesheet, `priv/static/assets/css/console.css`, written by
 hand, beside `tokens.css` and `components.css`, which
-`assets/design/build.py` projects there from the house tokens. (The
-mock it was once shared with is retired since 2026-09-05; a visual
-question is settled on a standalone page, then retired.)
+`assets/design/build.py` projects there from the house tokens. A visual
+question is settled on a standalone page, then retired.
 
 The console is published on `127.0.0.1` only and keeps the origin check
 on in dev: it drives Docker and wipes workspaces, and no page the reader

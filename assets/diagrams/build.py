@@ -9,8 +9,8 @@ diagram-design skill's taste gate is written against) and as a
 standalone `<cartridge>/<name>.svg` that a README embeds. Colours are
 the house's, from assets/design/tokens.json, written into the SVG as
 custom properties under a `prefers-color-scheme` media query, so the
-one file reads on light and dark ground alike — on GitHub, in the
-console, in the mock. Fonts come from the same tokens; where a viewer
+one file reads on light and dark ground alike — on GitHub and in the
+console. Fonts come from the same tokens; where a viewer
 does not load web fonts (an SVG shown as an image), the fallback stacks
 stand in.
 

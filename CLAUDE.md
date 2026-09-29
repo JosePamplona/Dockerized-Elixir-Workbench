@@ -48,7 +48,7 @@ mix test --only exhaustive   # igniter, excluded by default: ~1 hour. Run it in 
 - To test a service cartridge live: rsync a `test_N` to `claude_probe_X` (excluding `_build`/`deps`), `WORKSPACE_PATH=… ./wb.sh -y add X && … bake`, then `docker compose -p claude_probe_X -f … up -d --no-build <services>`. Never `wb.sh up` there.
 - **Never `git stash`**. `core.fileMode` is false, so a pop strips `+x` from `wb.sh` and `assets/design/build.py`, and the console fails with `:eacces` (the fix is `chmod +x`). Compare against HEAD with `git show HEAD:path` or a worktree instead.
 - **Never `git add -A`**. The tree usually carries the user's uncommitted work. Stage named paths, and commit by topic.
-- `mock/` is retired: never update it to follow a console change.
+- The console's static maquette (`mock/`) was retired on 2026-09-05 and archived out of git on 2026-09-29 (`_archived/mock/`, in git history until then): never bring it back or reference it as alive.
 
 ## Papers and records
 

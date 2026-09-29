@@ -83,15 +83,18 @@ defmodule Console.PapersTest do
 
   test "a fence the Files sheet has a lexer for is coloured with its palette" do
     html = Papers.to_html("```elixir\ndef a, do: :ok\n```\n\n```sh\nmix test | grep ok\n```\n")
-    assert html =~ ~s(<pre class="src" data-lang="elixir"><code><span class="kd">def</span>)
-    assert html =~ ~s(<pre class="src" data-lang="shell"><code>)
+
+    assert html =~
+             ~s(<pre class="src term-box" data-lang="elixir"><code><span class="kd">def</span>)
+
+    assert html =~ ~s(<pre class="src term-box" data-lang="shell"><code>)
     refute html =~ "language-"
   end
 
   test "a fence named nothing, or something no lexer answers to, stays as it came" do
     html = Papers.to_html("```\nplain\n```\n\n```text\nalso plain\n```\n")
-    assert html =~ "<pre><code>plain\n</code></pre>"
-    assert html =~ ~s(<pre><code class="language-text">also plain\n</code></pre>)
+    assert html =~ ~s(<pre class="term-box"><code>plain\n</code></pre>)
+    assert html =~ ~s(<pre class="term-box"><code class="language-text">also plain\n</code></pre>)
     refute html =~ "src"
   end
 

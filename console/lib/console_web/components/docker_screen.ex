@@ -138,8 +138,8 @@ defmodule ConsoleWeb.DockerScreen do
           the lines the daemon says of itself and of its disk, and beneath
           them the scope and, on Containers, Stats. Headed "Specs". --%>
     <div class="log-cap"><span class="label">Specs</span></div>
-    <div class="viewport daemon">
-      <code :if={@dk.daemon} class="code-box daemon">
+    <div class="viewport daemon term-box">
+      <code :if={@dk.daemon} class="code-box daemon term-box">
         <.spec_line :for={line <- daemon_lines(@dk)} line={line} />
       </code>
       <p :if={!@dk.daemon} class="nothing">Reading the daemon…</p>
@@ -528,15 +528,14 @@ defmodule ConsoleWeb.DockerScreen do
 
   defp card(assigns) do
     ~H"""
-    <div class="ficha" id={"card-" <> @card.name}>
-      <header>
-        <h3>{@card.name}</h3>
+    <ConsoleWeb.Card.card tag="div" name={@card.name} class="ficha" id={"card-" <> @card.name}>
+      <:head>
         <.chip class={elem(reading(@card), 1)}>{elem(reading(@card), 0)}</.chip>
         <span class="note">{@card.image}<span :if={@card.started}> · started {stamp(@card.started)}</span><span :if={
           @card.finished
         }> · ended {stamp(@card.finished)} with {@card.exit}</span>
         · {@card.restarts} restarts<span :if={@card.oom}> · killed for memory</span></span>
-      </header>
+      </:head>
       <div class="grid">
         <div>
           <p class="cap">Process</p>
@@ -591,10 +590,10 @@ defmodule ConsoleWeb.DockerScreen do
         </div>
         <div class="full">
           <p class="cap">Env</p>
-          <pre class="env"><.env_line :for={line <- @card.env} line={line} /></pre>
+          <pre class="env term-box"><.env_line :for={line <- @card.env} line={line} /></pre>
         </div>
       </div>
-    </div>
+    </ConsoleWeb.Card.card>
     """
   end
 
@@ -881,7 +880,7 @@ defmodule ConsoleWeb.DockerScreen do
       <span>docker events · since the console started · the healthchecks' exec_* dropped at the source · the last 500 kept</span>
       <span>{length(@events)} lines</span>
     </div>
-    <div class="viewport">
+    <div class="viewport term-box">
       <div class="lines" id="dk-events">
         <div :for={e <- @events} class={["ln", event_class(e)]}>
           <span class="t">{clock(e.ts && DateTime.to_iso8601(e.ts))}</span>

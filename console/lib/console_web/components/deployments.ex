@@ -38,7 +38,7 @@ defmodule ConsoleWeb.Deployments do
   import ConsoleWeb.Refs
   import ConsoleWeb.Square, only: [square: 1]
   import ConsoleWeb.Board, only: [bake_button: 1, build_button: 1, deploy_button: 1]
-  import ConsoleWeb.Folds, only: [card_head: 1, fold_class: 2]
+  import ConsoleWeb.Card, only: [card: 1]
 
   # What comes off the project — in sync or not, the drift — is the last
   # full reading's until the next lands, and a fast status meanwhile
@@ -110,16 +110,16 @@ defmodule ConsoleWeb.Deployments do
       )
 
     ~H"""
-    <section class={["deployments", fold_class(@folded, "sheet")]}>
-      <%!-- Its own key, not the rail's `deployments`: the rail's section
-            and this sheet are two things with one name, and a reader
-            folding one does not mean the other. --%>
-      <.card_head
-        key="sheet"
-        name="Deployments"
-        folded={@folded}
-        title="the compose files baked into the workspace, one per deployment: the topology each brings up — pick one on its row, and Up it under the table"
-      />
+    <%!-- Its own key, not the rail's `deployments`: the rail's section
+          and this sheet are two things with one name, and a reader
+          folding one does not mean the other. --%>
+    <.card
+      key="sheet"
+      name="Deployments"
+      folded={@folded}
+      class="deployments"
+      title="the compose files baked into the workspace, one per deployment: the topology each brings up — pick one on its row, and Up it under the table"
+    >
       <form id="deploy-pick" phx-change="pick" phx-submit="deploy_run">
         <table class="rows deps">
           <thead>
@@ -342,7 +342,7 @@ defmodule ConsoleWeb.Deployments do
           />
         </div>
       </div>
-    </section>
+    </.card>
     """
   end
 
@@ -405,7 +405,7 @@ defmodule ConsoleWeb.Deployments do
           {@chosen.file}
         </span>
       </div>
-      <pre :if={@chosen} class="env yaml out"><.yaml_line :for={line <- @chosen.lines} line={line} /></pre>
+      <pre :if={@chosen} class="env yaml out term-box"><.yaml_line :for={line <- @chosen.lines} line={line} /></pre>
       <div
         :if={@chosen}
         class="ograb"

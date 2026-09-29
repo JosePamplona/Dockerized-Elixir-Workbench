@@ -152,9 +152,19 @@ defmodule Console.Papers do
       render: [unsafe: false]
     )
     |> colour_fences()
+    |> box_blocks()
     |> outside_images()
     |> mark_trees()
   end
+
+  @doc """
+  Every block the renderer wrote bare wears the house's terminal box —
+  a fence named nothing, one no lexer answers to, an indented block —
+  the way a coloured fence already does. The ground of what came out
+  of a file is `.term-box` (components.css), declared once and named
+  here, never by a stylesheet rule on a bare `pre`.
+  """
+  def box_blocks(html), do: String.replace(html, "<pre>", ~s(<pre class="term-box">))
 
   @doc """
   A fenced block whose language the Files sheet colours is coloured
@@ -174,7 +184,7 @@ defmodule Console.Papers do
       fn whole, info, escaped ->
         case Console.Highlight.fenced(info, unescape_text(escaped)) do
           {:ok, lang, inner} ->
-            ~s(<pre class="src" data-lang="#{lang}"><code>#{inner}</code></pre>)
+            ~s(<pre class="src term-box" data-lang="#{lang}"><code>#{inner}</code></pre>)
 
           :plain ->
             whole

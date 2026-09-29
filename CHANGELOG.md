@@ -51,6 +51,42 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **The console's boxes are three families, and two of them are the
+  house's.** The question was whether Project › Mix should sit in a
+  card like the Deploy screen's; the answer came from an inventory of
+  every box the console draws (`_archived/inventario-de-contenedores.html`,
+  2026-09-27, retired with this entry as its record). The boxes were
+  not scattered: a *card* frames what is acted on — a form or a row of
+  verbs: New Project, Deployments, Danger, Commit — a *sheet* is what is
+  read and wears no frame — Birth, Mix, History, README, Docker,
+  Cartridges, Jobs — and a *terminal box* frames what came out of a
+  process or a file: Logs, Terminal, a job's output, the .env, the
+  daemon's specs. Twelve boxes, a rule of three lines nobody had
+  written, no exception. **Mix stays a sheet.** What the inventory also
+  found: the card was declared four times in `console.css` (three head
+  sizes, a hand-written list of what folds) and the terminal box three
+  — eight, counting the ones outside the screens: a paper's code
+  block, `config.conf` in the drawer, the birth command, the daemon's
+  specs, a container's env. Both are notation now, in the design
+  system: `.card` and `.term-box` in `components.css`, declared once,
+  and `ConsoleWeb.Card` is the one place that writes the class
+  (`<.card name key folded danger tag class>`, with `:head` for what the
+  head carries beside the name) — New Project, Deployments, Danger,
+  Commit, a container's ficha and the box's specs call it. The commit
+  form's head is a card's head now, at the card's size. `.target`, a
+  card no template wrote, is gone. The name was taken twice: the box's
+  cover in hand is `.cover`, the drawer's ground pickers are `.swatch`.
+  `ConsoleWeb.BoxesTest` is the ten-line grep the page asked for: the
+  two frames appear once, in the generated file; `console.css` never
+  draws them; no template writes `class="card"` by hand; and the copies
+  the console serves are the ones `build.py` wrote. Two tests learned
+  that LiveView marks a slot's first element `phx-r`, and stopped
+  matching a whole opening tag. The fold is a state and wins over
+  whatever a card's content says its display is — the Danger foot's
+  grid outranked the first version of it, and the card would not fold. One box the rule does not settle yet:
+  the box's specs, a framed reading in the drawer, keeps its frame as a
+  card without a head.
+
 - **The README asks for Docker, not Docker Desktop.** Its first
   sentence and its first step named Desktop as the one thing to
   install. On Linux that is the worst route — the CHANGELOG's own

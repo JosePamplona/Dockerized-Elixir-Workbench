@@ -62,7 +62,7 @@ defmodule ConsoleWeb.JobsScreen do
       </div>
       <%!-- The list of jobs is the framed list a box's Runs are: one way to
             meet a pile of jobs, wherever it is met (2026-09-12). --%>
-      <div class="viewport light">
+      <div class="viewport">
         <p :if={@jobs == []} class="nothing">
           No jobs yet. Every command the console runs is a job — its output, its exit code, how long it took. Insert a cartridge, deploy, or type one below.
         </p>
@@ -167,7 +167,7 @@ defmodule ConsoleWeb.JobsScreen do
     assigns = assign(assigns, say: say(assigns.j, assigns.asking, assigns.stoppable))
 
     ~H"""
-    <div class="out">
+    <div class="out term-box">
       <div class="pane">
         <div class="dim">$ {@j.cmdline}</div>
         <.job_lines id={@prefix <> @j.id} job={@j.id} />

@@ -573,7 +573,7 @@ table.carts td .pairs{grid-template-columns:max-content}
 .logmeta{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-family:var(--mono);font-size:11.5px;color:var(--muted)}
 .logmeta .lk{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--line)}
 .logmeta .lk:hover,.logmeta .lk:focus-visible{color:var(--ink);text-decoration-color:currentColor;outline:none}
-.viewport{position:relative;background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;overflow:hidden;display:grid}
+.viewport{position:relative;overflow:hidden;display:grid}
 /* The faces the drawer offers (priv/static/assets/fonts/README.md:
    sources and licences), for two groups of surface chosen apart: `code`,
    what runs — terminals, jobs, logs, events — and `file`, what is read —
@@ -625,14 +625,6 @@ pre .ln{display:block}
 
 
 /* --- deploy -------------------------------------------------------------- */
-.target{border:1px solid var(--line);background:var(--surface);border-radius:3px;padding:16px;display:grid;gap:12px;align-content:start}
-.target h3{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:18px;display:flex;justify-content:space-between;align-items:center;gap:10px}
-.target p{margin:0;font-size:13.5px;color:var(--muted)}
-.target .opts{display:flex;gap:10px;align-items:center;font-family:var(--mono);font-size:12px}
-.target .opts input[type=number]{width:56px;font-family:var(--mono);padding:3px 6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px}
-.target .acts{display:flex;flex-wrap:wrap;gap:6px}
-.target .cmd{font-family:var(--mono);font-size:11.5px;color:var(--muted);overflow-x:auto;white-space:nowrap}
-.target .cmd::before{content:"$ "}
 /* One column: the card is the form. It was two while the second held
    the collection to insert afterwards — that offer is gone, and an
    empty column is not a layout. */
@@ -640,23 +632,16 @@ pre .ln{display:block}
    was 18px 20px against their 16px 18px, so its foot's button stood
    2px left of theirs and the three right edges of the screen never
    quite met (2026-09-26). */
-.newcard{border:1px solid var(--line);background:var(--surface);border-radius:3px;padding:16px 18px;display:grid;grid-template-columns:minmax(0,1fr);gap:18px;margin-bottom:18px}
-/* The two cards of this screen carry the same heading; only the new
-   project's also has to hold a chip out at its right edge. */
-.newcard h3,.deployment h3{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:18px}
-.newcard h3{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:10px}
-/* The card is intention; what the project is has its paper, and the card only points at it. */
-.newcard h3 .lk{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:12px;color:var(--muted);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px;margin-left:auto}
-.newcard h3 .lk:hover{color:var(--ink);text-decoration-color:var(--ink)}
-.newcard .form{display:grid;gap:12px}
-.newcard .frow{display:grid;grid-template-columns:130px minmax(0,1fr);gap:10px;align-items:center}
-.newcard .frow label{font-family:var(--mono);font-size:12.5px}
-.newcard .frow input[type=text]{font-family:var(--mono);font-size:13px;padding:6px 8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;width:100%;max-width:520px}
+.newproject{gap:18px;margin-bottom:18px}
+.newproject .form{display:grid;gap:12px}
+.newproject .frow{display:grid;grid-template-columns:130px minmax(0,1fr);gap:10px;align-items:center}
+.newproject .frow label{font-family:var(--mono);font-size:12.5px}
+.newproject .frow input[type=text]{font-family:var(--mono);font-size:13px;padding:6px 8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;width:100%;max-width:520px}
 /* The project's name, asked here since 2026-09-26: a field as wide as a
    name, not as wide as the card. Full width it outweighed every reading
    beside it — `1.20.4`, `29.1.1` — which are the rows it is read with. */
-.newcard .frow .ro input[type=text]{width:24ch;max-width:100%}
-.newcard .flags select{font-family:var(--mono);font-size:12px;margin-left:4px;padding:2px 4px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px}
+.newproject .frow .ro input[type=text]{width:24ch;max-width:100%}
+.newproject .flags select{font-family:var(--mono);font-size:12px;margin-left:4px;padding:2px 4px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px}
 /* A base cartridge left out is left out, not unknown. The strike this
    used to draw belongs to `.cart-ref.unknown`, which the house keeps for
    one thing — a name with no cartridge behind it — and a mention that
@@ -668,34 +653,27 @@ pre .ln{display:block}
    finding one meant reading them all. A cartridge's own flags keep its
    line — ecto's --database and --binary-id, html's --live — because
    they are that cartridge's switches and not cartridges of their own. */
-.newcard .flags.bases{display:grid;gap:7px}
-.newcard .flags.bases .base{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
+.newproject .flags.bases{display:grid;gap:7px}
+.newproject .flags.bases .base{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
 /* A cartridge's flags follow the cartridge, and nothing lines them up:
    they belong to the box before them and to nothing on the lines above
    (2026-09-27). The names were padded to a column of 150px first, then
    118, and both said the flags were a column of their own. */
-.newcard .bases label.out{color:var(--muted)}
-.newcard .bases .subs{display:inline-flex;gap:6px 14px;align-items:center;flex-wrap:wrap}
-.newcard .bases label.sub{margin-left:-2px;padding-left:10px;border-left:1px solid var(--line);color:var(--muted)}
-.newcard .bases label.sub.out{color:var(--muted)}
-.newcard .frow .ro{font-family:var(--mono);font-size:12.5px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.newcard .frow .ro a:not(.sq){font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:11px;color:var(--accent)}
-/* The Deploy screen's three cards fold to their head, the rail's fold
-   at a card's size (2026-09-27): the same square, the same event, the
-   same memory in the browser. A folded card is its head alone, and the
-   head keeps no air under it. */
-.newcard.folded>:not(h3),.deployments.folded>:not(h3),section.danger.folded>:not(h3){display:none}
-/* A folded card keeps the box it had: 16 all round. The rail's folded
-   sections take 10 under the head, which reads right where a section
-   has no border of its own — and wrong inside a frame, where the head
-   then sits off-centre in it (2026-09-27). */
-.newcard h3,.deployments h3,section.danger h3{cursor:pointer;user-select:none}
-.newcard h3 .name,.deployments h3 .name,section.danger h3 .name{margin-right:auto}
-.newcard h3 .foldsq,.deployments h3 .foldsq,section.danger h3 .foldsq{flex:none}
+.newproject .bases label.out{color:var(--muted)}
+.newproject .bases .subs{display:inline-flex;gap:6px 14px;align-items:center;flex-wrap:wrap}
+.newproject .bases label.sub{margin-left:-2px;padding-left:10px;border-left:1px solid var(--line);color:var(--muted)}
+.newproject .bases label.sub.out{color:var(--muted)}
+.newproject .frow .ro{font-family:var(--mono);font-size:12.5px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.newproject .frow .ro a:not(.sq){font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:11px;color:var(--accent)}
+/* The Deploy screen's three cards and the Commit form are the house's
+   .card (components.css, 2026-09-29): the frame, the head, the fold and
+   the foot are declared there, once. What is here hangs from each
+   card's content class — .newproject, .deployments, .card.danger — and
+   is that card's own: its rows, its table, its foot's shape. */
 /* The cog is a square icon button, the eye's own face: the row's link
    colour is not its. */
-.newcard .flags{display:flex;flex-wrap:wrap;gap:6px 14px;font-family:var(--mono);font-size:12.5px}
-.newcard .flags label{display:inline-flex;gap:6px;align-items:center}
+.newproject .flags{display:flex;flex-wrap:wrap;gap:6px 14px;font-family:var(--mono);font-size:12.5px}
+.newproject .flags label{display:inline-flex;gap:6px;align-items:center}
 /* Every foot of the Deploy screen is the same gesture: a line of
    `wb.sh`, and the button that runs it. Create, Up, Stop, Down, Delete
    — so they share a floor and the commands before them all end at the
@@ -705,10 +683,10 @@ pre .ln{display:block}
    there is one — `Replace scaled with dev`, the button whose words
    change with the row the reader picks. */
 .screen{--verb:170px}
-.newcard .foot,.deployments .foot,section.danger .foot,.install .foot{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-.newcard .foot>.btn,.deployments .foot .fline>.btn,section.danger .foot>.btn,section.danger .foot>.confirm{min-width:var(--verb);justify-content:center}
-.newcard .foot .cmds,.deployments .foot .cmds{flex:1;min-width:240px;display:grid;gap:3px}
-.newcard .foot .cmd,.deployments .foot .cmd,section.danger .foot .cmd,.install .foot .cmd{min-width:0}
+.install .foot{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.newproject .foot>.btn,.deployments .foot .fline>.btn,.card.danger .foot>.btn,.card.danger .foot>.confirm{min-width:var(--verb);justify-content:center}
+.newproject .foot .cmds,.deployments .foot .cmds{flex:1;min-width:240px;display:grid;gap:3px}
+.newproject .foot .cmd,.deployments .foot .cmd,.card.danger .foot .cmd,.install .foot .cmd{min-width:0}
 .confirm{font-family:var(--serif);font-size:13.5px;color:var(--bad);display:none;gap:8px;align-items:center}
 .confirm.on{display:inline-flex}
 
@@ -766,11 +744,10 @@ pre .ln{display:block}
 .toolbar.cli .btn{grid-area:2/4}
 .toolbar.cli input{min-width:0;font-family:var(--mono);font-size:12.5px;padding:5px 9px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px}
 /* The Jobs screen's viewport is the pane around the list, not its frame: it keeps the pane's air and scrolls, and the framed list inside hugs its rows. */
-.viewport.light{background:var(--surface);color:var(--ink);border-color:var(--line)}
-.jobsp .viewport.light{background:none;border:0;border-radius:0;padding:14px 0;overflow:auto;align-content:start}
+.jobsp .viewport{padding:14px 0;overflow:auto;align-content:start}
 /* With no job there is no list to frame: the word stands where the list would, as a box's Runs say theirs. */
-.jobsp .viewport.light .nothing{margin:0;padding:0;max-width:64ch;font-size:13.5px}
-.viewport.light .lines{padding:0}
+.jobsp .viewport .nothing{margin:0;padding:0;max-width:64ch;font-size:13.5px}
+.jobsp .viewport .lines{padding:0}
 /* The columns keep their air; the row below does not need as much. The
    output belongs to the line above it — half the gap says so, and 14px
    read as a gap between two things rather than one unfolding. */
@@ -800,7 +777,7 @@ pre .ln{display:block}
 /* The box is a frame: the pane inside scrolls under the reader's cap, and the
    strip of controls under the pane stays in sight — the Logs and Terminal
    boxes' own strip, in a job's frame (2026-09-12). */
-.job .out{grid-column:1/-1;display:none;font-family:var(--code-face,var(--mono));font-size:var(--code-size,12px);background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;white-space:pre-wrap;line-height:round(calc(var(--code-size,12px) * var(--code-leading,1.55)),1px);overflow:hidden}
+.job .out{grid-column:1/-1;display:none;font-family:var(--code-face,var(--mono));font-size:var(--code-size,12px);white-space:pre-wrap;line-height:round(calc(var(--code-size,12px) * var(--code-leading,1.55)),1px);overflow:hidden}
 .job .out .pane{padding:10px 14px;max-height:var(--job-out,220px);overflow:auto}
 .out .toolbar.controls .say{flex:1;min-width:0;font-family:var(--serif);font-style:italic;font-size:13px;line-height:1.4;color:var(--muted)}
 .job.open .out{display:block}
@@ -989,7 +966,7 @@ pre .ln{display:block}
 .md a{color:var(--accent);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
 .md a[data-open]{font-family:var(--cond);font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-size:.85em;text-decoration:none;border:1px solid var(--accent);padding:1px 6px;border-radius:2px}
 .md code{font-family:var(--mono);font-size:.86em;background:var(--surface-2);padding:.1em .35em;border-radius:2px}
-.md pre{background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:12px 14px;overflow-x:auto;font-family:var(--file-face,var(--mono));font-size:var(--file-size,12.5px);line-height:var(--file-leading,1.5);margin:0 0 1.2em}
+.md pre{padding:12px 14px;overflow-x:auto;font-family:var(--file-face,var(--mono));font-size:var(--file-size,12.5px);line-height:var(--file-leading,1.5);margin:0 0 1.2em}
 /* The code inside a block is the block's: `.md code` sets the chip's
    face, and until 2026-09-29 it reached in here too, so the pre wore
    the reader's Files face and its text stayed Plex. */
@@ -1024,8 +1001,8 @@ pre .ln{display:block}
    transition of the card, and backface-visibility picks the side that
    shows. Nothing is swapped mid-turn, so no frame shows the wrong face. */
 .hand .face{aspect-ratio:5/7;position:relative;perspective:1100px}
-.hand .card{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .55s cubic-bezier(.4,.1,.2,1)}
-.hand .card.back{transform:rotateY(180deg)}
+.hand .cover{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .55s cubic-bezier(.4,.1,.2,1)}
+.hand .cover.back{transform:rotateY(180deg)}
 .hand .side{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:var(--board);border-radius:2px;overflow:hidden;box-shadow:var(--shadow)}
 .hand .side.back{transform:rotateY(180deg)}
 .hand .side img{width:100%;height:100%;object-fit:cover;display:block}
@@ -1182,7 +1159,7 @@ form.insert.locked .opt input{opacity:.55}
    Same panel as .need, without its accent edge: that one is the voice
    of the developer, this one the manifest's. */
 #d-specs{display:grid;gap:8px}
-.specs{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:9px 14px;align-items:baseline;padding:12px 14px;border:1px solid var(--line);background:var(--surface);border-radius:3px}
+.specs{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:9px 14px;align-items:baseline;padding:12px 14px}
 .specs .k{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);white-space:nowrap}
 .specs .v{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:13px}
 /* The rows that name cartridges and containers stand one per line: a
@@ -1500,8 +1477,8 @@ form.insert.locked .opt input{opacity:.55}
 .ui .seg .f{fill:currentColor;opacity:.3}
 .ui .seg .d{fill:none;stroke:currentColor;stroke-width:1.2;stroke-dasharray:2.2 2;opacity:.8}
 .ui .cards{display:flex;gap:10px;flex-wrap:wrap}
-.ui .card{display:grid;gap:6px;justify-items:center;padding:6px 6px 5px;border:1px solid var(--line);border-radius:3px;background:none;cursor:pointer;font-family:var(--cond);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:var(--muted);line-height:1}
-.ui .card[aria-pressed="true"]{border-color:var(--accent);color:var(--ink);box-shadow:0 0 0 1px var(--accent)}
+.ui .swatch{display:grid;gap:6px;justify-items:center;padding:6px 6px 5px;border:1px solid var(--line);border-radius:3px;background:none;cursor:pointer;font-family:var(--cond);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:var(--muted);line-height:1}
+.ui .swatch[aria-pressed="true"]{border-color:var(--accent);color:var(--ink);box-shadow:0 0 0 1px var(--accent)}
 /* The thumbnails are the two grounds' own colours, not the current tokens: a card says what it would give. */
 .ui .thumb{width:76px;height:48px;border-radius:2px;position:relative;overflow:hidden;border:1px solid rgba(0,0,0,.18)}
 .ui .thumb i{position:absolute;display:block;border-radius:1px}
@@ -1569,7 +1546,7 @@ form.insert.locked .opt input{opacity:.55}
 .ui .mini .ln[hidden]{display:none}
 .ui .mtabs{display:flex;gap:2px;border-bottom:1px solid var(--line);padding:0 4px}
 .ui .mtabs .tab{font-size:11px;padding:4px 8px 6px}
-.ui .mini .lines{min-height:0;background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px}
+.ui .mini .lines{min-height:0}
 /* The sheet's pre is the scroller, as on the Files sheet, and the file's row stays: the chain down to it gives its height away instead of clipping it (.files hides its overflow for the corners). */
 .ui .mini .impl{min-height:0;min-width:0;display:flex;flex-direction:column}
 .ui .mini .impl .files,.ui .mini .impl .f{display:flex;flex-direction:column;min-height:0;min-width:0}
@@ -1596,7 +1573,7 @@ form.insert.locked .opt input{opacity:.55}
 .cfg .row.changed label::after{content:"●";color:var(--accent);font-size:10px}
 .cfg .chip.new{font-size:10px;padding:1px 5px}
 .cfg .stack{display:grid;gap:8px}
-.cfg pre.raw{font-family:var(--file-face,var(--mono));font-size:var(--file-size,12px);line-height:var(--file-leading,1.5);background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:14px;overflow:auto;margin:0;white-space:pre}
+.cfg pre.raw{font-family:var(--file-face,var(--mono));font-size:var(--file-size,12px);line-height:var(--file-leading,1.5);padding:14px;overflow:auto;margin:0;white-space:pre}
 /* The pre no longer breaks its own lines: each is an element, so the
    container wraps normally and the line keeps its own spaces. An empty
    line is an empty element, and an empty element is no lines tall — so
@@ -1630,7 +1607,7 @@ form.insert.locked .opt input{opacity:.55}
    air under a document is its own padding-bottom, as on every screen. */
 .pdocs .booklet{flex:1;min-height:0;overflow:auto;padding:0 28px 60px;scrollbar-gutter:stable}
 .pdocs .booklet .toc{top:0}
-.pdocs pre.env,.deployments pre.env{flex:1;min-height:0;font-family:var(--file-face,var(--mono));font-size:var(--file-size,12.5px);line-height:var(--file-leading,1.6);background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:14px 16px;overflow:auto;margin:0;white-space:normal}
+.pdocs pre.env,.deployments pre.env{flex:1;min-height:0;font-family:var(--file-face,var(--mono));font-size:var(--file-size,12.5px);line-height:var(--file-leading,1.6);padding:14px 16px;overflow:auto;margin:0;white-space:normal}
 .pdocs pre.env .c,.deployments pre.env .c{color:var(--term-dim)}.pdocs pre.env .k,.deployments pre.env .k{color:var(--accent)}.pdocs pre.env .m,.deployments pre.env .m{color:var(--ansi-red)}
 .pdocs>pre.env{margin-left:28px;margin-right:28px;margin-bottom:22px}
 .pdocs .nothing{padding:18px 28px;max-width:60ch}
@@ -1685,7 +1662,7 @@ span.fact input{accent-color:var(--accent);width:14px;height:14px;margin:0;verti
    generic one and left its text-indent, so the `$` sat against the
    border and the wrapped lines hung under it, not under the command
    (2026-09-27). */
-.record .cmd{margin:0;font-family:var(--mono);font-size:12px;line-height:1.6;background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:10px 14px 10px calc(14px + 2ch);white-space:pre-wrap;overflow-wrap:anywhere}
+.record .cmd{margin:0;font-family:var(--mono);font-size:12px;line-height:1.6;padding:10px 14px 10px calc(14px + 2ch);white-space:pre-wrap;overflow-wrap:anywhere}
 /* Danger: the tab's last box, and the only one in it is the verb that
    cannot be taken back. Its ground is the card's, its rule is the bad
    colour, and its note says what goes before the hand is near it —
@@ -1695,24 +1672,23 @@ span.fact input{accent-color:var(--accent);width:14px;height:14px;margin:0;verti
    `danger` too — it is a `.btn.danger` — so a bare `.danger` puts the
    box's own padding and border on the button, which is how it came out
    16px tall and half again the size of Create. */
-section.danger{border:1px solid var(--line);border-left:3px solid var(--bad);background:var(--surface);border-radius:3px;padding:16px 18px;display:grid;gap:12px;margin-top:14px}
-section.danger h3{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:18px;color:var(--bad);display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
 /* The foot's shape here is the other two's — the line taking the
    width, the button at its right — but with a second row for the note,
    which is the line's and not the button's: the button holds the
    line's row and is centred on it, so a note of any length leaves it
    where it is. The note is the Docker screen's own, italic and quiet,
    so the box's one loud thing is the button. */
-section.danger .foot{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:10px;row-gap:5px}
-section.danger .foot .cmd{grid-area:1/1}
-section.danger .foot .note{grid-area:2/1;padding:0 2px}
-section.danger .foot>.btn,section.danger .foot>.confirm{grid-area:1/2}
+/* Under the Deployments card, the way that one stands under New Project. */
+.card.danger{margin-top:14px}
+.card.danger .foot{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:10px;row-gap:5px}
+.card.danger .foot .cmd{grid-area:1/1}
+.card.danger .foot .note{grid-area:2/1;padding:0 2px}
+.card.danger .foot>.btn,.card.danger .foot>.confirm{grid-area:1/2}
 
 /* Deployments: the Deploy tab's third card, under the Deployment card —
    one row per compose file, and the file itself in a box under the
    table. It was the Record's third section until 2026-09-09. */
-.deployments{border:1px solid var(--line);background:var(--surface);border-radius:3px;padding:16px 18px;display:grid;gap:12px;margin-top:14px}
-.deployments h3{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:18px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.deployments{margin-top:14px}
 .deployments h3 .label{font-weight:500;letter-spacing:.1em;font-size:12px;color:var(--muted)}
 /* Deployments: one row per compose file. */
 /* The columns hug their content from the left, the services take the
@@ -1866,12 +1842,11 @@ header.band ::selection{background:color-mix(in srgb,var(--board-ink) 15%,transp
    that is quiet on THEIR ground: --muted is the house's, and the house's
    ground is not what these are on. The two ::before are here because a
    pseudo cannot carry a class; what they say is the class's. */
-.viewport .nothing,.term .screen .nothing,.log:empty::before{color:var(--term-dim);font-style:italic;font-family:var(--serif)}
-.viewport.light .nothing{color:var(--muted);font-style:italic;font-family:var(--serif)}
+.term-box .nothing,.term .screen .nothing,.log:empty::before{color:var(--term-dim);font-style:italic;font-family:var(--serif)}
 .viewport .nothing{display:block;padding:14px}
 /* …except the one viewport that is not a terminal: the jobs list is
-   .viewport.light, on the house's own surface, so it takes the house's. */
-.viewport.light{scrollbar-color:var(--scroll) transparent}
+   the Jobs list, on the house's own surface, so it takes the house's. */
+.jobsp .viewport{scrollbar-color:var(--scroll) transparent}
 
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 
@@ -1908,9 +1883,7 @@ header.band ::selection{background:color-mix(in srgb,var(--board-ink) 15%,transp
 /* The shelf too: its four readings are the row, and the planks the pane. */
 #panel-shelf{padding-top:0}
 .shelfp .toolbar .label{letter-spacing:.08em}
-.git .commit{display:grid;gap:8px;max-width:760px;border:1px solid var(--line);background:var(--surface);border-radius:3px;padding:14px 16px}
-.git .commit .head{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
-.git .commit h3{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:15px}
+.git .commit{gap:8px;max-width:760px}
 .git .commit .a{color:var(--good)}.git .commit .r{color:var(--bad)}
 .git .commit input[type=text],.git .commit textarea{font-family:var(--mono);font-size:13px;padding:6px 8px;border:1px solid var(--line);background:var(--ground);color:var(--ink);border-radius:2px;width:100%}
 .git .commit textarea{resize:vertical;line-height:1.5}
@@ -1959,7 +1932,7 @@ table.rows.pkgs td.opts{white-space:pre}
    rail left it: the kernel went unread. `.code-box` is the recipe the
    job's output, the log and the papers' blocks each write for
    themselves, named once for a few lines that are not a log. */
-.code-box{display:block;font-family:var(--code-face,var(--mono));font-size:var(--code-size,12px);line-height:round(calc(var(--code-size,12px) * var(--code-leading,1.5)),1px);background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:8px 14px;white-space:normal;overflow-wrap:anywhere}
+.code-box{display:block;font-family:var(--code-face,var(--mono));font-size:var(--code-size,12px);line-height:round(calc(var(--code-size,12px) * var(--code-leading,1.5)),1px);padding:8px 14px;white-space:normal;overflow-wrap:anywhere}
 /* Its lines are `.ln`, a key and a value each — the template's own
    air between them is not the box's — and the key is a column, nine
    cells unless the screen says (--key-w), dim, so the values stand in
@@ -2045,9 +2018,7 @@ table.wide tr.on td{background:var(--accent-soft)}
 table.wide tr.dead td,table.wide tr.theirs td{color:var(--soft)}
 table.wide tr.dead td.k,table.wide tr.theirs td.k{color:var(--muted)}
 /* The card: one container, whole. */
-.ficha{border:1px solid var(--line);background:var(--surface);border-radius:3px;padding:14px 16px;display:grid;gap:12px}
-.ficha header{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
-.ficha h3{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:15px}
+.ficha{padding:14px 16px}
 .ficha .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px 22px}
 .ficha .grid>*{min-width:0}
 .ficha .grid>.full{grid-column:1/-1}
@@ -2059,7 +2030,7 @@ table.wide tr.dead td.k,table.wide tr.theirs td.k{color:var(--muted)}
 .ficha .cap,.docker h3.cap{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:11px;color:var(--muted);margin:0 0 6px}
 .docker h3.cap{margin:8px 0 0}
 /* The env of a card and the compose of a deployment wear the .env's ground. */
-.ficha pre.env,.docker pre.env{font-family:var(--file-face,var(--mono));font-size:var(--file-size,11.5px);line-height:var(--file-leading,1.6);background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px;padding:10px 12px;margin:0;white-space:normal;overflow:auto;flex:none}
+.ficha pre.env,.docker pre.env{font-family:var(--file-face,var(--mono));font-size:var(--file-size,11.5px);line-height:var(--file-leading,1.6);padding:10px 12px;margin:0;white-space:normal;overflow:auto;flex:none}
 /* The template puts a newline between one line and the next; each keeps its own spaces. */
 .ficha pre.env .ln,.docker pre.env .ln{white-space:pre-wrap}
 .ficha pre.env .k,.docker pre.env .k{color:var(--accent)}

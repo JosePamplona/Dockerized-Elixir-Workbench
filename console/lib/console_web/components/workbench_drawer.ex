@@ -186,7 +186,7 @@ defmodule ConsoleWeb.WorkbenchDrawer do
         <span class="note">Values are written back in place by ./wb.sh config set; comments and order stay. Each field's tag says when it takes effect.</span>
       </div>
       <div class="cfgbody">
-        <pre :if={@raw} class="raw"><%= for line <- String.split(raw_text(@config, @edits), "\n") do %><.raw_line line={line} /><% end %></pre>
+        <pre :if={@raw} class="raw term-box"><%= for line <- String.split(raw_text(@config, @edits), "\n") do %><.raw_line line={line} /><% end %></pre>
         <%!-- The id is what lets LiveView put the form back after a
             reconnect: without it the edits staged in the drawer would be
             gone the first time the socket blinked. --%>
@@ -947,15 +947,15 @@ defmodule ConsoleWeb.WorkbenchDrawer do
               role="group"
               aria-label="The ground: light, dark, or whatever this machine says"
             >
-              <button type="button" class="card" data-ground="light" aria-pressed="false">
+              <button type="button" class="swatch" data-ground="light" aria-pressed="false">
                 <span class="thumb light"><i class="b"></i><i class="rl"></i><i class="t t1"></i><i class="t t2"></i><i class="t t3"></i><i class="tm"></i></span>Light
               </button>
-              <button type="button" class="card" data-ground="dark" aria-pressed="false">
+              <button type="button" class="swatch" data-ground="dark" aria-pressed="false">
                 <span class="thumb dark"><i class="b"></i><i class="rl"></i><i class="t t1"></i><i class="t t2"></i><i class="t t3"></i><i class="tm"></i></span>Dark
               </button>
               <button
                 type="button"
-                class="card"
+                class="swatch"
                 data-ground="system"
                 aria-pressed="false"
                 title="Whatever this machine says"
@@ -1148,7 +1148,7 @@ defmodule ConsoleWeb.WorkbenchDrawer do
               <button class="btn" type="button" data-ts aria-pressed="true">Timestamps</button>
             </div>
             <div
-              class="lines"
+              class="lines term-box"
               aria-label="Lines of a log, as the Logs screen draws them"
               style={"--svc-w:#{@services |> Enum.map(&String.length/1) |> Enum.max()}ch"}
             >

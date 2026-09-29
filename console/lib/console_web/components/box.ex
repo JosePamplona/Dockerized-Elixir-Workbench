@@ -8,6 +8,7 @@ defmodule ConsoleWeb.Box do
   use Phoenix.Component
   import ConsoleWeb.Refs
   import ConsoleWeb.Ribbon, only: [ribbon: 1]
+  import ConsoleWeb.Card, only: [card: 1]
   alias ConsoleWeb.Cartridges
   alias ConsoleWeb.Packages
   alias ConsoleWeb.Record
@@ -514,7 +515,7 @@ defmodule ConsoleWeb.Box do
           phx-key="Enter"
           aria-label={if @face == "front", do: "Turn it over", else: "Turn it back"}
         >
-          <div class={["card", @face == "back" && "back"]} id="d-card">
+          <div class={["cover", @face == "back" && "back"]} id="d-card">
             <div class="side front">
               <img
                 :if={@box["covers"]["front"]}
@@ -665,7 +666,7 @@ defmodule ConsoleWeb.Box do
       )
 
     ~H"""
-    <div class="specs">
+    <.card tag="div" class="specs">
       <span :if={@box["task"]} class="k">Task</span>
       <span :if={@box["task"]} class="v"><span class="path">mix {@box["task"]}</span></span>
       <span class="k">Kind</span>
@@ -738,7 +739,7 @@ defmodule ConsoleWeb.Box do
       </span>
       <span :if={@box["afterwards"]} class="k">After</span>
       <span :if={@box["afterwards"]} class="v"><span class="after">{@box["afterwards"]}</span></span>
-    </div>
+    </.card>
     """
   end
 

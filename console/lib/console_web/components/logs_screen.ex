@@ -12,7 +12,7 @@ defmodule ConsoleWeb.LogsScreen do
   def logs_screen(assigns) do
     ~H"""
     <div class="logs logsp" id="logs" phx-hook="Logs" phx-update="ignore">
-      <div class="viewport">
+      <div class="viewport term-box">
         <%!-- The services on top, alone: which of them show. Empty until a
               service has written a line — the strip hides itself then. --%>
         <div class="toolbar controls top" id="svc-chips" aria-label="The services whose lines show">

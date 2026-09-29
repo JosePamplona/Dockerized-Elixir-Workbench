@@ -19,6 +19,7 @@ defmodule ConsoleWeb.GitScreen do
   use Phoenix.Component
   import ConsoleWeb.Refs
   import ConsoleWeb.Box, only: [file: 1]
+  import ConsoleWeb.Card, only: [card: 1]
 
   @docs [{"pending", "Changes"}, {"history", "History"}]
   def docs, do: @docs
@@ -86,15 +87,14 @@ defmodule ConsoleWeb.GitScreen do
     ~H"""
     <p :if={is_nil(@p)} class="note">Reading the tree…</p>
     <%= if @p do %>
-      <form class="commit" phx-submit="git_commit">
-        <div class="head">
-          <h3>Commit</h3>
+      <.card tag="form" name="Commit" class="commit" phx-submit="git_commit">
+        <:head>
           <span :if={!@clean} class="note">{length(@p.files)} file{if length(@p.files) == 1,
             do: "",
             else: "s"} ·
           <span class="a">+{@p.added}</span><span :if={@p.removed > 0} class="r"> −{@p.removed}</span></span>
           <span :if={@clean} class="note">the tree is clean: nothing to commit</span>
-        </div>
+        </:head>
         <input
           type="text"
           name="title"
@@ -123,7 +123,7 @@ defmodule ConsoleWeb.GitScreen do
           >Commit</button>
           <span class="note">signed as {@identity || "the workbench"} · a dirty tree stops add and eject, which want a clean one: this is what lets the next cartridge in</span>
         </div>
-      </form>
+      </.card>
       <div :if={@p.files != []} class="impl">
         <span class="label">Files</span>
         <div class={["files", length(@p.files) > 12 && "many"]}>

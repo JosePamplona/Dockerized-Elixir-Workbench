@@ -586,7 +586,7 @@ export const Face = {
       ev.stopPropagation()
       // The viewer is given the piece, both faces, and the side that showed:
       // it opens on that one and holds the other beside it.
-      const back = this.el.querySelector(".card").classList.contains("back")
+      const back = this.el.querySelector(".cover").classList.contains("back")
       const front = this.el.querySelector(".side.front img"), rear = this.el.querySelector(".side.back img")
       if (front && rear) openViewerPair([front, rear], (front.alt || rear.alt || "The box").replace(/ — box (cover|back)$/, ""), ["cover", "back"], back ? 1 : 0)
       else { const img = back ? rear : front; if (img) openViewer(img, img.alt || (back ? "The back of the box" : "The box")) }
@@ -1000,7 +1000,7 @@ export const Frame = {
       }
       if (mini) { mini.classList.toggle("bottom", s.bottom); mini.classList.toggle("right", s.right); mini.classList.toggle("off", s.off) }
       const chosen = store.get(THEME_KEY) || "system"
-      for (const c of el.querySelectorAll(".card[data-ground]")) c.setAttribute("aria-pressed", String(c.dataset.ground === chosen))
+      for (const c of el.querySelectorAll(".swatch[data-ground]")) c.setAttribute("aria-pressed", String(c.dataset.ground === chosen))
     }
     const setFrame = want => {
       const s = { ...state(), ...want }
@@ -1018,7 +1018,7 @@ export const Frame = {
       else { document.documentElement.setAttribute("data-theme", g); store.set(THEME_KEY, g) }
       paint(); document.getElementById("ground-toggle")?.dispatchEvent(new Event("repaint"))
     }
-    for (const c of el.querySelectorAll(".card[data-ground]")) c.addEventListener("click", () => setGround(c.dataset.ground))
+    for (const c of el.querySelectorAll(".swatch[data-ground]")) c.addEventListener("click", () => setGround(c.dataset.ground))
     // The overlay as words, for the file: the band's side, the rail's, the ground chosen.
     const frame = {
       get: () => { const s = state(); return { band: s.bottom ? "bottom" : "top", rail: s.off ? "hidden" : s.right ? "right" : "left", ground: store.get(THEME_KEY) || "system" } },

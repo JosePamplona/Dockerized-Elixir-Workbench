@@ -423,3 +423,38 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
    reserved width in `ch` for the widest one the column can hold. */
 .num{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .stamp{display:inline-block;font-family:var(--cond);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:10.5px;color:var(--accent-ink);background:var(--accent);padding:3px 8px;border-radius:2px;transform:rotate(8deg);box-shadow:0 2px 4px rgba(0,0,0,.3)}
+/* .card — the frame of a unit the reader acts on: a form, or a row of
+   verbs (New Project, Deployments, Danger, Commit). The console's boxes
+   follow a rule of three families, read off its twelve boxes on
+   2026-09-27 (the interface inventory that asked whether Project › Mix
+   should be a card: it should not): a *card* frames what is acted on;
+   a *sheet* — a paper, a table, a list — is what is read, and wears no
+   frame; a *terminal box* (.term-box) frames what came out of a process
+   or a file, as it came. The card was declared four times in
+   console.css, with three head sizes and a hand-written list of what
+   folds; it is declared here, once. One head: an h3, its .name first,
+   whatever the head carries after it (a .note in the note's own voice),
+   the fold square last when the card folds — the cursor says so only
+   then. .folded keeps the head alone. .danger is the same card with the
+   bad's edge and head. .foot is its last line — the command and the
+   button that runs it — and the screen decides the button's floor. */
+.card{border:1px solid var(--line);background:var(--surface);border-radius:3px;padding:16px 18px;display:grid;gap:12px}
+.card>h3{margin:0;display:flex;align-items:center;gap:10px;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:18px}
+.card>h3 .name{margin-right:auto}
+.card>h3 .note{font-family:var(--serif);font-weight:400;font-style:italic;font-size:13px;letter-spacing:0;text-transform:none;color:var(--muted)}
+.card>h3:has(.foldsq){cursor:pointer;user-select:none}
+.card>h3 .foldsq{flex:none}
+/* The fold is a state, and it wins over whatever a card's content says its
+   display is (a foot laid out as a grid, at a higher specificity): a folded
+   card is its head alone, or the fold is a lie. */
+.card.folded>:not(h3){display:none!important}
+.card.danger{border-left:3px solid var(--bad)}
+.card.danger>h3{color:var(--bad)}
+.card>.foot{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+/* .term-box — the ground of what came out of a process or a file: the
+   logs, a terminal, a job's output, the .env, the daemon's specs. The
+   terminal's ink on the terminal's ground, one line around it; what is
+   inside keeps its own face and leading (the drawer's code and file
+   faces). It was declared three times in console.css, and undone by
+   hand where a pane wanted to be a sheet. */
+.term-box{background:var(--term);color:var(--term-ink);border:1px solid var(--term-line);border-radius:3px}

@@ -20,7 +20,7 @@ defmodule ConsoleWeb.NewProject do
 
   import ConsoleWeb.Refs
   import ConsoleWeb.Square, only: [square: 1]
-  import ConsoleWeb.Folds, only: [card_head: 1, fold_class: 2]
+  import ConsoleWeb.Card, only: [card: 1]
   alias Console.{Jobs, Verbs}
   alias ConsoleWeb.{Cartridges, Deploy}
 
@@ -96,20 +96,22 @@ defmodule ConsoleWeb.NewProject do
       )
 
     ~H"""
-    <div class={["newcard", fold_class(@folded, "newproject")]}>
-      <.card_head key="newproject" name="New Project" folded={@folded} />
-      <%!-- The form carries its own id, which the Create button outside it
+    <%!-- A stateful component's root is one static tag, so the card sits
+          in a bare div that carries the component's id. --%>
+    <div>
+      <.card tag="div" key="newproject" name="New Project" folded={@folded} class="newproject">
+        <%!-- The form carries its own id, which the Create button outside it
             names to submit it. It was `new-project` until the card became
             a component and took that id for its wrapper: the button then
             pointed at a div and submitted nothing (2026-09-27). --%>
-      <form
-        class="form"
-        id="new-project-form"
-        phx-target={@myself}
-        phx-change="new_form"
-        phx-submit="new_submit"
-      >
-        <%!-- The workspace first (2026-09-26): it is the row that says
+        <form
+          class="form"
+          id="new-project-form"
+          phx-target={@myself}
+          phx-change="new_form"
+          phx-submit="new_submit"
+        >
+          <%!-- The workspace first (2026-09-26): it is the row that says
               whether there is anything here and what Create would
               overwrite, so it is what the reader checks before they
               read a name, and the chip beside it is the card's own
@@ -123,41 +125,41 @@ defmodule ConsoleWeb.NewProject do
               its own process. Type another here and the project gets
               it — and the console will say it was started for the other
               one, which is true (2026-09-27). --%>
-        <.given label="workspace" value={@conf["WORKSPACE_PATH"]}>
-          <:mark>
-            <.chip
-              :if={!@project?}
-              class="off"
-              title="nothing to read and nothing to lose: Create makes one"
-            >
-              empty
-            </.chip>
-            <.chip :if={@project?} class="good" title="creating overwrites every file in it">
-              existing project
-            </.chip>
-          </:mark>
-        </.given>
-        <.given
-          label="debian"
-          value={@conf["DEBIAN_VERSION"]}
-          warn={born_arg(@born, "DEBIAN", "debian", @conf["DEBIAN_VERSION"])}
-        />
-        <.given
-          label="elixir"
-          value={@conf["ELIXIR_VERSION"]}
-          warn={born_arg(@born, "ELIXIR", "elixir", @conf["ELIXIR_VERSION"])}
-        />
-        <.given
-          label="erlang"
-          value={@conf["ERLANG_VERSION"]}
-          warn={born_arg(@born, "OTP", "erlang", @conf["ERLANG_VERSION"])}
-        />
-        <.given
-          label="installer"
-          value={installer(@conf)}
-          muted="the newest phx.new that runs on this stack"
-        />
-        <%!-- <div class="frow">
+          <.given label="workspace" value={@conf["WORKSPACE_PATH"]}>
+            <:mark>
+              <.chip
+                :if={!@project?}
+                class="off"
+                title="nothing to read and nothing to lose: Create makes one"
+              >
+                empty
+              </.chip>
+              <.chip :if={@project?} class="good" title="creating overwrites every file in it">
+                existing project
+              </.chip>
+            </:mark>
+          </.given>
+          <.given
+            label="debian"
+            value={@conf["DEBIAN_VERSION"]}
+            warn={born_arg(@born, "DEBIAN", "debian", @conf["DEBIAN_VERSION"])}
+          />
+          <.given
+            label="elixir"
+            value={@conf["ELIXIR_VERSION"]}
+            warn={born_arg(@born, "ELIXIR", "elixir", @conf["ELIXIR_VERSION"])}
+          />
+          <.given
+            label="erlang"
+            value={@conf["ERLANG_VERSION"]}
+            warn={born_arg(@born, "OTP", "erlang", @conf["ERLANG_VERSION"])}
+          />
+          <.given
+            label="installer"
+            value={installer(@conf)}
+            muted="the newest phx.new that runs on this stack"
+          />
+          <%!-- <div class="frow">
           <label for="new-name">project name</label>
           <span class="ro">
             <input
@@ -171,30 +173,30 @@ defmodule ConsoleWeb.NewProject do
             />
           </span>
         </div> --%>
-        <div class="frow">
-          <label>mix phx.new</label>
-          <div class="flags">
-            <label :for={{k, values} <- Deploy.gen_flags()}>
-              --{k}
-              <select name={"gen[#{k}]"}>
-                <option :for={v <- values} value={v} selected={(@newp.gen[k] || hd(values)) == v}>
-                  {v}
-                </option>
-              </select>
-            </label>
+          <div class="frow">
+            <label>mix phx.new</label>
+            <div class="flags">
+              <label :for={{k, values} <- Deploy.gen_flags()}>
+                --{k}
+                <select name={"gen[#{k}]"}>
+                  <option :for={v <- values} value={v} selected={(@newp.gen[k] || hd(values)) == v}>
+                    {v}
+                  </option>
+                </select>
+              </label>
+            </div>
           </div>
-        </div>
-        <div class="frow">
-          <label title="In from birth; leave one out and insert it later from the shelf">base cartridges</label>
-          <div class="flags bases">
-            <%= for e <- @bases do %>
-              <% out = Deploy.base_out?(@catalog, @newp, e["name"]) %>
-              <% forced = Enum.any?(e["requires"] || [], &Deploy.base_out?(@catalog, @newp, &1)) %>
-              <%!-- A cartridge that phx.new only generates with another is
+          <div class="frow">
+            <label title="In from birth; leave one out and insert it later from the shelf">base cartridges</label>
+            <div class="flags bases">
+              <%= for e <- @bases do %>
+                <% out = Deploy.base_out?(@catalog, @newp, e["name"]) %>
+                <% forced = Enum.any?(e["requires"] || [], &Deploy.base_out?(@catalog, @newp, &1)) %>
+                <%!-- A cartridge that phx.new only generates with another is
                     not the reader's to leave in: it is disabled with the
                     reason in its title, which is `.unlit` and not a
                     fourth opacity written here. --%>
-              <%!-- One line per cartridge (2026-09-27): the eight ran on
+                <%!-- One line per cartridge (2026-09-27): the eight ran on
                     as a paragraph of boxes, wrapping where the card's
                     width happened to end, and a reader looking for one
                     of them read them all. What shares a line is what
@@ -203,23 +205,23 @@ defmodule ConsoleWeb.NewProject do
                     not cartridges, they are that cartridge's own
                     switches, and reading them apart from it would say
                     they were. --%>
-              <div class="base">
-                <label class={[out && "out", forced && "unlit"]}>
-                  <input
-                    type="checkbox"
-                    name={"in[#{e["name"]}]"}
-                    checked={!out}
-                    disabled={forced}
-                    title={
-                      if forced,
-                        do:
-                          "goes with #{Enum.join(e["requires"], " and ")}: phx.new generates it only with them",
-                        else: "in from birth; uncheck to leave it out"
-                    }
-                  />
-                  <.cart_ref name={e["name"]} />
-                </label>
-                <%!-- A base cartridge's own phx.new flags: ecto's database and
+                <div class="base">
+                  <label class={[out && "out", forced && "unlit"]}>
+                    <input
+                      type="checkbox"
+                      name={"in[#{e["name"]}]"}
+                      checked={!out}
+                      disabled={forced}
+                      title={
+                        if forced,
+                          do:
+                            "goes with #{Enum.join(e["requires"], " and ")}: phx.new generates it only with them",
+                          else: "in from birth; uncheck to leave it out"
+                      }
+                    />
+                    <.cart_ref name={e["name"]} />
+                  </label>
+                  <%!-- A base cartridge's own phx.new flags: ecto's database and
                     ids, html's live. A switch is labelled with its flag and
                     checked when on, whatever its default; one on by default
                     carries an "off" before its box, since a form sends
@@ -236,64 +238,65 @@ defmodule ConsoleWeb.NewProject do
                     with it — disabled, so neither is sent — and what the
                     reader had set is what they find when they tick the
                     cartridge back on. --%>
-                <span :if={e["options"] != []} class="subs">
-                  <%= for o <- e["options"] do %>
-                    <% flag = "--" <> String.replace(o["name"], "_", "-") %>
-                    <label class={["sub", out && "out"]}>
-                      <%= if o["choices"] do %>
-                        {flag}
-                        <select name={"gen[#{o["name"]}]"} disabled={out} title={o["doc"]}>
-                          <option
-                            :for={c <- choices(o)}
-                            value={c["value"]}
-                            selected={(@newp.gen[o["name"]] || o["default"]) == c["value"]}
-                            title={c["doc"]}
-                          >
-                            {c["value"]}
-                          </option>
-                        </select>
-                      <% else %>
-                        <input
-                          type="hidden"
-                          name={"gen[#{o["name"]}]"}
-                          value="off"
-                          disabled={out}
-                        />
-                        <input
-                          type="checkbox"
-                          name={"gen[#{o["name"]}]"}
-                          disabled={out}
-                          checked={not out and switch_on?(o, @newp.gen[o["name"]])}
-                          title={o["doc"]}
-                        /> {flag}
-                      <% end %>
-                    </label>
-                  <% end %>
-                </span>
-              </div>
-            <% end %>
+                  <span :if={e["options"] != []} class="subs">
+                    <%= for o <- e["options"] do %>
+                      <% flag = "--" <> String.replace(o["name"], "_", "-") %>
+                      <label class={["sub", out && "out"]}>
+                        <%= if o["choices"] do %>
+                          {flag}
+                          <select name={"gen[#{o["name"]}]"} disabled={out} title={o["doc"]}>
+                            <option
+                              :for={c <- choices(o)}
+                              value={c["value"]}
+                              selected={(@newp.gen[o["name"]] || o["default"]) == c["value"]}
+                              title={c["doc"]}
+                            >
+                              {c["value"]}
+                            </option>
+                          </select>
+                        <% else %>
+                          <input
+                            type="hidden"
+                            name={"gen[#{o["name"]}]"}
+                            value="off"
+                            disabled={out}
+                          />
+                          <input
+                            type="checkbox"
+                            name={"gen[#{o["name"]}]"}
+                            disabled={out}
+                            checked={not out and switch_on?(o, @newp.gen[o["name"]])}
+                            title={o["doc"]}
+                          /> {flag}
+                        <% end %>
+                      </label>
+                    <% end %>
+                  </span>
+                </div>
+              <% end %>
+            </div>
           </div>
+        </form>
+        <div class="foot">
+          <div class="cmds">
+            <div class="cmd">{@cmd}</div>
+          </div>
+          <span :if={@pending} class="confirm on">A project already exists in this workspace: every file in it goes.
+          <button class="btn danger" phx-click="confirm" phx-value-id={@pending.id}>Yes, overwrite</button><button
+            class="btn"
+            phx-click="cancel"
+            phx-value-id={@pending.id}
+          >Keep it</button></span>
+          <.job_button
+            :if={!@pending}
+            label={if @busy, do: "Creating…", else: "Create project"}
+            class="primary"
+            form="new-project-form"
+            args={String.replace_prefix(@cmd, "./wb.sh ", "")}
+            why={@busy && "a job is running"}
+          />
         </div>
-      </form>
-      <div class="foot">
-        <div class="cmds">
-          <div class="cmd">{@cmd}</div>
-        </div>
-        <span :if={@pending} class="confirm on">A project already exists in this workspace: every file in it goes.
-        <button class="btn danger" phx-click="confirm" phx-value-id={@pending.id}>Yes, overwrite</button><button
-          class="btn"
-          phx-click="cancel"
-          phx-value-id={@pending.id}
-        >Keep it</button></span>
-        <.job_button
-          :if={!@pending}
-          label={if @busy, do: "Creating…", else: "Create project"}
-          class="primary"
-          form="new-project-form"
-          args={String.replace_prefix(@cmd, "./wb.sh ", "")}
-          why={@busy && "a job is running"}
-        />
-      </div>
+      </.card>
     </div>
     """
   end

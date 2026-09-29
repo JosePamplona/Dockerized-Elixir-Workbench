@@ -44,7 +44,7 @@ defmodule ConsoleWeb.Terminal do
       data-open={to_string(@open)}
       data-key={"#{@target.name} #{@shell}"}
     >
-      <div class="viewport">
+      <div class="viewport term-box">
         <%!-- The containers on top, alone: where a session opens. Each one
               wears its sessions — live, or ended with its trail — and none
               is dark while another has one: a session is its own process,

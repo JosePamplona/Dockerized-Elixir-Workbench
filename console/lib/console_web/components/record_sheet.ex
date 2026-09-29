@@ -121,7 +121,7 @@ defmodule ConsoleWeb.RecordSheet do
           class="thead"
           title="the command that generated it, reconstructed from mix.exs, config/config.exs and AGENTS.md as the first commit left them"
         >mix phx.new</span>
-        <pre class="cmd">{@birth.command}</pre>
+        <pre class="cmd term-box">{@birth.command}</pre>
       </div>
 
       <table class="rows shape flags">

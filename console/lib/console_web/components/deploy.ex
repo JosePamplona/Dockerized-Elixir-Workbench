@@ -13,7 +13,7 @@ defmodule ConsoleWeb.Deploy do
   """
   use Phoenix.Component
   import ConsoleWeb.Refs
-  import ConsoleWeb.Folds, only: [card_head: 1, fold_class: 2]
+  import ConsoleWeb.Card, only: [card: 1]
   import ConsoleWeb.Deployments, only: [deployments_sheet: 1]
   alias ConsoleWeb.Cartridges
 
@@ -154,8 +154,7 @@ defmodule ConsoleWeb.Deploy do
       )
 
     ~H"""
-    <section class={["danger", fold_class(@folded, "danger")]}>
-      <.card_head key="danger" name="Danger" folded={@folded} />
+    <.card key="danger" name="Danger" folded={@folded} danger>
       <%!-- The foot of the two boxes above: the line it is, taking the
             width, and the button at its right — Create's shape and Up's,
             because this is the third of the three verbs the tab has. The
@@ -182,7 +181,7 @@ defmodule ConsoleWeb.Deploy do
           phx-value-id={@deleting.id}
         >Keep it</button></span>
       </div>
-    </section>
+    </.card>
     """
   end
 

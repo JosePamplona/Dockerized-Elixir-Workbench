@@ -64,7 +64,7 @@ defmodule ConsoleWeb.ProjectScreen do
           >{text}</a>
         </nav>
       </div>
-      <pre :if={@page && @page[:env]} class="env"><%= for line <- @page.env do %><.env_line line={line} /><% end %></pre>
+      <pre :if={@page && @page[:env]} class="env term-box"><%= for line <- @page.env do %><.env_line line={line} /><% end %></pre>
       <.record_sheet
         :if={@page && @page[:record] && @record}
         record={@record}

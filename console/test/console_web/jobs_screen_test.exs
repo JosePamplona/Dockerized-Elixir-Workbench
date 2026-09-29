@@ -124,7 +124,7 @@ defmodule ConsoleWeb.JobsScreenTest do
   # scrolled away with it.
   test "the verbs are the strip's, under the pane" do
     html = screen([job("a", :failed, exit: 2)])
-    assert html =~ ~r/<div[^>]*class="out">\s*<div class="pane">/
+    assert html =~ ~r/<div[^>]*class="out term-box">\s*<div class="pane">/
 
     assert html =~
              ~r/<div class="toolbar controls"[^>]*>\s*<span class="say">it stopped here<\/span>/
@@ -132,7 +132,7 @@ defmodule ConsoleWeb.JobsScreenTest do
     assert html =~ ~r/<button[^>]*class="btn"[^>]*phx-click="retry"[^>]*>Run it again<\/button>/
     # The one link left is the meta line's fold, not a job's verb: look
     # inside the output, where the meta line is not.
-    [out] = Regex.run(~r/class="out">.*?class="ograb"/s, html)
+    [out] = Regex.run(~r/class="out term-box">.*?class="ograb"/s, html)
     refute out =~ ~s(class="lk")
     assert html =~ ~s(class="lk")
   end

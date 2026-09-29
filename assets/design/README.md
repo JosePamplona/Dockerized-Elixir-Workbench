@@ -297,6 +297,25 @@ decimal, memory always in MiB with one decimal), and the two live
 columns reserve, in `ch`, the width of the widest value they can hold.
 Decided on 2026-09-05 over the Docker screen's containers table.
 
+**The boxes.** The console's boxes follow a rule of three families,
+read off its twelve boxes on 2026-09-27 (the interface inventory of
+Project › Mix, which asked whether that sheet should be a card, and
+found the rule instead): a **card** frames what is acted on — a form,
+or a row of verbs (New Project, Deployments, Danger, Commit, a
+container's ficha); a **sheet** — a paper, a table, a list — is what is
+read, and wears no frame; a **terminal box** frames what came out of a
+process or a file, as it came (the logs, a terminal, a job's output,
+the .env, the daemon's specs, a paper's code block). Two of the three
+are notation, and they are here: `.card` (its `h3` head with the
+`.name`, what the head carries, the fold square; `.folded`; `.danger`;
+`.foot`) and `.term-box` (the terminal's ink on the terminal's ground,
+one line around it). The console names them — `ConsoleWeb.Card` is the
+one place that writes `class="card"` — and never draws them again:
+before 2026-09-29 `console.css` declared the card four times and the
+terminal box eight, each a copy with a size of its own, and
+`ConsoleWeb.BoxesTest` is the grep that keeps a ninth from being
+written. Mix stays a sheet.
+
 ## The rules
 
 * **Edit the tokens, run the build.** A generated file edited by hand is

@@ -47,6 +47,27 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `wb.sh`'s notice for a `config.conf` from before `NODE_VERSION` says
   where the line goes now.
 
+- **The daemon's Specs: the disk in columns, and one colour that means
+  something.** The Docker screen's box set its in-use ratio in the
+  source palette's blue and every size's unit in its gold (`--t-const`,
+  `--t-mod`, since 2026-09-24): One Light's and One Dark's, the code
+  editor's set, on a reading that is not code, and gold eight times a
+  block on the piece that matters least. A first pass put the keys in
+  the accent, as the .env paper's are, and the ratio in the terminal's
+  blue; it did not read better. Seven takes on the real daemon, side by
+  side on both grounds (a decision page, retired with the decision),
+  settled it: the machine's five lines are set by weight alone — key
+  and qualifiers dim, the figure bold, the rest ink — and the disk is a
+  table, as `docker system df` prints it, a dim head over four columns
+  (in use, size, reclaimable, its share) instead of the same sentence
+  four times, the widths in `ch` so the bitmap faces keep them whole.
+  The one colour is the house's warn on a reclaimable share of half or
+  more, with the title saying where to prune: the one thing the box
+  says that asks for an act, in the voice the chips say it in. The
+  template is a component a line, `spec_line/1`, in its four shapes,
+  and the pieces of a value one component, in place of a `for` written
+  without a line break between its spans.
+
 - **GitHub's mark is vendored like hex's.** A package from a
   repository on GitHub wore the Invertocat from the house's sprite
   (`assets/design/icons/github.svg`, since 2026-09-23): a tracing of no

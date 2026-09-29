@@ -1962,17 +1962,31 @@ table.rows.pkgs td.opts{white-space:pre}
 /* The daemon's box is a viewport like the Logs screen's: the lines, and the controls in a strip under them. Inside it the code box keeps its type and its ink and loses its own frame, which the viewport draws. `build cache` is the widest key. */
 .docker .viewport.daemon{grid-template-rows:auto auto;flex:none}
 .docker .viewport.daemon .code-box{border:0;border-radius:0;--key-w:13ch}
-/* Its values by weight (2026-09-24): the figure that matters bold,
-   what qualifies it dim, the in-use ratio blue and a size's unit
-   golden, from the source palette so both themes have them. Bold is
-   700: Fira Code and Tamzen carry only 400 and 700, and a 500 fell back
-   to their 400 — no bold at all; Plex is loaded at 700 for it. A blank
-   line parts the machine from the disk. */
-.code-box .v .b{font-weight:700}
-.code-box .v .d{color:var(--term-dim)}
-.code-box .v .q{color:var(--t-const)}
-.code-box .v .u{color:var(--t-mod)}
+/* Its text by weight (2026-09-24): the figure that matters bold, what
+   qualifies it dim, the rest ink, and no colour of its own — until
+   2026-09-29 the in-use ratio wore the source palette's blue and every
+   size's unit its gold, two colours from the code editor's set on a
+   reading that is not code, and for a day the keys wore the accent;
+   seven takes on the real daemon settled on none of that. The one
+   colour is the house's warn, on a reclaimable share of half or more:
+   the one thing here that asks for an act, in the voice the chips say
+   it in. Bold is 700: Fira Code and Tamzen carry only 400 and 700, and
+   a 500 fell back to their 400 — no bold at all; Plex is loaded at 700
+   for it. A blank line parts the machine from the disk. */
+.code-box .b{font-weight:700}
+.code-box .d{color:var(--term-dim)}
+.code-box .w{color:var(--warn);font-weight:700}
 .code-box .ln.gap{min-height:1lh}
+/* The disk is a table, as `docker system df` prints it: a dim head
+   over the kind, and four columns — in use, size, reclaimable and its
+   share — each as wide as its widest reading in ch, which the bitmap
+   faces keep whole; the share is right-aligned, as a figure column is.
+   The head's "reclaimable" spans the size that can go and its share.
+   (`.row` is taken — a card's row, with its margin over it.) */
+.code-box .ln.disk{grid-template-columns:var(--key-w,9ch) 8ch 10ch 10ch 4ch}
+.code-box .disk .col:last-child{text-align:right}
+.code-box .disk.heads .col{color:var(--term-dim);text-align:left}
+.code-box .disk.heads .two{grid-column:span 2}
 .docker .viewport.daemon .nothing{margin:0;padding:8px 14px}
 .dtab .badge{font-family:var(--mono);font-size:10.5px;padding:1px 6px;border-radius:999px;background:var(--surface-2);color:var(--muted);letter-spacing:0}
 .dtab .badge.bad{background:var(--bad);color:#fff}

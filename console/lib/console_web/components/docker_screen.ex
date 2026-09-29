@@ -139,15 +139,9 @@ defmodule ConsoleWeb.DockerScreen do
           them the scope and, on Containers, Stats. Headed "Specs". --%>
     <div class="log-cap"><span class="label">Specs</span></div>
     <div class="viewport daemon">
-      <code :if={@dk.daemon} class="code-box daemon"><%= for line <- daemon_lines(@dk) do %>
-        <span
-          :if={is_nil(line)}
-          class="ln gap"
-        ></span><span :if={line} class="ln"><span class="k">{elem(line, 0)}</span><span class="v"><span
-          :for={{class, text} <- elem(line, 1)}
-          class={class}
-        >{text}</span></span></span>
-      <% end %></code>
+      <code :if={@dk.daemon} class="code-box daemon">
+        <.spec_line :for={line <- daemon_lines(@dk)} line={line} />
+      </code>
       <p :if={!@dk.daemon} class="nothing">Reading the daemon…</p>
       <div class="toolbar controls">
         <span class="label">Scope</span>
@@ -183,13 +177,77 @@ defmodule ConsoleWeb.DockerScreen do
     """
   end
 
+  # One line of the box, in its four shapes: `:gap`, the blank line;
+  # `:head`, the disk table's column heads over an empty key; `{:row,
+  # key, cells}`, a disk row, one cell a column; and `{key, pieces}`, a
+  # line of the machine. A value's pieces stand with nothing between
+  # them — the value keeps its spaces (pre-wrap), so the template's own
+  # air must never reach inside it.
+  attr :line, :any, required: true
+
+  defp spec_line(%{line: :gap} = assigns) do
+    ~H"""
+    <span class="ln gap"></span>
+    """
+  end
+
+  defp spec_line(%{line: :head} = assigns) do
+    ~H"""
+    <span class="ln disk heads">
+      <span class="k"></span>
+      <span class="col">in use</span>
+      <span class="col">size</span>
+      <span class="col two">reclaimable</span>
+    </span>
+    """
+  end
+
+  defp spec_line(%{line: {:row, key, cells}} = assigns) do
+    assigns = assign(assigns, key: key, cells: cells)
+
+    ~H"""
+    <span class="ln disk">
+      <span class="k">{@key}</span>
+      <span :for={cell <- @cells} class="col"><.pieces pieces={cell} /></span>
+    </span>
+    """
+  end
+
+  defp spec_line(%{line: {key, pieces}} = assigns) do
+    assigns = assign(assigns, key: key, pieces: pieces)
+
+    ~H"""
+    <span class="ln">
+      <span class="k">{@key}</span>
+      <span class="v"><.pieces pieces={@pieces} /></span>
+    </span>
+    """
+  end
+
+  attr :pieces, :list, required: true
+
+  defp pieces(assigns) do
+    ~H"""
+    <span :for={p <- @pieces} class={elem(p, 0)} title={piece_title(p)}>{elem(p, 1)}</span>
+    """
+  end
+
+  defp piece_title({_, _, title}), do: title
+  defp piece_title(_), do: nil
+
   # The daemon's box: the machine — os, kernel, docker, host, storage —
-  # a blank line, then the disk, one kind a line (images, containers,
-  # volumes, build cache). Each value is a list of pieces, `{class,
-  # text}`, set by weight and not by syntax (2026-09-24): the figure that
-  # matters `b`old, what qualifies it `d`im, the in-use ratio blue
-  # (`q`), a size's unit golden and not bold (`u`); the words between stay ink. `nil`
-  # for the blank line.
+  # a blank line, then the disk as `docker system df` prints it, one
+  # kind a row (images, containers, volumes, build cache) under a head.
+  # Text is set by weight and not by syntax (2026-09-24): every piece is
+  # `{class, text}` (a title third, where one is due), the figure that
+  # matters `b`old, what qualifies it `d`im (the OS's edition, the
+  # kernel, the platform, the storage), a size's unit a piece of its own
+  # so the weight stops at the figure; the rest is ink. The one colour is
+  # the house's warn on a reclaimable share of half or more (`w`): the
+  # one thing in the box that asks for an act, said in the voice the
+  # rest of the console says it in. Decided 2026-09-29 over seven takes
+  # (the ratio in blue and the unit in gold, then the keys in the accent,
+  # were the two before it).
   defp daemon_lines(%{daemon: d, df: df}) do
     {os, edition} = os_parts(d.os)
     {mem, mem_unit} = size_parts(Console.Docker.human(d.mem))
@@ -198,29 +256,37 @@ defmodule ConsoleWeb.DockerScreen do
       {"os", [{"b", os} | if(edition, do: [{nil, " "}, {"d", edition}], else: [])]},
       {"kernel", [{"d", d.kernel}]},
       {"docker", [{"b", d.version}, {nil, " · "}, {"d", d.platform}]},
-      {"host", [{"b", d.cpus}, {nil, " CPU · "}, {"b", mem}, {"u", mem_unit}, {nil, " RAM"}]},
+      {"host", [{"b", d.cpus}, {nil, " CPU · "}, {"b", mem}, {nil, mem_unit}, {nil, " RAM"}]},
       {"storage", [{"d", "#{d.driver} in #{d.root}"}]},
-      nil
+      :gap
       | disk_lines(df)
     ]
   end
 
   defp disk_lines(nil), do: [{"disk", [{"d", "measuring: docker system df takes seconds…"}]}]
 
-  defp disk_lines(df) do
-    for r <- df do
-      {size, unit} = size_parts(r.size)
-      {free, free_unit} = size_parts(r.reclaimable)
+  defp disk_lines(df), do: [:head | Enum.map(df, &disk_row/1)]
 
-      {disk_kind(r.type),
-       [{"q b", r.active}, {"q", "/#{r.total}"}, {nil, " in use · "}, {"b", size}, {"u", unit}] ++
-         [
-           {nil, " with #{reclaimable_pct(r)}% reclaimable ("},
-           {"b", free},
-           {"u", free_unit},
-           {nil, ")"}
-         ]}
-    end
+  # In use, size, reclaimable, and its share — the head's four columns.
+  @prune_share 50
+
+  defp disk_row(r) do
+    {size, unit} = size_parts(r.size)
+    {free, free_unit} = size_parts(r.reclaimable)
+    pct = reclaimable_pct(r)
+
+    share =
+      if String.to_integer(pct) >= @prune_share,
+        do: {"w", "#{pct}%", "half or more of it can go: Images and Volumes say how to prune"},
+        else: {nil, "#{pct}%"}
+
+    {:row, disk_kind(r.type),
+     [
+       [{"b", r.active}, {nil, "/#{r.total}"}],
+       [{"b", size}, {nil, unit}],
+       [{"b", free}, {nil, free_unit}],
+       [share]
+     ]}
   end
 
   # The OS's name, and the edition it carries in parentheses apart.

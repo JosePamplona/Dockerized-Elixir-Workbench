@@ -14,6 +14,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+## v0.14.0 - (2026-09-29)
+
 ### Added
 
 - **The console checks `NODE_VERSION` the way it checks the stack and

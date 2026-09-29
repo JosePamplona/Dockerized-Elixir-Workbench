@@ -1339,7 +1339,7 @@ defmodule ConsoleWeb.Box do
     st = assigns.c_state[o["name"]]
     has = has?(o, c, assigns.c_state)
     group_locked = st == true
-    chosen = c["value"] in List.wrap(assigns.args[o["name"]] || [])
+    chosen = c["value"] in picked(o, assigns.args, st)
 
     assigns =
       assign(assigns,
@@ -1368,6 +1368,25 @@ defmodule ConsoleWeb.Box do
     </label>
     <p :if={@c["doc"]} class="doc of">{linked(@c["doc"])}</p>
     """
+  end
+
+  # What the form holds for a choice option: what the reader picked, or
+  # the default while they picked nothing. A default is checked, not
+  # only tagged — a radio with nothing on and a tag beside one of its
+  # values read as a question the reader had to answer (2026-09-29) —
+  # and the line still leaves the flag out while the pick is the
+  # default (`choice_argv/3`). Nothing picked in a group of boxes is
+  # the default again: the installer has no value for "none".
+  # What the project reports for the option comes before the default:
+  # a box in from birth on mysql shows mysql, not postgres beside it.
+  defp picked(o, args, state) do
+    picked = args[o["name"]] |> List.wrap() |> Enum.reject(&(&1 == ""))
+
+    cond do
+      picked != [] -> picked
+      is_binary(state) or is_list(state) -> List.wrap(state)
+      true -> List.wrap(o["default"])
+    end
   end
 
   # A cartridge's line of text as the form shows it: its `code` as code,
@@ -1570,13 +1589,19 @@ defmodule ConsoleWeb.Box do
 
   # The choices picked, and the ones typed under Other.
   defp choice_argv(o, flag, args) do
-    picked = List.wrap(args[o["name"]] || [])
+    picked = args[o["name"]] |> List.wrap() |> Enum.reject(&(&1 == ""))
     other = (args["other:#{o["name"]}"] || "") |> String.split(~r/[,\s]+/, trim: true)
     v = picked ++ other
 
     if o["multiple"],
-      do: if(v == [], do: [], else: [flag, Enum.join(v, ",")]),
+      do: many_choice_argv(v, List.wrap(o["default"]), flag),
       else: one_choice_argv(v, o["default"], flag)
+  end
+
+  # Nothing picked, or the default set picked (the boxes as the form
+  # first shows them): the flag stays out.
+  defp many_choice_argv(v, default, flag) do
+    if v == [] or Enum.sort(v) == Enum.sort(default), do: [], else: [flag, Enum.join(v, ",")]
   end
 
   defp one_choice_argv([], _default, _flag), do: []

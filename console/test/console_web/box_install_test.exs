@@ -176,6 +176,80 @@ defmodule ConsoleWeb.BoxInstallTest do
     assert Box.argv(box, %{"minimum" => "90"}) == ["--minimum", "90"]
   end
 
+  # The box as the form first shows it: the default value of a choice is
+  # the one checked, whether a radio or a box among boxes, and the line
+  # says nothing for it — the reader who presses Insert at once gets
+  # the default, which is what the checked value promised.
+  @choices %{
+    "name" => "probe",
+    "options" => [
+      %{
+        "name" => "database",
+        "type" => "string",
+        "default" => "postgres",
+        "choices" => [%{"value" => "postgres"}, %{"value" => "mysql"}]
+      },
+      %{
+        "name" => "ignore_files",
+        "type" => "csv",
+        "multiple" => true,
+        "default" => ["deps", "test"],
+        "choices" => [%{"value" => "deps"}, %{"value" => "test"}, %{"value" => "components"}]
+      }
+    ]
+  }
+
+  test "a choice's default is checked while nothing is picked, and the line leaves it out" do
+    html = screen(@choices, %{"exists" => true, "git" => %{"repo" => true, "clean" => true}})
+
+    assert html =~ ~r{value="postgres"[^>]*checked}
+    refute html =~ ~r{value="mysql"[^>]*checked}
+    assert html =~ ~r{value="deps"[^>]*checked}
+    assert html =~ ~r{value="test"[^>]*checked}
+    refute html =~ ~r{value="components"[^>]*checked}
+    # Checked and tagged: the tag says why it is checked.
+    assert html =~ ~r{value="postgres".*?tag def">default<}s
+
+    assert Box.argv(@choices, %{}) == []
+    # The form sends the default set once any field moves: still the default.
+    assert Box.argv(@choices, %{"database" => "postgres", "ignore_files" => ["test", "deps"]}) ==
+             []
+
+    assert Box.argv(@choices, %{"ignore_files" => ["deps"]}) == ["--ignore-files", "deps"]
+    assert Box.argv(@choices, %{"database" => "mysql"}) == ["--database", "mysql"]
+    # Every box unticked is the default again: the installer has no "none".
+    assert Box.argv(@choices, %{"ignore_files" => [""]}) == []
+    html = screen(@choices, %{"exists" => true}, args: %{"ignore_files" => [""]})
+    assert html =~ ~r{value="deps"[^>]*checked}
+  end
+
+  # The whole shelf, off the package the console carries: every choice
+  # with a default starts checked on it — coverage's report groups and
+  # theme, exdoc's module groups once the project says which — so no
+  # box asks a question its default already answers.
+  test "on the whole shelf, every choice with a default starts checked on it" do
+    status = %{"exists" => true, "git" => %{"repo" => true, "clean" => true}}
+
+    for feature <- WorkbenchIgniter.Features.catalog(),
+        box = feature |> WorkbenchIgniter.Features.entry() |> Jason.encode!() |> Jason.decode!(),
+        # `archived` is the date and the reason, not a boolean.
+        !box["archived"],
+        !box["pending"] do
+      doc = box |> screen(status) |> LazyHTML.from_fragment()
+
+      for o <- box["options"] || [],
+          o["choices"],
+          default <- List.wrap(o["default"]),
+          is_binary(default) do
+        name = if o["multiple"], do: "opt[#{o["name"]}][]", else: "opt[#{o["name"]}]"
+        input = LazyHTML.query(doc, ~s(input[name="#{name}"][value="#{default}"]))
+
+        assert LazyHTML.attribute(input, "checked") != [],
+               "#{box["name"]} --#{o["name"]}: #{default} is the default and is not checked"
+      end
+    end
+  end
+
   test "a default read off the project shows the value the status read for it" do
     box = %{
       "name" => "exdoc",
@@ -217,7 +291,10 @@ defmodule ConsoleWeb.BoxInstallTest do
     assert html =~ "read off the project"
     # Nothing read: the field says where it would come from.
     assert html =~ ~r{id="opt-project_name"[^>]*placeholder="read off the project"}
-    # A choice read off the project carries the default's tag.
+    # A choice read off the project carries the default's tag, and is
+    # the one checked.
+    assert html =~ ~r{value="ash"[^>]*checked}
+    refute html =~ ~r{value="layers"[^>]*checked}
     assert html =~ ~r{value="ash".*?tag def">default<}s
     refute html =~ ~r{value="layers"[^<]*<[^>]*>[^<]*<span[^>]*tag def">default<}
     # Empty, the flag stays out: the installer reads the same value.

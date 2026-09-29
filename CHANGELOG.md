@@ -269,6 +269,25 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **A choice's default starts checked.** coverage's `--ignore-files`
+  boxes and `--html-theme` radios, exdoc's `--module-groups` once the
+  project said `layers`: the form tagged the default and left it
+  unchecked, on the rule that a default is shown and never filled in
+  — right for a text field, whose empty state *is* the default, and
+  wrong for a radio, where nothing on beside a *default* tag read as a
+  question the reader had to answer. The root: a choice was checked
+  only when the reader had picked it or the project reported it. It
+  is checked now when the form holds nothing else — the reader's pick
+  first, then what the project reports (a box in from birth on mysql
+  shows mysql, not postgres beside it), then the default — and the
+  line still leaves the flag out while the pick is the default, the
+  default set of boxes included, so pressing Insert at once gives
+  what the checked values promised. Every box unticked is the default
+  again: the installer has no value for "none". Checked on the whole
+  shelf off the package the console carries (`BoxInstallTest`): every
+  choice with a default, in every box that is not archived or pending,
+  starts checked on it.
+
 - **A paper's code blocks ignored the Files face.** `.md pre` read the
   reader's face for files, and its text did not: the block's `<code>`
   took the inline chip's `font-family` from `.md code`, so a README

@@ -51,7 +51,7 @@ Every command it runs is a job in its tray, with the output and exit code `wb.sh
     ```
 
 1. Modify the `./config.conf` file in order to configure the project name, the workspace and the stack the images are built from.
-  For complete configuration instruccions consult: [Configuration File](./CONFIG.md).
+  The file explains every setting above its line, and the console's configuration drawer shows the same text as each field's help.
 
 1. Make sure [Docker Desktop](https://www.docker.com/products/docker-desktop/) is running before running any script command.
 

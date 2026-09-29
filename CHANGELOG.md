@@ -208,6 +208,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Removed
 
+- **`CONFIG.md`, archived.** It was a second copy of what `config.conf`
+  says above each of its lines, and the copy had drifted: no
+  `JOB_NICENESS`, two image versions the file no longer carries,
+  examples from 2024. The file is the documentation of itself — the
+  console's drawer reads each comment block as its field's help
+  (`Console.Config`) — so the README points at the file and the drawer
+  now, and the one mention with the typo goes with it. What the paper
+  had on its own, how `new` weighs the installer against the stack, is
+  in `config.conf`'s note on `PHX_NEW_VERSION` in short and in this
+  changelog in full.
+
 - **The reference project's papers leave the repository.** `reference/`
   — the design of the project the series is built on, a light CMMS:
   candidates, stories, events, rules, glossary, ADRs, domains and their

@@ -30,6 +30,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **The New Project card asks nothing `config.conf` already answers.**
+  The *project name* field is gone from the card (its markup stays as a
+  comment in `new_project.ex` for now): the name is `config.conf`'s,
+  and a field beside it was noise, and one more way to end with a
+  project called one thing and its images and compose project called
+  another. The *node* row goes too: Node serves one option of one
+  cartridge, and whoever opens the configuration for any other reason
+  finds the field explained there. The stack the card shows reads
+  debian, elixir, erlang, installer.
+
 - **GitHub's mark is vendored like hex's.** A package from a
   repository on GitHub wore the Invertocat from the house's sprite
   (`assets/design/icons/github.svg`, since 2026-09-23): a tracing of no

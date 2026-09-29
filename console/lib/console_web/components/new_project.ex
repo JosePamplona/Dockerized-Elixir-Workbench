@@ -137,7 +137,27 @@ defmodule ConsoleWeb.NewProject do
             </.chip>
           </:mark>
         </.given>
-        <div class="frow">
+        <.given
+          label="debian"
+          value={@conf["DEBIAN_VERSION"]}
+          warn={born_arg(@born, "DEBIAN", "debian", @conf["DEBIAN_VERSION"])}
+        />
+        <.given
+          label="elixir"
+          value={@conf["ELIXIR_VERSION"]}
+          warn={born_arg(@born, "ELIXIR", "elixir", @conf["ELIXIR_VERSION"])}
+        />
+        <.given
+          label="erlang"
+          value={@conf["ERLANG_VERSION"]}
+          warn={born_arg(@born, "OTP", "erlang", @conf["ERLANG_VERSION"])}
+        />
+        <.given
+          label="installer"
+          value={installer(@conf)}
+          muted="the newest phx.new that runs on this stack"
+        />
+        <%!-- <div class="frow">
           <label for="new-name">project name</label>
           <span class="ro">
             <input
@@ -150,32 +170,7 @@ defmodule ConsoleWeb.NewProject do
               title="the app and module derive from it, and so do this workspace's images and its compose project"
             />
           </span>
-        </div>
-        <.given
-          label="elixir"
-          value={@conf["ELIXIR_VERSION"]}
-          warn={born_arg(@born, "ELIXIR", "elixir", @conf["ELIXIR_VERSION"])}
-        />
-        <.given
-          label="erlang"
-          value={@conf["ERLANG_VERSION"]}
-          warn={born_arg(@born, "OTP", "erlang", @conf["ERLANG_VERSION"])}
-        />
-        <.given
-          label="debian"
-          value={@conf["DEBIAN_VERSION"]}
-          warn={born_arg(@born, "DEBIAN", "debian", @conf["DEBIAN_VERSION"])}
-        />
-        <.given
-          label="node"
-          value={@conf["NODE_VERSION"]}
-          warn={born_arg(@born, "NODE", "node", @conf["NODE_VERSION"])}
-        />
-        <.given
-          label="installer"
-          value={installer(@conf)}
-          muted="the newest phx.new that runs on this stack"
-        />
+        </div> --%>
         <div class="frow">
           <label>mix phx.new</label>
           <div class="flags">

@@ -373,6 +373,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Removed
 
+- **`./wb.sh demo`.** It ran `new`, `up`, `logs` and `delete` in a
+  row, with a trap so that Ctrl+C on the logs moved on to the teardown:
+  the way to show the workbench when the workbench was a script alone,
+  and the most destructive verb it had, since it began by deleting
+  whatever project was there. The console is that demonstration now,
+  button by button, and the release rehearsal walked it that way
+  (2026-09-29). Gone from the script, its help, the README and the
+  console's list of verbs.
+
 - **Two papers of the package.** `igniter/la-estructura-de-los-cartuchos.html`,
   the decision page of the cartridge-structure review (its first phase
   landed on 2026-09-11: `state/1` on every cartridge, the composes, the

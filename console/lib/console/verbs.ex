@@ -14,7 +14,7 @@ defmodule Console.Verbs do
   the workspace config.conf names now (see `Console.Workbench.rebind/0`).
   """
 
-  @verbs ~w(new add eject bake commit up build stop down restart prune delete demo mix ps catalog status stacks expand config console help k6)
+  @verbs ~w(new add eject bake commit up build stop down restart prune delete mix ps catalog status stacks expand config console help k6)
 
   @doc "Every verb a job may start with."
   def verbs, do: @verbs
@@ -108,7 +108,7 @@ defmodule Console.Verbs do
   @spec reread(kind()) :: :fast | :full | :all | :config | :none
   def reread({:config, _}), do: :config
 
-  def reread({verb, _}) when verb in [:stop, :down, :restart, :prune, :remove, :demo, :mix],
+  def reread({verb, _}) when verb in [:stop, :down, :restart, :prune, :remove, :mix],
     do: :fast
 
   def reread({verb, _}) when verb in [:up, :build, :insert, :eject, :commit, :bake], do: :full

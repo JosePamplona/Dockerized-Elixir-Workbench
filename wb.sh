@@ -2277,12 +2277,6 @@
     command_content \
       "Delete the workspace's project files and its compose project. Asks first."
 
-    print_command "demo [--deploy TARGET]"
-    command_content \
-      "Run new, up, logs and delete in a row; Ctrl+C on the logs moves on to" \
-      "the teardown." \
-      "  --deploy TARGET   Deployment to demo (default: dev)."
-
     print_command "help"
     command_content \
       "Print this help."
@@ -3491,29 +3485,6 @@ if [ $# -gt 0 ]; then
         "No k6/$SCRIPT in the workspace. The scripts live in the project's k6/ directory."
       docker compose --file "$COMPOSE_TARGET" --profile tools run --rm k6 run "/scripts/$SCRIPT" "$@"
     else terminate "There is no project."; fi
-
-  elif [[ "$1" == "demo" ]]; then
-    WORKBENCH_SCRIPT="$WORKBENCH_SELF"; shift;
-
-    # One deployment end to end. The database needs no step of its own:
-    # the dev image creates it on boot, the release deployments migrate
-    # into the one postgres created.
-    parse_deploy_args "$@"
-
-    "$WORKBENCH_SCRIPT" new && \
-    "$WORKBENCH_SCRIPT" up --deploy "$DEPLOY_ARG" && \
-    {
-      # Following the logs blocks the demo while the application is
-      # tried out. Ctrl+C hits the whole foreground process group, so
-      # without the no-op trap it would also kill this script and the
-      # delete step would never run ('' instead of ':' would not do:
-      # children inherit an ignored SIGINT and the follower would not
-      # detach).
-      trap ':' INT
-      "$WORKBENCH_SCRIPT" logs
-      trap - INT
-      "$WORKBENCH_SCRIPT" delete
-    }
 
   elif [[ "$1" == "help" ]]; then
     help

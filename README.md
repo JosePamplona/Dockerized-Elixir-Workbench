@@ -254,18 +254,6 @@ In order to download private github registry images, you need to login to GitHub
 
 Replace `[GITHUB_USER]` and `[ACCESS_TOKEN]` with your corresponding user name and token. How to generate a token: [Personal Access Token (classic)](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic)
 
-### Demo
-
-This command runs the **new**, **up**, **logs** and **delete** commands consecutively for demonstration purposes. The logs block the demo while the application is tried out; Ctrl+C moves on to the teardown (gated by its own confirmation):
-
-```sh
-./wb.sh demo [--deploy TARGET]
-```
-
-`TARGET` is **dev** (the default), **prod** or **scaled**: the deployment to run end to end.
-
-> ⚠️ **Warning**: This action is destructive. Once executed, the current project files (if any) will be deleted, new ones will be created and finally deleted again and cannot be recovered. Before proceeding, make sure is safe to remove them if there is any.
-
 ### Checks
 
 Every push runs the same checks CI does (`.github/workflows/ci.yml`): the two scripts through [ShellCheck](https://www.shellcheck.net/), and each Elixir package — `igniter/`, `console/` — through the formatter, [Credo](https://hexdocs.pm/credo) in strict mode, [Dialyzer](https://hexdocs.pm/dialyxir) and its tests, on the Elixir and OTP its `.tool-versions` names. To run them before pushing:

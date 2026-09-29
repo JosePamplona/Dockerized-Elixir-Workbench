@@ -53,7 +53,7 @@ mix test --only exhaustive   # igniter, excluded by default: ~1 hour. Run it in 
 ## Papers and records
 
 - The root `CHANGELOG.md` is the record of what was done and why. Each cartridge's own `CHANGELOG.md` versions that box.
-- `RELEASE_PLAN.md` is the checklist for the portfolio release, judged by what a 90-second reviewer sees. `SCRIPT.md` lists the reference project's steps against the shelf. The reference project's design papers are the author's own and live outside the repository, in `_local/reference/` (gitignored); they were tracked as `reference/` until 2026-09-29.
+- The release plan (`RELEASE_PLAN.md`), the reference project's script (`SCRIPT.md`, its steps against the shelf) and the reference project's design papers are the author's own and live outside the repository, in `_local/` and `_local/reference/` (gitignored). They were tracked until 2026-09-29 (`reference/` until the 28th), and the CHANGELOG and the cartridges' papers still cite them by name.
 - A cartridge's README/NEED opens with what the tool solves for anyone. A cartridge never names the collections that pick it.
 - A visual or design question is settled with a standalone HTML page in the repo, never a Claude artifact. The page is deleted once decided, and the CHANGELOG keeps the record.
 - The design tokens and components (`.cart-ref`, `.stamp`, `.unlit`) are in `assets/design/` (`build.py` → `generated/`). Show what is unavailable as disabled with a reason; never hide it.

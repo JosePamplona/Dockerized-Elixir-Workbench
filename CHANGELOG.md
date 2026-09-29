@@ -14,6 +14,21 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+### Removed
+
+- **`RELEASE_PLAN.md` and `SCRIPT.md` leave the repository for
+  `_local/`**, where `reference/` went the day before: the three are
+  the author's own papers — the release checklist with the series and
+  the site it plans, and the reference project's script, which
+  summarises the design that left and links to it. A reader of the
+  public repository gets the workbench and the record of why it is
+  shaped so (the CHANGELOG, the cartridges' papers), not the author's
+  plans; the papers that cite `SCRIPT.md` as "the author's selection"
+  (exdebug, toolchain, version_manager, test_doubles, the
+  `project-design` skill) cite it as it was, a paper that lives outside
+  the repository now. Both go out of the history with `reference/` at
+  the cut.
+
 ## v0.14.0 - (2026-09-29)
 
 ### Added

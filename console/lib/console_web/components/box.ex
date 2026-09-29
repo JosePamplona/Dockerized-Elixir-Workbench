@@ -147,7 +147,7 @@ defmodule ConsoleWeb.Box do
   def files_unlit(box, status) do
     cond do
       box["pending"] ->
-        "the box is designed; its installer is not done yet"
+        "the box is designed, not built: nothing inserts it yet"
 
       box["collection"] ->
         if member_inserts(box, status) == [],
@@ -566,7 +566,7 @@ defmodule ConsoleWeb.Box do
             <.chip
               :if={@box["pending"]}
               class="warn"
-              title="the box is designed; its installer is not done yet"
+              title="the box is designed, not built: nothing inserts it yet"
             >
               not done
             </.chip>
@@ -589,7 +589,7 @@ defmodule ConsoleWeb.Box do
           <h4>{title(@box)}</h4>
           <p>
             {@box["summary"] ||
-              "Documented in the generated project, but its installer is not done yet."}
+              "Designed and documented; not built yet, so nothing inserts it."}
           </p>
           <div :if={@box["need"]} class="need">
             <p class="want">{ticked(@box["need"]["line"])}</p>
@@ -1012,7 +1012,7 @@ defmodule ConsoleWeb.Box do
             args={"add #{@box["name"]}#{if @argv != [], do: " " <> Enum.join(@argv, " ")}"}
             why={
               cond do
-                @box["pending"] -> "no installer yet: nothing to run"
+                @box["pending"] -> "not built yet: nothing to run"
                 # The installer still works; the console is not where it
                 # is forced. The shell's flag is, and the command above
                 # already carries it.

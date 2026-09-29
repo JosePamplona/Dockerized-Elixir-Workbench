@@ -51,6 +51,21 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **A pending box says it is not built, in no word the console uses
+  for something else.** *Installer* is the Phoenix generator across the
+  console — the New Project card's row, the Record's, the drawer's
+  list — and a pending box said "its installer is not done yet",
+  meaning its own Igniter installer, which the package calls that and
+  the reader never sees. Two things, one word, two screens apart. The
+  five strings (the *not done* chip, the Files sheet's reason, the
+  default summary on the box and the shelf, the Insert button's
+  reason) now say what the reader needs: designed, not built, nothing
+  inserts it yet — in the house's own verb. The package keeps its
+  vocabulary: a cartridge's *installer* is its installer and its
+  *task* is `task.ex`, so "its task is not written yet", the wording
+  the plan had in mind, would have named another piece of the same
+  box.
+
 - **The console's boxes are three families, and two of them are the
   house's.** The question was whether Project › Mix should sit in a
   card like the Deploy screen's; the answer came from an inventory of

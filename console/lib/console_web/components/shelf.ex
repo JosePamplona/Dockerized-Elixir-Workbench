@@ -47,7 +47,7 @@ defmodule ConsoleWeb.Shelf do
   # Which of the catalog each state holds. A cartridge that is in is in,
   # whatever else it is — a project carrying a retired box is told the
   # truth about its own project first; of the rest, the retired are
-  # archived, then the ones with no installer yet are not done, and the
+  # archived, then the ones not built yet are not done, and the
   # others are on the shelf.
   defp state(status, e) do
     cond do
@@ -404,9 +404,7 @@ defmodule ConsoleWeb.Shelf do
           in: the mention opens the box. --%>
     <tr class={[@installed && "in", @e["pending"] && "pending", @e["archived"] && "archived"]}>
       <td class="th"><img src={"/covers/#{front(@e)}"} alt="" draggable="false" /></td>
-      <td title={
-        @e["summary"] || "Documented in the generated project, but its installer is not done yet."
-      }>
+      <td title={@e["summary"] || "Designed and documented; not built yet, so nothing inserts it."}>
         <.cart_ref name={@e["name"]} installed={@installed} />
       </td>
       <td>
@@ -442,7 +440,7 @@ defmodule ConsoleWeb.Shelf do
             or why it cannot: the row sent the bare `add NAME` for a day
             (2026-09-10), and a verb with options to pick is pressed where
             they are. Never unlit: the screen reads for every box, and it
-            is the screen that says "no installer yet". --%>
+            is the screen that says "not built yet". --%>
       <td class="act">
         <.link
           class="btn primary"

@@ -15,7 +15,8 @@ already carrying what that command installed is a major.
   tagged `network: :ash_hq`, and `mix workbench.ash.site` is gone.
   `mix test` excludes the `:network` group — every test that reads a
   third party — and `mix test --only network:ash_hq` runs these alone,
-  as the weekly job now does (`.github/workflows/ash-site.yml`). The
+  or `--only network` for the whole group, as the weekly job now does
+  (`.github/workflows/network.yml`, which was `ash-site.yml`). The
   comparison is the same (`site.ex` keeps `fetch/0` and the two
   comparisons), the report reads the same, and a difference is now a
   failing test with the `!!` lines as its message. README, *Keeping up

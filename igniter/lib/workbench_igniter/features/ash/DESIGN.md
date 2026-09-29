@@ -377,7 +377,7 @@ goes both ways: a package the site added to a section, stopped listing
 or moved to another, a section opened or closed, and each strategy of
 *Authentication* against `--auth`'s list. What waits for an installer
 ("coming soon") is reported apart and does not fail the run, so a
-weekly CI job (`.github/workflows/ash-site.yml`) can run it: a red run
+weekly CI job (`.github/workflows/network.yml`) can run it: a red run
 means something to follow. It was a Mix task of its own
 (`mix workbench.ash.site`) until 2026-09-29, when it became three
 tests tagged `network: :ash_hq`, which `mix test` excludes and

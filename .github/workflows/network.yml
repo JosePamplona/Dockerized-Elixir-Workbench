@@ -1,0 +1,45 @@
+# The tests that read a third party: the `:network` group of the
+# igniter's suite (test_helper.exs), which `mix test` leaves out. Each
+# checks that a public resource a cartridge copied still answers as
+# the cartridge expects — ash-hq.org's installer against the ash
+# cartridge (`network: :ash_hq`) today. A third party changes on its
+# own schedule, so once a week this job reads them all. A red run is a
+# list of what to update by hand in a cartridge, not a broken build:
+# it runs apart from CI and never on a push, since it depends on the
+# network and on sites that are not ours. The group takes no
+# credentials; a resource that needs a key gets a job of its own.
+name: Third parties
+
+on:
+  schedule:
+    - cron: "0 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  network:
+    name: The shelf against the third parties it copies
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: igniter
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: erlef/setup-beam@v1
+        id: beam
+        with:
+          version-file: igniter/.tool-versions
+          version-type: strict
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            igniter/deps
+            igniter/_build
+          key: igniter-network-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ hashFiles('igniter/mix.lock') }}
+
+      - run: mix deps.get
+      - run: mix test --only network

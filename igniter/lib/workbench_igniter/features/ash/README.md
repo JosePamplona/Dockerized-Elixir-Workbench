@@ -175,9 +175,9 @@ mix test --only network:ash_hq
 
 It writes nothing. Run it before releasing a new version of the
 cartridge, and whenever the site announces a package. CI also runs it
-every Monday and on demand (`.github/workflows/ash-site.yml`, *Run
-workflow*), apart from the build: a red run is a to-do list, not a
-broken commit.
+every Monday and on demand, with the rest of the `:network` group
+(`.github/workflows/network.yml`, *Run workflow*), apart from the
+build: a red run is a to-do list, not a broken commit.
 
 **What it reads.** Two things the site serves: the home page, whose
 widget groups the features in sections (`<div data-category="AI">`,

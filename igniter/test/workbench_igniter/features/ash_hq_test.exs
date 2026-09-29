@@ -4,7 +4,7 @@ defmodule WorkbenchIgniter.Features.Ash.HqTest do
   # The ash cartridge against ash-hq.org as it is today. `mix test`
   # leaves it out (test_helper, `:network`); it runs by name, with the
   # network — `mix test --only network:ash_hq` — and every Monday from
-  # `.github/workflows/ash-site.yml`. A failure is a list of what to
+  # `.github/workflows/network.yml`. A failure is a list of what to
   # update by hand in the cartridge's tables (README, *Keeping up with
   # the site*), not a broken build. What the tests compare is read off
   # fixtures in ash_site_test.exs; here the site is the fixture.

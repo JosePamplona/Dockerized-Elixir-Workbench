@@ -26,8 +26,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `:exhaustive`, so `mix test` and CI stay off the network; the tag's
   value names the resource, so `mix test --only network:ash_hq` runs
   one third party's tests and `--only network` runs them all, which is
-  what the weekly job runs now. The group takes no credentials: what
-  needs a key is not in it. The next members are the ones the shelf
+  what the weekly job runs now: `ash-site.yml` is
+  `.github/workflows/network.yml`, the group's job, and a new third
+  party is a test file with its tag, never a workflow. The group takes
+  no credentials: what needs a key gets a job of its own. The next members are the ones the shelf
   already reads by hand — the Elixir image's tags, hex.pm for
   Phoenix's version. The precommit cartridge's `test` check stays
   `mix test`: which groups a project's suite leaves out is its

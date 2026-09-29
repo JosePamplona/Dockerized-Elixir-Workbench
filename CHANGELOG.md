@@ -51,6 +51,29 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **The release, rehearsed on a fresh clone.** The path a reader
+  takes from GitHub, walked with Docker emptied of images first: a
+  clone in a scratch directory, `./wb.sh console`, a project created
+  from the browser, Up dev, the app on its port, Delete. It holds.
+  The console's image built in four minutes and the console answered
+  the moment it was up — the image carries a release, nothing compiles
+  on the first run; Create project took 142 s, Up dev 44 s with the
+  app answering 36 s later on the first free port, Delete 11 s. Found
+  and fixed on the way: `wb.sh` and `build.py` tracked without their
+  executable bit, and CI running the console's suite without the
+  bundle it reads. The README's first step, "give execution
+  permissions to `./wb.sh`" with a `sudo`, was the patch for that bit
+  and is gone. One thing found and left open: run from the console,
+  `delete` removes the files, the containers, the images and the
+  database's volume, and leaves the two build volumes the console
+  itself mounts for its resident (`<name>_deps`,
+  `<name>_workbench_build`) and their two empty mount-point
+  directories in the workspace — a running container's volumes cannot
+  be removed from inside it, and the errors are swallowed, so the job
+  ends with exit 0 and the Danger card's "its volumes" is not the
+  whole truth there. From a shell, with the console down, everything
+  goes. An issue, with the release.
+
 - **A door follows the page when the project moves it.** exdoc's
   docs door named `doc` and coverage's report door named `cover`, so a
   project that wrote its docs elsewhere — tunez, to `priv/static/doc`,

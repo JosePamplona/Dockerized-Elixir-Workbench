@@ -44,12 +44,6 @@ Every command it runs is a job in its tray, with the output and exit code `wb.sh
 
 ## Configuration
 
-1. Give execution permissions to the `./wb.sh` file (this step only needs to be performed once):
-
-    ```sh
-    sudo chmod +x wb.sh
-    ```
-
 1. Modify the `./config.conf` file in order to configure the project name, the workspace and the stack the images are built from.
   The file explains every setting above its line, and the console's configuration drawer shows the same text as each field's help.
 

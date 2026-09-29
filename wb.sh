@@ -2796,17 +2796,18 @@ if [ $# -gt 0 ]; then
 
       if ! workspace_git revert --no-commit "$SHA" > /dev/null 2>&1; then
         UNMERGED=$(git_read diff --name-only --diff-filter=U 2>/dev/null)
+        mapfile -t UNMERGED_FILES < <(printf '%s' "$UNMERGED")
         FOREIGN=$(grep -vxF -f <(printf '%s\n' "${OURS[@]}") <<< "$UNMERGED")
         if [ -n "$UNMERGED" ] && [ -z "$FOREIGN" ]; then
-          # shellcheck disable=SC2086  # word splitting intended: file names, none with spaces
-          workspace_git checkout --ours -- $UNMERGED > /dev/null 2>&1 && workspace_git add -- $UNMERGED
+          workspace_git checkout --ours -- "${UNMERGED_FILES[@]}" > /dev/null 2>&1 && \
+            workspace_git add -- "${UNMERGED_FILES[@]}"
         else
           # Said before the revert is abandoned, while the markers are
           # in the files: which files, where, and who wrote there since
           # — a cartridge inserted after this one, which is the usual
           # case and whose eject first clears the way, or a commit of
           # the reader's own.
-          REPORT=$'\n'"$(revert_conflicts "$SHA" $UNMERGED)"$'\n'"Newest first: the order to eject them in."$'\n'
+          REPORT=$'\n'"$(revert_conflicts "$SHA" "${UNMERGED_FILES[@]}")"$'\n'"Newest first: the order to eject them in."$'\n'
           workspace_git revert --abort 2>/dev/null || workspace_git reset -q --hard HEAD
           terminate \
             "The revert does not apply: files the cartridge wrote were written" \

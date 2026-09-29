@@ -51,6 +51,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **The README asks for Docker, not Docker Desktop.** Its first
+  sentence and its first step named Desktop as the one thing to
+  install. On Linux that is the worst route — the CHANGELOG's own
+  verdict when the builds left the bind mount — so the step now says
+  which: the native Engine on Linux, Desktop on macOS and Windows.
+  Two typos of the same screen with it ("his directory", "scalated"),
+  and the licence year runs to 2026.
+
 - **A paper's headings carry GitHub's ids, and the index is a link to
   them.** Every `h1` to `h4` of a rendered paper — a box's, the
   workbench's, the project's — has for id its own words as GitHub

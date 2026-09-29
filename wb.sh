@@ -727,7 +727,7 @@
   require_node_version() {
     [ -n "$NODE_VERSION" ] || terminate \
       "NODE_VERSION is not set in config.conf: the major of the Node the images" \
-      "carry, from NodeSource (24). Add 'export NODE_VERSION=\"24\"' below DEBIAN_VERSION."
+      "carry, from NodeSource (24). Add 'export NODE_VERSION=\"24\"' below PHX_NEW_VERSION."
   }
 
   # create_local_dockerfile

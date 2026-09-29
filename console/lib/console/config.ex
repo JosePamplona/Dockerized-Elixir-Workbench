@@ -4,7 +4,7 @@ defmodule Console.Config do
   a field, the comment block above it its help, the `# ---` lines its
   sections, `# --` a group inside one, the commented-out exports and the
   stack tags its alternatives. Read off the mount and never written
-  here: the writer is `wb.sh config set` (see console/PLAN.md).
+  here: the writer is `wb.sh config set` (see console/README.md).
 
   A comment block belongs to whatever follows it with no blank line in
   between: an export takes it as its help; a blank line leaves it

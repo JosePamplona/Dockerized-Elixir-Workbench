@@ -70,7 +70,7 @@ defmodule Console.MixProject do
       # The papers a box carries, rendered escaping the HTML in them (console/README.md).
       {:mdex, "~> 0.13"},
       # The workbench's own package: the catalog is read in this BEAM, off the
-      # cartridges' manifests, never off a project (console/PLAN.md).
+      # cartridges' manifests, never off a project (console/README.md).
       {:workbench_igniter, path: "../igniter"},
       {:makeup, "~> 1.2"},
       {:makeup_elixir, "~> 1.0"},

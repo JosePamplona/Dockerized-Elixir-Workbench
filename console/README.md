@@ -84,12 +84,11 @@ and the verb:
 | `Console.Config` | `config.conf` read as the form it is: sections, fields, help, alternatives |
 | `Console.Diffs` | what a cartridge wrote, off the workspace's git: the insert commit's files, a collection's range when its members are contiguous, both faces of every file cut into lines through `Console.Highlight` |
 | `Console.Project` | the project's own README, CHANGELOG and `.env`, the last with its secrets masked before it leaves the module |
-| `Console.Cluster` | the two probes of the Cluster screen, run by the console: four requests to the balancer, `Node.list()` through the release's rpc |
 | `Console.Papers` | a box's README, DESIGN and CHANGELOG off the mount, rendered by MDEx with the HTML in them left out, links rewritten to what the console opens |
 | `Console.ANSI` | a line of `wb.sh` output as safe HTML, its colours kept as spans |
 | `ConsoleWeb.Plugs.CSP` | the content security policy, with a nonce per response |
 | `ConsoleWeb.ConsoleLive` | the page: the screen in the URL (`/deploy`, `/jobs`…), what arrives, what the reader does |
-| `ConsoleWeb.Board`, `Deploy`, `JobsScreen`, `Shelf`, `Box`, `ProjectScreen`, `Cluster`, `Terminal`, `WorkbenchDrawer` | the rail, the screens, the box in hand and the workbench's drawer, one module each |
+| `ConsoleWeb.Board`, `Deploy`, `JobsScreen`, `Shelf`, `Box`, `ProjectScreen`, `Terminal`, `WorkbenchDrawer` | the rail, the screens, the box in hand and the workbench's drawer, one module each |
 | `ConsoleWeb.Refs` | the house's notation as components: the mention, the door, the probe, the chip |
 | `ConsoleWeb.Cartridges` | what the page works out of the status and the catalog about a cartridge |
 | `ConsoleWeb.CoversController` | serves the box covers from `assets/covers` |
@@ -101,14 +100,69 @@ ground, the clock, the wb.sh line's history and Tab completion — in
 `assets/js/hooks.js` and this browser's `localStorage`.
 
 Styles: one stylesheet, `priv/static/assets/css/console.css`, written by
-hand and shared with the mock — `mock/build.py` inlines it, the console
-serves it as it is — beside `tokens.css` and `components.css`, which
-`assets/design/build.py` projects there from the house tokens. The mock
-stays the place to try an interaction before it is built here.
+hand, beside `tokens.css` and `components.css`, which
+`assets/design/build.py` projects there from the house tokens. (The
+mock it was once shared with is retired since 2026-09-05; a visual
+question is settled on a standalone page, then retired.)
 
 The console is published on `127.0.0.1` only and keeps the origin check
 on in dev: it drives Docker and wipes workspaces, and no page the reader
 visits while it is up may open its socket.
+
+## The architecture, as settled
+
+Settled in the console's port plan (`console/PLAN.md`, 2026-09-02 to
+2026-09-27, closed on 2026-09-29 and kept in git history) and kept here
+as what the code cites.
+
+| Piece | Where | What |
+| --- | --- | --- |
+| `wb.sh` | the host, bash and Docker only | the one implementation of the verbs |
+| the console | a container on the workbench's image, as a release | the LiveView; carries the igniter package; mounts the workbench and the socket; runs `wb.sh` in its own container, mix and git in-process |
+| the resident | a process beside the console, `mix workbench.serve` on a Port | the one BEAM with the project loaded; answers `status` and `expand`, with the app up or down |
+| the dev `app` | the workspace's compose | the project compiled and running |
+| volumes | inside the engine | `_build` and `deps` of the workspace and of the console, and `<project>_workbench_build` for what the workbench compiles; the bind mount carries source only |
+
+Four rules that stay fixed: nothing compiles through the bind mount; no
+question starts a BEAM; the host needs Docker and nothing else; `wb.sh`
+alone writes the workspace and `config.conf`.
+
+The decisions the code leans on, each dated in the plan:
+
+- **The resident, not `:erpc`** (2026-09-06). Asking the dev node by
+  distribution would cost a named, cookied dev node, the console on the
+  workspace's network, the OTP pinned once the console is a release —
+  and, with the app down, nobody could say what the project carries.
+  The resident answers with the app down. What was wrong, two BEAMs
+  compiling into one `_build`, is fixed by the workbench compiling into
+  a volume of its own.
+- **The console is the toolchain** (2026-09-04). `wb.sh` run inside the
+  console runs mix and git in this process at `/app/src`, where the
+  workspace is mounted a second time under the app's volumes;
+  `toolchain_here` checks the mount against `config.conf` and goes back
+  to containers when the console was started for another workspace,
+  which the band then says, with *Start again*.
+- **The project's pages are served by the console** (2026-09-20).
+  `mix docs`' `doc/` and coveralls' `cover/` are read off the workspace
+  and served by `ConsoleWeb.Reports`, a second listener on a port of its
+  own — another origin, so the project's JavaScript never runs on the
+  page that runs `wb.sh --yes` — read-only, loopback names only. The
+  project carries no route for them: a door of kind `:output`, unlit
+  with the reason until built, `build:` as the button. `check_origin`
+  names the port the browser sees.
+- **The probes reach the app through `host.docker.internal`**
+  (2026-09-02); the doors stay `localhost`, for the browser.
+- **The console is a release** (2026-09-27), compiled at the workbench's
+  host path so the package reads a cartridge's papers where it was
+  compiled; `Console.Application` scrubs the release's runtime from the
+  environment every job inherits.
+- **What belongs where.** The client owns the reader's arrangement
+  (`localStorage`); the URL owns where the reader is (`handle_params`);
+  the server owns the workbench's facts. Logs and the terminal are lines
+  pushed to a hook that keeps and filters them.
+- **No cluster screen** (2026-09-26). The console reads no cluster: the
+  addresses are on Docker and the Deploy sheet, `Node.list()` two
+  keystrokes into an `rpc` session.
 
 ## The terminal
 
@@ -126,22 +180,11 @@ ends; so does the remsh, which is why closing an iex session sends it
 SIGTERM and waits for it before the port, its stdin, is closed.
 History and Ctrl+L live in the client.
 
-## Not verified yet
+## Foreign content
 
-The Cluster screen — the table off the status's addresses and
-publishers, the two probes — is built but was not seen against a
-scaled deployment with clustering inserted; the workspace at hand has
-neither.
-
-What to settle before that porting starts — the contracts `wb.sh` still
-owes the console, what belongs to the client, and the order to build in
-— is in [`PLAN.md`](PLAN.md).
-
-### What to settle when the documents are ported
-
-Both are about rendering, in a page, content the console did not write —
-a cartridge's papers and the files its installer produced. Neither costs
-anything if it is decided up front, and both are expensive later.
+Two rules about rendering, in a page, content the console did not write
+— a cartridge's papers and the files its installer produced. Both were
+decided before the papers were ported, and the reasons stay here.
 
 **Markdown must escape the HTML in it.** The mock renders a cartridge's
 README with `marked`, which dropped its sanitiser years ago and passes

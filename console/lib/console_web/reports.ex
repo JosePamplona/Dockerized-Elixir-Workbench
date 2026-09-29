@@ -16,7 +16,7 @@ defmodule ConsoleWeb.Reports do
   a real origin of their own — ExDoc's `localStorage`, its search, its
   theme all work as they do on HexDocs. Nothing here reads the session,
   and nothing here can change anything: GET and HEAD only.
-  (console/PLAN.md, *The project's pages are served by the console*.)
+  (console/README.md, *The architecture, as settled*: the project's pages.)
   """
   use Plug.Builder, copy_opts_to_assign: :reports
 

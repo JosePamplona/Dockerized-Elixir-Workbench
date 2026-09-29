@@ -208,6 +208,27 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Removed
 
+- **`console/PLAN.md`, closed and archived.** The console's port plan
+  (2026-09-02 to 2026-09-27) is done: the six steps of its order, the
+  volumes and the release all landed, and what it still called open is
+  settled in its last section — the third step, the node, is retired,
+  as *The resident stays* (2026-09-06) had already decided and the
+  release's section forgot; the *Which* of its first section and the
+  two the first step left open were decided in practice or the same
+  day; the covers, the single stylesheet, `docker events` and NEED's
+  four parts are done or moot. Two things stay open and go to
+  `RELEASE_PLAN.md`, Phase 1: the word *installer* for a cartridge's
+  installation, and where a project moved its docs' or coverage's
+  output. The paper goes to `_archived/` with the retired decision
+  pages, out of git, which keeps it in history. What the code cited
+  from it — the pieces, the four fixed rules, the resident over
+  `:erpc`, the console as the toolchain, the project's pages on their
+  own origin, the release, what belongs to the client — is now
+  `console/README.md`, *The architecture, as settled*, and the ten
+  citations point there. The README also drops what was no longer
+  true: the Cluster module and screen (retired 2026-09-26), the mock as
+  a living thing, and *Not verified yet*.
+
 - **The *Detail* link on the New Project card's workspace row.** The
   `existing project` chip stays and says what Create would overwrite;
   the Record is the Project tab's, and the card that asks for the next

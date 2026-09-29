@@ -141,7 +141,7 @@ uses a function pattern: grouping by behaviour is this cartridge's.
 **The console's pages carry a foreign origin's script.** ExDoc's pages
 run JavaScript — search, the sidebar, settings in `localStorage`. The
 console, on the other side, is the page that runs `wb.sh --yes`.
-`console/PLAN.md` (*The project's pages are served by the console*)
+`console/README.md` (*The architecture, as settled*)
 records the decision this cartridge relies on: the pages are served on
 a listener apart from the console's, another port, so another origin,
 read-only and limited to the directories the inserted cartridges
@@ -485,8 +485,9 @@ which the hooks also serve.
    `deps/ex_doc` on 2026-09-21.
 2. ExDoc 0.40.4, `lib/ex_doc/formatter.ex`, `copy_assets/2`, read on
    2026-09-21.
-3. `console/PLAN.md`, *The project's pages are served by the console,
-   settled on 2026-09-20*, in this repository.
+3. `console/README.md`, *The architecture, as settled* — the decision
+   of 2026-09-20, first recorded in `console/PLAN.md`, closed on
+   2026-09-29 and kept in git history — in this repository.
 4. ExDoc 0.40.4, `lib/ex_doc/config.ex`, `match_module/4`, and
    `lib/ex_doc/retriever.ex`, where `:kind` is put into the metadata,
    read on 2026-09-21.

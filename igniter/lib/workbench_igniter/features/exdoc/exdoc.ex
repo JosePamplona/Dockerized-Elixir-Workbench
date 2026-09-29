@@ -3,7 +3,7 @@ defmodule WorkbenchIgniter.Features.Exdoc do
   ExDoc's site for the project, with per-feature extra pages (the test
   suite report, the changelog, and whatever another cartridge lists with
   `list_page/4` — dbschema's database page). `mix docs` writes it to `doc/`,
-  and the console serves it off the workspace (console/PLAN.md): the
+  and the console serves it off the workspace (console/README.md): the
   project carries no route, no controller and no environment for it.
 
   Full feature cartridge: manifest, install logic, EEx templates and the

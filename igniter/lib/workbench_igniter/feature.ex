@@ -354,7 +354,7 @@ defmodule WorkbenchIgniter.Feature do
       `{label, {:output, dir, index}}`: what a tool of the project
       writes for its reader (`{"docs", {:output, "doc", "index.html"}}`),
       which the console serves off the workspace on an origin of its
-      own, so the project needs no route for it (console/PLAN.md). A
+      own, so the project needs no route for it (console/README.md). A
       page on disk says how it is made, `build:`: the Mix task of the
       project that writes it (`build: "docs"`), so the console can
       offer it where the page is not there yet — it runs

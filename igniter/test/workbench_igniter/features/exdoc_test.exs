@@ -59,7 +59,7 @@ defmodule WorkbenchIgniter.Features.ExdocTest do
 
       files = igniter.assigns[:test_files]
 
-      # The console serves `doc/` off the workspace (console/PLAN.md): the
+      # The console serves `doc/` off the workspace (console/README.md): the
       # router is phx.new's, and the site is `mix docs`'s alone to write.
       assert files["lib/test_web/router.ex"] ==
                apply_igniter!(before).assigns[:test_files]["lib/test_web/router.ex"]

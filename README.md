@@ -4,15 +4,42 @@
 
 [![CI](https://github.com/JosePamplona/Dockerized-Elixir-Workbench/actions/workflows/ci.yml/badge.svg)](https://github.com/JosePamplona/Dockerized-Elixir-Workbench/actions/workflows/ci.yml)
 
-This is a script for creating [Elixir](https://elixir-lang.org/) projects with the [Phoenix](https://www.phoenixframework.org/) framework and deploying them on `localhost` using a specific service architecture with Docker containers. It eliminates the need to install anything other than Docker to create, develop, and serve the project in either a development, production, or a scaled deployment.
+Phoenix projects created and run on `localhost` with nothing installed on the host but Docker. Three parts: `wb.sh`, the script that generates a project into its own workspace and runs every mix and git step in a container; a package of **cartridges** (`igniter/`), features that go into the project as one commit each and come out the same way; and a **console** that drives both from the browser.
 
-The workbench stays permanently in this directory. Projects are generated into the **workspace** directory (`WORKSPACE_PATH` in `config.conf`), each one owning its `docker-compose.yml` with its name, ports and images baked in — several workspaces can run simultaneously without conflicts. The Elixir configuration is delegated to the **workbench_igniter** package (`igniter/`), whose tasks run inside the containers.
+![The console: a project up, its containers and doors on the rail, the Deploy screen with its three deployments](assets/readme/console.png)
+
+## Quickstart
+
+```sh
+git clone https://github.com/JosePamplona/Dockerized-Elixir-Workbench.git
+cd Dockerized-Elixir-Workbench
+./wb.sh console          # builds the workbench image (four minutes, once), then http://localhost:4100
+```
+
+In the console, **Create project** generates a stock Phoenix project with its base cartridges and makes its first commit (about two minutes); **Up dev** brings it up, and the rail says on which port it answers — the first free one from `4000`. The same from a shell:
+
+```sh
+./wb.sh new --name "My App"  # the project, into the workspace config.conf names (_workspaces/_001)
+./wb.sh add exdoc            # a cartridge, as one commit; ./wb.sh catalog lists the shelf
+./wb.sh up                   # dev, detached: the boot compiles the project with what was added; ./wb.sh logs follows it
+```
+
+Every feature is a **box on the shelf**: a cover, its papers — what it installs, the need it answers, why it is shaped so — and the form of its options. Inserted, it is one commit in the project; ejected, one revert.
+
+![The shelf: the cartridges as boxes with their covers, filtered to the ones on offer](assets/readme/shelf.png)
+
+## Why it is shaped like this
+
+- **One compose per workspace, and a pod inside it.** A project owns its orchestration, with names and ports baked in, so several run side by side; inside, every service joins one network namespace and reaches the others on `localhost`, so Phoenix's own configuration stays untouched. [The Workspace](#the-workspace), below.
+- **A feature is a cartridge: one commit in, one revert out.** What it installs, the need it answers and the reasoning behind it are papers in its own directory. The anatomy: [igniter/lib/workbench_igniter/features/README.md](igniter/lib/workbench_igniter/features/README.md). Three papers to read first: [health_probe](igniter/lib/workbench_igniter/features/health_probe/DESIGN.md) (the reference), [clustering](igniter/lib/workbench_igniter/features/clustering/DESIGN.md) and [ecto](igniter/lib/workbench_igniter/features/ecto/DESIGN.md).
+- **The console reads what the project has, and asks it to carry nothing for the console's sake.** Its architecture, as settled: [console/README.md](console/README.md).
+- **The record is the CHANGELOG**: what was done and why, decision by decision. [CHANGELOG.md](CHANGELOG.md).
 
 ## The Workspace
 
 The workbench stays in its directory and never changes shape. What it builds does — every cartridge and every deployment adds its own containers, routes and edges — so the shape of a project is not described here: each cartridge's README says what it installs and how it is wired, the [deployments](#deployment) say what they bring up, and the workbench itself tells what is there right now (`./wb.sh status`) and what could be (`./wb.sh catalog`). What follows is the part that holds for every project.
 
-A project is generated into its **workspace** (`WORKSPACE_PATH`), which owns its orchestration: a `docker-compose.yml` with the project's name, images and host ports baked in at creation — the first free ones from `4000` (application) and, when the cartridges that bring them are in, `5050` (pgAdmin) and `3000` (Grafana): free meaning nothing listens on them and no other workspace under `_workspaces/` has them in a compose file of its own, so several workspaces run side by side whether or not they were up when the next one was made. `up` refuses, naming the holder, when a port the file publishes is taken meanwhile; the fix is the port line in the file. Inside it the services follow the **pod pattern**: a `network` container owns the workspace's network namespace and its published ports, and every other service joins it, so they all reach each other on `localhost` and the project keeps Phoenix's default database configuration untouched. The database is never published: it is reachable only from inside its workspace.
+A project is generated into its **workspace** (`WORKSPACE_PATH`), which owns its orchestration: a `docker-compose.yml` with the project's name, images and host ports baked in at creation — the first free ones from `4000` (application) and, when the cartridges that bring them are in, `5050` (pgAdmin) and `3000` (Grafana): free meaning nothing listens on them and no other workspace under `_workspaces/` has them in a compose file of its own, so several workspaces run side by side whether or not they were up when the next one was made. `up` refuses, naming the holder, when a port the file publishes is taken meanwhile; the fix is the port line in the file. Inside it the services follow the **pod pattern**: a `pod` container owns the workspace's network namespace and its published ports, and every other service joins it, so they all reach each other on `localhost` and the project keeps Phoenix's default database configuration untouched. The database is never published: it is reachable only from inside its workspace.
 
 ### Orchestration files of a workspace
 
@@ -57,7 +84,7 @@ Every command it runs is a job in its tray, with the output and exit code `wb.sh
     ./wb.sh new --name "Lorem Ipsum"
     ```
 
-    This command generates a **vanilla** project into the workspace: a stock `phx.new` project plus only what the workspace needs to boot it — the endpoint bound to `0.0.0.0`, the `.env`/`.env.sample` files the compose `env_file` requires, and the `.env` entry in `.gitignore`. It also runs `mix phx.gen.release --docker`, which `phx.new` does not: the production `Dockerfile` it generates is what `up --env prod` builds from. Finally it bakes the workspace's own `docker-compose.yml` and `Dockerfile.local`.
+    This command generates a **vanilla** project into the workspace: a stock `phx.new` project plus only what the workspace needs to boot it — the endpoint bound to `0.0.0.0`, the `.env`/`.env.sample` files the compose `env_file` requires, and the `.env` entry in `.gitignore`. It also runs `mix phx.gen.release --docker`, which `phx.new` does not: the production `Dockerfile` it generates is what `up --deploy prod` builds from. Finally it bakes the workspace's three compose files and its `Dockerfile.local`.
 
     It can accept all option flags from the task `mix phx.new` like `--no-html` or `--no-ecto` (Full task [phx.new](https://hexdocs.pm/phoenix/Mix.Tasks.Phx.New.html) documentation).
 
@@ -88,7 +115,7 @@ The running system is managed with:
 ./wb.sh down              # Remove the containers (data volumes survive)
 ```
 
-Images can be (re)built without deploying with `./wb.sh build [-e, --env ENV] [OPTIONS]` — the dev image from the project's `Dockerfile.local`, or the production release image with `-e prod` (`up -e prod` also rebuilds it on each deploy). `[OPTIONS]` are passed to `docker compose build`, e.g. `--no-cache`.
+Images can be (re)built without deploying with `./wb.sh build [--deploy TARGET] [OPTIONS]` — the dev image from the project's `Dockerfile.local`, or the production release image with `--deploy prod` (`up --deploy prod` also rebuilds it on each deploy). `[OPTIONS]` are passed to `docker compose build`, e.g. `--no-cache`.
 
 ### Cluster deployment
 
@@ -108,8 +135,7 @@ That is a perfectly valid deployment — replicas behind a balancer is how a sta
 Look at the cluster from the inside:
 
 ```sh
-docker compose --file _workspaces/<workspace>/docker-compose.scaled.yml \
-  exec app1 /app/bin/<app> remote
+./wb.sh iex --deploy scaled app1   # the release's remote shell on the first replica
 ```
 
 ```elixir
@@ -123,12 +149,12 @@ And see the balancing without touching the project: the `X-Served-By` header ngi
 curl -sI http://localhost:4000 | grep X-Served-By
 ```
 
-Two options shape how the deployment is baked, and only `up` and `build` take them — `logs`, `ps`, `stop` and `down` act on the same file either way and just need `--deploy scaled`:
+Two options shape how the deployment is baked, and `bake` alone takes them — `up`, `build`, `logs`, `ps`, `stop` and `down` act on the file as baked and just need `--deploy scaled`:
 
 | Option | Default |
 | --- | --- |
-| `--replicas N` | `4` |
-| `--no-balancer` | balancer included; publishes only the per-replica ports |
+| `bake --deploy scaled --replicas N` | `4` |
+| `bake --deploy scaled --no-balancer` | balancer included; publishes only the per-replica ports |
 
 This deployment is meant for seeing the cluster work, not for developing: the source is not mounted and every replica runs the release image.
 
@@ -147,7 +173,7 @@ These commands run on the **running** app container (`exec`): they enter instant
 ### Load testing
 
 ```sh
-./wb.sh add k6 && ./wb.sh bake
+./wb.sh add k6
 ./wb.sh k6 [--deploy TARGET] [SCRIPT] [K6_OPTIONS...]
 ```
 
@@ -156,14 +182,14 @@ The **k6** cartridge puts [k6](https://k6.io/) in the compose under a profile `u
 ### Monitoring
 
 ```sh
-./wb.sh add monitoring && ./wb.sh bake
+./wb.sh add monitoring
 ```
 
 The **monitoring** cartridge puts [PromEx](https://hexdocs.pm/prom_ex) in the app — the plugins its shape calls for (Application, Beam, Phoenix; Ecto with a repo; LiveView with `phoenix_live_view`), `/metrics` served by the endpoint — and [Prometheus](https://prometheus.io) with [Grafana](https://grafana.com) in the compose. Grafana is published on its own port beside the app's (the first free one from `3000`; `./wb.sh status` and the console say which), signed in already, with a dashboard per plugin: PromEx uploads them when the app starts, and the app waits for Grafana to be there. Each container opens with a file the project owns, `monitoring/prometheus.yml` and `monitoring/grafana/datasource.yml`; what is the topology's — the app on `localhost` inside the pod, one target per replica on the scaled network, where Prometheus and Grafana are — the compose hands over, so the same insert serves dev, prod and scaled. With k6 in, `./wb.sh k6` writes its results to Prometheus too, for Grafana to draw beside the app's.
 
 ### Services that are cartridges
 
-Some cartridges bring a container rather than Elixir code: **db_admin** (a database admin in the browser, open on the project's database: `--admin pgadmin`, `phpmyadmin`, `adminer` or `cloudbeaver`, one or several, each with the file it opens with in the workspace; without `--admin`, the one for the project's database; requires ecto), **k6**, and **monitoring** (Prometheus and Grafana, beside the PromEx it installs). Each declares the compose services it needs, and `./wb.sh bake` writes them in — `add` says so when the compose is behind — while the prod and scaled files pick them up on their next `up`. A vanilla `new` brings the database alone.
+Some cartridges bring a container rather than Elixir code: **db_admin** (a database admin in the browser, open on the project's database: `--admin pgadmin`, `phpmyadmin`, `adminer` or `cloudbeaver`, one or several, each with the file it opens with in the workspace; requires ecto, and the project's database decides which can be chosen), **k6**, and **monitoring** (Prometheus and Grafana, beside the PromEx it installs). Each declares the compose services it needs, and `add` bakes them into the three compose files in the insert's own commit; `./wb.sh bake` writes them again for a compose you edited by hand. A vanilla `new` brings the database alone.
 
 ### Add features
 
@@ -173,9 +199,9 @@ Workbench features can be installed on the existing project at any time:
 ./wb.sh add [FEATURE] [OPTIONS]
 ```
 
-`[FEATURE]` is one of: **chiefs_setup**, **ansi**, **version_manager**, **toolchain**, **changelog**, **health_endpoint**, **rest**, **graphql**, **coverage**, **exdoc**, **guidelines**, **enhancements**, **auth0**, **openai**, **credo**, **precommit**, **test_data**, **mock**, **exdebug**, **dashboard_extras**, **db_admin**, **k6**, **monitoring**, **clustering**, **health_probe**, **ash**, **mailer**, **gettext**, **ecto**, **esbuild**, **tailwind**, **html**, **dashboard**. `[OPTIONS]` are the flags of the corresponding `mix workbench.install.FEATURE` task.
+`[FEATURE]` is a cartridge of the catalog (`./wb.sh catalog`). As of 2026-09-29 the shelf offers **ash**, **changelog**, **clustering**, **coverage**, **credo**, **dashboard_extras**, **db_admin**, **exdebug**, **exdoc**, **health_probe**, **k6**, **monitoring**, **precommit**, **test_data**, **test_doubles** and **version_manager**, plus the seven *base cartridges* below. `[OPTIONS]` are the flags of the corresponding `mix workbench.install.FEATURE` task; the console's Installation screen is the same form.
 
-Ten of those are *archived* (**chiefs_setup**, **ansi**, **toolchain**, **mock**, **rest**, **graphql**, **enhancements**, **auth0**, **openai**, **health_endpoint**, retired 2026-09-20): the Phoenix line's boxes, plus the two a newer box covers — `mock` by `test_doubles` and `health_endpoint` by `health_probe`. Each says on its own papers why it went, which is why they stay; `add` refuses them unless `--archived` says so.
+Two boxes are *pending* — **specdd** and **stripe**: designed and documented, not built, so nothing inserts them yet — and twelve are *archived* (**ansi**, **auth0**, **chiefs_setup**, **dbschema**, **enhancements**, **graphql**, **guidelines**, **health_endpoint**, **mock**, **openai**, **rest**, **toolchain**, retired 2026-09-20 and 2026-09-22): the Phoenix line's boxes, the two a newer box covers — `mock` by `test_doubles` and `health_endpoint` by `health_probe` — and the ones that need an outside account or a team's URL. Each says on its own papers why it went, which is why they stay; `add` refuses them unless `--archived` says so.
 
 **chiefs_setup** was a *collection*: a cartridge whose installer inserts other cartridges — the workbench's picks (the house's settings, the dep-only quintet, REST or GraphQL as its `--interface` says, coverage, exdoc, enhancements and health_endpoint). Adding one inserts each missing member as its own commit, so `eject` still reverts one cartridge alone; the collection leaves no commit of its own. It is archived with the line it collected, and is for now the only collection the shelf has had.
 
@@ -247,10 +273,25 @@ Every push runs the same checks CI does (`.github/workflows/ci.yml`): the two sc
 ```sh
 shellcheck -x wb.sh scripts/entrypoint.sh
 cd igniter && mix format --check-formatted && mix credo --strict && mix dialyzer && mix test
-cd console && mix format --check-formatted && mix credo --strict && mix dialyzer && mix test
+cd console && mix assets.build && mix format --check-formatted && mix credo --strict && mix dialyzer && mix test
 ```
 
-The first `mix dialyzer` builds the PLT into `priv/plts/` (ignored; CI caches it), which takes a few minutes; the runs after it take seconds.
+The first `mix dialyzer` builds the PLT into `priv/plts/` (ignored; CI caches it), which takes a few minutes; the runs after it take seconds. The console's suite reads the bundle esbuild writes (`priv/static/assets/js/app.js`, ignored), so `mix assets.build` comes first on a fresh checkout; CI does the same.
+
+### Other commands
+
+The rest of what `./wb.sh help` lists, one line each:
+
+```sh
+./wb.sh adopt                    # Take in a Phoenix project made elsewhere, as it is in the workspace: what new adds after phx.new, as one commit
+./wb.sh stacks [use TAG]         # The usable hexpm/elixir images on Docker Hub; 'use' writes one's three versions into config.conf
+./wb.sh engine [native|desktop]  # Show or switch the Docker context: on Linux the host's engine and Docker Desktop's VM share nothing
+./wb.sh config set KEY=VALUE     # Write into config.conf in place, keeping comments and order
+./wb.sh expand CARTRIDGE [OPTS]  # What 'add' would insert, in order, without inserting it
+./wb.sh restart [SERVICE...]     # Restart the named services of the deployment that is up
+./wb.sh prune [--images|--build] # Remove what no live workspace uses; never this deployment, never the console. Asks first
+./wb.sh --yes COMMAND            # Answer every confirmation, for scripts and tools driving the workbench
+```
 
 ### Help
 
@@ -266,4 +307,4 @@ This software is released under the [MIT](https://mit-license.org/) license.
 
 Permission is granted to use, copy, modify, and distribute the code in both commercial and non-commercial projects. It only requires that the copyright notice and permission statement be maintained in all copies. No warranties are provided and the authors bear no liability.
 
-Copyright © 2024 José Luis Pamplona Stoever.
+Copyright © 2024-2026 José Luis Pamplona Stoever.

@@ -51,6 +51,34 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **The README's first screen, and the manual told against the
+  workbench as it is.** The README opened as a 267-line operating
+  manual whose first sentence called the whole thing "a script"; a
+  reader with ninety seconds got no picture and no path. It opens now
+  with what it is in one sentence — the script, the cartridges, the
+  console — a screenshot of the console with a project up, a
+  Quickstart of three commands (the ones the release rehearsal
+  walked, with the times they took), the same path from a shell, and
+  the shelf with its covers, since a feature that is a box is the one
+  thing a screenshot says better than a sentence, and "Why it is
+  shaped like this": the pod pattern, the cartridge as one commit with
+  its papers, the console that reads and never asks, the CHANGELOG as
+  the record, each a link. The manual under it was read
+  against `wb.sh help`, the catalog and the console, and corrected
+  where it had drifted: the pod service is `pod`, not `network`; `up`
+  and `build` take `--deploy`, never `--env`, which the script refuses
+  now; `new` bakes the three compose files, not one; `--replicas` and
+  `--no-balancer` are `bake`'s alone since the three files are born
+  with the project; `add k6` and `add monitoring` no longer need a
+  `bake` after them, since an insert bakes its services in its own
+  commit; db_admin's `--admin` has no default; the cluster's remote
+  shell is `./wb.sh iex --deploy scaled app1`; the feature list is the
+  shelf of today — sixteen offered, seven base, two pending, twelve
+  archived (it said ten, and listed a box that is archived among the
+  offered); the console's checks start with `mix assets.build`; and
+  the verbs the manual never named — adopt, stacks, engine, config
+  set, expand, restart, prune, `--yes` — have a line each.
+
 - **The release, rehearsed on a fresh clone.** The path a reader
   takes from GitHub, walked with Docker emptied of images first: a
   clone in a scratch directory, `./wb.sh console`, a project created

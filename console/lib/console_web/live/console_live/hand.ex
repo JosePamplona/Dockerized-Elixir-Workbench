@@ -33,6 +33,17 @@ defmodule ConsoleWeb.ConsoleLive.Hand do
 
   def take(socket, _params), do: assign(socket, box: nil, page: nil, pending_box: nil)
 
+  # The paper the URL names; else, on the box already in hand, the one
+  # it was on — Installation's link carries none, and the Manual came
+  # back on README (2026-09-29); else the first it carries.
+  defp paper_of(named, papers, _kept) when is_binary(named) and named != "" do
+    if named in papers, do: named, else: paper_of(nil, papers, nil)
+  end
+
+  defp paper_of(_named, papers, kept) do
+    if kept in papers, do: kept, else: List.first(papers) || "readme"
+  end
+
   # The box opened on the screen the query names; a box just picked up
   # starts with its form blank and its recipe asked.
   defp open(socket, box, params, same) do
@@ -43,8 +54,7 @@ defmodule ConsoleWeb.ConsoleLive.Hand do
 
     papers = Papers.carried(name)
 
-    paper =
-      if params["paper"] in papers, do: params["paper"], else: List.first(papers) || "readme"
+    paper = paper_of(params["paper"], papers, same && socket.assigns.paper)
 
     page = if screen == "manual", do: Papers.render(name, paper)
 

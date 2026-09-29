@@ -20,7 +20,16 @@ defmodule ConsoleWeb.ConsoleLive.Drawer do
 
   def take(socket, %{"wb" => key} = params) when key in ~w(config manual ui) do
     papers = Papers.workbench_papers() |> Enum.map(&elem(&1, 0))
-    paper = if params["paper"] in papers, do: params["paper"], else: hd(papers)
+
+    # The paper the URL names; else, with the drawer already open, the
+    # one it was on — Config's link carries none, and Manual came back
+    # on README (2026-09-29); else the first.
+    paper =
+      cond do
+        params["paper"] in papers -> params["paper"]
+        socket.assigns.wb && socket.assigns.wbpaper in papers -> socket.assigns.wbpaper
+        true -> hd(papers)
+      end
 
     assign(socket,
       wb: key,

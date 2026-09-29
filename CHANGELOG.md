@@ -61,8 +61,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   through the one `screen_query/2` that Put back and Close already
   used to come back to a paper, so the URL stays the screen and the
   browser's back stays the trail. A default says nothing in the link.
-  Not a subtab, and not remembered: a compose file open on Deploy and
-  a box open on the shelf, which are sheets over the screen.
+  The same one level down (found by the author the same day): inside a
+  box, Installation's link names no paper and the Manual came back on
+  README; in the workbench drawer, Config's link did the same to its
+  Manual. The box in hand and the open drawer keep the paper they
+  were on when the URL names none. Not a subtab, and not remembered: a
+  compose file open on Deploy and a box put back, which are sheets
+  over the screen.
 
 - **The README's first screen, and the manual told against the
   workbench as it is.** The README opened as a 267-line operating

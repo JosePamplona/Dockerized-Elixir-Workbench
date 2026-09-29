@@ -91,6 +91,32 @@ defmodule ConsoleWeb.BackTest do
     assert_patch(view, "/project?paper=history&commit=abc1234")
   end
 
+  # Inside a box, the manual keeps its paper across the box's other
+  # screens: Installation's link names no paper, and the Manual link
+  # carries the one the box was on.
+  test "a box's manual keeps its paper across Installation", %{conn: conn} do
+    {:ok, view, _} = live(conn, "/shelf?box=k6&screen=manual&paper=changelog")
+    assert render(view) =~ ~s(href="/shelf?box=k6&amp;screen=manual&amp;paper=changelog")
+
+    view |> element(~s(a[href="/shelf?box=k6&screen=install"])) |> render_click()
+    assert_patch(view, "/shelf?box=k6&screen=install")
+    html = render(view)
+    assert html =~ ~s(href="/shelf?box=k6&amp;screen=manual&amp;paper=changelog")
+    refute html =~ ~s(href="/shelf?box=k6&amp;screen=manual&amp;paper=readme")
+
+    # Another box picked up starts on its first paper.
+    render_click(view, "close", %{})
+    {:ok, view, _} = live(conn, "/shelf?box=k6&screen=manual")
+    assert render(view) =~ ~r{aria-selected="true"[^>]*>\s*README}
+  end
+
+  test "the workbench drawer's manual keeps its paper across Config", %{conn: conn} do
+    {:ok, view, _} = live(conn, "/deploy?wb=manual&paper=changelog")
+    html = render_patch(view, "/deploy?wb=config")
+    assert html =~ ~s(href="/deploy?wb=manual&amp;paper=changelog")
+    refute html =~ ~s(href="/deploy?wb=manual&amp;paper=readme")
+  end
+
   test "the workbench drawer opens over the paper and Close comes back to it", %{conn: conn} do
     {:ok, view, _} = live(conn, "/project?paper=history")
 

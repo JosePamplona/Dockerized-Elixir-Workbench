@@ -269,6 +269,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **CI builds the console's bundle before its tests.** `HooksTest`
+  reads `priv/static/assets/js/app.js`, the bundle esbuild writes and
+  git ignores, to check every hook the components ask for is in what
+  the browser gets — and the workflow never wrote it, so that test
+  fails on any fresh checkout (found on an extracted tree,
+  2026-09-29). `mix assets.build` runs for the console before its
+  suite.
+
 - **`wb.sh` is executable in a clone.** The repository has
   `core.fileMode` off since the mock's `+x` troubles, and `wb.sh` and
   `assets/design/build.py` had been tracked as plain files (`100644`)

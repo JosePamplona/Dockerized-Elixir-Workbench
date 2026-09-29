@@ -208,6 +208,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Removed
 
+- **`IGN_IMPROV.md`, archived.** The paper of 2026-09-24 that read what
+  Igniter already solves against what the workbench does, and planned
+  four phases from it. What it settled stays decided: an installer
+  refuses with `Igniter.add_issue`, never `raise`, and the workbench
+  keeps its own recovery — `undo_failed_insert` over git — instead of
+  Igniter's prompt, and its own `add` instead of `igniter.install`'s
+  Hex round trip. Its first phase, `mix workbench.ash.site` checking
+  the site both ways every week, was done the day it was written. The
+  three that were not — the insert preview, the upgrade of an inserted
+  cartridge, and a small hygiene — go to `RELEASE_PLAN.md`, Phase 2, as
+  issues to be, under the rule that nothing is built until a chapter
+  asks for it. Out of git, in history at the root.
+
 - **`CONFIG.md`, archived.** It was a second copy of what `config.conf`
   says above each of its lines, and the copy had drifted: no
   `JOB_NICENESS`, two image versions the file no longer carries,

@@ -794,7 +794,7 @@
     # Writes a compose file of the pod topology into the workspace —
     # the dev file with the app's dev image and dockerfile, the prod
     # file with the release's — off `mix workbench.compose` in the
-    # igniter package (scripts/PLAN.md), run on the project: this side
+    # igniter package (WorkbenchIgniter.Compose), run on the project: this side
     # decides the ports and the images and hands them over; which
     # services the project asks for — a database with ecto, pgAdmin,
     # Adminer, k6, Prometheus and Grafana with their cartridges — the task reads

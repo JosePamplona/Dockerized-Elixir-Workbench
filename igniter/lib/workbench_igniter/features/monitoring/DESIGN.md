@@ -21,7 +21,8 @@ keeps its name on the dashboards.
 
 ## 1. Problem
 
-The workbench's plan (`scripts/PLAN.md`, step 5) asks for "Prometheus
+The workbench's compose plan (`scripts/PLAN.md`, step 5; closed on
+2026-09-29 and kept in git history) asked for "Prometheus
 and Grafana as services of one cartridge, whose Elixir side installs
 PromEx or telemetry_metrics_prometheus; Grafana enters the console as
 a door", and for k6's results to reach Prometheus "when the monitoring

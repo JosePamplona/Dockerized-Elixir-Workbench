@@ -28,6 +28,8 @@ The workspace owns its orchestration. These files are generated into it, and the
 
 The unsuffixed file is the *development* one for compose and the *production* one for the Dockerfiles. That is not an oversight: each follows its own ecosystem's convention — `docker-compose.yml` is what Compose loads by default and conventionally holds local development, while an unsuffixed `Dockerfile` is what build systems and registries expect for the deployable image.
 
+The three files are the bake's to write, so a hand edit to one of them lasts until the next `bake`. Edits meant to stay go in `docker-compose.override.yml`, which Compose reads on its own beside the dev file and the bake never touches.
+
 ## The Console
 
 The workbench has a face: a Phoenix LiveView page that shows the workspace — containers, deployments, git, what is inserted — and drives this script from the browser, cartridges included. It runs as a container of its own, a release on an image built once for the sources as they are, with Docker's socket and the workbench mounted:

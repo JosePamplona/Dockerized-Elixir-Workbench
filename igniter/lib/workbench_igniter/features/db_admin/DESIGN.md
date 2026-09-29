@@ -6,8 +6,8 @@ were consulted on 2026-09-09 and phpMyAdmin's and CloudBeaver's on
 2026-09-18; quotations are verbatim from the file or page as read then.
 The mechanism as installed is in the [README](README.md); the rule a
 service cartridge follows — a file the project owns, the topology's
-part in the compose — is settled in `scripts/PLAN.md` and argued in
-[monitoring's paper](../monitoring/DESIGN.md) §3.4.*
+part in the compose — is stated in [the shelf's index](../README.md)
+and argued in [monitoring's paper](../monitoring/DESIGN.md) §3.4.*
 
 ## Abstract
 

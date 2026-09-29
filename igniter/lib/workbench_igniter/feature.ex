@@ -415,7 +415,7 @@ defmodule WorkbenchIgniter.Feature do
   The compose services the cartridge needs the workspace to run, by
   name, given what the project carries of it (`state/1`): the workbench
   bakes them into the workspace's compose (`mix workbench.compose`,
-  scripts/PLAN.md). A name is the cartridge's own — what it is in a
+  `WorkbenchIgniter.Compose`). A name is the cartridge's own — what it is in a
   compose file is said by the same cartridge, in `compose/1` — and it
   is also what the status reports and what a neighbour asks about
   (`"prometheus"`, for k6). A cartridge that needs no container says

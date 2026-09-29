@@ -208,6 +208,21 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Removed
 
+- **`scripts/PLAN.md`, closed and archived.** The compose plan of
+  2026-09-06 — the bake moved from `sed` in `wb.sh` to a plan rendered
+  by templates in one Mix task, the services declared by the cartridges
+  — is done: its five steps landed on the 6th and the 7th, and the
+  three things its record left for later are done since by the service
+  cartridges (pgAdmin's `configs` block in db_admin's own fragments, the
+  console drawing the services off `Compose.brought/2`, the grep gone).
+  Its sixth step, umbrella, never started and goes to `RELEASE_PLAN.md`
+  as an issue to be. The living home of what it settled is
+  `WorkbenchIgniter.Compose`'s moduledoc and the shelf's index, which
+  the six citations point to now; the one line it owed the root README
+  — hand edits go to `docker-compose.override.yml`, the bake never
+  touches it — is written. Archived beside the console's plan, out of
+  git, in history at `scripts/PLAN.md`.
+
 - **`console/PLAN.md`, closed and archived.** The console's port plan
   (2026-09-02 to 2026-09-27) is done: the six steps of its order, the
   volumes and the release all landed, and what it still called open is

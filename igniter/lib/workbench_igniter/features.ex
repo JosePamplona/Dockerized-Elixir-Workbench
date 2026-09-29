@@ -52,7 +52,7 @@ defmodule WorkbenchIgniter.Features do
     Features.HealthProbe,
     Features.Ash,
     Features.Specdd,
-    # Services of the workspace, declared for the compose (scripts/PLAN.md).
+    # Services of the workspace, declared for the compose (WorkbenchIgniter.Compose).
     Features.DbAdmin,
     Features.K6,
     Features.Monitoring,

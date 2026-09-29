@@ -161,7 +161,7 @@ its mark — so that what the containers read has something to read.
 What is the topology's (where the app is, where Prometheus is) the
 compose hands over, so the files serve every deployment. The compose is
 baked from what the project carries (`./wb.sh bake` after the insert),
-never the other way round; see `scripts/PLAN.md`. db_admin is a
+never the other way round; see `WorkbenchIgniter.Compose`. db_admin is a
 chiefs_setup pick, bare: the admin of the database the project is on.
 Each of its admins says which databases it serves, as a requirement on
 the option's value. k6 and monitoring are inserted by hand.

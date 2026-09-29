@@ -208,6 +208,20 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Removed
 
+- **The reference project's papers leave the repository.** `reference/`
+  — the design of the project the series is built on, a light CMMS:
+  candidates, stories, events, rules, glossary, ADRs, domains and their
+  diagrams — is the author's own guide, not the workbench's, and goes
+  to `_local/` (ignored) with its diagram script, which finds
+  `assets/diagrams/build.py` from one directory deeper. What cited it
+  (`CLAUDE.md`, `SCRIPT.md`, `RELEASE_PLAN.md`, the `project-design`
+  skill) says the papers live outside. The move hides them from the
+  tree and not from the history, where they have been since
+  2026-09-16 on the published branch: `RELEASE_PLAN.md` gains, before
+  the merge into `main`, a review of the whole history — the papers
+  filtered out, and a sweep for anything sensitive — to be done once,
+  before the tags.
+
 - **The mock, archived.** `mock/` — the console's static maquette,
   its generator and the captures of test_28 it was built from — was
   retired on 2026-09-05 and stayed tracked: ten files, 7.6 MB, most of

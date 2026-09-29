@@ -11,9 +11,10 @@
 
 # Generated workspaces (projects live here, not in the workbench repo).
 /_workspaces/
+/_local/
 
 # Superseded cover artwork: kept beside each cover, never in the repo.
 _archived/
 
-# Python bytecode (reference/diagrams/build.py imports assets/diagrams/build.py).
+# Python bytecode (a project's diagrams/build.py imports assets/diagrams/build.py).
 __pycache__/

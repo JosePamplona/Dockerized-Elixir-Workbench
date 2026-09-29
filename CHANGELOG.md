@@ -269,6 +269,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **`wb.sh` is executable in a clone.** The repository has
+  `core.fileMode` off since the mock's `+x` troubles, and `wb.sh` and
+  `assets/design/build.py` had been tracked as plain files (`100644`)
+  all along: a fresh clone got a `./wb.sh` the shell refused, and the
+  console's suite on such a checkout died of `:eacces` the moment the
+  bench ran it (39 failures, found rehearsing the release on an
+  extracted tree, 2026-09-29). The two carry the bit in git now, as
+  `scripts/entrypoint.sh` and `assets/covers/covers.py` already did.
+
 - **A choice's default starts checked.** coverage's `--ignore-files`
   boxes and `--html-theme` radios, exdoc's `--module-groups` once the
   project said `layers`: the form tagged the default and left it

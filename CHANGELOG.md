@@ -26,8 +26,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   plans; the papers that cite `SCRIPT.md` as "the author's selection"
   (exdebug, toolchain, version_manager, test_doubles, the
   `project-design` skill) cite it as it was, a paper that lives outside
-  the repository now. Both go out of the history with `reference/` at
-  the cut.
+  the repository now. The `project-design` skill goes with them — the
+  author's design process, written from that project and carrying it
+  as its example — to `_local/skills/`, out of Claude Code's reach on
+  purpose: it is still being worked on, and comes back to
+  `.claude/skills/` when it is done; `cartridge-covers` stays, the
+  house's own. All of it goes out of the history with `reference/`
+  at the cut.
 
 ## v0.14.0 - (2026-09-29)
 

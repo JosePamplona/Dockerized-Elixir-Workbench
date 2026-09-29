@@ -28,7 +28,44 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   the schedule does not know it, and otherwise carries its standing
   (`lts · until 2028-04-30`).
 
+- **A paper's fenced code is coloured as the Files sheet colours a
+  file.** The papers a box carries, the project's own and the
+  workbench's were rendered with every fenced block in plain terminal
+  ink, while the Files sheet next to them coloured the same Elixir
+  with Makeup and the reader's palette. `Console.Highlight` gains a
+  registry by the name a fence opens with (` ```elixir `, `heex`,
+  `css`, `ts`, `json`, `markdown`, `gd`, `sh`…), the same treatments as
+  the one by extension, and `Console.Papers.to_html/1` passes MDEx's
+  output through it: a block whose name a lexer answers to is read back
+  off the page, lexed, and put back as `pre.src[data-lang]`, so the
+  palette the reader set on the Interface tab reaches it; a fence named
+  nothing, or named something no lexer answers to, stays as it came.
+  Nothing about the renderer's HTML policy moves: the block's text was
+  escaped by MDEx before and is escaped again by Makeup after. The
+  shell, the most written fence on the papers (48 of 96 named ones),
+  had no lexer: no `makeup_*` on hex lexes a shell (checked
+  2026-09-29), so it reads through `makeup_syntect`'s grammar like
+  Markdown does, as the eighth palette of the Interface tab, `Shell`,
+  with its sample, its scopes for a pasted VS Code theme and its
+  twelve custom properties.
+
 ### Updated
+
+- **A paper's headings carry GitHub's ids, and the index is a link to
+  them.** Every `h1` to `h4` of a rendered paper — a box's, the
+  workbench's, the project's — has for id its own words as GitHub
+  writes them (`MDEx.anchorize/1`, GFM's algorithm: lower case,
+  punctuation out, a hyphen a space; a repeated heading counts from the
+  second on, `repeated-1`), in place of a number on the `h2`s alone
+  (`h-0`, `w-0`, `p-0`). So a link an author wrote for the repository,
+  `(#what-it-installs)`, `(#7-what-it-replaces)` — three of them on the
+  papers today, leading nowhere in the console — lands on its section
+  here, and the index at the right is those anchors and nothing more.
+  The section goes into the address, so a place in a paper can be
+  copied and opened, and a booklet opened on one lands there. Two
+  papers can be on the page at once, a box's manual under the drawer's,
+  each with its *What it installs*: the booklet's hook looks inside its
+  own article before the document.
 
 - **The New Project card asks nothing `config.conf` already answers.**
   The *project name* field is gone from the card (its markup stays as a
@@ -153,6 +190,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   a VM of its own (`iex -S mix`) would show nothing there.
 
 ### Fixed
+
+- **A paper's code blocks ignored the Files face.** `.md pre` read the
+  reader's face for files, and its text did not: the block's `<code>`
+  took the inline chip's `font-family` from `.md code`, so a README
+  under Tamzen kept every block in Plex. The code inside a block now
+  inherits the block's font whole (`.md pre code{font:inherit}`).
 
 - **The code/drawing switch on an SVG's diff stood against the top
   edge.** The source pane has no padding of its own — a row paints its

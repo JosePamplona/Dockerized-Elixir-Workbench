@@ -42,15 +42,15 @@ defmodule Console.Papers do
         |> rewrite_images(name)
         |> mark_revisions()
 
-      booklet(html, "h-", file)
+      booklet(html, file)
     else
       _ -> nil
     end
   end
 
   @doc """
-  The booklet a paper is read in: the article with its h2s given ids,
-  the index of those h2s, and the document's title. One shape for every
+  The booklet a paper is read in: the article with its headings given
+  ids, the index of its h2s, and the document's title. One shape for every
   paper the console shows — a cartridge's, the workbench's, the
   project's — so the rule of the index lives here and nowhere else.
 
@@ -61,8 +61,8 @@ defmodule Console.Papers do
   a README that always had its index. A document with no h2 at all is
   the one that reads full-width; there is nothing to index.
   """
-  def booklet(html, prefix, file) do
-    {html, heads} = head_ids(html, prefix)
+  def booklet(html, file) do
+    {html, heads} = head_ids(html)
     %{html: html, toc: heads, title: doc_title(html, file)}
   end
 
@@ -134,7 +134,7 @@ defmodule Console.Papers do
             )
           )
 
-        booklet(html, "w-", file)
+        booklet(html, file)
 
       _ ->
         nil
@@ -151,8 +151,46 @@ defmodule Console.Papers do
       extension: [table: true, strikethrough: true, autolink: true, tasklist: true],
       render: [unsafe: false]
     )
+    |> colour_fences()
     |> outside_images()
     |> mark_trees()
+  end
+
+  @doc """
+  A fenced block whose language the Files sheet colours is coloured
+  the same way, with the same lexer and the reader's palette for it
+  (`Console.Highlight.fenced/2`): `pre.src[data-lang]`, as the sheet
+  draws a file. The renderer writes a fence as `<pre><code
+  class="language-NAME">` with the text escaped and nothing else inside,
+  so the block is read back off the page, unescaped, lexed, and put
+  back as spans of escaped text — the raw HTML a paper carried never
+  comes near this, having been left out before. A fence named nothing,
+  or a name no lexer answers to, stays as it came.
+  """
+  def colour_fences(html) do
+    Regex.replace(
+      ~r{<pre><code class="language-([^"]*)">(.*?)</code></pre>}s,
+      html,
+      fn whole, info, escaped ->
+        case Console.Highlight.fenced(info, unescape_text(escaped)) do
+          {:ok, lang, inner} ->
+            ~s(<pre class="src" data-lang="#{lang}"><code>#{inner}</code></pre>)
+
+          :plain ->
+            whole
+        end
+      end
+    )
+  end
+
+  # The four the renderer escapes in text, `&amp;` last so a literal
+  # `&lt;` in the source (written `&amp;lt;`) comes back as itself.
+  defp unescape_text(text) do
+    text
+    |> String.replace("&lt;", "<")
+    |> String.replace("&gt;", ">")
+    |> String.replace("&quot;", "\"")
+    |> String.replace("&amp;", "&")
   end
 
   @doc """
@@ -272,19 +310,52 @@ defmodule Console.Papers do
   defp mark_revisions(html),
     do: String.replace(html, ~r/<p>(Revision:)/, ~s(<p class="revision">\\1))
 
-  @doc "An id on every h2, and the list of them for the index."
-  def head_ids(html, prefix) do
-    {html, heads} =
-      Regex.scan(~r/<h2>(.*?)<\/h2>/s, html)
-      |> Enum.with_index()
-      |> Enum.reduce({html, []}, fn {[whole, inner], i}, {html, heads} ->
-        id = "#{prefix}#{i}"
-        text = inner |> String.replace(~r/<[^>]+>/, "") |> String.replace(~r/^\d+\.\s*/, "")
+  @doc """
+  An id on every heading, `h1` to `h4`, and the `h2`s for the index.
 
-        {String.replace(html, whole, ~s(<h2 id="#{id}">#{inner}</h2>), global: false),
-         [{id, text} | heads]}
+  The id is the heading's words as GitHub writes them (`MDEx.anchorize/1`,
+  GFM's algorithm: lower case, punctuation out, a hyphen a space), and a
+  repeated one counts from the second on — `repeated`, `repeated-1`,
+  `repeated-2` — so a link an author wrote for the repository,
+  `(#what-it-installs)`, lands on the same section here, and a link to
+  a section here is a link on GitHub. Until 2026-09-29 the h2s alone
+  were numbered, `h-0`, `w-0`, `p-0`, and the papers' own anchors led
+  nowhere. Two papers can be on the page at once (a box's manual under
+  the drawer's), each with its *What it installs*: the booklet's hook
+  looks for a target inside its own article first.
+  """
+  def head_ids(html) do
+    {html, heads, _seen} =
+      Regex.scan(~r/<(h[1-4])>(.*?)<\/\1>/s, html)
+      |> Enum.reduce({html, [], %{}}, fn [whole, tag, inner], {html, heads, seen} ->
+        text = inner |> String.replace(~r/<!--.*?-->/s, "") |> String.replace(~r/<[^>]+>/, "")
+        {id, seen} = unique_id(MDEx.anchorize(text), seen)
+
+        html =
+          String.replace(html, whole, ~s(<#{tag} id="#{id}">#{inner}</#{tag}>), global: false)
+
+        heads =
+          if tag == "h2", do: [{id, String.replace(text, ~r/^\d+\.\s*/, "")} | heads], else: heads
+
+        {html, heads, seen}
       end)
 
     {html, Enum.reverse(heads)}
+  end
+
+  # GitHub's count: the first bare, then -1, -2 — and a counted one that
+  # collides with a heading really named so counts on.
+  defp unique_id(base, seen) do
+    case Map.get(seen, base) do
+      nil ->
+        {base, Map.put(seen, base, 0)}
+
+      n ->
+        id = "#{base}-#{n + 1}"
+
+        if Map.has_key?(seen, id),
+          do: unique_id(base, Map.put(seen, base, n + 1)),
+          else: {id, seen |> Map.put(base, n + 1) |> Map.put(id, 0)}
+    end
   end
 end

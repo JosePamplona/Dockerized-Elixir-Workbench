@@ -127,7 +127,7 @@ defmodule Console.Project do
       md
       |> Papers.to_html()
       |> String.replace(~r/<img src="(?!https?:|data:)/, ~s(<img src="#" data-missing="))
-      |> Papers.booklet("p-", file)
+      |> Papers.booklet(file)
     else
       _ -> nil
     end

@@ -12,8 +12,21 @@ defmodule Console.HighlightSampleTest do
     json: ~w(nt s2 mi kc p),
     ts: ~w(kr kd kt nf o mi s si c1 p),
     markdown: ~w(gh gs ge g p kc),
-    godot: ~w(k ni kd kt nv nf o mf mi s2 p c1)
+    godot: ~w(k ni kd kt nv nf o mf mi s2 p c1),
+    shell: ~w(k kd nf nv o s2 s1 mi p c1)
   }
+
+  test "a fence is coloured by the name it opens with, or left plain" do
+    assert {:ok, :elixir, html} = Highlight.fenced("elixir", "def a, do: :ok")
+    assert html =~ ~s(class="kd") and html =~ ~s(class="ss")
+    assert {:ok, :shell, html} = Highlight.fenced("sh", "mix test | grep ok")
+    assert html =~ ~s(class="nf") and html =~ ~s(class="o")
+    assert {:ok, :shell, _} = Highlight.fenced("bash", "ls")
+    assert {:ok, :html, _} = Highlight.fenced("HEEx title=\"x\"", "<p>{@a}</p>")
+    assert Highlight.fenced("", "x") == :plain
+    assert Highlight.fenced("text", "x") == :plain
+    assert Highlight.fenced("jsonc", "// c\n{}") == :plain
+  end
 
   test "every language's sample touches every rule of its palette" do
     for lang <- Highlight.languages(), class <- @classes[lang] do

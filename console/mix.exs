@@ -64,8 +64,9 @@ defmodule Console.MixProject do
       # the same token vocabulary out of all of them, so the palette is
       # written once and a new language costs no CSS. When a file turns
       # up that no makeup_* covers, makeup_syntect (the Sublime grammars
-      # through a precompiled Rust NIF) is the escape hatch: Markdown reads
-      # through it. An unknown extension is shown plain, never guessed at.
+      # through a precompiled Rust NIF) is the escape hatch: Markdown and
+      # the shell read through it (no makeup_* lexes a shell, checked on
+      # hex 2026-09-29). An unknown extension is shown plain, never guessed at.
       # The papers a box carries, rendered escaping the HTML in them (console/README.md).
       {:mdex, "~> 0.13"},
       # The workbench's own package: the catalog is read in this BEAM, off the

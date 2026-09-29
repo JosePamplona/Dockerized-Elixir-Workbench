@@ -53,6 +53,55 @@ defmodule Console.PapersTest do
     assert html =~ "<table>" and html =~ "<code>x</code>"
   end
 
+  test "every heading carries GitHub's id for its words, repeats counted from the second" do
+    md =
+      "# Some Title\n## v0.13.0 - (2026-09-28)\n## Repeated\n## Repeated\n### `code` in title\n#### 7. What it replaces\n"
+
+    %{html: html, toc: toc, title: title} = md |> Papers.to_html() |> Papers.booklet("X.md")
+    assert html =~ ~s(<h1 id="some-title">)
+    assert html =~ ~s(<h2 id="v0130---2026-09-28">)
+
+    assert html =~ ~s(<h2 id="repeated">Repeated</h2>) and
+             html =~ ~s(<h2 id="repeated-1">Repeated</h2>)
+
+    assert html =~ ~s(<h3 id="code-in-title"><code>code</code> in title</h3>)
+    assert html =~ ~s(<h4 id="7-what-it-replaces">)
+
+    assert toc == [
+             {"v0130---2026-09-28", "v0.13.0 - (2026-09-28)"},
+             {"repeated", "Repeated"},
+             {"repeated-1", "Repeated"}
+           ]
+
+    assert title == "Some Title"
+  end
+
+  test "a heading really named like a counted repeat does not take its id" do
+    %{html: html} = "## A\n## A\n## A-1\n" |> Papers.to_html() |> Papers.booklet("X.md")
+    assert html =~ ~s(id="a">) and html =~ ~s(id="a-1">A</h2>) and html =~ ~s(id="a-1-1">A-1</h2>)
+  end
+
+  test "a fence the Files sheet has a lexer for is coloured with its palette" do
+    html = Papers.to_html("```elixir\ndef a, do: :ok\n```\n\n```sh\nmix test | grep ok\n```\n")
+    assert html =~ ~s(<pre class="src" data-lang="elixir"><code><span class="kd">def</span>)
+    assert html =~ ~s(<pre class="src" data-lang="shell"><code>)
+    refute html =~ "language-"
+  end
+
+  test "a fence named nothing, or something no lexer answers to, stays as it came" do
+    html = Papers.to_html("```\nplain\n```\n\n```text\nalso plain\n```\n")
+    assert html =~ "<pre><code>plain\n</code></pre>"
+    assert html =~ ~s(<pre><code class="language-text">also plain\n</code></pre>)
+    refute html =~ "src"
+  end
+
+  test "the HTML inside a coloured fence stays text" do
+    html = Papers.to_html("```html\n<img src=x onerror=alert(1)>\n```\n")
+    assert html =~ ~s(data-lang="html")
+    refute html =~ "<img"
+    assert html =~ "&lt;"
+  end
+
   test "a table drawn as a file tree marks its branch cells, and no other table's" do
     html =
       Papers.to_html(

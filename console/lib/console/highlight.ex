@@ -30,10 +30,17 @@ defmodule Console.Highlight do
   `makeup_syntect` — the Sublime grammars behind a precompiled Rust NIF,
   from the same makeup organisation — is the escape hatch: Markdown,
   SCSS, GDScript, a Godot shader (through GLSL, which it is a dialect
-  of) and a Godot scene (through INI, which it is shaped like) read
-  through it, as `{MakeupSyntect.Lexer, language: "..."}`, a lexer with
-  the options it lexes with. The language is syntect's: a file
-  extension it knows, `gd` and not `gdscript`.
+  of), a Godot scene (through INI, which it is shaped like) and the
+  shell read through it, as `{MakeupSyntect.Lexer, language: "..."}`,
+  a lexer with the options it lexes with. The language is syntect's: a
+  file extension it knows, `gd` and not `gdscript`, `sh` and not `bash`.
+
+  A second registry, `@by_fence`, is the same treatments by the name a
+  Markdown fence opens with (` ```elixir `): the papers a box carries
+  and the project's own are rendered by `Console.Papers`, and a fenced
+  block whose language is here is coloured as the Files sheet would
+  colour the file, with its palette. A fence named nothing, or named
+  something not here, stays as the renderer wrote it: plain.
   """
 
   alias Makeup.Token.Utils
@@ -83,9 +90,57 @@ defmodule Console.Highlight do
     ".webp" => :image
   }
 
+  # A fence's name is what its author typed after the backticks: the
+  # names GitHub's own highlighter answers to, so a paper written for
+  # the repository reads the same here. `shell` and `zsh` read as `sh`
+  # — the grammar is one — and `jsonc` is not `json`: the JSON lexer
+  # does not know a comment. Counted on the papers on 2026-09-29: `sh`
+  # 46, `elixir` 32, `bash` 2, `markdown` 3, `css` 1.
+  @by_fence %{
+    "elixir" => {:lexer, Makeup.Lexers.ElixirLexer, :elixir},
+    "heex" => {:lexer, Makeup.Lexers.HEExLexer, :html},
+    "eex" => {:lexer, Makeup.Lexers.EExLexer, :html},
+    "html" => {:lexer, Makeup.Lexers.HTMLLexer, :html},
+    "css" => {:lexer, MakeupCSS.Lexer, :css},
+    "scss" => {:lexer, {MakeupSyntect.Lexer, language: "scss"}, :css},
+    "js" => {:lexer, Makeup.Lexers.JsLexer, :ts},
+    "javascript" => {:lexer, Makeup.Lexers.JsLexer, :ts},
+    "ts" => {:lexer, MakeupTS.Lexer, :ts},
+    "typescript" => {:lexer, MakeupTS.Lexer, :ts},
+    "json" => {:lexer, Makeup.Lexers.JsonLexer, :json},
+    "markdown" => {:lexer, {MakeupSyntect.Lexer, language: "markdown"}, :markdown},
+    "md" => {:lexer, {MakeupSyntect.Lexer, language: "markdown"}, :markdown},
+    "gd" => {:lexer, {MakeupSyntect.Lexer, language: "gd"}, :godot},
+    "gdscript" => {:lexer, {MakeupSyntect.Lexer, language: "gd"}, :godot},
+    "gdshader" => {:lexer, {MakeupSyntect.Lexer, language: "glsl"}, :godot},
+    "sh" => {:lexer, {MakeupSyntect.Lexer, language: "sh"}, :shell},
+    "bash" => {:lexer, {MakeupSyntect.Lexer, language: "sh"}, :shell},
+    "shell" => {:lexer, {MakeupSyntect.Lexer, language: "sh"}, :shell},
+    "zsh" => {:lexer, {MakeupSyntect.Lexer, language: "sh"}, :shell}
+  }
+
   @doc "The registry, for a page that wants to show what is covered."
-  @spec registry() :: %{names: map(), extensions: map()}
-  def registry, do: %{names: @by_name, extensions: @by_extension}
+  @spec registry() :: %{names: map(), extensions: map(), fences: map()}
+  def registry, do: %{names: @by_name, extensions: @by_extension, fences: @by_fence}
+
+  @doc """
+  A fenced block, coloured as a file of its language would be: the
+  palette's name and the inner HTML, or `:plain` when the fence names
+  nothing this registry has — or when the lexer fails on it, which is
+  the block's problem and not the page's. The info string is what
+  follows the backticks; only its first word names the language
+  (` ```sh title="x" ` is a fence GitHub reads), and case does not count.
+  """
+  @spec fenced(binary(), binary()) :: {:ok, atom(), binary()} | :plain
+  def fenced(info, source) do
+    with [word | _] <- info |> String.trim() |> String.downcase() |> String.split(~r/\s+/),
+         {:lexer, lexer, lang} <- Map.get(@by_fence, word, :plain),
+         %{treatment: :lexer, html: html} <- highlight(lexer, source) do
+      {:ok, lang, html}
+    else
+      _ -> :plain
+    end
+  end
 
   @doc """
   What to do with this path. Never raises, and never guesses: a file the
@@ -253,12 +308,27 @@ defmodule Console.Highlight do
        	if velocity.length() > 0 and not is_dead:
        		move_and_slide()
        	died.emit()
+       """},
+    shell:
+      {{MakeupSyntect.Lexer, language: "sh"},
+       """
+       #!/usr/bin/env bash
+       # One room a workspace; the port comes from .env.
+       set -euo pipefail
+       export PORT="${PORT:-4000}"
+       if [ ! -f .env ]; then
+         echo "no .env in $PWD" >&2
+         exit 1
+       fi
+       players=$(mix run -e 'IO.puts 8' | tr -d '\\n')
+       for f in lib/*.ex; do wc -l "$f"; done
+       mix phx.server && echo "room on :$PORT, $players at most"
        """}
   }
 
   @doc "The languages the Interface tab shows a palette for, in its order."
   @spec languages() :: [atom()]
-  def languages, do: [:elixir, :html, :css, :ts, :json, :markdown, :godot]
+  def languages, do: [:elixir, :html, :css, :ts, :json, :markdown, :godot, :shell]
 
   @doc "A language's sample, coloured by its lexer: inner HTML for a `.src`."
   @spec sample(atom()) :: binary()
@@ -277,7 +347,8 @@ defmodule Console.Highlight do
     json: {3, ~s(  "port": 4001,)},
     ts: {4, "  max: number = 12;"},
     markdown: {6, "- twelve at most"},
-    godot: {4, "@export var speed: float = 240.0"}
+    godot: {4, "@export var speed: float = 240.0"},
+    shell: {9, "players=$(mix run -e 'IO.puts 12' | tr -d '\\n')"}
   }
 
   @doc """

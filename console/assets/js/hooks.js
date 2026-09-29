@@ -555,13 +555,21 @@ export const Booklet = {
     this.el.addEventListener("click", ev => {
       const a = ev.target.closest("a"); if (!a) return
       if (a.hasAttribute("data-patch")) { ev.preventDefault(); this.pushEvent("goto", { href: a.getAttribute("href") }) }
-      else if (a.getAttribute("href")?.startsWith("#")) {
-        ev.preventDefault()
-        const id = a.getAttribute("href").slice(1)
-        const target = id === "top" ? this.el.querySelector(".md") : document.getElementById(id)
-        if (target) target.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" })
-      }
+      else if (a.getAttribute("href")?.startsWith("#")) { ev.preventDefault(); this.go(a.getAttribute("href").slice(1), true) }
     })
+    // Opened on a link with a section in it: land on the section.
+    if (location.hash.length > 1) this.go(decodeURIComponent(location.hash.slice(1)), false)
+  },
+  // The heading ids are the paper's own, GitHub's for its words, so two
+  // papers on the page — a box's manual under the drawer's — can share
+  // one: this booklet's article is searched first, the document after.
+  // The section goes in the address, so the link can be copied; the
+  // history entry stays LiveView's.
+  go(id, keep) {
+    const target = id === "top" ? this.el.querySelector(".md") : (this.el.querySelector(`[id="${CSS.escape(id)}"]`) || document.getElementById(id))
+    if (!target) return
+    target.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" })
+    if (keep) history.replaceState(history.state, "", id === "top" ? location.pathname + location.search : `#${id}`)
   },
 }
 
@@ -767,6 +775,20 @@ const LANGS = {
     { key: "mod", name: "var, const, func, signal, types", scopes: ["storage.type.gdscript", "storage.type.var.gdscript", "storage.type.const.gdscript", "storage.type.function.gdscript", "entity.other.inherited-class.gdscript", "entity.name.type.class.gdscript", "storage.type.glsl"] },
     { key: "str", name: "strings, scene values", scopes: ["string.quoted.double.gdscript", "string.quoted.single.gdscript", "string.quoted.double.ini"] },
     { key: "interp", name: "annotations, uniforms, scene keys", scopes: ["entity.name.function.decorator.gdscript", "storage.modifier.gdscript", "storage.type.qualifier.glsl", "keyword.other.definition.ini"] },
+  ] },
+  // The shell's scopes are VS Code's shellscript grammar's; a paper's
+  // ` ```sh ` fence reads with them, through syntect's grammar.
+  shell: { name: "Shell", roles: [
+    { key: "base", name: "words, flags", scopes: ["source.shell", "variable.other.normal.shell"] },
+    { key: "punct", name: "quotes, braces", scopes: ["punctuation.definition.string.begin.shell", "punctuation.definition.string.end.shell", "punctuation.definition.variable.shell", "meta.scope.group.shell"] },
+    { key: "comment", name: "comments", scopes: ["comment.line.number-sign.shell", "comment.line.shebang.shell"], style: "italic" },
+    { key: "const", name: "numbers", scopes: ["constant.numeric.shell"] },
+    { key: "func", name: "commands", scopes: ["entity.name.command.shell", "support.function.builtin.shell", "entity.name.function.shell"] },
+    { key: "kw", name: "if, for, case", scopes: ["keyword.control.shell", "storage.type.function.shell"] },
+    { key: "op", name: "pipes, redirects", scopes: ["keyword.operator.pipe.shell", "keyword.operator.redirect.shell", "keyword.operator.logical.shell", "keyword.operator.assignment.shell", "keyword.operator.list.shell"] },
+    { key: "mod", name: "export, local", scopes: ["storage.modifier.shell"] },
+    { key: "str", name: "strings", scopes: ["string.quoted.double.shell", "string.quoted.single.shell", "string.unquoted.heredoc.shell"] },
+    { key: "interp", name: "$variables", scopes: ["variable.parameter.positional.shell", "variable.language.special.shell", "punctuation.definition.variable.shell", "meta.parameter-expansion.shell"] },
   ] },
 }
 const HEX = /^#[0-9a-f]{6}$/i

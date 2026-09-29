@@ -836,7 +836,8 @@ defmodule ConsoleWeb.WorkbenchDrawer do
     ts: "assets/js/app.ts",
     json: "priv/static/manifest.json",
     markdown: "README.md",
-    godot: "scripts/player.gd"
+    godot: "scripts/player.gd",
+    shell: "bin/room.sh"
   }
   # The miniature's terminal: {service, level, cont?, time, html}. The
   # times are the lines' own, as the Logs screen formats them; the

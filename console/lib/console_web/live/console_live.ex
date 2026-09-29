@@ -188,14 +188,27 @@ defmodule ConsoleWeb.ConsoleLive do
   # come back to it — where before both went to the bare tab, and
   # pressing a cartridge on History left History (2026-09-15).
   defp keep_back(socket),
-    do: assign(socket, back: "/#{socket.assigns.tab}#{screen_query(socket)}")
+    do:
+      assign(socket,
+        back: "/#{socket.assigns.tab}#{screen_query(socket.assigns.tab, socket.assigns)}"
+      )
 
-  defp screen_query(%{assigns: %{tab: "project", ppaper: paper, gt: gt}}) do
+  # Where a screen was left, as its query: on Project the paper and the
+  # commit open on it, on Docker the document, on Cartridges the
+  # ribbon's filter — what the socket already remembers of each screen.
+  # The tab strip builds its links from it, so a tab pressed leads back
+  # to where its screen was (2026-09-29): before, `/project` bare fell
+  # to Birth and `/docker` to Containers, while the shelf kept its
+  # filter only because it read none from the URL. A default the URL
+  # need not say stays out of it.
+  defp screen_query("project", %{ppaper: paper, gt: gt}) do
     "?paper=#{paper}" <>
       if(gt.pick && paper in ["pending", "history"], do: "&commit=#{gt.pick}", else: "")
   end
 
-  defp screen_query(_socket), do: ""
+  defp screen_query("docker", %{dk: %{doc: doc}}) when doc != "containers", do: "?doc=#{doc}"
+  defp screen_query("shelf", %{filter: filter}) when is_binary(filter), do: "?doc=#{filter}"
+  defp screen_query(_tab, _assigns), do: ""
 
   # Whether `paper` in the URL is a manual's — the box's, or the
   # workbench's — and not the project's, which stays as it was then.
@@ -968,7 +981,7 @@ defmodule ConsoleWeb.ConsoleLive do
               :if={!why}
               class="tab"
               role="tab"
-              patch={"/#{t}"}
+              patch={"/#{t}" <> screen_query(t, %{ppaper: @ppaper, gt: @gt, dk: @dk, filter: @filter})}
               aria-selected={to_string(@tab == t)}
             >
               {label}

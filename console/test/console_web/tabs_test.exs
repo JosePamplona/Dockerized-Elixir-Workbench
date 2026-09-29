@@ -444,6 +444,31 @@ defmodule ConsoleWeb.TabsTest do
     assert html =~ "The daemon"
   end
 
+  # Each screen with subtabs is remembered where it was left, and the
+  # tab strip leads back there: the paper, the Docker document, the
+  # shelf's filter. A default says nothing in the link.
+  test "a tab leads back to where its screen was left", %{conn: conn} do
+    # A repository, so that History is a paper the project carries.
+    arrives(Map.put(status([]), "git", %{"repo" => true, "clean" => true, "inserts" => []}))
+    {:ok, view, html} = live(conn, "/deploy")
+    assert html =~ ~s(href="/project?paper=record")
+    assert html =~ ~s(href="/docker")
+    refute html =~ ~s(href="/docker?doc=)
+    assert html =~ ~s(href="/shelf")
+    refute html =~ ~s(href="/shelf?doc=)
+
+    render_patch(view, "/project?paper=history")
+    render_patch(view, "/docker?doc=images")
+    render_patch(view, "/shelf?doc=archived")
+    html = render_patch(view, "/deploy")
+    assert html =~ ~s(href="/project?paper=history")
+    assert html =~ ~s(href="/docker?doc=images")
+    assert html =~ ~s(href="/shelf?doc=archived")
+    # The tab strip's own link takes the reader there.
+    assert render_patch(view, "/project?paper=history") =~
+             ~r{aria-selected="true"[^>]*>\s*History}
+  end
+
   test "there is no Git tab: its two papers are the Project's, unlit without a repository", %{
     conn: conn
   } do

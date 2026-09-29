@@ -51,6 +51,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **A tab leads back to where its screen was left.** Project on Mix,
+  a look at Docker, back to Project: it opened on Birth, and Docker
+  came back on Containers, while the shelf alone kept its filter — not
+  by design but because it read none from a bare URL. The socket
+  already remembered each screen's place (`ppaper`, the Docker
+  document, the ribbon's filter); the tab strip's links now carry it —
+  `/project?paper=mix`, `/docker?doc=images`, `/shelf?doc=archived` —
+  through the one `screen_query/2` that Put back and Close already
+  used to come back to a paper, so the URL stays the screen and the
+  browser's back stays the trail. A default says nothing in the link.
+  Not a subtab, and not remembered: a compose file open on Deploy and
+  a box open on the shelf, which are sheets over the screen.
+
 - **The README's first screen, and the manual told against the
   workbench as it is.** The README opened as a 267-line operating
   manual whose first sentence called the whole thing "a script"; a

@@ -652,10 +652,12 @@ defmodule WorkbenchIgniter.CatalogTest do
       ],
       "coverage" => [
         {~w(--minimum-coverage 90 --file-column-width 128
-            --ignore-files mix_tasks,open_api --md-report --html-theme exdoc-ish --githook),
+            --ignore-files mix_tasks,open_api --md-report --html-theme exdoc-ish --githook
+            --output-dir priv/static/cover),
          %{
            minimum_coverage: "90",
            file_column_width: "128",
+           output_dir: "priv/static/cover",
            ignore_files: ~w(mix_tasks open_api),
            md_report: true,
            html_theme: "exdoc-ish",
@@ -665,9 +667,10 @@ defmodule WorkbenchIgniter.CatalogTest do
       "exdoc" => [
         {~w(--project-name Probe --repo-url https://example.com/acme/probe
             --homepage-url https://probe.example.com --app-logo --module-groups contexts
-            --no-readme --changelog --coverage),
+            --no-readme --changelog --coverage --output priv/static/doc),
          %{
            project_name: "Probe",
+           output: "priv/static/doc",
            repo_url: "https://example.com/acme/probe",
            homepage_url: "https://probe.example.com",
            app_logo: true,

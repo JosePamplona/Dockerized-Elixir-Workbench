@@ -2,8 +2,8 @@ defmodule WorkbenchIgniter.Features.Exdoc do
   @moduledoc """
   ExDoc's site for the project, with per-feature extra pages (the test
   suite report, the changelog, and whatever another cartridge lists with
-  `list_page/4` — dbschema's database page). `mix docs` writes it to `doc/`,
-  and the console serves it off the workspace (console/README.md): the
+  `list_page/4` — dbschema's database page). `mix docs` writes it to `doc/`
+  — or where `--output` says — and the console serves it off the workspace (console/README.md): the
   project carries no route, no controller and no environment for it.
 
   Full feature cartridge: manifest, install logic, EEx templates and the
@@ -20,7 +20,7 @@ defmodule WorkbenchIgniter.Features.Exdoc do
   # The two addresses the site writes into mix.exs: a browser opens
   # them, so they are checked before they are written.
   @impl true
-  def formats, do: [repo_url: :url, homepage_url: :url]
+  def formats, do: [repo_url: :url, homepage_url: :url, output: :dir]
 
   # Read off the project when not given: `detect/1` says how.
   @impl true
@@ -48,8 +48,10 @@ defmodule WorkbenchIgniter.Features.Exdoc do
   @impl true
   def task, do: "workbench.install.exdoc"
 
+  # The door follows the site: `{output}` is what `state/1` reads off
+  # mix.exs, so a project that moved its docs is still found.
   @impl true
-  def console, do: [doors: [{"docs", {:output, "doc", "index.html"}, build: "docs"}]]
+  def console, do: [doors: [{"docs", {:output, "{output}", "index.html"}, build: "docs"}]]
 
   @impl true
   def afterwards,
@@ -66,6 +68,8 @@ defmodule WorkbenchIgniter.Features.Exdoc do
         "The repository, for `source_url` (the links to each function's source) and `authors`. Default: the `source_url:` mix.exs has, or the `origin` remote of the project's own git repository, or a placeholder to replace.",
       homepage_url:
         "The project's website, where the sidebar's logo and name link. Default: a placeholder commented out, to fill in — until then they open the docs' main page, as ExDoc does.",
+      output:
+        "Where `mix docs` writes the site — ExDoc's `output`, a directory inside the project. Default: `doc`, which phx.new gitignores. Under `priv/static/` the app serves the site itself, as its own static files, and the console serves it off the workspace either way.",
       app_logo:
         "Plant a placeholder logo (`guides/images/app-logo.png`) and name it the site's `logo:`, to be replaced by the project's own. Off by default: it is a 1.9 MB image with somebody else's name on it.",
       module_groups:
@@ -112,6 +116,7 @@ defmodule WorkbenchIgniter.Features.Exdoc do
         project_name: :string,
         repo_url: :string,
         homepage_url: :string,
+        output: :string,
         app_logo: :boolean,
         module_groups: :string,
         readme: :boolean,
@@ -119,6 +124,7 @@ defmodule WorkbenchIgniter.Features.Exdoc do
         coverage: :boolean
       ],
       defaults: [
+        output: "doc",
         app_logo: false,
         readme: true,
         changelog: false,
@@ -169,9 +175,22 @@ defmodule WorkbenchIgniter.Features.Exdoc do
        module_groups: module_groups(mix_exs),
        readme: lists_live?(mix_exs, @readme),
        changelog: lists_live?(mix_exs, @changelog),
-       coverage: lists_live?(mix_exs, @report)
+       coverage: lists_live?(mix_exs, @report),
+       output: output(mix_exs)
      }, igniter}
   end
+
+  # Where the site is written, as mix.exs says — or ExDoc's own default
+  # when the line is not there. A project that moved its docs by hand
+  # reports the move like one that asked for it with `--output`.
+  defp output(mix_exs) when is_binary(mix_exs) do
+    case Regex.run(~r/^\s*output: "([^"]*)"/m, mix_exs) do
+      [_, dir] -> dir
+      nil -> "doc"
+    end
+  end
+
+  defp output(_), do: "doc"
 
   # The line written live; the placeholder's, commented, is no website.
   defp homepage_url(mix_exs) when is_binary(mix_exs) do
@@ -362,6 +381,11 @@ defmodule WorkbenchIgniter.Features.Exdoc do
       # No website asked for: the line is written commented, to fill in.
       |> Keyword.put(:placeholder_homepage, is_nil(igniter.args.options[:homepage_url]))
       |> Keyword.put_new(:homepage_url, @placeholder_homepage)
+      # The site's directory as ExDoc takes it: no trailing slash.
+      |> Keyword.update(:output, "doc", &String.trim_trailing(String.trim(&1), "/"))
+
+    {coverage_dir, igniter} = coverage_dir(igniter)
+    opts = Keyword.put(opts, :coverage_dir, coverage_dir)
 
     app_module = Igniter.Project.Module.module_name_prefix(igniter)
     web_module = Igniter.Libs.Phoenix.web_module(igniter)
@@ -403,6 +427,14 @@ defmodule WorkbenchIgniter.Features.Exdoc do
         |> configure_mix_project(app_module, web_module, opts)
         |> plant_assets(opts)
     end
+  end
+
+  # Where the coverage box writes its report, which its state says —
+  # `cover` unless that box was asked otherwise: `--coverage` copies the
+  # report from there.
+  defp coverage_dir(igniter) do
+    {state, igniter} = WorkbenchIgniter.Features.Coverage.state(igniter)
+    {state[:output_dir] || "cover", igniter}
   end
 
   # --- mix.exs ----------------------------------------------------------------
@@ -471,7 +503,7 @@ defmodule WorkbenchIgniter.Features.Exdoc do
       join(
         [
           ~s|"guides/config" => "/"|,
-          only(opts[:coverage], ~s|"cover" => "/"|),
+          only(opts[:coverage], ~s|"#{opts[:coverage_dir]}" => "/"|),
           ~s|"guides/images" => "/assets"|
         ],
         ",\n    "
@@ -513,7 +545,7 @@ defmodule WorkbenchIgniter.Features.Exdoc do
       source_ref: "main",
       #{owner && ~s|authors: ["#{owner}"],|}
       #{sidebar}
-      output: "doc",
+      output: "#{opts[:output]}",
       #{only(opts[:readme] and not opts[:placeholder_readme], ~s|main: "readme",|)}
       assets: %{
         #{assets}

@@ -109,6 +109,37 @@ defmodule WorkbenchIgniter.Features.ExdocTest do
       refute mix_exs =~ "logo:"
     end
 
+    test "writes the site where --output says, and says it back; doc unasked" do
+      state = fn argv ->
+        igniter =
+          phx_test_project()
+          |> Igniter.compose_task("workbench.install.exdoc", argv)
+          |> apply_igniter!()
+
+        {%{output: dir}, _} = WorkbenchIgniter.Features.Exdoc.state(igniter)
+        {dir, igniter.assigns[:test_files]["mix.exs"]}
+      end
+
+      assert {"doc", mix_exs} = state.([])
+      assert mix_exs =~ ~s|output: "doc"|
+
+      # Under priv/static the app serves the site itself; the trailing
+      # slash is trimmed, since ExDoc takes the directory bare.
+      assert {"priv/static/doc", mix_exs} = state.(["--output", "priv/static/doc/"])
+      assert mix_exs =~ ~s|output: "priv/static/doc"|
+    end
+
+    test "an output that climbs out of the project, or is absolute, is refused" do
+      for bad <- ["../elsewhere", "/tmp/doc", "doc/../../x"] do
+        igniter =
+          phx_test_project()
+          |> Igniter.compose_task("workbench.install.exdoc", ["--output", bad])
+
+        assert_has_issue(igniter, &(&1 =~ "--output takes a directory inside the project"))
+        refute Igniter.exists?(igniter, "guides/config/docs_config.js")
+      end
+    end
+
     test "says back the website given, and none for the placeholder" do
       state = fn argv ->
         phx_test_project()

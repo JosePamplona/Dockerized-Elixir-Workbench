@@ -17,7 +17,7 @@ as a browsable, searchable website. Because the source of the reference is
 the code itself, regenerating the docs keeps them honest — there is no
 separate document slowly drifting away from reality.
 
-`mix docs` writes the site to `doc/`, and the console serves it from
+`mix docs` writes the site to `doc/` — or where `--output` says — and the console serves it from
 there, on an origin of its own: the project carries no route, no
 controller and no environment for it, and the docs can be read with the
 app down. Anyone running the workbench has the full documentation one

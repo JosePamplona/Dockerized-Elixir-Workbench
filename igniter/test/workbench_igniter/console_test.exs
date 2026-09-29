@@ -21,8 +21,12 @@ defmodule WorkbenchIgniter.ConsoleTest do
     assert by.("exdoc").doors == [
              %{
                label: "docs",
-               path: "doc/",
-               output: %{dir: "doc", index: "index.html", build: [%{task: "docs", when: nil}]},
+               path: "{output}/",
+               output: %{
+                 dir: "{output}",
+                 index: "index.html",
+                 build: [%{task: "docs", when: nil}]
+               },
                when: nil
              }
            ]
@@ -33,9 +37,9 @@ defmodule WorkbenchIgniter.ConsoleTest do
     assert by.("coverage").doors == [
              %{
                label: "coverage",
-               path: "cover/",
+               path: "{output_dir}/",
                output: %{
-                 dir: "cover",
+                 dir: "{output_dir}",
                  index: "excoveralls.html",
                  build: [
                    %{task: "cover", when: %{option: "md_report"}},

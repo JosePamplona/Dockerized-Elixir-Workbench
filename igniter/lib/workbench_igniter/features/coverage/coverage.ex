@@ -115,7 +115,9 @@ defmodule WorkbenchIgniter.Features.Coverage do
   def console,
     do: [
       doors: [
-        {"coverage", {:output, "cover", "excoveralls.html"},
+        # The door follows the report: `{output_dir}` is what `state/1`
+        # reads off coveralls.json, so a moved report is still found.
+        {"coverage", {:output, "{output_dir}", "excoveralls.html"},
          build: [{"cover", when: {:option, :md_report}}, "coveralls.html"]}
       ]
     ]
@@ -124,7 +126,11 @@ defmodule WorkbenchIgniter.Features.Coverage do
   # else leaves a file excoveralls cannot read.
   @impl true
   def formats,
-    do: [minimum_coverage: {:integer, 0..100}, file_column_width: {:integer, 40..999}]
+    do: [
+      minimum_coverage: {:integer, 0..100},
+      file_column_width: {:integer, 40..999},
+      output_dir: :dir
+    ]
 
   # The themes are the directories under assets/template — the same
   # list the installer checks --html-theme against.
@@ -172,6 +178,8 @@ defmodule WorkbenchIgniter.Features.Coverage do
     [
       minimum_coverage:
         "Minimum coverage percentage, a whole number from 0 to 100. Default: `80`.",
+      output_dir:
+        "Where the HTML report is written — ExCoveralls' `output_dir`, a directory inside the project. Default: `cover`, which phx.new gitignores.",
       file_column_width:
         "How wide the file column of the terminal table is, in characters — ExCoveralls' `file_column_width`. A path longer than the column is cut, and `mix cover` reads that table to build the report's own, so a cut path is a file the report loses. Default: `80`; ExCoveralls' own is 40, and a project with deep module paths wants more.",
       ignore_files:
@@ -207,12 +215,14 @@ defmodule WorkbenchIgniter.Features.Coverage do
       schema: [
         minimum_coverage: :string,
         file_column_width: :string,
+        output_dir: :string,
         ignore_files: :csv,
         html_theme: :string,
         md_report: :boolean,
         githook: :boolean
       ],
       defaults: [
+        output_dir: @output_dir,
         minimum_coverage: "80",
         file_column_width: "80",
         ignore_files: @default_groups,
@@ -269,6 +279,7 @@ defmodule WorkbenchIgniter.Features.Coverage do
     {%{
        minimum_coverage: minimum,
        file_column_width: number(json, "file_column_width"),
+       output_dir: string(json, "output_dir") || @output_dir,
        ignore_files: ignored(json, app_name),
        md_report: cover_task?,
        html_theme: theme,
@@ -277,6 +288,14 @@ defmodule WorkbenchIgniter.Features.Coverage do
   end
 
   # A number the json carries, as it is written there.
+  # A string the json carries under `key`, or nil.
+  defp string(json, key) do
+    case json && Regex.run(~r/"#{key}":\s*"([^"]*)"/, json) do
+      [_, value] -> value
+      _ -> nil
+    end
+  end
+
   defp number(json, key) do
     case json && Regex.run(~r/"#{key}":\s*([\d.]+)/, json) do
       [_, value] -> value
@@ -315,7 +334,14 @@ defmodule WorkbenchIgniter.Features.Coverage do
 
   @doc "Installer body, run by the mix task shell as its `igniter/1`."
   def install(igniter) do
-    opts = igniter.args.options
+    # The report's directory as ExCoveralls takes it: no trailing slash.
+    opts =
+      Keyword.update(
+        igniter.args.options,
+        :output_dir,
+        @output_dir,
+        &String.trim_trailing(String.trim(&1), "/")
+      )
 
     {installed?, igniter} = installed?(igniter)
 
@@ -493,7 +519,7 @@ defmodule WorkbenchIgniter.Features.Coverage do
     content =
       template("coveralls_json.eex",
         app_name: to_string(app_name),
-        output_dir: @output_dir,
+        output_dir: opts[:output_dir],
         # ExCoveralls' own report is the one it finds with no path.
         template_path: opts[:html_theme] != @default_theme && @template_path,
         # Written as parsed, so `080` lands as JSON's `80`.

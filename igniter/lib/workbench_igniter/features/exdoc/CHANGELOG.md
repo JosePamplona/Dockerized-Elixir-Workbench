@@ -11,6 +11,29 @@ Backfilled at the version below, its first: the cartridge shipped
 before a changelog was part of the anatomy, and gets one on its next
 change, as the features index says.
 
+## v0.9.0 - (2026-09-29)
+
+### Added
+
+- **`--output`: where `mix docs` writes the site.** ExDoc's own
+  `output`, a directory inside the project, `doc` by default — which is
+  what the box wrote until now, and what phx.new gitignores. Under
+  `priv/static/` the app serves the site itself. The value is checked
+  as a directory of the project's own (`:dir`: relative, no `..`),
+  since the console serves it off the workspace. `state/1` reads it
+  back off `mix.exs` — ExDoc's default when the line is not there — so
+  a project that moved its docs by hand reports the move like one that
+  asked for it, and the docs door follows: it is `{output}` now, filled
+  with what the project says, where it used to name `doc` and read
+  *nothing built* on a project that had moved it (tunez, to
+  `priv/static/doc`).
+
+### Changed
+
+- **`--coverage` copies the report from where the coverage box writes
+  it**, read off that box's `state/1` (`output_dir`), where it assumed
+  `cover`.
+
 ## v0.8.0 - (2026-09-23)
 
 ### Changed

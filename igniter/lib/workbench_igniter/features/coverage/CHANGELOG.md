@@ -10,6 +10,19 @@ Backfilled at the version below, its first: the cartridge shipped
 before a changelog was part of the anatomy, and gets one on its next
 change, as the features index says.
 
+## v0.12.0 - (2026-09-29)
+
+### Added
+
+- **`--output-dir`: where the HTML report is written.** ExCoveralls'
+  own `output_dir`, a directory inside the project, `cover` by default
+  — what the box wrote until now, and what phx.new gitignores. Checked
+  as a directory of the project's own (`:dir`), since the console
+  serves it off the workspace. `state/1` reads it back off
+  `coveralls.json`, so a project that moved the report by hand reports
+  the move too, and the coverage door follows: `{output_dir}`, filled
+  with what the project says, where it used to name `cover`.
+
 ## v0.11.0 - (2026-09-25)
 
 ### Changed

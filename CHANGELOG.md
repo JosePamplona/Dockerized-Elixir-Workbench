@@ -51,6 +51,25 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **A door follows the page when the project moves it.** exdoc's
+  docs door named `doc` and coverage's report door named `cover`, so a
+  project that wrote its docs elsewhere — tunez, to `priv/static/doc`,
+  where the app serves them itself — read *nothing built* in the
+  console, with a build button that built and still did not see it.
+  Where a page lands is now an option of each box, in the tool's own
+  words — exdoc v0.9.0 `--output`, coverage v0.12.0 `--output-dir`,
+  with the directory they always wrote as the default — and `state/1`
+  reads the value back off `mix.exs` and `coveralls.json`, so a project
+  that moved the page by hand reports it like one that asked. The door
+  is `{output}` / `{output_dir}`, and the console fills it the way it
+  already fills health_probe's `{path}`: nothing changed on its side,
+  and the Record's parameters column shows the flag like any other,
+  marked when it is the default. A directory inside the project is a
+  format now (`:dir`, beside `:url`, `:route`, `:version`): relative,
+  no `..`, since the console serves it off the workspace. exdoc's
+  `--coverage` copies the report from where coverage's state says it
+  is, where it assumed `cover`.
+
 - **A pending box says it is not built, in no word the console uses
   for something else.** *Installer* is the Phoenix generator across the
   console — the New Project card's row, the Record's, the drawer's

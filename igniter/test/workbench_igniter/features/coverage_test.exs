@@ -149,6 +149,27 @@ defmodule WorkbenchIgniter.Features.CoverageTest do
     # narrower than a path truncates it, and a truncated path is a row
     # the parser cannot match to a file. 80 is the default, wider than
     # ExCoveralls' own 40; a project with deeper paths asks for more.
+    test "writes the report where --output-dir says, and says it back; cover unasked" do
+      asked =
+        phx_test_project()
+        |> Igniter.compose_task("workbench.install.coverage", [
+          "--output-dir",
+          "priv/static/cover/"
+        ])
+        |> apply_igniter!()
+
+      assert asked.assigns[:test_files]["coveralls.json"] =~ ~s|"output_dir": "priv/static/cover"|
+      assert {%{output_dir: "priv/static/cover"}, _} = Coverage.state(asked)
+
+      unasked =
+        phx_test_project()
+        |> Igniter.compose_task("workbench.install.coverage", [])
+        |> apply_igniter!()
+
+      assert unasked.assigns[:test_files]["coveralls.json"] =~ ~s|"output_dir": "cover"|
+      assert {%{output_dir: "cover"}, _} = Coverage.state(unasked)
+    end
+
     test "the minimum the suite is held to: the flag, else 80" do
       igniter =
         phx_test_project()

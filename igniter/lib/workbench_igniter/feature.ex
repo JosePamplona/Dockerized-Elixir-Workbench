@@ -131,7 +131,8 @@ defmodule WorkbenchIgniter.Feature do
   option's *format*, which the type cannot say: `:url` (exdoc's
   repository and website, guidelines' page), `:version` (changelog's
   first release), `:dns_name` (clustering's query), `:route`
-  (health_probe's prefix) or `{:integer, range}` (coverage's minimum).
+  (health_probe's prefix), `:dir` (a directory inside the project:
+  exdoc's and coverage's output) or `{:integer, range}` (coverage's minimum).
 
   It is a fact of the option, declared once and read twice: the
   installer refuses a value that does not hold it — one message for
@@ -147,7 +148,7 @@ defmodule WorkbenchIgniter.Feature do
   @callback formats() :: [{atom(), format()}]
 
   @typedoc "What a value has to look like — see `c:formats/0`."
-  @type format :: :url | :version | :dns_name | :route | {:integer, Range.t()}
+  @type format :: :url | :version | :dns_name | :route | :dir | {:integer, Range.t()}
 
   @doc """
   The options whose default is read off the project when not given —
@@ -769,6 +770,7 @@ defmodule WorkbenchIgniter.Feature do
   defp shape(:version), do: "a version (1.2.3)"
   defp shape(:dns_name), do: "a DNS name (app.default.svc.cluster.local)"
   defp shape(:route), do: "a path (/health)"
+  defp shape(:dir), do: "a directory inside the project (priv/static/doc)"
 
   defp shape({:integer, %Range{first: first, last: last}}),
     do: "a whole number from #{first} to #{last}"
@@ -806,6 +808,17 @@ defmodule WorkbenchIgniter.Feature do
   # The slashes around them are the cartridge's to trim.
   defp holds_format?(value, :route),
     do: Regex.match?(~r|^/*([A-Za-z0-9._~-]+/*)*$|, String.trim(value))
+
+  # A directory of the project's own: relative, segments of plain
+  # characters, none of them `..` — the console serves it off the
+  # workspace, and a path that climbed out would serve something else.
+  defp holds_format?(value, :dir) do
+    value = value |> String.trim() |> String.trim_trailing("/")
+
+    value != "" and not String.starts_with?(value, "/") and
+      Regex.match?(~r|^[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*$|, value) and
+      ".." not in String.split(value, "/")
+  end
 
   defp holds_format?(value, {:integer, range}) do
     case Integer.parse(String.trim(value)) do

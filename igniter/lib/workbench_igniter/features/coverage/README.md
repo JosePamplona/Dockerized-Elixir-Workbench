@@ -42,7 +42,7 @@ become part of what the project shows about itself.
 * `mix.exs`: `test_coverage: [tool: ExCoveralls]` and the
   `preferred_envs` (`cover`, `coveralls`,
   `coveralls.detail|post|html|cobertura` → `:test`).
-* `coveralls.json`: output to the standard `cover/` dir (already
+* `coveralls.json`: output to the standard `cover/` dir — or where `--output-dir` says — (already
   gitignored by phx.new), minimum coverage, the list of what the report
   leaves out (`--ignore-files`) and, with a theme, the report template
   path.

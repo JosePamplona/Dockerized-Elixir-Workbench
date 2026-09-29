@@ -5998,10 +5998,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   blank lines. Conditional rows are now rendered inline and `plant/5`
   collapses residual blank-line runs.
 
-## Unreleased
+## v0.5.0
 
-> During development, milestones can be added to this section. Once finished working on them, it's only needed to copy the commented title template line, adjust the title version & date and uncomment it.
-<!-- ## v0.0.0 - (0000-00-00) -->
 ### Added
 
 <!-- # BETTER SERVICE STRUCTURE -->

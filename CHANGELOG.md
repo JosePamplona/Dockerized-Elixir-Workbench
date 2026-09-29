@@ -101,6 +101,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   console's Terminal on `app`), read at the *mailbox* door — and why
   a VM of its own (`iex -S mix`) would show nothing there.
 
+### Removed
+
+- **The *Detail* link on the New Project card's workspace row.** The
+  `existing project` chip stays and says what Create would overwrite;
+  the Record is the Project tab's, and the card that asks for the next
+  project no longer points at the one it would replace.
+
 ## v0.13.0 - (2026-09-28)
 
 ### Added

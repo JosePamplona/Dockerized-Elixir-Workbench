@@ -366,28 +366,18 @@ defmodule ConsoleWeb.TabsTest do
     refute table =~ "chip"
   end
 
-  # The Record's link left the card's head on 2026-09-27 and stands by
-  # the chip that says there is a project: the two come and go together
-  # — both are there exactly when the workspace holds one — so the chip
-  # says there is a project and the link opens it, on the row that is
-  # about it.
-  test "the project's Detail link stands with the chip, not in the card's head", %{conn: conn} do
+  # The Record's link left the New Project card on 2026-09-28: the chip
+  # beside the workspace says there is a project, and the Project tab is
+  # where the reader opens it. The card asks for a project; it does not
+  # point at the one it would overwrite.
+  test "the New Project card carries no Detail link to the Record", %{conn: conn} do
     arrives(Map.merge(status([]), %{"exists" => true, "project" => %{"app" => "lorem_ipsum"}}))
     {:ok, _view, html} = live(conn, "/deploy")
 
-    # Not in the head any more, where it read "what it is".
-    [head] = Regex.run(~r{<h3[^>]*>.*?New Project.*?</h3>}s, html)
-    refute head =~ "Detail"
-    refute head =~ "what it is"
-
-    # And on the workspace row: after the chip that says there is a
-    # project, before the row that asks for a name.
-    chip = :binary.match(html, "existing project") |> elem(0)
-    link = :binary.match(html, "/project?paper=record") |> elem(0)
-    next_row = :binary.match(html, "project name") |> elem(0)
-
-    assert chip < link and link < next_row
-    assert html =~ "Detail"
+    [card] = Regex.run(~r{<form[^>]*id="new-project-form".*?</form>}s, html)
+    assert card =~ "existing project"
+    refute card =~ "Detail"
+    refute card =~ "/project?paper=record"
   end
 
   # The Deploy screen's three cards fold to their head since 2026-09-27,

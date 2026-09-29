@@ -135,19 +135,6 @@ defmodule ConsoleWeb.NewProject do
             <.chip :if={@project?} class="good" title="creating overwrites every file in it">
               existing project
             </.chip>
-            <%!-- Beside the chip and not in the card's head (2026-09-27):
-                  the two come and go together — both are there when the
-                  workspace holds a project — so the chip says there is
-                  one and the link opens it, on the row that is about
-                  it. --%>
-            <.link
-              :if={@project?}
-              class="lk"
-              patch="/project?paper=record"
-              title="the Record: what this project is — its birth, its cartridges"
-            >
-              Detail
-            </.link>
           </:mark>
         </.given>
         <div class="frow">

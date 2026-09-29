@@ -30,6 +30,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **The console's image is `dew-console:WORKBENCH-HASH`.** The stack
+  and the installer are no longer in its name: the hash in the tag
+  now covers the workbench image the release is compiled on, along
+  with the sources and the path, so a stack changed in `config.conf`
+  is a new tag as a source changed is, and the base's name is a label
+  on the image (`org.opencontainers.image.base.name`). One repository
+  to list, and `prune_console_images` now also drops the consoles of
+  this version built on another stack, which the stack in the name
+  kept out of its sight. The images with the old name are not seen by
+  the new prune: `docker rmi` them once.
+
 - **The console's logs come out in colour.** `config :elixir,
   ansi_enabled: true` in the console's `config.exs`: Elixir turns
   colour off when its output is not a terminal, and the console's is

@@ -2404,11 +2404,13 @@
     # nothing names the same image. Not the tests, not what Mix wrote,
     # and not a cartridge's papers, which the console reads off the
     # mount at run time: editing one costs no build. The workbench's
-    # path goes in too: the sources are compiled at that path and the
-    # image is good for it alone. Tenths of a second.
+    # image goes in, since the release is compiled on it and another
+    # stack is another image, and so does the workbench's path: the
+    # sources are compiled at that path and the image is good for it
+    # alone. Tenths of a second.
   console_sources_hash() {
     ( cd "$WORKBENCH_PATH" && \
-      { echo "$WORKBENCH_PATH"; \
+      { echo "$WORKBENCH_IMAGE"; echo "$WORKBENCH_PATH"; \
       find console igniter .dockerignore \
         \( -path console/_build -o -path console/deps -o -path console/cover \
            -o -path console/doc -o -path console/tmp -o -path console/test \
@@ -2422,17 +2424,16 @@
   }
 
   # console_image
-    # The console's image, named off the workbench's: the same stack
-    # and installer in the repository, with 'console' after 'dew',
-    # and the workbench's version and the sources' hash as the tag —
-    # dew-console-exELIXIR-erlOTP-phxVERSION:WORKBENCH-HASH. It is the
-    # workbench's image with the console compiled into it as a release
-    # (console/Dockerfile), so one per workbench image, and a
-    # source that changed is another tag.
+    # The console's image: 'console' after 'dew' in the repository, and
+    # the workbench's version and the hash above as the tag —
+    # dew-console:WORKBENCH-HASH. It is the workbench's image with the
+    # console compiled into it as a release (console/Dockerfile); the
+    # stack is not in the name, since the hash covers the image it was
+    # built on, and a base or a source that changed is another tag.
   console_image() {
     local hash
     hash=$(console_sources_hash) || return 1
-    CONSOLE_IMAGE="$IMAGE_REPOSITORY-console-${WORKBENCH_IMAGE#"$IMAGE_REPOSITORY-"}-$hash"
+    CONSOLE_IMAGE="$IMAGE_REPOSITORY-console:$IMAGE_TAG-$hash"
   }
 
   # build_console_image
@@ -2463,9 +2464,10 @@
   }
 
   # prune_console_images
-    # The console images this version built for other sources: gone,
-    # once the console runs on the current one. One in use by a
-    # container that still runs is refused by Docker and goes next time.
+    # The console images this version built for other sources or on
+    # another stack: gone, once the console runs on the current one.
+    # One in use by a container that still runs is refused by Docker
+    # and goes next time.
   prune_console_images() {
     docker images --format '{{.Repository}}:{{.Tag}}' "${CONSOLE_IMAGE%%:*}" 2> /dev/null | \
       grep "^${CONSOLE_IMAGE%%:*}:$IMAGE_TAG-" | grep -v "^$CONSOLE_IMAGE\$" | \

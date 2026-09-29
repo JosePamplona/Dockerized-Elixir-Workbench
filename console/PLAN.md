@@ -800,14 +800,16 @@ would come up with no version and no need. And the release carries
 `:mix`: the catalog is the package's Mix task called in this BEAM, and
 each box's summary is its task's `@shortdoc`.
 
-The image is named off the workbench's, `dew-console-STACK-phxVERSION`,
-tagged with the workbench's version and a hash of the sources the
-`.dockerignore` lets into the context — `console/` and `igniter/`
-without the tests, what Mix wrote, and the cartridges' papers, which
-the console reads off the mount, so editing one costs no build — and
-of the workbench's path, since the image is good for that path alone. A
-source that changed is a new tag, built on the next start; the old tags
-of the same version go once the new console runs. `console dev` keeps
+The image is `dew-console`, tagged with the workbench's version and a
+hash of the sources the `.dockerignore` lets into the context —
+`console/` and `igniter/` without the tests, what Mix wrote, and the
+cartridges' papers, which the console reads off the mount, so editing
+one costs no build — of the workbench's image it is built on, and of
+the workbench's path, since the image is good for that path alone. The
+stack is not in the name: the hash covers the base, and the base's
+name is a label on the image. A base or a source that changed is a new
+tag, built on the next start; the old tags of the same version go once
+the new console runs. `console dev` keeps
 the mode the console ran in until now, `mix phx.server` on the mounted
 sources with its two volumes, for work on the console or the package.
 The start-again from inside the console comes back in the mode it was

@@ -1,5 +1,5 @@
-# The console's image (dew-console-exELIXIR-erlOTP-phxVERSION:WORKBENCH-HASH):
-# the workbench's image with the console compiled into it as a release,
+# The console's image (dew-console:WORKBENCH-HASH): the workbench's
+# image with the console compiled into it as a release,
 # at /app/console/release. The image stays the workbench's because the
 # console runs wb.sh in its own container — the mix and git of a job,
 # the resident — so mix, the installer and the Docker CLI have to be
@@ -7,8 +7,10 @@
 # nothing to fetch or compile, seconds, and no code compiled through the
 # bind mount. Built by './wb.sh console' when the daemon has no image for
 # the sources as they are: the tag carries the workbench's version and a
-# hash of the context (.dockerignore says what that is) and of the path
-# below, so a source that changed is a new tag, and the old one goes.
+# hash of the context (.dockerignore says what that is), of the image
+# below and of the path below, so a base or a source that changed is a
+# new tag, and the old one goes. Which workbench image it was built on
+# is in the label, for 'docker inspect'.
 # The context is the workbench's root, not this directory, because the
 # package is a path dependency beside it (../igniter): that is why the
 # .dockerignore is there too. Two build arguments, no defaults on
@@ -59,7 +61,9 @@ RUN mix compile && \
 
 FROM ${WORKBENCH_IMAGE}
 
+ARG WORKBENCH_IMAGE
 ARG WORKBENCH_PATH
+LABEL org.opencontainers.image.base.name="${WORKBENCH_IMAGE}"
 COPY --from=build --chown=elixir:elixir \
     ${WORKBENCH_PATH}/console/_build/prod/rel/console /app/console/release
 

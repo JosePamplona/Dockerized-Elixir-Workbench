@@ -96,5 +96,6 @@ container run each, ~11 for a full add) accepted and not measured.
 ## References
 
 1. `SETUP2_INVENTORY.md` — the dissection of setup's parts (read
-   2026-08-30).
+   2026-08-30; a resolved record, removed on 2026-09-29 and kept in
+   git history at `igniter/lib/mix/tasks/`).
 2. `../README.md` — cartridge anatomy and the collections rule.

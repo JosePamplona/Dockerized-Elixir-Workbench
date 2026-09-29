@@ -85,8 +85,11 @@ generated tests need a double registers it, and owns its own block of
 alias WorkbenchIgniter.Features.TestDoubles
 
 igniter
-|> TestDoubles.copy("health_endpoint", ["MyApp.Repo", "System"],
-     note: "what its controller test makes raise")
+|> TestDoubles.copy(
+  "health_endpoint",
+  ["MyApp.Repo", "System"],
+  note: "what its controller test makes raise"
+)
 |> TestDoubles.defmock("openai", [{"MyApp.OpenAI.Mock", "MyApp.OpenAI.Client"}])
 ```
 

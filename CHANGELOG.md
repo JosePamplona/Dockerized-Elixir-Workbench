@@ -208,6 +208,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Removed
 
+- **Two papers of the package.** `igniter/la-estructura-de-los-cartuchos.html`,
+  the decision page of the cartridge-structure review (its first phase
+  landed on 2026-09-11: `state/1` on every cartridge, the composes, the
+  conformance suite), goes to `_archived/` with the other settled pages.
+  `igniter/lib/mix/tasks/SETUP2_INVENTORY.md`, the inventory that guided
+  the dissection of the retired `workbench.setup` and said of itself it
+  was kept as a record, is removed: the record is the CHANGELOG's and
+  chiefs_setup's DESIGN, whose reference to it now says where it is
+  (git history).
+
 - **`IGN_IMPROV.md`, archived.** The paper of 2026-09-24 that read what
   Igniter already solves against what the workbench does, and planned
   four phases from it. What it settled stays decided: an installer

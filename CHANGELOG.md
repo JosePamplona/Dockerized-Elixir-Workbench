@@ -114,6 +114,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   console's Terminal on `app`), read at the *mailbox* door — and why
   a VM of its own (`iex -S mix`) would show nothing there.
 
+### Fixed
+
+- **The code/drawing switch on an SVG's diff stood against the top
+  edge.** The source pane has no padding of its own — a row paints its
+  band edge to edge — and the switch brought room on its left and under
+  it only, so it sat pressed to the top of the box; and its sticky
+  offset was the scroller's edge itself, so a patch scrolled sideways
+  pressed it against the left. It now brings room over it too, as the
+  drawing keeps under, and sticks at the same distance from the left
+  it stands at in rest (`console.css`, `.impl .src .switch`).
+
 ### Removed
 
 - **The *Detail* link on the New Project card's workspace row.** The

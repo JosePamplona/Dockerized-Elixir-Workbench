@@ -1334,8 +1334,12 @@ form.insert.locked .opt input{opacity:.55}
    scrolls out over bare ground. */
 .impl .src .rows{min-width:max-content}
 /* The switch sits on the terminal ground the source is read on, and stays
-   put while the patch scrolls sideways under it. */
-.impl .src .switch{position:sticky;left:0;z-index:1;display:inline-flex;gap:2px;margin:0 0 6px 14px;
+   put while the patch scrolls sideways under it. The pre has no padding
+   of its own (a row paints its own band edge to edge), so the switch
+   brings the room over it, the same the drawing keeps under; and the
+   room on its left is the sticky offset too, so a scrolled patch does
+   not press it against the scroller's edge. */
+.impl .src .switch{position:sticky;left:8px;z-index:1;display:inline-flex;gap:6px;margin:8px 0 8px 8px;
   font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10.5px}
 .impl .src .switch button{background:none;border:1px solid var(--term-line);color:var(--term-dim);
   padding:3px 9px;border-radius:2px;cursor:pointer;font:inherit}

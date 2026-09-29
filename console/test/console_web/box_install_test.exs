@@ -516,7 +516,9 @@ defmodule ConsoleWeb.BoxInstallTest do
       # GitHub's mark in place of hex's.
       assert html =~ ~s|href="https://github.com/tailwindlabs/heroicons"|
       assert html =~ ~s|href="https://github.com/tailwindlabs/heroicons/tree/v2.2.0"|
-      assert html =~ "icons.svg#github"
+      assert html =~ ~s|src="/images/vendor/github.svg"|
+      assert html =~ ~s|src="/images/vendor/github-white.svg"|
+      refute html =~ "icons.svg#github"
       refute html =~ "hex.pm/packages/heroicons"
       # GitHub is asked of it, by the same button, and counts no downloads.
       assert html =~ ~s(phx-value-names="tailwind,heroicons=tailwindlabs/heroicons")

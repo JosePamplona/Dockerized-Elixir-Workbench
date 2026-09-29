@@ -30,6 +30,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **GitHub's mark is vendored like hex's.** A package from a
+  repository on GitHub wore the Invertocat from the house's sprite
+  (`assets/design/icons/github.svg`, since 2026-09-23): a tracing of no
+  recorded provenance, painted in whatever ink held it, alongside the
+  bell and the cog — everything `vendor/README.md` says a third party's
+  mark is not. The sprite symbol is gone. The mark is now the two files
+  GitHub itself hands out (`brand.github.com/GitHub_Logos.zip`), black
+  and white, vendored at `console/priv/static/images/vendor/` with
+  their provenance beside hex's, and shown as `<img>` like hex's: the
+  mention carries both, and the house's `.pkg-ref` shows the one the
+  ground calls for, switching under the same three guards as the
+  tokens, so neither is ever recoloured.
+
 - **The console's image is `dew-console:WORKBENCH-HASH`.** The stack
   and the installer are no longer in its name: the hash in the tag
   now covers the workbench image the release is compiled on, along

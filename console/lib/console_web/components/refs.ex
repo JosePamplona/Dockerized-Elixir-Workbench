@@ -68,8 +68,10 @@ defmodule ConsoleWeb.Refs do
   tells it apart from a mention of a cartridge (`cart_ref/1`, a drawer
   in this console).
   With `git` — where a package from git comes from, as the status
-  reports it — the package is its repository instead: GitHub's mark,
-  the repository's page, and with `version`, its tag's tree. A git
+  reports it — the package is its repository instead: GitHub's mark
+  (the Invertocat as GitHub draws it, black on the light ground and
+  white on the dark, both vendored), the repository's page, and with
+  `version`, its tag's tree. A git
   host other than GitHub has no page the console can name, so the
   mention says the name and is no link.
   """
@@ -111,7 +113,21 @@ defmodule ConsoleWeb.Refs do
             else: "#{@name} on GitHub: #{@repo}"
           )
       }
-    ><svg :if={@mark} class="mark" aria-hidden="true" width="12" height="12"><use href="/images/icons.svg#github" /></svg>{@says}</a>
+    ><img
+      :if={@mark}
+      class="mark light"
+      src="/images/vendor/github.svg"
+      alt=""
+      width="12"
+      height="12"
+    /><img
+      :if={@mark}
+      class="mark dark"
+      src="/images/vendor/github-white.svg"
+      alt=""
+      width="12"
+      height="12"
+    />{@says}</a>
     <span
       :if={!@href}
       class={["pkg-ref", "bare", @class]}

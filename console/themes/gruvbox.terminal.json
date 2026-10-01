@@ -1,0 +1,54 @@
+{
+  "dew.theme": {
+    "name": "Gruvbox",
+    "author": "Pavel Pertsev (morhetz)",
+    "url": "https://github.com/morhetz/gruvbox",
+    "licence": "MIT"
+  },
+  "dark": {
+    "workbench.colorCustomizations": {
+      "terminal.background": "#282828",
+      "terminal.foreground": "#ebdbb2",
+      "dew.terminal.dim": "#8a826d",
+      "terminal.ansiBlack": "#282828",
+      "terminal.ansiRed": "#cc241d",
+      "terminal.ansiGreen": "#98971a",
+      "terminal.ansiYellow": "#d79921",
+      "terminal.ansiBlue": "#458588",
+      "terminal.ansiMagenta": "#b16286",
+      "terminal.ansiCyan": "#689d6a",
+      "terminal.ansiWhite": "#a89984",
+      "terminal.ansiBrightBlack": "#928374",
+      "terminal.ansiBrightRed": "#fb4934",
+      "terminal.ansiBrightGreen": "#b8bb26",
+      "terminal.ansiBrightYellow": "#fabd2f",
+      "terminal.ansiBrightBlue": "#83a598",
+      "terminal.ansiBrightMagenta": "#d3869b",
+      "terminal.ansiBrightCyan": "#8ec07c",
+      "terminal.ansiBrightWhite": "#ebdbb2"
+    }
+  },
+  "light": {
+    "workbench.colorCustomizations": {
+      "terminal.background": "#fbf1c7",
+      "terminal.foreground": "#3c3836",
+      "dew.terminal.dim": "#9c947e",
+      "terminal.ansiBlack": "#fdf4c1",
+      "terminal.ansiRed": "#cc241d",
+      "terminal.ansiGreen": "#98971a",
+      "terminal.ansiYellow": "#d79921",
+      "terminal.ansiBlue": "#458588",
+      "terminal.ansiMagenta": "#b16286",
+      "terminal.ansiCyan": "#689d6a",
+      "terminal.ansiWhite": "#7c6f64",
+      "terminal.ansiBrightBlack": "#928374",
+      "terminal.ansiBrightRed": "#9d0006",
+      "terminal.ansiBrightGreen": "#79740e",
+      "terminal.ansiBrightYellow": "#b57614",
+      "terminal.ansiBrightBlue": "#076678",
+      "terminal.ansiBrightMagenta": "#8f3f71",
+      "terminal.ansiBrightCyan": "#427b58",
+      "terminal.ansiBrightWhite": "#3c3836"
+    }
+  }
+}

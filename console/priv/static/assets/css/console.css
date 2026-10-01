@@ -941,7 +941,11 @@ pre .ln{display:block}
    clipped, options and runs out of reach on a short window. */
 .drawer > .booklet,.drawer > .install,.drawer > .body{min-height:0;overflow:auto}
 /* The Interface pane does not scroll as a whole: its controls column does, and the miniature fills the height. */
-.drawer > .ui{min-height:0;overflow:clip}
+/* The Interface tab's pane: its ribbon, then the tab, which never scrolls as a whole (its column does). */
+.drawer > .uipane{min-height:0;overflow:clip;display:grid;grid-template-rows:auto minmax(0,1fr)}
+/* The scale of the whole (the drawer's Text part, --scale on the root): on what the page lays out — the band, the warning, the screen — and on what each overlay holds, never on an overlay's frame, which is sized in viewport units and zoomed would leave the viewport. */
+body>[data-phx-main]>header.band,body>[data-phx-main]>.rebind,body>[data-phx-main]>.app,.drawer>*,.viewer>*{zoom:var(--scale,1)}
+.uipane > .dtabs.docked{padding-left:28px;padding-right:28px}
 .booklet[hidden]{display:none}
 .booklet.notoc{grid-template-columns:minmax(0,1fr)}
 .booklet .toc{position:sticky;top:0;align-self:start;display:grid;gap:6px;font-family:var(--cond);font-weight:600;letter-spacing:.06em;font-size:12.5px;text-transform:uppercase;border-left:1px solid var(--line);padding-left:12px}
@@ -1228,8 +1232,10 @@ form.insert.locked .opt input{opacity:.55}
 .impl .fh .n .r{color:var(--bad)}
 
 /* --- the diff, on the ground the palette was written for -------------------
-   console/elixir_color_theme.jsonc is One Dark: twelve rules meant for a
-   dark editor. They go in here as they were written, on the house's own
+   The twelve are One Dark, as written in console/elixir_color_theme.jsonc
+   (archived out of git on 2026-09-29, once hooks.js LANGS and this block
+   carried them whole; themes/house.json is that file again): rules
+   meant for a dark editor. They go in here as they were written, on the house's own
    dark ground — the one the Logs screen already uses — instead of being
    re-derived for paper, which is what made them read muddy. On the light
    ground the terminal is paper since 2026-09-07, and the twelve are One
@@ -1285,8 +1291,10 @@ form.insert.locked .opt input{opacity:.55}
 .src[data-lang="markdown"]{--t-base:var(--t-markdown-base);--t-punct:var(--t-markdown-punct);--t-comment:var(--t-markdown-comment);--t-atom:var(--t-markdown-atom);--t-const:var(--t-markdown-const);--t-func:var(--t-markdown-func);--t-kw:var(--t-markdown-kw);--t-op:var(--t-markdown-op);--t-mod:var(--t-markdown-mod);--t-str:var(--t-markdown-str);--t-interp:var(--t-markdown-interp);--t-regex:var(--t-markdown-regex)}
 .src[data-lang="godot"]{--t-base:var(--t-godot-base);--t-punct:var(--t-godot-punct);--t-comment:var(--t-godot-comment);--t-atom:var(--t-godot-atom);--t-const:var(--t-godot-const);--t-func:var(--t-godot-func);--t-kw:var(--t-godot-kw);--t-op:var(--t-godot-op);--t-mod:var(--t-godot-mod);--t-str:var(--t-godot-str);--t-interp:var(--t-godot-interp);--t-regex:var(--t-godot-regex)}
 .src[data-lang="shell"]{--t-base:var(--t-shell-base);--t-punct:var(--t-shell-punct);--t-comment:var(--t-shell-comment);--t-atom:var(--t-shell-atom);--t-const:var(--t-shell-const);--t-func:var(--t-shell-func);--t-kw:var(--t-shell-kw);--t-op:var(--t-shell-op);--t-mod:var(--t-shell-mod);--t-str:var(--t-shell-str);--t-interp:var(--t-shell-interp);--t-regex:var(--t-shell-regex)}
-.impl .src{margin:0;overflow:auto;max-height:min(62vh,700px);background:var(--term);color:var(--t-base);
+.impl .src{margin:0;overflow:auto;max-height:min(62vh,700px);background:var(--sheet,var(--term));color:var(--t-base);
            font-family:var(--file-face,var(--mono));font-size:var(--file-size,12.5px);line-height:round(calc(var(--file-leading,1.6) * 1em),1px);padding:0}
+/* A file with no language is read in the sheet's own ink, the code theme's (--sheet-ink, editor.foreground) when it says one; a language's code keeps its palette's. After .impl .src, which sets the palette's base. */
+.src:not([data-lang]),.impl .src:not([data-lang]),.md pre.src:not([data-lang]){color:var(--sheet-ink,var(--t-base))}
 .src .n, .src .nv, .src .nb, .src .nx{color:var(--t-base)}
 .src .p{color:var(--t-punct)}
 .src .c, .src .c1, .src .cm, .src .cs, .src .cp, .src .gp{color:var(--t-comment)}
@@ -1348,7 +1356,7 @@ form.insert.locked .opt input{opacity:.55}
 /* The number sits centred in its plate, a size smaller than the code: a ruler, not a line of the file. The plate is the file row's own ground (surface-2), so ruler and row read as one furniture around the text. */
 /* Whole pixels throughout — the widths, the air, the line's height — because a bitmap face (Tamzen, the VGA) blurs the moment its glyphs land on a fraction, and a ch or an em is a fraction more often than not; round() is what the drawer already does to its own width. */
 /* Centred by arithmetic, not by text-align: the leftover of the cell is halved and rounded, so the number starts on a whole pixel whatever its digits (--d, from the row). text-align would put a number one digit short of the widest on a half pixel, since a bitmap digit is an odd number of pixels wide. */
-.impl .dl .gut{flex:none;--w:calc(round(up,var(--gut,3ch),1px) + 2 * round(.6em,1px));width:var(--w);padding:0 0 0 round(calc((var(--w) - var(--d,0) * 1ch) / 2),1px);display:flex;align-items:center;justify-content:start;font-size:calc(var(--file-ruler,.85) * 1em);color:var(--term-dim);user-select:none;font-variant-numeric:tabular-nums;background:var(--surface-2)}
+.impl .dl .gut{flex:none;--w:calc(round(up,var(--gut,3ch),1px) + 2 * round(.6em,1px));width:var(--w);padding:0 0 0 round(calc((var(--w) - var(--d,0) * 1ch) / 2),1px);display:flex;align-items:center;justify-content:start;font-size:calc(var(--file-ruler,.85) * 1em);color:var(--sheet-num,var(--term-dim));user-select:none;font-variant-numeric:tabular-nums;background:var(--sheet-num-bg,var(--surface-2))}
 /* The text of a line sits centred in it by its capitals, not by the font's
    box. A line box is the font's ascent and descent with the leading split
    above and below, and a face's descent is room most lines never use — so
@@ -1451,16 +1459,31 @@ form.insert.locked .opt input{opacity:.55}
 /* The gap between the controls and the miniature is the pane's own side margin, 28px, read from the controls' scrollbar, which is the column's edge. */
 .ui{display:grid;grid-template-columns:320px minmax(0,1fr);gap:28px;padding:26px 28px 28px;height:100%;min-height:0}
 .ui .ctl{overflow:auto;min-height:0;display:grid;gap:18px;align-content:start;padding-right:6px;scrollbar-gutter:stable}
-.ui .lede{margin:0;font-size:13px;color:var(--muted)}
 .ui section{display:grid;gap:10px}
-/* The four groups, folded as the rail's sections are: the head is the rail's h2 at the tab's size, the chevron square at its end, and a folded group keeps only its head. The head sits close over its first section, 8px, so the group reads as one thing; the sections inside keep 18 between them, and the groups 28 (the column's gap and the open group's padding below). */
-.ui .group{display:grid;gap:0}
-.ui .group > .ghead{margin-bottom:8px}
-.ui .group > section + section{margin-top:18px}
-.ui .group > .ghead{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:15px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
-.ui .group > .ghead .sq.foldsq{margin-left:auto}
-.ui .group.folded > :not(.ghead){display:none}
-.ui .group:not(.folded){padding-bottom:10px}
+/* The parts, one in view: the one the pane's data-part names, which the ribbon's patch sets (the pane is phx-update="ignore", so the part travels as an attribute, and the hook only rewinds the column). The sections inside keep 18 between them, as they did under the folds these replaced on 2026-09-29. */
+.ui .part{display:none;gap:18px}
+.ui[data-part="overlay"] .part[data-part="overlay"],.ui[data-part="terminal"] .part[data-part="terminal"],.ui[data-part="code"] .part[data-part="code"],.ui[data-part="credits"] .part[data-part="credits"]{display:grid}
+/* A theme's part shows its surface alone in the miniature: Terminal the lines, the row taking the sheet's height; Code the sheet, without the terminal's toolbar and lines. Overlay shows both, the frame being the whole. Until 2026-09-30 the surface a part set was outlined in the accent too; with a surface a part, the outline said what the miniature says. */
+.ui[data-part="terminal"] .mini .ograb,.ui[data-part="terminal"] .mini .impl,.ui[data-part="code"] .mini .toolbar,.ui[data-part="code"] .mini .lines,.ui[data-part="code"] .mini .ograb{display:none}
+.ui[data-part="terminal"] .mmain{grid-template-rows:auto auto minmax(0,1fr)}
+.ui[data-part="code"] .mmain{grid-template-rows:auto minmax(0,1fr)}
+/* The Credits part: a face a card, its head the name set in the face itself (the specimen, in place of the card's uppercase head), whose and under which licence as chips, what it draws under. Settled 2026-09-29 among the list, the card and a ficha with the accent edge. */
+.ui .credits{display:grid;gap:10px}
+.ui .credits>*{min-width:0}
+.ui .card.credit{padding:12px 14px;gap:8px}
+.ui .card.credit>h3{font:inherit;letter-spacing:0;text-transform:none;display:block}
+/* The specimen is the face shown, not a link: it takes no hover. The ficha's one link is its .site-ref, which lights in the accent as the house's mentions do. */
+.ui .credit .spec{color:var(--ink);line-height:1.15}
+.ui .credit .chips{margin:0;display:flex;gap:6px;flex-wrap:wrap}
+.ui .credit .chips .chip{font-size:10.5px;white-space:normal}
+.ui .credit .hint{margin:0}
+.ui .credit .site{margin:0}
+.ui .credit>h3 b{font-weight:600}
+.ui .credit[data-on]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.ui .credit .on{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:11px;color:var(--accent)}
+.ui .credit .on[hidden]{display:none}
+/* A hint the hook has not written is not there. */
+.ui .hint:empty{display:none}
 .ui h5{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:13px;padding-bottom:5px;border-bottom:1px solid var(--line)}
 .ui .hint{margin:0;font-size:12px;color:var(--muted)}
 .ui .acts{margin:0;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -1496,26 +1519,94 @@ form.insert.locked .opt input{opacity:.55}
 .ui .thumb.system .t{background:linear-gradient(90deg,#1D1424 12px,#EFE7F2 12px);opacity:.35}
 .ui .thumb.system .tm{background:linear-gradient(90deg,#FDFBFE 12px,#120B17 12px);border:1px solid #6B5C76}
 .ui .picks{display:grid;gap:6px}
-.ui .picks label{display:grid;grid-template-columns:64px 1fr;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;color:var(--ink)}
+/* What a face does — ligatures on, a bitmap — right under the face it is said of, in the control's column. */
+.ui .picks .help{grid-column:1/-1;margin:-2px 0 2px 72px}
+.ui .picks label,.ui .picks .pick{display:grid;grid-template-columns:64px 1fr;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;color:var(--ink)}
 .ui select{font-family:var(--mono);font-size:12px;padding:3px 6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;width:100%;min-width:0}
 .ui .groups{display:grid;gap:10px}
 .ui .set{display:grid;gap:6px}
 .ui .set h6{margin:0;font-family:var(--cond);font-weight:600;text-transform:uppercase;letter-spacing:.08em;font-size:11px;color:var(--muted)}
-.ui .roles{display:grid;grid-template-columns:1fr 1fr;gap:5px 10px}
-.ui .roles label{display:inline-flex;gap:8px;align-items:center;font-family:var(--mono);font-size:12px;color:var(--ink);cursor:pointer;min-width:0}
-.ui .roles input[type=color]{width:22px;height:22px;flex:none;padding:0;border:1px solid var(--line);border-radius:2px;background:none;cursor:pointer}
+/* The colour roles, one component (2026-09-30): a table of name | colour
+   pairs, the colour 20px, the pairs repeated across the row while every
+   name fits on one line — the hook measures a box's longest name into
+   --role-w (fitRoles), and data-pairs caps the pairs a row takes, the
+   name column widened until only that many fit. One gap, 5px, both
+   ways. On a row of two pairs or more the even pairs are mirrored,
+   colour then name, and the names align towards their colour: the row
+   reads towards its axis and two colours meet in the middle — ANSI's
+   each beside its bright. A pair alone keeps the name first. A record
+   with nothing in it (label.none, a null in the hook's list) ends a
+   row early. The hook writes the mirrored tracks (grid-template-columns)
+   when it lays the pairs out; this is the shape before it does. */
+.ui .roles{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--role-w,140px),1fr) 20px);gap:5px;align-items:center}
+.ui .roles label{display:contents}
+.ui .roles label.none.alone{display:none}
+/* The opacity: a slider and, at its right, the number — typed, or read as the slider moves — in the control's column. */
+.ui .picks .slide{display:grid;grid-template-columns:minmax(0,1fr) 6.5ch auto;gap:6px;align-items:center;min-width:0}
+.ui .picks input[type=range]{width:100%;margin:0;accent-color:var(--accent)}
+.ui .picks input[type=number]{font-family:var(--mono);font-size:12px;padding:3px 4px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;width:100%;min-width:0;text-align:right;font-variant-numeric:tabular-nums}
+.ui .picks .unit{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.ui .roles label>span{font-family:var(--mono);font-size:12px;color:var(--ink);white-space:nowrap;cursor:pointer}
+.ui .roles.paired label:not(.mirror)>span{justify-self:end;text-align:right}
+.ui .roles.paired label.mirror>span{justify-self:start}
+.ui .roles input[type=color]{width:20px;height:20px;flex:none;padding:0;border:1px solid var(--line);border-radius:2px;background:none;cursor:pointer}
 .ui .roles input[type=color]::-webkit-color-swatch-wrapper{padding:0}
 .ui .roles input[type=color]::-webkit-color-swatch{border:0;border-radius:1px}
-.ui .roles small{color:var(--muted)}
 /* The jsonc behind the house's fold: the line says the tool is there, the box comes when asked. */
 .ui details.disc summary.fold{display:flex;align-items:center;gap:8px;list-style:none;font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:11.5px;color:var(--muted)}
 .ui details.disc summary.fold::marker,.ui details.disc summary.fold::-webkit-details-marker{display:none;content:""}
 .ui details.disc summary.fold small{font-family:var(--mono);font-size:11px;letter-spacing:0;text-transform:none}
 .ui details.disc:not([open])>.jsonc{display:none}
-.ui .jsonc{display:grid;gap:8px}
-.ui .jsonc textarea{width:100%;min-height:96px;resize:vertical;font-family:var(--mono);font-size:11.5px;line-height:1.45;padding:8px 10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;white-space:pre-wrap;overflow:auto}
-.ui .jsonc .word{font-family:var(--mono);font-size:12px;color:var(--muted)}
-.ui .jsonc .word.bad{color:var(--bad)}
+.ui .word{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.ui .word.bad{color:var(--bad)}
+/* ---- the themes, a shelf a surface (2026-09-30, console/la-estanteria-a-la-vista.html) --- */
+/* The shelf: the ground cards' device, a card a theme with a thumbnail
+   the hook draws from the file — both grounds, the ground's colour and
+   five lines of the theme's; the thumbnail is the preview, and nothing
+   is worn before it is picked. Custom is the card that appears when something
+   is set on top of the theme in force — a state, not a choice on the
+   shelf — and the base then wears a dashed edge: pressing it is the one
+   way back. */
+.ui .grounds.themes{display:flex;flex-wrap:wrap;gap:10px}
+.ui .grounds.themes .swatch{color:var(--muted)}
+.ui .grounds.themes .swatch[aria-pressed="true"]{color:var(--ink)}
+.ui .grounds.themes .swatch:hover{border-color:var(--accent)}
+.ui .grounds.themes .swatch[data-base]{border-style:dashed}
+.ui .grounds.themes .swatch[hidden]{display:none}
+.ui .grounds.themes .swatch.custom{font-family:var(--serif);font-style:italic;text-transform:none;letter-spacing:0;font-size:12px;color:var(--ink)}
+.ui .grounds.themes .swatch.custom small{display:block;font-style:normal;font-family:var(--cond);text-transform:uppercase;letter-spacing:.1em;font-size:9.5px;color:var(--muted)}
+.ui .tthumb{display:flex;width:76px;height:48px;border-radius:2px;overflow:hidden;border:1px solid rgba(0,0,0,.18);flex:none}
+.ui .tthumb .half{flex:1;display:grid;gap:3px;align-content:start;padding:6px 5px}
+.ui .tthumb .half i{display:block;height:3px;border-radius:1px}
+.ui .tshelf{gap:8px}
+/* The fold: a group whose head is the house's h5 with the count of what
+   is yours and the small fold square at its end (the Credits groups
+   wear the same); folded, the group is its head alone. The body keeps
+   the part's 18 between its groups. In Credits the head is centred. */
+.ui .group>h5{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px}
+.ui .group>h5>.touch{justify-self:end;font-family:var(--mono);font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted)}
+.ui .group>h5>.touch:empty{display:none}
+.ui .group>h5>.sq{grid-column:3;justify-self:end}
+.ui .group[data-folded]>:not(h5){display:none}
+.ui .tsec{display:grid;gap:18px;padding-top:2px}
+.ui .tsec .tbody{display:grid;gap:18px}
+/* Credits takes the whole pane: no miniature, since it sets nothing to
+   light, and one centred column of fichas cut by its three
+   groups' heads, read down like a film's credits. */
+.ui[data-part="credits"]{grid-template-columns:minmax(0,1fr)}
+.ui[data-part="credits"] .mini{display:none}
+.ui[data-part="credits"] .ctl{justify-items:center;padding-right:0}
+.ui[data-part="credits"] .part[data-part="credits"]{width:min(100%,520px);text-align:center;gap:26px}
+.ui[data-part="credits"] .part[data-part="credits"] .group{display:grid;gap:10px}
+.ui[data-part="credits"] .part[data-part="credits"] .group>h5{grid-template-columns:1fr auto 1fr}
+.ui[data-part="credits"] .part[data-part="credits"] .group>h5>span{grid-column:2}
+.ui[data-part="credits"] .part[data-part="credits"] .group>h5>.sq{grid-column:3;justify-self:end}
+.ui[data-part="credits"] .credit{justify-items:center}
+.ui[data-part="credits"] .credit .chips{justify-content:center}
+.ui .theme label.btn{cursor:pointer}
+/* Custom is a state, not a theme: in italics and the muted ink on the select that shows it, and in the list where the browser lets an option be styled (Firefox; Chromium dims it only while disabled). */
+.ui .theme select.custom{font-style:italic;color:var(--muted)}
+.ui .theme option[value=""]{font-style:italic;color:var(--muted)}
 /* --- the miniature: the band, the rail, the screen with a terminal and a sheet --- */
 .ui .mini{display:flex;flex-direction:column;border:1px solid var(--line);background:var(--ground);min-height:0;overflow:hidden;border-radius:3px}
 .ui .mini.bottom{flex-direction:column-reverse}
@@ -1527,6 +1618,7 @@ form.insert.locked .opt input{opacity:.55}
 .ui .mband .dot{width:5px;height:5px;border-radius:50%;border:1px solid currentColor;box-sizing:border-box}
 .ui .mband .right{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:9px}
 .ui .mband .right svg{width:12px;height:12px;display:block}
+.ui .mband .right .mground{display:flex;background:none;border:0;padding:0;margin:0;color:inherit;cursor:pointer}
 .ui .mrow{display:flex;flex:1;min-height:0}
 .ui .mini.right .mrow{flex-direction:row-reverse}
 .ui .mini.off .mrail{display:none}
@@ -1551,6 +1643,7 @@ form.insert.locked .opt input{opacity:.55}
 .ui .mini .impl{min-height:0;min-width:0;display:flex;flex-direction:column}
 .ui .mini .impl .files,.ui .mini .impl .f{display:flex;flex-direction:column;min-height:0;min-width:0}
 .ui .mini .impl .f[hidden]{display:none}
+/* The miniature's sheet takes all the height the pane gives it. */
 .ui .mini .impl .src{flex:1;min-height:0;max-height:none}
 .ui .mini .impl .fh{cursor:default}
 .cfg .row select option.dim{color:var(--soft)}

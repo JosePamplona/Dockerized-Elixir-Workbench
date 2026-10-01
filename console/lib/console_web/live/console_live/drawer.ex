@@ -10,8 +10,9 @@ defmodule ConsoleWeb.ConsoleLive.Drawer do
   alias Console.{Bench, Jobs, Papers}
 
   # The workbench's drawer, over whatever screen: ?wb=config|manual|ui,
-  # and under Manual which paper — the same shape as a box's
-  # ?screen=manual&paper=readme, because it is the same thing.
+  # under Manual which paper — the same shape as a box's
+  # ?screen=manual&paper=readme, because it is the same thing — and
+  # under Interface which part (2026-09-29), kept the same way.
   # The papers used to be flat tabs of their own. A link that still names
   # one — a bookmark, or the README's own "see the CHANGELOG" — is the
   # paper it asks for, under Manual.
@@ -20,25 +21,29 @@ defmodule ConsoleWeb.ConsoleLive.Drawer do
 
   def take(socket, %{"wb" => key} = params) when key in ~w(config manual ui) do
     papers = Papers.workbench_papers() |> Enum.map(&elem(&1, 0))
-
-    # The paper the URL names; else, with the drawer already open, the
-    # one it was on — Config's link carries none, and Manual came back
-    # on README (2026-09-29); else the first.
-    paper =
-      cond do
-        params["paper"] in papers -> params["paper"]
-        socket.assigns.wb && socket.assigns.wbpaper in papers -> socket.assigns.wbpaper
-        true -> hd(papers)
-      end
+    paper = kept(params["paper"], socket, :wbpaper, papers)
+    part = kept(params["part"], socket, :wbpart, ConsoleWeb.WorkbenchDrawer.part_keys())
 
     assign(socket,
       wb: key,
       wbpaper: paper,
+      wbpart: part,
       wbpage: if(key == "manual", do: Papers.render_workbench(paper))
     )
   end
 
   def take(socket, _params), do: assign(socket, wb: nil, wbpage: nil)
+
+  # What the URL names, if it is one; else, with the drawer already
+  # open, what it was on — Config's link carries none, and Manual came
+  # back on README (2026-09-29); else the first.
+  defp kept(named, socket, key, allowed) do
+    cond do
+      named in allowed -> named
+      socket.assigns.wb && socket.assigns[key] in allowed -> socket.assigns[key]
+      true -> hd(allowed)
+    end
+  end
 
   # --- the workbench's config, as a form ---
   def event("cfg_change", params, socket) do

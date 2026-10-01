@@ -10,7 +10,9 @@ import Config
 config :elixir, ansi_enabled: true
 
 config :console,
-  generators: [timestamp_type: :utc_datetime]
+  generators: [timestamp_type: :utc_datetime],
+  # The themes on the shelf (Console.Themes), relative to where the console runs.
+  themes_dir: "themes"
 
 # Configure the endpoint
 config :console, ConsoleWeb.Endpoint,

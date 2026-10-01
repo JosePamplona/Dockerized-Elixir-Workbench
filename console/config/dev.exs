@@ -64,6 +64,10 @@ config :console, :reports,
 # Enable dev routes for dashboard and mailbox
 config :console, dev_routes: true
 
+# The Interface tab's Download Custom and Load Custom: writing a theme
+# for the shelf is a developer's move, so the drawer draws them in dev alone.
+config :console, theme_files: true
+
 # Do not include metadata nor timestamps in development logs
 config :logger, :default_formatter, format: "[$level] $message\n"
 

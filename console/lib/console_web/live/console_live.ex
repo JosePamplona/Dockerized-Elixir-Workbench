@@ -84,6 +84,9 @@ defmodule ConsoleWeb.ConsoleLive do
         preads: %{},
         wb: nil,
         wbpaper: "readme",
+        wbpart: "overlay",
+        themes: Console.Themes.all(),
+        theme_files: Application.get_env(:console, :theme_files, false),
         wbpage: nil,
         cfg_edits: %{},
         cfg_raw: false,
@@ -1119,6 +1122,9 @@ defmodule ConsoleWeb.ConsoleLive do
       back={@back}
       wb={@wb}
       paper={@wbpaper}
+      part={@wbpart}
+      themes={@themes}
+      theme_files={@theme_files}
       version={@version}
       config={@config}
       edits={@cfg_edits}

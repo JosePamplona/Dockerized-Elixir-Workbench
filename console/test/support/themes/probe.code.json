@@ -1,0 +1,5 @@
+{
+  "dew.theme": { "name": "Probe", "author": "The suite", "url": "https://example.test/probe", "licence": "MIT", "about": "The probe's code, as the suite wrote it." },
+  "dark": { "workbench.colorCustomizations": { "editor.background": "#101010" } },
+  "light": { "workbench.colorCustomizations": { "editor.background": "#fefefe" } }
+}

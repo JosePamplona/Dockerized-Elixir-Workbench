@@ -165,6 +165,57 @@ defmodule ConsoleWeb.Refs do
   end
 
   @doc """
+  A mention of somebody else's site that is not a package — a theme's
+  home, a face's: the `.pkg-ref`'s rules with a mark that says where it
+  goes. A repository on GitHub is named as the packages table names one,
+  `owner/repo` under the Invertocat (both vendored drawings, the ground's);
+  any other host goes under the house's globe, by its name. It is the
+  one link of a credits ficha.
+  """
+  attr :url, :string, required: true
+  attr :name, :string, required: true, doc: "whose site it is, for the title"
+  attr :class, :any, default: nil
+
+  def site_ref(assigns) do
+    assigns =
+      case Regex.run(~r{^https?://github\.com/([^/]+/[^/#?]+)}, assigns.url) do
+        [_, repo] -> assign(assigns, repo: repo, host: nil)
+        _ -> assign(assigns, repo: nil, host: host_of(assigns.url))
+      end
+
+    ~H"""
+    <a
+      class={["site-ref", @class]}
+      href={@url}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={if @repo, do: "#{@name} on GitHub: #{@repo}", else: "#{@name}'s site: #{@host}"}
+    ><img
+      :if={@repo}
+      class="mark light"
+      src="/images/vendor/github.svg"
+      alt=""
+      width="12"
+      height="12"
+    /><img
+      :if={@repo}
+      class="mark dark"
+      src="/images/vendor/github-white.svg"
+      alt=""
+      width="12"
+      height="12"
+    /><ConsoleWeb.Square.mark :if={!@repo} name="globe" class="mark" />{@repo || @host}</a>
+    """
+  end
+
+  defp host_of(url) do
+    url
+    |> String.replace(~r{^https?://(www\.)?}, "")
+    |> String.split("/", parts: 2)
+    |> hd()
+  end
+
+  @doc """
   A reading attached to whatever names the thing read: `{words, chip
   class}` as `Cartridges.container_reading/1` gives it — `healthy`,
   `running`, `starting`, `exited`, `exited 1`, `stopped` — or what a

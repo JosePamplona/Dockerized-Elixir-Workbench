@@ -1,0 +1,61 @@
+{
+  "dew.theme": {
+    "name": "Default",
+    "author": "The house, after Nord",
+    "url": "https://www.nordtheme.com",
+    "licence": "MIT",
+    "about": "The house's terminal: Nord's sixteen on the house's ground, and a Nord light of the house's making on paper."
+  },
+  "dark": {
+    "workbench.colorCustomizations": {
+      "terminal.background": "#120b17",
+      "terminal.foreground": "#d8dee9",
+      "dew.terminal.dim": "#8b7c96",
+      "terminal.ansiBlack": "#3b4252",
+      "terminal.ansiRed": "#bf616a",
+      "terminal.ansiGreen": "#a3be8c",
+      "terminal.ansiYellow": "#ebcb8b",
+      "terminal.ansiBlue": "#81a1c1",
+      "terminal.ansiMagenta": "#b48ead",
+      "terminal.ansiCyan": "#88c0d0",
+      "terminal.ansiWhite": "#e5e9f0",
+      "terminal.ansiBrightBlack": "#4c566a",
+      "terminal.ansiBrightRed": "#bf616a",
+      "terminal.ansiBrightGreen": "#a3be8c",
+      "terminal.ansiBrightYellow": "#ebcb8b",
+      "terminal.ansiBrightBlue": "#81a1c1",
+      "terminal.ansiBrightMagenta": "#b48ead",
+      "terminal.ansiBrightCyan": "#8fbcbb",
+      "terminal.ansiBrightWhite": "#eceff4",
+      "dew.terminal.errorLine": "#e06c5f",
+      "dew.terminal.warningLine": "#e3b25c",
+      "editor.lineHighlightBackground": "#ffffff"
+    }
+  },
+  "light": {
+    "workbench.colorCustomizations": {
+      "terminal.background": "#fdfbfe",
+      "terminal.foreground": "#2e3440",
+      "dew.terminal.dim": "#8f819a",
+      "terminal.ansiBlack": "#2e3440",
+      "terminal.ansiRed": "#a2424b",
+      "terminal.ansiGreen": "#4a6b2e",
+      "terminal.ansiYellow": "#7e5c16",
+      "terminal.ansiBlue": "#3c648d",
+      "terminal.ansiMagenta": "#964087",
+      "terminal.ansiCyan": "#306979",
+      "terminal.ansiWhite": "#d8dee9",
+      "terminal.ansiBrightBlack": "#4c566a",
+      "terminal.ansiBrightRed": "#ba555e",
+      "terminal.ansiBrightGreen": "#588037",
+      "terminal.ansiBrightYellow": "#976e1a",
+      "terminal.ansiBrightBlue": "#4878a8",
+      "terminal.ansiBrightMagenta": "#b34fa1",
+      "terminal.ansiBrightCyan": "#397d91",
+      "terminal.ansiBrightWhite": "#eceff4",
+      "dew.terminal.errorLine": "#e06c5f",
+      "dew.terminal.warningLine": "#b7791f",
+      "editor.lineHighlightBackground": "#1d1424"
+    }
+  }
+}

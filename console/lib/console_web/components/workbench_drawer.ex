@@ -7,6 +7,7 @@ defmodule ConsoleWeb.WorkbenchDrawer do
   """
   use Phoenix.Component
   import ConsoleWeb.Refs
+  import ConsoleWeb.Card, only: [card: 1]
   import ConsoleWeb.Ribbon, only: [ribbon: 1]
   import ConsoleWeb.Square, only: [square: 1, mark: 1, logo: 1]
 
@@ -57,6 +58,94 @@ defmodule ConsoleWeb.WorkbenchDrawer do
 
   def tabs, do: @tabs
 
+  # The Interface tab's parts, in the ribbon's order: the key the URL
+  # names (`?wb=ui&part=`), the label, and — for a part not built yet —
+  # why it is unlit. The ribbon across the pane under the drawer's own,
+  # as a box's papers sit under a screen's tabs, settled on 2026-09-29;
+  # its parts settled on 2026-09-30 (console/la-estanteria-a-la-vista.html):
+  # Terminal and Code are the two themes, one a surface, each with its
+  # shelf; Text — the pages' own type — is retired for now, the rest of
+  # the interface not being offered to customise yet.
+  @parts [
+    {"overlay", "Overlay", nil},
+    {"terminal", "Terminal", nil},
+    {"code", "Code", nil},
+    {"credits", "Credits", nil}
+  ]
+
+  def parts, do: @parts
+
+  # Every face the console draws with, for the Credits part: whose it
+  # is, where it lives, under which licence, and what it draws. The
+  # three the pages are set in come from Google Fonts as the page
+  # loads (root.html.heex); the three the terminal and the files can
+  # be set in travel with the console, each licence beside its files
+  # (priv/static/assets/fonts/, its README). This is the one place the
+  # console credits them: the notes under the face selectors say what
+  # a face does, not whose it is. Each is a card whose head is the
+  # name set in the face itself, at a body that shows it (`spec`):
+  # settled on 2026-09-29 among the list, the card and a ficha with
+  # the accent edge, on the real part. A theme's credit is its file's
+  # `dew.theme`, and shows where the theme is chosen, not here.
+  @faces [
+    %{
+      name: "Barlow Condensed",
+      spec: "font-family:var(--cond);font-size:22px;font-weight:700",
+      by: "Jeremy Tribby",
+      at: "https://github.com/jpt/barlow",
+      licence: "SIL Open Font License 1.1",
+      draws:
+        "The display: the band's lettering, the tabs, the labels, the headings. From Google Fonts."
+    },
+    %{
+      name: "Source Serif 4",
+      spec: "font-family:var(--serif);font-size:21px;font-weight:400",
+      by: "Frank Grießhammer, for Adobe",
+      at: "https://github.com/adobe-fonts/source-serif",
+      licence: "SIL Open Font License 1.1",
+      draws:
+        "The text: the prose, the papers, the hints, the backs of the boxes. From Google Fonts."
+    },
+    %{
+      name: "IBM Plex Mono",
+      spec: "font-family:var(--mono);font-size:18px;font-weight:500",
+      by: "Mike Abbink and Bold Monday, for IBM",
+      at: "https://github.com/IBM/plex",
+      licence: "SIL Open Font License 1.1",
+      draws:
+        "The mono: commands, logs, ports, paths, chips; the house's face for the terminal and the files. From Google Fonts."
+    },
+    %{
+      name: "Fira Code",
+      spec: "font-family:'Fira Code';font-size:18px;font-weight:400",
+      by: "Nikita Prokopov and the Fira Code Project Authors",
+      at: "https://github.com/tonsky/FiraCode",
+      licence: "SIL Open Font License 1.1",
+      draws: "A face for the terminal and the files, ligatures on. Carried by the console."
+    },
+    %{
+      name: "Flexi IBM VGA",
+      spec: "font-family:'Flexi IBM VGA True';font-size:24px;font-weight:400",
+      by: "VileR, The Ultimate Oldschool PC Font Pack",
+      at: "https://int10h.org/oldschool-pc-fonts/",
+      licence: "CC BY-SA 4.0",
+      draws:
+        "The PC's text mode, a bitmap, for the terminal and the files. Carried by the console, as the pack ships it."
+    },
+    %{
+      name: "Tamzen",
+      spec: "font-family:'Tamzen10x20';font-size:20px;font-weight:700",
+      by: "Suraj N. Kurapati, after Tamsyn by Scott Fial",
+      at: "https://github.com/sunaku/tamzen-font",
+      licence: "Tamsyn's: free to use, copy, modify and distribute",
+      draws:
+        "A bitmap face for the terminal and the files, one drawing a size. Carried by the console."
+    }
+  ]
+
+  @doc "The keys of the parts that are built: what `?part=` may name."
+  def part_keys, do: for({key, _, nil} <- @parts, do: key)
+
   attr :tab, :string, required: true, doc: "the screen under the drawer"
 
   attr :back, :string,
@@ -65,6 +154,13 @@ defmodule ConsoleWeb.WorkbenchDrawer do
 
   attr :wb, :string, required: true
   attr :paper, :string, default: "readme", doc: "which of the workbench's papers, under Manual"
+  attr :part, :string, default: "overlay", doc: "which part of the Interface tab"
+  attr :themes, :list, default: [], doc: "the themes on both shelves (Console.Themes)"
+
+  attr :theme_files, :boolean,
+    default: false,
+    doc: "Download Custom and Load Custom, drawn in dev alone (config :console, :theme_files)"
+
   attr :version, :string, default: nil
   attr :config, :map, required: true
   attr :edits, :map, required: true
@@ -101,7 +197,12 @@ defmodule ConsoleWeb.WorkbenchDrawer do
                   href:
                     ConsoleWeb.Refs.over(
                       @back || "/#{@tab}",
-                      "wb=#{key}#{if key == "manual", do: "&paper=#{@paper}"}"
+                      "wb=#{key}" <>
+                        case key do
+                          "manual" -> "&paper=#{@paper}"
+                          "ui" -> "&part=#{@part}"
+                          _ -> ""
+                        end
                     )
                 }
           }
@@ -153,7 +254,13 @@ defmodule ConsoleWeb.WorkbenchDrawer do
           </nav>
         </div>
       </div>
-      <.ui :if={@wb == "ui"} />
+      <.ui
+        :if={@wb == "ui"}
+        part={@part}
+        back={@back || "/#{@tab}"}
+        themes={@themes}
+        theme_files={@theme_files}
+      />
     </aside>
     """
   end
@@ -807,11 +914,20 @@ defmodule ConsoleWeb.WorkbenchDrawer do
       end)
 
   # --- Interface: the controls on the left, the console in miniature on the right ---
-  # The controls fold in three groups, one a surface, as the rail's
-  # sections do — Overlay (the frame and the ground), Terminal (its
+  # The controls are parts under a ribbon (`parts/0`), one in view at a
+  # time — Overlay (the frame, the ground, and the theme: the whole as
+  # one file, chosen off the shelf, downloaded or loaded), Text (the
+  # pages' own three faces and the scale of the whole), Terminal (its
   # face, and its ground, ink, dim and the six ANSI), Files (the files'
-  # face, the syntax palette and the diff's four) — the
-  # fold kept in this browser by the Frame hook (2026-09-15).
+  # face, the syntax palette and the diff's four), Credits (every face
+  # and every theme, whose they are) — and the part is in the URL, so a
+  # tab pressed leads back to it. They
+  # folded in three from 2026-09-15 to 2026-09-29, the fold kept in the
+  # browser: a column 3.5 screens tall until the reader folded two. The
+  # pane is `phx-update="ignore"` (the hook owns its controls), so the
+  # part is an attribute on it, `data-part`, that the ribbon's patch
+  # changes and console.css reads: which part shows, and which surface
+  # of the miniature lights up as the one being set.
   # Everything here is kept in this browser: the frame as classes on
   # <body> (band-bottom, rail-right, rail-off), the ground as data-theme
   # on the root, the faces and the colours as custom properties on the
@@ -837,7 +953,8 @@ defmodule ConsoleWeb.WorkbenchDrawer do
     json: "priv/static/manifest.json",
     markdown: "README.md",
     godot: "scripts/player.gd",
-    shell: "bin/room.sh"
+    shell: "bin/room.sh",
+    other: "config/room.toml"
   }
   # The miniature's terminal: {service, level, cont?, time, html}. The
   # times are the lines' own, as the Logs screen formats them; the
@@ -882,318 +999,380 @@ defmodule ConsoleWeb.WorkbenchDrawer do
     "--svc:var(--svc-#{Map.get(@sample_roles, base, "network")})"
   end
 
+  attr :part, :string, required: true
+  attr :back, :string, required: true
+  attr :themes, :list, required: true
+  attr :theme_files, :boolean, required: true
+
+  # The languages the Files sheet colours, as the Language Syntax select
+  # names them, short: the long name (Elixir and its templates) is the
+  # option's title.
+  @lang_names %{
+    elixir: {"Elixir", "Elixir and its templates"},
+    html: {"HTML", "HTML and its templates"},
+    css: {"CSS", "CSS and SCSS"},
+    ts: {"TypeScript", "TypeScript and JavaScript"},
+    json: {"JSON", "JSON"},
+    markdown: {"Markdown", "Markdown"},
+    godot: {"Godot", "Godot: GDScript, shaders, scenes"},
+    shell: {"Shell", "Shell"},
+    other: {"Other", "A file with no language: read in the sheet's foreground"}
+  }
+
   defp ui(assigns) do
     services = @log_lines |> Enum.map(&elem(&1, 0)) |> Enum.uniq()
 
     assigns =
-      assign(assigns, sheet_paths: @sheet_paths, log_lines: @log_lines, services: services)
+      assign(assigns,
+        sheet_paths: @sheet_paths,
+        log_lines: @log_lines,
+        services: services,
+        faces: @faces,
+        lang_names: @lang_names,
+        terminal: Enum.filter(assigns.themes, &(&1.kind == :terminal)),
+        code: Enum.filter(assigns.themes, &(&1.kind == :code)),
+        # What the hook needs of a theme, as JSON in the pane: its shelf, its key and its file.
+        themes_json:
+          Jason.encode!(for(t <- assigns.themes, do: %{key: t.key, kind: t.kind, json: t.json}),
+            escape: :html_safe
+          )
+      )
 
     ~H"""
-    <div class="ui" id="wb-ui" phx-hook="Frame" phx-update="ignore">
-      <div class="ctl">
-        <p class="lede">
-          Kept in this browser. Nothing here touches <code>config.conf</code>.
-        </p>
-        <section class="group" data-fold="overlay">
-          <h4 class="ghead">
-            <span class="name">Overlay</span>
-            <.square
-              mark="chevron"
-              size="small"
-              class="foldsq"
-              label="Overlay: fold, or open"
-              aria-expanded="true"
-            />
-          </h4>
-          <section>
-            <h5>The frame</h5>
-            <div class="segs">
-              <div class="one">
-                <span class="lbl">the band</span>
-                <div
-                  class="seg"
-                  role="group"
-                  aria-label="The band: on top or at the bottom"
-                  data-axis="band"
-                >
-                  <button type="button" data-pick="top" aria-pressed="false">Top</button><button
-                    type="button"
-                    data-pick="bottom"
-                    aria-pressed="false"
-                  >Bottom</button>
+    <div class="uipane">
+      <.ribbon
+        label="The interface: its parts"
+        selected={@part}
+        docked
+        items={
+          for {key, label, why} <- parts(),
+              do: %{
+                key: key,
+                label: label,
+                why: why,
+                href: ConsoleWeb.Refs.over(@back, "wb=ui&part=#{key}")
+              }
+        }
+      />
+      <div class="ui" id="wb-ui" phx-hook="Frame" phx-update="ignore" data-part={@part}>
+        <div class="ctl">
+          <div class="part" data-part="overlay">
+            <section>
+              <h5>The frame</h5>
+              <div class="segs">
+                <div class="one">
+                  <span class="lbl">the band</span>
+                  <div
+                    class="seg"
+                    role="group"
+                    aria-label="The band: on top or at the bottom"
+                    data-axis="band"
+                  >
+                    <button type="button" data-pick="top" aria-pressed="false">Top</button><button
+                      type="button"
+                      data-pick="bottom"
+                      aria-pressed="false"
+                    >Bottom</button>
+                  </div>
+                </div>
+                <div class="one">
+                  <span class="lbl">the rail</span>
+                  <div
+                    class="seg"
+                    role="group"
+                    aria-label="The rail: on the left, on the right, or hidden"
+                    data-axis="rail"
+                  >
+                    <button type="button" data-pick="left" aria-pressed="false">Left</button><button
+                      type="button"
+                      data-pick="right"
+                      aria-pressed="false"
+                    >Right</button><button type="button" data-pick="hidden" aria-pressed="false">Hidden</button>
+                  </div>
                 </div>
               </div>
-              <div class="one">
-                <span class="lbl">the rail</span>
-                <div
-                  class="seg"
-                  role="group"
-                  aria-label="The rail: on the left, on the right, or hidden"
-                  data-axis="rail"
-                >
-                  <button type="button" data-pick="left" aria-pressed="false">Left</button><button
-                    type="button"
-                    data-pick="right"
-                    aria-pressed="false"
-                  >Right</button><button type="button" data-pick="hidden" aria-pressed="false">Hidden</button>
-                </div>
-              </div>
-            </div>
-          </section>
-          <section>
-            <h5>The ground</h5>
-            <div
-              class="cards"
-              role="group"
-              aria-label="The ground: light, dark, or whatever this machine says"
-            >
-              <button type="button" class="swatch" data-ground="light" aria-pressed="false">
-                <span class="thumb light"><i class="b"></i><i class="rl"></i><i class="t t1"></i><i class="t t2"></i><i class="t t3"></i><i class="tm"></i></span>Light
-              </button>
-              <button type="button" class="swatch" data-ground="dark" aria-pressed="false">
-                <span class="thumb dark"><i class="b"></i><i class="rl"></i><i class="t t1"></i><i class="t t2"></i><i class="t t3"></i><i class="tm"></i></span>Dark
-              </button>
-              <button
-                type="button"
-                class="swatch"
-                data-ground="system"
-                aria-pressed="false"
-                title="Whatever this machine says"
+            </section>
+            <section>
+              <h5>The ground</h5>
+              <div
+                class="cards"
+                role="group"
+                aria-label="The ground: light, dark, or whatever this machine says"
               >
-                <span class="thumb system"><i class="b"></i><i class="rl"></i><i class="t t1"></i><i class="t t2"></i><i class="t t3"></i><i class="tm"></i></span>System
-              </button>
-            </div>
-          </section>
-        </section>
-        <section class="group" data-fold="terminal">
-          <h4 class="ghead">
-            <span class="name">Terminal</span>
-            <.square
-              mark="chevron"
-              size="small"
-              class="foldsq"
-              label="Terminal: fold, or open"
-              aria-expanded="true"
-            />
-          </h4>
-          <section>
-            <h5>Face</h5>
-            <p class="hint">
-              The terminals, the jobs' output, the logs, Docker's events. <span id="help-code"></span>
-            </p>
-            <div class="picks">
-              <label>face <select id="code-face" aria-label="The code face"></select></label>
-              <label>size <select id="code-size" aria-label="The code size"></select></label>
-              <label>leading
-              <select id="code-leading" aria-label="The code leading, as a ratio of the size"></select></label>
-            </div>
-          </section>
-          <section class="colours">
-            <h5>Colours</h5>
-            <p class="hint">
-              Its ground, ink and dim; the sixteen ANSI colours, normal and bright, red for errors and yellow for warnings; and the lines' grounds: error, warning, and the one under the pointer. A set a ground, this one <span id="term-ground"></span>.
-            </p>
+                <button type="button" class="swatch" data-ground="light" aria-pressed="false">
+                  <span class="thumb light"><i class="b"></i><i class="rl"></i><i class="t t1"></i><i class="t t2"></i><i class="t t3"></i><i class="tm"></i></span>Light
+                </button>
+                <button type="button" class="swatch" data-ground="dark" aria-pressed="false">
+                  <span class="thumb dark"><i class="b"></i><i class="rl"></i><i class="t t1"></i><i class="t t2"></i><i class="t t3"></i><i class="tm"></i></span>Dark
+                </button>
+                <button
+                  type="button"
+                  class="swatch"
+                  data-ground="system"
+                  aria-pressed="false"
+                  title="Whatever this machine says"
+                >
+                  <span class="thumb system"><i class="b"></i><i class="rl"></i><i class="t t1"></i><i class="t t2"></i><i class="t t3"></i><i class="tm"></i></span>System
+                </button>
+              </div>
+            </section>
+          </div>
+          <.theme_part kind="terminal" themes={@terminal} theme_files={@theme_files}>
+            <:font>
+              <div class="set">
+                <h6>Font</h6>
+                <div class="picks">
+                  <label>face <select id="code-face" aria-label="The code face"></select></label>
+                  <p class="hint help" id="help-code"></p>
+                  <label>size <select id="code-size" aria-label="The code size"></select></label>
+                  <label>leading
+                  <select id="code-leading" aria-label="The code leading, as a ratio of the size"></select></label>
+                </div>
+              </div>
+              <%!-- The terminal's opacity: the reader's, like the face, over any
+                  theme — under 100 % the interface shows through its ground. --%>
+              <div class="set">
+                <h6>Opacity</h6>
+                <div class="picks">
+                  <div class="pick">
+                    <span>ground</span>
+                    <span class="slide">
+                      <input
+                        type="range"
+                        id="term-alpha"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value="40"
+                        aria-label="The terminal ground's opacity, in percent"
+                        title="Under 100 % the interface shows through the terminal's ground"
+                      />
+                      <input
+                        type="number"
+                        id="term-alpha-n"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value="40"
+                        aria-label="The terminal ground's opacity, as a number"
+                      /><span class="unit">%</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </:font>
             <div class="groups" id="term-swatches">
               <div class="set">
                 <h6>The terminal</h6><div
                   class="roles"
                   data-term="term"
+                  data-pairs="2"
                   aria-label="The terminal's colours"
                 >
                 </div>
               </div>
               <div class="set">
-                <h6>ANSI</h6><div class="roles" data-term="ansi" aria-label="The eight ANSI colours">
-                </div>
-              </div>
-              <div class="set">
-                <h6>ANSI bright</h6><div
+                <h6>ANSI</h6><div
                   class="roles"
-                  data-term="bright"
-                  aria-label="The eight bright ANSI colours"
+                  data-term="ansi"
+                  data-pairs="2"
+                  aria-label="The sixteen ANSI colours, each beside its bright"
                 >
                 </div>
               </div>
               <div class="set">
-                <h6>Lines</h6><div class="roles" data-term="lines" aria-label="The lines' grounds">
+                <h6>Highlights</h6><div
+                  class="roles"
+                  data-term="lines"
+                  data-pairs="2"
+                  aria-label="The highlights: the grounds a line wears"
+                >
                 </div>
               </div>
             </div>
-            <p class="acts">
-              <button class="btn" type="button" id="term-reset">Back to default</button>
-            </p>
-          </section>
-        </section>
-        <section class="group" data-fold="files">
-          <h4 class="ghead">
-            <span class="name">Files</span>
-            <.square
-              mark="chevron"
-              size="small"
-              class="foldsq"
-              label="Files: fold, or open"
-              aria-expanded="true"
-            />
-          </h4>
-          <section>
-            <h5>Face</h5>
-            <p class="hint">
-              The Files sheet, the diffs, <code>.env</code>, <code>config.conf</code>, the papers' code.
-              <span id="help-file"></span>
-            </p>
-            <div class="picks">
-              <label>face <select id="file-face" aria-label="The files' face"></select></label>
-              <label>size <select id="file-size" aria-label="The files' size"></select></label>
-              <label>leading
-              <select id="file-leading" aria-label="The files' leading, as a ratio of the size"></select></label>
+          </.theme_part>
+          <.theme_part kind="code" themes={@code} theme_files={@theme_files}>
+            <:font>
+              <div class="set">
+                <h6>Font</h6>
+                <div class="picks">
+                  <label>face <select id="file-face" aria-label="The files' face"></select></label>
+                  <p class="hint help" id="help-file"></p>
+                  <label>size <select id="file-size" aria-label="The files' size"></select></label>
+                  <label>leading
+                  <select id="file-leading" aria-label="The files' leading, as a ratio of the size"></select></label>
+                </div>
+              </div>
+            </:font>
+            <div class="groups" id="sheet-swatches">
+              <div class="set">
+                <h6>Sheet</h6><div
+                  class="roles"
+                  data-sheet="sheet"
+                  data-pairs="2"
+                  aria-label="The sheet's colours: a line's background and foreground, and the line number's"
+                >
+                </div>
+              </div>
             </div>
-          </section>
-          <section class="colours">
-            <h5>Language Syntax</h5>
-            <p class="hint">
-              A palette a ground and a language, this one <span id="colours-ground"></span>.
-            </p>
-            <div class="picks">
-              <label>language
-              <select id="colours-lang" aria-label="The language whose colours these are"></select></label>
-            </div>
-            <div class="roles" id="swatches" aria-label="The colours"></div>
-            <p class="acts">
-              <button class="btn" type="button" id="jsonc-reset">Back to default</button>
-            </p>
-          </section>
-          <section class="colours">
-            <h5>Diff</h5>
-            <p class="hint">
-              An added line and a removed one: the code's ground, and its number and sign. A set a ground, this one <span id="diff-ground"></span>.
-            </p>
             <div class="groups" id="diff-swatches">
               <div class="set">
-                <h6>Added</h6><div class="roles" data-diff="add" aria-label="An added line's colours">
-                </div>
-              </div>
-              <div class="set">
-                <h6>Removed</h6><div
+                <h6>Diff</h6><div
                   class="roles"
-                  data-diff="del"
-                  aria-label="A removed line's colours"
+                  data-diff="diff"
+                  data-pairs="2"
+                  aria-label="The diff's colours: an added line's and a removed line's"
                 >
                 </div>
               </div>
             </div>
-            <p class="acts">
-              <button class="btn" type="button" id="diff-reset">Back to default</button>
-            </p>
-          </section>
-        </section>
-        <%!-- The interface as one file, outside the folds: what the three
-              groups set, read out to keep or carry, or pasted in and
-              applied — a VS Code theme pastes in too, for what it has. --%>
-        <section class="file">
-          <h5>As a file</h5>
-          <p class="hint">
-            This interface as jsonc, with VS Code's keys where it has them. Read yours out; paste one in, or a VS Code theme, and apply it.
-          </p>
-          <div class="jsonc">
-            <textarea
-              id="jsonc"
-              aria-label="The interface as jsonc"
-              placeholder={~s(A jsonc: this interface's, or a VS Code theme's.)}
-              spellcheck="false"
-            ></textarea>
-            <p class="acts">
-              <button class="btn" type="button" id="jsonc-apply">Apply the jsonc</button>
-              <button class="btn" type="button" id="jsonc-show">Read mine as jsonc</button>
-              <span class="word" id="jsonc-word"></span>
-            </p>
-          </div>
-        </section>
-      </div>
-      <div
-        class="mini"
-        id="mini"
-        aria-label="The console, at a fifth: click the band or the rail to move them"
-      >
-        <%!-- The band, at a fifth: the mark, the name, the state, the
-              clock and the two cells, drawn as the band draws them. --%>
-        <div class="mband" title="The band — click to move it">
-          <span class="mark"><.logo /><b>Dockerized Elixir Workbench</b></span>
-          <span class="state"><i class="dot"></i>idle</span>
-          <span class="right"><span class="clock">12:00</span><.mark name="ground" /><.mark name="workbench" /></span>
-        </div>
-        <div class="mrow">
-          <div class="mrail" title="The rail — click to change its side">
-            <span class="lbl">Workspace</span><i class="w"></i><i></i><i class="n"></i><i class="w"></i><i class="n"></i>
-          </div>
-          <div class="mmain">
-            <div class="mtabs">
-              <span class="tab">Deploy</span><span class="tab">Jobs</span><span
-                class="tab"
-                aria-selected="true"
-              >Logs</span><span class="tab">Terminal</span><span class="tab">Project</span><span class="tab">Cartridges</span><span class="tab">Docker</span>
+            <div class="set">
+              <h6>Language Syntax</h6>
+              <div class="picks">
+                <label>
+                  language
+                  <select id="colours-lang" aria-label="The language whose colours these are">
+                    <option
+                      :for={lang <- Console.Highlight.samples()}
+                      value={lang}
+                      selected={lang == :elixir}
+                      title={elem(@lang_names[lang], 1)}
+                    >
+                      {elem(@lang_names[lang], 0)}
+                    </option>
+                  </select>
+                </label>
+              </div>
+              <div class="roles" id="swatches" data-pairs="2" aria-label="The colours"></div>
+              <p class="hint" id="swatches-none" hidden>
+                No palette: a file with no language is read in the sheet's foreground.
+              </p>
             </div>
-            <%!-- The Logs screen's service chips, the markup its hook builds
+          </.theme_part>
+          <div class="part" data-part="credits">
+            <.credits_group
+              title="Terminal themes"
+              hint="The terminal themes on the shelf, console/themes/*.terminal.json, whose they are, and which is in force."
+            >
+              <.theme_credit :for={t <- @terminal} theme={t} />
+            </.credits_group>
+            <.credits_group
+              title="Code themes"
+              hint="The code themes on the shelf, console/themes/*.code.json, whose they are, and which is in force. Download yours from Terminal or Code and drop it there."
+            >
+              <.theme_credit :for={t <- @code} theme={t} />
+            </.credits_group>
+            <.credits_group
+              title="Faces"
+              hint="Every face the console draws with, whose it is and under which licence. Three come from Google Fonts as the page loads; three travel with the console, their licences beside them in priv/static/assets/fonts/."
+            >
+              <.card :for={f <- @faces} class="credit">
+                <h3><span class="spec" style={f.spec}>{f.name}</span></h3>
+                <p class="chips">
+                  <span class="chip">{f.by}</span><span class="chip">{f.licence}</span>
+                </p>
+                <p class="site"><ConsoleWeb.Refs.site_ref url={f.at} name={f.name} /></p>
+                <p class="hint">{f.draws}</p>
+              </.card>
+            </.credits_group>
+          </div>
+          <script type="application/json" id="themes">
+            <%= Phoenix.HTML.raw(@themes_json) %>
+          </script>
+        </div>
+        <div
+          class="mini"
+          id="mini"
+          aria-label="The console, at a fifth: click the band or the rail to move them"
+        >
+          <%!-- The band, at a fifth: the mark, the name, the state, the
+              clock and the two cells, drawn as the band draws them. The
+              ground cell is a control, as the band's is: it switches
+              the ground. --%>
+          <div class="mband" title="The band — click to move it">
+            <span class="mark"><.logo /><b>Dockerized Elixir Workbench</b></span>
+            <span class="state"><i class="dot"></i>idle</span>
+            <span class="right"><span class="clock">12:00</span><button
+              type="button"
+              class="mground"
+              title="The ground — click to switch it"
+              aria-label="Switch the ground"
+            ><.mark name="ground" /></button><.mark name="workbench" /></span>
+          </div>
+          <div class="mrow">
+            <div class="mrail" title="The rail — click to change its side">
+              <span class="lbl">Workspace</span><i class="w"></i><i></i><i class="n"></i><i class="w"></i><i class="n"></i>
+            </div>
+            <div class="mmain">
+              <div class="mtabs">
+                <span class="tab">Deploy</span><span class="tab">Jobs</span><span
+                  class="tab"
+                  aria-selected="true"
+                >Logs</span><span class="tab">Terminal</span><span class="tab">Project</span><span class="tab">Cartridges</span><span class="tab">Docker</span>
+              </div>
+              <%!-- The Logs screen's service chips, the markup its hook builds
                   (renderChips): pressed, the service's lines show. And its
                   Timestamps button, which folds the time column away. --%>
-            <div class="toolbar" role="group" aria-label="The services whose lines show">
-              <button
-                :for={s <- @services}
-                class="btn svc"
-                type="button"
-                data-svc={s}
-                aria-pressed="true"
-                style={svc_var(s)}
-              >{s}</button>
-              <span class="sep"></span>
-              <button class="btn" type="button" data-ts aria-pressed="true">Timestamps</button>
-            </div>
-            <div
-              class="lines term-box"
-              aria-label="Lines of a log, as the Logs screen draws them"
-              style={"--svc-w:#{@services |> Enum.map(&String.length/1) |> Enum.max()}ch"}
-            >
-              <div
-                :for={{service, level, cont, ts, html} <- @log_lines}
-                class={["ln", level, cont && "cont"]}
-                data-svc={service}
-                style={svc_var(service)}
-              >
-                <span class="t">{ts}</span><span class="s">{service}</span><span class="m">{Phoenix.HTML.raw(
-                  html
-                )}</span>
+              <div class="toolbar" role="group" aria-label="The services whose lines show">
+                <button
+                  :for={s <- @services}
+                  class="btn svc"
+                  type="button"
+                  data-svc={s}
+                  aria-pressed="true"
+                  style={svc_var(s)}
+                >{s}</button>
+                <span class="sep"></span>
+                <button class="btn" type="button" data-ts aria-pressed="true">Timestamps</button>
               </div>
-            </div>
-            <%!-- The Jobs screen's grip (.ograb), between the two panes:
-                  drag, and the terminal takes the height the sheet gives up. --%>
-            <div
-              class="ograb"
-              role="separator"
-              aria-orientation="horizontal"
-              tabindex="0"
-              aria-label="How the screen is split between the terminal and the sheet — drag, or arrow keys; double-click for halves"
-            >
-            </div>
-            <div class="impl" aria-label="A file, as the Files sheet draws it">
-              <div class="files">
+              <div
+                class="lines term-box"
+                aria-label="Lines of a log, as the Logs screen draws them"
+                style={"--svc-w:#{@services |> Enum.map(&String.length/1) |> Enum.max()}ch"}
+              >
                 <div
-                  :for={lang <- Console.Highlight.languages()}
-                  class="f open sample"
-                  data-lang={lang}
-                  hidden={lang != :elixir}
+                  :for={{service, level, cont, ts, html} <- @log_lines}
+                  class={["ln", level, cont && "cont"]}
+                  data-svc={service}
+                  style={svc_var(service)}
                 >
-                  <div class="fh">
-                    <span class="ft"><span class="p">{@sheet_paths[lang]}</span></span>
-                    <span class="n"><span class="a">+1</span><span class="r"> −1</span></span>
-                  </div>
-                  <pre
-                    class="src"
+                  <span class="t">{ts}</span><span class="s">{service}</span><span class="m">{Phoenix.HTML.raw(
+                    html
+                  )}</span>
+                </div>
+              </div>
+              <%!-- The Jobs screen's grip (.ograb), between the two panes:
+                  drag, and the terminal takes the height the sheet gives up. --%>
+              <div
+                class="ograb"
+                role="separator"
+                aria-orientation="horizontal"
+                tabindex="0"
+                aria-label="How the screen is split between the terminal and the sheet — drag, or arrow keys; double-click for halves"
+              >
+              </div>
+              <div class="impl" aria-label="A file, as the Files sheet draws it">
+                <div class="files">
+                  <div
+                    :for={lang <- Console.Highlight.samples()}
+                    class="f open sample"
                     data-lang={lang}
-                    aria-label={"A sample of #{lang} in the chosen colours, one line changed"}
-                    style={"--gut:#{Console.Diffs.gutter(Console.Highlight.sample_diff(lang))}ch"}
-                  ><div class="rows"><div
+                    hidden={lang != :elixir}
+                  >
+                    <div class="fh">
+                      <span class="ft"><span class="p">{@sheet_paths[lang]}</span></span>
+                      <span class="n"><span class="a">+1</span><span class="r"> −1</span></span>
+                    </div>
+                    <pre
+                      class="src"
+                      data-lang={lang != :other && lang}
+                      aria-label={"A sample of #{lang} in the chosen colours, one line changed"}
+                      style={"--gut:#{Console.Diffs.gutter(Console.Highlight.sample_diff(lang))}ch"}
+                    ><div class="rows"><div
                     :for={{cls, o, n, sign, html} <- Console.Highlight.sample_diff(lang)}
                     class={["dl", cls != :ctx && cls]}
                   ><span class="gut" style={"--d:#{digits(o)}"}>{o}</span><span class="gut" style={"--d:#{digits(n)}"}>{n}</span><span class="sg">{sign}</span><span class="cd">{Phoenix.HTML.raw(html)}</span></div></div></pre>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1202,5 +1381,156 @@ defmodule ConsoleWeb.WorkbenchDrawer do
       </div>
     </div>
     """
+  end
+
+  # A theme's part, Terminal or Code: the face first — Font, the
+  # reader's, no theme's: a theme is colours — then the shelf, the group
+  # "Color Themes", a card a theme with the thumbnail the hook draws
+  # from the file (the thumbnail is the preview: nothing is worn before
+  # it is picked), and Custom, which the hook shows when something is
+  # set on top — then Download Custom and Load Custom, in dev alone;
+  # then one fold, Adjustments, the house's fold head with the count of
+  # what is yours, holding the part's colour groups. Settled 2026-09-30
+  # (console/la-estanteria-a-la-vista.html), the face out of the theme
+  # the same day.
+  attr :kind, :string, required: true, values: ~w(terminal code)
+  attr :themes, :list, required: true
+  attr :theme_files, :boolean, required: true
+  slot :font, required: true, doc: "the Font group: face, size and leading"
+  slot :inner_block, required: true
+
+  defp theme_part(assigns) do
+    ~H"""
+    <div class="part" data-part={@kind}>
+      {render_slot(@font)}
+      <section class="tshelf set">
+        <h6>Color Themes</h6>
+        <div
+          class="grounds themes"
+          role="group"
+          data-shelf={@kind}
+          aria-label={"The #{@kind} themes on the shelf"}
+        >
+          <button
+            :for={t <- @themes}
+            type="button"
+            class="swatch ttile"
+            data-theme-key={t.key}
+            aria-pressed="false"
+            title={"#{t.author} · #{t.licence}"}
+          >
+            <span class="tthumb"></span>{t.name}
+          </button>
+          <button
+            type="button"
+            class="swatch ttile custom"
+            data-theme-key="custom"
+            aria-pressed="false"
+            hidden
+          >
+            <span class="tthumb"></span>Custom<small></small>
+          </button>
+        </div>
+        <p :if={@theme_files} class="acts">
+          <button class="btn" type="button" data-theme-download>Download Custom</button>
+          <label class="btn">Load Custom<input
+            type="file"
+            data-theme-file
+            accept=".json,.jsonc,application/json"
+            hidden
+          /></label>
+          <span class="word" data-theme-word></span>
+        </p>
+      </section>
+      <section class="group tsec" data-sec={@kind} data-folded>
+        <h5>
+          <span>Adjustments</span><span class="touch"></span><.square
+            mark="chevron"
+            label="Unfold the adjustments"
+            size="small"
+            class="foldsq"
+            aria-expanded="false"
+            title="Unfold"
+          />
+        </h5>
+        <div class="tbody">{render_slot(@inner_block)}</div>
+      </section>
+    </div>
+    """
+  end
+
+  # A group of Credits: its head, centred, with the house's small fold
+  # square at its end; its hint; its fichas.
+  attr :title, :string, required: true
+  attr :hint, :string, required: true
+  slot :inner_block, required: true
+
+  defp credits_group(assigns) do
+    ~H"""
+    <section class="group">
+      <h5>
+        <span>{@title}</span><.square
+          mark="chevron"
+          label={"Fold #{@title}"}
+          size="small"
+          class="foldsq"
+          aria-expanded="true"
+          title="Fold"
+        />
+      </h5>
+      <p class="hint">{@hint}</p>
+      <div class="credits">{render_slot(@inner_block)}</div>
+    </section>
+    """
+  end
+
+  # A theme's ficha in Credits: the one ficha faces and themes share —
+  # the name as its head, whose and under which licence as chips, its
+  # site with the house's mention, what it is (its file's `about`, or
+  # what its blocks say) — and, from the hook, "In use" when it is
+  # the one on, with nothing set on top. Everything printed is the
+  # file's: a theme is credited as it credits itself.
+  attr :theme, :map, required: true
+
+  defp theme_credit(assigns) do
+    t = assigns.theme
+
+    assigns =
+      assign(assigns,
+        what: t.about || theme_what(t),
+        chips: Enum.reject([t.author, t.licence], &is_nil/1)
+      )
+
+    ~H"""
+    <.card class="credit" data-theme={@theme.key} data-kind={@theme.kind}>
+      <h3><b>{@theme.name}</b></h3>
+      <p class="chips"><span :for={c <- @chips} class="chip">{c}</span></p>
+      <p :if={@theme.url} class="site">
+        <ConsoleWeb.Refs.site_ref url={@theme.url} name={@theme.name} />
+      </p>
+      <p class="hint">{@what}</p>
+      <p class="on" hidden></p>
+    </.card>
+    """
+  end
+
+  # What a theme is, read off its file when it does not say: which
+  # surface its shelf is, and which grounds it carries.
+  defp theme_what(%{kind: kind, json: json}) do
+    surface =
+      case kind do
+        :terminal -> "The terminal's colours"
+        :code -> "The sheet, every language's palette and the diff's"
+      end
+
+    grounds =
+      case {Map.has_key?(json, "dark"), Map.has_key?(json, "light")} do
+        {true, true} -> "both grounds"
+        {true, false} -> "dark only: on the light ground, the house's"
+        {false, true} -> "light only: on the dark ground, the house's"
+        _ -> "neither ground"
+      end
+
+    "#{surface}, #{grounds}."
   end
 end

@@ -1,0 +1,54 @@
+{
+  "dew.theme": {
+    "name": "Selenized",
+    "author": "Jan Warchoł",
+    "url": "https://github.com/jan-warchol/selenized",
+    "licence": "MIT"
+  },
+  "dark": {
+    "workbench.colorCustomizations": {
+      "terminal.background": "#103c48",
+      "terminal.foreground": "#adbcbc",
+      "dew.terminal.dim": "#72898f",
+      "terminal.ansiBlack": "#184956",
+      "terminal.ansiRed": "#fa5750",
+      "terminal.ansiGreen": "#75b938",
+      "terminal.ansiYellow": "#dbb32d",
+      "terminal.ansiBlue": "#4695f7",
+      "terminal.ansiMagenta": "#f275be",
+      "terminal.ansiCyan": "#41c7b9",
+      "terminal.ansiWhite": "#72898f",
+      "terminal.ansiBrightBlack": "#2d5b69",
+      "terminal.ansiBrightRed": "#ff665c",
+      "terminal.ansiBrightGreen": "#84c747",
+      "terminal.ansiBrightYellow": "#ebc13d",
+      "terminal.ansiBrightBlue": "#58a3ff",
+      "terminal.ansiBrightMagenta": "#ff84cd",
+      "terminal.ansiBrightCyan": "#53d6c7",
+      "terminal.ansiBrightWhite": "#cad8d9"
+    }
+  },
+  "light": {
+    "workbench.colorCustomizations": {
+      "terminal.background": "#fbf3db",
+      "terminal.foreground": "#53676d",
+      "dew.terminal.dim": "#909995",
+      "terminal.ansiBlack": "#ece3cc",
+      "terminal.ansiRed": "#d2212d",
+      "terminal.ansiGreen": "#489100",
+      "terminal.ansiYellow": "#ad8900",
+      "terminal.ansiBlue": "#0072d4",
+      "terminal.ansiMagenta": "#ca4898",
+      "terminal.ansiCyan": "#009c8f",
+      "terminal.ansiWhite": "#909995",
+      "terminal.ansiBrightBlack": "#d5cdb6",
+      "terminal.ansiBrightRed": "#cc1729",
+      "terminal.ansiBrightGreen": "#428b00",
+      "terminal.ansiBrightYellow": "#a78300",
+      "terminal.ansiBrightBlue": "#006dce",
+      "terminal.ansiBrightMagenta": "#c44392",
+      "terminal.ansiBrightCyan": "#00978a",
+      "terminal.ansiBrightWhite": "#3a4d53"
+    }
+  }
+}

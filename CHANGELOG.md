@@ -16,6 +16,276 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **The Interface tab is parts under a ribbon, not three folds.** Its
+  controls folded in three since 2026-09-15 — Overlay, Terminal and
+  Files, with *As a file* outside them — all open at birth: the column
+  measured 2274 px in a pane that showed 641, three and a half screens
+  until the reader folded two, and what was folded lived in the
+  browser alone. They are parts now, one in view, under a ribbon
+  across the pane below the drawer's own, as a box's papers sit under
+  a screen's tabs: Overlay, Text, Terminal, Files and Credits that
+  day — Overlay, Terminal, Code and Credits since the 30th, below. The
+  part is in the URL (`?wb=ui&part=`) and kept as Manual keeps
+  its paper, so Config and back returns to it; and the miniature
+  lights the surface the part sets: the band and the rail, the tabs,
+  the lines, the sheet. The pane is
+  `phx-update="ignore"`, so the part travels as `data-part` on it and
+  `console.css` reads it; the Frame hook only rewinds the column and
+  forgets `wb-console-ui-folds`. Settled on 2026-09-29 among three
+  compositions on the tab's real DOM (`las-subpestanas-de-interface`,
+  retired): the folds, a ribbon in the column's head — where six parts
+  wrapped to two lines in 320 px — and this.
+
+- **Text: the pages' own type is the reader's too.** A part of the
+  Interface tab for the three faces every page is drawn in — the
+  display, the text and the mono, the tokens `--cond`, `--serif` and
+  `--mono` — each the house's or another the console carries, and a
+  scale of the whole, 90 to 150 %. Kept in this browser
+  (`wb-console-text`) and carried by the jsonc under `dew.interface`,
+  as the overlay is. A face chosen is its token set on the root, the
+  house's is the token absent, as the code's and the files' faces
+  work; the bitmap faces are not offered here, a page being set at
+  many sizes and a bitmap face right at one. The scale is `--scale`
+  on the root, applied as `zoom` to what the page lays out and to
+  what each overlay holds — never to an overlay's frame, sized in
+  viewport units: zoomed, the drawer left the viewport at 125 %.
+  Retired the next day, 2026-09-30, the rest of the interface not
+  being offered to customise yet: the part left the ribbon, and what
+  it kept, `wb-console-text`, is forgotten when the page boots — a
+  face nobody can change any more must not stay on. The three faces
+  stay credited in Credits, and the pages' type stays a thing a theme
+  file may name under `dew.interface`, for the day it comes back.
+
+- **Credits: every face the console draws with, credited in one
+  place, each set in itself.** A part of the Interface tab, a face a
+  card: its head the name composed in the face — Tamzen looks like
+  Tamzen, at its pixel body — the link to where it lives, whose it is
+  and under which licence as chips, what it draws under. Settled on
+  2026-09-29 in `console/las-fichas-de-credits.html` (retired) among
+  the list it was, the card and a ficha with the accent edge of the
+  box's need block, on the real part: the card, because a ficha that
+  shows what it credits has something to frame and the link is its
+  verb — the rule of three families gains that line in
+  `components.css`. The themes were not credited here that day — a
+  theme's credit is its file's `dew.theme`, and where it showed was
+  the theme's chooser's matter; since the 30th they are, on the same
+  ficha, below. Barlow Condensed (Jeremy Tribby), Source Serif 4 (Frank
+  Grießhammer, for Adobe) and IBM Plex Mono (Mike Abbink and Bold
+  Monday, for IBM) come from Google Fonts as the page loads; Fira
+  Code (Nikita Prokopov and the project's authors), Flexi IBM VGA
+  (VileR, The Ultimate Oldschool PC Font Pack) and Tamzen (Suraj N.
+  Kurapati, after Tamsyn by Scott Fial) travel with the console. The
+  notes under the face selectors of Terminal and Files say what a
+  face does now — ligatures on, a bitmap, one drawing a size — and no
+  longer whose it is. Two things put right on the way: the fonts'
+  README and the Tamzen note credited Scott Fial, who drew Tamsyn,
+  the face Tamzen is after; and the licences now travel with the
+  files, `LICENSE-fira_code.txt`, `LICENSE-flexi_IBM_VGA.txt` and
+  `LICENSE-tamzen.txt` beside the `.ttf` in
+  `console/priv/static/assets/fonts/`, as the SIL Open Font License
+  and CC BY-SA 4.0 ask of a copy that is redistributed — a table in a
+  README did not meet either.
+
+- **A theme is a surface's: two shelves in `console/themes/`,
+  `<key>.terminal.json` and `<key>.code.json`.** For a day
+  (2026-09-29) a theme was the interface whole, one file on one shelf:
+  the pages' type, the terminal's colours, the diff's, every language's
+  palette, picked from a select in Overlay, *Custom* first as the
+  state of anything touched on top. Settled again on 2026-09-30, part
+  by part, on three pages on the tab's real DOM
+  (`los-temas-en-el-cajon`, `el-tema-y-sus-partes`,
+  `la-estanteria-a-la-vista`, retired), after the select, cards under
+  it, a theme card that opens, and three arrangements of one part
+  called Themes had each been drawn and measured. What was settled:
+
+  *Two themes, one a surface.* Terminal schemes and editor themes are
+  published apart out there — iTerm2's, Windows Terminal's, Ghostty's
+  and Gogh's on one side, VS Code's and tmTheme on the other — and a
+  reader will want Dracula in the terminal and GitHub in the code, so
+  a terminal theme and a code theme are two files, told apart by the
+  suffix, and `Console.Themes` reads two shelves (`kind`, `shelf/1`);
+  a file that wears neither suffix is left out with a warning. A
+  terminal theme carries, a ground each, `terminal.*`,
+  `dew.terminal.*` and `editor.lineHighlightBackground`; a code theme carries the
+  sheet — `editor.background`, `editor.foreground`,
+  `editorGutter.background`, `editorLineNumber.foreground`, keys the
+  console had never read: the sheet took the terminal's ground, a dark
+  editor theme on the light sheet was broken, and a file with no
+  language was read in a constant of the house's that no theme reached
+  — the diff's four and the `textMateRules`. A theme is colours: the
+  face, size and leading of each surface are the reader's own, the
+  group *Font* above the shelf, no theme's — a theme changed does not
+  change the letter, and the letter changed does not make a theme
+  Custom — as iTerm2 and Windows Terminal keep appearance and scheme
+  apart. `console.css` draws the sheet on `--sheet` with
+  `--term` in reserve, a file with no language in `--sheet-ink`, and
+  the gutter on `--sheet-num-bg` and `--sheet-num`. A theme with no light ground
+  carries no `light` block, and on that ground the house's shows.
+
+  *The shelves.* The terminal's opens with *Default* — the house's,
+  credited to it *after Nord*, whose sixteen its ANSI are (2026-09-16)
+  on the house's ground, with a Nord light of the house's making on
+  paper — and five as their sources give them: *GNOME* and *Tango*,
+  GNOME Terminal's two palettes with their light and dark grounds as
+  it draws them (`terminal-schemes.hh`; GPL-3.0 and the public
+  domain); *Nord*, the original (Sven Greb, Arctic Ice Studio, MIT),
+  dark alone; *Selenized* (Jan Warchoł, MIT) and *Gruvbox* (Pavel
+  Pertsev, MIT), each with its dark and light variants — every value
+  checked against its source on 2026-09-30 (`terminal-profile-editor.cc`,
+  Nord's and Selenized's own GNOME Terminal and Alacritty ports,
+  gruvbox-contrib's xresources): GNOME's black, white, bright black and
+  the two schemes' foregrounds had been an older palette's, and
+  Gruvbox light's black too. Dim, which no scheme names, was each
+  one's bright black for a day, and read at 1.7:1 on Tango and Nord —
+  timestamps gone; it is the foreground halfway to the background now,
+  the way a terminal draws faint text, 3.3 to 3.9 on every dark
+  ground, except on Selenized, which names a dim of its own, `dim_0`.
+  The terminal's ground takes an opacity, to blend with the
+  interface's colours behind it: the reader's, like the face, a group
+  *Opacity* under *Font* above the shelf with a slider from 0 to
+  100 % and the number beside it, 40 % until the reader says
+  otherwise, kept as `wb-console-term-alpha` and composed onto the ground
+  of whatever theme is on — or the house's — as it goes on the root,
+  `#rrggbbaa` under 100 %; a theme's file never carries it, a theme
+  being colours. The `alpha` attribute of `<input type="color">` was
+  tried first, and the Chromium at hand sanitised it away. The code's opens with
+  *Default*, One Dark and One Light (Atom, MIT), and *GitHub* (Primer,
+  MIT), which leaves the terminal's shelf: GitHub's terminal colours
+  are on the shelf no more, its sheet is, `#0d1117` and `#ffffff` with
+  their line numbers, from the theme's source. A theme is credited as it credits itself:
+  `dew.theme` carries `about` too, what the theme is in a sentence,
+  which Credits prints whole — the house's two say what they are
+  after — and a theme that says nothing is credited with what its
+  blocks say, which surface and which grounds.
+
+  *The ribbon is four: Overlay, Terminal, Code, Credits.* Terminal and
+  Code are the two themes, a part each, in the place Terminal and
+  Files had; Text is retired for now (above). A theme's part is *Font*
+  first, then the group *Color Themes* — a card a theme, its
+  thumbnail drawn by the hook from the file, both grounds, the
+  ground's colour and five lines of the theme's: the terminal's ANSI,
+  the code's tokens — then *Download Custom* and *Load Custom*, then
+  one fold, *Adjustments*. The thumbnail is the preview:
+  a card worn on hover, drawn and tried, was taken out again the same
+  day. *Custom* is a card that appears at the first touch of anything
+  the theme carries, *Custom · on GNOME*, and the theme's own card
+  goes dashed: pressing it is the one way back, whole — no reset by
+  section (drawn, and found to be noise), no accent on a touched
+  section, no dot beside a touched value; what is yours is a count on
+  the fold's head, *1 set by you*, this ground's, and nothing else.
+  The pick and the state are kept, `wb-console-theme-terminal` and
+  `-code`, and a shelf hears only its own surface's touches. *Download
+  Custom* writes this surface's file, `my-theme.<kind>.json`, the
+  theme in force under what is set on top, both grounds, read off the
+  stores and not off the page (reading the page on the other ground
+  for a moment toggled `data-theme`, and an observer of it re-drew in
+  a loop the first time it was tried); *Load Custom* takes a file onto
+  the shelf it belongs to by what it carries, and a VS Code theme onto
+  this ground by both shelves, what each finds of its own. Both
+  buttons are the console's in dev alone (`config :console,
+  theme_files`, `dev.exs`): writing a file for the shelf is a
+  developer's move, and in prod the shelf is what it is.
+
+  *Adjustments.* The fold's head is the house's `h5` with the count
+  and the small fold square at its end, the same head Credits' groups
+  wear — one way of folding in the drawer — and inside it there are
+  groups alone, in the `h6` of The terminal, ANSI and Highlights:
+  *The terminal*, *ANSI*, *Highlights*; *Sheet*, *Diff*, *Language
+  Syntax*. *Font*, the three selects, stands above the shelf, outside
+  the fold; its sizes are numbers now, 12 px and 1.5 selected as what
+  the house draws — *as drawn* said no number, and hid that the house
+  draws each surface at its own size, 12 or 12.5 px. The hints and the section heads went: the part's
+  hint explained the preview and Custom, which the first touch
+  teaches; the sections' enumerated the labels the controls carry;
+  the heads said what the groups say. The one thing the controls did
+  not say, that a colour table edits the ground on view, the ground
+  switch says.
+
+  *The colour roles, one component.* Every colour table is a table of
+  name | colour pairs, the colour 20 px, the pairs repeated across the
+  row while every name fits on one line — the hook measures a box's
+  longest name into `--role-w` (`fitRoles`), `data-pairs` caps the
+  pairs a row takes, and one gap, 5 px, both ways. On a row of two
+  pairs or more the even pairs are mirrored, colour then name, and the
+  names align towards their colour, so the row reads towards its axis
+  and two colours meet in the middle: ANSI is one table of sixteen,
+  each colour beside its bright, *green* and *bright green*. A null in
+  a box's list is an empty record that ends a row early, so
+  *background* stands alone and *foreground · dim* follow (a box at
+  one pair a row has no axis, and draws no empty record); Diff is
+  four rows with the side in the name, *+line background*, *+line
+  foreground*, *-line background*, *-line foreground*; *red · errors*
+  and *yellow · warnings* are *red* and *yellow*, what they mark in
+  the title; and the lines' grounds are *Highlights* — *error*,
+  *warning* and *hover*, the one under the pointer. The words are VS
+  Code's: background and foreground, never ground and ink, on a
+  control that writes VS Code's keys. A box that is hidden measures nothing and is fitted when it
+  comes into view; and a box draws itself only after putting its set
+  on the root, because the ground hook mounts first and an observer
+  registered after a change never hears it — on the dark ground the
+  swatches showed the light's values until they did.
+
+  *The language.* The language is a native select, as the face is.
+  For a day it was a combo of the house's own, so that its button and
+  every option could wear the technology's mark beside the name
+  (Simple Icons' drawings, in one colour the ground's), and the same
+  mark stood on a sample's file header; the mark was a pleasant detail
+  and no function, and the listbox it needed — opened upward when the
+  column ended before it would, closed on a click outside, its option
+  copied onto the button, and the clicks a `label` forwarded to it —
+  was a cost paid for that detail alone, so both went on 2026-10-01
+  and the sprite lost the `lang-*` drawings. The list ends with
+  *Other*, a file with no language — `config/room.toml` as its sample,
+  plain — whose only colour is the sheet's foreground, and says so
+  where its palette would be.
+  Picking a language scrolled the column up, to the first colours of
+  the new palette or near it: fitting the pairs table measures the
+  names with the grid's minimum at zero, which lays the table out many
+  pairs a row and a fraction of its height, and the column's scroll,
+  clamped to that height, was never put back — Chromium's scroll
+  anchoring repairs it sometimes, which is why it was not always
+  seen. The fit keeps the column's scroll and puts it back.
+
+  *Credits, one ficha.* What is a credit's — whose a theme is, under
+  which licence, where it lives — left the theme's part for Credits,
+  which credits the themes and the faces on one ficha (`.card.credit`):
+  the name as its head (a face set in itself), author and licence as
+  chips, the site with the house's mention, what it draws; the theme
+  in use says *In use* and wears the accent, unless Custom is on,
+  when nothing on the shelf is. Credits takes the whole pane, no
+  miniature (it lights nothing), one centred column cut by three groups — *Terminal
+  themes*, *Code themes*, *Faces* — each with the fold square, read
+  down like a film's credits: one list with the role over each name,
+  one list by group, and three columns side by side were drawn, and
+  the list by group chosen. The mention is `.site-ref`
+  (`assets/design/build.py`, `ConsoleWeb.Refs.site_ref/1`), the
+  `.pkg-ref`'s rules with a mark that says where it goes — GitHub's
+  Invertocat and `owner/repo` for a repository there, as the packages
+  table names one, or the house's globe (`icons/globe.svg`) and the
+  host for any other — the one link of a ficha; a face's name is a
+  link no more. The two bitmap faces are set bigger, Flexi IBM VGA at
+  24 px and Tamzen at its 10×20, so a specimen shows the drawing. And
+  the drawer's *Kept in this browser. Nothing here touches
+  config.conf* line, Overlay's first since the tab was three folds, is
+  gone from Overlay, Terminal and Code: the shelf and the frame say
+  what they are, and nothing on the tab ever touched the file. A
+  bitmap specimen centred on a fractional pixel is a blur; the
+  Credits column was centred by a margin rounded to the pixel for an
+  afternoon, and is centred as any column is: the specimen takes its
+  half pixel.
+  In Terminal and Code the miniature shows the part's surface alone —
+  the lines taking the sheet's height, the sheet without the toolbar
+  and the lines — and Overlay shows both, the frame being the whole;
+  the accent outline that lit the surface a part set, since the parts
+  were folds, went with that: with a surface a part it said what the
+  miniature says. The miniature's ground cell is a control now, as
+  the band's is: it switches the ground, and the click stays off the
+  band, which a click moves.
+  The language samples (`Console.Highlight`, `@samples`) grew from
+  eight or twelve lines to twenty to thirty-eight each, in the same
+  room, so the sheet fills what the pane gives it and scrolls; each still touches
+  every rule of its palette, and the changed line is where it was.
+
 - **The tests that read a third party are a group of their own,
   `:network`, and the check against ash-hq.org is its first member.**
   `mix workbench.ash.site` fetched the site's installer and compared
@@ -36,6 +306,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `test_helper`'s business, not the hook's. ash CHANGELOG v0.8.1.
 
 ### Removed
+
+- **`console/elixir_color_theme.jsonc`, archived.** The twelve One
+  Dark rules for Elixir, as first written for VS Code, were the seed
+  of the console's colouring; every one of them — scopes, colours,
+  the comments' italic — has lived in `hooks.js` (`LANGS.elixir`) and
+  `console.css` since, and since today in `console/themes/` too —
+  `default.code.json` — in the same VS Code form with One Light's
+  beside. Checked rule
+  by rule before it went. Out of git, in `_archived/`; the two
+  comments that cited it say so.
 
 - **`RELEASE_PLAN.md` and `SCRIPT.md` leave the repository for
   `_local/`**, where `reference/` went the day before: the three are

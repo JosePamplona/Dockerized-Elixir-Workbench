@@ -22,6 +22,12 @@
      this: the first opens a drawer in this console, the second leaves
      for somebody else's site, and the reader should never have to
      press to learn which.
+   .site-ref — a mention of somebody else's site that is not a package:
+     a theme's home, a face's. The .pkg-ref's rules, with a mark that
+     says where it goes: GitHub's Invertocat as GitHub draws it for a
+     repository there (`owner/repo` in mono, as the packages table names
+     one), or the house's globe from the sprite for any other host (the
+     host's name in mono). The mark is the one link of a credits ficha.
    .door-ref — an address: a route the project offers on the app's port
      (exdoc's /dev/docs, mailer's /dev/mailbox, health_probe's
      {path}/live) or a port the compose publishes for a service
@@ -310,6 +316,15 @@
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .pkg-ref .mark.light{display:none}:root:not([data-theme="light"]) .pkg-ref .mark.dark{display:inline}}
 :root[data-theme="dark"] .pkg-ref .mark.light{display:none}
 :root[data-theme="dark"] .pkg-ref .mark.dark{display:inline}
+.site-ref{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;font-family:var(--mono);font-size:12px;color:var(--ink);text-decoration:none;background:none;border:0;padding:0;cursor:pointer}
+.site-ref:hover,.site-ref:focus-visible{color:var(--accent);outline:none}
+.site-ref .mark{width:12px;height:12px;flex:none;opacity:.55;transition:opacity 120ms}
+.site-ref svg.mark{color:var(--ink)}
+.site-ref:hover .mark,.site-ref:focus-visible .mark{opacity:1}
+.site-ref .mark.dark{display:none}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .site-ref .mark.light{display:none}:root:not([data-theme="light"]) .site-ref .mark.dark{display:inline}}
+:root[data-theme="dark"] .site-ref .mark.light{display:none}
+:root[data-theme="dark"] .site-ref .mark.dark{display:inline}
 .door-ref{position:relative;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;color:var(--ink);text-decoration:none;padding:3px 9px;border:1px solid var(--line);border-radius:2px;background:none}
 /* The link is the name and the address, laid flat on the plate: a button (build) may follow them, and no <a> may hold one. */
 .door-ref>a{display:contents;color:inherit;text-decoration:none;cursor:pointer}
@@ -437,7 +452,11 @@ input[type="checkbox"],input[type="radio"]{accent-color:var(--accent)}
    the fold square last when the card folds — the cursor says so only
    then. .folded keeps the head alone. .danger is the same card with the
    bad's edge and head. .foot is its last line — the command and the
-   button that runs it — and the screen decides the button's floor. */
+   button that runs it — and the screen decides the button's floor.
+   A ficha that shows what it credits is a card too (2026-09-29, the
+   drawer's Credits: a face a card, its head the name set in the face
+   itself): the specimen is what the frame holds, and the link to where
+   the face lives is its verb. */
 .card{border:1px solid var(--line);background:var(--surface);border-radius:3px;padding:16px 18px;display:grid;gap:12px}
 .card>h3{margin:0;display:flex;align-items:center;gap:10px;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:18px}
 .card>h3 .name{margin-right:auto}

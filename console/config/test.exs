@@ -2,6 +2,9 @@ import Config
 
 # The bench reads nothing at boot in tests: a reading starts a container.
 config :console, bench_reads_at_boot: false
+
+# The shelf of themes is the suite's own, one probe on it.
+config :console, themes_dir: "test/support/themes"
 # And the events feed listens to nothing: there is no daemon to hear.
 config :console, events_at_boot: false
 # And the Docker screen asks the daemon nothing.

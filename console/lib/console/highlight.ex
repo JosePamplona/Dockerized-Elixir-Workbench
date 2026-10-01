@@ -179,6 +179,8 @@ defmodule Console.Highlight do
   defp lex(lexer, source) when is_atom(lexer), do: lexer.lex(source)
   defp lex({lexer, opts}, source), do: lexer.lex(source, opts)
 
+  defp inner_html(:plain, source), do: escape(source)
+
   defp inner_html(lexer, source) when is_atom(lexer),
     do: Makeup.highlight_inner_html(source, lexer: lexer)
 
@@ -225,7 +227,40 @@ defmodule Console.Highlight do
          # A late player is turned away; nil is nobody.
          def join(%{players: ps} = room, %Player{} = p) when length(ps) < @max do
            valid? = Regex.match?(~r/^[a-z_]+$/, p.name) && p.age >= 18
-           if valid?, do: {:ok, %{room | players: [p | ps]}}, else: {:error, :refused}
+           if valid? do
+             {:ok, %{room | players: [p | ps]}}
+           else
+             {:error, :refused}
+           end
+         end
+
+         def leave(%{players: ps} = room, %Player{id: id}) do
+           {gone, kept} = Enum.split_with(ps, &(&1.id == id))
+
+           case gone do
+             [] -> {:error, :not_here}
+             [_] -> {:ok, %{room | players: kept}}
+           end
+         end
+
+         @doc "The room as the band reads it: a name and a count."
+         def summary(%{name: name, players: ps}) do
+           "\#{name}: \#{length(ps)}/\#{@max}"
+         end
+
+         def handle_call({:join, p}, _from, room) do
+           case join(room, p) do
+             {:ok, room} ->
+               {:reply, :ok, room}
+
+             {:error, why} = err ->
+               {:reply, err, Map.update(room, :refused, [why], &[why | &1])}
+           end
+         end
+
+         def handle_info(:tick, room) do
+           Process.send_after(self(), :tick, 1_000)
+           {:noreply, %{room | ticks: room.ticks + 1}}
          end
        end
        """},
@@ -238,6 +273,24 @@ defmodule Console.Highlight do
            <a href={~p"/players/\#{p.id}"}>{p.name}</a> <%= @max %>
          </li>
        </ul>
+       <section class="board" phx-update="ignore" id="room-1-board">
+         <h2>{@room.name} <small>{length(@players)}/8</small></h2>
+         <form phx-submit="join" phx-change="validate">
+           <input type="text" name="name" value={@form[:name].value} placeholder="your name" />
+           <input type="number" name="age" min="18" max="120" />
+           <button type="submit" disabled={@late}>Join</button>
+         </form>
+         <p :if={@late} class="late">The room is full: come back at <time>{@next}</time>.</p>
+         <table>
+           <tr :for={{p, i} <- Enum.with_index(@players, 1)}>
+             <td>{i}</td><td>{p.name}</td><td>{p.age}</td>
+           </tr>
+         </table>
+         <footer>
+           <.link navigate={~p"/rooms"} class="back">All rooms</.link>
+           <span class="count">{length(@players)} of {@max}</span>
+         </footer>
+       </section>
        """},
     css:
       {MakeupCSS.Lexer,
@@ -250,6 +303,20 @@ defmodule Console.Highlight do
        }
        /* the band */
        @media (max-width: 700px) { .room { display: none } }
+       .players { display: grid; gap: 6px 12px; grid-template-columns: 2ch 1fr auto; }
+       .players .late { color: var(--muted); text-decoration: line-through; }
+       .board h2 small { font-size: .7em; opacity: .6; margin-left: .5ch; }
+       .board form { display: flex; gap: 8px; align-items: center; }
+       .board input[type="number"] { width: 5ch; text-align: right; }
+       .board button:disabled { cursor: not-allowed; opacity: .5; }
+       .board table { border-collapse: collapse; width: 100%; }
+       .board td { padding: 2px 6px; border-bottom: 1px solid #eee; }
+       .board tr:nth-child(odd) td { background: rgba(0, 0, 0, .03); }
+       /* the late one blinks until the next seat */
+       @keyframes pulse { 50% { opacity: .2; } }
+       .late time { animation: pulse 1.2s infinite; }
+       .back::before { content: "←"; margin-right: .4ch; }
+       .count { font-variant-numeric: tabular-nums; float: right; }
        """},
     json:
       {Makeup.Lexers.JsonLexer,
@@ -260,7 +327,17 @@ defmodule Console.Highlight do
          "ssl": false,
          "replicas": null,
          "tags": ["live", "dev"],
-         "db": { "pool": 10, "url": "ecto://arcade@db/arcade" }
+         "db": { "pool": 10, "url": "ecto://arcade@db/arcade" },
+         "rooms": [
+           { "id": 1, "name": "lobby", "max": 8, "open": true },
+           { "id": 2, "name": "arena", "max": 4, "open": false },
+           { "id": 3, "name": "balcony", "max": 2, "open": true }
+         ],
+         "limits": { "age": 18, "idle_seconds": 300, "rate": 2.5 },
+         "features": { "chat": true, "spectators": false, "replays": null },
+         "mail": { "from": "arcade@example.test", "retries": 3 },
+         "log": { "level": "info", "json": true, "file": "/var/log/arcade.log" },
+         "build": "2026-09-30T18:00:00Z"
        }
        """},
     ts:
@@ -275,6 +352,21 @@ defmodule Console.Highlight do
          }
        }
        const socket = new Socket("/socket", { params: { token: `t-${id}` } });
+       socket.connect();
+       const channel = socket.channel(`room:${id}`, { age: 21 });
+       channel.on("joined", ({ name, count }: { name: string; count: number }) => {
+         console.log(`${name} joined; ${count} in the room`);
+       });
+       channel.join()
+         .receive("ok", () => render(document.getElementById("board")!))
+         .receive("error", (why: unknown) => console.error("refused", why));
+       // The board: one row a player, the late one greyed.
+       function render(el: HTMLElement): void {
+         const rows = players.map((p, i) => `<tr><td>${i + 1}</td><td>${p.name}</td></tr>`);
+         el.innerHTML = rows.join("");
+       }
+       type Player = { name: string; age: number };
+       const players: Player[] = [];
        """},
     markdown:
       {{MakeupSyntect.Lexer, language: "markdown"},
@@ -292,6 +384,27 @@ defmodule Console.Highlight do
        ```elixir
        Room.join(room, player)
        ```
+
+       ## Rooms
+
+       | Room    | Max | Open |
+       | ------- | --- | ---- |
+       | lobby   | 8   | yes  |
+       | arena   | 4   | no   |
+
+       1. Pick a room.
+       2. Give your name and your age.
+       3. Wait for the band to say *joined*.
+
+       ### Limits
+
+       The room turns a player away when it is **full**, when the player is
+       under 18, or when the name has anything but `a-z` and `_`.
+
+       ---
+
+       See [the design](DESIGN.md) for why eight, and the `CHANGELOG.md` for
+       the day it became twelve.
        """},
     godot:
       {{MakeupSyntect.Lexer, language: "gd"},
@@ -308,6 +421,25 @@ defmodule Console.Highlight do
        	if velocity.length() > 0 and not is_dead:
        		move_and_slide()
        	died.emit()
+
+       func take_hit(amount: int) -> void:
+       	health -= amount
+       	if health <= 0:
+       		is_dead = true
+       		$Sprite2D.modulate = Color(0.4, 0.4, 0.4, 1.0)
+       		died.emit()
+
+       func _on_area_body_entered(body: Node2D) -> void:
+       	if body.is_in_group("spikes"):
+       		take_hit(25)
+       	elif body.name == "Coin":
+       		coins += 1
+       		body.queue_free()
+
+       var health: int = 100
+       var coins: int = 0
+       var is_dead := false
+       const JUMP_FORCE := -400.0
        """},
     shell:
       {{MakeupSyntect.Lexer, language: "sh"},
@@ -323,8 +455,49 @@ defmodule Console.Highlight do
        players=$(mix run -e 'IO.puts 8' | tr -d '\\n')
        for f in lib/*.ex; do wc -l "$f"; done
        mix phx.server && echo "room on :$PORT, $players at most"
+       rooms=("lobby" "arena" "balcony")
+       for room in "${rooms[@]}"; do
+         if docker compose ps --status running | grep -q "$room"; then
+           printf '%-8s up\\n' "$room"
+         else
+           printf '%-8s down\\n' "$room" >&2
+         fi
+       done
+       case "${1:-}" in
+         start) docker compose up -d --wait ;;
+         stop)  docker compose down ;;
+         *)     echo "usage: $0 start|stop" >&2; exit 2 ;;
+       esac
+       trap 'echo "bye"; exit 0' INT TERM
+       while read -r line; do
+         [[ "$line" =~ ^#.*$ ]] && continue
+         echo "$line" | tee -a room.log
+       done < players.txt
+       """},
+    # A file with no language — no lexer answers to .toml — read in the
+    # sheet's own foreground, for the Interface tab's *Other*.
+    other:
+      {:plain,
+       """
+       # The room's own settings; the port comes from .env.
+       name = "lobby"
+       max = 8
+       open = true
+
+       [limits]
+       age = 18
+       idle_seconds = 300
+       rate = 2.5
+
+       [mail]
+       from = "arcade@example.test"
+       retries = 3
        """}
   }
+
+  @doc "The samples the Interface tab's sheet shows: a language each, and Other, a file with none."
+  @spec samples() :: [atom()]
+  def samples, do: languages() ++ [:other]
 
   @doc "The languages the Interface tab shows a palette for, in its order."
   @spec languages() :: [atom()]
@@ -348,7 +521,8 @@ defmodule Console.Highlight do
     ts: {4, "  max: number = 12;"},
     markdown: {6, "- twelve at most"},
     godot: {4, "@export var speed: float = 240.0"},
-    shell: {9, "players=$(mix run -e 'IO.puts 12' | tr -d '\\n')"}
+    shell: {9, "players=$(mix run -e 'IO.puts 12' | tr -d '\\n')"},
+    other: {3, "max = 12"}
   }
 
   @doc """
@@ -381,6 +555,8 @@ defmodule Console.Highlight do
         {line, i} -> [{:ctx, i, i, " ", line}]
       end)
   end
+
+  defp lines_of(:plain, source), do: plain_lines(String.trim_trailing(source, "\n"))
 
   defp lines_of(lexer, source),
     do: lexer |> lex(String.trim_trailing(source, "\n")) |> token_lines()

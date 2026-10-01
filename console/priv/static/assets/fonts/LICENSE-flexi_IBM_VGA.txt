@@ -1,0 +1,33 @@
+Flexi IBM VGA True — flexi_IBM_VGA00x20r.ttf
+
+From The Ultimate Oldschool PC Font Pack, by VileR
+https://int10h.org/oldschool-pc-fonts/
+
+The file is the pack's own, renamed for the console (its name says the
+cell, 00x20, and the weight, r; the pack has no bold) and otherwise
+unchanged.
+
+Licence: Creative Commons Attribution-ShareAlike 4.0 International
+(CC BY-SA 4.0), https://creativecommons.org/licenses/by-sa/4.0/
+
+In the author's words (the pack's readme, "Legal Stuff"):
+
+  I do not claim any rights to the original raster binary data
+  charsets, which this work is based on. Credit for these goes to
+  their respective designers.
+
+  The font files in this pack (TTF and FON remakes and enhancements)
+  are my own work, hereby licensed under a Creative Commons
+  Attribution-ShareAlike 4.0 International License.
+
+  "tl;dr" version (which is not a substitute for the license):
+
+  - You may freely share and adapt / transform / enhance them for any
+    purpose
+  - You must give appropriate credit (with the author's name + a link
+    to the original material); the preferred form of attribution is
+    my handle "VileR" and a link to this site's Home page
+  - If you distribute your own adaptations, do so under a compatible
+    license
+  - No warranties are given - whatever you do, I will not be held
+    liable

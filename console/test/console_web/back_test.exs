@@ -117,6 +117,107 @@ defmodule ConsoleWeb.BackTest do
     refute html =~ ~s(href="/deploy?wb=manual&amp;paper=readme")
   end
 
+  test "the workbench drawer's Interface keeps its part across Config, and names it on the ribbon",
+       %{conn: conn} do
+    {:ok, view, html} = live(conn, "/deploy?wb=ui&part=terminal")
+    assert html =~ ~s(data-part="terminal")
+
+    # The ribbon: Overlay, Terminal, Code, Credits — a theme a surface; Text retired for now.
+    for part <- ~w(overlay code credits) do
+      assert html =~ ~r{href="/deploy\?wb=ui&amp;part=#{part}"[^>]*aria-selected="false"}
+    end
+
+    refute html =~ ~s(part=text")
+    refute html =~ ~s(part=files")
+
+    # Each theme part: its shelf first, a card a theme and Custom hidden,
+    # then the one fold, Adjustments. The suite's shelf
+    # has a probe on each.
+    assert html =~
+             ~r{data-shelf="terminal"[^>]*>.*?data-theme-key="probe"[^>]*title="The suite · MIT"}s
+
+    assert html =~ ~r{data-shelf="code"[^>]*>.*?data-theme-key="probe"}s
+    assert html =~ ~r{data-theme-key="custom"[^>]*hidden}
+
+    assert html =~
+             ~r{<span>Adjustments</span><span class="touch"></span><button[^>]*class="sq small foldsq"[^>]*aria-expanded="false"}
+
+    # Its groups: Font; the terminal's colour tables, each a pairs table
+    # of two; the code's sheet, diff and languages, the language a native
+    # select ending with Other.
+    assert html =~ ~r{<h6>Font</h6>}
+    assert html =~ ~r{data-term="ansi"[^>]*data-pairs="2"}
+    assert html =~ ~r{data-sheet="sheet"[^>]*data-pairs="2"}
+    assert html =~ ~r{data-diff="diff"[^>]*data-pairs="2"}
+
+    assert html =~
+             ~r{<select id="colours-lang"[^>]*>\s*<option value="elixir" selected[^>]*>\s*Elixir}
+
+    assert html =~ ~r{<option value="shell"[^>]*>\s*Shell}
+
+    # And Other, a file with no language, read in the sheet's foreground.
+    assert html =~ ~r{<option value="other"[^>]*>\s*Other\s*</option>\s*</select>}
+    assert html =~ ~r{class="f open sample" data-lang="other" hidden}
+    refute html =~ "lmark"
+
+    # The miniature's ground cell is a control, as the band's is.
+    assert html =~
+             ~r{<button[^>]*class="mground"[^>]*>\s*<svg[^>]*><use href="/images/icons.svg#ground"}
+
+    # Download Custom and Load Custom are dev's: the suite runs without them.
+    refute html =~ "Download Custom"
+    refute html =~ "data-theme-file"
+
+    # The hook is handed the shelves as JSON, kind and all.
+    assert html =~ ~s(<script type="application/json" id="themes">)
+    assert html =~ "terminal.foreground"
+    assert html =~ ~s("kind":"code")
+
+    # Credits: one ficha for faces and themes — the name (a face set in
+    # itself), whose and under which licence as chips, the site with the
+    # house's mention (GitHub's mark and owner/repo, or the globe and the
+    # host), what it draws — in three groups with the small fold square.
+    assert html =~
+             ~r{<span>Terminal themes</span><button[^>]*class="sq small foldsq"[^>]*aria-expanded="true"}
+
+    assert html =~ ~r{<span>Code themes</span>}
+    assert html =~ ~r{<span>Faces</span>}
+
+    for kind <- ~w(terminal code) do
+      assert html =~
+               ~r{<section[^>]*data-kind="#{kind}"[^>]*data-theme="probe"|<section[^>]*data-theme="probe"[^>]*data-kind="#{kind}"}
+    end
+
+    assert html =~
+             ~r{class="site-ref ?" href="https://example.test/probe"[^>]*title="Probe&#39;s site: example.test"><svg[^>]*class="mark"[^>]*><use href="/images/icons.svg#globe"></use></svg>example.test</a>}
+
+    assert html =~ ~r{class="spec" style="font-family:&#39;Tamzen10x20&#39;[^"]*">Tamzen</span>}
+    assert html =~ "Suraj N. Kurapati, after Tamsyn by Scott Fial"
+
+    assert html =~
+             ~r{class="site-ref ?" href="https://github.com/sunaku/tamzen-font"[^>]*><img[^>]*class="mark light"[^>]*src="/images/vendor/github.svg"[^>]*><img[^>]*class="mark dark"[^>]*src="/images/vendor/github-white.svg"[^>]*>sunaku/tamzen-font</a>}
+
+    assert html =~
+             ~r{class="site-ref ?" href="https://github.com/jpt/barlow"[^>]*>.*?jpt/barlow</a>}s
+
+    # A theme's ficha says what it draws, read off its file: the probe carries both grounds.
+    assert html =~ "The terminal&#39;s colours, both grounds."
+    # A theme that says what it is (dew.theme.about) is credited in its own words.
+    assert html =~ "The probe&#39;s code, as the suite wrote it."
+    refute html =~ "The sheet, every language&#39;s palette and the diff&#39;s, both grounds."
+    # The theme in force is the hook's to mark: nothing is, server-side.
+    assert html =~ ~r{<p[^>]*class="on" hidden}
+    refute html =~ "In use"
+
+    html = render_patch(view, "/deploy?wb=config")
+    assert html =~ ~s(href="/deploy?wb=ui&amp;part=terminal")
+    refute html =~ ~s(href="/deploy?wb=ui&amp;part=overlay")
+
+    # A part the URL names that is not one is the first.
+    {:ok, _view, html} = live(conn, "/deploy?wb=ui&part=nope")
+    assert html =~ ~s(data-part="overlay")
+  end
+
   test "the workbench drawer opens over the paper and Close comes back to it", %{conn: conn} do
     {:ok, view, _} = live(conn, "/project?paper=history")
 

@@ -34,6 +34,21 @@ defmodule Console.HighlightSampleTest do
     end
   end
 
+  test "Other is a file with no language, plain, with its changed line" do
+    assert Highlight.samples() == Highlight.languages() ++ [:other]
+    assert Highlight.sample(:other) =~ "name = &quot;lobby&quot;"
+    refute Highlight.sample(:other) =~ "class="
+
+    assert [
+             {:hunk, _, _, _, _},
+             _,
+             _,
+             {:del, 3, nil, "−", "max = 8"},
+             {:add, nil, 3, "+", "max = 12"} | _
+           ] =
+             Highlight.sample_diff(:other)
+  end
+
   test "a file's language is its palette's name" do
     assert Highlight.lang("lib/a.ex") == :elixir
     assert Highlight.lang("lib/a.html.heex") == :html

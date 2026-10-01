@@ -164,6 +164,28 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   way (`rulesOfRole` in `hooks.js`, the role's `italic`), so the file
   carried to VS Code slants what the sheet slants.
 
+### Fixed
+
+- **A role is read in its own rule's colour, not in a neighbour's.**
+  The console read a theme's rule onto every role that shared one of
+  its scopes, the later rule winning (`coloursFromRules`, `hooks.js`),
+  and roles do share scopes: a template's assigns are Elixir's module
+  attributes, a template's numbers Elixir's, and the shell's `$` is
+  among its quotes and its variables. So a file said one colour and
+  the sheet showed another: in *House's* the shell's quotes and braces
+  were read in the variables' red and not their own grey, in *GitHub*
+  the same and Elixir's embedded — `use`, `@max`, `#{}` — in a
+  template's plain ink where the file says GitHub's red. Found on
+  2026-10-01 writing the four new themes, whose colours for those
+  roles differ more than the house's do. A role takes the rule that
+  covers the most of its scopes now, and of two that cover as many,
+  the later: a role's own rule covers them all, so a shelf file reads
+  as written, and a VS Code theme pasted in gives a role the colour
+  most of its scopes wear in place of whichever rule came last.
+  Checked with the reader cut out of `hooks.js` — every role of both
+  grounds of the six code themes reads as its rule says — and on the
+  running console.
+
 ## v0.15.0 - (2026-10-01)
 
 ### Updated

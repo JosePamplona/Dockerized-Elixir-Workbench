@@ -853,13 +853,22 @@ const setOfDoc = (spec, doc) => { const c = (!Array.isArray(doc) && (doc["workbe
 // A rule's scope covers a role's when it is the same, or a parent of it.
 const covers = (rule, scope) => scope === rule || scope.startsWith(rule + ".")
 // The rules, sorted into languages: `{elixir: {kw: "#..."}, json: {...}}`.
+// A role takes the rule that covers the most of its scopes, and of two
+// that cover as many, the later. Roles share scopes — a template's
+// assigns are Elixir's module attributes, the shell's `$` is among its
+// quotes and its variables — and until 2026-10-01 any rule that touched
+// a role took it, so the later role's colour reached the earlier one:
+// the shell's quotes were read in its variables' colour.
 function coloursFromRules(rules) {
-  const out = {}
+  const out = {}, most = {}
   for (const r of rules) {
     const fg = r.settings && r.settings.foreground
     if (!fg || !HEX.test(fg)) continue
     const scopes = (Array.isArray(r.scope) ? r.scope : String(r.scope || "").split(",")).map(x => x.trim()).filter(Boolean)
-    for (const [l, lang] of Object.entries(LANGS)) for (const role of lang.roles) if (scopes.some(rs => role.scopes.some(ts => covers(rs, ts)))) (out[l] ||= {})[role.key] = fg.toLowerCase()
+    for (const [l, lang] of Object.entries(LANGS)) for (const role of lang.roles) {
+      const n = role.scopes.filter(ts => scopes.some(rs => covers(rs, ts))).length, id = `${l} ${role.key}`
+      if (n && n >= (most[id] || 0)) { most[id] = n; (out[l] ||= {})[role.key] = fg.toLowerCase() }
+    }
   }
   return out
 }

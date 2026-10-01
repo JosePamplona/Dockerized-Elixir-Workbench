@@ -1306,7 +1306,11 @@ form.insert.locked .opt input{opacity:.55}
 .src .nc, .src .ni, .src .nl, .src .nt, .src .kt{color:var(--t-mod)}
 .src .s, .src .s1, .src .s2, .src .sb, .src .sd, .src .sh, .src .sx{color:var(--t-str)}
 .src .si, .src .na, .src .nd{color:var(--t-interp)}
-.src .sr{color:var(--t-regex)}
+/* `sr` is Pygments' regex and the design system's screen-reader label
+   (components.css, .sr: one pixel, clipped). In a `.src` it is only
+   ever the first, so the label's clipping is undone here: a regex was
+   coloured and not there. */
+.src .sr{color:var(--t-regex);position:static;width:auto;height:auto;margin:0;overflow:visible;clip-path:none;white-space:inherit}
 /* Markdown, through syntect: a heading, bold, italic, and one class for
    what the grammar calls generic — code, a link's address, a list, a
    quote. Each takes a rule of the twelve, so the reader's jsonc reaches

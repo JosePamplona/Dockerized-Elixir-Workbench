@@ -427,6 +427,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   0.04 %, is VS Code misreading — a doc given with a sigil, a variable
   named `exit` — and one-file oddities. A template's Elixir is left as lexed:
   it reads with HTML's palette.
+- **A regex is on the sheet again.** Pygments' class for a regex is
+  `sr`, and `sr` is also the design system's screen-reader label
+  (`components.css`: one pixel, absolute, clipped). Every regex a
+  lexer found — `~r/^[a-z_]+$/` in the Interface tab's own sample —
+  was given its colour by `.src .sr` and hidden by `.sr`: the line
+  read `Regex.match?(, p.name)`. Seen on the screenshot taken to check
+  the first repair above, on 2026-10-01. `.src .sr` now undoes the label's
+  clipping; inside a `.src` the class is only ever the token.
 
 ## v0.14.0 - (2026-09-29)
 

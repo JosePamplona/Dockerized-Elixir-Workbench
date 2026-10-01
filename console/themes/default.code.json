@@ -92,10 +92,16 @@
             "keyword.operator.comparison.elixir",
             "keyword.operator.arithmetic.elixir",
             "punctuation.separator.object.elixir",
-            "punctuation.separator.method.elixir",
-            "parameter.variable.function.elixir"
+            "punctuation.separator.method.elixir"
           ],
           "settings": {
+            "foreground": "#d19a66"
+          }
+        },
+        {
+          "scope": "parameter.variable.function.elixir",
+          "settings": {
+            "fontStyle": "italic",
             "foreground": "#d19a66"
           }
         },
@@ -801,10 +807,16 @@
             "keyword.operator.comparison.elixir",
             "keyword.operator.arithmetic.elixir",
             "punctuation.separator.object.elixir",
-            "punctuation.separator.method.elixir",
-            "parameter.variable.function.elixir"
+            "punctuation.separator.method.elixir"
           ],
           "settings": {
+            "foreground": "#986801"
+          }
+        },
+        {
+          "scope": "parameter.variable.function.elixir",
+          "settings": {
+            "fontStyle": "italic",
             "foreground": "#986801"
           }
         },

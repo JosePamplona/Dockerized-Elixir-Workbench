@@ -151,6 +151,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   and not again while Custom was on, so a second colour set left it
   at one; any touch draws it now. Walked on a running console, the
   terminal's part and the code's.
+- **A function's parameters are set in italic.** The check of the
+  house's code theme against Atom's One Dark left three differences in
+  Elixir, and this was one: Atom slants a parameter as well as giving
+  it the operators' amber. The sheet does now (2026-10-01,
+  `console.css`, the `nv` of a `def`'s head). In the console an italic
+  is a trait of the sheet and not of a theme, as a comment's is, so
+  every code theme on the shelf wears it; what a theme can do is say
+  it for where the file goes next, and House's does: the parameter
+  leaves the operators' rule for one of its own, with `fontStyle`, in
+  `default.code.json`, and Download Custom writes it apart the same
+  way (`rulesOfRole` in `hooks.js`, the role's `italic`), so the file
+  carried to VS Code slants what the sheet slants.
 
 ## v0.15.0 - (2026-10-01)
 

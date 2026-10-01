@@ -727,7 +727,7 @@ const LANGS = {
     { key: "const", name: "constants", title: "constants, numbers", scopes: ["punctuation.definition.constant.elixir", "constant.language.elixir", "constant.numeric.elixir"] },
     { key: "func", name: "functions", scopes: ["entity.name.function.elixir"] },
     { key: "kw", name: "keywords", scopes: ["keyword.control.module.elixir", "keyword.control.elixir", "variable.other.anonymous.elixir"] },
-    { key: "op", name: "operators", scopes: ["keyword.operator.other.elixir", "keyword.operator.assignment.elixir", "keyword.operator.logical.elixir", "keyword.operator.comparison.elixir", "keyword.operator.arithmetic.elixir", "punctuation.separator.object.elixir", "punctuation.separator.method.elixir", "parameter.variable.function.elixir"] },
+    { key: "op", name: "operators", scopes: ["keyword.operator.other.elixir", "keyword.operator.assignment.elixir", "keyword.operator.logical.elixir", "keyword.operator.comparison.elixir", "keyword.operator.arithmetic.elixir", "punctuation.separator.object.elixir", "punctuation.separator.method.elixir", "parameter.variable.function.elixir"], italic: ["parameter.variable.function.elixir"] },
     { key: "mod", name: "modules", scopes: ["variable.other.constant.elixir", "entity.name.type.module.elixir"] },
     { key: "str", name: "strings", scopes: ["punctuation.definition.string.begin.elixir", "punctuation.definition.string.end.elixir", "string.quoted.double.elixir", "support.function.variable.quoted.single.elixir", "string.quoted.double.interpolated.elixir", "string.quoted.double.literal.elixir"] },
     { key: "interp", name: "embedded", scopes: ["punctuation.section.embedded.elixir", "keyword.other.special-method.elixir", "punctuation.definition.variable.elixir", "variable.other.readwrite.module.elixir", "variable.language.elixir"] },
@@ -1090,9 +1090,17 @@ const blockIn = (doc, g) => (doc && doc[g] && typeof doc[g] === "object") ? doc[
 const carries = (doc, kind) => KIND_SETS[kind].some(k => Object.keys(setOfDoc(SETS[k], blockIn(doc, "dark"))).length || Object.keys(setOfDoc(SETS[k], blockIn(doc, "light"))).length) || (kind === "code" && (rulesOf(blockIn(doc, "dark")).length > 0 || rulesOf(blockIn(doc, "light")).length > 0))
 // One ground's colours of a shelf as VS Code keys them: the sets under
 // workbench.colorCustomizations, the palettes as textMateRules.
+// A role as a theme's rules: its scopes with its colour — and, where some of them are set in italic and the rest
+// are not (a parameter among the operators: `italic` on the role), those apart in a rule of their own, so a file
+// carried to VS Code slants what the sheet slants.
+const rulesOfRole = (role, foreground) => {
+  const rule = (scopes, style) => ({ scope: scopes.length === 1 ? scopes[0] : scopes, settings: { ...(style ? { fontStyle: style } : {}), foreground } })
+  const slanted = role.italic || [], upright = role.scopes.filter(sc => !slanted.includes(sc))
+  return [rule(upright, role.style), ...(slanted.length ? [rule(slanted, "italic")] : [])]
+}
 const blockOf = kind => ({
   "workbench.colorCustomizations": Object.fromEntries(KIND_SETS[kind].flatMap(k => SETS[k].roles.map(r => [r.vs, shownProp(r.prop).slice(0, 7)]))),
-  ...(kind === "code" ? { "editor.tokenColorCustomizations": { textMateRules: Object.entries(LANGS).flatMap(([l, lang]) => lang.roles.map(role => ({ scope: role.scopes.length === 1 ? role.scopes[0] : role.scopes, settings: { ...(role.style ? { fontStyle: role.style } : {}), foreground: shownColour(l, role.key) } }))) } } : {}),
+  ...(kind === "code" ? { "editor.tokenColorCustomizations": { textMateRules: Object.entries(LANGS).flatMap(([l, lang]) => lang.roles.flatMap(role => rulesOfRole(role, shownColour(l, role.key)))) } } : {}),
 })
 function bindShelves(el, deps) {
   let shelf = []
@@ -1179,7 +1187,7 @@ function bindShelf(el, kind, themes, { colours, sets }, shelves) {
       if (kind === "code") {
         const have = cleanGround((mine.colours || {})[g]), base = rulesFrom(docOf(mine.key) || {})[g]
         const all = Object.fromEntries(Object.keys(LANGS).map(l => [l, { ...(base[l] || {}), ...(have[l] || {}) }]))
-        doc[g]["editor.tokenColorCustomizations"] = { textMateRules: Object.entries(LANGS).flatMap(([l, lang]) => lang.roles.filter(role => all[l][role.key]).map(role => ({ scope: role.scopes.length === 1 ? role.scopes[0] : role.scopes, settings: { ...(role.style ? { fontStyle: role.style } : {}), foreground: all[l][role.key] } }))) }
+        doc[g]["editor.tokenColorCustomizations"] = { textMateRules: Object.entries(LANGS).flatMap(([l, lang]) => lang.roles.filter(role => all[l][role.key]).flatMap(role => rulesOfRole(role, all[l][role.key]))) }
       }
     }
     return doc

@@ -14,6 +14,45 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+### Added
+
+- **Four more code themes on the shelf: Catppuccin, Dracula, Gruvbox
+  and Tokyo Night.** The code's shelf had two, the house's and
+  GitHub. On 2026-10-01 six of the best known were drawn side by side
+  on a page, `temas-de-codigo` — Dracula, Solarized, Catppuccin,
+  Gruvbox, Tokyo Night and Monokai, each in its own colours on the
+  Interface tab's sample, by the sheet's own rules — and the author
+  chose four. All are MIT and all have both grounds: *Dracula* (Zeno
+  Rocha), its dark from the theme for VS Code (2.25.1) and its light,
+  Alucard, from Dracula's own theme for Cursor (`dracula/cursor`
+  1.0.1), since the VS Code extension carries no light; *Catppuccin*,
+  Mocha and Latte of its four flavours (`@catppuccin/vscode` 3.18.1);
+  *Gruvbox* (Pavel Pertsev), dark and light at medium contrast as
+  jdinhify's port has them (`jdinhlife.gruvbox` 1.29.1), a pair for
+  the terminal shelf's Gruvbox; *Tokyo Night* (enkia), with Tokyo
+  Night Light (1.1.2). Solarized, the one of least contrast, and
+  Monokai, which has no light ground, stayed out. A theme of VS Code
+  says rules by scope, not the console's twelve roles a language, so
+  each role takes the colour VS Code would give its leading scope, by
+  TextMate's precedence — the most specific rule, the later of two
+  alike: for Elixir the scope most of the role's characters wear
+  (the module after `defmodule` for modules, so they take the theme's
+  colour for a type), for the other languages the colour most of the
+  role's scopes share, but for four roles where that is not the
+  role's own thing (TypeScript's keywords, Godot's names, functions
+  and annotations). The same method on GitHub's theme gave 61 of the
+  73 rules of `github.code.json` before those four. The sheet is the
+  theme's editor — ground, ink, line numbers — and the diff's two
+  grounds its own, laid over the sheet; a changed line's number takes
+  the theme's gutter mark without its alpha, or the first of its own
+  greens and reds that reads on the line. Writing them found a fault
+  in the console's reader, put right the same day (Fixed, below).
+  Checked with the reader cut out of `hooks.js`, every role of both
+  grounds of the four as meant, and on the running console, each
+  theme worn on both grounds. *One Atom* — Atom's One Dark and One
+  Light as near as twelve roles can say them, built beside *House's*
+  the same day to compare the two — was not kept: the house's stays.
+
 ### Updated
 
 - **The house's terminal is the author's on both grounds, and the

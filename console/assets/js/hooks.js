@@ -1186,11 +1186,9 @@ function bindShelf(el, kind, themes, { colours, sets }, shelves) {
   }
   const half = v => `<span class="half" style="background:${v[0]}">${v.slice(1).map((c, i) => `<i style="background:${c};width:${W[i]}%"></i>`).join("")}</span>`
   const thumb = doc => half(six(doc, "dark")) + half(six(doc, "light"))
-  // Mine, as a doc: the theme Custom stands on under what is set on top, both grounds — as the stores hold them
-  // while it is worn, as it was put away while a theme is worn bare.
-  const mineDoc = () => {
+  // A snapshot as a doc: the theme it stands on under what it sets on top, both grounds.
+  const docFrom = mine => {
     const doc = { "dew.theme": { name: "My theme", author: "", url: "", licence: "" } }
-    const mine = !state.custom && state.kept ? state.kept : snapshot()
     for (const g of ["dark", "light"]) {
       const base = docOf(mine.key) || {}, c = { ...(blockIn(base, g)["workbench.colorCustomizations"] || {}) }
       for (const [k, spec] of mySets) for (const r of spec.roles) { const v = cleanSet(spec, (mine.sets[k] || {})[g])[r.key]; if (v) c[r.vs] = v }
@@ -1203,6 +1201,10 @@ function bindShelf(el, kind, themes, { colours, sets }, shelves) {
     }
     return doc
   }
+  // Mine, for Custom's card: as the stores hold it while it is worn, as it was put away while a theme is worn bare.
+  const mineDoc = () => docFrom(!state.custom && state.kept ? state.kept : snapshot())
+  // And what is worn now, whichever it is — a theme bare, or Custom on one: what Download Current gives.
+  const currentDoc = () => docFrom(snapshot())
   const draw = () => {
     const on = state.custom ? "custom" : state.key, name = docOf(state.key)?.["dew.theme"]?.name || state.key
     // Custom's card: there while it is worn or put away, and it says the theme it stands on.
@@ -1240,9 +1242,10 @@ function bindShelf(el, kind, themes, { colours, sets }, shelves) {
   // The palette's rows are drawn again for the language chosen: its names are marked again.
   if (kind === "code") el.querySelector("#colours-lang")?.addEventListener("change", () => mark(yours()))
   onGround(draw)
-  // Mine, as a file for the shelf: this surface's, both grounds, and a dew.theme to fill in.
+  // What is worn, as a file for the shelf: this surface's, both grounds, and a dew.theme to fill in. It gave Custom
+  // even put away until 2026-10-01, when it was named for it; a Custom put away is worn first, a press on its card.
   down?.addEventListener("click", () => {
-    const a = document.createElement("a"), blob = new Blob([JSON.stringify(mineDoc(), null, 2)], { type: "application/json" })
+    const a = document.createElement("a"), blob = new Blob([JSON.stringify(currentDoc(), null, 2)], { type: "application/json" })
     a.href = URL.createObjectURL(blob); a.download = `my-theme.${kind}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000)
     say(`downloaded: give it its name, your name and a link in dew.theme, and drop it in console/themes/ as <key>.${kind}.json`)
   })

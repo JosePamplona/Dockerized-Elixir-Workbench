@@ -66,11 +66,22 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   never listened to, so its title stayed on the ground before. Asked
   by the author on 2026-10-01; checked on the running console, both
   parts, pressed from the square and from the band.
+- **Download Custom is *Download Current*, and gives what is worn.**
+  The button gave three things under one name: Custom when it was
+  worn, the theme in force when there was no Custom — which the name
+  did not say — and, with Custom put away, the Custom and not the
+  theme on the sheet. It is named for what it does now and does one
+  thing: the file is this surface as it is worn, both grounds, a
+  theme bare or Custom on one. A Custom put away is worn first, a
+  press on its card. *Load Custom* and *Clear Custom* keep their
+  names: a file loaded is a Custom, and Custom is what is cleared.
+  Proposed by the author on 2026-10-01; checked on the running
+  console, the file read as it left, in the three cases.
 - **Clear Custom: a Custom can be forgotten.** Since Custom is kept
   when another theme is picked, nothing took it off the shelf again:
   its card stayed, worn or put away, for good. Under the shelf, in
   Terminal and in Code, there is *Clear Custom*, anyone's — Download
-  Custom and Load Custom beside it stay dev's — and there only while
+  Current and Load Custom beside it stay dev's — and there only while
   there is a Custom, as its card is. Pressed with Custom worn, the
   theme it stands on goes on whole, as it is on the shelf; pressed
   with Custom put away, it is dropped and what is worn stays. Either
@@ -176,7 +187,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   touch the new Custom, and the one put away is gone. The shelf's
   kept state (`wb-console-theme-terminal`, `-code`) carries it, the
   stores as they were and the key of its theme, so it is there after
-  a reload; Download Custom gives it whether it is worn or put away.
+  a reload; Download Custom gave it whether it was worn or put away,
+  until the button was named for what is worn (*Download Current*,
+  above).
   Walked on a running console, the terminal's shelf and the code's:
   touch, pick another, come back, touch on another, reload.
 - **A theme's part shows its surface and no frame.** The Interface

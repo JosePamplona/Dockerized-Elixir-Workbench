@@ -164,8 +164,9 @@ defmodule ConsoleWeb.BackTest do
     assert html =~
              ~r{<button[^>]*class="mground"[^>]*>\s*<svg[^>]*><use href="/images/icons.svg#ground"}
 
-    # Download Custom and Load Custom are dev's: the suite runs without them.
-    refute html =~ "Download Custom"
+    # Download Current and Load Custom are dev's: the suite runs without them.
+    refute html =~ "Download Current"
+    refute html =~ "data-theme-download"
     refute html =~ "data-theme-file"
 
     # Clear Custom is anyone's, one a part, and stays away until the hook

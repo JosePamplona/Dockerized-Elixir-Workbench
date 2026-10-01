@@ -160,7 +160,7 @@ defmodule ConsoleWeb.WorkbenchDrawer do
 
   attr :theme_files, :boolean,
     default: false,
-    doc: "Download Custom and Load Custom, drawn in dev alone (config :console, :theme_files)"
+    doc: "Download Current and Load Custom, drawn in dev alone (config :console, :theme_files)"
 
   attr :version, :string, default: nil
   attr :config, :map, required: true
@@ -1461,8 +1461,9 @@ defmodule ConsoleWeb.WorkbenchDrawer do
   # from the file (the thumbnail is the preview: nothing is worn before
   # it is picked), and Custom, which the hook shows when something is
   # set on top and keeps there, put away, while another theme is worn
-  # — then Download Custom and Load Custom, in dev alone, and Clear
-  # Custom, anyone's, there while there is a Custom, as its card is;
+  # — then Download Current (what is worn, as a file) and Load Custom,
+  # in dev alone, and Clear Custom, anyone's, there while there is a
+  # Custom, as its card is;
   # then one fold, Adjustments, the house's fold head with the count of
   # what is yours, holding the part's colour groups. Settled 2026-09-30
   # (console/la-estanteria-a-la-vista.html), the face out of the theme
@@ -1515,7 +1516,7 @@ defmodule ConsoleWeb.WorkbenchDrawer do
         </div>
         <p class="acts">
           <button :if={@theme_files} class="btn" type="button" data-theme-download>
-            Download Custom
+            Download Current
           </button>
           <label :if={@theme_files} class="btn">Load Custom<input
             type="file"

@@ -14,6 +14,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+## v0.16.0 - (2026-10-01)
+
 ### Added
 
 - **Four more code themes on the shelf: Catppuccin, Dracula, Gruvbox

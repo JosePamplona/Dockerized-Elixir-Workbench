@@ -125,6 +125,23 @@ def house_light():
     return out
 
 
+# The services' colours tell a line's service apart in the logs, the
+# events and the sessions: a role a colour (tokens.json, svc-*). They
+# were chosen when the terminal was dark on both grounds, and on paper
+# they read at 2.1 to 3.0:1. Their light keeps each hue and saturation
+# and drops to 4.5:1 on paper, a name being text (2026-10-01).
+SVC = {"compute": "#B58BD9", "database": "#6FA8DC", "devtools": "#5FBFA6", "observability": "#8FBF5F",
+       "network": "#9A8FA3", "balancer": "#E0955A", "job": "#C9A0DC"}
+
+
+def svc_light():
+    out = {}
+    for name, c in SVC.items():
+        h, s, _ = hsl(c)
+        out[name] = solve(h, s, LIGHT, 4.5, False)
+    return out
+
+
 if __name__ == "__main__":
     for g in ("dark", "light"):
         ground, pal = palette(g)
@@ -143,3 +160,6 @@ if __name__ == "__main__":
     print(f"the house's light, as the author set it, on {LIGHT}")
     for k, c in HOUSE_LIGHT.items():
         print(f"  ansi-{k:15} {c.upper()}  {contrast(c, LIGHT):4.1f}:1")
+    print(f"the services, on {HOUSE_DARK} and carried to {LIGHT}")
+    for k, c in svc_light().items():
+        print(f"  svc-{k:15} {SVC[k]}  {contrast(SVC[k], HOUSE_DARK):4.1f}:1   {c}  {contrast(c, LIGHT):4.1f}:1")

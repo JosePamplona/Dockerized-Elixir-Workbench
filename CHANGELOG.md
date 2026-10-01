@@ -247,6 +247,22 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `default.code.json`, and Download Custom writes it apart the same
   way (`rulesOfRole` in `hooks.js`, the role's `italic`), so the file
   carried to VS Code slants what the sheet slants.
+- **A service's colour has a value a ground.** The seven `svc-*`
+  colours — a role a colour, what tells a line's service apart in the
+  logs, Docker's events and the sessions — were one value each, chosen
+  when the terminal was dark on both grounds. It follows the theme
+  since 2026-09-07, and on paper they were pale: 2.1 to 3.0:1, a
+  service's name being text. The author saw it on 2026-10-01. The
+  dark keeps the seven as they were (5.1 to 7.3:1 on the terminal's
+  ground); the light is each one's hue and saturation dropped to
+  4.5:1 on paper, by the method of the terminal's light
+  (`assets/design/palette.py`, `svc_light`): compute `#9559C8`,
+  database `#2E78BC`, devtools `#34816D`, observability `#598033`,
+  network `#7D6F88`, balancer `#B06021`, job `#9F55C1`.
+  `tokens.json` holds both and `build.py` writes them; nothing that
+  wears a service's colour changed, each reading `--svc-*` as before.
+  The diagram profile's series follow: its light column was the same
+  pale value as its dark.
 
 ### Fixed
 

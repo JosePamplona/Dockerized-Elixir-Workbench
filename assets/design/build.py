@@ -151,11 +151,11 @@ The workbench's service colours, which its logs already use to tell services apa
 
 | Token | Light | Dark | Notes |
 |---|---|---|---|
-| `series-1` | `{role("svc-compute","light")}` | `{role("svc-compute","light")}` | compute: the app |
-| `series-2` | `{role("svc-database","light")}` | `{role("svc-database","light")}` | database |
-| `series-3` | `{role("svc-devtools","light")}` | `{role("svc-devtools","light")}` | devtools: pgAdmin, Adminer |
-| `series-4` | `{role("svc-balancer","light")}` | `{role("svc-balancer","light")}` | the balancer |
-| `series-5` | `{role("svc-network","light")}` | `{role("svc-network","light")}` | network: the pod container |
+| `series-1` | `{role("svc-compute","light")}` | `{role("svc-compute","dark")}` | compute: the app |
+| `series-2` | `{role("svc-database","light")}` | `{role("svc-database","dark")}` | database |
+| `series-3` | `{role("svc-devtools","light")}` | `{role("svc-devtools","dark")}` | devtools: pgAdmin, Adminer |
+| `series-4` | `{role("svc-balancer","light")}` | `{role("svc-balancer","dark")}` | the balancer |
+| `series-5` | `{role("svc-network","light")}` | `{role("svc-network","dark")}` | network: the pod container |
 
 Fills sit at `0.18` opacity light, `0.22` dark; strokes use the full color. **Don't backfill these tokens to non-chart types.**
 

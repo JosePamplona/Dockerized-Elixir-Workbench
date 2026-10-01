@@ -55,6 +55,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **A theme's part switches the ground beside its shelf.** A theme has
+  two grounds and a card shows both, but to see the other one worn
+  the reader had to leave the part for Overlay, or reach the band. The
+  name of the group *Color Themes*, in Terminal and in Code, carries
+  the house's small square right beside it, with the band's own mark:
+  a press turns the ground, light to dark and back, and it is kept as
+  the band's is. The square says the ground it is on whoever set it,
+  and the band's cell hears the drawer now: its `repaint` was sent and
+  never listened to, so its title stayed on the ground before. Asked
+  by the author on 2026-10-01; checked on the running console, both
+  parts, pressed from the square and from the band.
 - **The house's code is read on the terminal's ground.** The dark
   sheet of *House's* was `#120B17`, the terminal's ground of before
   2026-10-01; it is `#2D1D3A`, the violet the house's terminal took

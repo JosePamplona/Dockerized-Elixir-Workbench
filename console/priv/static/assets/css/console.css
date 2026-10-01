@@ -1599,6 +1599,8 @@ form.insert.locked .opt input{opacity:.55}
 .ui .tthumb .half{flex:1;display:grid;gap:3px;align-content:start;padding:6px 5px}
 .ui .tthumb .half i{display:block;height:3px;border-radius:1px}
 .ui .tshelf{gap:8px}
+/* The shelf's name carries the ground's switch right beside it: the small square, with the band's own mark. */
+.ui .tshelf h6{display:flex;align-items:center;gap:8px}
 /* The fold: a group whose head is the house's h5 with the count of what
    is yours and the small fold square at its end (the Credits groups
    wear the same); folded, the group is its head alone. The body keeps

@@ -1455,7 +1455,9 @@ defmodule ConsoleWeb.WorkbenchDrawer do
 
   # A theme's part, Terminal or Code: the face first — Font, the
   # reader's, no theme's: a theme is colours — then the shelf, the group
-  # "Color Themes", a card a theme with the thumbnail the hook draws
+  # "Color Themes", with the small square beside its name that switches
+  # the ground (a theme has two, and the other is one press away), a
+  # card a theme with the thumbnail the hook draws
   # from the file (the thumbnail is the preview: nothing is worn before
   # it is picked), and Custom, which the hook shows when something is
   # set on top and keeps there, put away, while another theme is worn
@@ -1475,7 +1477,15 @@ defmodule ConsoleWeb.WorkbenchDrawer do
     <div class="part" data-part={@kind}>
       {render_slot(@font)}
       <section class="tshelf set">
-        <h6>Color Themes</h6>
+        <h6>
+          <span>Color Themes</span><.square
+            mark="ground"
+            label="The ground: light or dark"
+            size="small"
+            data-ground-flip
+            aria-pressed="false"
+          />
+        </h6>
         <div
           class="grounds themes"
           role="group"

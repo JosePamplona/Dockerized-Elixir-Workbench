@@ -85,6 +85,8 @@ export const Ground = {
     const paint = () => { const t = ground(); this.el.setAttribute("aria-pressed", String(t === "dark")); this.el.title = t === "dark" ? "Dark ground — click for light" : "Light ground — click for dark" }
     this.el.addEventListener("click", () => { const t = ground() === "dark" ? "light" : "dark"; document.documentElement.setAttribute("data-theme", t); store.set(THEME_KEY, t); paint() })
     matchMedia("(prefers-color-scheme: dark)").addEventListener("change", paint)
+    // The drawer switches the ground too, and says so here (Frame, setGround).
+    this.el.addEventListener("repaint", paint)
     paint()
   },
 }
@@ -1311,6 +1313,11 @@ export const Frame = {
       paint(); document.getElementById("ground-toggle")?.dispatchEvent(new Event("repaint"))
     }
     for (const c of el.querySelectorAll(".swatch[data-ground]")) c.addEventListener("click", () => setGround(c.dataset.ground))
+    // A theme's part switches it too, beside its shelf's name: the square says the ground it is on, whoever set it.
+    const flips = [...el.querySelectorAll("[data-ground-flip]")]
+    const paintFlips = () => { const dark = ground() === "dark"; for (const b of flips) { b.setAttribute("aria-pressed", String(dark)); b.title = dark ? "Dark ground — click for light" : "Light ground — click for dark" } }
+    for (const b of flips) b.addEventListener("click", () => setGround(ground() === "dark" ? "light" : "dark"))
+    onGround(paintFlips); paintFlips()
     // The code's and the files' face, size and leading, the reader's.
     const picks = Object.fromEntries(Object.keys(GROUPS).map(g => [g, bindPicks(el, g) || {}]))
     // And a ground's opacity, the reader's too, the terminal's and the sheet's: the slider and the number beside it

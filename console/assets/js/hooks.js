@@ -633,8 +633,9 @@ const PICKS = {
 // config.conf, the papers' code blocks. Each is three custom properties
 // on the root, `--<group>-face`, `--<group>-size` and `--<group>-leading`,
 // that every surface of the group reads with its own default in the
-// fallback — so "the house's" is the properties absent, and each surface
-// keeps the size and leading it was drawn at. A face brings its sizes:
+// fallback — so the page's own mono is the properties absent, and each
+// surface keeps the size and leading it was drawn at. A reader who has
+// chosen nothing gets the house's (DEFAULTS, below). A face brings its sizes:
 // Tamzen is a bitmap face, one drawing per size, and the drawing is the
 // family name; the vector faces take any. The leading is unitless, a
 // ratio of the size, so it holds when the size changes.
@@ -655,8 +656,14 @@ const FACES = {
 // nobody can change any more must not stay on.
 try { localStorage.removeItem("wb-console-text") } catch (e) {}
 const usual = f => f.sizes[Math.floor(f.sizes.length / 2)]
+// The house's, for a reader who has kept no choice (2026-10-01): what runs
+// in Tamzen at 15 px, a line on the next, and what is read in Fira Code at
+// 13 px and 1.2. Until then it was the page's own mono, IBM Plex — the
+// face `house`, still on the list — at each surface's drawn size. A
+// choice once kept is the reader's and stays, that one included.
+const DEFAULTS = { code: { face: "tamzen", size: 15, leading: 1 }, file: { face: "fira", size: 13, leading: 1.2 } }
 const cleanChoice = c => ({ face: c?.face in FACES ? c.face : "house", size: Number(c?.size) || null, leading: LEADINGS.includes(c?.leading) ? c.leading : null })
-const choiceOf = group => { try { return cleanChoice(JSON.parse(store.get(GROUPS[group]) || "{}")) } catch (e) { return cleanChoice({}) } }
+const choiceOf = group => { try { const kept = store.get(GROUPS[group]); return kept ? cleanChoice(JSON.parse(kept)) : { ...DEFAULTS[group] } } catch (e) { return { ...DEFAULTS[group] } } }
 function applyChoice(group, { face, size, leading }) {
   const root = document.documentElement.style, f = FACES[face]
   const s = f.sizes.includes(size) ? size : (face === "house" ? null : usual(f))
@@ -679,7 +686,7 @@ function bindPicks(el, group) {
   const draw = () => {
     const f = FACES[choice.face]
     faceSel.replaceChildren(...Object.entries(FACES).map(([k, v]) => opt(k, v.name, k === choice.face)))
-    // A size and a leading are chosen, never "as drawn" (2026-09-30): the house's are shown as what they are, 12 px and 1.5 — the
+    // A size and a leading are chosen, never "as drawn" (2026-09-30): the page's mono's are shown as what they are, 12 px and 1.5 — the
     // surfaces drawn at 12.5 or 1.6 keep theirs while nothing is chosen, and take the number the moment one is.
     sizeSel.replaceChildren(...f.sizes.map(n => opt(n, `${n} px`, n === (choice.size || (f.sizes.includes(12) ? 12 : usual(f))))))
     leadSel.replaceChildren(...LEADINGS.map(n => opt(n, n.toFixed(1), n === (choice.leading || 1.5))))
@@ -692,7 +699,7 @@ function bindPicks(el, group) {
   leadSel.addEventListener("change", () => { choice = { ...choice, leading: leadSel.value ? Number(leadSel.value) : null }; keep() })
   draw()
   // For a theme: the choice as it is, and the choice set whole (a bare one is the house's).
-  return { get: () => choice, replace: c => { choice = cleanChoice(c); keep() } }
+  return { get: () => choice, replace: c => { choice = c?.face ? cleanChoice(c) : { ...DEFAULTS[group] }; keep() } }
 }
 
 // --- the colours: twelve rules, One Dark's for Elixir as they were
@@ -935,11 +942,12 @@ const SETS = {
 }
 // Which sets are a shelf's, and which palettes: the terminal's one set; the code's two and every language's palette.
 const KIND_SETS = { terminal: ["term"], code: ["sheet", "diff"] }
-// The terminal ground's opacity is the reader's, like the face, over any theme (wb-console-term-alpha, 0 to 100,
-// 40 until the reader says otherwise): composed onto the ground's colour as it goes on the root, #rrggbbaa under
-// 100 %, and never written to a theme's file.
-const ALPHA_KEY = "wb-console-term-alpha", ALPHA_DEFAULT = 40
-const termAlpha = () => { const v = store.get(ALPHA_KEY); if (v === null || v === undefined || v === "") return ALPHA_DEFAULT; const n = Number(v); return Number.isFinite(n) && n >= 0 && n <= 100 ? n : ALPHA_DEFAULT }
+// A ground's opacity is the reader's, like the face, over any theme — the terminal's (wb-console-term-alpha) and
+// the sheet's (wb-console-sheet-alpha, 2026-10-01), each 0 to 100 and 40 until the reader says otherwise: composed
+// onto the ground's colour as it goes on the root, #rrggbbaa under 100 %, and never written to a theme's file.
+const ALPHA_KEYS = { term: "wb-console-term-alpha", sheet: "wb-console-sheet-alpha" }, ALPHA_DEFAULT = 40
+const alphaOf = which => { const v = store.get(ALPHA_KEYS[which]); if (v === null || v === undefined || v === "") return ALPHA_DEFAULT; const n = Number(v); return Number.isFinite(n) && n >= 0 && n <= 100 ? n : ALPHA_DEFAULT }
+const termAlpha = () => alphaOf("term")
 const withAlpha = (v, pct) => v.slice(0, 7) + (pct >= 100 ? "" : Math.round(pct * 2.55).toString(16).padStart(2, "0"))
 const cleanSet = (spec, d) => Object.fromEntries(spec.roles.filter(r => HEX.test((d || {})[r.key] || "")).map(r => [r.key, d[r.key].toLowerCase()]))
 const setOf = spec => { try { const d = JSON.parse(store.get(spec.key) || "{}"); return { dark: cleanSet(spec, d.dark), light: cleanSet(spec, d.light) } } catch (e) { return { dark: {}, light: {} } } }
@@ -948,8 +956,17 @@ const shownProp = prop => getComputedStyle(document.documentElement).getProperty
 function applySet(spec, all) {
   const root = document.documentElement.style, g = all[ground()] || {}
   for (const r of spec.roles) { const v = g[r.key]; if (v) root.setProperty(r.prop, v); else root.removeProperty(r.prop) }
-  // The terminal's ground wears the reader's opacity, over the theme's colour or the house's.
-  if (spec.key === SETS.term.key) { const pct = termAlpha(); if (pct < 100) root.setProperty("--term", withAlpha(shownProp("--term"), pct)) }
+  // The terminal's ground wears the reader's opacity, over the theme's colour or the house's — and a sheet with
+  // no ground of its own stands on the terminal's, so it follows.
+  if (spec.key === SETS.term.key) { const pct = termAlpha(); if (pct < 100) root.setProperty("--term", withAlpha(shownProp("--term"), pct)); sheetGround(setOf(SETS.sheet)) }
+  if (spec.key === SETS.sheet.key) sheetGround(all)
+}
+// The sheet's ground with the reader's opacity: over its own colour, the theme's or the reader's, or over the
+// terminal's when it has none (console.css: var(--sheet, var(--term))) — the colour alone, not the terminal's
+// opacity with it, which is the terminal's.
+function sheetGround(all) {
+  const own = (all[ground()] || {}).sheet
+  document.documentElement.style.setProperty("--sheet", withAlpha(own || shownProp("--term"), alphaOf("sheet")))
 }
 for (const spec of Object.values(SETS)) { applySet(spec, setOf(spec)); onGround(() => applySet(spec, setOf(spec))) }
 // --- the colour roles, one component (console.css .roles): a table of
@@ -960,8 +977,9 @@ for (const spec of Object.values(SETS)) { applySet(spec, setOf(spec)); onGround(
 // more the even pairs are mirrored, colour then name, the tracks with
 // them, so two colours meet at the axis. A hidden box measures nothing
 // and is fitted when it comes into view (the fold, the part, a resize).
-const roleRow = (name, title, value, label, onInput, onChange) => {
+const roleRow = (key, name, title, value, label, onInput, onChange) => {
   const row = document.createElement("label"), span = document.createElement("span"), input = document.createElement("input")
+  row.dataset.role = key
   if (title) row.title = title
   span.textContent = name
   input.type = "color"; input.value = value; input.setAttribute("aria-label", label)
@@ -1009,7 +1027,7 @@ function bindSet(el, spec) {
       box.replaceChildren(...(spec.rows[box.dataset[spec.data]] || []).map(key => {
         if (!key) return emptyRecord()
         const role = spec.roles.find(r => r.key === key)
-        return roleRow(role.name, role.title, shownProp(role.prop).slice(0, 7), `${role.title || role.name}, the colour`, v => set({ ...mine(), [role.key]: v }), keep)
+        return roleRow(role.key, role.name, role.title, shownProp(role.prop).slice(0, 7), `${role.title || role.name}, the colour`, v => set({ ...mine(), [role.key]: v }), keep)
       }))
       fitRoles(box)
     }
@@ -1032,7 +1050,7 @@ function bindColours(el) {
     for (const s of el.querySelectorAll(".sample[data-lang]")) s.hidden = s.dataset.lang !== lang
     // Other, a file with no language, has no palette: the sheet's foreground, above, is its ink.
     const roles = LANGS[lang]?.roles || [], none = el.querySelector("#swatches-none")
-    swatches.replaceChildren(...roles.map(role => roleRow(role.name, role.title, shownColour(lang, role.key), `${role.title || role.name}, the colour`, v => set({ ...mine(), [role.key]: v }), keep)))
+    swatches.replaceChildren(...roles.map(role => roleRow(role.key, role.name, role.title, shownColour(lang, role.key), `${role.title || role.name}, the colour`, v => set({ ...mine(), [role.key]: v }), keep)))
     if (none) none.hidden = roles.length > 0
     fitRoles(swatches)
   }
@@ -1050,11 +1068,15 @@ function bindColours(el) {
 // ground, `dark` and `light`, in the keys VS Code uses. A theme is
 // colours: the face is the reader's own, chosen above the shelf. Picking one
 // replaces its surface whole, what it does not say being the house's.
-// Custom is what is set now on top of the theme in force — a state, a
-// card that appears at the first touch, never a choice on the shelf —
-// and the theme's own card, dashed, is the one way back: pressing it
-// puts the theme back whole. What is yours is counted on the fold's
-// head, this ground's, and nowhere else. Settled on 2026-09-30
+// Custom is what the reader set on top of a theme — a card that appears
+// at the first touch, never a file on the shelf. Picking a theme, the
+// one Custom stands on (its card dashed) or any other, puts that theme
+// on whole and puts Custom away, kept: its card stays, and pressing it
+// wears it again. There is one Custom a shelf: touching a colour while
+// another theme is worn makes that theme and the touch the new Custom,
+// and the one kept is gone (2026-10-01; until then picking a theme lost
+// it at once). What is yours is counted on the fold's head, this
+// ground's, and nowhere else. Settled on 2026-09-30
 // (console/la-estanteria-a-la-vista.html), after the one theme for the
 // interface whole of the day before.
 const SHELF_KEYS = { terminal: "wb-console-theme-terminal", code: "wb-console-theme-code" }
@@ -1092,8 +1114,11 @@ function bindShelf(el, kind, themes, { colours, sets }, shelves) {
   const say = (text, bad) => { if (word) { word.textContent = text; word.classList.toggle("bad", !!bad) } }
   const house = themes.find(t => t.key === "default")?.json || {}
   const mySets = KIND_SETS[kind].map(k => [k, SETS[k]])
-  // What is kept: the theme in force and whether something is set on top of it.
-  const stateOf = () => { try { const s = JSON.parse(store.get(SHELF_KEYS[kind]) || "null"); if (s && typeof s === "object") return { key: themes.some(t => t.key === s.key) ? s.key : "default", custom: !!s.custom } } catch (e) {} return { key: "default", custom: false } }
+  // What is kept: the theme in force, whether something is set on top of it — Custom, worn — and, when a theme is
+  // worn bare, the Custom put away: the theme it stood on and the stores as they were, both grounds.
+  const known = key => themes.some(t => t.key === key) ? key : "default"
+  const keptOf = k => (k && typeof k === "object" && k.sets && typeof k.sets === "object") ? { key: known(k.key), sets: k.sets, colours: (k.colours && typeof k.colours === "object") ? k.colours : {} } : null
+  const stateOf = () => { try { const s = JSON.parse(store.get(SHELF_KEYS[kind]) || "null"); if (s && typeof s === "object") return { key: known(s.key), custom: !!s.custom, kept: s.custom ? null : keptOf(s.kept) } } catch (e) {} return { key: "default", custom: false, kept: null } }
   let state = stateOf(), applying = false
   const keepState = () => store.set(SHELF_KEYS[kind], JSON.stringify(state))
   const docOf = key => themes.find(t => t.key === key)?.json
@@ -1107,13 +1132,30 @@ function bindShelf(el, kind, themes, { colours, sets }, shelves) {
       if (kind === "code") colours.replace?.(rulesFrom(doc))
     } finally { applying = false }
   }
-  // What is set on this ground that the theme in force does not say.
-  const count = () => {
+  // Custom as the stores hold it now, to put away; and one put away, worn again.
+  const snapshot = () => ({ key: state.key, sets: Object.fromEntries(mySets.map(([k, spec]) => [k, setOf(spec)])), ...(kind === "code" ? { colours: coloursOf() } : {}) })
+  const wear = kept => {
+    applying = true
+    try {
+      for (const [k] of mySets) sets[k].replace?.(kept.sets[k] || {})
+      if (kind === "code") colours.replace?.(kept.colours || {})
+    } finally { applying = false }
+  }
+  // What is set on this ground that the theme in force does not say: the keys, a set and a language each.
+  const yours = () => {
     const g = ground(), doc = docOf(state.key), both = doc ? setsFrom(doc) : {}, want = doc ? rulesFrom(doc)[g] : {}
-    let n = 0
-    for (const [k, spec] of mySets) { const have = setOf(spec)[g] || {}, w = (both[k] || {})[g] || {}; for (const key of Object.keys(have)) if (have[key] !== w[key]) n++ }
-    if (kind === "code") { const have = coloursOf()[g] || {}; for (const l of Object.keys(have)) for (const key of Object.keys(have[l] || {})) if (have[l][key] !== (want[l] || {})[key]) n++ }
-    return n
+    const differ = (have, w) => Object.keys(have).filter(key => have[key] !== w[key])
+    return {
+      sets: Object.fromEntries(mySets.map(([k, spec]) => [k, differ(setOf(spec)[g] || {}, (both[k] || {})[g] || {})])),
+      langs: kind === "code" ? Object.fromEntries(Object.entries(coloursOf()[g] || {}).map(([l, have]) => [l, differ(have || {}, want[l] || {})])) : {},
+    }
+  }
+  const count = ({ sets, langs }) => [...Object.values(sets), ...Object.values(langs)].reduce((n, keys) => n + keys.length, 0)
+  // And each wears the accent on its name, in the rows of its part: the count on the fold's head says how many,
+  // the names say which (2026-10-01). Of the languages, the one the select shows.
+  const mark = ({ sets, langs }) => {
+    for (const [k, spec] of mySets) for (const row of el.querySelectorAll(`${spec.root} [data-${spec.data}] label[data-role]`)) row.classList.toggle("yours", sets[k].includes(row.dataset.role))
+    if (kind === "code") { const shown = langs[el.querySelector("#colours-lang")?.value] || []; for (const row of el.querySelectorAll("#swatches label[data-role]")) row.classList.toggle("yours", shown.includes(row.dataset.role)) }
   }
   // A thumbnail: both grounds, the ground's colour and five lines of the theme's; what a theme does not say, the house's says.
   const W = [55, 38, 66, 30, 48]
@@ -1125,15 +1167,17 @@ function bindShelf(el, kind, themes, { colours, sets }, shelves) {
   }
   const half = v => `<span class="half" style="background:${v[0]}">${v.slice(1).map((c, i) => `<i style="background:${c};width:${W[i]}%"></i>`).join("")}</span>`
   const thumb = doc => half(six(doc, "dark")) + half(six(doc, "light"))
-  // Mine, as a doc: the theme in force under what is set on top, both grounds, as the stores hold them.
+  // Mine, as a doc: the theme Custom stands on under what is set on top, both grounds — as the stores hold them
+  // while it is worn, as it was put away while a theme is worn bare.
   const mineDoc = () => {
     const doc = { "dew.theme": { name: "My theme", author: "", url: "", licence: "" } }
+    const mine = !state.custom && state.kept ? state.kept : snapshot()
     for (const g of ["dark", "light"]) {
-      const base = docOf(state.key) || {}, c = { ...(blockIn(base, g)["workbench.colorCustomizations"] || {}) }
-      for (const [k, spec] of mySets) for (const r of spec.roles) { const v = (setOf(spec)[g] || {})[r.key]; if (v) c[r.vs] = v }
+      const base = docOf(mine.key) || {}, c = { ...(blockIn(base, g)["workbench.colorCustomizations"] || {}) }
+      for (const [k, spec] of mySets) for (const r of spec.roles) { const v = cleanSet(spec, (mine.sets[k] || {})[g])[r.key]; if (v) c[r.vs] = v }
       doc[g] = { "workbench.colorCustomizations": c }
       if (kind === "code") {
-        const have = coloursOf()[g] || {}, base = rulesFrom(docOf(state.key) || {})[g]
+        const have = cleanGround((mine.colours || {})[g]), base = rulesFrom(docOf(mine.key) || {})[g]
         const all = Object.fromEntries(Object.keys(LANGS).map(l => [l, { ...(base[l] || {}), ...(have[l] || {}) }]))
         doc[g]["editor.tokenColorCustomizations"] = { textMateRules: Object.entries(LANGS).flatMap(([l, lang]) => lang.roles.filter(role => all[l][role.key]).map(role => ({ scope: role.scopes.length === 1 ? role.scopes[0] : role.scopes, settings: { ...(role.style ? { fontStyle: role.style } : {}), foreground: all[l][role.key] } }))) }
       }
@@ -1142,25 +1186,35 @@ function bindShelf(el, kind, themes, { colours, sets }, shelves) {
   }
   const draw = () => {
     const on = state.custom ? "custom" : state.key, name = docOf(state.key)?.["dew.theme"]?.name || state.key
+    // Custom's card: there while it is worn or put away, and it says the theme it stands on.
+    const mine = state.custom || !!state.kept, under = state.custom ? name : docOf(state.kept?.key)?.["dew.theme"]?.name || state.kept?.key
     for (const c of cards) {
       const k = c.dataset.themeKey
       c.setAttribute("aria-pressed", String(k === on))
-      if (k === "custom") { c.hidden = !state.custom; c.querySelector("small").textContent = `on ${name}`; if (state.custom) c.querySelector(".tthumb").innerHTML = thumb(mineDoc()) }
+      if (k === "custom") { c.hidden = !mine; c.querySelector("small").textContent = mine ? `on ${under}` : ""; c.title = state.custom ? "" : "Back to what you set, as you left it"; if (mine) c.querySelector(".tthumb").innerHTML = thumb(mineDoc()) }
       else {
         const t = themes.find(x => x.key === k); c.querySelector(".tthumb").innerHTML = thumb(t.json)
         if (state.custom && k === state.key) { c.dataset.base = ""; c.title = `Back to ${name}, as it is on the shelf` } else { delete c.dataset.base; c.title = `${t.json["dew.theme"]?.author || ""} · ${t.json["dew.theme"]?.licence || t.json["dew.theme"]?.license || ""}` }
       }
     }
-    if (touch) { const n = count(); touch.textContent = n ? `${n} set by you` : "" }
+    const set = yours(), n = count(set)
+    if (touch) touch.textContent = n ? `${n} set by you` : ""
+    mark(set)
     // Credits: the theme in force wears it, unless Custom is on — then nothing on the shelf is.
     for (const c of el.querySelectorAll(`.credit[data-kind="${kind}"]`)) { const isOn = c.dataset.theme === state.key && !state.custom; c.toggleAttribute("data-on", isOn); const p = c.querySelector(".on"); if (p) { p.hidden = !isOn; p.textContent = isOn ? "In use" : "" } }
   }
   for (const c of cards) {
     const k = c.dataset.themeKey
-    if (k === "custom") continue
-    c.addEventListener("click", () => { apply(docOf(k)); state = { key: k, custom: false }; keepState(); say(""); draw() })
+    // Custom's card wears what was put away; while it is worn there is nothing to go back to.
+    if (k === "custom") { c.addEventListener("click", () => { if (state.custom || !state.kept) return; const kept = state.kept; wear(kept); state = { key: kept.key, custom: true, kept: null }; keepState(); say(""); draw() }); continue }
+    // A theme's card puts the theme on whole, and Custom away if it was worn; one already put away stays.
+    c.addEventListener("click", () => { const kept = state.custom ? snapshot() : state.kept; apply(docOf(k)); state = { key: k, custom: false, kept }; keepState(); say(""); draw() })
   }
-  el.addEventListener("wb:touched", e => { if (e.detail?.kind !== kind || applying || state.custom) return; state = { ...state, custom: true }; keepState(); draw() })
+  // The first touch on a theme worn bare: it and the touch are Custom now, in place of any put away. Any touch
+  // after it changes what is yours, so the count and the names are drawn again.
+  el.addEventListener("wb:touched", e => { if (e.detail?.kind !== kind || applying) return; if (!state.custom) { state = { ...state, custom: true, kept: null }; keepState() } draw() })
+  // The palette's rows are drawn again for the language chosen: its names are marked again.
+  if (kind === "code") el.querySelector("#colours-lang")?.addEventListener("change", () => mark(yours()))
   onGround(draw)
   // Mine, as a file for the shelf: this surface's, both grounds, and a dew.theme to fill in.
   down?.addEventListener("click", () => {
@@ -1198,9 +1252,9 @@ function bindShelf(el, kind, themes, { colours, sets }, shelves) {
   draw()
   return {
     // A whole theme of this surface, from a file: worn, and Custom, since it is not on the shelf.
-    takeWhole: doc => { apply(doc); state = { ...state, custom: true }; keepState(); draw() },
+    takeWhole: doc => { apply(doc); state = { ...state, custom: true, kept: null }; keepState(); draw() },
     // Part of one, onto this ground.
-    takePart: ({ taken, found }) => { applying = true; try { for (const [k, d] of taken) sets[k].take?.(d); if (found) colours.take?.(found) } finally { applying = false } state = { ...state, custom: true }; keepState(); draw() },
+    takePart: ({ taken, found }) => { applying = true; try { for (const [k, d] of taken) sets[k].take?.(d); if (found) colours.take?.(found) } finally { applying = false } state = { ...state, custom: true, kept: null }; keepState(); draw() },
     redraw: draw,
     mine: mineDoc,
   }
@@ -1242,16 +1296,17 @@ export const Frame = {
     for (const c of el.querySelectorAll(".swatch[data-ground]")) c.addEventListener("click", () => setGround(c.dataset.ground))
     // The code's and the files' face, size and leading, the reader's.
     const picks = Object.fromEntries(Object.keys(GROUPS).map(g => [g, bindPicks(el, g) || {}]))
-    // And the terminal ground's opacity, the reader's too: the slider and the number beside it say one thing, whichever
-    // moves; kept, and the ground put on again with it.
-    const alpha = el.querySelector("#term-alpha"), alphaN = el.querySelector("#term-alpha-n")
-    if (alpha && alphaN) {
+    // And a ground's opacity, the reader's too, the terminal's and the sheet's: the slider and the number beside it
+    // say one thing, whichever moves; kept, and the ground put on again with it.
+    for (const which of Object.keys(ALPHA_KEYS)) {
+      const alpha = el.querySelector(`#${which}-alpha`), alphaN = el.querySelector(`#${which}-alpha-n`)
+      if (!alpha || !alphaN) continue
       const show = pct => { alpha.value = String(pct); alphaN.value = String(pct) }
-      const take = v => { const pct = Math.max(0, Math.min(100, Math.round(Number(v)))); if (!Number.isFinite(pct)) return; show(pct); store.set(ALPHA_KEY, String(pct)); applySet(SETS.term, setOf(SETS.term)) }
-      show(termAlpha())
+      const take = v => { const pct = Math.max(0, Math.min(100, Math.round(Number(v)))); if (!Number.isFinite(pct)) return; show(pct); store.set(ALPHA_KEYS[which], String(pct)); applySet(SETS[which], setOf(SETS[which])) }
+      show(alphaOf(which))
       alpha.addEventListener("input", () => take(alpha.value))
       alphaN.addEventListener("input", () => { if (alphaN.value !== "") take(alphaN.value) })
-      alphaN.addEventListener("change", () => take(alphaN.value === "" ? termAlpha() : alphaN.value))
+      alphaN.addEventListener("change", () => take(alphaN.value === "" ? alphaOf(which) : alphaN.value))
     }
     onGround(paint)
     this.repaint = paint; addEventListener("resize", paint)

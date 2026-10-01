@@ -1478,10 +1478,11 @@ form.insert.locked .opt input{opacity:.55}
 /* The parts, one in view: the one the pane's data-part names, which the ribbon's patch sets (the pane is phx-update="ignore", so the part travels as an attribute, and the hook only rewinds the column). The sections inside keep 18 between them, as they did under the folds these replaced on 2026-09-29. */
 .ui .part{display:none;gap:18px}
 .ui[data-part="overlay"] .part[data-part="overlay"],.ui[data-part="terminal"] .part[data-part="terminal"],.ui[data-part="code"] .part[data-part="code"],.ui[data-part="credits"] .part[data-part="credits"]{display:grid}
-/* A theme's part shows its surface alone in the miniature: Terminal the lines, the row taking the sheet's height; Code the sheet, without the terminal's toolbar and lines. Overlay shows both, the frame being the whole. Until 2026-09-30 the surface a part set was outlined in the accent too; with a surface a part, the outline said what the miniature says. */
+/* A theme's part shows its surface alone in the miniature, and nothing of the frame: Terminal the lines under the chips that sort them, Code the file. The band, the rail and the screen's tabs are Overlay's to show, the frame being what it sets; a theme is judged on the terminal or on the file, not on where the band sits (2026-10-01: until then the frame stood around the surface in every part). The miniature's box stays, the page's ground under the surface, as it is on the screen. Until 2026-09-30 the surface a part set was outlined in the accent too; with a surface a part, the outline said what the miniature says. */
+.ui[data-part="terminal"] .mini .mband,.ui[data-part="terminal"] .mini .mrail,.ui[data-part="terminal"] .mini .mtabs,.ui[data-part="code"] .mini .mband,.ui[data-part="code"] .mini .mrail,.ui[data-part="code"] .mini .mtabs{display:none}
 .ui[data-part="terminal"] .mini .ograb,.ui[data-part="terminal"] .mini .impl,.ui[data-part="code"] .mini .toolbar,.ui[data-part="code"] .mini .lines,.ui[data-part="code"] .mini .ograb{display:none}
-.ui[data-part="terminal"] .mmain{grid-template-rows:auto auto minmax(0,1fr)}
-.ui[data-part="code"] .mmain{grid-template-rows:auto minmax(0,1fr)}
+.ui[data-part="terminal"] .mmain{grid-template-rows:auto minmax(0,1fr)}
+.ui[data-part="code"] .mmain{grid-template-rows:minmax(0,1fr)}
 /* The Credits part: a face a card, its head the name set in the face itself (the specimen, in place of the card's uppercase head), whose and under which licence as chips, what it draws under. Settled 2026-09-29 among the list, the card and a ficha with the accent edge. */
 .ui .credits{display:grid;gap:10px}
 .ui .credits>*{min-width:0}
@@ -1562,6 +1563,8 @@ form.insert.locked .opt input{opacity:.55}
 .ui .picks input[type=number]{font-family:var(--mono);font-size:12px;padding:3px 4px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;width:100%;min-width:0;text-align:right;font-variant-numeric:tabular-nums}
 .ui .picks .unit{font-family:var(--mono);font-size:12px;color:var(--muted)}
 .ui .roles label>span{font-family:var(--mono);font-size:12px;color:var(--ink);white-space:nowrap;cursor:pointer}
+/* A colour the reader set on top of the theme in force says so on its name, in the accent: the fold's head counts them, the names say which. */
+.ui .roles label.yours>span{color:var(--accent)}
 .ui .roles.paired label:not(.mirror)>span{justify-self:end;text-align:right}
 .ui .roles.paired label.mirror>span{justify-self:start}
 .ui .roles input[type=color]{width:20px;height:20px;flex:none;padding:0;border:1px solid var(--line);border-radius:2px;background:none;cursor:pointer}

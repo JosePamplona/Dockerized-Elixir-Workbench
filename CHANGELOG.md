@@ -78,6 +78,79 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   and the sheet, its gutter and the diff's grounds are the house's
   own (`#120B17` on the dark, the terminal's ground of before
   2026-10-01, which the line used to claim it still was).
+- **A reader who has chosen no face gets the house's: Tamzen at 15 px
+  and a leading of 1.0 for the terminal, Fira Code at 13 px and 1.2
+  for the code.** Until 2026-10-01 a reader with nothing kept read
+  both in the page's own mono, IBM Plex, at the size and leading each
+  surface was drawn at (12 or 12.5 px, 1.5 to 1.6). The default is
+  the author's now, a face a surface: what runs — the terminals, the
+  logs, the jobs — in the bitmap, a line on the next as a terminal
+  sets them; what is read — the Files sheet, the diffs, the papers'
+  code — in Fira Code, tighter than it was. It is `DEFAULTS` in
+  `hooks.js`, beside the faces, and it is only what stands in for a
+  choice: a choice a browser has kept, IBM Plex included, stays; IBM
+  Plex is still on the list. Credits says whose face each surface
+  wears by default. Checked on a running console from a browser with
+  nothing kept.
+- **Custom is kept when another theme is picked.** Custom was what
+  was set on top of the theme in force, and picking any theme put
+  that theme on whole and lost it at once — the theme's own card,
+  dashed, was "the one way back", and it was a way with no return.
+  The author asked on 2026-10-01 for the other reading: a theme
+  picked puts Custom away and keeps it — its card stays on the shelf,
+  saying the theme it stands on, and pressing it wears it again as it
+  was left, both grounds. There is still one Custom a shelf, so what
+  replaces it is a new one and nothing else: a colour touched, or a
+  file loaded, while another theme is worn makes that theme and the
+  touch the new Custom, and the one put away is gone. The shelf's
+  kept state (`wb-console-theme-terminal`, `-code`) carries it, the
+  stores as they were and the key of its theme, so it is there after
+  a reload; Download Custom gives it whether it is worn or put away.
+  Walked on a running console, the terminal's shelf and the code's:
+  touch, pick another, come back, touch on another, reload.
+- **A theme's part shows its surface and no frame.** The Interface
+  tab's miniature is the console at a fifth — the band, the rail, the
+  screen's tabs, a terminal and a file — and since 2026-09-30 a
+  theme's part lit one surface in it, Terminal the lines and Code the
+  file, with the frame still standing around. The frame is Overlay's
+  to show, being what Overlay sets; a theme is judged on the terminal
+  or on the file, not on where the band sits. So in Terminal and in
+  Code the band, the rail and the tabs are gone (2026-10-01,
+  `console.css`): Terminal is the lines under the chips that sort
+  them, Code the file, each filling the miniature's box, which keeps
+  the page's ground under the surface as the screen has it. Overlay's
+  is as it was. Seen on a running console, the three parts.
+- **The sheet's ground has its opacity too.** The terminal's ground
+  has worn the reader's opacity since v0.15.0, a slider and a
+  number in its part, 40 % until the reader says otherwise. The code
+  part has the same now (2026-10-01), for the sheet's line
+  background: its own key (`wb-console-sheet-alpha`), the reader's
+  like the face, over any theme and never written to a theme's file.
+  It is laid over the sheet's own colour, the theme's or the
+  reader's, or over the terminal's when the sheet has none — a sheet
+  with no ground of its own stood on the terminal's, opacity and all,
+  which is why the default is the terminal's 40: a reader who has
+  touched nothing sees what was there. What changes is that the two
+  are apart: the terminal's slider no longer moves the sheet, and a
+  code theme picked from the shelf, which was opaque, wears the 40 %
+  until the reader moves it. The line numbers' ground stays as it
+  was. Walked on a running console: the slider, the number, the
+  terminal's beside it, a theme picked.
+- **A colour that is yours says so on its name.** With Custom on, the
+  fold's head counted what the reader had set on top of the theme —
+  "2 set by you" — and said nothing of which two; finding them was
+  comparing swatches by eye. The author proposed the accent on the
+  name (2026-10-01), and it is so: in a part's Adjustments, the name
+  of every colour that differs on this ground from the theme Custom
+  stands on is drawn in the gold, by the same test the count makes,
+  so the two always agree. It follows what is done: a colour set back
+  to the theme's value loses it, a theme picked clears them, Custom
+  pressed brings them back, the other ground shows its own, and of
+  the languages the palette shows the one the select names. The
+  count had a fault this uncovered: it was drawn at the first touch
+  and not again while Custom was on, so a second colour set left it
+  at one; any touch draws it now. Walked on a running console, the
+  terminal's part and the code's.
 
 ## v0.15.0 - (2026-10-01)
 

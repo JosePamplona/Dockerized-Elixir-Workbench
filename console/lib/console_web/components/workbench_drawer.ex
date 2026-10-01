@@ -113,7 +113,7 @@ defmodule ConsoleWeb.WorkbenchDrawer do
       at: "https://github.com/IBM/plex",
       licence: "SIL Open Font License 1.1",
       draws:
-        "The mono: commands, logs, ports, paths, chips; the house's face for the terminal and the files. From Google Fonts."
+        "The mono: commands, logs, ports, paths, chips; a face the terminal and the files can take. From Google Fonts."
     },
     %{
       name: "Fira Code",
@@ -121,7 +121,8 @@ defmodule ConsoleWeb.WorkbenchDrawer do
       by: "Nikita Prokopov and the Fira Code Project Authors",
       at: "https://github.com/tonsky/FiraCode",
       licence: "SIL Open Font License 1.1",
-      draws: "A face for the terminal and the files, ligatures on. Carried by the console."
+      draws:
+        "The house's face for the files, ligatures on; one the terminal can take. Carried by the console."
     },
     %{
       name: "Flexi IBM VGA",
@@ -139,7 +140,7 @@ defmodule ConsoleWeb.WorkbenchDrawer do
       at: "https://github.com/sunaku/tamzen-font",
       licence: "Tamsyn's: free to use, copy, modify and distribute",
       draws:
-        "A bitmap face for the terminal and the files, one drawing a size. Carried by the console."
+        "The house's face for the terminal, a bitmap, one drawing a size; one the files can take. Carried by the console."
     }
   ]
 
@@ -936,7 +937,9 @@ defmodule ConsoleWeb.WorkbenchDrawer do
   # properties, so what is set on the left lands on the right where it
   # will land on the screen: the band moves, the rail changes side, the
   # terminal is set in the code face, the sheet in the files' face and
-  # the language's colours. Its terminal is real lines — a warning of
+  # the language's colours. That is Overlay's miniature; a theme's part
+  # shows its surface alone, the terminal or the file, with no band, no
+  # rail and no tabs around it (2026-10-01, console.css). Its terminal is real lines — a warning of
   # Elixir's compiler as a terminal colours it, a Phoenix boot, a
   # request, an error of Bandit's, all off logs of 2026-09-11 — and its
   # sheet is the Files sheet's own drawing of the tab's sample with one
@@ -1239,6 +1242,37 @@ defmodule ConsoleWeb.WorkbenchDrawer do
                   <select id="file-leading" aria-label="The files' leading, as a ratio of the size"></select></label>
                 </div>
               </div>
+              <%!-- The sheet's opacity: the reader's, like the terminal's, over
+                  any theme — under 100 % the interface shows through its ground. --%>
+              <div class="set">
+                <h6>Opacity</h6>
+                <div class="picks">
+                  <div class="pick">
+                    <span>ground</span>
+                    <span class="slide">
+                      <input
+                        type="range"
+                        id="sheet-alpha"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value="40"
+                        aria-label="The sheet ground's opacity, in percent"
+                        title="Under 100 % the interface shows through the sheet's ground"
+                      />
+                      <input
+                        type="number"
+                        id="sheet-alpha-n"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value="40"
+                        aria-label="The sheet ground's opacity, as a number"
+                      /><span class="unit">%</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
             </:font>
             <div class="groups" id="sheet-swatches">
               <div class="set">
@@ -1319,7 +1353,7 @@ defmodule ConsoleWeb.WorkbenchDrawer do
         <div
           class="mini"
           id="mini"
-          aria-label="The console, at a fifth: click the band or the rail to move them"
+          aria-label="The miniature: what is set on the left, as the console will draw it"
         >
           <%!-- The band, at a fifth: the mark, the name, the state, the
               clock and the two cells, drawn as the band draws them. The
@@ -1424,7 +1458,8 @@ defmodule ConsoleWeb.WorkbenchDrawer do
   # "Color Themes", a card a theme with the thumbnail the hook draws
   # from the file (the thumbnail is the preview: nothing is worn before
   # it is picked), and Custom, which the hook shows when something is
-  # set on top — then Download Custom and Load Custom, in dev alone;
+  # set on top and keeps there, put away, while another theme is worn
+  # — then Download Custom and Load Custom, in dev alone;
   # then one fold, Adjustments, the house's fold head with the count of
   # what is yours, holding the part's colour groups. Settled 2026-09-30
   # (console/la-estanteria-a-la-vista.html), the face out of the theme

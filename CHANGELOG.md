@@ -14,6 +14,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+## v0.15.0 - (2026-10-01)
+
 ### Updated
 
 - **The house's terminal on the dark ground is the author's own: a

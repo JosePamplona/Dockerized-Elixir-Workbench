@@ -1,6 +1,6 @@
 #!/bin/bash
 # Dockerized workbench script (Igniter edition)
-# v0.14.0
+# v0.15.0
 #
 # Thin Docker wrapper: project creation and Elixir configuration are
 # delegated to the :workbench_igniter package (igniter/) via

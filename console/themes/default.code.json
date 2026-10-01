@@ -1,10 +1,10 @@
 {
   "dew.theme": {
-    "name": "Default",
-    "author": "Atom",
-    "url": "https://github.com/atom/one-dark-syntax",
+    "name": "House's",
+    "author": "The house, after Atom",
+    "url": "https://github.com/atom/atom/tree/master/packages/one-dark-syntax",
     "licence": "MIT",
-    "about": "The house's code: One Dark and One Light, the sheet the terminal's ground."
+    "about": "The house's code, based on Atom's One Dark and One Light: their colours, and their Elixir rule for rule. Every other language is coloured the house's way, by Elixir's twelve, and the sheet is its own."
   },
   "dark": {
     "workbench.colorCustomizations": {

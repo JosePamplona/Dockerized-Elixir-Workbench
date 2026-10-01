@@ -31,6 +31,21 @@ defmodule Console.ThemesTest do
     assert log =~ "bad.code.json left out"
   end
 
+  test "on a shelf the house's is first, whatever its name, and the rest by name" do
+    dir = Path.join(System.tmp_dir!(), "wb-themes-#{System.unique_integer([:positive])}")
+    File.mkdir_p!(dir)
+    on_exit(fn -> File.rm_rf!(dir) end)
+
+    for {key, name} <- [{"nord", "Nord"}, {"default", "House's"}, {"gnome", "Gnome"}] do
+      File.write!(
+        Path.join(dir, "#{key}.terminal.json"),
+        ~s({"dew.theme": {"name": "#{name}"}, "dark": {}})
+      )
+    end
+
+    assert ["House's", "Gnome", "Nord"] = Enum.map(Themes.shelf(:terminal, dir), & &1.name)
+  end
+
   test "a shelf is its kind alone, with the file's blocks whole" do
     [terminal] = Themes.shelf(:terminal)
     [code] = Themes.shelf(:code)

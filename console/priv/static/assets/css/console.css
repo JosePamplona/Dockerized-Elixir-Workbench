@@ -1276,9 +1276,9 @@ form.insert.locked .opt input{opacity:.55}
    washes, 5% the tint — so a solid colour stays a wash. The light
    ground's are the house's bad and the ANSI yellow over the ink; the
    dark ground's the same two over white. */
-:root{--line-error:#e06c5f;--line-warning:#b7791f;--line-highlight:#1d1424}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--line-error:#e06c5f;--line-warning:#e3b25c;--line-highlight:#ffffff}}
-:root[data-theme="dark"]{--line-error:#e06c5f;--line-warning:#e3b25c;--line-highlight:#ffffff}
+:root{--line-error:#e90130;--line-warning:#a7660b;--line-highlight:#1d1424}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--line-error:#fe0b3c;--line-warning:#f2a436;--line-highlight:#ffffff}}
+:root[data-theme="dark"]{--line-error:#fe0b3c;--line-warning:#f2a436;--line-highlight:#ffffff}
 :root{--diff-add-bg:#c0eeff;--diff-add-num:#529fc7;--diff-del-bg:#ffd6d2;--diff-del-num:#db5a5a}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--diff-add-bg:#00212d;--diff-add-num:#529fc7;--diff-del-bg:#3f0600;--diff-del-num:#db5a5a}}
 :root[data-theme="dark"]{--diff-add-bg:#00212d;--diff-add-num:#529fc7;--diff-del-bg:#3f0600;--diff-del-num:#db5a5a}
@@ -1528,11 +1528,11 @@ form.insert.locked .opt input{opacity:.55}
 .ui .thumb.light .t{color:#1D1424}.ui .thumb.dark .t{color:#EFE7F2}
 .ui .thumb .t1{top:15px;width:34px}.ui .thumb .t2{top:22px;width:24px}.ui .thumb .t3{top:29px;width:40px}
 .ui .thumb .tm{left:26px;right:6px;top:36px;bottom:5px;border-radius:2px}
-.ui .thumb.light .tm{background:#FDFBFE;border:1px solid #D6CBDA}.ui .thumb.dark .tm{background:#08010E;border:1px solid #2B1F33}
+.ui .thumb.light .tm{background:#FDFBFE;border:1px solid #D6CBDA}.ui .thumb.dark .tm{background:#2D1D3A;border:1px solid #2B1F33}
 .ui .thumb.system{background:linear-gradient(90deg,#F2EDF3 50%,#160F1B 50%)}
 .ui .thumb.system .rl{background:#FBF8FC;border-right:1px solid #D6CBDA}
 .ui .thumb.system .t{background:linear-gradient(90deg,#1D1424 12px,#EFE7F2 12px);opacity:.35}
-.ui .thumb.system .tm{background:linear-gradient(90deg,#FDFBFE 12px,#08010E 12px);border:1px solid #6B5C76}
+.ui .thumb.system .tm{background:linear-gradient(90deg,#FDFBFE 12px,#2D1D3A 12px);border:1px solid #6B5C76}
 .ui .picks{display:grid;gap:6px}
 /* What a face does — ligatures on, a bitmap — right under the face it is said of, in the control's column. */
 .ui .picks .help{grid-column:1/-1;margin:-2px 0 2px 72px}

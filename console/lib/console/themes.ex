@@ -33,8 +33,10 @@ defmodule Console.Themes do
   @kinds %{"terminal" => :terminal, "code" => :code}
 
   @doc """
-  Every theme on both shelves, the terminal's first, each by name. The
-  shelf is the configured directory (`:themes_dir`) unless one is given.
+  Every theme on both shelves, the terminal's first; on a shelf the
+  house's first (the key `default`: what a theme does not say, it says)
+  and the rest by name. The shelf is the configured directory
+  (`:themes_dir`) unless one is given.
   """
   @spec all(Path.t() | nil) :: [t()]
   def all(dir \\ nil) do
@@ -44,10 +46,10 @@ defmodule Console.Themes do
     |> Path.join("*.json")
     |> Path.wildcard()
     |> Enum.flat_map(&read/1)
-    |> Enum.sort_by(&{&1.kind != :terminal, &1.name})
+    |> Enum.sort_by(&{&1.kind != :terminal, &1.key != "default", &1.name})
   end
 
-  @doc "One shelf: the terminal themes, or the code themes, by name."
+  @doc "One shelf: the terminal themes, or the code themes, the house's first."
   @spec shelf(kind(), Path.t() | nil) :: [t()]
   def shelf(kind, dir \\ nil) when kind in [:terminal, :code],
     do: Enum.filter(all(dir), &(&1.kind == kind))

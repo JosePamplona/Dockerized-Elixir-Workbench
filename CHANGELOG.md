@@ -14,6 +14,71 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+### Updated
+
+- **The house's terminal is the author's on both grounds, and the
+  theme is named for it: *House's*.** The dark of v0.15.0 — the
+  author's twelve on a near-black `#08010E` — was a first take; the
+  second came the same day, 2026-10-01, set in the drawer and handed
+  over as a theme file: a violet ground, `#2D1D3A`, ink `#E1DBEB`, and
+  softer rows (red `#EE3F65`, green `#87C738`, yellow `#F1CB65`, blue
+  `#4A7EF7`, magenta `#E690FE`, cyan `#60C7D7`, and the brights
+  `#FC7391`, `#B7DD88`, `#F7E3AB`, `#94B2FA`, `#F2C2FF`, `#9CDDE7`),
+  with the two line washes its own too (an error's `#FE0B3C`, a
+  warning's `#F2A436`). Nord's blacks and whites and the dim stay. The
+  light was still the Nord light of the house's making, a stranger to
+  the new dark, so it is the author's too, in two steps of the same
+  day. First a take derived from the dark by the method that Nord
+  light was made with: each of the twelve keeping its hue and its
+  saturation, its lightness dropped to 6:1 on paper the normal row
+  and 4.5:1 the bright, the two washes the same way at 4.5:1
+  (`#E90130`, `#A7660B`), and the dark's own ground for ink on paper
+  (`assets/design/palette.py`, `house_light`). Then the author tuned
+  that take by hand in the drawer, lighter and livelier, and handed
+  it over as a theme file: the red stays the derived `#C11137`, with
+  green `#508A05`, yellow `#C47608`, blue `#347CEF`, magenta
+  `#AD61C2`, cyan `#1F8D9E`, and the brights `#EF486C`, `#6DBB07`,
+  `#F5B60A`, `#639AF2`, `#C086D0`, `#28B3C8`; the washes and the ink
+  stay the derived ones. Chosen by eye, and below the derived take's
+  targets on paper: 6.0:1 the red, 3.4 to 4.1 the rest of the normal
+  row, 1.8 to 3.5 the bright; `palette.py` prints both, the take and
+  what was set, each with its contrast. The one
+  source is `assets/design/tokens.json`; `build.py` writes the tokens;
+  the theme (`console/themes/default.terminal.json`) says the same,
+  checked value by value; `console.css` carries the washes' defaults
+  and the Overlay's ground thumbs. The theme's name was *Default*,
+  which said where it stands and not whose it is, and the code
+  shelf's *Default* — Atom's One Dark and One Light, the house's
+  choice — is *House's* with it; the key of both stays `default`,
+  what the shelf and a reader's kept choice know them by. As *House's*
+  no longer sorts first, `Console.Themes` puts the house's first on
+  its shelf and the rest by name. The code theme's card points at One
+  Dark inside Atom's own repository (`atom/atom`,
+  `packages/one-dark-syntax`), the address the author gave, in place
+  of `atom/one-dark-syntax`, and it no longer reads as Atom's theme,
+  which it is not: its author was *Atom* and its line *One Dark and
+  One Light*; it is *the house, after Atom*, and *based on* them. What
+  it is was checked against Atom's sources that day, the legacy
+  styles of both themes (`colors.less`, `syntax-legacy/_base.less`,
+  `elixir.less` and the other languages'). Three findings. The colours
+  are theirs: all eleven of One Dark's, plus one of the house's, the
+  functions' `#60ACEA`, a step off One Dark's blue since the author's
+  first jsonc; and One Light's, with the ambers of its standalone
+  repository (`#986801`, `#C18401`), which Atom's own has since
+  moved. Elixir is Atom's own Elixir, rule for rule — `elixir.less`
+  is where the blue numbers, the amber operators and separators, the
+  grey brackets, the yellow modules, the red `#{}` and the second
+  red of a regex come from — but for that blue, for an escape (cyan here, as
+  Atom's older rules had it; green by its newer) and for the
+  parameters, which Atom also sets in italic. And everything else is the house's:
+  the other seven languages are coloured by Elixir's twelve roles and
+  not as One Dark has them (a number blue where it is orange, an HTML
+  tag and a JSON key yellow where they are red, a class selector red
+  where it is orange, a CSS property purple where it is the text's),
+  and the sheet, its gutter and the diff's grounds are the house's
+  own (`#120B17` on the dark, the terminal's ground of before
+  2026-10-01, which the line used to claim it still was).
+
 ## v0.15.0 - (2026-10-01)
 
 ### Updated

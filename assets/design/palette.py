@@ -98,6 +98,33 @@ def nord_light():
     return out
 
 
+# The house's own, since 2026-10-01: the dark is the author's, set by
+# hand on a violet ground. Its light was first that dark carried to
+# paper — each of the twelve keeping its hue and its saturation, its
+# lightness dropped to the targets of the house's light (6:1 the normal
+# row, 4.5:1 the bright), the two line washes the same way at the bright
+# row's target — and that take, house_light, is what the author then
+# tuned by hand in the drawer: lighter and livelier, eleven of the
+# twelve (HOUSE_LIGHT, what tokens.json says). The red and the two
+# washes are still the derived ones. The greys stay Nord's on both
+# grounds, and the ink on paper is the dark's own ground.
+HOUSE_DARK = "#2D1D3A"
+HOUSE = {"red": "#ee3f65", "green": "#87c738", "yellow": "#f1cb65", "blue": "#4a7ef7", "magenta": "#e690fe", "cyan": "#60c7d7",
+         "bright-red": "#fc7391", "bright-green": "#b7dd88", "bright-yellow": "#f7e3ab", "bright-blue": "#94b2fa",
+         "bright-magenta": "#f2c2ff", "bright-cyan": "#9cdde7"}
+HOUSE_LINES = {"line-error": "#fe0b3c", "line-warning": "#f2a436"}
+HOUSE_LIGHT = {"red": "#c11137", "green": "#508a05", "yellow": "#c47608", "blue": "#347cef", "magenta": "#ad61c2", "cyan": "#1f8d9e",
+               "bright-red": "#ef486c", "bright-green": "#6dbb07", "bright-yellow": "#f5b60a", "bright-blue": "#639af2", "bright-magenta": "#c086d0", "bright-cyan": "#28b3c8"}
+
+
+def house_light():
+    out = dict(NORD_GREYS)
+    for name, c in {**HOUSE, **HOUSE_LINES}.items():
+        h, s, _ = hsl(c)
+        out[name] = solve(h, s, LIGHT, 6.0 if name in ORDER else 4.5, False)
+    return out
+
+
 if __name__ == "__main__":
     for g in ("dark", "light"):
         ground, pal = palette(g)
@@ -108,3 +135,11 @@ if __name__ == "__main__":
     print(f"Nord's light, derived, on {LIGHT}")
     for k in ORDER + ["bright-" + k for k in ORDER]:
         print(f"  ansi-{k:15} {pal[k]}  {contrast(pal[k], LIGHT):4.1f}:1")
+
+    pal = house_light()
+    print(f"the house's light, the first take: the dark of {HOUSE_DARK} carried to {LIGHT}")
+    for k in ORDER + ["bright-" + k for k in ORDER] + list(HOUSE_LINES):
+        print(f"  {k if k in HOUSE_LINES else 'ansi-' + k:20} {pal[k]}  {contrast(pal[k], LIGHT):4.1f}:1")
+    print(f"the house's light, as the author set it, on {LIGHT}")
+    for k, c in HOUSE_LIGHT.items():
+        print(f"  ansi-{k:15} {c.upper()}  {contrast(c, LIGHT):4.1f}:1")

@@ -61,7 +61,7 @@ The console's own terminal, for the terminal-window primitive (see [primitive-te
 | `terminal-paper` | `#FDFBFE` | Window body, node fill |
 | `terminal-bar` | `#D6CBDA` | Titlebar strip |
 | `terminal-border` | `#D6CBDA` | Window border, hairlines |
-| `terminal-ink` | `#2E3440` | Primary text, primary stroke |
+| `terminal-ink` | `#2D1D3A` | Primary text, primary stroke |
 | `terminal-muted` | `#8F819A` | Secondary text, sublabels, ring stroke |
 | `terminal-soft` | `#7E7189` | Tertiary — inactive dots, spokes |
 | `terminal-accent` | `#D4B27E` | The one accent — focal station, prompt sign, active dot |

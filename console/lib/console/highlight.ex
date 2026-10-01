@@ -287,14 +287,23 @@ defmodule Console.Highlight do
        <section class="board" phx-update="ignore" id="room-1-board">
          <h2>{@room.name} <small>{length(@players)}/8</small></h2>
          <form phx-submit="join" phx-change="validate">
-           <input type="text" name="name" value={@form[:name].value} placeholder="your name" />
+           <input
+             type="text"
+             name="name"
+             value={@form[:name].value}
+             placeholder="your name"
+           />
            <input type="number" name="age" min="18" max="120" />
            <button type="submit" disabled={@late}>Join</button>
          </form>
-         <p :if={@late} class="late">The room is full: come back at <time>{@next}</time>.</p>
+         <p :if={@late} class="late">
+           The room is full: come back at <time>{@next}</time>.
+         </p>
          <table>
            <tr :for={{p, i} <- Enum.with_index(@players, 1)}>
-             <td>{i}</td><td>{p.name}</td><td>{p.age}</td>
+             <td>{i}</td>
+             <td>{p.name}</td>
+             <td>{p.age}</td>
            </tr>
          </table>
          <footer>
@@ -302,6 +311,7 @@ defmodule Console.Highlight do
            <span class="count">{length(@players)} of {@max}</span>
          </footer>
        </section>
+
        """},
     css:
       {MakeupCSS.Lexer,
@@ -312,22 +322,54 @@ defmodule Console.Highlight do
          font: 12.5px/1.5 var(--mono);
          background: url("seal.png");
        }
+
        /* the band */
        @media (max-width: 700px) { .room { display: none } }
-       .players { display: grid; gap: 6px 12px; grid-template-columns: 2ch 1fr auto; }
-       .players .late { color: var(--muted); text-decoration: line-through; }
-       .board h2 small { font-size: .7em; opacity: .6; margin-left: .5ch; }
-       .board form { display: flex; gap: 8px; align-items: center; }
-       .board input[type="number"] { width: 5ch; text-align: right; }
-       .board button:disabled { cursor: not-allowed; opacity: .5; }
-       .board table { border-collapse: collapse; width: 100%; }
-       .board td { padding: 2px 6px; border-bottom: 1px solid #eee; }
+
+       .players {
+         display: grid;
+         gap: 6px 12px;
+         grid-template-columns: 2ch 1fr auto;
+       }
+       .players .late {
+         color: var(--muted);
+         text-decoration: line-through;
+        }
+
+       .board h2 small {
+         font-size: .7em;
+         opacity: .6;
+         margin-left: .5ch;
+       }
+       .board form {
+         display: flex;
+         gap: 8px;
+         align-items: center;
+       }
+       .board input[type="number"] {
+         width: 5ch;
+         text-align: right;
+       }
+       .board button:disabled {
+         cursor: not-allowed;
+         opacity: .5;
+       }
+       .board table {
+         border-collapse: collapse;
+         width: 100%;
+       }
+       .board td {
+         padding: 2px 6px;
+         border-bottom: 1px solid #eee;
+       }
        .board tr:nth-child(odd) td { background: rgba(0, 0, 0, .03); }
+
        /* the late one blinks until the next seat */
        @keyframes pulse { 50% { opacity: .2; } }
        .late time { animation: pulse 1.2s infinite; }
        .back::before { content: "←"; margin-right: .4ch; }
        .count { font-variant-numeric: tabular-nums; float: right; }
+
        """},
     json:
       {Makeup.Lexers.JsonLexer,
@@ -344,10 +386,25 @@ defmodule Console.Highlight do
            { "id": 2, "name": "arena", "max": 4, "open": false },
            { "id": 3, "name": "balcony", "max": 2, "open": true }
          ],
-         "limits": { "age": 18, "idle_seconds": 300, "rate": 2.5 },
-         "features": { "chat": true, "spectators": false, "replays": null },
-         "mail": { "from": "arcade@example.test", "retries": 3 },
-         "log": { "level": "info", "json": true, "file": "/var/log/arcade.log" },
+         "limits": {
+           "age": 18,
+           "idle_seconds": 300,
+           "rate": 2.5
+         },
+         "features": {
+           "chat": true,
+           "spectators": false,
+           "replays": null
+         },
+         "mail": {
+           "from": "arcade@example.test",
+           "retries": 3
+         },
+         "log": {
+           "level": "info",
+           "json": true,
+           "file": "/var/log/arcade.log"
+         },
          "build": "2026-09-30T18:00:00Z"
        }
        """},
@@ -355,6 +412,7 @@ defmodule Console.Highlight do
       {MakeupTS.Lexer,
        """
        import { Socket } from "phoenix";
+
        // One socket per tab; the token comes from the page.
        export class Room<T> extends Base {
          max: number = 8;
@@ -362,8 +420,13 @@ defmodule Console.Highlight do
            return this.max > 0 && p.age >= 18;
          }
        }
-       const socket = new Socket("/socket", { params: { token: `t-${id}` } });
+
+       const socket = new Socket(
+         "/socket",
+         { params: { token: `t-${id}` } }
+       );
        socket.connect();
+
        const channel = socket.channel(`room:${id}`, { age: 21 });
        channel.on("joined", ({ name, count }: { name: string; count: number }) => {
          console.log(`${name} joined; ${count} in the room`);
@@ -371,13 +434,18 @@ defmodule Console.Highlight do
        channel.join()
          .receive("ok", () => render(document.getElementById("board")!))
          .receive("error", (why: unknown) => console.error("refused", why));
+
        // The board: one row a player, the late one greyed.
        function render(el: HTMLElement): void {
-         const rows = players.map((p, i) => `<tr><td>${i + 1}</td><td>${p.name}</td></tr>`);
+         const rows = players.map(
+           (p, i) => `<tr><td>${i + 1}</td><td>${p.name}</td></tr>`
+         );
          el.innerHTML = rows.join("");
        }
+
        type Player = { name: string; age: number };
        const players: Player[] = [];
+
        """},
     markdown:
       {{MakeupSyntect.Lexer, language: "markdown"},
@@ -416,6 +484,7 @@ defmodule Console.Highlight do
 
        See [the design](DESIGN.md) for why eight, and the `CHANGELOG.md` for
        the day it became twelve.
+
        """},
     godot:
       {{MakeupSyntect.Lexer, language: "gd"},
@@ -458,14 +527,17 @@ defmodule Console.Highlight do
        #!/usr/bin/env bash
        # One room a workspace; the port comes from .env.
        set -euo pipefail
+
        export PORT="${PORT:-4000}"
        if [ ! -f .env ]; then
          echo "no .env in $PWD" >&2
          exit 1
        fi
+
        players=$(mix run -e 'IO.puts 8' | tr -d '\\n')
        for f in lib/*.ex; do wc -l "$f"; done
        mix phx.server && echo "room on :$PORT, $players at most"
+
        rooms=("lobby" "arena" "balcony")
        for room in "${rooms[@]}"; do
          if docker compose ps --status running | grep -q "$room"; then
@@ -474,16 +546,20 @@ defmodule Console.Highlight do
            printf '%-8s down\\n' "$room" >&2
          fi
        done
+
        case "${1:-}" in
          start) docker compose up -d --wait ;;
          stop)  docker compose down ;;
          *)     echo "usage: $0 start|stop" >&2; exit 2 ;;
        esac
+
        trap 'echo "bye"; exit 0' INT TERM
+
        while read -r line; do
          [[ "$line" =~ ^#.*$ ]] && continue
          echo "$line" | tee -a room.log
        done < players.txt
+
        """},
     # A file with no language — no lexer answers to .toml — read in the
     # sheet's own foreground, for the Interface tab's *Other*.

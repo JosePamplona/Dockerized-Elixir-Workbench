@@ -727,9 +727,9 @@
       "editor.foreground": "#383a42",
       "editorGutter.background": "#ebe3ee",
       "editorLineNumber.foreground": "#8f819a",
-      "diffEditor.insertedLineBackground": "#c0eeff",
       "editorGutter.addedBackground": "#529fc7",
-      "diffEditor.removedLineBackground": "#ffd6d2",
+      "diffEditor.insertedLineBackground": "#c7e1ea",
+      "diffEditor.removedLineBackground": "#edcacd",
       "editorGutter.deletedBackground": "#db5a5a"
     },
     "editor.tokenColorCustomizations": {

@@ -608,19 +608,6 @@ export const ShelfView = {
 // --- the frame: where the band sits, which side the rail is on, whether it is there.
 // Three independent switches, each one class on <body>, each drawn by the
 // button that flips it — the icon is a map of the page.
-// The pictogram of one frame: the band, the rail, the screen, with the
-// axis being chosen drawn full and the rest faint. A segment of the
-// control shows the frame it would set, so every position is in view
-// and the one in force is the pressed one — no ghost, no sentence.
-function pict(state, axis) {
-  const { bottom, right, off } = state, top = bottom ? 5 : 5.5, hgt = 9.5, rx = right ? 17 : 1.5
-  const bar = (y, c) => `<rect class="${c}" x="1" y="${y}" width="24" height="3" rx="1"/>`
-  const col = (x, c) => `<rect class="${c}" x="${x}" y="${top}" width="7.5" height="${hgt}" rx="1"/>`
-  const band = bar(bottom ? 15 : 1, axis === "band" ? "r" : "f")
-  const rail = axis === "rail" ? col(rx, off ? "d" : "r") : (off ? "" : col(rx, "f"))
-  const scr = `<rect class="o" x="${off ? 1.5 : (right ? 1.5 : 10)}" y="${top}" width="${off ? 23 : 14.5}" height="${hgt}" rx="1"/>`
-  return `<svg viewBox="0 0 26 19" aria-hidden="true">${band}${rail}${scr}</svg>`
-}
 const FRAME_CLASSES = ["band-bottom", "rail-right", "rail-off"]
 // What each segment sets: the band's two, the rail's three — hidden is
 // a position of the rail, not a setting of its own, and it keeps the side.
@@ -1118,7 +1105,8 @@ function bindShelves(el, deps) {
   try { shelf = JSON.parse(el.querySelector("#themes")?.textContent || "[]") } catch (e) {}
   const shelves = {}
   for (const kind of Object.keys(SHELF_KEYS)) shelves[kind] = bindShelf(el, kind, shelf.filter(t => t.kind === kind), deps, shelves)
-  // The folds: the adjustments of a theme's part, and Credits' groups. Unfolded, the pairs are fitted.
+  // The folds: every head of the tab has one (2026-10-01) — Overlay's two, a theme's Style and its adjustments,
+  // Credits' groups. Unfolded, the pairs are fitted.
   for (const b of el.querySelectorAll(".group>h5>.foldsq")) b.addEventListener("click", () => {
     const g = b.closest(".group"), folded = g.toggleAttribute("data-folded")
     b.setAttribute("aria-expanded", String(!folded)); b.title = folded ? "Unfold" : "Fold"
@@ -1293,10 +1281,24 @@ export const Frame = {
     const state = () => ({ bottom: body.classList.contains("band-bottom"), right: body.classList.contains("rail-right"), off: body.classList.contains("rail-off") })
     const paint = () => {
       const s = state()
-      for (const b of el.querySelectorAll(".seg button[data-pick]")) {
+      // A card of the frame shows the frame it would set — the other axis as it stands — so every position is in
+      // view, and the one in force is the pressed one.
+      for (const b of el.querySelectorAll("[data-axis] button[data-pick]")) {
         const want = PICKS[b.dataset.pick], on = Object.entries(want).every(([k, v]) => s[k] === v) && (b.dataset.pick !== "left" && b.dataset.pick !== "right" || !s.off)
         b.setAttribute("aria-pressed", String(on))
-        if (!b.querySelector("svg")) b.insertAdjacentHTML("afterbegin", pict({ ...s, ...want }, b.closest(".seg").dataset.axis))
+        const thumb = b.querySelector(".thumb"), would = { ...s, ...want }
+        if (thumb) for (const k of ["bottom", "right", "off"]) thumb.classList.toggle(k, !!would[k])
+      }
+      // The ground's cards are the page too: their thumbnails wear the frame in force (System's is two, one a ground)
+      // and, as the frame's own do through --term, the terminal's ground as the reader has it — the theme's colour
+      // for that card's ground when it says one, and the opacity. A card is a ground the page may not be on, so the
+      // colour is read from what is kept and handed to the thumbnail (--tm, --tm-a), the stylesheet's being the house's.
+      const kept = setOf(SETS.term), pct = termAlpha()
+      for (const thumb of el.querySelectorAll(".swatch[data-ground] .thumb:not(.system)")) {
+        for (const k of ["bottom", "right", "off"]) thumb.classList.toggle(k, !!s[k])
+        const own = (kept[thumb.classList.contains("dark") ? "dark" : "light"] || {}).term
+        if (own) thumb.style.setProperty("--tm", own); else thumb.style.removeProperty("--tm")
+        thumb.style.setProperty("--tm-a", `${pct}%`)
       }
       if (mini) { mini.classList.toggle("bottom", s.bottom); mini.classList.toggle("right", s.right); mini.classList.toggle("off", s.off) }
       const chosen = store.get(THEME_KEY) || "system"
@@ -1308,7 +1310,7 @@ export const Frame = {
       store.set("wb-console-frame", JSON.stringify(FRAME_CLASSES.filter(c => body.classList.contains(c))))
       paint(); dispatchEvent(new Event("resize"))
     }
-    for (const b of el.querySelectorAll(".seg button[data-pick]")) b.addEventListener("click", () => setFrame(PICKS[b.dataset.pick]))
+    for (const b of el.querySelectorAll("[data-axis] button[data-pick]")) b.addEventListener("click", () => setFrame(PICKS[b.dataset.pick]))
     // The miniature is a control too: the band moves, the rail changes side.
     mini?.querySelector(".mband")?.addEventListener("click", () => setFrame({ bottom: !state().bottom }))
     mini?.querySelector(".mrail")?.addEventListener("click", () => setFrame({ right: !state().right }))
@@ -1396,6 +1398,8 @@ export const Frame = {
     this.part = this.el.dataset.part
     const ctl = this.el.querySelector(".ctl"); if (ctl) ctl.scrollTop = 0
     fitAll(this.el)
+    // A part left may have changed what another draws: a terminal theme or its opacity, the cards of Overlay.
+    this.repaint && this.repaint()
   },
   destroyed() { removeEventListener("resize", this.repaint); removeEventListener("resize", this.refit) },
 }

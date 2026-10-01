@@ -263,6 +263,63 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   wears a service's colour changed, each reading `--svc-*` as before.
   The diagram profile's series follow: its light column was the same
   pale value as its dark.
+- **A theme's part opens under a head, *Style*, and every head
+  folds.** Overlay's two sections stand under theirs, *The frame* and
+  *The ground*; the
+  Terminal and the Code parts began with no head, straight on the
+  small *Font*, and had one only further down, on the fold,
+  *Adjustments*. The author asked for the first (2026-10-01): *Style*
+  is over what the reader chooses — the face, the opacity, the theme —
+  and *Adjustments* stays over what is set on top of it. And every
+  head folds, for the same reason the head was added, that the parts
+  be made alike: *Adjustments* and Credits' groups had the chevron,
+  *The frame*, *The ground* and now *Style* did not. They are groups
+  with the one head (`fold_head` in the drawer, which Credits' groups
+  take too), open as the part opens — *Adjustments* alone opens
+  folded, as it did; a fold is the page's and is not kept. *Style*
+  holds its sets at the 18px they had between them. Walked on a
+  running console: every head of the four parts has its chevron, and
+  *Style* and *The frame* fold and unfold.
+- **The frame is chosen on cards, as the ground and the themes are.**
+  The band and the rail were two segmented controls, each segment a
+  word under a small pictogram, beside a ground and two shelves that
+  are cards with a thumbnail; one part, two idioms. The author asked
+  for the one (2026-10-01). Each position is a card now — Top and
+  Bottom under *The band*, Left, Right and Hidden under *The rail*,
+  the two named in the small head a theme's part names *Font* and
+  *Opacity* with, and set apart as those are —
+  the size of a ground's, with the same thumbnail: the page at a
+  glance, in the ground in force, with the band and the rail where
+  the card would put them and the other axis as it stands, so every
+  position is in view and the pressed one is the frame in force, as
+  the pictogram had it. One rule for the five, the author's: what a
+  card acts on wears the colour of the card's own selection border,
+  the accent — the band on Top and Bottom, the rail on Left and
+  Right — and the rest is drawn as it is. Hidden has nothing to fill,
+  so it draws the place the rail now has, on its side, as a dashed
+  outline in that colour. And the ground's three cards, the same
+  thumbnail under them, are drawn in the frame in force: the band at
+  the bottom, the rail on the right or gone, as the frame's cards set
+  them — a page being one thing, they no longer show a frame the
+  reader has left. Checked one against the other, the two kinds of
+  card differed in one more thing, the terminal: the frame's drew it
+  through `--term`, the reader's theme and opacity, and the ground's
+  in the house's colour, opaque. The ground's take the reader's now,
+  each card the theme's colour for its own ground (what is kept, as
+  the page may not be on that ground), at the opacity chosen. The
+  rest was the same already, colour by colour against `tokens.json`.
+  The
+  segments' styles and the pictogram's drawing (`pict` in `hooks.js`)
+  are gone with them. Walked on a running console: the five cards,
+  the thumbnails following each choice.
+- **System's card is cut on a slant.** Of the ground's three cards,
+  System's thumbnail was the light half and the dark half side by
+  side, a straight cut down the middle, each piece of the drawing
+  painted in two colours to meet it. It is the two thumbnails now,
+  the light one whole and the dark one over it, cut like a "/" —
+  light to its left, dark to its right (2026-10-01, `console.css`, a
+  `clip-path`) — which reads as *either* where the straight cut read
+  as *half*.
 
 ### Fixed
 

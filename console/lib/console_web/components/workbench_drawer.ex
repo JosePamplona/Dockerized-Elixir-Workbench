@@ -1096,43 +1096,50 @@ defmodule ConsoleWeb.WorkbenchDrawer do
       <div class="ui" id="wb-ui" phx-hook="Frame" phx-update="ignore" data-part={@part}>
         <div class="ctl">
           <div class="part" data-part="overlay">
-            <section>
-              <h5>The frame</h5>
-              <div class="segs">
-                <div class="one">
-                  <span class="lbl">the band</span>
-                  <div
-                    class="seg"
-                    role="group"
-                    aria-label="The band: on top or at the bottom"
-                    data-axis="band"
-                  >
-                    <button type="button" data-pick="top" aria-pressed="false">Top</button><button
-                      type="button"
-                      data-pick="bottom"
-                      aria-pressed="false"
-                    >Bottom</button>
-                  </div>
+            <section class="group sets">
+              <.fold_head title="The frame" />
+              <%!-- The band and the rail, a card a position as the ground's
+                  and the themes' are: the thumbnail is the frame the card
+                  would set, in the ground in force (hooks.js Frame paints
+                  it), and the pressed one is the frame in force. --%>
+              <div class="set">
+                <h6>The band</h6>
+                <div
+                  class="cards"
+                  role="group"
+                  aria-label="The band: on top or at the bottom"
+                  data-axis="band"
+                >
+                  <button type="button" class="swatch" data-pick="top" aria-pressed="false">
+                    <.frame_thumb />Top
+                  </button>
+                  <button type="button" class="swatch" data-pick="bottom" aria-pressed="false">
+                    <.frame_thumb />Bottom
+                  </button>
                 </div>
-                <div class="one">
-                  <span class="lbl">the rail</span>
-                  <div
-                    class="seg"
-                    role="group"
-                    aria-label="The rail: on the left, on the right, or hidden"
-                    data-axis="rail"
-                  >
-                    <button type="button" data-pick="left" aria-pressed="false">Left</button><button
-                      type="button"
-                      data-pick="right"
-                      aria-pressed="false"
-                    >Right</button><button type="button" data-pick="hidden" aria-pressed="false">Hidden</button>
-                  </div>
+              </div>
+              <div class="set">
+                <h6>The rail</h6>
+                <div
+                  class="cards"
+                  role="group"
+                  aria-label="The rail: on the left, on the right, or hidden"
+                  data-axis="rail"
+                >
+                  <button type="button" class="swatch" data-pick="left" aria-pressed="false">
+                    <.frame_thumb />Left
+                  </button>
+                  <button type="button" class="swatch" data-pick="right" aria-pressed="false">
+                    <.frame_thumb />Right
+                  </button>
+                  <button type="button" class="swatch" data-pick="hidden" aria-pressed="false">
+                    <.frame_thumb />Hidden
+                  </button>
                 </div>
               </div>
             </section>
-            <section>
-              <h5>The ground</h5>
+            <section class="group">
+              <.fold_head title="The ground" />
               <div
                 class="cards"
                 role="group"
@@ -1151,7 +1158,7 @@ defmodule ConsoleWeb.WorkbenchDrawer do
                   aria-pressed="false"
                   title="Whatever this machine says"
                 >
-                  <span class="thumb system"><i class="b"></i><i class="rl"></i><i class="t t1"></i><i class="t t2"></i><i class="t t3"></i><i class="tm"></i></span>System
+                  <span class="thumb system"><span class="thumb light"><i class="b"></i><i class="rl"></i><i class="t t1"></i><i class="t t2"></i><i class="t t3"></i><i class="tm"></i></span><span class="thumb dark"><i class="b"></i><i class="rl"></i><i class="t t1"></i><i class="t t2"></i><i class="t t3"></i><i class="tm"></i></span></span>System
                 </button>
               </div>
             </section>
@@ -1453,7 +1460,9 @@ defmodule ConsoleWeb.WorkbenchDrawer do
     """
   end
 
-  # A theme's part, Terminal or Code: the face first — Font, the
+  # A theme's part, Terminal or Code, under two heads as Overlay's are
+  # (The frame, The ground): Style — what the reader chooses, the face,
+  # the opacity and the theme — and Adjustments; each folds. The face first — Font, the
   # reader's, no theme's: a theme is colours — then the shelf, the group
   # "Color Themes", with the small square beside its name that switches
   # the ground (a theme has two, and the other is one press away), a
@@ -1477,56 +1486,59 @@ defmodule ConsoleWeb.WorkbenchDrawer do
   defp theme_part(assigns) do
     ~H"""
     <div class="part" data-part={@kind}>
-      {render_slot(@font)}
-      <section class="tshelf set">
-        <h6>
-          <span>Color Themes</span><.square
-            mark="ground"
-            label="The ground: light or dark"
-            size="small"
-            data-ground-flip
-            aria-pressed="false"
-          />
-        </h6>
-        <div
-          class="grounds themes"
-          role="group"
-          data-shelf={@kind}
-          aria-label={"The #{@kind} themes on the shelf"}
-        >
-          <button
-            :for={t <- @themes}
-            type="button"
-            class="swatch ttile"
-            data-theme-key={t.key}
-            aria-pressed="false"
-            title={"#{t.author} · #{t.licence}"}
+      <section class="group sets">
+        <.fold_head title="Style" />
+        {render_slot(@font)}
+        <section class="tshelf set">
+          <h6>
+            <span>Color Themes</span><.square
+              mark="ground"
+              label="The ground: light or dark"
+              size="small"
+              data-ground-flip
+              aria-pressed="false"
+            />
+          </h6>
+          <div
+            class="grounds themes"
+            role="group"
+            data-shelf={@kind}
+            aria-label={"The #{@kind} themes on the shelf"}
           >
-            <span class="tthumb"></span>{t.name}
-          </button>
-          <button
-            type="button"
-            class="swatch ttile custom"
-            data-theme-key="custom"
-            aria-pressed="false"
-            hidden
-          >
-            <span class="tthumb"></span>Custom<small></small>
-          </button>
-        </div>
-        <p class="acts">
-          <button :if={@theme_files} class="btn" type="button" data-theme-download>
-            Download Current
-          </button>
-          <label :if={@theme_files} class="btn">Load Custom<input
-            type="file"
-            data-theme-file
-            accept=".json,.jsonc,application/json"
-            hidden
-          /></label>
-          <button class="btn" type="button" data-theme-clear hidden>Clear Custom</button>
-          <span class="word" data-theme-word></span>
-        </p>
+            <button
+              :for={t <- @themes}
+              type="button"
+              class="swatch ttile"
+              data-theme-key={t.key}
+              aria-pressed="false"
+              title={"#{t.author} · #{t.licence}"}
+            >
+              <span class="tthumb"></span>{t.name}
+            </button>
+            <button
+              type="button"
+              class="swatch ttile custom"
+              data-theme-key="custom"
+              aria-pressed="false"
+              hidden
+            >
+              <span class="tthumb"></span>Custom<small></small>
+            </button>
+          </div>
+          <p class="acts">
+            <button :if={@theme_files} class="btn" type="button" data-theme-download>
+              Download Current
+            </button>
+            <label :if={@theme_files} class="btn">Load Custom<input
+              type="file"
+              data-theme-file
+              accept=".json,.jsonc,application/json"
+              hidden
+            /></label>
+            <button class="btn" type="button" data-theme-clear hidden>Clear Custom</button>
+            <span class="word" data-theme-word></span>
+          </p>
+        </section>
       </section>
       <section class="group tsec" data-sec={@kind} data-folded>
         <h5>
@@ -1545,6 +1557,37 @@ defmodule ConsoleWeb.WorkbenchDrawer do
     """
   end
 
+  # The frame at a thumbnail's size, as the ground's cards draw it: the
+  # band, the rail, three lines and a terminal. The hook says where the
+  # band and the rail are (`bottom`, `right`, `off` on the thumb).
+  defp frame_thumb(assigns) do
+    ~H"""
+    <span class="thumb frame"><i class="b"></i><i class="rl"></i><i class="t t1"></i><i class="t t2"></i><i class="t t3"></i><i class="tm"></i></span>
+    """
+  end
+
+  # A group's head: its title and the chevron that folds what is under
+  # it (hooks.js, `.group>h5>.foldsq`; console.css, `.group[data-folded]`).
+  # Every head of the Interface tab carries one since 2026-10-01 — The
+  # frame, The ground, Style, Credits' groups — unfolded as it opens;
+  # Adjustments has its own, with the count, and opens folded.
+  attr :title, :string, required: true
+
+  defp fold_head(assigns) do
+    ~H"""
+    <h5>
+      <span>{@title}</span><.square
+        mark="chevron"
+        label={"Fold #{@title}"}
+        size="small"
+        class="foldsq"
+        aria-expanded="true"
+        title="Fold"
+      />
+    </h5>
+    """
+  end
+
   # A group of Credits: its head, centred, with the house's small fold
   # square at its end; its hint; its fichas.
   attr :title, :string, required: true
@@ -1554,16 +1597,7 @@ defmodule ConsoleWeb.WorkbenchDrawer do
   defp credits_group(assigns) do
     ~H"""
     <section class="group">
-      <h5>
-        <span>{@title}</span><.square
-          mark="chevron"
-          label={"Fold #{@title}"}
-          size="small"
-          class="foldsq"
-          aria-expanded="true"
-          title="Fold"
-        />
-      </h5>
+      <.fold_head title={@title} />
       <p class="hint">{@hint}</p>
       <div class="credits">{render_slot(@inner_block)}</div>
     </section>

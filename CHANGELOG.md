@@ -361,6 +361,73 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   house's own. All of it goes out of the history with `reference/`
   at the cut.
 
+### Fixed
+
+- **The console colours Elixir as VS Code does with the same theme,
+  where the theme has a rule.** The author, reading the archived theme
+  against the sheet on 2026-09-30, found a comma drawn as a bracket
+  while a dot was an operator, and `@moduledoc` with its string drawn
+  as any attribute with any string. The theme was whole — both scopes
+  sit in the right rule in `LANGS.elixir` — and the loss was one step
+  later: the palette is written in a grammar's scopes and painted on
+  Makeup's classes, and the lexer sorts coarser than the grammar, or
+  just otherwise. A comma is `punctuation` like `(`; the dot was right
+  only because the lexer lists it among the operators; a doc is not a
+  thing it knows. A first repair that day took the cases the author
+  named. The rest were found by measure on 2026-10-01 and not by eye:
+  the same code through `vscode-textmate`, the library VS Code colours
+  with, and through `Console.Highlight`, compared a character at a
+  time. The grammar is `mjmcloug.vscode-elixir` 1.1.0's — of the three
+  installed that answer to `source.elixir`, the only one all forty-six
+  scopes of the theme are found in (ElixirLS 0.31.1 has forty-two, and
+  the first repair, checked against it, had `&1` wrong) — and the
+  theme the archived rules over One Dark Pro, which paints whatever
+  they do not name. The corpus: `igniter/`, `console/` and the
+  console's dependencies, 1,241 files and 6.8 million characters that
+  are not a space. 89.6 % came out one colour on both sides; the
+  differences fell into twenty-four kinds, laid out with real lines
+  painted both ways on a decision page,
+  `console/elixir-contra-vscode.html`, retired once seen and never
+  committed. Fifteen were the console leaving the theme,
+  and are repaired; with them it is 94.0 %. Two repairs, by where the
+  loss is. Where a class already tells the token apart, `console.css`
+  moves the rule for Elixir alone, as it did for CSS and Godot:
+  `alias`, `import`, `require` and `use` (`kn`) and `__MODULE__` and
+  its kin (`bp`) are the theme's *embedded*; `when`, `and`, `or`,
+  `not` and `in` (`ow`) are keywords and not operators; a date's sigil
+  (`ld`), which had no rule, is a string. Where the class is shared,
+  `Console.Highlight.ElixirTokens` re-sorts Elixir's tokens before
+  they are drawn, a scope of the grammar a case: a comma, `=>` and a
+  binary's `<<` `>>` are operators, and so is the dot inside `Foo.Bar`,
+  which the lexer hands as one name — but not in the name a module is
+  defined with, one name to the grammar; the colon of an atom and of a
+  keyword, and the quotes of `:"a b"`, are cut from the name into
+  `sa`, the constant's mark; `:erlang` before a dot is an atom and not
+  a module; a capture's `&` is a variable's mark (`nd`) and only the
+  `1` of `&1` a keyword; `_` is a comment like `_from`; `?a` is a
+  number; the `~w(` and `)a` of a word list are brackets; a name in a
+  `def`'s head is a parameter (`nv`, the operators' colour, as the
+  theme has it) — the head being the bracket pair Makeup already
+  matched, so nothing is parsed; `@doc`, `@moduledoc` or `@typedoc`
+  with its string, its heredoc or `false` is `sd`, drawn as a comment,
+  an escape inside keeping its colour and a `#{}` hole read as code;
+  `\x1f` is one escape, where the lexer stopped at `\x`; and a keyword
+  after a dot (`Mix.raise`, `range.end`) is a name, the one case where
+  the lexer was simply wrong. What is still apart, 6.0 %, is left on
+  purpose. 5.2 % is VS Code leaving the theme, not the console: a
+  heredoc and a sigil are `string.quoted.double.heredoc` and
+  `string.quoted.other.literal`, a one-line doc
+  `comment.documentation.string`, `_` `comment.wildcard`, none of
+  which the theme names, so One Dark Pro gives them its own green and
+  grey, a shade from the theme's, which the console uses for all of
+  them. 0.8 % is the grammar's gaps, which VS Code leaves in the base
+  colour and the console colours: the brackets of a `def`'s head and
+  the `%` of a map, `^` and `!`, `defguard`, a head's names after a
+  nested `)`, where the grammar closes the head early. The rest,
+  0.04 %, is VS Code misreading — a doc given with a sigil, a variable
+  named `exit` — and one-file oddities. A template's Elixir is left as lexed:
+  it reads with HTML's palette.
+
 ## v0.14.0 - (2026-09-29)
 
 ### Added

@@ -35,6 +35,14 @@ defmodule Console.Highlight do
   a lexer with the options it lexes with. The language is syntect's: a
   file extension it knows, `gd` and not `gdscript`, `sh` and not `bash`.
 
+  Elixir's tokens take one more pass before they are drawn,
+  `Console.Highlight.ElixirTokens`: Makeup's lexer sorts them coarser than the
+  grammar VS Code reads Elixir with, and the palette is a VS Code theme.
+  A comma is punctuation like a bracket to the one and a separator to
+  the other; `@doc "..."` an attribute and a string, or documentation.
+  That module says which, token by token. A template's Elixir is left
+  as lexed: it reads with HTML's palette.
+
   A second registry, `@by_fence`, is the same treatments by the name a
   Markdown fence opens with (` ```elixir `): the papers a box carries
   and the project's own are rendered by `Console.Papers`, and a fenced
@@ -43,6 +51,9 @@ defmodule Console.Highlight do
   something not here, stays as the renderer wrote it: plain.
   """
 
+  alias Console.Highlight.ElixirTokens
+  alias Makeup.Formatters.HTML.HTMLFormatter
+  alias Makeup.Lexers.ElixirLexer
   alias Makeup.Token.Utils
 
   # Whole names win over extensions: `.lock` says nothing anywhere else,
@@ -176,16 +187,16 @@ defmodule Console.Highlight do
   end
 
   # The two shapes a lexer takes, lexed and rendered the same way.
+  defp lex(ElixirLexer, source),
+    do: source |> ElixirLexer.lex() |> ElixirTokens.as_its_editor_reads()
+
   defp lex(lexer, source) when is_atom(lexer), do: lexer.lex(source)
   defp lex({lexer, opts}, source), do: lexer.lex(source, opts)
 
   defp inner_html(:plain, source), do: escape(source)
 
-  defp inner_html(lexer, source) when is_atom(lexer),
-    do: Makeup.highlight_inner_html(source, lexer: lexer)
-
-  defp inner_html({lexer, opts}, source),
-    do: Makeup.highlight_inner_html(source, lexer: lexer, lexer_options: opts)
+  defp inner_html(lexer, source),
+    do: lexer |> lex(source) |> HTMLFormatter.format_inner_as_binary([])
 
   @doc """
   The file as the page should receive it: the treatment that was applied,
@@ -212,8 +223,8 @@ defmodule Console.Highlight do
 
   # A few lines a language, touching every rule of its palette — for the
   # Interface tab to show the colours on. Elixir's: keywords, a module,
-  # an attribute, `use`, strings, atoms, a number, a function, operators,
-  # a regex, brackets and a comment.
+  # a doc, an attribute, `use`, strings, atoms, a number, a function,
+  # operators, a capture's `&1`, a regex, brackets and a comment.
   @samples %{
     elixir:
       {Makeup.Lexers.ElixirLexer,
@@ -595,8 +606,7 @@ defmodule Console.Highlight do
       Enum.reduce(tokens, {[], []}, fn {type, _meta, value}, {lines, current} ->
         class = Utils.css_class_for_token_type(type)
 
-        # A lexer may hand a lone codepoint as the value; chardata wants a list.
-        case value |> List.wrap() |> IO.chardata_to_string() |> String.split("\n") do
+        case value |> text() |> String.split("\n") do
           [only] ->
             {lines, [span(class, only) | current]}
 
@@ -611,6 +621,9 @@ defmodule Console.Highlight do
     |> Enum.reverse()
     |> Enum.map(&(&1 |> Enum.reverse() |> IO.iodata_to_binary()))
   end
+
+  # A lexer may hand a lone codepoint as the value; chardata wants a list.
+  defp text(value), do: value |> List.wrap() |> IO.chardata_to_string()
 
   defp span(_class, ""), do: ""
   defp span(nil, text), do: escape(text)

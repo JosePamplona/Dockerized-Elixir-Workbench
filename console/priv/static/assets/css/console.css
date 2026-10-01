@@ -1319,6 +1319,17 @@ form.insert.locked .opt input{opacity:.55}
    line, not a keyword. */
 .src[data-lang="css"] .kc{color:var(--t-kw)}.src[data-lang="css"] .no{color:var(--t-atom)}.src[data-lang="css"] .nc{color:var(--t-interp)}
 .src[data-lang="godot"] .kd{color:var(--t-interp)}
+/* Elixir, as the grammar VS Code reads it with sorts it, since the
+   palette is a theme written against that grammar
+   (mjmcloug.vscode-elixir's): alias, import, require and use are its
+   special methods and not keywords; when, and, or, not and in are
+   keywords and not operators; __MODULE__ and its kin are the
+   language's variables; a date's sigil is a string. The rest are
+   classes Console.Highlight.ElixirTokens sorts Elixir's tokens into,
+   which the lexer does not: the 1 of a capture's &1 (ni), the colon
+   and the quotes of an atom or a keyword (sa), a name in a def's head
+   (nv), and @doc with what it is given (sd). */
+.src[data-lang="elixir"] .kn,.src[data-lang="elixir"] .bp{color:var(--t-interp)}.src[data-lang="elixir"] .ni,.src[data-lang="elixir"] .ow{color:var(--t-kw)}.src[data-lang="elixir"] .sa{color:var(--t-const)}.src[data-lang="elixir"] .nv{color:var(--t-op)}.src[data-lang="elixir"] .ld{color:var(--t-str)}.src[data-lang="elixir"] .sd{color:var(--t-comment);font-style:italic}
 .src .c, .src .c1, .src .cm{font-style:italic}
 .src .err{color:var(--t-interp);text-decoration:underline wavy}
 /* A row carries both line numbers — a removal has no new one, an

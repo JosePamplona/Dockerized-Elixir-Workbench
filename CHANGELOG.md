@@ -55,6 +55,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **The house's code is read on the terminal's ground.** The dark
+  sheet of *House's* was `#120B17`, the terminal's ground of before
+  2026-10-01; it is `#2D1D3A`, the violet the house's terminal took
+  that day, so what runs and what is read stand on one ground again.
+  The inks are One Dark's still, and read a step softer on it: 7.3:1
+  the code's (9.1 before), 2.6 the comments' (3.2). The numbers'
+  plate, `#2C2036`, is next to the same colour as the new ground, so
+  the ruler no longer stands apart from the line; left as it is.
 - **The house's terminal is the author's on both grounds, and the
   theme is named for it: *House's*.** The dark of v0.15.0 — the
   author's twelve on a near-black `#08010E` — was a first take; the
@@ -116,7 +124,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   where it is orange, a CSS property purple where it is the text's),
   and the sheet, its gutter and the diff's grounds are the house's
   own (`#120B17` on the dark, the terminal's ground of before
-  2026-10-01, which the line used to claim it still was).
+  2026-10-01, which the line used to claim it still was; the sheet
+  took the terminal's new ground the same day, above).
 - **A reader who has chosen no face gets the house's: Tamzen at 15 px
   and a leading of 1.0 for the terminal, Fira Code at 13 px and 1.2
   for the code.** Until 2026-10-01 a reader with nothing kept read

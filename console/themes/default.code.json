@@ -8,7 +8,7 @@
   },
   "dark": {
     "workbench.colorCustomizations": {
-      "editor.background": "#120b17",
+      "editor.background": "#2d1d3a",
       "editor.foreground": "#abb2bf",
       "editorGutter.background": "#2c2036",
       "editorLineNumber.foreground": "#8b7c96",

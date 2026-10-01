@@ -960,7 +960,15 @@ defmodule ConsoleWeb.WorkbenchDrawer do
   # times are the lines' own, as the Logs screen formats them; the
   # services are the compose project's, and each line wears its colour
   # the way the Logs screen gives it (hooks.js svcColor: the six named
-  # ones, and the network's for any other).
+  # ones, and the network's for any other). The ANSI is each tool's own,
+  # so the theme's sixteen are seen on what they colour (2026-10-01):
+  # Logger paints a line by its level (debug cyan, warning yellow, error
+  # red; info none), the compiler its `warning:` yellow, `dbg` a value
+  # in IO.ANSI.syntax_colors/0 (atoms cyan, numbers yellow, strings
+  # green, booleans and nil magenta, a variable light cyan), and ExUnit
+  # its dots green, a failure red, a skip yellow, the `code:`, `left:`
+  # and `right:` labels cyan, the diff's deletions red and insertions
+  # green, and the count red when a test failed.
   @log_lines [
     {"database", "info", false, "11:04:38.442",
      "UTC [1] LOG:  database system is ready to accept connections"},
@@ -975,9 +983,37 @@ defmodule ConsoleWeb.WorkbenchDrawer do
      "[info] Running ConsoleWeb.Endpoint with Bandit 1.12.5 at 0.0.0.0:4000 (http)"},
     {"app", "info", false, "17:07:17.401", "[info] GET /deploy"},
     {"app", "debug", false, "17:07:17.409",
-     "[debug] Processing with ConsoleWeb.ConsoleLive.__live__/0"},
+     ~s(<span class="ansi-fg-6">[debug] Processing with ConsoleWeb.ConsoleLive.__live__/0</span>)},
+    {"app", "debug", false, "17:07:17.418",
+     ~s(<span class="ansi-fg-6">[debug] QUERY OK source="rooms" db=1.2ms idle=1498.6ms</span>)},
+    {"app", "debug", true, "17:07:17.418",
+     ~s(<span class="ansi-fg-6">SELECT r0."id", r0."name", r0."max" FROM "rooms" AS r0 WHERE \(r0."id" = $1\) [12]</span>)},
     {"app", "info", false, "17:07:17.426", "[info] Sent 200 in 24ms"},
-    {"app", "error", false, "17:52:13.680", "[error] ** (Bandit.HTTPError) Read timeout"}
+    {"app", "info", false, "17:09:02.550", "[lib/arcade/room.ex:9: Arcade.Room.join/2]"},
+    {"app", "info", true, "17:09:02.550",
+     ~s(<span class="ansi-fg-14">p</span> #=> %Arcade.Player{<span class="ansi-fg-6">age:</span> <span class="ansi-fg-3">7</span>, <span class="ansi-fg-6">late?:</span> <span class="ansi-fg-5">true</span>, <span class="ansi-fg-6">name:</span> <span class="ansi-fg-2">"ana"</span>, <span class="ansi-fg-6">seat:</span> <span class="ansi-fg-5">nil</span>})},
+    {"app", "warn", false, "17:10:40.093",
+     ~s(<span class="ansi-fg-3">[warning] Ignoring unmatched topic "room:9" in ArcadeWeb.UserSocket</span>)},
+    {"app", "error", false, "17:52:13.680",
+     ~s(<span class="ansi-fg-1">[error] ** \(Bandit.HTTPError\) Read timeout</span>)},
+    {"app", "info", false, "18:03:11.204", "Running ExUnit with seed: 318221, max_cases: 16"},
+    {"app", "info", false, "18:03:11.731",
+     ~s(<span class="ansi-fg-2">...............</span><span class="ansi-fg-1">F</span><span class="ansi-fg-2">...</span><span class="ansi-fg-3">*</span><span class="ansi-fg-2">.</span>)},
+    {"app", "info", false, "18:03:11.733",
+     ~s(<span class="ansi-fg-1">  1\) test join/2 turns a late player away \(Arcade.RoomTest\)</span>)},
+    {"app", "info", true, "18:03:11.733", "     test/arcade/room_test.exs:21"},
+    {"app", "info", true, "18:03:11.733",
+     ~s(     <span class="ansi-fg-1">Assertion with == failed</span>)},
+    {"app", "info", true, "18:03:11.733",
+     ~s(     <span class="ansi-fg-6">code:</span>  assert join\(room, late\) == {:error, :refused})},
+    {"app", "info", true, "18:03:11.733",
+     ~s(     <span class="ansi-fg-6">left:</span>  {<span class="ansi-fg-1">:ok</span>, <span class="ansi-fg-1">%Arcade.Room{players: [...]}</span>})},
+    {"app", "info", true, "18:03:11.733",
+     ~s(     <span class="ansi-fg-6">right:</span> {<span class="ansi-fg-2">:error</span>, <span class="ansi-fg-2">:refused</span>})},
+    {"app", "info", false, "18:03:11.902", "Finished in 0.4 seconds (0.2s async, 0.2s sync)"},
+    {"app", "info", false, "18:03:11.902",
+     ~s(<span class="ansi-fg-1">20 tests, 1 failure, 1 skipped</span>)},
+    {"app", "info", true, "18:03:11.902", "Randomized with seed 318221"}
   ]
   # The sample's services, by the role each would say: the preview is
   # coloured as the logs are, by role (ConsoleWeb.Services).

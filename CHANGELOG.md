@@ -16,6 +16,32 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **The house's terminal on the dark ground is the author's own: a
+  near-black ground, `#08010E`, and six colours of its own with their
+  brights.** Since 2026-09-16 the dark terminal was Nord's sixteen on
+  the house's `#120B17`, chosen among five on
+  `console/temas-de-terminal.html`; the author set the ground and the
+  twelve chromatic rows on 2026-10-01 (red `#D52A50`, green
+  `#38C751`, yellow `#D5BC2A`, blue `#372AD5`, magenta `#D52AD5`,
+  cyan `#2ABFD5`, and the brights `#E4758E`, `#7EDB89`, `#E4D975`,
+  `#8375E4`, `#E475E4`, `#75DAE4`). Nord's blacks and whites, the
+  dim, the foreground and the light ground stay. The one source is
+  `assets/design/tokens.json`, with the date on each token's use;
+  `build.py` writes the tokens; the Default terminal theme
+  (`console/themes/default.terminal.json`) says the same, as it must,
+  and its card no longer stands on Nord: the house is its author, the
+  workbench's repository its site, and its *about* says what it is
+  now; and the Overlay's ground thumbs draw the new ground. The miniature's terminal shows the sixteen on what they
+  colour, so a theme is judged on logs: to the compiler's warning and
+  the boot it adds Logger's levels (debug cyan, warning yellow, error
+  red, a line whole, as Logger paints them), an Ecto query, a `dbg`
+  value in `IO.ANSI.syntax_colors/0` (atoms cyan, numbers yellow,
+  strings green, booleans and `nil` magenta, the variable light cyan),
+  and an ExUnit run — the dots green, the failure red, a skip yellow,
+  the `code:`, `left:` and `right:` labels cyan, the diff's deletions
+  red and insertions green, the count red — each colour read off the
+  tool's own source.
+
 - **The Interface tab is parts under a ribbon, not three folds.** Its
   controls folded in three since 2026-09-15 — Overlay, Terminal and
   Files, with *As a file* outside them — all open at birth: the column

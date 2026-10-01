@@ -1513,11 +1513,11 @@ form.insert.locked .opt input{opacity:.55}
 .ui .thumb.light .t{color:#1D1424}.ui .thumb.dark .t{color:#EFE7F2}
 .ui .thumb .t1{top:15px;width:34px}.ui .thumb .t2{top:22px;width:24px}.ui .thumb .t3{top:29px;width:40px}
 .ui .thumb .tm{left:26px;right:6px;top:36px;bottom:5px;border-radius:2px}
-.ui .thumb.light .tm{background:#FDFBFE;border:1px solid #D6CBDA}.ui .thumb.dark .tm{background:#120B17;border:1px solid #2B1F33}
+.ui .thumb.light .tm{background:#FDFBFE;border:1px solid #D6CBDA}.ui .thumb.dark .tm{background:#08010E;border:1px solid #2B1F33}
 .ui .thumb.system{background:linear-gradient(90deg,#F2EDF3 50%,#160F1B 50%)}
 .ui .thumb.system .rl{background:#FBF8FC;border-right:1px solid #D6CBDA}
 .ui .thumb.system .t{background:linear-gradient(90deg,#1D1424 12px,#EFE7F2 12px);opacity:.35}
-.ui .thumb.system .tm{background:linear-gradient(90deg,#FDFBFE 12px,#120B17 12px);border:1px solid #6B5C76}
+.ui .thumb.system .tm{background:linear-gradient(90deg,#FDFBFE 12px,#08010E 12px);border:1px solid #6B5C76}
 .ui .picks{display:grid;gap:6px}
 /* What a face does — ligatures on, a bitmap — right under the face it is said of, in the control's column. */
 .ui .picks .help{grid-column:1/-1;margin:-2px 0 2px 72px}

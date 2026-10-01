@@ -1601,6 +1601,8 @@ form.insert.locked .opt input{opacity:.55}
 .ui .tshelf{gap:8px}
 /* The shelf's name carries the ground's switch right beside it: the small square, with the band's own mark. */
 .ui .tshelf h6{display:flex;align-items:center;gap:8px}
+/* The shelf's buttons: with none to show — no Custom to clear, and not dev, whose Download and Load are — the row takes no room. */
+.ui .tshelf .acts:not(:has(>.btn:not([hidden]))){display:none}
 /* The fold: a group whose head is the house's h5 with the count of what
    is yours and the small fold square at its end (the Credits groups
    wear the same); folded, the group is its head alone. The body keeps

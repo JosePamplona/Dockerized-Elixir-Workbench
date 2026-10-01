@@ -1461,7 +1461,8 @@ defmodule ConsoleWeb.WorkbenchDrawer do
   # from the file (the thumbnail is the preview: nothing is worn before
   # it is picked), and Custom, which the hook shows when something is
   # set on top and keeps there, put away, while another theme is worn
-  # — then Download Custom and Load Custom, in dev alone;
+  # — then Download Custom and Load Custom, in dev alone, and Clear
+  # Custom, anyone's, there while there is a Custom, as its card is;
   # then one fold, Adjustments, the house's fold head with the count of
   # what is yours, holding the part's colour groups. Settled 2026-09-30
   # (console/la-estanteria-a-la-vista.html), the face out of the theme
@@ -1512,14 +1513,17 @@ defmodule ConsoleWeb.WorkbenchDrawer do
             <span class="tthumb"></span>Custom<small></small>
           </button>
         </div>
-        <p :if={@theme_files} class="acts">
-          <button class="btn" type="button" data-theme-download>Download Custom</button>
-          <label class="btn">Load Custom<input
+        <p class="acts">
+          <button :if={@theme_files} class="btn" type="button" data-theme-download>
+            Download Custom
+          </button>
+          <label :if={@theme_files} class="btn">Load Custom<input
             type="file"
             data-theme-file
             accept=".json,.jsonc,application/json"
             hidden
           /></label>
+          <button class="btn" type="button" data-theme-clear hidden>Clear Custom</button>
           <span class="word" data-theme-word></span>
         </p>
       </section>

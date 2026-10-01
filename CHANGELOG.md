@@ -66,6 +66,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   never listened to, so its title stayed on the ground before. Asked
   by the author on 2026-10-01; checked on the running console, both
   parts, pressed from the square and from the band.
+- **Clear Custom: a Custom can be forgotten.** Since Custom is kept
+  when another theme is picked, nothing took it off the shelf again:
+  its card stayed, worn or put away, for good. Under the shelf, in
+  Terminal and in Code, there is *Clear Custom*, anyone's — Download
+  Custom and Load Custom beside it stay dev's — and there only while
+  there is a Custom, as its card is. Pressed with Custom worn, the
+  theme it stands on goes on whole, as it is on the shelf; pressed
+  with Custom put away, it is dropped and what is worn stays. Either
+  way the card and the button go, at once and with no asking: it is
+  what the theme's own dashed card did before Custom was kept. Where
+  the row has no button to show it takes no room. Asked by the author
+  on 2026-10-01; checked on the running console, worn and put away.
 - **The house's code is read on the terminal's ground.** The dark
   sheet of *House's* was `#120B17`, the terminal's ground of before
   2026-10-01; it is `#2D1D3A`, the violet the house's terminal took

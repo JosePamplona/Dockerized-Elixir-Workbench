@@ -168,6 +168,13 @@ defmodule ConsoleWeb.BackTest do
     refute html =~ "Download Custom"
     refute html =~ "data-theme-file"
 
+    # Clear Custom is anyone's, one a part, and stays away until the hook
+    # finds a Custom to clear.
+    assert length(
+             Regex.scan(~r{<button[^>]*data-theme-clear[^>]*hidden[^>]*>\s*Clear Custom}, html)
+           ) ==
+             2
+
     # The hook is handed the shelves as JSON, kind and all.
     assert html =~ ~s(<script type="application/json" id="themes">)
     assert html =~ "terminal.foreground"

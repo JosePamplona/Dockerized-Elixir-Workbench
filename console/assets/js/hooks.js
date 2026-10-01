@@ -1129,7 +1129,7 @@ function bindShelves(el, deps) {
 function bindShelf(el, kind, themes, { colours, sets }, shelves) {
   const part = el.querySelector(`.part[data-part="${kind}"]`); if (!part) return {}
   const cards = [...part.querySelectorAll(".grounds.themes .ttile")], custom = cards.find(c => c.dataset.themeKey === "custom"), touch = part.querySelector(".tsec .touch")
-  const word = part.querySelector("[data-theme-word]"), down = part.querySelector("[data-theme-download]"), file = part.querySelector("[data-theme-file]")
+  const word = part.querySelector("[data-theme-word]"), down = part.querySelector("[data-theme-download]"), file = part.querySelector("[data-theme-file]"), clear = part.querySelector("[data-theme-clear]")
   const say = (text, bad) => { if (word) { word.textContent = text; word.classList.toggle("bad", !!bad) } }
   const house = themes.find(t => t.key === "default")?.json || {}
   const mySets = KIND_SETS[kind].map(k => [k, SETS[k]])
@@ -1216,6 +1216,8 @@ function bindShelf(el, kind, themes, { colours, sets }, shelves) {
         if (state.custom && k === state.key) { c.dataset.base = ""; c.title = `Back to ${name}, as it is on the shelf` } else { delete c.dataset.base; c.title = `${t.json["dew.theme"]?.author || ""} · ${t.json["dew.theme"]?.licence || t.json["dew.theme"]?.license || ""}` }
       }
     }
+    // Clear Custom is there while there is one, as its card is, and says what a press leaves.
+    if (clear) { clear.hidden = !mine; clear.title = state.custom ? `Forget what you set: ${name}, as it is on the shelf` : "Forget the Custom you put away" }
     const set = yours(), n = count(set)
     if (touch) touch.textContent = n ? `${n} set by you` : ""
     mark(set)
@@ -1229,6 +1231,9 @@ function bindShelf(el, kind, themes, { colours, sets }, shelves) {
     // A theme's card puts the theme on whole, and Custom away if it was worn; one already put away stays.
     c.addEventListener("click", () => { const kept = state.custom ? snapshot() : state.kept; apply(docOf(k)); state = { key: k, custom: false, kept }; keepState(); say(""); draw() })
   }
+  // Custom, forgotten: worn, the theme it stands on goes on whole, as it is on the shelf; put away, it is dropped
+  // and what is worn stays. Either way no Custom is left, and its card and this button go with it.
+  clear?.addEventListener("click", () => { if (state.custom) apply(docOf(state.key)); state = { key: state.key, custom: false, kept: null }; keepState(); say(""); draw() })
   // The first touch on a theme worn bare: it and the touch are Custom now, in place of any put away. Any touch
   // after it changes what is yours, so the count and the names are drawn again.
   el.addEventListener("wb:touched", e => { if (e.detail?.kind !== kind || applying) return; if (!state.custom) { state = { ...state, custom: true, kept: null }; keepState() } draw() })

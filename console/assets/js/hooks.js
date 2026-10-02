@@ -625,8 +625,8 @@ const PICKS = {
 // fallback — so the page's own mono is the properties absent, and each
 // surface keeps the size and leading it was drawn at. A reader who has
 // chosen nothing gets the house's (DEFAULTS, below). A face brings its sizes:
-// Tamzen is a bitmap face, one drawing per size, and the drawing is the
-// family name; the vector faces take any. The leading is unitless, a
+// Tamzen and Greybeard are bitmap faces, one drawing per size, and the
+// drawing is the family name; the vector faces take any. The leading is unitless, a
 // ratio of the size, so it holds when the size changes.
 const GROUPS = { code: "wb-console-code", file: "wb-console-file" }
 const SIZES = [10, 11, 12, 13, 14, 15, 16, 18, 20]
@@ -636,6 +636,7 @@ const FACES = {
   fira: { name: "Fira Code", sizes: SIZES, family: () => '"Fira Code"', note: "Ligatures on." },
   vga: { name: "Flexi IBM VGA", sizes: [14, 16, 18, 20, 24, 32], family: () => '"Flexi IBM VGA True"', note: "The PC's text mode, a bitmap: its own sizes.", bitmap: true },
   tamzen: { name: "Tamzen", sizes: [9, 12, 13, 14, 15, 16, 20], family: s => `"Tamzen${{ 9: 5, 12: 6, 13: 7, 14: 7, 15: 8, 16: 8, 20: 10 }[s]}x${s}"`, note: "A bitmap face, one drawing a size.", bitmap: true },
+  greybeard: { name: "Greybeard", sizes: [11, 12, 13, 14, 15, 16, 17, 18, 22], family: s => `"Greybeard${{ 11: 6, 12: 6, 13: 7, 14: 7, 15: 8, 16: 8, 17: 9, 18: 9, 22: 11 }[s]}x${s}"`, note: "A bitmap face, one drawing a size; it draws the boxes, the blocks and the shades.", bitmap: true },
 }
 // (Whose each face is, and under which licence, the drawer's Faces part says: the notes above say what a face does.)
 // The pages' own type — the display, the text and the mono, and a scale

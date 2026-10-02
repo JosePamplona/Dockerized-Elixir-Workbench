@@ -61,6 +61,34 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   cells are pictures now splits its width evenly (`console.css`): left
   to their content, two pictures of one size came out a column wider
   than the other.
+- **Greybeard, a bitmap face that draws the shades, the blocks and the
+  boxes.** Looking at how the faces show in the terminal, the author
+  saw `░▒▓█` blurred under Tamzen (2026-10-02): Tamzen has none of
+  them, so they come from a face of the browser's choosing, off the
+  pixel. The ask was not Tamzen mended but a face on the list that
+  draws them itself. Seven open ones were measured as they ship
+  and set in Chromium at their own size, counting the pixels that are
+  neither ink nor ground: Greybeard, Departure Mono, Unscii, Spleen,
+  Cozette and Fairfax came out with none, Terminus TTF with a few;
+  Greybeard was taken. It is UW ttyp0 (Uwe Waldmann) turned into
+  outlines by Andy Walker, MIT, and it is built as Tamzen is here — a
+  family a pixel height, a hundred units a pixel, regular and bold in
+  one cell — so it entered the same way: nine sizes, 11 to 18 and
+  22 px (6x11 to 11x22), a pair of files each, `"GreybeardWxH"` in
+  `console.css` and `greybeard` in `hooks.js`'s `FACES`, a bitmap like
+  the other two. It brings all of U+2500 to U+259F, Powerline's
+  marks, and at 15 to 18 px an italic of its own, declared too, so a
+  comment on the Files sheet is drawn and not slanted by the browser.
+  The files are the WOFF2 of its release v1.0.0, renamed to the
+  house's `WWxHH` and nothing else (1.5 MB the twenty-six; the TTF
+  were 7.5 MB the eighteen), `LICENSE-greybeard.txt` beside them, and
+  Credits has its card: four faces travel with the console now. The
+  house's default stays Tamzen. Seen on a console on the host, chosen
+  in the drawer at 15 px and a leading of 1: shades, blocks and
+  single and double boxes join cell to cell and line to line, in
+  regular and bold. Left as it was: the miniature's
+  colour scale is still set in Fira Code whatever the face in force,
+  though this one could draw it.
 
 ### Fixed
 

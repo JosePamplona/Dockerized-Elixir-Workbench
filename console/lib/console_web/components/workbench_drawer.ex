@@ -141,6 +141,15 @@ defmodule ConsoleWeb.WorkbenchDrawer do
       licence: "Tamsyn's: free to use, copy, modify and distribute",
       draws:
         "The house's face for the terminal, a bitmap, one drawing a size; one the files can take. Carried by the console."
+    },
+    %{
+      name: "Greybeard",
+      spec: "font-family:'Greybeard11x22';font-size:22px;font-weight:700",
+      by: "Andy Walker, after UW ttyp0 by Uwe Waldmann",
+      at: "https://github.com/flowchartsman/greybeard",
+      licence: "MIT",
+      draws:
+        "A bitmap, one drawing a size, with the boxes, the blocks and the shades drawn in its own cell; for the terminal and the files. Carried by the console."
     }
   ]
 
@@ -1373,7 +1382,7 @@ defmodule ConsoleWeb.WorkbenchDrawer do
             </.credits_group>
             <.credits_group
               title="Faces"
-              hint="Every face the console draws with, whose it is and under which licence. Three come from Google Fonts as the page loads; three travel with the console, their licences beside them in priv/static/assets/fonts/."
+              hint="Every face the console draws with, whose it is and under which licence. Three come from Google Fonts as the page loads; four travel with the console, their licences beside them in priv/static/assets/fonts/."
             >
               <.card :for={f <- @faces} class="credit">
                 <h3><span class="spec" style={f.spec}>{f.name}</span></h3>

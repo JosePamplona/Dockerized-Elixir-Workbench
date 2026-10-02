@@ -206,6 +206,11 @@ defmodule ConsoleWeb.BackTest do
              ~r{class="site-ref ?" href="https://github.com/sunaku/tamzen-font"[^>]*><img[^>]*class="mark light"[^>]*src="/images/vendor/github.svg"[^>]*><img[^>]*class="mark dark"[^>]*src="/images/vendor/github-white.svg"[^>]*>sunaku/tamzen-font</a>}
 
     assert html =~
+             ~r{class="spec" style="font-family:&#39;Greybeard11x22&#39;[^"]*">Greybeard</span>}
+
+    assert html =~ "Andy Walker, after UW ttyp0 by Uwe Waldmann"
+
+    assert html =~
              ~r{class="site-ref ?" href="https://github.com/jpt/barlow"[^>]*>.*?jpt/barlow</a>}s
 
     # A theme's ficha says what it draws, read off its file: the probe carries both grounds.

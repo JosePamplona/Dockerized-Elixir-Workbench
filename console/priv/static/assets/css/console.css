@@ -581,8 +581,10 @@ table.carts td .pairs{grid-template-columns:max-content}
    surface reads its group's choice as `var(--<group>-face, var(--mono))`,
    `var(--<group>-size, <its own>)` and `var(--<group>-leading, <its own>)`:
    the properties are set on the root by hooks.js, and absent they leave
-   each surface as drawn. Tamzen is one family per pixel height — a
-   bitmap drawing each — which is why the size is part of its name. */
+   each surface as drawn. Tamzen and Greybeard are one family per pixel
+   height — a bitmap drawing each — which is why the size is part of the
+   name. Greybeard brings an italic of its own at four of its sizes; at
+   the others, and in Tamzen, an italic is the browser's slant. */
 @font-face{font-family:"Tamzen5x9";src:url("/assets/fonts/Tamzen05x9r.ttf");font-weight:400}
 @font-face{font-family:"Tamzen5x9";src:url("/assets/fonts/Tamzen05x9b.ttf");font-weight:700}
 @font-face{font-family:"Tamzen6x12";src:url("/assets/fonts/Tamzen06x12r.ttf");font-weight:400}
@@ -597,6 +599,32 @@ table.carts td .pairs{grid-template-columns:max-content}
 @font-face{font-family:"Tamzen8x16";src:url("/assets/fonts/Tamzen08x16b.ttf");font-weight:700}
 @font-face{font-family:"Tamzen10x20";src:url("/assets/fonts/Tamzen10x20r.ttf");font-weight:400}
 @font-face{font-family:"Tamzen10x20";src:url("/assets/fonts/Tamzen10x20b.ttf");font-weight:700}
+@font-face{font-family:"Greybeard6x11";src:url("/assets/fonts/Greybeard06x11r.woff2");font-weight:400}
+@font-face{font-family:"Greybeard6x11";src:url("/assets/fonts/Greybeard06x11b.woff2");font-weight:700}
+@font-face{font-family:"Greybeard6x12";src:url("/assets/fonts/Greybeard06x12r.woff2");font-weight:400}
+@font-face{font-family:"Greybeard6x12";src:url("/assets/fonts/Greybeard06x12b.woff2");font-weight:700}
+@font-face{font-family:"Greybeard7x13";src:url("/assets/fonts/Greybeard07x13r.woff2");font-weight:400}
+@font-face{font-family:"Greybeard7x13";src:url("/assets/fonts/Greybeard07x13b.woff2");font-weight:700}
+@font-face{font-family:"Greybeard7x14";src:url("/assets/fonts/Greybeard07x14r.woff2");font-weight:400}
+@font-face{font-family:"Greybeard7x14";src:url("/assets/fonts/Greybeard07x14b.woff2");font-weight:700}
+@font-face{font-family:"Greybeard8x15";src:url("/assets/fonts/Greybeard08x15r.woff2");font-weight:400}
+@font-face{font-family:"Greybeard8x15";src:url("/assets/fonts/Greybeard08x15b.woff2");font-weight:700}
+@font-face{font-family:"Greybeard8x15";src:url("/assets/fonts/Greybeard08x15i.woff2");font-weight:400;font-style:italic}
+@font-face{font-family:"Greybeard8x15";src:url("/assets/fonts/Greybeard08x15bi.woff2");font-weight:700;font-style:italic}
+@font-face{font-family:"Greybeard8x16";src:url("/assets/fonts/Greybeard08x16r.woff2");font-weight:400}
+@font-face{font-family:"Greybeard8x16";src:url("/assets/fonts/Greybeard08x16b.woff2");font-weight:700}
+@font-face{font-family:"Greybeard8x16";src:url("/assets/fonts/Greybeard08x16i.woff2");font-weight:400;font-style:italic}
+@font-face{font-family:"Greybeard8x16";src:url("/assets/fonts/Greybeard08x16bi.woff2");font-weight:700;font-style:italic}
+@font-face{font-family:"Greybeard9x17";src:url("/assets/fonts/Greybeard09x17r.woff2");font-weight:400}
+@font-face{font-family:"Greybeard9x17";src:url("/assets/fonts/Greybeard09x17b.woff2");font-weight:700}
+@font-face{font-family:"Greybeard9x17";src:url("/assets/fonts/Greybeard09x17i.woff2");font-weight:400;font-style:italic}
+@font-face{font-family:"Greybeard9x17";src:url("/assets/fonts/Greybeard09x17bi.woff2");font-weight:700;font-style:italic}
+@font-face{font-family:"Greybeard9x18";src:url("/assets/fonts/Greybeard09x18r.woff2");font-weight:400}
+@font-face{font-family:"Greybeard9x18";src:url("/assets/fonts/Greybeard09x18b.woff2");font-weight:700}
+@font-face{font-family:"Greybeard9x18";src:url("/assets/fonts/Greybeard09x18i.woff2");font-weight:400;font-style:italic}
+@font-face{font-family:"Greybeard9x18";src:url("/assets/fonts/Greybeard09x18bi.woff2");font-weight:700;font-style:italic}
+@font-face{font-family:"Greybeard11x22";src:url("/assets/fonts/Greybeard11x22r.woff2");font-weight:400}
+@font-face{font-family:"Greybeard11x22";src:url("/assets/fonts/Greybeard11x22b.woff2");font-weight:700}
 @font-face{font-family:"Flexi IBM VGA True";src:url("/assets/fonts/flexi_IBM_VGA00x20r.ttf");font-weight:400}
 @font-face{font-family:"Fira Code";src:url("/assets/fonts/fira_code00x14r.ttf");font-weight:400}
 @font-face{font-family:"Fira Code";src:url("/assets/fonts/fira_code00x14b.ttf");font-weight:700}

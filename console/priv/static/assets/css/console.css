@@ -993,6 +993,8 @@ body>[data-phx-main]>header.band,body>[data-phx-main]>.rebind,body>[data-phx-mai
 .md td.tree code{background:none;padding:0;white-space:pre;font-size:12.5px}
 .md hr{border:0;border-top:1px solid var(--line);margin:1.5em 0}
 .md img{max-width:100%}
+/* A table whose cells are pictures is a row of pictures: its columns share the width evenly, whatever their heads say — left to their content, two pictures of one size came out a column wider than the other — and it has nothing to scroll. (A picture stands in a figure once the page has dressed it.) */
+.md table:has(td>img:only-child,td>figure:only-child){display:table;table-layout:fixed;width:100%}
 /* A shields.io badge drawn from its address (Console.Shields, through Console.Papers.outside_images/1): the service's own SVG in an <img>, at its own size — never stretched by the booklet's measure. Any other outside image is a link wearing its alt. */
 .md img.shield{max-width:none;vertical-align:middle}
 .md a.outside-img{font-family:var(--mono);font-size:.86em}

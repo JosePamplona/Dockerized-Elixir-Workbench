@@ -48,6 +48,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   browser's choosing), and that stand-in is wider than the cell. Its
   chip sorts its lines like any service's. Seen on a running console,
   both grounds, in the Terminal part and in Overlay's.
+- **The README shows the Interface tab.** Two captures the author
+  asked for (2026-10-01), both on the dark ground: the Terminal part
+  with Selenized worn, its twenty-two pickers in view and the sample
+  logs down to the colour scale, and the Code part with House's, its
+  twenty pickers beside the Elixir file — each cut to the drawer, the
+  screen behind it being none of the matter. They stand side by side under
+  the shelf's, with a sentence on what the console lets a reader set.
+  Side by side is a Markdown table and not `<img>` tags: the console's
+  Manual drops a paper's raw HTML, on purpose, and the first take, in
+  HTML, showed on GitHub and not here. And in the Manual a table whose
+  cells are pictures now splits its width evenly (`console.css`): left
+  to their content, two pictures of one size came out a column wider
+  than the other.
 
 ### Fixed
 

@@ -28,6 +28,12 @@ Every feature is a **box on the shelf**: a cover, its papers — what it install
 
 ![The shelf: the cartridges as boxes with their covers, filtered to the ones on offer](assets/readme/shelf.png)
 
+The console is the reader's to set. Its terminal and its code each wear a **theme off a shelf** — a file in `console/themes/`, in the keys VS Code uses — a face of their own, and every colour adjustable beside a sample that shows it as it lands: real logs with each tool's own ANSI, and a file with a line changed.
+
+| The terminal | The code |
+| --- | --- |
+| ![The Interface tab's Terminal part on the dark ground: the Selenized theme picked, its sixteen ANSI colours as pickers, and the sample logs ending in the colour scale](assets/readme/interface-terminal.png) | ![The Interface tab's Code part on the dark ground: the House's theme, the sheet's, the diff's and Elixir's colours as pickers, beside an Elixir file with a line changed](assets/readme/interface-code.png) |
+
 ## Why it is shaped like this
 
 - **One compose per workspace, and a pod inside it.** A project owns its orchestration, with names and ports baked in, so several run side by side; inside, every service joins one network namespace and reaches the others on `localhost`, so Phoenix's own configuration stays untouched. [The Workspace](#the-workspace), below.

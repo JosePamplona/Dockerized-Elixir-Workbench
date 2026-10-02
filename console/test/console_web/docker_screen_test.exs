@@ -32,4 +32,48 @@ defmodule ConsoleWeb.DockerScreenTest do
     assert DockerScreen.since(%{state: "created", status: "Created"}) == ""
     assert DockerScreen.since(%{state: "created", status: nil}) == ""
   end
+
+  # The events' column of who did it: as wide as the longest name in
+  # view, so a container of no service is not broken over its lines.
+  describe "the events" do
+    import Phoenix.LiveViewTest, only: [render_component: 2]
+
+    defp events(events) do
+      dk = %{DockerScreen.initial(events) | doc: "events", scope: "daemon"}
+      render_component(&DockerScreen.docker_screen/1, dk: dk, status: nil, jobs: [])
+    end
+
+    defp event(fields) do
+      Map.merge(
+        %{
+          type: "container",
+          action: "start",
+          detail: nil,
+          ts: ~U[2026-10-02 18:00:00Z],
+          id: "",
+          name: nil,
+          service: nil,
+          project: nil,
+          image: nil,
+          exit: nil,
+          signal: nil
+        },
+        Map.new(fields)
+      )
+    end
+
+    test "the column is the longest name's" do
+      name = "lorem_ipsum_workbench_term_4163"
+      html = events([event(name: name), event(name: "lorem_ipsum_web_1", service: "web")])
+
+      assert html =~ ~s(id="dk-events" style="--svc-w:#{String.length(name)}ch")
+    end
+
+    test "with nothing yet it is the stylesheet's" do
+      html = events([])
+
+      assert html =~ ~s(id="dk-events")
+      refute html =~ "--svc-w"
+    end
+  end
 end

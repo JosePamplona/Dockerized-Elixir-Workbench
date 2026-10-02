@@ -869,7 +869,13 @@ defmodule ConsoleWeb.DockerScreen do
       )
       |> Enum.reverse()
 
-    assigns = assign(assigns, events: events, project: project)
+    # The column of who did it is as wide as the longest name in view, as
+    # the Logs' is (console.css, .ln .s): left at the stylesheet's 72px, a
+    # container of no service — a terminal's, `…_workbench_term_4163` —
+    # broke over three or four lines.
+    who_w = events |> Enum.map(&String.length(who(&1))) |> Enum.max(fn -> nil end)
+
+    assigns = assign(assigns, events: events, project: project, who_w: who_w)
 
     ~H"""
     <.toolbar dk={@dk}>
@@ -881,7 +887,7 @@ defmodule ConsoleWeb.DockerScreen do
       <span>{length(@events)} lines</span>
     </div>
     <div class="viewport term-box">
-      <div class="lines" id="dk-events">
+      <div class="lines" id="dk-events" style={@who_w && "--svc-w:#{@who_w}ch"}>
         <div :for={e <- @events} class={["ln", event_class(e)]}>
           <span class="t">{clock(e.ts && DateTime.to_iso8601(e.ts))}</span>
           <span class="s" style={"--svc:" <> svc_color(@status, e)}>{who(e)}</span>

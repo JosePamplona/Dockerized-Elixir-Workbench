@@ -115,6 +115,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   ground; Logs, Jobs and the terminals paint it once. The lines no
   longer paint a ground of their own (`console.css`). Looked for on
   every screen: it was the only box that did.
+- **Docker's events no longer break a long name over its lines.** The
+  author saw `lorem_ipsum_workbench_term_4163` on three or four lines
+  (2026-10-02). A line's column of who did it is as wide as
+  `--svc-w`, which the Logs hook sets to its longest service and the
+  miniature to the names it draws; the events never said it, so the
+  column stood at the stylesheet's 72 px, and a container of no
+  service — a terminal's — shows by its whole name. The events say it
+  now, the longest name in view in the face's own characters
+  (`docker_screen.ex`), so every name is one line and the messages
+  still start in one column. With the real stylesheet the name went
+  from four lines in 72 px to one in 31 ch.
 
 ## v0.16.0 - (2026-10-01)
 

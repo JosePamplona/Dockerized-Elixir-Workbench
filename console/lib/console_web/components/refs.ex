@@ -246,12 +246,12 @@ defmodule ConsoleWeb.Refs do
   An address: the label first, then the address in mono. Who opened it
   goes beside as a mention, never inside. `why` is the reason there is
   nothing to press, and it takes the href with it. `kind` is the layer
-  the square before the label says — `"route"` (the project's, on the
-  app's port), `"port"` (the compose's, published on the host),
-  `"inside"` (the compose's, inside the pod only: the same violet, the
-  square hollow — a port with no door), `"output"` (a page a tool of
-  the project wrote on disk, grey, written as the dir it is read from
-  and served by the console on the origin beside it). `port` writes a route on its
+  the drawing before the label says — `"route"` (the project's, on the
+  app's port: a globe), `"port"` (the compose's, published on the host:
+  a rack with an arrow leaving by its corner), `"inside"` (the compose's,
+  inside the pod only: the rack alone — a port with no door), `"output"` (a page a
+  tool of the project wrote on disk: a sheet, written as the dir it is
+  read from and served by the console on the origin beside it). `port` writes a route on its
   port, `:4001/dev/mailbox`, the port
   dimmed. `read` is what the address answered when the console called
   it, `{text, chip class}`, attached inside the border; nil when nothing
@@ -273,6 +273,11 @@ defmodule ConsoleWeb.Refs do
   attr :read_title, :any,
     default: nil,
     doc: "what the reading says at length: a container's own `Status` line, Docker's words"
+
+  attr :svc, :any,
+    default: nil,
+    doc:
+      "a service's plate: the CSS colour of its role (`ConsoleWeb.Services.color/2`), which its drawing wears while lit"
 
   attr :build, :any,
     default: nil,
@@ -303,10 +308,15 @@ defmodule ConsoleWeb.Refs do
             is a page on disk — so the reading is what the word reads. --%>
       <span
         class={["door-ref", "door-" <> @kind, !@open && @why && "unlit"]}
+        style={@svc && "--svc:#{@svc}"}
         title={door_title(@who, @path, @why)}
-      ><a :if={@open} href={@href} target="_blank"><b>{@label}</b><span :if={@addr}><em :if={@port}>:{@port}</em>{@path}</span></a><b :if={
-        !@open
-      }>{@label}</b><span :if={!@open and @addr}><em :if={@port}>:{@port}</em>{@path}</span><.state_read
+      ><ConsoleWeb.Square.mark name={layer_mark(@kind)} class="layer" /><a
+        :if={@open}
+        href={@href}
+        target="_blank"
+      ><b>{@label}</b><span :if={@addr}><em :if={@port}>:{@port}</em>{@path}</span></a><b :if={!@open}>{@label}</b><span :if={
+        !@open and @addr
+      }><em :if={@port}>:{@port}</em>{@path}</span><.state_read
         read={@read}
         title={@read_title}
       /><button
@@ -323,6 +333,12 @@ defmodule ConsoleWeb.Refs do
     </span>
     """
   end
+
+  # The drawing a layer wears, by its name in the sprite.
+  defp layer_mark("port"), do: "rack-net"
+  defp layer_mark("inside"), do: "rack"
+  defp layer_mark("output"), do: "page"
+  defp layer_mark(_route), do: "globe"
 
   defp door_title(who, path, why),
     do:

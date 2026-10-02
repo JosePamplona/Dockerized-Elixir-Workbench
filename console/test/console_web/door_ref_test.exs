@@ -66,4 +66,29 @@ defmodule ConsoleWeb.DoorRefTest do
     refute html =~ "read build"
     refute html =~ ">build</button>"
   end
+
+  # The layer is a drawing from the sprite, one a kind (2026-10-02): it
+  # was a square in the layer's colour, the logs' service swatch, and
+  # was taken for it.
+  test "each layer wears its own drawing" do
+    for {kind, mark} <- [
+          {"port", "rack-net"},
+          {"inside", "rack"},
+          {"route", "globe"},
+          {"output", "page"}
+        ] do
+      html = render_component(&door_ref/1, label: "app", path: "localhost:4001", kind: kind)
+
+      assert html =~
+               ~r{<svg[^>]*class="layer"[^>]*><use href="/images/icons.svg##{mark}"}
+    end
+  end
+
+  test "every drawing a layer names is in the sprite" do
+    sprite = File.read!(Path.join(:code.priv_dir(:console), "static/images/icons.svg"))
+
+    for mark <- ~w(rack-net rack globe page) do
+      assert sprite =~ ~s(<symbol id="#{mark}")
+    end
+  end
 end

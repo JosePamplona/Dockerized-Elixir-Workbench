@@ -516,7 +516,7 @@ defmodule ConsoleWeb.Record do
   # status (`compose`: each by name, with the port it listens on and the
   # ones the host publishes). Each is written as the service it is, the
   # way the rail's Services line writes it: published on the host,
-  # `pgadmin localhost:5051`, a violet port the reader opens while its
+  # `pgadmin localhost:5051`, a port the reader opens while its
   # container runs; not published, `database :5432`, the port inside.
   # Its reading is its container's, never a call: it was a door at its
   # root, knocked over HTTP, until 2026-09-25.
@@ -691,6 +691,7 @@ defmodule ConsoleWeb.Record do
 
     %{
       label: service,
+      svc: ConsoleWeb.Services.color(status, service),
       path: listens,
       kind: "inside",
       port: nil,
@@ -715,6 +716,7 @@ defmodule ConsoleWeb.Record do
 
     %{
       label: service,
+      svc: ConsoleWeb.Services.color(status, service),
       path: "localhost:#{port}",
       kind: "port",
       port: nil,
@@ -776,7 +778,8 @@ defmodule ConsoleWeb.Record do
       up: up,
       mine: mine?(up, present, status["deployment"]),
       containers: containers,
-      inside: inside
+      inside: inside,
+      status: status
     }
 
     %{
@@ -830,6 +833,7 @@ defmodule ConsoleWeb.Record do
 
     door = %{
       label: name,
+      svc: ConsoleWeb.Services.color(at.status, name),
       port: nil,
       why: why,
       read: read,

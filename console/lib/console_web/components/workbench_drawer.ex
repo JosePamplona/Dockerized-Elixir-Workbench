@@ -1440,7 +1440,7 @@ defmodule ConsoleWeb.WorkbenchDrawer do
                   data-svc={s}
                   aria-pressed="true"
                   style={svc_var(s)}
-                >{s}</button>
+                ><ConsoleWeb.Square.mark name="rack" class="mark" />{s}</button>
                 <span class="sep"></span>
                 <button class="btn" type="button" data-ts aria-pressed="true">Timestamps</button>
               </div>

@@ -74,23 +74,35 @@ one: a bordered box is a door you press.
   (`app`) wear it with nothing beside them: having nobody to name is the
   fact.
   Two things ride on it, both decided on 2026-09-08 over the Record paper
-  (`console/el-estado-del-proyecto.html`). **The layer**, as the 8px
-  square the logs' service filter already uses, before the label: blue
-  (`addr-route`, the link's) for a route — an address the reader opens,
-  and the knock reads by HTTP, whether the project offers it on the
-  app's port or a service offers it on its own (pgAdmin, Grafana);
-  violet (`addr-port`) for a port — a service's, read off `docker
-  compose ps`; grey (`addr-output`, the quietest text's) for a page a
-  tool of the project wrote on disk — ExDoc's `doc/`, the coverage
-  report's `cover/` — which the console serves off the workspace and
-  which answers with the app down, so it is never knocked: its reading
-  is when it was built. The three are the author's of 2026-10-02:
-  until then a route was violet, a port blue and a page green (since
-  2026-09-20), and that green was taken for the dot of the cartridge
-  mentioned beside it.
+  (`console/el-estado-del-proyecto.html`). **The layer**, as a
+  drawing before the label: a globe for a route —
+  an address the reader opens, and the knock reads by HTTP, whether
+  the project offers it on the app's port or a service offers it on
+  its own (pgAdmin, Grafana); a rack for a service's port, read off
+  `docker compose ps`, with an arrow leaving by its corner when the
+  host reaches it — the sign of a link that opens outside — and alone
+  when it is inside the pod; a sheet for a page a tool of the project wrote on
+  disk — ExDoc's `doc/`, the coverage report's `cover/` — which the
+  console serves off the workspace and which answers with the app
+  down, so it is never knocked: its reading is when it was built.
+  Until 2026-10-02 the layer was the 8px square the logs' service
+  filter uses, in a colour a layer (`addr-route`, `addr-port`,
+  `addr-output`, retired with it): the same mark on purpose, and it
+  was taken for a service's. Settled that day on
+  `iconos-en-las-direcciones.html` (retired), the author's proposal among five;
+  and the arrow on the same page, asked again, among six: the mark
+  was a dot in the link's blue first, and a dot of colour in a corner
+  is the language of state — it read as *active*, and stayed blue on
+  a plate that was down. The colour the drawing has, since the same
+  day, says the plate is lit and whose it is: a service's plate wears
+  its role's colour, the one its button wears in Logs and in the
+  Terminal — which wear the rack too, so a service has one face
+  wherever it is named —; a door and a page, which are no service's,
+  the app's violet (`addr-lit`); an unlit plate, the label's ink.
+  15px. The page is retired.
   The split is what the face does, not who offers it (settled
-  2026-09-09): the same pgAdmin is a blue door on its cartridge's row
-  and a violet port on its deployment's. A route is written on its port,
+  2026-09-09): the same pgAdmin is a globe on its cartridge's row
+  and a rack on its deployment's. A route is written on its port,
   `:4001/dev/mailbox` with the port dimmed, because it rides on one; a
   port is written whole. **The reading**, what answered when
   it was called, attached *inside* the border at the right edge — the

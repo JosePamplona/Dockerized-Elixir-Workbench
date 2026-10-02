@@ -98,27 +98,72 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
-- **The layer squares change colour: a service violet, a door blue, a
-  page grey.** In Services, Doors & Pages a page's square stood beside
-  its cartridge's mention, whose dot is green when it is in: the moss
-  of one and the sea green of the other read as the same mark
-  (2026-10-02). A canary yellow was tried first and left — that bright
-  it is 1.1:1 against the light paper, and it took an edge to hold —
-  and the author set the three anew: violet for a service's port
-  (`addr-port`, the violet the routes had), blue for a door
-  (`addr-route`, the link's, which the ports had: a door is what the
-  reader opens), grey for a page (`addr-output`, the quietest text's,
-  `soft`, 3.5:1 on the light ground and 3.7:1 on the dark; `muted`
-  was weighed and left, too near the violet on the dark). On the
-  dark ground the violet itself still read as the grey, both pale
-  and the house's greys violet themselves, and it was made livelier,
-  `#C084FC` for the `#BE9BDE` the routes had: nearly twice as far
-  from the grey, and as far from the door's blue. A port
-  inside the pod is the same violet, hollow. No colour of a verdict is
-  left among them. Seen with the real stylesheets on both grounds,
-  beside an inserted cartridge's mention and an unlit page. It
-  reaches every address plate: the rail, the Record, the box, the
-  Deployments sheet.
+- **The layer on an address is a drawing, and a service has one face
+  everywhere.** In Services, Doors & Pages a page's green square stood
+  beside its cartridge's mention, whose dot is green when it is in,
+  and the two read as one mark (2026-10-02). The colours were moved
+  first — a canary yellow for the page, tried and left at 1.1:1 on
+  the light paper; then violet for a service, blue for a door and grey
+  for a page, committed that day — and the author then saw what colour
+  could not mend: the square is the logs' service swatch, on purpose
+  since 2026-09-08, the same 8 px and the same corner, and it was
+  taken for a service of Logs or of the Terminal. Four drawings were
+  proposed, and they were set beside the squares on `lorem_ipsum`'s
+  own rail and Deployments rows in
+  `assets/design/iconos-en-las-direcciones.html` (retired), five ways:
+  the squares; the proposal, in the layer's colour with a red dot for
+  the network; in one ink with the red dot; in one ink with the dot in
+  the link's blue; in one ink, solid for published and hollow for
+  inside. The fourth was taken, with the rack solid: red is `bad` in
+  the house and a red dot on every published service reads as an
+  alarm. Seen working, the blue dot did the same in small: a dot of
+  colour in a corner is the language of state, it read as *active*,
+  and on a plate that was down it stayed blue. The page was written
+  again for that question — how the trade says a thing is reachable
+  from outside (Docker Desktop and Portainer by the port made a link,
+  OpenShift by a decorator on the node's corner, VS Code by a lock or
+  a globe, Render and Kubernetes by the type's name: none by a
+  colour) — with six takes on the same rows, lit and unlit: the dot;
+  the letters HTTP, the author's thought, which the console cannot
+  vouch for, a compose publishing ports and not protocols; an arrow
+  leaving by the corner; solid and hollow; a padlock on the one
+  inside; the dot in ink. The arrow was taken, at 15 px. So a plate
+  wears a rack for a service's port — with an arrow leaving by its
+  corner when the host reaches it; alone inside the pod — a globe for
+  a route, the house's own, and a sheet for a page (`rack-net`,
+  `rack`, `page` new in `assets/design/icons/`, in the sprite).
+  `door_ref` draws it by its kind where the `::before` was.
+
+  Then its colour. Violet while the plate is lit and the label's ink
+  on an unlit one came first — colour on the channel it belongs to,
+  the state — in the app's own violet of Logs and the Terminal; the
+  gold of what is picked was weighed and left, being the mark of a
+  choice and a neighbour of `warn`. And the author took it one step
+  on: the rack on the service buttons of Logs and of the Terminal
+  too, where the swatch was, and on a plate the colour each service
+  wears there, its role's. Two objections were set down on a third
+  writing of the page — the pod's role is grey and would read as
+  unlit; pgAdmin's, Grafana's and Prometheus's are greens, back beside
+  the cartridge's dot — and the author asked for both built, to weigh
+  them working. On the dark ground the pod, lit, stood off the unlit
+  plates well enough; no green service was in the project to be seen.
+  It stays: a service has one face wherever it is named — the rack,
+  in its role's colour — in the Logs' filter and the miniature's
+  (`hooks.js`, the drawer), on the Terminal's buttons, and on its
+  plate while it is lit (`svc`, said by the Record off
+  `ConsoleWeb.Services` and worn as `--svc`); a door and a page, which
+  are no service's, wear the app's violet (`addr-lit`); an unlit
+  plate, the label's ink. How what answers is doing stays the
+  reading's. The three layer tokens (`addr-port`, `addr-route`,
+  `addr-output`) are retired, having no reader left. The plate is one
+  component, so it reaches the rail, the Record, the box, the
+  Deployments sheet and Docker's containers. Seen on a console on the
+  host: the plates on both grounds, the buttons on the dark. The
+  globe is also the mark of a site in Credits: a door is a local
+  route, and the two were left to share it. That day's glitches on
+  Logs and the Terminal were not the drawings': sixty of them on the
+  page and none redrawn in fifteen seconds of lines; the card had
+  240 MiB of memory left, and a new session gave it back.
 
 ### Fixed
 

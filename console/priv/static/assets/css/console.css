@@ -568,7 +568,8 @@ table.carts td .pairs{grid-template-columns:max-content}
 .toolbar input[type=search]{font-family:var(--mono);font-size:12.5px;padding:5px 9px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;min-width:200px}
 .toolbar select{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px;padding:5px 8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px}
 .svc{display:inline-flex;align-items:center;gap:6px}
-.svc::before{content:"";width:8px;height:8px;border-radius:2px;background:var(--svc)}
+/* A service wears the rack of the address plates, in its role's colour: one drawing and one colour for a service, wherever it is named (2026-10-02; it was an 8px swatch, the colour alone). */
+.svc .mark{width:14px;height:14px;flex:none;color:var(--svc)}
 .svc[aria-pressed="false"]{opacity:.45}
 .logmeta{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-family:var(--mono);font-size:11.5px;color:var(--muted)}
 .logmeta .lk{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--line)}

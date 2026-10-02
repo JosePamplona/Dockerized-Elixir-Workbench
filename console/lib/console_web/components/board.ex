@@ -213,6 +213,7 @@ defmodule ConsoleWeb.Board do
           href={a.href}
           why={a.why}
           kind={a.kind}
+          svc={a[:svc]}
           read={a.read}
           read_title={a[:read_title]}
         />

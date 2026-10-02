@@ -60,7 +60,7 @@ defmodule ConsoleWeb.Terminal do
             title={t.title <> sessions_on(@term.sessions, t.name)}
             phx-click="term_pick"
             phx-value-target={t.name}
-          >{t.name}</button>
+          ><ConsoleWeb.Square.mark name="rack" class="mark" />{t.name}</button>
         </div>
         <div class="lines screen" id="term-screen" phx-update="ignore"></div>
         <form :if={@open} class="in" phx-submit="term_line">

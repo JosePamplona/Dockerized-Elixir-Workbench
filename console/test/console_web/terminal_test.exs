@@ -262,9 +262,9 @@ defmodule ConsoleWeb.TerminalTest do
     html = render_component(&Terminal.terminal/1, status: s, term: term)
 
     # The container's mark reads across its shells; the shell's is its own.
-    assert html =~ ~r/<button[^>]*data-session="live"[^>]*>app</
-    assert html =~ ~r/<button[^>]*data-session="ended"[^>]*>database</
-    assert html =~ ~r/<button[^>]*data-session="live"[^>]*>workbench</
+    assert html =~ ~r/<button[^>]*data-session="live"[^>]*><svg.*?<\/svg>\s*app</s
+    assert html =~ ~r/<button[^>]*data-session="ended"[^>]*><svg.*?<\/svg>\s*database</s
+    assert html =~ ~r/<button[^>]*data-session="live"[^>]*><svg.*?<\/svg>\s*workbench</s
     assert html =~ ~r/<button[^>]*data-session="live"[^>]*>iex --remsh</
     refute html =~ ~r/<button[^>]*data-session[^>]*>bash</
     refute html =~ ~r/<button[^>]*phx-click="term_pick"[^>]*disabled/

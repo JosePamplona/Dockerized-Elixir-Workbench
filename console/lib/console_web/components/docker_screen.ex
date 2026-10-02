@@ -376,8 +376,8 @@ defmodule ConsoleWeb.DockerScreen do
             <td class="dim">{since(c)}</td>
             <td class="num dim" title={"restart policy: #{c.policy}"}>{c.restarts}</td>
             <td class="ports">
-              <%!-- The port's square wears its service's colour, as the Logs
-                    pills and the events do: one colour for one service
+              <%!-- The port's drawing wears its service's colour, as the Logs
+                    buttons and the events do: one colour for one service
                     everywhere. --%>
               <%= for p <- c.ports, [host, inside] = String.split(p, "→") do %>
                 <div class="port">
@@ -386,6 +386,7 @@ defmodule ConsoleWeb.DockerScreen do
                     path={"localhost:#{host}"}
                     href={"http://localhost:#{host}"}
                     kind="port"
+                    svc={c.service && ConsoleWeb.Services.color(@status, c.service)}
                   />
                 </div>
               <% end %>

@@ -472,12 +472,14 @@ export const Logs = {
     const renderBadge = () => { if (badge) { badge.hidden = !logs.unseenErrors; badge.textContent = logs.unseenErrors + " err" } }
     const scrollToEnd = () => { box.scrollTop = box.scrollHeight; logs.pending = 0; $("#newpill").classList.remove("on") }
     const setFollow = on => { logs.follow = on; $("#follow").setAttribute("aria-pressed", String(on)); $("#follow").textContent = on ? "Following" : "Paused"; if (on) scrollToEnd(); renderBadge() }
+    // A service's mark, the rack of the sprite, as the server draws it on the Terminal's buttons (ConsoleWeb.Square.mark): its colour is the service's, --svc.
+    const SVC_MARK = '<svg class="mark" aria-hidden="true"><use href="/images/icons.svg#rack"></use></svg>'
     const renderChips = () => {
       const chips = $("#svc-chips"); chips.replaceChildren()
       // The service column is the longest name wide, so every message starts in one column and the gap after the longest is the grid's.
       const names = Object.keys(logs.services); box.style.setProperty("--svc-w", `${Math.max(1, ...names.map(s => s.length))}ch`)
       for (const s of Object.keys(logs.services)) {
-        const b = h("button", "btn svc", s); b.type = "button"; b.style.setProperty("--svc", svcColor(s)); b.setAttribute("aria-pressed", String(logs.services[s] !== false))
+        const b = h("button", "btn svc", s); b.type = "button"; b.style.setProperty("--svc", svcColor(s)); b.insertAdjacentHTML("afterbegin", SVC_MARK); b.setAttribute("aria-pressed", String(logs.services[s] !== false))
         b.addEventListener("click", () => { logs.services[s] = !(logs.services[s] !== false); b.setAttribute("aria-pressed", String(logs.services[s])); rerender() })
         chips.append(b)
       }

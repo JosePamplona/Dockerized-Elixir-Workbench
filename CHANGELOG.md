@@ -165,6 +165,20 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   page and none redrawn in fifteen seconds of lines; the card had
   240 MiB of memory left, and a new session gave it back.
 
+### Removed
+
+- **The design's decision pages leave the repository.** Four stood in
+  `assets/design/` — `chapas-y-menciones.html`,
+  `estado-en-la-banda.html`, `fuente-claro.html`,
+  `puertas-y-sondas.html` — each the page a question of the house's
+  notation was settled on, weeks ago, and each kept after its answer
+  was built. A page is retired once decided and this file is the
+  record: the author took the four out on 2026-10-02, with the one of
+  that day on the addresses' drawings. What they found stays where it
+  was written — the design's README, the tokens' uses, the entries
+  here — and those now say *retired* where they cited a page as
+  standing.
+
 ### Fixed
 
 - **A background outside the sixteen no longer leaves a style of its

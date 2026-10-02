@@ -116,7 +116,7 @@ one: a bordered box is a door you press.
   owes the workbench nothing, a health endpoint is a route it has for its
   own reasons, and the console reads it and calls it like any other door.
   `assets/design/puertas-y-sondas.html`, the page that had split the two,
-  retires with it; its finding — the same door drawn one way in the rail
+  retired with it (and left the repository on 2026-10-02); its finding — the same door drawn one way in the rail
   and another on the box — stays true and is what `.door-ref` fixed.
 * **`.commit-ref`** — a mention of a commit, the third reference beside
   the cartridge and the door: the short sha in mono, in a 1px box because
@@ -142,7 +142,7 @@ one: a bordered box is a door you press.
   **Voice**: mono in lower case, which in the console already means
   *read off the machine* — the board's tables, the log lines, the
   terminal — where the condensed uppercase is the house's lettering for
-  *names*. `assets/design/chapas-y-menciones.html` is the page the
+  *names*. `assets/design/chapas-y-menciones.html` (retired) was the page the
   decision was made on, with the five candidates it was chosen from.
 * **`.unlit`** — the one way the house says *not available*. The rule it
   carries: **never hide what the reader could have.** A control they could
@@ -268,7 +268,7 @@ box. The dot pulses
 only while something is moving, which is what `.chip.busy`'s dot means,
 and the last of those five is written in CSS on the class LiveView puts
 on the page when the socket goes — a server that cannot be reached cannot
-be the one to say so. `assets/design/estado-en-la-banda.html` is the page
+be the one to say so. `assets/design/estado-en-la-banda.html` (retired) was the page
 it was decided on, with the five candidates and what each would cost.
 
 The terminal follows the ground since 2026-09-07: `term`, `term-ink`,
@@ -278,7 +278,7 @@ in on each ground, the same red, green and yellow as the semantic three
 so an error in a job and a chip in red say the same thing. The Files
 sheet's twelve are One Dark on the dark ground and One Light on the light,
 kept beside the jsonc in `console.css`, not here: they are an editor's
-palette, not the house's. `assets/design/fuente-claro.html` is the page
+palette, not the house's. `assets/design/fuente-claro.html` (retired) was the page
 it was decided on, with the three candidates and what each lost.
 
 Two things came from it. `board-warn` and `board-bad` are roles now,

@@ -1271,7 +1271,7 @@ form.insert.locked .opt input{opacity:.55}
    re-derived for paper, which is what made them read muddy. On the light
    ground the terminal is paper since 2026-09-07, and the twelve are One
    Light's, the same author's pair, role for role
-   (assets/design/fuente-claro.html is where that was decided). The two
+   (assets/design/fuente-claro.html, retired, is where that was decided). The two
    sets follow the ground the way tokens.css does — light on the root,
    dark under the scheme and under the toggle.
    Every Makeup lexer emits these same classes, so a language added later

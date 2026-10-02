@@ -516,10 +516,10 @@ defmodule ConsoleWeb.Record do
   # status (`compose`: each by name, with the port it listens on and the
   # ones the host publishes). Each is written as the service it is, the
   # way the rail's Services line writes it: published on the host,
-  # `pgadmin localhost:5051`, a blue port the reader opens while its
+  # `pgadmin localhost:5051`, a violet port the reader opens while its
   # container runs; not published, `database :5432`, the port inside.
-  # Its reading is its container's, never a call: it was a violet door
-  # at its root, knocked over HTTP, until 2026-09-25.
+  # Its reading is its container's, never a call: it was a door at its
+  # root, knocked over HTTP, until 2026-09-25.
   # Every one, whichever deployment it enters (2026-09-27): a release's
   # one-shot is not something the project has running beside it, and
   # the row left it out for that until now — but ecto's migrate is a

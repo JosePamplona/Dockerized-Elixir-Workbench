@@ -75,19 +75,22 @@ one: a bordered box is a door you press.
   fact.
   Two things ride on it, both decided on 2026-09-08 over the Record paper
   (`console/el-estado-del-proyecto.html`). **The layer**, as the 8px
-  square the logs' service filter already uses, before the label: violet
-  (`addr-route`) for a route — an address the reader opens, and the
-  knock reads by HTTP, whether the project offers it on the app's port
-  or a service offers it on its own (pgAdmin, Grafana); blue
-  (`addr-port`) for a port — a service's, read off `docker compose ps`;
-  green (`addr-output`, since 2026-09-20) for a page a tool of the
-  project wrote on disk — ExDoc's `doc/`, the coverage report's
-  `cover/` — which the console serves off the workspace and which
-  answers with the app down, so it is never knocked: its reading is
-  when it was built.
+  square the logs' service filter already uses, before the label: blue
+  (`addr-route`, the link's) for a route — an address the reader opens,
+  and the knock reads by HTTP, whether the project offers it on the
+  app's port or a service offers it on its own (pgAdmin, Grafana);
+  violet (`addr-port`) for a port — a service's, read off `docker
+  compose ps`; grey (`addr-output`, the quietest text's) for a page a
+  tool of the project wrote on disk — ExDoc's `doc/`, the coverage
+  report's `cover/` — which the console serves off the workspace and
+  which answers with the app down, so it is never knocked: its reading
+  is when it was built. The three are the author's of 2026-10-02:
+  until then a route was violet, a port blue and a page green (since
+  2026-09-20), and that green was taken for the dot of the cartridge
+  mentioned beside it.
   The split is what the face does, not who offers it (settled
-  2026-09-09): the same pgAdmin is a violet door on its cartridge's row
-  and a blue port on its deployment's. A route is written on its port,
+  2026-09-09): the same pgAdmin is a blue door on its cartridge's row
+  and a violet port on its deployment's. A route is written on its port,
   `:4001/dev/mailbox` with the port dimmed, because it rides on one; a
   port is written whole. **The reading**, what answered when
   it was called, attached *inside* the border at the right edge — the

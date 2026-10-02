@@ -96,6 +96,30 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   pixel. It is left to a face that draws them now (the scale's entry,
   above).
 
+### Updated
+
+- **The layer squares change colour: a service violet, a door blue, a
+  page grey.** In Services, Doors & Pages a page's square stood beside
+  its cartridge's mention, whose dot is green when it is in: the moss
+  of one and the sea green of the other read as the same mark
+  (2026-10-02). A canary yellow was tried first and left — that bright
+  it is 1.1:1 against the light paper, and it took an edge to hold —
+  and the author set the three anew: violet for a service's port
+  (`addr-port`, the violet the routes had), blue for a door
+  (`addr-route`, the link's, which the ports had: a door is what the
+  reader opens), grey for a page (`addr-output`, the quietest text's,
+  `soft`, 3.5:1 on the light ground and 3.7:1 on the dark; `muted`
+  was weighed and left, too near the violet on the dark). On the
+  dark ground the violet itself still read as the grey, both pale
+  and the house's greys violet themselves, and it was made livelier,
+  `#C084FC` for the `#BE9BDE` the routes had: nearly twice as far
+  from the grey, and as far from the door's blue. A port
+  inside the pod is the same violet, hollow. No colour of a verdict is
+  left among them. Seen with the real stylesheets on both grounds,
+  beside an inserted cartridge's mention and an unlit page. It
+  reaches every address plate: the rail, the Record, the box, the
+  Deployments sheet.
+
 ### Fixed
 
 - **A background outside the sixteen no longer leaves a style of its

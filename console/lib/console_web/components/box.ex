@@ -707,7 +707,7 @@ defmodule ConsoleWeb.Box do
             the role's colour, the port inside beside it — so the same
             pgAdmin was a blue door on the list and a coloured dot on
             the box, and only the list could open it. The plate keeps
-            the door's rules for its colour, blue for a port with the
+            the door's rules for its colour, violet for a port with the
             square hollow inside the pod, and the deployments it enters
             follow it, which no address says. --%>
       <span :if={@brings != []} class="k">Brings</span>

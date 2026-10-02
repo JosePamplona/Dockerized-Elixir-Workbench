@@ -294,11 +294,11 @@ def components_css():
      one taught the reader the other wrong.
      The layer, as an 8px square before the label — the mark the logs'
      service filter already uses, meaning "which layer answers here":
-       .door-route  (default) violet, addr-route: a route the project offers
-       .door-port   blue, addr-port: a port the compose publishes on the host
-       .door-inside the same blue, hollow: a port inside the pod, no door on
+       .door-route  (default) blue, addr-route: a route the project offers
+       .door-port   violet, addr-port: a port the compose publishes on the host
+       .door-inside the same violet, hollow: a port inside the pod, no door on
                     the host (database:5432) — the layer kept, the opening not
-       .door-output green, addr-output: a page a tool wrote on disk (doc/,
+       .door-output grey, addr-output: a page a tool wrote on disk (doc/,
                     cover/), served by the console on an origin of its own;
                     written as the dir it is read from, its reading the day
                     and time it was built on the machine's clock and nothing

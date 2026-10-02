@@ -248,9 +248,9 @@ defmodule ConsoleWeb.Refs do
   nothing to press, and it takes the href with it. `kind` is the layer
   the square before the label says — `"route"` (the project's, on the
   app's port), `"port"` (the compose's, published on the host),
-  `"inside"` (the compose's, inside the pod only: the same blue, the
+  `"inside"` (the compose's, inside the pod only: the same violet, the
   square hollow — a port with no door), `"output"` (a page a tool of
-  the project wrote on disk, green, written as the dir it is read from
+  the project wrote on disk, grey, written as the dir it is read from
   and served by the console on the origin beside it). `port` writes a route on its
   port, `:4001/dev/mailbox`, the port
   dimmed. `read` is what the address answered when the console called

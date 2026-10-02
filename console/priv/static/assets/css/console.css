@@ -1988,6 +1988,12 @@ header.band ::selection{background:color-mix(in srgb,var(--board-ink) 15%,transp
 .ansi-fg-4{color:var(--ansi-blue)}.ansi-fg-5{color:var(--ansi-magenta)}.ansi-fg-6{color:var(--ansi-cyan)}.ansi-fg-7{color:var(--ansi-white)}
 .ansi-fg-8{color:var(--ansi-bright-black)}.ansi-fg-9{color:var(--ansi-bright-red)}.ansi-fg-10{color:var(--ansi-bright-green)}.ansi-fg-11{color:var(--ansi-bright-yellow)}
 .ansi-fg-12{color:var(--ansi-bright-blue)}.ansi-fg-13{color:var(--ansi-bright-magenta)}.ansi-fg-14{color:var(--ansi-bright-cyan)}.ansi-fg-15{color:var(--ansi-bright-white)}
+/* A background is the text's sixteen again, and reverse video the two changed over (Console.ANSI): where the text takes the terminal's ground it takes the colour and not the opacity the reader gave that ground, and where the ground takes the text's it is the terminal's ink. */
+.ansi-bg-0{background:var(--ansi-black)}.ansi-bg-1{background:var(--ansi-red)}.ansi-bg-2{background:var(--ansi-green)}.ansi-bg-3{background:var(--ansi-yellow)}
+.ansi-bg-4{background:var(--ansi-blue)}.ansi-bg-5{background:var(--ansi-magenta)}.ansi-bg-6{background:var(--ansi-cyan)}.ansi-bg-7{background:var(--ansi-white)}
+.ansi-bg-8{background:var(--ansi-bright-black)}.ansi-bg-9{background:var(--ansi-bright-red)}.ansi-bg-10{background:var(--ansi-bright-green)}.ansi-bg-11{background:var(--ansi-bright-yellow)}
+.ansi-bg-12{background:var(--ansi-bright-blue)}.ansi-bg-13{background:var(--ansi-bright-magenta)}.ansi-bg-14{background:var(--ansi-bright-cyan)}.ansi-bg-15{background:var(--ansi-bright-white)}
+.ansi-fg-ground{color:rgb(from var(--term) r g b / 1)}.ansi-bg-ink{background:var(--term-ink)}
 .out .lk{background:none;border:0;padding:0;color:inherit;text-decoration:underline;cursor:pointer;font:inherit}
 /* A template puts a newline between one line's div and the next, and a
    pre-wrap container would print each as a blank line: the container

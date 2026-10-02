@@ -14,6 +14,33 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+### Added
+
+- **A background is drawn, and reverse video.** `Console.ANSI` turned a
+  line's colours into classes for the text alone: a background's code
+  was read and dropped, and what a tool printed white on red arrived
+  white on nothing. The author asked how one stood (2026-10-01). A
+  background is kept beside the text's colour now and said as
+  `ansi-bg-N`, the sixteen, which `console.css` paints in the same
+  colours of the terminal's theme the text wears — so a theme picked
+  changes both. Reverse video (`\e[7m`) is the two changed over in
+  those same classes, the terminal's own ink and ground standing in
+  for one that was not set; the ground as a text's colour is taken
+  without the opacity the reader gave it. It reaches whatever the
+  module feeds: the terminals, the jobs, the logs.
+
+### Fixed
+
+- **A background outside the sixteen no longer leaves a style of its
+  own.** `48;5;N` and `48;2;R;G;B` were read a number at a time, the
+  `48` dropped and each parameter taken for a code: a blue ground of
+  the 256 came out underlined, `48;5;1` bold, and an RGB's three
+  numbers as whatever they fell on. They are read whole now, with the
+  underline's colour (`58`): the first sixteen of the 256 are the
+  sixteen and are painted; one beyond, and one in RGB, is no colour
+  of the theme's and is left unpainted, taking the place of the
+  ground before it.
+
 ## v0.16.0 - (2026-10-01)
 
 ### Added

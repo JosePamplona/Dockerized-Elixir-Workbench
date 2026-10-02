@@ -28,6 +28,26 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   for one that was not set; the ground as a text's colour is taken
   without the opacity the reader gave it. It reaches whatever the
   module feeds: the terminals, the jobs, the logs.
+- **The miniature's terminal shows the sixteen as a scale.** Its lines
+  are real logs, each colour where a tool puts it, and tools leave
+  colours out: blue, magenta and most of the brights were on no line,
+  so a theme was judged on half its palette. The author asked for a
+  service of the miniature's own (2026-10-01): *color*, in the
+  job's violet, whose lines are the palette itself — black to
+  white through red, yellow, green, cyan, blue and magenta, a line
+  the eight and a line their brights. With a background to draw, the
+  scale is a blend: each colour comes up over the one before it,
+  `░▒▓█`, its own on the other's ground, so a shade is the two mixed;
+  the first comes up over the terminal's ground and the last goes
+  down to it, `▓▒░`. It is written as a terminal would be sent it
+  and read by `Console.ANSI`, so the line is what a tool printing it
+  would leave. It is set in Fira Code at the size that gives its
+  characters the cell of the face in force, because Tamzen, the
+  terminal's default, has no block characters (nor box-drawing ones:
+  the `│` and `└─` of a compiler's warning come from a face of the
+  browser's choosing), and that stand-in is wider than the cell. Its
+  chip sorts its lines like any service's. Seen on a running console,
+  both grounds, in the Terminal part and in Overlay's.
 
 ### Fixed
 

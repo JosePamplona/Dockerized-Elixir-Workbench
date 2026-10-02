@@ -971,7 +971,35 @@ defmodule ConsoleWeb.WorkbenchDrawer do
   # green, booleans and nil magenta, a variable light cyan), and ExUnit
   # its dots green, a failure red, a skip yellow, the `code:`, `left:`
   # and `right:` labels cyan, the diff's deletions red and insertions
-  # green, and the count red when a test failed.
+  # green, and the count red when a test failed. What tools colour
+  # leaves colours out — blue, magenta, most of the brights — so the
+  # last lines are a service of the miniature's own, `color`: the
+  # sixteen as a scale, a line the eight and a line their brights.
+  #
+  # The scale: black to white through the hues in the spectrum's order
+  # (red, yellow, green, cyan, blue, magenta). Each colour comes up
+  # over the one before it — `░▒▓█`, its own on the other's ground, so
+  # a shade is the two mixed — the first over the terminal's ground,
+  # and the last goes down to it again, `▓▒░`. It is written as a
+  # terminal would be sent it and read by Console.ANSI, backgrounds and
+  # all, so the line is what a tool printing it would leave here. It is
+  # set in Fira Code at the size that gives its characters the cell of
+  # the face in force (console.css, .scale): Tamzen, the terminal's
+  # own, has no block characters, and a browser's stand-in is wider
+  # than the cell.
+  @scale_order [0, 1, 3, 2, 6, 4, 5, 7]
+  @scales (for row <- [0, 8] do
+             sgr = fn base, n -> if n < 8, do: base + n, else: base + 60 + n - 8 end
+
+             {cells, _} =
+               Enum.map_reduce(@scale_order, nil, fn n, before ->
+                 n = n + row
+                 ground = if before, do: ";#{sgr.(40, before)}", else: ""
+                 {"\e[#{sgr.(30, n)}#{ground}m░▒▓█", n}
+               end)
+
+             ~s(<span class="scale">#{Console.ANSI.to_html(Enum.join(cells) <> "\e[49m▓▒░\e[0m")}</span>)
+           end)
   @log_lines [
     {"database", "info", false, "11:04:38.442",
      "UTC [1] LOG:  database system is ready to accept connections"},
@@ -1016,7 +1044,9 @@ defmodule ConsoleWeb.WorkbenchDrawer do
     {"app", "info", false, "18:03:11.902", "Finished in 0.4 seconds (0.2s async, 0.2s sync)"},
     {"app", "info", false, "18:03:11.902",
      ~s(<span class="ansi-fg-1">20 tests, 1 failure, 1 skipped</span>)},
-    {"app", "info", true, "18:03:11.902", "Randomized with seed 318221"}
+    {"app", "info", true, "18:03:11.902", "Randomized with seed 318221"},
+    {"color", "info", false, "18:04:02.118", Enum.at(@scales, 0)},
+    {"color", "info", true, "18:04:02.118", Enum.at(@scales, 1)}
   ]
   # The sample's services, by the role each would say: the preview is
   # coloured as the logs are, by role (ConsoleWeb.Services).
@@ -1025,7 +1055,9 @@ defmodule ConsoleWeb.WorkbenchDrawer do
     "database" => "database",
     "pgadmin" => "devtools",
     "balancer" => "balancer",
-    "migrate" => "job"
+    "migrate" => "job",
+    # The scale's own, in the job's violet: no role is a demo's.
+    "color" => "job"
   }
 
   # The digits of a line number, as ConsoleWeb.Box counts them for the sheet.

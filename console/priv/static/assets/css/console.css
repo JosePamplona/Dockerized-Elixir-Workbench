@@ -2082,7 +2082,8 @@ table.rows.pkgs td.opts{white-space:pre}
 .code-box .k{min-width:0;color:var(--term-dim)}
 /* The daemon's box is a viewport like the Logs screen's: the lines, and the controls in a strip under them. Inside it the code box keeps its type and its ink and loses its own frame, which the viewport draws. `build cache` is the widest key. */
 .docker .viewport.daemon{grid-template-rows:auto auto;flex:none}
-.docker .viewport.daemon .code-box{border:0;border-radius:0;--key-w:13ch}
+/* The daemon's lines stand in the box the viewport already is, a terminal's ground and frame: a second ground on them was the reader's opacity laid twice, 40 % read as 64. */
+.docker .viewport.daemon .code-box{border:0;border-radius:0;background:none;--key-w:13ch}
 /* Its text by weight (2026-09-24): the figure that matters bold, what
    qualifies it dim, the rest ink, and no colour of its own — until
    2026-09-29 the in-use ratio wore the source palette's blue and every

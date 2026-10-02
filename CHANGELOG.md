@@ -73,6 +73,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   sixteen and are painted; one beyond, and one in RGB, is no colour
   of the theme's and is left unpainted, taking the place of the
   ground before it.
+- **The Docker screen's Specs wear the opacity once.** The author
+  thought the box did not take the 40 % set for the terminal's ground
+  (2026-10-01), and it did not: it took it twice. The daemon's lines
+  are a `term-box` inside the viewport, which is one too, and each
+  painted the ground, so 40 % over 40 % read as 64 %, on either
+  ground; Logs, Jobs and the terminals paint it once. The lines no
+  longer paint a ground of their own (`console.css`). Looked for on
+  every screen: it was the only box that did.
 
 ## v0.16.0 - (2026-10-01)
 

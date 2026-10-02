@@ -1701,8 +1701,9 @@ form.insert.locked .opt input{opacity:.55}
 .ui .mmain .ograb.dragging::after{top:3.5px}
 .ui .mini .toolbar{gap:6px}
 .ui .mini .ln[hidden]{display:none}
-/* The scale is blocks and shades, which Tamzen does not have: left to the browser they come from a face of its choosing, wider than the cell, and the row breaks. It is set in Fira Code, which has them, at the size whose advance (1200 of 1950) is one ch of the face in force. */
-.ui .mini .scale{font-family:"Fira Code",var(--mono);font-size:calc(1ch / .6154);white-space:nowrap}
+/* The scale is blocks and shades, which Tamzen does not have: left to the browser they come from a face of its choosing, wider than the cell, and the row breaks. Under a face without them it is set in Fira Code, which has them, at the size whose advance (1200 of 1950) is one ch of the face in force. A face that draws them is left to: hooks.js marks it on the root (`blocks`, in FACES), and the scale is then the terminal's own face, in its own cell. */
+.ui .mini .scale{white-space:nowrap}
+:root:not([data-code-blocks]) .ui .mini .scale{font-family:"Fira Code",var(--mono);font-size:calc(1ch / .6154)}
 .ui .mtabs{display:flex;gap:2px;border-bottom:1px solid var(--line);padding:0 4px}
 .ui .mtabs .tab{font-size:11px;padding:4px 8px 6px}
 .ui .mini .lines{min-height:0}

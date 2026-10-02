@@ -633,10 +633,10 @@ const SIZES = [10, 11, 12, 13, 14, 15, 16, 18, 20]
 const LEADINGS = [1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.8, 2]
 const FACES = {
   house: { name: "IBM Plex Mono", sizes: SIZES, family: () => null },
-  fira: { name: "Fira Code", sizes: SIZES, family: () => '"Fira Code"', note: "Ligatures on." },
-  vga: { name: "Flexi IBM VGA", sizes: [14, 16, 18, 20, 24, 32], family: () => '"Flexi IBM VGA True"', note: "The PC's text mode, a bitmap: its own sizes.", bitmap: true },
+  fira: { name: "Fira Code", sizes: SIZES, family: () => '"Fira Code"', note: "Ligatures on.", blocks: true },
+  vga: { name: "Flexi IBM VGA", sizes: [14, 16, 18, 20, 24, 32], family: () => '"Flexi IBM VGA True"', note: "The PC's text mode, a bitmap: its own sizes.", bitmap: true, blocks: true },
   tamzen: { name: "Tamzen", sizes: [9, 12, 13, 14, 15, 16, 20], family: s => `"Tamzen${{ 9: 5, 12: 6, 13: 7, 14: 7, 15: 8, 16: 8, 20: 10 }[s]}x${s}"`, note: "A bitmap face, one drawing a size.", bitmap: true },
-  greybeard: { name: "Greybeard", sizes: [11, 12, 13, 14, 15, 16, 17, 18, 22], family: s => `"Greybeard${{ 11: 6, 12: 6, 13: 7, 14: 7, 15: 8, 16: 8, 17: 9, 18: 9, 22: 11 }[s]}x${s}"`, note: "A bitmap face, one drawing a size; it draws the boxes, the blocks and the shades.", bitmap: true },
+  greybeard: { name: "Greybeard", sizes: [11, 12, 13, 14, 15, 16, 17, 18, 22], family: s => `"Greybeard${{ 11: 6, 12: 6, 13: 7, 14: 7, 15: 8, 16: 8, 17: 9, 18: 9, 22: 11 }[s]}x${s}"`, note: "A bitmap face, one drawing a size; it draws the boxes, the blocks and the shades.", bitmap: true, blocks: true },
 }
 // (Whose each face is, and under which licence, the drawer's Faces part says: the notes above say what a face does.)
 // The pages' own type — the display, the text and the mono, and a scale
@@ -663,6 +663,8 @@ function applyChoice(group, { face, size, leading }) {
   if (leading) root.setProperty(`--${group}-leading`, String(leading)); else root.removeProperty(`--${group}-leading`)
   // A bitmap face has one drawing per size: the sheet's line numbers, drawn smaller than the code in a vector face, keep the code's size in it or they blur.
   if (f.bitmap) root.setProperty(`--${group}-ruler`, "1"); else root.removeProperty(`--${group}-ruler`)
+  // A face that draws the blocks and the shades itself (`blocks`) says so on the root, and the miniature's colour scale is then left in it; without the mark the scale is set in a stand-in (console.css, .scale).
+  document.documentElement.toggleAttribute(`data-${group}-blocks`, !!f.blocks)
   return { face, size: s, leading: leading || null }
 }
 for (const g of Object.keys(GROUPS)) applyChoice(g, choiceOf(g))

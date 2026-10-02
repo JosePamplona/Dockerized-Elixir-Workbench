@@ -991,11 +991,12 @@ defmodule ConsoleWeb.WorkbenchDrawer do
   # a shade is the two mixed — the first over the terminal's ground,
   # and the last goes down to it again, `▓▒░`. It is written as a
   # terminal would be sent it and read by Console.ANSI, backgrounds and
-  # all, so the line is what a tool printing it would leave here. It is
-  # set in Fira Code at the size that gives its characters the cell of
-  # the face in force (console.css, .scale): Tamzen, the terminal's
-  # own, has no block characters, and a browser's stand-in is wider
-  # than the cell.
+  # all, so the line is what a tool printing it would leave here. Under
+  # a face that draws the blocks it is set in that face; under one that
+  # does not — Tamzen, the terminal's own, has no block characters, and
+  # a browser's stand-in is wider than the cell — it is set in Fira
+  # Code at the size that gives its characters the cell of the face in
+  # force (console.css, .scale; `blocks` in hooks.js's FACES).
   @scale_order [0, 1, 3, 2, 6, 4, 5, 7]
   @scales (for row <- [0, 8] do
              sgr = fn base, n -> if n < 8, do: base + n, else: base + 60 + n - 8 end

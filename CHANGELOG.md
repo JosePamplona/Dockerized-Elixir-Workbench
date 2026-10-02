@@ -41,11 +41,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   the first comes up over the terminal's ground and the last goes
   down to it, `▓▒░`. It is written as a terminal would be sent it
   and read by `Console.ANSI`, so the line is what a tool printing it
-  would leave. It is set in Fira Code at the size that gives its
-  characters the cell of the face in force, because Tamzen, the
-  terminal's default, has no block characters (nor box-drawing ones:
-  the `│` and `└─` of a compiler's warning come from a face of the
-  browser's choosing), and that stand-in is wider than the cell. Its
+  would leave. Under a face that draws the blocks — Greybeard, Flexi
+  IBM VGA, Fira Code: `blocks` in `hooks.js`'s `FACES`, said on the
+  root — the scale is set in that face. Under one that does not it is
+  set in Fira Code at the size that gives its characters the cell of
+  the face in force, because Tamzen, the terminal's default, has no
+  block characters (nor box-drawing ones: the `│` and `└─` of a
+  compiler's warning come from a face of the browser's choosing), and
+  that stand-in is wider than the cell; IBM Plex keeps the stand-in
+  too, what Google Fonts serves of it not having been checked. Its
   chip sorts its lines like any service's. Seen on a running console,
   both grounds, in the Terminal part and in Overlay's.
 - **The README shows the Interface tab.** Two captures the author
@@ -86,9 +90,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   house's default stays Tamzen. Seen on a console on the host, chosen
   in the drawer at 15 px and a leading of 1: shades, blocks and
   single and double boxes join cell to cell and line to line, in
-  regular and bold. Left as it was: the miniature's
-  colour scale is still set in Fira Code whatever the face in force,
-  though this one could draw it.
+  regular and bold. The author then saw the shades
+  no different under it: the miniature's colour scale was set in Fira
+  Code whatever the face in force, a vector face at a size off the
+  pixel. It is left to a face that draws them now (the scale's entry,
+  above).
 
 ### Fixed
 

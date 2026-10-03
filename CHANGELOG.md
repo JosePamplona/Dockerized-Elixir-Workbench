@@ -14,6 +14,45 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+### Added
+
+- **The Changes paper can throw the changes away, not only commit
+  them.** The paper said what a dirty tree costs — `add` and `eject`
+  both want a clean one — and offered one way out of it: the commit.
+  The reader who had decided their changes were not worth keeping had
+  to leave the console for a terminal, which is the one thing the
+  console is for. `wb.sh discard` is the other way out: the tracked
+  files back to HEAD and the untracked ones gone, exactly what the
+  commit would have taken, and nothing git ignores — `deps/` and
+  `_build/` are the container's work, and throwing them away would cost
+  a recompile to undo nothing. It is the verb `undo_failed_insert`
+  already ran for an insert that failed, named and given to the reader.
+  The console keeps its side of the house: `Console.Git` still only
+  reads, the button runs the verb as a job, and the job waits for the
+  reader's word first, like `delete` and `prune`.
+
+  The two live in the one card, whose foot now reads down and presses
+  across — the Deployments card's shape (2026-09-26) — each line the
+  danger card's three-cell grid: the command taking the width, the verb
+  at the right edge on `--verb`, the note under the command, where what
+  it says is what that command takes. Which cost Commit the row it had
+  been keeping to itself, with the button at the left and the `wb.sh`
+  line nowhere but in its title, and gained it the shape every other
+  box that runs a command already had. Discard went through a danger
+  card of its own under the files first, the way `delete` sits apart on
+  the Deploy tab: one dirty tree is one thing, and what can become of it
+  is a choice between two, not two boxes. What that card's red edge
+  said, the button says, filled as `delete` is: in this house the fill
+  is what the verb costs and not how often it is pressed — `eject` is
+  outlined because the cartridge can go back in, and this, like
+  `delete`, cannot be taken back. The note is under it, and the word it
+  asks for comes before it runs. Asking, the note takes the row, so the
+  card does not move under the hand at the moment it decides, and its
+  two buttons carry `type="button"`: a button with no type inside a form
+  is a submit, and the card is the commit's form, so bare they confirmed
+  the discard and committed behind it — the author saw it. In the danger
+  card they had stood in a `section`, where there was nothing to submit.
+
 ### Fixed
 
 - **The Deploy tab's three cards stand the same distance apart.** The

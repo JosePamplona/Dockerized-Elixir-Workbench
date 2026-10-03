@@ -719,9 +719,9 @@ pre .ln{display:block}
    change with the row the reader picks. */
 .screen{--verb:170px}
 .install .foot{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-.newproject .foot>.btn,.deployments .foot .fline>.btn,.card.danger .foot>.btn,.card.danger .foot>.confirm{min-width:var(--verb);justify-content:center}
+.newproject .foot>.btn,.deployments .foot .fline>.btn,.card.danger .foot>.btn,.card.danger .foot>.confirm,.git .commit .fline>.btn,.git .commit .fline>.confirm{min-width:var(--verb);justify-content:center}
 .newproject .foot .cmds,.deployments .foot .cmds{flex:1;min-width:240px;display:grid;gap:3px}
-.newproject .foot .cmd,.deployments .foot .cmd,.card.danger .foot .cmd,.install .foot .cmd{min-width:0}
+.newproject .foot .cmd,.deployments .foot .cmd,.card.danger .foot .cmd,.install .foot .cmd,.git .commit .fline .cmd{min-width:0}
 .confirm{font-family:var(--serif);font-size:13.5px;color:var(--bad);display:none;gap:8px;align-items:center}
 .confirm.on{display:inline-flex}
 
@@ -1858,6 +1858,8 @@ span.fact input{accent-color:var(--accent);width:14px;height:14px;margin:0;verti
    so the box's one loud thing is the button. */
 /* Under the Deployments card, the way that one stands under New Project. */
 .card.danger{margin-top:14px}
+/* Changes' card ends in the same shape, twice over (2026-10-03): see
+   `.git .commit .foot` by the git papers. */
 .card.danger .foot{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:10px;row-gap:5px}
 .card.danger .foot .cmd{grid-area:1/1}
 .card.danger .foot .note{grid-area:2/1;padding:0 2px}
@@ -2068,11 +2070,27 @@ header.band ::selection{background:color-mix(in srgb,var(--board-ink) 15%,transp
 #panel-shelf{padding-top:0}
 .shelfp .toolbar .label{letter-spacing:.08em}
 .git .commit{gap:8px;max-width:760px}
+/* The paper's two ways out of a dirty tree, in the one card: the commands
+   read down and the buttons press across, which is the Deployments card's
+   foot (2026-09-26), each line the danger card's three-cell grid — the
+   command taking the width, the verb at the right edge on `--verb`, the
+   note under the command, where what it says is what that command takes.
+   Discard was a danger card of its own under the files for an afternoon;
+   one dirty tree is one thing, and its two ends belong in one box. */
+.git .commit .foot{display:grid;gap:12px;margin-top:2px}
+.git .commit .fline{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:10px;row-gap:5px}
+.git .commit .fline .cmd{grid-area:1/1}
+.git .commit .fline .note{grid-area:2/1;padding:0 2px;margin:0}
+.git .commit .fline>.btn,.git .commit .fline>.confirm{grid-area:1/2}
+/* While the discard is asking, its question and two buttons hold the right
+   column, and the note under the command had nowhere to go but down — six
+   narrow lines, and the whole card moving under the hand at the moment it
+   decides. Asking, the note takes the row. */
+.git .commit .fline:has(>.confirm.on) .note{grid-column:1/-1}
 .git .commit .a{color:var(--good)}.git .commit .r{color:var(--bad)}
 .git .commit input[type=text],.git .commit textarea{font-family:var(--mono);font-size:13px;padding:6px 8px;border:1px solid var(--line);background:var(--ground);color:var(--ink);border-radius:2px;width:100%}
 .git .commit textarea{resize:vertical;line-height:1.5}
 .git .commit input:disabled,.git .commit textarea:disabled{opacity:.6}
-.git .commit .acts{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .git .impl{padding:0}
 .git table.commits td.mono{font-family:var(--mono)}
 .git table.commits .sj{margin-right:8px}

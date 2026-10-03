@@ -23,6 +23,8 @@ defmodule Console.VerbsTest do
 
       assert {:ok, {:prune, nil}, ["prune", "--images"]} = Verbs.parse("prune --images")
 
+      assert {:ok, {:discard, nil}, ["discard"]} = Verbs.parse("discard")
+
       assert {:ok, {:k6, "smoke.js"}, ["k6"]} = Verbs.parse("k6")
 
       assert {:ok, {:k6, "spike.js"}, ["k6", "--deploy", "scaled", "spike.js", "--vus", "20"]} =
@@ -39,8 +41,9 @@ defmodule Console.VerbsTest do
     end
   end
 
-  test "confirm?/2: delete and prune always, new only over a project" do
+  test "confirm?/2: delete, discard and prune always, new only over a project" do
     assert Verbs.confirm?({:delete, nil}, false)
+    assert Verbs.confirm?({:discard, nil}, false)
     assert Verbs.confirm?({:prune, nil}, false)
     assert Verbs.confirm?({:delete, nil}, true)
     refute Verbs.confirm?({:new, nil}, false)
@@ -56,6 +59,8 @@ defmodule Console.VerbsTest do
     assert Verbs.reread({:restart, "app"}) == :fast
     assert Verbs.reread({:prune, nil}) == :fast
     assert Verbs.reread({:insert, "rest"}) == :full
+    # Discard writes the tree back to HEAD: the project is another one.
+    assert Verbs.reread({:discard, nil}) == :full
     assert Verbs.reread({:new, nil}) == :all
     assert Verbs.reread({:catalog, nil}) == :none
   end

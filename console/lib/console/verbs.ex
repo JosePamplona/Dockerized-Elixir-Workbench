@@ -14,7 +14,7 @@ defmodule Console.Verbs do
   the workspace config.conf names now (see `Console.Workbench.rebind/0`).
   """
 
-  @verbs ~w(new add eject bake commit up build stop down restart prune delete mix ps catalog status stacks expand config console help k6)
+  @verbs ~w(new add eject bake commit discard up build stop down restart prune delete mix ps catalog status stacks expand config console help k6)
 
   @doc "Every verb a job may start with."
   def verbs, do: @verbs
@@ -78,13 +78,15 @@ defmodule Console.Verbs do
   end
 
   @doc """
-  Whether the job must be confirmed before it runs. `delete` and
-  `prune` always; `new` when the workspace already holds a project,
-  since it overwrites every file in it. The console owns this gate: `wb.sh` runs under
+  Whether the job must be confirmed before it runs. `delete`,
+  `discard` and `prune` always; `new` when the workspace already holds
+  a project, since it overwrites every file in it. The console owns this gate: `wb.sh` runs under
   `--yes` and never asks.
   """
   @spec confirm?(kind(), boolean()) :: boolean()
   def confirm?({:delete, _}, _project?), do: true
+  # Discard throws away work git does not have: there is no undo for it.
+  def confirm?({:discard, _}, _project?), do: true
   # Prune removes what other workspaces left: always asked, whatever it is about.
   def confirm?({:prune, _}, _project?), do: true
   # An image or a volume removed by name is a prune too: asked, whatever it is.
@@ -111,7 +113,9 @@ defmodule Console.Verbs do
   def reread({verb, _}) when verb in [:stop, :down, :restart, :prune, :remove, :mix],
     do: :fast
 
-  def reread({verb, _}) when verb in [:up, :build, :insert, :eject, :commit, :bake], do: :full
+  def reread({verb, _}) when verb in [:up, :build, :insert, :eject, :commit, :discard, :bake],
+    do: :full
+
   def reread({verb, _}) when verb in [:new, :delete], do: :all
   def reread(_), do: :none
 end

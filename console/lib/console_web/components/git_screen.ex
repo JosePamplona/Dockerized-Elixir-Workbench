@@ -14,7 +14,14 @@ defmodule ConsoleWeb.GitScreen do
   `wb.sh` alone writes the workspace, the commit is its job, and the
   house's undo is `eject`. What the screen does say, and nobody did: a
   dirty tree stops `add` and `eject`, which want a clean one, so the
-  commit is not tidiness, it is what lets the next cartridge in.
+  commit is not tidiness, it is what lets the next cartridge in. Which
+  is why Changes grew a second way out of a dirty tree (2026-10-03):
+  `discard`, every change git does not have thrown away at once. Both
+  live in the one card, whose foot reads down and presses across — the
+  Deployments card's shape — because one dirty tree is one thing, and
+  what it can become is a choice between two, not two boxes. The verb
+  that cannot be taken back is marked, not hidden, and asks for the
+  reader's word before it runs.
   """
   use Phoenix.Component
   import ConsoleWeb.Refs
@@ -57,7 +64,7 @@ defmodule ConsoleWeb.GitScreen do
   attr :status, :map, default: nil
   attr :jobs, :list, required: true
 
-  @doc "Changes: what a commit would take, and the commit."
+  @doc "Changes: what a commit would take, and the two things that can become of it."
   def git_pending(assigns) do
     busy =
       Enum.any?(
@@ -80,6 +87,7 @@ defmodule ConsoleWeb.GitScreen do
       assign(assigns,
         p: p,
         clean: clean,
+        busy: busy,
         why: why,
         identity: assigns.status && get_in(assigns.status, ["git", "identity"])
       )
@@ -87,7 +95,7 @@ defmodule ConsoleWeb.GitScreen do
     ~H"""
     <p :if={is_nil(@p)} class="note">Reading the tree…</p>
     <%= if @p do %>
-      <.card tag="form" name="Commit" class="commit" phx-submit="git_commit">
+      <.card tag="form" name="Changes" class="commit" phx-submit="git_commit">
         <:head>
           <span :if={!@clean} class="note">{length(@p.files)} file{if length(@p.files) == 1,
             do: "",
@@ -112,16 +120,20 @@ defmodule ConsoleWeb.GitScreen do
           aria-label="Description"
           disabled={@why != nil}
         ></textarea>
-        <div class="acts">
-          <button
-            class={["btn primary", @why && "unlit"]}
-            type="submit"
-            aria-disabled={@why && "true"}
-            title={
-              @why || "./wb.sh commit --message-file … · signed as #{@identity || "the workbench"}"
-            }
-          >Commit</button>
-          <span class="note">signed as {@identity || "the workbench"} · a dirty tree stops add and eject, which want a clean one: this is what lets the next cartridge in</span>
+        <div class="foot">
+          <div class="fline">
+            <div class="cmd">./wb.sh commit --message-file …</div>
+            <button
+              class={["btn primary", @why && "unlit"]}
+              type="submit"
+              aria-disabled={@why && "true"}
+              title={@why || "signed as #{@identity || "the workbench"}"}
+            >Commit</button>
+            <p class="note">
+              signed as {@identity || "the workbench"} · a dirty tree stops add and eject, which want a clean one: this is what lets the next cartridge in
+            </p>
+          </div>
+          <.discard clean={@clean} busy={@busy} jobs={@jobs} />
         </div>
       </.card>
       <div :if={@p.files != []} class="impl">
@@ -131,6 +143,66 @@ defmodule ConsoleWeb.GitScreen do
         </div>
       </div>
     <% end %>
+    """
+  end
+
+  attr :clean, :boolean, required: true
+  attr :busy, :boolean, required: true
+  attr :jobs, :list, required: true
+
+  # The second line of the foot, and the one that cannot be taken back:
+  # the Deployments card's shape for a box with more than one verb — the
+  # commands read down, the buttons press across. It stood in a danger
+  # card of its own under the files for an afternoon; one dirty tree is
+  # one thing, and its two ways out belong in one box. What the red edge
+  # of that card said, this says with the button, filled as `delete` is:
+  # in this house the fill is what the verb costs, not how often it is
+  # pressed — `eject` is outlined because it can be inserted again, and
+  # this, like `delete`, cannot be taken back. Its two confirmation
+  # buttons carry `type="button"`: the card is the Commit form, and a
+  # button with no type inside a form is a submit — bare, "Yes, discard"
+  # confirmed the discard and committed behind it.
+  defp discard(assigns) do
+    waiting = ConsoleWeb.Deploy.pending(assigns.jobs, :discard)
+
+    assigns =
+      assign(assigns,
+        waiting: waiting,
+        why:
+          cond do
+            assigns.clean -> "nothing to discard: the tree is clean"
+            assigns.busy -> "a commit is running"
+            true -> nil
+          end
+      )
+
+    ~H"""
+    <div class="fline">
+      <div class="cmd">./wb.sh discard</div>
+      <.job_button
+        :if={!@waiting}
+        label="Discard"
+        class="primary danger"
+        args="discard"
+        why={@why}
+        title="./wb.sh discard · asks first"
+      />
+      <span :if={@waiting} class="confirm on">The changes go, and no commit holds them.
+      <button
+        type="button"
+        class="btn primary danger"
+        phx-click="confirm"
+        phx-value-id={@waiting.id}
+      >Yes, discard</button><button
+        type="button"
+        class="btn"
+        phx-click="cancel"
+        phx-value-id={@waiting.id}
+      >Keep them</button></span>
+      <p class="note">
+        every change git does not have — the files listed below back to the last commit, the new ones gone · what git ignores (deps, _build) stays · cannot be undone
+      </p>
+    </div>
     """
   end
 

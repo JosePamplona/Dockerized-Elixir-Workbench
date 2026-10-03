@@ -2069,7 +2069,8 @@
     section_content \
       "./$script_name [-y | --yes] COMMAND [ARGS...]" \
       "  -y, --yes   Answer yes to every confirmation ('new' over a project," \
-      "              'delete', 'prune'), for scripts and tools driving the workbench."
+      "              'delete', 'discard', 'prune'), for scripts and tools driving" \
+      "              the workbench."
 
     section "DESCRIPTION"
     section_content \
@@ -2183,6 +2184,12 @@
       "  MESSAGE               The message (default: 'Workbench: commit" \
       "                        pending changes')." \
       "  --message-file PATH   Read title and body from PATH."
+
+    print_command "discard"
+    command_content \
+      "Throw away every change git does not have: what 'commit' would have" \
+      "taken, the tracked files back to HEAD and the untracked ones gone. What" \
+      "git ignores (deps/, _build/) stays. Confirmed, and cannot be undone."
 
     print_command "catalog [--json [--brief]]"
     command_content \
@@ -3183,6 +3190,38 @@ if [ $# -gt 0 ]; then
         workspace_commit --hooks "${*:-Workbench: commit pending changes}"
       fi
     else terminate "There is no project to commit."; fi
+
+  elif [[ "$1" == "discard" ]]; then
+    shift
+    [ -z "$1" ] || args_error invalid
+    # The other end of 'commit': the changes git does not have, thrown
+    # away. What 'undo_failed_insert' does for an insert that failed, for
+    # the reader who decided their own changes were not worth keeping and
+    # wants the clean tree 'add' and 'eject' ask for. It takes exactly
+    # what 'commit' would have taken — the tracked files back to HEAD, the
+    # untracked ones gone — and nothing git ignores: deps/ and _build/ are
+    # the container's work, and throwing them away would cost a recompile
+    # to undo nothing. There is no undo: the commit is the save.
+    #
+    # No '--no-verify' here, unlike every workspace_commit the workbench
+    # makes: the precommit cartridge's only hook is '.git/hooks/pre-commit'
+    # (git_hooks.install), and this command makes no commit. 'checkout --'
+    # and 'clean' fire no hook of their own, so there is nothing to skip.
+    if [[ "$EXISTING_PROJECT" == true ]]; then
+      if [ ! -d "$WORKSPACE_PATH/.git" ]; then
+        terminate "The workspace is not a git repository: there is nothing to discard."
+      elif workspace_dirty; then
+        confirm \
+          "This action cannot be undone: every change git does not have goes," \
+          "and the workspace goes back to $(git_read log --format='%h %s' -n 1 2>/dev/null || echo 'its first commit')."
+        workspace_git checkout -- . > /dev/null 2>&1
+        workspace_git clean -fdq && \
+        echo "Discarded the changes git did not have:" \
+          "the workspace is back at $(git_read log --format='%h %s' -n 1)."
+      else
+        echo "Nothing to discard: the tree is clean."
+      fi
+    else terminate "There is no project to discard."; fi
 
   elif [[ "$1" == "catalog" ]]; then
     shift

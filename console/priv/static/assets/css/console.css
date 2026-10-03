@@ -326,9 +326,10 @@ section h2 .sq[aria-busy="true"] svg,.record .sq[aria-busy="true"] svg,.shelfp .
    what a probe and its reading need. */
 /* One address a line: a list is read down, a row is scanned, and the rail
    is read — who answers where, and what it said. */
-.urls{display:grid;justify-items:start;gap:8px}
-/* A door and its mention wrap as one pair, and the mention drops a line when the rail is too narrow for both. */
-.urls .pair{display:inline-flex;flex-wrap:wrap;gap:6px;align-items:center;max-width:100%}
+.urls{display:grid;justify-items:stretch;gap:8px}
+/* A door and its mention wrap as one pair, and the mention drops a line when the rail is too narrow for both. The mentions stand at the rail's right edge, a column of their own to read down (2026-10-02; they trailed each plate before, at a different distance on every line); dropped a line, a mention keeps the edge. */
+.urls .pair{display:flex;flex-wrap:wrap;gap:6px;align-items:center;max-width:100%}
+.urls .pair>.cart-ref{margin-left:auto}
 .pair{display:inline-flex;align-items:center;gap:6px;min-width:0}
 
 table.rows{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px}

@@ -164,6 +164,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   Logs and the Terminal were not the drawings': sixty of them on the
   page and none redrawn in fifteen seconds of lines; the card had
   240 MiB of memory left, and a new session gave it back.
+- **The rail's cartridge mentions stand at its right edge.** In
+  Services, Doors & Pages a mention trailed its plate, at a different
+  distance on every line; the author asked for them aligned right
+  (2026-10-02). Each row is a flex pair now and the mention takes the
+  margin left over, so the mentions are a column of their own to read
+  down, the plates another; a mention that drops a line under a wide
+  plate keeps the edge. Seen on the rail of a project with thirteen
+  mentions, the house's faces loaded.
 
 ### Removed
 

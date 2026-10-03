@@ -26,7 +26,7 @@ In the console, **Create project** generates a stock Phoenix project with its ba
 
 Every feature is a **box on the shelf**: a cover, its papers — what it installs, the need it answers, why it is shaped so — and the form of its options. Inserted, it is one commit in the project; ejected, one revert.
 
-![The shelf: the cartridges as boxes with their covers, filtered to the ones on offer](assets/readme/shelf.png)
+![The shelf: the cartridges as boxes with their covers — the twenty-two in the project](assets/readme/shelf.png)
 
 The console is the reader's to set. Its terminal and its code each wear a **theme off a shelf** — a file in `console/themes/`, in the keys VS Code uses — a face of their own, and every colour adjustable beside a sample that shows it as it lands: real logs with each tool's own ANSI, and a file with a line changed.
 

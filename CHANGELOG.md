@@ -172,6 +172,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   down, the plates another; a mention that drops a line under a wide
   plate keeps the edge. Seen on the rail of a project with thirteen
   mentions, the house's faces loaded.
+- **The README's four captures are taken again.** The plates and the
+  service buttons wear drawings now, the rail's mentions stand at its
+  edge, and the project has grown, so the pictures of 2026-09-29 and
+  10-01 no longer showed the console as it is. The author took the
+  four again (2026-10-02): Deploy and the shelf at 1440 wide on the
+  light ground, the Interface tab's Terminal and Code parts on the
+  dark, Selenized and House's, cut to the drawer. The shelf's picture
+  is the Inserted list, twenty-two covers: one box is left on offer in
+  `lorem_ipsum` today, and a shelf with one box says nothing of what
+  the boxes are; its caption says so.
 
 ### Removed
 

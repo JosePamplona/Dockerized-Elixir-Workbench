@@ -227,8 +227,8 @@ defmodule ConsoleWeb.Box do
               <%!-- One sheet per insert: the commits are apart in the log,
                     so no range reads them as one. --%>
               <%= for {p, k} <- Enum.with_index(@diff.picks) do %>
-                <span class="label" title={p.subject}>
-                  Files · {String.slice(p.sha, 0, 7)} {p.subject}
+                <span class="label">
+                  Files <small>{String.slice(p.sha, 0, 7)} {p.subject}</small>
                 </span>
                 <div class={["files", length(p.files) > 12 && "many"]}>
                   <.file
@@ -378,7 +378,7 @@ defmodule ConsoleWeb.Box do
       /></span>
       <span class="sh">{String.slice(@sha || "", 0, 7)}</span>
       <span class="dt">{String.slice(@date || "", 0, 10)}</span>
-      <span class="sj" title={@subject}>{@subject}</span>
+      <span class="sj">{@subject}</span>
       <span class="n" title={@title}><span class="a">+{@added}</span><span
         :if={@removed && @removed > 0}
         class="r"

@@ -1235,14 +1235,20 @@ form.insert.locked .opt input{opacity:.55}
 .lines.jobs-list{padding:0;overflow:visible;border:1px solid var(--line);border-radius:3px}
 .jobs-list .job{--jx:12px}
 /* --- Installation: what the cartridge wrote --------------------------------
-   Its own screen, the drawer's full width, one scroll. */
-.install{padding:22px 32px 60px;display:grid;gap:12px;align-content:start}
+   Its own screen, the drawer's full width, one scroll.
+
+   The column is minmax(0,1fr) and not the implicit auto: an auto track
+   sizes to max-content and takes the screen with it, so a 365-character
+   insert subject or a long path grew the page sideways and the ellipsis
+   below never came into play. Capped, each row shortens its own way —
+   a path to its ellipsis, a subject over as many lines as it needs. */
+.install{padding:22px 32px 60px;display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-content:start}
 /* The form wants a measure; the diff wants the window. They share the
    container and part company here: a route like /health in an input
    780px wide reads as a mistake, and a patch cut at 820 reads as one too. */
 #d-install{max-width:820px}
 .install[hidden]{display:none}
-.install .label small{margin-left:10px;font-family:var(--mono);font-size:11px;letter-spacing:0;text-transform:none;color:var(--soft)}
+.install .label small{margin-left:10px;overflow-wrap:anywhere;font-family:var(--mono);font-size:11px;letter-spacing:0;text-transform:none;color:var(--soft)}
 .install .cap{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
 .impl{display:grid;gap:10px}
 .impl .files{border:1px solid var(--line);border-radius:3px;overflow:hidden}
@@ -1448,7 +1454,7 @@ form.insert.locked .opt input{opacity:.55}
 .impl .picks .pick .p{flex:none;display:flex;min-width:170px}
 .impl .picks .pick .sh{flex:none;width:5.4em;color:var(--muted);font-size:11.5px;white-space:nowrap}
 .impl .picks .pick .dt{flex:none;width:7.4em;color:var(--muted);font-size:11.5px;white-space:nowrap;font-variant-numeric:tabular-nums}
-.impl .picks .pick .sj{flex:1;min-width:0;color:var(--soft);font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.impl .picks .pick .sj{flex:1;min-width:0;color:var(--soft);font-size:11.5px;overflow-wrap:anywhere}
 .impl .picks .pick .fc{flex:none;width:6.2em;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
 .impl .picks .pick.total{border-top:0;border-bottom:1px solid var(--ink);padding-bottom:8px;font-weight:600}
 .impl .picks .pick.total+.pick{border-top:0;padding-top:8px}

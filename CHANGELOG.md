@@ -14,6 +14,28 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+### Fixed
+
+- **A long insert subject no longer stretches the Files screen.** The
+  author found the cartridge detail's Files screen scrolling sideways
+  when the commit's subject was long (2026-10-03). The subject's cell
+  and the file paths both carried an ellipsis and neither ever reached
+  it: `.install` is a grid, and its implicit `auto` column sizes to
+  max-content, so the column grew to whatever the longest line asked
+  for and took the screen with it — `ash`'s insert, whose subject
+  carries every option it was given, is 365 characters, and the column
+  came out 3061px wide inside a drawer of 1088. The column is
+  `minmax(0,1fr)` now, and each row shortens its own way: a path to the
+  ellipsis it already had, and the subject, which is the one cell whose
+  length nothing bounds, over as many lines as it needs, so it is read
+  whole rather than cut. Its title is dropped with the cut — a tooltip
+  repeating what is already in view is noise. In the heading that names
+  an insert's own sheet, `Files · sha subject`, the subject moves into
+  the `small` the screen already had for a reading off the machine:
+  mono, lower case, soft ink. 365 characters of condensed uppercase
+  over four lines were a shout. Measured against the author's console
+  on `_001`.
+
 ## v0.17.0 - (2026-10-02)
 
 ### Added

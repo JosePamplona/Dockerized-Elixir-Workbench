@@ -209,6 +209,15 @@ defmodule ConsoleWeb.TerminalTest do
     assert ConsoleWeb.Services.color(s, "migrate") == "var(--svc-job)"
     assert ConsoleWeb.Services.color(s, "app3") == "var(--svc-compute)"
     assert ConsoleWeb.Services.color(s, "balancer") == "var(--svc-balancer)"
+
+    # Who brings a service: the cartridge whose compose names it; the
+    # app, the pod and a replica of the app are the project's own.
+    assert ConsoleWeb.Services.bringer(s, "database") == "ecto"
+    assert ConsoleWeb.Services.bringer(s, "migrate") == "ecto"
+    assert ConsoleWeb.Services.bringer(s, "pgadmin") == "db_admin"
+    assert ConsoleWeb.Services.bringer(s, "app") == nil
+    assert ConsoleWeb.Services.bringer(s, "app3") == nil
+    assert ConsoleWeb.Services.bringer(s, "cache") == nil
   end
 
   # Before the status is here the targets are a guess and the source's

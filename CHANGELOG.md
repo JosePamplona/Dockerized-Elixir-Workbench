@@ -197,6 +197,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   It reads the Files group's face, size and leading now, as the
   papers' blocks and the `.env` do; a command is read, not run. Seen
   on a console on the host with Greybeard at 16 px kept for the files.
+- **A service on the rail carries the mention of the cartridge that
+  brings it.** In Services, Doors & Pages a door said who opened it
+  and a service said nothing of who brought it, though pgAdmin is
+  `db_admin`'s and Grafana `monitoring`'s as plainly as the mailbox is
+  `mailer`'s (2026-10-02). `ConsoleWeb.Services.bringer/2` answers it
+  off the cartridges' compose, the way their colours are answered,
+  and the plate wears the mention; the app, the project's own, wears
+  none. Seen on the rail of a project with four brought services.
 - **A background outside the sixteen no longer leaves a style of its
   own.** `48;5;N` and `48;2;R;G;B` were read a number at a time, the
   `48` dropped and each parameter taken for a code: a blue ground of

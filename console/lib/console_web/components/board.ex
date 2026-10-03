@@ -13,7 +13,7 @@ defmodule ConsoleWeb.Board do
   use Phoenix.Component
   import ConsoleWeb.Refs
   import ConsoleWeb.Square, only: [square: 1]
-  alias ConsoleWeb.{Cartridges, Record}
+  alias ConsoleWeb.{Cartridges, Record, Services}
 
   attr :status, :map, default: nil
 
@@ -206,6 +206,9 @@ defmodule ConsoleWeb.Board do
         />
       </.head>
       <div class="urls">
+        <%!-- A service's plate carries the mention of the cartridge that
+              brings it, as a door's carries who opened it; the app's,
+              the project's own, carries none (2026-10-02). --%>
         <.door_ref
           :for={a <- @services}
           label={a.label}
@@ -214,6 +217,7 @@ defmodule ConsoleWeb.Board do
           why={a.why}
           kind={a.kind}
           svc={a[:svc]}
+          who={Services.bringer(@status, a.label)}
           read={a.read}
           read_title={a[:read_title]}
         />

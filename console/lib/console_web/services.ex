@@ -62,6 +62,18 @@ defmodule ConsoleWeb.Services do
 
   defp base(service), do: if(service =~ ~r/^app\d+$/, do: "app", else: service)
 
+  @doc "The cartridge that brings a service, by name; nil for the skeleton's own (the app, the pod) and for one nobody brought."
+  @spec bringer(map() | nil, String.t() | nil) :: String.t() | nil
+  def bringer(_status, nil), do: nil
+
+  def bringer(status, service) do
+    name = base(service)
+
+    Enum.find_value(get_in(status || %{}, ["project", "cartridges"]) || [], fn c ->
+      Enum.any?(c["compose"] || [], &(&1["service"] == name)) && c["name"]
+    end)
+  end
+
   @doc "The CSS colour a service is drawn in: its role's, the balancer told apart from the pod."
   @spec color(map() | nil, String.t() | nil) :: String.t()
   def color(_status, "balancer"), do: "var(--svc-balancer)"

@@ -97,6 +97,20 @@ defmodule WorkbenchIgniter.Features.AshTest do
                ~w(ash ash_phoenix ash_money ash_double_entry ash_oban oban_web cloak ash_cloak)
     end
 
+    # WORKAROUND (mishka_chelekom 0.0.9): its installer reads app.css off
+    # the disk and writes it back whole, dropping what any installer
+    # before it wrote there — ash_authentication_phoenix's `@source`,
+    # which Tailwind 4 needs for the sign-in pages. First in the list it
+    # has nothing to drop. Remove with `mishka_first/1` when the
+    # installer reads the source instead (ash.ex).
+    test "mishka_chelekom goes first, ahead of the site's order" do
+      assert queued(install(~w(--auth password --components mishka_chelekom,cinder))) ==
+               ~w(mishka_chelekom ash ash_phoenix ash_authentication ash_authentication_phoenix cinder --auth-strategy password)
+
+      # Nothing moves when it is not asked for.
+      assert queued(install(~w(--components cinder))) == ~w(ash ash_phoenix cinder)
+    end
+
     test "a database data layer builds on ecto with its own database" do
       data_layer =
         Enum.find(WorkbenchIgniter.Features.entry(Ash).options, &(&1.name == :data_layer))

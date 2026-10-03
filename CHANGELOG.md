@@ -55,6 +55,26 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **The ash cartridge queues `mishka_chelekom` first, and `/sign-in`
+  has its styles back.** The author found the Ash sign-in page unstyled
+  on `_001` (2026-10-03) — no blue on the buttons. Tailwind 4 scans
+  only what `app.css` names, and the
+  `@source "../../deps/ash_authentication_phoenix"` that
+  `ash_authentication_phoenix`'s installer writes was not there: 18 of
+  the page's 70 classes had no rule in the compiled stylesheet. Ejecting
+  and re-inserting the cartridge reproduced it, and the cause is
+  `mishka_chelekom` 0.0.9, which reads `app.css` off the disk and writes
+  it back whole — and Igniter flushes nothing to disk until a run ends,
+  so it was writing back the file as it stood before the command, over
+  everything the installers before it had put there. Nothing of ours and
+  nothing of Ash's: `ash_authentication_phoenix` had patched the source
+  and said so. The cartridge now queues `mishka_chelekom` first, where
+  there is nothing for it to drop and every installer after it stacks on
+  its write. Marked WORKAROUND wherever it shows, to remove when the
+  installer reads the source; the issue is drafted at
+  `ISSUE-mishka_chelekom-app-css.md` and not filed yet, so the link is
+  a TODO in the four places that carry it. ash v0.9.0.
+
 - **The Deploy tab's three cards stand the same distance apart.** The
   author saw the gap over Deployments wider than the gap over Danger
   (2026-10-03). The stack's spacing is written once per card, as the

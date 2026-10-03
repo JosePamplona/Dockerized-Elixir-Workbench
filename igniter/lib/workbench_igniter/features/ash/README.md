@@ -111,7 +111,19 @@ site's order:
 | Automation | `--automation` | `ash_oban` (with `oban_web`, as the site adds it), `ash_state_machine`, `ash_events` |
 | Safety & Security | `--security` | `ash_archival`, `ash_paper_trail`, `ash_cloak` (with `cloak` before it, as the site adds it) |
 | Dev Tools | `--dev-tools` | `live_debugger`, `ash_admin` |
-| UI Components | `--components` | `mishka_chelekom`, `cinder` |
+| UI Components | `--components` | `mishka_chelekom` (queued **first**, ahead of everything: see below), `cinder` |
+
+`mishka_chelekom` is the one package the command does not queue in the
+site's order. Its installer reads `assets/css/app.css` off the disk and
+writes it back whole, and Igniter flushes nothing to disk until a run
+ends: late in the command, it dropped everything an earlier installer
+had put in that file — in practice
+`ash_authentication_phoenix`'s `@source "../../deps/ash_authentication_phoenix"`,
+the line Tailwind 4 needs to find the classes the sign-in pages wear,
+which rendered unstyled. First in the command there is nothing for it
+to drop, and its own output is the same wherever it runs. It is a
+compensation, not a decision, and it goes when the installer reads the
+source instead (DESIGN §2.5).
 
 What the site offers besides — `appsignal`, `opentelemetry` — has no
 installer yet ("coming soon", the site says); the check against the
@@ -212,7 +224,8 @@ option (`info/2`, `option_docs/0`, `choices/0` pick it up from
 **What it does not check.** The order the site lists features in:
 the map's `order` field repeats numbers and puts Money at 999, so it
 says nothing reliable, and the cartridge's order is its own
-(ash_authentication before its Phoenix half, DESIGN.md §2.5). And
+(ash_authentication before its Phoenix half, and `mishka_chelekom`
+first, DESIGN.md §2.5). And
 `--auth`'s full list: the site offers four strategies, `--auth` knows
 the seventeen `ash_authentication.add_strategy` accepts — that list is
 the installer's, not the site's. Presets like *LiveView* and *React*

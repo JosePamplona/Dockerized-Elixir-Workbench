@@ -7,6 +7,31 @@ what the cartridge *installs*: a change in the command it queues or in
 the options that build it is a minor, a change that breaks a project
 already carrying what that command installed is a major.
 
+## v0.9.0 - (2026-10-03)
+
+### Changed
+
+- **`mishka_chelekom` is queued first, ahead of the site's order.** Its
+  installer reads `assets/css/app.css` off the disk
+  (`Generators.Assets.import_and_setup_theme/2`, `File.read/1`) and
+  writes that content back whole; Igniter flushes nothing to disk until
+  a run ends, so the read returns the file as it was before the command
+  started and everything an earlier installer put in `app.css` is
+  dropped. Late in the command, what it dropped was
+  `ash_authentication_phoenix`'s
+  `@source "../../deps/ash_authentication_phoenix"` — the line
+  Tailwind 4 needs to find the classes the sign-in pages wear — and
+  `/sign-in` came up unstyled: 18 of its 70 classes had no rule,
+  `bg-blue-500` and `hover:bg-blue-600` among them (found on _001,
+  2026-10-03, reproduced on a clean eject and re-insert). First in the
+  command there is nothing for it to drop, every installer after it
+  stacks on its write, and its own output is the same either way, since
+  the disk read returns the pre-run file wherever it runs; its
+  installer declares no `adds_deps`, `installs` or `composes`, so
+  nothing has to precede it. A compensation, not a decision: it goes
+  when the installer reads the source instead. WORKAROUND in
+  `mishka_first/1`; README, *Advanced Options*; DESIGN §2.5.
+
 ## v0.8.1 - (2026-09-29)
 
 ### Changed

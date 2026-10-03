@@ -490,7 +490,8 @@ defmodule WorkbenchIgniter.Features.Ash do
   @doc """
   The packages the options ask for, in the order they go to
   `mix igniter.install`: `ash`, the data layer, `ash_phoenix`, the APIs,
-  authentication, then the advanced sections in the site's order.
+  authentication, then the advanced sections in the site's order — with
+  `mishka_chelekom` hoisted to the front (`mishka_first/1`).
   Unknown data layers, APIs and advanced packages are an error; `--auth`
   is validated by ash_authentication's own installer.
   """
@@ -507,8 +508,41 @@ defmodule WorkbenchIgniter.Features.Ash do
           auth_packages(opts[:auth] || []) ++
           Enum.flat_map(advanced, &expand/1)
 
-      {:ok, Enum.uniq(packages)}
+      {:ok, packages |> Enum.uniq() |> mishka_first()}
     end
+  end
+
+  # WORKAROUND (mishka_chelekom 0.0.9, igniter 0.8.4): mishka_chelekom's
+  # installer reads `assets/css/app.css` off the disk
+  # (`Generators.Assets.import_and_setup_theme/2`, `File.read/1`) and
+  # writes that content back whole. Igniter flushes nothing to disk
+  # until the run ends, so the read returns the file as it was before
+  # the command started and every change an earlier installer made to
+  # `app.css` is dropped. In the site's order it runs late, and what it
+  # dropped was ash_authentication_phoenix's
+  # `@source "../../deps/ash_authentication_phoenix"` — the line
+  # Tailwind 4 needs to find the classes the sign-in pages wear, which
+  # therefore rendered unstyled (_001, 2026-10-03; cinder survives
+  # because it runs after it and reads the source, not the disk).
+  #
+  # First in the list, there is nothing in `app.css` yet for it to
+  # drop, and every installer after it stacks on its write. Its own
+  # output is the same either way: the disk read returns the pre-run
+  # file wherever it runs. Its installer declares no `adds_deps`,
+  # `installs` or `composes`, so nothing has to precede it.
+  #
+  # The cartridge's order being its own is not new — ash_authentication
+  # goes before its Phoenix half for a reason of the same kind
+  # (DESIGN.md §2.5) — but this one is a compensation, not a decision:
+  # remove it when the installer reads the source, and the command goes
+  # back to the site's order.
+  #
+  # Issue: TODO — not filed yet (draft: ISSUE-mishka_chelekom-app-css.md
+  # at the workbench root).
+  defp mishka_first(packages) do
+    if "mishka_chelekom" in packages,
+      do: ["mishka_chelekom" | packages -- ["mishka_chelekom"]],
+      else: packages
   end
 
   @doc """

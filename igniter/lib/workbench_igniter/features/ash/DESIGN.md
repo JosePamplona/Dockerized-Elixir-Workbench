@@ -149,6 +149,32 @@ Read in full: `ash.install` [12], `ash_postgres.install` [13],
   > now?"
 
   through `Mix.shell().yes?/1`, which `--yes` does not answer.
+* `mishka_chelekom.install` composes `mishka.ui.gen.components` and
+  declares no `adds_deps`, `installs` or `composes`: nothing has to
+  precede it. Its
+  `MishkaChelekom.Generators.Assets.import_and_setup_theme/2` reads
+  `assets/css/app.css` with `File.read/1` — the disk — and writes that
+  content back whole through `Igniter.create_or_update_file/4`, whose
+  updater ignores the `source` it is handed. Igniter flushes nothing to
+  disk until the run ends, so the read returns the file as it was
+  before the command started: everything an earlier installer wrote to
+  `app.css` is dropped. The same module's `update_js_files/2` reads the
+  source (`Rewrite.Source.get(source, :content)`) and `app.js` is
+  therefore untouched by this, and `cinder.install`, which patches the
+  same anchor, reads the source too and survives — it runs after it.
+  **The cartridge queues it first** (`mishka_first/1`): there is then
+  nothing for it to drop, every installer after it stacks on its write,
+  and its own output is the same either way. Found on _001 on
+  2026-10-03, when `/sign-in` came up unstyled: 18 of the 70 classes on
+  the page had no rule, among them `bg-blue-500` and
+  `hover:bg-blue-600`, because
+  `ash_authentication_phoenix`'s `@source` line was gone. That
+  installer had reported `✔` and printed none of its "configure
+  Tailwind by hand" notice, which it only emits when it cannot patch
+  the file — and notices did print in that run — so it had patched the
+  source and the write was discarded afterwards. A compensation, to
+  remove when the installer reads the source (issue: TODO, draft at
+  `ISSUE-mishka_chelekom-app-css.md`).
 * The strategies the released `add_strategy` accepts are `password`,
   `magic_link` and `api_key` (`@strategies`); any other stops it with
   "Invalid strategy provided" [16]. The site's OAuth2 option passes no

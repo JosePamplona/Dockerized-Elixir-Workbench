@@ -662,7 +662,12 @@ pre .ln{display:block}
    was 18px 20px against their 16px 18px, so its foot's button stood
    2px left of theirs and the three right edges of the screen never
    quite met (2026-09-26). */
-.newproject{gap:18px;margin-bottom:18px}
+/* It carried a `margin-bottom:18px` of its own until 2026-10-03, which
+   collapsed against Deployments' 14px and won: the first gap of the
+   stack was 18px and the second 14px. The stack's spacing is the
+   following card's `margin-top`, written once per card, so the only
+   margin here is the one inside. */
+.newproject{gap:18px}
 .newproject .form{display:grid;gap:12px}
 .newproject .frow{display:grid;grid-template-columns:130px minmax(0,1fr);gap:10px;align-items:center}
 .newproject .frow label{font-family:var(--mono);font-size:12.5px}

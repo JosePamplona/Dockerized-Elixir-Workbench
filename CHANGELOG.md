@@ -16,6 +16,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **The Deploy tab's three cards stand the same distance apart.** The
+  author saw the gap over Deployments wider than the gap over Danger
+  (2026-10-03). The stack's spacing is written once per card, as the
+  following card's `margin-top: 14px` — but New Project also carried a
+  `margin-bottom: 18px` of its own, and adjacent margins collapse to
+  the larger of the two, so the first gap came out 18px and the second
+  14px. The margin-bottom goes; the only margin New Project keeps is
+  the gap inside it. There is no spacing scale in `assets/design/` to
+  hang this on — the design system holds colour, roles and type — so
+  the rule stays where the other two are, in `console.css`. Measured
+  in the browser: 18/14 before, 14/14 after.
+
 - **A long insert subject no longer stretches the Files screen.** The
   author found the cartridge detail's Files screen scrolling sideways
   when the commit's subject was long (2026-10-03). The subject's cell

@@ -199,6 +199,21 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **House's sheet no longer turns the terminal theme's colour.** The
+  author saw the Code part's sheet green with House's picked, and
+  could not make it happen again (2026-10-02). It happens to a browser
+  that has never picked a code theme: nothing is kept for the sheet,
+  and the sheet with no ground of its own stood on the terminal's —
+  `--term`, which wears the terminal's theme — so Selenized on the
+  terminal turned House's sheet its teal, on the Files sheet and in
+  the miniature alike; picking House's once keeps its `#2d1d3a` and
+  the fault goes, which is why it would not come back. The sheet has
+  a token of its own now, `sheet` in `tokens.json`, the terminal's
+  colour and not the terminal's; `sheetGround` falls back to it, read
+  with the reader's value taken off the root first. Seen on a console
+  on the host, a fresh browser session: Selenized picked for the
+  terminal, the sheet stays `#2d1d3a`; Catppuccin picked for the code,
+  its own `#1e1e2e`.
 - **The Record's `mix phx.new` command wears the terminal's ground
   again.** The author missed the ground set in the drawer on it
   (2026-10-02). It had been the box's own since the Record was written

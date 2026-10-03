@@ -959,17 +959,19 @@ const shownProp = prop => getComputedStyle(document.documentElement).getProperty
 function applySet(spec, all) {
   const root = document.documentElement.style, g = all[ground()] || {}
   for (const r of spec.roles) { const v = g[r.key]; if (v) root.setProperty(r.prop, v); else root.removeProperty(r.prop) }
-  // The terminal's ground wears the reader's opacity, over the theme's colour or the house's — and a sheet with
-  // no ground of its own stands on the terminal's, so it follows.
+  // The terminal's ground wears the reader's opacity, over the theme's colour or the house's; the sheet's is
+  // composed again with it, its own or the house's, never the terminal's.
   if (spec.key === SETS.term.key) { const pct = termAlpha(); if (pct < 100) root.setProperty("--term", withAlpha(shownProp("--term"), pct)); sheetGround(setOf(SETS.sheet)) }
   if (spec.key === SETS.sheet.key) sheetGround(all)
 }
 // The sheet's ground with the reader's opacity: over its own colour, the theme's or the reader's, or over the
-// terminal's when it has none (console.css: var(--sheet, var(--term))) — the colour alone, not the terminal's
-// opacity with it, which is the terminal's.
+// house's when it has none — tokens.css's --sheet, read with the reader's value taken off the root first. It
+// stood on the terminal's colour until 2026-10-02, and a reader who had kept no code theme saw House's sheet
+// turn the terminal theme's colour (Selenized's teal) the moment the terminal wore one.
 function sheetGround(all) {
-  const own = (all[ground()] || {}).sheet
-  document.documentElement.style.setProperty("--sheet", withAlpha(own || shownProp("--term"), alphaOf("sheet")))
+  const own = (all[ground()] || {}).sheet, root = document.documentElement.style
+  root.removeProperty("--sheet")
+  root.setProperty("--sheet", withAlpha(own || shownProp("--sheet") || shownProp("--term"), alphaOf("sheet")))
 }
 for (const spec of Object.values(SETS)) { applySet(spec, setOf(spec)); onGround(() => applySet(spec, setOf(spec))) }
 // --- the colour roles, one component (console.css .roles): a table of

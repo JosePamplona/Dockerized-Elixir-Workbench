@@ -1129,6 +1129,9 @@ form.insert .opts{display:grid}
    The wrapped lines hang under the first, clear of the `$`. */
 .cmd{font-family:var(--mono);font-size:12.5px;background:var(--surface);border:1px solid var(--line);padding:8px 10px 8px calc(10px + 2ch);border-radius:2px;white-space:pre-wrap;overflow-wrap:anywhere;text-indent:-2ch}
 .cmd::before{content:"$ ";color:var(--muted)}
+/* A command that is a terminal box (the Record's mix phx.new) keeps the terminal's ground, the reader's, with its line and its dim: the plain .cmd above paints the surface, and being this sheet's it came after components.css's .term-box and won, so the box lost the ground on 2026-09-29 when the ground moved to the family (it had been its own until then). */
+.cmd.term-box{background:var(--term);border-color:var(--term-line)}
+.cmd.term-box::before{color:var(--term-dim)}
 .go{justify-self:start;font-family:var(--cond);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:13px;background:var(--accent);color:var(--accent-ink);padding:9px 16px;border-radius:2px;box-shadow:0 2px 0 rgba(0,0,0,.25)}
 .go[disabled]{box-shadow:none}
 /* The box's two feet: the same shape as every other foot in the
@@ -1824,7 +1827,8 @@ span.fact input{accent-color:var(--accent);width:14px;height:14px;margin:0;verti
    generic one and left its text-indent, so the `$` sat against the
    border and the wrapped lines hung under it, not under the command
    (2026-09-27). */
-.record .cmd{margin:0;font-family:var(--mono);font-size:12px;line-height:1.6;padding:10px 14px 10px calc(14px + 2ch);white-space:pre-wrap;overflow-wrap:anywhere}
+/* The command is read, not run: it is set in the Files group's face, size and leading, as the papers' blocks and the .env are (2026-10-02; it was the page's mono, fixed, and the only block of the Record the drawer did not reach). */
+.record .cmd{margin:0;font-family:var(--file-face,var(--mono));font-size:var(--file-size,12px);line-height:var(--file-leading,1.6);padding:10px 14px 10px calc(14px + 2ch);white-space:pre-wrap;overflow-wrap:anywhere}
 /* Danger: the tab's last box, and the only one in it is the verb that
    cannot be taken back. Its ground is the card's, its rule is the bad
    colour, and its note says what goes before the hand is near it —

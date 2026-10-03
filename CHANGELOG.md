@@ -181,6 +181,22 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **The Record's `mix phx.new` command wears the terminal's ground
+  again.** The author missed the ground set in the drawer on it
+  (2026-10-02). It had been the box's own since the Record was written
+  (2026-09-09); on 2026-09-29 the ground moved to the `term-box`
+  family, and the plain `.cmd` rule — the surface, for a command at
+  the foot of a form — being the console's own sheet and later in the
+  cascade, won over the family's at the same weight: the box had
+  shown the surface since. `.cmd.term-box` says the terminal's ground,
+  line and dim now.
+- **The Record's `mix phx.new` command is set in the Files face.** The
+  author set a face for the files in the drawer and the command box of
+  Birth kept the page's mono at 12 px (2026-10-02): its rule named the
+  font itself, the one block of the Record the drawer did not reach.
+  It reads the Files group's face, size and leading now, as the
+  papers' blocks and the `.env` do; a command is read, not run. Seen
+  on a console on the host with Greybeard at 16 px kept for the files.
 - **A background outside the sixteen no longer leaves a style of its
   own.** `48;5;N` and `48;2;R;G;B` were read a number at a time, the
   `48` dropped and each parameter taken for a code: a blue ground of

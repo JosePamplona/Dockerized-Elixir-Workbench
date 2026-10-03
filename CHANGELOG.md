@@ -14,6 +14,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+## v0.17.0 - (2026-10-02)
+
 ### Added
 
 - **A background is drawn, and reverse video.** `Console.ANSI` turned a

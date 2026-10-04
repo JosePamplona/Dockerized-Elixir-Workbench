@@ -15,6 +15,20 @@ defmodule ConsoleWeb.CartridgesTest do
   }
   @ash %{"name" => "ash", "state" => %{"with" => ["ash_oban"]}}
 
+  describe "not_done/1" do
+    # Read off the papers of the workbench this suite runs in: specdd
+    # carries a DESIGN.md, stripe a need and nothing else.
+    test "a pending box with its design written is designed, not built" do
+      assert Cartridges.not_done(%{"name" => "specdd"}) =~ "designed, not built"
+      assert Cartridges.not_done_said(%{"name" => "specdd"}) =~ "Designed and documented"
+    end
+
+    test "a pending box with only its need is identified, not designed" do
+      assert Cartridges.not_done(%{"name" => "stripe"}) =~ "identified, not designed yet"
+      assert Cartridges.not_done_said(%{"name" => "stripe"}) =~ "Identified"
+    end
+  end
+
   describe "holds?/3" do
     test "an item without a when holds" do
       assert Cartridges.holds?(@status, @ash, %{"path" => "/oban"})

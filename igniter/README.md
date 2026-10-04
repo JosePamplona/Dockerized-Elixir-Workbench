@@ -47,7 +47,11 @@ the legacy `app.sh` and the earlier package editions lives in the git log.
 │   │       ├── 📦 mailer/                           #   a base cartridge: phx.new's --no-mailer, undone through phx_delta
 │   │       ├── 📦 ash/                              #   queues the mix igniter.install of ash-hq.org
 │   │       ├── 📦 stripe/                           # pending manifest (installer not done)
-│   │       └── 📦 specdd/                           # pending: designed (DESIGN.md, priv/ files), installer not done
+│   │       ├── 📦 specdd/                           # pending: designed (DESIGN.md, priv/ files), installer not done
+│   │       └── 📦 security_review/,                 # pending, identified: the need written (NEED.md), not designed yet
+│   │              machine_learning/, seo_aeo/,
+│   │              browser_tests/,
+│   │              message_broker/, event_stream/
 │   └── 📁 mix/tasks/
 │       ├── 📄 workbench.setup.ex                    # vanilla setup: only what the workspace needs to boot
 │       ├── 📄 workbench.expand.ex                   # a cartridge → the inserts wb.sh add runs (one commit each)

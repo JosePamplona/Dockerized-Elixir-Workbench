@@ -302,6 +302,28 @@ no network; the framework updates itself through its own CLI, which
 rewrites one file. Its `DESIGN.md` records what the CLI does and what
 its `resolve` verified.
 
+Six more are *pending* and only **identified** (2026-10-04): the need
+is written and the design is not. That is the difference from specdd,
+which is *designed* — a box moves from one to the other the day its
+`DESIGN.md` is written, and the console reads which it is off that
+file. Each is a manifest, a `NEED.md` and a README that says what the
+box is expected to bring and what its design has to settle:
+[security_review](security_review/), a review of the project against
+the OWASP Top 10 kept in the repository, with the checks a machine can
+run; [machine_learning](machine_learning/), a model served from inside
+the application with Nx, instead of a second service beside it;
+[seo_aeo](seo_aeo/), what the application emits so its pages are found
+and quoted correctly by a search engine and by an assistant;
+[browser_tests](browser_tests/), tests that drive the application
+through a real browser kept in the workspace;
+[message_broker](message_broker/), a broker in the workspace for two
+parts of a system that must not wait for each other; and
+[event_stream](event_stream/), a log of events that several consumers
+read again, each from its own position. They are named for the need
+and not for the tool, as `db_admin` and `test_doubles` are, so each can
+offer more than one tool as an option. [stripe](stripe/) is identified
+too, by the same reading: a need and no design.
+
 Box cover art for the cartridges — the fixed elements, the per-cartridge
 slots and the prompt template — lives with the art it produces, in
 [`assets/covers/`](../../../../assets/covers/). A cartridge that adds a

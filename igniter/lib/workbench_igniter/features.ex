@@ -52,10 +52,16 @@ defmodule WorkbenchIgniter.Features do
     Features.HealthProbe,
     Features.Ash,
     Features.Specdd,
+    Features.SecurityReview,
+    Features.MachineLearning,
+    Features.SeoAeo,
+    Features.BrowserTests,
     # Services of the workspace, declared for the compose (WorkbenchIgniter.Compose).
     Features.DbAdmin,
     Features.K6,
     Features.Monitoring,
+    Features.MessageBroker,
+    Features.EventStream,
     # The base cartridges: capabilities phx.new decides at generation
     # time, added after the fact (WorkbenchIgniter.PhxDelta).
     Features.Mailer,

@@ -16,6 +16,66 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **Six boxes on the shelf that are identified and not designed:
+  `security_review`, `machine_learning`, `seo_aeo`, `browser_tests`,
+  `message_broker`, `event_stream`.** Pending, as `stripe` and `specdd` are — a manifest
+  whose `pending?/0` is true, so the catalog lists them, the console
+  counts them under *Not done* and `add` refuses them — and each with
+  the two papers such a box can honestly have: a `NEED.md`, which the
+  catalog test asks of every cartridge, and a README that says what the
+  box is expected to bring and, under *Open*, what its design has to
+  settle before a line of installer is written. No `DESIGN.md`, no
+  version, no test: there is nothing yet for them to be about.
+
+  That made a second kind of pending visible, and the console was
+  saying one thing of both. *Designed, not built* was its line for
+  every box that is not done, true of `specdd`, whose design is
+  written, and false of these six the moment they appeared — and of
+  `stripe`, as it turns out, which has had a need and no design all
+  along. A pending box is now read as one of two stages:
+  **designed** when it carries a `DESIGN.md`, **identified** when its
+  need is all there is. `ConsoleWeb.Cartridges.not_done/1` reads it off
+  the papers on the mount, the way the Manual reads them, so no
+  manifest declares it and nothing has to be flipped: writing the
+  design is what moves the box. The chip's title, the reason the Files
+  screen is dark and the sentence that stands in for a missing summary,
+  on the box and in the shelf's list, all say it from that one place.
+
+  They are named for the need and not for the tool, the rule `db_admin`
+  and `test_doubles` already follow, because the tool is the part most
+  likely to become an option: `message_broker` starts from RabbitMQ and
+  `event_stream` from Kafka, each with Broadway in the project, and
+  either may offer another server the way `db_admin` offers four
+  admins. `security_review` is a review of the project against the
+  OWASP Top 10's current edition, kept as a file of the repository,
+  with the checks a machine can run (Sobelow, `mix deps.audit`,
+  `mix hex.audit`) behind one task to shorten it — the review is the
+  box, the tools are what speed it up. `machine_learning` is a model
+  served from inside the application with Nx — Bumblebee to load it, an
+  `Nx.Serving` in the supervision tree — where the usual answer is a
+  second service in another language. `seo_aeo` is the one named by
+  its discipline, because that is the name the need goes by: what the
+  application emits so a search engine and an answer engine find and
+  quote its pages — metadata, sitemap, crawling rules, structured data
+  — with the answer-engine half as options the reader chooses, since
+  that half is young and `llms.txt` is a proposal, not a standard.
+  `browser_tests` is tests that drive the application through a real
+  browser — Playwright as a service of the workspace under a profile
+  `up` never starts, the way `k6` is — for what only a browser does: a
+  hook, an upload, a full navigation. The two messaging services go
+  after `monitoring` in the registry and the other four before the
+  services;
+  both services are expected to take `messaging`, a role the vocabulary
+  has had since it was written and no box has used.
+
+  More candidates were listed the same day (a notebook on the running
+  node, background jobs, tracing, type checks) and deliberately not
+  made boxes: choosing them and drawing where each one ends is analysis
+  that has not been done, and a shelf with more boxes pending than
+  built would read as a promise. The README draft (`README3.md`) names
+  the eight pending ones, by stage, under *Base cartridges, collections
+  and archived boxes*.
+
 - **The Changes paper can throw the changes away, not only commit
   them.** The paper said what a dirty tree costs — `add` and `eject`
   both want a clean one — and offered one way out of it: the commit.

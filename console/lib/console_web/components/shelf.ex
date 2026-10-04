@@ -405,7 +405,7 @@ defmodule ConsoleWeb.Shelf do
           in: the mention opens the box. --%>
     <tr class={[@installed && "in", @e["pending"] && "pending", @e["archived"] && "archived"]}>
       <td class="th"><img src={"/covers/#{front(@e)}"} alt="" draggable="false" /></td>
-      <td title={@e["summary"] || "Designed and documented; not built yet, so nothing inserts it."}>
+      <td title={@e["summary"] || Cartridges.not_done_said(@e)}>
         <.cart_ref name={@e["name"]} installed={@installed} />
       </td>
       <td>

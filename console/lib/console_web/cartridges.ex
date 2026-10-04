@@ -3,7 +3,9 @@ defmodule ConsoleWeb.Cartridges do
   What the page works out of the status and the catalog about a
   cartridge: whether the project carries it, what it opened in the
   console, how it got here. All read off the two contracts; nothing
-  here is a second opinion about what is installed.
+  here is a second opinion about what is installed. One fact comes
+  from the papers instead: whether a box that is not done has its
+  design written (`not_done/1`).
   """
 
   @doc "The catalog entries the project carries (status's, with `installed` and `state`)."
@@ -13,6 +15,30 @@ defmodule ConsoleWeb.Cartridges do
     do: Enum.filter(get_in(status, ["project", "cartridges"]) || [], & &1["installed"])
 
   def installed?(status, name), do: Enum.any?(installed(status), &(&1["name"] == name))
+
+  @doc """
+  What a box that is not done is, in the short words a chip's title
+  takes. A pending box is one of two things, and its papers say which
+  (2026-10-04): *designed* when it carries a `DESIGN.md` — the design
+  is written and the installer is what is missing — and *identified*
+  when its need is all there is, the design still to do. Read off the
+  papers on the mount, as the Manual reads them, so no manifest has to
+  declare it: writing the design is what moves the box.
+  """
+  def not_done(box) do
+    if designed?(box),
+      do: "the box is designed, not built: nothing inserts it yet",
+      else: "the box is identified, not designed yet: nothing inserts it"
+  end
+
+  @doc "The same, as the sentence that stands where a pending box has no summary."
+  def not_done_said(box) do
+    if designed?(box),
+      do: "Designed and documented; not built yet, so nothing inserts it.",
+      else: "Identified: its need is written and its design is not, so nothing inserts it yet."
+  end
+
+  defp designed?(box), do: "design" in Console.Papers.carried(box["name"])
 
   @doc """
   Whether the project carries a cartridge in the state a requirement

@@ -147,7 +147,7 @@ defmodule ConsoleWeb.Box do
   def files_unlit(box, status) do
     cond do
       box["pending"] ->
-        "the box is designed, not built: nothing inserts it yet"
+        Cartridges.not_done(box)
 
       box["collection"] ->
         if member_inserts(box, status) == [],
@@ -566,7 +566,7 @@ defmodule ConsoleWeb.Box do
             <.chip
               :if={@box["pending"]}
               class="warn"
-              title="the box is designed, not built: nothing inserts it yet"
+              title={Cartridges.not_done(@box)}
             >
               not done
             </.chip>
@@ -588,8 +588,7 @@ defmodule ConsoleWeb.Box do
           </div>
           <h4>{title(@box)}</h4>
           <p>
-            {@box["summary"] ||
-              "Designed and documented; not built yet, so nothing inserts it."}
+            {@box["summary"] || Cartridges.not_done_said(@box)}
           </p>
           <div :if={@box["need"]} class="need">
             <p class="want">{ticked(@box["need"]["line"])}</p>

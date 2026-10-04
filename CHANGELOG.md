@@ -53,6 +53,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   the discard and committed behind it — the author saw it. In the danger
   card they had stood in a `section`, where there was nothing to submit.
 
+### Updated
+
+- **The rail opens 500px wide.** 380px was the width the rail was born
+  with, and the papers it now carries — the Record's address face, the
+  cartridge in hand, the tables — were all read in a rail the reader had
+  to drag wider first. The default is what they would have dragged it
+  to; the bounds, the memory per browser and the grip's double-click
+  reset are unchanged, so a reader who already has a width keeps it.
+
 ### Fixed
 
 - **The ash cartridge queues `mishka_chelekom` first, and `/sign-in`

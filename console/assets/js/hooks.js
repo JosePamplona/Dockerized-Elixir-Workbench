@@ -330,7 +330,7 @@ export const UrlField = {
 }
 
 // --- the rail's width: dragged, nudged with the arrows, reset with a double click, kept
-const RAIL_KEY = "wb-console-rail", RAIL_MIN = 300, RAIL_MAX_SHARE = 0.5, RAIL_DEFAULT = 380
+const RAIL_KEY = "wb-console-rail", RAIL_MIN = 300, RAIL_MAX_SHARE = 0.5, RAIL_DEFAULT = 500
 export const Rail = {
   mounted() {
     const app = this.el, grip = app.querySelector("#rail-grip")

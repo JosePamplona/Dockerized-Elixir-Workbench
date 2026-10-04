@@ -163,7 +163,7 @@ header.band .mock{border:1px solid rgba(255,255,255,.35);padding:3px 8px;border-
    dragged it to — which the Rail hook writes on :root, outside anything
    LiveView patches, so a fold or a status does not take it back. */
 /* --sqw is the rail's two squares' size (ConsoleWeb.Square small, 22px; normal is 33px): the pair and the tab row's padding read it. */
-.app{--rail:var(--rail-set,380px);--sqw:22px;position:relative;display:grid;grid-template-columns:var(--rail) minmax(0,1fr);height:100%;min-height:0}
+.app{--rail:var(--rail-set,500px);--sqw:22px;position:relative;display:grid;grid-template-columns:var(--rail) minmax(0,1fr);height:100%;min-height:0}
 /* The frame has three axes, and each is one class on <body>. The band is
    a grid row, so moving it is the row order; the rail is a grid column,
    so hiding it is one template and swapping sides is another plus the

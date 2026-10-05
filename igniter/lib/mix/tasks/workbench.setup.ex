@@ -16,7 +16,7 @@ defmodule Mix.Tasks.Workbench.Setup do
   In a single atomic patch set it:
 
   * binds the dev endpoint to `0.0.0.0` — with the compose pod pattern
-    (`network_mode: "service:network"`) the published port arrives on the
+    (`network_mode: "service:pod"`) the published port arrives on the
     namespace interface, never on loopback, so a server left on
     `127.0.0.1` starts but answers nothing
   * generates `.env` and `.env.sample` — the workspace compose declares

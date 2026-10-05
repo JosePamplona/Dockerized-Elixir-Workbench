@@ -172,10 +172,16 @@ defmodule WorkbenchIgniter.GrownVsBornTest do
     assert length(orders) <= 16, "#{length(orders)} orders"
   end
 
+  # These two grow a project order by order, on every core there is. A
+  # desk has twelve and is done in seconds; CI's runner has a handful,
+  # and the default minute was not always enough (three runs of eight
+  # timed out there, 2026-09-29 to 2026-10-05).
+  @tag timeout: :timer.minutes(10)
   test "born bare and grown, in every order of the covering set and the pinned ones: born whole" do
     assert_whole(Enum.uniq(@pinned ++ covering()))
   end
 
+  @tag timeout: :timer.minutes(10)
   test "born bare and grown, in five orders drawn by this run's seed: born whole" do
     :rand.seed(:exsss, {ExUnit.configuration()[:seed], 0, 0})
 

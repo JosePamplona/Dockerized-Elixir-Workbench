@@ -176,6 +176,20 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **CI is green again, and it had not been since 2026-09-29.** Two
+  things, neither of them in the code under test. The console's
+  Dialyzer step failed every run with ten calls to functions of
+  `WorkbenchIgniter` it called missing: the console carries the package
+  as a path dependency, the lock file says nothing of one, and dialyxir
+  takes its cached PLT for current as long as the lock is — so every
+  function the package grew after that PLT was built did not exist to
+  it. The step runs with `--force-check`, which looks at the modules
+  themselves (half a minute); the same flag is in the commands the
+  README and `CLAUDE.md` give. And `grown_vs_born_test.exs` timed out
+  on three runs of eight: it grows a project order by order on every
+  core, a desk has twelve and the runner a handful, and ExUnit's minute
+  was not always enough. The two tests take ten.
+
 - **The drawer's Manual reads the new README whole.** Three things
   stood between that page and the console, and the README found all
   three the day it was written. The renderer leaves raw HTML out, so

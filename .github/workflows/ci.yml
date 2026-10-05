@@ -77,6 +77,14 @@ jobs:
       - run: mix format --check-formatted
       - run: mix credo --strict
       - run: mix dialyzer --format github
+        if: matrix.package == 'igniter'
+      # The console carries the package as a path dependency, which the
+      # lock file says nothing of: dialyxir takes its PLT for current as
+      # long as the lock is, so a function added to the package was
+      # "missing" to every run after the PLT was cached. --force-check
+      # looks at the modules themselves.
+      - run: mix dialyzer --force-check --format github
+        if: matrix.package == 'console'
       - run: mix test
       # The README's shelf and its pending boxes are written from the
       # catalog (assets/readme/build.py). A cartridge added, renamed or

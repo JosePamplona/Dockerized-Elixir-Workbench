@@ -30,7 +30,7 @@ Each package pins its Erlang/Elixir in its own `.tool-versions` (asdf). Run mix 
 # The same checks CI runs (.github/workflows/ci.yml)
 shellcheck -x wb.sh scripts/entrypoint.sh
 cd igniter && mix format --check-formatted && mix credo --strict && mix dialyzer && mix test
-cd console && mix format --check-formatted && mix credo --strict && mix dialyzer && mix test
+cd console && mix format --check-formatted && mix credo --strict && mix dialyzer --force-check && mix test   # --force-check: the PLT does not notice ../igniter changing
 cd igniter && mix workbench.catalog --json --brief | python3 ../assets/readme/build.py --check   # the README's two tables of cartridges
 
 mix test test/workbench_igniter/features/credo_test.exs      # one cartridge

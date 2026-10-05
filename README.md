@@ -573,10 +573,10 @@ Every push runs the checks in `.github/workflows/ci.yml`. To run them before pus
 ```sh
 shellcheck -x wb.sh scripts/entrypoint.sh
 cd igniter && mix format --check-formatted && mix credo --strict && mix dialyzer && mix test
-cd console && mix assets.build && mix format --check-formatted && mix credo --strict && mix dialyzer && mix test
+cd console && mix assets.build && mix format --check-formatted && mix credo --strict && mix dialyzer --force-check && mix test
 ```
 
-Each package pins its Erlang and Elixir in its own `.tool-versions`. The first `mix dialyzer` builds its PLT, which takes a few minutes.
+Each package pins its Erlang and Elixir in its own `.tool-versions`. The first `mix dialyzer` builds its PLT, which takes a few minutes. The console takes `--force-check` because it carries `igniter/` as a path dependency, and Dialyzer's cache does not notice that one changing.
 
 CI also checks that the two tables of cartridges in this README say what the catalog says. After adding a cartridge, or changing one's version or summary, write them again:
 

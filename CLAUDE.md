@@ -31,6 +31,7 @@ Each package pins its Erlang/Elixir in its own `.tool-versions` (asdf). Run mix 
 shellcheck -x wb.sh scripts/entrypoint.sh
 cd igniter && mix format --check-formatted && mix credo --strict && mix dialyzer && mix test
 cd console && mix format --check-formatted && mix credo --strict && mix dialyzer && mix test
+cd igniter && mix workbench.catalog --json --brief | python3 ../assets/readme/build.py --check   # the README's two tables of cartridges
 
 mix test test/workbench_igniter/features/credo_test.exs      # one cartridge
 mix test test/workbench_igniter/features/credo_test.exs:42   # one test
@@ -55,6 +56,7 @@ mix test --only network:ash_hq   # igniter, excluded by default: the ash cartrid
 
 - The root `CHANGELOG.md` is the record of what was done and why. Each cartridge's own `CHANGELOG.md` versions that box.
 - The release plan (`RELEASE_PLAN.md`), the reference project's script (`SCRIPT.md`, its steps against the shelf) and the reference project's design papers are the author's own and live outside the repository, in `_local/` and `_local/reference/` (gitignored). They were tracked until 2026-09-29 (`reference/` until the 28th), and the CHANGELOG and the cartridges' papers still cite them by name. The `project-design` skill, the author's design process with that project as its example, went with them to `_local/skills/`, out of Claude Code's reach on purpose: it is still being worked on, and comes back to `.claude/skills/` or the home directory when it is done.
+- The root README's shelf and its table of pending boxes are generated, between markers, from the catalog: after adding, renaming, versioning or archiving a cartridge run `./wb.sh catalog --json --brief | python3 assets/readme/build.py`, or CI fails. The README is Markdown with two tags only, `<img>` (a width, a side) and `<br>` inside a table's cell; its captures are in `assets/readme/console/`, on the dark ground.
 - A cartridge's README/NEED opens with what the tool solves for anyone. A cartridge never names the collections that pick it.
 - A visual or design question is settled with a standalone HTML page in the repo, never a Claude artifact. The page is deleted once decided, and the CHANGELOG keeps the record.
 - The design tokens and components (`.cart-ref`, `.stamp`, `.unlit`) are in `assets/design/` (`build.py` → `generated/`). Show what is unavailable as disabled with a reason; never hide it.

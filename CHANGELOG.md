@@ -72,9 +72,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   node, background jobs, tracing, type checks) and deliberately not
   made boxes: choosing them and drawing where each one ends is analysis
   that has not been done, and a shelf with more boxes pending than
-  built would read as a promise. The README draft (`README3.md`) names
-  the eight pending ones, by stage, under *Base cartridges, collections
-  and archived boxes*.
+  built would read as a promise. The README names the eight pending
+  ones, by stage, in a table `assets/readme/build.py` writes from the
+  catalog.
 
 - **The Changes paper can throw the changes away, not only commit
   them.** The paper said what a dirty tree costs — `add` and `eject`
@@ -114,6 +114,56 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   card they had stood in a `section`, where there was nothing to submit.
 
 ### Updated
+
+- **The README is a tour, read in order.** It was an operating manual
+  in the order the commands were written; it is now written so that
+  every section only uses what an earlier one explained. It opens on
+  the two things the workbench is — a development environment that
+  asks the host for nothing but Docker, and a knowledge base of the
+  ecosystem kept as cartridges — and on what that is good for; then the
+  workbench and its workspace, the cartridges as a concept and as a
+  shelf, the console screen by screen with a capture of each, writing a
+  cartridge, and why it is shaped like this, with what each decision
+  costs. The captures are on the dark ground and come from one session
+  on a real workspace (`assets/readme/console/`); the legend of the
+  rail's plates is drawn from the console's own stylesheets
+  (`assets/readme/legend.html`).
+
+  Two tables are not written by hand: the shelf, one cartridge to a row
+  with its cover, version, summary and papers, and the pending boxes
+  with their stage and need. `assets/readme/build.py` writes both from
+  `./wb.sh catalog --json --brief`, between markers, and cuts the
+  covers' thumbnails. CI holds the README to them: `build.py --check`
+  writes nothing, compares the tables the catalog would give with the
+  ones the page has and looks for every thumbnail, off the package's
+  own `mix workbench.catalog` and with no Docker, so a cartridge added
+  or versioned without writing them again fails the run and says how
+  to mend it. The file is Markdown with two tags, each for what
+  Markdown cannot say — an `<img>` for a width or a side, a `<br>` for a
+  second line inside a table's cell — and says so to markdownlint.
+
+  What it claims was measured or read, and it says where it was not: it
+  has been run on Linux, and macOS and Windows are still to try. On
+  Linux it names the native Engine, with the one measurement behind it
+  (2026-10-04, one run each on the same machine: the workbench's image
+  from scratch in 143 s on the Engine and 837 s on Docker Desktop;
+  compiling, testing and inserting a cartridge the same on both). *What
+  I would do differently* is a sentence for now, to grow as the
+  decisions are tested. The draft's two predecessors
+  (`README2.md`, `README3.md`) and the two captures only the old page
+  used are gone.
+
+- **The two package READMEs say what is there.** `igniter/README.md`
+  still took `health_endpoint` for its reference, kept templates inside
+  the cartridge's directory and Elixir assets under an `.asset` suffix,
+  listed five Mix tasks of eleven and named one cartridge as not done:
+  it now draws the package as it is — `health_probe` the reference,
+  everything that is not code under `priv/features/<feature>/`, the
+  file modules, the three suites that stand over the cartridges' own
+  tests. `console/README.md` names the seven screens and the modules
+  that came after its table was written (Docker, Terminals, Installers,
+  Nodes, Hex, Themes, Services, Doors, Reports), and speaks of the mock
+  in the past.
 
 - **The rail opens 500px wide.** 380px was the width the rail was born
   with, and the papers it now carries — the Record's address face, the

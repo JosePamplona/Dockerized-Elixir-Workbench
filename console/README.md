@@ -1,10 +1,14 @@
 # The console
 
 A Phoenix LiveView page that shows the configured workspace and drives
-the workbench: the board on the left (workspace, containers,
-deployments, git, what is inserted), the screens on the right (Deploy,
-Logs, Project, Cartridges — the shelf of boxes), and the jobs tray at
+the workbench: the band across the top (what is running, the ground,
+the workbench's own drawer), the rail on the left (workspace,
+deployments, containers, services and doors, what is inserted, git),
+the seven screens on the right (Deploy, Jobs, Logs, Terminal, Project,
+Cartridges — the shelf of boxes — and Docker), and the jobs tray at
 the bottom, where every command lands with its output and exit code.
+The root [README](../README.md#the-console) walks them one by one,
+with a capture of each.
 
 ```sh
 ./wb.sh console          # builds its image if missing (minutes), starts it: http://localhost:4100 (first free port from 4100)
@@ -83,14 +87,24 @@ and the verb:
 | `Console.Logs` | `docker compose logs --follow` on the compose project, parsed, buffered, broadcast on `"logs"` |
 | `Console.Config` | `config.conf` read as the form it is: sections, fields, help, alternatives |
 | `Console.Diffs` | what a cartridge wrote, off the workspace's git: the insert commit's files, a collection's range when its members are contiguous, both faces of every file cut into lines through `Console.Highlight` |
-| `Console.Project` | the project's own README, CHANGELOG and `.env`, the last with its secrets masked before it leaves the module |
-| `Console.Papers` | a box's README, DESIGN and CHANGELOG off the mount, rendered by MDEx with the HTML in them left out, links rewritten to what the console opens |
+| `Console.Project` | the project's own papers, off the workspace: Birth, Mix, `.env` (its secrets masked before it leaves the module), README.md, CHANGELOG.md, and its git as Changes and History |
+| `Console.Papers` | a box's README, DESIGN and CHANGELOG off the mount, rendered by MDEx with the HTML in them left out, links rewritten to what the console opens; and the workbench's own README and CHANGELOG, for the drawer's Manual, with its two tags written again (*Foreign content*) |
+| `Console.Git` | the workspace's git, read: what a commit would take, the log with the cartridge inserts marked |
+| `Console.Docker`, `Console.Events` | what the daemon holds, for the Docker screen, and what it does on its own, as it happens (`docker events` on a Port) |
+| `Console.Terminals` | the terminal's sessions, each its own process: one per container and shell |
+| `Console.Installers`, `Console.Nodes` | what `PHX_NEW_VERSION` and `NODE_VERSION` can name, asked of hex and of Node's release schedule and NodeSource, for the Config form (the stack's list is `wb.sh stacks`) |
+| `Console.Hex`, `Console.GitHub` | what hex.pm and GitHub say of a package: latest release, when, how much it is downloaded |
+| `Console.Themes` | the themes on the shelf, `console/themes/`, read when the page mounts |
+| `Console.Shields` | a shields.io static badge drawn here, with no request to anyone |
 | `Console.ANSI` | a line of `wb.sh` output as safe HTML, its colours kept as spans |
 | `ConsoleWeb.Plugs.CSP` | the content security policy, with a nonce per response |
 | `ConsoleWeb.ConsoleLive` | the page: the screen in the URL (`/deploy`, `/jobs`…), what arrives, what the reader does |
-| `ConsoleWeb.Board`, `Deploy`, `JobsScreen`, `Shelf`, `Box`, `ProjectScreen`, `Terminal`, `WorkbenchDrawer` | the rail, the screens, the box in hand and the workbench's drawer, one module each |
+| `ConsoleWeb.Band`, `Board`, `Deploy`, `JobsScreen`, `LogsScreen`, `Terminal`, `ProjectScreen`, `Shelf`, `Box`, `DockerScreen`, `WorkbenchDrawer` | the band, the rail, the seven screens, the box in hand and the workbench's drawer, one module each |
 | `ConsoleWeb.Refs` | the house's notation as components: the mention, the door, the probe, the chip |
-| `ConsoleWeb.Cartridges` | what the page works out of the status and the catalog about a cartridge |
+| `ConsoleWeb.Cartridges` | what the page works out of the status and the catalog about a cartridge; and, off its papers, whether a box that is not done is designed or only identified |
+| `ConsoleWeb.Services` | what a compose service is, for whoever draws one: its role, its colour, its shells, asked of the cartridge and never known by name |
+| `ConsoleWeb.Doors` | the console calling the project's doors, every open route once, and what each answered |
+| `ConsoleWeb.Reports` | the pages a project's tools write (`doc/`, `cover/`), served on a listener of their own |
 | `ConsoleWeb.CoversController` | serves the box covers from `assets/covers` |
 | `ConsoleWeb.FiguresController` | serves what a paper shows — the diagrams — as images, never inline |
 | `ConsoleWeb.BlobController` | a file as a commit of the workspace has it, for the images on the Files screen |
@@ -165,7 +179,7 @@ The decisions the code leans on, each dated in the plan:
 
 ## The terminal
 
-Line-oriented, as the mock drew it: `docker exec -i` (or `docker run
+Line-oriented: `docker exec -i` (or `docker run
 -i` on a one-off toolchain container with the source, when nothing
 runs) on a `Port` owned by the page, no tty. bash and iex both read
 lines that way — verified: `iex` on a piped stdin answers with its
@@ -185,10 +199,11 @@ Two rules about rendering, in a page, content the console did not write
 — a cartridge's papers and the files its installer produced. Both were
 decided before the papers were ported, and the reasons stay here.
 
-**Markdown must escape the HTML in it.** The mock renders a cartridge's
+**Markdown must escape the HTML in it.** The mock (the static maquette
+the console grew from, retired on 2026-09-05) rendered a cartridge's
 README with `marked`, which dropped its sanitiser years ago and passes
 raw HTML straight through: a README carrying `<svg onload="…">` or
-`<img onerror="…">` runs it. In the mock that is nobody, since the
+`<img onerror="…">` runs it. In the mock that was nobody, since the
 cartridges are the ones in this repository — but the console proper is
 meant to serve catalogues the user adds, and then it is somebody. Pick a
 renderer that escapes by default rather than inherit the hole; both of
@@ -201,8 +216,21 @@ element, by specification, and an SVG inside an `<img>` does not either.
 What runs is an event-handler attribute — an `onload`, an `onerror` on a
 source that fails — the moment the node is inserted.
 
+**The workbench's own README keeps two tags, written again.** The
+root README is Markdown with two exceptions, each for what Markdown
+cannot say: an `<img>`, for a width or a side, and a `<br>`, the one way
+to a second line inside a table's cell (2026-10-04). The renderer still
+leaves raw HTML out, for that document too. `Console.Papers.house_tags/1`
+takes those two tags out before the page is rendered and writes them
+back afterwards, and what it writes is not what it read: the source
+when it is a picture under `assets/`, a width in digits, a side, the
+`alt` escaped. An `onerror`, a `style`, a source anywhere else are not
+copied, and a tag that does not read that way is left for the renderer
+to leave out. It is for the workbench's README alone: a cartridge's
+papers are foreign content and never pass through it.
+
 **The manifest's option docs go the same way.** Not only the papers: the
-mock renders each option's `doc` through `marked.parseInline` as well. It
+mock rendered each option's `doc` through `marked.parseInline` as well. It
 is a field nobody reads with these eyes, and it arrives from the same
 place the papers do.
 
@@ -222,8 +250,8 @@ defence: it declines to run a `<script>` element, but an `onload`
 attribute fires all the same. GitHub arrives at the same place from the
 other side — it renders SVGs and disables their scripting and animation.
 
-One consequence worth knowing, since the mock shows it as a limit rather
-than a choice: its Files sheet can draw a file the cartridge *created*,
+One consequence worth knowing, since the mock showed it as a limit rather
+than a choice: its Files sheet could draw a file the cartridge *created*,
 because the patch of a new file is the whole file, and not one it
 *edited*, because a patch is only what changed. The console has git,
 so it has both blobs: its Files screen draws either face through

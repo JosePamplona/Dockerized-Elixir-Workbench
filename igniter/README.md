@@ -1,11 +1,19 @@
 # WorkbenchIgniter
 
-Port of the `app.sh` script features to
-[Igniter](https://hexdocs.pm/igniter) tasks, which patch the target
-project semantically (AST-based) instead of with `sed`. The only
-cartridge that is not done yet is stripe (see
-`lib/workbench_igniter/features/stripe/`); the migration history from
-the legacy `app.sh` and the earlier package editions lives in the git log.
+The workbench's features as *cartridges*:
+[Igniter](https://hexdocs.pm/igniter) installers that patch the target
+project semantically (AST-based) instead of with `sed`, each one with
+the papers that explain it. The package also carries the Mix tasks the
+rest of the workbench reads: the catalog, the status, the compose
+files. It began as a port of the legacy `app.sh` script; that history
+lives in the git log.
+
+Eight cartridges are *pending*, with no installer yet: specdd is
+designed, and stripe, security_review, machine_learning, seo_aeo,
+browser_tests, message_broker and event_stream are identified, their
+need written and their design still to do. The index of every
+cartridge is
+[`lib/workbench_igniter/features/README.md`](lib/workbench_igniter/features/README.md).
 
 ## Structure
 
@@ -16,56 +24,71 @@ the legacy `app.sh` and the earlier package editions lives in the git log.
 │   ├── 📄 workbench_igniter.ex                      # priv/ template/asset helpers
 │   ├── 📁 workbench_igniter/
 │   │   ├── 📄 feature.ex                            # Feature behaviour + embed_templates/embed_assets
-│   │   ├── 📄 phx_delta.ex                          # a phx.new capability added after the fact, as the difference between two generations
 │   │   ├── 📄 features.ex                           # registry: every cartridge, in shelf order — the catalog
-│   │   └── 📁 features/                             # one directory per cartridge, each with its README:
-│   │       ├── 📦 health_endpoint/                  #   the reference cartridge
+│   │   ├── 📄 task.ex                               # what every installer's Mix task is: Igniter's, failing on an issue
+│   │   ├── 📄 phx_delta.ex                          # a phx.new capability added after the fact, as the difference between two generations
+│   │   ├── 📄 birth.ex                              # how the project was made, read off its first commit
+│   │   ├── 📄 compose.ex                            # the workspace's compose files, rendered from a plan
+│   │   ├── 📄 deployments.ex                        # the three compose files as they stand, and whether each is still current
+│   │   ├── 📄 mix_file.ex, compose_file.ex,         # one module per project file: everything that reads
+│   │   │      env_file.ex, ignore_file.ex,          #   or writes that file lives in it
+│   │   │      dockerfile.ex, router_file.ex,
+│   │   │      block_file.ex, text_file.ex
+│   │   └── 📁 features/                             # one directory per cartridge:
+│   │       ├── 📦 health_probe/                     #   the reference cartridge
 │   │       │   ├── 📄 README.md                     #   what it installs, options, contents
-│   │       │   ├── 📄 CHANGELOG.md                  #   the cartridge's own version history
+│   │       │   ├── 📄 NEED.md                       #   the need it answers
 │   │       │   ├── 📄 DESIGN.md                     #   why it is shaped like this, with sources
-│   │       │   ├── 📄 health_endpoint.ex            #   manifest + install logic
-│   │       │   ├── 📄 task.ex                       #   Mix.Tasks.Workbench.Install.HealthEndpoint shell
-│   │       │   └── 📄 templates/*.eex               #   compile-time embedded templates
-│   │       ├── 📦 rest/                             # same (6 templates)
-│   │       ├── 📦 graphql/                          # same (2 templates)
-│   │       ├── 📦 auth0/                            # same (14 templates)
-│   │       ├── 📦 openai/                           # same (13 templates)
-│   │       ├── 📦 enhancements/                     # same (16 templates), + verbatim assets/
-│   │       │   └── 📁 assets/{db_schema, postman}/  #   DbSchema diagrams and Postman collections
-│   │       ├── 📦 coverage/                        # same, + embedded verbatim assets/
-│   │       │   └── 📁 assets/{cover.ex.asset, ...}  #   .asset suffix: mix won't compile them
-│   │       ├── 📦 exdoc/                            # same, + text assets/; the binary PNG logo
-│   │       │                                        #   lives in priv/features/exdoc/
-│   │       ├── 📦 credo/, mock/, exdebug/, ...      # dep-only cartridges: no priv/, papers + <f>.ex + task.ex
-│   │       ├── 📦 chiefs_setup/                     # the collection: its installer inserts the picks
-│   │       ├── 📦 ansi/, version_manager/,          # the house's settings: one decision each
-│   │       │      toolchain/, changelog/
-│   │       ├── 📦 guidelines/                       # the team's conventions into exdoc's site (requires it)
-│   │       ├── 📦 precommit/, test_data/            # cartridges no collection picks
-│   │       ├── 📦 clustering/                       #   rel/*.eex + distributed exports
-│   │       ├── 📦 health_probe/                     #   liveness/readiness plug, mounted first
-│   │       ├── 📦 mailer/                           #   a base cartridge: phx.new's --no-mailer, undone through phx_delta
-│   │       ├── 📦 ash/                              #   queues the mix igniter.install of ash-hq.org
-│   │       ├── 📦 stripe/                           # pending manifest (installer not done)
-│   │       ├── 📦 specdd/                           # pending: designed (DESIGN.md, priv/ files), installer not done
-│   │       └── 📦 security_review/,                 # pending, identified: the need written (NEED.md), not designed yet
+│   │       │   ├── 📄 CHANGELOG.md                  #   the cartridge's own version history
+│   │       │   ├── 📄 health_probe.ex               #   manifest + install logic
+│   │       │   └── 📄 task.ex                       #   Mix.Tasks.Workbench.Install.HealthProbe shell
+│   │       ├── 📦 credo/, exdebug/, test_doubles/,  # dep-only cartridges: papers + <f>.ex + task.ex
+│   │       │      dashboard_extras/, test_data/
+│   │       ├── 📦 changelog/, version_manager/,     # one decision each, on a stock project
+│   │       │      precommit/, coverage/, exdoc/
+│   │       ├── 📦 clustering/                       # rel/*.eex + distributed exports
+│   │       ├── 📦 ash/                              # queues the mix igniter.install of ash-hq.org
+│   │       ├── 📦 db_admin/, k6/, monitoring/       # services of the workspace, declared for the compose
+│   │       ├── 📦 mailer/, gettext/, ecto/,         # the base cartridges: phx.new's --no-* flags,
+│   │       │      esbuild/, tailwind/, html/,       #   undone through phx_delta
+│   │       │      dashboard/
+│   │       ├── 📦 chiefs_setup/, ansi/, toolchain/, # archived: off the offer, their papers kept
+│   │       │      mock/, rest/, graphql/, auth0/,
+│   │       │      openai/, dbschema/, guidelines/,
+│   │       │      enhancements/, health_endpoint/
+│   │       ├── 📦 specdd/                           # pending, designed (DESIGN.md, priv/ files), installer not done
+│   │       └── 📦 stripe/, security_review/,        # pending, identified: the need written (NEED.md), not designed yet
 │   │              machine_learning/, seo_aeo/,
 │   │              browser_tests/,
 │   │              message_broker/, event_stream/
 │   └── 📁 mix/tasks/
 │       ├── 📄 workbench.setup.ex                    # vanilla setup: only what the workspace needs to boot
-│       ├── 📄 workbench.expand.ex                   # a cartridge → the inserts wb.sh add runs (one commit each)
 │       ├── 📄 workbench.catalog.ex                  # every cartridge's manifest, as a table or JSON
 │       ├── 📄 workbench.status.ex                   # the catalog plus what this project carries
-│       └── 📄 workbench.plant_asset.ex              # after-apply byte-for-byte copy of binary assets
+│       ├── 📄 workbench.expand.ex                   # a cartridge → the inserts wb.sh add runs (one commit each)
+│       ├── 📄 workbench.dependents.ex               # which installed cartridges build on the named one
+│       ├── 📄 workbench.compose.ex                  # writes one of the workspace's compose files
+│       ├── 📄 workbench.serve.ex                    # answers the console's questions about this project, for as long as it is asked
+│       ├── 📄 workbench.ejected.ex                  # takes away what an ejected cartridge left outside the tree
+│       └── 📄 workbench.plant_asset.ex,             # internal plumbing, hidden from mix help
+│              workbench.executable.ex,
+│              workbench.igniter_install.ex
 ├── 📁 priv/
 │   ├── 📁 setup/templates/                          # the setup task's .env template
-│   └── 📁 features/<feature>/                       # mirror of lib/…/features/<feature>/ for binary
-│       └── 📁 exdoc/images/                         #   assets (priv_asset/1, plant_binary_asset/3)
+│   ├── 📁 compose/                                  # the two topologies: pod.yml.eex, scaled.yml.eex
+│   └── 📁 features/<feature>/                       # everything of a cartridge that is not code:
+│       ├── 📁 templates/                            #   EEx templates, embedded at compile time
+│       ├── 📁 assets/                               #   text files copied verbatim, embedded at compile time
+│       ├── 📁 compose/                              #   the fragments of the services it brings
+│       └── 📁 images/                               #   binaries, read or planted at runtime
 └── 📁 test/
+    ├── 📁 support/                                  # the golden compose files' script
     └── 📁 workbench_igniter/
-        ├── 📄 setup_test.exs
         ├── 📄 catalog_test.exs                      # the registry, the catalog, installed?/1 of every cartridge
+        ├── 📄 grown_vs_born_test.exs                # a project grown cartridge by cartridge is the project born whole
+        ├── 📄 services_conformance_test.exs         # the promise every cartridge makes about its own services
+        ├── 📄 compose_test.exs, phx_delta_test.exs, # one per module above
+        │      mix_file_test.exs, …
         └── 📄 features/<feature>_test.exs           # one test per cartridge
 ```
 
@@ -81,7 +104,7 @@ functionality. Every cartridge — dep-only ones included — is a directory
 with its own `README.md` explaining what it installs, how it is inserted
 and the role of each file; the general index is
 [`lib/workbench_igniter/features/README.md`](lib/workbench_igniter/features/README.md).
-`health_endpoint/` is the reference:
+`health_probe/` is the reference:
 
 - **`<feature>.ex`** — a `WorkbenchIgniter.Features.<Feature>` module with
   `use WorkbenchIgniter.Feature`. It gathers the *manifest* and the
@@ -94,9 +117,10 @@ and the role of each file; the general index is
     only stops being offered for a new project: `wb.sh add` refuses and
     names `--archived`, which inserts it anyway.
   - `members/1` — a collection's recipe: the cartridges its installer
-    inserts, in order, with the argv each one gets (chiefs_setup). `[]`
+    inserts, in order, with the argv each one gets (chiefs_setup, now
+    archived, was the one collection). `[]`
     — the default — means a plain cartridge.
-  - `requires/0` — the cartridges it builds on (openai on auth0): the
+  - `requires/0` — the cartridges it builds on (db_admin on ecto): the
     installer refuses, naming them, until they are in.
   - `advises/0` — what a switch works fully only with, and why (html's
     `--live` with esbuild): never refused; the installer adds a notice
@@ -135,28 +159,36 @@ and the role of each file; the general index is
     enforced by `requires/0`; inside a collection, the order is its
     `members/1` list.
 - **`task.ex`** — a `Mix.Tasks.Workbench.Install.<Feature>` shell (~15
-  lines) delegating `info/2` and `igniter/1` to the feature module, and
-  rendering its "## Options" from the module's `option_docs/0`. Elixir
-  doesn't require Mix tasks to live in `lib/mix/tasks/`: only the module
-  name matters, so the task lives inside the cartridge.
-- **`templates/*.eex`** — templates embedded at compile time by
-  `embed_templates()` (each one is an `@external_resource`: editing it
-  recompiles). Rendered through the module's local `template/2`, with the
-  same semantics as `WorkbenchIgniter.template/2`.
-- **`assets/`** — files the feature copies verbatim (no rendering):
-  `embed_assets()` embeds them as a local `asset/1` (see coverage).
-  Careful: a `*.ex` asset would be compiled by mix along with the package
-  — it is stored with an extra `.asset` suffix (`cover.ex.asset`) and the
-  macro strips it from the key.
-- **`priv/features/<feature>/`** — the cartridge's mirror under `priv/`
-  for binary assets that must stay out of the compiled module (the exdoc
-  logo). Read at runtime
-  with the local `priv_asset/1`, or planted byte-for-byte after the patch
-  set is applied with `plant_binary_asset/3` (binaries must never go
-  through the igniter rewrite pipeline, which normalizes trailing bytes).
-  Both helpers derive the feature name from the cartridge directory.
+  lines) with `use WorkbenchIgniter.Task`, delegating `info/2` and
+  `igniter/1` to the feature module, and rendering its "## Options"
+  from the module's `option_docs/0`. Elixir doesn't require Mix tasks
+  to live in `lib/mix/tasks/`: only the module name matters, so the
+  task lives inside the cartridge. `WorkbenchIgniter.Task` is Igniter's
+  task with one thing more: an issue ends it with a failure, so
+  `wb.sh add` undoes a half-insert instead of committing it.
+- **`priv/features/<feature>/`** — the cartridge directory holds only
+  code and papers. Everything else lives in its mirror under `priv/`,
+  never compiled, so a file keeps its final name (`cover.ex`):
+  - `templates/*.eex` — embedded at compile time by `embed_templates()`
+    (each one is an `@external_resource`: editing it recompiles).
+    Rendered through the module's local `template/2`, with the same
+    semantics as `WorkbenchIgniter.template/2`.
+  - `assets/` — text files the feature copies verbatim (no rendering):
+    `embed_assets()` embeds them as a local `asset/1` (see coverage).
+  - `compose/` — the fragments of the services the cartridge declares
+    (`compose/1`), for the workspace's compose files.
+  - binaries (`images/`, the exdoc logo) — read at runtime with the
+    local `priv_asset/1`, or planted byte-for-byte after the patch set
+    is applied with `plant_binary_asset/3` (binaries must never go
+    through the igniter rewrite pipeline, which normalizes trailing
+    bytes). Both helpers derive the feature name from the cartridge
+    directory.
 - **test** — at `test/workbench_igniter/features/<feature>_test.exs`,
   exercising the task by name with `Igniter.Test`.
+- **`NEED.md`** — the developer's need the cartridge answers: one
+  sentence, then *Before*, *After* and *Not for*. The catalog reads the
+  sentence off the file, and the catalog test refuses a cartridge
+  without one.
 - **`CHANGELOG.md`** — the cartridge's own version history, in the Keep
   a Changelog format, with semver applied to what it *installs*: a new
   file or route is a minor, anything that breaks a project already
@@ -176,12 +208,15 @@ and the role of each file; the general index is
   reference, and the criteria for writing one are in the features
   index, under *Writing a DESIGN.md*.
 
-Dep-only cartridges (credo, mock, …) keep the same shape minus
-`templates/` and `assets/`: README, `<feature>.ex` and `task.ex`.
+Dep-only cartridges (credo, exdebug, …) keep the same shape without a
+`priv/features/<feature>/` directory: the papers, `<feature>.ex` and
+`task.ex`.
 
 Every feature is in cartridge form; `lib/mix/tasks/` only keeps the
-setup task, the expand task, the two query tasks (`workbench.catalog`,
-`workbench.status`) and the `workbench.plant_asset` plumbing.
+tasks that are about the whole project and not one cartridge: the
+setup, the two query tasks (`workbench.catalog`, `workbench.status`),
+`workbench.expand` and `workbench.dependents`, the compose writer, the
+console's `workbench.serve`, and the plumbing.
 
 ## The catalog
 
@@ -205,8 +240,8 @@ reads one JSON and not two trees.
 ## The setup, and the collection
 
 `workbench.setup` is vanilla: a stock `phx.new` project plus *only* what
-the dockerized workspace requires to boot it (6 options, `composes:
-[]`). The endpoint must bind `0.0.0.0` because the compose pod pattern
+the dockerized workspace requires to boot it (two options,
+`--internal-port` and `--ecto`; `composes: []`). The endpoint must bind `0.0.0.0` because the compose pod pattern
 (`network_mode: "service:pod"`) delivers the published port on the
 namespace interface and never on loopback; `.env` must exist because the
 workspace compose declares `env_file: ./.env`. Everything else is a
@@ -219,7 +254,8 @@ now the [chiefs_setup](lib/workbench_igniter/features/chiefs_setup/)
 picks. `mix workbench.expand` turns a cartridge into the inserts
 `wb.sh add` runs (a collection: its missing members; a plain cartridge:
 itself), so every inserted cartridge is one commit and `eject` reverts
-one alone.
+one alone. chiefs_setup is archived with the line it collected
+(2026-09-20), and is for now the only collection the shelf has had.
 
 ## Adding a feature (checklist)
 
@@ -235,11 +271,12 @@ one alone.
 - [ ] `installed?/1`, off one mark; and the idempotency guard reads
       that same function if it touches the router or any other
       non-idempotent edit (`installed?` + `add_notice`; see
-      health_endpoint).
-- [ ] Templates as EEx module *bodies* in `templates/`
-      (`embed_templates()`); verbatim files in `assets/`
-      (`embed_assets()`, `.asset` suffix for `*.ex` files); binary
-      assets in the `priv/features/<feature>/` mirror.
+      health_probe).
+- [ ] Everything that is not code under `priv/features/<feature>/`:
+      templates as EEx module *bodies* in `templates/`
+      (`embed_templates()`), verbatim files in `assets/`
+      (`embed_assets()`), the services' fragments in `compose/`,
+      binaries beside them.
 - [ ] Register `dont_move_file_pattern` for files outside the
       module-name → path convention (e.g. `controllers/`,
       `test/support/fixtures/`).
@@ -259,16 +296,18 @@ one alone.
 - [ ] Manual validation: `./wb.sh new --name "…"`, then `./wb.sh add <feature>` on
       the created project.
 
-Possible future step: moving the package to its own git repo, so projects
-that already ran `remove-workbench` can keep installing features via
+Possible future step: moving the package to its own git repo. Today a
+shelf of your own is a fork of the workbench; as a package of its own,
+a project away from the workbench could keep installing cartridges via
 `{:workbench_igniter, git: "..."}`.
 
 ## Usage
 
 With `wb.sh` there is nothing to configure: the `new` command injects into
 the generated `mix.exs` a conditional dep pointing at the workbench
-mounted at `/app/workbench` (the `workbench_dep/0` function). To use the
-package by hand in any project:
+mounted at `/app/workbench` (the `workbench_dep/0` function; it adds
+nothing when the directory is not there). To use the package by hand in
+any project:
 
 ```elixir
 {:workbench_igniter, path: "path/to/workbench/igniter", only: [:dev, :test], runtime: false}
@@ -281,29 +320,21 @@ workspace:
 mix workbench.setup --yes
 ```
 
-then the collection, for the workbench's picks in one patch set:
+then the installers, one cartridge each:
 
 ```sh
-mix workbench.install.chiefs_setup --interface rest --yes
-```
-
-or individual installers:
-
-```sh
-mix workbench.install.health_endpoint          # shows the diff and asks for confirmation
-mix workbench.install.health_endpoint --yes    # applies directly (for Docker/CI use)
-mix workbench.install.health_endpoint --endpoint /status   # configurable route
+mix workbench.install.health_probe            # shows the diff and asks for confirmation
+mix workbench.install.health_probe --yes      # applies directly (for Docker/CI use)
+mix workbench.install.health_probe --path /status   # configurable route prefix
 ```
 
 The task performs, in a single atomic patch set:
 
-| Change | Igniter API | app.sh equivalent |
-| --- | --- | --- |
-| Adds `{:mock, "~> 0.3", only: :test}` | `Igniter.Project.Deps.add_dep/3` | `mix_insert` |
-| `dev_routes: true` in `config/test.exs` | `Igniter.Project.Config.configure/5` | `adjust_config_test` |
-| Creates `MyAppWeb.HealthcheckController` | `Igniter.Project.Module.create_module/4` | `cp seed + sed placeholders` |
-| Creates the controller test | `Igniter.Project.Module.create_module/4` | `unit_testing` |
-| Router scope | `Igniter.Libs.Phoenix.add_scope/4` | `router_add_scope` |
+| Change | Igniter API |
+| --- | --- |
+| Creates `MyAppWeb.Plugs.Health` | `Igniter.Project.Module.create_module/4` |
+| Creates its test | `Igniter.Project.Module.create_module/4` |
+| `plug MyAppWeb.Plugs.Health`, first in the endpoint | `Igniter.Project.Module.find_and_update_module!/3` + `Igniter.Code.Common.add_code/3` |
 
 The module name, web module and app name are **derived from the target
 project** (`app_name/1`, `web_module/1`, `module_name_prefix/1`): there
@@ -311,22 +342,36 @@ are no `%{elixir_module}` placeholders injected from outside.
 
 ## Idempotency
 
-Running a task twice is a no-op: if `MyAppWeb.HealthcheckController`
-already exists, the task emits a notice and touches nothing. This allows
-installing features on existing projects, not just freshly generated ones.
+Running a task twice is a no-op: if `MyAppWeb.Plugs.Health` already
+exists, the task emits a notice and touches nothing. The guard reads
+`installed?/1`, the same function `mix workbench.status` asks, so the
+two never disagree. This allows installing features on existing
+projects, not just freshly generated ones.
 
 ## Tests
 
 ```sh
 mix test
+mix test --only exhaustive       # every order the base cartridges can go in: about an hour
+mix test --only network:ash_hq   # the ash cartridge against ash-hq.org, live
 ```
 
-Tests use `Igniter.Test`: each case runs against a simulated **in-memory**
-Phoenix project (`phx_test_project/0`, requires the `:phx_new` test dep) —
-no disk writes, no database, no real project generation. They verify file
-creation at Phoenix's conventional paths, the patches on
-router/config/mix.exs, and idempotency (applying twice ⇒ no changes + a
-notice).
+Each cartridge's test uses `Igniter.Test`: every case runs against a
+simulated **in-memory** Phoenix project (`phx_test_project/0`, requires
+the `:phx_new` test dep) — no disk writes, no database, no real project
+generation. They verify file creation at Phoenix's conventional paths,
+the patches on router/config/mix.exs, and idempotency (applying twice ⇒
+no changes + a notice).
+
+Three suites stand over all of them. `catalog_test.exs` holds every
+cartridge to its manifest: a need, a mark `installed?/1` reads, options
+that are documented. `grown_vs_born_test.exs` grows a project born bare
+one base cartridge at a time and compares it, file by file, with the
+project born whole. The compose files are held, byte for byte, to a
+golden corpus under `test/fixtures/compose/` (written by
+`test/support/compose_golden.sh`), and
+`services_conformance_test.exs` checks what each cartridge promises
+about its own services.
 
 ## Lessons learned (for future features)
 
@@ -337,8 +382,10 @@ notice).
   `Igniter.Project.IgniterConfig.dont_move_file_pattern/2` (the task
   already does; the generated `.igniter.exs` must be committed).
 - **`add_scope` is not idempotent** (it always appends). Any installer
-  touching the router needs its own guard — here, the controller's
-  existence via `Igniter.Project.Module.module_exists/2`.
+  touching the router needs its own guard: `installed?/1`, a notice,
+  and nothing touched.
+- **`Igniter.create_new_file(on_exists: :skip)` does not skip.** The
+  same guard is the answer.
 - EEx templates are the module *body*: `create_module/4` adds the outer
   `defmodule` and the target project's formatter normalizes indentation.
 

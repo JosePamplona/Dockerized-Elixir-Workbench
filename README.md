@@ -566,8 +566,6 @@ None of these was free. What each decision costs:
 | **The project owes the workbench nothing** | The workbench has to work everything out by reading: the source, Docker and git. |
 | **Cartridges live in the workbench's repository** | A shelf of your own, or your team's, is a fork. |
 
-What I would do differently is not written yet. None of these decisions has broken badly enough to say, and this section will grow as they do.
-
 The implementation was AI-assisted. The architecture and the decisions are the author's, and the [CHANGELOG](CHANGELOG.md) is where each one was argued.
 
 ## Maintenance

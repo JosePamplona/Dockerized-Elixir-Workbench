@@ -2,7 +2,11 @@
 <!-- markdownlint-configure-file { "MD033": { "allowed_elements": ["img", "br"] } } -->
 # Dockerized Elixir Workbench <!-- omit in toc -->
 
+![v0.18.0](https://img.shields.io/badge/version-0.4.2-white.svg?style=flat-square&color=lightgray)
 [![CI](https://github.com/JosePamplona/Dockerized-Elixir-Workbench/actions/workflows/ci.yml/badge.svg)](https://github.com/JosePamplona/Dockerized-Elixir-Workbench/actions/workflows/ci.yml)
+[![Last Updated](https://img.shields.io/github/last-commit/JosePamplona/Dockerized-Elixir-Workbench.svg?style=flat-square)](https://github.com/JosePamplona/Dockerized-Elixir-Workbench/commits/main)
+[![License](https://img.shields.io/github/license/JosePamplona/Dockerized-Elixir-Workbench?style=flat-square)](https://github.com/JosePamplona/Dockerized-Elixir-Workbench/blob/main/LICENSE.md)
+
 
 The workbench is two things in one repository.
 

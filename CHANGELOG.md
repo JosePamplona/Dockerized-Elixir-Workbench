@@ -14,6 +14,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+## v0.18.0 - (2026-10-04)
+
 ### Added
 
 - **Six boxes on the shelf that are identified and not designed:

@@ -1,0 +1,250 @@
+defmodule ConsoleWeb.Cartridges do
+  @moduledoc """
+  What the page works out of the status and the catalog about a
+  cartridge: whether the project carries it, what it opened in the
+  console, how it got here. All read off the two contracts; nothing
+  here is a second opinion about what is installed. One fact comes
+  from the papers instead: whether a box that is not done has its
+  design written (`not_done/1`).
+  """
+
+  @doc "The catalog entries the project carries (status's, with `installed` and `state`)."
+  def installed(nil), do: []
+
+  def installed(status),
+    do: Enum.filter(get_in(status, ["project", "cartridges"]) || [], & &1["installed"])
+
+  def installed?(status, name), do: Enum.any?(installed(status), &(&1["name"] == name))
+
+  @doc """
+  What a box that is not done is, in the short words a chip's title
+  takes. A pending box is one of two things, and its papers say which
+  (2026-10-04): *designed* when it carries a `DESIGN.md` — the design
+  is written and the installer is what is missing — and *identified*
+  when its need is all there is, the design still to do. Read off the
+  papers on the mount, as the Manual reads them, so no manifest has to
+  declare it: writing the design is what moves the box.
+  """
+  def not_done(box) do
+    if designed?(box),
+      do: "the box is designed, not built: nothing inserts it yet",
+      else: "the box is identified, not designed yet: nothing inserts it"
+  end
+
+  @doc "The same, as the sentence that stands where a pending box has no summary."
+  def not_done_said(box) do
+    if designed?(box),
+      do: "Designed and documented; not built yet, so nothing inserts it.",
+      else: "Identified: its need is written and its design is not, so nothing inserts it yet."
+  end
+
+  defp designed?(box), do: "design" in Console.Papers.carried(box["name"])
+
+  @doc """
+  Whether the project carries a cartridge in the state a requirement
+  asks (the catalog's `conditions`: `%{"database" => "postgres"}`),
+  read off the state the status reports for it; a requirement without
+  a state is met by the cartridge being in.
+  """
+  def satisfies?(status, name, condition) when map_size(condition) == 0,
+    do: installed?(status, name)
+
+  def satisfies?(status, name, condition) do
+    case carried(status, name) do
+      %{"installed" => true} = c ->
+        Enum.all?(condition, fn {key, value} -> met?(get_in(c, ["state", key]), value) end)
+
+      _ ->
+        false
+    end
+  end
+
+  # The same reading as the installer's (`WorkbenchIgniter.Feature`): a
+  # list asks for any one of its values (`database` postgres, mysql or
+  # mssql), and a state the project answers with a list — a `:csv`
+  # option: test_doubles' doubles, db_admin's admins — is met when it
+  # carries what was asked. Without this the console shut an option
+  # whose box was in and whose state held, and the insert would have
+  # taken it.
+  defp met?(found, expected) when is_list(found) and is_list(expected),
+    do: Enum.any?(found, &(&1 in expected))
+
+  defp met?(found, expected) when is_list(found), do: expected in found
+  defp met?(found, expected) when is_list(expected), do: found in expected
+  defp met?(found, expected), do: found == expected
+
+  @doc "A requirement said, with its state: `ecto with database postgres`."
+  def requirement(name, condition) when map_size(condition) == 0, do: name
+  def requirement(name, condition), do: "#{name} with #{state_said(condition)}"
+
+  @doc "A required state said on its own: `database postgres`, `live`, `no binary_id`."
+  def state_said(condition), do: Enum.map_join(condition, " and ", &said/1)
+
+  defp said({key, true}), do: key
+  defp said({key, false}), do: "no #{key}"
+  defp said({key, [value]}), do: "#{key} #{value}"
+
+  defp said({key, values}) when is_list(values),
+    do: "#{key} #{values |> Enum.drop(-1) |> Enum.join(", ")} or #{List.last(values)}"
+
+  defp said({key, value}), do: "#{key} #{value}"
+
+  @doc "The status's entry for a cartridge, installed or not."
+  def carried(status, name),
+    do: Enum.find(get_in(status, ["project", "cartridges"]) || [], &(&1["name"] == name))
+
+  @doc "Every insert commit of a cartridge still standing, newest first."
+  def inserts(nil, _name), do: []
+
+  def inserts(status, name),
+    do: Enum.filter(get_in(status, ["git", "inserts"]) || [], &(&1["feature"] == name))
+
+  @doc "The latest insert commit of a cartridge, when it went in by commit."
+  def insert(nil, _name), do: nil
+
+  def insert(status, name),
+    do: Enum.find(get_in(status, ["git", "inserts"]) || [], &(&1["feature"] == name))
+
+  @doc """
+  What a container is doing, as a chip's words and class, off what
+  `docker compose ps` says: `healthy`, `running` without a healthcheck,
+  good; `starting`, a warn that pulses; `unhealthy`, bad. Exited with
+  code 0 is an absence — a Stop, a `migrate` that did its job — and
+  wears `.off`; exited otherwise is bad, with the code on the chip, so
+  the number says what to look at. The title is Docker's own line.
+  """
+  def container_reading(c) do
+    health = if(c["Health"] in [nil, ""], do: nil, else: c["Health"])
+    state = c["State"] || ""
+    code = c["ExitCode"]
+
+    reading(state, health, code)
+  end
+
+  # Health is read only while the container runs: Docker stops probing
+  # a stopped one and keeps the last answer, so an app that crashed
+  # reads `unhealthy` next to its `Exited (1)`.
+  defp reading("running", "healthy", _code), do: {"healthy", "good"}
+  defp reading("running", "starting", _code), do: {"starting", "warn busy"}
+  defp reading("running", "unhealthy", _code), do: {"unhealthy", "bad"}
+  defp reading("running", _health, _code), do: {"running", "good"}
+  defp reading("exited", _health, code) when code in [0, nil], do: {"exited", "off"}
+  defp reading("exited", _health, code), do: {"exited #{code}", "bad"}
+
+  defp reading(state, _health, _code) when state in ["created", "paused", "restarting"],
+    do: {state, "warn"}
+
+  defp reading(state, _health, _code), do: {state, "bad"}
+
+  @doc "Whether the app is up: an app container running, whichever deployment."
+  def app_up?(nil), do: false
+  def app_up?(status), do: status["deployment"] != nil
+
+  @doc """
+  What each inserted cartridge adds to the console, off the manifest's
+  `console/0` as the catalog carries it: `[{entry, item}]` for `kind`
+  — doors — only the items whose condition holds.
+  """
+  def contributions(status, catalog, kind) do
+    for c <- installed(status),
+        entry = Enum.find(catalog, &(&1["name"] == c["name"])) || c,
+        item <- get_in(entry, ["console", kind]) || [],
+        holds?(status, c, item),
+        do: {c, item}
+  end
+
+  # A door's `when`: with an option on or at a value, or with another
+  # cartridge in. The item is unwrapped once — only a map that carries a
+  # `when` — and the condition itself is read by its key; an item
+  # without one holds.
+  def holds?(status, c, %{"when" => condition}), do: holds?(status, c, condition)
+
+  # An option at a value, read as a requirement's state is: ash's
+  # `--api` answers with a list, and `/sign-in` asks for any one of the
+  # strategies that bring pages.
+  def holds?(_status, c, %{"option" => key, "value" => value}) do
+    case get_in(c, ["state", key]) do
+      nil -> false
+      found -> met?(found, value)
+    end
+  end
+
+  # The cartridge's own option, as the project reports it: `--exdoc` is
+  # what plants coverage's `mix cover`, and whether the exdoc cartridge
+  # is in says nothing about that file.
+  def holds?(_status, c, %{"option" => key}), do: !!get_in(c, ["state", key])
+
+  def holds?(status, _c, %{"cartridge" => name}), do: installed?(status, name)
+  def holds?(_, _, _), do: true
+
+  @doc "`{option}` in a path: the option's value as the project reports it, or its default."
+  def fill_path(path, c) do
+    Regex.replace(~r/\{(\w+)\}/, path, fn _, o ->
+      to_string(
+        get_in(c, ["state", o]) ||
+          (Enum.find(c["options"] || [], &(&1["name"] == o)) || %{})["default"] || ""
+      )
+    end)
+  end
+
+  @doc """
+  How a cartridge got here, which is also whether the workbench can
+  take it back: `{word, chip class, why}`.
+  """
+  def origin(status, c) do
+    cond do
+      i = insert(status, c["name"]) ->
+        {"by commit", "",
+         "git revert #{String.slice(i["sha"], 0, 7)} — #{i["subject"]} · #{i["date"]}"}
+
+      c["collection"] ->
+        {"collection", "off",
+         "the box leaves no commit of its own: eject its cartridges, not the collection"}
+
+      get_in(status, ["project", "phx", c["name"]]) == true ->
+        {"from birth", "off", "came with the project: phx.new generated it — nothing to eject"}
+
+      composer = composer(status, c) ->
+        {"with #{composer["name"]}", "off",
+         "came in with #{composer["name"]}'s insert (#{String.slice(composer["sha"], 0, 7)} — " <>
+           "#{composer["subject"]}): its files are in that commit, and ejecting " <>
+           "#{composer["name"]} takes them back"}
+
+      true ->
+        {"by hand", "off", "inserted by hand: no commit to eject"}
+    end
+  end
+
+  @doc """
+  The cartridge that brought this one in, when it has no insert of its
+  own: one that is in by commit and declares it among what its
+  installer composes (`composes`, off the manifest) — coverage's
+  `--exdoc` brings test_doubles, health_endpoint brings mock. The
+  entry with its insert's sha and subject; `nil` when nobody claims it.
+  """
+  def composer(status, c) do
+    Enum.find_value(get_in(status, ["project", "cartridges"]) || [], fn other ->
+      with true <- other["installed"],
+           true <- c["name"] in (other["composes"] || []),
+           %{} = i <- insert(status, other["name"]) do
+        Map.merge(i, %{"name" => other["name"]})
+      else
+        _ -> nil
+      end
+    end)
+  end
+
+  @doc "What is true of a box: not done, archived, a collection of N, base."
+  def facts(e) do
+    [
+      e["pending"] && "not done",
+      e["archived"] && "archived",
+      e["collection"] && "inserts #{length(e["members"] || [])}",
+      e["base"] && "base"
+    ]
+    |> Enum.filter(&is_binary/1)
+  end
+
+  @doc "The catalog entries phx.new decides: the base cartridges."
+  def base(catalog), do: Enum.filter(catalog, & &1["base"])
+end

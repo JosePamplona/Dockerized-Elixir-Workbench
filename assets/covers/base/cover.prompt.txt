@@ -1,0 +1,104 @@
+The hero is manual: generated from the prompt below (the collegiate
+heraldic brief, 2026-09-18), then adjusted by hand. art/hero.jpg is
+the source now; it cannot be regenerated, only continued, and it is
+archived before anything overwrites it.
+
+Changes from the prompt, as they stand in the hero:
+  - 2026-09-18 — the scroll reads "EST. MMXIV" instead of "RESURGAM".
+    Verified: phoenixframework/phoenix's first commit, "Initial
+    commit", is dated 2014-01-18.
+  - 2026-09-18 — the subtitle reads "BASE CARTRIDGE" instead of
+    "BORN AGAIN".
+  - 2026-09-18 (hero-2) — the shield's field is violet leather
+    instead of vermilion, the seven stars gold on a violet band, every
+    metal gold with no vermilion left; the ground is aged parchment,
+    darkening and foxed towards the edges, instead of even ivory laid
+    paper.
+  - 2026-09-19 (hero-3) — the whole device — crest, laurels, scroll
+    and the *PHOENIX / BASE CARTRIDGE* lockup — reduced to about a
+    third and set in the top third of the face: the shield centred on
+    the width from 0.07 to 0.20 of the height, the scroll at 0.24, the
+    lockup ending at 0.33. Below it the face is aged parchment, edge to
+    edge, with nothing on it.
+  - 2026-09-20 (cover, by hand) — the composition of the cut face
+    itself, in art/cover.xcf, which is the source of art/cover.jpg from
+    here on: the device moved out of the top third and down to the
+    left, the shield from 0.157 to 0.454 of the width and from 0.44 to
+    0.743 of the height, with the parchment bare above it and to its
+    right. The top third is the engraved name's, and the space beside
+    the device is the seal's, which is why the seal is no longer
+    centred at the foot: --corner tl --inside -m 0.4625,0,0,0.4950
+    --size 0.396 sets it at 490,570 of the 707x995 face with a 140px
+    radius, and --title-y 0.3042 puts the name 140px above where the
+    third hero had it.
+
+================================================================
+
+[Attach art/logo-reference.png to this turn: the Phoenix bird, orange on
+white. It is the reference for the bird's silhouette, not an image to
+paste.]
+
+Collegiate heraldic cover art in the tradition of an old university's
+bound register. Fine copperplate engraving printed on heavy ivory laid
+paper: dense, even line hatching for every shadow, no painted
+gradients; the metalwork in real gold leaf, foil-blocked with a
+subtle deboss that catches the light; one spot colour, a deep
+vermilion, laid flat inside engraved outlines; classical Roman
+capitals with fine bracketed serifs, widely letterspaced. Quiet,
+symmetrical, solemn, crafted by hand.
+
+Flat cover illustration filling the entire image edge to edge, all of
+it in one plane: the four edges of the image are the four edges of the
+illustration, and the illustration is all there is — not a product
+photograph, not a box or a board: no bevel, no lip, no rim of light, no
+edge, no shadow, no surface behind it, no margin of any colour around
+it. Proportions 4:5 portrait. Every position below is measured from
+the edges of the image. The ground of the illustration, edge to edge,
+is one tone that reads clearly lighter or darker in value than Elixir
+violet (#4B275F).
+
+Hero illustration: a coat of arms, centred on the width, on the ivory
+paper. The shield is a plain heater shield, its top edge at 0.24 of
+the height and its point at 0.62, its sides at 0.33 and 0.67 of the
+width, outlined in gold leaf. Across the top of the shield, a band of
+gold leaf holding seven small five-pointed stars in one row, engraved
+in vermilion, evenly spaced. Below the band, the field of the shield
+is vermilion, and on it, in gold leaf, the firebird of the attached
+reference image with exactly its silhouette — a compact rounded body,
+a short hooked beak and one almond-shaped eye at the upper left, long
+curling tongues of flame streaming from its back and underside away
+to the right — engraved with fine hatching along its feathers and
+flames, filling the field. Around the shield, two branches of laurel
+engraved in gold leaf, rising from a crossing just below the shield's
+point and curving up along each side to the height of the band of
+stars, their leaves in pairs. Beneath the crossing, a ribbon scroll
+engraved in ivory with vermilion hatching in its folds, its two ends
+turned back, spanning from 0.28 to 0.72 of the width at 0.68 of the
+height, and on it, in gold Roman capitals at foreground size, the one
+word "RESURGAM".
+
+Title lockup across the lower part of the image, on the ivory paper
+below the scroll: "PHOENIX" set in gold leaf, classical Roman capitals
+widely letterspaced, centred on the width, its baseline at 0.86 of the
+height and half the width wide; and beneath it, in small vermilion
+capitals, the subtitle "BORN AGAIN".
+
+The word on the scroll, the title and the subtitle are all the
+lettering in the image.
+
+The top left and the top right of the artwork are both composed as
+quiet areas: low detail, no focal element, the even ivory of the laid
+paper, down to 0.20 of the height.
+
+Every mark on the face is printed illustration or type, and the
+marks named above are all of them.
+
+--- second turn, with art/padded.jpg from covers.py pad ---
+
+The flat grey border around this picture is blank. Paint it by
+continuing the picture outward into it on every side, to the edges —
+the aged parchment continues above the crest to the top edge, below to
+the bottom edge, and to both side edges, with the same grain, the same
+foxing and the same light, darkening towards the edges as it already
+does. Keep the picture inside exactly as it is, and add nothing new:
+no figure, no object, no lettering.

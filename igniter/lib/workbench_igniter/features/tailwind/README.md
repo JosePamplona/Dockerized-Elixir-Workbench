@@ -1,0 +1,79 @@
+# tailwind
+
+Phoenix's tailwind for a project generated with `--no-tailwind`.
+
+Phoenix styles its generated markup with Tailwind CSS: the
+[tailwind](https://hexdocs.pm/tailwind/) package downloads the
+stand-alone CLI and runs it from a profile in `config.exs`
+(`assets/css/app.css` in, `priv/static/assets/css/app.css` out), a
+watcher rebuilds it in development, and the `assets.*` aliases drive
+it. Heroicons come "embedded as CSS classes, ensuring only used icons
+reach clients via Tailwind's tree-shaking", and daisyUI as a plugin
+([asset management](https://hexdocs.pm/phoenix/asset_management.html)).
+`mix help phx.new` on the flag: "The generated markup will still
+include Tailwind CSS classes, those are left-in as reference" — so a
+`--no-tailwind` project has a layout written for Tailwind, styled by a
+static `default.css` snapshot.
+
+Base cartridge. Install it on demand with
+
+```sh
+./wb.sh add tailwind
+mix workbench.install.tailwind
+```
+
+## What it installs
+
+Whatever `phx.new` generates for it at the installer's version in the
+toolchain — asked of `phx.new` itself (`WorkbenchIgniter.PhxDelta`, see
+[mailer](../mailer/) for the mechanism). With Phoenix 1.8.12: `{:tailwind, "~> 0.5"}` with the `heroicons` and
+`daisyui` git dependencies, `config :tailwind` (the version and the
+`test` profile: `css/app.css` to `priv/static/assets/css/app.css`), the
+tailwind watcher in `dev.exs`, `tailwind test` in the
+`assets.setup`/`assets.build`/`assets.deploy` aliases,
+`assets/css/app.css` and `assets/vendor/heroicons.js`, and the
+Tailwind classes of the root layout and the home page (without it
+phx.new ships a plain stylesheet). And, when the project had no
+`assets/` directory before, the assets steps of the production
+`Dockerfile` (`mix assets.setup`, `COPY assets`, `mix assets.deploy`)
+that `phx.gen.release --docker` writes at birth only for a project that
+has one.
+
+Files the project already changed are merged three ways; a conflict is
+reported with `phx.new`'s version of the file beside it.
+
+What the build needs: `phx.new`'s `app.css` imports
+`phoenix-colocated/<app>/colocated.css`, a directory LiveView's
+compiler writes — and that compiler comes with [html](../html/). The
+insert succeeds on any project and says so in a notice when html is
+out; `mix assets.build` fails with "Can't resolve
+'phoenix-colocated/…'" until html is in. What goes: `--no-tailwind`
+put `priv/static/assets/css/app.css` and the 80 kB
+`priv/static/assets/default.css` in the project; the insert takes
+them away when they are still `phx.new`'s, and keeps a file the
+project rewrote (the root layout no longer links `default.css` either
+way).
+
+## Options
+
+None. `phx.new` has none for it.
+
+## Idempotency
+
+Re-running is a no-op: when the `tailwind` dependency is there — a default project carries
+it — nothing is touched and a notice says so.
+
+## Contents
+
+| File | Role |
+| --- | --- |
+| `📁 lib/workbench_igniter/features/tailwind/` | The cartridge: its code and its papers |
+| `├── 📄 tailwind.ex` | The mark and the `--no-tailwind` delta |
+| `├── 📄 task.ex` | The Mix task `wb.sh add` runs |
+| `├── 📄 README.md` | What it installs, and how it runs |
+| `├── 📄 NEED.md` | The need, the line the shelf shows |
+| `├── 📄 CHANGELOG.md` | Its versions, apart from the workbench's |
+| `└── 📄 DESIGN.md` | Why it is shaped so; the engine: mailer's |
+|  |  |
+| `📁 test/workbench_igniter/features/` |  |
+| `└── 📄 base_cartridges_test.exs` | Shared with the other base cartridges |

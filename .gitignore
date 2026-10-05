@@ -1,0 +1,20 @@
+# Generated on each `wb.sh new` from scripts/Dockerfile.seed.local.
+/scripts/Dockerfile.local
+
+# Deploy logs.
+*.log
+
+# Elixir build artifacts of the igniter package.
+/igniter/_build/
+/igniter/deps/
+/igniter/erl_crash.dump
+
+# Generated workspaces (projects live here, not in the workbench repo).
+/_workspaces/
+/_local/
+
+# Superseded cover artwork: kept beside each cover, never in the repo.
+_archived/
+
+# Python bytecode (a project's diagrams/build.py imports assets/diagrams/build.py).
+__pycache__/

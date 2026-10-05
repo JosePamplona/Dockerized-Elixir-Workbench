@@ -1,0 +1,56 @@
+test_data — back plate prompt
+Era 3, editorial cover (mid-1980s), from the front's row in the cover
+record. Register: supporting. The plate carries nothing lettered: the
+copy, the frames, the screenshots, the name lozenge, the install command
+and the seal are all composited by `covers.py back`.
+
+Generated from this text alone, with no reference image attached. The
+era block is cut of its placing clause ("one carefully lit object
+centred with generous space around it"): the back has no subject. The
+device is the era's colophon, an oval with one figure inside, and the
+figure is the front's in the only form a device allows: one paper doll,
+alone, with no lettering on it.
+
+Take 2 (2026-09-21): take 1 came back 4:5 and with the band floating
+above the foot (0.915 to 0.965, lighter stock under it); the band is
+now given as positions to the edge. The format block stays verbatim;
+the 825x1024 is the front hero's 4:5, most likely still selected in
+the generator: clear it so the prompt's 5:7 decides, as every other
+plate on the shelf came back at 728x1024.
+
+--- the plate, one turn ---
+
+Mid-1980s literary game cover art. Restrained editorial design rather
+than illustration: an even ground of a single colour, serif type set
+small, a subtle deboss, clean printing on coated stock.
+
+Flat cover illustration filling the entire image edge to edge, all of
+it in one plane: the four edges of the image are the four edges of the
+illustration, and the illustration is all there is — not a product
+photograph, not a box or a board: no bevel, no lip, no rim of light, no
+edge, no shadow, no surface behind it, no margin of any colour around
+it. Proportions 5:7 portrait. Elixir violet (#4B275F) is the dominant
+colour of the illustration.
+
+Back face layout. This face carries no subject: no figure, no scene, no
+picture of anything. The face is coated stock printed in one even deep
+Elixir violet across the whole face, lit softly from the upper left, its
+only texture the fine tooth of the stock. Nothing on the face is
+lettered: no title, no caption, no signature, no placeholder text, no
+glyphs, no words of any kind anywhere on the face.
+
+Across the middle of the face the printed stock continues, bare, and one
+publisher's colophon is debossed into it, centred on the width, its
+centre a little below the middle of the height, a fifth of the width
+wide: an upright oval outline, and inside it one small standing paper
+doll figure, arms held out to the sides, and nothing else. It is the
+same violet as the stock and barely darker than it — a watermark rather
+than a print, and the one mark on this face. It carries no lettering.
+
+Along the foot of the face, a band of the same stock printed in a
+darker violet ink: it starts at 0.93 of the height down and runs to the
+bottom edge of the image, and from the left edge to the right edge — the
+last thing on the face in every direction, with the stock above it.
+
+Every mark on the face is printed material or type, and the marks named
+above are all of them.

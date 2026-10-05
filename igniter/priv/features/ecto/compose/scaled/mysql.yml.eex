@@ -1,0 +1,20 @@
+  # No `restart:`, as in the dev compose: the deployment is the unit,
+  # across a reboot too.
+  database:
+    image: mysql:<%= @version.("mysql", "8") %>
+    environment:
+      # phx.new's own dev credentials for MySQL: root, no password.
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      MYSQL_DATABASE: <%= @app_name %>_prod
+    healthcheck:
+      # 127.0.0.1 forces TCP, as in the dev compose: the init's temporary
+      # server answers the unix socket before the real one listens.
+      test: mysqladmin ping -h 127.0.0.1 --silent
+      timeout: 45s
+      interval: 10s
+      retries: 10
+      # The first start on a fresh volume initialises the data directory,
+      # runs a temporary server and shuts it down before the real one
+      # listens: a minute or more on a busy host, and a failure in this
+      # period does not count — compose used to give up on it.
+      start_period: 90s

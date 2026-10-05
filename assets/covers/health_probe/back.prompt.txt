@@ -1,0 +1,94 @@
+Manual plate — drawn from the hero, not from an era block. The
+reference image sent with this text is art/hero.jpg, the front of the
+same box; the plate is the back of that box, in the same printing.
+
+--- change 1, with art/hero.jpg as the reference ---
+
+Draw the back face of the box whose front is this picture, in exactly
+this printing: the same dark plum leather, lit at the centre and
+darkening evenly toward the edges, the same fine grain, the same thin
+embossed frame with rounded corners a little inside the edges, the
+same gold classical serif lettering.
+
+Flat cover illustration filling the entire image edge to edge, all of
+it in one plane: the four edges of the image are the four edges of the
+illustration, and the illustration is all there is — not a product
+photograph, not a box or a board: no bevel, no lip, no rim of light, no
+edge, no shadow, no surface behind it, no margin of any colour around
+it. Proportions 5:7 portrait. Every position below is measured from
+the edges of the image. Elixir violet (#4B275F) is the dominant colour
+of the illustration.
+
+This face carries no subject: no bell, no lozenges, no figure, no
+picture of anything. The face is the dark plum leather of the front,
+even across the whole face, with the embossed frame running round it
+as on the front: its top side at four hundredths of the height, its
+bottom side at ninety hundredths of the height, its sides two
+hundredths of the width in from each edge. One thing on it is
+lettered, and only one: the words "DOCKERIZED ELIXIR WORKBENCH", in
+exactly the gold classical serif capitals of the title on the front,
+printed the same way, on two lines — "DOCKERIZED" on the first line
+and "ELIXIR WORKBENCH" on the second — at foreground size, centred on
+the width, inside a rectangle that runs from ten hundredths of the
+width to ninety hundredths of the width and from eight hundredths of
+the height to twenty-two hundredths of the height. Nothing else on the
+face is lettered: no title, no caption, no signature, no placeholder
+text, no glyphs, no words of any kind anywhere else, anywhere on the
+face.
+
+Across the middle of the face the leather continues, bare, and one
+publisher's colophon is blind-embossed into it as a watermark, centred
+on the width, its centre at fifty hundredths of the height, a fifth of
+the width wide: an upright oval outline, and inside it one small desk
+bell drawn in outline and nothing else — pressed into the leather, a
+step darker than the leather around it, barely visible, the one mark
+on this face. It carries no lettering.
+
+Across the bottom edge, over the full width, from ninety-three
+hundredths of the height to the bottom edge, a band of the same
+leather a step darker than the face, with nothing printed on it; the
+frame's bottom side sits above it.
+
+Every mark on the face is printed material or type, and the marks
+named above are all of them.
+Accent: the front's — the gold of the lettering; nothing else on this
+face has a colour of its own.
+
+--- change 2, with art/back.jpg as the reference (the plate before it
+    is `_archived/art/back-1.jpg`, composed in `_archived/back-1/`) ---
+
+The rectangle given to the name in change 1 came back drawn: an
+embossed panel from 0.18 to 0.34 of the height, the lettering less
+than half of it. The name is printed directly on the leather now, and
+no rectangle is named.
+
+Keep this picture exactly as it is — the leather, its grain and
+lighting, the embossed frame, the colophon with the bell, the darker
+band at the foot — and change one thing: the words "DOCKERIZED ELIXIR
+WORKBENCH" are printed directly on the bare leather, in the same gold
+classical serif capitals, on two lines as they are — "DOCKERIZED" on
+the first line, "ELIXIR WORKBENCH" on the second — centred on the
+width, the first line's baseline at ten hundredths of the height and
+the second's at sixteen hundredths, each line no wider than seven
+tenths of the width. Around the lettering the leather is bare, the
+same leather as the rest of the face, and the panel that held it is
+gone. Nothing else on the face is lettered, and nothing else changes.
+
+--- change 3, with art/back.jpg as the reference (the plate before it
+    is `_archived/art/back-2.jpg`) ---
+
+Change 2 took the panel away and left the lettering where the panel
+had been: 0.21–0.30 of the height, the top third of the face still
+its own. The concept changes: the name leaves the plate. It is
+composited now, as a membership badge in the legal strip beside the
+seal — a lozenge in the form of the hero's platform lozenges, typeset
+by `covers.py back` — and the plate carries no lettering at all, so
+the screenshots take the top of the face.
+
+Keep this picture exactly as it is — the leather, its grain and
+lighting, the embossed frame, the colophon with the bell, the darker
+band at the foot — and change one thing: where the gold lettering is,
+the leather continues bare, the same leather as the rest of the face,
+its grain and lighting unbroken, so the whole face above the colophon
+is bare leather inside the frame. Nothing on the face is lettered,
+and nothing else changes.

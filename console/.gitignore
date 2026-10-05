@@ -1,0 +1,47 @@
+# The directory Mix will write compiled artifacts to.
+/_build/
+
+# If you run "mix test --cover", coverage assets end up here.
+/cover/
+
+# The directory Mix downloads your dependencies sources to.
+/deps/
+
+# Where 3rd-party dependencies like ExDoc output generated docs.
+/doc/
+
+# Ignore .fetch files in case you like to edit your project deps locally.
+/.fetch
+
+# If the VM crashes, it generates a dump, let's ignore it too.
+erl_crash.dump
+
+# Also ignore archive artifacts (built via "mix archive.build").
+*.ez
+
+# Temporary files, for example, from tests.
+/tmp/
+
+# Ignore package tarball (built via "mix hex.build").
+console-*.tar
+
+# Ignore assets that are produced by build tools — but not the stylesheets:
+# console.css is written by hand
+# and tokens.css and components.css are projected there by assets/design/build.py,
+# which --check keeps honest. Nothing builds them at the console's side.
+# Nor the fonts: the faces the drawer offers travel with the repository
+# (priv/static/assets/fonts/README.md says which, and under what licence).
+/priv/static/assets/*
+!/priv/static/assets/css/
+!/priv/static/assets/fonts/
+
+# Ignore digested assets cache.
+/priv/static/cache_manifest.json
+
+# In case you use Node.js/npm, you want to ignore these.
+npm-debug.log
+/assets/node_modules/
+
+
+# Dialyzer's PLT, built by mix dialyzer and cached by CI.
+/priv/plts/

@@ -1,0 +1,17 @@
+# Grafana's datasource, as the workbench's monitoring cartridge
+# installed it: the workspace's Prometheus, provisioned when Grafana
+# starts. Its address is the topology's — localhost inside the pod,
+# the service's name on the scaled network — so the compose hands it
+# over as PROMETHEUS_URL, which Grafana expands here. The name is what
+# the PromEx dashboards ask for (dashboard_assigns/0 in the PromEx
+# module: datasource_id).
+
+apiVersion: 1
+
+datasources:
+  - name: prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    url: ${PROMETHEUS_URL}
+    isDefault: true

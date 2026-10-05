@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg class="diagram" viewBox="0 0 960 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="who-writes-what-title who-writes-what-desc">
+  <title id="who-writes-what-title">Who writes what, and when</title>
+  <desc id="who-writes-what-desc">Sequence diagram of an ash install: wb.sh runs the cartridge, which builds the argv of missing packages and hands Igniter a patch set holding only the .env entry and a queued igniter.install task; Igniter writes .env, runs the task, each package installer writes its files, and the output — where Ash's changes appear — returns with a notice.</desc>
+  <defs><style>@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&amp;family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap');
+svg{
+  --paper:#F2EDF3;
+  --surface:#FBF8FC;
+  --paper-2:#EBE3EE;
+  --ink:#1D1424;
+  --muted:#6B5C76;
+  --soft:#8F819A;
+  --rule:#D6CBDA;
+  --accent:#9A7A3E;
+  --accent-tint:rgba(154,122,62,.12);
+  --link:#3F6FA8;
+  --ink-02:rgba(29,20,36,.02);
+  --ink-03:rgba(29,20,36,.03);
+  --ink-05:rgba(29,20,36,.05);
+  --ink-12:rgba(29,20,36,.12);
+  --ink-20:rgba(29,20,36,.20);
+  --ink-30:rgba(29,20,36,.30);
+  --muted-10:rgba(107,92,118,.10);
+  --accent-50:rgba(154,122,62,.50);
+  --f-display:'Barlow Condensed','Roboto Condensed','Arial Narrow',sans-serif;
+  --f-text:'Source Serif 4',Georgia,serif;
+  --f-code:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) svg, svg:root{
+    --paper:#160F1B;
+    --surface:#22182A;
+    --paper-2:#2C2036;
+    --ink:#EFE7F2;
+    --muted:#A394AE;
+    --soft:#7E7189;
+    --rule:#3B2D46;
+    --accent:#D4B27E;
+    --accent-tint:rgba(212,178,126,.14);
+    --link:#8DBBE8;
+    --ink-02:rgba(239,231,242,.02);
+    --ink-03:rgba(239,231,242,.03);
+    --ink-05:rgba(239,231,242,.05);
+    --ink-12:rgba(239,231,242,.12);
+    --ink-20:rgba(239,231,242,.20);
+    --ink-30:rgba(239,231,242,.30);
+    --muted-10:rgba(163,148,174,.10);
+    --accent-50:rgba(212,178,126,.50);
+  } }
+:root[data-theme="dark"] svg{
+  --paper:#160F1B;
+  --surface:#22182A;
+  --paper-2:#2C2036;
+  --ink:#EFE7F2;
+  --muted:#A394AE;
+  --soft:#7E7189;
+  --rule:#3B2D46;
+  --accent:#D4B27E;
+  --accent-tint:rgba(212,178,126,.14);
+  --link:#8DBBE8;
+  --ink-02:rgba(239,231,242,.02);
+  --ink-03:rgba(239,231,242,.03);
+  --ink-05:rgba(239,231,242,.05);
+  --ink-12:rgba(239,231,242,.12);
+  --ink-20:rgba(239,231,242,.20);
+  --ink-30:rgba(239,231,242,.30);
+  --muted-10:rgba(163,148,174,.10);
+  --accent-50:rgba(212,178,126,.50);
+}
+</style><marker id="arrow-muted" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="var(--muted)"/></marker><marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="var(--accent)"/></marker><marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="var(--link)"/></marker><marker id="arrow-ink" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="var(--ink)"/></marker></defs>
+  <rect x="0" y="0" width="960" height="600" fill="var(--paper)"/>
+<line x1="96" y1="112" x2="96" y2="516" stroke="var(--ink-20)" stroke-width="1" stroke-dasharray="3,3"/>
+<line x1="288" y1="112" x2="288" y2="516" stroke="var(--ink-20)" stroke-width="1" stroke-dasharray="3,3"/>
+<line x1="480" y1="112" x2="480" y2="516" stroke="var(--ink-20)" stroke-width="1" stroke-dasharray="3,3"/>
+<line x1="672" y1="112" x2="672" y2="516" stroke="var(--ink-20)" stroke-width="1" stroke-dasharray="3,3"/>
+<line x1="864" y1="112" x2="864" y2="516" stroke="var(--ink-20)" stroke-width="1" stroke-dasharray="3,3"/>
+<rect x="92" y="136" width="8" height="364" fill="var(--ink-05)" stroke="var(--muted)" stroke-width="0.8"/>
+<rect x="284" y="136" width="8" height="96" fill="var(--ink-05)" stroke="var(--muted)" stroke-width="0.8"/>
+<rect x="476" y="232" width="8" height="252" fill="var(--ink-05)" stroke="var(--muted)" stroke-width="0.8"/>
+<rect x="668" y="300" width="8" height="156" fill="var(--ink-05)" stroke="var(--muted)" stroke-width="0.8"/>
+<rect x="860" y="264" width="8" height="176" fill="var(--ink-05)" stroke="var(--muted)" stroke-width="0.8"/>
+<rect x="652" y="324" width="256" height="116" rx="4" fill="var(--ink-02)" stroke="var(--ink-20)" stroke-width="1"/>
+<rect x="652" y="324" width="40" height="16" rx="2" fill="var(--paper)" stroke="var(--ink-20)" stroke-width="1"/>
+<text x="672" y="336" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="middle" letter-spacing="0.12em">LOOP</text>
+<text x="700" y="348" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="start" letter-spacing="0.04em">[for each package]</text>
+<line x1="100" y1="136" x2="284" y2="136" fill="none" stroke="var(--muted)" stroke-width="1.2" marker-end="url(#arrow-muted)"/>
+<rect x="95.0" y="116" width="194" height="12" rx="2" fill="var(--paper)"/><text x="192.0" y="125" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="middle" letter-spacing="0.06em">mix workbench.install.ash --yes</text>
+<path d="M 292,160 H 316 Q 324,160 324,168 V 176 Q 324,184 316,184 H 292" fill="none" stroke="var(--muted)" stroke-width="1.2" marker-end="url(#arrow-muted)"/>
+<text x="332" y="175" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="start" letter-spacing="0.04em">argv: the packages mix.exs lacks</text>
+<line x1="292" y1="232" x2="476" y2="232" fill="none" stroke="var(--accent)" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+<rect x="251.0" y="212" width="266" height="12" rx="2" fill="var(--paper)"/><text x="384.0" y="221" fill="var(--accent)" font-size="8" font-family="var(--f-code)" text-anchor="middle" letter-spacing="0.06em">patch set: .env · add_task(igniter.install)</text>
+<line x1="484" y1="264" x2="860" y2="264" fill="none" stroke="var(--muted)" stroke-width="1.2" marker-end="url(#arrow-muted)"/>
+<rect x="638.0" y="244" width="68" height="12" rx="2" fill="var(--paper)"/><text x="672.0" y="253" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="middle" letter-spacing="0.06em">write .env</text>
+<line x1="484" y1="300" x2="668" y2="300" fill="none" stroke="var(--muted)" stroke-width="1.2" marker-end="url(#arrow-muted)"/>
+<rect x="515.0" y="280" width="122" height="12" rx="2" fill="var(--paper)"/><text x="576.0" y="289" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="middle" letter-spacing="0.06em">run the queued task</text>
+<line x1="676" y1="384" x2="860" y2="384" fill="none" stroke="var(--muted)" stroke-width="1.2" marker-end="url(#arrow-muted)"/>
+<rect x="653.0" y="364" width="230" height="12" rx="2" fill="var(--paper)"/><text x="768.0" y="373" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="middle" letter-spacing="0.06em">&lt;pkg&gt;.install: mix.exs, config, files</text>
+<path d="M 676,404 H 700 Q 708,404 708,412 V 420 Q 708,428 700,428 H 676" fill="none" stroke="var(--muted)" stroke-width="1.2" marker-end="url(#arrow-muted)"/>
+<text x="716" y="419" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="start" letter-spacing="0.04em">deps.get · compile</text>
+<line x1="668" y1="464" x2="484" y2="464" fill="none" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#arrow-muted)"/>
+<rect x="554.0" y="444" width="44" height="12" rx="2" fill="var(--paper)"/><text x="576.0" y="453" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="middle" letter-spacing="0.06em">output</text>
+<line x1="476" y1="492" x2="100" y2="492" fill="none" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#arrow-muted)"/>
+<rect x="164.0" y="472" width="248" height="12" rx="2" fill="var(--paper)"/><text x="288.0" y="481" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="middle" letter-spacing="0.06em">notice: Ash's changes are in that output</text>
+<rect x="16" y="56" width="160" height="48" rx="6" fill="var(--paper)"/>
+<rect x="16" y="56" width="160" height="48" rx="6" fill="var(--surface)" stroke="var(--ink)" stroke-width="1"/>
+<text x="96.0" y="82.0" fill="var(--ink)" font-size="13" font-family="var(--f-display)" text-anchor="middle" font-weight="600" letter-spacing="0.04em">wb.sh add ash</text>
+<rect x="208" y="56" width="160" height="48" rx="6" fill="var(--paper)"/>
+<rect x="208" y="56" width="160" height="48" rx="6" fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="1"/>
+<text x="288.0" y="82.0" fill="var(--ink)" font-size="13" font-family="var(--f-display)" text-anchor="middle" font-weight="600" letter-spacing="0.04em">the cartridge</text>
+<rect x="400" y="56" width="160" height="48" rx="6" fill="var(--paper)"/>
+<rect x="400" y="56" width="160" height="48" rx="6" fill="var(--surface)" stroke="var(--ink)" stroke-width="1"/>
+<text x="480.0" y="82.0" fill="var(--ink)" font-size="13" font-family="var(--f-display)" text-anchor="middle" font-weight="600" letter-spacing="0.04em">Igniter</text>
+<rect x="592" y="56" width="160" height="48" rx="6" fill="var(--paper)"/>
+<rect x="592" y="56" width="160" height="48" rx="6" fill="var(--surface)" stroke="var(--ink)" stroke-width="1"/>
+<text x="672.0" y="82.0" fill="var(--ink)" font-size="13" font-family="var(--f-display)" text-anchor="middle" font-weight="600" letter-spacing="0.04em">igniter.install</text>
+<rect x="784" y="56" width="160" height="48" rx="6" fill="var(--paper)"/>
+<rect x="784" y="56" width="160" height="48" rx="6" fill="var(--surface)" stroke="var(--ink)" stroke-width="1"/>
+<text x="864.0" y="82.0" fill="var(--ink)" font-size="13" font-family="var(--f-display)" text-anchor="middle" font-weight="600" letter-spacing="0.04em">project files</text>
+<line x1="24" y1="552" x2="936" y2="552" stroke="var(--ink-12)" stroke-width="0.8"/>
+<text x="24" y="568" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="start" letter-spacing="0.14em">LEGEND</text>
+<line x1="96" y1="565" x2="112" y2="565" stroke="var(--muted)" stroke-width="1.2"/>
+<text x="120" y="568" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="start">call</text>
+<line x1="176" y1="565" x2="192" y2="565" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="5,4"/>
+<text x="200" y="568" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="start">return</text>
+<line x1="268" y1="565" x2="284" y2="565" stroke="var(--accent)" stroke-width="1.2"/>
+<text x="292" y="568" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="start">the cartridge's whole diff</text>
+<rect x="480" y="560" width="16" height="10" rx="2" fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="0.8"/>
+<text x="504" y="568" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="start">the cartridge</text>
+</svg>

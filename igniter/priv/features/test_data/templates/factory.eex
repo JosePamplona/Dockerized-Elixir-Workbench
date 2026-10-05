@@ -1,0 +1,37 @@
+@moduledoc """
+Test data for <%= @app_module %>'s schemas: `build(:user)`,
+`insert(:user)`, `params_for(:user)`, each with the defaults a factory
+below declares and whatever the test overrides —
+`insert(:user, name: "Ana")`.
+
+A factory is a `<name>_factory/0` function returning the struct. Four
+rules keep them honest:
+
+  * **Minimal and valid.** A default is what a valid record needs. A
+    value the test asserts on is written in the test, as an override,
+    so the reader sees cause and effect in one place.
+  * **Unique by sequence.** A unique column is `sequence/2`, never
+    Faker: Faker draws from finite lists and repeats itself, and two
+    concurrent tests inserting the same value wait on each other's lock.
+  * **Associations by `build`.** `author: build(:user)`, never
+    `insert(:user)`: `insert` saves the whole tree once, at the end.
+    `fn -> build(:user) end` gives each record of a `build_pair` its own.
+  * **Faker for what nobody asserts.** Names, cities, sentences. A value
+    drawn in the test process repeats under `mix test --seed N`.
+
+`insert` writes with `Repo.insert!` and does **not** run the schema's
+changeset. `<%= @test_module %>` inserts every factory, so one the
+database refuses fails by name; to hold a factory to its changeset too:
+
+    assert User.changeset(%User{}, params_for(:user)).valid?
+
+When this file grows, split it: a module per context with
+`defmacro __using__(_opts)` holding its factories, and `use` each here.
+"""
+use ExMachina.Ecto, repo: <%= @repo <> "\n" %>
+# def user_factory do
+#   %<%= @app_module %>.Accounts.User{
+#     email: sequence(:email, &"user#{&1}@example.com"),
+#     name: Faker.Person.name()
+#   }
+# end

@@ -1,0 +1,117 @@
+# The project's development image: Elixir, the build tools and nothing
+# of the workbench. The workbench bakes this seed into the workspace as
+# its own Dockerfile.local, and the workspace's docker-compose.yml builds
+# the app's image from it (APP:local), so a standalone clone rebuilds the
+# same image without the workbench. The workbench's own work — the
+# generator, the cartridges, git, the console — runs on another image,
+# scripts/Dockerfile.workbench, which opens with this file's steps in
+# this order so Docker builds them once for both: keep the two in step.
+#
+# The source is bind-mounted at /app/src by the workspace's
+# docker-compose.yml — host edits hot-reload through Phoenix's code
+# reloader, and code or dependency changes never require rebuilding
+# this image. What is derived from the source (deps, _build) does NOT
+# live in the mount: the compose declares a named volume over each of
+# them, because compiling through a bind mount is the one load Docker
+# Desktop's file sharing bears worst, and the host never needed the
+# compiled code. The volume covers the path; nothing is written through.
+#
+# They are mounted where Mix looks for them on its own — /app/src/deps
+# and /app/src/_build — and Mix is told nothing. It used to be told:
+# two volumes outside the source and MIX_DEPS_PATH / MIX_BUILD_ROOT
+# pointing at them. That worked for Mix and for nothing else. `phx.new`
+# writes the conventional deps/ path into config.exs (NODE_PATH, for
+# esbuild and tailwind) and into assets/vendor/heroicons.js, and asks
+# Mix nothing; since phx_new 1.8 daisyUI is a git dependency resolved
+# through that NODE_PATH, so a fresh project could not build its assets
+# at all. The workbench patched those lines back. It no longer has to:
+# whatever the generator writes next, if it is where Mix looks, it is
+# where the volume is.
+#
+# We use Ubuntu/Debian instead of Alpine to avoid DNS resolution issues.
+#
+#   - https://hub.docker.com/r/hexpm/elixir/tags?name=debian
+ARG ELIXIR="%{elixir_version}"
+ARG    OTP="%{erlang_version}"
+ARG DEBIAN="%{debian_version}"
+
+ARG TOOLCHAIN_IMAGE="hexpm/elixir:${ELIXIR}-erlang-${OTP}-debian-${DEBIAN}"
+
+FROM ${TOOLCHAIN_IMAGE} AS toolchain
+
+# Build dependencies: build-essential for the NIFs, git for the
+# dependencies Phoenix fetches from GitHub (heroicons, daisyUI),
+# inotify-tools for the live reload, and Node for the packages a
+# project takes from the npm registry, beyond the esbuild and tailwind
+# binaries Phoenix ships as Elixir packages — ash_typescript's
+# installer, for one, hooks `npm install` into `assets.setup`, which
+# `mix setup` runs at every boot of this container. Node comes from
+# NodeSource, by the major config.conf names (NODE_VERSION), as one
+# package with npm inside. Debian's `npm` unpacks every dependency of
+# npm as a package of its own — 640 of them, six minutes and 400 MB on
+# this layer (2026-09-28: 521 s against 103 s for this step without
+# it). Its key and its list go in the way Docker's own do in the
+# workbench's Dockerfile.
+ARG NODE="%{node_version}"
+RUN test -n "${NODE}" || { echo "NODE is required: --build-arg NODE=MAJOR" >&2; exit 1; } && \
+    apt-get update -y && \
+    apt-get install -y build-essential git inotify-tools ca-certificates curl && \
+    install -m 0755 -d /etc/apt/keyrings && \
+    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key -o /etc/apt/keyrings/nodesource.asc && \
+    echo "deb [signed-by=/etc/apt/keyrings/nodesource.asc] https://deb.nodesource.com/node_${NODE}.x nodistro main" \
+      > /etc/apt/sources.list.d/nodesource.list && \
+    apt-get update -y && \
+    apt-get install -y nodejs && \
+    apt-get clean && \
+    rm -f /var/lib/apt/lists/*_*
+
+# The image is always built locally, so it is born with the identity of
+# the building user (pass --build-arg UID/GID if yours is not the
+# typical single-user Linux 1000:1000): everything written into the
+# mounted workspace keeps the right ownership.
+ARG UID=1000
+ARG GID=1000
+RUN groupadd --gid ${GID} elixir && \
+    useradd --uid ${UID} --gid ${GID} --create-home elixir
+
+# The source mount point and the two directories under it that a volume
+# covers: born owned by the user, so a named volume first mounted there
+# takes that ownership with it. This is the whole reason they exist in
+# the image — the bind mount hides them the moment it lands, and Docker
+# still reads the image layer to seed an empty volume. A volume mounted
+# on a path the image does not have comes up root-owned, and this
+# container is not root.
+WORKDIR /app
+RUN mkdir -p /app/src/_build /app/src/deps && \
+    chown -R elixir:elixir /app
+
+USER elixir
+
+# hex and rebar, into the user's own home.
+RUN mix local.hex --force && \
+    mix local.rebar --force
+
+# The Phoenix installer that generated this project: hex's newest when
+# it was created, or the one 'new --phx-new' named. Nothing here
+# installs it — the app never generates anything — but the line is the
+# project's record of its own generator, and the workbench reads it
+# back: the base cartridges take their delta with that same phx_new.
+# Declared last, so it touches no step above.
+ARG PHX_NEW="%{phx_new_version}"
+
+# Self-initializing container: fetches dependencies, sets up the
+# database (idempotent) and starts the server — all from the mounted
+# source. The workspace's docker-compose.yml can override this with
+# its `command:`. Mirrored in the compose seed's comment: keep in sync.
+# `exec` on the last step: the shell hands its PID 1 to the BEAM, which
+# handles SIGTERM (it stops the application in order and exits 0).
+# Without it `sh` stayed PID 1, forwarded nothing, and every `down`
+# waited compose's 10 s of grace and killed the app with SIGKILL —
+# `die exit 137` on the daemon's events, measured 2026-09-05.
+# A named node (`--sname`, the app's name at the container's hostname):
+# `./wb.sh iex` and the console's iex attach to this VM with `--remsh`,
+# the way the release's `remote` does, instead of booting a second one
+# whose mailbox, Repo and PubSub the server never sees. epmd starts
+# with it; the cookie is the one Erlang writes in the home directory,
+# shared by every exec in this container.
+CMD ["sh", "-c", "cd /app/src && mix setup && exec elixir --sname %{app_name} -S mix phx.server"]

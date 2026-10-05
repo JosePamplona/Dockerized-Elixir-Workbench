@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The four roads a test record takes to the database</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+svg.diagram{
+      --paper:#F2EDF3;
+      --surface:#FBF8FC;
+      --paper-2:#EBE3EE;
+      --ink:#1D1424;
+      --muted:#6B5C76;
+      --soft:#8F819A;
+      --rule:#D6CBDA;
+      --accent:#9A7A3E;
+      --accent-tint:rgba(154,122,62,.12);
+      --link:#3F6FA8;
+      --ink-02:rgba(29,20,36,.02);
+      --ink-03:rgba(29,20,36,.03);
+      --ink-05:rgba(29,20,36,.05);
+      --ink-12:rgba(29,20,36,.12);
+      --ink-20:rgba(29,20,36,.20);
+      --ink-30:rgba(29,20,36,.30);
+      --muted-10:rgba(107,92,118,.10);
+      --accent-50:rgba(154,122,62,.50);
+      --f-display:'Barlow Condensed','Roboto Condensed','Arial Narrow',sans-serif;
+      --f-text:'Source Serif 4',Georgia,serif;
+      --f-code:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+    }
+    @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) svg.diagram, svg.diagram:root{
+        --paper:#160F1B;
+        --surface:#22182A;
+        --paper-2:#2C2036;
+        --ink:#EFE7F2;
+        --muted:#A394AE;
+        --soft:#7E7189;
+        --rule:#3B2D46;
+        --accent:#D4B27E;
+        --accent-tint:rgba(212,178,126,.14);
+        --link:#8DBBE8;
+        --ink-02:rgba(239,231,242,.02);
+        --ink-03:rgba(239,231,242,.03);
+        --ink-05:rgba(239,231,242,.05);
+        --ink-12:rgba(239,231,242,.12);
+        --ink-20:rgba(239,231,242,.20);
+        --ink-30:rgba(239,231,242,.30);
+        --muted-10:rgba(163,148,174,.10);
+        --accent-50:rgba(212,178,126,.50);
+      } }
+    :root[data-theme="dark"] svg.diagram{
+      --paper:#160F1B;
+      --surface:#22182A;
+      --paper-2:#2C2036;
+      --ink:#EFE7F2;
+      --muted:#A394AE;
+      --soft:#7E7189;
+      --rule:#3B2D46;
+      --accent:#D4B27E;
+      --accent-tint:rgba(212,178,126,.14);
+      --link:#8DBBE8;
+      --ink-02:rgba(239,231,242,.02);
+      --ink-03:rgba(239,231,242,.03);
+      --ink-05:rgba(239,231,242,.05);
+      --ink-12:rgba(239,231,242,.12);
+      --ink-20:rgba(239,231,242,.20);
+      --ink-30:rgba(239,231,242,.30);
+      --muted-10:rgba(163,148,174,.10);
+      --accent-50:rgba(212,178,126,.50);
+    }
+    
+    body { font-family: 'Source Serif 4',Georgia,serif; background: var(--page); color: var(--page-ink); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 3rem 2rem; }
+    :root { --page: #F2EDF3; --page-ink: #1D1424; --page-muted: #6B5C76; }
+    @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --page: #160F1B; --page-ink: #EFE7F2; --page-muted: #A394AE; } }
+    :root[data-theme="dark"] { --page: #160F1B; --page-ink: #EFE7F2; --page-muted: #A394AE; }
+    .frame { max-width: 1200px; width: 100%; }
+    .eyebrow { font-family: 'IBM Plex Mono',ui-monospace,Menlo,monospace; font-size: 0.66rem; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: var(--page-muted); margin-bottom: 0.5rem; }
+    h1 { font-family: 'Source Serif 4',Georgia,serif; font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem); font-weight: 400; letter-spacing: -0.02em; line-height: 1.15; margin-bottom: 1.5rem; }
+    svg { width: 100%; min-width: 900px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Architecture · Dockerized Elixir Workbench</p>
+    <h1>The four roads a test record takes to the database</h1>
+<svg class="diagram" viewBox="0 0 960 580" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="four-roads-title four-roads-desc">
+  <title id="four-roads-title">The four roads a test record takes to the database</title>
+  <desc id="four-roads-desc">Architecture diagram of test data on both lines. On Ecto, a Phoenix fixture goes through the context's changeset to the repo, while an ExMachina factory — what test_data writes — goes straight to Repo.insert! and skips the changeset, leaving the database's constraints as the only check. On Ash, a changeset_generator — what test_data writes — runs the resource's action with its changes, validations and policies before the data layer, while seed_generator writes under the action for a state no action reaches.</desc>
+  <defs><marker id="arrow-muted" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="var(--muted)"/></marker><marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="var(--accent)"/></marker><marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="var(--link)"/></marker><marker id="arrow-ink" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="var(--ink)"/></marker></defs>
+  <rect x="0" y="0" width="960" height="580" fill="var(--paper)"/>
+<rect x="24" y="56" width="912" height="200" rx="8" fill="var(--ink-02)" stroke="var(--ink-20)" stroke-width="0.8" stroke-dasharray="4,4"/>
+<rect x="36" y="60" width="62" height="12" rx="2" fill="var(--paper)"/>
+<text x="67.0" y="69" fill="var(--soft)" font-size="7" font-family="var(--f-code)" text-anchor="middle" letter-spacing="0.14em">ECTO LINE</text>
+<rect x="24" y="272" width="912" height="200" rx="8" fill="var(--ink-02)" stroke="var(--ink-20)" stroke-width="0.8" stroke-dasharray="4,4"/>
+<rect x="36" y="276" width="56" height="12" rx="2" fill="var(--paper)"/>
+<text x="64.0" y="285" fill="var(--soft)" font-size="7" font-family="var(--f-code)" text-anchor="middle" letter-spacing="0.14em">ASH LINE</text>
+<line x1="248" y1="116" x2="368" y2="116" fill="none" stroke="var(--muted)" stroke-width="1.2" marker-end="url(#arrow-muted)"/>
+<line x1="568" y1="116" x2="688" y2="116" fill="none" stroke="var(--muted)" stroke-width="1.2" marker-end="url(#arrow-muted)"/>
+<line x1="248" y1="196" x2="688" y2="196" fill="none" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#arrow-muted)"/>
+<rect x="407.0" y="176" width="122" height="12" rx="2" fill="var(--paper)"/><text x="468" y="185" fill="var(--soft)" font-size="8" font-family="var(--f-code)" text-anchor="middle" letter-spacing="0.06em">SKIPS THE CHANGESET</text>
+<line x1="248" y1="332" x2="368" y2="332" fill="none" stroke="var(--muted)" stroke-width="1.2" marker-end="url(#arrow-muted)"/>
+<line x1="568" y1="332" x2="688" y2="332" fill="none" stroke="var(--muted)" stroke-width="1.2" marker-end="url(#arrow-muted)"/>
+<line x1="248" y1="412" x2="688" y2="412" fill="none" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#arrow-muted)"/>
+<rect x="416.0" y="392" width="104" height="12" rx="2" fill="var(--paper)"/><text x="468" y="401" fill="var(--soft)" font-size="8" font-family="var(--f-code)" text-anchor="middle" letter-spacing="0.06em">SKIPS THE ACTION</text>
+<rect x="48" y="88" width="200" height="56" rx="6" fill="var(--paper)"/>
+<rect x="48" y="88" width="200" height="56" rx="6" fill="var(--surface)" stroke="var(--ink)" stroke-width="1"/>
+<text x="148.0" y="114.0" fill="var(--ink)" font-size="13" font-family="var(--f-display)" text-anchor="middle" font-weight="600" letter-spacing="0.04em">Phoenix fixture</text>
+<text x="148.0" y="128.0" fill="var(--muted)" font-size="9" font-family="var(--f-code)" text-anchor="middle">user_fixture/1 · the context</text>
+<rect x="368" y="88" width="200" height="56" rx="6" fill="var(--paper)"/>
+<rect x="368" y="88" width="200" height="56" rx="6" fill="var(--surface)" stroke="var(--ink)" stroke-width="1"/>
+<text x="468.0" y="114.0" fill="var(--ink)" font-size="13" font-family="var(--f-display)" text-anchor="middle" font-weight="600" letter-spacing="0.04em">changeset</text>
+<text x="468.0" y="128.0" fill="var(--muted)" font-size="9" font-family="var(--f-code)" text-anchor="middle">cast · validate · constraints</text>
+<rect x="48" y="168" width="200" height="56" rx="6" fill="var(--paper)"/>
+<rect x="48" y="168" width="200" height="56" rx="6" fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="1"/>
+<text x="148.0" y="194.0" fill="var(--ink)" font-size="13" font-family="var(--f-display)" text-anchor="middle" font-weight="600" letter-spacing="0.04em">ExMachina factory</text>
+<text x="148.0" y="208.0" fill="var(--muted)" font-size="9" font-family="var(--f-code)" text-anchor="middle">insert(:user)</text>
+<rect x="688" y="88" width="200" height="136" rx="6" fill="var(--paper)"/>
+<rect x="688" y="88" width="200" height="136" rx="6" fill="var(--ink-05)" stroke="var(--muted)" stroke-width="1"/>
+<text x="788.0" y="154.0" fill="var(--ink)" font-size="13" font-family="var(--f-display)" text-anchor="middle" font-weight="600" letter-spacing="0.04em">Repo</text>
+<text x="788.0" y="168.0" fill="var(--muted)" font-size="9" font-family="var(--f-code)" text-anchor="middle">Repo.insert!</text>
+<text x="788.0" y="180.0" fill="var(--muted)" font-size="9" font-family="var(--f-code)" text-anchor="middle">the database's constraints</text>
+<rect x="48" y="304" width="200" height="56" rx="6" fill="var(--paper)"/>
+<rect x="48" y="304" width="200" height="56" rx="6" fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="1"/>
+<text x="148.0" y="330.0" fill="var(--ink)" font-size="13" font-family="var(--f-display)" text-anchor="middle" font-weight="600" letter-spacing="0.04em">changeset_generator</text>
+<text x="148.0" y="344.0" fill="var(--muted)" font-size="9" font-family="var(--f-code)" text-anchor="middle">generate(user())</text>
+<rect x="368" y="304" width="200" height="56" rx="6" fill="var(--paper)"/>
+<rect x="368" y="304" width="200" height="56" rx="6" fill="var(--surface)" stroke="var(--ink)" stroke-width="1"/>
+<text x="468.0" y="330.0" fill="var(--ink)" font-size="13" font-family="var(--f-display)" text-anchor="middle" font-weight="600" letter-spacing="0.04em">the action</text>
+<text x="468.0" y="344.0" fill="var(--muted)" font-size="9" font-family="var(--f-code)" text-anchor="middle">changes · validations · policies</text>
+<rect x="48" y="384" width="200" height="56" rx="6" fill="var(--paper)"/>
+<rect x="48" y="384" width="200" height="56" rx="6" fill="var(--ink-02)" stroke="var(--ink-20)" stroke-width="1" stroke-dasharray="4,3"/>
+<text x="148.0" y="410.0" fill="var(--ink)" font-size="13" font-family="var(--f-display)" text-anchor="middle" font-weight="600" letter-spacing="0.04em">seed_generator</text>
+<text x="148.0" y="424.0" fill="var(--muted)" font-size="9" font-family="var(--f-code)" text-anchor="middle">Ash.Seed · for one state</text>
+<rect x="688" y="304" width="200" height="136" rx="6" fill="var(--paper)"/>
+<rect x="688" y="304" width="200" height="136" rx="6" fill="var(--ink-05)" stroke="var(--muted)" stroke-width="1"/>
+<text x="788.0" y="370.0" fill="var(--ink)" font-size="13" font-family="var(--f-display)" text-anchor="middle" font-weight="600" letter-spacing="0.04em">data layer</text>
+<text x="788.0" y="384.0" fill="var(--muted)" font-size="9" font-family="var(--f-code)" text-anchor="middle">ash_postgres · ETS</text>
+<text x="788.0" y="396.0" fill="var(--muted)" font-size="9" font-family="var(--f-code)" text-anchor="middle">the database's constraints</text>
+<text x="480" y="504" fill="var(--muted)" font-size="13" font-family="var(--f-text)" text-anchor="middle" font-style="italic">On Ecto the box's road skips the changeset, so its test inserts every factory and lets the database refuse by name.</text>
+<text x="480" y="524" fill="var(--muted)" font-size="13" font-family="var(--f-text)" text-anchor="middle" font-style="italic">On Ash its road is the action itself: the rules check every record the generator makes.</text>
+<line x1="24" y1="544" x2="936" y2="544" stroke="var(--ink-12)" stroke-width="0.8"/>
+<text x="24" y="560" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="start" letter-spacing="0.14em">LEGEND</text>
+<rect x="96" y="552" width="16" height="10" rx="2" fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="0.8"/>
+<text x="120" y="560" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="start">what test_data writes</text>
+<rect x="278" y="552" width="16" height="10" rx="2" fill="var(--ink-05)" stroke="var(--muted)" stroke-width="0.8"/>
+<text x="302" y="560" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="start">where the row lands</text>
+<rect x="448" y="552" width="16" height="10" rx="2" fill="var(--ink-02)" stroke="var(--ink-20)" stroke-width="0.8" stroke-dasharray="4,3"/>
+<text x="472" y="560" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="start">a seed</text>
+<line x1="540" y1="557" x2="556" y2="557" stroke="var(--muted)" stroke-width="1.2"/>
+<text x="564" y="560" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="start">through the rules</text>
+<line x1="698" y1="557" x2="714" y2="557" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="5,4"/>
+<text x="722" y="560" fill="var(--muted)" font-size="8" font-family="var(--f-code)" text-anchor="start">under them</text>
+</svg>
+  </div>
+</body>
+</html>

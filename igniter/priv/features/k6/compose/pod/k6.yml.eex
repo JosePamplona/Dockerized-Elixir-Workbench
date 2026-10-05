@@ -1,0 +1,18 @@
+  # A load tool, not a service of the deployment: k6 runs to completion,
+  # so it sits under a profile 'up' never starts — './wb.sh k6 [SCRIPT]'
+  # runs it ('compose --profile tools run --rm k6'). It joins the pod, so
+  # the app is on localhost for it as for everything else here; the
+  # scripts are the project's own, under k6/.
+  k6:
+    image: grafana/k6:<%= @version.("k6", "latest") %>
+    profiles: [tools]
+    network_mode: "service:pod"
+    environment:
+      BASE_URL: http://localhost:<%= @internal_port %><%= if @prometheus do %>
+      # Its results go to Prometheus as well, as metrics of its own
+      # (k6_*), for Grafana to draw beside the app's: the remote write
+      # the prometheus service above accepts because of this.
+      K6_OUT: experimental-prometheus-rw
+      K6_PROMETHEUS_RW_SERVER_URL: http://localhost:9090/api/v1/write<% end %>
+    volumes:
+      - ./k6:/scripts:ro

@@ -1,0 +1,85 @@
+# Cartridge: enhancements
+
+> **Archived 2026-09-20**: the Phoenix line's — its Ecto generators and schema
+> config fight Ash's domain. The box stays on the shelf for the reading —
+> these papers are why it was made; it is no longer a pick for a new project,
+> and `wb.sh add` refuses it unless `--archived` says so.
+
+Workbench base enhancements: shared schema and helper, the `mix db`
+task, and the base test suite.
+
+* **Task**: `mix workbench.install.enhancements`
+* **Inserted by**: `wb.sh add --archived enhancements`
+* **Ordering**: before `auth0`, whose User schema uses the `MyApp.Schema`
+  this feature generates (`auth0` refuses until this is in).
+* **Options**: `--project-name` `--interface`
+  `[--id-type --timestamps]`
+  `[--exdoc --auth0 --openai --stripe --health]` name the fellow
+  cartridges that shape what it plants — what the project has of Ecto,
+  html, the mailer and the dashboard is read off the project, not asked.
+
+## Description
+
+The workbench's quality-of-life pack: everything a freshly created project
+is glad to have from day one. A stock Phoenix project starts minimal on
+purpose; this cartridge layers the workbench's conventions on top, so
+every project built with it shares the same foundations instead of each
+one reinventing them.
+
+Concretely, it seeds three kinds of groundwork. Shared building blocks: a
+base schema that fixes project-wide defaults (primary key and timestamp
+types) so every future table is consistent, plus a helper with the small
+functions every codebase ends up needing. A developer command: `mix db`
+to regenerate the database documentation and diagrams that the ExDoc
+site publishes. And
+API polish: an error view that renders validation errors in a clean,
+uniform JSON shape, plus a ready-to-import Postman collection for the
+project's endpoints.
+
+The third kind is testing culture: a starter suite covering the basic
+parts of the application, shared fixtures, and a mock helper wired into
+the test setup — so coverage starts high and the patterns for writing new
+tests are already established. Other features assume this groundwork:
+auth0's User schema, for instance, builds on the base schema created
+here.
+
+## What it installs
+
+* **Ecto group** (when the project has Ecto): the `ecto_enum` dep;
+  the generators and migration configuration `--id-type` and
+  `--timestamps` decide (`migration_primary_key`, `migration_timestamps`
+  and `generators: [timestamp_type: :utc_datetime_usec]` in
+  `config.exs`) — the same policy `MyApp.Schema` carries, written where
+  `mix phx.gen.*` reads it, so the tables cannot drift from the schemas;
+  and `MyApp.Helper` and `MyApp.Schema` (+ tests). It also composes
+  [dbschema](../dbschema/) with the combo the enabled features make
+  (`none`, `auth0`, `auth0_openai`, …), which is what brings the
+  `mix db` task, the DbSchema export under `assets/db_schema/` and the
+  database's page — they were this cartridge's until v1.2.0.
+* **REST group** (`--interface rest`): enhanced `error_json.ex` (changeset
+  error rendering) and the Postman collection for the enabled features
+  combo (auth0/openai/health).
+* **Base testing**: composes `workbench.install.mock`;
+  application/telemetry tests and (conditional)
+  page/dashboard/mailbox tests (each when the project has html, the
+  dashboard, the mailer — read off the project) and the error view test
+  (`rest`); `MyApp.Fixtures` and
+  `MyApp.MockHelper`, imported into `ConnCase`.
+
+**Idempotency**: if `test/support/fixtures.ex` already exists, notice
+and no-op. (The mark was the `mix version` task until v1.0.0, when the
+task moved to changelog.)
+
+## Contents
+
+| File | Role |
+| --- | --- |
+| `enhancements.ex` | Manifest + logic |
+| `task.ex` | `Mix.Tasks.Workbench.Install.Enhancements` shell |
+| `templates/*.eex` (12) | Helper/Schema, error_json, base tests, fixtures, mock_helper |
+
+| `assets/postman/<combo>.postman_collection.json` | Postman collections (verbatim), one per auth0/openai/health combo |
+
+`asset/1` reads the set matching the enabled feature combo.
+
+Cartridge test: `test/workbench_igniter/features/enhancements_test.exs`.

@@ -1,0 +1,87 @@
+@moduledoc false
+
+use <%= @web_module %>.ConnCase, async: true
+
+alias <%= @web_module %>.Plugs.Health
+<%= if @repo do %>
+
+# Repos that fail the way a real one does when the database is gone.
+defmodule DownRepo do
+  @moduledoc false
+  def query(_sql, _params, _opts), do: {:error, :down}
+end
+
+defmodule CrashingRepo do
+  @moduledoc false
+  def query(_sql, _params, _opts), do: raise("pool exhausted")
+end
+<% end %>
+
+describe "GET <%= @path %>/live" do
+  test "answers 200 through the endpoint", %{conn: conn} do
+    conn = get(conn, "<%= @path %>/live")
+
+    assert conn.status == 200
+    assert conn.resp_body == "ok"
+    # Halted in the endpoint: the router never saw the request.
+    assert conn.halted
+    assert get_resp_header(conn, "cache-control") == ["no-store"]
+  end
+end
+
+describe "GET <%= @path %>/ready" do
+<%= if @repo do %>
+  test "answers 200 when the database answers", %{conn: conn} do
+    conn = get(conn, "<%= @path %>/ready")
+
+    assert conn.status == 200
+    assert conn.resp_body == "ok"
+  end
+
+  test "answers 503 when the query fails" do
+    conn = probe("<%= @path %>/ready", repo: DownRepo)
+
+    assert conn.status == 503
+    assert conn.resp_body == "unavailable"
+    assert conn.halted
+  end
+
+  test "answers 503 instead of raising when the check crashes" do
+    assert probe("<%= @path %>/ready", repo: CrashingRepo).status == 503
+  end
+
+  test "ready?/1 never raises" do
+    assert Health.ready?(<%= @repo %>)
+    refute Health.ready?(DownRepo)
+    refute Health.ready?(CrashingRepo)
+  end
+<% else %>
+  test "answers 200", %{conn: conn} do
+    conn = get(conn, "<%= @path %>/ready")
+
+    assert conn.status == 200
+    assert conn.resp_body == "ok"
+    assert conn.halted
+  end
+<% end %>
+end
+
+describe "any other request" do
+  test "passes through untouched" do
+    conn = probe("/")
+
+    refute conn.halted
+    assert conn.state == :unset
+  end
+
+  test "only GET is a probe" do
+    conn = :post |> build_conn("<%= @path %>/live") |> Health.call(Health.init([]))
+
+    refute conn.halted
+  end
+end
+
+# Runs the plug alone, with its own options, outside the endpoint.
+defp probe(path, opts \\ []) do
+  :get |> build_conn(path) |> Health.call(Health.init(opts))
+end

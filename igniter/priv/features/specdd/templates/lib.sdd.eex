@@ -1,0 +1,19 @@
+Spec: Application Code
+
+Purpose:
+  Hold the application in two halves: the domain, which knows nothing of
+    HTTP, and the web interface that exposes it.
+
+Structure:
+  ./<%= @app %>: Domain contexts, schemas and the OTP application (@<%= @module %>)
+  ./<%= @app %>_web: Endpoint, router, controllers, LiveViews and components (@<%= @module %>Web)
+  ./<%= @app %>.ex: The domain's top-level module
+  ./<%= @app %>_web.ex: The `use` macros of the web layer
+
+Must:
+  Business rules live in ./<%= @app %>, reached from ./<%= @app %>_web through context functions.
+  A module reached from the web layer is a context: a public function with a docstring, not a schema.
+
+Must not:
+  Code in ./<%= @app %> calls into ./<%= @app %>_web or reads a @Plug.Conn.
+  Controllers, LiveViews and components hold business rules.

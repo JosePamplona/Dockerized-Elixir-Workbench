@@ -1,0 +1,19 @@
+# AI Assistant implementation:
+ai_assistant_api_url =
+  System.get_env("AI_ASSISTANT_API_URL") ||
+    raise """
+    environment variable AI_ASSISTANT_API_URL is missing.
+    For example: "https://api.openai.com/v1"
+    """
+
+ai_assistant_api_key =
+  System.get_env("AI_ASSISTANT_API_KEY") ||
+    raise """
+    environment variable AI_ASSISTANT_API_KEY is missing.
+    For example: "sk-proj-secret"
+    """
+
+config :<%= @app_name %>,
+  ai_assistant_api_url: ai_assistant_api_url,
+  ai_assistant_api_key: ai_assistant_api_key
+

@@ -1,0 +1,24 @@
+  # No `restart:`, as in the dev compose: the deployment is the unit,
+  # across a reboot too.
+  database:
+    image: mcr.microsoft.com/mssql/server:<%= @version.("mssql", "2022-latest") %>
+    environment:
+      # Microsoft's licence, accepted by running the image at all.
+      ACCEPT_EULA: "Y"
+      # phx.new's own dev credentials for MSSQL.
+      MSSQL_SA_PASSWORD: some!Password
+    # The image declares no volume of its own: an anonymous one, as the
+    # dev compose has it.
+    volumes:
+      - /var/opt/mssql
+    healthcheck:
+      # mssql-tools18 is where the 2022 image ships sqlcmd; -C trusts
+      # the server's own certificate, -b fails the command on an error.
+      test: /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P some!Password -Q "SELECT 1" -b
+      timeout: 45s
+      interval: 10s
+      retries: 10
+      # The first start on a fresh volume takes SQL Server minutes —
+      # system databases, tempdb — and a failure in this period does not
+      # count, or compose gave up on it before it answered (seen 2026-09-07).
+      start_period: 180s

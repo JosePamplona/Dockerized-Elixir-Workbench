@@ -1,0 +1,97 @@
+# test_doubles — manual hero
+
+The hero is **manual**: made in conversation with the generator,
+outside the repository, starting from proposal 5 (CD-ROM, early 1990s)
+in `eras.md`, whose prompt did not convince. The image is the source,
+the way `overlay.xcf` is: it cannot be regenerated, only continued, so
+`art/hero.jpg` is archived before anything overwrites it —
+`_archived/art/hero-1.jpg` is the state of 2026-09-20 09:51.
+
+The turns that made it were not logged; the log starts here, and every
+entry is written before the take that tests it. Each turn is the
+current `art/hero.jpg` plus the last entry below.
+
+Everything downstream is unchanged: the proportion `covers.py window`
+names (4:5), `pad`, `cut`, `stamp`, the invariants, the counts.
+
+## What the hero carries (read off the image, 2026-09-20)
+
+Three bodies on a ship's bridge, left to right: a man standing in a
+lit glass capsule (`THE REAL ONE`), a white android of the same build
+(`COPIED`), and a cyan wireframe figure of the same build standing on
+a projector pad (`BUILT TO SPEC`). The real one is flesh and the two
+doubles are made, which is the metaphor of `eras.md` in the bodies
+rather than in the captions. Lockup `TEST DOUBLES` / `NEVER THE REAL
+ONE` across the foot; badge `2 DOUBLES` on a screen panel at the top
+left; a banner across the top reading `Mimic · Mox · Hammox`. No
+furniture, no wear, no version and no date.
+
+## The log
+
+### 1 — the top right has to be the seal's (2026-09-20)
+
+Measured on the hero, in fractions of its own width and height: the
+banner's lettering runs from 0.073 to **0.857** of the width at 0.03 to
+0.14 of the height, and the caption row runs to 0.928 of the width at
+0.16 to 0.25. The seal straddles a top corner and the composition owes
+it a quarter-disc of calm; there is lettering in all four corners of
+this hero, so at 0.23 it eats `Hammox` and the top of `BUILT TO SPEC`
+at top right, and the lockup at either bottom corner. At 0.15 it clears
+the captions and eats only the last two letters of `Hammox`.
+
+The banner is also the one thing on the face that contradicts another:
+the badge says `2 DOUBLES` and the banner names three. The box's option
+is `--double mimic|mox`, two values; **Hammox is not a third double**,
+it is what `--type-check` puts in Mox's place, and it belongs on the
+back where that switch is explained.
+
+So one change answers both:
+
+> In the banner across the top, the text reads **`Mimic · Mox`** — the
+> same lettering, the same banner, two names instead of three, ending
+> by 0.60 of the width. The top right of the image, from 0.72 of the
+> width to the right edge and from the top edge down to 0.15 of the
+> height, is the bridge's dark wall: an even field, no lettering and no
+> focal element in it.
+
+Everything else in the image stays exactly as it is.
+
+### 2 — the expansion goes to the generator (2026-09-20)
+
+Supersedes the hand expansion. `expand.py` stays beside this file as
+what was done first and as the fallback: it continues the hero's own
+edge rows and columns, which holds above and below — those bands are
+near-flat dark — but at the sides it repeats a column of the bridge's
+wall panelling, and this overlay has **no board at the sides** (`covers.py
+window`: board top 105, bottom 55, left 0, right 0), so those 19px
+show on the finished cover. A painted continuation reads better there
+than a repeated column.
+
+`./assets/covers/covers.py pad test_doubles` has written the canvas:
+
+    assets/covers/test_doubles/art/padded.jpg   863x1214
+
+The hero sits in it at +19+124, untouched, with flat grey around it:
+124px above, 66px below, and 19px at each side inside the window. Send
+that canvas to the generator **in the same conversation the hero was
+made in**, with the turn below, and save what comes back as
+
+    assets/covers/test_doubles/art/expanded.jpg
+
+--- the second turn ---
+
+The flat grey border around this picture is blank. Paint it by
+continuing the picture outward into it on every side, to the edges —
+the bridge's dark ceiling and its upper bulkhead continue above, the
+deck's floor plating and the lit console strip continue below, and at
+each side the wall's panelling and its recessed screens run on to the
+edge. Keep the picture inside exactly as it is, and add nothing new: no
+figure, no object, no lettering.
+
+---
+
+Then `covers.py cut test_doubles` and `covers.py stamp test_doubles
+--corner tr --inside --size 0.15`. If `cut` reports the expansion short
+on a side, the generator cropped or moved the picture and the turn is
+rerun; if it keeps its own output size, that is expected — it is cut to
+whatever scale it comes back at.

@@ -1,0 +1,109 @@
+defmodule Mix.Tasks.VersionTest do
+  @moduledoc false
+
+  # The task reads and writes the files of the current directory, so
+  # each test runs in a directory of its own, and not beside the others.
+  use ExUnit.Case, async: false
+
+  import ExUnit.CaptureIO
+
+  alias Mix.Tasks.Version
+
+  @mix ~s|defmodule App.MixProject do\n  def project, do: [app: :app, version: "0.1.0"]\nend\n|
+  @changelog """
+  # Changelog
+
+  ## Unreleased
+
+  > Copy the commented title line, adjust it and uncomment it.
+  <!-- ## v0.0.0 - (0000-00-00) -->
+
+  - Something done.
+
+  ## v0.1.0 - (2026-01-01)
+  """
+  @readme "# App\n\n![v0.1.0](https://img.shields.io/badge/version-0.1.0-lightgrey.svg)\n"
+
+  setup do
+    dir = Path.join(System.tmp_dir!(), "version_test_#{System.unique_integer([:positive])}")
+    File.mkdir_p!(dir)
+    on_exit(fn -> File.rm_rf!(dir) end)
+    {:ok, dir: dir}
+  end
+
+  defp today, do: :calendar.local_time() |> elem(0) |> Date.from_erl!()
+
+  defp in_dir(dir, files, fun) do
+    for {name, content} <- files, do: File.write!(Path.join(dir, name), content)
+    File.cd!(dir, fun)
+  end
+
+  test "writes the version into mix.exs, closes the changelog and updates the badge", %{dir: dir} do
+    in_dir(dir, [{"mix.exs", @mix}, {"CHANGELOG.md", @changelog}, {"README.md", @readme}], fn ->
+      output = capture_io(fn -> Version.run(["1.2.0"]) end)
+
+      assert File.read!("mix.exs") =~ ~s|version: "1.2.0"|
+      changelog = File.read!("CHANGELOG.md")
+      assert changelog =~ "<!-- ## v0.0.0 - (0000-00-00) -->\n\n## v1.2.0 - (#{today()})\n\n- Something done."
+      assert changelog =~ "## v0.1.0 - (2026-01-01)"
+      assert File.read!("README.md") =~ "![v1.2.0](https://img.shields.io/badge/version-1.2.0-lightgrey.svg)"
+      assert output =~ "Version 1.2.0:"
+      assert output =~ "CHANGELOG.md (Unreleased closed as v1.2.0)"
+      assert output =~ "README.md"
+    end)
+  end
+
+  test "a README without a badge and a missing changelog are skipped, not errors", %{dir: dir} do
+    in_dir(dir, [{"mix.exs", @mix}, {"README.md", "# App\n"}], fn ->
+      output = capture_io(fn -> Version.run(["2.0.0"]) end)
+
+      assert File.read!("mix.exs") =~ ~s|version: "2.0.0"|
+      assert File.read!("README.md") == "# App\n"
+      assert output =~ "CHANGELOG.md: none, skipped"
+      refute output =~ "README.md"
+    end)
+  end
+
+  test "a version kept in @version is written there", %{dir: dir} do
+    mix = ~s|defmodule App.MixProject do\n  @version "0.1.0"\n  def project, do: [app: :app, version: @version]\nend\n|
+
+    in_dir(dir, [{"mix.exs", mix}], fn ->
+      capture_io(fn -> Version.run(["1.2.0"]) end)
+
+      assert File.read!("mix.exs") =~ ~s|@version "1.2.0"|
+      assert File.read!("mix.exs") =~ "version: @version"
+    end)
+  end
+
+  test "a pre-release goes into the badge with its dash doubled, and out again", %{dir: dir} do
+    in_dir(dir, [{"mix.exs", @mix}, {"README.md", @readme}], fn ->
+      capture_io(fn -> Version.run(["2.0.0-rc.1"]) end)
+      assert File.read!("README.md") =~ "![v2.0.0-rc.1](https://img.shields.io/badge/version-2.0.0--rc.1-lightgrey.svg)"
+
+      capture_io(fn -> Version.run(["2.0.0"]) end)
+      assert File.read!("README.md") =~ "![v2.0.0](https://img.shields.io/badge/version-2.0.0-lightgrey.svg)"
+    end)
+  end
+
+  test "a version Mix would not compile is refused, and nothing written", %{dir: dir} do
+    in_dir(dir, [{"mix.exs", @mix}], fn ->
+      assert_raise Mix.Error, ~r/1.2 is not a version Mix accepts/, fn ->
+        capture_io(fn -> Version.run(["1.2"]) end)
+      end
+
+      assert File.read!("mix.exs") == @mix
+    end)
+  end
+
+  test "a mix.exs without a version is the one error", %{dir: dir} do
+    in_dir(dir, [{"mix.exs", "defmodule App.MixProject do\nend\n"}], fn ->
+      assert_raise Mix.Error, ~r/mix.exs carries no version/, fn ->
+        capture_io(fn -> Version.run(["1.0.0"]) end)
+      end
+    end)
+  end
+
+  test "needs exactly one argument" do
+    assert_raise Mix.Error, ~r/Usage: mix version/, fn -> Version.run([]) end
+  end
+end

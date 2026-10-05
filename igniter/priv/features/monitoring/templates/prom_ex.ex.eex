@@ -1,0 +1,54 @@
+@moduledoc """
+The application's metrics for Prometheus, through PromEx.
+
+What the plugins below capture off Telemetry is served at `/metrics`
+by the `PromEx.Plug` in the endpoint, and the Grafana dashboards each
+plugin ships are uploaded to the workspace's Grafana when the
+application starts (`config/runtime.exs` says where that is).
+Installed by the workbench's monitoring cartridge.
+
+A plugin is one library's metrics, with the dashboard that reads them:
+add one when the project takes the library on (Oban, Absinthe,
+Broadway...), and take out what the project no longer runs.
+"""
+use PromEx, otp_app: :<%= @app_name %>
+
+alias PromEx.Plugins
+
+@impl true
+def plugins do
+  [
+    Plugins.Application,
+    Plugins.Beam,
+    {Plugins.Phoenix, router: <%= @web_module %>.Router, endpoint: <%= @web_module %>.Endpoint}<%= if @ecto do %>,
+    {Plugins.Ecto, repos: [<%= @app_module %>.Repo]}<% end %><%= if @live do %>,
+    Plugins.PhoenixLiveView<% end %>
+    # Plugins.Oban,
+    # Plugins.Absinthe,
+    # Plugins.Broadway
+  ]
+end
+
+@impl true
+def dashboard_assigns do
+  [
+    # The Grafana datasource the dashboards read: the one the compose
+    # provisions off monitoring/grafana/datasource.yml.
+    datasource_id: "prometheus",
+    default_selected_interval: "30s"
+  ]
+end
+
+@impl true
+def dashboards do
+  [
+    {:prom_ex, "application.json"},
+    {:prom_ex, "beam.json"},
+    {:prom_ex, "phoenix.json"}<%= if @ecto do %>,
+    {:prom_ex, "ecto.json"}<% end %><%= if @live do %>,
+    {:prom_ex, "phoenix_live_view.json"}<% end %>
+    # {:prom_ex, "oban.json"},
+    # {:prom_ex, "absinthe.json"},
+    # {:prom_ex, "broadway.json"}
+  ]
+end

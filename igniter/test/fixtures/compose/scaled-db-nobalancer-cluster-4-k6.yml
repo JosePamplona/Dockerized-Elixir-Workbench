@@ -1,0 +1,119 @@
+# The workspace's scaled deployment, baked by the workbench:
+#
+#   docker-compose.scaled.yml  (scaled) - 'up --deploy scaled'
+#
+# The dev and prod files, docker-compose.yml and docker-compose.prod.yml,
+# keep the pod pattern this one deliberately replaces with a bridge
+# network. It is baked with as many replicas as --replicas asks for, and
+# without the balancer when --no-balancer is given; 'up --deploy scaled'
+# writes it again each time.
+
+name: lorem_ipsum
+
+# Scaled deployment: the production replicas live on a regular bridge
+# network — one IP each — all answering to the `app` network alias, so
+# Docker's embedded DNS returns every address for that single name. That
+# is exactly what DNSCluster queries through DNS_CLUSTER_QUERY, and how
+# the replicas find each other.
+#
+# This file deliberately drops the pod pattern of docker-compose.yml.
+# Replicas sharing a network namespace would share one IP and one port:
+# only the first would bind the server, and every RELEASE_NODE would
+# resolve to the same <name>@<ip>, a duplicate node name epmd rejects.
+# The price of leaving the pod is that the database is no longer on
+# localhost, hence the DATABASE_URL the app anchor overrides in projects
+# that have one.
+#
+# The replicas form a BEAM cluster only with the clustering feature
+# ('wb.sh add clustering'): its rel/env.sh.eex is what makes the release
+# boot as a named distributed node. Without it they run isolated, which is
+# a valid deployment on its own, and DNS_CLUSTER_QUERY is left out.
+
+x-app: &app
+  image: lorem-ipsum:0.1.0-prod
+  build:
+    context: .
+    dockerfile: Dockerfile
+  env_file:
+    - ./.env
+  environment:
+    # Overrides what .env declares: the pod's localhost database is gone,
+    # and the name every replica answers to is the shared network alias.
+    DNS_CLUSTER_QUERY: app
+    DATABASE_URL: ecto://postgres:postgres@database/lorem_ipsum_prod
+  networks:
+    default:
+      aliases:
+        - app
+  depends_on:
+    migrate:
+      condition: service_completed_successfully
+
+services:
+  app1:
+    <<: *app
+    ports:
+      - 4000:4000
+
+  app2:
+    <<: *app
+    ports:
+      - 4001:4000
+
+  app3:
+    <<: *app
+    ports:
+      - 4002:4000
+
+  app4:
+    <<: *app
+    ports:
+      - 4003:4000
+
+  # One-shot migration (rel/overlays/bin/migrate, from phx.gen.release),
+  # so the replicas do not race each other running it on boot. The
+  # database itself is created by the postgres image from POSTGRES_DB.
+  migrate:
+    image: lorem-ipsum:0.1.0-prod
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: /app/bin/migrate
+    env_file:
+      - ./.env
+    environment:
+      DATABASE_URL: ecto://postgres:postgres@database/lorem_ipsum_prod
+    depends_on:
+      database:
+        condition: service_healthy
+
+  # No `restart:`, as in the dev compose: the deployment is the unit,
+  # across a reboot too.
+  database:
+    image: postgres:latest
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: lorem_ipsum_prod
+    healthcheck:
+      # -h forces TCP, as in the dev seed: the init's temporary server
+      # answers the unix socket before the real one listens.
+      test: pg_isready -q -h localhost -d lorem_ipsum_prod -U postgres
+      timeout: 45s
+      interval: 10s
+      retries: 10
+      # Its init is quick, but it is an init: the same allowance, shorter.
+      start_period: 30s
+
+  # A load tool, not a service of the deployment: k6 runs to completion,
+  # so it sits under a profile 'up' never starts — './wb.sh k6 [SCRIPT]
+  # --deploy scaled' runs it. On this network it aims at the balancer
+  # when there is one, and at the `app` alias otherwise — the name every
+  # replica answers to, so Docker's DNS spreads the users over them.
+  k6:
+    image: grafana/k6:latest
+    profiles: [tools]
+    environment:
+      BASE_URL: http://app:4000
+    volumes:
+      - ./k6:/scripts:ro

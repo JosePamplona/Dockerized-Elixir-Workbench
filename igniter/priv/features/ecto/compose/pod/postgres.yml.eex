@@ -1,0 +1,26 @@
+  database:
+    image: postgres:<%= @version.("postgres", "latest") %>
+    network_mode: "service:pod"
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      # Created when the data directory is initialised, and only then:
+      # the production database the release deployments migrate into
+      # ('bin/migrate' runs the migrations, it does not create the
+      # database; 'mix ecto.create' does that for dev on its own). The
+      # prod and scaled deployments share this container's volume with
+      # dev, so the database has to be there from the first init.
+      POSTGRES_DB: <%= @app_name %>_prod
+    depends_on:
+      - pod
+    healthcheck:
+      # -h forces TCP: without it pg_isready asks the unix socket, which
+      # the image's init already answers on its temporary server — so a
+      # fresh volume said healthy before the real server listened, and
+      # the migrator's first connections were refused.
+      test: pg_isready -q -h localhost -d postgres -U postgres
+      timeout: 45s
+      interval: 10s
+      retries: 10
+      # Its init is quick, but it is an init: the same allowance, shorter.
+      start_period: 30s

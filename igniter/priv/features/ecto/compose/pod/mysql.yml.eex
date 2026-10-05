@@ -1,0 +1,27 @@
+  database:
+    image: mysql:<%= @version.("mysql", "8") %>
+    network_mode: "service:pod"
+    environment:
+      # phx.new's own dev credentials for MySQL: root, no password.
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      # Created when the data directory is initialised, and only then,
+      # as POSTGRES_DB is: the production database the release
+      # deployments migrate into ('bin/migrate' runs the migrations, it
+      # does not create the database; 'mix ecto.create' does that for
+      # dev on its own).
+      MYSQL_DATABASE: <%= @app_name %>_prod
+    depends_on:
+      - pod
+    healthcheck:
+      # 127.0.0.1 forces TCP: the image's init runs a temporary server
+      # that answers only on the unix socket, so with -h localhost a
+      # fresh volume said healthy before the real server listened.
+      test: mysqladmin ping -h 127.0.0.1 --silent
+      timeout: 45s
+      interval: 10s
+      retries: 10
+      # The first start on a fresh volume initialises the data directory,
+      # runs a temporary server and shuts it down before the real one
+      # listens: a minute or more on a busy host, and a failure in this
+      # period does not count — compose used to give up on it.
+      start_period: 90s

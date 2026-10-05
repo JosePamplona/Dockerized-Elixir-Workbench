@@ -1,0 +1,6 @@
+{
+  "dew.theme": { "name": "Probe", "author": "The suite", "url": "https://example.test/probe", "licence": "MIT" },
+  "dew.interface": { "text": { "mono": "fira" } },
+  "dark": { "workbench.colorCustomizations": { "terminal.foreground": "#abcdef" } },
+  "light": { "workbench.colorCustomizations": { "terminal.foreground": "#123456" } }
+}

@@ -1,0 +1,171 @@
+# The workspace's orchestration, baked by the workbench into two files:
+#
+#   docker-compose.yml       (dev)  - dev toolchain image, source mounted
+#   docker-compose.prod.yml  (prod) - release image, no source volume and
+#                                     no build identity args
+#
+# Both are the pod topology below with another image and two switches:
+# the dev file has no one-shot 'migrate' service (the dev image migrates
+# itself on boot) and the prod file makes the app wait for it; the prod
+# file also carries no source mount and no build identity. The scaled
+# deployment, docker-compose.scaled.yml, is another topology: it
+# replaces the pod pattern with a bridge network. './wb.sh bake' writes
+# this file again for the project as it is now.
+
+name: lorem_ipsum
+
+services:
+  # Pod pattern: this service's only job is to own the workspace's network
+  # namespace and its published ports — literally the "pause" container
+  # Kubernetes uses for the same job in its pods (~700 kB, sleeps forever).
+  # Every other service joins it, so they all reach each other through
+  # localhost — and the project keeps Phoenix's default database
+  # configuration untouched.
+  # No `restart:` on any service, here or in the scaled compose: a
+  # deployment goes up and down whole, and that holds across a reboot
+  # of the host too. With `unless-stopped` on the pod and the database
+  # alone, a reboot brought those two back and left the app and pgadmin
+  # down — half a deployment, which the status could only call "no
+  # deployment is up and these are still here". Now a reboot leaves
+  # everything exited, the status says down, and Up raises it whole.
+  # What this gives up: a database that crashes is not restarted on its
+  # own — the console's events feed says so, and Restart is a click.
+  pod:
+    image: registry.k8s.io/pause:3.10
+    ports:
+      # Application port (host:container).
+      - 4000:4000
+      # pgAdmin port, with db_admin's pgadmin in. The database is not
+      # published: it is only reachable from inside this workspace.
+      - 5050:5050
+      # Adminer port, with db_admin's adminer in.
+      - 8080:8080
+
+  app:
+    image: lorem-ipsum:local
+    build:
+      # Baked by the workbench: Dockerfile.local (the app's dev image)
+      # in docker-compose.yml, and the production Dockerfile in
+      # docker-compose.prod.yml, baked by 'up --env prod'. Do not point
+      # docker-compose.yml at the production Dockerfile. The workbench's
+      # own runs (add, mix, git) use an image of their own, not this one.
+      dockerfile: Dockerfile.local
+      # These arguments are only relevant for 'Dockerfile.local'.
+      # Build identity for standalone builds (no workbench): the image is
+      # born with the workspace creator's UID/GID, so files written into
+      # the mounted source keep the right ownership. Edit if you build
+      # this project on a host with a different user.
+      args:
+        UID: 1000
+        GID: 1000
+    # The image starts itself (CMD). Defaults per dockerfile —
+    #   Dockerfile.local: sh -c 'cd /app/src && mix setup && exec elixir --sname lorem_ipsum -S mix phx.server'
+    #   Dockerfile (prod): /app/bin/server
+    # Uncomment to override:
+    # command:
+    # An init (docker's tini) as PID 1 above the command: it reaps what
+    # the BEAM's ports leave behind — the esbuild and tailwind watchers
+    # of a dev server — and forwards the signals of a stop.
+    init: true
+    network_mode: "service:pod"
+    env_file:
+      - ./.env
+    volumes:
+      - .:/app/src
+      # Compiled code and dependencies stay inside Docker, never in the
+      # bind mount: a volume covers each of the two directories Mix
+      # writes into, where Mix already looks for them — nothing is
+      # written through to the host, and nothing has to be told where
+      # they went. 'delete' drops them with the project.
+      - build:/app/src/_build
+      - deps:/app/src/deps
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      # TCP-connect probe via bash (present in both the dev toolchain and
+      # the prod runner image): no curl/wget needed.
+      test: ["CMD", "bash", "-c", "</dev/tcp/localhost/4000"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      # First compile & boot may take a while: not counted as failures.
+      start_period: 120s
+
+  database:
+    image: postgres:latest
+    network_mode: "service:pod"
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      # Created when the data directory is initialised, and only then:
+      # the production database the release deployments migrate into
+      # ('bin/migrate' runs the migrations, it does not create the
+      # database; 'mix ecto.create' does that for dev on its own). The
+      # prod and scaled deployments share this container's volume with
+      # dev, so the database has to be there from the first init.
+      POSTGRES_DB: lorem_ipsum_prod
+    depends_on:
+      - pod
+    healthcheck:
+      # -h forces TCP: without it pg_isready asks the unix socket, which
+      # the image's init already answers on its temporary server — so a
+      # fresh volume said healthy before the real server listened, and
+      # the migrator's first connections were refused.
+      test: pg_isready -q -h localhost -d postgres -U postgres
+      timeout: 45s
+      interval: 10s
+      retries: 10
+      # Its init is quick, but it is an init: the same allowance, shorter.
+      start_period: 30s
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    network_mode: "service:pod"
+    # `exec` on the last step, as the app's CMD: without it this shell
+    # stayed PID 1 and every stop of pgadmin waited the 10 s of grace
+    # and ended in SIGKILL (`die exit 137`, seen on the events feed).
+    entrypoint: >
+      /bin/sh -c "
+      echo 'localhost:5432:*:postgres:postgres' > /var/lib/pgadmin/pgpass;
+      chmod 600 /var/lib/pgadmin/pgpass;
+      exec /entrypoint.sh
+      "
+    environment:
+      PGADMIN_DEFAULT_EMAIL: pgadmin4@pgadmin.org
+      PGADMIN_DEFAULT_PASSWORD: pass
+      PGADMIN_LISTEN_PORT: 5050
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    depends_on:
+      - database
+    configs:
+      - source: pgadmin_servers
+        target: /pgadmin4/servers.json
+
+  # Adminer, with db_admin's adminer in: one page on the workspace's
+  # database, whatever the adapter, on its own port beside the app's.
+  # The login it opens with is the project's own file (adminer/login.php,
+  # the directory mounted as the image's plugins-enabled/); where the
+  # database is and which one to open are this deployment's, so they are
+  # said here, and the file's own values stand for an Adminer run by hand.
+  adminer:
+    image: adminer:6
+    network_mode: "service:pod"
+    environment:
+      WORKBENCH_SERVER: 127.0.0.1:5432
+      WORKBENCH_DATABASE: lorem_ipsum_dev
+    depends_on:
+      - database
+    volumes:
+      - ./adminer:/var/www/html/plugins-enabled:ro
+
+volumes:
+  build:
+  deps:
+
+configs:
+  # The servers pgAdmin opens with: db_admin's file, the
+  # project's own (pgadmin/servers.json), not a copy kept in here.
+  pgadmin_servers:
+    file: ./pgadmin/servers.json

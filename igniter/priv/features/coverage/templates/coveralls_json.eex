@@ -1,0 +1,13 @@
+{
+  "coverage_options": {
+    "output_dir": "<%= @output_dir %>",<%= if @template_path do %>
+    "template_path": "<%= @template_path %>",<% end %>
+    "minimum_coverage": <%= @minimum_coverage %>
+  },
+  "terminal_options": {
+    "file_column_width": <%= @file_column_width %>
+  },
+  "skip_files": [<%= for {path, i} <- Enum.with_index(@skip_files) do %>
+    "<%= path %>"<%= if i < length(@skip_files) - 1, do: "," %><% end %>
+  ]
+}

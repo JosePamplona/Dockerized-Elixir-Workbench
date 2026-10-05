@@ -1,0 +1,6 @@
+  create:
+    image: mcr.microsoft.com/mssql/server:<%= @version.("mssql", "2022-latest") %>
+    command: ["/opt/mssql-tools18/bin/sqlcmd", "-C", "-S", "database", "-U", "sa", "-P", "some!Password", "-b", "-Q", "IF DB_ID('<%= @app_name %>_prod') IS NULL CREATE DATABASE [<%= @app_name %>_prod]"]
+    depends_on:
+      database:
+        condition: service_healthy

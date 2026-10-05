@@ -1,0 +1,28 @@
+Manual hero — no single prompt. This hero was made in conversation
+with the generator, by instructions and its reinterpretations, from
+proposal 2 in eras.md as the starting point; the image is the source,
+and what follows is the log of the changes asked of it, each written
+here before the take that tests it. Every turn is the current
+art/hero.jpg plus the change below it.
+
+--- change 1 ---
+
+Keep this picture exactly as it is — the platform, the four terminals,
+the six beams, the tubes, the cables, the four name plates, the flash,
+the title plate — and make the image 4:5 portrait instead of 5:7, by
+bringing the top and the bottom in: the "PROD ONLY" flash sits a
+little lower, wholly inside the top edge with sky above it, and the
+riveted title plate with "CLUSTERING" and "THEY FIND EACH OTHER" sits
+a little higher, wholly inside the bottom edge with ground below it.
+Nothing new is added: no figure, no object, no lettering.
+
+--- second turn, with art/padded.jpg from covers.py pad ---
+
+The flat grey border around this picture is blank. Paint it by
+continuing the picture outward into it on every side, to the edges:
+the flat pale blue sky continues above to the top edge and below to
+the bottom edge, the same even tone, empty, with nothing printed on
+it. Keep the picture inside exactly as it is, and add nothing new: no
+figure, no object, no lettering, no second flash — the one flash in
+the top right corner of the picture stays where it is and appears
+once.

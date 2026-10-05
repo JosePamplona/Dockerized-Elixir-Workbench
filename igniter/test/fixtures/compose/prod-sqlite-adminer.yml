@@ -1,0 +1,139 @@
+# The workspace's orchestration, baked by the workbench into two files:
+#
+#   docker-compose.yml       (dev)  - dev toolchain image, source mounted
+#   docker-compose.prod.yml  (prod) - release image, no source volume and
+#                                     no build identity args
+#
+# Both are the pod topology below with another image and two switches:
+# the dev file has no one-shot 'migrate' service (the dev image migrates
+# itself on boot) and the prod file makes the app wait for it; the prod
+# file also carries no source mount and no build identity. The scaled
+# deployment, docker-compose.scaled.yml, is another topology: it
+# replaces the pod pattern with a bridge network. './wb.sh bake' writes
+# this file again for the project as it is now.
+
+name: lorem_ipsum
+
+services:
+  # Pod pattern: this service's only job is to own the workspace's network
+  # namespace and its published ports — literally the "pause" container
+  # Kubernetes uses for the same job in its pods (~700 kB, sleeps forever).
+  # Every other service joins it, so they all reach each other through
+  # localhost — and the project keeps Phoenix's default database
+  # configuration untouched.
+  # No `restart:` on any service, here or in the scaled compose: a
+  # deployment goes up and down whole, and that holds across a reboot
+  # of the host too. With `unless-stopped` on the pod and the database
+  # alone, a reboot brought those two back and left the app and pgadmin
+  # down — half a deployment, which the status could only call "no
+  # deployment is up and these are still here". Now a reboot leaves
+  # everything exited, the status says down, and Up raises it whole.
+  # What this gives up: a database that crashes is not restarted on its
+  # own — the console's events feed says so, and Restart is a click.
+  pod:
+    image: registry.k8s.io/pause:3.10
+    ports:
+      # Application port (host:container).
+      - 4000:4000
+      # Adminer port, with db_admin's adminer in.
+      - 8080:8080
+
+  app:
+    image: lorem-ipsum:0.1.0-prod
+    build:
+      # Baked by the workbench: Dockerfile.local (the app's dev image)
+      # in docker-compose.yml, and the production Dockerfile in
+      # docker-compose.prod.yml, baked by 'up --env prod'. Do not point
+      # docker-compose.yml at the production Dockerfile. The workbench's
+      # own runs (add, mix, git) use an image of their own, not this one.
+      dockerfile: Dockerfile
+    # The image starts itself (CMD). Defaults per dockerfile —
+    #   Dockerfile.local: sh -c 'cd /app/src && mix setup && exec elixir --sname lorem_ipsum -S mix phx.server'
+    #   Dockerfile (prod): /app/bin/server
+    # Uncomment to override:
+    # command:
+    # An init (docker's tini) as PID 1 above the command: it reaps what
+    # the BEAM's ports leave behind — the esbuild and tailwind watchers
+    # of a dev server — and forwards the signals of a stop.
+    init: true
+    network_mode: "service:pod"
+    env_file:
+      - ./.env
+    volumes:
+      # The SQLite file, on a volume that outlives the container: the
+      # release opens it where DATABASE_PATH (.env) says, /app/data.
+      - data:/app/data
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      # TCP-connect probe via bash (present in both the dev toolchain and
+      # the prod runner image): no curl/wget needed.
+      test: ["CMD", "bash", "-c", "</dev/tcp/localhost/4000"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      # First compile & boot may take a while: not counted as failures.
+      start_period: 120s
+
+  # One-shot migration (rel/overlays/bin/migrate, from phx.gen.release):
+  # the release phase every platform has under its own name — Heroku's
+  # release phase, Fly's release_command, a Kubernetes Job. The same
+  # image as the app, one command, run to completion before the app
+  # starts: in docker-compose.prod.yml the app's depends_on waits on
+  # this service instead of on the database (a migration that completed
+  # implies a healthy one). The dev compose has no such service: the
+  # dev image migrates itself on boot ('mix setup' in its CMD).
+  migrate:
+    image: lorem-ipsum:0.1.0-prod
+    build:
+      dockerfile: Dockerfile
+    command: /app/bin/migrate
+    network_mode: "service:pod"
+    env_file:
+      - ./.env
+    volumes:
+      - data:/app/data
+    depends_on:
+      volume_init:
+        condition: service_completed_successfully
+
+  # A place for the file, before the migration: the release runs as
+  # nobody, and a named volume mounted where the image has no directory
+  # comes up owned by root. This one-shot, as root on the same image,
+  # hands /app/data to nobody once; the migrator waits for it, and the
+  # volume keeps the ownership from then on.
+  volume_init:
+    image: lorem-ipsum:0.1.0-prod
+    build:
+      dockerfile: Dockerfile
+    user: root
+    command: ["sh", "-c", "chown nobody /app/data"]
+    volumes:
+      - data:/app/data
+
+  # Adminer, with db_admin's adminer in: one page on the workspace's
+  # database, whatever the adapter, on its own port beside the app's.
+  # The login it opens with is the project's own file (adminer/login.php,
+  # the directory mounted as the image's plugins-enabled/); where the
+  # database is and which one to open are this deployment's, so they are
+  # said here, and the file's own values stand for an Adminer run by hand.
+  adminer:
+    image: adminer:6
+    network_mode: "service:pod"
+    environment:
+      # The SQLite file, where this deployment keeps it.
+      WORKBENCH_DATABASE: /app/data/lorem_ipsum_prod.db
+    # The file's owner — the workspace's user on the source, nobody on the
+    # release's volume — so SQLite can write its journal beside the file.
+    user: "65534:65534"
+    depends_on:
+      volume_init:
+        condition: service_completed_successfully
+    volumes:
+      - ./adminer:/var/www/html/plugins-enabled:ro
+      - data:/app/data
+
+volumes:
+  # The SQLite file of the release: 'delete' drops it with the project.
+  data:

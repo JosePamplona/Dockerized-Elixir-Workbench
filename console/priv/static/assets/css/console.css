@@ -1,0 +1,2255 @@
+/* The console's stylesheet, written by hand and served as it is (until 2026-09-29
+   the retired mock inlined the same file, which some comments below recall). The colours
+   and type it uses are the house's tokens (assets/design, generated as tokens.css
+   and components.css beside this file). */
+[hidden]{display:none!important}
+img{max-width:100%}
+*{box-sizing:border-box}
+html,body{height:100%}
+/* The page is a grid — the band, then the rest — so no height is ever
+   100vh minus a hardcoded pixel count: a fractional zoom rounded that
+   into a one-pixel slit under the jobs bar. */
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--serif);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;display:grid;grid-template-rows:auto auto minmax(0,1fr);overflow:hidden}
+/* Each of the three takes the row it is meant for, and the middle one —
+   the warning, which is there only when the console was started for
+   something else — takes none when it is absent. Placed, not flowed:
+   auto-placement put the screen in the warning's row (2026-09-27), so
+   the screen was as tall as its content and the fraction went to an
+   empty row under it — the rail ended mid-window and read as cut. */
+body>[data-phx-main]>header.band{grid-row:1}
+body>[data-phx-main]>.app{grid-row:3}
+/* The band at the foot swaps the two, and says so in the same shape:
+   the two placements would otherwise tie on specificity and be settled
+   by which came last in this file. */
+/* The console is a LiveView, and a LiveView comes wrapped in a div of
+   its own. That div was the body's only grid row: it took its height
+   from its content, the two rows below it never applied, and the whole
+   frame grew past the window with the jobs bar left under the fold.
+   `display:contents` takes the wrapper's box away and gives the band
+   and the app back to the body's grid. The mock has no wrapper, and
+   reads the same rules unchanged. */
+body>[data-phx-main]{display:contents}
+/* In this console a link is almost never a word in a sentence: it is a tab, a
+   box on the shelf, a door, a row, the whole jobs bar. All of those are
+   surfaces you press, and the house already says what a surface you press
+   looks like — a border, a ground, a cursor — so the browser's underline on
+   top of one is noise, and it was being taken off one element at a time, at
+   the bottom of this file, once per element that became an <a>. The tray's bar
+   was the one that got away: its class was renamed and the rule that undressed
+   it (`a.tray-bar`) went on matching nothing. So the underline is a mark here,
+   not a default: nothing wears it unless it asks. The two that ask are the two
+   that are really links in prose — a link inside rendered Markdown, and .lk,
+   the button that reads as one. */
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* A placeholder with no colour of its own gets the browser's, and that
+   one is a fixed grey — #757575 in Chromium, measured, the same on both
+   grounds — which `color-scheme` does not move, though tokens.css sets
+   it. So it did not follow the theme, and read as ash on the dark
+   surface of the jobs command line. It takes the house's muted ink
+   instead; the ones on the terminal ground override this below, with the
+   terminal's own dim, that ground being dark under either theme.
+   `opacity` because Firefox dims placeholders by default and would take
+   the colour down a second time. */
+::placeholder{color:var(--muted);opacity:1}
+.mono{font-family:var(--mono);font-size:12.5px}
+.label{font-family:var(--cond);font-weight:600;text-transform:uppercase;letter-spacing:.12em;font-size:12px;color:var(--muted)}
+.btn{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:12px;color:var(--ink);border:1px solid var(--line);padding:5px 10px;border-radius:2px;background:var(--surface);white-space:nowrap}
+.btn:hover{border-color:var(--ink)}
+.btn[aria-pressed="true"]{border-color:var(--ink);background:var(--surface-2)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent;box-shadow:0 2px 0 rgba(0,0,0,.25)}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.btn.primary.danger{background:var(--bad);color:var(--surface);border-color:transparent}
+
+/* --- the band --------------------------------------------------------- */
+header.band{
+  position:relative;
+  background:var(--board);color:var(--board-ink);
+  display:flex;align-items:center;justify-content:space-between;gap:24px;
+  padding:0 28px;height:56px;border-bottom:3px solid transparent;
+}
+/* The band's gold rule IS the loading bar, and the two were never two
+   things: a full rule is a page with nothing on its way, and that is
+   what it has always looked like. So it is drawn rather than bordered,
+   and its width is `--load` — 1 at rest, which is the rule as it always
+   was, and rewound to a sliver while something is coming. It is only
+   ever seen incomplete. Phoenix's own topbar is gone with this: it drew
+   a second 3px line, in a blue that was not the house's, pinned to the
+   top of the window — which is not where the band is once the reader
+   has moved it. The transform is what animates, not the variable, so
+   this needs no @property to be smooth. */
+header.band::after{content:"";position:absolute;left:0;right:0;bottom:-3px;height:3px;background:var(--accent);
+  transform:scaleX(var(--load,1));transform-origin:left;transition:transform var(--load-in,.18s) ease-out}
+/* One cell, three uses. 56px wide, the band's full height, closed by a
+   hairline: the mark in the left corner, and in the right one the two
+   controls that are not about this row but about the whole thing — the
+   ground it is read on, and the workbench itself. Between the ends they
+   are what the band is made of; at the ends they bleed into its padding
+   so they finish where the window does, which is what stops them from
+   reading as three more items in a row. */
+header.band .cell{flex:none;width:56px;align-self:stretch;display:flex;align-items:center;justify-content:center;
+  background:none;border:0;color:var(--board-ink);padding:0}
+header.band button.cell{cursor:pointer}
+header.band button.cell:hover{background:rgba(255,255,255,.1)}
+header.band .cell svg{width:19px;height:19px;display:block}
+header.band .mark{margin-left:-28px;align-self:stretch;display:flex;align-items:center;gap:14px;min-width:0}
+header.band .mark .cell{border-right:1px solid rgba(255,255,255,.2)}
+/* The mark goes in inline, never as an <img>: an SVG loaded as an image
+   is its own document, where `fill="currentColor"` falls back to black
+   instead of taking the band's ink. Inline it is the one colour the band
+   already sets, and it follows wherever the mark is put next. */
+header.band .mark svg{height:34px;width:34px;display:block;flex:none}
+header.band h1{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.14em;font-size:22px;margin:0;line-height:1}
+header.band h1 small{display:block;font-weight:500;letter-spacing:.2em;font-size:10.5px;opacity:.8;margin-top:3px}
+/* The version reads off the machine, so it takes the machine's face — the
+   mono, unspaced — beside a name that is set in the house's condensed.
+   It sits under the title with what it is the version of, which is where
+   it was going all along: in the row on the right it had to carry the
+   word `wb.sh` to say so, and that word was already overhead. */
+header.band h1 small .v{font-family:var(--mono);letter-spacing:.02em;font-size:10px;opacity:.75;margin-left:8px}
+/* The row stretches so the corner control can reach the band's full
+   height; its own align-items keeps everything else centred in it. */
+/* What the console is doing, in the band's middle. It is the chip's
+   grammar with the plate taken off — a dot and a word, mono in lower
+   case — which is the move the probe already made on the door: nobody
+   presses this, so it has no box. The dot is the only thing that moves
+   in the whole band, and it moves for the same reason .chip.busy's does.
+   Centred in what the mark and the controls leave, and the first thing
+   to give up its room when the window narrows: it ellipsises, then the
+   title's subtitle goes, and the word survives to the end. */
+/* Nothing here is a value to copy: it is the console saying what it is
+   doing, and a drag across the band should not leave it highlighted. */
+header.band .state{flex:1;min-width:0;display:flex;justify-content:center;font-family:var(--mono);font-size:12px;user-select:none;-webkit-user-select:none}
+header.band .state .w{display:inline-flex;align-items:center;gap:8px;min-width:0}
+header.band .state .word{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+header.band .state .dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+header.band .state.busy .dot{animation:chip-pulse 1s infinite}
+/* An absence keeps the word and drops everything else: the hollow dot is
+   the shelf's «not inserted», read here as «nothing is happening». */
+header.band .state.idle{opacity:.5}
+header.band .state.idle .dot{background:none;border:1.5px solid currentColor;box-sizing:border-box}
+/* The band is the same violet on both grounds, so a colour on it is always
+   the dark value — which is what --board-warn and --board-bad are, read
+   from the tokens and not written here. */
+header.band .state.warn{color:var(--board-warn)}
+header.band .state.bad{color:var(--board-bad)}
+/* The one state the server cannot report is the one where there is no
+   server: LiveView marks the page .phx-error when the socket goes, and the
+   band answers from CSS alone. The word underneath is whatever was true
+   when the line went dead, so it is replaced, not merely tinted. */
+.phx-error header.band .state{color:var(--board-bad);opacity:1}
+.phx-error header.band .state .dot{background:currentColor;border:0;animation:none}
+.phx-error header.band .state .word{display:none}
+.phx-error header.band .state .w::after{content:"no connection"}
+header.band .right{display:flex;align-items:center;align-self:stretch;gap:18px;font-family:var(--mono);font-size:12px}
+header.band .right .cell{border-left:1px solid rgba(255,255,255,.2)}
+/* Two cells at the same end share an edge: the row's gap between them
+   would show a stripe of band and split the pair into two tabs. Cancelled
+   between cells only — the gap before the first one is what keeps them
+   off the clock. */
+header.band .right .cell + .cell{margin-left:-18px}
+header.band .right .cell:last-child{margin-right:-28px}
+header.band .mock{border:1px solid rgba(255,255,255,.35);padding:3px 8px;border-radius:2px;letter-spacing:.08em;text-transform:uppercase;font-family:var(--cond);font-weight:600;font-size:11px}
+/* The frame is set in the Interface tab, on cards: .ui .thumb.frame. */
+
+/* --- layout ------------------------------------------------------------ */
+/* The board and the screen scroll on their own, under the band: the page never does. */
+/* The rail's width is the reader's, not the stylesheet's: --rail is what
+   the grip drags, and it is remembered per browser. The bounds live in
+   the script, which also keeps the screen from being squeezed under what
+   a panel needs — a rule here could only clamp against the rail. */
+/* The rail's width: the stylesheet's default, and whatever the reader
+   dragged it to — which the Rail hook writes on :root, outside anything
+   LiveView patches, so a fold or a status does not take it back. */
+/* --sqw is the rail's two squares' size (ConsoleWeb.Square small, 22px; normal is 33px): the pair and the tab row's padding read it. */
+.app{--rail:var(--rail-set,500px);--sqw:22px;position:relative;display:grid;grid-template-columns:var(--rail) minmax(0,1fr);height:100%;min-height:0}
+/* The frame has three axes, and each is one class on <body>. The band is
+   a grid row, so moving it is the row order; the rail is a grid column,
+   so hiding it is one template and swapping sides is another plus the
+   border, which always faces the screen. */
+body.band-bottom{grid-template-rows:minmax(0,1fr) auto auto}
+body.band-bottom>[data-phx-main]>header.band{grid-row:3}
+body.band-bottom header.band{border-bottom:0;border-top:3px solid transparent}
+body.band-bottom header.band::after{bottom:auto;top:-3px}
+body.band-bottom>[data-phx-main]>.app{grid-row:1}
+/* The warning keeps the band's company, on the side the screen is: the
+   row between the two, whichever way round they are. */
+body.band-bottom .rebind{grid-row:2;border-top:1px solid var(--bad);border-bottom:0}
+/* The console was started for another workspace, or for a project by
+   another name (2026-09-27): a row across the frame, against the band,
+   in the house's bad. It is the one condition true of the whole console
+   at once — every job's mix and git runs in a container of its own —
+   and it said so in a note inside the rail until then, which is where
+   it was missed. Nothing is disabled with it: the console works whole,
+   only slower, and greying out what still works would be the unlit rule
+   backwards. */
+.rebind{grid-row:2;display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;padding:8px 28px;background:color-mix(in srgb,var(--bad) 12%,var(--ground));border-bottom:1px solid var(--bad);color:var(--ink);font-family:var(--serif);font-size:13.5px}
+.rebind .what{flex:1;min-width:280px}
+.rebind .mono{font-family:var(--mono);font-size:12.5px;color:var(--bad)}
+.rebind .btn{flex:none}
+body.rail-right .app{grid-template-columns:minmax(0,1fr) var(--rail)}
+body.rail-right .console{order:2;border-right:0;border-left:1px solid var(--line)}
+body.rail-off .app{grid-template-columns:minmax(0,1fr)}
+body.rail-off .console{display:none}
+/* The right padding gives the scrollbar's gutter back (--rail-gutter on the root, measured by the Rail hook), so the air the eye sees is 22px on both sides. */
+.console{border-right:1px solid var(--line);background:var(--surface);padding:22px calc(22px - var(--rail-gutter,0px)) 40px 22px;display:flex;flex-direction:column;gap:22px;overflow:auto;min-height:0;scrollbar-gutter:stable;position:relative}
+/* The screen holds two things that do not scroll together: everything
+   the reader reads, and the jobs bar under it. The bar used to ride the
+   scroller as a sticky footer, which put its bottom edge exactly on the
+   scroller's clip — and on a viewport whose height times the device
+   ratio is not whole, the two rounded apart and left a one-pixel line
+   of the content passing beneath (visible on Cartridges alone, the only
+   screen dark enough to show it). Sticky is gone: the bar is the
+   screen's own last row now, outside anything that clips, so there is
+   no edge for the two to disagree on. */
+/* The frame of a screen, top to bottom: the row of screens, what the
+   reader reads, the jobs bar. Only the middle one scrolls. The row used
+   to ride inside the scroller as a sticky passenger, which is the same
+   arrangement the jobs bar was in before it was moved out — and it has
+   the same fault: two edges rounded by different arithmetic, and a slit
+   of the content between them. A row that must not move is a row of the
+   frame, not an element of the document. */
+.screen{min-width:0;display:flex;flex-direction:column;height:100%;overflow:clip;min-height:0}
+/* A box that scrolls is also the box its absolutes are placed in: a .sr
+   label (position:absolute) deep in a long screen was placed against
+   .app instead, past its foot, and the whole page grew a scrollbar the
+   header went off by (Deploy, 2026-09-11). The rail the same. */
+.scroller{flex:1;min-height:0;min-width:0;overflow:auto;display:flex;flex-direction:column;position:relative}
+/* Sits on the seam, wider than it looks: a 9px target over a 1px line,
+   so it can be caught without aiming. It shows only under the pointer or
+   the keyboard — a handle that is always drawn would be a third border
+   competing with the two real ones. */
+.grip{position:absolute;top:0;bottom:0;left:var(--rail);width:9px;margin-left:-5px;z-index:3;
+  cursor:col-resize;touch-action:none;background:none;border:0;padding:0}
+body.rail-right .grip{left:auto;right:var(--rail);margin:0 -5px 0 0}
+.grip::after{content:"";position:absolute;top:0;bottom:0;left:4px;width:1px;background:var(--accent);opacity:0;transition:opacity .12s}
+.grip:hover::after,.grip:focus-visible::after{opacity:.7}
+.grip.dragging::after{opacity:1;left:3px;width:3px}
+.grip:focus-visible{outline:none}
+/* Nothing to drag when the rail is not there, or when the two stack. */
+body.rail-off .grip{display:none}
+/* The rail's two squares (#rail-left, #rail-right, ConsoleWeb.Square,
+   in one .railsq), Left then Right always, as the frames they draw:
+   in the rail's top corner, 22px in from its top and its edge as the
+   rail's own padding is, on whichever side the rail is; and, with the
+   rail away, in the screen's corner, where hexdocs leaves its sidebar
+   button — the tab row steps aside for it there. The pair's edge is
+   the section heads' edge: the rail's padding gives the scrollbar
+   gutter back, so only the rail's 1px border, on the left rail's right
+   side, is left to take off. The right square's mark is the left's
+   turned over, so the solid column sits on the side each would put the
+   rail on; the one in force is pressed. The pair floats over the rail,
+   which scrolls under it: one wide soft shadow in the rail's own
+   ground fades what passes beneath, and the pair's own ground fills
+   the gap between the two so nothing shows through it; two shadows,
+   one a square, laid the second's over the first. In the screen's
+   corner nothing scrolls under the pair, and it casts none. */
+.railsq{position:absolute;top:22px;z-index:3;display:flex;gap:8px;border-radius:2px;background:var(--surface);box-shadow:0 0 14px 10px var(--surface)}
+#rail-right svg{transform:scaleX(-1)}
+#rail-left[aria-pressed="true"],#rail-right[aria-pressed="true"]{color:var(--ink);background:var(--ground);border-color:var(--ink)}
+.railsq{left:calc(var(--rail) - 22px - var(--sqw) - 1px - 8px - var(--sqw))}
+/* A rail on the right keeps its name in its inner corner, so the pair takes the outer one — the window's, which is where it goes when the rail is away too. */
+body.rail-right .railsq{left:auto;right:22px}
+/* In the screen's corner it takes the screen's margin, 28px, as the tabs and the panels do, and keeps the rail's 22px from the top: that puts its centre at 33, half a pixel from the tabs' line of text (14 of air, 8 of the tab's own, half a 21px line), which is where a computed top landed too, less simply. */
+body.rail-off .railsq{left:28px;right:auto;background:none;box-shadow:none}
+body.rail-off.rail-right .railsq{left:auto;right:28px}
+body.rail-off .tabs{padding-left:calc(28px + var(--sqw) + 8px + var(--sqw) + 12px)}
+body.rail-off.rail-right .tabs{padding-left:28px;padding-right:calc(28px + var(--sqw) + 8px + var(--sqw) + 12px)}
+@media (max-width:900px){.app{grid-template-columns:1fr}.console{border-right:0;border-bottom:1px solid var(--line)}.grip{display:none}}
+
+/* --- a docked row ------------------------------------------------------- */
+/* Three rows of this console do not move while what they govern scrolls:
+   the config bar in the drawer, the papers of a cartridge, the papers of
+   the project. They are one thing and are written once — what each still
+   says for itself is only the ground it is on, because a drawer sits on
+   the surface and a screen on the ground.
+   They do not move because there is nothing under them that could move
+   them: each is the first row of a pane whose *second* row is what
+   scrolls. They were sticky passengers of the scroller before, docked at
+   the measured height of whatever was fixed above — and two edges
+   rounded by different arithmetic left a slit of the document between
+   them, which is the same fault the jobs bar had when it was a sticky
+   footer. A row that must not move is a row of the frame, not an element
+   of the document; then there is no edge for the two to disagree on, and
+   nothing to measure. */
+.docked{flex:none;border-bottom:1px solid var(--line)}
+
+section h2{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:15px;margin:0 0 10px;display:flex;align-items:baseline;gap:10px}
+section h2 .label{font-weight:500;letter-spacing:.1em}
+/* The rail's heads (ConsoleWeb.Board.head) fold with a small square
+   at the head's edge, its chevron turned by its own aria-expanded; the
+   head carries the same click for the pointer, so it folds wherever it
+   is pressed, the knock's bell excepted. A head with squares is as tall
+   as a square and centres on it. */
+section h2:has(.sq){align-items:center}
+section h2[phx-click]{cursor:pointer}
+section h2 .sq{margin-left:4px}
+section h2 .sq.foldsq{margin-left:auto}
+/* The chevron turns where it stands, whichever head it is on: the
+   rail's h2, the Interface groups', and the Deploy cards' h3
+   (2026-09-27, when the cards began to fold and their chevron sat
+   still — the rule had asked for a `section h2`). */
+.sq.foldsq svg{transition:transform .12s}
+.sq.foldsq[aria-expanded="false"] svg{transform:rotate(-90deg)}
+/* A bell rings rather than turns while the knock is out. */
+section h2 .sq[aria-busy="true"] svg,.record .sq[aria-busy="true"] svg,.shelfp .sq[aria-busy="true"] svg{animation:knock-ring .6s ease-in-out infinite;transform-origin:50% 20%}
+@keyframes knock-ring{0%,100%{transform:rotate(0)}25%{transform:rotate(-14deg)}75%{transform:rotate(14deg)}}
+@media (prefers-reduced-motion: reduce){section h2 .sq[aria-busy="true"] svg,.record .sq[aria-busy="true"] svg,.shelfp .sq[aria-busy="true"] svg{animation:none}}
+/* The head of a section in the rail is the control that folds it: the
+   heading stays a heading and the button inside it takes the whole line,
+   which is the accordion a screen reader expects (aria-expanded on the
+   button, not on the section). The caret is the one the jobs list and
+   the file rows already use, and it is drawn, not typed — the fold is a
+   state, and a state is not a character somebody has to remember to
+   change on both sides. */
+.console section h2 .name{display:flex;align-items:baseline;gap:10px}
+/* Folded: the head is all that is left, and the head is the summary —
+   `4 of 4 running`, `2 open by cartridges`. The rail keeps its table of
+   contents when it puts the tables away. */
+.console section.folded > :not(h2){display:none}
+/* An open section ends with a little air under its last row, before the next head; a folded one is its head alone. The same on the Interface tab's groups. */
+.console section:not(.folded){padding-bottom:10px}
+/* Folded, the head is the section: the space it kept for what came after
+   it goes with it. Said on .folded and not on the head itself, so the
+   mock — which reads this stylesheet and has no fold — keeps its own. */
+.console section.folded h2{margin-bottom:0}
+
+/* --- console blocks ---------------------------------------------------- */
+.ws{display:grid;gap:8px}
+.ws .name{font-family:var(--cond);font-weight:700;font-size:30px;letter-spacing:.02em;line-height:1;margin:0;overflow-wrap:anywhere}
+.ws .path{color:var(--muted)}
+/* The addresses on the app's port. What they look like is the house's
+   (.door-ref in components.css); what is left here is where
+   they sit. A door and the cartridge that opened it are one thing to the
+   eye and must wrap together, so each goes in a .pair — which is also
+   what a probe and its reading need. */
+/* One address a line: a list is read down, a row is scanned, and the rail
+   is read — who answers where, and what it said. */
+.urls{display:grid;justify-items:stretch;gap:8px}
+/* A door and its mention wrap as one pair, and the mention drops a line when the rail is too narrow for both. The mentions stand at the rail's right edge, a column of their own to read down (2026-10-02; they trailed each plate before, at a different distance on every line); dropped a line, a mention keeps the edge. */
+.urls .pair{display:flex;flex-wrap:wrap;gap:6px;align-items:center;max-width:100%}
+.urls .pair>.cart-ref{margin-left:auto}
+.pair{display:inline-flex;align-items:center;gap:6px;min-width:0}
+
+table.rows{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px}
+table.rows td{padding:7px 0;border-top:1px solid var(--line);vertical-align:middle;overflow-wrap:anywhere}
+table.rows tr:first-child td{border-top:0}
+table.rows td.k{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px;width:27%}
+/* The state gets a column of its own, wide enough for the widest thing
+   docker can put in it — `restarting` while it pulses, 86px, measured —
+   so the images below start where the images above did. Sized to the
+   vocabulary and not to the data of the day: a column that shifts when
+   a container falls over is a column the eye has to find again at the
+   moment it least wants to.
+   The gap after the chip is that width minus the widest chip, and it
+   belongs to the column: the chip carried a padding-right of its own on
+   top of it, which bought nothing — the cell is already wider than
+   anything that can go in it — and said the wrong thing, that a badge
+   keeps its distance, when it is the column that does. */
+table.rows td.st{width:var(--st);white-space:nowrap}
+/* Containers carry an action column now — the row's two ways into that
+   container, Logs and a shell — and the rail is 380px wide by default:
+   four columns left the image at 34px, wrapped into a stack of letters.
+   So the image goes under the name, on the line .hint already draws for
+   a second fact, and the name column takes whatever the state and the
+   actions leave. The actions are Logs, a shell's name and Restart, on one line. */
+#containers{--st:103px}
+/* The console's Containers table carries an action column that the mock's
+   does not, so what the fourth column costs is scoped to `.acts` and the
+   mock, which reads this same stylesheet, keeps the three it has. */
+/* The columns size themselves (auto layout): the state to its chip, the
+   actions to Logs, the shell's name and Restart on one line, and the name
+   takes what is left — width:100% with max-width:0 is how a table cell is
+   told to take the leftover and no more — cut with an ellipsis, whole in
+   the cell's title. Fixed columns held the name to a share that left the
+   actions crowded on two lines (2026-09-15). */
+#containers.acts{table-layout:auto}
+#containers.acts td.k{width:100%;max-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#containers.acts td.st{width:auto}
+#containers.acts td.act{width:auto}
+/* Two actions, not one, so the column reads down from its left edge and
+   not from its right: `Logs` is on every row and always at the same x,
+   the shell follows it at the same x too — and the row that has no shell
+   (the pause container) leaves the tail empty instead of sliding its one
+   button across to where nothing else is. */
+#containers.acts td.act{text-align:left;padding-left:8px}
+/* The image on one line, cut where the column ends and whole in the
+   cell's title: `overflow-wrap:anywhere`, which the table wants for the
+   long values it carries elsewhere, broke `registry.k8s.io/pause:3.10`
+   into `registry.k8s.io/p` and `ause:3.10` — a name read as letters. */
+#containers.acts td.k .hint{font-family:var(--mono);font-weight:400;letter-spacing:0;text-transform:none;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#deployments{--st:73px;--act:56px}
+table.rows td.muted{color:var(--muted)}
+table.rows td .hint{display:block;font-size:11.5px;color:var(--muted);margin-top:4px}
+/* The action gets a column like the state has one, and for the same
+   reason: a button that hangs off the end of the status cell sits at a
+   different x in every row, and there is nothing to read down. It ends
+   where the table ends — the leftover of its width is the gutter before
+   it, which is the column's to give, not the button's to carry — and an
+   empty cell holds the place for the rows that have no action. */
+table.rows td.act{width:var(--act);white-space:nowrap;text-align:right}
+table.rows td .btn.mini{padding:2px 8px;font-size:11px;vertical-align:middle}
+/* .chip, .cart-ref, .door-ref and .commit-ref are the house's notation:
+   all four come in generated, from assets/design/generated/components.css.
+   The chip used to be written here by hand, which is how it drifted into
+   being the mention's declaration exactly — nobody was watching two files
+   that were one. The door and the probe were the second half of that same
+   lesson: the same address was drawn one way in the rail and another on
+   the box, with the two halves swapped. */
+@keyframes pulse{50%{opacity:.2}}
+
+/* What is in the project, as a list: the board reads down, a line per
+   cartridge, the same rows as Containers and Deployments above. It was
+   a grid of slot cards — the metaphor cost four times the height. */
+table.rows tr.new{animation:seat 1.2s ease-out}
+@keyframes seat{from{background:var(--accent-soft)}to{background:transparent}}
+#slots td:first-child{width:1%;white-space:nowrap}
+/* The name column is as wide as the longest name in it, so the longest
+   one is the only row with nothing between it and the version — every
+   other row borrows the slack. The gutter goes on the column that
+   follows, as it does before the origin: a name does not carry space
+   after itself, a column keeps its distance from the one before. */
+#slots td.ver{white-space:nowrap;padding-left:10px;text-align:right}
+#slots td.og{width:1%;white-space:nowrap;padding-left:10px}
+#slots td.og .chip+.chip{margin-left:6px}
+#slots td.og .commit-ref{margin-left:6px}
+.git .row .head .commit-ref{margin-right:8px}
+#deployments td.k{white-space:nowrap}
+
+/* The box holds its own controls, under the command line on the terminal and under the lines on Logs: a strip of the surface with the house's buttons on it, and the screen keeps the ground. The row of controls above the box is gone with this (2026-09-12). */
+.term .viewport{grid-template-rows:auto minmax(0,1fr) auto auto;min-height:0}
+.logsp .viewport{grid-template-rows:auto minmax(0,1fr) auto}
+/* The services alone on top — the chips the Logs hook writes, the terminal's containers — and the strip is not there until there is a chip to show. */
+.viewport .toolbar.controls.top{border-top:0;border-bottom:1px solid var(--line);gap:6px}
+.viewport .toolbar.controls.top:not(:has(.svc)){display:none}
+/* Each row named, so a strip that is not there leaves its row empty instead of moving the lines up into it. */
+.logsp .controls.top,.term .controls.top{grid-row:1}
+.logsp .lines{grid-row:2}
+.logsp .controls:not(.top){grid-row:3}
+.term .screen{grid-row:2}
+.term .in{grid-row:3}
+.term .controls:not(.top){grid-row:4}
+/* Two rows, the box and the meta line under it (2026-09-27; above until then) — .logs still says three for the Jobs screen, whose command line is its own row. */
+.logs.logsp,.logs.term{grid-template-rows:minmax(0,1fr) auto}
+.viewport .toolbar.controls,.out .toolbar.controls{padding:8px 14px;border-top:1px solid var(--line);background:var(--surface);color:var(--ink);white-space:normal}
+.logsp .newpill{bottom:calc(14px + 47px)}
+.term .screen{padding:10px 14px;min-height:0}
+.term .screen .p{color:var(--accent)}
+.term .screen .dim{color:var(--term-dim)}
+/* A result's indentation is the terminal's to keep: the browser would fold the leading spaces of `  1 => ...` otherwise. */
+.term .screen>div{white-space:pre-wrap;word-break:break-word}
+/* A button with a session: a dot after the name, full when the process runs, hollow when it ended with its trail. A container's reads across its shells. */
+.term .controls .btn[data-session]{display:inline-flex;align-items:center;gap:6px}
+.term .controls .btn[data-session]::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--good);box-shadow:0 0 0 1px var(--good)}
+.term .controls .btn[data-session="ended"]::after{background:transparent;box-shadow:0 0 0 1px var(--muted)}
+.term .controls .svc[aria-pressed="false"][data-session]{opacity:.8}
+
+.term .in{display:flex;gap:8px;align-items:center;font-family:var(--code-face,var(--mono));font-size:var(--code-size,12.5px);padding:8px 14px;border-top:1px solid var(--term-line);background:var(--term)}
+.term .in .p{color:var(--accent);white-space:nowrap}
+.term .in input{flex:1;font-family:var(--code-face,var(--mono));font-size:var(--code-size,12.5px);padding:4px 0;border:0;background:transparent;color:var(--term-ink);min-width:0;outline:none}
+.term .in input::placeholder{color:var(--term-dim)}
+.note{font-size:13px;color:var(--muted);font-style:italic;margin:0}
+/* What comes off the project while a full status is in flight: the last
+   reading's, dimmed with the reason in the title — unlit, not asserted,
+   and not .unlit, which forbids the cursor over what is still pressable. */
+.stale{opacity:.45;transition:opacity .2s}
+
+/* --- tabs ---------------------------------------------------------------- */
+.tabs{flex:none;display:flex;gap:2px;padding:14px 28px 0;border-bottom:1px solid var(--line);background:var(--ground);flex-wrap:wrap;row-gap:0}
+.tab{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.12em;font-size:14px;color:var(--muted);padding:8px 14px 10px;border-bottom:3px solid transparent;margin-bottom:-1px;display:inline-flex;gap:8px;align-items:center}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tab[aria-disabled="true"],.dtab[aria-disabled="true"]{border-bottom-color:transparent}
+.tab .badge{font-family:var(--mono);font-size:10.5px;padding:1px 6px;border-radius:999px;background:var(--surface-2);color:var(--muted);letter-spacing:0}
+.tab .badge.bad{background:var(--bad);color:#fff}
+.tab .live{width:7px;height:7px;border-radius:50%;background:var(--good);animation:pulse 1.4s infinite}
+.panel{display:none;padding:22px 28px 60px;flex:1;min-width:0}
+.panel.on{display:block}
+/* Three screens are not documents: the logs, the terminal and the jobs are a
+   toolbar, a line about it, and a pane that holds as much as the window gives
+   it and scrolls inside itself. They said so already — `.logs` is a grid whose
+   last row is minmax(0,1fr) and asks for flex:1 — but they were asking a block
+   for it, and a block has no free height to give: the pane grew with its
+   content, the scroller took the overflow, and the toolbar scrolled away with
+   everything else. The screen fills, and the pane is what scrolls. The 60px
+   under a document is for the last paragraph not to sit on the edge; a pane
+   that ends where the window ends does not want it. */
+.panel.fill.on{display:flex;flex-direction:column;min-height:0;padding-bottom:22px}
+
+/* --- the shelf --------------------------------------------------------- */
+.shelf-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:4px;flex-wrap:wrap}
+.shelf-head h2{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:15px;display:flex;gap:10px;align-items:baseline}
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.filters .btn{color:var(--muted)}
+.filters .btn[aria-pressed="true"]{color:var(--ink)}
+.views{display:flex;gap:6px;flex-wrap:wrap}
+.views .btn{color:var(--muted)}
+.views .btn[aria-pressed="true"]{color:var(--ink)}
+
+/* The shelf as rows: a table of the Docker screen's kind, a cartridge
+   to a row with its cover as a thumbnail, in colour or grey by the same
+   rule as the plank. Rows of a grid of their own until 2026-09-11, from
+   when each was a link that opened the box. */
+/* The cover stands as tall as the row's verb, the box's own button, at
+   the covers' 5:7; the cell's width is the cover's and its air. */
+table.carts td.th{width:30px;padding-right:0}
+/* The list's thumbnails read the plank's grammar at 30px: colour for
+   every box that can be had, black and white for the archived. */
+table.carts .th img{width:calc(30px * 5 / 7);height:30px;object-fit:cover;display:block;border-radius:2px;background:var(--board)}
+table.carts tr.archived .th img{filter:grayscale(1) contrast(.9)}
+/* The facts stay on one line: a kind is read at a glance, not assembled from two rows. */
+table.carts .fx{display:flex;gap:6px}
+table.carts td.vr{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+table.carts th .addr{display:inline-flex;align-items:center;gap:8px}
+table.carts td.act{text-align:right}
+/* The installation parameters are the column that gives, the addresses
+   being doors and read whole: one flag with its value to a piece, and a
+   piece may break after its flag and inside a value with no space in
+   it — `https://github.com/user/repo`, ash's `a | b | c | d +30 …` —
+   so the table fits its box. */
+table.carts .argv{display:flex;flex-wrap:wrap;gap:2px 10px;font-size:12px}
+table.carts .argv>span{white-space:normal;min-width:0}
+table.carts .argv .val{overflow-wrap:anywhere}
+/* The doors' column asks the table for the width of its widest door:
+   an implicit track said less, and the doors painted over the verb. */
+table.carts td .pairs{grid-template-columns:max-content}
+.row{margin-top:18px}
+.row .label{margin-bottom:10px;display:block}
+/* The boxes hang from a common top, not from a common bottom: every
+   cover is the same 5:7, so their feet line up on the plank anyway, and
+   a caption that takes two lines grows downwards instead of lifting its
+   own cover off the shelf. */
+.boxes{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:22px 18px;align-items:start;padding:0 14px 18px}
+.plank{height:10px;background:var(--shelf);border-bottom:6px solid var(--shelf-edge);border-radius:1px;box-shadow:0 8px 14px rgba(0,0,0,.22)}
+.box{position:relative;display:block;width:100%;text-align:left;border-radius:2px}
+.box .face{aspect-ratio:5/7;width:100%;background:var(--board);border-radius:2px;overflow:hidden;box-shadow:var(--shadow);transition:transform .18s ease, box-shadow .18s ease, filter .18s ease, opacity .18s ease;position:relative}
+.box .face img{display:block;width:100%;height:100%;object-fit:cover}
+.box:hover .face,.box:focus-visible .face{transform:translateY(-6px) rotate(-.6deg)}
+.box .face.socket .name{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#F3ECF5;text-align:center;font-size:clamp(11px,1.6vw,15px);line-height:1.15;padding:6px 8px;background:rgba(20,10,28,.72);border:1px solid rgba(212,178,126,.6);border-radius:2px;max-width:88%}
+/* The caption wraps rather than spilling into the next box: three facts
+   at once (archived · inserts 15) are wider than a 128px column, and
+   nowrap on the facts alone sent them across the neighbour's name. */
+.box .cap{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:2px 6px;margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--muted)}
+.box .cap b{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);font-size:12px}
+/* Colour on the plank says what you can have, not what you already
+   took. Grey used to mean "not in this project" — the strongest mark in
+   the room spent on the most reversible fact, with the shelf a grey wall
+   and the art, which is most of the work a box carries, unreadable on
+   the screen that exists to show it. So the whole shelf is in colour —
+   on the shelf, not done, inserted alike — and the black and white is
+   kept for the one box that cannot be had: the archived, retired and no
+   longer offered. That mark is the box's own and does not lift under the
+   pointer; dimming that clears on hover reads as a state of the view,
+   and this is a state of the cartridge. The caption, which a reader has
+   to read anyway, carries the reason. */
+.box.archived .face{filter:grayscale(1) contrast(.9)}
+/* With colour no longer saying it, the accent ring comes back to say
+   what is in — it was dropped when colour against grey was already the
+   loudest thing on the plank, and that is no longer true. Inset, so the
+   box keeps its size and the covers stay on their grid — and drawn
+   on a layer of its own, because the cover fills the face and an inset
+   shadow on the face itself is painted under the art, where nobody
+   sees it. */
+.box.in .face::after{content:"";position:absolute;inset:0;border-radius:2px;box-shadow:inset 0 0 0 2px var(--accent);pointer-events:none}
+.box .cap .st{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.box .cap .st::before{content:"";width:6px;height:6px;border-radius:50%;border:1.5px solid var(--soft);box-sizing:border-box;flex:none}
+.box.in .cap .st{color:var(--ink)}
+.box.in .cap .st::before{background:var(--good);border-color:var(--good)}
+
+/* --- logs ---------------------------------------------------------------- */
+/* Logs, Terminal and Jobs fill the space between the tabs and the jobs
+   bar — the screen is a flex column, so the panel flexes and nothing is
+   computed from viewport heights (the bar's height counted twice once
+   turned the screen's scroll on). */
+#panel-logs.on,#panel-terminal.on,#panel-jobs.on{display:flex;flex-direction:column;min-height:0;overflow:clip;padding-bottom:22px}
+.logs{display:grid;grid-template-rows:auto auto minmax(0,1fr);gap:10px;flex:1;min-height:0}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.toolbar .sep{width:1px;height:22px;background:var(--line);margin:0 4px}
+.toolbar input[type=search]{font-family:var(--mono);font-size:12.5px;padding:5px 9px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;min-width:200px}
+.toolbar select{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px;padding:5px 8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px}
+.svc{display:inline-flex;align-items:center;gap:6px}
+/* A service wears the rack of the address plates, in its role's colour: one drawing and one colour for a service, wherever it is named (2026-10-02; it was an 8px swatch, the colour alone). */
+.svc .mark{width:14px;height:14px;flex:none;color:var(--svc)}
+.svc[aria-pressed="false"]{opacity:.45}
+.logmeta{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+.logmeta .lk{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--line)}
+.logmeta .lk:hover,.logmeta .lk:focus-visible{color:var(--ink);text-decoration-color:currentColor;outline:none}
+.viewport{position:relative;overflow:hidden;display:grid}
+/* The faces the drawer offers (priv/static/assets/fonts/README.md:
+   sources and licences), for two groups of surface chosen apart: `code`,
+   what runs — terminals, jobs, logs, events — and `file`, what is read —
+   the Files sheet, diffs, .env, config.conf, the papers' blocks. Each
+   surface reads its group's choice as `var(--<group>-face, var(--mono))`,
+   `var(--<group>-size, <its own>)` and `var(--<group>-leading, <its own>)`:
+   the properties are set on the root by hooks.js, and absent they leave
+   each surface as drawn. Tamzen and Greybeard are one family per pixel
+   height — a bitmap drawing each — which is why the size is part of the
+   name. Greybeard brings an italic of its own at four of its sizes; at
+   the others, and in Tamzen, an italic is the browser's slant. */
+@font-face{font-family:"Tamzen5x9";src:url("/assets/fonts/Tamzen05x9r.ttf");font-weight:400}
+@font-face{font-family:"Tamzen5x9";src:url("/assets/fonts/Tamzen05x9b.ttf");font-weight:700}
+@font-face{font-family:"Tamzen6x12";src:url("/assets/fonts/Tamzen06x12r.ttf");font-weight:400}
+@font-face{font-family:"Tamzen6x12";src:url("/assets/fonts/Tamzen06x12b.ttf");font-weight:700}
+@font-face{font-family:"Tamzen7x13";src:url("/assets/fonts/Tamzen07x13r.ttf");font-weight:400}
+@font-face{font-family:"Tamzen7x13";src:url("/assets/fonts/Tamzen07x13b.ttf");font-weight:700}
+@font-face{font-family:"Tamzen7x14";src:url("/assets/fonts/Tamzen07x14r.ttf");font-weight:400}
+@font-face{font-family:"Tamzen7x14";src:url("/assets/fonts/Tamzen07x14b.ttf");font-weight:700}
+@font-face{font-family:"Tamzen8x15";src:url("/assets/fonts/Tamzen08x15r.ttf");font-weight:400}
+@font-face{font-family:"Tamzen8x15";src:url("/assets/fonts/Tamzen08x15b.ttf");font-weight:700}
+@font-face{font-family:"Tamzen8x16";src:url("/assets/fonts/Tamzen08x16r.ttf");font-weight:400}
+@font-face{font-family:"Tamzen8x16";src:url("/assets/fonts/Tamzen08x16b.ttf");font-weight:700}
+@font-face{font-family:"Tamzen10x20";src:url("/assets/fonts/Tamzen10x20r.ttf");font-weight:400}
+@font-face{font-family:"Tamzen10x20";src:url("/assets/fonts/Tamzen10x20b.ttf");font-weight:700}
+@font-face{font-family:"Greybeard6x11";src:url("/assets/fonts/Greybeard06x11r.woff2");font-weight:400}
+@font-face{font-family:"Greybeard6x11";src:url("/assets/fonts/Greybeard06x11b.woff2");font-weight:700}
+@font-face{font-family:"Greybeard6x12";src:url("/assets/fonts/Greybeard06x12r.woff2");font-weight:400}
+@font-face{font-family:"Greybeard6x12";src:url("/assets/fonts/Greybeard06x12b.woff2");font-weight:700}
+@font-face{font-family:"Greybeard7x13";src:url("/assets/fonts/Greybeard07x13r.woff2");font-weight:400}
+@font-face{font-family:"Greybeard7x13";src:url("/assets/fonts/Greybeard07x13b.woff2");font-weight:700}
+@font-face{font-family:"Greybeard7x14";src:url("/assets/fonts/Greybeard07x14r.woff2");font-weight:400}
+@font-face{font-family:"Greybeard7x14";src:url("/assets/fonts/Greybeard07x14b.woff2");font-weight:700}
+@font-face{font-family:"Greybeard8x15";src:url("/assets/fonts/Greybeard08x15r.woff2");font-weight:400}
+@font-face{font-family:"Greybeard8x15";src:url("/assets/fonts/Greybeard08x15b.woff2");font-weight:700}
+@font-face{font-family:"Greybeard8x15";src:url("/assets/fonts/Greybeard08x15i.woff2");font-weight:400;font-style:italic}
+@font-face{font-family:"Greybeard8x15";src:url("/assets/fonts/Greybeard08x15bi.woff2");font-weight:700;font-style:italic}
+@font-face{font-family:"Greybeard8x16";src:url("/assets/fonts/Greybeard08x16r.woff2");font-weight:400}
+@font-face{font-family:"Greybeard8x16";src:url("/assets/fonts/Greybeard08x16b.woff2");font-weight:700}
+@font-face{font-family:"Greybeard8x16";src:url("/assets/fonts/Greybeard08x16i.woff2");font-weight:400;font-style:italic}
+@font-face{font-family:"Greybeard8x16";src:url("/assets/fonts/Greybeard08x16bi.woff2");font-weight:700;font-style:italic}
+@font-face{font-family:"Greybeard9x17";src:url("/assets/fonts/Greybeard09x17r.woff2");font-weight:400}
+@font-face{font-family:"Greybeard9x17";src:url("/assets/fonts/Greybeard09x17b.woff2");font-weight:700}
+@font-face{font-family:"Greybeard9x17";src:url("/assets/fonts/Greybeard09x17i.woff2");font-weight:400;font-style:italic}
+@font-face{font-family:"Greybeard9x17";src:url("/assets/fonts/Greybeard09x17bi.woff2");font-weight:700;font-style:italic}
+@font-face{font-family:"Greybeard9x18";src:url("/assets/fonts/Greybeard09x18r.woff2");font-weight:400}
+@font-face{font-family:"Greybeard9x18";src:url("/assets/fonts/Greybeard09x18b.woff2");font-weight:700}
+@font-face{font-family:"Greybeard9x18";src:url("/assets/fonts/Greybeard09x18i.woff2");font-weight:400;font-style:italic}
+@font-face{font-family:"Greybeard9x18";src:url("/assets/fonts/Greybeard09x18bi.woff2");font-weight:700;font-style:italic}
+@font-face{font-family:"Greybeard11x22";src:url("/assets/fonts/Greybeard11x22r.woff2");font-weight:400}
+@font-face{font-family:"Greybeard11x22";src:url("/assets/fonts/Greybeard11x22b.woff2");font-weight:700}
+@font-face{font-family:"Flexi IBM VGA True";src:url("/assets/fonts/flexi_IBM_VGA00x20r.ttf");font-weight:400}
+@font-face{font-family:"Fira Code";src:url("/assets/fonts/fira_code00x14r.ttf");font-weight:400}
+@font-face{font-family:"Fira Code";src:url("/assets/fonts/fira_code00x14b.ttf");font-weight:700}
+.lines{overflow:auto;padding:10px 0;font-family:var(--code-face,var(--mono));font-size:var(--code-size,12px);line-height:round(calc(var(--code-leading,1.5) * 1em),1px);scrollbar-gutter:stable}
+.ln{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:0 12px;padding:0 14px;white-space:pre-wrap;word-break:break-word;border-left:3px solid transparent}
+/* `.ln` is also a line of a pre — the .env, config.conf raw, a card's
+   env, a compose — and there it is a line, not the log's grid: the grid
+   was putting 12px of column gap after every key. */
+pre .ln{display:block}
+.ln:hover{background:color-mix(in srgb, var(--line-highlight) 5%, transparent)}
+/* The time is always twelve characters, HH:MM:SS.mmm, and the column is that many, rounded, as the service's is: the message then starts on a whole pixel, which a bitmap face needs. */
+/* Rounded up: a column that rounds down by a fraction wraps what it was measured for. */
+.ln .t{color:var(--term-dim);font-variant-numeric:tabular-nums;width:round(up,12ch,1px)}
+/* Each line is its own grid, so the service needs a set width for the messages to start in one column. It is the longest name's, in the face's own characters — the Logs hook sets --svc-w on its lines as services appear, the Interface tab's miniature from the names it draws — and 72px until anyone says. */
+.ln .s{color:var(--svc);width:round(up,var(--svc-w,72px),1px);overflow:hidden;text-overflow:ellipsis}
+.ln.debug .m{color:var(--term-dim)}
+.ln.warn{border-left-color:var(--warn);background:color-mix(in srgb, var(--line-warning) 8%, transparent)}.ln.warn .m{color:var(--ansi-yellow)}
+.ln.error{border-left-color:var(--bad);background:color-mix(in srgb, var(--line-error) 8%, transparent)}.ln.error .m{color:var(--ansi-red)}
+.ln.cont .s,.ln.cont .t{visibility:hidden}
+.ln.hit .m mark{background:var(--accent);color:var(--accent-ink);padding:0 2px}
+.lines.no-ts .ln{grid-template-columns:auto minmax(0,1fr)}.lines.no-ts .t{display:none}
+.lines.no-svc .ln{grid-template-columns:auto minmax(0,1fr)}.lines.no-svc .s{display:none}
+.lines.no-ts.no-svc .ln{grid-template-columns:minmax(0,1fr)}
+.newpill{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);background:var(--accent);color:var(--accent-ink);font-family:var(--cond);font-weight:700;letter-spacing:.12em;text-transform:uppercase;font-size:12px;padding:6px 14px;border-radius:999px;box-shadow:0 4px 12px rgba(0,0,0,.4);display:none}
+.newpill.on{display:block}
+
+
+/* --- deploy -------------------------------------------------------------- */
+/* One column: the card is the form. It was two while the second held
+   the collection to insert afterwards — that offer is gone, and an
+   empty column is not a layout. */
+/* The same inset as the two cards under it, Deployments and Danger: it
+   was 18px 20px against their 16px 18px, so its foot's button stood
+   2px left of theirs and the three right edges of the screen never
+   quite met (2026-09-26). */
+/* It carried a `margin-bottom:18px` of its own until 2026-10-03, which
+   collapsed against Deployments' 14px and won: the first gap of the
+   stack was 18px and the second 14px. The stack's spacing is the
+   following card's `margin-top`, written once per card, so the only
+   margin here is the one inside. */
+.newproject{gap:18px}
+.newproject .form{display:grid;gap:12px}
+.newproject .frow{display:grid;grid-template-columns:130px minmax(0,1fr);gap:10px;align-items:center}
+.newproject .frow label{font-family:var(--mono);font-size:12.5px}
+.newproject .frow input[type=text]{font-family:var(--mono);font-size:13px;padding:6px 8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;width:100%;max-width:520px}
+/* The project's name, asked here since 2026-09-26: a field as wide as a
+   name, not as wide as the card. Full width it outweighed every reading
+   beside it — `1.20.4`, `29.1.1` — which are the rows it is read with. */
+.newproject .frow .ro input[type=text]{width:24ch;max-width:100%}
+.newproject .flags select{font-family:var(--mono);font-size:12px;margin-left:4px;padding:2px 4px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px}
+/* A base cartridge left out is left out, not unknown. The strike this
+   used to draw belongs to `.cart-ref.unknown`, which the house keeps for
+   one thing — a name with no cartridge behind it — and a mention that
+   exists must not wear it because the reader unticked a box. The box is
+   the state; the label goes quiet with it, and the reference keeps the
+   face the house gives every mention of a cartridge. */
+/* One line per base cartridge (2026-09-27): eight of them ran on as a
+   paragraph of boxes that wrapped wherever the card's width ended, and
+   finding one meant reading them all. A cartridge's own flags keep its
+   line — ecto's --database and --binary-id, html's --live — because
+   they are that cartridge's switches and not cartridges of their own. */
+.newproject .flags.bases{display:grid;gap:7px}
+.newproject .flags.bases .base{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
+/* A cartridge's flags follow the cartridge, and nothing lines them up:
+   they belong to the box before them and to nothing on the lines above
+   (2026-09-27). The names were padded to a column of 150px first, then
+   118, and both said the flags were a column of their own. */
+.newproject .bases label.out{color:var(--muted)}
+.newproject .bases .subs{display:inline-flex;gap:6px 14px;align-items:center;flex-wrap:wrap}
+.newproject .bases label.sub{margin-left:-2px;padding-left:10px;border-left:1px solid var(--line);color:var(--muted)}
+.newproject .bases label.sub.out{color:var(--muted)}
+.newproject .frow .ro{font-family:var(--mono);font-size:12.5px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.newproject .frow .ro a:not(.sq){font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:11px;color:var(--accent)}
+/* The Deploy screen's three cards and the Commit form are the house's
+   .card (components.css, 2026-09-29): the frame, the head, the fold and
+   the foot are declared there, once. What is here hangs from each
+   card's content class — .newproject, .deployments, .card.danger — and
+   is that card's own: its rows, its table, its foot's shape. */
+/* The cog is a square icon button, the eye's own face: the row's link
+   colour is not its. */
+.newproject .flags{display:flex;flex-wrap:wrap;gap:6px 14px;font-family:var(--mono);font-size:12.5px}
+.newproject .flags label{display:inline-flex;gap:6px;align-items:center}
+/* Every foot of the Deploy screen is the same gesture: a line of
+   `wb.sh`, and the button that runs it. Create, Up, Stop, Down, Delete
+   — so they share a floor and the commands before them all end at the
+   same edge (2026-09-26). It was three widths down one screen: 111 for
+   Create, 170 for the three verbs, 134 for Delete, each button as wide
+   as its own words. Only a label that outgrows the floor moves it, and
+   there is one — `Replace scaled with dev`, the button whose words
+   change with the row the reader picks. */
+.screen{--verb:170px}
+.install .foot{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.newproject .foot>.btn,.deployments .foot .fline>.btn,.card.danger .foot>.btn,.card.danger .foot>.confirm,.git .commit .fline>.btn,.git .commit .fline>.confirm{min-width:var(--verb);justify-content:center}
+.newproject .foot .cmds,.deployments .foot .cmds{flex:1;min-width:240px;display:grid;gap:3px}
+.newproject .foot .cmd,.deployments .foot .cmd,.card.danger .foot .cmd,.install .foot .cmd,.git .commit .fline .cmd{min-width:0}
+.confirm{font-family:var(--serif);font-size:13.5px;color:var(--bad);display:none;gap:8px;align-items:center}
+.confirm.on{display:inline-flex}
+
+/* --- the jobs tray -------------------------------------------------------- */
+/* The tray: the bar pinned to the window's foot, and the last job's
+   output unfurling upward from it — the screen above is flex:1 and
+   gives the height, so nothing is covered. The bar is the fold, the
+   caret beside it the one link, and the output takes the row above
+   them both while keeping its place in the source after the control
+   that opens it. */
+.tray{flex:none;border-top:1px solid var(--line);background:var(--surface);display:grid;grid-template-columns:minmax(0,1fr) auto}
+.tray .bar{grid-row:2;grid-column:1;display:flex;align-items:center;gap:14px;padding:8px 28px;cursor:pointer;width:100%;font:inherit;color:inherit;text-align:left;background:none;border:0}
+/* The box sits to the bar as a job's output sits to its row on the Jobs
+   screen: the row's 7px under the line, and the row's 8px over the box
+   — the block's own padding went double with the bar's. */
+.tray>.job{--jy:0;grid-row:1;grid-column:1/-1;cursor:auto}
+.tray.open .bar{padding-top:7px}
+/* Above the box and not under it, and its line on the box's own edge:
+   the bar it belongs to is at the foot. */
+.tray>.job .ograb{margin:0 0 -8px}
+.tray>.job .ograb::after{top:auto;bottom:-1px}
+.tray>.job .ograb.dragging::after{bottom:-2px;height:3px}
+/* The one control beside the bar: a square that puts the tray away, the
+   shape of the knock on a head. */
+.tray .sq{grid-row:2;grid-column:2;align-self:center;margin-right:28px}
+.tray .bar .last{font-family:var(--mono);font-size:12px;color:var(--muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tray.ping .bar{background:var(--accent-soft)}
+.tray .bar{transition:background .5s}
+/* The meta line heads the list — its caption and its one control, still
+   while the list scrolls — and the command line is under it (2026-09-27;
+   the line was above the list until then). The meta line hides when
+   there are no jobs, and a hidden grid child leaves its row empty: each
+   keeps its own row, and the empty first one costs nothing but a gap. */
+.logs.jobsp{grid-template-rows:auto minmax(0,1fr) auto}
+.jobsp .logmeta{grid-row:1}
+.jobsp .viewport{grid-row:2}
+.jobsp .cli{grid-row:3}
+/* The command line is a grid, not a flex row (2026-09-27): the prompt,
+   the field, the rule and the button on one row, and over the field —
+   its column, its width — the line Tab writes when it cannot choose:
+   the candidates in mono, quiet, as a shell lists them above the
+   prompt. Hidden, the row is empty and there is no row gap to leave a
+   hole; the line carries its own air below. It was a toast: floating
+   over the page in the heading's condensed uppercase, which is the
+   voice of a title and not of a list of words to type, and gone on its
+   own after six seconds. */
+.toolbar.cli{display:grid;grid-template-columns:auto minmax(200px,1fr) auto auto;align-items:center;column-gap:8px;row-gap:0;font-family:var(--mono);font-size:12.5px}
+/* Each on its own cell: placed by hand, since the line over the field
+   is the first child and auto-placement would carry on after it. */
+.toolbar.cli .hint{grid-area:1/2;margin:0 0 6px;font-size:12px;line-height:1.5;color:var(--muted);white-space:normal;overflow-wrap:anywhere}
+.toolbar.cli .hint[hidden]{display:none}
+.toolbar.cli .p{grid-area:2/1;color:var(--accent);white-space:nowrap}
+.toolbar.cli input{grid-area:2/2}
+.toolbar.cli .sep{grid-area:2/3}
+.toolbar.cli .btn{grid-area:2/4}
+.toolbar.cli input{min-width:0;font-family:var(--mono);font-size:12.5px;padding:5px 9px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px}
+/* The Jobs screen's viewport is the pane around the list, not its frame: it keeps the pane's air and scrolls, and the framed list inside hugs its rows. */
+.jobsp .viewport{padding:14px 0;overflow:auto;align-content:start}
+/* With no job there is no list to frame: the word stands where the list would, as a box's Runs say theirs. */
+.jobsp .viewport .nothing{margin:0;padding:0;max-width:64ch;font-size:13.5px}
+.jobsp .viewport .lines{padding:0}
+/* The columns keep their air; the row below does not need as much. The
+   output belongs to the line above it — half the gap says so, and 14px
+   read as a gap between two things rather than one unfolding. */
+.job{--jx:28px;--jy:8px;display:grid;grid-template-columns:auto 1fr auto auto;column-gap:14px;row-gap:7px;align-items:center;padding:var(--jy) var(--jx);border-top:1px solid var(--line);font-family:var(--mono);font-size:12px;line-height:1.5}
+.job:first-child{border-top:0}
+/* The job's trigger is a control of its own, so the caret can be drawn
+   from its aria-expanded like every other fold — and so the output below
+   is no longer a click target: reading a job's lines used to close it.
+   It spans the row and carries the row's own columns, which leaves the
+   grid above it for the mock, whose jobs are built by its own script. */
+.job .jt{grid-column:1/-1;display:grid;grid-template-columns:auto auto 1fr auto auto;column-gap:14px;align-items:center}
+/* The trigger is the whole row, gutter included (2026-09-27): it sat
+   inside the row's padding, so 16 of a closed row's 37px and the 12px
+   at each side hit the div behind it, which wore the pointer and did
+   nothing. The button takes the padding back with negative margins,
+   in the row's own measures, so the tray's 28px and the list's 12px
+   follow; width auto so it stretches over both sides, where .fold's
+   100% is the content box alone. The div no longer promises a click. */
+.job .jt{width:auto;margin:calc(-1 * var(--jy)) calc(-1 * var(--jx));padding:var(--jy) var(--jx)}
+/* The job's number, first on its row and on the tray's bar: the reader's
+   count, `#7`, beside the chip. */
+.job .n,.tray .bar .n{font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:3ch}
+.job .cmdline{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.job .dur{color:var(--muted);font-variant-numeric:tabular-nums}
+/* The leading is rounded to a pixel: the drawer's ratio times a bitmap
+   size is 19.5px, and the lines took turns at 19 and 20. */
+/* The box is a frame: the pane inside scrolls under the reader's cap, and the
+   strip of controls under the pane stays in sight — the Logs and Terminal
+   boxes' own strip, in a job's frame (2026-09-12). */
+.job .out{grid-column:1/-1;display:none;font-family:var(--code-face,var(--mono));font-size:var(--code-size,12px);white-space:pre-wrap;line-height:round(calc(var(--code-size,12px) * var(--code-leading,1.55)),1px);overflow:hidden}
+.job .out .pane{padding:10px 14px;max-height:var(--job-out,220px);overflow:auto}
+.out .toolbar.controls .say{flex:1;min-width:0;font-family:var(--serif);font-style:italic;font-size:13px;line-height:1.4;color:var(--muted)}
+.job.open .out{display:block}
+/* A job's output is capped so a long one does not push the list out of
+   reach, and the cap is the reader's: the row under the pane is a grip,
+   and what it is dragged to becomes the cap for every job, kept in this
+   browser.
+   The browser's own `resize` did this first and was wrong twice. Its
+   grip lives in the corner where the scrollbar ends, and that corner is
+   drawn by the browser: a white square on a terminal ground, which
+   appeared exactly when the output was long enough to scroll. Painting
+   it would mean ::-webkit-scrollbar and the whole legacy model this
+   house refused on purpose (see components.css). And it wrote an inline
+   height, which is one pane's and would hold a short output open on
+   blank ground.
+   So the grip is ours, made like the rail's: a 9px target over a line
+   that is only drawn under the pointer or the keyboard, and it moves a
+   variable rather than a height — which also gives it the arrows and a
+   double-click, neither of which a native resizer has. */
+.ograb{height:9px;position:relative;cursor:ns-resize;touch-action:none;background:none;border:0;padding:0}
+.ograb::after{content:"";position:absolute;left:0;right:0;top:2px;height:1px;background:var(--accent);opacity:0;transition:opacity .12s}
+.ograb:hover::after,.ograb:focus-visible::after{opacity:.7}
+.ograb.dragging::after{opacity:1;top:1px;height:3px}
+.ograb:focus-visible{outline:none}
+.job .ograb{grid-column:1/-1;margin:-11px 0 0}
+/* Open, the row ends as close under the box as its line sits over it:
+   the 7px gap, with the grip riding on the box's edge inside it. */
+.lines .job.open{padding-bottom:0}
+.out .dim{color:var(--term-dim)}.out .add{color:var(--ansi-green)}.out .upd{color:var(--ansi-yellow)}.out .ok{color:var(--accent);font-weight:500}.out .err{color:var(--ansi-red)}
+
+/* --- the box in hand (drawer) ----------------------------------------- */
+/* The box in hand sits in the middle of the room; the scrim is light
+   enough that the board on the left keeps reading — it changes while
+   a cartridge goes in. */
+.scrim{position:fixed;inset:0;background:rgba(10,4,14,.42);backdrop-filter:blur(1.5px);opacity:0;pointer-events:none;transition:opacity .2s;z-index:5}
+.scrim.on{opacity:1;pointer-events:auto}
+/* A frame clips, it never scrolls: `overflow:clip`, not `hidden`. A
+   hidden box is still a scroll container, and a jump to an anchor —
+   a footnote's mark, `#box-pkgs-note-1` — scrolls every container
+   between it and the page, the ones with no scrollbar too: the drawer
+   rode up 160px, left a gap at its foot, and nothing could bring it
+   back (2026-09-24). The drawer, its Interface pane, the screen and the
+   full-height panels are frames. */
+/* Whole pixels. `inset:0; margin:auto` split the room's leftover in
+   halves, and 94vw is seldom whole: the drawer landed at x.03, and with
+   it every code block inside — a bitmap face drawn half a pixel off is
+   a blur. The width and height are rounded down, then the corner is:
+   the box's runs, the papers' blocks and the diffs all start on the grid. */
+.drawer{
+  --dw:round(down,min(1090px,94vw),1px);--dh:round(down,min(88vh,920px),1px);
+  position:fixed;left:round(down,calc((100vw - var(--dw)) / 2),1px);top:round(down,calc((100vh - var(--dh)) / 2),1px);margin:0;width:var(--dw);height:var(--dh);
+  background:var(--surface);border:1px solid var(--line);border-radius:4px;
+  transform:translateY(14px) scale(.985);opacity:0;pointer-events:none;
+  transition:transform .22s cubic-bezier(.2,.7,.2,1),opacity .18s;
+  overflow:clip;box-shadow:0 30px 70px rgba(0,0,0,.45);display:grid;grid-template-rows:auto minmax(0,1fr);z-index:6
+}
+.drawer.on{transform:none;opacity:1;pointer-events:auto}
+@media (max-width:700px){.drawer{--dw:100vw;--dh:100vh;border-radius:0;border:0}}
+/* Above the config tab's own sticky bar (z-index 1), which scrolled over these tabs. */
+/* The drawer is its header and its pane, and the pane is what scrolls —
+   so the header does not have to be told to stay: it is a row of the
+   frame. Which is also why nothing under it needs to know how tall it
+   is. */
+.drawer .top{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--line);background:var(--surface)}
+.drawer .top h3{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:16px}
+/* The step back and the name of the box in hand travel together on the
+   left; Put back stays at the other end. */
+.drawer .top .who{display:flex;align-items:center;gap:12px;min-width:0}
+/* A square with an arrow in it: the name of the box it goes back to is in
+   the title and in the label a screen reader reads, not on the face of a
+   control that sits beside the name of the box in hand — two names, one
+   of them stale, at the same size and a hand's width apart. Its padding
+   is the house button's, so the two in this header are the same height. */
+/* 18px is the line box of the 12px condensed text in the button beside
+   it: same padding, same border, so the square comes out 30 by 30 —
+   exactly the height of Put back at the other end of the header. */
+.drawer .top{flex-wrap:wrap;row-gap:8px}
+/* The row of documents (ConsoleWeb.Ribbon): one rule, two placements.
+   In a drawer's header it rides up into the header's own rule, which is
+   where the negative margin belongs and nowhere else. Docked — the
+   second row, under a screen's tabs or a drawer's — it is a band of the
+   house's second surface, lower than the row above, and the document
+   being read is cut into the ground of the pane it opens: a folder and
+   its tab, the same ground, no rule. Decided on 2026-09-05 in a page
+   since retired, console/la-segunda-fila.html in the history: two rows of one grammar
+   stacked, ten per cent apart in size, told the reader nothing about
+   which one ranks; a subordinate row changes surface and mark, not
+   size alone, and the gold rule stays on the one row that leads. */
+.dtabs{display:flex;gap:2px;width:100%;flex-wrap:wrap}
+.drawer .top .dtabs{margin:6px 0 -14px}
+/* The band is one surface step above the pane it anchors: on the ground
+   it is the rail's surface, so the two read as one furniture; in a
+   drawer, whose ground is that surface already, the step above it —
+   tried on 2026-09-05: the rail's surface in a drawer left nothing but
+   the hairline. */
+.dtabs.docked{flex:none;width:auto;gap:0;padding:4px 8px 0;background:var(--surface);border-bottom:1px solid var(--line)}
+.drawer .dtabs.docked{background:var(--surface-2)}
+/* The band spans the pane, and carries the side air itself, so its first
+   tab starts where the row above starts its: 28px on a screen, the tab
+   row's, 32px in a drawer's papers. The same air is on the scroller under
+   it, not on the pane around both — a scroller's bar sits on its own edge. */
+.pdocs .dtabs.docked{padding-left:28px;padding-right:28px}
+.papers .dtabs.docked{padding-left:32px;padding-right:32px}
+/* Every tab of the row wears a hairline's width on three sides, so the
+   selected one can show it without moving its word: the one being read
+   is outlined in the row's own line, left, right and top, and opens at
+   the foot into the pane — the row's rule runs under the others and
+   stops at its edges. */
+.dtabs.docked .dtab{font-size:11.5px;letter-spacing:.1em;padding:4px 10px 6px;border:1px solid transparent;border-bottom:0;border-radius:2px 2px 0 0;margin-bottom:-1px}
+.dtabs.docked .dtab[aria-selected="true"]{background:var(--ground);color:var(--ink);border-color:var(--line);box-shadow:0 1px 0 var(--ground)}
+/* The air under the row is the row's: 22px on whatever follows it, set
+   here once and nowhere per pane — Git's pane had none because Docker's
+   carried it under Docker's own name. A pane that scrolls takes it as
+   padding, so its lines pass under the row and not under a strip of
+   ground; a pre, which does not scroll the pane, as margin. */
+.dtabs.docked + .booklet,.dtabs.docked + .dkdoc{padding-top:22px}
+.dtabs.docked + pre.env{margin-top:22px}
+.drawer .dtabs.docked .dtab[aria-selected="true"]{background:var(--surface);box-shadow:0 1px 0 var(--surface)}
+.dtab{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.12em;font-size:12.5px;color:var(--muted);padding:6px 12px 8px;border-bottom:3px solid transparent;display:inline-flex;gap:6px;align-items:center}
+.dtab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+/* The sublabel is read off the machine — a count, a file's name — so it
+   is mono in lower case, the house's voice for that, and not the tab's
+   condensed capitals, which are for a name. */
+.dtab small{font-family:var(--mono);font-size:10px;letter-spacing:0;text-transform:none;color:var(--muted)}
+.drawer .need{display:grid;gap:8px;margin:2px 0 0;padding:12px 14px;border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);border-radius:3px}
+.drawer .need .want{margin:0;font-style:italic;font-size:14.5px}
+.drawer .need .row{display:grid;grid-template-columns:58px minmax(0,1fr);gap:10px;font-size:13px;align-items:baseline}
+.drawer .need .k{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);white-space:nowrap}
+.drawer .need .v{color:var(--muted)}
+.drawer .need code{font-family:var(--mono);font-size:12px;background:var(--surface-2);padding:0 4px;border-radius:2px}
+.drawer .need code.tight{padding-right:1px}
+.drawer .body{display:grid;grid-template-columns:320px minmax(0,1fr);gap:32px;padding:26px 28px 32px;align-content:start}
+.drawer .body[hidden]{display:none}
+/* The papers the box carries: a row of them inside the Manual screen,
+   under the drawer's own row. It is not of the same rank as that row, so
+   it does not stick to the top and it carries a rule under it. */
+/* The air above the row is the row's own, so it is docked from the first
+   pixel and never travels: same as the config bar under the workbench
+   modal, and as the project's row on its screen. */
+/* align-content, like every other grid the drawer holds: the drawer's
+   second row is 1fr, so a screen shorter than the drawer has free space
+   under it, and auto rows share that space out — which grew the row of
+   papers itself, by as much as a hundred pixels, whenever the sheet was
+   a short one. */
+/* The side air is the booklet's, not the pane's: the booklet is what
+   scrolls, and the bar of a scroller is drawn on the edge of its own
+   box — padding on a wrapper around it moved the bar 32px into the
+   drawer, while the drawer's other screens kept theirs on the edge.
+   See the scrollbar note in components.css. */
+.papers{display:flex;flex-direction:column;min-height:0;padding:0}
+.papers[hidden]{display:none}
+.papers .booklet{flex:1;min-height:0;overflow:auto;padding:0 32px 60px;scrollbar-gutter:stable}
+/* What is fixed above a heading is now the header and the row together,
+   so both the index's jumps and the index itself clear the two. */
+.papers .booklet{--fixed-above:0px}
+.papers .booklet .toc{top:0}
+.booklet{display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:32px;padding:26px 32px 60px}
+/* Every screen of the drawer scrolls on its own under the fixed top —
+   the papers and the UI pane did, the Installation and Files screens
+   and the box's two faces did not: past the drawer's height they were
+   clipped, options and runs out of reach on a short window. */
+.drawer > .booklet,.drawer > .install,.drawer > .body{min-height:0;overflow:auto}
+/* The Interface pane does not scroll as a whole: its controls column does, and the miniature fills the height. */
+/* The Interface tab's pane: its ribbon, then the tab, which never scrolls as a whole (its column does). */
+.drawer > .uipane{min-height:0;overflow:clip;display:grid;grid-template-rows:auto minmax(0,1fr)}
+/* The scale of the whole (the drawer's Text part, --scale on the root): on what the page lays out — the band, the warning, the screen — and on what each overlay holds, never on an overlay's frame, which is sized in viewport units and zoomed would leave the viewport. */
+body>[data-phx-main]>header.band,body>[data-phx-main]>.rebind,body>[data-phx-main]>.app,.drawer>*,.viewer>*{zoom:var(--scale,1)}
+.uipane > .dtabs.docked{padding-left:28px;padding-right:28px}
+.booklet[hidden]{display:none}
+.booklet.notoc{grid-template-columns:minmax(0,1fr)}
+.booklet .toc{position:sticky;top:0;align-self:start;display:grid;gap:6px;font-family:var(--cond);font-weight:600;letter-spacing:.06em;font-size:12.5px;text-transform:uppercase;border-left:1px solid var(--line);padding-left:12px}
+.booklet .toc a{color:var(--muted)}
+.booklet .toc a:hover{color:var(--ink)}
+.booklet .toc .doctitle{color:var(--ink);font-size:13.5px;letter-spacing:.08em;margin-bottom:6px;text-wrap:balance}
+.booklet .toc .doctitle:hover{color:var(--accent)}
+/* Where a heading lands when the index scrolls to it: below the fixed
+   top of its container, with air — the modal's top bar and tabs, or the
+   screen's tab bar — so the heading itself is what comes into view. */
+.booklet{--fixed-above:0px}
+.pdocs .booklet{--fixed-above:0px}
+.md{scroll-margin-top:var(--fixed-above)}
+.md h1,.md h2,.md h3{scroll-margin-top:calc(var(--fixed-above) + 6px)}
+@media (max-width:640px){.booklet{grid-template-columns:1fr}.booklet .toc{display:none}}
+.md{font-family:var(--serif);font-size:15.5px;line-height:1.6;min-width:0}
+.md>*:first-child{margin-top:0}
+.md h1,.md h2,.md h3,.md h4{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.06em;line-height:1.1;text-wrap:balance;margin:1.6em 0 .5em}
+.md h1{font-size:28px;margin-top:0}.md h2{font-size:21px;padding-top:.6em;border-top:1px solid var(--line)}.md h3{font-size:16px}.md h4{font-size:14px;color:var(--muted)}
+.md p,.md ul,.md ol{margin:0 0 1em}
+.md li{margin:.2em 0}
+.md a{color:var(--accent);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
+.md a[data-open]{font-family:var(--cond);font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-size:.85em;text-decoration:none;border:1px solid var(--accent);padding:1px 6px;border-radius:2px}
+.md code{font-family:var(--mono);font-size:.86em;background:var(--surface-2);padding:.1em .35em;border-radius:2px}
+.md pre{padding:12px 14px;overflow-x:auto;font-family:var(--file-face,var(--mono));font-size:var(--file-size,12.5px);line-height:var(--file-leading,1.5);margin:0 0 1.2em}
+/* The code inside a block is the block's: `.md code` sets the chip's
+   face, and until 2026-09-29 it reached in here too, so the pre wore
+   the reader's Files face and its text stayed Plex. */
+.md pre code{background:none;padding:0;font:inherit;color:inherit}
+/* A fenced block a lexer answers to (Console.Papers.colour_fences) is
+   a `.src` inside the paper: the palette rules below reach it by the
+   class, with the language's twelve by `data-lang`, and the base ink
+   is the palette's, as on the Files sheet. No ruler, no diff: a
+   paper's block is not a file. */
+.md pre.src{color:var(--t-base)}
+.md blockquote{margin:0 0 1em;padding:.2em 0 .2em 14px;border-left:3px solid var(--accent);color:var(--muted);font-style:italic}
+.md table{border-collapse:collapse;font-size:13.5px;margin:0 0 1.2em;display:block;overflow-x:auto;max-width:100%}
+.md th,.md td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+.md th{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px;background:var(--surface-2)}
+/* A file tree in a table (Console.Papers.mark_trees/1): the branch keeps its spaces and loses its chip, and the rows close up so │ runs on from one to the next. */
+.md table:has(td.tree) td{padding-block:0;border-block:0;line-height:1.3}
+.md table:has(td.tree) tr:last-child td{border-bottom:1px solid var(--line)}
+.md td.tree{white-space:pre}
+.md table:has(td.tree) td:empty{height:1em}
+.md td.tree code{background:none;padding:0;white-space:pre;font-size:12.5px}
+.md hr{border:0;border-top:1px solid var(--line);margin:1.5em 0}
+.md img{max-width:100%}
+/* A table whose cells are pictures is a row of pictures: its columns share the width evenly, whatever their heads say — left to their content, two pictures of one size came out a column wider than the other — and it has nothing to scroll. (A picture stands in a figure once the page has dressed it.) */
+.md table:has(td>img:only-child,td>figure:only-child){display:table;table-layout:fixed;width:100%}
+/* A shields.io badge drawn from its address (Console.Shields, through Console.Papers.outside_images/1): the service's own SVG in an <img>, at its own size — never stretched by the booklet's measure. Any other outside image is a link wearing its alt. */
+.md img.shield{max-width:none;vertical-align:middle}
+.md a.outside-img{font-family:var(--mono);font-size:.86em}
+.md svg.diagram{width:100%;height:auto;display:block;margin:0 0 1.2em;max-width:none}
+.md p:has(> svg.diagram){max-width:none}
+.md .revision{font-family:var(--mono);font-size:12px;color:var(--muted)}
+@media (max-width:700px){.drawer .body{grid-template-columns:1fr}}
+.hand{display:grid;gap:10px;align-content:start}
+/* A two-sided card: both faces are in the DOM, the flip is one
+   transition of the card, and backface-visibility picks the side that
+   shows. Nothing is swapped mid-turn, so no frame shows the wrong face. */
+.hand .face{aspect-ratio:5/7;position:relative;perspective:1100px}
+.hand .cover{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .55s cubic-bezier(.4,.1,.2,1)}
+.hand .cover.back{transform:rotateY(180deg)}
+.hand .side{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:var(--board);border-radius:2px;overflow:hidden;box-shadow:var(--shadow)}
+.hand .side.back{transform:rotateY(180deg)}
+.hand .side img{width:100%;height:100%;object-fit:cover;display:block}
+/* Picked up, an archived box is the same black and white it is on the
+   plank: the state belongs to the cartridge, not to one screen of it. */
+.hand.archived .side{filter:grayscale(1) contrast(.9)}
+.hand .typeset{position:absolute;inset:0;padding:14px;color:#F3ECF5;background:linear-gradient(180deg,rgba(20,10,28,.15),rgba(20,10,28,.85));display:flex;flex-direction:column;justify-content:flex-end;gap:6px}
+.hand .typeset h4{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:17px;margin:0;line-height:1.05;text-wrap:balance}
+.hand .typeset p{margin:0;font-size:12px;line-height:1.35}
+.hand .typeset .nocover{font-family:var(--mono);font-size:10px;opacity:.75}
+/* There was a light variant of this scrim, for the one placeholder that
+   is a white drawing: it kept the drawing's bottom from going grey. It
+   had a flaw the dark one cannot have — its wash was a fixed light
+   colour while its ink was var(--ink), so on the dark ground the ink
+   turned pale and the caption disappeared into the wash. A scrim sits
+   on art, and art does not follow the page's theme, so both of its
+   colours have to be fixed or neither. The dark one is fixed on both
+   counts, and it is the one every other cover already wears. */
+.sheet{display:grid;gap:18px;align-content:start;min-width:0}
+.sheet .head{display:grid;gap:6px}
+.sheet .head .kicker{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.sheet .head h4{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:28px;line-height:1;text-wrap:balance}
+.sheet .head p{margin:0;font-size:16px;max-width:60ch}
+.sheet .req{display:flex;flex-wrap:wrap;gap:6px}
+.sheet .req .chip{color:var(--ink)}
+form.insert{display:grid;gap:14px;border:1px solid var(--line);border-radius:3px;padding:14px;background:var(--surface-2)}
+form.insert .label{margin-bottom:-4px}
+/* One option per row, whatever its shape: the key — its flag, and under
+   it the kind of answer it takes — and its answers, one line per control.
+   A line reads control · name · tags in every shape; a switch has no
+   name. What helps an answer is under it, in one voice: a value's doc
+   under its line, a field's under the field, an option's note under
+   all its values. A tag sits on the line of the control
+   it shuts, never in the key: that is where the eye is before the click,
+   and the key's 150px no longer breaks under a long need. */
+form.insert .opts{display:grid}
+.opt{display:grid;grid-template-columns:150px minmax(0,1fr);gap:10px;align-items:start;padding:12px 0;border-top:1px solid var(--line)}
+.opt:first-child{border-top:0;padding-top:2px}
+.opt:last-child{padding-bottom:2px}
+.opt .key{display:grid;gap:2px;padding-top:1px}
+.opt .flag{font-family:var(--mono);font-size:12.5px;color:var(--ink)}
+.opt .kind{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--soft)}
+.opt .answers{display:grid;gap:8px;min-width:0}
+.opt .line{display:grid;grid-template-columns:auto auto auto minmax(0,1fr);justify-content:start;gap:0 8px;align-items:center;font-family:var(--mono);font-size:12.5px}
+.opt .line.sw{grid-template-columns:auto auto minmax(0,1fr)}
+.opt .line.txt{grid-template-columns:minmax(0,40ch) auto}
+.opt .line.other{grid-template-columns:minmax(0,54ch)}
+.opt .line input[type=checkbox],.opt .line input[type=radio]{width:15px;height:15px;margin:0}
+.opt .line .name{white-space:nowrap}
+/* Every field of the form, whatever an option's shape made it — a text,
+   a url (`formats/0`) — so the house's face does not depend on the
+   type attribute. Only the boxes above are left out. */
+.opt .line input:not([type=checkbox]):not([type=radio]){font-family:var(--mono);font-size:13px;padding:5px 8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;width:100%}
+.opt .line.other input{border-style:dashed;font-size:12.5px}
+/* What the browser itself judges, said in the house's bad: a url that is
+   no url, while it is being written. :user-invalid, so an empty field
+   the reader has not touched is not red. */
+.opt .line input:user-invalid{border-color:var(--bad)}
+.opt .gl{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:11px;color:var(--muted);margin-top:4px}
+.opt .gl:first-child{margin-top:0}
+.opt .doc{font-size:12.5px;color:var(--muted);margin:0;max-width:60ch;line-height:1.45}
+/* A value's doc hangs under its name, past the box, close to its line. */
+.opt .doc.of{padding-left:23px;margin-top:-5px}
+/* A link in a doc is the papers' link: the house's accent, underlined. */
+.opt .doc a{color:var(--accent);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
+.opt .doc code{font-family:var(--mono);font-size:.9em;background:var(--surface-2);padding:0 .3em;border-radius:2px}
+/* The tags: `needs` and the cartridges it names, each its own mention
+   — a door to that box — with the state it asks; or the default. */
+.opt .tags{display:inline-flex;flex-wrap:wrap;gap:4px 6px;align-items:center}
+.opt .tags:empty{display:none}
+.opt .tag{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:9.5px;color:var(--muted);border:1px solid var(--line);padding:0 4px;border-radius:2px;white-space:nowrap;line-height:1.5}
+.opt .tag.lacks{color:var(--warn);border-color:var(--warn)}
+.opt .tag.advises{color:var(--warn);border-color:var(--warn);border-style:dashed}
+.opt .doc.advice{border-left:2px solid var(--warn);padding-left:8px}
+.opt .tag.def{color:var(--soft)}
+.opt .req{display:inline-flex;gap:6px;align-items:center}
+.opt .by{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:9.5px;color:var(--soft);white-space:nowrap}
+.opt .line.lacks .name{color:var(--muted)}
+.opt .line.has{color:var(--muted)}
+/* Set, but not by the reader: this one the project already carries, so
+   it steps out of the accent the house gives every other control. */
+.opt .line.has input{accent-color:var(--muted)}
+@media (max-width:640px){.opt{grid-template-columns:1fr;gap:6px}}
+/* The line a verb would run. It keeps the width it has and wraps when
+   the line outgrows it — a second line, never a scrollbar: a command is
+   read whole before it is pressed, and a long option (a url) used to
+   push the rest of it out of sight. It breaks at the spaces between the
+   words, and inside a word only when one word is wider than the box.
+   The wrapped lines hang under the first, clear of the `$`. */
+.cmd{font-family:var(--mono);font-size:12.5px;background:var(--surface);border:1px solid var(--line);padding:8px 10px 8px calc(10px + 2ch);border-radius:2px;white-space:pre-wrap;overflow-wrap:anywhere;text-indent:-2ch}
+.cmd::before{content:"$ ";color:var(--muted)}
+/* A command that is a terminal box (the Record's mix phx.new) keeps the terminal's ground, the reader's, with its line and its dim: the plain .cmd above paints the surface, and being this sheet's it came after components.css's .term-box and won, so the box lost the ground on 2026-09-29 when the ground moved to the family (it had been its own until then). */
+.cmd.term-box{background:var(--term);border-color:var(--term-line)}
+.cmd.term-box::before{color:var(--term-dim)}
+.go{justify-self:start;font-family:var(--cond);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:13px;background:var(--accent);color:var(--accent-ink);padding:9px 16px;border-radius:2px;box-shadow:0 2px 0 rgba(0,0,0,.25)}
+.go[disabled]{box-shadow:none}
+/* The box's two feet: the same shape as every other foot in the
+   console — the line taking the width, the button at its right — and
+   the note under the line, as the Danger zone's is. */
+.install .foot{margin-top:12px}
+.install .foot .cmd{flex:1;min-width:240px}
+/* Brings: what the box puts in the project's mix.exs. One row per
+   package — its name, what the box brings, what the project pins and
+   what the lock resolved — read as a column each, mono, because every
+   one of them is read off a file. A pin that is not the box's wears
+   the house's warn: the insert is older than the box. Offered (the box
+   is not in) the last column is the tuple's own options instead. */
+/* Under Specs on the box's own screen: the packages are what the box
+   brings, like its doors and its containers — not a step of installing
+   it. A table and not a row of chips, because every column is a fact
+   read off a different place — the manifest, mix.exs, mix.lock, hex —
+   and a reader compares them down the column, not across a tooltip.
+   The name opens the package on hex and the locked version opens that
+   version's documentation; the mark before the name is what says so,
+   in place of an underline, which in a table cell stretches the width
+   of the column and underlines nothing. */
+/* The table keeps its shape in a narrow drawer: the panel scrolls
+   sideways rather than letting the cells wrap, because a version
+   broken over two lines — or a package name cut mid-word, which the
+   `overflow-wrap:anywhere` every `table.rows` carries would do — is
+   not a fact a reader can read. A column of numbers is only a column
+   while it is one line each. */
+.packages{display:grid;gap:6px;margin-top:18px;min-width:0}
+.packages .scroll{overflow-x:auto;overscroll-behavior-x:contain}
+table.rows.pkgs{font-size:12px;min-width:max-content}
+table.rows.pkgs td:first-child,table.rows.pkgs th:first-child{white-space:nowrap;overflow-wrap:normal;padding-right:12px}
+table.rows.pkgs th{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:10.5px;color:var(--muted);text-align:left;padding-bottom:6px;border-bottom:1px solid var(--line)}
+table.rows.pkgs th:not(:first-child),table.rows.pkgs td:not(:first-child){text-align:right;padding-left:12px;white-space:nowrap}
+table.rows.pkgs td{padding:6px 0}
+table.rows.pkgs td .unlit{color:var(--line)}
+table.rows.pkgs td .bad{color:var(--bad)}
+/* A cell is a cell: .req is a flex row inside the sheet, which would
+   take these two out of the table's columns. */
+table.rows.pkgs td{display:table-cell}
+table.rows.pkgs td.asks{color:var(--muted)}
+table.rows.pkgs td.asks.warn{color:var(--warn)}
+/* A mark is the way to its note: the note's muted mono, never the
+   accent, underlined only under the pointer; the note it lands on
+   takes the ink, so the eye finds which line it was. */
+table.rows.pkgs .fn a{color:inherit;text-decoration:none}
+table.rows.pkgs .fn a:hover,table.rows.pkgs .fn a:focus-visible{text-decoration:underline}
+.packages .fn-note:target{color:var(--ink)}
+table.rows.pkgs td.v{color:var(--soft);font-variant-numeric:tabular-nums}
+table.rows.pkgs td.v.good{color:var(--good)}
+/* The mention itself is the house's .pkg-ref (components.css); the
+   table only says how a cell of them reads. */
+table.rows.pkgs td.v .pkg-ref{color:var(--soft);font-size:inherit}
+table.rows.pkgs td.v .pkg-ref:hover,table.rows.pkgs td.v .pkg-ref:focus-visible{color:var(--accent)}
+table.rows.pkgs td .pkg-ref{font-size:inherit}
+.packages .log-cap{gap:8px}
+.packages .log-cap .note.bad{color:var(--bad)}
+.packages .log-cap .sq.ask{margin-left:auto}
+
+.install .foot .note{flex-basis:100%;margin:0}
+form.insert.locked .opt input{opacity:.55}
+/* Specs — the box's own facts, a table where the need above is prose.
+   Same panel as .need, without its accent edge: that one is the voice
+   of the developer, this one the manifest's. */
+#d-specs{display:grid;gap:8px}
+.specs{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:9px 14px;align-items:baseline;padding:12px 14px}
+.specs .k{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);white-space:nowrap}
+.specs .v{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:13px}
+/* The rows that name cartridges and containers stand one per line: a
+   list of things, each with its own note, reads as a list and not as a
+   paragraph that happened to wrap. */
+.specs .v.stack{flex-direction:column;flex-wrap:nowrap;align-items:flex-start;gap:5px}
+.specs .w{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:11.5px;color:var(--ink)}
+.specs .why{display:inline-flex;gap:6px;align-items:center;font-family:var(--mono);font-size:12px;color:var(--muted)}
+.specs .req{display:inline-flex;gap:6px;align-items:center}
+.specs .by{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:9.5px;color:var(--soft);white-space:nowrap}
+.specs .path{font-family:var(--mono);font-size:12px;color:var(--ink)}
+.specs .note,.specs .after{font-size:12.5px;color:var(--muted);font-style:italic}
+/* The rail's Git rows wrap their value under the right edge: a long commit
+   subject or signer must not widen the grid's track and scroll the rail. */
+.git{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;font-family:var(--mono);font-size:12px}
+.git .row{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.git .row>:last-child{min-width:0;text-align:right;overflow-wrap:anywhere}
+.git .row .k{flex:none;font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px;color:var(--muted)}
+.log{font-family:var(--code-face,var(--mono));font-size:var(--code-size,12px);line-height:var(--code-leading,1.55);background:var(--term);color:var(--term-ink);border-radius:3px;padding:12px 14px;min-height:120px;max-height:260px;overflow:auto;white-space:pre-wrap;border:1px solid var(--term-line)}
+.log .dim{color:var(--term-dim)}.log .add{color:var(--ansi-green)}.log .upd{color:var(--ansi-yellow)}.log .ok{color:var(--accent);font-weight:500}
+/* What an empty window says is the window's, not the stylesheet's: the
+   install screen says what will land here. */
+.log:empty::before{content:attr(data-empty)}
+.log-cap{display:flex;justify-content:space-between;align-items:baseline}
+/* The list of jobs — .jobs-list, on the Jobs screen and in a box's
+   Runs alike: a framed box that hugs its rows, a hairline and a rounded
+   corner, the rows 8px by 12px inside, kept apart by their own line. It
+   was the box's alone (as .inbox) and the Jobs screen listed the same
+   rows unframed across its viewport, 28px in from either side, which
+   read as a table without an end; a pile of jobs is a thing, and the
+   frame says where it starts and stops (2026-09-12). */
+.runs{display:grid;gap:8px}
+.runs .nothing{margin:0;font-family:var(--serif);font-style:italic;font-size:13.5px;color:var(--muted)}
+.lines.jobs-list{padding:0;overflow:visible;border:1px solid var(--line);border-radius:3px}
+.jobs-list .job{--jx:12px}
+/* --- Installation: what the cartridge wrote --------------------------------
+   Its own screen, the drawer's full width, one scroll.
+
+   The column is minmax(0,1fr) and not the implicit auto: an auto track
+   sizes to max-content and takes the screen with it, so a 365-character
+   insert subject or a long path grew the page sideways and the ellipsis
+   below never came into play. Capped, each row shortens its own way —
+   a path to its ellipsis, a subject over as many lines as it needs. */
+.install{padding:22px 32px 60px;display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-content:start}
+/* The form wants a measure; the diff wants the window. They share the
+   container and part company here: a route like /health in an input
+   780px wide reads as a mistake, and a patch cut at 820 reads as one too. */
+#d-install{max-width:820px}
+.install[hidden]{display:none}
+.install .label small{margin-left:10px;overflow-wrap:anywhere;font-family:var(--mono);font-size:11px;letter-spacing:0;text-transform:none;color:var(--soft)}
+.install .cap{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.impl{display:grid;gap:10px}
+.impl .files{border:1px solid var(--line);border-radius:3px;overflow:hidden}
+.impl .f{border-top:1px solid var(--line)}
+.impl .f:first-child{border-top:0}
+/* The row's caret is at its far end, past the counts, as a job's row has it: drawn on the row from the fold's aria-expanded (through :has), never typed, and the fold's own caret stays off. */
+.impl .fh{display:flex;gap:10px;align-items:center;padding:6px 12px;background:var(--surface-2);font-family:var(--mono);font-size:12px;color:var(--ink);cursor:pointer}
+.impl .fh:hover{background:var(--accent-soft)}
+.impl .fh .ft.fold::after{display:none}
+.impl .fh::after{content:"▸";flex:none;width:.8em;margin-left:auto;color:var(--soft);font-family:var(--mono);font-size:max(1.25em,17px);line-height:1;letter-spacing:0;text-align:right}
+.impl .fh:has(.ft[aria-expanded="true"])::after{content:"▾"}
+.impl .fh:hover::after,.impl .fh:has(.ft:focus-visible)::after{color:var(--ink)}
+/* The row's trigger is its own button, so the cart-refs beside it stay
+   the links the house says a cartridge mention always is. */
+.impl .ft{flex:1;min-width:0;width:auto;display:flex;gap:10px;align-items:baseline;padding:2px 0}
+.impl .ft .p{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.impl .fh .mark{flex:none;font-family:var(--cond);font-weight:600;text-transform:uppercase;letter-spacing:.08em;font-size:11px;color:var(--muted)}
+.impl .fh .refs{flex:none;display:flex;gap:5px;align-items:center}
+.impl .fh .refs .more{font-family:var(--cond);font-weight:600;letter-spacing:.08em;font-size:11px;color:var(--muted)}
+.impl .fh .n{flex:none;font-variant-numeric:tabular-nums;white-space:nowrap}
+.impl .fh .n .a{color:var(--good)}
+.impl .fh .n .r{color:var(--bad)}
+
+/* --- the diff, on the ground the palette was written for -------------------
+   The twelve are One Dark, as written in console/elixir_color_theme.jsonc
+   (archived out of git on 2026-09-29, once hooks.js LANGS and this block
+   carried them whole; themes/house.json is that file again): rules
+   meant for a dark editor. They go in here as they were written, on the house's own
+   dark ground — the one the Logs screen already uses — instead of being
+   re-derived for paper, which is what made them read muddy. On the light
+   ground the terminal is paper since 2026-09-07, and the twelve are One
+   Light's, the same author's pair, role for role
+   (assets/design/fuente-claro.html, retired, is where that was decided). The two
+   sets follow the ground the way tokens.css does — light on the root,
+   dark under the scheme and under the toggle.
+   Every Makeup lexer emits these same classes, so a language added later
+   costs this block nothing. The twelve are properties of the root, so
+   the reader's own — set by hooks.js from the Interface tab, where a
+   VS Code jsonc pastes in and out, one palette a ground — reach every
+   `.src` at once: the Files sheet's, and the sample the tab shows.
+   A palette a language, too: the eight the tab names — elixir, html,
+   css, ts, json, markdown, godot, shell — carry the twelve as `--t-<lang>-<key>`, which on the
+   root fall back to the shared twelve, and a `.src[data-lang]` reads
+   its language's. So a language left alone is the house's palette, and
+   a colour set for JSON's keys never reaches a module in Elixir. */
+:root{--t-base:#383a42;--t-punct:#696c77;--t-comment:#a0a1a7;--t-atom:#0184bc;
+      --t-const:#4078f2;--t-func:#4078f2;--t-kw:#a626a4;--t-op:#986801;
+      --t-mod:#c18401;--t-str:#50a14f;--t-interp:#e45649;--t-regex:#ca1243}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--t-base:#abb2bf;--t-punct:#828997;--t-comment:#5c6370;--t-atom:#56b6c2;
+      --t-const:#61afef;--t-func:#60acea;--t-kw:#c678dd;--t-op:#d19a66;
+      --t-mod:#e5c07b;--t-str:#98c379;--t-interp:#e06c75;--t-regex:#be5046}}
+:root[data-theme="dark"]{--t-base:#abb2bf;--t-punct:#828997;--t-comment:#5c6370;--t-atom:#56b6c2;
+      --t-const:#61afef;--t-func:#60acea;--t-kw:#c678dd;--t-op:#d19a66;
+      --t-mod:#e5c07b;--t-str:#98c379;--t-interp:#e06c75;--t-regex:#be5046}
+/* The diff's own four, a ground each and the reader's from the
+   Interface tab (hooks.js applyDiff, `--diff-<key>` on the root): the
+   ground of an added line and of a removed one, and the colour of the
+   line's number and sign on each. Both grounds' are as set on
+   2026-09-15: the numbers the same two on paper as on the dark
+   terminal, the grounds a pale wash of each. Hex, since the tab's
+   swatch is an <input type=color>. */
+/* The lines' grounds, the Terminal fold's third set: the wash under a
+   line of error and one of warning on the Logs screen, and the tint of
+   the line under the pointer, which the diff's hunk head wears too.
+   Hex, for the swatch; the sheet lays each at its share — 8% the
+   washes, 5% the tint — so a solid colour stays a wash. The light
+   ground's are the house's bad and the ANSI yellow over the ink; the
+   dark ground's the same two over white. */
+:root{--line-error:#e90130;--line-warning:#a7660b;--line-highlight:#1d1424}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--line-error:#fe0b3c;--line-warning:#f2a436;--line-highlight:#ffffff}}
+:root[data-theme="dark"]{--line-error:#fe0b3c;--line-warning:#f2a436;--line-highlight:#ffffff}
+:root{--diff-add-bg:#c0eeff;--diff-add-num:#529fc7;--diff-del-bg:#ffd6d2;--diff-del-num:#db5a5a}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--diff-add-bg:#00212d;--diff-add-num:#529fc7;--diff-del-bg:#3f0600;--diff-del-num:#db5a5a}}
+:root[data-theme="dark"]{--diff-add-bg:#00212d;--diff-add-num:#529fc7;--diff-del-bg:#3f0600;--diff-del-num:#db5a5a}
+:root{--t-elixir-base:var(--t-base);--t-elixir-punct:var(--t-punct);--t-elixir-comment:var(--t-comment);--t-elixir-atom:var(--t-atom);--t-elixir-const:var(--t-const);--t-elixir-func:var(--t-func);--t-elixir-kw:var(--t-kw);--t-elixir-op:var(--t-op);--t-elixir-mod:var(--t-mod);--t-elixir-str:var(--t-str);--t-elixir-interp:var(--t-interp);--t-elixir-regex:var(--t-regex);--t-html-base:var(--t-base);--t-html-punct:var(--t-punct);--t-html-comment:var(--t-comment);--t-html-atom:var(--t-atom);--t-html-const:var(--t-const);--t-html-func:var(--t-func);--t-html-kw:var(--t-kw);--t-html-op:var(--t-op);--t-html-mod:var(--t-mod);--t-html-str:var(--t-str);--t-html-interp:var(--t-interp);--t-html-regex:var(--t-regex);--t-css-base:var(--t-base);--t-css-punct:var(--t-punct);--t-css-comment:var(--t-comment);--t-css-atom:var(--t-atom);--t-css-const:var(--t-const);--t-css-func:var(--t-func);--t-css-kw:var(--t-kw);--t-css-op:var(--t-op);--t-css-mod:var(--t-mod);--t-css-str:var(--t-str);--t-css-interp:var(--t-interp);--t-css-regex:var(--t-regex);--t-ts-base:var(--t-base);--t-ts-punct:var(--t-punct);--t-ts-comment:var(--t-comment);--t-ts-atom:var(--t-atom);--t-ts-const:var(--t-const);--t-ts-func:var(--t-func);--t-ts-kw:var(--t-kw);--t-ts-op:var(--t-op);--t-ts-mod:var(--t-mod);--t-ts-str:var(--t-str);--t-ts-interp:var(--t-interp);--t-ts-regex:var(--t-regex);--t-json-base:var(--t-base);--t-json-punct:var(--t-punct);--t-json-comment:var(--t-comment);--t-json-atom:var(--t-atom);--t-json-const:var(--t-const);--t-json-func:var(--t-func);--t-json-kw:var(--t-kw);--t-json-op:var(--t-op);--t-json-mod:var(--t-mod);--t-json-str:var(--t-str);--t-json-interp:var(--t-interp);--t-json-regex:var(--t-regex);--t-markdown-base:var(--t-base);--t-markdown-punct:var(--t-punct);--t-markdown-comment:var(--t-comment);--t-markdown-atom:var(--t-atom);--t-markdown-const:var(--t-const);--t-markdown-func:var(--t-func);--t-markdown-kw:var(--t-kw);--t-markdown-op:var(--t-op);--t-markdown-mod:var(--t-mod);--t-markdown-str:var(--t-str);--t-markdown-interp:var(--t-interp);--t-markdown-regex:var(--t-regex);--t-godot-base:var(--t-base);--t-godot-punct:var(--t-punct);--t-godot-comment:var(--t-comment);--t-godot-atom:var(--t-atom);--t-godot-const:var(--t-const);--t-godot-func:var(--t-func);--t-godot-kw:var(--t-kw);--t-godot-op:var(--t-op);--t-godot-mod:var(--t-mod);--t-godot-str:var(--t-str);--t-godot-interp:var(--t-interp);--t-godot-regex:var(--t-regex);--t-shell-base:var(--t-base);--t-shell-punct:var(--t-punct);--t-shell-comment:var(--t-comment);--t-shell-atom:var(--t-atom);--t-shell-const:var(--t-const);--t-shell-func:var(--t-func);--t-shell-kw:var(--t-kw);--t-shell-op:var(--t-op);--t-shell-mod:var(--t-mod);--t-shell-str:var(--t-str);--t-shell-interp:var(--t-interp);--t-shell-regex:var(--t-regex)}
+.src[data-lang="elixir"]{--t-base:var(--t-elixir-base);--t-punct:var(--t-elixir-punct);--t-comment:var(--t-elixir-comment);--t-atom:var(--t-elixir-atom);--t-const:var(--t-elixir-const);--t-func:var(--t-elixir-func);--t-kw:var(--t-elixir-kw);--t-op:var(--t-elixir-op);--t-mod:var(--t-elixir-mod);--t-str:var(--t-elixir-str);--t-interp:var(--t-elixir-interp);--t-regex:var(--t-elixir-regex)}
+.src[data-lang="html"]{--t-base:var(--t-html-base);--t-punct:var(--t-html-punct);--t-comment:var(--t-html-comment);--t-atom:var(--t-html-atom);--t-const:var(--t-html-const);--t-func:var(--t-html-func);--t-kw:var(--t-html-kw);--t-op:var(--t-html-op);--t-mod:var(--t-html-mod);--t-str:var(--t-html-str);--t-interp:var(--t-html-interp);--t-regex:var(--t-html-regex)}
+.src[data-lang="css"]{--t-base:var(--t-css-base);--t-punct:var(--t-css-punct);--t-comment:var(--t-css-comment);--t-atom:var(--t-css-atom);--t-const:var(--t-css-const);--t-func:var(--t-css-func);--t-kw:var(--t-css-kw);--t-op:var(--t-css-op);--t-mod:var(--t-css-mod);--t-str:var(--t-css-str);--t-interp:var(--t-css-interp);--t-regex:var(--t-css-regex)}
+.src[data-lang="ts"]{--t-base:var(--t-ts-base);--t-punct:var(--t-ts-punct);--t-comment:var(--t-ts-comment);--t-atom:var(--t-ts-atom);--t-const:var(--t-ts-const);--t-func:var(--t-ts-func);--t-kw:var(--t-ts-kw);--t-op:var(--t-ts-op);--t-mod:var(--t-ts-mod);--t-str:var(--t-ts-str);--t-interp:var(--t-ts-interp);--t-regex:var(--t-ts-regex)}
+.src[data-lang="json"]{--t-base:var(--t-json-base);--t-punct:var(--t-json-punct);--t-comment:var(--t-json-comment);--t-atom:var(--t-json-atom);--t-const:var(--t-json-const);--t-func:var(--t-json-func);--t-kw:var(--t-json-kw);--t-op:var(--t-json-op);--t-mod:var(--t-json-mod);--t-str:var(--t-json-str);--t-interp:var(--t-json-interp);--t-regex:var(--t-json-regex)}
+.src[data-lang="markdown"]{--t-base:var(--t-markdown-base);--t-punct:var(--t-markdown-punct);--t-comment:var(--t-markdown-comment);--t-atom:var(--t-markdown-atom);--t-const:var(--t-markdown-const);--t-func:var(--t-markdown-func);--t-kw:var(--t-markdown-kw);--t-op:var(--t-markdown-op);--t-mod:var(--t-markdown-mod);--t-str:var(--t-markdown-str);--t-interp:var(--t-markdown-interp);--t-regex:var(--t-markdown-regex)}
+.src[data-lang="godot"]{--t-base:var(--t-godot-base);--t-punct:var(--t-godot-punct);--t-comment:var(--t-godot-comment);--t-atom:var(--t-godot-atom);--t-const:var(--t-godot-const);--t-func:var(--t-godot-func);--t-kw:var(--t-godot-kw);--t-op:var(--t-godot-op);--t-mod:var(--t-godot-mod);--t-str:var(--t-godot-str);--t-interp:var(--t-godot-interp);--t-regex:var(--t-godot-regex)}
+.src[data-lang="shell"]{--t-base:var(--t-shell-base);--t-punct:var(--t-shell-punct);--t-comment:var(--t-shell-comment);--t-atom:var(--t-shell-atom);--t-const:var(--t-shell-const);--t-func:var(--t-shell-func);--t-kw:var(--t-shell-kw);--t-op:var(--t-shell-op);--t-mod:var(--t-shell-mod);--t-str:var(--t-shell-str);--t-interp:var(--t-shell-interp);--t-regex:var(--t-shell-regex)}
+.impl .src{margin:0;overflow:auto;max-height:min(62vh,700px);background:var(--sheet,var(--term));color:var(--t-base);
+           font-family:var(--file-face,var(--mono));font-size:var(--file-size,12.5px);line-height:round(calc(var(--file-leading,1.6) * 1em),1px);padding:0}
+/* A file with no language is read in the sheet's own ink, the code theme's (--sheet-ink, editor.foreground) when it says one; a language's code keeps its palette's. After .impl .src, which sets the palette's base. */
+.src:not([data-lang]),.impl .src:not([data-lang]),.md pre.src:not([data-lang]){color:var(--sheet-ink,var(--t-base))}
+.src .n, .src .nv, .src .nb, .src .nx{color:var(--t-base)}
+.src .p{color:var(--t-punct)}
+.src .c, .src .c1, .src .cm, .src .cs, .src .cp, .src .gp{color:var(--t-comment)}
+.src .ss, .src .se, .src .sc{color:var(--t-atom)}
+.src .no, .src .kc, .src .bp, .src .nn, .src .m, .src .mi, .src .mf, .src .mo, .src .mh, .src .mb{color:var(--t-const)}
+.src .nf, .src .ne{color:var(--t-func)}
+.src .k, .src .kd, .src .kn, .src .kp, .src .kr{color:var(--t-kw)}
+.src .o, .src .ow{color:var(--t-op)}
+.src .nc, .src .ni, .src .nl, .src .nt, .src .kt{color:var(--t-mod)}
+.src .s, .src .s1, .src .s2, .src .sb, .src .sd, .src .sh, .src .sx{color:var(--t-str)}
+.src .si, .src .na, .src .nd{color:var(--t-interp)}
+/* `sr` is Pygments' regex and the design system's screen-reader label
+   (components.css, .sr: one pixel, clipped). In a `.src` it is only
+   ever the first, so the label's clipping is undone here: a regex was
+   coloured and not there. */
+.src .sr{color:var(--t-regex);position:static;width:auto;height:auto;margin:0;overflow:visible;clip-path:none;white-space:inherit}
+/* Markdown, through syntect: a heading, bold, italic, and one class for
+   what the grammar calls generic — code, a link's address, a list, a
+   quote. Each takes a rule of the twelve, so the reader's jsonc reaches
+   them by the scopes VS Code names them with. */
+.src .gh{color:var(--t-interp);font-weight:700}.src .gs{color:var(--t-op);font-weight:700}.src .ge{color:var(--t-kw);font-style:italic}.src .g{color:var(--t-str)}
+/* Where a lexer's class means another thing in its language, the rule
+   moves: CSS's properties are its keywords and not constants, its ids,
+   pseudo-classes and colours are atoms, its class selectors stand
+   apart from at-rules; a Godot annotation or uniform is a mark on the
+   line, not a keyword. */
+.src[data-lang="css"] .kc{color:var(--t-kw)}.src[data-lang="css"] .no{color:var(--t-atom)}.src[data-lang="css"] .nc{color:var(--t-interp)}
+.src[data-lang="godot"] .kd{color:var(--t-interp)}
+/* Elixir, as the grammar VS Code reads it with sorts it, since the
+   palette is a theme written against that grammar
+   (mjmcloug.vscode-elixir's): alias, import, require and use are its
+   special methods and not keywords; when, and, or, not and in are
+   keywords and not operators; __MODULE__ and its kin are the
+   language's variables; a date's sigil is a string. The rest are
+   classes Console.Highlight.ElixirTokens sorts Elixir's tokens into,
+   which the lexer does not: the 1 of a capture's &1 (ni), the colon
+   and the quotes of an atom or a keyword (sa), a name in a def's head
+   (nv, in italic as Atom's One Dark sets a parameter: like a comment's,
+   a trait of the sheet and not of a theme), and @doc with what it is
+   given (sd). */
+.src[data-lang="elixir"] .kn,.src[data-lang="elixir"] .bp{color:var(--t-interp)}.src[data-lang="elixir"] .ni,.src[data-lang="elixir"] .ow{color:var(--t-kw)}.src[data-lang="elixir"] .sa{color:var(--t-const)}.src[data-lang="elixir"] .nv{color:var(--t-op);font-style:italic}.src[data-lang="elixir"] .ld{color:var(--t-str)}.src[data-lang="elixir"] .sd{color:var(--t-comment);font-style:italic}
+.src .c, .src .c1, .src .cm{font-style:italic}
+.src .err{color:var(--t-interp);text-decoration:underline wavy}
+/* A row carries both line numbers — a removal has no new one, an
+   addition no old one — so a hunk can be followed on either side. */
+/* As wide as the longest line, never narrower than the window: a row's
+   background is painted to its own width, so without this the red and
+   green bands stop at the visible edge and the rest of a long line
+   scrolls out over bare ground. */
+.impl .src .rows{min-width:max-content}
+/* The switch sits on the terminal ground the source is read on, and stays
+   put while the patch scrolls sideways under it. The pre has no padding
+   of its own (a row paints its own band edge to edge), so the switch
+   brings the room over it, the same the drawing keeps under; and the
+   room on its left is the sticky offset too, so a scrolled patch does
+   not press it against the scroller's edge. */
+.impl .src .switch{position:sticky;left:8px;z-index:1;display:inline-flex;gap:6px;margin:8px 0 8px 8px;
+  font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10.5px}
+.impl .src .switch button{background:none;border:1px solid var(--term-line);color:var(--term-dim);
+  padding:3px 9px;border-radius:2px;cursor:pointer;font:inherit}
+.impl .src .switch button.on{color:var(--term-ink);border-color:var(--term-dim)}
+.impl .src.drawn .rows{display:none}
+.impl .src .shot{background:none;padding:6px 14px 10px}
+.impl .src img.drawn{max-width:100%;max-height:520px;height:auto;display:block;margin:0 auto}
+.impl .dl{display:flex;white-space:pre}
+/* `gut`, no `ln`: that one is the Logs screen's line, a grid, from long
+   before this — and it was quietly winning. */
+/* The numbers get a ground of their own — a plate over the terminal, in
+   the idiom the rows beside them already use — so they read as the ruler
+   and not as part of the file. A changed line tints its plate too, a
+   shade deeper than the line (the rule below): from 2026-09-10 to
+   2026-09-12 the change began at the sign and the numbers stayed plain,
+   which kept them clean but hid where the changes were once the code
+   had scrolled off to the right. */
+/* The two number columns are as wide as the file's widest number (Console.Diffs.gutter, on the pre as --gut), never narrower than two digits: a short file's ruler is a short ruler. */
+/* The number sits centred in its plate, a size smaller than the code: a ruler, not a line of the file. The plate is the file row's own ground (surface-2), so ruler and row read as one furniture around the text. */
+/* Whole pixels throughout — the widths, the air, the line's height — because a bitmap face (Tamzen, the VGA) blurs the moment its glyphs land on a fraction, and a ch or an em is a fraction more often than not; round() is what the drawer already does to its own width. */
+/* Centred by arithmetic, not by text-align: the leftover of the cell is halved and rounded, so the number starts on a whole pixel whatever its digits (--d, from the row). text-align would put a number one digit short of the widest on a half pixel, since a bitmap digit is an odd number of pixels wide. */
+.impl .dl .gut{flex:none;--w:calc(round(up,var(--gut,3ch),1px) + 2 * round(.6em,1px));width:var(--w);padding:0 0 0 round(calc((var(--w) - var(--d,0) * 1ch) / 2),1px);display:flex;align-items:center;justify-content:start;font-size:calc(var(--file-ruler,.85) * 1em);color:var(--sheet-num,var(--term-dim));user-select:none;font-variant-numeric:tabular-nums;background:var(--sheet-num-bg,var(--surface-2))}
+/* The text of a line sits centred in it by its capitals, not by the font's
+   box. A line box is the font's ascent and descent with the leading split
+   above and below, and a face's descent is room most lines never use — so
+   in Fira Code a line of code sat 3px high in a 22px row, plainest on a
+   row with a ground. Trimming the line box to cap height and baseline
+   and giving the leading back as equal padding centres the capitals in
+   every face; descenders hang below, where they belong. The row keeps
+   its height, leading times size. Browsers without text-box keep the
+   old line box. */
+@supports (text-box: trim-both cap alphabetic){
+  /* The row's height is the rounded leading exactly: the air above is rounded, and the air below is what is left once the capitals have their height, which a font may give in fractions. */
+  .impl .dl .cd,.impl .dl .sg{--lh:round(calc(var(--file-leading,1.6) * 1em),1px);--above:round(calc((var(--lh) - 1cap) / 2),1px);text-box:trim-both cap alphabetic;padding-top:var(--above);padding-bottom:calc(var(--lh) - 1cap - var(--above));min-height:var(--lh)}
+  .ln .t,.ln .s,.ln .m{--lh:round(calc(var(--code-leading,1.5) * 1em),1px);--above:round(calc((var(--lh) - 1cap) / 2),1px);text-box:trim-both cap alphabetic;padding-top:var(--above);padding-bottom:calc(var(--lh) - 1cap - var(--above));min-height:var(--lh)}
+  /* The number too, by its own capitals: its em is a ruler's share of the line's, so the row's height is the leading over that share. */
+  /* --file-ruler is the number's size over the code's: .85, or 1 in a bitmap face (hooks.js applyChoice), whose one drawing per size blurs at any other. */
+  .impl .dl .gut{--lh:round(calc(var(--file-leading,1.6) * 1em / var(--file-ruler,.85)),1px);--above:round(calc((var(--lh) - 1cap) / 2),1px);display:block;text-align:left;text-box:trim-both cap alphabetic;padding-top:var(--above);padding-bottom:calc(var(--lh) - 1cap - var(--above));min-height:var(--lh)}
+}
+.impl .dl .sg{flex:none;--w:round(up,1.6em,1px);width:var(--w);padding-left:round(calc((var(--w) - 1ch) / 2),1px);text-align:left;color:var(--term-dim);user-select:none}
+.impl .dl .cd{flex:none;padding-right:16px}
+/* The line wears its ground at 66%, so the terminal shows through it; the plate, below, wears it whole. */
+.impl .dl.add{background:color-mix(in srgb, var(--diff-add-bg) 66%, transparent)}
+.impl .dl.add .sg{color:var(--diff-add-num)}
+.impl .dl.del{background:color-mix(in srgb, var(--diff-del-bg) 66%, transparent)}
+.impl .dl.del .sg{color:var(--diff-del-num)}
+/* A changed line colours its numbers too, the way GitHub does: the ruler shows where the changes are when the code has scrolled off to the right. The plate takes the line's ground whole, and the number and the sign one colour, the four the reader sets on the Interface tab; until 2026-09-15 the plate wore the line's wash at half strength over its own ground and the sign the house's good or bad. This turns the 2026-09-10 rule above around, the change began at the sign, on 2026-09-12. */
+.impl .dl.add .gut{background:var(--diff-add-bg);color:var(--diff-add-num)}
+.impl .dl.del .gut{background:var(--diff-del-bg);color:var(--diff-del-num)}
+.impl .dl.hunk{color:var(--soft);background:color-mix(in srgb, var(--line-highlight) 5%, transparent)}
+.impl .dl.meta{color:var(--term-dim)}
+.impl .shot{margin:0;padding:16px;background:var(--term);display:flex;justify-content:center}
+.impl .shot svg, .impl .shot img{max-width:100%;max-height:420px;height:auto}
+.impl .none{margin:0;padding:10px 12px;background:var(--surface);color:var(--muted);font-size:12.5px}
+/* The picks under a collection's accumulated diff: one commit each. */
+.impl .picks{display:grid;gap:0;font-family:var(--mono);font-size:12px}
+.impl .picks .pick{display:flex;gap:10px;align-items:baseline;padding:6px 0;border-top:1px solid var(--line)}
+.impl .picks .pick:first-child{border-top:0}
+.impl .picks .pick .p{flex:none;display:flex;min-width:170px}
+.impl .picks .pick .sh{flex:none;width:5.4em;color:var(--muted);font-size:11.5px;white-space:nowrap}
+.impl .picks .pick .dt{flex:none;width:7.4em;color:var(--muted);font-size:11.5px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.impl .picks .pick .sj{flex:1;min-width:0;color:var(--soft);font-size:11.5px;overflow-wrap:anywhere}
+.impl .picks .pick .fc{flex:none;width:6.2em;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+.impl .picks .pick.total{border-top:0;border-bottom:1px solid var(--ink);padding-bottom:8px;font-weight:600}
+.impl .picks .pick.total+.pick{border-top:0;padding-top:8px}
+.impl .picks .pick.total .p{align-items:center}
+.impl .caveat{margin:0;color:var(--muted);font-size:13px;max-width:76ch}
+.impl .picks .pick .n{flex:none;width:8.4em;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.impl .picks .pick .n .a{color:var(--good)}
+.impl .picks .pick .n .r{color:var(--bad)}
+
+/* --- config.conf as a form ------------------------------------------- */
+/* No top padding: the bar's own is the air above it, so it is already at
+   its docked place at rest and does not travel there. See the note on the
+   bar itself. No side padding and no measure either: the pane is the
+   drawer's width, so the body's bar is drawn on the drawer's edge like
+   the papers' — the 860px measure and the 32px of air the form had are
+   the bar's and the form's own, below. */
+.cfg{display:flex;flex-direction:column;min-height:0;padding:0}
+.cfg .cfgbody{flex:1;min-height:0;overflow:auto;display:grid;gap:26px;padding:26px 32px 60px;scrollbar-gutter:stable}
+/* 796px is the measure the form always had: 860px less 32px of air on
+   each side, kept on the form's blocks now that the pane no longer
+   clamps — a clamp on the pane clamped the scroller with it. */
+.cfg .cfgbody>*,.cfg .bar{max-width:796px}
+/* The pane's first row; the form under it is what scrolls. See .docked
+   for what the three rows share. Its side air is margin, not padding: the
+   bar is not a scroller, and margin keeps its rule where it was. */
+.cfg .bar{flex:none;display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--surface);padding:10px 0;margin:0 32px}
+.cfg .bar .note{flex:1;min-width:200px}
+.cfg .sec{display:grid;gap:14px}
+.cfg .sec .intro{margin:-6px 0 0;font-size:13.5px;color:var(--muted);max-width:60ch}
+/* A group inside a section ('# -- Application --'), and the note a
+   section closes with — what the file says between its fields. */
+.cfg .sec h5.grp{margin:8px 0 -4px;font-family:var(--cond);font-weight:600;text-transform:uppercase;letter-spacing:.12em;font-size:11px;color:var(--muted)}
+.cfg .sec .outro{margin:6px 0 0;font-style:italic}
+.cfg .sec .outro a{color:var(--accent)}
+.cfg .sec h4{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:16px;display:flex;gap:10px;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:6px}
+.cfg .row{display:grid;grid-template-columns:220px minmax(0,1fr);gap:4px 16px;align-items:center}
+.cfg .row label{font-family:var(--mono);font-size:12.5px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.cfg .row .help{grid-column:2;font-size:12.5px;color:var(--muted);margin:0}
+/* An address in what config.conf says: it is a link in prose, so it is
+   one of the two places in the console that wear the underline. */
+.cfg .row .help a,.cfg .intro a{color:var(--accent);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;overflow-wrap:anywhere}
+/* The frame and the ground, on a screen of their own. Same shape as a
+   config row — the control, then what it is and what it is doing — but
+   the reading is the other way round: config says what the next project
+   gets, this says what this browser is showing right now. Each control
+   is its own state, so the sentence beside it is written by the same
+   hand that draws the icon. */
+/* The pane is the drawer's width and scrolls to its edge; the 796px
+   measure (860px less the air) is on what it holds, as on Config — a
+   max-width on the scroller had its bar standing in the middle of the
+   drawer. */
+/* --- Interface: the controls on the left, the console in miniature on the right.
+   The grid is the one the drawer's .body already reserves, 320px and
+   the rest; the column scrolls, the miniature does not. The frame's
+   pictograms are drawn by hooks.js (pict), one per position, so every
+   position is in view and the one in force is pressed; the ground is
+   three cards with a thumbnail, light, dark, and the machine's; the
+   miniature reads the same body classes and root properties the screen
+   does, so a change on the left lands on the right where it will land. */
+/* The gap between the controls and the miniature is the pane's own side margin, 28px, read from the controls' scrollbar, which is the column's edge. */
+.ui{display:grid;grid-template-columns:320px minmax(0,1fr);gap:28px;padding:26px 28px 28px;height:100%;min-height:0}
+.ui .ctl{overflow:auto;min-height:0;display:grid;gap:18px;align-content:start;padding-right:6px;scrollbar-gutter:stable}
+.ui section{display:grid;gap:10px}
+/* A group that holds sets — a theme's Style, Overlay's The frame — keeps 18 between them, as sets had as the part's own children; what follows the head keeps the 10 a section gives its head. */
+.ui .group.sets{gap:18px}
+.ui .group.sets>h5+*{margin-top:-8px}
+/* The parts, one in view: the one the pane's data-part names, which the ribbon's patch sets (the pane is phx-update="ignore", so the part travels as an attribute, and the hook only rewinds the column). The sections inside keep 18 between them, as they did under the folds these replaced on 2026-09-29. */
+.ui .part{display:none;gap:18px}
+.ui[data-part="overlay"] .part[data-part="overlay"],.ui[data-part="terminal"] .part[data-part="terminal"],.ui[data-part="code"] .part[data-part="code"],.ui[data-part="credits"] .part[data-part="credits"]{display:grid}
+/* A theme's part shows its surface alone in the miniature, and nothing of the frame: Terminal the lines under the chips that sort them, Code the file. The band, the rail and the screen's tabs are Overlay's to show, the frame being what it sets; a theme is judged on the terminal or on the file, not on where the band sits (2026-10-01: until then the frame stood around the surface in every part). The miniature's box stays, the page's ground under the surface, as it is on the screen. Until 2026-09-30 the surface a part set was outlined in the accent too; with a surface a part, the outline said what the miniature says. */
+.ui[data-part="terminal"] .mini .mband,.ui[data-part="terminal"] .mini .mrail,.ui[data-part="terminal"] .mini .mtabs,.ui[data-part="code"] .mini .mband,.ui[data-part="code"] .mini .mrail,.ui[data-part="code"] .mini .mtabs{display:none}
+.ui[data-part="terminal"] .mini .ograb,.ui[data-part="terminal"] .mini .impl,.ui[data-part="code"] .mini .toolbar,.ui[data-part="code"] .mini .lines,.ui[data-part="code"] .mini .ograb{display:none}
+.ui[data-part="terminal"] .mmain{grid-template-rows:auto minmax(0,1fr)}
+.ui[data-part="code"] .mmain{grid-template-rows:minmax(0,1fr)}
+/* The Credits part: a face a card, its head the name set in the face itself (the specimen, in place of the card's uppercase head), whose and under which licence as chips, what it draws under. Settled 2026-09-29 among the list, the card and a ficha with the accent edge. */
+.ui .credits{display:grid;gap:10px}
+.ui .credits>*{min-width:0}
+.ui .card.credit{padding:12px 14px;gap:8px}
+.ui .card.credit>h3{font:inherit;letter-spacing:0;text-transform:none;display:block}
+/* The specimen is the face shown, not a link: it takes no hover. The ficha's one link is its .site-ref, which lights in the accent as the house's mentions do. */
+.ui .credit .spec{color:var(--ink);line-height:1.15}
+.ui .credit .chips{margin:0;display:flex;gap:6px;flex-wrap:wrap}
+.ui .credit .chips .chip{font-size:10.5px;white-space:normal}
+.ui .credit .hint{margin:0}
+.ui .credit .site{margin:0}
+.ui .credit>h3 b{font-weight:600}
+.ui .credit[data-on]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.ui .credit .on{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:11px;color:var(--accent)}
+.ui .credit .on[hidden]{display:none}
+/* A hint the hook has not written is not there. */
+.ui .hint:empty{display:none}
+.ui h5{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:13px;padding-bottom:5px;border-bottom:1px solid var(--line)}
+.ui .hint{margin:0;font-size:12px;color:var(--muted)}
+.ui .acts{margin:0;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ui .cards{display:flex;gap:10px;flex-wrap:wrap}
+.ui .swatch{display:grid;gap:6px;justify-items:center;padding:6px 6px 5px;border:1px solid var(--line);border-radius:3px;background:none;cursor:pointer;font-family:var(--cond);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:var(--muted);line-height:1}
+.ui .swatch[aria-pressed="true"]{border-color:var(--accent);color:var(--ink);box-shadow:0 0 0 1px var(--accent)}
+/* The thumbnails are the two grounds' own colours, not the current tokens: a card says what it would give. */
+.ui .thumb{width:76px;height:48px;border-radius:2px;position:relative;overflow:hidden;border:1px solid rgba(0,0,0,.18)}
+.ui .thumb i{position:absolute;display:block;border-radius:1px}
+.ui .thumb.light{background:#F2EDF3}.ui .thumb.dark{background:#160F1B}
+.ui .thumb .b{left:0;right:0;top:0;height:9px;background:#4B275F}
+.ui .thumb .rl{left:0;top:9px;bottom:0;width:20px}
+.ui .thumb.light .rl{background:#FBF8FC;border-right:1px solid #D6CBDA}.ui .thumb.dark .rl{background:#22182A;border-right:1px solid #3B2D46}
+.ui .thumb .t{left:26px;height:3px;background:currentColor;opacity:.35}
+.ui .thumb.light .t{color:#1D1424}.ui .thumb.dark .t{color:#EFE7F2}
+.ui .thumb .t1{top:15px;width:34px}.ui .thumb .t2{top:22px;width:24px}.ui .thumb .t3{top:29px;width:40px}
+.ui .thumb .tm{left:26px;right:6px;top:36px;bottom:5px;border-radius:2px}
+/* The terminal on a ground's card is the reader's, as on the page: the colour a theme says for that ground (--tm, set by the hook; the house's here) at the opacity chosen (--tm-a), over the card's own ground. */
+.ui .thumb.light .tm{background:color-mix(in srgb,var(--tm,#FDFBFE) var(--tm-a,100%),transparent);border:1px solid #D6CBDA}.ui .thumb.dark .tm{background:color-mix(in srgb,var(--tm,#2D1D3A) var(--tm-a,100%),transparent);border:1px solid #2B1F33}
+/* The frame's cards (2026-10-01; segments with a pictogram until then): the same thumbnail, in the ground in force and not a ground of its own, with the band and the rail where the card would put them — bottom, right, off, set by the hook. One rule for the five: what the card acts on wears the colour of the card's own selection border, the accent — the band on the band's cards, the rail on Left and Right — and the rest is drawn as it is. Hidden has nothing to fill: it draws the place the rail now has, on its side, as a dashed outline in that colour, and leaves the page beside it where it is. On the band's cards a hidden rail is simply not there, and the page takes its room — and so on the ground's three, which are drawn in the frame in force too. */
+.ui .thumb.frame{background:var(--ground)}
+.ui .thumb.frame .b{background:var(--board)}
+.ui .thumb.frame .rl{background:var(--surface);border-right:1px solid var(--line)}
+.ui .thumb.frame .t{color:var(--ink)}
+.ui .thumb.frame .tm{background:var(--term);border:1px solid var(--term-line)}
+.ui .thumb.bottom .b{top:auto;bottom:0}
+.ui .thumb.bottom .rl{top:0;bottom:9px}
+.ui .thumb.bottom .t1{top:6px}.ui .thumb.bottom .t2{top:13px}.ui .thumb.bottom .t3{top:20px}
+.ui .thumb.bottom .tm{top:27px;bottom:14px}
+.ui .thumb.right .rl{left:auto;right:0;border-right:0;border-left:1px solid var(--line)}
+.ui .thumb.right .t{left:6px}
+.ui .thumb.right .tm{left:6px;right:26px}
+.ui .thumb.light.right .rl{border-left-color:#D6CBDA}.ui .thumb.dark.right .rl{border-left-color:#3B2D46}
+.ui [data-axis="band"] .thumb.off .rl,.ui [data-ground] .thumb.off .rl{display:none}
+.ui [data-axis="band"] .thumb.off .t,.ui [data-ground] .thumb.off .t{left:6px}
+.ui [data-axis="band"] .thumb.off .tm,.ui [data-ground] .thumb.off .tm{left:6px;right:6px}
+.ui [data-axis="band"] .thumb.frame .b{background:var(--accent)}
+.ui [data-axis="rail"] .thumb.frame .rl{background:var(--accent);border-color:var(--accent)}
+.ui [data-axis="rail"] .thumb.frame.off .rl{background:none;border:1px dashed var(--accent);box-sizing:border-box}
+/* System is both grounds: the light thumbnail whole and the dark one over it, cut on a slant like a "/" — light to its left, dark to its right (2026-10-01; a straight cut down the middle until then, each piece painted in two colours to meet it). */
+.ui .thumb.system>.thumb{position:absolute;inset:0;width:auto;height:auto;border:0;border-radius:0}
+.ui .thumb.system>.thumb.dark{clip-path:polygon(62% 0,100% 0,100% 100%,38% 100%)}
+.ui .picks{display:grid;gap:6px}
+/* What a face does — ligatures on, a bitmap — right under the face it is said of, in the control's column. */
+.ui .picks .help{grid-column:1/-1;margin:-2px 0 2px 72px}
+.ui .picks label,.ui .picks .pick{display:grid;grid-template-columns:64px 1fr;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;color:var(--ink)}
+.ui select{font-family:var(--mono);font-size:12px;padding:3px 6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;width:100%;min-width:0}
+.ui .groups{display:grid;gap:10px}
+.ui .set{display:grid;gap:6px}
+.ui .set h6{margin:0;font-family:var(--cond);font-weight:600;text-transform:uppercase;letter-spacing:.08em;font-size:11px;color:var(--muted)}
+/* The colour roles, one component (2026-09-30): a table of name | colour
+   pairs, the colour 20px, the pairs repeated across the row while every
+   name fits on one line — the hook measures a box's longest name into
+   --role-w (fitRoles), and data-pairs caps the pairs a row takes, the
+   name column widened until only that many fit. One gap, 5px, both
+   ways. On a row of two pairs or more the even pairs are mirrored,
+   colour then name, and the names align towards their colour: the row
+   reads towards its axis and two colours meet in the middle — ANSI's
+   each beside its bright. A pair alone keeps the name first. A record
+   with nothing in it (label.none, a null in the hook's list) ends a
+   row early. The hook writes the mirrored tracks (grid-template-columns)
+   when it lays the pairs out; this is the shape before it does. */
+.ui .roles{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--role-w,140px),1fr) 20px);gap:5px;align-items:center}
+.ui .roles label{display:contents}
+.ui .roles label.none.alone{display:none}
+/* The opacity: a slider and, at its right, the number — typed, or read as the slider moves — in the control's column. */
+.ui .picks .slide{display:grid;grid-template-columns:minmax(0,1fr) 6.5ch auto;gap:6px;align-items:center;min-width:0}
+.ui .picks input[type=range]{width:100%;margin:0;accent-color:var(--accent)}
+.ui .picks input[type=number]{font-family:var(--mono);font-size:12px;padding:3px 4px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;width:100%;min-width:0;text-align:right;font-variant-numeric:tabular-nums}
+.ui .picks .unit{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.ui .roles label>span{font-family:var(--mono);font-size:12px;color:var(--ink);white-space:nowrap;cursor:pointer}
+/* A colour the reader set on top of the theme in force says so on its name, in the accent: the fold's head counts them, the names say which. */
+.ui .roles label.yours>span{color:var(--accent)}
+.ui .roles.paired label:not(.mirror)>span{justify-self:end;text-align:right}
+.ui .roles.paired label.mirror>span{justify-self:start}
+.ui .roles input[type=color]{width:20px;height:20px;flex:none;padding:0;border:1px solid var(--line);border-radius:2px;background:none;cursor:pointer}
+.ui .roles input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+.ui .roles input[type=color]::-webkit-color-swatch{border:0;border-radius:1px}
+/* The jsonc behind the house's fold: the line says the tool is there, the box comes when asked. */
+.ui details.disc summary.fold{display:flex;align-items:center;gap:8px;list-style:none;font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:11.5px;color:var(--muted)}
+.ui details.disc summary.fold::marker,.ui details.disc summary.fold::-webkit-details-marker{display:none;content:""}
+.ui details.disc summary.fold small{font-family:var(--mono);font-size:11px;letter-spacing:0;text-transform:none}
+.ui details.disc:not([open])>.jsonc{display:none}
+.ui .word{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.ui .word.bad{color:var(--bad)}
+/* ---- the themes, a shelf a surface (2026-09-30, console/la-estanteria-a-la-vista.html) --- */
+/* The shelf: the ground cards' device, a card a theme with a thumbnail
+   the hook draws from the file — both grounds, the ground's colour and
+   five lines of the theme's; the thumbnail is the preview, and nothing
+   is worn before it is picked. Custom is the card that appears when something
+   is set on top of the theme in force — a state, not a choice on the
+   shelf — and the base then wears a dashed edge: pressing it is the one
+   way back. */
+.ui .grounds.themes{display:flex;flex-wrap:wrap;gap:10px}
+.ui .grounds.themes .swatch{color:var(--muted)}
+.ui .grounds.themes .swatch[aria-pressed="true"]{color:var(--ink)}
+.ui .grounds.themes .swatch:hover{border-color:var(--accent)}
+.ui .grounds.themes .swatch[data-base]{border-style:dashed}
+.ui .grounds.themes .swatch[hidden]{display:none}
+.ui .grounds.themes .swatch.custom{font-family:var(--serif);font-style:italic;text-transform:none;letter-spacing:0;font-size:12px;color:var(--ink)}
+.ui .grounds.themes .swatch.custom small{display:block;font-style:normal;font-family:var(--cond);text-transform:uppercase;letter-spacing:.1em;font-size:9.5px;color:var(--muted)}
+.ui .tthumb{display:flex;width:76px;height:48px;border-radius:2px;overflow:hidden;border:1px solid rgba(0,0,0,.18);flex:none}
+.ui .tthumb .half{flex:1;display:grid;gap:3px;align-content:start;padding:6px 5px}
+.ui .tthumb .half i{display:block;height:3px;border-radius:1px}
+.ui .tshelf{gap:8px}
+/* The shelf's name carries the ground's switch right beside it: the small square, with the band's own mark. */
+.ui .tshelf h6{display:flex;align-items:center;gap:8px}
+/* The shelf's buttons: with none to show — no Custom to clear, and not dev, whose Download and Load are — the row takes no room. */
+.ui .tshelf .acts:not(:has(>.btn:not([hidden]))){display:none}
+/* The fold: a group whose head is the house's h5 with the count of what
+   is yours and the small fold square at its end (the Credits groups
+   wear the same); folded, the group is its head alone. The body keeps
+   the part's 18 between its groups. In Credits the head is centred. */
+.ui .group>h5{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px}
+.ui .group>h5>.touch{justify-self:end;font-family:var(--mono);font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--muted)}
+.ui .group>h5>.touch:empty{display:none}
+.ui .group>h5>.sq{grid-column:3;justify-self:end}
+.ui .group[data-folded]>:not(h5){display:none}
+.ui .tsec{display:grid;gap:18px;padding-top:2px}
+.ui .tsec .tbody{display:grid;gap:18px}
+/* Credits takes the whole pane: no miniature, since it sets nothing to
+   light, and one centred column of fichas cut by its three
+   groups' heads, read down like a film's credits. */
+.ui[data-part="credits"]{grid-template-columns:minmax(0,1fr)}
+.ui[data-part="credits"] .mini{display:none}
+.ui[data-part="credits"] .ctl{justify-items:center;padding-right:0}
+.ui[data-part="credits"] .part[data-part="credits"]{width:min(100%,520px);text-align:center;gap:26px}
+.ui[data-part="credits"] .part[data-part="credits"] .group{display:grid;gap:10px}
+.ui[data-part="credits"] .part[data-part="credits"] .group>h5{grid-template-columns:1fr auto 1fr}
+.ui[data-part="credits"] .part[data-part="credits"] .group>h5>span{grid-column:2}
+.ui[data-part="credits"] .part[data-part="credits"] .group>h5>.sq{grid-column:3;justify-self:end}
+.ui[data-part="credits"] .credit{justify-items:center}
+.ui[data-part="credits"] .credit .chips{justify-content:center}
+.ui .theme label.btn{cursor:pointer}
+/* Custom is a state, not a theme: in italics and the muted ink on the select that shows it, and in the list where the browser lets an option be styled (Firefox; Chromium dims it only while disabled). */
+.ui .theme select.custom{font-style:italic;color:var(--muted)}
+.ui .theme option[value=""]{font-style:italic;color:var(--muted)}
+/* --- the miniature: the band, the rail, the screen with a terminal and a sheet --- */
+.ui .mini{display:flex;flex-direction:column;border:1px solid var(--line);background:var(--ground);min-height:0;overflow:hidden;border-radius:3px}
+.ui .mini.bottom{flex-direction:column-reverse}
+.ui .mband{flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;height:34px;padding:0 12px;background:var(--board);color:var(--board-ink);cursor:pointer;border-bottom:2px solid var(--accent)}
+.ui .mband .mark{display:flex;align-items:center;gap:8px;min-width:0}
+.ui .mband .mark svg{width:18px;height:18px;display:block;flex:none}
+.ui .mband b{font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.14em;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ui .mband .state{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:9px;opacity:.5}
+.ui .mband .dot{width:5px;height:5px;border-radius:50%;border:1px solid currentColor;box-sizing:border-box}
+.ui .mband .right{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:9px}
+.ui .mband .right svg{width:12px;height:12px;display:block}
+.ui .mband .right .mground{display:flex;background:none;border:0;padding:0;margin:0;color:inherit;cursor:pointer}
+.ui .mrow{display:flex;flex:1;min-height:0}
+.ui .mini.right .mrow{flex-direction:row-reverse}
+.ui .mini.off .mrail{display:none}
+.ui .mrail{width:112px;flex:none;background:var(--surface);border-right:1px solid var(--line);padding:10px;display:grid;gap:8px;align-content:start;cursor:pointer}
+.ui .mini.right .mrail{border-right:0;border-left:1px solid var(--line)}
+.ui .mrail .lbl{font-family:var(--cond);font-weight:600;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.ui .mrail i{display:block;height:6px;border-radius:2px;background:var(--ink);opacity:.18}
+.ui .mrail i.w{width:70%}.ui .mrail i.n{width:45%}
+/* The terminal's row is --term-h when the reader has dragged the grip, halves otherwise; the grip rides in the grid's gap. */
+.ui .mmain{flex:1;min-width:0;min-height:0;display:grid;grid-template-rows:auto auto var(--term-h,minmax(0,1fr)) auto minmax(0,1fr);padding:10px}
+.ui .mtabs,.ui .mini .toolbar{margin-bottom:8px}
+/* It sizes two panes, so it sits in the middle of the air between them, and that air is the 10px the panes keep from the sides: the grid has no row gap of its own (a negative margin cannot pull a track under zero), the rows above carry their 8px, and the grip is the 10px itself, its line at 4.5 from either pane, the dragged line's 3px keeping that centre. */
+.ui .mmain .ograb{margin:0;height:10px}
+.ui .mmain .ograb::after{top:4.5px}
+.ui .mmain .ograb.dragging::after{top:3.5px}
+.ui .mini .toolbar{gap:6px}
+.ui .mini .ln[hidden]{display:none}
+/* The scale is blocks and shades, which Tamzen does not have: left to the browser they come from a face of its choosing, wider than the cell, and the row breaks. Under a face without them it is set in Fira Code, which has them, at the size whose advance (1200 of 1950) is one ch of the face in force. A face that draws them is left to: hooks.js marks it on the root (`blocks`, in FACES), and the scale is then the terminal's own face, in its own cell. */
+.ui .mini .scale{white-space:nowrap}
+:root:not([data-code-blocks]) .ui .mini .scale{font-family:"Fira Code",var(--mono);font-size:calc(1ch / .6154)}
+.ui .mtabs{display:flex;gap:2px;border-bottom:1px solid var(--line);padding:0 4px}
+.ui .mtabs .tab{font-size:11px;padding:4px 8px 6px}
+.ui .mini .lines{min-height:0}
+/* The sheet's pre is the scroller, as on the Files sheet, and the file's row stays: the chain down to it gives its height away instead of clipping it (.files hides its overflow for the corners). */
+.ui .mini .impl{min-height:0;min-width:0;display:flex;flex-direction:column}
+.ui .mini .impl .files,.ui .mini .impl .f{display:flex;flex-direction:column;min-height:0;min-width:0}
+.ui .mini .impl .f[hidden]{display:none}
+/* The miniature's sheet takes all the height the pane gives it. */
+.ui .mini .impl .src{flex:1;min-height:0;max-height:none}
+.ui .mini .impl .fh{cursor:default}
+.cfg .row select option.dim{color:var(--soft)}
+.cfg .row input[type=text],.cfg .row select{font-family:var(--mono);font-size:13px;padding:6px 8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px;width:100%;max-width:520px}
+/* The stack field is a .fetch: the house's pair keeps the field's width,
+   so the 520px the column is built on belongs to the pair now and the
+   select gives the button its side. */
+/* The stack row holds two things now: the field with its errand button,
+   and the state of the four fields together. The state goes under the
+   field and aligned with it — the drawer's column is 560px and the field
+   takes 520 of them, so there is no room beside, and taking the room
+   from the field would have shortened the one input whose value is a
+   46-character tag. Under is also where a form's verdict on a field
+   belongs. It wraps rather than being told to, so it would sit beside
+   the day the column is wide enough for both. */
+.cfg .row .stackline{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap}
+.cfg .row .fetch{flex:0 1 520px;font-size:13px}
+.cfg .row .help .bad{display:block;color:var(--bad);margin-top:4px}
+.cfg .row input[type=checkbox]{width:16px;height:16px}
+.cfg .row.changed label::after{content:"●";color:var(--accent);font-size:10px}
+.cfg .chip.new{font-size:10px;padding:1px 5px}
+.cfg .stack{display:grid;gap:8px}
+.cfg pre.raw{font-family:var(--file-face,var(--mono));font-size:var(--file-size,12px);line-height:var(--file-leading,1.5);padding:14px;overflow:auto;margin:0;white-space:pre}
+/* The pre no longer breaks its own lines: each is an element, so the
+   container wraps normally and the line keeps its own spaces. An empty
+   line is an empty element, and an empty element is no lines tall — so
+   it is given one, in the unit that is exactly one: 1lh. */
+.cfg pre.raw{white-space:normal}
+.cfg pre.raw .ln,.pdocs pre.env .ln,.deployments pre.env .ln{white-space:pre-wrap;min-height:1.5em;min-height:1lh}
+.cfg pre.raw .c{color:var(--term-dim)}.cfg pre.raw .k{color:var(--accent)}.cfg pre.raw .v{color:var(--ansi-green)}
+@media (max-width:700px){.cfg .row{grid-template-columns:1fr}.cfg .row .help{grid-column:1}}
+
+/* --- the project's own documents --------------------------------------- */
+/* The project's documents: the row that says which one, and the one
+   being read. The row is the pane's own first line — it does not move
+   because there is nothing under it to move it — and only the document
+   scrolls. */
+.pdocs{display:flex;flex-direction:column;min-height:0;gap:0}
+/* The one screen whose panel gives its top air away: the row takes it, so
+   that here too the row is docked from the first pixel, like the config
+   bar and the cartridge's papers. Its ground is the panel's, not a
+   modal's surface. */
+#panel-project{padding-top:0}
+/* And its side air too, on every panel that holds a `.pdocs`: the pane
+   under the row is what scrolls, and its bar belongs on the panel's edge,
+   where the document panels' is — a padded panel around the scroller had
+   it 28px in. The 28px moves onto the row, the scrollers, and whatever
+   else the pane holds directly. */
+#panel-project,#panel-docker,#panel-git,#panel-shelf{padding:0}
+/* And the bottom: the 22px the filled panel keeps under itself is a
+   strip of ground below the scroller's end, where the last row of boxes
+   is cut and the bar stops short of the band — while the rail's bar runs
+   to the edge beside it. The scroller ends where the panel ends, and the
+   air under a document is its own padding-bottom, as on every screen. */
+.pdocs .booklet{flex:1;min-height:0;overflow:auto;padding:0 28px 60px;scrollbar-gutter:stable}
+.pdocs .booklet .toc{top:0}
+.pdocs pre.env,.deployments pre.env{flex:1;min-height:0;font-family:var(--file-face,var(--mono));font-size:var(--file-size,12.5px);line-height:var(--file-leading,1.6);padding:14px 16px;overflow:auto;margin:0;white-space:normal}
+.pdocs pre.env .c,.deployments pre.env .c{color:var(--term-dim)}.pdocs pre.env .k,.deployments pre.env .k{color:var(--accent)}.pdocs pre.env .m,.deployments pre.env .m{color:var(--ansi-red)}
+.pdocs>pre.env{margin-left:28px;margin-right:28px;margin-bottom:22px}
+.pdocs .nothing{padding:18px 28px;max-width:60ch}
+/* Record: what the project is, drawn off the status — its birth in two
+   tables with the command between, the cartridges on the shelf's own row
+   with three columns after it, the deployments with the console first.
+   It scrolls like the booklet. Decided on console/el-estado-del-proyecto.html. */
+.pdocs .record{flex:1;min-height:0;overflow:auto;padding:22px 28px 60px;display:grid;gap:26px;align-content:start;scrollbar-gutter:stable}
+.record .name{font-family:var(--cond);font-weight:700;font-size:30px;letter-spacing:.02em;line-height:1;margin:0;overflow-wrap:anywhere}
+.record section{display:grid;gap:10px}
+.record h3{margin:0;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:14px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.record h3 .label{font-weight:500;letter-spacing:.1em;display:inline-flex;gap:6px;align-items:baseline}
+.record h3 .chip{font-weight:500;letter-spacing:0}
+.record .nothing{margin:0;font-family:var(--serif);font-style:italic;font-size:13.5px;color:var(--muted);padding:0}
+.record .argv{font-family:var(--mono);font-size:12px;white-space:normal}
+.record .argv>span{white-space:normal;margin-right:6px}
+/* A flag in ink, what follows it dimmed — its value, or its type on the
+   shelf. Whether the value is the default is said in the title, no longer
+   by dimming the whole flag. */
+.argv .val,.argv.val{font-style:normal;color:var(--muted)}
+.pairs{display:grid;justify-items:start;gap:6px}
+/* Birth: the two tables share their three columns; the flags table has five. */
+.record table.rows.shape{width:100%;table-layout:fixed;border-collapse:collapse;font-family:var(--mono);font-size:12.5px}
+.record table.rows.shape col.c1{width:170px}
+.record table.rows.shape col.c3{width:44%}
+.record table.rows.shape th{text-align:left;font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);padding:0 18px 6px 0;border-bottom:1px solid var(--line)}
+.record table.rows.shape td{padding:7px 18px 7px 0;border-top:1px solid var(--line);vertical-align:middle;overflow-wrap:anywhere}
+.record table.rows.shape tbody tr:first-child td{border-top:0}
+.record table.rows.shape td.k{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px}
+.record table.rows.shape td:last-child{color:var(--muted)}
+.record table.rows.flags col.f0{width:60px}
+.record table.rows.flags col.f1{width:140px}
+.record table.rows.flags col.f2{width:170px}
+.record table.rows.flags col.f4{width:130px}
+.record table.rows.flags td.used,.record table.rows.flags th.used{text-align:center;padding-right:0}
+/* The docs column's head is its source: phx.new's page on hexdocs. It wears the head's ink and says it is a link only under the hand, like an image's name on the Docker screen. */
+.record table.rows.flags th a.src{color:inherit;text-decoration:underline dotted;text-underline-offset:3px}
+.record table.rows.flags th a.src:hover,.record table.rows.flags th a.src:focus-visible{text-decoration:underline;outline:none}
+.record table.rows.flags td.doc{font-family:var(--serif);font-size:13.5px;line-height:1.45;color:var(--muted)}
+.record table.rows.flags td:last-child{color:inherit}
+/* The cartridge closes the row at the right edge, as Mix's brought by does. */
+.record table.rows.flags th.by,.record table.rows.flags td.by{text-align:right}
+/* A fact drawn as a checkbox, never a control: the reader cannot toggle it.
+   No `disabled` — that dims it as a control not yet usable — and no inline
+   handler, which the CSP would not run: the input takes no pointer and no
+   focus, and the span around it keeps the title. */
+span.fact{display:inline-block;line-height:0}
+span.fact input{accent-color:var(--accent);width:14px;height:14px;margin:0;vertical-align:middle;pointer-events:none}
+.record .cmdblock{display:grid;gap:8px;margin:14px 0 22px}
+.record .cmdblock .thead{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);padding-bottom:6px;border-bottom:1px solid var(--line)}
+/* The same hanging indent as every .cmd: the padding here overrode the
+   generic one and left its text-indent, so the `$` sat against the
+   border and the wrapped lines hung under it, not under the command
+   (2026-09-27). */
+/* The command is read, not run: it is set in the Files group's face, size and leading, as the papers' blocks and the .env are (2026-10-02; it was the page's mono, fixed, and the only block of the Record the drawer did not reach). */
+.record .cmd{margin:0;font-family:var(--file-face,var(--mono));font-size:var(--file-size,12px);line-height:var(--file-leading,1.6);padding:10px 14px 10px calc(14px + 2ch);white-space:pre-wrap;overflow-wrap:anywhere}
+/* Danger: the tab's last box, and the only one in it is the verb that
+   cannot be taken back. Its ground is the card's, its rule is the bad
+   colour, and its note says what goes before the hand is near it —
+   the shape the Docker screen gives its own removals. The delete had
+   a foot beside Create until 2026-09-10, ten pixels from it.
+   Every selector here says `section`: the button in the box wears
+   `danger` too — it is a `.btn.danger` — so a bare `.danger` puts the
+   box's own padding and border on the button, which is how it came out
+   16px tall and half again the size of Create. */
+/* The foot's shape here is the other two's — the line taking the
+   width, the button at its right — but with a second row for the note,
+   which is the line's and not the button's: the button holds the
+   line's row and is centred on it, so a note of any length leaves it
+   where it is. The note is the Docker screen's own, italic and quiet,
+   so the box's one loud thing is the button. */
+/* Under the Deployments card, the way that one stands under New Project. */
+.card.danger{margin-top:14px}
+/* Changes' card ends in the same shape, twice over (2026-10-03): see
+   `.git .commit .foot` by the git papers. */
+.card.danger .foot{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:10px;row-gap:5px}
+.card.danger .foot .cmd{grid-area:1/1}
+.card.danger .foot .note{grid-area:2/1;padding:0 2px}
+.card.danger .foot>.btn,.card.danger .foot>.confirm{grid-area:1/2}
+
+/* Deployments: the Deploy tab's third card, under the Deployment card —
+   one row per compose file, and the file itself in a box under the
+   table. It was the Record's third section until 2026-09-09. */
+.deployments{margin-top:14px}
+.deployments h3 .label{font-weight:500;letter-spacing:.1em;font-size:12px;color:var(--muted)}
+/* Deployments: one row per compose file. */
+/* The columns hug their content from the left, the services take the
+   slack, and the actions sit on the right edge: the row reads from the
+   name to the button, the way the rail's does. */
+.deployments table.rows.deps{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px}
+.deployments table.rows.deps td.k,.deployments table.rows.deps td.file,.deployments table.rows.deps td.st,.deployments table.rows.deps th.narrow{width:1%;white-space:nowrap}
+/* One air for the cells: --cell on every side of a cell, and between what sits side by side in one, the eye and the file's chip. */
+.deployments table.rows.deps{--cell:8px}
+.deployments table.rows.deps th{text-align:left;font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);padding:0 var(--cell) 6px;border-bottom:1px solid var(--line)}
+.deployments table.rows.deps td{padding:var(--cell);border-top:1px solid var(--line);vertical-align:top}
+.deployments table.rows.deps tbody tr:first-child td{border-top:0}
+/* The target's cell: the radio and the name on one line, what the
+   deployment is under them in the reading face, scaled's options under
+   that. Twice what two lines of the sentence took (2026-09-26), the room
+   the sync diff column left when it folded into the file's: the prose
+   reads in fewer lines and the row stands lower. */
+/* The target's share of the table, not a count of pixels (2026-09-27):
+   it was 480px and fell to 180 the moment the container crossed 760,
+   so the column held still and then jumped. A share moves with the
+   table, and the prose under the name rewraps as it goes. */
+.deployments table.rows.deps td.k{width:40%;white-space:normal;vertical-align:top;font-family:inherit;font-weight:400;letter-spacing:0;text-transform:none;font-size:inherit;padding-left:calc(var(--cell) + 4px)}
+.deployments table.rows.deps th:first-child{padding-left:calc(var(--cell) + 4px)}
+.deployments .pickt{display:inline-flex;gap:8px;align-items:center;cursor:pointer;font-family:var(--cond);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:13px}
+.deployments .pickt input{margin:0}
+.deployments .what{margin:4px 0 0;font-family:var(--serif);font-size:12.5px;line-height:1.45;color:var(--muted)}
+.deployments td.k .chip{white-space:normal;margin-top:6px}
+.deployments .opts{display:flex;gap:8px 12px;align-items:center;flex-wrap:wrap;font-family:var(--mono);font-size:12px;min-width:0;margin-top:8px}
+.deployments .opts label{display:inline-flex;gap:6px;align-items:center;cursor:pointer}
+.deployments .opts input[type=number]{width:52px;font-family:var(--mono);font-size:12px;padding:2px 4px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:2px}
+/* The row picked wears the picker's old ground. */
+.deployments table.rows.deps tr.on td.k{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+/* The foot is the Project card's: the command line taking the width, the buttons at its right. */
+/* The three verbs of a deployment read down, one line each: the command
+   on the left and the button at the right edge, the same shape three
+   times, so the reader reads the commands as a column and presses
+   across (2026-09-26). The foot was one line — Up alone — while Stop
+   and Down sat on every row. */
+.deployments .foot{margin-top:6px;display:grid;gap:8px}
+.deployments .foot .fline{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+/* The three lines' buttons share the edge every foot of this screen
+   shares: `--verb`, over by the feet themselves. */
+/* Services is the column that gives: with the three buttons always
+   there, the addresses would push past the row and paint over them.
+   Their path shortens with an ellipsis — the whole one is in the
+   title — and the label and the reading stay. */
+.deployments table.rows.deps td .pairs{min-width:0;grid-template-columns:minmax(0,max-content)}
+.deployments table.rows.deps td .pairs .pair,.deployments table.rows.deps td .pairs .door-ref{max-width:100%}
+.deployments table.rows.deps td .pairs .door-ref{overflow:hidden}
+.deployments table.rows.deps td .pairs .door-ref>span,.deployments table.rows.deps td .pairs .door-ref>a>span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+/* The name of the service and its reading are whole or not at all: the
+   address is the one that gives way. */
+.deployments table.rows.deps td .pairs .door-ref>b,.deployments table.rows.deps td .pairs .door-ref>a>b,.deployments table.rows.deps td .pairs .door-ref .read{flex:none}
+/* The row's verbs read down, not across (2026-09-26): one under the
+   next, in the order the columns before them are read — Bake, Build,
+   Stop, Down. They folded onto as many lines as the width allowed
+   until then, so the same four buttons broke differently on each row
+   and the column's edge moved as a row went up or down. A column of
+   one width is the same shape on every row, whatever the window, and
+   the cell is as narrow as the widest word: what a line of them was
+   taking, the services get. */
+/* The cell stays a table cell and hugs its buttons; they read down in a
+   column of their own, never wider than the foot's verbs (`--verb`):
+   as a flex box the cell took a share of the slack with the services,
+   and its buttons grew with it (2026-09-26). */
+.deployments table.rows.deps td.act{width:1%;white-space:nowrap}
+.deployments table.rows.deps td.act .verbs{display:flex;flex-direction:column;align-items:stretch;gap:4px;max-width:var(--verb);margin-left:auto}
+.deployments table.rows.deps td.act .btn.mini{margin-block:0;justify-content:center;text-align:center}
+.deployments{container-type:inline-size}
+/* Narrow: the target column gives first — its prose only takes another
+   line — and the addresses close up, so the name of the service and
+   its reading stay whole. The address itself shortens to an ellipsis;
+   the whole one is in the title, as it always was. */
+@container (max-width:760px){.deployments table.rows.deps td .pairs .door-ref{min-width:0;gap:6px;padding-left:6px}
+.deployments table.rows.deps td .pairs .door-ref .read+.read{margin-left:-6px}
+.deployments table.rows.deps td .pairs .door-ref .read{padding:3px 6px}}
+/* Narrower than that the reading no longer fits beside the name: it
+   drops under it, plain, keeping its colour — the box would not hold
+   both, and neither the name nor the reading may be cut. */
+@container (max-width:660px){
+.deployments table.rows.deps td .pairs .door-ref{flex-wrap:wrap;padding:3px 6px}
+.deployments table.rows.deps td .pairs .door-ref .read{flex:1 0 100%;margin:1px 0 0;padding:0;border:0;background:none;border-radius:0}}
+/* The eye before the file's chip: the row's own way to open the file in the box under. */
+.deployments table.rows.deps td.file .fl{display:inline-flex;align-items:center;gap:var(--cell)}
+.deployments table.rows.deps td.file .sq[aria-pressed="true"]{color:var(--ink);background:var(--ground);border-color:var(--ink)}
+/* The file under the deployments: a strip that names it, then the YAML sheet. */
+.deployments table.rows.deps tr.fbox td{padding:0 var(--cell) 14px;border-top:0}
+.deployments .fsheet{margin-top:0}
+.deployments .fsheet .strip{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;padding:6px 0 6px 2px}
+.deployments .fsheet .strip .label{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted)}
+.deployments .fsheet .strip .fname{font-family:var(--mono);font-size:12.5px;color:var(--ink)}
+/* The box's cap is the reader's, as a job's: the grip under it moves --job-out, 60vh until dragged. */
+.deployments .fsheet pre.env.yaml{margin:0;max-height:var(--job-out,60vh)}
+.deployments .fsheet .ograb{margin:-4px 0 0}
+/* The drift stands where the file's chip does, and folds under itself
+   past a few chips rather than widen the file's column into the services. */
+.deployments table.rows.deps .drift{display:inline-flex;flex-wrap:wrap;gap:6px;vertical-align:middle;white-space:nowrap;max-width:18em}
+.deployments table.rows.deps td.file .state{display:inline-flex}
+
+/* --- figures: a hint on hover, a viewer on click --------------------------- */
+.fig{position:relative;margin:0 0 1.2em}
+.fig>svg.diagram,.fig>img{margin:0;cursor:zoom-in}
+.fig .expand{position:absolute;right:8px;top:8px;font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:11px;color:var(--ink);background:var(--surface);border:1px solid var(--line);padding:3px 8px;border-radius:2px;opacity:0;transition:opacity .15s;pointer-events:none}
+.fig:hover .expand,.fig:focus-within .expand{opacity:1}
+/* The box turns under the hand — a click, or Enter and Space with it
+   focused — and the lozenge in its corner is what opens the viewer, the
+   same lozenge a figure shows on hover, but a button: it has to be
+   pressed without turning the box. The button that turned it used to
+   stand under the box; a box is turned by picking it up. */
+.hand .face{cursor:pointer}
+.hand .expand{position:absolute;right:8px;top:8px;z-index:1;font:inherit;font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:11px;color:var(--ink);background:var(--surface);border:1px solid var(--line);padding:3px 8px;border-radius:2px;cursor:zoom-in;opacity:0;transition:opacity .15s}
+.hand .face:hover .expand,.hand .face:focus-within .expand,.hand .expand:focus-visible{opacity:1}
+.viewer{position:fixed;inset:0;z-index:9;background:rgba(10,4,14,.86);display:none;flex-direction:column}
+.viewer.on{display:flex}
+.viewer .bar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--line)}
+.viewer .bar .title{flex:1;min-width:0;font-family:var(--cond);font-weight:700;letter-spacing:.1em;text-transform:uppercase;font-size:13px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.viewer .bar .pct{font-family:var(--mono);font-size:12px;color:var(--muted);min-width:56px;text-align:center}
+.viewer .stage{flex:1;overflow:hidden;position:relative;cursor:grab;touch-action:none}
+.viewer .stage.dragging{cursor:grabbing}
+/* The zoom is a real size, not a transform scale: a scaled layer is a
+   bitmap the GPU stretches, while a resized SVG is drawn again from
+   the vector at every level. transform only moves the canvas. */
+.viewer .canvas{position:absolute;left:0;top:0}
+.viewer .canvas>svg,.viewer .canvas>img{display:block;width:100%;height:100%;max-width:none;background:var(--ground);border-radius:4px}
+/* A vector figure is not moved as an element — it would be a huge
+   composited layer, rasterised in tiles that go missing while it is
+   dragged. The svg fills the stage and its viewBox says what shows. */
+.viewer .canvas.vector{inset:0;width:auto!important;height:auto!important;transform:none!important}
+.viewer .canvas.vector>svg{background:transparent;border-radius:0}
+/* Images are looked at and dragged around, never dragged out: no
+   native image drag anywhere on the page, no text selection in the viewer. */
+img{-webkit-user-drag:none;user-drag:none}
+.viewer{user-select:none;-webkit-user-select:none}
+.viewer .hint{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);font-family:var(--mono);font-size:11px;color:rgba(255,255,255,.7);pointer-events:none}
+
+/* The panes on the terminal ground are dark whichever theme is on, so the
+   house's thumb (light on the light theme) would be wrong in half of them.
+   scrollbar-color inherits, so saying it once here is enough — and it is
+   said here, in one grouped rule, rather than in each of their five
+   declarations, where the sixth pane added would forget it. */
+/* The same panes once more, and the band with them: a ground that does
+   not follow the theme does not follow the selection either. `--selection`
+   is the veil for the theme's own ground; these are dark under both, so
+   each washes with its own ink at the same strength — no token of their
+   own, and nothing that can come apart from the ground it sits on. */
+.job .out ::selection,.log ::selection,.impl .src ::selection,.cfg pre.raw ::selection,
+.viewport ::selection,.term ::selection{background:color-mix(in srgb,var(--term-ink) 15%,transparent)}
+header.band ::selection{background:color-mix(in srgb,var(--board-ink) 15%,transparent)}
+.job .out .pane,.log,.impl .src,.cfg pre.raw,.viewport{scrollbar-color:var(--term-scroll) transparent}
+/* And the same panes, for the same reason, give an empty place the ink
+   that is quiet on THEIR ground: --muted is the house's, and the house's
+   ground is not what these are on. The two ::before are here because a
+   pseudo cannot carry a class; what they say is the class's. */
+.term-box .nothing,.term .screen .nothing,.log:empty::before{color:var(--term-dim);font-style:italic;font-family:var(--serif)}
+.viewport .nothing{display:block;padding:14px}
+/* …except the one viewport that is not a terminal: the jobs list is
+   the Jobs list, on the house's own surface, so it takes the house's. */
+.jobsp .viewport{scrollbar-color:var(--scroll) transparent}
+
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+
+/* --- the console proper: what the mock did not need --------------------------- */
+/* The workbench's own colours, as it prints them: bold for a name, dark red
+   for an error, blue underline for a link. Console.ANSI turns the escapes
+   into these; the palette is the terminal ground's. */
+/* Sixteen colours, one token each (2026-09-16; the bright row wore the normal row's, and black and white had none). Dim is opacity, not a colour: a dim red stays red, as a terminal draws it. */
+.ansi-b{font-weight:600}.ansi-d{opacity:.6}.ansi-u{text-decoration:underline}
+.ansi-fg-0{color:var(--ansi-black)}.ansi-fg-1{color:var(--ansi-red)}.ansi-fg-2{color:var(--ansi-green)}.ansi-fg-3{color:var(--ansi-yellow)}
+.ansi-fg-4{color:var(--ansi-blue)}.ansi-fg-5{color:var(--ansi-magenta)}.ansi-fg-6{color:var(--ansi-cyan)}.ansi-fg-7{color:var(--ansi-white)}
+.ansi-fg-8{color:var(--ansi-bright-black)}.ansi-fg-9{color:var(--ansi-bright-red)}.ansi-fg-10{color:var(--ansi-bright-green)}.ansi-fg-11{color:var(--ansi-bright-yellow)}
+.ansi-fg-12{color:var(--ansi-bright-blue)}.ansi-fg-13{color:var(--ansi-bright-magenta)}.ansi-fg-14{color:var(--ansi-bright-cyan)}.ansi-fg-15{color:var(--ansi-bright-white)}
+/* A background is the text's sixteen again, and reverse video the two changed over (Console.ANSI): where the text takes the terminal's ground it takes the colour and not the opacity the reader gave that ground, and where the ground takes the text's it is the terminal's ink. */
+.ansi-bg-0{background:var(--ansi-black)}.ansi-bg-1{background:var(--ansi-red)}.ansi-bg-2{background:var(--ansi-green)}.ansi-bg-3{background:var(--ansi-yellow)}
+.ansi-bg-4{background:var(--ansi-blue)}.ansi-bg-5{background:var(--ansi-magenta)}.ansi-bg-6{background:var(--ansi-cyan)}.ansi-bg-7{background:var(--ansi-white)}
+.ansi-bg-8{background:var(--ansi-bright-black)}.ansi-bg-9{background:var(--ansi-bright-red)}.ansi-bg-10{background:var(--ansi-bright-green)}.ansi-bg-11{background:var(--ansi-bright-yellow)}
+.ansi-bg-12{background:var(--ansi-bright-blue)}.ansi-bg-13{background:var(--ansi-bright-magenta)}.ansi-bg-14{background:var(--ansi-bright-cyan)}.ansi-bg-15{background:var(--ansi-bright-white)}
+.ansi-fg-ground{color:rgb(from var(--term) r g b / 1)}.ansi-bg-ink{background:var(--term-ink)}
+.out .lk{background:none;border:0;padding:0;color:inherit;text-decoration:underline;cursor:pointer;font:inherit}
+/* A template puts a newline between one line's div and the next, and a
+   pre-wrap container would print each as a blank line: the container
+   breaks normally, each line keeps its own spaces. */
+.job .out,.log{white-space:normal}.job .out .pane>div,.log>div{white-space:pre-wrap}
+/* The caret of a file row is drawn, not typed: the fold is a class the button toggles. */
+.impl .src .shot.drawing{display:none}.impl .src.drawn .shot.drawing{display:block}
+/* The template puts newlines between a pre's children; the rows keep their own spaces. */
+.impl pre.src{white-space:normal}
+
+/* --- the Docker screen ---------------------------------------------------------- */
+/* Six documents under the Project screen's row of tabs (`.pdocs`), settled
+   in console/docker-en-la-consola.html, a page since retired. The table is the rail's Containers
+   table across the width the screen has, and the card of the container
+   picked opens under it: the width is for the columns, and the card wants
+   it whole for the env and the mounts. */
+#panel-docker{padding-top:0}
+/* --- the Git screen ------------------------------------------------------------ */
+/* The git papers of the Project tab, on the Docker screen's pane; the
+   sheet of files is the box's (.impl), the log a table like Docker's. */
+/* The shelf too: its four readings are the row, and the planks the pane. */
+#panel-shelf{padding-top:0}
+.shelfp .toolbar .label{letter-spacing:.08em}
+.git .commit{gap:8px;max-width:760px}
+/* The paper's two ways out of a dirty tree, in the one card: the commands
+   read down and the buttons press across, which is the Deployments card's
+   foot (2026-09-26), each line the danger card's three-cell grid — the
+   command taking the width, the verb at the right edge on `--verb`, the
+   note under the command, where what it says is what that command takes.
+   Discard was a danger card of its own under the files for an afternoon;
+   one dirty tree is one thing, and its two ends belong in one box. */
+.git .commit .foot{display:grid;gap:12px;margin-top:2px}
+.git .commit .fline{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:10px;row-gap:5px}
+.git .commit .fline .cmd{grid-area:1/1}
+.git .commit .fline .note{grid-area:2/1;padding:0 2px;margin:0}
+.git .commit .fline>.btn,.git .commit .fline>.confirm{grid-area:1/2}
+/* While the discard is asking, its question and two buttons hold the right
+   column, and the note under the command had nowhere to go but down — six
+   narrow lines, and the whole card moving under the hand at the moment it
+   decides. Asking, the note takes the row. */
+.git .commit .fline:has(>.confirm.on) .note{grid-column:1/-1}
+.git .commit .a{color:var(--good)}.git .commit .r{color:var(--bad)}
+.git .commit input[type=text],.git .commit textarea{font-family:var(--mono);font-size:13px;padding:6px 8px;border:1px solid var(--line);background:var(--ground);color:var(--ink);border-radius:2px;width:100%}
+.git .commit textarea{resize:vertical;line-height:1.5}
+.git .commit input:disabled,.git .commit textarea:disabled{opacity:.6}
+.git .impl{padding:0}
+.git table.commits td.mono{font-family:var(--mono)}
+.git table.commits .sj{margin-right:8px}
+.git table.commits .hint{display:block;white-space:pre-wrap;max-width:70ch}
+.git table.commits tr[phx-click]{cursor:pointer}
+/* The picked commit's diff under its row: the cell wraps, and .fit gives
+   the diff the table's width without lending it its own — a long diff line
+   scrolls in its box instead of widening the log's columns. */
+.git table.commits tr.fbox td{padding:4px 8px 14px;white-space:normal}
+.git table.commits tr.fbox .fit{width:0;min-width:100%}
+/* The pane under the row: it scrolls, the row does not — the shape of
+   the Project's booklet, without the booklet's two columns. */
+/* A column and not a grid: a grid of a fixed height sizes its rows to
+   what fits, and a table that scrolls sideways (a scroll container, so
+   its minimum height is nothing) was given the height left over and
+   clipped inside itself — thirteen images of twenty-seven. Here every
+   block keeps its own height and the pane is what scrolls. */
+.pdocs .dkdoc{flex:1;min-height:0;overflow:auto;padding:0 28px 60px;display:flex;flex-direction:column;gap:14px;scrollbar-gutter:stable}
+.pdocs .dkdoc>*{flex:none;min-width:0}
+/* Mix: def project in a code box, as mix format writes each value —
+   its own line breaks kept, coloured as Elixir — the key a column of
+   its own so a value of several lines (`docs:`) stays under itself.
+   `start_permanent` is the widest key phx.new writes. In the table the
+   options are plain, as the file writes them, and read from the left
+   like the name; who brought it closes the row at the right edge, as
+   the numbers do. */
+table.rows.pkgs th.opts,table.rows.pkgs td.opts{text-align:left}
+table.rows.pkgs th.by,table.rows.pkgs td.by{text-align:right}
+table.rows.pkgs td.by{white-space:nowrap}
+/* Where it came from is a word in a cell, not the Project screen's
+   empty page: none of .pdocs .nothing's air. */
+table.rows.pkgs td.by .nothing{padding:0;max-width:none}
+table.rows.pkgs td.by .refs{display:inline-flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;vertical-align:middle}
+/* The options one to a line, as a keyword list is written once it no
+   longer fits one: the cell keeps the breaks and never wraps on its own. */
+table.rows.pkgs td.opts{white-space:pre}
+/* A line read off the machine — the daemon's version, CPUs, memory,
+   driver, host and kernel — is code, and set as one: the terminal's
+   ground and face, in a box of its own under the scope buttons. It was
+   a note at the toolbar's right, cut with an ellipsis at any width the
+   rail left it: the kernel went unread. `.code-box` is the recipe the
+   job's output, the log and the papers' blocks each write for
+   themselves, named once for a few lines that are not a log. */
+.code-box{display:block;font-family:var(--code-face,var(--mono));font-size:var(--code-size,12px);line-height:round(calc(var(--code-size,12px) * var(--code-leading,1.5)),1px);padding:8px 14px;white-space:normal;overflow-wrap:anywhere}
+/* Its lines are `.ln`, a key and a value each — the template's own
+   air between them is not the box's — and the key is a column, nine
+   cells unless the screen says (--key-w), dim, so the values stand in
+   a line of their own and a value that wraps stays in it. `.ln` is the
+   log's line too, and its padding is the log's: not here, or the box's
+   padding and the line's add up (the daemon's keys stood 31px in, the
+   Mix paper's 18px, until 2026-09-24). */
+.code-box .ln{display:grid;grid-template-columns:var(--key-w,9ch) minmax(0,1fr);gap:0;padding:0;white-space:pre-wrap}
+.code-box .k{min-width:0;color:var(--term-dim)}
+/* The daemon's box is a viewport like the Logs screen's: the lines, and the controls in a strip under them. Inside it the code box keeps its type and its ink and loses its own frame, which the viewport draws. `build cache` is the widest key. */
+.docker .viewport.daemon{grid-template-rows:auto auto;flex:none}
+/* The daemon's lines stand in the box the viewport already is, a terminal's ground and frame: a second ground on them was the reader's opacity laid twice, 40 % read as 64. */
+.docker .viewport.daemon .code-box{border:0;border-radius:0;background:none;--key-w:13ch}
+/* Its text by weight (2026-09-24): the figure that matters bold, what
+   qualifies it dim, the rest ink, and no colour of its own — until
+   2026-09-29 the in-use ratio wore the source palette's blue and every
+   size's unit its gold, two colours from the code editor's set on a
+   reading that is not code, and for a day the keys wore the accent;
+   seven takes on the real daemon settled on none of that. The one
+   colour is the house's warn, on a reclaimable share of half or more:
+   the one thing here that asks for an act, in the voice the chips say
+   it in. Bold is 700: Fira Code and Tamzen carry only 400 and 700, and
+   a 500 fell back to their 400 — no bold at all; Plex is loaded at 700
+   for it. A blank line parts the machine from the disk. */
+.code-box .b{font-weight:700}
+.code-box .d{color:var(--term-dim)}
+.code-box .w{color:var(--warn);font-weight:700}
+.code-box .ln.gap{min-height:1lh}
+/* The disk is a table, as `docker system df` prints it: a dim head
+   over the kind, and four columns — in use, size, reclaimable and its
+   share — each as wide as its widest reading in ch, which the bitmap
+   faces keep whole; the share is right-aligned, as a figure column is.
+   The head's "reclaimable" spans the size that can go and its share.
+   (`.row` is taken — a card's row, with its margin over it.) */
+.code-box .ln.disk{grid-template-columns:var(--key-w,9ch) 8ch 10ch 10ch 4ch}
+.code-box .disk .col:last-child{text-align:right}
+.code-box .disk.heads .col{color:var(--term-dim);text-align:left}
+.code-box .disk.heads .two{grid-column:span 2}
+.docker .viewport.daemon .nothing{margin:0;padding:8px 14px}
+.dtab .badge{font-family:var(--mono);font-size:10.5px;padding:1px 6px;border-radius:999px;background:var(--surface-2);color:var(--muted);letter-spacing:0}
+.dtab .badge.bad{background:var(--bad);color:#fff}
+/* A table wider than the rail's: it scrolls inside its own box, never the page. */
+.tbl{overflow-x:auto}
+table.wide{border-collapse:collapse;width:100%;font-family:var(--mono);font-size:12.5px}
+table.wide th{text-align:left;font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.wide td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap}
+table.wide td.k{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px}
+table.wide td.k.mono{font-family:var(--mono);font-weight:400;letter-spacing:0;text-transform:none}
+table.wide td.k .nm{display:block}
+/* A name that is a link to its registry's page reads as the name, and says so under the pointer. */
+table.wide td.k a.nm{color:inherit;text-decoration:none}
+table.wide td.k a.nm:hover,table.wide td.k a.nm:focus-visible{text-decoration:underline;outline:none}
+table.wide td .hint{display:block;font-size:11px;color:var(--muted);margin-top:3px;font-family:var(--mono);font-weight:400;letter-spacing:0;text-transform:none}
+/* Whose it is, when it is not this workspace's: the project, beside the name. */
+table.wide td .of{font-family:var(--mono);font-weight:400;letter-spacing:0;text-transform:none;font-size:11px;color:var(--soft);margin-left:8px}
+/* The two columns redrawn every two seconds reserve the width of the
+   widest value they can hold: `1200.0 %` on twelve cores, `1234.5 MiB`. */
+/* The head of a column of measures sits on the edge its values are read
+   by — the right one — and keeps the head's own face otherwise. */
+table.wide th.num{text-align:right}
+table.wide td.num.cpu{min-width:9ch}
+table.wide td.num.mem{min-width:11ch}
+table.wide td.dim,table.wide th.dim{color:var(--muted)}
+table.wide td.wrap{white-space:normal}
+/* A published port is an address, and an address is a door — the rail's
+   own notation — one per line,
+   read down like the list it is, centred in its row. */
+table.wide td.ports .port+.port{margin-top:4px}
+table.wide td.ports .door-ref{white-space:nowrap}
+/* No layer square on a container's ports: this table is Docker's view, every port a published one, and the service is the row's first column — the square wore the service's colour here until 2026-09-16, the rail's shape with another meaning. */
+table.wide td.ports .door-ref::before{display:none}
+/* The actions read down from their left edge, as the rail's do: Logs at
+   the same x on every row, Restart after it, and the shell in its own
+   column — a row with fewer buttons leaves the tail empty instead of
+   sliding what it has across. */
+table.wide td.act{text-align:left;width:1%}
+table.wide td.act .btn.mini{padding:2px 8px;font-size:11px;vertical-align:middle}
+/* The shell is a column of its own, last: it opens a session on another
+   screen, where Logs and Restart act from this one. */
+table.wide tr[phx-click]{cursor:pointer}
+table.wide tr.on td{background:var(--accent-soft)}
+/* Another workspace's, or gone: quieter. Not `.other` — that name is the
+   drawer's row for a version typed by hand, and it is a flex row. */
+table.wide tr.dead td,table.wide tr.theirs td{color:var(--soft)}
+table.wide tr.dead td.k,table.wide tr.theirs td.k{color:var(--muted)}
+/* The card: one container, whole. */
+.ficha{padding:14px 16px}
+.ficha .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px 22px}
+.ficha .grid>*{min-width:0}
+.ficha .grid>.full{grid-column:1/-1}
+.ficha dl{margin:0;display:grid;grid-template-columns:max-content minmax(0,1fr);gap:4px 12px;font-family:var(--mono);font-size:12px;align-content:start}
+.ficha dt{font-family:var(--cond);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:11px;color:var(--muted);white-space:nowrap}
+.ficha dd{margin:0;overflow-wrap:anywhere}
+.ficha dd .m{color:var(--muted)}
+.ficha dd .bad{color:var(--bad)}
+.ficha .cap,.docker h3.cap{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:11px;color:var(--muted);margin:0 0 6px}
+.docker h3.cap{margin:8px 0 0}
+/* The env of a card and the compose of a deployment wear the .env's ground. */
+.ficha pre.env,.docker pre.env{font-family:var(--file-face,var(--mono));font-size:var(--file-size,11.5px);line-height:var(--file-leading,1.6);padding:10px 12px;margin:0;white-space:normal;overflow:auto;flex:none}
+/* The template puts a newline between one line and the next; each keeps its own spaces. */
+.ficha pre.env .ln,.docker pre.env .ln{white-space:pre-wrap}
+.ficha pre.env .k,.docker pre.env .k{color:var(--accent)}
+.ficha pre.env .m,.docker pre.env .m{color:var(--ansi-red)}
+.ficha pre.env .c,.docker pre.env .c{color:var(--term-dim)}
+/* A compose or a feed fills what the pane leaves and scrolls alone: the
+   pane is a column, and the one block that grows takes the rest of it,
+   so there is one scroll and not the pane's on top of the block's. */
+.pdocs .dkdoc>pre.env{flex:1;min-height:0}
+/* The events' feed takes the document's height; the daemon's box, a viewport too since 2026-09-16, keeps its own — under this same selector it was given the feed's share and cut off. */
+.pdocs .dkdoc>.viewport{flex:1;min-height:160px}
+.pdocs .dkdoc>.viewport.daemon{flex:none;min-height:0}
+/* The 60px under a document is for its last paragraph not to sit on the
+   edge; a block that ends where the pane ends does not want it. */
+.pdocs .dkdoc:has(>pre.env,>.viewport){padding-bottom:22px}
+/* The feed: the Logs screen's pane, server-rendered — five hundred lines at most. */
+.docker .lines{min-height:0}
+.docker .ln.dim .m{color:var(--term-dim)}
+.docker .acts{display:flex;gap:10px;align-items:center;flex-wrap:wrap}

@@ -1,0 +1,73 @@
+@moduledoc """
+Answers the health probes before anything else in the endpoint runs.
+
+Two routes, split by what the platform does when one fails:
+
+* `GET <%= @path %>/live` — *liveness*: 200 as long as the VM answers.
+  It checks nothing else on purpose. An orchestrator restarts the
+  container when this fails, and a restart does not fix a database
+  that is down — it only turns one outage into a rolling one.
+* `GET <%= @path %>/ready` — *readiness*: 200 when the application can
+  take traffic, 503 when it cannot. On failure the instance is taken
+  out of the balancer, not restarted. <%= @ready_note %>
+
+Mounted first in `<%= @web_module %>.Endpoint`, so a probe never goes
+through `Plug.Static`, `Plug.SSL` (a redirect is not an answer), the
+logger, the parsers or the router: no log noise, no session, no
+telemetry, and the router never sees the path.
+
+Probes are answered with `Cache-Control: no-store`; nothing in between
+may reuse a verdict.
+"""
+@behaviour Plug
+
+import Plug.Conn
+
+# Readiness has to fail fast: platforms time a probe out at 2-5 s.
+@timeout 1_000
+
+@impl Plug
+def init(opts) do
+  path = Keyword.get(opts, :path, "<%= @path %>")
+
+  %{
+    live: path <> "/live",
+    ready: path <> "/ready",
+    repo: Keyword.get(opts, :repo, <%= @repo || "nil" %>)
+  }
+end
+
+@impl Plug
+def call(%Plug.Conn{method: "GET", request_path: path} = conn, %{live: path}),
+  do: respond(conn, 200, "ok")
+
+def call(%Plug.Conn{method: "GET", request_path: path} = conn, %{ready: path, repo: repo}) do
+  if ready?(repo),
+    do: respond(conn, 200, "ok"),
+    else: respond(conn, 503, "unavailable")
+end
+
+def call(conn, _opts), do: conn
+
+@doc """
+Whether the application can take traffic — the check behind
+`<%= @path %>/ready`. Never raises: any error is a `false`.
+"""
+@spec ready?(module() | nil) :: boolean()
+def ready?(nil), do: true
+
+def ready?(repo) do
+  match?({:ok, _}, repo.query("SELECT 1", [], timeout: @timeout))
+rescue
+  _ -> false
+catch
+  :exit, _ -> false
+end
+
+defp respond(conn, status, body) do
+  conn
+  |> put_resp_header("cache-control", "no-store")
+  |> put_resp_content_type("text/plain")
+  |> send_resp(status, body)
+  |> halt()
+end

@@ -1,0 +1,24 @@
+Spec: Test Suite
+
+Platform: ExUnit
+
+Purpose:
+  Verify the application from outside ./lib, one test file per module
+    under test.
+
+Structure:
+  ./<%= @app %>: Tests of the domain
+  ./<%= @app %>_web: Tests of the web interface, through the endpoint
+  ./support: Cases and fixtures shared by the tests
+  ./test_helper.exs: ExUnit start
+
+Can read:
+  ../lib
+
+Must:
+  A test file mirrors the path of its subject: `lib/<%= @app %>/accounts.ex` is tested by `./<%= @app %>/accounts_test.exs`.
+  A spec's Scenario has a matching test before its task is marked done.
+  The suite runs with `mix test`, and one file with `mix test path/to/file_test.exs`.
+
+Must not:
+  Define application code.

@@ -1,0 +1,91 @@
+Early-1980s home computer game cover art. Coarse airbrush over a short,
+hard-edged palette that reads as a limited display: heavy black outlines,
+a receding grid floor, wide empty fields of flat colour, geometric slab
+lettering, matte board.
+
+Flat cover illustration filling the entire image edge to edge, all of
+it in one plane: the four edges of the image are the four edges of the
+illustration, and the illustration is all there is — not a product
+photograph, not a box or a board: no bevel, no lip, no rim of light, no
+edge, no shadow, no surface behind it, no margin of any colour around
+it. Proportions 4:5 portrait. Every position below is measured from
+the edges of the image. The ground of the illustration, edge to edge,
+is one tone that reads clearly lighter or darker in value than Elixir
+violet (#4B275F).
+
+Hero illustration: the palette is five flat colours and no others —
+pale cream, the colour of unprinted matte board; pure black, the black
+of a switched-off screen; a bright grape violet, clearly lighter than
+the violet named above; a deep cherry red, the red of a maraschino
+cherry; enamel blue. The wall behind everything, from the top edge of
+the image down to three fifths of the height, is one flat empty field
+of the pale cream, the ground of the illustration. Against the wall, a
+set of open shelves drawn in heavy black outline, two shelves one
+above the other: its top at a quarter of the height down, its foot at
+three fifths of the height down, its left side at a twentieth of the
+width in and its right side at two thirds of the width. On the upper
+shelf stand three large round-bellied flasks with narrow necks and
+cork stoppers, each as tall as an eighth of the height of the image
+and filled with flat grape violet, and after the third flask, at the
+right end of the shelf, one empty place as wide as a flask where a
+fourth stood. On the lower shelf stand four flasks of the same shape
+and size filled with flat cherry red. Every flask carries on its belly
+one square pale cream label with heavy black numerals at foreground
+size: on the upper shelf, left to right, "1.16", "1.17", "1.18"; on
+the lower shelf, left to right, "25", "26", "27", "28". On the front
+edge of the upper shelf, at its left end, a black plate with pale
+cream geometric slab lettering at foreground size reading "ELIXIR"; on
+the front edge of the lower shelf, at its left end, the same plate
+reading "ERLANG". To the right of the shelves stands one scientist in
+a long pale cream lab coat with heavy black outlines, round black
+spectacles and black hair, seen from the front and turned a little
+toward the shelves, as tall as half the height of the image, the top
+of the head at a third of the height down and the body's centre line
+at four fifths of the width. The scientist's raised hand holds the
+fourth violet flask up at eye level, at two fifths of the height down
+and at two thirds of the width, a soft violet halo around it, its
+square label facing the viewer with the numerals "1.19" at foreground
+size; the eyes are on the flask. The other hand, at three fifths of
+the height down, holds a pale cream index card facing the viewer
+squarely, flat on the page, with one line of black typewriter
+lettering at foreground size reading ".tool-versions". Below the wall
+a floor of pure black recedes from the bottom of the wall, ruled with
+a perspective grid of thin enamel-blue lines, and the scientist and
+the shelves stand on it. The bottom fifth of the image is the same
+pure black with the grid lines stopping at its top, flat, and the
+lockup sits on it.
+
+Title lockup across the lower part of the image: "VERSION MANAGER" on
+one line, set large in geometric slab lettering in pale cream with a
+hard enamel-blue offset shadow, and beneath it a smaller subtitle
+"TO EACH ITS OWN" in the same lettering in grape violet.
+
+In the upper left corner of the image, a small rectangular flash, a
+pure black field with pale cream geometric slab lettering at
+foreground size, reading on one line the word "ASDF", then a centred
+round dot, then the word "MISE".
+
+On the black floor at the left edge of the image, at seven tenths of
+the height down, a small round white price sticker, stuck on slightly
+crooked, with "7.95" written on it by hand in blue ballpoint.
+
+The eight labels on the flasks, the two plates on the shelves, the
+card, the title, the subtitle, the flash and the sticker are all the
+lettering in the image.
+
+The upper right corner of the artwork is composed as a quiet area: low
+detail, no focal element, an even field of tone — the flat pale cream
+of the wall, above the scientist's head.
+
+Every mark on the face is printed illustration or type, and the marks
+named above are all of them.
+
+--- second turn, with the padded canvas from covers.py pad ---
+
+The flat grey border around this picture is blank. Paint it by
+continuing the picture outward into it on every side, to the edges —
+the flat pale cream wall continues above, the flat pure black
+continues below, and at each side the cream wall and the black floor
+with its grid lines run on to the edge. Keep the picture
+inside exactly as it is, and add nothing new: no figure, no object, no
+lettering.

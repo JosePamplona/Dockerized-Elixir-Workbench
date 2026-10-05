@@ -1,0 +1,24 @@
+
+# The web layer, the same under every preset: live views and components
+# by what they are, the rest by the names phx.new gives them.
+defp web_groups do
+  [
+    "Live views": [&behaves?(&1, [Phoenix.LiveView, Phoenix.LiveComponent])],
+    Controllers: [~r/^<%= @web %>\..*Controller$/],
+    Components: [
+      &in_dir?(&1, "lib/<%= @app %>_web/components/"),
+      ~r/^<%= @web %>\..*(HTML|JSON)$/
+    ],
+    Plugs: [~r/^<%= @web %>\.Plugs?\./],
+    Web: [~r/^<%= @web %>(\.|$)/],
+    "Mix tasks": [~r/^Mix\.Tasks\./],
+    Exceptions: [&(&1[:kind] == :exception), ~r/(Error|Exception)$/]
+  ]
+end
+
+# ExDoc hands each group's functions the module's doc metadata.
+defp behaves?(metadata, behaviours),
+  do: Enum.any?(metadata[:behaviours] || [], &(&1 in behaviours))
+
+defp in_dir?(metadata, dir),
+  do: String.contains?(to_string(metadata[:source_path]), "/" <> dir)

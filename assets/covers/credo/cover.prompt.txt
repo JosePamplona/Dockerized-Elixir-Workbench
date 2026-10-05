@@ -1,0 +1,162 @@
+# credo — manual hero
+
+The hero is **manual**: made by the author outside the repository, in
+conversation with the generator, from proposal 7 in `eras.md` (the
+classroom, the author's own) and the classroom drawing that was its
+reference. The image is the source, the way `overlay.xcf` is: it cannot
+be regenerated, only continued, so it is archived before anything
+overwrites it — `_archived/art/hero-manual-1.png` is the state of
+2026-09-21 18:24, as it arrived (`art/hero.png`, 1126×1397, 4:5);
+`art/hero.jpg` is that image converted, untouched.
+
+The prompted box before it — take 5 of the console hero, its padded
+canvas, expansion, cut and sealed cover — is archived as `cover-4*`,
+this file's previous text as `cover-4.prompt.txt`. `art/lockup.png`, cut
+from take 4, stays: the title is still composited, not painted.
+
+The turns that made the hero were not logged; the log starts here, and
+every entry is written before the take that tests it. Each turn is the
+current `art/hero.jpg` plus the last entry below.
+
+Everything downstream is unchanged: the proportion `covers.py window`
+names (4:5), `pad`, `cut`, `stamp`, the invariants, the counts.
+
+## What the hero carries (read off the image, 2026-09-21)
+
+An empty classroom in one-point perspective, lit by afternoon sun from
+a window on the left: a green blackboard on the far wall, a wooden
+teacher's desk with an empty blue chair behind it, a tiled floor of
+cream and blue running to the foot. On the board, a chalk table of
+Credo's five groups, each with a coloured dot: `[C] Consistency`,
+`[D] Design`, `[F] Refactoring`, `[R] Readability`, `[W] Warning`.
+Ceiling with two lit fixtures, a wall clock above the board, a plant
+and books on a side table at the left, a door and a `CLASSROOM RULES`
+poster at the right, a `LEARN` pennant by the window. No title, no
+badge, no furniture, no wear, no version and no date.
+
+Lettering beyond the board: the poster's four rules, `LEARN`, and two
+book spines whose text is not words. Open, for the author's eye.
+
+The ground is warm cream and ochre, clearly lighter than the violet.
+
+## The log
+
+### 1 — the expansion goes to the generator (2026-09-21)
+
+`./assets/covers/covers.py pad credo` has written the canvas:
+
+    assets/covers/credo/art/padded.jpg   1177x1656
+
+The hero sits in it at +26+170, untouched, with flat grey around it:
+170px above, 89px below, and 26px at each side inside the window. Send
+that canvas to the generator, **in the same conversation the hero was
+made in** if it is still open, with the turn below, and save what comes
+back as
+
+    assets/covers/credo/art/expanded.jpg
+
+then `./assets/covers/covers.py cut credo`.
+
+--- turn 2, with art/padded.jpg attached ---
+
+The flat grey border around this picture is blank. Paint it by
+continuing the picture outward into it on every side, to the edges —
+the ceiling with its wooden trim continues above, the cream and blue
+tiled floor continues below, the window wall on the left and the door
+wall on the right continue to the sides. Keep the picture inside
+exactly as it is, and add nothing new: no figure, no object, no
+lettering.
+
+### 2 — the board in the colours of Credo's mark (2026-09-21)
+
+The chalk table's dots and tags carry colours of the hero's own
+choosing, and they do not rhyme with Credo's mark, which is composited
+beside the title on this face. The author chose the mark's colours
+over the terminal's (`mix credo` colours the categories cyan, olive,
+yellow, blue and red): the board takes the mark's five bars, top to
+bottom, row by row, so the table reads as the mark's echo. Read off
+`marks/1-credo.png`, the bars are green #288850, lime #689800, mustard
+#C8A000, coral red #E05040 and blue #4080C0.
+
+The last row also reads `Warning` where Credo's category is
+*Warnings*, and this change corrects it.
+
+The hero before this change is `_archived/art/hero-manual-1.png`. When
+the new one comes back it is saved as `art/hero.jpg`, `pad` is run
+again, and the second turn (entry 1) is sent with the new canvas: an
+expansion is about the canvas it was sent with.
+
+--- change 2, with art/hero.jpg attached ---
+
+Keep this picture exactly as it is — the room, the light, the desk, the
+chair, the board, the table drawn on it and its lettering — and change
+only the colours of the five rows of the chalk table on the board. Each
+row's dot and its bracketed letter are one colour, and the word beside
+them stays white chalk:
+
+  first row, [C] Consistency: deep green (#288850)
+  second row, [D] Design: lime green (#689800), clearly yellower and
+  lighter than the first row's green
+  third row, [F] Refactoring: mustard yellow (#C8A000)
+  fourth row, [R] Readability: coral red (#E05040)
+  fifth row, [W] Warnings: blue (#4080C0)
+
+In the fifth row the word reads "Warnings", with the final s, in the
+same chalk hand as the other four words.
+
+Sent by the author to the **expansion**, not the hero (`art/expanded.jpg`
+with the change above, no session left for the pad turn), and it came
+back at the expansion's own 1057×1488 with everything outside the board
+the same (mean difference 5.6 of 255 above and below the board, JPEG
+noise and a re-render). The five rows came in the mark's colours, the
+last reads `Warnings`. So the hero is **cut from the expansion** at the
+place `cut` had found the first one (+33+157, 988×1226), and
+`art/hero.jpg` is that crop; `cut` finds it at 1.00. The expansion
+before it is `_archived/art/hero-manual-1-expanded.jpg`. The `[C]` tag
+is deep green on the green slate, dimmer than the other four; accepted.
+
+### 3 — the board in chalk (2026-09-25)
+
+Made by the author outside the repository with no entry written here
+first; this entry records it after the fact. Sent to the expansion
+again, and it came back at its 1057×1488 with only the board changed
+(the rest within JPEG noise). The ruled table is gone: the five
+categories are written in chalk, lowercase, each after its initial in
+a coloured chalk capital, the initials in the mark's colours top to
+bottom. The order now reads C, D, F, **W, R** — `warnings` above
+`readability`, coral on the W and blue on the R — where the mark's bars
+and entry 2 had R fourth and W fifth. Open, for the author's eye.
+
+The expansion as it arrived is `_archived/art/hero-manual-3-expanded.png`;
+the one before it (entry 2) is `hero-manual-2-expanded.jpg`, with its
+sealed cover as `hero-manual-2-sealed.jpg`. The hero is cut from the
+expansion at the same +33+157, 988×1226 (`cut` finds it at 1.00), and
+the cover is stamped with the options in the cover record, unchanged.
+
+### 4 — the grade (2026-09-25)
+
+Made by the author outside the repository, in the editor
+(`class.xcf`), with no entry written here first; recorded after the
+fact. The same 1057×1488 expansion with nothing moved: the whole image
+regraded, cooler and less saturated, toward the violet — the warm
+sunlight on the floor goes pink, the blue chair and bin go violet
+(mean difference 6.2 of 255, at most 32, spread over the whole face).
+The board reads as entry 3 left it.
+
+The expansion as it arrived is `_archived/art/hero-manual-4-expanded.png`;
+entry 3's sealed cover is `hero-manual-3-sealed.jpg`. The hero is cut
+from the expansion at the same +33+157, 988×1226 (`cut` finds it at
+1.00), and the cover is stamped with the options in the cover record,
+unchanged.
+
+### 5 — the floor behind the title (2026-09-25)
+
+Made by the author in the editor, recorded after the fact. A local
+retouch of entry 4: only the floor band behind the lockup changed
+(x 436 to the right edge, y 1148–1276 of the expansion, at most 14 of
+255), the sunlit tiles taken from pink toward a neutral cream. Nothing
+moved.
+
+The expansion as it arrived is `_archived/art/hero-manual-5-expanded.png`;
+entry 4's sealed cover is `hero-manual-4-sealed.jpg`. Cut at the same
++33+157, 988×1226 (1.00) and stamped with the recorded options.

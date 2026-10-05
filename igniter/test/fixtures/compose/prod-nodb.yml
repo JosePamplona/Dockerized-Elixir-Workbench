@@ -1,0 +1,68 @@
+# The workspace's orchestration, baked by the workbench into two files:
+#
+#   docker-compose.yml       (dev)  - dev toolchain image, source mounted
+#   docker-compose.prod.yml  (prod) - release image, no source volume and
+#                                     no build identity args
+#
+# Both are the pod topology below with another image and two switches:
+# the dev file has no one-shot 'migrate' service (the dev image migrates
+# itself on boot) and the prod file makes the app wait for it; the prod
+# file also carries no source mount and no build identity. The scaled
+# deployment, docker-compose.scaled.yml, is another topology: it
+# replaces the pod pattern with a bridge network. './wb.sh bake' writes
+# this file again for the project as it is now.
+
+name: lorem_ipsum
+
+services:
+  # Pod pattern: this service's only job is to own the workspace's network
+  # namespace and its published ports — literally the "pause" container
+  # Kubernetes uses for the same job in its pods (~700 kB, sleeps forever).
+  # Every other service joins it, so they all reach each other through
+  # localhost — and the project keeps Phoenix's default database
+  # configuration untouched.
+  # No `restart:` on any service, here or in the scaled compose: a
+  # deployment goes up and down whole, and that holds across a reboot
+  # of the host too. With `unless-stopped` on the pod and the database
+  # alone, a reboot brought those two back and left the app and pgadmin
+  # down — half a deployment, which the status could only call "no
+  # deployment is up and these are still here". Now a reboot leaves
+  # everything exited, the status says down, and Up raises it whole.
+  # What this gives up: a database that crashes is not restarted on its
+  # own — the console's events feed says so, and Restart is a click.
+  pod:
+    image: registry.k8s.io/pause:3.10
+    ports:
+      # Application port (host:container).
+      - 4000:4000
+
+  app:
+    image: lorem-ipsum:0.1.0-prod
+    build:
+      # Baked by the workbench: Dockerfile.local (the app's dev image)
+      # in docker-compose.yml, and the production Dockerfile in
+      # docker-compose.prod.yml, baked by 'up --env prod'. Do not point
+      # docker-compose.yml at the production Dockerfile. The workbench's
+      # own runs (add, mix, git) use an image of their own, not this one.
+      dockerfile: Dockerfile
+    # The image starts itself (CMD). Defaults per dockerfile —
+    #   Dockerfile.local: sh -c 'cd /app/src && mix setup && exec elixir --sname lorem_ipsum -S mix phx.server'
+    #   Dockerfile (prod): /app/bin/server
+    # Uncomment to override:
+    # command:
+    # An init (docker's tini) as PID 1 above the command: it reaps what
+    # the BEAM's ports leave behind — the esbuild and tailwind watchers
+    # of a dev server — and forwards the signals of a stop.
+    init: true
+    network_mode: "service:pod"
+    env_file:
+      - ./.env
+    healthcheck:
+      # TCP-connect probe via bash (present in both the dev toolchain and
+      # the prod runner image): no curl/wget needed.
+      test: ["CMD", "bash", "-c", "</dev/tcp/localhost/4000"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      # First compile & boot may take a while: not counted as failures.
+      start_period: 120s

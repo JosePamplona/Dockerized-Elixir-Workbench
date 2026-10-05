@@ -1,0 +1,54 @@
+{
+  "dew.theme": {
+    "name": "GNOME",
+    "author": "GNOME Terminal",
+    "url": "https://gitlab.gnome.org/GNOME/gnome-terminal",
+    "licence": "GPL-3.0"
+  },
+  "dark": {
+    "workbench.colorCustomizations": {
+      "terminal.background": "#1e1e1e",
+      "terminal.foreground": "#cfcfcf",
+      "dew.terminal.dim": "#767676",
+      "terminal.ansiBlack": "#1e1e1e",
+      "terminal.ansiRed": "#c01c28",
+      "terminal.ansiGreen": "#26a269",
+      "terminal.ansiYellow": "#a2734c",
+      "terminal.ansiBlue": "#12488b",
+      "terminal.ansiMagenta": "#a347ba",
+      "terminal.ansiCyan": "#2aa1b3",
+      "terminal.ansiWhite": "#cfcfcf",
+      "terminal.ansiBrightBlack": "#5d5d5d",
+      "terminal.ansiBrightRed": "#f66151",
+      "terminal.ansiBrightGreen": "#33d17a",
+      "terminal.ansiBrightYellow": "#e9ad0c",
+      "terminal.ansiBrightBlue": "#2a7bde",
+      "terminal.ansiBrightMagenta": "#c061cb",
+      "terminal.ansiBrightCyan": "#33c7de",
+      "terminal.ansiBrightWhite": "#ffffff"
+    }
+  },
+  "light": {
+    "workbench.colorCustomizations": {
+      "terminal.background": "#ffffff",
+      "terminal.foreground": "#1e1e1e",
+      "dew.terminal.dim": "#8e8e8e",
+      "terminal.ansiBlack": "#1e1e1e",
+      "terminal.ansiRed": "#c01c28",
+      "terminal.ansiGreen": "#26a269",
+      "terminal.ansiYellow": "#a2734c",
+      "terminal.ansiBlue": "#12488b",
+      "terminal.ansiMagenta": "#a347ba",
+      "terminal.ansiCyan": "#2aa1b3",
+      "terminal.ansiWhite": "#cfcfcf",
+      "terminal.ansiBrightBlack": "#5d5d5d",
+      "terminal.ansiBrightRed": "#f66151",
+      "terminal.ansiBrightGreen": "#33d17a",
+      "terminal.ansiBrightYellow": "#e9ad0c",
+      "terminal.ansiBrightBlue": "#2a7bde",
+      "terminal.ansiBrightMagenta": "#c061cb",
+      "terminal.ansiBrightCyan": "#33c7de",
+      "terminal.ansiBrightWhite": "#ffffff"
+    }
+  }
+}

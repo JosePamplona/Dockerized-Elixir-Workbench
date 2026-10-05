@@ -1,0 +1,68 @@
+# Cartridge: credo
+
+Credo static code analysis, and the check before the commit.
+
+* **Task**: `mix workbench.install.credo`
+* **Inserted by**: `wb.sh add credo [--githook]`
+
+## Description
+
+An automated reviewer that flags style and structure before they reach
+a human reviewer: `mix credo` reads the source and reports what a team
+would otherwise argue about in every pull request.
+
+With `--githook` it also runs before every commit. The hook itself is
+not this cartridge's — the **precommit** box owns the file, the way it
+reaches `mix` inside the container, and the checks that come with
+Elixir — and this one writes a block of its own in
+`.githooks/pre-commit`. So `--githook` needs precommit in first, and
+refuses while it is not (`./wb.sh add precommit`). Ejecting credo
+leaves the rest of the hook standing; precommit's eject waits until
+credo's block is gone.
+
+## The guide a human reads
+
+What Credo flags is written out in prose in the
+[Elixir Style Guide](https://github.com/rrrene/elixir-style-guide),
+Credo's own: its author's, "the basis for Credo", which "reflects the
+principles promoted by its code analysis". Its sections are the four
+the tool reports under — code readability, documentation, refactoring
+opportunities, software design — plus the pitfalls. When a check fires
+and the reason is not obvious, that page is where it is argued, with
+the example beside the rule; and it reads on its own, for the parts of
+a style no analyser can check.
+
+## What it installs
+
+* `{:credo, "~> 1.7", only: [:dev, :test], runtime: false}` in the project deps.
+* With `--githook`: `mix credo` in this cartridge's block of
+  `.githooks/pre-commit`, which the **precommit** cartridge owns and has
+  to be in already.
+
+**Idempotency**: `on_exists: :skip` for the dependency; the hook line is
+written once, and a second run adds it if it is missing.
+
+## Options
+
+| Option | What it does |
+| --- | --- |
+| `--githook` | Run `mix credo` before every commit, in this cartridge's own block of the pre-commit hook. Builds on precommit: insert it first. Default: off. |
+
+The line is `mix credo`, not `mix credo --strict`: a hook that refuses
+the first commit after it is inserted is a hook the developer turns
+off. `--strict` is one word away, in a file the project owns.
+
+## Contents
+
+| File | Role |
+| --- | --- |
+| `📁 lib/workbench_igniter/features/credo/` | The cartridge: its code and its papers |
+| `├── 📄 credo.ex` | Manifest, the dependency and the hook block |
+| `├── 📄 task.ex` | The Mix task `wb.sh add` runs |
+| `├── 📄 README.md` | What it installs, and how it runs |
+| `├── 📄 NEED.md` | The need, the line the shelf shows |
+| `├── 📄 CHANGELOG.md` | Its versions, apart from the workbench's |
+| `└── 📄 DESIGN.md` | Why this reviewer, and why the hook is not its file |
+|  |  |
+| `📁 test/workbench_igniter/features/` |  |
+| `└── 📄 credo_test.exs` | The dependency, and the block before the commit |

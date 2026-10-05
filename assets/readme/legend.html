@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<!--
+  The source of assets/readme/console/legend.png: how to read the plates
+  on the console's rail. It draws with the console's own stylesheets and
+  icon sprite, so the plates here are the ones the console draws; only
+  the layout of the legend itself is styled below.
+
+  To take the picture again, serve the repository root and capture #legend:
+
+    python3 -m http.server 8766 --bind 127.0.0.1
+    http://127.0.0.1:8766/assets/readme/legend.html
+-->
+<head>
+<meta charset="utf-8">
+<title>Reading the rail</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../../console/priv/static/assets/css/tokens.css">
+<link rel="stylesheet" href="../../console/priv/static/assets/css/components.css">
+<link rel="stylesheet" href="../../console/priv/static/assets/css/console.css">
+<style>
+  html, body { height: auto }
+  body { display: block; overflow: visible; padding: 24px }
+  #legend { width: 884px; padding: 22px 26px 26px; background: var(--surface); border: 1px solid var(--line) }
+  #legend h2 { margin: 22px 0 10px; font-family: var(--cond); font-weight: 600; font-size: 14px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted) }
+  #legend h2:first-child { margin-top: 0 }
+  #legend .rows { display: grid; grid-template-columns: 300px 1fr; gap: 9px 22px; align-items: center }
+  #legend .rows p { margin: 0; color: var(--muted) }
+  #legend .rows p b { color: var(--ink); font-weight: 600 }
+</style>
+</head>
+<body>
+<div id="legend">
+  <h2>The drawing: what kind of address it is</h2>
+  <div class="rows">
+    <span><span class="door-ref door-port" style="--svc:var(--svc-compute)"><svg class="layer" aria-hidden="true"><use href="../../console/priv/static/images/icons.svg#rack-net"></use></svg><a><b>app</b><span>localhost:4000</span></a><i class="read good">healthy</i></span></span>
+    <p><b>A service published on the host.</b> Click it to open it in the browser.</p>
+    <span><span class="door-ref door-inside" style="--svc:var(--svc-database)"><svg class="layer" aria-hidden="true"><use href="../../console/priv/static/images/icons.svg#rack"></use></svg><b>database</b><span>:5432</span><i class="read good">healthy</i></span></span>
+    <p><b>A service inside the pod only.</b> It has a port, and no door from the host.</p>
+    <span><span class="door-ref door-route"><svg class="layer" aria-hidden="true"><use href="../../console/priv/static/images/icons.svg#globe"></use></svg><a><b>live</b><span><em>:4000</em>/health/live</span></a></span></span>
+    <p><b>A door.</b> A route of the application that a cartridge opened.</p>
+    <span><span class="door-ref door-output"><svg class="layer" aria-hidden="true"><use href="../../console/priv/static/images/icons.svg#page"></use></svg><a><b>docs</b><span>doc/</span></a><i class="read">2026-10-04 18:37</i><button type="button" class="read build">rebuild</button></span></span>
+    <p><b>A page.</b> Files a tool of the project wrote on disk, with the task that writes them again.</p>
+  </div>
+
+  <h2>The colour: what the service is for</h2>
+  <div class="rows">
+    <span><span class="door-ref door-inside" style="--svc:var(--svc-compute)"><svg class="layer" aria-hidden="true"><use href="../../console/priv/static/images/icons.svg#rack"></use></svg><b>app</b></span></span>
+    <p><b>compute</b> runs the project's code.</p>
+    <span><span class="door-ref door-inside" style="--svc:var(--svc-database)"><svg class="layer" aria-hidden="true"><use href="../../console/priv/static/images/icons.svg#rack"></use></svg><b>database</b></span></span>
+    <p><b>database</b> keeps its data.</p>
+    <span><span class="door-ref door-inside" style="--svc:var(--svc-devtools)"><svg class="layer" aria-hidden="true"><use href="../../console/priv/static/images/icons.svg#rack"></use></svg><b>pgadmin</b></span></span>
+    <p><b>devtools</b> are for whoever develops: a database admin, k6.</p>
+    <span><span class="door-ref door-inside" style="--svc:var(--svc-observability)"><svg class="layer" aria-hidden="true"><use href="../../console/priv/static/images/icons.svg#rack"></use></svg><b>grafana</b></span></span>
+    <p><b>observability</b> watches: Prometheus, Grafana.</p>
+    <span><span class="door-ref door-inside" style="--svc:var(--svc-balancer)"><svg class="layer" aria-hidden="true"><use href="../../console/priv/static/images/icons.svg#rack"></use></svg><b>balancer</b></span></span>
+    <p><b>balancer</b> stands in front of the replicas of the scaled deployment.</p>
+    <span><span class="door-ref door-inside" style="--svc:var(--svc-job)"><svg class="layer" aria-hidden="true"><use href="../../console/priv/static/images/icons.svg#rack"></use></svg><b>migrate</b></span></span>
+    <p><b>job</b> runs once and ends: a migration.</p>
+    <span><span class="door-ref door-inside" style="--svc:var(--svc-network)"><svg class="layer" aria-hidden="true"><use href="../../console/priv/static/images/icons.svg#rack"></use></svg><b>pod</b></span></span>
+    <p><b>network</b> carries the traffic. Also the colour of a service whose role the console does not know.</p>
+  </div>
+
+  <h2>The dot: where a cartridge is</h2>
+  <div class="rows">
+    <span><button type="button" class="cart-ref in">health_probe</button></span>
+    <p><b>Inserted.</b> The project carries it.</p>
+    <span><button type="button" class="cart-ref">coverage</button></span>
+    <p><b>On the shelf.</b> Not in the project. Either way, the name opens its box.</p>
+  </div>
+</div>
+</body>
+</html>

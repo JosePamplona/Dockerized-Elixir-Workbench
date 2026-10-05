@@ -1,0 +1,158 @@
+MANUAL HERO. The image in art/hero.jpg is the source, the way
+overlay.xcf is: it was made in conversation with the generator, over
+several sessions, starting from proposal 3 (editorial cover) in
+eras.md and the prompt kept at the foot of this file — a duplex
+instrument, two dials lit from within in one ivory-enamelled case with
+black rings, the nameplates OS DATA and ECTO STATS, the title in
+letterspaced serif small capitals over a fine rule and the italic
+subtitle "Lights on", the flash "2 PAGES" at the top left. It cannot
+be regenerated, only continued: every change asked of the image from
+here on is logged below, before the take that tests it, and the
+previous image is archived before the new one overwrites it.
+
+The image is the hero at the window's 4:5 (825x1024) since
+2026-09-18: it first arrived as a whole face, 728x1024, 5:7, where the
+overlay's band lay exactly over the generated "2 PAGES" flash — that
+one is `_archived/art/cover-1.jpg`, stamped once with a typeset badge.
+The same picture at 4:5 goes through `covers.py pad`, the second turn
+below and `covers.py cut`, and its own flash shows in the window.
+
+What the image carries beyond that prompt, read off it on 2026-09-18
+(the turns that produced it were not logged — the log starts here):
+
+- The ground is not an even tone: behind the instrument, a sepia
+  photograph of a machine hall of the first computers — racks of
+  valves and patch cables running back along the left wall, a figure
+  at work far back on the right, ceiling lamps — soft and out of
+  focus toward the back, falling into the prompt's deep blue-black
+  below the instrument, where the lockup sits on plain tone.
+- The instrument stands on a wooden floor and throws a soft shadow;
+  the case is a glossy cream, with a highlight along its upper edge.
+- Each dial has ONE needle, not three and one, and a label arched
+  over the pivot: "CPU LOAD" on the left, "DB LATENCY" on the right.
+- Small monospaced readouts in the lower half of each face. Left:
+  "kernel.cpu_usage_avg = 78.3", "memory.usage_68 = 16384". Right:
+  "request.total_count = 1839327", "response.errors_ratio = 8.6851",
+  "database.query_latency = 12ms".
+- A pictogram at the foot of each face: a processor on the left, a
+  drum of stacked discs on the right (the prompt's, moved).
+- The nameplates are black plates with ivory serif capitals, set on
+  the case under each dial.
+
+--- log of changes asked of the image ---
+
+1. (proposed 2026-09-18, the author decides whether it is asked) The
+   right dial's readouts are the application's HTTP metrics, which
+   are LiveDashboard's Metrics page and the one thing the NEED says
+   this box is not for; Ecto Stats reads the database server. Keep
+   everything else exactly as it is and replace only the lettering
+   inside the right dial: the arched label "DB LATENCY" becomes
+   "CACHE HIT", and the three small lines become
+
+       index_cache_hit = 0.99
+       unused_indexes = 0
+       long_running_queries = 0
+
+   and inside the left dial the two small lines become
+
+       load_avg_1min = 0.36
+       memory_used = 64.9%
+       disk_used = 95%
+
+   (the queries are ecto_psql_extras' own names; the three readings
+   are the ones OS Data showed on the probe of DESIGN.md §4.2).
+
+--- second turn, with the padded canvas from covers.py pad ---
+
+The flat grey border around this picture is blank. Paint it by
+continuing the picture outward into it on every side, to the edges —
+above, the same machine hall runs on upward to the top edge: the dark
+cabinets of the left wall continue up, the pale ceiling with its beams
+and its hanging lamps continues up and back, soft and out of focus, in
+the same sepia; below, the same plain deep blue-black ground continues
+down to the bottom edge, one even tone with nothing on it; and in the
+thin strip at each side the same things run on to the edge at the same
+heights — the dark cabinets and their cables at the left, the dim back
+of the hall and the wooden floor at the right, the blue-black ground
+below them. Keep the picture inside exactly as it is, and add nothing
+new: no figure, no object, no lettering.
+
+--- the prompt the first turn started from (2026-09-18) ---
+
+Mid-1980s literary game cover art. Restrained editorial design rather
+than illustration: an even ground of a single colour, one carefully lit
+object centred with generous space around it, serif type set small, a
+subtle deboss, clean printing on coated stock.
+
+Flat cover illustration filling the entire image edge to edge, all of
+it in one plane: the four edges of the image are the four edges of the
+illustration, and the illustration is all there is — not a product
+photograph, not a box or a board: no bevel, no lip, no rim of light, no
+edge, no shadow, no surface behind it, no margin of any colour around
+it. Proportions 4:5 portrait. Every position below is measured from
+the edges of the image. The ground of the illustration, edge to edge,
+is one tone that reads clearly lighter or darker in value than Elixir
+violet (#4B275F).
+
+Hero illustration, a studio still life of the period reproduced in
+four-colour offset with a fine halftone screen, every surface matte:
+the ground of the image, edge to edge, is one even tone of deep
+blue-black ink, clearly darker than violet, the same flat tone at all
+four edges of the image. Centred on the width, with its centre at two
+fifths of the height down, stands one object, seen straight on: a
+duplex instrument — two round dials set side by side in a single case.
+The case is three fifths of the width of the image across and a
+quarter of the height tall, a rounded oblong with half-round ends, of
+ivory-enamelled steel with a matte eggshell finish, and around each
+dial one plain ring of matte black. The two dials are the same size,
+each a fifth of the height across, the centre of the left one at a
+third of the width and the centre of the right one at two thirds of
+the width. Both dial faces are lit from within: translucent cream
+faces glowing warm amber, brightest at the middle of each face and
+falling off toward its ring, and that glow is the light of the
+picture — it warms the ivory of the case around each ring and lays one
+faint amber pool on the ground directly under the case, fading out
+well before the edges of the image. The left dial carries a scale of
+fine black tick marks around its upper half and three slender black
+needles on one central pivot: one needle pointing to the upper left,
+one pointing straight up, one pointing to the upper right. The right
+dial carries the same scale of fine black tick marks around its upper
+half and one slender black needle on a central pivot pointing to the
+upper right; in the lower half of its face, printed in fine black
+line, a small drum of three flat discs stacked one on another. The
+scales are tick marks only. Under each dial, on the ivory of the case,
+a nameplate engraved and filled black, in upright serif capitals at
+foreground size, each as wide as half its dial. Under the left dial:
+
+    OS DATA
+
+and under the right dial:
+
+    ECTO STATS
+
+Generous even ground on every side of the case: the ground above the
+case, from the top edge of the image down to a quarter of the height,
+is the plain blue-black tone, and so are the left and right tenths of
+the width, from top to bottom.
+
+Title lockup across the lower part of the image, on the plain ground:
+"DASHBOARD EXTRAS" on one line in small capitals of a serif face,
+letterspaced, in ivory, centred on the width and three fifths of the
+width wide, its baseline at four fifths of the height down; under it
+one fine debossed rule a quarter of the width long, centred; and
+beneath the rule, in a smaller italic of the same serif, in ivory, the
+subtitle "Lights on".
+
+In the top left corner of the image, a small rectangular flash: a fine
+ivory keyline box holding "2 PAGES" in the same serif small capitals,
+in ivory, at foreground size.
+
+The two nameplates, the title, the subtitle and the flash are all the
+lettering in the image.
+
+The top right corner of the artwork is composed as a quiet area: low
+detail, no focal element, an even field of tone — the plain blue-black
+ground.
+
+Every mark on the face is printed illustration or type, and the marks
+named above are all of them.

@@ -1,0 +1,41 @@
+#!/bin/sh
+#
+# `mix`, for the machine that commits.
+#
+# The git hook runs on the host, and the host of a workbench project
+# has Docker and nothing else — no Elixir, no mix. This is what
+# git_hooks is pointed at (`mix_path` in config/dev.exs), so the checks
+# run where the project lives: the app container, on the source the
+# commit is being made from.
+#
+# Warm path when the workspace is up, one-off container when it is not
+# — the same two paths the workbench's own `mix` verb takes, and the
+# same ambient Docker context, so this agrees with whatever `docker
+# compose` would do from this directory.
+#
+# A commit made where the project already is — its container, where
+# the source is /app/src and mix is on the PATH (the workbench's
+# console, a terminal in the workspace) — runs mix right there: that
+# is where the hop would have landed, and such a container need not
+# reach Docker at all. Both conditions, because a host with an Elixir
+# of its own is still a host: its mix has none of the project's deps.
+
+set -e
+
+cd "$(dirname "$0")/.." || exit 1
+
+if [ "$(pwd -P)" = /app/src ] && command -v mix >/dev/null 2>&1; then
+  exec mix "$@"
+fi
+
+if ! command -v docker >/dev/null 2>&1; then
+  echo "pre-commit: docker is not on PATH, and the checks run in the project's container." >&2
+  echo "            Start Docker, or commit with --no-verify to skip them." >&2
+  exit 1
+fi
+
+if [ -n "$(docker compose ps --status running --quiet app 2>/dev/null)" ]; then
+  exec docker compose exec -T --workdir /app/src app mix "$@"
+else
+  exec docker compose run --rm -T --workdir /app/src app mix "$@"
+fi

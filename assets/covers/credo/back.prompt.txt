@@ -1,0 +1,50 @@
+credo — back plate prompt
+Era 4, console (late 1980s), from the front's row in the cover record.
+Register: tireless. The plate carries nothing lettered: the copy, the
+frames, the screenshots, the name lozenge, the install command and the
+seal are all composited by `covers.py back`.
+
+Generated from this text alone, with no reference image attached: the
+plate has no subject, and the classroom hero attached would be a subject
+offered to a face that must not have one (and the front's five takes
+showed what a reference plus a competing description does). The device
+echoes the front's mark in the only way a device may, as a shape with no
+lettering: five bars, the five groups of Credo's checks.
+
+--- the plate, one turn ---
+
+Late-1980s console game box cover art. Painted airbrush illustration with
+the slightly stiff, heroic look of North American 8-bit era packaging:
+hard airbrush gradients, chunky specular highlights, visible matte
+cardboard grain.
+
+Flat cover illustration filling the entire image edge to edge, all of
+it in one plane: the four edges of the image are the four edges of the
+illustration, and the illustration is all there is — not a product
+photograph, not a box or a board: no bevel, no lip, no rim of light, no
+edge, no shadow, no surface behind it, no margin of any colour around
+it. Proportions 5:7 portrait. Elixir violet (#4B275F) is the dominant
+colour of the illustration.
+
+Back face layout. This face carries no subject: no figure, no scene, no
+picture of anything. The face is matte cardboard printed in deep Elixir
+violet, one hard airbrush gradient across the whole face, a step lighter
+at the upper left and darkening evenly toward the lower right, with the
+cardboard's grain visible through the ink. Nothing on the face is
+lettered: no title, no caption, no signature, no placeholder text, no
+glyphs, no words of any kind anywhere on the face.
+
+Across the middle of the face the printed board continues, bare, and one
+embossed shield is blind-stamped into it, centred on the width, its
+centre a little below the middle of the height, a quarter of the width
+wide, in the same violet as the board and barely darker than it — a
+watermark rather than a print, and the one mark on this face. Inside the
+shield's outline there are five short horizontal bars of equal length,
+stacked one above the other and evenly spaced, and nothing else. It
+carries no lettering.
+
+Across the bottom edge, over the full width, a band of the same board
+printed in a darker ink, about a fifteenth of the height of the face.
+
+Every mark on the face is printed material or type, and the marks named
+above are all of them.

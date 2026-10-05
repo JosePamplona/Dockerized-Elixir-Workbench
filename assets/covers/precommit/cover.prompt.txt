@@ -1,0 +1,51 @@
+THIS HERO IS MANUAL. There is no prompt that regenerates it.
+
+It was made in conversation with the generator, outside the repository,
+and the image itself is the source — as `overlay.xcf` is for the
+overlay. It started from proposal 3, the editorial cover (`eras.md`),
+and left the era behind: what came back is a photographic door, not a
+printed editorial ground. The register did not move — *scrupulous*, the
+thing held back at your own door — and neither did the subject the six
+proposals share: one thing finished and about to go, and one small
+fitting, reachable by the person it stops.
+
+A manual hero can only be **continued**, never regenerated. Every turn
+is the current `art/hero.jpg` plus the last entry below, and each entry
+is written here *before* the take that tests it. The hero is archived
+before anything overwrites it, without exception.
+
+Everything downstream is unchanged: `covers.py pad`, the expansion,
+`covers.py cut`, `covers.py stamp`, the invariants, the counts.
+
+--- the log ---
+
+### 1 — 2026-09-20, the image as it arrived (art/hero.jpg, 825x1024)
+
+A dark wooden door, ajar, seen straight on and filling the frame: the
+jamb and the dark gap at the left, the door's stiles and one raised
+panel at the right. Across the gap, a brass security chain at the end
+of its travel — the knob hard against the closed end of its slotted
+plate — the plate screwed to the door at the middle right, the chain
+running up and to the left to its mounting plate on the jamb. Warm
+light from the right rakes across the grain; the room beyond the gap is
+unlit. The lettering is in the art: "PreCommit" in a white serif at
+0.72 of the width and 0.57 of the height down, and "Not yet." beneath
+it, smaller, with its full stop.
+
+What it keeps, and what it changed, against the take it replaces
+(`_archived/art/cover-2.jpg`, the editorial hero):
+
+* The chain, at the end of its travel, is still the whole argument —
+  and here it has the door the editorial take could not have, since
+  that era's method is one object on an empty ground.
+* No unit badge. The typeset `--badge "4 CHECKS"` was stamped once and
+  taken off: a white chip on photographic art reads as a sticker from
+  another system, and this hero composes its own lettering.
+* The title is set as `PreCommit`, not the uppercase the title slot
+  asks of a prompt. The image is the source; it is not corrected.
+* The margins are not flat, so the expansion repeats the hero's own
+  edge rows and columns (`expand.py`) rather than asking a second turn
+  for wood grain. Everything it smears falls under the board: 124px
+  above, 66px below, against the band's 124 and the strip's 65.
+
+### 2 — next turn goes here, before the take that tests it

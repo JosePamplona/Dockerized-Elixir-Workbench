@@ -1,0 +1,61 @@
+{
+  "dew.theme": {
+    "name": "House's",
+    "author": "The house",
+    "url": "https://github.com/JosePamplona/Dockerized-Elixir-Workbench",
+    "licence": "MIT",
+    "about": "The house's terminal: its own colours on a violet ground, and its own on paper."
+  },
+  "dark": {
+    "workbench.colorCustomizations": {
+      "terminal.background": "#2d1d3a",
+      "terminal.foreground": "#e1dbeb",
+      "dew.terminal.dim": "#8b7c96",
+      "terminal.ansiBlack": "#3b4252",
+      "terminal.ansiRed": "#ee3f65",
+      "terminal.ansiGreen": "#87c738",
+      "terminal.ansiYellow": "#f1cb65",
+      "terminal.ansiBlue": "#4a7ef7",
+      "terminal.ansiMagenta": "#e690fe",
+      "terminal.ansiCyan": "#60c7d7",
+      "terminal.ansiWhite": "#e5e9f0",
+      "terminal.ansiBrightBlack": "#4c566a",
+      "terminal.ansiBrightRed": "#fc7391",
+      "terminal.ansiBrightGreen": "#b7dd88",
+      "terminal.ansiBrightYellow": "#f7e3ab",
+      "terminal.ansiBrightBlue": "#94b2fa",
+      "terminal.ansiBrightMagenta": "#f2c2ff",
+      "terminal.ansiBrightCyan": "#9cdde7",
+      "terminal.ansiBrightWhite": "#eceff4",
+      "dew.terminal.errorLine": "#fe0b3c",
+      "dew.terminal.warningLine": "#f2a436",
+      "editor.lineHighlightBackground": "#ffffff"
+    }
+  },
+  "light": {
+    "workbench.colorCustomizations": {
+      "terminal.background": "#fdfbfe",
+      "terminal.foreground": "#2d1d3a",
+      "dew.terminal.dim": "#8f819a",
+      "terminal.ansiBlack": "#2e3440",
+      "terminal.ansiRed": "#c11137",
+      "terminal.ansiGreen": "#508a05",
+      "terminal.ansiYellow": "#c47608",
+      "terminal.ansiBlue": "#347cef",
+      "terminal.ansiMagenta": "#ad61c2",
+      "terminal.ansiCyan": "#1f8d9e",
+      "terminal.ansiWhite": "#d8dee9",
+      "terminal.ansiBrightBlack": "#4c566a",
+      "terminal.ansiBrightRed": "#ef486c",
+      "terminal.ansiBrightGreen": "#6dbb07",
+      "terminal.ansiBrightYellow": "#f5b60a",
+      "terminal.ansiBrightBlue": "#639af2",
+      "terminal.ansiBrightMagenta": "#c086d0",
+      "terminal.ansiBrightCyan": "#28b3c8",
+      "terminal.ansiBrightWhite": "#eceff4",
+      "dew.terminal.errorLine": "#e90130",
+      "dew.terminal.warningLine": "#a7660b",
+      "editor.lineHighlightBackground": "#1d1424"
+    }
+  }
+}

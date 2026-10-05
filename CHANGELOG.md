@@ -2271,7 +2271,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   left column keeps its 320px, so the air goes to the papers, their
   code and the diffs. Below a viewport of about 1160px nothing
   changes: `94vw` still rules there. The change itself rode in with
-  `0f79e8c`, which does not mention it; this entry is its record.
+  `3d01bf4`, which does not mention it; this entry is its record.
 
 - **An insert form's help is one voice, under what it helps.** An
   option with values said itself twice: each value's gloss on its

@@ -109,9 +109,12 @@ defmodule Console.Papers do
 
     case File.read(Path.join(Workbench.dir(), file)) do
       {:ok, md} ->
+        {md, tags} = house_tags(md)
+
         html =
           md
           |> to_html()
+          |> put_house_tags(tags)
           |> then(
             &Regex.replace(
               ~r/<img src="(assets\/[^"]+)"/,
@@ -139,6 +142,87 @@ defmodule Console.Papers do
       _ ->
         nil
     end
+  end
+
+  @doc """
+  The two tags the workbench's own README may carry, taken out of the
+  Markdown before it is rendered: `{markdown, tags}`, each tag replaced
+  by a word the renderer passes through, and `tags` what to write back
+  where each word lands (`put_house_tags/2`).
+
+  The README is Markdown with two exceptions, each for what Markdown
+  cannot say: an `<img>`, for a width or a side, and a `<br>`, the one
+  way to a second line inside a table's cell (2026-10-04). The renderer
+  leaves raw HTML out, and that stays: nothing here turns it on. A tag
+  is not let through, it is read and written again — the image's source
+  when it is a picture under `assets/`, a width in digits, a side, and
+  its `alt` escaped; whatever else the tag carried, an `onerror` first
+  of all, is not copied. A tag that does not read that way is left
+  where it was, for the renderer to leave out.
+
+  For the workbench's README alone. A cartridge's papers are foreign
+  content (console/README.md) and are never passed through here.
+  """
+  def house_tags(md) do
+    {md, tags} =
+      Regex.scan(~r/<img\s[^<>]*>|<br>/, md)
+      |> Enum.map(&hd/1)
+      |> Enum.uniq()
+      |> Enum.reduce({md, []}, fn tag, {md, tags} ->
+        case house_tag(tag) do
+          nil ->
+            {md, tags}
+
+          html ->
+            word = "dewhousetag#{length(tags)}x"
+            {String.replace(md, tag, word), [{word, html} | tags]}
+        end
+      end)
+
+    {md, Enum.reverse(tags)}
+  end
+
+  @doc "The rendered page with each word of `house_tags/1` given its tag back."
+  def put_house_tags(html, tags),
+    do: Enum.reduce(tags, html, fn {word, tag}, html -> String.replace(html, word, tag) end)
+
+  defp house_tag("<br>"), do: "<br>"
+
+  defp house_tag(tag) do
+    src = tag_attr(tag, "src")
+
+    if house_picture?(src) do
+      alt =
+        (tag_attr(tag, "alt") || "")
+        |> Phoenix.HTML.html_escape()
+        |> Phoenix.HTML.safe_to_string()
+
+      ~s(<img src="#{src}"#{house_width(tag)}#{house_side(tag)} alt="#{alt}">)
+    end
+  end
+
+  defp tag_attr(tag, name) do
+    case Regex.run(~r/\s#{name}="([^"]*)"/, tag) do
+      [_, value] -> value
+      _ -> nil
+    end
+  end
+
+  defp house_picture?(nil), do: false
+
+  defp house_picture?(src),
+    do:
+      Regex.match?(~r/^assets\/[\w.\/-]+\.(png|jpe?g|gif|webp|svg)$/, src) and
+        not String.contains?(src, "..")
+
+  defp house_width(tag) do
+    width = tag_attr(tag, "width")
+    if width && Regex.match?(~r/^\d{1,4}$/, width), do: ~s( width="#{width}"), else: ""
+  end
+
+  defp house_side(tag) do
+    side = tag_attr(tag, "align")
+    if side in ["left", "right"], do: ~s( align="#{side}"), else: ""
   end
 
   @doc """
@@ -321,9 +405,16 @@ defmodule Console.Papers do
     do: String.replace(html, ~r/<p>(Revision:)/, ~s(<p class="revision">\\1))
 
   @doc """
-  An id on every heading, `h1` to `h4`, and the `h2`s for the index.
+  An anchor on every heading, `h1` to `h4`, and the `h2`s for the index.
 
-  The id is the heading's words as GitHub writes them (`MDEx.anchorize/1`,
+  It is written as `data-anchor`, not as an `id`: a paper's headings are
+  whatever its writer called them, and the page has ids of its own. The
+  workbench's README has a *Deployments* and a *Logs*, and so has the
+  console — the rail's table, the logs' pane — so as ids the two met
+  the day that README was read in the drawer (2026-10-04). The booklet's
+  hook is what follows a link to a section, and it looks for the anchor.
+
+  The anchor is the heading's words as GitHub writes them (`MDEx.anchorize/1`,
   GFM's algorithm: lower case, punctuation out, a hyphen a space), and a
   repeated one counts from the second on — `repeated`, `repeated-1`,
   `repeated-2` — so a link an author wrote for the repository,
@@ -338,11 +429,18 @@ defmodule Console.Papers do
     {html, heads, _seen} =
       Regex.scan(~r/<(h[1-4])>(.*?)<\/\1>/s, html)
       |> Enum.reduce({html, [], %{}}, fn [whole, tag, inner], {html, heads, seen} ->
-        text = inner |> String.replace(~r/<!--.*?-->/s, "") |> String.replace(~r/<[^>]+>/, "")
+        text =
+          inner
+          |> String.replace(~r/<!--.*?-->/s, "")
+          |> String.replace(~r/<[^>]+>/, "")
+          |> unescaped()
+
         {id, seen} = unique_id(MDEx.anchorize(text), seen)
 
         html =
-          String.replace(html, whole, ~s(<#{tag} id="#{id}">#{inner}</#{tag}>), global: false)
+          String.replace(html, whole, ~s(<#{tag} data-anchor="#{id}">#{inner}</#{tag}>),
+            global: false
+          )
 
         heads =
           if tag == "h2", do: [{id, String.replace(text, ~r/^\d+\.\s*/, "")} | heads], else: heads
@@ -351,6 +449,19 @@ defmodule Console.Papers do
       end)
 
     {html, Enum.reverse(heads)}
+  end
+
+  # A heading's words as written, not as the renderer escaped them: the
+  # index escapes what it is given, and "Workbench &amp; its Workspace"
+  # reached it reading *&AMP;*, with an id no link written for GitHub
+  # (`#the-workbench--its-workspace`) could land on (2026-10-04).
+  defp unescaped(text) do
+    text
+    |> String.replace("&lt;", "<")
+    |> String.replace("&gt;", ">")
+    |> String.replace("&quot;", "\"")
+    |> String.replace("&#39;", "'")
+    |> String.replace("&amp;", "&")
   end
 
   # GitHub's count: the first bare, then -1, -2 — and a counted one that

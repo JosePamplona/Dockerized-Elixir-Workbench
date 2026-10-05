@@ -124,6 +124,26 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **The drawer's Manual reads the new README whole.** Three things
+  stood between that page and the console, and the README found all
+  three the day it was written. The renderer leaves raw HTML out, so
+  the covers of the shelf and the lines inside its cells were gone:
+  `Console.Papers.house_tags/1` takes the README's two tags out before
+  the page is rendered and writes them back after, and what it writes
+  is not what it read — the source when it is a picture under
+  `assets/`, a width in digits, a side, the `alt` escaped; an
+  `onerror`, a `style` or a source anywhere else is not copied. For the
+  workbench's README alone: a cartridge's papers never pass through it,
+  and nothing turns the renderer's escaping off. A heading's anchor was
+  written as its `id`, and the README has a *Deployments* and a *Logs*,
+  as the page does (the rail's table, the logs' pane): two elements
+  with one id. The anchor is `data-anchor` now, which is what the
+  booklet's hook looks for, so a paper is free to name its sections
+  anything. And a heading with an ampersand reached the index twice
+  escaped, *THE WORKBENCH &AMP; ITS WORKSPACE*, with an id no link
+  written for GitHub could land on: the index and the anchor take the
+  heading's words as written.
+
 - **The ash cartridge queues `mishka_chelekom` first, and `/sign-in`
   has its styles back.** The author found the Ash sign-in page unstyled
   on `_001` (2026-10-03) — no blue on the buttons. Tailwind 4 scans

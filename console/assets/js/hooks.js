@@ -564,13 +564,16 @@ export const Booklet = {
     // Opened on a link with a section in it: land on the section.
     if (location.hash.length > 1) this.go(decodeURIComponent(location.hash.slice(1)), false)
   },
-  // The heading ids are the paper's own, GitHub's for its words, so two
-  // papers on the page — a box's manual under the drawer's — can share
-  // one: this booklet's article is searched first, the document after.
+  // A heading's anchor is the paper's own, GitHub's id for its words,
+  // kept in data-anchor and not in id: the page has ids of its own, and a
+  // paper is free to have a "Logs". Two papers on the page — a box's
+  // manual under the drawer's — can share one: this booklet's article
+  // is searched first, the document after.
   // The section goes in the address, so the link can be copied; the
   // history entry stays LiveView's.
   go(id, keep) {
-    const target = id === "top" ? this.el.querySelector(".md") : (this.el.querySelector(`[id="${CSS.escape(id)}"]`) || document.getElementById(id))
+    const at = `[data-anchor="${CSS.escape(id)}"]`
+    const target = id === "top" ? this.el.querySelector(".md") : (this.el.querySelector(at) || document.querySelector(at))
     if (!target) return
     target.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" })
     if (keep) history.replaceState(history.state, "", id === "top" ? location.pathname + location.search : `#${id}`)

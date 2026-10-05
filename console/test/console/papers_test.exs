@@ -48,6 +48,64 @@ defmodule Console.PapersTest do
     assert Papers.to_html("![d](assets/d.svg)") =~ ~s(<img src="assets/d.svg")
   end
 
+  describe "the workbench README's two tags" do
+    defp housed(md) do
+      {md, tags} = Papers.house_tags(md)
+      md |> Papers.to_html() |> Papers.put_house_tags(tags)
+    end
+
+    test "an image under assets/ keeps its source, width, side and alt" do
+      html =
+        housed(
+          ~s(<img src="assets/readme/console/rail.png" alt="The rail" width="340" align="right">)
+        )
+
+      assert html =~
+               ~s(<img src="assets/readme/console/rail.png" width="340" align="right" alt="The rail">)
+    end
+
+    test "it is written again, never passed through: what else it carried is gone" do
+      html =
+        housed(~s|<img src="assets/a.png" onerror="alert(1)" width="80" style="x" alt="a & b">|)
+
+      assert html =~ ~s(<img src="assets/a.png" width="80" alt="a &amp; b">)
+      refute html =~ "onerror"
+      refute html =~ "style"
+    end
+
+    test "an image from anywhere else is left for the renderer to leave out" do
+      for src <- [
+            "https://evil.example/x.png",
+            "assets/../config.conf",
+            "assets/x.js",
+            "/etc/passwd"
+          ] do
+        html = housed(~s(<img src="#{src}" width="80">))
+        refute html =~ "<img", "#{src} got through"
+      end
+    end
+
+    test "a line break inside a table's cell, and inside a link an image" do
+      html =
+        housed("""
+        | a | b |
+        | --- | --- |
+        | [<img src="assets/c.jpg" width="80" alt="c">](dir/) | **one**<br>`two` |
+        """)
+
+      assert html =~ ~s(<strong>one</strong><br><code>two</code>)
+      assert html =~ ~r{<a href="dir/"><img src="assets/c.jpg" width="80" alt="c"></a>}
+    end
+
+    test "no other tag is taken out" do
+      html = housed(~s(<br clear="right">\n\n<svg onload="x"></svg>\n\n<b>b</b>))
+
+      refute html =~ "<br"
+      refute html =~ "<svg"
+      refute html =~ "<b>"
+    end
+  end
+
   test "tables and code come through" do
     html = Papers.to_html("| a | b |\n|---|---|\n| 1 | 2 |\n\n`x`")
     assert html =~ "<table>" and html =~ "<code>x</code>"
@@ -58,14 +116,14 @@ defmodule Console.PapersTest do
       "# Some Title\n## v0.13.0 - (2026-09-28)\n## Repeated\n## Repeated\n### `code` in title\n#### 7. What it replaces\n"
 
     %{html: html, toc: toc, title: title} = md |> Papers.to_html() |> Papers.booklet("X.md")
-    assert html =~ ~s(<h1 id="some-title">)
-    assert html =~ ~s(<h2 id="v0130---2026-09-28">)
+    assert html =~ ~s(<h1 data-anchor="some-title">)
+    assert html =~ ~s(<h2 data-anchor="v0130---2026-09-28">)
 
-    assert html =~ ~s(<h2 id="repeated">Repeated</h2>) and
-             html =~ ~s(<h2 id="repeated-1">Repeated</h2>)
+    assert html =~ ~s(<h2 data-anchor="repeated">Repeated</h2>) and
+             html =~ ~s(<h2 data-anchor="repeated-1">Repeated</h2>)
 
-    assert html =~ ~s(<h3 id="code-in-title"><code>code</code> in title</h3>)
-    assert html =~ ~s(<h4 id="7-what-it-replaces">)
+    assert html =~ ~s(<h3 data-anchor="code-in-title"><code>code</code> in title</h3>)
+    assert html =~ ~s(<h4 data-anchor="7-what-it-replaces">)
 
     assert toc == [
              {"v0130---2026-09-28", "v0.13.0 - (2026-09-28)"},
@@ -76,9 +134,20 @@ defmodule Console.PapersTest do
     assert title == "Some Title"
   end
 
+  test "a heading with an ampersand keeps its words in the index and GitHub's id" do
+    page = "## The Workbench & its Workspace\n" |> Papers.to_html() |> Papers.booklet("x.md")
+
+    assert page.toc == [{"the-workbench--its-workspace", "The Workbench & its Workspace"}]
+
+    assert page.html =~
+             ~s(<h2 data-anchor="the-workbench--its-workspace">The Workbench &amp; its Workspace</h2>)
+  end
+
   test "a heading really named like a counted repeat does not take its id" do
     %{html: html} = "## A\n## A\n## A-1\n" |> Papers.to_html() |> Papers.booklet("X.md")
-    assert html =~ ~s(id="a">) and html =~ ~s(id="a-1">A</h2>) and html =~ ~s(id="a-1-1">A-1</h2>)
+
+    assert html =~ ~s(data-anchor="a">) and html =~ ~s(data-anchor="a-1">A</h2>) and
+             html =~ ~s(data-anchor="a-1-1">A-1</h2>)
   end
 
   test "a fence the Files sheet has a lexer for is coloured with its palette" do

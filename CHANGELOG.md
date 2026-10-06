@@ -14,6 +14,46 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+### Fixed
+
+- **`./wb.sh new --database sqlite3` creates the project again: a
+  deployment a project cannot have is no longer an error.** Since the
+  three compose files are baked at a project's birth (2026-09-27),
+  `new` and `adopt` ended on `** (Mix) workbench.compose: a scaled
+  deployment cannot run on SQLite`, because the bake of the scaled
+  file was one more step of a chain and its refusal failed the whole
+  birth. The refusal was right and its kind was wrong: N replicas on
+  SQLite are N database files, so what a request reads depends on the
+  replica that answers it, with a balancer or without one, clustered
+  or not (the `ecto` cartridge, v0.3.2, DESIGN §3.5). That is not a
+  render that failed. It is a deployment this project does not have.
+
+  A cartridge's `compose/1` can now say so: `{:unavailable, reason}`
+  beside `{:error, reason}`, which stays for a set of services that is
+  wrong (two databases). `mix workbench.compose` prints
+  `unavailable> REASON` and exits with 4, the way a port still to
+  choose is `need> NAME DEFAULT` and 3, and `wb.sh` reads it without
+  naming a service or a deployment: the reason is the cartridge's,
+  shown as written. `new` and `adopt` leave the project with its dev
+  and prod files and one note. `add` removes a scaled file the project
+  can no longer have, in the insert's own commit (a project born
+  `--no-ecto` and given `ecto --database sqlite3` afterwards), and the
+  eject's revert brings it back to be rendered again. `bake --deploy
+  scaled` ends with the reason.
+
+  The status carries it — `deployments.<deploy>.unavailable` in
+  `status --json`, null for a deployment the project can have, and
+  *not available* with the reason under the Deployments line of the
+  text — and the console draws it where the deployment would be: the
+  scaled row stays on the Deployments sheet with *not available* and
+  the reason in full, its Bake, Build and Up unlit with that reason,
+  on the rail too. Switched off and saying why, not hidden.
+
+  It was first read as a consequence of `iex` attaching to the running
+  node (2026-09-16), which it is not: dev runs no release. Its
+  container boots `elixir --sname <app> -S mix phx.server` and `iex`
+  enters with `--remsh`; a release is only what prod and scaled run.
+
 ## v0.18.0 - (2026-10-04)
 
 ### Added

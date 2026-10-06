@@ -70,8 +70,13 @@ at every boot, and phx.new's `setup` alias runs `ecto.setup` (create,
 migrate, seeds). So the next `./wb.sh up` finishes the job. With `--database sqlite3`
 there is no server: the dev compose stays as it was (the file lives
 beside the source), and the prod compose gets a `data` volume for it
-and the migrator; the scaled deployment refuses SQLite, since replicas
-cannot share a file.
+and the migrator. The scaled deployment is not available on SQLite:
+each replica would keep its own database file, so what a request reads
+would depend on the replica that answers it. The project has no
+`docker-compose.scaled.yml` — a project born with `--database sqlite3`
+is born without one, and one baked before the insert leaves in the
+insert's commit — and `bake --deploy scaled`, the status and the
+console say why ([DESIGN](DESIGN.md) §3.5).
 
 ## Idempotency
 

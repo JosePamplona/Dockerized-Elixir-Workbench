@@ -342,6 +342,7 @@ defmodule ConsoleWeb.Board do
                 status={@status}
                 busy={@busy}
                 baked={d.baked}
+                unavailable={d.unavailable}
               />
             </td>
           </tr>
@@ -370,12 +371,17 @@ defmodule ConsoleWeb.Board do
     default: nil,
     doc: "the picker it stands in, when it stands in one: pressed, it sends the form"
 
+  attr :unavailable, :any,
+    default: nil,
+    doc: "why the project cannot have this deployment, in its cartridge's words"
+
   def bake_button(assigns) do
     cmd = ConsoleWeb.Deploy.cmdline("bake", assigns.name, assigns.extra)
 
     why =
       cond do
         assigns.status["exists"] != true -> "the workspace is empty: Deploy → Project creates one"
+        is_binary(assigns.unavailable) -> assigns.unavailable
         assigns.busy -> "a job is running"
         true -> nil
       end
@@ -424,12 +430,17 @@ defmodule ConsoleWeb.Board do
     default: nil,
     doc: "the picker it stands in, when it stands in one: pressed, it sends the form"
 
+  attr :unavailable, :any,
+    default: nil,
+    doc: "why the project cannot have this deployment, in its cartridge's words"
+
   def build_button(assigns) do
     cmd = ConsoleWeb.Deploy.cmdline("build", assigns.name, "")
 
     why =
       cond do
         assigns.status["exists"] != true -> "the workspace is empty: Deploy → Project creates one"
+        is_binary(assigns.unavailable) -> assigns.unavailable
         assigns.busy -> "a job is running"
         true -> nil
       end
@@ -467,7 +478,9 @@ defmodule ConsoleWeb.Board do
   # containers stay for a fast Up again.
   #
   # A verb it cannot do now is unlit with the reason, not hidden
-  # (2026-09-10): it says what it could do, not only what it can.
+  # (2026-09-10): it says what it could do, not only what it can. So is
+  # the Up of a deployment the project cannot have (`unavailable`: the
+  # scaled one on SQLite), with the reason its cartridge gives.
   #
   # Stop and Down came off the rows of the Deployments sheet on
   # 2026-09-26 and stand at its foot, where they name what they act on
@@ -486,10 +499,14 @@ defmodule ConsoleWeb.Board do
     doc:
       "the deployment's name on the button's face: away from its row, it must say what it acts on"
 
+  attr :unavailable, :any,
+    default: nil,
+    doc: "why the project cannot have this deployment, in its cartridge's words"
+
   def deploy_button(assigns) do
     running = assigns.status["deployment"]
     cmd = ConsoleWeb.Deploy.cmdline(assigns.verb, assigns.name, "")
-    why = deploy_why(assigns, running)
+    why = up_unavailable(assigns) || deploy_why(assigns, running)
     title = why || cmd <> deploy_says(assigns.verb, running, assigns.name)
 
     assigns = assign(assigns, why: why, title: title, cmd: cmd)
@@ -507,6 +524,12 @@ defmodule ConsoleWeb.Board do
     />
     """
   end
+
+  # A deployment the project cannot have: Up is unlit for good, with
+  # the cartridge's reason, not for want of a Bake that would refuse.
+  # Stop and Down keep their own reasons: they act on containers.
+  defp up_unavailable(%{verb: "up", unavailable: reason}) when is_binary(reason), do: reason
+  defp up_unavailable(_assigns), do: nil
 
   # Why the verb cannot run now, nil when it can.
   defp deploy_why(assigns, running) do

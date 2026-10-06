@@ -1,6 +1,8 @@
 # ecto — Design
 
-*Revision: cartridge v0.3.1 (2026-09-25): the step after the insert
+*Revision: cartridge v0.3.2 (2026-10-06): §3.5, a project on SQLite
+has no scaled deployment, with references 11–14 read on that date.
+Cartridge v0.3.1 (2026-09-25): the step after the insert
 is the compose baked in the insert's commit and `mix setup` at the app
 container's boot; `./wb.sh setup` never existed. The rest: cartridge
 v0.2.0 (2026-08-30). Sources consulted on that
@@ -238,6 +240,63 @@ installer has no database beside it. No `POOL_SIZE`, `ECTO_IPV6`: read
 with defaults in `runtime.exs` (§2.1). No pgAdmin variables: the
 compose's. No migration: there is nothing to migrate.
 
+### 3.5 A project on SQLite has no scaled deployment
+
+The scaled deployment is N replicas of the release that any request
+may reach: behind the balancer, or one by one on their own ports. That
+holds only while the replicas read the same data. A server gives them
+that; a SQLite file does not, because each replica is a container with
+a file of its own. What the reader would see depends on how requests
+are spread, and none of the ways is a working application:
+
+| Topology | What a request reads |
+|---|---|
+| balancer, round robin | another replica's data on each request: rows come and go |
+| balancer with affinity | each client's own data, for as long as the affinity holds |
+| no balancer | one application per port, each with its own data |
+| any of them, clustered | PubSub and Presence cross the nodes and the Repo does not: a node is told of a row it does not have |
+
+So the cartridge does not refuse the set of services, which is what
+`{:error, reason}` is for (two databases). It says the project has no
+such deployment: `compose/1` answers `{:unavailable, reason}`,
+`mix workbench.compose` prints it as `unavailable> REASON` and exits
+with 4, and `wb.sh` tells that apart from a render that failed. A
+project is born with its dev and prod files and one note; a scaled
+file baked before `add ecto --database sqlite3` is removed in the
+insert's commit; `bake --deploy scaled` ends with the reason; the
+status carries it (`deployments.scaled.unavailable`) and the console
+shows the row switched off, saying why.
+
+Considered and left out:
+
+* **One file on a volume all the replicas mount.** It would run on the
+  one Docker host a workspace is, and nowhere the deployment stands
+  for. SQLite's own word on WAL: "All processes using a database must
+  be on the same host computer; WAL does not work over a network
+  filesystem", and "there can only be one writer at a time" [11]. On a
+  file shared over a network its locks "have been known to operate
+  incorrectly for some network filesystems. This has led to database
+  corruption", and its advice is the one given here: "if your data is
+  separated from the application by a network, you want to use a
+  client/server database" [12]. A deployment that works only because
+  its replicas are on one machine teaches the opposite of what it is
+  for.
+* **Leaving the balancer out.** The third row of the table: it names
+  the divergence instead of hiding it, and it is still N applications.
+  Not an option of this cartridge, since a use for it was not found.
+* **Replicating the file.** LiteFS puts "a passthrough file system"
+  under the application, has one node take the writes — "All writes
+  should be directed to that node and it will propagate changes to the
+  rest of the cluster" — and chooses that node with "a lease from
+  Consul" [13]; rqlite puts a Raft log in front of SQLite and is
+  another server with its own client [14]. Both are real, and both are
+  an architecture of their own — a file system or a server, a lease, a
+  way to send writes to one node — not a flag on this one. If one is
+  ever wanted it is a cartridge.
+* **A read-only file in the image.** Identical in every replica, so it
+  scales; it is a dataset the application ships, not the Repo with
+  migrations that `phx.new --database sqlite3` generates.
+
 ## 4. Evaluation
 
 **Unit tests** (`features/ecto_test.exs`, 6 cases; run 2026-08-30 in
@@ -348,3 +407,17 @@ Read in full on 2026-08-30 unless marked otherwise.
     `WorkbenchIgniter.EnvFile.entry/4` (`igniter/lib/workbench_igniter/env_file.ex`);
     `igniter/test/workbench_igniter/features/ecto_test.exs`; the
     [mailer paper](../mailer/DESIGN.md) for the engine.
+11. SQLite, *Write-Ahead Logging* — <https://www.sqlite.org/wal.html>.
+    Read on 2026-10-06, **summary only** (fetched through a
+    summarizer, asked for the sentences verbatim); quoted for the same
+    host and the single writer.
+12. SQLite, *SQLite Over a Network, Caveats and Considerations* —
+    <https://www.sqlite.org/useovernet.html>. Read on 2026-10-06,
+    **summary only**, as [11]; quoted for the locks and the advice.
+13. Fly.io, *How LiteFS Works* —
+    <https://docs.fly.io/litefs/how-it-works>. Read on 2026-10-06,
+    **summary only**, as [11]; quoted for the file system, the writes
+    and the lease.
+14. rqlite — <https://rqlite.io>. **Not read for this paper**: named
+    as what it is known to be, a distributed database built on SQLite
+    and Raft, and quoted for nothing.

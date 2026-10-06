@@ -445,10 +445,17 @@ defmodule WorkbenchIgniter.Feature do
   `services`, every name asked for, so a service can see its
   neighbours: k6 writes to Prometheus when it is there, Adminer asks
   ecto which database the project has. A set of services no file can
-  be made of is refused with `{:error, reason}`. Nothing by default.
+  be made of is refused with `{:error, reason}`. A deployment the
+  project cannot have, being what it is — replicas, each on a SQLite
+  file of its own — is answered with `{:unavailable, reason}` instead:
+  nothing went wrong, there is no such file for this project, and the
+  reason is shown as it is wherever the deployment would be. Nothing by
+  default.
   """
   @callback compose(context :: map()) ::
-              [WorkbenchIgniter.ComposeFile.Service.t()] | {:error, String.t()}
+              [WorkbenchIgniter.ComposeFile.Service.t()]
+              | {:error, String.t()}
+              | {:unavailable, String.t()}
 
   defmacro __using__(_opts) do
     quote do

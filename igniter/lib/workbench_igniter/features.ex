@@ -306,14 +306,18 @@ defmodule WorkbenchIgniter.Features do
   cartridge's `compose/1`, in catalog order. Each cartridge answers for
   the names of its own that `context.services` asks for; a name no
   cartridge answers for contributes nothing. A cartridge may refuse the
-  set instead — two databases — and its reason is the answer.
+  set instead — two databases — or say the project has no such
+  deployment — replicas on SQLite — and its reason is the answer.
   """
   @spec compose(map()) ::
-          {:ok, [WorkbenchIgniter.ComposeFile.Service.t()]} | {:error, String.t()}
+          {:ok, [WorkbenchIgniter.ComposeFile.Service.t()]}
+          | {:error, String.t()}
+          | {:unavailable, String.t()}
   def compose(context) do
     Enum.reduce_while(catalog(), {:ok, []}, fn feature, {:ok, acc} ->
       case feature.compose(context) do
         {:error, reason} -> {:halt, {:error, reason}}
+        {:unavailable, reason} -> {:halt, {:unavailable, reason}}
         services -> {:cont, {:ok, acc ++ services}}
       end
     end)

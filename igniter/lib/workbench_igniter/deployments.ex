@@ -11,6 +11,11 @@ defmodule WorkbenchIgniter.Deployments do
   question of the dev file by baking it again and comparing bytes; this
   asks it of all three by name, which is the question the Record paper
   puts: does the file say what the cartridges ask for.
+
+  A deployment the project cannot have (`Compose.unavailable/2`: the
+  scaled one on SQLite) carries the cartridge's reason as `unavailable`,
+  baked or not: it is shown where the deployment would be, switched off
+  and saying why, instead of as a file still to bake.
   """
 
   alias WorkbenchIgniter.Compose
@@ -27,14 +32,18 @@ defmodule WorkbenchIgniter.Deployments do
           services: [String.t()],
           in_sync: boolean() | nil,
           stray: [String.t()],
-          missing: [String.t()]
+          missing: [String.t()],
+          unavailable: String.t() | nil
         }
 
   @doc "The three files under `dir`, against `services` — what the cartridges ask for."
   @spec read(Path.t(), [String.t()]) :: %{dev: t(), prod: t(), scaled: t()}
   def read(dir, services) do
     Map.new(@files, fn {deploy, file} ->
-      {deploy, one(deploy, Path.join(dir, file), services)}
+      {deploy,
+       deploy
+       |> one(Path.join(dir, file), services)
+       |> Map.put(:unavailable, Compose.unavailable(deploy, services))}
     end)
   end
 

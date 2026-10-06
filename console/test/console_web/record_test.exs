@@ -365,6 +365,22 @@ defmodule ConsoleWeb.RecordTest do
 
     File.rm_rf!(ws)
 
+    # A deployment the project cannot have carries its cartridge's
+    # reason; the others carry none.
+    assert Enum.map(page.deployments, & &1.unavailable) == [nil, nil, nil]
+
+    on_a_file =
+      put_in(
+        @status,
+        ["project", "deployments", "scaled", "unavailable"],
+        "no replicas on a file"
+      )
+
+    assert [%{unavailable: nil}, %{unavailable: nil}, %{deploy: "scaled", baked: false} = off] =
+             Record.deployments(on_a_file)
+
+    assert off.unavailable == "no replicas on a file"
+
     # Stopped: the containers are there, none running — dev after a Stop.
     stopped = Map.put(@status, "deployment", nil)
     [dev_stopped | _] = Record.deployments(stopped)

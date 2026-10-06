@@ -831,6 +831,12 @@
     # written — and is chosen here, the first free from the cartridge's
     # default on, because free is a question for the host; then the
     # task is asked again with it.
+    # A deployment the project cannot have — the scaled one on SQLite —
+    # comes back as 'unavailable> REASON', exit 4, nothing written: not
+    # a failure, so nothing is printed here. The reason is left in
+    # COMPOSE_UNAVAILABLE and the function returns 4, for each caller to
+    # say in its own place — a note at birth, the error of a bake asked
+    # for by name. No deployment is named here: a cartridge says which.
   compose_render() {
     local file="$1" kept="$2"; shift 2
     local file_path="$WORKSPACE_PATH/$file" answer name default port chosen=" " versions=() ports=()
@@ -841,6 +847,8 @@
     then mv "$file_path.baking" "$file_path"; return 0; fi
 
     rm -f "$file_path.baking"
+    COMPOSE_UNAVAILABLE=$(sed -n 's/^unavailable> //p' <<< "$answer" | tr -d '\r' | head -n 1)
+    [ -z "$COMPOSE_UNAVAILABLE" ] || return 4
     grep -q '^need> ' <<< "$answer" || { echo "$answer" | tail -n 5 >&2; return 1; }
 
     while read -r _ name default; do
@@ -945,6 +953,11 @@
     # that is behind is something 'bake' mends later.
     # The scaled file is rendered with what it has: as many replicas,
     # the balancer or none.
+    # A file of a deployment the project can no longer have (ecto in on
+    # SQLite, and the scaled file baked at birth without a database) is
+    # removed, in the same commit: a derived file says what the project
+    # asks for, and it asks for no such deployment. The eject's revert
+    # brings the file back, and this renders it again.
   rebake_composes() {
     local file
     COMPOSES_LEFT=()
@@ -967,7 +980,13 @@
     if [ -f "$WORKSPACE_PATH/$file" ]; then
       if compose_is_ours "$file"; then
         REPLICAS=""; BALANCER=""; read_scaled_shape
-        bake_scaled_compose || COMPOSES_LEFT+=( "$file" )
+        bake_scaled_compose
+        case $? in
+          0) ;;
+          4) rm -f "$WORKSPACE_PATH/$file"
+             echo "${B}Note${R} $file removed: $COMPOSE_UNAVAILABLE" ;;
+          *) COMPOSES_LEFT+=( "$file" ) ;;
+        esac
       else COMPOSES_LEFT+=( "$file" ); fi
     fi
     return 0
@@ -1886,10 +1905,19 @@
     # birth is one every Insert carries its services into and every
     # eject takes them out of, and one no 'up' has to write — and leave
     # uncommitted — on the way. The scaled file takes the default shape.
+    # A deployment the project cannot have (compose_render's 4: the
+    # scaled one on SQLite) is no failure of the birth: the project is
+    # born without that file, and told why in one note.
   bake_release_composes() {
     REPLICAS=$DEFAULT_REPLICAS
     BALANCER=true
-    bake_prod_compose && bake_scaled_compose
+    bake_prod_compose || return 1
+    bake_scaled_compose
+    case $? in
+      0) ;;
+      4) echo "${B}Note${R} No $SCALED_COMPOSE_FILE: $COMPOSE_UNAVAILABLE" ;;
+      *) return 1 ;;
+    esac
   }
 
   # bake_scaled_compose
@@ -3134,7 +3162,10 @@ if [ $# -gt 0 ]; then
         fi
 
       elif [[ "$DEPLOY_ARG" == "scaled" ]]; then
-        bake_scaled_compose && \
+        bake_scaled_compose
+        BAKED=$?
+        [ "$BAKED" -ne 4 ] || terminate "$COMPOSE_UNAVAILABLE"
+        [ "$BAKED" -eq 0 ] && \
         if workspace_dirty; then
           workspace_commit "Bake $SCALED_COMPOSE_FILE" && \
           echo "The scaled compose says what the project asks for now: the next up --deploy scaled brings it up."

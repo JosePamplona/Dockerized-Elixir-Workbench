@@ -738,7 +738,8 @@ defmodule ConsoleWeb.Record do
   @doc """
   The three deployments, off the status: each compose file baked, in
   sync with what the cartridges ask for (nil when the status is a fast
-  one, without the project), up or down, and its services as ports.
+  one, without the project), up or down, and its services as ports —
+  or `unavailable`, with the reason, when the project cannot have it.
   What the Record's table shows, and the rail's Deployments too.
   """
   def deployments(status), do: deployments(status, status["project"] || %{})
@@ -790,6 +791,9 @@ defmodule ConsoleWeb.Record do
       in_sync: d["in_sync"],
       stray: d["stray"] || [],
       missing: d["missing"] || [],
+      # Why the project cannot have this deployment, in its cartridge's
+      # words (`WorkbenchIgniter.Deployments`); nil when it can.
+      unavailable: d["unavailable"],
       status: deploy_status(baked, up, present),
       services: Enum.flat_map(services, &service_doors(&1, published[&1], at))
     }

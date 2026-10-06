@@ -46,7 +46,9 @@ defmodule Mix.Tasks.Workbench.Status do
     in a workspace. `deployments` is each compose file beside the project
     (`WorkbenchIgniter.Deployments`): baked, the services it declares,
     and whether it is in sync with what the cartridges ask for now, with
-    what is stray or missing when it is not.
+    what is stray or missing when it is not — and `unavailable`, the
+    reason a cartridge gives when the project cannot have that
+    deployment at all (the scaled one on SQLite), null otherwise.
   """
 
   alias WorkbenchIgniter.Birth
@@ -83,6 +85,12 @@ defmodule Mix.Tasks.Workbench.Status do
       IO.puts(birth_line(birth))
       IO.puts("Services: " <> if(services == [], do: "none", else: Enum.join(services, ", ")))
       IO.puts("Deployments: " <> deployments_line(deployments))
+
+      # Why, in the cartridge's words: the line above has no room for it.
+      for deploy <- [:dev, :prod, :scaled],
+          reason = deployments[deploy][:unavailable],
+          do: IO.puts("  #{deploy}: #{reason}")
+
       IO.puts("")
 
       for {title, list} <- [{"Installed", installed}, {"Not installed", missing}],
@@ -253,6 +261,9 @@ defmodule Mix.Tasks.Workbench.Status do
   defp deployments_line(deployments) do
     Enum.map_join([:dev, :prod, :scaled], " · ", fn deploy ->
       case deployments[deploy] do
+        %{unavailable: reason} when is_binary(reason) ->
+          "#{deploy} not available"
+
         %{baked: false} ->
           "#{deploy} not baked"
 

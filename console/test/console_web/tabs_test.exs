@@ -308,6 +308,58 @@ defmodule ConsoleWeb.TabsTest do
     refute sheet =~ ~s(class="sq eye")
   end
 
+  test "a deployment the project cannot have is on its row, switched off, saying why",
+       %{conn: conn} do
+    why = "The scaled deployment is not available on SQLite: each replica its own file."
+    file = %{"baked" => true, "in_sync" => true, "stray" => [], "missing" => []}
+
+    arrives(%{
+      "exists" => true,
+      "workspace" => "/w",
+      "containers" => [],
+      "baked" => %{"dev" => true, "prod" => true, "scaled" => false},
+      "project" => %{
+        "cartridges" => [],
+        "deployments" => %{
+          "dev" => Map.put(file, "services", ~w(pod app)),
+          "prod" => Map.put(file, "services", ~w(pod app migrate volume_init)),
+          "scaled" => %{
+            "baked" => false,
+            "in_sync" => nil,
+            "stray" => [],
+            "missing" => [],
+            "services" => [],
+            "unavailable" => why
+          }
+        }
+      }
+    })
+
+    {:ok, _view, html} = live(conn, "/deploy")
+    [sheet] = Regex.run(~r{<section[^>]*class="card deployments[^"]*"[^>]*>.*?</section>}s, html)
+    [_, scaled] = String.split(sheet, ~s(name="target" value="scaled"), parts: 2)
+
+    # The row is there, with the reason in full and no promise of a Bake.
+    assert scaled =~ ~r/>\s*not available\s*</
+    assert scaled =~ why
+    refute scaled =~ ~r/>\s*not baked\s*</
+
+    # Bake and Build are unlit with the cartridge's reason, not hidden.
+    for label <- ~w(Bake Build) do
+      assert [button] = Regex.run(~r{<button[^>]*>#{label}</button>}, scaled)
+      assert button =~ "unlit"
+      assert button =~ ~s(aria-disabled="true")
+      assert button =~ ~s(title="#{why}")
+    end
+
+    # The rail's Up of that row too; dev's is lit.
+    [rail] = Regex.run(~r{<table class="rows" id="deployments">.*?</table>}s, html)
+    [dev_row, _prod_row, scaled_row] = Regex.scan(~r{<tr>.*?</tr>}s, rail) |> List.flatten()
+    assert scaled_row =~ ~s(title="#{why}")
+    assert scaled_row =~ "unlit"
+    refute dev_row =~ "unlit"
+  end
+
   # Stop and Down came off the rows on 2026-09-26: only one deployment is
   # up at a time, so at most one row's Stop was ever lit, and `down`
   # clears the whole project — orphans of the other deployments included

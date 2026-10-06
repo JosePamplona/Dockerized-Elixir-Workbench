@@ -21,7 +21,10 @@ defmodule ConsoleWeb.ConsoleLive.Drawer do
 
   def take(socket, %{"wb" => key} = params) when key in ~w(config manual ui) do
     papers = Papers.workbench_papers() |> Enum.map(&elem(&1, 0))
-    paper = kept(params["paper"], socket, :wbpaper, papers)
+    # With a box open over the drawer, `paper` in the address is the
+    # box's manual's: the drawer stays on the one it was on.
+    named = if is_binary(params["box"]), do: nil, else: params["paper"]
+    paper = kept(named, socket, :wbpaper, papers)
     part = kept(params["part"], socket, :wbpart, ConsoleWeb.WorkbenchDrawer.part_keys())
 
     assign(socket,

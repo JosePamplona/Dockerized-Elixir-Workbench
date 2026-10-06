@@ -35,7 +35,16 @@ defmodule ConsoleWeb.Box do
 
   attr :back, :string,
     default: nil,
-    doc: "the screen's own place, where Put back goes; the bare tab when not given"
+    doc:
+      "what the box stands over, which its own links are written over; the bare tab when not given"
+
+  attr :put_back, :string,
+    default: nil,
+    doc: "where Put back goes: what the box stands over, or the box it was opened from"
+
+  attr :put_back_to, :string,
+    default: nil,
+    doc: "the box this one was opened from, when it was: Put back returns to it, and says so"
 
   attr :diff, :any,
     default: nil,
@@ -68,7 +77,16 @@ defmodule ConsoleWeb.Box do
         <div class="who">
           <h3>{@box["name"]}</h3>
         </div>
-        <.link class="btn" patch={@back || "/#{@tab}"}>Put back</.link>
+        <.link
+          class="btn"
+          patch={@put_back || @back || "/#{@tab}"}
+          title={
+            @put_back_to &&
+              "puts this box back and returns to #{@put_back_to}, where it was opened from — on the paper you were reading, at the place you left it"
+          }
+        >
+          {if @put_back_to, do: "Back to #{@put_back_to}", else: "Put back"}
+        </.link>
         <.ribbon
           label="The box and what comes inside it"
           selected={@screen}

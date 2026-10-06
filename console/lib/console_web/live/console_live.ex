@@ -83,6 +83,7 @@ defmodule ConsoleWeb.ConsoleLive do
         mix_by: %{},
         preads: %{},
         wb: nil,
+        trail: [],
         wbpaper: "readme",
         wbpart: "overlay",
         themes: Console.Themes.all(),
@@ -180,6 +181,7 @@ defmodule ConsoleWeb.ConsoleLive do
          |> Docker.take(params)
          |> Git.take(params)
          |> take_shelf(params)
+         |> assign(trail: if(params["box"], do: trail(params["from"]), else: []))
          |> sync_last_fold()
          |> keep_back()}
     end
@@ -195,6 +197,73 @@ defmodule ConsoleWeb.ConsoleLive do
       assign(socket,
         back: "/#{socket.assigns.tab}#{screen_query(socket.assigns.tab, socket.assigns)}"
       )
+
+  # What a box stands over, as a path: the screen, and the workbench's
+  # drawer when it is open — the two can be on the page at once, the box
+  # on top (2026-10-06). Until then a cartridge pressed in the
+  # workbench's README took the drawer's place, and putting the box back
+  # left the reader on the bare screen, the README and their place in it
+  # gone. The drawer's own paper and part are not in this path: `paper`
+  # is the box's manual's while a box is open, and the drawer keeps what
+  # it was on (`Drawer.take/2`).
+  defp under(%{wb: wb, back: back}) when is_binary(wb), do: Refs.over(back, "wb=#{wb}")
+  defp under(%{back: back}), do: back
+
+  # The trail of boxes left on the way to the one in hand, oldest first:
+  # `from=ecto.manual.design,clustering.manual.readme`, each the box,
+  # its screen and its paper. There is one box in hand, never two — its
+  # form, its recipe and its face are one set — so a cartridge pressed
+  # in another's paper takes its place, and until 2026-10-06 that was
+  # the end of the first reading: Put back went to the screen. Now it
+  # goes back along this trail, one box at a time, and the booklet puts
+  # the reader where they were (the Booklet hook). Read off the address,
+  # so the browser's back and a reload agree with it; whatever does not
+  # read as a box, a screen and a paper is not on it.
+  @trail_entry ~r/^[a-z0-9_]+\.(box|install|files|manual)\.[a-z]*$/
+  defp trail(nil), do: []
+
+  defp trail(from),
+    do: from |> String.split(",") |> Enum.filter(&(&1 =~ @trail_entry)) |> Enum.take(-8)
+
+  defp from([]), do: ""
+  defp from(trail), do: "&from=" <> Enum.join(trail, ",")
+
+  # The address of a box opened by `query` (`box=NAME…`) from here:
+  # over what a box stands over, and, when another box is in hand, with
+  # that one added to the trail. A link to the box in hand — another of
+  # its screens, another of its papers — keeps the trail as it is.
+  defp over_box(%{box: box, trail: trail} = assigns, query) do
+    [_, name] = Regex.run(~r/^box=([^&]*)/, query)
+
+    trail =
+      if box && box["name"] != name,
+        do: trail ++ ["#{box["name"]}.#{assigns.screen}.#{assigns.paper}"],
+        else: trail
+
+    Refs.over(under(assigns), query <> from(trail))
+  end
+
+  # Where the box in hand is put back to: the last box on the trail, on
+  # the screen and the paper it was left on, or what it stands over.
+  defp put_back(%{trail: []} = assigns), do: under(assigns)
+
+  defp put_back(%{trail: trail} = assigns) do
+    [name, screen, paper] = trail |> List.last() |> String.split(".")
+    rest = Enum.drop(trail, -1)
+
+    Refs.over(
+      under(assigns),
+      "box=#{name}&screen=#{screen}" <>
+        if(screen == "manual", do: "&paper=#{paper}", else: "") <> from(rest)
+    )
+  end
+
+  # The box's own links are written over this: what it stands over,
+  # with the trail, so turning a paper of the box in hand keeps the way back.
+  defp box_back(%{trail: []} = assigns), do: under(assigns)
+
+  defp box_back(%{trail: trail} = assigns),
+    do: Refs.over(under(assigns), "from=" <> Enum.join(trail, ","))
 
   # Where a screen was left, as its query: on Project the paper and the
   # commit open on it, on Docker the document, on Cartridges the
@@ -583,19 +652,24 @@ defmodule ConsoleWeb.ConsoleLive do
   def handle_event("filter", %{"filter" => f}, socket), do: {:noreply, assign(socket, filter: f)}
 
   def handle_event("open", %{"name" => name}, socket),
-    do: {:noreply, push_patch(socket, to: Refs.over(socket.assigns.back, "box=#{name}"))}
+    do: {:noreply, push_patch(socket, to: over_box(socket.assigns, "box=#{name}"))}
 
-  # The scrim: the drawer closes onto the box under it, or the box onto the screen.
+  # Close takes away what is on top. A box opened over the workbench's
+  # drawer — a cartridge pressed in its README — is put back, and the
+  # drawer is there as it was left; closed again, the screen.
   def handle_event("close", _, socket),
     do:
       {:noreply,
        push_patch(socket,
-         to:
-           if(socket.assigns.wb && socket.assigns.box,
-             do: Refs.over(socket.assigns.back, "box=#{socket.assigns.box["name"]}"),
-             else: socket.assigns.back
-           )
+         to: if(socket.assigns.box, do: put_back(socket.assigns), else: socket.assigns.back)
        )}
+
+  # A link of a paper that opens a box: over the workbench's drawer when
+  # the link is the drawer's, and, from another box, with that box left
+  # on the trail to come back to.
+  def handle_event("goto", %{"href" => "?box=" <> _ = href}, socket),
+    do:
+      {:noreply, push_patch(socket, to: over_box(socket.assigns, String.trim_leading(href, "?")))}
 
   def handle_event("goto", %{"href" => href}, socket),
     do: {:noreply, push_patch(socket, to: "/#{socket.assigns.tab}#{href}")}
@@ -1140,9 +1214,10 @@ defmodule ConsoleWeb.ConsoleLive do
       nodes_error={@nodes_error}
       page={@wbpage}
       jobs={@jobs}
+      under={@box != nil}
     />
     <Box.box
-      :if={@box && !@wb}
+      :if={@box}
       box={@box}
       status={@status}
       catalog={@catalog}
@@ -1154,7 +1229,9 @@ defmodule ConsoleWeb.ConsoleLive do
       recipe={@recipe}
       face={@face}
       tab={@tab}
-      back={@back}
+      back={box_back(%{wb: @wb, back: @back, trail: @trail})}
+      put_back={put_back(%{wb: @wb, back: @back, trail: @trail})}
+      put_back_to={@trail |> List.last() |> then(&(&1 && hd(String.split(&1, "."))))}
       jobs={box_jobs(@jobs, @box)}
       open={@open_jobs}
       now={@now}

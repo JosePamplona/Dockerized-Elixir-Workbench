@@ -134,6 +134,48 @@ defmodule Console.PapersTest do
     assert title == "Some Title"
   end
 
+  test "the workbench README opens a cartridge here: its box, its papers, by the link's shape" do
+    %{html: html} = Papers.render_workbench("readme")
+    features = "igniter/lib/workbench_igniter/features"
+
+    # Nothing is left pointing into a cartridge's directory by a path the console does not serve.
+    refute html =~ ~s(href="#{features}/)
+
+    # The directory is the box, a paper it carries is that paper in its
+    # Manual, and its NEED is on the box — in the shelf's table, in the
+    # pending one and in a sentence alike.
+    assert html =~ ~s(<a href="?box=ecto&amp;screen=box" data-patch>)
+
+    assert html =~
+             ~s(<a href="?box=ecto&amp;screen=manual&amp;paper=readme" data-patch>README</a>)
+
+    assert html =~
+             ~s(<a href="?box=ecto&amp;screen=manual&amp;paper=design" data-patch>DESIGN</a>)
+
+    assert html =~
+             ~s(<a href="?box=ecto&amp;screen=manual&amp;paper=changelog" data-patch>CHANGELOG</a>)
+
+    assert html =~ ~s(<a href="?box=ecto&amp;screen=box" data-patch>NEED</a>)
+
+    assert html =~
+             ~s(<a href="?box=stripe&amp;screen=manual&amp;paper=readme" data-patch>README</a>)
+
+    assert html =~
+             ~s(<a href="?box=health_probe&amp;screen=manual&amp;paper=design" data-patch>health_probe</a>)
+
+    # A paper the box does not carry is not offered by the README, and
+    # would be read on GitHub: nothing here opens it.
+    refute html =~ "box=stripe&amp;screen=manual&amp;paper=design"
+
+    # What is not a cartridge is read where the repository is; the
+    # changelog stays the Manual's other paper.
+    github = "https://github.com/JosePamplona/Dockerized-Elixir-Workbench/blob/main/"
+    assert html =~ ~s(<a href="#{github}console/README.md" target="_blank" rel="noopener">)
+    assert html =~ ~s(<a href="#{github}#{features}/README.md#writing-a-designmd" target="_blank")
+    assert html =~ ~s(<a href="#{github}LICENSE.md" target="_blank" rel="noopener">)
+    assert html =~ ~s(<a href="?wb=manual&amp;paper=changelog" data-patch>)
+  end
+
   test "a heading with an ampersand keeps its words in the index and GitHub's id" do
     page = "## The Workbench & its Workspace\n" |> Papers.to_html() |> Papers.booklet("x.md")
 

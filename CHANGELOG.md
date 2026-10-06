@@ -14,6 +14,57 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+### Updated
+
+- **The workbench's README opens a cartridge in the console, not on
+  GitHub.** Read in the drawer's Manual, a link into a cartridge's
+  directory led to a path the console does not serve. Each is now read
+  by the shape of its address, wherever it stands — a cell of the
+  shelf's table, of the pending one, or a sentence: the directory is
+  the box, a paper the box carries is that paper in its Manual, and
+  its NEED is the box itself, as from the cartridge's own papers
+  (`Console.Papers.workbench_link/2`, beside `link_tag/3`). Whatever
+  else points into the repository — another package's README, the
+  licence, a paper a box does not carry — is read on GitHub, which is
+  the rule a cartridge's papers already had; a picture under `assets/`
+  is the figures route's.
+
+- **A box opens over what was being read, and is put back onto it.**
+  Pressing a cartridge in the workbench's README opened its box in the
+  drawer's place, and Put back left the reader on the bare screen: the
+  README, and their place in it, gone. The two are on the page at once
+  now, the box on top. The address carries both (`?wb=manual&box=…`),
+  the drawer stays mounted under the box, `inert`, and Put back, Close
+  and the scrim take the box away and nothing else. `paper` in that
+  address is the box's manual's, so the drawer stays on the paper it
+  was on. Both in the address used to mean the opposite, the drawer
+  shown and the box hidden, which nothing in the console led to.
+
+  A box pressed in another box's paper cannot be drawn over it: there
+  is one box in hand, with one form, one recipe and one face. It leaves
+  a trail in the address instead — `from=coverage.manual.readme`, the
+  box, its screen and its paper — and Put back becomes *Back to
+  coverage*: one box back at a time, on the paper it was left on, and
+  the Booklet hook returns the page to the line the reader left
+  (measured in a browser: left at 2316 px, back at 2316 px). The box's
+  own links keep the trail, and a link to another of its papers adds
+  nothing to it.
+
+- **A cover in the README's tables is pressed to be seen, not to go
+  somewhere.** The cover was the link to the cartridge, and in the
+  console one press opened the picture's viewer and left for the box at
+  the same time. The name is the link now, and the cover is a picture.
+
+- **The README's two drawings of what is not yet there.** The file
+  tree under *The Workbench & its Workspace* is the `File | Role` table
+  the cartridges' *Contents* are, branches in code with no-break
+  spaces: it is by those that the console tells a tree from a table
+  (`mark_trees/1`), and two rows written with plain spaces came out as
+  ordinary cells. The table of pending boxes has the shelf's shape
+  without the cover — a pending box has none, and a placeholder took a
+  column to say nothing: the name, the stage in a column of its own,
+  the need, and the papers it has so far (`assets/readme/build.py`).
+
 ## v0.18.1 - (2026-10-06)
 
 ### Fixed

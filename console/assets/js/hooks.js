@@ -538,6 +538,15 @@ export const Logs = {
 
 // --- the booklet: a paper's in-console links go through the socket, and
 // the index scrolls the drawer, not the page.
+// Where each paper of a box was left when a link in it opened another
+// box: `box.paper` → the booklet's scroll. There is one box in hand, so
+// the first one's page is gone from the element the moment the second
+// arrives; Put back returns to it along the trail the address keeps
+// (`from=`), and this is what puts the reader back on the line they
+// left. Kept for as long as the page lives, and taken the first time
+// the paper is shown again.
+const leftAt = new Map()
+const paperKey = () => { const q = new URLSearchParams(location.search); return q.get("box") && `${q.get("box")}.${q.get("paper") || ""}` }
 export const Booklet = {
   // Every figure gets the expand hint and opens the viewer. Done on
   // mount and on every patch: the booklet is one element for every
@@ -553,12 +562,30 @@ export const Booklet = {
       wrap.addEventListener("click", () => openViewer(img, img.alt || "Figure"))
     }
   },
-  updated() { this.figures() },
+  // The address moves after the patch that brings the page, so the
+  // paper is asked for a frame later. The workbench's booklet has
+  // nothing to return to: it stays on the page under a box.
+  returned() {
+    if (this.el.id !== "d-booklet") return
+    // A place is gone back to only once it was left: the patch that
+    // carries the reader away may be drawn before the address says so.
+    requestAnimationFrame(() => {
+      const key = paperKey()
+      for (const [k, left] of leftAt) if (k !== key) left.away = true
+      const left = key && leftAt.get(key)
+      if (left && left.away) { this.el.scrollTop = left.top; leftAt.delete(key) }
+    })
+  },
+  updated() { this.figures(); this.returned() },
   mounted() {
-    this.figures()
+    this.figures(); this.returned()
     this.el.addEventListener("click", ev => {
       const a = ev.target.closest("a"); if (!a) return
-      if (a.hasAttribute("data-patch")) { ev.preventDefault(); this.pushEvent("goto", { href: a.getAttribute("href") }) }
+      if (a.hasAttribute("data-patch")) {
+        ev.preventDefault()
+        const key = paperKey(); if (key && this.el.id === "d-booklet" && !a.getAttribute("href").startsWith(`?box=${key.split(".")[0]}&`)) leftAt.set(key, { top: this.el.scrollTop, away: false })
+        this.pushEvent("goto", { href: a.getAttribute("href") })
+      }
       else if (a.getAttribute("href")?.startsWith("#")) { ev.preventDefault(); this.go(a.getAttribute("href").slice(1), true) }
     })
     // Opened on a link with a section in it: land on the section.

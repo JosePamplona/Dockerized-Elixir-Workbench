@@ -187,9 +187,19 @@ defmodule ConsoleWeb.WorkbenchDrawer do
   attr :page, :map, default: nil
   attr :jobs, :list, default: []
 
+  attr :under, :boolean,
+    default: false,
+    doc: "a box is open over it: on the page as it was left, and out of reach until the box goes"
+
   def workbench_drawer(assigns) do
     ~H"""
-    <aside class="drawer on" role="dialog" aria-modal="true" aria-label="The workbench">
+    <aside
+      class="drawer on"
+      role="dialog"
+      aria-modal={to_string(!@under)}
+      aria-label="The workbench"
+      inert={@under}
+    >
       <div class="top">
         <h3>
           Dockerized Elixir Workbench

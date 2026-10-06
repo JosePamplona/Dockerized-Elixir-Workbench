@@ -14,6 +14,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+## v0.18.2 - (2026-10-06)
+
 ### Updated
 
 - **The workbench's README opens a cartridge in the console, not on

@@ -14,6 +14,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+## v0.18.3 - (2026-10-06)
+
 ### Updated
 
 - **Going back one box and putting the box away are two buttons.** In

@@ -1,12 +1,11 @@
-<!-- markdownlint-disable MD024 -->
+<!-- markdownlint-disable MD024 MD038 -->
 <!-- markdownlint-configure-file { "MD033": { "allowed_elements": ["img", "br"] } } -->
-# Dockerized Elixir Workbench <!-- omit in toc -->
+# Dockerized Elixir Workbench
 
 [![License](https://img.shields.io/github/license/JosePamplona/Dockerized-Elixir-Workbench?style=flat-square)](https://github.com/JosePamplona/Dockerized-Elixir-Workbench/blob/main/LICENSE.md)
 [![Release](https://img.shields.io/github/v/release/JosePamplona/Dockerized-Elixir-Workbench?style=flat-square&color=lightgray)](https://github.com/JosePamplona/Dockerized-Elixir-Workbench/releases/latest)
 [![Last Updated](https://img.shields.io/github/last-commit/JosePamplona/Dockerized-Elixir-Workbench.svg?style=flat-square)](https://github.com/JosePamplona/Dockerized-Elixir-Workbench/commits/main)
 [![CI](https://github.com/JosePamplona/Dockerized-Elixir-Workbench/actions/workflows/ci.yml/badge.svg)](https://github.com/JosePamplona/Dockerized-Elixir-Workbench/actions/workflows/ci.yml)
-
 
 The workbench is two things in one repository.
 
@@ -20,38 +19,6 @@ It has three parts, and this README presents them in order, so each section only
 - **`wb.sh`**, a shell script that creates projects and runs every mix and git step inside a container.
 - **The cartridges** (`igniter/`), a package of [Igniter](https://hexdocs.pm/igniter) installers that patch a project through its AST.
 - **The console** (`console/`), a Phoenix LiveView application that drives both from the browser.
-
-## Table of Contents <!-- omit in toc -->
-
-- [What it is good for](#what-it-is-good-for)
-- [Quickstart](#quickstart)
-- [The Workbench \& its Workspace](#the-workbench--its-workspace)
-  - [Configuration](#configuration)
-  - [Deployments](#deployments)
-  - [Commands](#commands)
-- [Cartridges](#cartridges)
-  - [One commit in, one revert out](#one-commit-in-one-revert-out)
-  - [The papers](#the-papers)
-  - [The shelf](#the-shelf)
-  - [Base cartridges, collections, archived and pending boxes](#base-cartridges-collections-archived-and-pending-boxes)
-- [The Console](#the-console)
-  - [The Rail](#the-rail)
-  - [Deploy](#deploy)
-  - [Jobs](#jobs)
-  - [Logs](#logs)
-  - [Terminal](#terminal)
-  - [Project](#project)
-  - [The Cartridges tab](#the-cartridges-tab)
-  - [Docker](#docker)
-  - [Settings](#settings)
-- [Writing a cartridge](#writing-a-cartridge)
-  - [By hand, for now](#by-hand-for-now)
-  - [The box art](#the-box-art)
-- [Why it is shaped like this](#why-it-is-shaped-like-this)
-- [Maintenance](#maintenance)
-- [License](#license)
-
----
 
 ## What it is good for
 
@@ -68,8 +35,6 @@ Four uses, each with the place in this document that shows it.
   See [Writing a cartridge](#writing-a-cartridge) and [Why it is shaped like this](#why-it-is-shaped-like-this).
 
 One limit to know from the start: your own cartridges live in the workbench's repository, so a personal shelf or a team's is a fork of it.
-
----
 
 ## Quickstart
 
@@ -94,8 +59,6 @@ The same from a shell, without the console:
 
 That is a stock Phoenix application, running. What goes into it next is the subject of [Cartridges](#cartridges).
 
----
-
 ## The Workbench & its Workspace
 
 Two words are used through the rest of this document.
@@ -105,16 +68,16 @@ Two words are used through the rest of this document.
 
 Workspaces go under `_workspaces/` by default, but nothing requires it. `WORKSPACE_PATH` takes any path, relative to the workbench or absolute, so a project can live next to your other repositories.
 
-```text
-Dockerized-Elixir-Workbench/
-├── wb.sh              the CLI
-├── config.conf        what the next project gets: workspace, name, stack versions
-├── igniter/           the cartridges
-├── console/           the console
-└── _workspaces/
-    ├── _001/          a workspace: one Phoenix project, its compose files, its git history
-    └── _002/          another one, running beside it on its own ports
-```
+| File | Role |
+| --- | --- |
+| `📁 Dockerized-Elixir-Workbench/` | The workbench |
+| `├── 📄 wb.sh` | The CLI |
+| `├── 📄 config.conf` | What the next project gets: workspace, name, stack versions |
+| `├── 📁 igniter/` | The cartridges |
+| `├── 📁 console/` | The console |
+| `└── 📁 _workspaces/` | |
+| `    ├── 📁 _001/` | A workspace: one Phoenix project, its compose files, its git history |
+| `    └── 📁 _002/` | Another one, running beside it on its own ports |
 
 Every command runs in a container on the *workbench image*, which carries the Elixir toolchain, the Phoenix installer and the Docker CLI. That is why the host needs nothing but Docker: `mix phx.new`, `mix deps.get`, the cartridges' installers and even `git commit` happen inside it.
 
@@ -167,8 +130,6 @@ Writing a compose file from the project as it is now is called *baking*. The wor
 
 `./wb.sh --yes COMMAND` answers every confirmation, for scripts. `status --json` and `catalog --json` are the machine-readable forms, the ones the console reads.
 
----
-
 ## Cartridges
 
 A cartridge is one feature a project can take: a library with its configuration, a piece of code, a service in the compose file, or all three. Technically it is an [Igniter](https://hexdocs.pm/igniter) installer, a Mix task that edits the project through its AST instead of with text substitution, so it finds the right place in *your* `mix.exs`, endpoint or router even after you changed them.
@@ -213,34 +174,34 @@ The cartridges on offer today, one to a row. The cover links to the cartridge's 
 
 | Box&nbsp;cover | Cartridge | What it installs | Papers |
 | :-: | --- | --- | --- |
-| [<img src="assets/readme/covers/version_manager.jpg" width="80" alt="The version_manager box cover">](igniter/lib/workbench_igniter/features/version_manager/) | **version_manager**<br>`v0.1.0` | Pins the Erlang and Elixir the project runs on, for the host's version manager | [README](igniter/lib/workbench_igniter/features/version_manager/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/version_manager/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/version_manager/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/version_manager/CHANGELOG.md) |
-| [<img src="assets/readme/covers/changelog.jpg" width="80" alt="The changelog box cover">](igniter/lib/workbench_igniter/features/changelog/) | **changelog**<br>`v0.5.2` | Starts versioning in the project: a changelog opened at the version it is on; the mix version task and the README badge on request | [README](igniter/lib/workbench_igniter/features/changelog/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/changelog/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/changelog/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/changelog/CHANGELOG.md) |
-| [<img src="assets/readme/covers/dashboard_extras.jpg" width="80" alt="The dashboard_extras box cover">](igniter/lib/workbench_igniter/features/dashboard_extras/) | **dashboard_extras**<br>`v0.1.0` | Switches on LiveDashboard's OS Data and Ecto Stats pages | [README](igniter/lib/workbench_igniter/features/dashboard_extras/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/dashboard_extras/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/dashboard_extras/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/dashboard_extras/CHANGELOG.md) |
-| [<img src="assets/readme/covers/credo.jpg" width="80" alt="The credo box cover">](igniter/lib/workbench_igniter/features/credo/) | **credo**<br>`v0.2.0` | Adds Credo static code analysis to the project | [README](igniter/lib/workbench_igniter/features/credo/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/credo/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/credo/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/credo/CHANGELOG.md) |
-| [<img src="assets/readme/covers/test_doubles.jpg" width="80" alt="The test_doubles box cover">](igniter/lib/workbench_igniter/features/test_doubles/) | **test_doubles**<br>`v0.1.1` | Installs the test double libraries: Mimic, Mox, or both | [README](igniter/lib/workbench_igniter/features/test_doubles/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/test_doubles/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/test_doubles/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/test_doubles/CHANGELOG.md) |
-| [<img src="assets/readme/covers/exdebug.jpg" width="80" alt="The exdebug box cover">](igniter/lib/workbench_igniter/features/exdebug/) | **exdebug**<br>`v0.1.0` | Installs ExDebug: a framed look at what passes through a pipeline, printed in :dev and :test only | [README](igniter/lib/workbench_igniter/features/exdebug/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/exdebug/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/exdebug/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/exdebug/CHANGELOG.md) |
-| [<img src="assets/readme/covers/coverage.jpg" width="80" alt="The coverage box cover">](igniter/lib/workbench_igniter/features/coverage/) | **coverage**<br>`v0.12.0` | Adds test coverage reports to the project, measured by ExCoveralls | [README](igniter/lib/workbench_igniter/features/coverage/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/coverage/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/coverage/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/coverage/CHANGELOG.md) |
-| [<img src="assets/readme/covers/exdoc.jpg" width="80" alt="The exdoc box cover">](igniter/lib/workbench_igniter/features/exdoc/) | **exdoc**<br>`v0.9.1` | Adds the ExDoc documentation site to the project | [README](igniter/lib/workbench_igniter/features/exdoc/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/exdoc/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/exdoc/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/exdoc/CHANGELOG.md) |
-| [<img src="assets/readme/covers/precommit.jpg" width="80" alt="The precommit box cover">](igniter/lib/workbench_igniter/features/precommit/) | **precommit**<br>`v0.1.3` | Runs the project's checks before the commit exists | [README](igniter/lib/workbench_igniter/features/precommit/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/precommit/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/precommit/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/precommit/CHANGELOG.md) |
-| [<img src="assets/readme/covers/test_data.jpg" width="80" alt="The test_data box cover">](igniter/lib/workbench_igniter/features/test_data/) | **test_data**<br>`v0.1.1` | Adds test factories and Faker, shaped by the project's line | [README](igniter/lib/workbench_igniter/features/test_data/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/test_data/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/test_data/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/test_data/CHANGELOG.md) |
-| [<img src="assets/readme/covers/clustering.jpg" width="80" alt="The clustering box cover">](igniter/lib/workbench_igniter/features/clustering/) | **clustering**<br>`v0.2.1` | Boots the production release as a distributed node for DNSCluster | [README](igniter/lib/workbench_igniter/features/clustering/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/clustering/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/clustering/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/clustering/CHANGELOG.md) |
-| [<img src="assets/readme/covers/health_probe.jpg" width="80" alt="The health_probe box cover">](igniter/lib/workbench_igniter/features/health_probe/) | **health_probe**<br>`v0.2.1` | Adds liveness and readiness probes as the first plug of the endpoint | [README](igniter/lib/workbench_igniter/features/health_probe/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/health_probe/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/health_probe/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/health_probe/CHANGELOG.md) |
-| [<img src="assets/readme/covers/ash.jpg" width="80" alt="The ash box cover">](igniter/lib/workbench_igniter/features/ash/) | **ash**<br>`v0.9.0` | Installs the Ash framework, configured like ash-hq.org's installer for an existing app | [README](igniter/lib/workbench_igniter/features/ash/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/ash/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/ash/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/ash/CHANGELOG.md) |
-| [<img src="assets/readme/covers/db_admin.jpg" width="80" alt="The db_admin box cover">](igniter/lib/workbench_igniter/features/db_admin/) | **db_admin**<br>`v0.2.1` | Adds a database admin to the workspace, open on the project's database | [README](igniter/lib/workbench_igniter/features/db_admin/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/db_admin/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/db_admin/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/db_admin/CHANGELOG.md) |
-| [<img src="assets/readme/covers/_placeholder.jpg" width="80" alt="The k6 box cover">](igniter/lib/workbench_igniter/features/k6/) | **k6**<br>`v0.1.0` | Adds k6 load testing to the workspace, with a smoke test to start from | [README](igniter/lib/workbench_igniter/features/k6/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/k6/NEED.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/k6/CHANGELOG.md) |
-| [<img src="assets/readme/covers/_placeholder.jpg" width="80" alt="The monitoring box cover">](igniter/lib/workbench_igniter/features/monitoring/) | **monitoring**<br>`v0.1.0` | Adds PromEx to the app, and Prometheus with Grafana to the workspace | [README](igniter/lib/workbench_igniter/features/monitoring/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/monitoring/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/monitoring/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/monitoring/CHANGELOG.md) |
+| <img src="assets/readme/covers/version_manager.jpg" width="80" alt="The version_manager box cover"> | [**version_manager**](igniter/lib/workbench_igniter/features/version_manager/)<br>`v0.1.0` | Pins the Erlang and Elixir the project runs on, for the host's version manager | [README](igniter/lib/workbench_igniter/features/version_manager/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/version_manager/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/version_manager/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/version_manager/CHANGELOG.md) |
+| <img src="assets/readme/covers/changelog.jpg" width="80" alt="The changelog box cover"> | [**changelog**](igniter/lib/workbench_igniter/features/changelog/)<br>`v0.5.2` | Starts versioning in the project: a changelog opened at the version it is on; the mix version task and the README badge on request | [README](igniter/lib/workbench_igniter/features/changelog/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/changelog/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/changelog/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/changelog/CHANGELOG.md) |
+| <img src="assets/readme/covers/dashboard_extras.jpg" width="80" alt="The dashboard_extras box cover"> | [**dashboard_extras**](igniter/lib/workbench_igniter/features/dashboard_extras/)<br>`v0.1.0` | Switches on LiveDashboard's OS Data and Ecto Stats pages | [README](igniter/lib/workbench_igniter/features/dashboard_extras/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/dashboard_extras/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/dashboard_extras/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/dashboard_extras/CHANGELOG.md) |
+| <img src="assets/readme/covers/credo.jpg" width="80" alt="The credo box cover"> | [**credo**](igniter/lib/workbench_igniter/features/credo/)<br>`v0.2.0` | Adds Credo static code analysis to the project | [README](igniter/lib/workbench_igniter/features/credo/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/credo/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/credo/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/credo/CHANGELOG.md) |
+| <img src="assets/readme/covers/test_doubles.jpg" width="80" alt="The test_doubles box cover"> | [**test_doubles**](igniter/lib/workbench_igniter/features/test_doubles/)<br>`v0.1.1` | Installs the test double libraries: Mimic, Mox, or both | [README](igniter/lib/workbench_igniter/features/test_doubles/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/test_doubles/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/test_doubles/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/test_doubles/CHANGELOG.md) |
+| <img src="assets/readme/covers/exdebug.jpg" width="80" alt="The exdebug box cover"> | [**exdebug**](igniter/lib/workbench_igniter/features/exdebug/)<br>`v0.1.0` | Installs ExDebug: a framed look at what passes through a pipeline, printed in :dev and :test only | [README](igniter/lib/workbench_igniter/features/exdebug/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/exdebug/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/exdebug/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/exdebug/CHANGELOG.md) |
+| <img src="assets/readme/covers/coverage.jpg" width="80" alt="The coverage box cover"> | [**coverage**](igniter/lib/workbench_igniter/features/coverage/)<br>`v0.12.0` | Adds test coverage reports to the project, measured by ExCoveralls | [README](igniter/lib/workbench_igniter/features/coverage/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/coverage/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/coverage/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/coverage/CHANGELOG.md) |
+| <img src="assets/readme/covers/exdoc.jpg" width="80" alt="The exdoc box cover"> | [**exdoc**](igniter/lib/workbench_igniter/features/exdoc/)<br>`v0.9.1` | Adds the ExDoc documentation site to the project | [README](igniter/lib/workbench_igniter/features/exdoc/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/exdoc/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/exdoc/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/exdoc/CHANGELOG.md) |
+| <img src="assets/readme/covers/precommit.jpg" width="80" alt="The precommit box cover"> | [**precommit**](igniter/lib/workbench_igniter/features/precommit/)<br>`v0.1.3` | Runs the project's checks before the commit exists | [README](igniter/lib/workbench_igniter/features/precommit/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/precommit/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/precommit/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/precommit/CHANGELOG.md) |
+| <img src="assets/readme/covers/test_data.jpg" width="80" alt="The test_data box cover"> | [**test_data**](igniter/lib/workbench_igniter/features/test_data/)<br>`v0.1.1` | Adds test factories and Faker, shaped by the project's line | [README](igniter/lib/workbench_igniter/features/test_data/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/test_data/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/test_data/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/test_data/CHANGELOG.md) |
+| <img src="assets/readme/covers/clustering.jpg" width="80" alt="The clustering box cover"> | [**clustering**](igniter/lib/workbench_igniter/features/clustering/)<br>`v0.2.1` | Boots the production release as a distributed node for DNSCluster | [README](igniter/lib/workbench_igniter/features/clustering/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/clustering/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/clustering/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/clustering/CHANGELOG.md) |
+| <img src="assets/readme/covers/health_probe.jpg" width="80" alt="The health_probe box cover"> | [**health_probe**](igniter/lib/workbench_igniter/features/health_probe/)<br>`v0.2.1` | Adds liveness and readiness probes as the first plug of the endpoint | [README](igniter/lib/workbench_igniter/features/health_probe/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/health_probe/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/health_probe/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/health_probe/CHANGELOG.md) |
+| <img src="assets/readme/covers/ash.jpg" width="80" alt="The ash box cover"> | [**ash**](igniter/lib/workbench_igniter/features/ash/)<br>`v0.9.0` | Installs the Ash framework, configured like ash-hq.org's installer for an existing app | [README](igniter/lib/workbench_igniter/features/ash/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/ash/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/ash/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/ash/CHANGELOG.md) |
+| <img src="assets/readme/covers/db_admin.jpg" width="80" alt="The db_admin box cover"> | [**db_admin**](igniter/lib/workbench_igniter/features/db_admin/)<br>`v0.2.1` | Adds a database admin to the workspace, open on the project's database | [README](igniter/lib/workbench_igniter/features/db_admin/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/db_admin/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/db_admin/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/db_admin/CHANGELOG.md) |
+| <img src="assets/readme/covers/_placeholder.jpg" width="80" alt="The k6 box cover"> | [**k6**](igniter/lib/workbench_igniter/features/k6/)<br>`v0.1.0` | Adds k6 load testing to the workspace, with a smoke test to start from | [README](igniter/lib/workbench_igniter/features/k6/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/k6/NEED.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/k6/CHANGELOG.md) |
+| <img src="assets/readme/covers/_placeholder.jpg" width="80" alt="The monitoring box cover"> | [**monitoring**](igniter/lib/workbench_igniter/features/monitoring/)<br>`v0.1.0` | Adds PromEx to the app, and Prometheus with Grafana to the workspace | [README](igniter/lib/workbench_igniter/features/monitoring/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/monitoring/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/monitoring/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/monitoring/CHANGELOG.md) |
 
 **Base cartridges** — the 7 capabilities `phx.new` decides at birth, each one addable afterwards:
 
 | Box&nbsp;cover | Cartridge | What it installs | Papers |
 | :-: | --- | --- | --- |
-| [<img src="assets/readme/covers/mailer.jpg" width="80" alt="The mailer box cover">](igniter/lib/workbench_igniter/features/mailer/) | **mailer**<br>`v0.3.0` | Adds Phoenix's Swoosh mailer, as phx.new would have generated it | [README](igniter/lib/workbench_igniter/features/mailer/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/mailer/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/mailer/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/mailer/CHANGELOG.md) |
-| [<img src="assets/readme/covers/gettext.jpg" width="80" alt="The gettext box cover">](igniter/lib/workbench_igniter/features/gettext/) | **gettext**<br>`v0.2.0` | Adds Phoenix's gettext, as phx.new would have generated it | [README](igniter/lib/workbench_igniter/features/gettext/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/gettext/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/gettext/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/gettext/CHANGELOG.md) |
-| [<img src="assets/readme/covers/ecto.jpg" width="80" alt="The ecto box cover">](igniter/lib/workbench_igniter/features/ecto/) | **ecto**<br>`v0.3.2` | Adds Phoenix's Ecto with a database adapter, as phx.new would have generated it | [README](igniter/lib/workbench_igniter/features/ecto/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/ecto/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/ecto/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/ecto/CHANGELOG.md) |
-| [<img src="assets/readme/covers/esbuild.jpg" width="80" alt="The esbuild box cover">](igniter/lib/workbench_igniter/features/esbuild/) | **esbuild**<br>`v0.2.0` | Adds Phoenix's esbuild JavaScript bundling, as phx.new would have generated it | [README](igniter/lib/workbench_igniter/features/esbuild/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/esbuild/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/esbuild/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/esbuild/CHANGELOG.md) |
-| [<img src="assets/readme/covers/tailwind.jpg" width="80" alt="The tailwind box cover">](igniter/lib/workbench_igniter/features/tailwind/) | **tailwind**<br>`v0.2.0` | Adds Phoenix's Tailwind CSS pipeline, as phx.new would have generated it | [README](igniter/lib/workbench_igniter/features/tailwind/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/tailwind/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/tailwind/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/tailwind/CHANGELOG.md) |
-| [<img src="assets/readme/covers/html.jpg" width="80" alt="The html box cover">](igniter/lib/workbench_igniter/features/html/) | **html**<br>`v0.3.0` | Adds Phoenix's HTML views, as phx.new would have generated them | [README](igniter/lib/workbench_igniter/features/html/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/html/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/html/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/html/CHANGELOG.md) |
-| [<img src="assets/readme/covers/dashboard.jpg" width="80" alt="The dashboard box cover">](igniter/lib/workbench_igniter/features/dashboard/) | **dashboard**<br>`v0.2.0` | Adds Phoenix LiveDashboard, as phx.new would have generated it | [README](igniter/lib/workbench_igniter/features/dashboard/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/dashboard/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/dashboard/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/dashboard/CHANGELOG.md) |
+| <img src="assets/readme/covers/mailer.jpg" width="80" alt="The mailer box cover"> | [**mailer**](igniter/lib/workbench_igniter/features/mailer/)<br>`v0.3.0` | Adds Phoenix's Swoosh mailer, as phx.new would have generated it | [README](igniter/lib/workbench_igniter/features/mailer/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/mailer/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/mailer/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/mailer/CHANGELOG.md) |
+| <img src="assets/readme/covers/gettext.jpg" width="80" alt="The gettext box cover"> | [**gettext**](igniter/lib/workbench_igniter/features/gettext/)<br>`v0.2.0` | Adds Phoenix's gettext, as phx.new would have generated it | [README](igniter/lib/workbench_igniter/features/gettext/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/gettext/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/gettext/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/gettext/CHANGELOG.md) |
+| <img src="assets/readme/covers/ecto.jpg" width="80" alt="The ecto box cover"> | [**ecto**](igniter/lib/workbench_igniter/features/ecto/)<br>`v0.3.2` | Adds Phoenix's Ecto with a database adapter, as phx.new would have generated it | [README](igniter/lib/workbench_igniter/features/ecto/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/ecto/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/ecto/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/ecto/CHANGELOG.md) |
+| <img src="assets/readme/covers/esbuild.jpg" width="80" alt="The esbuild box cover"> | [**esbuild**](igniter/lib/workbench_igniter/features/esbuild/)<br>`v0.2.0` | Adds Phoenix's esbuild JavaScript bundling, as phx.new would have generated it | [README](igniter/lib/workbench_igniter/features/esbuild/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/esbuild/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/esbuild/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/esbuild/CHANGELOG.md) |
+| <img src="assets/readme/covers/tailwind.jpg" width="80" alt="The tailwind box cover"> | [**tailwind**](igniter/lib/workbench_igniter/features/tailwind/)<br>`v0.2.0` | Adds Phoenix's Tailwind CSS pipeline, as phx.new would have generated it | [README](igniter/lib/workbench_igniter/features/tailwind/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/tailwind/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/tailwind/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/tailwind/CHANGELOG.md) |
+| <img src="assets/readme/covers/html.jpg" width="80" alt="The html box cover"> | [**html**](igniter/lib/workbench_igniter/features/html/)<br>`v0.3.0` | Adds Phoenix's HTML views, as phx.new would have generated them | [README](igniter/lib/workbench_igniter/features/html/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/html/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/html/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/html/CHANGELOG.md) |
+| <img src="assets/readme/covers/dashboard.jpg" width="80" alt="The dashboard box cover"> | [**dashboard**](igniter/lib/workbench_igniter/features/dashboard/)<br>`v0.2.0` | Adds Phoenix LiveDashboard, as phx.new would have generated it | [README](igniter/lib/workbench_igniter/features/dashboard/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/dashboard/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/dashboard/DESIGN.md)<br>[CHANGELOG](igniter/lib/workbench_igniter/features/dashboard/CHANGELOG.md) |
 
 <!-- shelf:end -->
 
@@ -257,20 +218,18 @@ There is one kind of cartridge. These four words describe facts about some of th
 
 <!-- pending:start -->
 
-| Pending box | Stage | The need it answers |
-| --- | --- | --- |
-| [`specdd`](igniter/lib/workbench_igniter/features/specdd/) | designed | You are handing the project to a coding agent, and the prompt is the only place it learns what it may touch. |
-| [`stripe`](igniter/lib/workbench_igniter/features/stripe/) | identified | Your users should be able to pay — not done yet. |
-| [`security_review`](igniter/lib/workbench_igniter/features/security_review/) | identified | You have to be able to say, point by point, how your application answers the OWASP Top 10. |
-| [`machine_learning`](igniter/lib/workbench_igniter/features/machine_learning/) | identified | You want a model's answer inside your application, without running a second service in another language beside it. |
-| [`seo_aeo`](igniter/lib/workbench_igniter/features/seo_aeo/) | identified | Your pages should be found, and quoted correctly, by a search engine and by an assistant answering someone's question. |
-| [`browser_tests`](igniter/lib/workbench_igniter/features/browser_tests/) | identified | You need to know the page works in a real browser, not only that the server answered. |
-| [`message_broker`](igniter/lib/workbench_igniter/features/message_broker/) | identified | Two parts of your system have to talk to each other without waiting for each other. |
-| [`event_stream`](igniter/lib/workbench_igniter/features/event_stream/) | identified | You need a record of events that several consumers can read again, each at its own pace. |
+| Pending box | Stage | The need it answers | Papers |
+| --- | --- | --- | --- |
+| [**specdd**](igniter/lib/workbench_igniter/features/specdd/) | designed | You are handing the project to a coding agent, and the prompt is the only place it learns what it may touch. | [README](igniter/lib/workbench_igniter/features/specdd/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/specdd/NEED.md)<br>[DESIGN](igniter/lib/workbench_igniter/features/specdd/DESIGN.md) |
+| [**stripe**](igniter/lib/workbench_igniter/features/stripe/) | identified | Your users should be able to pay — not done yet. | [README](igniter/lib/workbench_igniter/features/stripe/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/stripe/NEED.md) |
+| [**security_review**](igniter/lib/workbench_igniter/features/security_review/) | identified | You have to be able to say, point by point, how your application answers the OWASP Top 10. | [README](igniter/lib/workbench_igniter/features/security_review/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/security_review/NEED.md) |
+| [**machine_learning**](igniter/lib/workbench_igniter/features/machine_learning/) | identified | You want a model's answer inside your application, without running a second service in another language beside it. | [README](igniter/lib/workbench_igniter/features/machine_learning/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/machine_learning/NEED.md) |
+| [**seo_aeo**](igniter/lib/workbench_igniter/features/seo_aeo/) | identified | Your pages should be found, and quoted correctly, by a search engine and by an assistant answering someone's question. | [README](igniter/lib/workbench_igniter/features/seo_aeo/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/seo_aeo/NEED.md) |
+| [**browser_tests**](igniter/lib/workbench_igniter/features/browser_tests/) | identified | You need to know the page works in a real browser, not only that the server answered. | [README](igniter/lib/workbench_igniter/features/browser_tests/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/browser_tests/NEED.md) |
+| [**message_broker**](igniter/lib/workbench_igniter/features/message_broker/) | identified | Two parts of your system have to talk to each other without waiting for each other. | [README](igniter/lib/workbench_igniter/features/message_broker/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/message_broker/NEED.md) |
+| [**event_stream**](igniter/lib/workbench_igniter/features/event_stream/) | identified | You need a record of events that several consumers can read again, each at its own pace. | [README](igniter/lib/workbench_igniter/features/event_stream/README.md)<br>[NEED](igniter/lib/workbench_igniter/features/event_stream/NEED.md) |
 
 <!-- pending:end -->
-
----
 
 ## The Console
 
@@ -313,7 +272,7 @@ A cartridge's service gets its colour from the role the cartridge declares, not 
 
 The first tab. It has three cards: one to create the project, one to run it and one to delete it.
 
-#### Create a new project <!-- omit in toc -->
+#### Create a new project
 
 ![The New Project card: workspace, stack versions, the phx.new flags as base cartridges with checkboxes, the command line and the Create project button](assets/readme/console/deploy-new-project.png)
 
@@ -323,7 +282,7 @@ The line at the bottom is the exact command the button runs, and it changes as y
 
 > From a shell: `./wb.sh new --name "Lorem Ipsum" [any mix phx.new flag]`
 
-#### Deployment <!-- omit in toc -->
+#### Deployment
 
 ![The Deployments card: dev, prod and scaled, each with its compose file, its status and its services; dev is up with four services](assets/readme/console/deploy-deployments.png)
 
@@ -335,7 +294,7 @@ One deployment is up at a time: bringing another up takes the current one down f
 
 > From a shell: `./wb.sh up [--deploy dev|prod|scaled]`, then `stop`, `down`, `bake`, `build`
 
-#### Delete project <!-- omit in toc -->
+#### Delete project
 
 ![The Danger card: the delete command and its button](assets/readme/console/deploy-delete.png)
 
@@ -375,35 +334,35 @@ IEx attaches to the node that is serving the application, so what you evaluate h
 
 What the project is, read from the project itself: its git history, its `mix.exs`, its files. The tab has seven papers.
 
-#### Birth <!-- omit in toc -->
+#### Birth
 
 ![The Birth paper: when the project was born, the stack it was built on, the mix phx.new command and a table of its flags](assets/readme/console/project-record.png)
 
 How the project was created, reconstructed from its first commit. It shows the stack in its `Dockerfile.local`, the Phoenix installer version and the exact `mix phx.new` command, then every flag of `phx.new` with the installer's own description, whether this project used it, and the base cartridge that owns it. A teammate who joins later can see how the project started without asking anyone.
 
-#### History <!-- omit in toc -->
+#### History
 
 ![The History paper: six commits, the insert of health_probe unfolded to its three files and the diff of endpoint.ex](assets/readme/console/project-history.png)
 
 The git log. An insert commit carries the badge of its cartridge, which opens its box. Click a commit to see its files, and a file to see its diff, with syntax highlighting. In the screenshot, the three lines `health_probe` added to the endpoint.
 
-#### Mix <!-- omit in toc -->
+#### Mix
 
 ![The Mix paper: the project's packages with their requirement in mix.exs, the locked version, the latest on hex and the cartridge that brought each](assets/readme/console/project-mix.png)
 
 The dependencies of `mix.exs` as a table: the requirement, the version locked in `mix.lock`, and who brought the package (the project at birth, or a cartridge). The button at the top right asks hex.pm for each package's latest version, release date and downloads, so an outdated dependency is visible at a glance.
 
-#### .env <!-- omit in toc -->
+#### .env
 
 ![The .env paper: the file's variables, with the database password and the secret key masked](assets/readme/console/project-env.png)
 
 The project's `.env`, the file its compose files load. Secrets are masked before they leave the server.
 
-#### README.md and CHANGELOG.md <!-- omit in toc -->
+#### README.md and CHANGELOG.md
 
 The project's own README and its changelog, each rendered as a paper, the changelog with an outline to jump between versions. A stock Phoenix project has no changelog, so that paper is shown disabled until there is a file. In this session it appeared when the `changelog` cartridge was inserted.
 
-#### Changes <!-- omit in toc -->
+#### Changes
 
 ![The Changes paper: a commit message field, the Commit and Discard buttons, and the diff of the one changed file](assets/readme/console/project-changes.png)
 
@@ -417,19 +376,19 @@ What changed since the last commit, as diffs, with a message field and two butto
 
 The [shelf](#the-shelf), live. The ribbon splits it in four: **Inserted** (what this project carries), **On the shelf** (what it can take), **Not done** (pending) and **Archived**. It can be seen as covers or as a list. Clicking a box takes it in hand and opens it on four screens.
 
-#### Box <!-- omit in toc -->
+#### Box
 
 ![The Box screen of health_probe: its cover, its need with Before, After and Not for, the task that installs it, the two routes it opens](assets/readme/console/box.png)
 
 The front of the box: the cover, the one-line summary, and the [`NEED.md`](#the-papers) with its *Before*, *After* and *Not for*. Below, the specifications: the Mix task that installs it, the doors it opens, the packages it adds with their versions.
 
-#### Manual <!-- omit in toc -->
+#### Manual
 
 ![The Manual screen of health_probe: its README rendered, with tabs for DESIGN and CHANGELOG and an outline on the right](assets/readme/console/box-manual.png)
 
 The cartridge's papers, rendered: README, DESIGN and CHANGELOG. This is where the knowledge base is read. It works the same before inserting, to decide whether you want the cartridge, and long after, to remember how the thing it installed works.
 
-#### Installation <!-- omit in toc -->
+#### Installation
 
 ![The Installation screen of coverage: the --html-theme option as three radios, two switches disabled because each needs another cartridge, and the command line with the Insert cartridge button](assets/readme/console/box-installation.png)
 
@@ -441,7 +400,7 @@ Once inserted, the button becomes **Eject** and the options show what the cartri
 
 > From a shell: `./wb.sh add coverage --html-theme exdoc-ish`, `./wb.sh eject health_probe`
 
-#### Files <!-- omit in toc -->
+#### Files
 
 ![The Files screen of health_probe: its insert commit, three files, and the new plug's source as a diff](assets/readme/console/box-files.png)
 
@@ -459,7 +418,7 @@ The last stop of the tour is not a tab. The gear on the band opens the workbench
 
 ![The Config tab of the workbench drawer: WORKSPACE_PATH and PROJECT_NAME as fields, each with its explanation](assets/readme/console/settings.png)
 
-#### Choosing versions  <!-- omit in toc -->
+#### Choosing versions
 
 Three of those settings are versions of things published somewhere else, and a version typed from memory is how a build fails ten minutes in. Each of the three has a refresh button beside it that asks the source and turns the field into a list of what really exists. None of them chooses for you, and `config.conf` keeps your choice and no copy of the lists.
 
@@ -483,7 +442,7 @@ The workbench itself never runs Node, and Phoenix ships esbuild and Tailwind as 
 
 In the three screenshots the list is drawn open under its field and the button that asks is outlined.
 
-#### Interface <!-- omit in toc -->
+#### Interface
 
 The **Interface** tab sets how the console looks. Unlike Config, what you set here belongs to your browser: it is kept in `localStorage`, never in `config.conf`, so it survives a restart or a rebuild of the console and does not travel to another browser or machine. It has four parts, each with a live sample beside its controls.
 
@@ -500,8 +459,6 @@ The **Interface** tab sets how the console looks. Unlike Config, what you set he
 **Credits** lists every typeface and every theme the console draws with: whose it is, where it comes from and under which licence.
 
 The third tab of the drawer, **Manual**, holds the workbench's own README and CHANGELOG.
-
----
 
 ## Writing a cartridge
 
@@ -536,8 +493,6 @@ The covers are generated with an image model, and the repository keeps the whole
 | <img src="assets/readme/covers/_pipeline-1.jpg" width="160" alt="The generated hero art for test_doubles"> | <img src="assets/readme/covers/_pipeline-2.jpg" width="160" alt="The hero placed on a 5:7 canvas with grey margins"> | <img src="assets/readme/covers/_pipeline-3.jpg" width="160" alt="The canvas with its margins painted by the generator"> | <img src="assets/readme/covers/_pipeline-4.jpg" width="160" alt="The finished test_doubles cover with the banner and the seal"> |
 
 The record of every cover, with what each attempt taught, is [`assets/covers/README.md`](assets/covers/README.md).
-
----
 
 ## Why it is shaped like this
 

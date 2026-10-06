@@ -16,7 +16,8 @@ what './wb.sh catalog' prints. An archived box is in neither table. A
 pending one is said to be designed when its directory carries a
 DESIGN.md and identified when it does not, the reading the console
 makes. A cartridge without a sealed cover gets the placeholder, as on
-the console's shelf. It also cuts the four states one cover went
+the console's shelf; a pending box has no cover to show, and its table
+has no column for one. It also cuts the four states one cover went
 through, for the README's strip of how the box art is made. PIL,
 nothing else.
 
@@ -72,16 +73,26 @@ def cover(name, placeholder):
     return thumbnail(sealed, name) if sealed.is_file() else placeholder
 
 
-def row(box, placeholder):
-    """One cartridge as one row: its cover, its name and version, what it installs, its papers."""
+def row(box, placeholder, under, says):
+    """
+    One cartridge as one row: its cover, its name with UNDER beneath it,
+    what it SAYS, its papers. The name is the link to the cartridge's
+    directory. The cover is not a link: a picture is pressed to be seen
+    larger — GitHub opens it, the console's viewer expands it — and a
+    link around it took the reader to the cartridge instead. Without a
+    PLACEHOLDER the row has no cover cell, and UNDER is a cell of its
+    own beside the name.
+    """
     name = box["name"]
     home = f"{FEATURES}/{name}"
-    image = f'<img src="{cover(name, placeholder)}" width="{COVER_WIDTH}" alt="The {name} box cover">'
     papers = "<br>".join(
         f"[{paper}]({home}/{paper}.md)" for paper in PAPERS if (ROOT / home / f"{paper}.md").is_file()
     )
-    summary = box["summary"].replace("|", "\\|")
-    return f"| [{image}]({home}/) | **{name}**<br>`v{box['version']}` | {summary} | {papers} |"
+    says = (says or "").replace("|", "\\|")
+    if placeholder is None:
+        return f"| [**{name}**]({home}/) | {under} | {says} | {papers} |"
+    image = f'<img src="{cover(name, placeholder)}" width="{COVER_WIDTH}" alt="The {name} box cover">'
+    return f"| {image} | [**{name}**]({home}/)<br>{under} | {says} | {papers} |"
 
 
 def table(boxes, placeholder):
@@ -96,7 +107,7 @@ def table(boxes, placeholder):
     cannot wrap is what keeps the column as wide as the cover.
     """
     head = ["| Box&nbsp;cover | Cartridge | What it installs | Papers |", "| :-: | --- | --- | --- |"]
-    return "\n".join(head + [row(box, placeholder) for box in boxes])
+    return "\n".join(head + [row(box, placeholder, f"`v{box['version']}`", box["summary"]) for box in boxes])
 
 
 def shelf(catalog):
@@ -116,18 +127,19 @@ def shelf(catalog):
 
 
 def pending(catalog):
-    """The boxes with no installer yet, the designed ones first, each with the need it answers."""
+    """
+    The boxes with no installer yet, the designed ones first, drawn as
+    the shelf's are but for the cover, which a pending box has not got:
+    the name, the stage it is at in a column of its own, the need it
+    answers, and the papers it has so far.
+    """
 
     def designed(box):
         return (ROOT / FEATURES / box["name"] / "DESIGN.md").is_file()
 
     boxes = sorted((box for box in catalog if box["pending"]), key=lambda box: not designed(box))
-    head = ["| Pending box | Stage | The need it answers |", "| --- | --- | --- |"]
-    rows = [
-        f"| [`{box['name']}`]({FEATURES}/{box['name']}/) | {'designed' if designed(box) else 'identified'} "
-        f"| {(box['need'] or '').replace('|', chr(92) + '|')} |"
-        for box in boxes
-    ]
+    head = ["| Pending box | Stage | The need it answers | Papers |", "| --- | --- | --- | --- |"]
+    rows = [row(box, None, "designed" if designed(box) else "identified", box["need"]) for box in boxes]
     return "\n".join(head + rows)
 
 

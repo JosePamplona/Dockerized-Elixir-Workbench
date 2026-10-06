@@ -176,6 +176,25 @@ defmodule Console.PapersTest do
     assert html =~ ~s(<a href="?wb=manual&amp;paper=changelog" data-patch>)
   end
 
+  test "a table of pictures is told from a table with a picture in it" do
+    row = "| a | b |\n| --- | --- |\n"
+    assert Papers.to_html(row <> "| ![x](x.png) | ![y](y.png) |\n") =~ ~s(<table class="pics">)
+    refute Papers.to_html(row <> "| ![x](x.png) | words |\n") =~ ~s(class="pics")
+    refute Papers.to_html(row <> "| words | more |\n") =~ ~s(class="pics")
+
+    # The workbench's README: the four states of a cover are a row of
+    # pictures, the shelf is a table of words with a cover in it.
+    %{html: html} = Papers.render_workbench("readme")
+    tables = Regex.scan(~r{<table[^>]*>.*?</table>}s, html) |> List.flatten()
+
+    assert [pipeline] = Enum.filter(tables, &(&1 =~ "_pipeline-1.jpg"))
+    assert pipeline =~ ~s(<table class="pics">)
+
+    shelf = Enum.filter(tables, &(&1 =~ "The ecto box cover" or &1 =~ "The credo box cover"))
+    assert length(shelf) == 2
+    refute Enum.any?(shelf, &(&1 =~ ~s(class="pics")))
+  end
+
   test "a heading with an ampersand keeps its words in the index and GitHub's id" do
     page = "## The Workbench & its Workspace\n" |> Papers.to_html() |> Papers.booklet("x.md")
 

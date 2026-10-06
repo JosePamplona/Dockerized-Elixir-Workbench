@@ -214,9 +214,10 @@ defmodule ConsoleWeb.ConsoleLive do
   # its screen and its paper. There is one box in hand, never two — its
   # form, its recipe and its face are one set — so a cartridge pressed
   # in another's paper takes its place, and until 2026-10-06 that was
-  # the end of the first reading: Put back went to the screen. Now it
-  # goes back along this trail, one box at a time, and the booklet puts
-  # the reader where they were (the Booklet hook). Read off the address,
+  # the end of the first reading: there was no way back to it. The `‹`
+  # beside the box's name goes back along this trail, one box at a
+  # time, and the booklet puts the reader where they were (the Booklet
+  # hook). Read off the address,
   # so the browser's back and a reload agree with it; whatever does not
   # read as a box, a screen and a paper is not on it.
   @trail_entry ~r/^[a-z0-9_]+\.(box|install|files|manual)\.[a-z]*$/
@@ -243,11 +244,16 @@ defmodule ConsoleWeb.ConsoleLive do
     Refs.over(under(assigns), query <> from(trail))
   end
 
-  # Where the box in hand is put back to: the last box on the trail, on
-  # the screen and the paper it was left on, or what it stands over.
-  defp put_back(%{trail: []} = assigns), do: under(assigns)
+  # One box back along the trail: the last one left, on the screen and
+  # the paper it was left on; nil when the box was opened from no other.
+  # The `‹` beside the box's name. Put back, Close and the scrim are not
+  # this: they put the box away whole, trail and all, onto what it
+  # stands over. For one day (2026-10-06) Put back was the step back,
+  # and a reader five boxes deep had five presses between them and the
+  # screen.
+  defp back_one(%{trail: []}), do: nil
 
-  defp put_back(%{trail: trail} = assigns) do
+  defp back_one(%{trail: trail} = assigns) do
     [name, screen, paper] = trail |> List.last() |> String.split(".")
     rest = Enum.drop(trail, -1)
 
@@ -655,13 +661,14 @@ defmodule ConsoleWeb.ConsoleLive do
     do: {:noreply, push_patch(socket, to: over_box(socket.assigns, "box=#{name}"))}
 
   # Close takes away what is on top. A box opened over the workbench's
-  # drawer — a cartridge pressed in its README — is put back, and the
-  # drawer is there as it was left; closed again, the screen.
+  # drawer — a cartridge pressed in its README — is put back, whatever
+  # trail of boxes led to it, and the drawer is there as it was left;
+  # closed again, the screen.
   def handle_event("close", _, socket),
     do:
       {:noreply,
        push_patch(socket,
-         to: if(socket.assigns.box, do: put_back(socket.assigns), else: socket.assigns.back)
+         to: if(socket.assigns.box, do: under(socket.assigns), else: socket.assigns.back)
        )}
 
   # A link of a paper that opens a box: over the workbench's drawer when
@@ -1230,8 +1237,9 @@ defmodule ConsoleWeb.ConsoleLive do
       face={@face}
       tab={@tab}
       back={box_back(%{wb: @wb, back: @back, trail: @trail})}
-      put_back={put_back(%{wb: @wb, back: @back, trail: @trail})}
-      put_back_to={@trail |> List.last() |> then(&(&1 && hd(String.split(&1, "."))))}
+      put_back={under(%{wb: @wb, back: @back})}
+      back_one={back_one(%{wb: @wb, back: @back, trail: @trail})}
+      back_one_to={@trail |> List.last() |> then(&(&1 && hd(String.split(&1, "."))))}
       jobs={box_jobs(@jobs, @box)}
       open={@open_jobs}
       now={@now}

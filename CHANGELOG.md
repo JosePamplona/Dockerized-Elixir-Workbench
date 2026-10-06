@@ -14,6 +14,55 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+### Updated
+
+- **Going back one box and putting the box away are two buttons.** In
+  v0.18.2 Put back became the step back along the trail of boxes, and a
+  reader five boxes deep had five presses between them and the screen.
+  A square beside the box's name is the step back now — one box, on
+  the paper it was left on, at the line it was left at — and Put back,
+  Close and the scrim put the box away whole, whatever led to it, onto
+  what it stands over: the screen, or the workbench's drawer. The
+  square is there only when the box was opened from another: a box
+  taken off the shelf has nothing behind it, which is not a verb it
+  cannot do now but one it does not have.
+
+- **Two drawings in the sprite, `back` and `expand`.** Both were
+  characters, `‹` and `⤢`, and a character sits where its face puts
+  it: neither stood in the middle of its square. They are
+  `assets/design/icons/*.svg` now, like every other mark, and the hint
+  on a figure, on a thumbnail and on the box's face wears the drawing
+  (measured in a browser: both 0 px off the centre of their button).
+  The step back is Put back's own button, a `.btn` as tall as it and
+  square, with the drawing for its words: as the house's square it was
+  another size, another ground and another ink in one head. Settled on
+  a page of six takes on the box's real head (`el-boton-de-volver`,
+  retired the same day): the same button with the drawing alone, over
+  the same with its destination, the two grouped at the right, a
+  breadcrumb, and both as squares.
+
+### Fixed
+
+- **The expand hint of a cover in the README's tables is on the cover.**
+  A figure in a paper is a block as wide as what holds it, and its hint
+  stands at that block's corner: right for a diagram, which fills the
+  column, and beside the picture for an 80-pixel cover in a table's
+  cell, where the hint's two words did not fit either. A picture in a
+  cell that declares its width is a thumbnail now (`.fig.thumb`, the
+  Booklet hook): its figure is the picture's size and the hint the mark
+  alone, the sprite's drawing in a 22-pixel square in its corner.
+
+- **The shelf's cover column is as wide as the cover.** A table whose
+  cells are pictures shares its width evenly between its columns, and
+  the rule asked for *a* cell holding only a picture. The shelf met it
+  the day its cover stopped being a link (v0.18.2): four equal columns,
+  197 pixels around an 80-pixel cover. *Every* cell is what was meant,
+  and a selector cannot ask it — `:has()` does not nest — so the
+  renderer marks such a table (`Console.Papers.mark_picture_tables/1`,
+  `table.pics`), as it marks a file tree. In a table of words a picture
+  that declares its width is drawn that wide and its column is the
+  picture's: both tables of the shelf draw every cover at 80 by 113.
+
 ## v0.18.2 - (2026-10-06)
 
 ### Updated

@@ -9,6 +9,7 @@ defmodule ConsoleWeb.Box do
   import ConsoleWeb.Refs
   import ConsoleWeb.Ribbon, only: [ribbon: 1]
   import ConsoleWeb.Card, only: [card: 1]
+  import ConsoleWeb.Square, only: [mark: 1]
   alias ConsoleWeb.Cartridges
   alias ConsoleWeb.Packages
   alias ConsoleWeb.Record
@@ -40,11 +41,13 @@ defmodule ConsoleWeb.Box do
 
   attr :put_back, :string,
     default: nil,
-    doc: "where Put back goes: what the box stands over, or the box it was opened from"
+    doc: "where Put back goes: what the box stands over, whatever boxes led to this one"
 
-  attr :put_back_to, :string,
+  attr :back_one, :string,
     default: nil,
-    doc: "the box this one was opened from, when it was: Put back returns to it, and says so"
+    doc: "the box this one was opened from, as a path: where the ‹ beside the name goes"
+
+  attr :back_one_to, :string, default: nil, doc: "that box's name"
 
   attr :diff, :any,
     default: nil,
@@ -75,17 +78,33 @@ defmodule ConsoleWeb.Box do
     <aside class="drawer on" role="dialog" aria-modal="true" aria-label="The box in hand">
       <div class="top">
         <div class="who">
+          <%!-- One box back, there when this one was opened from
+                another's paper and not otherwise: a box opened from the
+                shelf has nothing behind it, which is not a verb it
+                cannot do now but one it does not have. It is the same
+                button Put back is, with a drawing for its words: the
+                two are the box's ways out, and for a day it was the
+                house's square — another size, another ground, another
+                ink, in one head. --%>
+          <.link
+            :if={@back_one}
+            class="btn back"
+            patch={@back_one}
+            title={"back to #{@back_one_to}, where this box was opened from — on the paper you were reading, at the place you left it"}
+          >
+            <.mark name="back" /><span class="sr">Back to {@back_one_to}</span>
+          </.link>
           <h3>{@box["name"]}</h3>
         </div>
         <.link
           class="btn"
           patch={@put_back || @back || "/#{@tab}"}
           title={
-            @put_back_to &&
-              "puts this box back and returns to #{@put_back_to}, where it was opened from — on the paper you were reading, at the place you left it"
+            @back_one &&
+              "puts the box back onto what it stands over, leaving the boxes that led to it; ‹ goes back one"
           }
         >
-          {if @put_back_to, do: "Back to #{@put_back_to}", else: "Put back"}
+          Put back
         </.link>
         <.ribbon
           label="The box and what comes inside it"
@@ -575,7 +594,9 @@ defmodule ConsoleWeb.Box do
               </div>
             </div>
           </div>
-          <button class="expand" type="button" aria-label="See this side large">⤢ expand</button>
+          <button class="expand" type="button" aria-label="See this side large">
+            <.mark name="expand" /> expand
+          </button>
         </div>
       </div>
       <div class="sheet">

@@ -557,8 +557,12 @@ export const Booklet = {
   figures() {
     for (const img of this.el.querySelectorAll("article.md img")) {
       if (img.closest(".fig")) continue
-      const wrap = document.createElement("figure"); wrap.className = "fig"
-      img.replaceWith(wrap); const hint = document.createElement("span"); hint.className = "expand"; hint.textContent = "⤢ expand"; wrap.append(img, hint)
+      // A picture in a table's cell that declares its width is a thumbnail: its figure is no
+      // wider than the picture, so the hint lands on it and not beside
+      // it, and the hint is the mark alone, which is all that fits.
+      const thumb = !!img.closest("td") && img.hasAttribute("width")
+      const wrap = document.createElement("figure"); wrap.className = thumb ? "fig thumb" : "fig"
+      img.replaceWith(wrap); const hint = document.createElement("span"); hint.className = "expand"; hint.innerHTML = `<svg aria-hidden="true"><use href="/images/icons.svg#expand"/></svg>${thumb ? "" : "expand"}`; if (thumb) hint.title = "Expand"; wrap.append(img, hint)
       wrap.addEventListener("click", () => openViewer(img, img.alt || "Figure"))
     }
   },

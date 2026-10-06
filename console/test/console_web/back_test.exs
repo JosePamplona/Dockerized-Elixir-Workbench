@@ -153,12 +153,16 @@ defmodule ConsoleWeb.BackTest do
     assert_patch(view, "/deploy")
   end
 
-  test "a cartridge pressed in another's paper leaves a trail, and Put back goes back along it",
+  test "a cartridge pressed in another's paper leaves a trail: ‹ goes back one, Put back puts it all away",
        %{conn: conn} do
     arrives({:catalog, {:ok, [k6(), Map.put(k6(), "name", "monitoring")]}})
+    back = ~r{<a[^>]*class="btn back"}
 
     {:ok, view, html} = live(conn, "/shelf?box=k6&screen=manual&paper=changelog")
     assert html =~ ~r{<a[^>]*href="/shelf"[^>]*>\s*Put back}
+
+    # Opened from no other box: nothing behind it, and no ‹.
+    refute html =~ back
 
     # A link in k6's paper to monitoring's: k6 is left on the trail, on
     # the screen and the paper it was on.
@@ -172,9 +176,14 @@ defmodule ConsoleWeb.BackTest do
     html = render(view)
     assert html =~ ~s(<h3>monitoring</h3>)
 
-    # Put back says where it goes, and the box's own links keep the trail.
-    assert html =~
-             ~r{<a[^>]*href="/shelf\?box=k6&amp;screen=manual&amp;paper=changelog"[^>]*>\s*Back to k6}
+    # ‹ goes back one box, to the paper it was left on; Put back goes to
+    # the screen whatever the trail; the box's own links keep the trail.
+    assert [step] = Regex.run(~r{<a[^>]*class="btn back"[^>]*>.*?</a>}s, html)
+    assert step =~ ~s(href="/shelf?box=k6&amp;screen=manual&amp;paper=changelog")
+    assert step =~ ~s(<use href="/images/icons.svg#back")
+    assert step =~ ~r{<span[^>]*class="sr"[^>]*>\s*Back to k6\s*</span>}
+
+    assert html =~ ~r{<a[^>]*href="/shelf"[^>]*>\s*Put back}
 
     assert html =~
              ~s(href="/shelf?from=k6.manual.changelog&amp;box=monitoring&amp;screen=install")
@@ -187,14 +196,18 @@ defmodule ConsoleWeb.BackTest do
       "/shelf?box=monitoring&screen=manual&paper=changelog&from=k6.manual.changelog"
     )
 
-    # Close goes back one box, to the paper it was left on; again, the screen.
-    render_click(view, "close", %{})
-    assert_patch(view, "/shelf?box=k6&screen=manual&paper=changelog")
-
-    html = render(view)
+    # ‹ pressed: k6 again, on its changelog, with nothing behind it.
+    html = render_patch(view, "/shelf?box=k6&screen=manual&paper=changelog")
     assert html =~ ~s(<h3>k6</h3>)
     assert html =~ ~r{aria-selected="true"[^>]*>\s*Changelog}
-    assert html =~ ~r{<a[^>]*href="/shelf"[^>]*>\s*Put back}
+    refute html =~ back
+  end
+
+  test "Close puts the box away whole, however many boxes led to it", %{conn: conn} do
+    arrives({:catalog, {:ok, [k6(), Map.put(k6(), "name", "monitoring")]}})
+
+    {:ok, view, _} =
+      live(conn, "/shelf?box=monitoring&screen=manual&paper=readme&from=k6.manual.changelog")
 
     render_click(view, "close", %{})
     assert_patch(view, "/shelf")
@@ -202,7 +215,9 @@ defmodule ConsoleWeb.BackTest do
 
   test "a trail that does not read as boxes is not followed", %{conn: conn} do
     {:ok, view, _} = live(conn, "/shelf?box=k6&screen=manual&from=../etc,k6,<x>.manual.readme")
-    assert render(view) =~ ~r{<a[^>]*href="/shelf"[^>]*>\s*Put back}
+    html = render(view)
+    assert html =~ ~r{<a[^>]*href="/shelf"[^>]*>\s*Put back}
+    refute html =~ ~s(class="btn back")
   end
 
   test "a box alone closes onto the screen, as before", %{conn: conn} do

@@ -313,6 +313,19 @@ defmodule ConsoleWeb.TabsTest do
     why = "The scaled deployment is not available on SQLite: each replica its own file."
     file = %{"baked" => true, "in_sync" => true, "stray" => [], "missing" => []}
 
+    # The reading off the project outlives a fast status, and the bench
+    # is every test's: left as it is, the next test's scaled row would
+    # still be this one's. A project with nothing to say takes it away.
+    on_exit(fn ->
+      plain = %{"exists" => true, "workspace" => "/w", "containers" => [], "baked" => %{}}
+      project = %{"cartridges" => [], "deployments" => %{}}
+
+      send(
+        Process.whereis(Console.Bench),
+        {make_ref(), {:status, {:ok, Map.put(plain, "project", project)}}}
+      )
+    end)
+
     arrives(%{
       "exists" => true,
       "workspace" => "/w",

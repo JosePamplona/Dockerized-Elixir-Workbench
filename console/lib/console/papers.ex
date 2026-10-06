@@ -115,6 +115,7 @@ defmodule Console.Papers do
           md
           |> to_html()
           |> put_house_tags(tags)
+          |> mark_picture_tables()
           |> then(
             &Regex.replace(
               ~r/<img src="(assets\/[^"]+)"/,
@@ -284,6 +285,7 @@ defmodule Console.Papers do
     |> box_blocks()
     |> outside_images()
     |> mark_trees()
+    |> mark_picture_tables()
   end
 
   @doc """
@@ -341,6 +343,28 @@ defmodule Console.Papers do
   """
   def mark_trees(html),
     do: String.replace(html, ~r/<td>(<code>\x{00A0}*(?:📁|📄|│|├|└))/u, ~s(<td class="tree">\\1))
+
+  @doc """
+  A table every cell of which is one picture — a row of screenshots,
+  the four states of a cover — gets `pics`: the stylesheet shares its
+  width evenly between the columns. *Every* cell is what a selector
+  cannot ask, so it is asked here. A table with a picture in one column
+  and words in the others, the README's shelf, is a table of words.
+  Run again it changes nothing: it reads only a table not yet marked,
+  which is how the workbench's README is marked after its own `<img>`
+  tags are written back (`render_workbench/1`).
+  """
+  def mark_picture_tables(html) do
+    Regex.replace(~r{<table>(.*?)</table>}s, html, fn whole, inner ->
+      if pictures_only?(inner), do: ~s(<table class="pics">) <> inner <> "</table>", else: whole
+    end)
+  end
+
+  # Whether a table's body cells are one picture each, and it has any.
+  defp pictures_only?(inner) do
+    cells = Regex.scan(~r{<td[^>]*>(.*?)</td>}s, inner, capture: :all_but_first)
+    cells != [] and Enum.all?(cells, fn [cell] -> cell =~ ~r{^\s*<img\s[^<>]*>\s*$} end)
+  end
 
   @doc """
   An image from another origin never loads here — the policy's

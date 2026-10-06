@@ -14,6 +14,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+## v0.18.1 - (2026-10-06)
+
 ### Fixed
 
 - **`./wb.sh new --database sqlite3` creates the project again: a

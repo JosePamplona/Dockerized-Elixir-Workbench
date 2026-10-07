@@ -69,6 +69,25 @@ defmodule ConsoleWeb.ClientDoorTest do
       assert Record.door(status(shut), shut, door).build == nil
     end
 
+    # The path is the project's: an option's value, read off its state.
+    test "its path is the one the project forwards on" do
+      door = Map.put(@door, "path", "{mcp_path}")
+      c = cartridge(%{"mcp" => true, "mcp_path" => "/mishka-chelekom/mcp"})
+      row = Record.door(status(c), c, door)
+
+      assert row.path == "/mishka-chelekom/mcp"
+      assert row.href == "http://localhost:4011/mishka-chelekom/mcp"
+
+      assert row.client == [
+               {"Claude Code",
+                "claude mcp add --transport http pieces http://localhost:4011/mishka-chelekom/mcp"}
+             ]
+
+      # A project that forwards it elsewhere is read where it is.
+      old = cartridge(%{"mcp" => true, "mcp_path" => "/mcp"})
+      assert Record.door(status(old), old, door).href == "http://localhost:4011/mcp"
+    end
+
     test "any answer to the bell is the door answering; silence is not" do
       c = cartridge(%{"mcp" => true})
       read = fn answer -> Record.door(status(c), c, @door, %{@href => answer}).read end

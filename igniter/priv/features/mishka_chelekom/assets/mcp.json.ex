@@ -6,14 +6,15 @@ defmodule Mix.Tasks.Mcp.Json do
 
       mix mcp.json
 
-  The router forwards `/mcp` to Mishka Chelekom's MCP server while
-  `dev_routes` is on. An AI tool — Claude Code, Cursor, VS Code — finds
+  The router forwards a path to Mishka Chelekom's MCP server while
+  `dev_routes` is on — `/mishka-chelekom/mcp`, unless the project moved
+  it; the task reads it off the router. An AI tool — Claude Code, Cursor, VS Code — finds
   it through a `.mcp.json` at the project's root, which needs the
   address, and the address depends on where the project runs:
 
     * run with Docker Compose, it is the port `docker-compose.yml`
       publishes the endpoint's port on (`4011:4000` is
-      `http://localhost:4011/mcp`);
+      `http://localhost:4011/mishka-chelekom/mcp`);
     * run with `mix phx.server` on the host — no `docker-compose.yml`,
       or one that publishes no such port — it is the endpoint's own
       port.
@@ -32,7 +33,7 @@ defmodule Mix.Tasks.Mcp.Json do
   @file_name ".mcp.json"
   @compose "docker-compose.yml"
   @server "mishka-chelekom"
-  @route "/mcp"
+  @routers "lib/*_web/router.ex"
 
   @impl Mix.Task
   def run(_argv) do
@@ -40,7 +41,7 @@ defmodule Mix.Tasks.Mcp.Json do
 
     inside = endpoint_port(Application.get_all_env(Mix.Project.config()[:app]))
     {port, said} = published(inside, read(@compose))
-    url = "http://localhost:#{port}#{@route}"
+    url = "http://localhost:#{port}#{route!()}"
 
     case merged(read(@file_name), url) do
       {:ok, json} ->
@@ -56,6 +57,31 @@ defmodule Mix.Tasks.Mcp.Json do
     case File.read(path) do
       {:ok, content} -> content
       {:error, _} -> nil
+    end
+  end
+
+  defp route! do
+    case @routers |> Path.wildcard() |> Enum.find_value(&route(File.read!(&1))) do
+      nil ->
+        Mix.raise(
+          "No router under #{@routers} forwards to MishkaChelekom.MCP.Server: there is no address to write."
+        )
+
+      path ->
+        path
+    end
+  end
+
+  @doc false
+  # The path a router's source forwards to the library's MCP server on,
+  # with the formatter's parentheses or without; `nil` when it has none.
+  def route(router) do
+    forward =
+      ~r/forward\(?\s*"([^"]+)",\s*Anubis\.Server\.Transport\.StreamableHTTP\.Plug,\s*server:\s*MishkaChelekom\.MCP\.Server/
+
+    case Regex.run(forward, router, capture: :all_but_first) do
+      [path] -> path
+      nil -> nil
     end
   end
 

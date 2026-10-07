@@ -1016,6 +1016,7 @@ defmodule ConsoleWeb.Box do
           <.option
             :for={o <- @box["options"]}
             o={o}
+            options={@box["options"]}
             args={@args}
             status={@status}
             locked={@locked || (@installed && not addable?(@adds, o))}
@@ -1161,6 +1162,7 @@ defmodule ConsoleWeb.Box do
   attr :c_state, :map
   attr :from_insert, :boolean
   attr :inserted_args, :list
+  attr :options, :list, default: [], doc: "the box's options: a detail reads its switch off them"
   attr :by_hand, :boolean, doc: "locked with no Insert commit to read the value off"
   attr :detected, :map, default: %{}, doc: "the defaults the project gives, off the status"
 
@@ -1178,7 +1180,10 @@ defmodule ConsoleWeb.Box do
             do: o["choices"],
             else: [%{"group" => nil, "values" => o["choices"] || []}]
           ),
-        columns: columns?(o)
+        columns: columns?(o),
+        # A detail of a switch is offered only while the switch is on,
+        # and not yet in: unlit with the reason otherwise.
+        off: detail_off(o, assigns)
       )
 
     ~H"""
@@ -1250,7 +1255,6 @@ defmodule ConsoleWeb.Box do
                 type={input_type(@o)}
                 inputmode={input_mode(@o)}
                 pattern={input_pattern(@o)}
-                title={format_says(@o)}
                 spellcheck={input_type(@o) == "url" && "false"}
                 phx-hook={input_type(@o) == "url" && "UrlField"}
                 id={"opt-#{@o["name"]}"}
@@ -1259,9 +1263,16 @@ defmodule ConsoleWeb.Box do
                 placeholder={
                   if @by_hand, do: "inserted by hand: value unknown", else: placeholder(@o)
                 }
-                disabled={@locked}
+                disabled={@locked || @off != nil}
+                title={@off || format_says(@o)}
               />
-              <.tags need={[]} default={!@installed && text_default(@o)} status={@status} />
+              <span :if={@off} class="tag lacks" title={@off}>{@off}</span>
+              <.tags
+                :if={!@off}
+                need={[]}
+                default={!@installed && text_default(@o)}
+                status={@status}
+              />
             </div>
         <% end %>
         <%!-- An option with values is helped by each value's own doc,
@@ -1368,6 +1379,10 @@ defmodule ConsoleWeb.Box do
   defp switch(assigns) do
     o = assigns.o
 
+    # What the project has on is in: said by the box checked and shut,
+    # as a value of a list is — a second insert adds, and cannot take it
+    # away.
+    has = assigns.installed && assigns.c_state[o["name"]] == true
     need = if assigns.c_state[o["name"]] == true, do: [], else: lacks(o, assigns.status)
 
     on =
@@ -1376,6 +1391,7 @@ defmodule ConsoleWeb.Box do
 
     assigns =
       assign(assigns,
+        has: has,
         need: need,
         advice: if(on && o["advises"], do: lacks(o["advises"], assigns.status), else: []),
         default:
@@ -1388,14 +1404,20 @@ defmodule ConsoleWeb.Box do
       <%!-- A form sends nothing for an unchecked box: the "off" before it
             is what says a switch was turned off, which matters for one on
             by default (html's --live). --%>
-      <input type="hidden" name={"opt[#{@o["name"]}]"} value="off" disabled={@locked} />
+      <input type="hidden" name={"opt[#{@o["name"]}]"} value="off" disabled={@locked || @has} />
       <input
         type="checkbox"
         id={"opt-#{@o["name"]}"}
         name={"opt[#{@o["name"]}]"}
-        checked={@need == [] && checked?(@o, @args, @c_state, @from_insert, @inserted_args)}
-        disabled={@locked || @need != []}
-        title={@need != [] && builds_on(@need)}
+        checked={@has || (@need == [] && checked?(@o, @args, @c_state, @from_insert, @inserted_args))}
+        disabled={@has || @locked || @need != []}
+        title={
+          cond do
+            @need != [] -> builds_on(@need)
+            @has -> "in the project already: inserting again adds, and this is in"
+            true -> nil
+          end
+        }
       />
       <.tags need={@need} default={@default} status={@status} />
       <span :if={@advice != []} class="tags" title={@o["advises"]["doc"]}>
@@ -1502,6 +1524,33 @@ defmodule ConsoleWeb.Box do
       _ -> args
     end
   end
+
+  # Why a detail of a switch cannot be said now, or nil when it can:
+  # the switch is off, or it is in the project already — the detail
+  # went in with it, and a second insert adds and does not move.
+  defp detail_off(%{"of" => of} = _o, assigns) when is_binary(of) do
+    flag = "--" <> String.replace(of, "_", "-")
+    switch = Enum.find(assigns.options, &(&1["name"] == of)) || %{"name" => of}
+
+    cond do
+      assigns.installed && assigns.c_state[of] == true ->
+        "went in with #{flag}"
+
+      not checked?(
+        switch,
+        assigns.args,
+        assigns.c_state,
+        assigns.from_insert,
+        assigns.inserted_args
+      ) ->
+        "only with #{flag}"
+
+      true ->
+        nil
+    end
+  end
+
+  defp detail_off(_o, _assigns), do: nil
 
   # A value's doc when it is an address and nothing else.
   defp page(doc) when is_binary(doc) do
@@ -1624,19 +1673,30 @@ defmodule ConsoleWeb.Box do
   end
 
   # A cartridge that is in and adds on a second run has nothing left to
-  # add when every option is a closed list and each of its values is
-  # either in or builds on what the project lacks — db_admin with every
-  # admin its database allows. An open field or a switch can always say
-  # something new, so a box with one never counts as full.
+  # add when every piece it still adds is in, or out of reach: a closed
+  # list with each of its values in or building on what the project
+  # lacks — db_admin with every admin its database allows — and a
+  # switch the project already has on, or one it cannot take. An open
+  # field can always say something new, so a box with one never counts
+  # as full. A switch counted as never full until 2026-10-07: a box
+  # inserted with its one switch on offered the same insert again, to
+  # be told by the installer that there was nothing to do.
   defp nothing_to_add?(box, c, status, adds) do
     options = for o <- box["options"] || [], addable?(adds, o), do: o
     state = c["state"] || %{}
 
-    options != [] and
-      Enum.all?(options, fn o ->
-        o["choices"] && !o["open"] &&
-          Enum.all?(choices(o), &(has?(o, &1, state) or lacks(&1, status) != []))
-      end)
+    # A detail has nothing of its own to add: it is spent with its switch.
+    options = Enum.reject(options, & &1["of"])
+
+    options != [] and Enum.all?(options, &spent?(&1, state, status))
+  end
+
+  defp spent?(%{"type" => "boolean"} = o, state, status),
+    do: state[o["name"]] == true or lacks(o, status) != []
+
+  defp spent?(o, state, status) do
+    o["choices"] && !o["open"] &&
+      Enum.all?(choices(o), &(has?(o, &1, state) or lacks(&1, status) != []))
   end
 
   @doc """
@@ -1646,7 +1706,7 @@ defmodule ConsoleWeb.Box do
   """
   def addable?("all", _o), do: true
   def addable?("none", _o), do: false
-  def addable?(names, o) when is_list(names), do: o["name"] in names
+  def addable?(names, o) when is_list(names), do: o["name"] in names or o["of"] in names
   def addable?(_adds, _o), do: false
 
   # What the reader has just said wins; then what the project reports of
@@ -1712,7 +1772,28 @@ defmodule ConsoleWeb.Box do
   end
 
   @doc "The installer's argv from the form as filled."
-  def argv(box, args), do: Enum.flat_map(box["options"] || [], &option_argv(&1, args))
+  def argv(box, args) do
+    options = box["options"] || []
+
+    Enum.flat_map(options, fn o ->
+      if detail_unsaid?(o, options, args), do: [], else: option_argv(o, args)
+    end)
+  end
+
+  # A detail of a switch the form has off is not on the line: the
+  # installer would refuse it alone.
+  defp detail_unsaid?(%{"of" => of}, options, args) when is_binary(of) do
+    switch = Enum.find(options, &(&1["name"] == of)) || %{"name" => of}
+
+    on =
+      if Map.has_key?(args, of),
+        do: args[of] == "on",
+        else: switch["default"] == true
+
+    not on
+  end
+
+  defp detail_unsaid?(_o, _options, _args), do: false
 
   @doc """
   The options the box's line shows: what the open form says, and for a

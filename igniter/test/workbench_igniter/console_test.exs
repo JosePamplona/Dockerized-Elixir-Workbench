@@ -78,7 +78,16 @@ defmodule WorkbenchIgniter.ConsoleTest do
 
     # A door for a client, not a page: the lines it is given, with the
     # address left for the console to fill — it knows the port.
-    assert [%{label: "mcp", path: "/mcp", when: %{option: "mcp"}, client: lines, build: build}] =
+    # Its path is the one the project forwards on, off the box's state.
+    assert [
+             %{
+               label: "mcp",
+               path: "{mcp_path}",
+               when: %{option: "mcp"},
+               client: lines,
+               build: build
+             }
+           ] =
              by.("mishka_chelekom").doors
 
     # The project's own task that sets a client up, planted by the box.

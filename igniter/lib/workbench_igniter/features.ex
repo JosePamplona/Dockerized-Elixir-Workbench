@@ -467,7 +467,9 @@ defmodule WorkbenchIgniter.Features do
         format: format(Keyword.get(formats, key)),
         doc: Keyword.get(docs, key),
         # What the option says that none of its values can.
-        note: Keyword.get(notes, key)
+        note: Keyword.get(notes, key),
+        # The switch this option is a detail of, when it is one.
+        of: Keyword.get(feature.details(), key)
       }
     end
   end

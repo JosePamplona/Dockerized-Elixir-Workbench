@@ -31,8 +31,11 @@ what the cartridge *installs*.
 - The components are run through `mix format` once generated, since
   the library leaves `button.ex` a line short of it; `--no-format`
   leaves them as written.
-- `--mcp`: the library's MCP server forwarded at `/mcp` in the router,
-  under `dev_routes` — the route `mix mishka.mcp.setup` writes, at the
+- `--mcp`: the library's MCP server forwarded in the router, under
+  `dev_routes`, at `--mcp-path` — `/mishka-chelekom/mcp` by default and
+  not the library's `/mcp`: an MCP endpoint is one server's, and that
+  is the path any other would want. The path is a detail of the
+  switch: given without `--mcp` it is refused — the route `mix mishka.mcp.setup` writes, at the
   end of the router. A WORKAROUND: the library's task puts it inside
   `pipeline :browser` on an untouched router, so the cartridge writes
   its lines and does not queue it; to remove when the task appends to
@@ -54,7 +57,9 @@ what the cartridge *installs*.
   (`requires`).
 - The mark is the dependency, the same one the ash cartridge's
   `--components mishka_chelekom` leaves. A second run generates
-  nothing, and adds the MCP route when asked.
+  nothing, and adds the MCP route and its task when asked. `--mcp`
+  counts as in with both: a project with the route alone is offered
+  the option again, and gets the task.
 - `mix workbench.mishka_components`, the plumbing the queued command
   goes through: it completes the list off the fetched package's
   catalog, fails where the library's task reports issues, and formats

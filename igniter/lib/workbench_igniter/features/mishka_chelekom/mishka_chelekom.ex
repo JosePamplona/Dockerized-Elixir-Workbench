@@ -50,12 +50,14 @@ defmodule WorkbenchIgniter.Features.MishkaChelekom do
     pre-commit hook would refuse the next commit. The switch leaves
     them as the library wrote them.
   * `--mcp` — the library's MCP server on the project's own port: the
-    route `mix mishka.mcp.setup` writes, `/mcp` forwarded in the router
-    under `dev_routes`. Of the library's three ways to serve it, this
+    route `mix mishka.mcp.setup` writes, forwarded in the router under
+    `dev_routes` at `--mcp-path` — `/mishka-chelekom/mcp` unless told
+    otherwise, a path of the library's own and not the `/mcp` another
+    server would want. Of the library's three ways to serve it, this
     is the one a project in a container offers the host: the
     standalone server and the stdio entry both have the client run
     `mix`. The cartridge writes the route itself, a WORKAROUND:
-    the task puts it inside `pipeline :browser` (`mcp/2`).
+    the task puts it inside `pipeline :browser` (`mcp/3`).
 
   Re-running adds the MCP route where it is missing and nothing else:
   a component is added afterwards with the library's own
@@ -68,6 +70,18 @@ defmodule WorkbenchIgniter.Features.MishkaChelekom do
   @dep {:mishka_chelekom, "~> 0.0.9", only: :dev}
 
   @plumbing "workbench.mishka_components"
+
+  # The project's own task that writes `.mcp.json`, planted by `--mcp`.
+  @mcp_task "lib/mix/tasks/mcp.json.ex"
+
+  # Where the MCP server is forwarded, unless told otherwise. Not the
+  # library's `/mcp`: an MCP endpoint is one server's — the protocol's
+  # transport gives each server "a single HTTP endpoint path" — so a
+  # project with two servers needs two paths, and `/mcp` is the one any
+  # of them would take. The name goes first, as Tidewave's does
+  # (`/tidewave/mcp`): a `forward "/mcp"` takes everything under
+  # `/mcp/`, so a path of that shape would depend on the router's order.
+  @mcp_path "/mishka-chelekom/mcp"
 
   @site "https://mishka.tools/chelekom"
 
@@ -181,7 +195,7 @@ defmodule WorkbenchIgniter.Features.MishkaChelekom do
   def console do
     [
       doors: [
-        {"mcp", "/mcp",
+        {"mcp", "{mcp_path}",
          when: {:option, :mcp},
          build: "mcp.json",
          client: [
@@ -232,9 +246,18 @@ defmodule WorkbenchIgniter.Features.MishkaChelekom do
       format:
         "The generated components are run through `mix format`, so a `mix format --check-formatted` before the next commit passes: the library leaves one of them a line short of it. Off, they stay as the library wrote them.",
       mcp:
-        "The library's MCP server for AI tools, on the project's own port: the route `mix mishka.mcp.setup` writes, `/mcp` forwarded in the router under `dev_routes`. With it comes `mix mcp.json`, a task of the project's own that writes `.mcp.json` with the address a client connects to — the port `docker-compose.yml` publishes, or the endpoint's own without one — and `.gitignore` lists that file. Default: off."
+        "The library's MCP server for AI tools, on the project's own port: the route `mix mishka.mcp.setup` writes, forwarded in the router under `dev_routes`. With it comes `mix mcp.json`, a task of the project's own that writes `.mcp.json` with the address a client connects to — the port `docker-compose.yml` publishes, or the endpoint's own without one — and `.gitignore` lists that file. Default: off.",
+      mcp_path:
+        "Where `--mcp` forwards the server. An MCP endpoint is one server's, so the default is a path of this library's own and not the `/mcp` its documentation uses, which another server in the project would want too. Only with `--mcp`. Default: `#{@mcp_path}`."
     ]
   end
+
+  @impl true
+  def formats, do: [mcp_path: :route]
+
+  # The path is where `--mcp` forwards, and nothing without it.
+  @impl true
+  def details, do: [mcp_path: :mcp]
 
   @impl true
   def option_notes do
@@ -249,8 +272,14 @@ defmodule WorkbenchIgniter.Features.MishkaChelekom do
     %Igniter.Mix.Task.Info{
       group: :workbench_igniter,
       example: "mix " <> task() <> " --components card,badge,timeline --no-daisy",
-      schema: [components: :csv, no_daisy: :boolean, format: :boolean, mcp: :boolean],
-      defaults: [no_daisy: false, format: true, mcp: false]
+      schema: [
+        components: :csv,
+        no_daisy: :boolean,
+        format: :boolean,
+        mcp: :boolean,
+        mcp_path: :string
+      ],
+      defaults: [no_daisy: false, format: true, mcp: false, mcp_path: @mcp_path]
     }
   end
 
@@ -268,8 +297,10 @@ defmodule WorkbenchIgniter.Features.MishkaChelekom do
   @doc """
   What the project carries: the components its `MishkaComponents` macro
   imports, in the catalog's order, whether daisyUI's plugin is gone
-  from `app.css`, and whether the router forwards to the library's MCP
-  server. `format` leaves no mark: a formatted file is a formatted
+  from `app.css`, and whether `--mcp` is in whole: the router forwarding
+  to the library's MCP server and the project's `mix mcp.json` beside
+  it. A project with the route alone answers that it is not, so a
+  second run is offered, and adds the task. `format` leaves no mark: a formatted file is a formatted
   file, whoever ran the formatter.
   """
   @impl true
@@ -277,13 +308,14 @@ defmodule WorkbenchIgniter.Features.MishkaChelekom do
     {macro, igniter} = macro_source(igniter)
     {css, igniter} = WorkbenchIgniter.Feature.file_content(igniter, css_path())
 
-    {mcp?, igniter} = mcp?(igniter)
+    {path, igniter} = mcp_path(igniter)
 
     {%{
        components: components_in(macro || ""),
        no_daisy: not daisyui?(css || ""),
        format: nil,
-       mcp: mcp?
+       mcp: path != nil and Igniter.exists?(igniter, @mcp_task),
+       mcp_path: path
      }, igniter}
   end
 
@@ -303,16 +335,33 @@ defmodule WorkbenchIgniter.Features.MishkaChelekom do
 
   defp css_path, do: "assets/css/app.css"
 
-  # The route `mishka.mcp.setup` writes names the server it forwards to.
-  defp mcp?(igniter) do
+  # The path the router forwards to the library's MCP server on, read
+  # off the router: wherever the project has it, whoever wrote it.
+  defp mcp_path(igniter) do
     router = Module.concat(Igniter.Libs.Phoenix.web_module(igniter), Router)
 
     case Igniter.Project.Module.find_module(igniter, router) do
       {:ok, {igniter, source, _zipper}} ->
-        {Rewrite.Source.get(source, :content) =~ "MishkaChelekom.MCP.Server", igniter}
+        {mcp_path_in(Rewrite.Source.get(source, :content)), igniter}
 
       {:error, igniter} ->
-        {false, igniter}
+        {nil, igniter}
+    end
+  end
+
+  @doc """
+  The path a router's source forwards to the library's MCP server on,
+  or `nil`: the `forward` that names `MishkaChelekom.MCP.Server`, as
+  the formatter leaves it, with parentheses or without.
+  """
+  @spec mcp_path_in(String.t()) :: String.t() | nil
+  def mcp_path_in(router) do
+    forward =
+      ~r/forward\(?\s*"([^"]+)",\s*Anubis\.Server\.Transport\.StreamableHTTP\.Plug,\s*server:\s*MishkaChelekom\.MCP\.Server/
+
+    case Regex.run(forward, router, capture: :all_but_first) do
+      [path] -> path
+      nil -> nil
     end
   end
 
@@ -331,16 +380,20 @@ defmodule WorkbenchIgniter.Features.MishkaChelekom do
   def install(igniter) do
     opts = igniter.args.options
     daisyui? = opts[:no_daisy] != true
+    # One leading slash and none trailing, whatever was typed.
+    mcp_path = "/" <> String.trim(opts[:mcp_path] || @mcp_path, "/")
 
     with {[], igniter} <- WorkbenchIgniter.Feature.missing_requirements(igniter, __MODULE__),
          {false, igniter} <- installed?(igniter),
          {:known, []} <- {:known, unknown(opts[:components] || [])},
+         {:path, false} <- {:path, opts[:mcp] == true and mcp_path == "/"},
+         {:alone, false} <- {:alone, opts[:mcp] != true and mcp_path != @mcp_path},
          [] <- if(daisyui?, do: [], else: daisy_bound(igniter)) do
       igniter
       |> Igniter.Project.Deps.add_dep(@dep, on_exists: :skip)
       |> without_daisyui(daisyui?)
       |> queue(opts[:components] || [], opts[:format] != false)
-      |> mcp(opts[:mcp])
+      |> mcp(opts[:mcp], mcp_path)
     else
       {true, igniter} ->
         igniter
@@ -350,10 +403,22 @@ defmodule WorkbenchIgniter.Features.MishkaChelekom do
         `mix mishka.ui.gen.component NAME`, and imported in \
         `<App>Web.Components.MishkaComponents`.\
         """)
-        |> mcp(opts[:mcp])
+        |> mcp(opts[:mcp], mcp_path)
 
       {[_ | _] = shortfalls, igniter} ->
         WorkbenchIgniter.Feature.refuse(igniter, __MODULE__, shortfalls)
+
+      {:alone, true} ->
+        Igniter.add_issue(
+          igniter,
+          "--mcp-path says where --mcp forwards the MCP server: it goes with --mcp, which was not given."
+        )
+
+      {:path, true} ->
+        Igniter.add_issue(
+          igniter,
+          "--mcp-path: the MCP server needs a path of its own, and / is the whole site's."
+        )
 
       {:known, unknown} ->
         Igniter.add_issue(igniter, """
@@ -425,27 +490,29 @@ defmodule WorkbenchIgniter.Features.MishkaChelekom do
   #
   # Issue: TODO — not filed yet (draft: ISSUE-mishka_chelekom-mcp-route.md
   # at the workbench's `_local/`).
-  defp mcp(igniter, true) do
-    case mcp?(igniter) do
-      {true, igniter} ->
+  defp mcp(igniter, true, path) do
+    case mcp_path(igniter) do
+      {path, igniter} when is_binary(path) ->
         igniter
-        |> Igniter.add_notice("--mcp: the router already forwards to the library's MCP server.")
+        |> Igniter.add_notice(
+          "--mcp: the router already forwards to the library's MCP server, at #{path}."
+        )
         |> mcp_json()
 
-      {false, igniter} ->
+      {nil, igniter} ->
         app = Igniter.Project.Application.app_name(igniter)
         router = Module.concat(Igniter.Libs.Phoenix.web_module(igniter), Router)
 
         igniter
         |> Igniter.Project.Module.find_and_update_module!(router, fn zipper ->
-          {:ok, Igniter.Code.Common.add_code(zipper, mcp_route(app))}
+          {:ok, Igniter.Code.Common.add_code(zipper, mcp_route(app, path))}
         end)
         |> mcp_json()
         |> Igniter.add_notice("""
-        The library's MCP server is forwarded at `/mcp` in the router, \
+        The library's MCP server is forwarded at `#{path}` in the router, \
         under `dev_routes`: the route `mix mishka.mcp.setup` writes, \
         at the end of the router. With the app up, an AI tool \
-        connects to http://localhost:<the app's port>/mcp: `mix \
+        connects to http://localhost:<the app's port>#{path}: `mix \
         mcp.json` writes that address into `.mcp.json`, off the port \
         docker-compose.yml publishes or, without one, the endpoint's \
         own. The file is the machine's, and .gitignore lists it. The \
@@ -456,9 +523,7 @@ defmodule WorkbenchIgniter.Features.MishkaChelekom do
     end
   end
 
-  defp mcp(igniter, _off), do: igniter
-
-  @mcp_task "lib/mix/tasks/mcp.json.ex"
+  defp mcp(igniter, _off, _path), do: igniter
 
   # The client's side, as a task of the project's own: the address has
   # a port, and the port is a fact of where the project runs — the one
@@ -479,13 +544,13 @@ defmodule WorkbenchIgniter.Features.MishkaChelekom do
     )
   end
 
-  @doc "The route `mix mishka.mcp.setup` writes, for the project's `app`."
-  @spec mcp_route(atom()) :: String.t()
-  def mcp_route(app) do
+  @doc "The route `mix mishka.mcp.setup --path PATH` writes, for the project's `app`."
+  @spec mcp_route(atom(), String.t()) :: String.t()
+  def mcp_route(app, path) do
     """
     # MCP Server for AI tools (development only)
     if Application.compile_env(#{inspect(app)}, :dev_routes) do
-      forward "/mcp", Anubis.Server.Transport.StreamableHTTP.Plug,
+      forward #{inspect(path)}, Anubis.Server.Transport.StreamableHTTP.Plug,
         server: MishkaChelekom.MCP.Server
     end
     """

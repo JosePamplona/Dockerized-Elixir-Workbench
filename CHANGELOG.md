@@ -40,9 +40,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `ash_authentication_phoenix` is in. The generated components are run
   through `mix format` — the library leaves `button.ex` a line short of
   it, which a pre-commit format check refuses — unless `--no-format`.
-  `--mcp` forwards the library's MCP server at `/mcp` in the router,
-  under `dev_routes`: the way to serve it that needs no `mix` on the
-  host. The route is the one `mix mishka.mcp.setup` writes, and the
+  `--mcp` forwards the library's MCP server in the router, under
+  `dev_routes`: the way to serve it that needs no `mix` on the host.
+  It goes at `--mcp-path`, `/mishka-chelekom/mcp` by default and not
+  the `/mcp` of the library's documentation: an MCP endpoint is one
+  server's (the transport gives each "a single HTTP endpoint path"), so
+  a second cartridge with a server needs a second path, and `/mcp` is
+  the one each would take. The name goes first because a `forward
+  "/mcp"` takes everything under `/mcp/`. The route is the one `mix mishka.mcp.setup` writes, and the
   cartridge writes it itself, a WORKAROUND marked where it shows: on
   the router `phx.new` generates, that task puts its `forward` inside
   `pipeline :browser` (0.0.9 and 0.0.10-alpha.8; the draft of the
@@ -55,13 +60,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - **`mix mcp.json`, planted by mishka_chelekom's `--mcp`: the
   client's side of MCP, read off the project when it is run.** A
-  client needs the address of `/mcp`, and its port is the one the
+  client needs the address of the route, and its port is the one the
   compose publishes the app on — a fact of where the project runs. A
   `.mcp.json` written by the installer carries a number the next bake
   changes; a port-free stdio entry through `docker compose exec` makes
   Docker a requirement of a file in a project that runs with `mix`
   anywhere else. The author's answer is a task of the project's own:
-  it takes the endpoint's port from the app's configuration, looks in
+  it reads the path off the router, takes the endpoint's port from
+  the app's configuration, looks in
   `docker-compose.yml` for the line that publishes it (`4011:4000`),
   falls back to the endpoint's port where there is no compose, and
   adds its entry to `.mcp.json`, keeping the file's other servers.
@@ -90,6 +96,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   out of the bell: 1 to 2.3 s on a project in dev, once over 8 s,
   against the 2.5 s a door is given. Seen on the console from the
   working tree, against a project up in dev.
+
+- **An option can be a detail of a switch, and goes with it.**
+  mishka_chelekom's `--mcp-path` says where `--mcp` forwards the
+  server and nothing without it, and the form offered the field with
+  the switch off, for an installer that then ignored it. A cartridge
+  declares it (`details/0`, `[mcp_path: :mcp]`; `of` in the catalog),
+  and the two sides hold it: the installer refuses the detail given
+  alone, and the console's form shows its field unlit, *only with
+  --mcp*, until the switch is on, and keeps it off the command. On a
+  box that is in, a detail follows the switch it belongs to: open
+  while the switch is a piece being added, shut with *went in with
+  --mcp* once it is in, and never what keeps a box from being full.
 
 - **A long list of names in a box's form is set in columns, and a
   value documented by an address carries it beside its name.**
@@ -130,6 +148,22 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   repeated in an answer about why the coverage page has two commands.
   The records of the renaming, and a test's fixture of an old project's
   `Insert coverage --exdoc`, stay as they are.
+
+- **A box inserted with its one switch on no longer offers the same
+  insert again.** The author inserted mishka_chelekom with `--mcp`, and
+  the form came back with `--mcp` open and *Add to cartridge* lit:
+  pressed, the installer ran to say there was nothing to do. The
+  console held that "a switch can always say something new", so a box
+  with a switch among the pieces it still adds never counted as full —
+  credo's `--githook` the same. A switch the project already has on is
+  in, and one that builds on what the project lacks is out of reach:
+  either way it has nothing to add, as a value of a closed list has
+  not. Such a box is now full — the add unlit, *nothing left to add* —
+  and the switch is drawn as a value that is in is, checked and shut.
+  A field of text still keeps a box open. For mishka_chelekom the mark
+  of `--mcp` is both of its pieces, the route and the project's `mix
+  mcp.json`: a project with the route alone answers that it is not in,
+  so the option stays offered and a second run plants the task.
 
 - **`catalog --json --brief` takes an option whose values come in
   sections.** The brief read `value` off every choice, and a sectioned

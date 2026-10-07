@@ -72,6 +72,10 @@ route at the end of `lib/<app>_web/router.ex`,
   --check-formatted` in a pre-commit hook would refuse the next commit.
 * `--mcp` — the library's MCP server for AI tools, on the project's own
   port. Default: off.
+* `--mcp-path /ai/components` — where `--mcp` forwards it, and only
+  with `--mcp`: given alone it is refused, and the console's form
+  offers the field while the switch is on. Default:
+  `/mishka-chelekom/mcp`.
 
 Every component is drawn, with its variants, at
 <https://mishka.tools/chelekom>, and each one has a page of its own
@@ -119,78 +123,149 @@ project: their pages are dressed in daisyUI.
 
 ## MCP
 
-Mishka Chelekom ships an MCP server: an AI tool connected to it can
-list the components, read each one's attributes and examples, and get
-the `mix` command that generates one. The library serves it three
-ways — a standalone server on port 4003, a stdio process the client
-spawns, and a route in the project's own router. The first two have
-the client run `mix`, which a host with Docker alone does not have.
-`--mcp` is the third:
+Mishka Chelekom ships an MCP server: an AI tool connected to it reads
+the library instead of guessing it. Asked for a timeline, it looks up
+which attributes `<.timeline>` takes and writes those.
 
-```elixir
-# MCP Server for AI tools (development only)
-if Application.compile_env(:my_app, :dev_routes) do
-  forward "/mcp", Anubis.Server.Transport.StreamableHTTP.Plug, server: MishkaChelekom.MCP.Server
-end
-```
+What the server of 0.0.9 offers, as it lists them itself:
 
-With the app up, the server answers on the app's port:
+| Tools | |
+| --- | --- |
+| `search_components`, `get_component_info`, `get_example` | Find a component; its types, colours, sizes and what it needs; its documentation with the attributes of each function |
+| `get_js_hook_info`, `get_mix_task_info`, `get_docs` | A hook's, a Mix task's, or a page of the library's site |
+| `generate_component`, `generate_components`, `uninstall_component` | The `mix` command that does it — the tool hands the command over, and running it is yours: `./wb.sh mix …` on the workbench |
+| `update_config`, `validate_config` | The lines to add to the library's `priv/mishka_chelekom/config.exs`, handed over the same way, and a check of that file |
 
-```
-claude mcp add --transport http mishka-chelekom http://localhost:<port>/mcp
-```
+And ten resources to read: the components, colours, variants, sizes,
+spaces, CSS variables, dependencies between components, scripts, the
+headless set, and the project's configuration.
+
+### What `--mcp` puts in
+
+The library serves it three ways — a standalone server on port 4003,
+a stdio process the client spawns, and a route in the project's own
+router. The first two have the client run `mix`, which a host with
+Docker alone does not have. `--mcp` is the third, and two more things
+with it:
+
+* the route, at the end of `lib/<app>_web/router.ex`:
+
+  ```elixir
+  # MCP Server for AI tools (development only)
+  if Application.compile_env(:my_app, :dev_routes) do
+    forward "/mishka-chelekom/mcp", Anubis.Server.Transport.StreamableHTTP.Plug,
+      server: MishkaChelekom.MCP.Server
+  end
+  ```
+
+* `lib/mix/tasks/mcp.json.ex`, the project's own `mix mcp.json`;
+* `/.mcp.json` in `.gitignore`.
+
+### Connecting a client
+
+The server is the app's: it answers while the app is up in dev, on
+the app's port.
+
+1. `./wb.sh add mishka_chelekom --mcp` — on a project that already has
+   the library, this adds the three things above and nothing else.
+2. `./wb.sh up`, the dev deployment.
+3. `./wb.sh mix mcp.json` — `mix mcp.json` off the workbench. It
+   writes `.mcp.json` at the project's root, the file Claude Code,
+   Cursor and VS Code read, with the address the app answers on here.
+4. Open the client **from the project's folder**. Claude Code asks
+   once whether to trust the servers of that `.mcp.json`; `/mcp` in
+   the session then shows `mishka-chelekom` connected, with its tools.
+
+Afterwards: with the app down the client shows the server
+disconnected, and finds it again when the app is back (`/mcp`, or a
+new session). When the published port changes — another bake — run
+`mix mcp.json` again. A session opened from another folder does not
+see the server.
+
+### The address
 
 How a client reaches the route — which port, on which machine — is a
 fact of where the project runs, not of the project, so the installer
-writes no address anywhere. It plants a task instead, the project's
-own, which reads the address when it is run:
-
-```
-mix mcp.json        # ./wb.sh mix mcp.json on the workbench
-```
-
-It writes `.mcp.json` at the project's root, the file Claude Code,
-Cursor and VS Code read:
+writes no address anywhere. The task reads it when it is run:
 
 | The project has | The address |
 | --- | --- |
-| a `docker-compose.yml` publishing the endpoint's port (`4011:4000`) | `http://localhost:4011/mcp` |
-| no `docker-compose.yml`, or one that publishes no such port | the endpoint's own port, `http://localhost:4000/mcp` |
+| a `docker-compose.yml` publishing the endpoint's port (`4011:4000`) | `http://localhost:4011/mishka-chelekom/mcp` |
+| no `docker-compose.yml`, or one that publishes no such port | the endpoint's own port, `http://localhost:4000/mishka-chelekom/mcp` |
 
-An existing `.mcp.json` keeps its other servers; one that is not a
-JSON object is left alone, with the address printed. The file is this
-machine's, as `.env` is: `.gitignore` lists it, and the task is run
-again when the published port changes.
+The path is the one the project's router forwards on, read off
+`lib/<app>_web/router.ex`, so a project that moved the route is still
+found. The endpoint's port is the one its configuration says (`http:
+[port: …]`), 4000 when it says none. An existing `.mcp.json` keeps its other
+servers; one that is not a JSON object is left alone, with the address
+printed. The file is this machine's, as `.env` is: `.gitignore` lists
+it.
 
-In the console the route is a door, **mcp**, of the kind that is for a
-client and not a page: its address is shown and not linked, the bell
-reads any answer as *answers* (a `GET` gets the server's own 406), and
-the plate has a button that runs `mix mcp.json`. The box's *Opens*
-also gives the line above, and the JSON entry, with the published port
-already in them and a button to copy each — for registering the
-server in a client's own configuration instead of a file.
+Without the file, the same server is registered in the client's own
+configuration, which is kept per folder and outside the project:
 
-The route is the one `mix mishka.mcp.setup` writes, and the cartridge
-writes it itself, at the end of the router. That is a **workaround**
-for the library's task, which on the router `phx.new` generates puts
-the `forward` inside `pipeline :browser`; it goes when the task
-appends to the router module instead (DESIGN §3.6).
+```
+claude mcp add --transport http mishka-chelekom http://localhost:<port>/mishka-chelekom/mcp
+```
 
-The route names a development dependency. An environment that turns
-`dev_routes` on without it — `test`, on a project that set it there —
-compiles with a warning that the plug is not available.
+### The path
+
+The library's documentation forwards its server at `/mcp`. The
+cartridge's default is `/mishka-chelekom/mcp`, and `--mcp-path` moves
+it. An MCP endpoint is one server's: the protocol gives each server "a
+single HTTP endpoint path", with no way for two to share one, and a
+client lists them one by one, each by its name and address. `/mcp` is
+the specification's own example of such a path, and the one any other
+server in the project would want too. The name goes before `mcp`, as
+Tidewave's does, and not after: `forward "/mcp"` takes every path under
+`/mcp/`, so two servers at `/mcp` and `/mcp/<name>` would depend on the
+order of the router.
+
+A project that already forwards the server elsewhere — at the
+library's `/mcp`, by an earlier insert or by `mix mishka.mcp.setup` —
+keeps it there: the cartridge, the task and the console read the path
+off the router.
+
+### In the console
+
+The route is a door, **mcp**, of the kind that is for a client and not
+a page: its address is shown and not linked, the bell reads any answer
+as *answers* (a `GET` gets the server's own 406), and its plate has a
+button that runs `mix mcp.json`. The box's *Opens* also gives the line
+above, and the JSON entry Cursor and VS Code take, with the published
+port already in them and a button to copy each.
+
+### What to know of it
+
+* The route is the one `mix mishka.mcp.setup` writes, and the cartridge
+  writes it itself. That is a **workaround** for the library's task,
+  which on the router `phx.new` generates puts the `forward` inside
+  `pipeline :browser`; it goes when the task appends to the router
+  module instead (DESIGN §3.6).
+* The route names a development dependency. An environment that turns
+  `dev_routes` on without it — `test`, on a project that set it there —
+  compiles with a warning that the plug is not available.
+* It is the dev deployment's: `dev_routes` is off in prod, and the
+  task reads `docker-compose.yml`, not the prod or scaled compose.
 
 ## Idempotency
 
 A second run generates nothing: the mark is the dependency, the same
-one the ash cartridge's `--components mishka_chelekom` leaves. With
-`--mcp` it adds the route where the router lacks it, on a project
-either road brought the library to. A component is added afterwards
-with the library's own task and a line in the macro:
+one the ash cartridge's `--components mishka_chelekom` leaves. A
+component is added afterwards with the library's own task and a line
+in the macro:
 
 ```
 mix mishka.ui.gen.component carousel
 ```
+
+`--mcp` is the one piece a second run adds, and it counts as in when
+both of its pieces are: the route and the project's `mix mcp.json`. A
+project with the route alone — written by the library's own setup, or
+by this box before it planted the task — is offered the option again
+and gets what it lacks; the route is not written twice. With both in,
+the console shows the switch shut on and the box with nothing left to
+add.
 
 ## What the library leaves, as it is
 

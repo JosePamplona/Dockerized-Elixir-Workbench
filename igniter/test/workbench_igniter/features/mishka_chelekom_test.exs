@@ -200,14 +200,18 @@ defmodule WorkbenchIgniter.Features.MishkaChelekomTest do
       # The in-memory project has no formatter configuration, so the
       # router's calls come back in parentheses; a project's own do not.
       assert router =~
-               ~r/# MCP Server for AI tools \(development only\)\n  if Application.compile_env\(:test, :dev_routes\) do\n    forward\(?\s*"\/mcp", Anubis.Server.Transport.StreamableHTTP.Plug,\s+server: MishkaChelekom.MCP.Server\s*\)?\n  end\nend\n\z/
+               ~r/# MCP Server for AI tools \(development only\)\n  if Application.compile_env\(:test, :dev_routes\) do\n    forward\(?\s*"\/mishka-chelekom\/mcp", Anubis.Server.Transport.StreamableHTTP.Plug,\s+server: MishkaChelekom.MCP.Server\s*\)?\n  end\nend\n\z/
 
       [pipeline, _rest] = String.split(router, "pipeline :api", parts: 2)
       refute pipeline =~ "MCP"
 
       # Nothing of it is queued: the components' task alone.
       assert igniter.tasks == [{"workbench.mishka_components", ["--format"]}]
-      assert Enum.any?(igniter.notices, &(&1 =~ "http://localhost:<the app's port>/mcp"))
+
+      assert Enum.any?(
+               igniter.notices,
+               &(&1 =~ "http://localhost:<the app's port>/mishka-chelekom/mcp")
+             )
     end
 
     test "says back that the route is in" do
@@ -227,6 +231,97 @@ defmodule WorkbenchIgniter.Features.MishkaChelekomTest do
       refute Map.has_key?(written, "lib/test_web/components/mishka_components.ex")
 
       assert MishkaChelekom.adds() == [:mcp]
+    end
+
+    # The mark is both pieces: a project with the route alone — one
+    # the library's own setup wrote, or this box before it planted the
+    # task — is offered the option again, and gets what it lacks.
+    test "a project with the route and no task is not whole, and a second run completes it" do
+      route_only =
+        install(~w(--mcp))
+        |> apply_igniter!()
+        |> Igniter.rm("lib/mix/tasks/mcp.json.ex")
+        |> apply_igniter!()
+
+      assert {%{mcp: false}, _} = MishkaChelekom.state(route_only)
+
+      again = install(~w(--mcp), route_only)
+      assert Enum.any?(again.notices, &(&1 =~ "already forwards"))
+
+      completed = apply_igniter!(again)
+      assert files(completed)["lib/mix/tasks/mcp.json.ex"] =~ "Mix.Tasks.Mcp.Json"
+      assert {%{mcp: true}, _} = MishkaChelekom.state(completed)
+      # The route is there once.
+      assert length(String.split(router(completed), "MishkaChelekom.MCP.Server")) == 2
+    end
+
+    test "the path is the library's own by default, not the /mcp another server would want" do
+      info = MishkaChelekom.info([], nil)
+      assert info.defaults[:mcp_path] == "/mishka-chelekom/mcp"
+      assert MishkaChelekom.formats()[:mcp_path] == :route
+
+      assert {%{mcp: true, mcp_path: "/mishka-chelekom/mcp"}, _} =
+               install(~w(--mcp)) |> apply_igniter!() |> MishkaChelekom.state()
+
+      # Without the route there is no path to say.
+      assert {%{mcp: false, mcp_path: nil}, _} =
+               install() |> apply_igniter!() |> MishkaChelekom.state()
+    end
+
+    test "--mcp-path forwards it elsewhere, with one slash before and none after" do
+      for given <- ~w(/ai/mishka ai/mishka/ /ai/mishka/) do
+        project = install(["--mcp", "--mcp-path", given]) |> apply_igniter!()
+
+        assert router(project) =~ ~r{forward\(?\s*"/ai/mishka", Anubis}
+        assert {%{mcp: true, mcp_path: "/ai/mishka"}, _} = MishkaChelekom.state(project)
+      end
+    end
+
+    test "refuses the root, and a path that is no path" do
+      assert [issue] = install(~w(--mcp --mcp-path /)).issues
+      assert issue =~ "needs a path of its own"
+
+      assert [issue] = install(["--mcp", "--mcp-path", "/a b"]).issues
+      assert issue =~ "--mcp-path"
+    end
+
+    # The path is a detail of --mcp: it says where, and nothing alone.
+    test "--mcp-path without --mcp is refused, and nothing is written" do
+      igniter = install(~w(--mcp-path /ai/mishka))
+
+      assert [issue] = igniter.issues
+      assert issue =~ "--mcp-path says where --mcp forwards"
+      assert igniter.tasks == []
+
+      # Left at its default, nobody asked for it.
+      assert install().issues == []
+      assert MishkaChelekom.details() == [mcp_path: :mcp]
+
+      option =
+        Enum.find(
+          WorkbenchIgniter.Features.entry(MishkaChelekom).options,
+          &(&1.name == :mcp_path)
+        )
+
+      assert option.of == :mcp
+    end
+
+    # A project inserted before the path was the library's own, or one
+    # whose route the library's setup wrote: the path is read where it is.
+    test "reads the path off the router, wherever the project has it" do
+      at = fn forward -> MishkaChelekom.mcp_path_in("  scope \"/\" do\n  end\n\n" <> forward) end
+
+      assert at.(
+               ~s|forward "/mcp", Anubis.Server.Transport.StreamableHTTP.Plug, server: MishkaChelekom.MCP.Server|
+             ) ==
+               "/mcp"
+
+      assert at.(
+               ~s|forward("/x/mcp", Anubis.Server.Transport.StreamableHTTP.Plug,\n      server: MishkaChelekom.MCP.Server\n    )|
+             ) ==
+               "/x/mcp"
+
+      assert at.(~s|forward "/mailbox", Plug.Swoosh.MailboxPreview|) == nil
     end
 
     test "does not write it twice" do
@@ -297,6 +392,26 @@ defmodule WorkbenchIgniter.Features.MishkaChelekomTest do
       assert {4000, _} = task.published(4000, "services:\n  app:\n    image: x\n")
       # 14000 is not 4000, and neither is 40001.
       assert {4000, _} = task.published(4000, "ports:\n  - 5011:14000\n  - 6011:40001\n")
+    end
+
+    test "the path is the one the project's router forwards on" do
+      router = """
+      defmodule TestWeb.Router do
+        if Application.compile_env(:test, :dev_routes) do
+          forward "/mailbox", Plug.Swoosh.MailboxPreview
+        end
+
+        # MCP Server for AI tools (development only)
+        if Application.compile_env(:test, :dev_routes) do
+          forward "/mishka-chelekom/mcp", Anubis.Server.Transport.StreamableHTTP.Plug,
+            server: MishkaChelekom.MCP.Server
+        end
+      end
+      """
+
+      assert task().route(router) == "/mishka-chelekom/mcp"
+      assert task().route(String.replace(router, "/mishka-chelekom/mcp", "/mcp")) == "/mcp"
+      assert task().route("defmodule TestWeb.Router do\nend\n") == nil
     end
 
     test "the endpoint's port is read off the app's configuration, 4000 when it says none" do

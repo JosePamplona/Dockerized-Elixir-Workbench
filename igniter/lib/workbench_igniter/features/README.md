@@ -114,7 +114,7 @@ Dep-only cartridges have no `priv/features/<feature>/` directory:
 | --- | --- | --- |
 | [credo](credo/) | `{:credo, "~> 1.7", only: [:dev, :test], runtime: false}`, and with `--githook` its line in the pre-commit hook (composes [precommit](precommit/)) | chiefs_setup |
 | [mock](mock/) | `{:mock, "~> 0.3", only: :test}` | chiefs_setup (also composed by health_endpoint and enhancements; coverage moved to test_doubles on 2026-09-20, and the last of the three takes it off the shelf) |
-| [test_doubles](test_doubles/) | `{:mimic, "~> 2.0", only: :test}`, `{:mox, "~> 1.2", only: :test}` or `{:hammox, "~> 1.0", only: :test}` with `--type-check`, by `--double` | chiefs_setup (coverage's `--exdoc` builds on it with Mimic since 2026-09-22, where it used to compose it) |
+| [test_doubles](test_doubles/) | `{:mimic, "~> 2.0", only: :test}`, `{:mox, "~> 1.2", only: :test}` or `{:hammox, "~> 1.0", only: :test}` with `--type-check`, by `--double` | chiefs_setup (coverage's `--md-report`, `--exdoc` then, builds on it with Mimic since 2026-09-22, where it used to compose it) |
 | [exdebug](exdebug/) | `{:ex_debug, "~> 1.0"}` | chiefs_setup |
 | [dashboard_extras](dashboard_extras/) | `:os_mon` in `extra_applications`, and the extras of the project's database: `ecto_psql_extras`, `ecto_mysql_extras` or `ecto_sqlite3_extras` (none on SQL Server or without a database) | chiefs_setup |
 | [test_data](test_data/) | `{:faker, "~> 0.19", only: :test}` and, by the line: on Ecto `{:ex_machina, "~> 2.8", only: :test}`, `test/support/factory.ex` and the test that inserts every factory; on Ash `test/support/generator.ex` (`Ash.Generator`) | no one (`wb.sh add test_data`) |
@@ -301,7 +301,8 @@ with the eight that stand in for `CoreComponents` — and, with
 `--no-daisy`, daisyUI taken out of the project: its plugins, its
 dependency, and its classes in the two pages `phx.new` wrote. The
 components are formatted (`--no-format` leaves them as generated), and
-`--mcp` forwards the library's MCP server at `/mcp` in the router —
+`--mcp` forwards the library's MCP server in the router, at a path of
+its own (`--mcp-path`, `/mishka-chelekom/mcp`) —
 a door for a client, whose address and the line to give the client
 the console fills with the published port, and plants `mix mcp.json`,
 the project's own task that writes `.mcp.json` with that address. The

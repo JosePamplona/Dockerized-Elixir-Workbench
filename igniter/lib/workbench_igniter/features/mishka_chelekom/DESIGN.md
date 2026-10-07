@@ -98,6 +98,39 @@ and `translate_errors`. In the generated macro they come from: `flash`
 `Modal`. `translate_error/1` and `translate_errors/2` have no
 counterpart, and nothing `phx.new` writes calls them from a template.
 
+### 2.5 The library's MCP server
+
+0.0.9 brought a server of the Model Context Protocol: "Connect your
+favorite AI tools directly to the component library" [12]. It is a
+process of the library's own application
+(`MishkaChelekom.Application` starts `MishkaChelekom.MCP.Server`), so
+it is there wherever the dependency is loaded, which is `:dev`. The
+library documents three ways to reach it [12]:
+
+* *standalone*, `mix mishka.mcp.server`, on port 4003;
+* *stdio*, the same task with `--transport stdio`, spawned by the
+  client from a `.mcp.json` whose command is `mix`;
+* *in the project's router*, `mix mishka.mcp.setup`: a `forward` to
+  `Anubis.Server.Transport.StreamableHTTP.Plug` under `dev_routes`,
+  answering on the app's own port [13].
+
+Asked for what it has (`tools/list`, `resources/list`, on the author's
+project, §4.2), the server names eleven tools — `search_components`,
+`get_component_info`, `get_example`, `get_js_hook_info`,
+`get_mix_task_info`, `get_docs`, `generate_component`,
+`generate_components`, `uninstall_component`, `update_config`,
+`validate_config` — and ten resources: `config`, `colors`,
+`components`, `css-variables`, `dependencies`, `headless`, `scripts`,
+`sizes`, `spaces`, `variants`. The three generating tools each say
+they return "the mix command", and `update_config` the Elixir "to add
+to the config": none of them writes to the project.
+
+The route speaks the protocol's streamable HTTP: `POST` with
+`initialize` opens a session and answers its id in `mcp-session-id`;
+every other request needs that header, `ping` among them; `DELETE`
+closes it. A `GET` that accepts no event stream is refused with 406
+(§4.2).
+
 ## 3. Design
 
 ### 3.1 Queue the library's task
@@ -266,6 +299,41 @@ second run adds (`adds: [:mcp]`).
 *Beaten:* running the task and moving its route afterwards — two
 writes to say one thing.
 
+**The path: the library's own, not `/mcp`.** The library's setup
+forwards at `/mcp` unless given `--path` [13]. The protocol's
+streamable HTTP transport says "The server MUST provide a single HTTP
+endpoint path (hereafter referred to as the MCP endpoint) that supports
+both POST and GET methods. For example, this could be a URL like
+`https://example.com/mcp`" [16]: one endpoint, one server, one
+handshake and one list of tools, and nothing for two servers to share
+a path. A client is told of each by its own name and address. So a
+second cartridge with an MCP server needs a second path, and `/mcp`,
+the specification's example, is the one each of them would take by
+default. The cartridge forwards at `--mcp-path`, `/mishka-chelekom/mcp`
+unless told otherwise — the author's default. The name goes before
+`mcp`: the transport does not say, and two things do. A Phoenix
+`forward "/mcp"` takes every path under `/mcp/`, so `/mcp/<name>`
+beside a server at `/mcp` would answer by the router's order. And it
+is where the other MCP server a workbench project may carry already
+is: ash's `--ai tidewave` mounts `plug Tidewave` in the endpoint, on a
+path of its own.
+
+The path is a detail of the switch, and is declared as one
+(`details/0`, `[mcp_path: :mcp]`): it says where `--mcp` forwards and
+nothing without it. So the installer refuses `--mcp-path` given alone,
+where the first cut ignored it in silence; the console's form shows
+the field unlit, *only with --mcp*, until the switch is on, and leaves
+it off the command; and on a project that has the library, where the
+switch is the one piece a second run adds, the field follows the
+switch — open while it is being added, shut with *went in with --mcp*
+once it is in.
+
+Nothing but the installer holds the path: `state/1`, the door of the
+console (`{mcp_path}`) and the planted task all read it off the
+router's `forward` to `MishkaChelekom.MCP.Server`. A project inserted
+while the path was `/mcp`, or one the library's setup wrote the route
+of, is read where it is.
+
 **The client's side: a task of the project's, not a file of the
 installer's.** A client needs the address, and the address has a port
 the project's code does not know: the one its compose publishes the
@@ -286,7 +354,8 @@ to give it were weighed.
   the workbench's.
 
 So `--mcp` plants `lib/mix/tasks/mcp.json.ex`, verbatim. `mix
-mcp.json` loads the app's configuration (`app.config`), takes the
+mcp.json` reads the path off the router, loads the app's
+configuration (`app.config`), takes the
 endpoint's port from the one entry that has `http: [port: …]`, 4000
 when none does; looks in `docker-compose.yml` for the line that
 publishes that port (`HOST:PORT`, with the address, `/tcp` and quotes
@@ -324,8 +393,15 @@ added: the library's own `mix mishka.ui.gen.component NAME`. Running
 the batch task again would overwrite the macro with the new list alone
 and regenerate components the project may have edited.
 
+The mark of `--mcp` is both of its pieces: the route in the router and
+`lib/mix/tasks/mcp.json.ex`. A project with the route alone — written
+by the library's own setup, or by this box before it planted the task
+— answers that the option is not in, so the console keeps offering it
+and a second run adds what is missing; with both, the console counts
+the box as full and offers nothing.
+
 `state/1` reads the components off the macro the library wrote,
-daisyUI off `app.css` and the MCP route off the router: the project as
+daisyUI off `app.css` and the MCP route and task off the project: the project as
 it is, whichever road it took. `format` answers `nil`: a formatted
 file keeps no mark of who formatted it.
 
@@ -387,6 +463,22 @@ the state.
   container of a workbench project up in dev: `docker-compose.yml` is
   in the task's directory, the endpoint's port is 4000 and the line
   found is `4011:4000`.
+* The server driven by hand, against that project: `initialize`,
+  then `tools/list` (the eleven of §2.5) and `resources/list` (the
+  ten); `search_components` for "timeline" answers the component with
+  its page and `mix mishka.ui.gen.component timeline`;
+  `get_component_info` its two functions, thirteen colours, eight
+  sizes and that it needs `icon`; `get_example` its documentation with
+  the attributes of each function. Read-only calls: nothing of the
+  project was written.
+* With the path the library's own (2026-10-07, a project generated
+  anew): `--components card --mcp` writes the route at
+  `/mishka-chelekom/mcp`; `mix format --check-formatted` passes and the
+  project compiles with no warning; `POST` of an `initialize` there
+  answers 200 with the server's name, and the same at `/mcp` 404;
+  `mix mcp.json` writes `http://localhost:4000/mishka-chelekom/mcp`
+  with no compose and `…:4011/…` with one publishing `4011:4000`. The
+  measurements above this one were taken while the path was `/mcp`.
 * The protocol as a health check, against that project: `ping` with no
   session 404; `initialize` 200 with a session id; `ping` on it 200;
   `DELETE` of the session 200; `ping` afterwards 404. Four
@@ -411,9 +503,13 @@ the components gone.
 
 ### 4.4 Not measured
 
-`--mcp` and the formatting through `wb.sh`: both ran on the host. An
-MCP client connected to the route, beyond the handshake. An opened
-`dropdown` beside daisyUI. A project that had edited `Layouts`.
+`--mcp` and the formatting through `wb.sh`: both ran on the host, and
+the planted `mix mcp.json` was run there too, never as `./wb.sh mix
+mcp.json`. A client — Claude Code, Cursor — reading the `.mcp.json`
+the task writes: the server was driven with `curl` alone. The console
+with a box full by its switch, in a browser: its tests cover it. An
+opened `dropdown` beside daisyUI. A project that had edited
+`Layouts`.
 
 ## 5. Limitations and open questions
 
@@ -476,3 +572,6 @@ MCP client connected to the route, beyond the handshake. An opened
 15. Mishka, *Introducing Mishka Chelekom v0.0.9* —
     <https://mishka.tools/blog/introducing-mishka-chelekom-v0.0.9-ai-native-phoenix-components-with-mcp-headless-ui-and-the-kit>.
     Read through a summarizer, for what it says of the MCP server.
+16. Model Context Protocol, *Transports*, revision 2025-03-26 —
+    <https://modelcontextprotocol.io/specification/2025-03-26/basic/transports>.
+    Read whole; quoted for the endpoint a server provides.

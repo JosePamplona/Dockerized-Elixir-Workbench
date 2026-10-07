@@ -194,6 +194,21 @@ defmodule WorkbenchIgniter.Feature do
   @callback option_notes() :: [{atom(), String.t()}]
 
   @doc """
+  The options that only say how another one is done, by schema key:
+  the switch each is a detail of. mishka_chelekom's `--mcp-path` is
+  where `--mcp` forwards the server, and says nothing without it:
+
+      [mcp_path: :mcp]
+
+  A detail goes with its switch everywhere. The installer refuses one
+  given without it; the catalog carries it as the option's `of`; and a
+  form offers the field only while the switch is on — unlit, with the
+  reason, otherwise — and, on a box that is in, while the switch is a
+  piece it still adds. Empty by default.
+  """
+  @callback details() :: [{atom(), atom()}]
+
+  @doc """
   What a second run does on a project that already carries the
   cartridge: `:noop` — the installer's guard skips everything (the
   default; the options were fixed when it was inserted, and changing
@@ -362,7 +377,7 @@ defmodule WorkbenchIgniter.Feature do
       `./wb.sh mix <task>`, the project's own command, and never learns
       one of its own. Several, `[{task, when: condition}, …]`, when
       which command writes it depends on what the project carries
-      (coverage: `mix cover` where it was inserted with `--exdoc`, which
+      (coverage: `mix cover` where it was inserted with `--md-report`, which
       is what plants that task, `mix coveralls.html` otherwise); the first whose condition holds
       is the one offered. A route can be a door for a client and not a
       page, `client: [{label, line}, …]`: an endpoint a program talks
@@ -512,6 +527,9 @@ defmodule WorkbenchIgniter.Feature do
       @impl WorkbenchIgniter.Feature
       def option_notes, do: []
 
+      @impl true
+      def details, do: []
+
       @impl WorkbenchIgniter.Feature
       def formats, do: []
 
@@ -572,6 +590,7 @@ defmodule WorkbenchIgniter.Feature do
                      choices: 0,
                      option_docs: 0,
                      option_notes: 0,
+                     details: 0,
                      formats: 0,
                      detected: 0,
                      detect: 1,
@@ -1075,8 +1094,8 @@ defmodule WorkbenchIgniter.Feature do
   project yet. Insert that first: ./wb.sh add html"; "ecto with
   database postgres, and this project's database is mysql." — with the
   line that tops it up where the box adds its pieces on a second run
-  ("coverage with exdoc, and this project's exdoc is off. Add it with:
-  ./wb.sh add coverage --exdoc"); and, with
+  ("coverage with md_report, and this project's md_report is off. Add
+  it with: ./wb.sh add coverage --md-report"); and, with
   both kinds, "html with live and mailer: this project's live is off,
   and mailer is not in yet. Insert that first: ./wb.sh add html --live,
   then ./wb.sh add mailer".

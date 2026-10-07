@@ -236,6 +236,25 @@ defmodule WorkbenchIgniter.CatalogTest do
       end
     end
 
+    # A detail says how a switch is done: both are options of the box,
+    # the switch a boolean, and no other option carries an `of`.
+    test "a detail names a switch of its own box" do
+      for feature <- Features.catalog(), not feature.pending?() do
+        schema = feature.info([], nil).schema || []
+
+        for {detail, switch} <- feature.details() do
+          assert Keyword.has_key?(schema, detail), "#{feature.name()}: #{detail} is no option"
+
+          assert schema[switch] == :boolean,
+                 "#{feature.name()}: #{detail} is a detail of #{switch}, which is no switch"
+        end
+
+        for option <- Features.entry(feature).options do
+          assert option.of == Keyword.get(feature.details(), option.name)
+        end
+      end
+    end
+
     # A box with no options at all cannot name any, so what it adds on a
     # second run is all of it or nothing.
     test "a box without options answers :none or :all" do
@@ -559,8 +578,8 @@ defmodule WorkbenchIgniter.CatalogTest do
         others = (installed -- [@feature.name()]) -- @in_by_default
 
         # Nothing lights up that the manifest does not account for;
-        # what it does account for may stay out (coverage composes
-        # mock with --exdoc alone).
+        # what it does account for may stay out (what an option
+        # builds on is not there while the option is not asked).
         assert others -- others_installed(@feature.name()) == [],
                "#{@feature.name()} inserted #{inspect(others)}, more than it declares"
 
@@ -578,7 +597,7 @@ defmodule WorkbenchIgniter.CatalogTest do
     # Their --githook writes into precommit's hook (the runs below).
     defp prereqs("credo"), do: ["workbench.install.precommit"]
     # --changelog lists the file the changelog box writes, and
-    # --coverage the report `mix cover` writes (coverage's --exdoc).
+    # --coverage the report `mix cover` writes (coverage's --md-report).
     defp prereqs("exdoc"),
       do: [
         "workbench.install.changelog",
@@ -586,7 +605,7 @@ defmodule WorkbenchIgniter.CatalogTest do
         {"workbench.install.coverage", ["--md-report"]}
       ]
 
-    # --githook writes into precommit's hook, and --exdoc stands on the
+    # --githook writes into precommit's hook, and --md-report stands on the
     # doubles its task's tests use.
     defp prereqs("coverage"),
       do: ["workbench.install.precommit", "workbench.install.test_doubles"]
@@ -742,8 +761,8 @@ defmodule WorkbenchIgniter.CatalogTest do
       # off the macro that task writes). A formatted file keeps no
       # mark of who formatted it.
       "mishka_chelekom" => [
-        {~w(--components card --no-daisy --no-format --mcp),
-         %{components: [], no_daisy: true, format: nil, mcp: true}}
+        {~w(--components card --no-daisy --no-format --mcp --mcp-path /ai/mishka),
+         %{components: [], no_daisy: true, format: nil, mcp: true, mcp_path: "/ai/mishka"}}
       ]
     }
 
@@ -798,7 +817,7 @@ defmodule WorkbenchIgniter.CatalogTest do
   describe "composes" do
     test "names, off the installer's info, the cartridges it inserts along" do
       assert %{composes: ["mock"]} = Features.entry(Features.HealthEndpoint)
-      # coverage inserts nothing: its `--exdoc` builds on test_doubles.
+      # coverage inserts nothing: its `--md-report` builds on test_doubles.
       assert %{composes: []} = Features.entry(Features.Coverage)
       assert %{composes: ["mock", "dbschema"]} = Features.entry(Features.Enhancements)
       assert %{composes: []} = Features.entry(Features.Credo)

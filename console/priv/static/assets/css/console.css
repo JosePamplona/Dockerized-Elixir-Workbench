@@ -1087,6 +1087,12 @@ form.insert .label{margin-bottom:-4px}
    it shuts, never in the key: that is where the eye is before the click,
    and the key's 150px no longer breaks under a long need. */
 form.insert .opts{display:grid}
+/* What a door for a client is given: who it is for, the line, and the
+   button that takes it away. */
+.specs .give{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:start;padding-left:22px}
+.specs .give code{font-family:var(--mono);font-size:12px;background:var(--surface-2);padding:3px 6px;border-radius:2px;white-space:pre-wrap;overflow-wrap:anywhere}
+.specs .give .copy{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);background:none;border:1px solid var(--line);border-radius:2px;padding:1px 6px;cursor:pointer}
+.specs .give .copy:hover,.specs .give .copy:focus-visible{color:var(--ink);border-color:var(--ink)}
 .opt{display:grid;grid-template-columns:150px minmax(0,1fr);gap:10px;align-items:start;padding:12px 0;border-top:1px solid var(--line)}
 .opt:first-child{border-top:0;padding-top:2px}
 .opt:last-child{padding-bottom:2px}
@@ -1100,6 +1106,14 @@ form.insert .opts{display:grid}
 .opt .line.other{grid-template-columns:minmax(0,54ch)}
 .opt .line input[type=checkbox],.opt .line input[type=radio]{width:15px;height:15px;margin:0}
 .opt .line .name{white-space:nowrap}
+/* A value and what is said under it, kept together; a long list of
+   bare names in columns, read down each one. */
+.opt .vals{display:grid;gap:8px;min-width:0}
+.opt .val{display:grid;gap:8px;min-width:0}
+.opt .vals.cols{display:block;columns:19ch;column-gap:20px}
+.opt .vals.cols .val{break-inside:avoid;margin-bottom:7px}
+.opt .line .page{color:var(--soft);text-decoration:none;font-size:12px;line-height:1;padding:0 2px}
+.opt .line .page:hover,.opt .line .page:focus-visible{color:var(--accent)}
 /* Every field of the form, whatever an option's shape made it — a text,
    a url (`formats/0`) — so the house's face does not depend on the
    type attribute. Only the boxes above are left out. */
@@ -1111,6 +1125,12 @@ form.insert .opts{display:grid}
 .opt .line input:user-invalid{border-color:var(--bad)}
 .opt .gl{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:11px;color:var(--muted);margin-top:4px}
 .opt .gl:first-child{margin-top:0}
+/* A section's name as the control that ticks or clears it whole. */
+.opt button.gl{appearance:none;background:none;border:0;padding:0;cursor:pointer;justify-self:start;text-align:left;display:inline-flex;gap:8px;align-items:baseline}
+.opt button.gl:hover:not(:disabled),.opt button.gl:focus-visible{color:var(--ink)}
+.opt button.gl[aria-pressed=true]{color:var(--accent)}
+.opt button.gl:disabled{cursor:default}
+.opt .gl .n{font-weight:500;letter-spacing:.06em;color:var(--soft)}
 .opt .doc{font-size:12.5px;color:var(--muted);margin:0;max-width:60ch;line-height:1.45}
 /* A value's doc hangs under its name, past the box, close to its line. */
 .opt .doc.of{padding-left:23px;margin-top:-5px}

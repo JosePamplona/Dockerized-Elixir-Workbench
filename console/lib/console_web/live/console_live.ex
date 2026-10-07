@@ -731,7 +731,7 @@ defmodule ConsoleWeb.ConsoleLive do
        socket |> push_patch(to: ~p"/logs") |> push_event("logs_only", %{service: service})}
 
   # The box in hand: its face, its options, and what it asks of wb.sh.
-  def handle_event(event, params, socket) when event in ~w(flip options insert eject),
+  def handle_event(event, params, socket) when event in ~w(flip options section insert eject),
     do: Hand.event(event, params, socket)
 
   # What hex says of the packages the box in hand brings. Asked for, as

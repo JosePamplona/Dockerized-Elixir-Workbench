@@ -286,6 +286,26 @@ const SAYS =
   "This is a full address, scheme and all — http://example.com or https://example.com/page. " +
   "Only http:// and https:// are taken, and the rest cannot carry spaces or quotes."
 const PREFIX = "https://"
+// A line to take away: its button puts it on the clipboard and says so
+// for a moment. The line is the element's own (`data-copy`), so what is
+// copied is what is read, whatever the server sends next.
+export const Copy = {
+  mounted() {
+    this.el.addEventListener("click", async () => {
+      const said = this.el.textContent
+      try {
+        await navigator.clipboard.writeText(this.el.dataset.copy)
+        this.el.textContent = "copied"
+      } catch (_) {
+        this.el.textContent = "select it"
+      }
+      clearTimeout(this.timer)
+      this.timer = setTimeout(() => { this.el.textContent = said }, 1400)
+    })
+  },
+  destroyed() { clearTimeout(this.timer) }
+}
+
 export const UrlField = {
   mounted() {
     const el = this.el

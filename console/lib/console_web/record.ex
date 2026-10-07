@@ -465,10 +465,34 @@ defmodule ConsoleWeb.Record do
       port: port,
       href: href,
       why: why,
-      read: read(reads, href),
-      build: nil
+      read: if(d["client"], do: answers(read(reads, href)), else: read(reads, href)),
+      # A client's door may come with the project's task that sets a
+      # client up for it, offered while the door's condition holds.
+      build: if(d["client"] && Cartridges.holds?(status, c, d), do: build_task(status, c, d)),
+      client: given(d["client"], port, path, Cartridges.holds?(status, c, d))
     }
   end
+
+  # A door for a client: its address is told, not opened, and the
+  # cartridge's lines are filled with it — while the port is known, the
+  # app up or not, since the line is kept by the client. A page has
+  # none (`nil`); a client's door shut by its condition has nothing to
+  # give yet.
+  defp given(nil, _port, _path, _holds), do: nil
+  defp given(_lines, port, _path, holds) when is_nil(port) or not holds, do: []
+
+  defp given(lines, port, path, _holds) do
+    for %{"label" => label, "line" => line} <- lines,
+        do: {label, String.replace(line, "{url}", "http://localhost:#{port}#{path}")}
+  end
+
+  # What a call to an endpoint says: it is called as a page is, and
+  # answers a page's question with a refusal — MCP's 406 to a GET with
+  # no stream accepted. The refusal is the endpoint's own, so any answer
+  # is the door answering; only silence, or the app failing, is not.
+  defp answers({_code, class}) when class in ["good", "warn"], do: {"answers", "good"}
+
+  defp answers(read), do: read
 
   # The first command whose condition holds — coverage's `mix cover`
   # where the docs site takes the report, ExCoveralls' own task

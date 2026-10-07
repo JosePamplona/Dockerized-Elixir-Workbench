@@ -766,15 +766,35 @@ defmodule ConsoleWeb.Box do
       </span>
       <span :if={@doors != []} class="k">Opens</span>
       <span :if={@doors != []} class="v stack">
-        <.door_ref
-          :for={a <- @doors}
-          label={a.label}
-          path={a.path}
-          href={a.href}
-          why={a.why}
-          kind={a.kind}
-          read={a.read}
-        />
+        <%= for a <- @doors do %>
+          <.door_ref
+            label={a.label}
+            path={a.path}
+            href={a.href}
+            why={a.why}
+            kind={a.kind}
+            port={a[:port]}
+            read={a.read}
+            client={a[:client]}
+            build={a[:build]}
+          />
+          <%!-- A door for a client says what to give the client, with
+                the address the app is published on here — which the
+                project does not know, so the line is the reader's to
+                keep on their side. --%>
+          <span :for={{label, line} <- a[:client] || []} class="give">
+            <span class="by">{label}</span>
+            <code>{line}</code>
+            <button
+              type="button"
+              class="copy"
+              phx-hook="Copy"
+              id={"copy-#{a.label}-#{String.replace(label, ~r/[^a-z0-9]+/i, "-")}"}
+              data-copy={line}
+              title="copy this line"
+            >copy</button>
+          </span>
+        <% end %>
       </span>
       <span :if={@box["afterwards"]} class="k">After</span>
       <span :if={@box["afterwards"]} class="v"><span class="after">{@box["afterwards"]}</span></span>
@@ -810,7 +830,8 @@ defmodule ConsoleWeb.Box do
           kind: if(d["output"], do: "output", else: "route"),
           href: nil,
           why: "insert #{box["name"]} first",
-          read: nil
+          read: nil,
+          client: d["client"] && []
         }
       end
     end
@@ -1156,7 +1177,8 @@ defmodule ConsoleWeb.Box do
           if(grouped,
             do: o["choices"],
             else: [%{"group" => nil, "values" => o["choices"] || []}]
-          )
+          ),
+        columns: columns?(o)
       )
 
     ~H"""
@@ -1169,17 +1191,43 @@ defmodule ConsoleWeb.Box do
         <%= cond do %>
           <% @o["choices"] -> %>
             <%= for g <- @groups do %>
-              <span :if={g["group"]} class="gl">{String.replace(to_string(g["group"]), "_", " ")}</span>
-              <.choice
-                :for={c <- g["values"]}
-                o={@o}
-                c={c}
-                args={@args}
-                status={@status}
-                locked={@locked}
-                installed={@installed}
-                c_state={@c_state}
-              />
+              <%!-- A section of an option that takes several is ticked
+                    or cleared whole from its own name, which counts
+                    what is ticked in it; one that takes a single value
+                    has nothing to tick at once, and keeps a plain
+                    name. --%>
+              <button
+                :if={g["group"] && @o["multiple"]}
+                type="button"
+                class="gl all"
+                phx-click="section"
+                phx-value-option={@o["name"]}
+                phx-value-group={g["group"]}
+                disabled={@locked}
+                aria-pressed={to_string(ticked(g, @o, @args, @c_state) == length(g["values"]))}
+                title="tick every one of these, or clear them when they all are"
+              >
+                {String.replace(to_string(g["group"]), "_", " ")}
+                <span class="n">{ticked(g, @o, @args, @c_state)} of {length(g["values"])}</span>
+              </button>
+              <span :if={g["group"] && !@o["multiple"]} class="gl">
+                {String.replace(to_string(g["group"]), "_", " ")}
+              </span>
+              <%!-- A long list of bare names is set in columns, each
+                    section its own; a value with a sentence under it
+                    needs the line, and keeps it. --%>
+              <div class={["vals", @columns && "cols"]}>
+                <.choice
+                  :for={c <- g["values"]}
+                  o={@o}
+                  c={c}
+                  args={@args}
+                  status={@status}
+                  locked={@locked}
+                  installed={@installed}
+                  c_state={@c_state}
+                />
+              </div>
             <% end %>
             <div :if={@o["open"]} class="line other">
               <input
@@ -1386,28 +1434,93 @@ defmodule ConsoleWeb.Box do
         has: has,
         group_locked: group_locked,
         chosen: chosen,
-        default: c["value"] in List.wrap(o["default"]) && !assigns.installed && "default"
+        default: c["value"] in List.wrap(o["default"]) && !assigns.installed && "default",
+        page: page(c["doc"])
       )
 
     ~H"""
-    <label class={["line", @has && "has", @need != [] && "lacks"]}>
-      <input
-        type={if @o["multiple"], do: "checkbox", else: "radio"}
-        name={if @o["multiple"], do: "opt[#{@o["name"]}][]", else: "opt[#{@o["name"]}]"}
-        value={@c["value"]}
-        checked={@has || @chosen}
-        disabled={@has || @group_locked || @locked || @need != []}
-        title={@need != [] && builds_on(@need)}
-      />
-      <span class="name">{@c["value"]}</span>
-      <%!-- What the project has is said by the box checked and shut, as
+    <div class="val">
+      <label class={["line", @has && "has", @need != [] && "lacks"]}>
+        <input
+          type={if @o["multiple"], do: "checkbox", else: "radio"}
+          name={if @o["multiple"], do: "opt[#{@o["name"]}][]", else: "opt[#{@o["name"]}]"}
+          value={@c["value"]}
+          checked={@has || @chosen}
+          disabled={@has || @group_locked || @locked || @need != []}
+          title={@need != [] && builds_on(@need)}
+        />
+        <span class="name">{@c["value"]}</span>
+        <%!-- A value documented by an address alone carries it as a mark
+            beside its name: the page opens apart, and the name still
+            ticks the box. --%>
+        <a
+          :if={@page}
+          class="page"
+          href={@page}
+          target="_blank"
+          rel="noopener noreferrer"
+          title={@page}
+          aria-label={"#{@c["value"]}: its page at #{URI.parse(@page).host}"}
+        >↗</a>
+        <%!-- What the project has is said by the box checked and shut, as
             it is when the whole form is locked; a tag only says why a
             box is shut that is not checked. --%>
-      <.tags need={if @has, do: [], else: @need} default={!@has && @default} status={@status} />
-    </label>
-    <p :if={@c["doc"]} class="doc of">{linked(@c["doc"])}</p>
+        <.tags need={if @has, do: [], else: @need} default={!@has && @default} status={@status} />
+      </label>
+      <p :if={@c["doc"] && !@page} class="doc of">{linked(@c["doc"])}</p>
+    </div>
     """
   end
+
+  # How many of a section's values the form shows ticked.
+  defp ticked(g, o, args, c_state) do
+    picked = picked(o, args, (c_state || %{})[o["name"]])
+    Enum.count(g["values"], &(&1["value"] in picked))
+  end
+
+  @doc """
+  The form's arguments after a section's name is pressed: every value
+  of that section the project can take is ticked, or — when they all
+  were — cleared. A value that builds on what the project lacks is
+  shut in the form, and stays out. The other sections are left as they
+  are.
+  """
+  @spec section(map(), map(), map() | nil, String.t(), String.t()) :: map()
+  def section(box, args, status, option, group) do
+    with %{"multiple" => true} = o <- Enum.find(box["options"] || [], &(&1["name"] == option)),
+         %{"values" => values} <-
+           Enum.find(List.wrap(o["choices"]), &(is_map(&1) and to_string(&1["group"]) == group)) do
+      names = for c <- values, lacks(c, status) == [], do: c["value"]
+      picked = args[option] |> List.wrap() |> Enum.reject(&(&1 == ""))
+
+      Map.put(
+        args,
+        option,
+        if(names -- picked == [], do: picked -- names, else: Enum.uniq(picked ++ names))
+      )
+    else
+      _ -> args
+    end
+  end
+
+  # A value's doc when it is an address and nothing else.
+  defp page(doc) when is_binary(doc) do
+    if doc =~ ~r{\Ahttps?://\S+\z}, do: doc
+  end
+
+  defp page(_doc), do: nil
+
+  # Columns are for a list too long to read down — more than a dozen
+  # values — and only where no value has a sentence under it: a doc is
+  # read across, and a column would break it every third word.
+  @columns_from 13
+
+  defp columns?(%{"choices" => choices} = o) when is_list(choices) do
+    values = choices(o)
+    length(values) >= @columns_from and Enum.all?(values, &(is_nil(&1["doc"]) or page(&1["doc"])))
+  end
+
+  defp columns?(_o), do: false
 
   # What the form holds for a choice option: what the reader picked, or
   # the default while they picked nothing. A default is checked, not

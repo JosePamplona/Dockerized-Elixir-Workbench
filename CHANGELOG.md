@@ -72,6 +72,47 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **A door can be for a client, and the console gives the client's
+  line with the port in it.** A cartridge's doors were pages: the
+  console links them and reads a 4xx as a warning. mishka_chelekom's
+  `/mcp` is an endpoint a program talks to, and a `GET` gets the
+  server's own 406, so as a door it was an amber chip on a link that
+  opens an error. A door now says `client: [{label, line}, …]`
+  (`Feature.console/0`): the console shows its address and does not
+  link it, reads any answer to the bell as *answers*, and under the
+  box's *Opens* gives each line with `{url}` filled — `claude mcp add
+  --transport http mishka-chelekom http://localhost:4011/mcp` — and a
+  *copy* button, the console's first (`Copy` in `hooks.js`). The words
+  are the cartridge's and the console learns no protocol. A door of
+  this kind may name the project's task that sets a client up
+  (`build:`), offered on its plate as a page's is. The protocol's own check
+  — `initialize`, then `DELETE` of its session — was measured and left
+  out of the bell: 1 to 2.3 s on a project in dev, once over 8 s,
+  against the 2.5 s a door is given. Seen on the console from the
+  working tree, against a project up in dev.
+
+- **A long list of names in a box's form is set in columns, and a
+  value documented by an address carries it beside its name.**
+  mishka_chelekom's `--components` is 74 values in six sections, each
+  with its page in the library's documentation: read down, with the
+  link under each, 148 lines. A value whose doc is an address and
+  nothing else now has a `↗` mark after its name, which opens the page
+  apart while the name still ticks the box; and an option with more
+  than a dozen values, none of them with a sentence under it, sets
+  each section in columns read down (`.vals.cols`). A value with a
+  sentence keeps its line, so ash's options are as they were. Seen on
+  the console from the working tree: five columns to a section.
+
+- **A section's name ticks its values, or clears them.** In an option
+  that takes several, each section's name is the control for the whole
+  of it — the 22 form fields at one press — and counts what is ticked
+  in it (`forms 22 of 22`). Pressed when they all are, it clears its
+  own and leaves the other sections alone; a value shut for what the
+  project lacks stays out. There is none for the whole option: left
+  empty, an option already means all of them. The form's state is the
+  server's, so it is an event of the box in hand (`section`,
+  `Box.section/5`), pressed through the LiveView in its test.
+
 - **`workbench.igniter_install`'s listening shell runs any package's
   task.** What made `mix igniter.install` fail on an installer's
   issues, and gave a spinner a screen over a pipe, is `watched/2`

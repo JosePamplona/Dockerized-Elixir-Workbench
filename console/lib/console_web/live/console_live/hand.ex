@@ -168,6 +168,12 @@ defmodule ConsoleWeb.ConsoleLive.Hand do
     {:noreply, if(moved, do: ask_recipe(socket, box, args), else: socket)}
   end
 
+  # A section's name, pressed: its values ticked or cleared at once.
+  def event("section", %{"option" => option, "group" => group}, socket) do
+    %{box: box, args: args, status: status} = socket.assigns
+    {:noreply, assign(socket, args: Box.section(box, args, status, option, group))}
+  end
+
   def event("insert", _params, socket) do
     box = socket.assigns.box
     Jobs.run({:insert, box["name"]}, ["add", box["name"] | Box.argv(box, socket.assigns.args)])

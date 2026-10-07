@@ -232,6 +232,7 @@ defmodule ConsoleWeb.Board do
           who={c["name"]}
           read={a.read}
           build={a[:build]}
+          client={a[:client]}
         />
       </div>
     </section>

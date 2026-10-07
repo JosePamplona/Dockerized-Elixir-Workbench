@@ -279,6 +279,11 @@ defmodule ConsoleWeb.Refs do
     doc:
       "a service's plate: the CSS colour of its role (`ConsoleWeb.Services.color/2`), which its drawing wears while lit"
 
+  attr :client, :any,
+    default: nil,
+    doc:
+      "a door for a client, not a page: the lines to give it, `[{label, line}]`. Its address is told and never linked"
+
   attr :build, :any,
     default: nil,
     doc: "the Mix task that would write this page, when it is not there"
@@ -289,7 +294,9 @@ defmodule ConsoleWeb.Refs do
     # the label ends in twice the room.
     assigns =
       assign(assigns,
-        open: assigns.href && !assigns.why,
+        # A door for a client has an address and nothing to open: a
+        # browser gets the endpoint's refusal.
+        open: assigns.href && !assigns.why && is_nil(assigns.client),
         addr: assigns.port || assigns.path != ""
       )
 
@@ -309,7 +316,9 @@ defmodule ConsoleWeb.Refs do
       <span
         class={["door-ref", "door-" <> @kind, !@open && @why && "unlit"]}
         style={@svc && "--svc:#{@svc}"}
-        title={door_title(@who, @path, @why)}
+        title={
+          door_title(@who, @path, @why || (@client && "an address for a client, not a page to open"))
+        }
       ><ConsoleWeb.Square.mark name={layer_mark(@kind)} class="layer" /><a
         :if={@open}
         href={@href}
@@ -326,9 +335,17 @@ defmodule ConsoleWeb.Refs do
         phx-click="run"
         phx-value-args={"mix " <> @build}
         title={
-          "./wb.sh mix #{@build} — writes this page in the workspace#{if @read, do: " again"}, as a job"
+          if @client,
+            do:
+              "./wb.sh mix #{@build} — the project's own task that sets a client up for this address, as a job",
+            else:
+              "./wb.sh mix #{@build} — writes this page in the workspace#{if @read, do: " again"}, as a job"
         }
-      >{if @read, do: "rebuild", else: "build"}</button></span>
+      >{cond do
+        @client -> "mix " <> @build
+        @read -> "rebuild"
+        true -> "build"
+      end}</button></span>
       <.cart_ref :if={@who} name={@who} installed={@who_installed} />
     </span>
     """

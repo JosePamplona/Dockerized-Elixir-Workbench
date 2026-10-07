@@ -68,16 +68,16 @@ Two words are used through the rest of this document.
 
 Workspaces go under `_workspaces/` by default, but nothing requires it. `WORKSPACE_PATH` takes any path, relative to the workbench or absolute, so a project can live next to your other repositories.
 
-| File | Role |
-| --- | --- |
-| `📁 Dockerized-Elixir-Workbench/` | The workbench |
-| `├── 📄 wb.sh` | The CLI |
-| `├── 📄 config.conf` | What the next project gets: workspace, name, stack versions |
-| `├── 📁 igniter/` | The cartridges |
-| `├── 📁 console/` | The console |
-| `└── 📁 _workspaces/` | |
-| `    ├── 📁 _001/` | A workspace: one Phoenix project, its compose files, its git history |
-| `    └── 📁 _002/` | Another one, running beside it on its own ports |
+```text
+📁 Dockerized-Elixir-Workbench/  # the workbench
+├── 📄 wb.sh                     # the CLI
+├── 📄 config.conf               # what the next project gets: workspace, name, stack versions
+├── 📁 igniter/                  # the cartridges
+├── 📁 console/                  # the console
+└── 📁 _workspaces/
+    ├── 📁 lorem_ipsum/          # a workspace: one Phoenix project, its compose files, its git history
+    └── 📁 dolor_sit_amet/       # another one, running beside it on its own ports
+```
 
 Every command runs in a container on the *workbench image*, which carries the Elixir toolchain, the Phoenix installer and the Docker CLI. That is why the host needs nothing but Docker: `mix phx.new`, `mix deps.get`, the cartridges' installers and even `git commit` happen inside it.
 

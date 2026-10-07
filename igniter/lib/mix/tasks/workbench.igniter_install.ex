@@ -94,7 +94,17 @@ defmodule Mix.Tasks.Workbench.IgniterInstall do
   end
 
   @doc false
-  def run(argv) do
+  def run(argv), do: watched("igniter.install", argv)
+
+  @doc """
+  Runs another package's Igniter task the way `run/1` runs
+  `igniter.install`: under the listening shell, with a screen for its
+  spinner, ending in a failure when it reports issues. For the
+  cartridges whose install is a package's own task and not
+  `igniter.install` (`workbench.mishka_components`).
+  """
+  @spec watched(String.t(), [String.t()]) :: :ok
+  def watched(task, argv) do
     screen_for_owl()
 
     inner = Mix.shell()
@@ -102,7 +112,7 @@ defmodule Mix.Tasks.Workbench.IgniterInstall do
     Mix.shell(Shell)
 
     try do
-      Mix.Task.run("igniter.install", argv)
+      Mix.Task.run(task, argv)
     after
       Mix.shell(inner)
     end

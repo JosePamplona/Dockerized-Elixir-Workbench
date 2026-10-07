@@ -14,6 +14,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+### Updated
+
+- **`workbench.igniter_install`'s listening shell runs any package's
+  task.** What made `mix igniter.install` fail on an installer's
+  issues, and gave a spinner a screen over a pipe, is `watched/2`
+  there; `run/1` calls it, and so does the mishka_chelekom
+  cartridge's queued command.
+
 ### Fixed
 
 - **`catalog --json --brief` takes an option whose values come in

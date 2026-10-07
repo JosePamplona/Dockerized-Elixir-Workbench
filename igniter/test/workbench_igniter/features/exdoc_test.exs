@@ -6,11 +6,11 @@ defmodule WorkbenchIgniter.Features.ExdocTest do
   import Igniter.Test
 
   # `--coverage` lists the page `mix cover` writes, which the coverage
-  # box plants with its own `--exdoc`: the site is built on a project
+  # box plants with its own `--md-report`: the site is built on a project
   # that has it.
   defp with_coverage(igniter \\ phx_test_project()) do
     igniter
-    # coverage's own `--exdoc` builds on test_doubles: the cover task's
+    # coverage's own `--md-report` builds on test_doubles: the cover task's
     # tests stand on a double of `File`.
     |> Igniter.compose_task("workbench.install.test_doubles", [])
     |> apply_igniter!()

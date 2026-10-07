@@ -8,7 +8,7 @@ defmodule WorkbenchIgniter.Features.CoverageTest do
   alias WorkbenchIgniter.Features.Coverage
   alias WorkbenchIgniter.Features.Precommit
 
-  # `--exdoc` plants a task whose tests stand on Mimic: the doubles are
+  # `--md-report` plants a task whose tests stand on Mimic: the doubles are
   # test_doubles' box, which the option builds on.
   defp with_doubles(igniter \\ phx_test_project()) do
     igniter

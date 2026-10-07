@@ -20,7 +20,7 @@ in, which the marks build on):
 | 1–4 | ansi, version_manager, toolchain, changelog | — |
 | 5–9 | dashboard_extras, db_admin, credo, mock, exdebug | — |
 | 10 | rest `--health` **or** graphql | `--interface` decides |
-| 11 | coverage | `--exdoc` |
+| 11 | coverage | `--md-report` |
 | 12 | exdoc | `--coverage` |
 | 13 | enhancements | `--interface`, `--exdoc`, `--health` |
 | 14 | health_endpoint | — |

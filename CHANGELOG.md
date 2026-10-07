@@ -121,6 +121,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **Coverage's option is `--md-report` wherever the papers name it.**
+  It was `--exdoc` until coverage v0.9.0, and the old name had stayed
+  in the manifest's own documentation (`Feature.console/0`'s example of
+  `build:`, and the example of a refusal), in chiefs_setup's table of
+  its recipe — which already passed `--md-report` — in the shelf's
+  index and in the comments of five test files. Found when the old name was
+  repeated in an answer about why the coverage page has two commands.
+  The records of the renaming, and a test's fixture of an old project's
+  `Insert coverage --exdoc`, stay as they are.
+
 - **`catalog --json --brief` takes an option whose values come in
   sections.** The brief read `value` off every choice, and a sectioned
   list is groups of them: it raised on the first cartridge to declare

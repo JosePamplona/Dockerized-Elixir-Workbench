@@ -51,7 +51,18 @@ defmodule WorkbenchIgniter.Features.Exdoc do
   # The door follows the site: `{output}` is what `state/1` reads off
   # mix.exs, so a project that moved its docs is still found.
   @impl true
-  def console, do: [doors: [{"docs", {:output, "{output}", "index.html"}, build: "docs"}]]
+  # What the site is made from: the code it documents, `mix.exs`, where
+  # its configuration is, and the pages ExDoc is usually given beside
+  # the code. A fixed list: the extras a project names are in its
+  # `mix.exs`, whose own date moves when they change.
+  def console do
+    [
+      doors: [
+        {"docs", {:output, "{output}", "index.html"},
+         build: "docs", from: ~w(lib mix.exs README.md CHANGELOG.md guides)}
+      ]
+    ]
+  end
 
   @impl true
   def afterwards,

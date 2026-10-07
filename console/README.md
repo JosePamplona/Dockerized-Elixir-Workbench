@@ -163,6 +163,17 @@ The decisions the code leans on, each dated in the plan:
   project carries no route for them: a door of kind `:output`, unlit
   with the reason until built, `build:` as the button. `check_origin`
   names the port the browser sees.
+- **A door that depends on a file is a plate of two rows**
+  (2026-10-07): the address above, and under it, flush in the same
+  border, the file — a stamp (a mark, full or hollow, and when it was
+  written) and the command that writes it, named as the project runs
+  it. A page is one; so is a door with the task that writes its file.
+  With no file the first row alone is unlit: the command can be run.
+  A door that names the file its task writes (`writes:`) has its state
+  read off the workspace: missing, up to date while it carries the
+  door's address, behind once the address moved. A page that names
+  what it is made from (`from:`) is up to date or behind by so many
+  files: the dates say which to look at, and git whether they changed.
 - **A door can be for a client** (2026-10-07). A route a program talks
   to — an MCP endpoint — is declared with the lines a client is given
   (`client:`), `{url}` left for the console: it shows the address and

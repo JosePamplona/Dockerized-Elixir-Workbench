@@ -777,6 +777,7 @@ defmodule ConsoleWeb.Box do
             read={a.read}
             client={a[:client]}
             build={a[:build]}
+            filed={a[:filed]}
           />
           <%!-- A door for a client says what to give the client, with
                 the address the app is published on here — which the

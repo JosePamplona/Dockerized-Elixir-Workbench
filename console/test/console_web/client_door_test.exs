@@ -126,6 +126,66 @@ defmodule ConsoleWeb.ClientDoorTest do
     end
   end
 
+  describe "the file its task writes" do
+    @filed Map.merge(@door, %{
+             "build" => [%{"task" => "mcp.json", "when" => nil}],
+             "writes" => ".mcp.json"
+           })
+
+    setup do
+      root = Path.join(System.tmp_dir!(), "client_door_#{System.unique_integer([:positive])}")
+      File.mkdir_p!(root)
+      on_exit(fn -> File.rm_rf!(root) end)
+      %{root: root}
+    end
+
+    defp in_workspace(c, root), do: Map.put(status(c), "workspace", root)
+
+    test "is missing until the task has run", %{root: root} do
+      c = cartridge(%{"mcp" => true})
+
+      assert %{file: ".mcp.json", state: "missing", written: nil} =
+               Record.door(in_workspace(c, root), c, @filed).filed
+    end
+
+    test "is up to date while it carries the door's address", %{root: root} do
+      File.write!(
+        Path.join(root, ".mcp.json"),
+        ~s({"mcpServers": {"pieces": {"url": "#{@href}"}}})
+      )
+
+      c = cartridge(%{"mcp" => true})
+
+      assert %{state: "up to date", why: nil, written: written} =
+               Record.door(in_workspace(c, root), c, @filed).filed
+
+      assert written =~ ~r/^\d{4}-\d\d-\d\d \d\d:\d\d$/
+    end
+
+    test "is behind once the address moved, and says where it is now", %{root: root} do
+      File.write!(Path.join(root, ".mcp.json"), ~s({"url": "http://localhost:4999/mcp"}))
+      c = cartridge(%{"mcp" => true})
+
+      assert %{state: "behind", why: "the address is :4011/mcp now"} =
+               Record.door(in_workspace(c, root), c, @filed).filed
+    end
+
+    test "is said of no door shut by its option, and of none that names no file", %{root: root} do
+      shut = cartridge(%{"mcp" => false})
+      assert Record.door(in_workspace(shut, root), shut, @filed).filed == nil
+
+      c = cartridge(%{"mcp" => true})
+      assert Record.door(in_workspace(c, root), c, @door).filed == nil
+    end
+
+    test "a file outside the project is not read", %{root: root} do
+      c = cartridge(%{"mcp" => true})
+      out = Map.put(@filed, "writes", "../elsewhere.json")
+
+      assert %{state: "missing"} = Record.door(in_workspace(c, root), c, out).filed
+    end
+  end
+
   describe "drawn" do
     defp plate(assigns), do: render_component(&ConsoleWeb.Refs.door_ref/1, assigns)
 
@@ -134,7 +194,7 @@ defmodule ConsoleWeb.ClientDoorTest do
         plate(label: "mcp", path: "/mcp", href: @href, port: 4011, kind: "route", client: [])
 
       refute html =~ "<a "
-      assert html =~ "<b>mcp</b>"
+      assert html =~ ~r{<b[^>]*>mcp</b>}
       assert html =~ "an address for a client, not a page to open"
     end
 
@@ -159,7 +219,7 @@ defmodule ConsoleWeb.ClientDoorTest do
     test "a page with the same address is a link, as it was" do
       html = plate(label: "docs", path: "/docs", href: @href, port: 4011, kind: "route")
 
-      assert html =~ ~s(<a href="#{@href}")
+      assert html =~ ~r{<a[^>]*href="#{@href}"}
     end
   end
 

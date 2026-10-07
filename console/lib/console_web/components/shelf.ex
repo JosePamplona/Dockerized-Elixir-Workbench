@@ -326,6 +326,7 @@ defmodule ConsoleWeb.Shelf do
       client={@a[:client]}
       read_title={@a[:read_title]}
       build={@a[:build]}
+      filed={@a[:filed]}
     />
     """
   end

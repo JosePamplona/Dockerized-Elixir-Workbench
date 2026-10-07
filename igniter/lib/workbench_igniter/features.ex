@@ -374,7 +374,14 @@ defmodule WorkbenchIgniter.Features do
         %{
           label: label,
           path: dir <> "/",
-          output: %{dir: dir, index: index, build: build(Keyword.get(opts, :build))},
+          output: %{
+            dir: dir,
+            index: index,
+            build: build(Keyword.get(opts, :build)),
+            # What the page is made from: the project's own files and
+            # directories a change in which leaves it behind.
+            from: Keyword.get(opts, :from, [])
+          },
           when: when_
         }
 
@@ -382,6 +389,7 @@ defmodule WorkbenchIgniter.Features do
         %{label: label, path: path, when: when_}
         |> client(Keyword.get(opts, :client))
         |> task(Keyword.get(opts, :build))
+        |> written(Keyword.get(opts, :writes))
     end
   end
 
@@ -396,6 +404,10 @@ defmodule WorkbenchIgniter.Features do
   # the cartridge plants one: offered beside it, as a page's is.
   defp task(door, nil), do: door
   defp task(door, task), do: Map.put(door, :build, build(task))
+
+  # The file that task writes, for the console to read its state off.
+  defp written(door, nil), do: door
+  defp written(door, file), do: Map.put(door, :writes, file)
 
   defp format(nil), do: nil
   defp format({:integer, %Range{first: first, last: last}}), do: "integer #{first}..#{last}"

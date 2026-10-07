@@ -379,7 +379,12 @@ defmodule WorkbenchIgniter.Feature do
       which command writes it depends on what the project carries
       (coverage: `mix cover` where it was inserted with `--md-report`, which
       is what plants that task, `mix coveralls.html` otherwise); the first whose condition holds
-      is the one offered. A route can be a door for a client and not a
+      is the one offered. A page says what it is made from too,
+      `from:` — the files and directories of the project a change in
+      which leaves the page behind (`from: ~w(lib test)` for a coverage
+      report) — and the console compares their dates with the page's:
+      up to date, or behind by so many files. Without it a page is
+      written or missing, and no more is said. A route can be a door for a client and not a
       page, `client: [{label, line}, …]`: an endpoint a program talks
       to, which a browser opens onto an error (mishka_chelekom's
       `/mcp`). The console shows its address and does not link it,
@@ -387,10 +392,15 @@ defmodule WorkbenchIgniter.Feature do
       each line with `{url}` filled with the address — the words are
       the cartridge's, and the console learns no protocol
       (`client: [{"Claude Code", "claude mcp add --transport http
-      mishka-chelekom {url}"}]`; `client: []` for an endpoint with
-      nothing to say). With `build:`, the Mix task the cartridge
+      NAME {url}"}]`; `client: []` for an endpoint with nothing to
+      say, as mishka_chelekom's, whose task writes what a client
+      reads). With `build:`, the Mix task the cartridge
       planted in the project to set a client up — mishka_chelekom's
-      `mix mcp.json` — is offered beside the door, as a page's is.
+      `mix chelekom.mcp.json` — is offered beside the door, as a page's is;
+      and with `writes:`, the file that task leaves at the project's
+      root (`writes: ".mcp.json"`), the console says its state as it
+      says a page's: missing, up to date while it carries the door's
+      address, behind once the address moved.
 
   Empty by default. There was a `tabs:` too until 2026-09-25 — screens
   the console showed only with this cartridge, which only clustering

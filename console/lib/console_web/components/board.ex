@@ -233,6 +233,7 @@ defmodule ConsoleWeb.Board do
           read={a.read}
           build={a[:build]}
           client={a[:client]}
+          filed={a[:filed]}
         />
       </div>
     </section>

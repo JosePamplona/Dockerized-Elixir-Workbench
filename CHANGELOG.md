@@ -78,6 +78,71 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **A door that depends on a file is a plate of two rows, and its
+  button wears its command.** A page's plate carried its address, the
+  stamp of when it was built and a button reading *build* or
+  *rebuild*, in one row. The word said the page's state, which the
+  stamp already said, and hid the command — two different ones behind
+  the coverage page, `mix cover` or `mix coveralls.html` by how the box
+  went in. Settled on a page of candidates drawn with the console's
+  own plates (`los-botones-de-las-puertas`), measured at the rail's 500
+  and 380 px: named by its command in one row, the coverage plate
+  broke its line at the default width, and mishka_chelekom's MCP door,
+  at its new path, no longer fitted at all (410 px). So the plate has
+  two rows, flush inside the one border and made of the cells it had:
+  the address above — the layer, the name, where it is, what the bell
+  heard — and the file below, its stamp and the command that writes it
+  (`mix docs`). The stamp is a mark and the date: full once the file is
+  written, hollow and alone while it is not, and its title says the
+  file (`doc/index.html · written 2026-10-06 18:44`, `missing ·
+  doc/index.html · mix docs writes it`). With no page the address is
+  what is unlit, and the first row alone is dimmed: the whole plate
+  was, its button with it, though the button was the one thing to
+  press. No plate runs past the rail at either width now, and the
+  mention of the cartridge sits beside it at 500. This undoes the
+  *build* / *rebuild* of 2026-09-26. The plate's styles are the design
+  system's (`assets/design/build.py`, `.door-ref.two`). Seen on the
+  console from the working tree: the rail and a box's *Opens*.
+
+  Every plate is 6 px from its sides, which were 9. The two rows had
+  each copied the figure into a rule of their own — 9 in the first, 8
+  in the second's cells — so it is written once now (`--plate-x`) and
+  the plate, its rows and its cells read it. Measured on the rail, the
+  eleven plates of a project, of one row and of two: the layer's mark
+  is 6 px from the border in every one. The file's mark, 9 px under a
+  layer's 15, stands on the same centre: its cell is padded by the
+  half of the difference more (`--plate-icon`, `--plate-dot`), 14.5 px
+  from the border for both on the two pages' plates. The mention of
+  the cartridge stands at the middle of a plate of two rows, as it
+  does beside one of one: it had been set by the first row.
+
+  A door for a client says the state of the file its task writes, in
+  the same stamp. The door declares the file (`writes: ".mcp.json"`),
+  and the console reads it off the workspace: *missing*; *up to date*
+  while it carries the door's address, the mark full and in the good
+  ink; *behind* once the address moved — another port after a bake —
+  the mark half and in the warning's, with where the address is now.
+  It is a comparison of text: the console does not read the file as
+  anything. One title for every stamp, in one order — the state, the
+  file, when it was written, why it is behind.
+
+  A page says whether it is behind what it is made from. Its door
+  declares its sources (`from:` — exdoc's `lib`, `mix.exs`,
+  `README.md`, `CHANGELOG.md` and `guides`; coverage's `lib` and
+  `test`), and the console compares: *up to date*, or *behind* by so
+  many files. The dates say which files to look at, and git says
+  whether they changed. The dates alone were tried first and were
+  wrong on the author's project within the hour: `mix cover` touched a
+  source while it ran, half a minute after `mix docs` had written the
+  site, and the site read as behind a file nobody had edited. So a
+  file newer than the page counts only when git has it changed in the
+  tree, or committed since the page was written; no file newer, and
+  git is not asked; no repository, and the dates are all there is. It
+  is still a reading of the sources and not of the page: a dependency
+  that moved changes the docs and is not seen. A page whose door names
+  no sources is written or missing, in plain ink, and no more is said.
+  On that project, 110 and 131 files, it takes 3 to 7 ms a page.
+
 - **A door can be for a client, and the console gives the client's
   line with the port in it.** A cartridge's doors were pages: the
   console links them and reads a 4xx as a warning. mishka_chelekom's

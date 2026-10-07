@@ -279,6 +279,11 @@ defmodule ConsoleWeb.Refs do
     doc:
       "a service's plate: the CSS colour of its role (`ConsoleWeb.Services.color/2`), which its drawing wears while lit"
 
+  attr :filed, :any,
+    default: nil,
+    doc:
+      "the file the door depends on, as the project has it: `%{file, written, state, why}`, the state `missing`, `written`, `up to date` or `behind`. A page without one is read off its `read`"
+
   attr :client, :any,
     default: nil,
     doc:
@@ -289,67 +294,124 @@ defmodule ConsoleWeb.Refs do
     doc: "the Mix task that would write this page, when it is not there"
 
   def door_ref(assigns) do
-    # A service with no port to write (`listens` unknown) has an empty
-    # address: not written, or the empty span takes the plate's gap and
-    # the label ends in twice the room.
+    page = assigns.kind == "output"
+
     assigns =
       assign(assigns,
         # A door for a client has an address and nothing to open: a
         # browser gets the endpoint's refusal.
         open: assigns.href && !assigns.why && is_nil(assigns.client),
-        addr: assigns.port || assigns.path != ""
+        # A service with no port to write (`listens` unknown) has an
+        # empty address: not written, or the empty span takes the
+        # plate's gap and the label ends in twice the room.
+        addr: assigns.port || assigns.path != "",
+        # A door that depends on a file — a page, which is one, or a
+        # door with the task that writes one — is a plate of two rows.
+        two: page or assigns.build != nil,
+        page: page,
+        # What the bell heard rides on the address; a page is never
+        # called, and its reading is its file's stamp.
+        heard: if(page, do: nil, else: assigns.read),
+        filed: assigns.filed || (page && read_filed(assigns.path, assigns.read))
       )
 
     ~H"""
     <span class="pair">
-      <%!-- One plate, three things on it: the address, which is the link
-            while it is open; its reading; and, on a page, the command
-            that writes it — a button, which no `<a>` may hold, so the
-            plate is a span and the link is its name and address
-            (2026-09-25; the whole plate was the link before).
-
-            The button says which of the two it is (2026-09-26): *build*
-            while there is no page, *rebuild* once there is. A page's
-            reading is the stamp of when it was written, and the two
-            come off the same `built` in `Record` — a page with a stamp
-            is a page on disk — so the reading is what the word reads. --%>
+      <%!-- A plate says an address: its layer, its name, where it is,
+            and what answered when the bell called it. A door that
+            depends on a file says the file too, in a second row flush
+            under the first, inside the same border: its stamp — a mark
+            and when it was written, the mark alone and hollow while
+            there is none — and the command that writes it, named as
+            the project runs it (`mix docs`). Until 2026-10-07 the two
+            were one row, the button read *build* or *rebuild*, and a
+            page with nothing built dimmed its own button with it: the
+            address is what is unlit then, and the command is the one
+            thing to press. --%>
       <span
-        class={["door-ref", "door-" <> @kind, !@open && @why && "unlit"]}
+        class={["door-ref", "door-" <> @kind, @two && "two", !@open && @why && "unlit"]}
         style={@svc && "--svc:#{@svc}"}
         title={
           door_title(@who, @path, @why || (@client && "an address for a client, not a page to open"))
         }
-      ><ConsoleWeb.Square.mark name={layer_mark(@kind)} class="layer" /><a
-        :if={@open}
-        href={@href}
-        target="_blank"
-      ><b>{@label}</b><span :if={@addr}><em :if={@port}>:{@port}</em>{@path}</span></a><b :if={!@open}>{@label}</b><span :if={
-        !@open and @addr
-      }><em :if={@port}>:{@port}</em>{@path}</span><.state_read
-        read={@read}
-        title={@read_title}
-      /><button
-        :if={@build}
-        type="button"
-        class="read build"
-        phx-click="run"
-        phx-value-args={"mix " <> @build}
-        title={
-          if @client,
-            do:
-              "./wb.sh mix #{@build} — the project's own task that sets a client up for this address, as a job",
-            else:
-              "./wb.sh mix #{@build} — writes this page in the workspace#{if @read, do: " again"}, as a job"
-        }
-      >{cond do
-        @client -> "mix " <> @build
-        @read -> "rebuild"
-        true -> "build"
-      end}</button></span>
+      >
+        <%= if @two do %>
+          <span class="row1"><.face {assigns} /></span>
+          <span class="row2">
+            <i
+              :if={@filed}
+              class={["read", "file" | file_class(@filed.state)]}
+              title={file_title(@filed, @build)}
+              aria-label={file_title(@filed, @build)}
+            >{@filed.written}</i>
+            <button
+              :if={@build}
+              type="button"
+              class="read build"
+              phx-click="run"
+              phx-value-args={"mix " <> @build}
+              title={
+                if @client,
+                  do:
+                    "./wb.sh mix #{@build} — the project's own task that sets a client up for this address, as a job",
+                  else:
+                    "./wb.sh mix #{@build} — writes this page in the workspace#{if @filed && @filed.written, do: " again"}, as a job"
+              }
+            >mix {@build}</button>
+          </span>
+        <% else %>
+          <.face {assigns} />
+        <% end %>
+      </span>
       <.cart_ref :if={@who} name={@who} installed={@who_installed} />
     </span>
     """
   end
+
+  # A page nobody told the file of is read off its reading, which is the
+  # stamp of when it was built.
+  defp read_filed(path, nil), do: %{file: path, written: nil, state: "missing", why: nil}
+
+  defp read_filed(path, {written, _class}),
+    do: %{file: path, written: written, state: "written", why: nil}
+
+  # The face of a plate: the layer's drawing, the name and the address —
+  # the link while it is open — and what the bell heard. The same on a
+  # plate of one row and on the first of two.
+  defp face(assigns) do
+    ~H"""
+    <ConsoleWeb.Square.mark name={layer_mark(@kind)} class="layer" /><a
+      :if={@open}
+      href={@href}
+      target="_blank"
+    ><b>{@label}</b><span :if={@addr}><em :if={@port}>:{@port}</em>{@path}</span></a><b :if={!@open}>{@label}</b><span :if={
+      !@open and @addr
+    }><em :if={@port}>:{@port}</em>{@path}</span><.state_read read={@heard} title={@read_title} />
+    """
+  end
+
+  # The stamp's mark and ink, by the file's state: hollow while it is
+  # missing, full once written, half and in the warning's ink when it
+  # fell behind; in the good ink only when it is known to be up to date.
+  defp file_class("missing"), do: ["missing"]
+  defp file_class("up to date"), do: ["written", "good"]
+  defp file_class("behind"), do: ["behind", "warn"]
+  defp file_class(_written), do: ["written"]
+
+  # What a file's stamp says at length, the same for every door that has
+  # one, in one order: the state, the file, when it was written, and why
+  # it is behind — or, missing, what writes it. A file that is written
+  # and nothing more is known of says no state.
+  defp file_title(%{state: "missing", file: file}, nil), do: "missing · #{file}"
+
+  defp file_title(%{state: "missing", file: file}, build),
+    do: "missing · #{file} · mix #{build} writes it"
+
+  defp file_title(%{state: "written", file: file, written: written}, _build),
+    do: "#{file} · written #{written}"
+
+  defp file_title(%{state: state, file: file, written: written, why: why}, _build),
+    do: Enum.join(["#{state} · #{file} · written #{written}" | List.wrap(why)], " · ")
 
   # The drawing a layer wears, by its name in the sprite.
   defp layer_mark("port"), do: "rack-net"

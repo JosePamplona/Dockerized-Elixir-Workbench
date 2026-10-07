@@ -75,6 +75,19 @@ defmodule WorkbenchIgniter.ConsoleTest do
            ]
 
     assert by.("credo") == %{doors: []}
+
+    # A door for a client, not a page: the lines it is given, with the
+    # address left for the console to fill — it knows the port.
+    assert [%{label: "mcp", path: "/mcp", when: %{option: "mcp"}, client: lines, build: build}] =
+             by.("mishka_chelekom").doors
+
+    # The project's own task that sets a client up, planted by the box.
+    assert build == [%{task: "mcp.json", when: nil}]
+
+    assert %{label: "Claude Code", line: "claude mcp add --transport http mishka-chelekom {url}"} in lines
+    assert Enum.all?(lines, &(&1.line =~ "{url}"))
+    # A page's map carries nothing of it.
+    refute Enum.any?(by.("health_probe").doors, &Map.has_key?(&1, :client))
   end
 
   test "every route starts with a slash or an {option}; an output is a relative dir" do

@@ -26,7 +26,8 @@ defmodule WorkbenchIgniter.CatalogTest do
   @cartridges ~w(chiefs_setup ansi version_manager toolchain changelog
                  dashboard_extras credo mock test_doubles exdebug rest graphql
                  coverage exdoc dbschema guidelines enhancements auth0 openai health_endpoint stripe
-                 precommit test_data clustering health_probe ash specdd security_review machine_learning seo_aeo
+                 precommit test_data clustering health_probe ash mishka_chelekom specdd security_review
+                 machine_learning seo_aeo
                  browser_tests
                  db_admin k6 monitoring message_broker event_stream
                  mailer gettext ecto esbuild tailwind html dashboard)
@@ -735,7 +736,15 @@ defmodule WorkbenchIgniter.CatalogTest do
       "credo" => [{~w(--githook), %{githook: true}}],
       # The box's own checks; a cartridge's check is that cartridge's state.
       "precommit" => [{~w(--checks compile,unused_deps), %{checks: ~w(unused_deps compile)}}],
-      "health_probe" => [{~w(--path /alive), %{path: "/alive"}}]
+      "health_probe" => [{~w(--path /alive), %{path: "/alive"}}],
+      # The components are written by the library's task, which is
+      # queued and never runs here: none yet (its own test reads them
+      # off the macro that task writes). A formatted file keeps no
+      # mark of who formatted it.
+      "mishka_chelekom" => [
+        {~w(--components card --no-daisy --no-format --mcp),
+         %{components: [], no_daisy: true, format: nil, mcp: true}}
+      ]
     }
 
     for feature <- Features.catalog(),

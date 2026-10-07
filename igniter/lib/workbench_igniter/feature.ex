@@ -364,7 +364,18 @@ defmodule WorkbenchIgniter.Feature do
       which command writes it depends on what the project carries
       (coverage: `mix cover` where it was inserted with `--exdoc`, which
       is what plants that task, `mix coveralls.html` otherwise); the first whose condition holds
-      is the one offered.
+      is the one offered. A route can be a door for a client and not a
+      page, `client: [{label, line}, …]`: an endpoint a program talks
+      to, which a browser opens onto an error (mishka_chelekom's
+      `/mcp`). The console shows its address and does not link it,
+      counts any answer to its call as the door answering, and offers
+      each line with `{url}` filled with the address — the words are
+      the cartridge's, and the console learns no protocol
+      (`client: [{"Claude Code", "claude mcp add --transport http
+      mishka-chelekom {url}"}]`; `client: []` for an endpoint with
+      nothing to say). With `build:`, the Mix task the cartridge
+      planted in the project to set a client up — mishka_chelekom's
+      `mix mcp.json` — is offered beside the door, as a page's is.
 
   Empty by default. There was a `tabs:` too until 2026-09-25 — screens
   the console showed only with this cartridge, which only clustering

@@ -51,6 +51,7 @@ defmodule WorkbenchIgniter.Features do
     Features.Clustering,
     Features.HealthProbe,
     Features.Ash,
+    Features.MishkaChelekom,
     Features.Specdd,
     Features.SecurityReview,
     Features.MachineLearning,
@@ -379,8 +380,22 @@ defmodule WorkbenchIgniter.Features do
 
       path ->
         %{label: label, path: path, when: when_}
+        |> client(Keyword.get(opts, :client))
+        |> task(Keyword.get(opts, :build))
     end
   end
+
+  # A door for a client carries what the client is told; a page carries
+  # nothing of it, and its map is as it always was.
+  defp client(door, nil), do: door
+
+  defp client(door, lines),
+    do: Map.put(door, :client, for({label, line} <- lines, do: %{label: label, line: line}))
+
+  # The task of the project that sets a client up for this door, when
+  # the cartridge plants one: offered beside it, as a page's is.
+  defp task(door, nil), do: door
+  defp task(door, task), do: Map.put(door, :build, build(task))
 
   defp format(nil), do: nil
   defp format({:integer, %Range{first: first, last: last}}), do: "integer #{first}..#{last}"

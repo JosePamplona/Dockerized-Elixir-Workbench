@@ -14,6 +14,62 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+### Added
+
+- **The mishka_chelekom cartridge: Mishka Chelekom's components
+  without Ash.** The library was on the shelf only as a value of
+  ash's `--components`. Its own box adds `{:mishka_chelekom, "~>
+  0.0.9", only: :dev}` and queues the library's batch task, `mix
+  mishka.ui.gen.components --import --helpers --global --yes`, the one
+  its installer composes, so nothing of it is reimplemented. Two
+  decisions are the box's. `--components` names the ones to generate:
+  the library's task generates exactly the names it is given, so the
+  list is completed with what each component declares `necessary` and
+  with the eight whose functions stand in for `CoreComponents`
+  (`alert`, `button`, `icon`, `input_field`, `list`, `modal`,
+  `navbar`, `table`), without which the swap leaves `Layouts` calling
+  a `<.flash>` nobody defines. Ten components are 263 KB of minified
+  CSS where all 74 are 1.46 MB. `--no-daisy` takes daisyUI out — its
+  plugins, its dependency, its classes in `Layouts` and the home page,
+  rewritten as Tailwind utilities, and the page's ground as a rule of
+  its own. It exists because of a measurement: on a Phoenix 1.8.15
+  project, over the computed style of 146 elements with daisyUI's
+  plugin in and out, the two libraries share five class names, and
+  Mishka's open `collapse` is 0 px high beside daisyUI. daisyUI stays
+  by default, and the option is refused while `cinder` or
+  `ash_authentication_phoenix` is in. The generated components are run
+  through `mix format` — the library leaves `button.ex` a line short of
+  it, which a pre-commit format check refuses — unless `--no-format`.
+  `--mcp` forwards the library's MCP server at `/mcp` in the router,
+  under `dev_routes`: the way to serve it that needs no `mix` on the
+  host. The route is the one `mix mishka.mcp.setup` writes, and the
+  cartridge writes it itself, a WORKAROUND marked where it shows: on
+  the router `phx.new` generates, that task puts its `forward` inside
+  `pipeline :browser` (0.0.9 and 0.0.10-alpha.8; the draft of the
+  issue is `ISSUE-mishka_chelekom-mcp-route.md`, not filed). Each
+  component's value carries its page in the library's documentation.
+  The queued command goes through `mix workbench.mishka_components`,
+  which completes the list off the fetched package's catalog. Inserted and ejected through `wb.sh` on
+  a copy of a workbench project. mishka_chelekom v0.1.0; its DESIGN
+  has the sources and what was not measured.
+
+- **`mix mcp.json`, planted by mishka_chelekom's `--mcp`: the
+  client's side of MCP, read off the project when it is run.** A
+  client needs the address of `/mcp`, and its port is the one the
+  compose publishes the app on — a fact of where the project runs. A
+  `.mcp.json` written by the installer carries a number the next bake
+  changes; a port-free stdio entry through `docker compose exec` makes
+  Docker a requirement of a file in a project that runs with `mix`
+  anywhere else. The author's answer is a task of the project's own:
+  it takes the endpoint's port from the app's configuration, looks in
+  `docker-compose.yml` for the line that publishes it (`4011:4000`),
+  falls back to the endpoint's port where there is no compose, and
+  adds its entry to `.mcp.json`, keeping the file's other servers.
+  The file is the machine's, as `.env` is, and `.gitignore` lists it.
+  Run on a host project in the four cases, and its premises read
+  inside a workbench project's container: the compose is there, the
+  endpoint is on 4000, and the line found is `4011:4000`.
+
 ### Updated
 
 - **`workbench.igniter_install`'s listening shell runs any package's

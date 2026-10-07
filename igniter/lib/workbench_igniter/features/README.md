@@ -292,6 +292,24 @@ to run once the patch set is applied — every Ash package carries its
 own installer, and the cartridge writes no file itself. Installed by
 hand with `wb.sh add ash`.
 
+[mishka_chelekom](mishka_chelekom/) queues a library's own command
+too: [Mishka Chelekom](https://mishka.tools/chelekom)'s components,
+generated into `lib/<app>_web/components/` by
+`mix mishka.ui.gen.components --import --helpers --global`, all 74 or
+the ones `--components` names — completed with what each needs and
+with the eight that stand in for `CoreComponents` — and, with
+`--no-daisy`, daisyUI taken out of the project: its plugins, its
+dependency, and its classes in the two pages `phx.new` wrote. The
+components are formatted (`--no-format` leaves them as generated), and
+`--mcp` forwards the library's MCP server at `/mcp` in the router —
+a door for a client, whose address and the line to give the client
+the console fills with the published port, and plants `mix mcp.json`,
+the project's own task that writes `.mcp.json` with that address. The
+one dependency it writes itself is `{:mishka_chelekom, "~> 0.0.9",
+only: :dev}`, the mark the ash cartridge's `--components
+mishka_chelekom` leaves too. Installed by hand with `wb.sh add
+mishka_chelekom`.
+
 [specdd](specdd/) — *pending*: designed, not installable yet — puts
 [SpecDD](https://specdd.ai) on a stock project: what `specdd init`
 writes (the bootstrap chain, the `AGENTS.md` pointer, `CLAUDE.md`),

@@ -14,6 +14,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+## v0.19.0 - (2026-10-07)
+
 ### Added
 
 - **The mishka_chelekom cartridge: Mishka Chelekom's components

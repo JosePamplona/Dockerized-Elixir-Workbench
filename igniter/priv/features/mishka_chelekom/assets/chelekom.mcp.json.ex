@@ -1,10 +1,10 @@
-defmodule Mix.Tasks.Mcp.Json do
+defmodule Mix.Tasks.Chelekom.Mcp.Json do
   @shortdoc "Writes .mcp.json: Mishka Chelekom's MCP server, at the address it answers on here"
 
   @moduledoc """
   #{@shortdoc}
 
-      mix mcp.json
+      mix chelekom.mcp.json
 
   The router forwards a path to Mishka Chelekom's MCP server while
   `dev_routes` is on — `/mishka-chelekom/mcp`, unless the project moved

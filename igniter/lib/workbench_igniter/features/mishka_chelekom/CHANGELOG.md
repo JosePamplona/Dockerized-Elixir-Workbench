@@ -40,17 +40,17 @@ what the cartridge *installs*.
   `pipeline :browser` on an untouched router, so the cartridge writes
   its lines and does not queue it; to remove when the task appends to
   the router module.
-- With `--mcp`, `mix mcp.json`: a task planted in the project
-  (`lib/mix/tasks/mcp.json.ex`) that writes `.mcp.json` with the
+- With `--mcp`, `mix chelekom.mcp.json`: a task planted in the project
+  (`lib/mix/tasks/chelekom.mcp.json.ex`) that writes `.mcp.json` with the
   address a client connects to, read when it is run — the port
   `docker-compose.yml` publishes the endpoint's on, or the endpoint's
   own where there is no compose. It keeps the file's other servers,
   and `.gitignore` lists the file: it is the machine's.
 - The MCP route as a door of the console, for a client: its address
-  with the port the app is published on, a button that runs `mix
-  mcp.json`, and the lines a client is given — Claude Code's `claude
-  mcp add --transport http …` and the JSON entry Cursor and VS Code
-  take — to copy.
+  with the port the app is published on, the state of `.mcp.json`
+  (missing, up to date, behind), and a button that runs
+  `mix chelekom.mcp.json`. It gives no line to copy: the task writes
+  what a client reads.
 - Each component's page in the library's documentation as its value's
   doc, and <https://mishka.tools/chelekom> in the option's note.
 - Builds on **html** with live, **tailwind** and **esbuild**
@@ -60,6 +60,11 @@ what the cartridge *installs*.
   nothing, and adds the MCP route and its task when asked. `--mcp`
   counts as in with both: a project with the route alone is offered
   the option again, and gets the task.
+- `--solve-warnings`: the fence three of the library's code blocks
+  lack, written — `combobox`'s example, never opened, and `layout`'s
+  `flex` and `grid`, never closed — so `mix docs` stops warning of
+  them. Off by default; a WORKAROUND for mishka_chelekom 0.0.9, to
+  remove when its templates carry both fences.
 - `mix workbench.mishka_components`, the plumbing the queued command
   goes through: it completes the list off the fetched package's
   catalog, fails where the library's task reports issues, and formats

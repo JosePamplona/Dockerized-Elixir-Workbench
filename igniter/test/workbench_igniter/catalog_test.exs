@@ -762,7 +762,14 @@ defmodule WorkbenchIgniter.CatalogTest do
       # mark of who formatted it.
       "mishka_chelekom" => [
         {~w(--components card --no-daisy --no-format --mcp --mcp-path /ai/mishka),
-         %{components: [], no_daisy: true, format: nil, mcp: true, mcp_path: "/ai/mishka"}}
+         %{
+           components: [],
+           no_daisy: true,
+           format: nil,
+           solve_warnings: nil,
+           mcp: true,
+           mcp_path: "/ai/mishka"
+         }}
       ]
     }
 

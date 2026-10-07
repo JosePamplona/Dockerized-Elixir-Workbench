@@ -303,8 +303,8 @@ dependency, and its classes in the two pages `phx.new` wrote. The
 components are formatted (`--no-format` leaves them as generated), and
 `--mcp` forwards the library's MCP server in the router, at a path of
 its own (`--mcp-path`, `/mishka-chelekom/mcp`) —
-a door for a client, whose address and the line to give the client
-the console fills with the published port, and plants `mix mcp.json`,
+a door for a client, whose address the console fills with the
+published port, and plants `mix chelekom.mcp.json`,
 the project's own task that writes `.mcp.json` with that address. The
 one dependency it writes itself is `{:mishka_chelekom, "~> 0.0.9",
 only: :dev}`, the mark the ash cartridge's `--components

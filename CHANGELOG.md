@@ -55,11 +55,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   component's value carries its page in the library's documentation.
   The queued command goes through `mix workbench.mishka_components`,
   which completes the list off the fetched package's catalog. Inserted and ejected through `wb.sh` on
-  a copy of a workbench project. mishka_chelekom v0.1.0; its DESIGN
-  has the sources and what was not measured.
+  a copy of a workbench project. `--solve-warnings`, off by default,
+  writes the fence three of the library's code blocks lack, which
+  ExDoc warns of on every `mix docs`: a WORKAROUND, by a rule over
+  each heredoc's fences and not by line, run without writing over a
+  project's 77 component files (three fences, two files) and never in
+  an insert. mishka_chelekom v0.1.0; its DESIGN has the sources and
+  what was not measured.
 
-- **`mix mcp.json`, planted by mishka_chelekom's `--mcp`: the
-  client's side of MCP, read off the project when it is run.** A
+- **`mix chelekom.mcp.json`, planted by mishka_chelekom's
+  `--mcp`: the client's side of MCP, read off the project when it is run.** A
   client needs the address of the route, and its port is the one the
   compose publishes the app on — a fact of where the project runs. A
   `.mcp.json` written by the installer carries a number the next bake
@@ -74,7 +79,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   The file is the machine's, as `.env` is, and `.gitignore` lists it.
   Run on a host project in the four cases, and its premises read
   inside a workbench project's container: the compose is there, the
-  endpoint is on 4000, and the line found is `4011:4000`.
+  endpoint is on 4000, and the line found is `4011:4000`. It was
+  `mix mcp.json` until 2026-10-07, and carries the library's name for
+  the reason its path does: an MCP server is one endpoint, a project
+  may forward several, and each one's task writes its own entry of
+  the one file. A project that has the task under the old name
+  answers that `--mcp` is not in.
 
 ### Updated
 
@@ -154,7 +164,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   box's *Opens* gives each line with `{url}` filled — `claude mcp add
   --transport http mishka-chelekom http://localhost:4011/mcp` — and a
   *copy* button, the console's first (`Copy` in `hooks.js`). The words
-  are the cartridge's and the console learns no protocol. A door of
+  are the cartridge's and the console learns no protocol.
+  mishka_chelekom's own two lines — Claude Code's and the JSON entry
+  of Cursor and VS Code — came out on 2026-10-07 (`client: []`): its
+  `mix chelekom.mcp.json` writes what a client reads, the plate runs
+  it and says the file's state, and the lines beside it were a second
+  way to the same place. A door of
   this kind may name the project's task that sets a client up
   (`build:`), offered on its plate as a page's is. The protocol's own check
   — `initialize`, then `DELETE` of its session — was measured and left
@@ -227,7 +242,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   and the switch is drawn as a value that is in is, checked and shut.
   A field of text still keeps a box open. For mishka_chelekom the mark
   of `--mcp` is both of its pieces, the route and the project's `mix
-  mcp.json`: a project with the route alone answers that it is not in,
+  chelekom.mcp.json`: a project with the route alone answers that it is not in,
   so the option stays offered and a second run plants the task.
 
 - **`catalog --json --brief` takes an option whose values come in

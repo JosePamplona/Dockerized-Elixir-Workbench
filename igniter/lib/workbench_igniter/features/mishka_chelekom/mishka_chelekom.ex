@@ -49,6 +49,11 @@ defmodule WorkbenchIgniter.Features.MishkaChelekom do
     them a line short of it and a `mix format --check-formatted` in a
     pre-commit hook would refuse the next commit. The switch leaves
     them as the library wrote them.
+  * `--solve-warnings` — mends the three code blocks the library
+    documents with one fence of the two, in `combobox` and `layout`,
+    which ExDoc warns of on every `mix docs`. A WORKAROUND for
+    mishka_chelekom 0.0.9, off by default: the components are the
+    library's, as it wrote them.
   * `--mcp` — the library's MCP server on the project's own port: the
     route `mix mishka.mcp.setup` writes, forwarded in the router under
     `dev_routes` at `--mcp-path` — `/mishka-chelekom/mcp` unless told
@@ -72,7 +77,7 @@ defmodule WorkbenchIgniter.Features.MishkaChelekom do
   @plumbing "workbench.mishka_components"
 
   # The project's own task that writes `.mcp.json`, planted by `--mcp`.
-  @mcp_task "lib/mix/tasks/mcp.json.ex"
+  @mcp_task "lib/mix/tasks/chelekom.mcp.json.ex"
 
   # Where the MCP server is forwarded, unless told otherwise. Not the
   # library's `/mcp`: an MCP endpoint is one server's — the protocol's
@@ -188,21 +193,15 @@ defmodule WorkbenchIgniter.Features.MishkaChelekom do
   def requires, do: [{"html", live: true}, "tailwind", "esbuild"]
 
   # The MCP route, once it is in: an endpoint for an AI tool, not a page.
-  # The console knows the port the app is published on, which nothing
-  # in the project says, so the line a client needs is filled there —
-  # and is the client's own to keep, in its own configuration.
+  # It tells the client nothing of its own (`client: []`): the
+  # project's task writes the file a client reads, and the plate says
+  # that file's state and runs the task.
   @impl true
   def console do
     [
       doors: [
         {"mcp", "{mcp_path}",
-         when: {:option, :mcp},
-         build: "mcp.json",
-         client: [
-           {"Claude Code", "claude mcp add --transport http mishka-chelekom {url}"},
-           {"Cursor · VS Code",
-            ~s({"mcpServers": {"mishka-chelekom": {"type": "http", "url": "{url}"}}})}
-         ]}
+         when: {:option, :mcp}, build: "chelekom.mcp.json", writes: ".mcp.json", client: []}
       ]
     ]
   end
@@ -245,8 +244,10 @@ defmodule WorkbenchIgniter.Features.MishkaChelekom do
         "Takes daisyUI out of the project: its plugins in `app.css`, its dependency, and its classes in `Layouts` and the home page, rewritten as Tailwind utilities. Both libraries style some of the same class names, and beside daisyUI Mishka's `collapse` does not open. Refused while a package dressed in daisyUI is in (#{Enum.map_join(@daisy_bound, ", ", fn {dep, _} -> "`#{dep}`" end)}). Default: off, daisyUI stays.",
       format:
         "The generated components are run through `mix format`, so a `mix format --check-formatted` before the next commit passes: the library leaves one of them a line short of it. Off, they stay as the library wrote them.",
+      solve_warnings:
+        "Mends the documentation of the generated components where ExDoc warns of it on every `mix docs`: three code blocks the library writes with one fence of the two, in `combobox` and in `layout`'s `flex` and `grid`. Off, they stay as the library wrote them. Only as the components are generated: a second run does not mend the ones a project has.",
       mcp:
-        "The library's MCP server for AI tools, on the project's own port: the route `mix mishka.mcp.setup` writes, forwarded in the router under `dev_routes`. With it comes `mix mcp.json`, a task of the project's own that writes `.mcp.json` with the address a client connects to — the port `docker-compose.yml` publishes, or the endpoint's own without one — and `.gitignore` lists that file. Default: off.",
+        "The library's MCP server for AI tools, on the project's own port: the route `mix mishka.mcp.setup` writes, forwarded in the router under `dev_routes`. With it comes `mix chelekom.mcp.json`, a task of the project's own that writes `.mcp.json` with the address a client connects to — the port `docker-compose.yml` publishes, or the endpoint's own without one — and `.gitignore` lists that file. Default: off.",
       mcp_path:
         "Where `--mcp` forwards the server. An MCP endpoint is one server's, so the default is a path of this library's own and not the `/mcp` its documentation uses, which another server in the project would want too. Only with `--mcp`. Default: `#{@mcp_path}`."
     ]
@@ -276,10 +277,17 @@ defmodule WorkbenchIgniter.Features.MishkaChelekom do
         components: :csv,
         no_daisy: :boolean,
         format: :boolean,
+        solve_warnings: :boolean,
         mcp: :boolean,
         mcp_path: :string
       ],
-      defaults: [no_daisy: false, format: true, mcp: false, mcp_path: @mcp_path]
+      defaults: [
+        no_daisy: false,
+        format: true,
+        solve_warnings: false,
+        mcp: false,
+        mcp_path: @mcp_path
+      ]
     }
   end
 
@@ -298,10 +306,11 @@ defmodule WorkbenchIgniter.Features.MishkaChelekom do
   What the project carries: the components its `MishkaComponents` macro
   imports, in the catalog's order, whether daisyUI's plugin is gone
   from `app.css`, and whether `--mcp` is in whole: the router forwarding
-  to the library's MCP server and the project's `mix mcp.json` beside
+  to the library's MCP server and the project's `mix chelekom.mcp.json` beside
   it. A project with the route alone answers that it is not, so a
   second run is offered, and adds the task. `format` leaves no mark: a formatted file is a formatted
-  file, whoever ran the formatter.
+  file, whoever ran the formatter. Nor does `solve_warnings`: a code
+  block with both its fences is one, whoever wrote the second.
   """
   @impl true
   def state(igniter) do
@@ -314,6 +323,7 @@ defmodule WorkbenchIgniter.Features.MishkaChelekom do
        components: components_in(macro || ""),
        no_daisy: not daisyui?(css || ""),
        format: nil,
+       solve_warnings: nil,
        mcp: path != nil and Igniter.exists?(igniter, @mcp_task),
        mcp_path: path
      }, igniter}
@@ -392,7 +402,7 @@ defmodule WorkbenchIgniter.Features.MishkaChelekom do
       igniter
       |> Igniter.Project.Deps.add_dep(@dep, on_exists: :skip)
       |> without_daisyui(daisyui?)
-      |> queue(opts[:components] || [], opts[:format] != false)
+      |> queue(opts[:components] || [], opts[:format] != false, opts[:solve_warnings] == true)
       |> mcp(opts[:mcp], mcp_path)
     else
       {true, igniter} ->
@@ -441,11 +451,14 @@ defmodule WorkbenchIgniter.Features.MishkaChelekom do
   defp daisy_bound(igniter),
     do: Enum.filter(@daisy_bound, fn {dep, _} -> Igniter.Project.Deps.has_dep?(igniter, dep) end)
 
-  defp queue(igniter, components, format?) do
+  defp queue(igniter, components, format?, solve?) do
     args = Enum.uniq(components)
 
+    flags =
+      if(format?, do: ["--format"], else: []) ++ if(solve?, do: ["--solve-warnings"], else: [])
+
     igniter
-    |> Igniter.add_task(@plumbing, if(format?, do: ["--format" | args], else: args))
+    |> Igniter.add_task(@plumbing, flags ++ args)
     |> Igniter.add_notice("""
     Mishka Chelekom's components are generated by the library's own \
     task, once this patch set is applied and the dependency fetched:
@@ -459,9 +472,14 @@ defmodule WorkbenchIgniter.Features.MishkaChelekom do
     which it reformats whole. Those files show up in that command's \
     output, not in this diff. core_components.ex stays where it is, \
     imported by nothing. It runs through `mix #{@plumbing}`, which \
-    fails when the task reports issues#{formatted(format?)}.\
+    fails when the task reports issues#{solved(solve?)}#{formatted(format?)}.\
     """)
   end
+
+  defp solved(true),
+    do: ", writes the fence three of the components' code blocks lack, which ExDoc warns of,"
+
+  defp solved(false), do: ""
 
   defp formatted(true), do: " and then runs `mix format` over the components"
   defp formatted(false), do: ""
@@ -513,7 +531,7 @@ defmodule WorkbenchIgniter.Features.MishkaChelekom do
         under `dev_routes`: the route `mix mishka.mcp.setup` writes, \
         at the end of the router. With the app up, an AI tool \
         connects to http://localhost:<the app's port>#{path}: `mix \
-        mcp.json` writes that address into `.mcp.json`, off the port \
+        chelekom.mcp.json` writes that address into `.mcp.json`, off the port \
         docker-compose.yml publishes or, without one, the endpoint's \
         own. The file is the machine's, and .gitignore lists it. The \
         route names a development dependency: an \
@@ -535,11 +553,11 @@ defmodule WorkbenchIgniter.Features.MishkaChelekom do
     igniter =
       if Igniter.exists?(igniter, @mcp_task),
         do: igniter,
-        else: Igniter.create_new_file(igniter, @mcp_task, asset("mcp.json.ex"))
+        else: Igniter.create_new_file(igniter, @mcp_task, asset("chelekom.mcp.json.ex"))
 
     WorkbenchIgniter.IgnoreFile.entry(
       igniter,
-      "What `mix mcp.json` writes: this machine's address of the MCP server.",
+      "What `mix chelekom.mcp.json` writes: this machine's address of the MCP server.",
       "/.mcp.json"
     )
   end

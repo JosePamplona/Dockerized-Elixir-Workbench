@@ -25,7 +25,9 @@ defmodule WorkbenchIgniter.ConsoleTest do
                output: %{
                  dir: "{output}",
                  index: "index.html",
-                 build: [%{task: "docs", when: nil}]
+                 build: [%{task: "docs", when: nil}],
+                 # What the site is made from: a change there leaves it behind.
+                 from: ~w(lib mix.exs README.md CHANGELOG.md guides)
                },
                when: nil
              }
@@ -44,7 +46,8 @@ defmodule WorkbenchIgniter.ConsoleTest do
                  build: [
                    %{task: "cover", when: %{option: "md_report"}},
                    %{task: "coveralls.html", when: nil}
-                 ]
+                 ],
+                 from: ~w(lib test)
                },
                when: nil
              }
@@ -84,17 +87,16 @@ defmodule WorkbenchIgniter.ConsoleTest do
                label: "mcp",
                path: "{mcp_path}",
                when: %{option: "mcp"},
-               client: lines,
-               build: build
+               client: [],
+               build: build,
+               writes: ".mcp.json"
              }
            ] =
              by.("mishka_chelekom").doors
 
     # The project's own task that sets a client up, planted by the box.
-    assert build == [%{task: "mcp.json", when: nil}]
+    assert build == [%{task: "chelekom.mcp.json", when: nil}]
 
-    assert %{label: "Claude Code", line: "claude mcp add --transport http mishka-chelekom {url}"} in lines
-    assert Enum.all?(lines, &(&1.line =~ "{url}"))
     # A page's map carries nothing of it.
     refute Enum.any?(by.("health_probe").doors, &Map.has_key?(&1, :client))
   end

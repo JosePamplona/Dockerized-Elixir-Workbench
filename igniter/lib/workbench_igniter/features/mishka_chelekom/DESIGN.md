@@ -228,8 +228,8 @@ commit for a file nobody wrote. So the queued task runs `mix format`
 over `lib/<app>_web/components/` when the library's task is done, and
 `--no-format` leaves the files as generated.
 
-It is the one place the cartridge touches what the library writes, and
-it changes no behaviour: the formatter is the project's own, with its
+It was the one place the cartridge touched what the library writes
+until `--solve-warnings` (§3.8), and it changes no behaviour: the formatter is the project's own, with its
 own configuration. It runs inside the plumbing task rather than as a
 queued `mix format`: Igniter joins a queued task's arguments into a
 shell command, where the glob over the components would be expanded
@@ -353,8 +353,16 @@ to give it were weighed.
   workbench nor Docker is needed to run it, and nothing it reads is
   the workbench's.
 
-So `--mcp` plants `lib/mix/tasks/mcp.json.ex`, verbatim. `mix
-mcp.json` reads the path off the router, loads the app's
+So `--mcp` plants `lib/mix/tasks/chelekom.mcp.json.ex`,
+verbatim. The task carries the library's name for the reason the path
+does: an MCP server is one endpoint, a project may forward several,
+and a task named `mcp.json` would be the one any other of them
+wanted. Each writes its own entry of the one file. It is `chelekom.`
+and not `mishka.`: that prefix is the library's own tasks'
+(`mishka.mcp.setup`, `mishka.mcp.server`), where a task of the
+project's would read as the library's and meet any it adds by that
+name; no package on Hex is called `chelekom`. `mix
+chelekom.mcp.json` reads the path off the router, loads the app's
 configuration (`app.config`), takes the
 endpoint's port from the one entry that has `http: [port: …]`, 4000
 when none does; looks in `docker-compose.yml` for the line that
@@ -394,7 +402,7 @@ the batch task again would overwrite the macro with the new list alone
 and regenerate components the project may have edited.
 
 The mark of `--mcp` is both of its pieces: the route in the router and
-`lib/mix/tasks/mcp.json.ex`. A project with the route alone — written
+`lib/mix/tasks/chelekom.mcp.json.ex`. A project with the route alone — written
 by the library's own setup, or by this box before it planted the task
 — answers that the option is not in, so the console keeps offering it
 and a second run adds what is missing; with both, the console counts
@@ -404,6 +412,51 @@ the box as full and offers nothing.
 daisyUI off `app.css` and the MCP route and task off the project: the project as
 it is, whichever road it took. `format` answers `nil`: a formatted
 file keeps no mark of who formatted it.
+
+### 3.8 `--solve-warnings`: three fences
+
+`mix docs` on a project with the components warns three times,
+*Fenced Code Block opened with ``` not closed at end of input*:
+`combobox.ex`'s `@moduledoc` ends its example with a fence nothing
+opened, and `layout.ex`'s `flex` and `grid` open an `elixir` block
+that nothing closes. The templates on the library's `master` carry
+the same lines (read 2026-10-07), and its issues name none of it
+(searched there for "Fenced Code Block", "ex_doc warning" and
+"combobox doc": nothing). The pages render; the warnings are what a
+project sees on every build of its documentation, about files it did
+not write.
+
+The option is a WORKAROUND, and off by default: this box installs the
+library as its author wrote it, and a warning is a fact to state
+before it is one to correct. The author asked for the switch — three
+warnings that are nobody's to fix in the project are noise over the
+ones that are.
+
+What it does is a rule, not three line numbers, so a release that
+moves the lines is still mended and one that fixes them is left
+alone. Inside each `@doc` and `@moduledoc` heredoc of the generated
+components, the fences are counted. An even number is left. An odd
+one lacks a fence: when the heredoc's one fence is the bare line that
+ends it, the block was never opened, and an `elixir` fence goes under
+the last heading above it; otherwise the last block was never closed,
+and a fence goes at the end. A lone closing fence with no heading
+above has nowhere to hang its opening from, and stays. It runs in the
+plumbing task between the library's task and the formatter, on files
+(`fenced/1`), since they are written outside Igniter's patch set.
+
+It leaves no mark, as `--format` leaves none: a block with both
+fences is one, whoever wrote the second. So it is not something a
+second run adds — the box is in, and it generates nothing again.
+
+To remove when the library's templates carry both fences
+(`priv/components/combobox.eex`, `layout.eex`).
+
+*Beaten:* a patch by line number (the three the author read off the
+warnings) — right for 0.0.9 and wrong, silently, for the next; on by
+default — the components would stop being the library's without
+anybody asking; a second run that mends a project's components —
+`adds` is for a piece with a mark to read, and the files of a project
+may have been edited since.
 
 ## 4. Evaluation
 
@@ -454,7 +507,7 @@ the state.
   up in dev with the route: the rail's row `mcp :4011/mcp`, no link,
   *answers* after the bell; the box's *Opens* with the two lines,
   `http://localhost:4011/mcp` in each, and *copy* answering *copied*.
-* `mix mcp.json`, on the host project: with no compose,
+* `mix chelekom.mcp.json`, on the host project: with no compose,
   `http://localhost:4000/mcp`; with one publishing `4011:4000`,
   `…:4011/mcp`; over a file with another server, both kept; over a
   file that is not JSON, the file untouched and the task's error with
@@ -476,7 +529,7 @@ the state.
   `/mishka-chelekom/mcp`; `mix format --check-formatted` passes and the
   project compiles with no warning; `POST` of an `initialize` there
   answers 200 with the server's name, and the same at `/mcp` 404;
-  `mix mcp.json` writes `http://localhost:4000/mishka-chelekom/mcp`
+  `mix chelekom.mcp.json` writes `http://localhost:4000/mishka-chelekom/mcp`
   with no compose and `…:4011/…` with one publishing `4011:4000`. The
   measurements above this one were taken while the path was `/mcp`.
 * The protocol as a health check, against that project: `ping` with no
@@ -503,9 +556,15 @@ the components gone.
 
 ### 4.4 Not measured
 
+`--solve-warnings` in an install: the rule was run, without writing,
+over the 77 files of a workbench project's components as 0.0.9
+generated them — two files change, by the three fences and nothing
+else, and a second pass changes nothing — but the option was never
+passed to an insert, and `mix docs` was not run on the result.
+
 `--mcp` and the formatting through `wb.sh`: both ran on the host, and
-the planted `mix mcp.json` was run there too, never as `./wb.sh mix
-mcp.json`. A client — Claude Code, Cursor — reading the `.mcp.json`
+the planted `mix chelekom.mcp.json` was run there too, never as `./wb.sh mix
+chelekom.mcp.json`. A client — Claude Code, Cursor — reading the `.mcp.json`
 the task writes: the server was driven with `curl` alone. The console
 with a box full by its switch, in a browser: its tests cover it. An
 opened `dropdown` beside daisyUI. A project that had edited

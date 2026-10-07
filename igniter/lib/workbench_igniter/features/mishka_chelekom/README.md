@@ -52,7 +52,7 @@ What that task writes, read off a Phoenix 1.8.15 project:
 
 With `--mcp`, the cartridge itself writes three things more: the
 route at the end of `lib/<app>_web/router.ex`,
-`lib/mix/tasks/mcp.json.ex`, and `/.mcp.json` in `.gitignore`.
+`lib/mix/tasks/chelekom.mcp.json.ex`, and `/.mcp.json` in `.gitignore`.
 
 `core_components.ex` stays, imported by nothing.
 
@@ -70,6 +70,11 @@ route at the end of `lib/<app>_web/router.ex`,
   them. Default: they are run through `mix format`, because the library
   leaves `button.ex` one line short of it, and a `mix format
   --check-formatted` in a pre-commit hook would refuse the next commit.
+* `--solve-warnings` — writes the fence three of the library's code
+  blocks lack, in the documentation of `combobox` and of `layout`'s
+  `flex` and `grid`: ExDoc warns of each on every `mix docs`. Default:
+  off, the components stay as the library wrote them. It works as the
+  components are generated, not on the ones a project already has.
 * `--mcp` — the library's MCP server for AI tools, on the project's own
   port. Default: off.
 * `--mcp-path /ai/components` — where `--mcp` forwards it, and only
@@ -158,7 +163,7 @@ with it:
   end
   ```
 
-* `lib/mix/tasks/mcp.json.ex`, the project's own `mix mcp.json`;
+* `lib/mix/tasks/chelekom.mcp.json.ex`, the project's own `mix chelekom.mcp.json`;
 * `/.mcp.json` in `.gitignore`.
 
 ### Connecting a client
@@ -169,7 +174,7 @@ the app's port.
 1. `./wb.sh add mishka_chelekom --mcp` — on a project that already has
    the library, this adds the three things above and nothing else.
 2. `./wb.sh up`, the dev deployment.
-3. `./wb.sh mix mcp.json` — `mix mcp.json` off the workbench. It
+3. `./wb.sh mix chelekom.mcp.json` — `mix chelekom.mcp.json` off the workbench. It
    writes `.mcp.json` at the project's root, the file Claude Code,
    Cursor and VS Code read, with the address the app answers on here.
 4. Open the client **from the project's folder**. Claude Code asks
@@ -179,7 +184,7 @@ the app's port.
 Afterwards: with the app down the client shows the server
 disconnected, and finds it again when the app is back (`/mcp`, or a
 new session). When the published port changes — another bake — run
-`mix mcp.json` again. A session opened from another folder does not
+`mix chelekom.mcp.json` again. A session opened from another folder does not
 see the server.
 
 ### The address
@@ -230,10 +235,12 @@ off the router.
 
 The route is a door, **mcp**, of the kind that is for a client and not
 a page: its address is shown and not linked, the bell reads any answer
-as *answers* (a `GET` gets the server's own 406), and its plate has a
-button that runs `mix mcp.json`. The box's *Opens* also gives the line
-above, and the JSON entry Cursor and VS Code take, with the published
-port already in them and a button to copy each.
+as *answers* (a `GET` gets the server's own 406), and under it, in the
+same plate, is its file: a mark and when `.mcp.json` was written —
+hollow while there is none, full and green while it carries the
+address of today, half and amber once the port moved — and the button
+that runs `mix chelekom.mcp.json`. The box's *Opens* shows the same
+plate and no line to copy: the task writes what a client reads.
 
 ### What to know of it
 
@@ -260,7 +267,7 @@ mix mishka.ui.gen.component carousel
 ```
 
 `--mcp` is the one piece a second run adds, and it counts as in when
-both of its pieces are: the route and the project's `mix mcp.json`. A
+both of its pieces are: the route and the project's `mix chelekom.mcp.json`. A
 project with the route alone — written by the library's own setup, or
 by this box before it planted the task — is offered the option again
 and gets what it lacks; the route is not written twice. With both in,
@@ -275,6 +282,12 @@ Facts of Mishka Chelekom 0.0.9, which the cartridge does not correct:
   property a line — not only with its two new lines.
 * `button.ex` is one line short of `mix format`; the other 73 pass.
   The cartridge formats the components unless told `--no-format`.
+* Three code blocks in the components' documentation have one fence
+  of the two — `combobox.ex` lacks the one that opens, `layout.ex` the
+  one that closes, twice — and `mix docs` warns *Fenced Code Block
+  opened with ``` not closed at end of input* for each. They render
+  and compile all the same. `--solve-warnings` writes the three
+  fences.
 * `mix mishka.mcp.setup` puts its route inside `pipeline :browser` on
   an untouched router (*MCP*, above).
 * `<.header>` has no dark variant: its title is `text-zinc-800` on any
@@ -295,10 +308,10 @@ Facts of Mishka Chelekom 0.0.9, which the cartridge does not correct:
 | `└── 📄 DESIGN.md` | Why queued, why a core set, and what was measured |
 |  |  |
 | `📁 priv/features/mishka_chelekom/assets/` |  |
-| `└── 📄 mcp.json.ex` | `mix mcp.json`, planted in the project by `--mcp` |
+| `└── 📄 chelekom.mcp.json.ex` | `mix chelekom.mcp.json`, planted in the project by `--mcp` |
 |  |  |
 | `📁 lib/mix/tasks/` |  |
-| `└── 📄 workbench.mishka_components.ex` | The queued command: the list completed, the library's task watched, the components formatted |
+| `└── 📄 workbench.mishka_components.ex` | The queued command: the list completed, the library's task watched, the fences written, the components formatted |
 |  |  |
 | `📁 test/workbench_igniter/features/` |  |
 | `└── 📄 mishka_chelekom_test.exs` | The queue, the list, and a project without daisyUI |

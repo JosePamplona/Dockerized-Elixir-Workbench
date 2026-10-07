@@ -26,18 +26,18 @@ defmodule WorkbenchIgniter.Features.MishkaChelekomTest do
     |> apply_igniter!()
   end
 
-  # `mix mcp.json` is the project's file, planted verbatim: compiled
+  # `mix chelekom.mcp.json` is the project's file, planted verbatim: compiled
   # here once, to run what the project will run.
   setup_all do
     unless Code.ensure_loaded?(task()),
-      do: Code.compile_string(MishkaChelekom.asset("mcp.json.ex"))
+      do: Code.compile_string(MishkaChelekom.asset("chelekom.mcp.json.ex"))
 
     :ok
   end
 
   # Named at run time: the module is the asset's, compiled above, and
   # no module of this package.
-  defp task, do: Module.concat(Mix.Tasks.Mcp, Json)
+  defp task, do: Module.concat(Mix.Tasks.Chelekom.Mcp, Json)
 
   describe "mix workbench.install.mishka_chelekom" do
     test "adds the dependency and queues the library's task for every component" do
@@ -165,6 +165,104 @@ defmodule WorkbenchIgniter.Features.MishkaChelekomTest do
     end
   end
 
+  describe "--solve-warnings" do
+    alias Mix.Tasks.Workbench.MishkaComponents
+
+    test "off by default; on, the queued task is told and the notice says it" do
+      refute Enum.any?(install().notices, &(&1 =~ "ExDoc"))
+
+      igniter = install(~w(--solve-warnings --components card))
+
+      assert igniter.tasks ==
+               [{"workbench.mishka_components", ~w(--format --solve-warnings card)}]
+
+      assert Enum.any?(igniter.notices, &(&1 =~ "ExDoc warns of"))
+    end
+
+    # The library's two shapes, as 0.0.9 writes them.
+    test "a block never opened is opened under its heading: combobox" do
+      source = ~S'''
+      defmodule C do
+        @moduledoc """
+        A combobox.
+
+         ## Example usage:
+          <.combobox />
+        ```
+        """
+      end
+      '''
+
+      assert MishkaComponents.fenced(source) == ~S'''
+             defmodule C do
+               @moduledoc """
+               A combobox.
+
+                ## Example usage:
+
+               ```elixir
+                 <.combobox />
+               ```
+               """
+             end
+             '''
+    end
+
+    test "a block never closed is closed at the end: layout's flex and grid" do
+      source = ~S'''
+      defmodule L do
+        @doc """
+        ## Examples
+
+        ```elixir
+        <.flex />
+        """
+        @doc type: :component
+        def flex(assigns), do: ~H"""
+        <div>```</div>
+        """
+
+        @doc """
+        ```elixir
+        <.grid />
+        """
+        def grid(assigns), do: assigns
+      end
+      '''
+
+      mended = MishkaComponents.fenced(source)
+      assert mended =~ ~s(  <.flex />\n  ```\n  """\n  @doc type: :component)
+      assert mended =~ ~s(  <.grid />\n  ```\n  """\n  def grid)
+      # A template is no documentation: its line stays alone.
+      assert mended =~ ~s(  <div>```</div>\n  """\n)
+      assert length(String.split(mended, "\n")) == length(String.split(source, "\n")) + 2
+    end
+
+    test "paired fences, and a second pass, change nothing" do
+      source = ~S'''
+      defmodule P do
+        @doc """
+        ```elixir
+        <.p />
+        ```
+        """
+        def p(assigns), do: assigns
+      end
+      '''
+
+      assert MishkaComponents.fenced(source) == source
+
+      once = MishkaComponents.fenced(~s(@doc """\n```elixir\nx\n"""\n))
+      assert once == ~s(@doc """\n```elixir\nx\n```\n"""\n)
+      assert MishkaComponents.fenced(once) == once
+    end
+
+    test "a lone closing fence with no heading above is left as it is" do
+      source = ~s(@doc """\n  <.x />\n```\n"""\n)
+      assert MishkaComponents.fenced(source) == source
+    end
+  end
+
   describe "--no-format" do
     test "by default the queued task formats what the library generated" do
       assert [{"workbench.mishka_components", ["--format" | _]}] = install().tasks
@@ -226,7 +324,10 @@ defmodule WorkbenchIgniter.Features.MishkaChelekomTest do
       assert igniter.tasks == []
 
       written = igniter |> apply_igniter!() |> files()
-      assert written["lib/mix/tasks/mcp.json.ex"] =~ "defmodule Mix.Tasks.Mcp.Json"
+
+      assert written["lib/mix/tasks/chelekom.mcp.json.ex"] =~
+               "defmodule Mix.Tasks.Chelekom.Mcp.Json"
+
       assert written[".gitignore"] =~ "/.mcp.json"
       refute Map.has_key?(written, "lib/test_web/components/mishka_components.ex")
 
@@ -240,7 +341,7 @@ defmodule WorkbenchIgniter.Features.MishkaChelekomTest do
       route_only =
         install(~w(--mcp))
         |> apply_igniter!()
-        |> Igniter.rm("lib/mix/tasks/mcp.json.ex")
+        |> Igniter.rm("lib/mix/tasks/chelekom.mcp.json.ex")
         |> apply_igniter!()
 
       assert {%{mcp: false}, _} = MishkaChelekom.state(route_only)
@@ -249,7 +350,10 @@ defmodule WorkbenchIgniter.Features.MishkaChelekomTest do
       assert Enum.any?(again.notices, &(&1 =~ "already forwards"))
 
       completed = apply_igniter!(again)
-      assert files(completed)["lib/mix/tasks/mcp.json.ex"] =~ "Mix.Tasks.Mcp.Json"
+
+      assert files(completed)["lib/mix/tasks/chelekom.mcp.json.ex"] =~
+               "Mix.Tasks.Chelekom.Mcp.Json"
+
       assert {%{mcp: true}, _} = MishkaChelekom.state(completed)
       # The route is there once.
       assert length(String.split(router(completed), "MishkaChelekom.MCP.Server")) == 2
@@ -333,7 +437,7 @@ defmodule WorkbenchIgniter.Features.MishkaChelekomTest do
     end
   end
 
-  describe "mix mcp.json, the task --mcp plants" do
+  describe "mix chelekom.mcp.json, the task --mcp plants" do
     @compose """
     services:
       pod:
@@ -348,23 +452,29 @@ defmodule WorkbenchIgniter.Features.MishkaChelekomTest do
     test "is planted with --mcp, and what it writes is ignored" do
       written = install(~w(--mcp)) |> apply_igniter!() |> files()
 
-      assert written["lib/mix/tasks/mcp.json.ex"] == MishkaChelekom.asset("mcp.json.ex")
+      assert written["lib/mix/tasks/chelekom.mcp.json.ex"] ==
+               MishkaChelekom.asset("chelekom.mcp.json.ex")
+
       assert written[".gitignore"] =~ "\n/.mcp.json\n"
-      refute Map.has_key?(install() |> apply_igniter!() |> files(), "lib/mix/tasks/mcp.json.ex")
+
+      refute Map.has_key?(
+               install() |> apply_igniter!() |> files(),
+               "lib/mix/tasks/chelekom.mcp.json.ex"
+             )
     end
 
     test "a task the project already has is left as it is" do
-      mine = "defmodule Mix.Tasks.Mcp.Json do\nend\n"
+      mine = "defmodule Mix.Tasks.Chelekom.Mcp.Json do\nend\n"
 
       written =
         project()
-        |> Igniter.create_new_file("lib/mix/tasks/mcp.json.ex", mine)
+        |> Igniter.create_new_file("lib/mix/tasks/chelekom.mcp.json.ex", mine)
         |> apply_igniter!()
         |> then(&install(~w(--mcp), &1))
         |> apply_igniter!()
         |> files()
 
-      assert written["lib/mix/tasks/mcp.json.ex"] == mine
+      assert written["lib/mix/tasks/chelekom.mcp.json.ex"] == mine
     end
 
     test "the address is the port the compose publishes the endpoint's on" do
@@ -666,6 +776,7 @@ defmodule WorkbenchIgniter.Features.MishkaChelekomTest do
                 components: ~w(card timeline input_field alert),
                 no_daisy: false,
                 format: nil,
+                solve_warnings: nil,
                 mcp: false
               }, _} = MishkaChelekom.state(project)
     end

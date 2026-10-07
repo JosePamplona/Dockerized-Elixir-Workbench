@@ -14,6 +14,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+### Fixed
+
+- **`catalog --json --brief` takes an option whose values come in
+  sections.** The brief read `value` off every choice, and a sectioned
+  list is groups of them: it raised on the first cartridge to declare
+  one, mishka_chelekom's `--components`. The brief keeps the values
+  alone, flat.
+
 ## v0.18.4 - (2026-10-06)
 
 ### Added

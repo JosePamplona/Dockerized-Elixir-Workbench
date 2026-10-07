@@ -105,10 +105,15 @@ defmodule Mix.Tasks.Workbench.Catalog do
       name: option.name,
       type: option.type,
       default: option.default,
-      choices: option.choices && Enum.map(option.choices, & &1.value),
+      choices: option.choices && Enum.flat_map(option.choices, &brief_values/1),
       multiple: option.multiple
     }
   end
+
+  # The values alone: a brief keeps no sections (mishka_chelekom's
+  # components come in the library's six).
+  defp brief_values(%{values: values}), do: Enum.map(values, & &1.value)
+  defp brief_values(%{value: value}), do: [value]
 
   @doc false
   def table(entries) do

@@ -451,7 +451,9 @@ defmodule ConsoleWeb.WorkbenchDrawer do
         effect: effect,
         choices: choices,
         help: help,
-        edited: Map.has_key?(assigns.edits, f.key)
+        edited: Map.has_key?(assigns.edits, f.key),
+        # The one setting with a rule of its own to break: a name `new` refuses.
+        error: if(f.key == "PROJECT_NAME", do: ConsoleWeb.Deploy.name_error(v))
       )
 
     ~H"""
@@ -483,8 +485,11 @@ defmodule ConsoleWeb.WorkbenchDrawer do
             value={@v}
             spellcheck="false"
             placeholder={@f.key == "WORKSPACE_PATH" && "./_workspaces/…"}
+            aria-invalid={@error && "true"}
+            aria-describedby={@error && "cfg-#{@f.key}-error"}
           />
       <% end %>
+      <p :if={@error} class="field-error" id={"cfg-#{@f.key}-error"}><.mark name="x" />{@error}</p>
       <p :if={@help != ""} class="help"><.prose text={@help} /></p>
     </div>
     """

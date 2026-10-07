@@ -14,6 +14,68 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+### Added
+
+- **`.field-error`, how a field says its value will not do.** The
+  design system had chips, the unlit button with its reason, and
+  `.note` and `.help` for the small print, and no piece for the error
+  of a field; the first one that came up, the project's name ending in
+  `Web`, was set in `.note` under the New Project card's command and
+  read as the hint of a field. It is one line under the field, in
+  `--bad`, with the `×` before it, and the field marked `aria-invalid`,
+  which rings it in the same ink — said where the value is edited and
+  nowhere else. A screen that only reads the value says it with a
+  `.chip.bad` and the way to the field. Settled on a page of three
+  takes on the real Config field and the real card
+  (`los-errores-de-un-campo`, retired the same day): the marked field
+  with its line, over a chip alone, which hides the reason behind a
+  hover, and a block, which is the weight of a job that failed.
+
+### Updated
+
+- **The README's file tree is a drawing again.** Under *The Workbench
+  & its Workspace* it had become the `File | Role` table of the
+  cartridges' *Contents* (v0.18.2); it is the block `igniter/README.md`
+  draws its own tree in, the marks and a `#` comment to a line. Eight
+  lines are read at a glance in a block, and a package's README draws
+  its tree while a cartridge's lists its files with a role each. The
+  two workspaces of the example are named as projects are.
+
+### Fixed
+
+- **A project's name cannot end in `Web`.** `./wb.sh add health_probe`
+  stopped on *Could not find module PortfoliosWeb.Endpoint* in a
+  project named *Portfolios Web*, whose endpoint is
+  `PortfoliosWebWeb.Endpoint`. Phoenix disagrees with itself about
+  such a name: `phx.new` always adds `Web` to the app's module
+  (`phx_new/single.ex`, `web_namespace`), while its own generators
+  take a module that already ends in `Web` to *be* the web module
+  (`Mix.Phoenix.web_module/1`: `phx.gen.html`, `.live`, `.json`,
+  `.auth`, `.channel`, `.socket`, `.release`). Igniter copies that rule
+  (`Igniter.Libs.Phoenix.web_module/1`), and with it eleven cartridges
+  and the birth's own setup, which had already written
+  `config :portfolios_web, PortfoliosWeb.Endpoint, http: [ip: …]` into
+  that project's `dev.exs`, for a module that is not there, and said
+  nothing.
+
+  The workbench could teach its own cartridges the right module. It
+  could not teach Phoenix's generators, nor Ash's installers, nor
+  whatever else the reader runs afterwards, and a project that looks
+  sound and fails later, far from the cause, is the worse gift. So
+  `new` refuses the name, when changing it costs nothing: an app whose
+  name ends in `web` as a word of its own (`Portfolios Web`,
+  `portfolios_web`; not `Cobweb`, not `Web Shop`), with the reason and
+  the name without that word. In the console it is the field's own
+  error: under `PROJECT_NAME` in the workbench's Config, where the name
+  is edited, and the New Project card, which only reads the name, shows
+  it in a `project name` row with a chip and the cog that leads there,
+  Create unlit with a short reason, and submits nothing. `adopt`
+  takes such a project as it is — it exists, and it is the reader's —
+  and warns that the inserts that touch the endpoint or the router
+  will fail on it. No issue was found upstream for it (one search of
+  Phoenix's tracker, 2026-10-06); the refusal goes when `phx.new` and
+  `Mix.Phoenix.web_module/1` agree.
+
 ## v0.18.3 - (2026-10-06)
 
 ### Updated

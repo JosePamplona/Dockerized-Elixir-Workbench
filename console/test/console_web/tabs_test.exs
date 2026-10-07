@@ -486,16 +486,39 @@ defmodule ConsoleWeb.TabsTest do
     # took `new-project` for its own wrapper when it became a component,
     # and the button went on naming that: it pointed at a div and
     # submitted nothing (2026-09-27).
+    # (Asked with a name of the test's own: the card opens with
+    # config.conf's, which is whatever the reader last named a project.)
+    html =
+      view |> element("#new-project-form") |> render_change(%{"name" => "Bakery Co"})
+
     [create] = Regex.run(~r{<button[^>]*>\s*Create project\s*</button>}s, html)
     assert create =~ ~s(form="new-project-form")
     assert create =~ ~s(type="submit")
 
     # And what it carries is what runs: the name typed into it.
-    html =
-      view |> element("#new-project-form") |> render_change(%{"name" => "Bakery Co"})
-
     # The quotes come through escaped, as any attribute-safe text does.
     assert html =~ "./wb.sh new --name &quot;Bakery Co&quot;"
+
+    # A name `wb.sh new` refuses: the card shows it with a chip, Create
+    # is unlit with a short reason that says where to change it, and it
+    # submits nothing. The error itself is the field's, in Config.
+    html =
+      view |> element("#new-project-form") |> render_change(%{"name" => "Bakery Web"})
+
+    [create] = Regex.run(~r{<button[^>]*>\s*Create project\s*</button>}s, html)
+    assert create =~ "unlit"
+    assert create =~ ~s(aria-disabled="true")
+    refute create =~ ~s(type="submit")
+    assert create =~ "the project&#39;s name ends in &#39;Web&#39;: change it in Config"
+
+    [card] = Regex.run(~r{<form[^>]*id="new-project-form".*?</form>}s, html)
+    assert card =~ ~r{<label[^>]*>project name</label>}
+    assert card =~ ~r{Bakery Web</span>\s*<span[^>]*class="chip bad"[^>]*>\s*ends in Web}
+    refute html =~ "cannot end in"
+
+    before = Console.Jobs.list()
+    view |> element("#new-project-form") |> render_submit(%{"name" => "Bakery Web"})
+    assert Console.Jobs.list() == before
   end
 
   test "the Docker screen is lit before any project is, and opens on its containers", %{

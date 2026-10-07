@@ -119,6 +119,38 @@
     # empty made '_build', which Docker refuses (a volume starts with a
     # letter or a digit). It is the fallback the console already used.
     # PROJECT_NAME itself stays empty, which is what 'new' asks about.
+    # web_named
+      # Whether the app's name ends in 'web' as a word of its own
+      # ('portfolios_web', 'web'): the module then ends in 'Web', and
+      # Phoenix disagrees with itself about such a project. 'phx.new'
+      # always adds 'Web' to the app's module — PortfoliosWebWeb — while
+      # its own generators (Mix.Phoenix.web_module/1: phx.gen.html,
+      # .live, .json, .auth, .channel, .socket) take a module that
+      # already ends in 'Web' to BE the web module, and write to
+      # PortfoliosWeb, which is not there. Igniter copies that rule
+      # (Igniter.Libs.Phoenix.web_module/1), so every installer built
+      # on it — the cartridges', Ash's — looks for PortfoliosWeb.Endpoint
+      # and stops (seen 2026-10-06, 'add health_probe'), or writes
+      # config for a module that does not exist, and says nothing.
+    web_named() { [[ "$ELIXIR_PROJECT_NAME" =~ (^|_)web$ ]]; }
+
+    # refuse_web_name
+      # 'new' creates no such project: the name costs nothing to change
+      # now, and nothing mends it later — the workbench could teach its
+      # own cartridges, never Phoenix's generators nor another's
+      # installer.
+    refuse_web_name() {
+      web_named || return 0
+      local other
+      other=$(echo "$PROJECT_NAME" | sed -E 's/[ _-]*[Ww][Ee][Bb]$//')
+      terminate \
+        "Not a name for a new project: '$PROJECT_NAME' ends in 'Web'." \
+        "phx.new would name its web module with 'Web' twice (…WebWeb), and Phoenix's own" \
+        "generators (mix phx.gen.*), Igniter and every installer built on it look for the" \
+        "one that ends in a single 'Web': they fail, or write to a module that is not there." \
+        "${other:+Name it without that word: ./$(basename "$0") new --name \"$other\"}"
+    }
+
     name_project() {
       LOWER_CASE=$( echo "${PROJECT_NAME:-app}" | tr '[:upper:]' '[:lower:]' )
       ELIXIR_PROJECT_NAME=$( echo "$LOWER_CASE" | tr ' ' '_' )
@@ -2127,7 +2159,8 @@
       "  --name NAME         The project's name for this creation: the app and" \
       "                      module derive from it, and so do the workspace's" \
       "                      images and its compose project. Capitalised, spaces" \
-      "                      between words ('My App'). Default: PROJECT_NAME in" \
+      "                      between words ('My App'); not ending in 'Web', which" \
+      "                      Phoenix's own generators trip on. Default: PROJECT_NAME in" \
       "                      config.conf, which is also what the console starts" \
       "                      its toolchain for." \
       "  --phx-new VERSION   Phoenix installer to use (default: the newest hex" \
@@ -2560,7 +2593,16 @@
        cp "$SCRIPTS_DIR/$LOCAL_DOCKERFILE" "$WORKSPACE_PATH/$LOCAL_DOCKERFILE" && \
        bake_compose "$LOCAL_IMAGE" "$LOCAL_DOCKERFILE" "$COMPOSE_FILE" && \
        bake_release_composes
-    then workspace_commit "Adopt $ELIXIR_PROJECT_NAME"
+    then
+      workspace_commit "Adopt $ELIXIR_PROJECT_NAME" || return 1
+      # Adopted as it is — the project is the reader's, and it exists —
+      # and told what 'new' refuses a name for (web_named).
+      if web_named; then
+        echo "⚠️  ${B}Warning${R} The app's name, $ELIXIR_PROJECT_NAME, ends in 'web': its web module has 'Web'"
+        echo "twice, and Phoenix's generators (mix phx.gen.*), Igniter and the cartridges that"
+        echo "touch the endpoint or the router look for the one with a single 'Web'. Those"
+        echo "inserts will fail on this project, or write to a module that is not there."
+      fi
     else undo_failed_insert adopt; return 1
     fi
   }
@@ -2628,6 +2670,7 @@ if [ $# -gt 0 ]; then
     echo "$PROJECT_NAME" | grep -qE '^[A-Za-z][A-Za-z0-9 _-]*$' || terminate \
       "Not a project name: '$PROJECT_NAME' (a letter first, then letters, digits, spaces, - or _)."
     name_project
+    refuse_web_name
     require_stack_floor "$ELIXIR_VERSION"
     resolve_installer
 

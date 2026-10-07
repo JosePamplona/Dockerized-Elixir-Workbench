@@ -50,7 +50,10 @@ defmodule ConsoleWeb.NewProject do
     ["new" | rest] = args = Deploy.new_args(socket.assigns.catalog, newp)
     project? = socket.assigns.status && socket.assigns.status["exists"] == true
 
-    Jobs.run(Verbs.kind("new", rest), args, confirm: Verbs.confirm?({:new, nil}, project?))
+    # A name the script would refuse runs nothing: Create is unlit for
+    # it, and a form is also submitted by Enter in one of its fields.
+    if is_nil(Deploy.new_name_why(socket.assigns.catalog, newp)),
+      do: Jobs.run(Verbs.kind("new", rest), args, confirm: Verbs.confirm?({:new, nil}, project?))
 
     {:noreply, assign(socket, newp: newp)}
   end
@@ -92,6 +95,9 @@ defmodule ConsoleWeb.NewProject do
         project?: project?,
         busy: Deploy.busy?(assigns.jobs, [:new]),
         cmd: Deploy.new_command(assigns.catalog, assigns.newp),
+        name: Deploy.new_name(assigns.catalog, assigns.newp),
+        name_error: Deploy.name_error(Deploy.new_name(assigns.catalog, assigns.newp)),
+        name_why: Deploy.new_name_why(assigns.catalog, assigns.newp),
         bases: Cartridges.base(assigns.catalog)
       )
 
@@ -137,6 +143,18 @@ defmodule ConsoleWeb.NewProject do
               <.chip :if={@project?} class="good" title="creating overwrites every file in it">
                 existing project
               </.chip>
+            </:mark>
+          </.given>
+          <%!-- The name the project would get, read off config.conf like
+                the rest: the card does not edit it, so a name `new`
+                refuses is a chip here and the cog beside it, the way
+                to the field — where the error itself is said
+                (`.field-error`, under PROJECT_NAME). For a few hours
+                it was a paragraph in the note's voice under the
+                command, which read as a hint (2026-10-06). --%>
+          <.given label="project name" value={@name}>
+            <:mark>
+              <.chip :if={@name_error} class="bad" title={@name_error}>ends in Web</.chip>
             </:mark>
           </.given>
           <.given
@@ -293,7 +311,7 @@ defmodule ConsoleWeb.NewProject do
             class="primary"
             form="new-project-form"
             args={String.replace_prefix(@cmd, "./wb.sh ", "")}
-            why={@busy && "a job is running"}
+            why={(@busy && "a job is running") || @name_why}
           />
         </div>
       </.card>

@@ -194,6 +194,18 @@ one: a bordered box is a door you press.
   reading as a list with nothing in it — the old code kept a failure as
   an empty list, so an offline console said *no published image for this
   combination (of the 0 usable)*, which is not what had happened.
+* **`.field-error`** — what a field says when its value will not do: one
+  line under the field, in `--bad`, with the `×` before it, and the field
+  marked `aria-invalid`, which rings it in the same ink. A line, not a
+  paragraph: what is wrong with the value, said where it is mended. It
+  goes under the field that is edited and nowhere else; a screen that
+  only reads the value says it with a `.chip.bad` and the way to the
+  field. Never `.note` or `.help`, the voice of an aside: an error set
+  in it reads as the hint of the field beside it. Settled on a page of
+  three takes on the real Config field and the New Project card
+  (`los-errores-de-un-campo`, retired the same day, 2026-10-06): the
+  marked field with its line, over a chip alone, which hides the reason
+  behind a hover, and a block, which is the weight of a job that failed.
 * **`.sq`** — the square icon button: the knock's bell, the eye on a
   compose file, the cog on a given, the reload of a `.fetch`, the `×`
   that puts a bar or the rail away. One drawing in the middle, from the

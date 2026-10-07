@@ -237,4 +237,39 @@ defmodule ConsoleWeb.ConfigFormTest do
     assert html =~ ~s(value="27.3.4.17" selected)
     assert html =~ ~s(value="trixie-20260824-slim" selected)
   end
+
+  # The one field with a rule to break: a name `wb.sh new` refuses is
+  # marked where it is edited, with its line under it (`.field-error`).
+  test "a project name ending in Web is the field's own error, in a line under it", %{view: view} do
+    name = fn value ->
+      html = change(view, ["cfg", "PROJECT_NAME"], %{"PROJECT_NAME" => value})
+
+      [row] =
+        Regex.run(
+          ~r{<div[^>]*class="row[^"]*"[^>]*>\s*<label[^>]*for="cfg-PROJECT_NAME".*?</div>}s,
+          html
+        )
+
+      row
+    end
+
+    row = name.("Bakery Web")
+    assert [input] = Regex.run(~r{<input[^>]*id="cfg-PROJECT_NAME"[^>]*>}, row)
+    assert input =~ ~s(aria-invalid="true")
+    assert input =~ ~s(aria-describedby="cfg-PROJECT_NAME-error")
+
+    assert [line] = Regex.run(~r{<p[^>]*class="field-error"[^>]*>.*?</p>}s, row)
+    assert line =~ ~s(id="cfg-PROJECT_NAME-error")
+    assert line =~ ~s(<use href="/images/icons.svg#x")
+
+    assert line =~
+             "Ends in &#39;Web&#39;: Phoenix&#39;s own generators would not find its web module."
+
+    # Before the help, which is the field's aside and stays.
+    assert row =~ ~r{class="field-error".*class="help"}s
+
+    row = name.("Bakery")
+    refute row =~ "aria-invalid"
+    refute row =~ "field-error"
+  end
 end

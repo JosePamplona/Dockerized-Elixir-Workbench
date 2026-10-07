@@ -228,6 +228,19 @@
      themes, which is the same split the scrollbars already make. Six
      declarations said this before: .note doing double duty, td.muted,
      two .empty, a .missing with its border, and two ::before contents.
+   .field-error — what a field says when its value will not do: one
+     line under the field, in --bad, with the × before it, and the
+     field itself marked with aria-invalid, which rings it in the same
+     ink. A line and not a paragraph: it says what is wrong with the
+     value, where the reader is looking when they can mend it; the why
+     at length is the CLI's and the papers'. It goes under the field
+     that is edited and nowhere else — a screen that only reads the
+     value says it with a chip (.chip.bad) and the way to the field.
+     Not .note and not .help: those are the voice of an aside, and an
+     error set in it reads as the hint of the field beside it (the
+     project's name ending in Web, 2026-10-06). The ring is an outline
+     drawn over the field's own border, so it holds whatever rule gave
+     the field that border.
    .fetch — a field whose values are not the workbench's. They come from
      outside it, over the network, and somebody has to go and get them:
      the square button flush against the field is who goes. It takes its
@@ -385,6 +398,9 @@
 .fn{font-family:var(--mono);font-weight:500;color:var(--muted);margin-left:.4em}
 .fn-note{margin:8px 0 0;font-size:11.5px;line-height:1.5;color:var(--muted)}
 .fn-note .fn{margin:0 .4em 0 0}
+[aria-invalid="true"]:is(input,select,textarea){outline:1px solid var(--bad);outline-offset:-1px;box-shadow:inset 0 0 0 1px var(--bad)}
+.field-error{display:flex;gap:6px;align-items:center;margin:0;font-family:var(--serif);font-style:normal;font-size:13px;line-height:1.35;color:var(--bad)}
+.field-error svg{width:11px;height:11px;flex:none}
 .fetch{display:flex;align-items:stretch;gap:8px}
 .fetch>:first-child{flex:1;min-width:0;max-width:none}
 /* The square's size is the field's height: 2.5em of the field's type, 13px — the reload of a .fetch had it, and every square has it now, whole pixels so the mark sits centred. */

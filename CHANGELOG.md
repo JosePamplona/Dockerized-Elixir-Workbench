@@ -14,6 +14,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+## v0.19.1 - (2026-10-07)
+
 ### Fixed
 
 - **An eject no longer commits what the cartridge had ignored.** A

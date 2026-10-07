@@ -2888,6 +2888,21 @@ if [ $# -gt 0 ]; then
         fi
       fi
 
+      # What the cartridge's lines in .gitignore covered goes with them:
+      # a file the insert ignored and something wrote since — a task's
+      # output, a built page — is no longer ignored once the revert
+      # takes those lines out, and the 'add -A' below would commit it
+      # into the revert, tracked from then on under an ignore that came
+      # back with the next insert. The eject began on a clean tree, so
+      # what is untracked here is exactly that. Read before the composes
+      # are rendered, which are the workbench's own writing.
+      UNCOVERED=$(git_read ls-files --others --exclude-standard --directory 2>/dev/null)
+      if [ -n "$UNCOVERED" ] && workspace_git clean -fdq; then
+        while IFS= read -r f; do
+          echo "Removed ${B}$f${R}: $FEATURE's lines in .gitignore covered it, and they went with the cartridge."
+        done <<< "$UNCOVERED"
+      fi
+
       rebake_composes
       if workspace_git add -A && workspace_git commit -q --no-verify --no-edit --cleanup=strip; then
         echo "Ejected ${B}$FEATURE${R}: $(workspace_git log --format='%h %s' -n 1)" \

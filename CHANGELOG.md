@@ -14,6 +14,31 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+### Fixed
+
+- **An eject no longer commits what the cartridge had ignored.** A
+  cartridge's insert adds lines to `.gitignore` for what is written
+  afterwards — mishka_chelekom's `/.mcp.json`, coverage's
+  `TESTING.md`. The revert takes those lines out, the file is still
+  on disk and no longer ignored, and the eject's `git add -A` put it
+  in the revert's commit: tracked from then on, under an ignore that
+  came back with the next insert and no longer applied, so the file
+  showed as changed every time its task wrote it. Nothing complained,
+  since the tree was left clean. Seen on the author's project, whose
+  reverts carried `A .mcp.json`. `eject` now removes what the revert
+  left untracked — it begins on a clean tree, so that is exactly what
+  those lines covered — and says each one (`Removed .mcp.json:
+  mishka_chelekom's lines in .gitignore covered it, and they went
+  with the cartridge.`). They are the cartridge's products, never in
+  git, and the task that writes them leaves with it. Run through
+  `wb.sh eject` on a copy of that project: mishka_chelekom with its
+  `.mcp.json` and coverage with its `TESTING.md` — neither file in
+  the revert, both gone, the tree clean; exdoc's `doc/` and
+  coverage's `cover/` stay, ignored by `phx.new`'s own lines. A file
+  a reader filled by hand under a cartridge's ignore would go the
+  same way: none on the shelf is known to be one, and the shelf was
+  not read through for it.
+
 ## v0.19.0 - (2026-10-07)
 
 ### Added

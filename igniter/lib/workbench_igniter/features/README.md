@@ -92,6 +92,19 @@ Every cartridge is a directory `features/<feature>/` holding:
   starts from it: the register and the hero come from the need, the
   bodies and counts from the README. Every cartridge has one; the
   catalog test says so.
+* **A figure, or the decision that it has none** — not a file of the
+  cartridge's, and asked of every cartridge: when its papers are first
+  written, and again when a change gives it a runtime path it did not
+  have. Two questions, one per paper. *Does it add a path at runtime* —
+  a route, a container, a process, a file something else reads? Then
+  the README carries the mechanism as installed. *Does a decision turn
+  on who acts in whose turn, or on an edge that goes away?* Then the
+  DESIGN carries that comparison. A no to both is an answer, and the
+  usual one for a cartridge that only adds a dependency; a list of
+  options, a table of cases and a sequence of steps the reader runs
+  are prose, and stay prose. The figures are drawn in
+  [`assets/diagrams/`](../../../../assets/diagrams/), whose README
+  lists which cartridges have one and why.
 
 The cartridge directory holds only code. Everything that is not code
 lives under `priv/features/<feature>/` (never compiled, so files keep
@@ -347,9 +360,10 @@ Box cover art for the cartridges — the fixed elements, the per-cartridge
 slots and the prompt template — lives with the art it produces, in
 [`assets/covers/`](../../../../assets/covers/). A cartridge that adds a
 path at runtime carries a figure of it in its README (the mechanism as
-installed) or its DESIGN (a comparison the prose cannot hold); those are
-drawn in [`assets/diagrams/`](../../../../assets/diagrams/), which says
-which cartridges have one and why.
+installed) or its DESIGN (a comparison the prose cannot hold) — the
+question is part of the [anatomy](#anatomy), asked of every cartridge;
+those are drawn in [`assets/diagrams/`](../../../../assets/diagrams/),
+which says which cartridges have one and why.
 
 ## The manifest (`WorkbenchIgniter.Feature` behaviour)
 

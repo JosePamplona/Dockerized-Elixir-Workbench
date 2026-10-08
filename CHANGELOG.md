@@ -51,6 +51,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   cartridges' are; the rest of the two papers is lists and tables, and
   stays prose.
 
+### Updated
+
+- **Whether a cartridge carries a figure is asked of every one.** The
+  rule was there — a figure where it shows a mechanism the prose
+  cannot — as criterion 6b of *Writing a DESIGN.md*, so it was read
+  only by whoever was writing a DESIGN, and mishka_chelekom's papers
+  were written without the question being put. It is part of the
+  anatomy now (`features/README.md`): two questions, one per paper,
+  asked when the papers are written and again when a change gives the
+  cartridge a runtime path; a no to both is an answer. `CLAUDE.md`
+  says it too. Nothing checks it: it is a question someone has to
+  ask.
+
 ## v0.19.1 - (2026-10-07)
 
 ### Fixed

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Dockerized workbench script (Igniter edition)
-# v0.18.0
+# v0.19.3
 #
 # Thin Docker wrapper: project creation and Elixir configuration are
 # delegated to the :workbench_igniter package (igniter/) via
@@ -119,6 +119,38 @@
     # empty made '_build', which Docker refuses (a volume starts with a
     # letter or a digit). It is the fallback the console already used.
     # PROJECT_NAME itself stays empty, which is what 'new' asks about.
+    # web_named
+      # Whether the app's name ends in 'web' as a word of its own
+      # ('portfolios_web', 'web'): the module then ends in 'Web', and
+      # Phoenix disagrees with itself about such a project. 'phx.new'
+      # always adds 'Web' to the app's module — PortfoliosWebWeb — while
+      # its own generators (Mix.Phoenix.web_module/1: phx.gen.html,
+      # .live, .json, .auth, .channel, .socket) take a module that
+      # already ends in 'Web' to BE the web module, and write to
+      # PortfoliosWeb, which is not there. Igniter copies that rule
+      # (Igniter.Libs.Phoenix.web_module/1), so every installer built
+      # on it — the cartridges', Ash's — looks for PortfoliosWeb.Endpoint
+      # and stops (seen 2026-10-06, 'add health_probe'), or writes
+      # config for a module that does not exist, and says nothing.
+    web_named() { [[ "$ELIXIR_PROJECT_NAME" =~ (^|_)web$ ]]; }
+
+    # refuse_web_name
+      # 'new' creates no such project: the name costs nothing to change
+      # now, and nothing mends it later — the workbench could teach its
+      # own cartridges, never Phoenix's generators nor another's
+      # installer.
+    refuse_web_name() {
+      web_named || return 0
+      local other
+      other=$(echo "$PROJECT_NAME" | sed -E 's/[ _-]*[Ww][Ee][Bb]$//')
+      terminate \
+        "Not a name for a new project: '$PROJECT_NAME' ends in 'Web'." \
+        "phx.new would name its web module with 'Web' twice (…WebWeb), and Phoenix's own" \
+        "generators (mix phx.gen.*), Igniter and every installer built on it look for the" \
+        "one that ends in a single 'Web': they fail, or write to a module that is not there." \
+        "${other:+Name it without that word: ./$(basename "$0") new --name \"$other\"}"
+    }
+
     name_project() {
       LOWER_CASE=$( echo "${PROJECT_NAME:-app}" | tr '[:upper:]' '[:lower:]' )
       ELIXIR_PROJECT_NAME=$( echo "$LOWER_CASE" | tr ' ' '_' )
@@ -831,6 +863,12 @@
     # written — and is chosen here, the first free from the cartridge's
     # default on, because free is a question for the host; then the
     # task is asked again with it.
+    # A deployment the project cannot have — the scaled one on SQLite —
+    # comes back as 'unavailable> REASON', exit 4, nothing written: not
+    # a failure, so nothing is printed here. The reason is left in
+    # COMPOSE_UNAVAILABLE and the function returns 4, for each caller to
+    # say in its own place — a note at birth, the error of a bake asked
+    # for by name. No deployment is named here: a cartridge says which.
   compose_render() {
     local file="$1" kept="$2"; shift 2
     local file_path="$WORKSPACE_PATH/$file" answer name default port chosen=" " versions=() ports=()
@@ -841,6 +879,8 @@
     then mv "$file_path.baking" "$file_path"; return 0; fi
 
     rm -f "$file_path.baking"
+    COMPOSE_UNAVAILABLE=$(sed -n 's/^unavailable> //p' <<< "$answer" | tr -d '\r' | head -n 1)
+    [ -z "$COMPOSE_UNAVAILABLE" ] || return 4
     grep -q '^need> ' <<< "$answer" || { echo "$answer" | tail -n 5 >&2; return 1; }
 
     while read -r _ name default; do
@@ -945,6 +985,11 @@
     # that is behind is something 'bake' mends later.
     # The scaled file is rendered with what it has: as many replicas,
     # the balancer or none.
+    # A file of a deployment the project can no longer have (ecto in on
+    # SQLite, and the scaled file baked at birth without a database) is
+    # removed, in the same commit: a derived file says what the project
+    # asks for, and it asks for no such deployment. The eject's revert
+    # brings the file back, and this renders it again.
   rebake_composes() {
     local file
     COMPOSES_LEFT=()
@@ -967,7 +1012,13 @@
     if [ -f "$WORKSPACE_PATH/$file" ]; then
       if compose_is_ours "$file"; then
         REPLICAS=""; BALANCER=""; read_scaled_shape
-        bake_scaled_compose || COMPOSES_LEFT+=( "$file" )
+        bake_scaled_compose
+        case $? in
+          0) ;;
+          4) rm -f "$WORKSPACE_PATH/$file"
+             echo "${B}Note${R} $file removed: $COMPOSE_UNAVAILABLE" ;;
+          *) COMPOSES_LEFT+=( "$file" ) ;;
+        esac
       else COMPOSES_LEFT+=( "$file" ); fi
     fi
     return 0
@@ -1886,10 +1937,19 @@
     # birth is one every Insert carries its services into and every
     # eject takes them out of, and one no 'up' has to write — and leave
     # uncommitted — on the way. The scaled file takes the default shape.
+    # A deployment the project cannot have (compose_render's 4: the
+    # scaled one on SQLite) is no failure of the birth: the project is
+    # born without that file, and told why in one note.
   bake_release_composes() {
     REPLICAS=$DEFAULT_REPLICAS
     BALANCER=true
-    bake_prod_compose && bake_scaled_compose
+    bake_prod_compose || return 1
+    bake_scaled_compose
+    case $? in
+      0) ;;
+      4) echo "${B}Note${R} No $SCALED_COMPOSE_FILE: $COMPOSE_UNAVAILABLE" ;;
+      *) return 1 ;;
+    esac
   }
 
   # bake_scaled_compose
@@ -2099,7 +2159,8 @@
       "  --name NAME         The project's name for this creation: the app and" \
       "                      module derive from it, and so do the workspace's" \
       "                      images and its compose project. Capitalised, spaces" \
-      "                      between words ('My App'). Default: PROJECT_NAME in" \
+      "                      between words ('My App'); not ending in 'Web', which" \
+      "                      Phoenix's own generators trip on. Default: PROJECT_NAME in" \
       "                      config.conf, which is also what the console starts" \
       "                      its toolchain for." \
       "  --phx-new VERSION   Phoenix installer to use (default: the newest hex" \
@@ -2532,7 +2593,16 @@
        cp "$SCRIPTS_DIR/$LOCAL_DOCKERFILE" "$WORKSPACE_PATH/$LOCAL_DOCKERFILE" && \
        bake_compose "$LOCAL_IMAGE" "$LOCAL_DOCKERFILE" "$COMPOSE_FILE" && \
        bake_release_composes
-    then workspace_commit "Adopt $ELIXIR_PROJECT_NAME"
+    then
+      workspace_commit "Adopt $ELIXIR_PROJECT_NAME" || return 1
+      # Adopted as it is — the project is the reader's, and it exists —
+      # and told what 'new' refuses a name for (web_named).
+      if web_named; then
+        echo "⚠️  ${B}Warning${R} The app's name, $ELIXIR_PROJECT_NAME, ends in 'web': its web module has 'Web'"
+        echo "twice, and Phoenix's generators (mix phx.gen.*), Igniter and the cartridges that"
+        echo "touch the endpoint or the router look for the one with a single 'Web'. Those"
+        echo "inserts will fail on this project, or write to a module that is not there."
+      fi
     else undo_failed_insert adopt; return 1
     fi
   }
@@ -2600,6 +2670,7 @@ if [ $# -gt 0 ]; then
     echo "$PROJECT_NAME" | grep -qE '^[A-Za-z][A-Za-z0-9 _-]*$' || terminate \
       "Not a project name: '$PROJECT_NAME' (a letter first, then letters, digits, spaces, - or _)."
     name_project
+    refuse_web_name
     require_stack_floor "$ELIXIR_VERSION"
     resolve_installer
 
@@ -2815,6 +2886,21 @@ if [ $# -gt 0 ]; then
             "again since it was inserted, so they are no longer the cartridge's alone.${REPORT}Eject" \
             "what came after it first, or revert it by hand in the workspace."
         fi
+      fi
+
+      # What the cartridge's lines in .gitignore covered goes with them:
+      # a file the insert ignored and something wrote since — a task's
+      # output, a built page — is no longer ignored once the revert
+      # takes those lines out, and the 'add -A' below would commit it
+      # into the revert, tracked from then on under an ignore that came
+      # back with the next insert. The eject began on a clean tree, so
+      # what is untracked here is exactly that. Read before the composes
+      # are rendered, which are the workbench's own writing.
+      UNCOVERED=$(git_read ls-files --others --exclude-standard --directory 2>/dev/null)
+      if [ -n "$UNCOVERED" ] && workspace_git clean -fdq; then
+        while IFS= read -r f; do
+          echo "Removed ${B}$f${R}: $FEATURE's lines in .gitignore covered it, and they went with the cartridge."
+        done <<< "$UNCOVERED"
       fi
 
       rebake_composes
@@ -3134,7 +3220,10 @@ if [ $# -gt 0 ]; then
         fi
 
       elif [[ "$DEPLOY_ARG" == "scaled" ]]; then
-        bake_scaled_compose && \
+        bake_scaled_compose
+        BAKED=$?
+        [ "$BAKED" -ne 4 ] || terminate "$COMPOSE_UNAVAILABLE"
+        [ "$BAKED" -eq 0 ] && \
         if workspace_dirty; then
           workspace_commit "Bake $SCALED_COMPOSE_FILE" && \
           echo "The scaled compose says what the project asks for now: the next up --deploy scaled brings it up."

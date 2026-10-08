@@ -92,6 +92,19 @@ Every cartridge is a directory `features/<feature>/` holding:
   starts from it: the register and the hero come from the need, the
   bodies and counts from the README. Every cartridge has one; the
   catalog test says so.
+* **A figure, or the decision that it has none** — not a file of the
+  cartridge's, and asked of every cartridge: when its papers are first
+  written, and again when a change gives it a runtime path it did not
+  have. Two questions, one per paper. *Does it add a path at runtime* —
+  a route, a container, a process, a file something else reads? Then
+  the README carries the mechanism as installed. *Does a decision turn
+  on who acts in whose turn, or on an edge that goes away?* Then the
+  DESIGN carries that comparison. A no to both is an answer, and the
+  usual one for a cartridge that only adds a dependency; a list of
+  options, a table of cases and a sequence of steps the reader runs
+  are prose, and stay prose. The figures are drawn in
+  [`assets/diagrams/`](../../../../assets/diagrams/), whose README
+  lists which cartridges have one and why.
 
 The cartridge directory holds only code. Everything that is not code
 lives under `priv/features/<feature>/` (never compiled, so files keep
@@ -114,7 +127,7 @@ Dep-only cartridges have no `priv/features/<feature>/` directory:
 | --- | --- | --- |
 | [credo](credo/) | `{:credo, "~> 1.7", only: [:dev, :test], runtime: false}`, and with `--githook` its line in the pre-commit hook (composes [precommit](precommit/)) | chiefs_setup |
 | [mock](mock/) | `{:mock, "~> 0.3", only: :test}` | chiefs_setup (also composed by health_endpoint and enhancements; coverage moved to test_doubles on 2026-09-20, and the last of the three takes it off the shelf) |
-| [test_doubles](test_doubles/) | `{:mimic, "~> 2.0", only: :test}`, `{:mox, "~> 1.2", only: :test}` or `{:hammox, "~> 1.0", only: :test}` with `--type-check`, by `--double` | chiefs_setup (coverage's `--exdoc` builds on it with Mimic since 2026-09-22, where it used to compose it) |
+| [test_doubles](test_doubles/) | `{:mimic, "~> 2.0", only: :test}`, `{:mox, "~> 1.2", only: :test}` or `{:hammox, "~> 1.0", only: :test}` with `--type-check`, by `--double` | chiefs_setup (coverage's `--md-report`, `--exdoc` then, builds on it with Mimic since 2026-09-22, where it used to compose it) |
 | [exdebug](exdebug/) | `{:ex_debug, "~> 1.0"}` | chiefs_setup |
 | [dashboard_extras](dashboard_extras/) | `:os_mon` in `extra_applications`, and the extras of the project's database: `ecto_psql_extras`, `ecto_mysql_extras` or `ecto_sqlite3_extras` (none on SQL Server or without a database) | chiefs_setup |
 | [test_data](test_data/) | `{:faker, "~> 0.19", only: :test}` and, by the line: on Ecto `{:ex_machina, "~> 2.8", only: :test}`, `test/support/factory.ex` and the test that inserts every factory; on Ash `test/support/generator.ex` (`Ash.Generator`) | no one (`wb.sh add test_data`) |
@@ -292,6 +305,25 @@ to run once the patch set is applied — every Ash package carries its
 own installer, and the cartridge writes no file itself. Installed by
 hand with `wb.sh add ash`.
 
+[mishka_chelekom](mishka_chelekom/) queues a library's own command
+too: [Mishka Chelekom](https://mishka.tools/chelekom)'s components,
+generated into `lib/<app>_web/components/` by
+`mix mishka.ui.gen.components --import --helpers --global`, all 74 or
+the ones `--components` names — completed with what each needs and
+with the eight that stand in for `CoreComponents` — and, with
+`--no-daisy`, daisyUI taken out of the project: its plugins, its
+dependency, and its classes in the two pages `phx.new` wrote. The
+components are formatted (`--no-format` leaves them as generated), and
+`--mcp` forwards the library's MCP server in the router, at a path of
+its own (`--mcp-path`, `/mishka-chelekom/mcp`) —
+a door for a client, whose address the console fills with the
+published port, and plants `mix chelekom.mcp.json`,
+the project's own task that writes `.mcp.json` with that address. The
+one dependency it writes itself is `{:mishka_chelekom, "~> 0.0.9",
+only: :dev}`, the mark the ash cartridge's `--components
+mishka_chelekom` leaves too. Installed by hand with `wb.sh add
+mishka_chelekom`.
+
 [specdd](specdd/) — *pending*: designed, not installable yet — puts
 [SpecDD](https://specdd.ai) on a stock project: what `specdd init`
 writes (the bootstrap chain, the `AGENTS.md` pointer, `CLAUDE.md`),
@@ -328,9 +360,10 @@ Box cover art for the cartridges — the fixed elements, the per-cartridge
 slots and the prompt template — lives with the art it produces, in
 [`assets/covers/`](../../../../assets/covers/). A cartridge that adds a
 path at runtime carries a figure of it in its README (the mechanism as
-installed) or its DESIGN (a comparison the prose cannot hold); those are
-drawn in [`assets/diagrams/`](../../../../assets/diagrams/), which says
-which cartridges have one and why.
+installed) or its DESIGN (a comparison the prose cannot hold) — the
+question is part of the [anatomy](#anatomy), asked of every cartridge;
+those are drawn in [`assets/diagrams/`](../../../../assets/diagrams/),
+which says which cartridges have one and why.
 
 ## The manifest (`WorkbenchIgniter.Feature` behaviour)
 

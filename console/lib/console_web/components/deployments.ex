@@ -102,6 +102,9 @@ defmodule ConsoleWeb.Deployments do
         why: @stale_why,
         targets: @targets,
         empty: empty,
+        # The picked row's, for the foot's Up: nil when it can go up.
+        picked_unavailable:
+          (Enum.find(assigns.rows, &(&1.deploy == assigns.pickname)) || %{})[:unavailable],
         not_baked:
           if(empty,
             do: "the workspace is empty: Deploy → Project creates one",
@@ -149,7 +152,19 @@ defmodule ConsoleWeb.Deployments do
                     <b>{d.deploy}</b>
                   </label>
                   <p class="what">{@targets[d.deploy]}</p>
-                  <.chip :if={d.deploy == "scaled" and !@clustering} class="warn">
+                  <%!-- A deployment the project cannot have stays on its
+                        row, switched off, with the reason its cartridge
+                        gives said in full: it is why the row's verbs
+                        are unlit, and the reader should not have to
+                        hover one to learn it. --%>
+                  <p :if={d.unavailable} class="what">
+                    <.chip class="off">not available</.chip>
+                    {d.unavailable}
+                  </p>
+                  <.chip
+                    :if={d.deploy == "scaled" and !@clustering and !d.unavailable}
+                    class="warn"
+                  >
                     no clustering: replicas run isolated
                   </.chip>
                   <div :if={d.deploy == "scaled"} class="opts">
@@ -166,10 +181,11 @@ defmodule ConsoleWeb.Deployments do
                       open={@deploy == d.deploy}
                       why={
                         !d.baked &&
-                          if(@empty,
-                            do: @not_baked,
-                            else: "not baked: no #{d.file} in this workspace — #{@not_baked}"
-                          )
+                          cond do
+                            @empty -> @not_baked
+                            d.unavailable -> d.unavailable
+                            true -> "not baked: no #{d.file} in this workspace — #{@not_baked}"
+                          end
                       }
                     />
                     <%!-- The file's state and its drift are one reading
@@ -178,8 +194,11 @@ defmodule ConsoleWeb.Deployments do
                           words come back only when the file drifted in
                           something neither names. --%>
                     <span class={["state", @stale && "stale"]} title={@stale && @why}>
-                      <.chip :if={!d.baked} class="off" title={@not_baked}>
+                      <.chip :if={!d.baked && !d.unavailable} class="off" title={@not_baked}>
                         not baked
+                      </.chip>
+                      <.chip :if={!d.baked && d.unavailable} class="off" title={d.unavailable}>
+                        no file
                       </.chip>
                       <span
                         :if={d.baked && (d.stray != [] or d.missing != [])}
@@ -255,8 +274,15 @@ defmodule ConsoleWeb.Deployments do
                       baked={d.baked}
                       extra={(d.deploy == "scaled" && @scaled_extra) || ""}
                       form="deploy-pick"
+                      unavailable={d.unavailable}
                     />
-                    <.build_button name={d.deploy} status={@status} busy={@busy} form="deploy-pick" />
+                    <.build_button
+                      name={d.deploy}
+                      status={@status}
+                      busy={@busy}
+                      form="deploy-pick"
+                      unavailable={d.unavailable}
+                    />
                   </div>
                 </td>
               </tr>
@@ -316,6 +342,7 @@ defmodule ConsoleWeb.Deployments do
               cond do
                 @busy -> "a job is running"
                 @empty -> "the workspace is empty: create a project first"
+                @picked_unavailable -> @picked_unavailable
                 @running == @pickname -> "#{@running} is up: Stop and Down are under this"
                 true -> nil
               end

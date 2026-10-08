@@ -1,0 +1,64 @@
+Manual plate — drawn from the hero, not from an era block: the front
+is outside the repertoire (the cover record's row), so there is no era
+block to cut. The reference image sent with this text is art/hero.jpg,
+the front of the same box; the plate is the back of that box, in the
+same painting. The plate carries nothing lettered: the copy, the
+frames, the screenshots, the name lozenge, the install command and the
+seal are all composited by `covers.py back`.
+
+Every position is written in words. The front's first take drew its
+decimal positions on the face as dimension figures (`cover-1`).
+
+The generator may still have the front hero's 4:5 selected: clear it,
+so the prompt's 5:7 decides (test_data's first plate came back 4:5).
+
+--- change 1, with art/hero.jpg as the reference ---
+
+Draw the back face of the box whose front is this picture, in exactly
+this painting: the same plain dark steel floor that lies under the
+title at the foot of the front — one smooth unbroken plate of dark
+steel with a dull even sheen and a fine brushed grain, painted the
+same soft way — a little lighter toward the middle of the face and
+darkening evenly toward the edges.
+
+Flat cover illustration filling the entire image edge to edge, all of
+it in one plane: the four edges of the image are the four edges of the
+illustration, and the illustration is all there is — not a product
+photograph, not a box or a board: no bevel, no lip, no rim of light, no
+edge, no shadow, no surface behind it, no margin of any colour around
+it. Proportions 5:7 portrait. Every position below is measured from
+the edges of the image. Elixir violet (#4B275F) is the dominant colour
+of the illustration.
+
+This face carries no subject: no sparrow in colour, no bench, no maze,
+no walls, no corridor, no tiles, no glowing slab, no figure, no picture
+of anything. The face is the front's plain steel floor, even across
+the whole face, painted in deep Elixir violet where the front's is
+near-black: the violet of #4B275F at the middle of the face, deepening
+to a violet near black at the four edges, the same fine brushed grain
+throughout. Nothing on the face is lettered: no title, no caption, no
+signature, no placeholder text, no glyphs, no numbers, no words of any
+kind anywhere on the face.
+
+Across the middle of the face the plate continues, bare, and one mark
+is engraved into it as a watermark, centred on the width, its centre
+at the middle of the height, a fifth of the width wide: one small
+sparrow seen straight on, drawn in thin outline — a round body, a
+small dome of a head, two dots for eyes and a short beak between them,
+one wing folded at each side — perched on one short straight
+horizontal bar, and nothing else. It is a step darker than the plate
+around it, barely visible, a watermark rather than a print, and the
+one mark on this face. It carries no lettering.
+
+Along the foot of the face, a band of the same plate a step darker
+than the face, a violet near black, with nothing on it: it starts a
+fifteenth of the height above the bottom edge and runs to the bottom
+edge of the image, and from the left edge to the right edge — the last
+thing on the face in every direction, with the plate above it.
+
+Every mark on the face is painted material, and the marks named above
+are all of them.
+
+Accent: the front's — the warm amber of the lit corridor and its
+tiles; nothing on this face carries it, and nothing else on this face
+has a colour of its own.

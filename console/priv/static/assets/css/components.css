@@ -56,18 +56,19 @@
                     more (2026-09-22 18:18: a page is read against the project
                     of that moment, and an hour alone left the day to be
                     guessed; the offset it carried said nothing the reader did
-                    not know, and went on 2026-09-25; that there IS a stamp is
-                    what says it was built) — never knocked, it answers with the app
-                    down. After the reading, the one thing to do: .read.build
-                    — *build* while there is no page, *rebuild* once
-                    there is, which the stamp beside it already says,
-                    a button on the same plate, which runs the command the
-                    cartridge names (./wb.sh mix docs) — alone while nothing
-                    is built, beside the stamp once it is, since a page is
-                    written again as often as the project moves (2026-09-25).
-                    The only door that does something other than open. Because
-                    a button may not sit inside an <a>, the plate is a span
-                    and the link is its name and address, laid flat on it.
+                    not know, and went on 2026-09-25) — never knocked, it
+                    answers with the app down. Its file is said in a row of
+                    its own under the address (.two, since 2026-10-07): the
+                    stamp, with a mark — full once written, hollow and alone
+                    while there is no page — and the command that writes it,
+                    .read.build, named as the project runs it (mix docs), a
+                    button that runs it (./wb.sh mix docs). It read *build*
+                    and *rebuild* in one row with the address until then; the
+                    mark says which, and the command says what. A door for a
+                    client with a task that writes its file has the same row.
+                    Because a button may not sit inside an <a>, the plate is
+                    a span and the link is its name and address, laid flat on
+                    it.
      The whole plate is the hit area, not the words on it: the link's
      name stretches over the plate (`>a>b::after`), so the square, the
      padding and the reading open it too, and only the build button
@@ -228,6 +229,19 @@
      themes, which is the same split the scrollbars already make. Six
      declarations said this before: .note doing double duty, td.muted,
      two .empty, a .missing with its border, and two ::before contents.
+   .field-error — what a field says when its value will not do: one
+     line under the field, in --bad, with the × before it, and the
+     field itself marked with aria-invalid, which rings it in the same
+     ink. A line and not a paragraph: it says what is wrong with the
+     value, where the reader is looking when they can mend it; the why
+     at length is the CLI's and the papers'. It goes under the field
+     that is edited and nowhere else — a screen that only reads the
+     value says it with a chip (.chip.bad) and the way to the field.
+     Not .note and not .help: those are the voice of an aside, and an
+     error set in it reads as the hint of the field beside it (the
+     project's name ending in Web, 2026-10-06). The ring is an outline
+     drawn over the field's own border, so it holds whatever rule gave
+     the field that border.
    .fetch — a field whose values are not the workbench's. They come from
      outside it, over the network, and somebody has to go and get them:
      the square button flush against the field is who goes. It takes its
@@ -329,7 +343,13 @@
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .site-ref .mark.light{display:none}:root:not([data-theme="light"]) .site-ref .mark.dark{display:inline}}
 :root[data-theme="dark"] .site-ref .mark.light{display:none}
 :root[data-theme="dark"] .site-ref .mark.dark{display:inline}
-.door-ref{position:relative;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;color:var(--ink);text-decoration:none;padding:3px 9px;border:1px solid var(--line);border-radius:2px;background:none}
+/* The plate's side padding is said once (--plate-x) and read by the
+   plate, by the first row of a plate of two, and by every cell on it,
+   so the two shapes cannot drift apart: they did, in the source, the
+   day the second was written. 6px, not the 9 it was: the layer's
+   drawing is 15px in a row of 24, 4.5px from the border above and
+   below it, and at 9 from the side it sat off its corner. */
+.door-ref{--plate-x:6px;--plate-icon:15px;--plate-dot:9px;position:relative;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;color:var(--ink);text-decoration:none;padding:3px var(--plate-x);border:1px solid var(--line);border-radius:2px;background:none}
 /* The link is the name and the address, laid flat on the plate: a button (build) may follow them, and no <a> may hold one. */
 .door-ref>a{display:contents;color:inherit;text-decoration:none;cursor:pointer}
 /* The whole plate opens it, not the two words on it (2026-09-26). The
@@ -348,7 +368,7 @@
 .door-ref:hover:not(.unlit),.door-ref:has(>a:focus-visible){border-color:var(--ink);outline:none}
 .door-ref>a:focus-visible{outline:none}
 /* The layer mark: a drawing from the sprite, saying which layer answers. Its shape says where a thing listens. Its colour says the plate is lit, and whose it is: a service's role's (--svc, said on the plate — the colour its button wears in Logs and in the Terminal), and the app's violet for a door and a page, which are no service's. An unlit plate's drawing is the label's ink, and dims with it. How what answers is doing is the reading's, never the drawing's. */
-.door-ref .layer{width:15px;height:15px;flex:none;color:var(--svc,var(--addr-lit))}
+.door-ref .layer{width:var(--plate-icon);height:var(--plate-icon);flex:none;color:var(--svc,var(--addr-lit))}
 .door-ref.unlit .layer{color:var(--muted)}
 /* The reading: one plate and one voice for every state a reader meets
    (2026-09-26) — a door's answer attached inside its border, a
@@ -362,11 +382,39 @@
 .read.busy::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex:none;animation:chip-pulse 1s infinite}
 /* Attached inside the border: the chip's plate behind the box's own line. */
 .door-ref:has(.read){padding-right:0}
-.door-ref .read{align-self:stretch;margin:-3px 0 -3px 1px;padding:3px 8px;border:0;border-left:1px solid var(--line);border-radius:0 2px 2px 0}
+.door-ref .read{align-self:stretch;margin:-3px 0 -3px 1px;padding:3px var(--plate-x);border:0;border-left:1px solid var(--line);border-radius:0 2px 2px 0}
 /* Two readings side by side (a stamp, then build) share one edge: the second gives the flex gap back. */
 .door-ref .read+.read{margin-left:-8px}
 .door-ref .read.build{border-top:0;border-right:0;border-bottom:0;cursor:pointer;color:var(--ink);text-transform:none}
 .door-ref .read.build:hover,.door-ref .read.build:focus-visible{background:var(--ink);color:var(--surface);outline:none}
+/* A door that depends on a file is a plate of two rows (.two), the
+   second flush under the first inside the one border: the address above
+   — the layer, the name, where it is, what the bell heard — and the file
+   below, in the plate's own cells: its stamp (.read.file, a mark and when
+   it was written; the mark alone and hollow while there is none, half
+   and in the warning's ink when the file fell behind), then
+   the command that writes it. The first row takes what the plate gives
+   its children: the padding, and the link stretched over the plate. */
+.door-ref.two{flex-direction:column;align-items:stretch;padding:0;gap:0}
+.door-ref.two>.row1{display:flex;align-items:center;gap:8px;padding:3px var(--plate-x)}
+.door-ref.two>.row1:has(.read){padding-right:0}
+.door-ref.two>.row1>a{display:contents;color:inherit;text-decoration:none;cursor:pointer}
+.door-ref.two>.row1>a>b::after{content:"";position:absolute;inset:0;border-radius:2px}
+.door-ref.two>.row1>a:focus-visible{outline:none}
+.door-ref.two:has(>.row1>a:focus-visible){border-color:var(--ink);outline:none}
+.door-ref.two>.row1 .read{margin-left:auto}
+.door-ref.two>.row2{display:flex;align-items:stretch;border-top:1px solid var(--line)}
+.door-ref.two>.row2 .read{flex:none;align-self:auto;margin:0;padding:3px var(--plate-x);border:0;border-right:1px solid var(--line);border-radius:0}
+.door-ref.two>.row2 .read.build{flex:1 1 auto;justify-content:flex-start;border-right:0}
+.door-ref.two>.row2 .read.file{position:relative;z-index:1;gap:6px;padding-inline:calc(var(--plate-x) + (var(--plate-icon) - var(--plate-dot))/2)}
+.door-ref.two>.row2 .read.file::before{content:"";width:var(--plate-dot);height:var(--plate-dot);border-radius:50%;background:currentColor;box-sizing:border-box;flex:none}
+.door-ref.two>.row2 .read.file.missing::before{background:none;border:2px solid currentColor}
+.door-ref.two>.row2 .read.file.behind::before{background:linear-gradient(90deg,currentColor 50%,transparent 50%);border:2px solid currentColor}
+/* With no page, what is unlit is the address: there is nothing to open.
+   The file's row is not — its command can be run, and a hollow mark is
+   a state of the file, not a control shut. */
+.door-ref.two.unlit{opacity:1;cursor:default}
+.door-ref.two.unlit>.row1{opacity:.45;cursor:not-allowed}
 .commit-ref{display:inline-block;font-family:var(--mono);font-size:11.5px;letter-spacing:0;text-transform:none;color:var(--ink);padding:1px 7px;border:1px solid var(--line);border-radius:2px;background:none;text-decoration:none;cursor:pointer}
 .commit-ref:hover,.commit-ref:focus-visible{border-color:var(--ink);outline:none}
 .chip{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;font-family:var(--mono);font-weight:500;font-size:11px;padding:2px 8px;border-radius:3px;border:0;background:var(--surface-2);color:var(--muted)}
@@ -385,6 +433,9 @@
 .fn{font-family:var(--mono);font-weight:500;color:var(--muted);margin-left:.4em}
 .fn-note{margin:8px 0 0;font-size:11.5px;line-height:1.5;color:var(--muted)}
 .fn-note .fn{margin:0 .4em 0 0}
+[aria-invalid="true"]:is(input,select,textarea){outline:1px solid var(--bad);outline-offset:-1px;box-shadow:inset 0 0 0 1px var(--bad)}
+.field-error{display:flex;gap:6px;align-items:center;margin:0;font-family:var(--serif);font-style:normal;font-size:13px;line-height:1.35;color:var(--bad)}
+.field-error svg{width:11px;height:11px;flex:none}
 .fetch{display:flex;align-items:stretch;gap:8px}
 .fetch>:first-child{flex:1;min-width:0;max-width:none}
 /* The square's size is the field's height: 2.5em of the field's type, 13px — the reload of a .fetch had it, and every square has it now, whole pixels so the mark sits centred. */

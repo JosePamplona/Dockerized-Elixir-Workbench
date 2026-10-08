@@ -99,7 +99,9 @@ defmodule WorkbenchIgniter.Features.Guidelines do
     {:ok, _} = Application.ensure_all_started(:req)
 
     try do
-      Igniter.create_new_file(igniter, @page, Req.get!(url).body, on_exists: :overwrite)
+      Igniter.create_new_file(igniter, @page, Req.get!(url, req_options()).body,
+        on_exists: :overwrite
+      )
     rescue
       error ->
         # The page is listed in the mix.exs docs extras: a placeholder
@@ -117,6 +119,13 @@ defmodule WorkbenchIgniter.Features.Guidelines do
         )
     end
   end
+
+  # What the download is made with, beyond the URL: nothing, outside a
+  # test. The package's tests put a plug here (`test_helper.exs`), so
+  # the request is answered in the test's own process and no socket is
+  # opened, and turn Req's retries off, which wait seven seconds on a
+  # download that is meant to fail.
+  defp req_options, do: Application.get_env(:workbench_igniter, :guidelines_req, [])
 
   # The two lists exdoc's `docs:` block keeps: the extras themselves and
   # the group they are shown under — exdoc's to write into.

@@ -117,8 +117,12 @@ defmodule WorkbenchIgniter.Features.Coverage do
       doors: [
         # The door follows the report: `{output_dir}` is what `state/1`
         # reads off coveralls.json, so a moved report is still found.
-        {"coverage", {:output, "{output_dir}", "excoveralls.html"},
-         build: [{"cover", when: {:option, :md_report}}, "coveralls.html"]}
+        {
+          "coverage",
+          {:output, "{output_dir}", "excoveralls.html"},
+          # The report is of the tests run over the code: either moves it.
+          build: [{"cover", when: {:option, :md_report}}, "coveralls.html"], from: ~w(lib test)
+        }
       ]
     ]
 

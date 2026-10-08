@@ -425,6 +425,7 @@ defmodule ConsoleWeb.Record do
     %{
       label: d["label"],
       path: output.dir <> "/",
+      filed: page_filed(status["workspace"], output, built, o["from"] || []),
       kind: "output",
       port: nil,
       href: if(is_nil(why), do: "http://localhost:#{port}/#{d["label"]}/"),
@@ -458,17 +459,189 @@ defmodule ConsoleWeb.Record do
 
     href = if is_nil(why) and port, do: "http://localhost:#{port}#{path}"
 
+    Map.merge(
+      %{
+        label: d["label"],
+        path: path,
+        kind: "route",
+        port: port,
+        href: href,
+        why: why,
+        read: read(reads, href),
+        build: nil,
+        filed: nil,
+        client: nil
+      },
+      for_client(status, c, d, port, path, read(reads, href))
+    )
+  end
+
+  # The page is its file: missing, or written — and, where the
+  # cartridge says what it is made from, up to date or behind: behind
+  # when a file among its sources is newer than the page. That is what
+  # the dates say and no more — a file touched and not changed counts,
+  # and a dependency that moved does not — so the word is *behind*, and
+  # the reason how many files.
+  defp page_filed(_root, output, nil, _from),
+    do: %{file: Path.join(output.dir, output.index), written: nil, state: "missing", why: nil}
+
+  defp page_filed(root, output, built, from) do
+    file = Path.join(output.dir, output.index)
+
+    {state, why} =
+      case newer(root, from, Path.join([root, output.dir, output.index])) do
+        nil -> {"written", nil}
+        0 -> {"up to date", nil}
+        1 -> {"behind", "1 file changed since"}
+        n -> {"behind", "#{n} files changed since"}
+      end
+
+    %{file: file, written: built_when(built), state: state, why: why}
+  end
+
+  # How many files under `from` — files, or directories read whole —
+  # changed since `page` was written; `nil` when there is nothing to
+  # compare with.
+  #
+  # The dates say which files to look at, and git says whether they
+  # changed. A date alone is no witness: on 2026-10-07 `mix cover`
+  # touched a source of the project while it ran, half a minute after
+  # `mix docs` had written the site, and by the dates the site was
+  # behind a file nobody had edited. So a file newer than the page
+  # counts only when git has it changed in the tree, or committed since
+  # the page was written. No file newer, and git is not asked at all;
+  # no repository, and the dates are all there is.
+  defp newer(root, from, page) when is_binary(root) and from != [] do
+    case File.stat(page, time: :posix) do
+      {:ok, %File.Stat{mtime: written}} ->
+        later =
+          from
+          |> Enum.flat_map(&sources(root, &1))
+          |> Enum.filter(fn path ->
+            match?(
+              {:ok, %File.Stat{type: :regular, mtime: m}} when m > written,
+              File.stat(path, time: :posix)
+            )
+          end)
+
+        changed(root, from, written, later)
+
+      _ ->
+        nil
+    end
+  end
+
+  defp newer(_root, _from, _page), do: nil
+
+  defp changed(_root, _from, _written, []), do: 0
+
+  defp changed(root, from, written, later) do
+    case moved_since(root, from, written) do
+      :unknown -> length(later)
+      moved -> Enum.count(later, &MapSet.member?(moved, Path.relative_to(&1, root)))
+    end
+  end
+
+  # The paths under `from` that git has changed in the tree, tracked or
+  # not, or committed since `written`.
+  defp moved_since(root, from, written) do
+    git = fn args ->
+      System.cmd("git", ["-C", root, "-c", "core.quotePath=false" | args] ++ ["--" | from],
+        stderr_to_stdout: true
+      )
+    end
+
+    with {dirty, 0} <- git.(~w(status --porcelain --no-renames --untracked-files=all)),
+         {committed, 0} <- git.(["log", "--since=@#{written}", "--name-only", "--format="]) do
+      dirty = for line <- String.split(dirty, "\n", trim: true), do: String.slice(line, 3..-1//1)
+      MapSet.new(dirty ++ String.split(committed, "\n", trim: true))
+    else
+      _ -> :unknown
+    end
+  end
+
+  # A source of the project's own: a path that does not climb out of it,
+  # itself when a file, everything under it when a directory.
+  defp sources(root, rel) do
+    with {:ok, safe} when safe != "" <- Path.safe_relative(rel),
+         path = Path.join(root, safe),
+         true <- File.exists?(path) do
+      if File.dir?(path), do: Path.wildcard(Path.join(path, "**/*")), else: [path]
+    else
+      _ -> []
+    end
+  end
+
+  # What a door for a client has over a page's route, while its
+  # condition holds: any answer read as the door answering, the
+  # project's task that sets a client up, the state of the file that
+  # task writes, and the lines a client is given. Shut, it gives nothing.
+  defp for_client(_status, _c, %{"client" => nil}, _port, _path, _read), do: %{}
+
+  defp for_client(status, c, %{"client" => lines} = d, port, path, read) when is_list(lines) do
+    holds = Cartridges.holds?(status, c, d)
+    address = port && "http://localhost:#{port}#{path}"
+
     %{
-      label: d["label"],
-      path: path,
-      kind: "route",
-      port: port,
-      href: href,
-      why: why,
-      read: read(reads, href),
-      build: nil
+      read: answers(read),
+      build: if(holds, do: build_task(status, c, d)),
+      filed: if(holds && d["writes"], do: filed(status["workspace"], d["writes"], address)),
+      client: given(lines, port, path, holds)
     }
   end
+
+  defp for_client(_status, _c, _d, _port, _path, _read), do: %{}
+
+  # A door for a client: its address is told, not opened, and the
+  # cartridge's lines are filled with it — while the port is known, the
+  # app up or not, since the line is kept by the client. A door shut by
+  # its condition has nothing to give yet.
+  defp given(_lines, port, _path, holds) when is_nil(port) or not holds, do: []
+
+  defp given(lines, port, path, _holds) do
+    for %{"label" => label, "line" => line} <- lines,
+        do: {label, String.replace(line, "{url}", "http://localhost:#{port}#{path}")}
+  end
+
+  # The file a door's task writes, as the project has it now: missing;
+  # up to date while it carries the door's address; behind once the
+  # address moved — another port after a bake — and the file still
+  # names the old one. A comparison of text: the console does not read
+  # the file as anything. With no address to compare (no port known)
+  # it is written, and no more is said.
+  defp filed(root, file, address) when is_binary(root) do
+    with {:ok, rel} when rel != "" <- Path.safe_relative(file),
+         built when not is_nil(built) <-
+           Reports.built(root, %{dir: Path.dirname(rel), index: Path.basename(rel)}),
+         {:ok, content} <- File.read(Path.join(root, rel)) do
+      {state, why} =
+        cond do
+          is_nil(address) ->
+            {"written", nil}
+
+          String.contains?(content, address) ->
+            {"up to date", nil}
+
+          true ->
+            {"behind",
+             "the address is #{String.replace_prefix(address, "http://localhost", "")} now"}
+        end
+
+      %{file: rel, written: built_when(built), state: state, why: why}
+    else
+      _ -> %{file: file, written: nil, state: "missing", why: nil}
+    end
+  end
+
+  defp filed(_root, file, _address), do: %{file: file, written: nil, state: "missing", why: nil}
+
+  # What a call to an endpoint says: it is called as a page is, and
+  # answers a page's question with a refusal — MCP's 406 to a GET with
+  # no stream accepted. The refusal is the endpoint's own, so any answer
+  # is the door answering; only silence, or the app failing, is not.
+  defp answers({_code, class}) when class in ["good", "warn"], do: {"answers", "good"}
+
+  defp answers(read), do: read
 
   # The first command whose condition holds — coverage's `mix cover`
   # where the docs site takes the report, ExCoveralls' own task
@@ -738,7 +911,8 @@ defmodule ConsoleWeb.Record do
   @doc """
   The three deployments, off the status: each compose file baked, in
   sync with what the cartridges ask for (nil when the status is a fast
-  one, without the project), up or down, and its services as ports.
+  one, without the project), up or down, and its services as ports —
+  or `unavailable`, with the reason, when the project cannot have it.
   What the Record's table shows, and the rail's Deployments too.
   """
   def deployments(status), do: deployments(status, status["project"] || %{})
@@ -790,6 +964,9 @@ defmodule ConsoleWeb.Record do
       in_sync: d["in_sync"],
       stray: d["stray"] || [],
       missing: d["missing"] || [],
+      # Why the project cannot have this deployment, in its cartridge's
+      # words (`WorkbenchIgniter.Deployments`); nil when it can.
+      unavailable: d["unavailable"],
       status: deploy_status(baked, up, present),
       services: Enum.flat_map(services, &service_doors(&1, published[&1], at))
     }

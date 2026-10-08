@@ -349,8 +349,8 @@ defmodule ConsoleWeb.BoxInstallTest do
     assert archived =~ ~s(<div class="cmd">./wb.sh add --archived ecto</div>)
   end
 
-  # A cartridge another box's installer brings in (coverage --exdoc
-  # brings test_doubles) has no insert of its own, and used to read as
+  # A cartridge another box's installer brings in (as coverage --exdoc
+  # brought test_doubles, in the projects of then) has no insert of its own, and used to read as
   # inserted by hand: the commit that carries its files is the other
   # box's, and the box says so.
   test "a cartridge that rode in with another box names the insert that carries it" do
@@ -800,6 +800,101 @@ defmodule ConsoleWeb.BoxInstallTest do
     refute html =~ "Comma-separated"
   end
 
+  describe "a long list of names" do
+    defp components(docs) do
+      values =
+        for n <- 1..14 do
+          %{"value" => "piece_#{n}", "doc" => docs.(n), "requires" => []}
+        end
+
+      %{
+        "name" => "mishka_chelekom",
+        "options" => [
+          %{
+            "name" => "components",
+            "type" => "csv",
+            "multiple" => true,
+            "open" => true,
+            "note" => "Every component is drawn at https://mishka.tools/chelekom.",
+            "choices" => [
+              %{"group" => "general", "values" => Enum.take(values, 9)},
+              %{"group" => "forms", "values" => Enum.drop(values, 9)}
+            ]
+          }
+        ]
+      }
+    end
+
+    @clean %{"exists" => true, "git" => %{"repo" => true, "clean" => true}}
+
+    test "a value documented by an address alone carries it beside its name, not under it" do
+      html = screen(components(&"https://mishka.tools/chelekom/docs/piece-#{&1}"), @clean)
+
+      assert html =~
+               ~r{<span class="name">piece_3</span>\s*<a[^>]*class="page"[^>]*href="https://mishka.tools/chelekom/docs/piece-3"[^>]*target="_blank"[^>]*>↗</a>}s
+
+      refute html =~ ~s(class="doc of")
+      # The note under them all is still a sentence, with its address a link.
+      assert html =~
+               ~r{<p class="doc">Every component is drawn at <a href="https://mishka.tools/chelekom"}
+    end
+
+    test "is set in columns, each section its own" do
+      html = screen(components(fn _ -> nil end), @clean)
+
+      assert length(Regex.scan(~r/<div class="vals cols">/, html)) == 2
+    end
+
+    test "keeps its lines when a value has a sentence under it" do
+      html = screen(components(fn n -> if n == 2, do: "the second one" end), @clean)
+
+      refute html =~ "vals cols"
+      assert html =~ ~s(class="doc of">the second one</p>)
+    end
+
+    test "a section's name ticks it whole, and counts what is ticked in it" do
+      box = components(fn _ -> nil end)
+      html = screen(box, @clean)
+
+      assert html =~
+               ~r{<button[^>]*class="gl all"[^>]*phx-click="section"[^>]*phx-value-option="components"[^>]*phx-value-group="forms"[^>]*aria-pressed="false"[^>]*>\s*forms\s*<span class="n">0 of 5</span>}s
+
+      args = Box.section(box, %{}, @clean, "components", "forms")
+      assert args == %{"components" => ~w(piece_10 piece_11 piece_12 piece_13 piece_14)}
+
+      assert screen(box, @clean, args: args) =~
+               ~r{aria-pressed="true"[^>]*>\s*forms\s*<span class="n">5 of 5</span>}s
+    end
+
+    test "pressed again it clears its own, and leaves the other sections as they are" do
+      box = components(fn _ -> nil end)
+
+      args = %{"components" => ~w(piece_1 piece_12)}
+      all = Box.section(box, args, @clean, "components", "forms")
+
+      assert Enum.sort(all["components"]) ==
+               Enum.sort(~w(piece_1 piece_10 piece_11 piece_12 piece_13 piece_14))
+
+      assert Box.section(box, all, @clean, "components", "forms") == %{
+               "components" => ["piece_1"]
+             }
+
+      # A name that is no section of the option changes nothing.
+      assert Box.section(box, args, @clean, "components", "nope") == args
+    end
+
+    test "a short one is read down, as it was" do
+      box =
+        update_in(
+          components(fn _ -> nil end),
+          ["options", Access.at(0), "choices"],
+          &Enum.take(&1, 1)
+        )
+
+      refute screen(box, @clean) =~ "vals cols"
+    end
+  end
+
   test "an address in a value's doc is a link, named by its host" do
     box = %{
       "name" => "ash",
@@ -993,6 +1088,116 @@ defmodule ConsoleWeb.BoxInstallTest do
 
     refute html =~ "tag advises"
     refute html =~ "only esbuild brings"
+  end
+
+  describe "a box whose one piece left to add is a switch" do
+    @pieces %{
+      "name" => "pieces",
+      "rerun" => "adds",
+      "adds" => ["mcp"],
+      "requires" => [],
+      "options" => [
+        %{"name" => "mcp", "type" => "boolean", "default" => false, "requires" => []},
+        %{"name" => "format", "type" => "boolean", "default" => true, "requires" => []}
+      ]
+    }
+
+    defp pieces_in(state),
+      do: with_cartridges([%{"name" => "pieces", "installed" => true, "state" => state}])
+
+    test "in with the switch on: nothing left to add, and the switch is shut on" do
+      html = screen(@pieces, pieces_in(%{"mcp" => true}))
+
+      assert html =~ "nothing left to add"
+      assert html =~ ~r{class="btn primary unlit"}
+      assert html =~ ~r{id="opt-mcp"[^>]*checked[^>]*disabled}
+      assert html =~ "in the project already"
+    end
+
+    test "in with the switch off: it is the piece still to add, lit" do
+      html = screen(@pieces, pieces_in(%{"mcp" => false}))
+
+      refute html =~ "nothing left to add"
+      refute html =~ ~r{id="opt-mcp"[^>]*disabled}
+      assert html =~ "Add to cartridge"
+    end
+
+    test "a switch that builds on what the project lacks is out of reach: nothing to add either" do
+      box =
+        put_in(@pieces, ["options", Access.at(0), "requires"], ["precommit"])
+        |> put_in(["options", Access.at(0), "conditions"], %{})
+
+      status =
+        with_cartridges([
+          %{"name" => "pieces", "installed" => true, "state" => %{"mcp" => false}},
+          %{"name" => "precommit", "installed" => false}
+        ])
+
+      assert screen(box, status) =~ "nothing left to add"
+    end
+
+    # A detail of the switch: where it goes, said only with it.
+    @detailed update_in(@pieces, ["options"], fn options ->
+                options ++
+                  [
+                    %{
+                      "name" => "mcp_path",
+                      "type" => "string",
+                      "default" => "/pieces/mcp",
+                      "of" => "mcp",
+                      "requires" => []
+                    }
+                  ]
+              end)
+
+    test "a detail is unlit while its switch is off, and says why" do
+      html = screen(@detailed, @clean)
+
+      assert html =~ ~r{id="opt-mcp_path"[^>]*disabled}
+      assert html =~ ~r{<span class="tag lacks"[^>]*>only with --mcp</span>}
+      # Typed or not, it is not on the line while the switch is off.
+      assert Box.argv(@detailed, %{"mcp_path" => "/ai/pieces"}) == []
+      assert Box.argv(@detailed, %{"mcp" => "off", "mcp_path" => "/ai/pieces"}) == []
+    end
+
+    test "with its switch on it is a field, and goes on the line beside it" do
+      args = %{"mcp" => "on", "mcp_path" => "/ai/pieces"}
+      html = screen(@detailed, @clean, args: args)
+
+      refute html =~ ~r{id="opt-mcp_path"[^>]*disabled}
+      refute html =~ "only with --mcp"
+      assert Box.argv(@detailed, args) == ["--mcp", "--mcp-path", "/ai/pieces"]
+      # Its default is not said, as no default is.
+      assert Box.argv(@detailed, %{"mcp" => "on"}) == ["--mcp"]
+    end
+
+    test "on a box that is in, the detail follows the switch it still adds" do
+      # The switch is the piece left to add: off, its detail is unlit…
+      html = screen(@detailed, pieces_in(%{"mcp" => false}))
+      assert html =~ ~r{id="opt-mcp_path"[^>]*disabled}
+      assert html =~ "only with --mcp"
+
+      # …on, the detail can be said, though `adds` names the switch alone.
+      html = screen(@detailed, pieces_in(%{"mcp" => false}), args: %{"mcp" => "on"})
+      refute html =~ ~r{id="opt-mcp_path"[^>]*disabled}
+    end
+
+    test "once the switch is in, its detail went in with it, and the box is full" do
+      html = screen(@detailed, pieces_in(%{"mcp" => true, "mcp_path" => "/ai/pieces"}))
+
+      assert html =~ ~r{id="opt-mcp_path"[^>]*value="/ai/pieces"[^>]*disabled}s
+      assert html =~ "went in with --mcp"
+      assert html =~ "nothing left to add"
+    end
+
+    test "with a field of text among its pieces a box is never full" do
+      box =
+        @pieces
+        |> Map.put("adds", ["mcp", "path"])
+        |> update_in(["options"], &(&1 ++ [%{"name" => "path", "type" => "string"}]))
+
+      refute screen(box, pieces_in(%{"mcp" => true})) =~ "nothing left to add"
+    end
   end
 
   test "rerunnable with a value still free: Add to cartridge, lit" do

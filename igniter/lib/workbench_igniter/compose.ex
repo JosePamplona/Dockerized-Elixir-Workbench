@@ -113,7 +113,9 @@ defmodule WorkbenchIgniter.Compose do
 
   @doc """
   The plan a `mix workbench.compose` argv describes, or why it does not
-  — or, as `{:needs, needs}`, the ports the host still has to choose.
+  — or, as `{:needs, needs}`, the ports the host still has to choose,
+  or, as `{:unavailable, reason}`, why this project has no such
+  deployment (`unavailable/2`).
 
   The services come from `--services` when it is there — names
   separated by commas, `""` or `none` for no service at all — and from
@@ -122,7 +124,10 @@ defmodule WorkbenchIgniter.Compose do
   accepted here so one argv serves both.
   """
   @spec plan_from_argv([String.t()], (-> [String.t()])) ::
-          {:ok, Plan.t()} | {:needs, [need()]} | {:error, String.t()}
+          {:ok, Plan.t()}
+          | {:needs, [need()]}
+          | {:unavailable, String.t()}
+          | {:error, String.t()}
   def plan_from_argv(argv, read_services \\ &project_services/0) do
     case OptionParser.parse(argv, strict: @switches) do
       {opts, [], []} -> build(opts, read_services)
@@ -256,7 +261,8 @@ defmodule WorkbenchIgniter.Compose do
   which `--no-balancer` leaves out); `replicas` says the scaled file's
   `app1`…`appN` stand where the pod's `app` is. What
   `WorkbenchIgniter.Deployments` compares each baked file against.
-  A set of services no file can be made of declares nothing.
+  A set of services no file can be made of declares nothing, and
+  neither does a deployment the project cannot have.
   """
   @spec service_names(Plan.deploy(), [String.t()]) :: %{
           names: [String.t()],
@@ -281,13 +287,40 @@ defmodule WorkbenchIgniter.Compose do
         {:ok, services} ->
           Enum.flat_map(services, &ComposeFile.services("services:\n" <> &1.body))
 
-        {:error, _} ->
+        {refused, _} when refused in [:error, :unavailable] ->
           []
       end
 
     if deploy == :scaled,
       do: %{names: contributed, optional: ["balancer"], replicas: true},
       else: %{names: ["pod", "app"] ++ contributed, optional: [], replicas: false}
+  end
+
+  @doc """
+  Why a project that asks for `services` has no `deploy` deployment, in
+  the words of the cartridge that says so (`compose/1` answering
+  `{:unavailable, reason}`), or `nil` when it has one. The answer the
+  bake gets for the same question (`plan_from_argv/2`), asked without a
+  plan: what `WorkbenchIgniter.Deployments` reports beside each file.
+  """
+  @spec unavailable(Plan.deploy(), [String.t()]) :: String.t() | nil
+  def unavailable(deploy, services) when deploy in [:dev, :prod, :scaled] do
+    # The answer does not depend on the values; any plan of this shape gives it.
+    plan = %Plan{
+      deploy: deploy,
+      services: services,
+      app_name: "app",
+      image: "app",
+      dockerfile: "Dockerfile",
+      uid: 0,
+      gid: 0,
+      app_port: 0
+    }
+
+    case WorkbenchIgniter.Features.compose(context(plan)) do
+      {:unavailable, reason} -> reason
+      _ -> nil
+    end
   end
 
   @doc """
@@ -351,7 +384,7 @@ defmodule WorkbenchIgniter.Compose do
     }
 
     case feature.compose(context(plan)) do
-      {:error, _} -> []
+      {refused, _} when refused in [:error, :unavailable] -> []
       contributed -> contributed
     end
   end
@@ -372,8 +405,9 @@ defmodule WorkbenchIgniter.Compose do
   end
 
   # What the deployment's skeleton reads and has no default for; then
-  # what the cartridges refuse (two databases, replicas on a file); then
-  # the ports their services publish, each given, kept, or needed.
+  # what the cartridges refuse (two databases) or say the project has
+  # no deployment for (replicas on SQLite); then the ports their
+  # services publish, each given, kept, or needed.
   defp check(%Plan{} = plan) do
     missing = Enum.filter(required(plan), &is_nil(Map.get(plan, &1)))
 
@@ -386,6 +420,7 @@ defmodule WorkbenchIgniter.Compose do
     else
       [_ | _] -> {:error, "missing: " <> Enum.map_join(missing, ", ", &"--#{flag(&1)}")}
       {:error, reason} -> {:error, reason}
+      {:unavailable, reason} -> {:unavailable, reason}
     end
   end
 
@@ -444,7 +479,8 @@ defmodule WorkbenchIgniter.Compose do
   end
 
   # What the cartridges' services contribute to this plan's file, in
-  # the file's order — or what one of them refuses.
+  # the file's order — or what one of them refuses, or why the project
+  # has no such deployment.
   defp contributions(%Plan{} = plan, host_ports) do
     with {:ok, services} <- WorkbenchIgniter.Features.compose(context(plan, host_ports)) do
       {:ok, services |> Enum.filter(&(plan.deploy in &1.deploys)) |> Enum.sort_by(& &1.position)}
@@ -468,7 +504,7 @@ defmodule WorkbenchIgniter.Compose do
       assigns = plan |> context(host_ports) |> Map.put(:slots, slots) |> Map.to_list()
       if plan.deploy == :scaled, do: scaled(assigns), else: pod(assigns)
     else
-      {:error, reason} -> raise ArgumentError, reason
+      {refused, reason} when refused in [:error, :unavailable] -> raise ArgumentError, reason
     end
   end
 end

@@ -110,6 +110,122 @@ defmodule ConsoleWeb.BackTest do
     assert render(view) =~ ~r{aria-selected="true"[^>]*>\s*README}
   end
 
+  test "a cartridge pressed in the workbench README opens over it, and Close leaves the README",
+       %{conn: conn} do
+    {:ok, view, html} = live(conn, "/deploy?wb=manual&paper=changelog")
+    render_patch(view, "/deploy?wb=manual&paper=readme")
+
+    assert html =~ "wb-booklet"
+    html = render(view)
+
+    assert html =~
+             ~r{<a href="\?box=k6&amp;screen=manual&amp;paper=changelog" data-patch[^>]*>CHANGELOG</a>}
+
+    # What the link's click sends (the Booklet hook): the box over the
+    # drawer, which stays in the address under it.
+    render_hook(view, "goto", %{"href" => "?box=k6&screen=manual&paper=changelog"})
+    assert_patch(view, "/deploy?wb=manual&box=k6&screen=manual&paper=changelog")
+
+    # Both on the page: the README as it was — `paper` is the box's now,
+    # and the drawer did not turn to its own changelog — out of reach
+    # under the box, and the box's Manual on its paper.
+    html = render(view)
+    assert html =~ ~r{<aside[^>]*aria-label="The workbench"[^>]*inert}
+    assert html =~ ~s(aria-label="The box in hand")
+    assert html =~ ~s(id="wb-booklet") and html =~ ~s(id="d-booklet")
+    assert html =~ "Two words are used through the rest of this document."
+
+    # The box's own links keep the drawer under it: another screen of
+    # the box, and Put back, which leaves the README.
+    assert html =~ ~s(href="/deploy?wb=manual&amp;box=k6&amp;screen=install")
+    assert html =~ ~r{<a[^>]*href="/deploy\?wb=manual"[^>]*>\s*Put back}
+
+    render_click(view, "close", %{})
+    assert_patch(view, "/deploy?wb=manual")
+
+    html = render(view)
+    refute html =~ ~s(aria-label="The box in hand")
+    refute html =~ ~r{<aside[^>]*aria-label="The workbench"[^>]*inert}
+    assert html =~ "Two words are used through the rest of this document."
+
+    # Closed again: the screen.
+    render_click(view, "close", %{})
+    assert_patch(view, "/deploy")
+  end
+
+  test "a cartridge pressed in another's paper leaves a trail: ‹ goes back one, Put back puts it all away",
+       %{conn: conn} do
+    arrives({:catalog, {:ok, [k6(), Map.put(k6(), "name", "monitoring")]}})
+    back = ~r{<a[^>]*class="btn back"}
+
+    {:ok, view, html} = live(conn, "/shelf?box=k6&screen=manual&paper=changelog")
+    assert html =~ ~r{<a[^>]*href="/shelf"[^>]*>\s*Put back}
+
+    # Opened from no other box: nothing behind it, and no ‹.
+    refute html =~ back
+
+    # A link in k6's paper to monitoring's: k6 is left on the trail, on
+    # the screen and the paper it was on.
+    render_hook(view, "goto", %{"href" => "?box=monitoring&screen=manual&paper=readme"})
+
+    assert_patch(
+      view,
+      "/shelf?box=monitoring&screen=manual&paper=readme&from=k6.manual.changelog"
+    )
+
+    html = render(view)
+    assert html =~ ~s(<h3>monitoring</h3>)
+
+    # ‹ goes back one box, to the paper it was left on; Put back goes to
+    # the screen whatever the trail; the box's own links keep the trail.
+    assert [step] = Regex.run(~r{<a[^>]*class="btn back"[^>]*>.*?</a>}s, html)
+    assert step =~ ~s(href="/shelf?box=k6&amp;screen=manual&amp;paper=changelog")
+    assert step =~ ~s(<use href="/images/icons.svg#back")
+    assert step =~ ~r{<span[^>]*class="sr"[^>]*>\s*Back to k6\s*</span>}
+
+    assert html =~ ~r{<a[^>]*href="/shelf"[^>]*>\s*Put back}
+
+    assert html =~
+             ~s(href="/shelf?from=k6.manual.changelog&amp;box=monitoring&amp;screen=install")
+
+    # Turning a paper of the box in hand adds nothing to the trail.
+    render_hook(view, "goto", %{"href" => "?box=monitoring&screen=manual&paper=changelog"})
+
+    assert_patch(
+      view,
+      "/shelf?box=monitoring&screen=manual&paper=changelog&from=k6.manual.changelog"
+    )
+
+    # ‹ pressed: k6 again, on its changelog, with nothing behind it.
+    html = render_patch(view, "/shelf?box=k6&screen=manual&paper=changelog")
+    assert html =~ ~s(<h3>k6</h3>)
+    assert html =~ ~r{aria-selected="true"[^>]*>\s*Changelog}
+    refute html =~ back
+  end
+
+  test "Close puts the box away whole, however many boxes led to it", %{conn: conn} do
+    arrives({:catalog, {:ok, [k6(), Map.put(k6(), "name", "monitoring")]}})
+
+    {:ok, view, _} =
+      live(conn, "/shelf?box=monitoring&screen=manual&paper=readme&from=k6.manual.changelog")
+
+    render_click(view, "close", %{})
+    assert_patch(view, "/shelf")
+  end
+
+  test "a trail that does not read as boxes is not followed", %{conn: conn} do
+    {:ok, view, _} = live(conn, "/shelf?box=k6&screen=manual&from=../etc,k6,<x>.manual.readme")
+    html = render(view)
+    assert html =~ ~r{<a[^>]*href="/shelf"[^>]*>\s*Put back}
+    refute html =~ ~s(class="btn back")
+  end
+
+  test "a box alone closes onto the screen, as before", %{conn: conn} do
+    {:ok, view, _} = live(conn, "/shelf?box=k6&screen=manual")
+    render_click(view, "close", %{})
+    assert_patch(view, "/shelf")
+  end
+
   test "the workbench drawer's manual keeps its paper across Config", %{conn: conn} do
     {:ok, view, _} = live(conn, "/deploy?wb=manual&paper=changelog")
     html = render_patch(view, "/deploy?wb=config")

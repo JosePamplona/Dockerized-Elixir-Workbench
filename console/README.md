@@ -163,6 +163,33 @@ The decisions the code leans on, each dated in the plan:
   project carries no route for them: a door of kind `:output`, unlit
   with the reason until built, `build:` as the button. `check_origin`
   names the port the browser sees.
+- **A door that depends on a file is a plate of two rows**
+  (2026-10-07): the address above, and under it, flush in the same
+  border, the file — a stamp (a mark, full or hollow, and when it was
+  written) and the command that writes it, named as the project runs
+  it. A page is one; so is a door with the task that writes its file.
+  With no file the first row alone is unlit: the command can be run.
+  A door that names the file its task writes (`writes:`) has its state
+  read off the workspace: missing, up to date while it carries the
+  door's address, behind once the address moved. A page that names
+  what it is made from (`from:`) is up to date or behind by so many
+  files: the dates say which to look at, and git whether they changed.
+- **A door can be for a client** (2026-10-07). A route a program talks
+  to — an MCP endpoint — is declared with the lines a client is given
+  (`client:`), `{url}` left for the console: it shows the address and
+  does not link it, the bell reads any answer as *answers*, and the
+  box's *Opens* gives each line with the published port in it and a
+  *copy* button. The words are the cartridge's; the console speaks no
+  protocol. `build:` on such a door is the project's task that sets a
+  client up, a button on its plate.
+- **A detail goes with its switch** (2026-10-07). An option the
+  catalog marks `of` a switch is a field only while that switch is on:
+  unlit with the reason otherwise, off the command, and counted with
+  its switch on a box that is in.
+- **A box is full when every piece it still adds is in or out of
+  reach** (2026-10-07): each value of a closed list, and a switch the
+  project has on or cannot take. The add is then unlit, with the
+  reason; a field of text keeps a box open.
 - **The probes reach the app through `host.docker.internal`**
   (2026-09-02); the doors stay `localhost`, for the browser.
 - **The console is a release** (2026-09-27), compiled at the workbench's

@@ -91,7 +91,7 @@ defmodule ConsoleWeb.JobButtonTest do
     assert html =~ ~s(phx-click="run")
     assert html =~ ~s(phx-value-args="mix docs")
     assert html =~ "./wb.sh mix docs"
-    assert html =~ ">build</button>"
+    assert html =~ ~r{>\s*mix docs\s*</button>}
   end
 
   # Built, the door opens on its name and address, wears the stamp, and
@@ -108,12 +108,14 @@ defmodule ConsoleWeb.JobButtonTest do
         build: "docs"
       )
 
-    assert html =~ ~s(<a href="http://localhost:4101/docs/" target="_blank"><b>docs</b>)
+    assert html =~
+             ~r{<a[^>]*href="http://localhost:4101/docs/"[^>]*target="_blank"[^>]*><b[^>]*>docs</b>}
+
     assert html =~ "2026-09-22 18:18"
     assert html =~ ~s(phx-value-args="mix docs")
-    # The page is there, so the button offers the second press, not the
-    # first (2026-09-26): `ConsoleWeb.DoorRefTest` holds the two words.
-    assert html =~ ">rebuild</button>"
+    # The button wears its command either way (2026-10-07):
+    # `ConsoleWeb.DoorRefTest` holds what the stamp says instead.
+    assert html =~ ~r{>\s*mix docs\s*</button>}
     refute html =~ "unlit"
   end
 end

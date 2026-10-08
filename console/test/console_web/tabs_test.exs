@@ -308,6 +308,71 @@ defmodule ConsoleWeb.TabsTest do
     refute sheet =~ ~s(class="sq eye")
   end
 
+  test "a deployment the project cannot have is on its row, switched off, saying why",
+       %{conn: conn} do
+    why = "The scaled deployment is not available on SQLite: each replica its own file."
+    file = %{"baked" => true, "in_sync" => true, "stray" => [], "missing" => []}
+
+    # The reading off the project outlives a fast status, and the bench
+    # is every test's: left as it is, the next test's scaled row would
+    # still be this one's. A project with nothing to say takes it away.
+    on_exit(fn ->
+      plain = %{"exists" => true, "workspace" => "/w", "containers" => [], "baked" => %{}}
+      project = %{"cartridges" => [], "deployments" => %{}}
+
+      send(
+        Process.whereis(Console.Bench),
+        {make_ref(), {:status, {:ok, Map.put(plain, "project", project)}}}
+      )
+    end)
+
+    arrives(%{
+      "exists" => true,
+      "workspace" => "/w",
+      "containers" => [],
+      "baked" => %{"dev" => true, "prod" => true, "scaled" => false},
+      "project" => %{
+        "cartridges" => [],
+        "deployments" => %{
+          "dev" => Map.put(file, "services", ~w(pod app)),
+          "prod" => Map.put(file, "services", ~w(pod app migrate volume_init)),
+          "scaled" => %{
+            "baked" => false,
+            "in_sync" => nil,
+            "stray" => [],
+            "missing" => [],
+            "services" => [],
+            "unavailable" => why
+          }
+        }
+      }
+    })
+
+    {:ok, _view, html} = live(conn, "/deploy")
+    [sheet] = Regex.run(~r{<section[^>]*class="card deployments[^"]*"[^>]*>.*?</section>}s, html)
+    [_, scaled] = String.split(sheet, ~s(name="target" value="scaled"), parts: 2)
+
+    # The row is there, with the reason in full and no promise of a Bake.
+    assert scaled =~ ~r/>\s*not available\s*</
+    assert scaled =~ why
+    refute scaled =~ ~r/>\s*not baked\s*</
+
+    # Bake and Build are unlit with the cartridge's reason, not hidden.
+    for label <- ~w(Bake Build) do
+      assert [button] = Regex.run(~r{<button[^>]*>#{label}</button>}, scaled)
+      assert button =~ "unlit"
+      assert button =~ ~s(aria-disabled="true")
+      assert button =~ ~s(title="#{why}")
+    end
+
+    # The rail's Up of that row too; dev's is lit.
+    [rail] = Regex.run(~r{<table class="rows" id="deployments">.*?</table>}s, html)
+    [dev_row, _prod_row, scaled_row] = Regex.scan(~r{<tr>.*?</tr>}s, rail) |> List.flatten()
+    assert scaled_row =~ ~s(title="#{why}")
+    assert scaled_row =~ "unlit"
+    refute dev_row =~ "unlit"
+  end
+
   # Stop and Down came off the rows on 2026-09-26: only one deployment is
   # up at a time, so at most one row's Stop was ever lit, and `down`
   # clears the whole project — orphans of the other deployments included
@@ -421,16 +486,39 @@ defmodule ConsoleWeb.TabsTest do
     # took `new-project` for its own wrapper when it became a component,
     # and the button went on naming that: it pointed at a div and
     # submitted nothing (2026-09-27).
+    # (Asked with a name of the test's own: the card opens with
+    # config.conf's, which is whatever the reader last named a project.)
+    html =
+      view |> element("#new-project-form") |> render_change(%{"name" => "Bakery Co"})
+
     [create] = Regex.run(~r{<button[^>]*>\s*Create project\s*</button>}s, html)
     assert create =~ ~s(form="new-project-form")
     assert create =~ ~s(type="submit")
 
     # And what it carries is what runs: the name typed into it.
-    html =
-      view |> element("#new-project-form") |> render_change(%{"name" => "Bakery Co"})
-
     # The quotes come through escaped, as any attribute-safe text does.
     assert html =~ "./wb.sh new --name &quot;Bakery Co&quot;"
+
+    # A name `wb.sh new` refuses: the card shows it with a chip, Create
+    # is unlit with a short reason that says where to change it, and it
+    # submits nothing. The error itself is the field's, in Config.
+    html =
+      view |> element("#new-project-form") |> render_change(%{"name" => "Bakery Web"})
+
+    [create] = Regex.run(~r{<button[^>]*>\s*Create project\s*</button>}s, html)
+    assert create =~ "unlit"
+    assert create =~ ~s(aria-disabled="true")
+    refute create =~ ~s(type="submit")
+    assert create =~ "the project&#39;s name ends in &#39;Web&#39;: change it in Config"
+
+    [card] = Regex.run(~r{<form[^>]*id="new-project-form".*?</form>}s, html)
+    assert card =~ ~r{<label[^>]*>project name</label>}
+    assert card =~ ~r{Bakery Web</span>\s*<span[^>]*class="chip bad"[^>]*>\s*ends in Web}
+    refute html =~ "cannot end in"
+
+    before = Console.Jobs.list()
+    view |> element("#new-project-form") |> render_submit(%{"name" => "Bakery Web"})
+    assert Console.Jobs.list() == before
   end
 
   test "the Docker screen is lit before any project is, and opens on its containers", %{

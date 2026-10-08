@@ -239,6 +239,37 @@ defmodule ConsoleWeb.Deploy do
   defp nonempty("", fallback), do: fallback
   defp nonempty(value, _fallback), do: value
 
+  @doc """
+  What is wrong with a project's name, in a line, nil when nothing is:
+  a name whose app ends in `web` as a word of its own (`Portfolios
+  Web`, `portfolios_web`), which `./wb.sh new` refuses (`web_named`,
+  with the reason at length). The field's own error, under
+  `PROJECT_NAME` in the workbench's Config, and the title of the chip
+  the New Project card wears beside the name.
+  """
+  def name_error(name) do
+    app = name |> to_string() |> String.trim() |> String.downcase() |> String.replace(" ", "_")
+
+    if app =~ ~r/(^|_)web$/,
+      do: "Ends in 'Web': Phoenix's own generators would not find its web module."
+  end
+
+  @doc "The name `./wb.sh new` would be given, as the card has it."
+  def new_name(catalog, newp) do
+    ["new", "--name", name | _] = new_args(catalog, newp)
+    name
+  end
+
+  @doc """
+  Why Create cannot run for the name the card has, nil when it can: a
+  short reason for an unlit button, which says where the name is
+  changed. What is wrong with the name is `name_error/1`'s to say.
+  """
+  def new_name_why(catalog, newp) do
+    if name_error(new_name(catalog, newp)),
+      do: "the project's name ends in 'Web': change it in Config"
+  end
+
   @doc "`./wb.sh new` with the flags the card has set, as the reader reads it."
   def new_command(catalog, newp) do
     ["new", "--name", name | flags] = new_args(catalog, newp)

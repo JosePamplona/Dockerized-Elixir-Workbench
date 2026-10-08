@@ -46,16 +46,16 @@ defmodule ConsoleWeb.CartridgesTest do
              })
     end
 
-    # coverage's `mix cover` is planted by its own --exdoc, and whether
+    # coverage's `mix cover` is planted by its own --md-report, and whether
     # the exdoc cartridge is in says nothing about that file.
     test "an option condition reads what the cartridge was inserted with" do
-      coverage = %{"name" => "coverage", "state" => %{"exdoc" => true, "githook" => false}}
+      coverage = %{"name" => "coverage", "state" => %{"md_report" => true, "githook" => false}}
 
-      assert Cartridges.holds?(@status, coverage, %{"when" => %{"option" => "exdoc"}})
+      assert Cartridges.holds?(@status, coverage, %{"when" => %{"option" => "md_report"}})
       refute Cartridges.holds?(@status, coverage, %{"when" => %{"option" => "githook"}})
 
       refute Cartridges.holds?(@status, %{"name" => "coverage"}, %{
-               "when" => %{"option" => "exdoc"}
+               "when" => %{"option" => "md_report"}
              })
     end
 

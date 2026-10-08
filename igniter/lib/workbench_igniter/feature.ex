@@ -194,6 +194,21 @@ defmodule WorkbenchIgniter.Feature do
   @callback option_notes() :: [{atom(), String.t()}]
 
   @doc """
+  The options that only say how another one is done, by schema key:
+  the switch each is a detail of. mishka_chelekom's `--mcp-path` is
+  where `--mcp` forwards the server, and says nothing without it:
+
+      [mcp_path: :mcp]
+
+  A detail goes with its switch everywhere. The installer refuses one
+  given without it; the catalog carries it as the option's `of`; and a
+  form offers the field only while the switch is on — unlit, with the
+  reason, otherwise — and, on a box that is in, while the switch is a
+  piece it still adds. Empty by default.
+  """
+  @callback details() :: [{atom(), atom()}]
+
+  @doc """
   What a second run does on a project that already carries the
   cartridge: `:noop` — the installer's guard skips everything (the
   default; the options were fixed when it was inserted, and changing
@@ -362,9 +377,30 @@ defmodule WorkbenchIgniter.Feature do
       `./wb.sh mix <task>`, the project's own command, and never learns
       one of its own. Several, `[{task, when: condition}, …]`, when
       which command writes it depends on what the project carries
-      (coverage: `mix cover` where it was inserted with `--exdoc`, which
+      (coverage: `mix cover` where it was inserted with `--md-report`, which
       is what plants that task, `mix coveralls.html` otherwise); the first whose condition holds
-      is the one offered.
+      is the one offered. A page says what it is made from too,
+      `from:` — the files and directories of the project a change in
+      which leaves the page behind (`from: ~w(lib test)` for a coverage
+      report) — and the console compares their dates with the page's:
+      up to date, or behind by so many files. Without it a page is
+      written or missing, and no more is said. A route can be a door for a client and not a
+      page, `client: [{label, line}, …]`: an endpoint a program talks
+      to, which a browser opens onto an error (mishka_chelekom's
+      `/mcp`). The console shows its address and does not link it,
+      counts any answer to its call as the door answering, and offers
+      each line with `{url}` filled with the address — the words are
+      the cartridge's, and the console learns no protocol
+      (`client: [{"Claude Code", "claude mcp add --transport http
+      NAME {url}"}]`; `client: []` for an endpoint with nothing to
+      say, as mishka_chelekom's, whose task writes what a client
+      reads). With `build:`, the Mix task the cartridge
+      planted in the project to set a client up — mishka_chelekom's
+      `mix chelekom.mcp.json` — is offered beside the door, as a page's is;
+      and with `writes:`, the file that task leaves at the project's
+      root (`writes: ".mcp.json"`), the console says its state as it
+      says a page's: missing, up to date while it carries the door's
+      address, behind once the address moved.
 
   Empty by default. There was a `tabs:` too until 2026-09-25 — screens
   the console showed only with this cartridge, which only clustering
@@ -445,10 +481,17 @@ defmodule WorkbenchIgniter.Feature do
   `services`, every name asked for, so a service can see its
   neighbours: k6 writes to Prometheus when it is there, Adminer asks
   ecto which database the project has. A set of services no file can
-  be made of is refused with `{:error, reason}`. Nothing by default.
+  be made of is refused with `{:error, reason}`. A deployment the
+  project cannot have, being what it is — replicas, each on a SQLite
+  file of its own — is answered with `{:unavailable, reason}` instead:
+  nothing went wrong, there is no such file for this project, and the
+  reason is shown as it is wherever the deployment would be. Nothing by
+  default.
   """
   @callback compose(context :: map()) ::
-              [WorkbenchIgniter.ComposeFile.Service.t()] | {:error, String.t()}
+              [WorkbenchIgniter.ComposeFile.Service.t()]
+              | {:error, String.t()}
+              | {:unavailable, String.t()}
 
   defmacro __using__(_opts) do
     quote do
@@ -493,6 +536,9 @@ defmodule WorkbenchIgniter.Feature do
 
       @impl WorkbenchIgniter.Feature
       def option_notes, do: []
+
+      @impl true
+      def details, do: []
 
       @impl WorkbenchIgniter.Feature
       def formats, do: []
@@ -554,6 +600,7 @@ defmodule WorkbenchIgniter.Feature do
                      choices: 0,
                      option_docs: 0,
                      option_notes: 0,
+                     details: 0,
                      formats: 0,
                      detected: 0,
                      detect: 1,
@@ -1057,8 +1104,8 @@ defmodule WorkbenchIgniter.Feature do
   project yet. Insert that first: ./wb.sh add html"; "ecto with
   database postgres, and this project's database is mysql." — with the
   line that tops it up where the box adds its pieces on a second run
-  ("coverage with exdoc, and this project's exdoc is off. Add it with:
-  ./wb.sh add coverage --exdoc"); and, with
+  ("coverage with md_report, and this project's md_report is off. Add
+  it with: ./wb.sh add coverage --md-report"); and, with
   both kinds, "html with live and mailer: this project's live is off,
   and mailer is not in yet. Insert that first: ./wb.sh add html --live,
   then ./wb.sh add mailer".

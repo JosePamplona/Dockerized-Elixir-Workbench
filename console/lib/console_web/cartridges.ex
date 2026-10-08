@@ -169,7 +169,7 @@ defmodule ConsoleWeb.Cartridges do
     end
   end
 
-  # The cartridge's own option, as the project reports it: `--exdoc` is
+  # The cartridge's own option, as the project reports it: `--md-report` is
   # what plants coverage's `mix cover`, and whether the exdoc cartridge
   # is in says nothing about that file.
   def holds?(_status, c, %{"option" => key}), do: !!get_in(c, ["state", key])
@@ -218,8 +218,8 @@ defmodule ConsoleWeb.Cartridges do
   @doc """
   The cartridge that brought this one in, when it has no insert of its
   own: one that is in by commit and declares it among what its
-  installer composes (`composes`, off the manifest) — coverage's
-  `--exdoc` brings test_doubles, health_endpoint brings mock. The
+  installer composes (`composes`, off the manifest) — health_endpoint
+  brings mock, as coverage's `--exdoc` once brought test_doubles. The
   entry with its insert's sha and subject; `nil` when nobody claims it.
   """
   def composer(status, c) do

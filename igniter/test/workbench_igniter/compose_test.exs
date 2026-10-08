@@ -330,9 +330,27 @@ defmodule WorkbenchIgniter.ComposeTest do
                Compose.plan_from_argv(@dev ++ ~w(--services postgres,mysql))
     end
 
-    test "no SQLite on the scaled deployment" do
-      assert {:error, "a scaled deployment cannot run on SQLite" <> _} =
+    # Not a refusal: the project has no such deployment, and says why.
+    test "a project on SQLite has no scaled deployment" do
+      assert {:unavailable, "The scaled deployment is not available on SQLite" <> _} =
                Compose.plan_from_argv(@scaled ++ ~w(--services sqlite) ++ @balancer)
+    end
+  end
+
+  describe "unavailable/2" do
+    test "the scaled deployment on SQLite, in the cartridge's words" do
+      assert "The scaled deployment is not available on SQLite" <> _ =
+               Compose.unavailable(:scaled, ~w(sqlite))
+
+      assert Compose.unavailable(:scaled, ~w(sqlite adminer)) =~ "database server"
+    end
+
+    test "nil for every deployment a project can have" do
+      for deploy <- [:dev, :prod], do: assert(Compose.unavailable(deploy, ~w(sqlite)) == nil)
+      assert Compose.unavailable(:scaled, ~w(postgres)) == nil
+      assert Compose.unavailable(:scaled, []) == nil
+      # Two databases is a set that is wrong, not a deployment that is missing.
+      assert Compose.unavailable(:scaled, ~w(postgres mysql)) == nil
     end
   end
 
@@ -400,6 +418,22 @@ defmodule WorkbenchIgniter.ComposeTest do
       path = Path.join(dir, "docker-compose.yml")
       Mix.Task.rerun("workbench.compose", @dev ++ ~w(--services postgres,pgadmin --out) ++ [path])
       assert File.read!(path) == File.read!(Path.join(@fixtures, "dev-db.yml"))
+    end
+
+    # What `wb.sh` tells apart from a render that failed: one line, exit 4, no file.
+    @tag :tmp_dir
+    test "a deployment the project cannot have is said, not raised", %{tmp_dir: dir} do
+      path = Path.join(dir, "docker-compose.scaled.yml")
+      argv = @scaled ++ ~w(--services sqlite) ++ @balancer ++ ["--out", path]
+
+      said =
+        ExUnit.CaptureIO.capture_io(fn ->
+          assert catch_exit(Mix.Task.rerun("workbench.compose", argv)) == {:shutdown, 4}
+        end)
+
+      assert "unavailable> The scaled deployment is not available on SQLite" <> _ = said
+      assert said |> String.trim() |> String.split("\n") |> length() == 1
+      refute File.exists?(path)
     end
   end
 

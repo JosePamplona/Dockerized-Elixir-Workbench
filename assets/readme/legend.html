@@ -39,8 +39,18 @@
     <p><b>A service inside the pod only.</b> It has a port, and no door from the host.</p>
     <span><span class="door-ref door-route"><svg class="layer" aria-hidden="true"><use href="../../console/priv/static/images/icons.svg#globe"></use></svg><a><b>live</b><span><em>:4000</em>/health/live</span></a></span></span>
     <p><b>A door.</b> A route of the application that a cartridge opened.</p>
-    <span><span class="door-ref door-output"><svg class="layer" aria-hidden="true"><use href="../../console/priv/static/images/icons.svg#page"></use></svg><a><b>docs</b><span>doc/</span></a><i class="read">2026-10-04 18:37</i><button type="button" class="read build">rebuild</button></span></span>
-    <p><b>A page.</b> Files a tool of the project wrote on disk, with the task that writes them again.</p>
+    <span><span class="door-ref door-output two"><span class="row1"><svg class="layer" aria-hidden="true"><use href="../../console/priv/static/images/icons.svg#page"></use></svg><a><b>docs</b><span>doc/</span></a></span><span class="row2"><i class="read file written good">2026-10-08 02:18</i><button type="button" class="read build">mix docs</button></span></span></span>
+    <p><b>A page.</b> Files a tool of the project wrote on disk. Its second row is the file: when it was written, and the command that writes it again.</p>
+  </div>
+
+  <h2>The mark: where its file stands</h2>
+  <div class="rows">
+    <span><span class="door-ref door-output two unlit"><span class="row1"><svg class="layer" aria-hidden="true"><use href="../../console/priv/static/images/icons.svg#page"></use></svg><a><b>coverage</b><span>cover/</span></a></span><span class="row2"><i class="read file missing"></i><button type="button" class="read build">mix cover</button></span></span></span>
+    <p><b>Missing.</b> Nothing has written it yet, so there is no page to open. The command is there to press.</p>
+    <span><span class="door-ref door-output two"><span class="row1"><svg class="layer" aria-hidden="true"><use href="../../console/priv/static/images/icons.svg#page"></use></svg><a><b>docs</b><span>doc/</span></a></span><span class="row2"><i class="read file written good">2026-10-08 02:18</i><button type="button" class="read build">mix docs</button></span></span></span>
+    <p><b>Up to date.</b> Written after everything it is made from.</p>
+    <span><span class="door-ref door-route two"><span class="row1"><svg class="layer" aria-hidden="true"><use href="../../console/priv/static/images/icons.svg#globe"></use></svg><a><b>mcp</b><span><em>:4000</em>/mishka-chelekom/mcp</span></a></span><span class="row2"><i class="read file behind warn">2026-10-06 18:40</i><button type="button" class="read build">mix chelekom.mcp.json</button></span></span></span>
+    <p><b>Behind.</b> What it is made from changed since: a source file, or the address a door's file carries.</p>
   </div>
 
   <h2>The colour: what the service is for</h2>

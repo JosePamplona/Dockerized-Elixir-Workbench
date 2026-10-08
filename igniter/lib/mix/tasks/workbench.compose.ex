@@ -48,9 +48,8 @@ defmodule Mix.Tasks.Workbench.Compose do
     `postgres`, `mysql`, `mssql`, or `sqlite`, which is no server but a
     volume for the file in a release — and `pgadmin`, `adminer`, `k6`,
     `prometheus`, `grafana`. `""` or `none` for no service at all. Absent, the project is asked. One
-    database at most, and never `sqlite` on the scaled deployment:
-    replicas cannot share a file. Without a database there is nothing
-    to migrate; with `grafana`, the app waits for it.
+    database at most. Without a database there is nothing to migrate;
+    with `grafana`, the app waits for it.
   * `--clustering` / `--no-clustering` - scaled: whether the release is
     distributed, which decides `DNS_CLUSTER_QUERY`.
   * `--replicas N`, `--replica-ports P1,P2,…` - scaled: how many, and
@@ -58,6 +57,16 @@ defmodule Mix.Tasks.Workbench.Compose do
   * `--balancer-port N` / `--no-balancer` - scaled: the entry point in
     front of the replicas, or none.
   * `--out FILE` - write the file there instead of standard output.
+
+  ## A deployment the project cannot have
+
+  A cartridge may say that the project, being what it is, has no such
+  deployment: `sqlite` on the scaled one, where each replica would keep
+  a database file of its own. That is not a failure of the task. It
+  writes no file, prints one `unavailable> REASON` line — the
+  cartridge's words — and exits with 4, for the script to tell apart
+  from a render that failed: a project is born without that file, and
+  whoever asks for it by name is told why.
   """
 
   alias WorkbenchIgniter.Compose
@@ -73,6 +82,10 @@ defmodule Mix.Tasks.Workbench.Compose do
       {:needs, needs} ->
         for {name, default} <- needs, do: IO.puts("need> #{name} #{default}")
         exit({:shutdown, 3})
+
+      {:unavailable, why} ->
+        IO.puts("unavailable> #{why}")
+        exit({:shutdown, 4})
 
       {:error, why} ->
         Mix.raise("workbench.compose: " <> why)

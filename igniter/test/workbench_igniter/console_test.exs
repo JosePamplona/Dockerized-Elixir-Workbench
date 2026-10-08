@@ -25,7 +25,9 @@ defmodule WorkbenchIgniter.ConsoleTest do
                output: %{
                  dir: "{output}",
                  index: "index.html",
-                 build: [%{task: "docs", when: nil}]
+                 build: [%{task: "docs", when: nil}],
+                 # What the site is made from: a change there leaves it behind.
+                 from: ~w(lib mix.exs README.md CHANGELOG.md guides)
                },
                when: nil
              }
@@ -44,7 +46,8 @@ defmodule WorkbenchIgniter.ConsoleTest do
                  build: [
                    %{task: "cover", when: %{option: "md_report"}},
                    %{task: "coveralls.html", when: nil}
-                 ]
+                 ],
+                 from: ~w(lib test)
                },
                when: nil
              }
@@ -75,6 +78,27 @@ defmodule WorkbenchIgniter.ConsoleTest do
            ]
 
     assert by.("credo") == %{doors: []}
+
+    # A door for a client, not a page: the lines it is given, with the
+    # address left for the console to fill — it knows the port.
+    # Its path is the one the project forwards on, off the box's state.
+    assert [
+             %{
+               label: "mcp",
+               path: "{mcp_path}",
+               when: %{option: "mcp"},
+               client: [],
+               build: build,
+               writes: ".mcp.json"
+             }
+           ] =
+             by.("mishka_chelekom").doors
+
+    # The project's own task that sets a client up, planted by the box.
+    assert build == [%{task: "chelekom.mcp.json", when: nil}]
+
+    # A page's map carries nothing of it.
+    refute Enum.any?(by.("health_probe").doors, &Map.has_key?(&1, :client))
   end
 
   test "every route starts with a slash or an {option}; an output is a relative dir" do

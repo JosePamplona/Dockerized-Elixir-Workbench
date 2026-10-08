@@ -4,6 +4,23 @@ Versioned on its own, independently of the workbench release that ships
 it; semver over what `phx.new` generates for Ecto at the installer's
 version plus the `.env` entry, as [mailer](../mailer/CHANGELOG.md) says.
 
+## v0.3.2 - (2026-10-06)
+
+### Fixed
+
+- A project on SQLite has no scaled deployment, and that is no longer
+  an error. `compose/1` answered `{:error, …}` for `sqlite` on the
+  scaled deployment, which is what it answers for a set of services
+  that is wrong; since the three compose files are baked at a
+  project's birth (2026-09-27), that error stopped
+  `./wb.sh new --database sqlite3` altogether. It answers
+  `{:unavailable, reason}` now: the project is born with its dev and
+  prod files and a note, a scaled file baked before the insert is
+  removed in the insert's commit, and `bake --deploy scaled`, the
+  status and the console give the reason — each replica would keep its
+  own database file, so what a request reads depends on the replica
+  that answers it (DESIGN §3.5, with what was considered and left out).
+
 ## v0.3.1 - (2026-09-25)
 
 ### Fixed

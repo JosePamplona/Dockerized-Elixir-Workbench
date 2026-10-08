@@ -94,4 +94,26 @@ defmodule ConsoleWeb.NewCommandTest do
       assert said == Enum.join(["./wb.sh" | Deploy.new_args([], p)], " ")
     end
   end
+
+  # What `wb.sh new` refuses (web_named): the field's own line, and the
+  # short reason of the card's unlit Create.
+  test "a name ending in Web is an error, in a line; a name that only contains it is not" do
+    for name <- ["Portfolios Web", "portfolios_web", "Web", "My Shop WEB", " Portfolios Web "] do
+      assert Deploy.name_error(name) =~ "Ends in 'Web'"
+      assert Deploy.new_name_why([], newp(name: name)) =~ "change it in Config"
+    end
+
+    for name <- ["Cobweb", "Web Shop", "Webby", "Portfolios", "web_2", "", nil] do
+      assert Deploy.name_error(name) == nil
+    end
+
+    # One line each: an error is not a paragraph, and a title is not a page.
+    assert String.length(Deploy.name_error("Portfolios Web")) < 80
+    assert String.length(Deploy.new_name_why([], newp(name: "Portfolios Web"))) < 60
+
+    # The name config.conf gives, when the card is left alone.
+    assert Deploy.new_name_why([], newp()) == nil
+    assert Deploy.new_name([], newp(name: "", default: "Portfolios Web")) == "Portfolios Web"
+    assert Deploy.new_name_why([], newp(name: "", default: "Portfolios Web"))
+  end
 end

@@ -51,6 +51,7 @@ defmodule WorkbenchIgniter.Features do
     Features.Clustering,
     Features.HealthProbe,
     Features.Ash,
+    Features.MishkaChelekom,
     Features.Specdd,
     Features.SecurityReview,
     Features.MachineLearning,
@@ -306,14 +307,18 @@ defmodule WorkbenchIgniter.Features do
   cartridge's `compose/1`, in catalog order. Each cartridge answers for
   the names of its own that `context.services` asks for; a name no
   cartridge answers for contributes nothing. A cartridge may refuse the
-  set instead — two databases — and its reason is the answer.
+  set instead — two databases — or say the project has no such
+  deployment — replicas on SQLite — and its reason is the answer.
   """
   @spec compose(map()) ::
-          {:ok, [WorkbenchIgniter.ComposeFile.Service.t()]} | {:error, String.t()}
+          {:ok, [WorkbenchIgniter.ComposeFile.Service.t()]}
+          | {:error, String.t()}
+          | {:unavailable, String.t()}
   def compose(context) do
     Enum.reduce_while(catalog(), {:ok, []}, fn feature, {:ok, acc} ->
       case feature.compose(context) do
         {:error, reason} -> {:halt, {:error, reason}}
+        {:unavailable, reason} -> {:halt, {:unavailable, reason}}
         services -> {:cont, {:ok, acc ++ services}}
       end
     end)
@@ -369,14 +374,40 @@ defmodule WorkbenchIgniter.Features do
         %{
           label: label,
           path: dir <> "/",
-          output: %{dir: dir, index: index, build: build(Keyword.get(opts, :build))},
+          output: %{
+            dir: dir,
+            index: index,
+            build: build(Keyword.get(opts, :build)),
+            # What the page is made from: the project's own files and
+            # directories a change in which leaves it behind.
+            from: Keyword.get(opts, :from, [])
+          },
           when: when_
         }
 
       path ->
         %{label: label, path: path, when: when_}
+        |> client(Keyword.get(opts, :client))
+        |> task(Keyword.get(opts, :build))
+        |> written(Keyword.get(opts, :writes))
     end
   end
+
+  # A door for a client carries what the client is told; a page carries
+  # nothing of it, and its map is as it always was.
+  defp client(door, nil), do: door
+
+  defp client(door, lines),
+    do: Map.put(door, :client, for({label, line} <- lines, do: %{label: label, line: line}))
+
+  # The task of the project that sets a client up for this door, when
+  # the cartridge plants one: offered beside it, as a page's is.
+  defp task(door, nil), do: door
+  defp task(door, task), do: Map.put(door, :build, build(task))
+
+  # The file that task writes, for the console to read its state off.
+  defp written(door, nil), do: door
+  defp written(door, file), do: Map.put(door, :writes, file)
 
   defp format(nil), do: nil
   defp format({:integer, %Range{first: first, last: last}}), do: "integer #{first}..#{last}"
@@ -448,7 +479,9 @@ defmodule WorkbenchIgniter.Features do
         format: format(Keyword.get(formats, key)),
         doc: Keyword.get(docs, key),
         # What the option says that none of its values can.
-        note: Keyword.get(notes, key)
+        note: Keyword.get(notes, key),
+        # The switch this option is a detail of, when it is one.
+        of: Keyword.get(feature.details(), key)
       }
     end
   end

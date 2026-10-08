@@ -53,6 +53,21 @@ defmodule WorkbenchIgniter.DeploymentsTest do
     assert %{baked: false, in_sync: nil, services: []} = read.scaled
   end
 
+  test "the scaled deployment of a project on SQLite is unavailable, and says why", %{dir: dir} do
+    lay(dir, "docker-compose.yml": "dev-sqlite.yml", "docker-compose.prod.yml": "prod-sqlite.yml")
+
+    read = Deployments.read(dir, ~w(sqlite))
+
+    assert %{baked: true, in_sync: true, unavailable: nil} = read.dev
+    assert %{baked: true, in_sync: true, unavailable: nil} = read.prod
+
+    assert %{baked: false, unavailable: "The scaled deployment is not available on SQLite" <> _} =
+             read.scaled
+
+    # A project with a server has all three.
+    assert Deployments.read(dir, ~w(postgres)).scaled.unavailable == nil
+  end
+
   test "declared/1 reads the services block and nothing else" do
     text = """
     name: lorem_ipsum

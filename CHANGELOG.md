@@ -14,6 +14,589 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+## v0.19.3 - (2026-10-07)
+
+### Updated
+
+- **No test of the guidelines cartridge opens a socket.** To see its
+  placeholder planted, its tests and the catalog's handed it a closed
+  port, `http://localhost:1/guide.md` — offline, as their comment
+  said, but not at once: Req retries a transport error three times,
+  waiting 1, 2 and 4 seconds, so every install in a test waited seven
+  seconds and printed six lines of warnings — five installs a run —
+  which on the first pull request's CI read as a loop. What the practice says,
+  read before deciding: a small test has no network at all, and Req's
+  own documentation answers a client's request in the test's process
+  (`plug:`) and turns retries off to assert a transport error. So the
+  download takes its Req options from the application's configuration
+  (`:guidelines_req`, empty outside a test, retries as they were), and
+  `test_helper.exs` answers it by host under `.test`: the page at one
+  address, a refused connection at the other. The test of the page
+  now reads the page it was served and not the placeholder's title,
+  which is what it had been asserting. The `:network` group is as it
+  was, run by name only. The suite's time on a machine with cores to
+  spare is the same, 99 s: the waits ran beside the other tests.
+- **The root README says what the last two releases changed, and
+  shows it.** Three passages had fallen behind: `eject` now also
+  removes what the cartridge had told git to ignore, and names each
+  file (v0.19.1); a door or a page that depends on a file has a second
+  row — the file's mark and the command that writes it — and a door
+  can be for a program and not for a browser (v0.19.0); and writing a
+  cartridge has an eighth step, asking whether it needs a figure
+  (v0.19.2). Three captures were taken again on the same project the
+  others show, `lorem_ipsum` in `_001`, with mishka_chelekom inserted
+  there for its MCP door: the rail, the whole window and
+  health_probe's box, all with the plates as they are now — two rows,
+  6 px at the sides. The other twenty-four are of 2026-10-05 and show
+  no plate; their headers say `12 IN` and v0.17.0 where the new ones
+  say `20 IN` and v0.19.2.
+  The legend of the plates is drawn again too
+  (`assets/readme/legend.html`): its page was the plate of one row
+  with *rebuild* on it, and it gains a section for the mark — missing,
+  up to date, behind — with a door among the three, since a door can
+  depend on a file as a page does.
+  The legend is also said in words, above the picture: a plate is
+  read in four parts — the drawing, the mark, the colour, the dot —
+  since the text inside an image is not searched, not read aloud, and
+  too small on a phone.
+- **The README says how a box's back is made.** *The box art* told
+  the front's two turns and stopped there. It now says the back is
+  made the other way round — composed, not generated, because a back
+  is mostly small text and small text is what an image model gets
+  wrong: the generator makes the plate, and the script sets the copy,
+  the real screenshots, the name, the version and the seal over it —
+  with a strip of three states of test_doubles' back, cut by
+  `assets/readme/build.py` as the front's four are and looked for by
+  its check.
+
+## v0.19.2 - (2026-10-07)
+
+### Added
+
+- **mishka_chelekom has its box.** Outside the repertoire of six eras,
+  by the author's decision: the library has pictures of its own — the
+  covers of its blog, a sparrow at some trade on every one — so the
+  cover is set in the world of the one for the version the cartridge
+  installs, 0.0.9, described and not reused, and its hero is the ASCII
+  sparrow the library's tasks print, made a body. That picture has the
+  sparrow frightened at the start of a maze with the AI far off; this
+  one turns it round — the sparrow calm on its perch, one corridor lit
+  straight through to the core, three components on it like stepping
+  stones — since what the release brought is the MCP server, and what
+  the server does is end the guessing. Three scenes were proposed in
+  place of six eras (`assets/covers/mishka_chelekom/eras.md`). The hero
+  was generated once, continued, and its expansion retouched by hand
+  by the author, twice; the back is composed on a plate drawn from it,
+  with a page of the components and the MCP server answering
+  `tools/list` as its two screens, both off a host probe with the
+  cartridge installed. The cover record gained three rows of evidence:
+  twenty decimal positions drawn on the face as dimension figures with
+  no reference image attached, the expansion painting out the hero's
+  flash, and a plate placed in words alone. The root README's shelf
+  shows the cover: committing the sealed face without rebuilding the
+  shelf had left the README's check failing.
+- **Two figures in mishka_chelekom's papers.** Its README, under
+  *MCP — The address*, draws where the address a client dials comes
+  from: the path off the router, the port off the endpoint's
+  configuration, the published port off `docker-compose.yml`, read by
+  the project's `mix chelekom.mcp.json` and written into `.mcp.json` —
+  three facts with one owner each, which the section said in a table
+  and two paragraphs. Its DESIGN, §3.1, draws who writes what and
+  when: the cartridge's own diff is four files, and what the library
+  generates lands two turns later, by its own task, in the same
+  commit. Drawn by `assets/diagrams/build.py`, as the other
+  cartridges' are; the rest of the two papers is lists and tables, and
+  stays prose.
+
+### Updated
+
+- **Whether a cartridge carries a figure is asked of every one.** The
+  rule was there — a figure where it shows a mechanism the prose
+  cannot — as criterion 6b of *Writing a DESIGN.md*, so it was read
+  only by whoever was writing a DESIGN, and mishka_chelekom's papers
+  were written without the question being put. It is part of the
+  anatomy now (`features/README.md`): two questions, one per paper,
+  asked when the papers are written and again when a change gives the
+  cartridge a runtime path; a no to both is an answer. `CLAUDE.md`
+  says it too. Nothing checks it: it is a question someone has to
+  ask.
+
+## v0.19.1 - (2026-10-07)
+
+### Fixed
+
+- **An eject no longer commits what the cartridge had ignored.** A
+  cartridge's insert adds lines to `.gitignore` for what is written
+  afterwards — mishka_chelekom's `/.mcp.json`, coverage's
+  `TESTING.md`. The revert takes those lines out, the file is still
+  on disk and no longer ignored, and the eject's `git add -A` put it
+  in the revert's commit: tracked from then on, under an ignore that
+  came back with the next insert and no longer applied, so the file
+  showed as changed every time its task wrote it. Nothing complained,
+  since the tree was left clean. Seen on the author's project, whose
+  reverts carried `A .mcp.json`. `eject` now removes what the revert
+  left untracked — it begins on a clean tree, so that is exactly what
+  those lines covered — and says each one (`Removed .mcp.json:
+  mishka_chelekom's lines in .gitignore covered it, and they went
+  with the cartridge.`). They are the cartridge's products, never in
+  git, and the task that writes them leaves with it. Run through
+  `wb.sh eject` on a copy of that project: mishka_chelekom with its
+  `.mcp.json` and coverage with its `TESTING.md` — neither file in
+  the revert, both gone, the tree clean; exdoc's `doc/` and
+  coverage's `cover/` stay, ignored by `phx.new`'s own lines. A file
+  a reader filled by hand under a cartridge's ignore would go the
+  same way: none on the shelf is known to be one, and the shelf was
+  not read through for it.
+
+## v0.19.0 - (2026-10-07)
+
+### Added
+
+- **The mishka_chelekom cartridge: Mishka Chelekom's components
+  without Ash.** The library was on the shelf only as a value of
+  ash's `--components`. Its own box adds `{:mishka_chelekom, "~>
+  0.0.9", only: :dev}` and queues the library's batch task, `mix
+  mishka.ui.gen.components --import --helpers --global --yes`, the one
+  its installer composes, so nothing of it is reimplemented. Two
+  decisions are the box's. `--components` names the ones to generate:
+  the library's task generates exactly the names it is given, so the
+  list is completed with what each component declares `necessary` and
+  with the eight whose functions stand in for `CoreComponents`
+  (`alert`, `button`, `icon`, `input_field`, `list`, `modal`,
+  `navbar`, `table`), without which the swap leaves `Layouts` calling
+  a `<.flash>` nobody defines. Ten components are 263 KB of minified
+  CSS where all 74 are 1.46 MB. `--no-daisy` takes daisyUI out — its
+  plugins, its dependency, its classes in `Layouts` and the home page,
+  rewritten as Tailwind utilities, and the page's ground as a rule of
+  its own. It exists because of a measurement: on a Phoenix 1.8.15
+  project, over the computed style of 146 elements with daisyUI's
+  plugin in and out, the two libraries share five class names, and
+  Mishka's open `collapse` is 0 px high beside daisyUI. daisyUI stays
+  by default, and the option is refused while `cinder` or
+  `ash_authentication_phoenix` is in. The generated components are run
+  through `mix format` — the library leaves `button.ex` a line short of
+  it, which a pre-commit format check refuses — unless `--no-format`.
+  `--mcp` forwards the library's MCP server in the router, under
+  `dev_routes`: the way to serve it that needs no `mix` on the host.
+  It goes at `--mcp-path`, `/mishka-chelekom/mcp` by default and not
+  the `/mcp` of the library's documentation: an MCP endpoint is one
+  server's (the transport gives each "a single HTTP endpoint path"), so
+  a second cartridge with a server needs a second path, and `/mcp` is
+  the one each would take. The name goes first because a `forward
+  "/mcp"` takes everything under `/mcp/`. The route is the one `mix mishka.mcp.setup` writes, and the
+  cartridge writes it itself, a WORKAROUND marked where it shows: on
+  the router `phx.new` generates, that task puts its `forward` inside
+  `pipeline :browser` (0.0.9 and 0.0.10-alpha.8; the draft of the
+  issue is `ISSUE-mishka_chelekom-mcp-route.md`, not filed). Each
+  component's value carries its page in the library's documentation.
+  The queued command goes through `mix workbench.mishka_components`,
+  which completes the list off the fetched package's catalog. Inserted and ejected through `wb.sh` on
+  a copy of a workbench project. `--solve-warnings`, off by default,
+  writes the fence three of the library's code blocks lack, which
+  ExDoc warns of on every `mix docs`: a WORKAROUND, by a rule over
+  each heredoc's fences and not by line, run without writing over a
+  project's 77 component files (three fences, two files) and never in
+  an insert. mishka_chelekom v0.1.0; its DESIGN has the sources and
+  what was not measured.
+
+- **`mix chelekom.mcp.json`, planted by mishka_chelekom's
+  `--mcp`: the client's side of MCP, read off the project when it is run.** A
+  client needs the address of the route, and its port is the one the
+  compose publishes the app on — a fact of where the project runs. A
+  `.mcp.json` written by the installer carries a number the next bake
+  changes; a port-free stdio entry through `docker compose exec` makes
+  Docker a requirement of a file in a project that runs with `mix`
+  anywhere else. The author's answer is a task of the project's own:
+  it reads the path off the router, takes the endpoint's port from
+  the app's configuration, looks in
+  `docker-compose.yml` for the line that publishes it (`4011:4000`),
+  falls back to the endpoint's port where there is no compose, and
+  adds its entry to `.mcp.json`, keeping the file's other servers.
+  The file is the machine's, as `.env` is, and `.gitignore` lists it.
+  Run on a host project in the four cases, and its premises read
+  inside a workbench project's container: the compose is there, the
+  endpoint is on 4000, and the line found is `4011:4000`. It was
+  `mix mcp.json` until 2026-10-07, and carries the library's name for
+  the reason its path does: an MCP server is one endpoint, a project
+  may forward several, and each one's task writes its own entry of
+  the one file. A project that has the task under the old name
+  answers that `--mcp` is not in.
+
+### Updated
+
+- **A door that depends on a file is a plate of two rows, and its
+  button wears its command.** A page's plate carried its address, the
+  stamp of when it was built and a button reading *build* or
+  *rebuild*, in one row. The word said the page's state, which the
+  stamp already said, and hid the command — two different ones behind
+  the coverage page, `mix cover` or `mix coveralls.html` by how the box
+  went in. Settled on a page of candidates drawn with the console's
+  own plates (`los-botones-de-las-puertas`), measured at the rail's 500
+  and 380 px: named by its command in one row, the coverage plate
+  broke its line at the default width, and mishka_chelekom's MCP door,
+  at its new path, no longer fitted at all (410 px). So the plate has
+  two rows, flush inside the one border and made of the cells it had:
+  the address above — the layer, the name, where it is, what the bell
+  heard — and the file below, its stamp and the command that writes it
+  (`mix docs`). The stamp is a mark and the date: full once the file is
+  written, hollow and alone while it is not, and its title says the
+  file (`doc/index.html · written 2026-10-06 18:44`, `missing ·
+  doc/index.html · mix docs writes it`). With no page the address is
+  what is unlit, and the first row alone is dimmed: the whole plate
+  was, its button with it, though the button was the one thing to
+  press. No plate runs past the rail at either width now, and the
+  mention of the cartridge sits beside it at 500. This undoes the
+  *build* / *rebuild* of 2026-09-26. The plate's styles are the design
+  system's (`assets/design/build.py`, `.door-ref.two`). Seen on the
+  console from the working tree: the rail and a box's *Opens*.
+
+  Every plate is 6 px from its sides, which were 9. The two rows had
+  each copied the figure into a rule of their own — 9 in the first, 8
+  in the second's cells — so it is written once now (`--plate-x`) and
+  the plate, its rows and its cells read it. Measured on the rail, the
+  eleven plates of a project, of one row and of two: the layer's mark
+  is 6 px from the border in every one. The file's mark, 9 px under a
+  layer's 15, stands on the same centre: its cell is padded by the
+  half of the difference more (`--plate-icon`, `--plate-dot`), 14.5 px
+  from the border for both on the two pages' plates. The mention of
+  the cartridge stands at the middle of a plate of two rows, as it
+  does beside one of one: it had been set by the first row.
+
+  A door for a client says the state of the file its task writes, in
+  the same stamp. The door declares the file (`writes: ".mcp.json"`),
+  and the console reads it off the workspace: *missing*; *up to date*
+  while it carries the door's address, the mark full and in the good
+  ink; *behind* once the address moved — another port after a bake —
+  the mark half and in the warning's, with where the address is now.
+  It is a comparison of text: the console does not read the file as
+  anything. One title for every stamp, in one order — the state, the
+  file, when it was written, why it is behind.
+
+  A page says whether it is behind what it is made from. Its door
+  declares its sources (`from:` — exdoc's `lib`, `mix.exs`,
+  `README.md`, `CHANGELOG.md` and `guides`; coverage's `lib` and
+  `test`), and the console compares: *up to date*, or *behind* by so
+  many files. The dates say which files to look at, and git says
+  whether they changed. The dates alone were tried first and were
+  wrong on the author's project within the hour: `mix cover` touched a
+  source while it ran, half a minute after `mix docs` had written the
+  site, and the site read as behind a file nobody had edited. So a
+  file newer than the page counts only when git has it changed in the
+  tree, or committed since the page was written; no file newer, and
+  git is not asked; no repository, and the dates are all there is. It
+  is still a reading of the sources and not of the page: a dependency
+  that moved changes the docs and is not seen. A page whose door names
+  no sources is written or missing, in plain ink, and no more is said.
+  On that project, 110 and 131 files, it takes 3 to 7 ms a page.
+
+- **A door can be for a client, and the console gives the client's
+  line with the port in it.** A cartridge's doors were pages: the
+  console links them and reads a 4xx as a warning. mishka_chelekom's
+  `/mcp` is an endpoint a program talks to, and a `GET` gets the
+  server's own 406, so as a door it was an amber chip on a link that
+  opens an error. A door now says `client: [{label, line}, …]`
+  (`Feature.console/0`): the console shows its address and does not
+  link it, reads any answer to the bell as *answers*, and under the
+  box's *Opens* gives each line with `{url}` filled — `claude mcp add
+  --transport http mishka-chelekom http://localhost:4011/mcp` — and a
+  *copy* button, the console's first (`Copy` in `hooks.js`). The words
+  are the cartridge's and the console learns no protocol.
+  mishka_chelekom's own two lines — Claude Code's and the JSON entry
+  of Cursor and VS Code — came out on 2026-10-07 (`client: []`): its
+  `mix chelekom.mcp.json` writes what a client reads, the plate runs
+  it and says the file's state, and the lines beside it were a second
+  way to the same place. A door of
+  this kind may name the project's task that sets a client up
+  (`build:`), offered on its plate as a page's is. The protocol's own check
+  — `initialize`, then `DELETE` of its session — was measured and left
+  out of the bell: 1 to 2.3 s on a project in dev, once over 8 s,
+  against the 2.5 s a door is given. Seen on the console from the
+  working tree, against a project up in dev.
+
+- **An option can be a detail of a switch, and goes with it.**
+  mishka_chelekom's `--mcp-path` says where `--mcp` forwards the
+  server and nothing without it, and the form offered the field with
+  the switch off, for an installer that then ignored it. A cartridge
+  declares it (`details/0`, `[mcp_path: :mcp]`; `of` in the catalog),
+  and the two sides hold it: the installer refuses the detail given
+  alone, and the console's form shows its field unlit, *only with
+  --mcp*, until the switch is on, and keeps it off the command. On a
+  box that is in, a detail follows the switch it belongs to: open
+  while the switch is a piece being added, shut with *went in with
+  --mcp* once it is in, and never what keeps a box from being full.
+
+- **A long list of names in a box's form is set in columns, and a
+  value documented by an address carries it beside its name.**
+  mishka_chelekom's `--components` is 74 values in six sections, each
+  with its page in the library's documentation: read down, with the
+  link under each, 148 lines. A value whose doc is an address and
+  nothing else now has a `↗` mark after its name, which opens the page
+  apart while the name still ticks the box; and an option with more
+  than a dozen values, none of them with a sentence under it, sets
+  each section in columns read down (`.vals.cols`). A value with a
+  sentence keeps its line, so ash's options are as they were. Seen on
+  the console from the working tree: five columns to a section.
+
+- **A section's name ticks its values, or clears them.** In an option
+  that takes several, each section's name is the control for the whole
+  of it — the 22 form fields at one press — and counts what is ticked
+  in it (`forms 22 of 22`). Pressed when they all are, it clears its
+  own and leaves the other sections alone; a value shut for what the
+  project lacks stays out. There is none for the whole option: left
+  empty, an option already means all of them. The form's state is the
+  server's, so it is an event of the box in hand (`section`,
+  `Box.section/5`), pressed through the LiveView in its test.
+
+- **`workbench.igniter_install`'s listening shell runs any package's
+  task.** What made `mix igniter.install` fail on an installer's
+  issues, and gave a spinner a screen over a pipe, is `watched/2`
+  there; `run/1` calls it, and so does the mishka_chelekom
+  cartridge's queued command.
+
+### Fixed
+
+- **Coverage's option is `--md-report` wherever the papers name it.**
+  It was `--exdoc` until coverage v0.9.0, and the old name had stayed
+  in the manifest's own documentation (`Feature.console/0`'s example of
+  `build:`, and the example of a refusal), in chiefs_setup's table of
+  its recipe — which already passed `--md-report` — in the shelf's
+  index and in the comments of five test files. Found when the old name was
+  repeated in an answer about why the coverage page has two commands.
+  The records of the renaming, and a test's fixture of an old project's
+  `Insert coverage --exdoc`, stay as they are.
+
+- **A box inserted with its one switch on no longer offers the same
+  insert again.** The author inserted mishka_chelekom with `--mcp`, and
+  the form came back with `--mcp` open and *Add to cartridge* lit:
+  pressed, the installer ran to say there was nothing to do. The
+  console held that "a switch can always say something new", so a box
+  with a switch among the pieces it still adds never counted as full —
+  credo's `--githook` the same. A switch the project already has on is
+  in, and one that builds on what the project lacks is out of reach:
+  either way it has nothing to add, as a value of a closed list has
+  not. Such a box is now full — the add unlit, *nothing left to add* —
+  and the switch is drawn as a value that is in is, checked and shut.
+  A field of text still keeps a box open. For mishka_chelekom the mark
+  of `--mcp` is both of its pieces, the route and the project's `mix
+  chelekom.mcp.json`: a project with the route alone answers that it is not in,
+  so the option stays offered and a second run plants the task.
+
+- **`catalog --json --brief` takes an option whose values come in
+  sections.** The brief read `value` off every choice, and a sectioned
+  list is groups of them: it raised on the first cartridge to declare
+  one, mishka_chelekom's `--components`. The brief keeps the values
+  alone, flat.
+
+## v0.18.4 - (2026-10-06)
+
+### Added
+
+- **`.field-error`, how a field says its value will not do.** The
+  design system had chips, the unlit button with its reason, and
+  `.note` and `.help` for the small print, and no piece for the error
+  of a field; the first one that came up, the project's name ending in
+  `Web`, was set in `.note` under the New Project card's command and
+  read as the hint of a field. It is one line under the field, in
+  `--bad`, with the `×` before it, and the field marked `aria-invalid`,
+  which rings it in the same ink — said where the value is edited and
+  nowhere else. A screen that only reads the value says it with a
+  `.chip.bad` and the way to the field. Settled on a page of three
+  takes on the real Config field and the real card
+  (`los-errores-de-un-campo`, retired the same day): the marked field
+  with its line, over a chip alone, which hides the reason behind a
+  hover, and a block, which is the weight of a job that failed.
+
+### Updated
+
+- **The README's file tree is a drawing again.** Under *The Workbench
+  & its Workspace* it had become the `File | Role` table of the
+  cartridges' *Contents* (v0.18.2); it is the block `igniter/README.md`
+  draws its own tree in, the marks and a `#` comment to a line. Eight
+  lines are read at a glance in a block, and a package's README draws
+  its tree while a cartridge's lists its files with a role each. The
+  two workspaces of the example are named as projects are.
+
+### Fixed
+
+- **A project's name cannot end in `Web`.** `./wb.sh add health_probe`
+  stopped on *Could not find module PortfoliosWeb.Endpoint* in a
+  project named *Portfolios Web*, whose endpoint is
+  `PortfoliosWebWeb.Endpoint`. Phoenix disagrees with itself about
+  such a name: `phx.new` always adds `Web` to the app's module
+  (`phx_new/single.ex`, `web_namespace`), while its own generators
+  take a module that already ends in `Web` to *be* the web module
+  (`Mix.Phoenix.web_module/1`: `phx.gen.html`, `.live`, `.json`,
+  `.auth`, `.channel`, `.socket`, `.release`). Igniter copies that rule
+  (`Igniter.Libs.Phoenix.web_module/1`), and with it eleven cartridges
+  and the birth's own setup, which had already written
+  `config :portfolios_web, PortfoliosWeb.Endpoint, http: [ip: …]` into
+  that project's `dev.exs`, for a module that is not there, and said
+  nothing.
+
+  The workbench could teach its own cartridges the right module. It
+  could not teach Phoenix's generators, nor Ash's installers, nor
+  whatever else the reader runs afterwards, and a project that looks
+  sound and fails later, far from the cause, is the worse gift. So
+  `new` refuses the name, when changing it costs nothing: an app whose
+  name ends in `web` as a word of its own (`Portfolios Web`,
+  `portfolios_web`; not `Cobweb`, not `Web Shop`), with the reason and
+  the name without that word. In the console it is the field's own
+  error: under `PROJECT_NAME` in the workbench's Config, where the name
+  is edited, and the New Project card, which only reads the name, shows
+  it in a `project name` row with a chip and the cog that leads there,
+  Create unlit with a short reason, and submits nothing. `adopt`
+  takes such a project as it is — it exists, and it is the reader's —
+  and warns that the inserts that touch the endpoint or the router
+  will fail on it. No issue was found upstream for it (one search of
+  Phoenix's tracker, 2026-10-06); the refusal goes when `phx.new` and
+  `Mix.Phoenix.web_module/1` agree.
+
+## v0.18.3 - (2026-10-06)
+
+### Updated
+
+- **Going back one box and putting the box away are two buttons.** In
+  v0.18.2 Put back became the step back along the trail of boxes, and a
+  reader five boxes deep had five presses between them and the screen.
+  A square beside the box's name is the step back now — one box, on
+  the paper it was left on, at the line it was left at — and Put back,
+  Close and the scrim put the box away whole, whatever led to it, onto
+  what it stands over: the screen, or the workbench's drawer. The
+  square is there only when the box was opened from another: a box
+  taken off the shelf has nothing behind it, which is not a verb it
+  cannot do now but one it does not have.
+
+- **Two drawings in the sprite, `back` and `expand`.** Both were
+  characters, `‹` and `⤢`, and a character sits where its face puts
+  it: neither stood in the middle of its square. They are
+  `assets/design/icons/*.svg` now, like every other mark, and the hint
+  on a figure, on a thumbnail and on the box's face wears the drawing
+  (measured in a browser: both 0 px off the centre of their button).
+  The step back is Put back's own button, a `.btn` as tall as it and
+  square, with the drawing for its words: as the house's square it was
+  another size, another ground and another ink in one head. Settled on
+  a page of six takes on the box's real head (`el-boton-de-volver`,
+  retired the same day): the same button with the drawing alone, over
+  the same with its destination, the two grouped at the right, a
+  breadcrumb, and both as squares.
+
+### Fixed
+
+- **The expand hint of a cover in the README's tables is on the cover.**
+  A figure in a paper is a block as wide as what holds it, and its hint
+  stands at that block's corner: right for a diagram, which fills the
+  column, and beside the picture for an 80-pixel cover in a table's
+  cell, where the hint's two words did not fit either. A picture in a
+  cell that declares its width is a thumbnail now (`.fig.thumb`, the
+  Booklet hook): its figure is the picture's size and the hint the mark
+  alone, the sprite's drawing in a 22-pixel square in its corner.
+
+- **The shelf's cover column is as wide as the cover.** A table whose
+  cells are pictures shares its width evenly between its columns, and
+  the rule asked for *a* cell holding only a picture. The shelf met it
+  the day its cover stopped being a link (v0.18.2): four equal columns,
+  197 pixels around an 80-pixel cover. *Every* cell is what was meant,
+  and a selector cannot ask it — `:has()` does not nest — so the
+  renderer marks such a table (`Console.Papers.mark_picture_tables/1`,
+  `table.pics`), as it marks a file tree. In a table of words a picture
+  that declares its width is drawn that wide and its column is the
+  picture's: both tables of the shelf draw every cover at 80 by 113.
+
+## v0.18.2 - (2026-10-06)
+
+### Updated
+
+- **The workbench's README opens a cartridge in the console, not on
+  GitHub.** Read in the drawer's Manual, a link into a cartridge's
+  directory led to a path the console does not serve. Each is now read
+  by the shape of its address, wherever it stands — a cell of the
+  shelf's table, of the pending one, or a sentence: the directory is
+  the box, a paper the box carries is that paper in its Manual, and
+  its NEED is the box itself, as from the cartridge's own papers
+  (`Console.Papers.workbench_link/2`, beside `link_tag/3`). Whatever
+  else points into the repository — another package's README, the
+  licence, a paper a box does not carry — is read on GitHub, which is
+  the rule a cartridge's papers already had; a picture under `assets/`
+  is the figures route's.
+
+- **A box opens over what was being read, and is put back onto it.**
+  Pressing a cartridge in the workbench's README opened its box in the
+  drawer's place, and Put back left the reader on the bare screen: the
+  README, and their place in it, gone. The two are on the page at once
+  now, the box on top. The address carries both (`?wb=manual&box=…`),
+  the drawer stays mounted under the box, `inert`, and Put back, Close
+  and the scrim take the box away and nothing else. `paper` in that
+  address is the box's manual's, so the drawer stays on the paper it
+  was on. Both in the address used to mean the opposite, the drawer
+  shown and the box hidden, which nothing in the console led to.
+
+  A box pressed in another box's paper cannot be drawn over it: there
+  is one box in hand, with one form, one recipe and one face. It leaves
+  a trail in the address instead — `from=coverage.manual.readme`, the
+  box, its screen and its paper — and Put back becomes *Back to
+  coverage*: one box back at a time, on the paper it was left on, and
+  the Booklet hook returns the page to the line the reader left
+  (measured in a browser: left at 2316 px, back at 2316 px). The box's
+  own links keep the trail, and a link to another of its papers adds
+  nothing to it.
+
+- **A cover in the README's tables is pressed to be seen, not to go
+  somewhere.** The cover was the link to the cartridge, and in the
+  console one press opened the picture's viewer and left for the box at
+  the same time. The name is the link now, and the cover is a picture.
+
+- **The README's two drawings of what is not yet there.** The file
+  tree under *The Workbench & its Workspace* is the `File | Role` table
+  the cartridges' *Contents* are, branches in code with no-break
+  spaces: it is by those that the console tells a tree from a table
+  (`mark_trees/1`), and two rows written with plain spaces came out as
+  ordinary cells. The table of pending boxes has the shelf's shape
+  without the cover — a pending box has none, and a placeholder took a
+  column to say nothing: the name, the stage in a column of its own,
+  the need, and the papers it has so far (`assets/readme/build.py`).
+
+## v0.18.1 - (2026-10-06)
+
+### Fixed
+
+- **`./wb.sh new --database sqlite3` creates the project again: a
+  deployment a project cannot have is no longer an error.** Since the
+  three compose files are baked at a project's birth (2026-09-27),
+  `new` and `adopt` ended on `** (Mix) workbench.compose: a scaled
+  deployment cannot run on SQLite`, because the bake of the scaled
+  file was one more step of a chain and its refusal failed the whole
+  birth. The refusal was right and its kind was wrong: N replicas on
+  SQLite are N database files, so what a request reads depends on the
+  replica that answers it, with a balancer or without one, clustered
+  or not (the `ecto` cartridge, v0.3.2, DESIGN §3.5). That is not a
+  render that failed. It is a deployment this project does not have.
+
+  A cartridge's `compose/1` can now say so: `{:unavailable, reason}`
+  beside `{:error, reason}`, which stays for a set of services that is
+  wrong (two databases). `mix workbench.compose` prints
+  `unavailable> REASON` and exits with 4, the way a port still to
+  choose is `need> NAME DEFAULT` and 3, and `wb.sh` reads it without
+  naming a service or a deployment: the reason is the cartridge's,
+  shown as written. `new` and `adopt` leave the project with its dev
+  and prod files and one note. `add` removes a scaled file the project
+  can no longer have, in the insert's own commit (a project born
+  `--no-ecto` and given `ecto --database sqlite3` afterwards), and the
+  eject's revert brings it back to be rendered again. `bake --deploy
+  scaled` ends with the reason.
+
+  The status carries it — `deployments.<deploy>.unavailable` in
+  `status --json`, null for a deployment the project can have, and
+  *not available* with the reason under the Deployments line of the
+  text — and the console draws it where the deployment would be: the
+  scaled row stays on the Deployments sheet with *not available* and
+  the reason in full, its Bake, Build and Up unlit with that reason,
+  on the rail too. Switched off and saying why, not hidden.
+
+  It was first read as a consequence of `iex` attaching to the running
+  node (2026-09-16), which it is not: dev runs no release. Its
+  container boots `elixir --sname <app> -S mix phx.server` and `iex`
+  enters with `--remsh`; a release is only what prod and scaled run.
+
 ## v0.18.0 - (2026-10-04)
 
 ### Added

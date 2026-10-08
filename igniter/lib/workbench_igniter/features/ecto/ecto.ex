@@ -121,6 +121,13 @@ defmodule WorkbenchIgniter.Features.Ecto do
   # The names `services/1` asks by: one per engine.
   @engines ~w(postgres mysql mssql sqlite)
 
+  # Why a project on SQLite has no scaled deployment: not a set of
+  # services that is wrong, a deployment this project cannot have. Said
+  # once, here, and read as it is by the bake, the status and the console.
+  @scaled_on_sqlite "The scaled deployment is not available on SQLite: each replica would keep " <>
+                      "its own database file, so what a request reads depends on the replica " <>
+                      "that answers it. Scaling needs a database server (postgres, mysql, mssql)."
+
   @impl true
   def compose(%{services: services, deploy: deploy} = context) do
     case Enum.filter(services, &(&1 in @engines)) do
@@ -131,7 +138,7 @@ defmodule WorkbenchIgniter.Features.Ecto do
         {:error, "one database at most, got " <> Enum.join(engines, " and ")}
 
       ["sqlite"] when deploy == :scaled ->
-        {:error, "a scaled deployment cannot run on SQLite: the replicas cannot share a file"}
+        {:unavailable, @scaled_on_sqlite}
 
       [_engine] ->
         database = database(services)

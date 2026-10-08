@@ -115,6 +115,7 @@ defmodule Console.Papers do
           md
           |> to_html()
           |> put_house_tags(tags)
+          |> mark_picture_tables()
           |> then(
             &Regex.replace(
               ~r/<img src="(assets\/[^"]+)"/,
@@ -123,24 +124,69 @@ defmodule Console.Papers do
             )
           )
           |> then(
-            &Regex.replace(
-              ~r/<a href="CHANGELOG\.md[^"]*"/,
-              &1,
-              ~s(<a href="?wb=manual&amp;paper=changelog" data-patch)
-            )
-          )
-          |> then(
-            &Regex.replace(
-              ~r/<a href="(https?:[^"]*)"/,
-              &1,
-              ~s(<a href="\\1" target="_blank" rel="noopener")
-            )
+            &Regex.replace(~r/<a href="([^"]*)"/, &1, fn whole, href ->
+              workbench_link(whole, href)
+            end)
           )
 
         booklet(html, file)
 
       _ ->
         nil
+    end
+  end
+
+  @features "igniter/lib/workbench_igniter/features/"
+
+  # The opening tag a link of the workbench's own papers gets, by where
+  # its href points — what `link_tag/3` is to a cartridge's. A cartridge
+  # is opened here and not on GitHub, by the shape of the address and
+  # wherever the link stands, a table's cell or a sentence: its
+  # directory is its box, a paper it carries is that paper in its
+  # Manual, and its NEED is on the box itself, as from its own papers.
+  # The changelog is the Manual's other paper, a picture under
+  # `assets/` is the one the figures route serves, and anything else in
+  # the repository — a paper the box does not carry, another package's
+  # README — is read where the repository is.
+  defp workbench_link(whole, href) do
+    cond do
+      String.starts_with?(href, "#") ->
+        whole
+
+      Regex.match?(~r/^(https?:|mailto:)/, href) ->
+        ~s(<a href="#{href}" target="_blank" rel="noopener")
+
+      String.starts_with?(href, "CHANGELOG.md") ->
+        ~s(<a href="?wb=manual&amp;paper=changelog" data-patch)
+
+      String.starts_with?(href, "assets/") ->
+        ~s(<a href="/figures/#{href}" target="_blank" rel="noopener")
+
+      door = box_door(href) ->
+        ~s(<a href="#{door}" data-patch)
+
+      true ->
+        ~s(<a href="#{@github}#{href}" target="_blank" rel="noopener")
+    end
+  end
+
+  # Where in the console a link into a cartridge's directory opens, nil
+  # when nothing here does: no such box on the mount, or a paper it
+  # does not carry.
+  defp box_door(href) do
+    with [_, name | file] <-
+           Regex.run(~r{^#{@features}([a-z0-9_]+)/(?:([A-Z]+)\.md)?(?:#.*)?$}, href),
+         true <- File.dir?(Path.join(features_dir(), name)) do
+      # No file named: the directory itself, which is the box.
+      key = file |> List.first("") |> String.downcase()
+
+      cond do
+        key in ["", "need"] -> "?box=#{name}&amp;screen=box"
+        key in carried(name) -> "?box=#{name}&amp;screen=manual&amp;paper=#{key}"
+        true -> nil
+      end
+    else
+      _ -> nil
     end
   end
 
@@ -239,6 +285,7 @@ defmodule Console.Papers do
     |> box_blocks()
     |> outside_images()
     |> mark_trees()
+    |> mark_picture_tables()
   end
 
   @doc """
@@ -296,6 +343,28 @@ defmodule Console.Papers do
   """
   def mark_trees(html),
     do: String.replace(html, ~r/<td>(<code>\x{00A0}*(?:📁|📄|│|├|└))/u, ~s(<td class="tree">\\1))
+
+  @doc """
+  A table every cell of which is one picture — a row of screenshots,
+  the four states of a cover — gets `pics`: the stylesheet shares its
+  width evenly between the columns. *Every* cell is what a selector
+  cannot ask, so it is asked here. A table with a picture in one column
+  and words in the others, the README's shelf, is a table of words.
+  Run again it changes nothing: it reads only a table not yet marked,
+  which is how the workbench's README is marked after its own `<img>`
+  tags are written back (`render_workbench/1`).
+  """
+  def mark_picture_tables(html) do
+    Regex.replace(~r{<table>(.*?)</table>}s, html, fn whole, inner ->
+      if pictures_only?(inner), do: ~s(<table class="pics">) <> inner <> "</table>", else: whole
+    end)
+  end
+
+  # Whether a table's body cells are one picture each, and it has any.
+  defp pictures_only?(inner) do
+    cells = Regex.scan(~r{<td[^>]*>(.*?)</td>}s, inner, capture: :all_but_first)
+    cells != [] and Enum.all?(cells, fn [cell] -> cell =~ ~r{^\s*<img\s[^<>]*>\s*$} end)
+  end
 
   @doc """
   An image from another origin never loads here — the policy's

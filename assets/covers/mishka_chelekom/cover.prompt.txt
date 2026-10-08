@@ -1,0 +1,114 @@
+THIS HERO IS MANUAL. There is no prompt that regenerates it.
+
+It was generated once from a prompt — proposal 1 of `eras.md`, *the
+straight way*, kept as `_archived/art/cover-1.prompt.txt` beside the
+take it made — and what came back was right in every body and count
+and wrong in one way: the prompt's decimal positions were drawn on the
+face as dimension figures with measuring lines, and the paragraph that
+asks for a quiet corner was lettered into that corner. The picture is
+continued from there, in conversation with the generator, and the
+image itself is the source.
+
+A manual hero can only be **continued**, never regenerated. Every turn
+is the current `art/hero.jpg` plus the last entry below, and each entry
+is written here *before* the take that tests it. The hero is archived
+before anything overwrites it, without exception.
+
+Everything downstream is unchanged: `covers.py pad`, the expansion,
+`covers.py cut`, `covers.py stamp`, the invariants, the counts.
+
+--- the log ---
+
+### 1 — 2026-10-07, the image as it arrived (art/hero.jpg, 825x1024; archived as _archived/art/cover-1.jpg)
+
+The maze seen from above its entrance, near-black riveted steel, red
+laser lines in the side corridors and two arcs of electric blue at the
+horizon. At the top centre, one upright cyan slab reading "AI", cables
+at its sides. One corridor lit amber straight down the middle, and on
+its floor three amber tiles, far to near: a fan of four cards, a thin
+bar with three beads, a rounded slab. In the foreground one sparrow
+seen straight on, perched on a pale wooden bench on two steel posts.
+Lettering in the art: a flash "74 COMPONENTS" in the upper left,
+"MISHKA CHELEKOM" in brushed steel across the bottom, "ASK THE
+SPARROW" in amber under it.
+
+What is wrong with it: ten small pale dimension figures — 0.16, 0.06,
+0.39, 0.50 twice, 0.64 twice, 0.24, 0.72, 0.82, 0.86 — with thin
+measuring lines and brackets beside the things they measured; and four
+lines of small pale text in the upper right corner.
+
+What is not corrected: the fan has four cards where three were asked,
+and the bar three beads where four were — marked members inside a
+body, the count a generator does not keep, and neither is a fact the
+cover states.
+
+### 2 — 2026-10-07, the figures and the corner's text painted over
+
+Sent with `art/hero.jpg` attached, in the same chat:
+
+Repaint this picture exactly as it is, with one change. The small pale
+numbers, and the thin pale measuring lines and brackets beside them,
+are painted over with what lies behind each one: the riveted steel
+wall, the amber floor of the corridor, the dark steel floor at the
+bottom, the dark haze at the top. The four lines of small pale text in
+the upper right corner are painted over with the same plain near-black
+haze as the sky beside them. The sparrow, the wooden bench and its two
+posts, the three amber tiles, the cyan slab with "AI", the walls and
+their red lines, the flash reading "74 COMPONENTS", the title "MISHKA
+CHELEKOM" and the subtitle "ASK THE SPARROW" stay exactly as they are,
+and they are all the lettering in the picture.
+
+What came back (art/hero.jpg, 825x1024, 18:39): every figure, line
+and bracket gone, the corner plain haze, and nothing else moved — the
+sparrow, the bench, the tiles, the slab and the three pieces of
+lettering are where they were. This is the hero.
+
+### 3 — 2026-10-07, the expansion and the stamp
+
+The second turn below was sent with `art/padded.jpg` and came back as
+`art/expanded.jpg` (728x1024): haze above, floor below, walls at the
+sides, nothing new. It repainted the hero as it went — `covers.py cut`
+found it at a correlation of 0.94 — and painted out the "74
+COMPONENTS" flash; the fan came back with three cards. The flash
+was cut from the hero (`art/badge.png`, 185x47 at +16+15 of
+`art/hero.jpg`) and is laid back by the stamp as a bare mark, at the
+size it had — the hero is 0.869 of its size in the cut face — and
+mirroring the seal: its top level with the seal's, as far from the left edge
+as the seal is from the right (48px), with the seal inside the window:
+`covers.py stamp mishka_chelekom --corner tr --inside --mark
+badge=art/badge.png --mark-style bare --mark-scale 2.38 --mark-at
+0.174,0.061`. A typeset badge was stamped first and taken off: a
+white box on this art read as another system's.
+
+### 4 — 2026-10-07, the expansion retouched by hand
+
+The author retouched `art/expanded.jpg` outside the repository and
+outside the generator: the ASCII sparrow the hero was read from —
+`.-.`, `/'v'\`, `(/   \)`, `=="="==` — laid over the scene as large
+soft glyphs of cyan and amber light, around the painted sparrow and
+on its bar, and the fan of cards lit greener. The expansion it
+replaces is `_archived/art/expanded-1.jpg`, with the face cut from it
+(`cover-2.jpg`) and that face sealed (`cover-2.sealed.jpg`). There is
+no prompt for this turn: the image is the source. `covers.py cut`
+found the hero in it where it was (correlation 0.92), and the stamp is
+the same command as in 3.
+
+### 5 — 2026-10-07, the retouch adjusted
+
+The author adjusted the retouched expansion by hand again: a little
+more brightness in the lights, nothing moved. The one it replaces is
+`_archived/art/expanded-2.jpg`, with its cut face (`cover-3.jpg`) and
+that face sealed (`cover-3.sealed.jpg`). `covers.py cut` found the
+hero where it was (correlation 0.94); the stamp is the same command.
+
+### 6 — next turn goes here, before the take that tests it
+
+--- second turn, with the padded canvas from covers.py pad ---
+
+The flat grey border around this picture is blank. Paint it by
+continuing the picture outward into it on every side, to the edges —
+the near-black haze continues above, the near-black steel floor of the
+entrance continues below, and the rows of bare steel walls with their
+red laser lines continue at each side, in the same dark. Keep the
+picture inside exactly as it is, and add nothing new: no figure, no
+object, no lettering.

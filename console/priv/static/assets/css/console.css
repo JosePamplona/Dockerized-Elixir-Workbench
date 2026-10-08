@@ -881,6 +881,9 @@ pre .ln{display:block}
 /* The step back and the name of the box in hand travel together on the
    left; Put back stays at the other end. */
 .drawer .top .who{display:flex;align-items:center;gap:12px;min-width:0}
+/* One box back along the trail: Put back's own button, as tall as it is and square, with the sprite's drawing for its words. */
+.drawer .top .who .back{display:inline-flex;align-items:center;justify-content:center;flex:none;box-sizing:border-box;width:30px;height:30px;padding:0}
+.drawer .top .who .back svg{width:14px;height:14px;display:block}
 /* A square with an arrow in it: the name of the box it goes back to is in
    the title and in the label a screen reader reads, not on the face of a
    control that sits beside the name of the box in hand — two names, one
@@ -1028,8 +1031,12 @@ body>[data-phx-main]>header.band,body>[data-phx-main]>.rebind,body>[data-phx-mai
 .md td.tree code{background:none;padding:0;white-space:pre;font-size:12.5px}
 .md hr{border:0;border-top:1px solid var(--line);margin:1.5em 0}
 .md img{max-width:100%}
-/* A table whose cells are pictures is a row of pictures: its columns share the width evenly, whatever their heads say — left to their content, two pictures of one size came out a column wider than the other — and it has nothing to scroll. (A picture stands in a figure once the page has dressed it.) */
-.md table:has(td>img:only-child,td>figure:only-child){display:table;table-layout:fixed;width:100%}
+/* A table whose cells are pictures is a row of pictures: its columns share the width evenly, whatever their heads say — left to their content, two pictures of one size came out a column wider than the other — and it has nothing to scroll.
+   Every cell, not any, which a selector cannot ask (`:has()` does not nest): the renderer marks such a table `pics` (Console.Papers.mark_picture_tables/1). The rule was `table:has(td>img:only-child)` until 2026-10-06, and the README's shelf — a cover in its first column, words in the other three — read as a row of pictures the day the cover stopped being a link: four equal columns, 197px around an 80px cover. */
+.md table.pics{display:table;table-layout:fixed;width:100%}
+/* In a table of words, a picture that declares its width is that wide, and its column is the picture's: the booklet's `max-width` let the column close on it down to its head's width. (A picture stands in a figure once the page has dressed it.) */
+.md table:not(.pics) td img[width]{max-width:none}
+.md table:not(.pics) td:has(>img[width]:only-child,>figure.thumb:only-child){width:1%}
 /* A shields.io badge drawn from its address (Console.Shields, through Console.Papers.outside_images/1): the service's own SVG in an <img>, at its own size — never stretched by the booklet's measure. Any other outside image is a link wearing its alt. */
 .md img.shield{max-width:none;vertical-align:middle}
 .md a.outside-img{font-family:var(--mono);font-size:.86em}
@@ -1080,6 +1087,12 @@ form.insert .label{margin-bottom:-4px}
    it shuts, never in the key: that is where the eye is before the click,
    and the key's 150px no longer breaks under a long need. */
 form.insert .opts{display:grid}
+/* What a door for a client is given: who it is for, the line, and the
+   button that takes it away. */
+.specs .give{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:start;padding-left:22px}
+.specs .give code{font-family:var(--mono);font-size:12px;background:var(--surface-2);padding:3px 6px;border-radius:2px;white-space:pre-wrap;overflow-wrap:anywhere}
+.specs .give .copy{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:10px;color:var(--muted);background:none;border:1px solid var(--line);border-radius:2px;padding:1px 6px;cursor:pointer}
+.specs .give .copy:hover,.specs .give .copy:focus-visible{color:var(--ink);border-color:var(--ink)}
 .opt{display:grid;grid-template-columns:150px minmax(0,1fr);gap:10px;align-items:start;padding:12px 0;border-top:1px solid var(--line)}
 .opt:first-child{border-top:0;padding-top:2px}
 .opt:last-child{padding-bottom:2px}
@@ -1093,6 +1106,14 @@ form.insert .opts{display:grid}
 .opt .line.other{grid-template-columns:minmax(0,54ch)}
 .opt .line input[type=checkbox],.opt .line input[type=radio]{width:15px;height:15px;margin:0}
 .opt .line .name{white-space:nowrap}
+/* A value and what is said under it, kept together; a long list of
+   bare names in columns, read down each one. */
+.opt .vals{display:grid;gap:8px;min-width:0}
+.opt .val{display:grid;gap:8px;min-width:0}
+.opt .vals.cols{display:block;columns:19ch;column-gap:20px}
+.opt .vals.cols .val{break-inside:avoid;margin-bottom:7px}
+.opt .line .page{color:var(--soft);text-decoration:none;font-size:12px;line-height:1;padding:0 2px}
+.opt .line .page:hover,.opt .line .page:focus-visible{color:var(--accent)}
 /* Every field of the form, whatever an option's shape made it — a text,
    a url (`formats/0`) — so the house's face does not depend on the
    type attribute. Only the boxes above are left out. */
@@ -1104,6 +1125,12 @@ form.insert .opts{display:grid}
 .opt .line input:user-invalid{border-color:var(--bad)}
 .opt .gl{font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:11px;color:var(--muted);margin-top:4px}
 .opt .gl:first-child{margin-top:0}
+/* A section's name as the control that ticks or clears it whole. */
+.opt button.gl{appearance:none;background:none;border:0;padding:0;cursor:pointer;justify-self:start;text-align:left;display:inline-flex;gap:8px;align-items:baseline}
+.opt button.gl:hover:not(:disabled),.opt button.gl:focus-visible{color:var(--ink)}
+.opt button.gl[aria-pressed=true]{color:var(--accent)}
+.opt button.gl:disabled{cursor:default}
+.opt .gl .n{font-weight:500;letter-spacing:.06em;color:var(--soft)}
 .opt .doc{font-size:12.5px;color:var(--muted);margin:0;max-width:60ch;line-height:1.45}
 /* A value's doc hangs under its name, past the box, close to its line. */
 .opt .doc.of{padding-left:23px;margin-top:-5px}
@@ -1498,6 +1525,7 @@ form.insert.locked .opt input{opacity:.55}
 .cfg .row{display:grid;grid-template-columns:220px minmax(0,1fr);gap:4px 16px;align-items:center}
 .cfg .row label{font-family:var(--mono);font-size:12.5px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .cfg .row .help{grid-column:2;font-size:12.5px;color:var(--muted);margin:0}
+.cfg .row .field-error{grid-column:2}
 /* An address in what config.conf says: it is a link in prose, so it is
    one of the two places in the console that wear the underline. */
 .cfg .row .help a,.cfg .intro a{color:var(--accent);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;overflow-wrap:anywhere}
@@ -1973,6 +2001,16 @@ span.fact input{accent-color:var(--accent);width:14px;height:14px;margin:0;verti
 .fig>svg.diagram,.fig>img{margin:0;cursor:zoom-in}
 .fig .expand{position:absolute;right:8px;top:8px;font-family:var(--cond);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:11px;color:var(--ink);background:var(--surface);border:1px solid var(--line);padding:3px 8px;border-radius:2px;opacity:0;transition:opacity .15s;pointer-events:none}
 .fig:hover .expand,.fig:focus-within .expand{opacity:1}
+/* The hint's mark is the sprite's drawing, not a character: a character sat where its face put it, off the middle of a square. */
+.fig .expand,.hand .expand{display:inline-flex;align-items:center;gap:5px}
+.fig .expand svg,.hand .expand svg{width:11px;height:11px;display:block;flex:none}
+/* A thumbnail in a table's cell (a cover on the README's shelf): the
+   figure was a block as wide as the cell, so the hint stood at the
+   cell's corner, beside the picture. It is the picture's size now, and
+   the hint the mark alone, inside its corner. */
+.fig.thumb{display:inline-block;margin:0;vertical-align:top;line-height:0}
+.fig.thumb .expand{right:4px;top:4px;width:22px;height:22px;padding:0;justify-content:center;gap:0}
+.fig.thumb .expand svg{width:12px;height:12px}
 /* The box turns under the hand — a click, or Enter and Space with it
    focused — and the lozenge in its corner is what opens the viewer, the
    same lozenge a figure shows on hover, but a button: it has to be

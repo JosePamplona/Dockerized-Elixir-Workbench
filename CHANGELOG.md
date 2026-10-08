@@ -14,6 +14,31 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+### Added
+
+- **mishka_chelekom has its box.** Outside the repertoire of six eras,
+  by the author's decision: the library has pictures of its own — the
+  covers of its blog, a sparrow at some trade on every one — so the
+  cover is set in the world of the one for the version the cartridge
+  installs, 0.0.9, described and not reused, and its hero is the ASCII
+  sparrow the library's tasks print, made a body. That picture has the
+  sparrow frightened at the start of a maze with the AI far off; this
+  one turns it round — the sparrow calm on its perch, one corridor lit
+  straight through to the core, three components on it like stepping
+  stones — since what the release brought is the MCP server, and what
+  the server does is end the guessing. Three scenes were proposed in
+  place of six eras (`assets/covers/mishka_chelekom/eras.md`). The hero
+  was generated once, continued, and its expansion retouched by hand
+  by the author, twice; the back is composed on a plate drawn from it,
+  with a page of the components and the MCP server answering
+  `tools/list` as its two screens, both off a host probe with the
+  cartridge installed. The cover record gained three rows of evidence:
+  twenty decimal positions drawn on the face as dimension figures with
+  no reference image attached, the expansion painting out the hero's
+  flash, and a plate placed in words alone. The root README's shelf
+  shows the cover: committing the sealed face without rebuilding the
+  shelf had left the README's check failing.
+
 ## v0.19.1 - (2026-10-07)
 
 ### Fixed

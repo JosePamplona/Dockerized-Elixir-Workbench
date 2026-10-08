@@ -93,7 +93,15 @@ no prompt for this turn: the image is the source. `covers.py cut`
 found the hero in it where it was (correlation 0.92), and the stamp is
 the same command as in 3.
 
-### 5 — next turn goes here, before the take that tests it
+### 5 — 2026-10-07, the retouch adjusted
+
+The author adjusted the retouched expansion by hand again: a little
+more brightness in the lights, nothing moved. The one it replaces is
+`_archived/art/expanded-2.jpg`, with its cut face (`cover-3.jpg`) and
+that face sealed (`cover-3.sealed.jpg`). `covers.py cut` found the
+hero where it was (correlation 0.94); the stamp is the same command.
+
+### 6 — next turn goes here, before the take that tests it
 
 --- second turn, with the padded canvas from covers.py pad ---
 

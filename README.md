@@ -263,7 +263,12 @@ The rail is the state of the workspace at a glance. It stays in view on every ta
 
 Every section folds. A button that cannot be used is still shown, disabled, and its tooltip says why.
 
-The small plates on the rail are a notation the whole console uses, on the Deploy, Logs, Terminal and Docker screens too. The drawing says what kind of address it is, the mark on a second row says where its file stands, the colour says what the service is for, and the dot says where a cartridge is.
+The small plates on the rail are a notation the whole console uses, on the Deploy, Logs, Terminal and Docker screens too. A plate is read in four parts:
+
+- **The drawing** says what kind of address it is. A *service published on the host* opens in the browser. A *service inside the pod only* has a port and no way in from the host. A *door* is a route of the application that a cartridge opened. A *page* is files a tool of the project wrote on disk.
+- **The mark** is on the second row, which a plate has only when it depends on a file. Hollow and grey means the file is *missing*: nothing has written it yet. Full and green means *up to date*: it was written after everything it is made from. Half and amber means *behind*: a source changed since, or the address a door's file carries moved. Beside the mark is the command that writes the file, as a button.
+- **The colour** says what a service is for, in seven roles: *compute* runs the project's code, *database* keeps its data, *devtools* are for whoever develops, *observability* watches, *balancer* stands in front of the replicas, *job* runs once and ends, and *network* carries the traffic, and is also the colour of a service whose role the console does not know.
+- **The dot** says where a cartridge is: full when the project carries it, hollow when it is on the shelf. Either way, the name opens its box.
 
 A cartridge's service gets its colour from the role the cartridge declares, not from its name, so a service the console has never heard of is still drawn correctly.
 

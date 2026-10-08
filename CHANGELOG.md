@@ -35,6 +35,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   with *rebuild* on it, and it gains a section for the mark — missing,
   up to date, behind — with a door among the three, since a door can
   depend on a file as a page does.
+  The legend is also said in words, above the picture: a plate is
+  read in four parts — the drawing, the mark, the colour, the dot —
+  since the text inside an image is not searched, not read aloud, and
+  too small on a phone.
 
 ## v0.19.2 - (2026-10-07)
 

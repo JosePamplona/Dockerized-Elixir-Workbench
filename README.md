@@ -487,7 +487,7 @@ The full checklist is [Adding a feature](igniter/README.md#adding-a-feature-chec
 
 ### The box art
 
-A cover is optional: a cartridge works without one and shows a placeholder, as `k6` and `monitoring` do above. But the part of cartridge authoring that *is* already assisted is this one.
+A box is optional: a cartridge works without one and shows a placeholder, as `k6` and `monitoring` do above. But the part of cartridge authoring that *is* already assisted is this one.
 
 The covers are generated with an image model, and the repository keeps the whole process rather than only the results. It has three parts:
 
@@ -499,7 +499,17 @@ The covers are generated with an image model, and the repository keeps the whole
 | :-: | :-: | :-: | :-: |
 | <img src="assets/readme/covers/_pipeline-1.jpg" width="160" alt="The generated hero art for test_doubles"> | <img src="assets/readme/covers/_pipeline-2.jpg" width="160" alt="The hero placed on a 5:7 canvas with grey margins"> | <img src="assets/readme/covers/_pipeline-3.jpg" width="160" alt="The canvas with its margins painted by the generator"> | <img src="assets/readme/covers/_pipeline-4.jpg" width="160" alt="The finished test_doubles cover with the banner and the seal"> |
 
-The record of every cover, with what each attempt taught, is [`assets/covers/README.md`](assets/covers/README.md).
+The box has a back too, and it is made the other way round: **composed, not generated**. A back is mostly small text — a blurb, a list of features, requirements, a legal line — and small text is what an image model gets wrong. So the generator makes only the *plate*: the front's material with nothing written on it, a faint device in the middle and a darker band at the foot. Everything else is set by the script:
+
+- **The copy** is written by hand into `assets/covers/<name>/back/copy.md`: a headline, a blurb drawn from the cartridge's `NEED.md`, the decisions of its `DESIGN.md` as features, what it was verified on, and the command that inserts it.
+- **The screenshots are real ones**, of what the cartridge installs in a project: a page it adds, its report, its output in a terminal. "Actual screens shown" is on every back, and it is true.
+- **`covers.py back <name>`** lays the frames, the screenshots, the copy, the workbench's name, the cartridge's version read off its changelog, and the seal over the plate.
+
+| 1. The plate, generated | 2. A real screen | 3. Composed and sealed |
+| :-: | :-: | :-: |
+| <img src="assets/readme/covers/_back-1.jpg" width="160" alt="The generated back plate for test_doubles: the front's material with nothing lettered on it"> | <img src="assets/readme/covers/_back-2.jpg" width="160" alt="One of the two real screenshots the test_doubles back carries"> | <img src="assets/readme/covers/_back-3.jpg" width="160" alt="The finished test_doubles back: two framed screenshots, a headline, a blurb, features, requirements and the legal strip with the seal"> |
+
+The record of every cover and every back, with what each attempt taught, is [`assets/covers/README.md`](assets/covers/README.md).
 
 ## Why it is shaped like this
 

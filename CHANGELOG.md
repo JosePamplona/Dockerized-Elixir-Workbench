@@ -39,6 +39,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   read in four parts — the drawing, the mark, the colour, the dot —
   since the text inside an image is not searched, not read aloud, and
   too small on a phone.
+- **The README says how a box's back is made.** *The box art* told
+  the front's two turns and stopped there. It now says the back is
+  made the other way round — composed, not generated, because a back
+  is mostly small text and small text is what an image model gets
+  wrong: the generator makes the plate, and the script sets the copy,
+  the real screenshots, the name, the version and the seal over it —
+  with a strip of three states of test_doubles' back, cut by
+  `assets/readme/build.py` as the front's four are and looked for by
+  its check.
 
 ## v0.19.2 - (2026-10-07)
 

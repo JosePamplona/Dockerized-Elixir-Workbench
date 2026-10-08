@@ -18,8 +18,8 @@ DESIGN.md and identified when it does not, the reading the console
 makes. A cartridge without a sealed cover gets the placeholder, as on
 the console's shelf; a pending box has no cover to show, and its table
 has no column for one. It also cuts the four states one cover went
-through, for the README's strip of how the box art is made. PIL,
-nothing else.
+through, and the three its back did, for the README's two strips of how
+the box art is made. PIL, nothing else.
 
 With --check nothing is written: the tables the catalog would give are
 compared with the ones the README has, every thumbnail they point to is
@@ -45,6 +45,8 @@ COVER_WIDTH = 80  # as drawn in a row of the table
 PAPERS = ("README", "NEED", "DESIGN", "CHANGELOG")
 # One cover's four states, in order: the README's strip of how the art is made.
 PIPELINE = ("test_doubles", ("art/hero.jpg", "art/padded.jpg", "art/expanded.jpg", "sealed/cover.jpg"))
+# The same box's back, in order: the plate, one of its real screens, the face composed.
+BACK = ("test_doubles", ("art/back.jpg", "back/shot-1.png", "sealed/back.jpg"))
 
 
 # Under --check: nothing is cut, and a thumbnail that is not there is noted here.
@@ -156,6 +158,9 @@ def pipeline():
     feature, states = PIPELINE
     for step, state in enumerate(states, start=1):
         thumbnail(COVERS / feature / state, f"_pipeline-{step}")
+    feature, states = BACK
+    for step, state in enumerate(states, start=1):
+        thumbnail(COVERS / feature / state, f"_back-{step}")
 
 
 def main():

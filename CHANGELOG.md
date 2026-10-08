@@ -14,6 +14,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+## v0.19.3 - (2026-10-07)
+
 ### Updated
 
 - **No test of the guidelines cartridge opens a socket.** To see its
@@ -34,11 +36,6 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   which is what it had been asserting. The `:network` group is as it
   was, run by name only. The suite's time on a machine with cores to
   spare is the same, 99 s: the waits ran beside the other tests.
-
-## v0.19.3 - (2026-10-07)
-
-### Updated
-
 - **The root README says what the last two releases changed, and
   shows it.** Three passages had fallen behind: `eject` now also
   removes what the cartridge had told git to ignore, and names each

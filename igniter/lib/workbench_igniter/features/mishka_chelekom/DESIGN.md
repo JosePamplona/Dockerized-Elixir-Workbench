@@ -151,6 +151,12 @@ with, now `watched/2` there: an Igniter task that reports issues
 writes nothing and exits with zero, and the library's spinner needs a
 screen when colour is on over a pipe.
 
+![Who writes what, and when: wb.sh runs the cartridge, which checks its guards and hands Igniter a patch set — the dependency, the MCP route, the project's mix task and a .gitignore line — with one queued task; Igniter writes those files, fetches and compiles, and runs the queued task, which completes the list of components off the library's catalog, runs the library's own generator, then mends the documentation's fences and formats; the output returns, and wb.sh commits everything as one Insert commit](../../../../../assets/diagrams/mishka_chelekom/who-writes-what.svg)
+
+*The cartridge's own diff is the two messages in its colour: four
+files. Everything the library generates is written two turns later, by
+its own task, and lands in the same commit.*
+
 *Beaten:* running `mix igniter.install mishka_chelekom`, as ash does —
 it cannot take a list. Writing `exclude_components` into the library's
 `priv/mishka_chelekom/config.exs` — the library's own switch, and the

@@ -193,6 +193,13 @@ How a client reaches the route — which port, on which machine — is a
 fact of where the project runs, not of the project, so the installer
 writes no address anywhere. The task reads it when it is run:
 
+![The MCP address, and where each part of it comes from: the router forwards a path to the library's MCP server under dev_routes; the project's own task, mix chelekom.mcp.json, reads that path off the router, the endpoint's port off the app's configuration and the port docker-compose.yml publishes it as, and writes the address into .mcp.json, a file of the machine's that git ignores; an AI tool reads that file and calls the route over HTTP on the published port](../../../../../assets/diagrams/mishka_chelekom/mcp-address.svg)
+
+*Three facts make the address, and each has one owner: the path is the
+router's, the port the endpoint's, and the number a client dials the
+compose's. The task reads all three when it is run, so none of them is
+written twice.*
+
 | The project has | The address |
 | --- | --- |
 | a `docker-compose.yml` publishing the endpoint's port (`4011:4000`) | `http://localhost:4011/mishka-chelekom/mcp` |

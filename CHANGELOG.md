@@ -38,6 +38,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   flash, and a plate placed in words alone. The root README's shelf
   shows the cover: committing the sealed face without rebuilding the
   shelf had left the README's check failing.
+- **Two figures in mishka_chelekom's papers.** Its README, under
+  *MCP — The address*, draws where the address a client dials comes
+  from: the path off the router, the port off the endpoint's
+  configuration, the published port off `docker-compose.yml`, read by
+  the project's `mix chelekom.mcp.json` and written into `.mcp.json` —
+  three facts with one owner each, which the section said in a table
+  and two paragraphs. Its DESIGN, §3.1, draws who writes what and
+  when: the cartridge's own diff is four files, and what the library
+  generates lands two turns later, by its own task, in the same
+  commit. Drawn by `assets/diagrams/build.py`, as the other
+  cartridges' are; the rest of the two papers is lists and tables, and
+  stays prose.
 
 ## v0.19.1 - (2026-10-07)
 

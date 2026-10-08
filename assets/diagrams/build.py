@@ -18,8 +18,9 @@ Geometry follows the skill: a 4px grid, orthogonal connectors with
 r=8 elbows, labels masked and 6px clear of their stroke, arrows drawn
 before boxes, at most two accents per diagram, a legend strip at the
 foot. The types: Deployment (clustering's README), Sequence
-(clustering's DESIGN, §3.2; ash's DESIGN, §3.1), Architecture (ash's
-README; test_data's DESIGN, §3.1).
+(clustering's DESIGN, §3.2; ash's DESIGN, §3.1; mishka_chelekom's
+DESIGN, §3.1), Architecture (ash's README; test_data's DESIGN, §3.1;
+mishka_chelekom's README).
 """
 import json, os, re
 
@@ -415,6 +416,70 @@ def test_data_roads():
     return W, H, "\n".join(o)
 
 # --- writing ----------------------------------------------------------------------------
+# --- 7. mishka_chelekom README, MCP: the address, and where each part comes from ---
+def mishka_address():
+    W, H = 960, 480
+    o = []
+    o.append(zone(272, 40, 664, 344, "THE PROJECT"))
+    # arrows
+    o.append(hline(208, 304, 108, color="link"))                              # client -> router
+    o.append(label(256, 108, "HTTP :4011", fill="var(--link)"))
+    o.append(hline(616, 696, 108))                                            # router -> server
+    o.append(label(656, 108, "FORWARDS"))
+    o.append(vline(600, 296, 144, dashed=True))                               # task -> router (the path)
+    o.append(vlabel(600, 268, "PATH"))
+    o.append(vline(496, 296, 240, dashed=True))                               # task -> config (the port)
+    o.append(vlabel(496, 268, "PORT", side="left"))
+    o.append(f'<path d="M 688,332 H 776 Q 784,332 784,324 V 240" {stroke_attrs("muted", dashed=True)}/>')  # task -> compose
+    o.append(vlabel(784, 288, "PUBLISHED AS"))
+    o.append(hline(424, 208, 332, color="accent"))                            # task -> .mcp.json
+    o.append(label(316, 332, "WRITES", fill="var(--accent)"))
+    o.append(vline(124, 144, 304, dashed=True))                               # client -> .mcp.json
+    o.append(vlabel(124, 224, "READS"))
+    # nodes
+    o.append(node(40, 72, 168, 72, "an AI tool", "an MCP client", kind="input", tag="CLIENT"))
+    o.append(node(304, 72, 312, 72, "Router", 'forward "/mishka-chelekom/mcp"', kind="focal", tag="WEB", sub2="under dev_routes"))
+    o.append(node(696, 72, 208, 72, "MCP server", "MishkaChelekom.MCP.Server", kind="external", tag="LIBRARY"))
+    o.append(node(304, 168, 264, 72, "the endpoint", "http: [port: 4000]", kind="store", tag="CONFIG"))
+    o.append(node(664, 168, 240, 72, "docker-compose.yml", "ports: 4011:4000", kind="store", tag="COMPOSE", sub2="none: the endpoint's port"))
+    o.append(node(424, 296, 264, 72, "mix chelekom.mcp.json", "the project's own task", kind="focal", tag="TASK"))
+    o.append(node(40, 304, 168, 56, ".mcp.json", ":4011/mishka-chelekom/mcp", kind="optional", tag="FILE"))
+    o.append(legend(440, W, [("focal", "what the cartridge writes"), ("store", "what the task reads"), ("optional", "the machine's, not in git"), ("link", "the client's call"), ("muted,d", "read")]))
+    return W, H, "\n".join(o)
+
+# --- 8. mishka_chelekom DESIGN §3.1: who writes what, and when ---------------------
+def mishka_sequence():
+    W, H = 960, 640
+    actors = [("wb.sh add", 96), ("the cartridge", 288), ("Igniter", 480), ("the queued task", 672), ("project files", 864)]
+    o = []
+    for _, cx in actors:
+        o.append(f'<line x1="{cx}" y1="112" x2="{cx}" y2="556" stroke="var(--ink-20)" stroke-width="1" stroke-dasharray="3,3"/>')
+    def bar(cx, y1, y2): return f'<rect x="{cx - 4}" y="{y1}" width="8" height="{y2 - y1}" fill="var(--ink-05)" stroke="var(--muted)" stroke-width="0.8"/>'
+    o.append(bar(96, 136, 540)); o.append(bar(288, 136, 232)); o.append(bar(480, 232, 500)); o.append(bar(672, 344, 500)); o.append(bar(864, 264, 540))
+    def msg(x1, x2, y, s, color="muted", dashed=False):
+        o.append(hline(x1, x2, y, color=color, dashed=dashed)); o.append(label((x1 + x2) / 2, y, s, fill=f"var(--{color})"))
+    def own(cx, y, s):
+        o.append(f'<path d="M {cx + 4},{y} H {cx + 28} Q {cx + 36},{y} {cx + 36},{y + 8} V {y + 16} Q {cx + 36},{y + 24} {cx + 28},{y + 24} H {cx + 4}" {stroke_attrs("muted")}/>')
+        o.append(text(cx + 44, y + 15, s, size=8, anchor="start", tracking="0.04em"))
+    msg(100, 284, 136, "install.mishka_chelekom")
+    own(288, 160, "the guards · the argv")
+    msg(292, 476, 232, "patch set · add_task", color="accent")
+    msg(484, 860, 264, "mix.exs · router · mix task · .gitignore", color="accent")
+    own(480, 288, "deps.get · compile")
+    msg(484, 668, 344, "run the queued task")
+    own(672, 368, "the list, off the catalog")
+    msg(676, 860, 424, "mishka.ui.gen.components")
+    o.append(label(768, 424, "components, macro, css, js", side="below"))
+    msg(676, 860, 472, "fences · mix format")
+    msg(668, 484, 500, "output", dashed=True)
+    msg(100, 860, 540, "git commit: Insert mishka_chelekom …")
+    for name, cx in actors:
+        sub = "workbench.mishka_components" if name == "the queued task" else None
+        o.append(node(cx - 80, 56, 160, 48, name, sub, kind="focal" if name == "the cartridge" else "backend"))
+    o.append(legend(600, W, [("muted", "call"), ("muted,d", "return"), ("accent", "the cartridge's own diff"), ("focal", "the cartridge")]))
+    return W, H, "\n".join(o)
+
+
 DIAGRAMS = [
     ("clustering", "scaled-deployment", "Deployment", "The scaled deployment, and what clustering adds inside it",
      "Deployment diagram of ./wb.sh up --deploy scaled: a browser reaching an nginx balancer on the host port, four production replicas of the app sharing the alias app on a bridge network, Docker's embedded DNS answering that alias with four addresses, the database reached by name, a one-shot migration, and — the cartridge's addition — the replicas booting as named distributed nodes that find each other.", clustering),
@@ -428,6 +493,10 @@ DIAGRAMS = [
      "Sequence diagram of a commit in a workbench project: git runs the shim git_hooks installed in .git/hooks, which calls .githooks/mix on the host; that script reaches the app container with docker compose exec, where mix git_hooks.run executes the project's .githooks/pre-commit — the formatter first, then each cartridge's block, the first failure cutting the rest — and the non-zero status walks back across the mount to abort the commit. The alternative branch is the library's own example, a mix command run on the host: it finds no Elixir there and cannot cd into the container's path, so the arrow never leaves the host.", precommit_crossing),
     ("test_data", "four-roads", "Architecture", "The four roads a test record takes to the database",
      "Architecture diagram of test data on both lines. On Ecto, a Phoenix fixture goes through the context's changeset to the repo, while an ExMachina factory — what test_data writes — goes straight to Repo.insert! and skips the changeset, leaving the database's constraints as the only check. On Ash, a changeset_generator — what test_data writes — runs the resource's action with its changes, validations and policies before the data layer, while seed_generator writes under the action for a state no action reaches.", test_data_roads),
+    ("mishka_chelekom", "mcp-address", "Architecture", "The MCP address, and where each part of it comes from",
+     "Architecture diagram of mishka_chelekom's MCP option: the router forwards a path to the library's MCP server under dev_routes; the project's own task, mix chelekom.mcp.json, reads that path off the router, the endpoint's port off the app's configuration and the port docker-compose.yml publishes it as — the endpoint's own where there is no compose — and writes the address into .mcp.json, a file of the machine's that git ignores; an AI tool reads that file and calls the route over HTTP on the published port.", mishka_address),
+    ("mishka_chelekom", "who-writes-what", "Sequence", "Who writes what, and when",
+     "Sequence diagram of a mishka_chelekom insert: wb.sh runs the cartridge, which checks its guards and hands Igniter a patch set — the dependency, the MCP route, the project's mix task and a .gitignore line — with one queued task; Igniter writes those files, fetches and compiles, and runs the queued task, which completes the list of components off the library's catalog, runs the library's own generator — the components, the import macro, the stylesheet and the hooks — then mends the documentation's fences and formats; the output returns, and wb.sh commits everything as one Insert commit.", mishka_sequence),
 ]
 
 def page(slug, kind, title, desc, W, H, body):

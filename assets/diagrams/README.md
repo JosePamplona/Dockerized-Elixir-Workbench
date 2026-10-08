@@ -33,6 +33,8 @@ says "credo".
 | ash | DESIGN, §3.1 | who writes what, and when — why the cartridge's diff is empty | Sequence |
 | precommit | DESIGN, §3 | the commit crossing the mount, and where the same commit stops without the cartridge | Sequence |
 | test_data | DESIGN, §3.1 | the four roads a test record takes to the database, the two the cartridge writes, and which skip the rules | Architecture |
+| mishka_chelekom | README, *MCP — The address* | the address a client dials, and the three places its parts are read from | Architecture |
+| mishka_chelekom | DESIGN, §3.1 | who writes what, and when — the cartridge's four files against what the library's task generates | Sequence |
 
 ## How one is drawn
 

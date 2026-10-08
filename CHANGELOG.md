@@ -14,6 +14,23 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+### Updated
+
+- **The root README says what the last two releases changed, and
+  shows it.** Three passages had fallen behind: `eject` now also
+  removes what the cartridge had told git to ignore, and names each
+  file (v0.19.1); a door or a page that depends on a file has a second
+  row — the file's mark and the command that writes it — and a door
+  can be for a program and not for a browser (v0.19.0); and writing a
+  cartridge has an eighth step, asking whether it needs a figure
+  (v0.19.2). Three captures were taken again on the same project the
+  others show, `lorem_ipsum` in `_001`, with mishka_chelekom inserted
+  there for its MCP door: the rail, the whole window and
+  health_probe's box, all with the plates as they are now — two rows,
+  6 px at the sides. The other twenty-four are of 2026-10-05 and show
+  no plate; their headers say `12 IN` and v0.17.0 where the new ones
+  say `20 IN` and v0.19.2.
+
 ## v0.19.2 - (2026-10-07)
 
 ### Added

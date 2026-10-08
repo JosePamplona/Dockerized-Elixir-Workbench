@@ -146,7 +146,7 @@ The name comes from how it is used: you take a box off a shelf, read what it say
 Every insert is exactly one commit in the workspace's git history. That gives three things for free:
 
 - **You can read what it did.** The commit's diff is the complete list of files the cartridge wrote or changed.
-- **You can undo it.** `eject` reverts the commit, and refuses if you changed those files since, or if another cartridge builds on it.
+- **You can undo it.** `eject` reverts the commit, and refuses if you changed those files since, or if another cartridge builds on it. What the cartridge had told git to ignore (a generated report, a file with this machine's address) is removed with it, and `eject` names each file it removes.
 - **It can be asked whether it is there.** Each cartridge answers `status` by looking at the same mark its installer checks before touching anything, so the two never disagree.
 
 A cartridge that brings a container (a database admin, Prometheus) also declares its compose services, and they are baked into the three compose files in that same commit.
@@ -257,7 +257,7 @@ The rail is the state of the workspace at a glance. It stays in view on every ta
 - **Workspace.** The project's name and the directory it lives in. The two squares move the rail to the other side, and its edge drags to resize it.
 - **Deployments.** The three deployments, which one is up, and the buttons to bring each up, stop it or take it down.
 - **Containers.** Every container of the deployment that is up, with its health, its logs and a restart.
-- **Services, doors & pages.** Everything you can open in a browser. A *service* is a published container (the app, pgAdmin). A *door* is a route a cartridge opened in the app (`/health/live`, the dev mailbox, LiveDashboard). A *page* is something the project generates on disk, like the ExDoc site, with a button to build it. Each one names the cartridge it comes from, and the bell calls every door once to check that it answers.
+- **Services, doors & pages.** Everything you can open in a browser. A *service* is a published container (the app, pgAdmin). A *door* is a route a cartridge opened in the app (`/health/live`, the dev mailbox, LiveDashboard). A *page* is something the project generates on disk, like the ExDoc site. A door or a page that depends on a file has a second row for it: a mark that says whether the file is missing, up to date or behind what it is made from, and a button that runs the command that writes it (`mix docs`). Some doors are for a program and not for a browser, like the MCP server mishka_chelekom forwards: their address is shown and not linked. Each one names the cartridge it comes from, and the bell calls every door once to check that it answers.
 - **Cartridges.** What the project carries. A cartridge inserted by `add` shows its commit, which is what `eject` reverts. A base cartridge shows that it came with the project.
 - **Git.** Whether the tree is clean, the last commit, and who the workbench signs commits as.
 
@@ -476,6 +476,7 @@ There is no generator and no form in the console for creating a cartridge yet. Y
 5. **Register it** in `WorkbenchIgniter.Features`, and it appears in the catalog and on the console's shelf.
 6. **Test it** with `Igniter.Test` against a generated Phoenix project, then for real: `./wb.sh add <name>` on a workspace.
 7. **Write the README and the CHANGELOG**, and optionally give it a cover.
+8. **Ask whether it needs a figure.** If the cartridge adds a path at runtime (a route, a container, a file something else reads), its README draws it; if a decision turns on who acts in whose turn, its DESIGN does. Most cartridges need none. [The figures](assets/diagrams/README.md) are drawn by one script.
 
 The full checklist is [Adding a feature](igniter/README.md#adding-a-feature-checklist). [credo](igniter/lib/workbench_igniter/features/credo/) is the smallest complete example and [health_probe](igniter/lib/workbench_igniter/features/health_probe/) the reference.
 

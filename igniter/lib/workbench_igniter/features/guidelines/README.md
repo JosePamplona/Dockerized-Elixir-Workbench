@@ -56,4 +56,8 @@ notice: to point the page at another URL, eject and insert again.
 | `guidelines.ex` | Manifest + logic (`info/2`, `install/1`) |
 | `task.ex` | `Mix.Tasks.Workbench.Install.Guidelines` shell |
 
-Cartridge test: `test/workbench_igniter/features/guidelines_test.exs`.
+Cartridge test: `test/workbench_igniter/features/guidelines_test.exs`. It
+opens no socket: the download takes its Req options from the
+application's configuration (`:guidelines_req`, empty outside a test),
+and the package's `test_helper.exs` answers it there — the page at one
+address, a refused connection at another.

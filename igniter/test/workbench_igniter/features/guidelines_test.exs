@@ -7,10 +7,14 @@ defmodule WorkbenchIgniter.Features.GuidelinesTest do
 
   alias WorkbenchIgniter.Features.Guidelines
 
-  # Nothing here reaches the network: the URL is a closed port, so the
-  # download fails at once and the installer plants its placeholder —
-  # the same file, listed in the same two places, either way.
-  @url "http://localhost:1/guide.md"
+  alias WorkbenchIgniter.Test.GuidelinesPage
+
+  # Nothing here opens a socket: the download is answered in
+  # `test_helper.exs` — the page at one address, a refused connection at
+  # the other — and the file is listed in the same two places either
+  # way.
+  @url GuidelinesPage.url()
+  @unreachable GuidelinesPage.unreachable()
 
   defp with_exdoc(argv) do
     phx_test_project()
@@ -20,14 +24,13 @@ defmodule WorkbenchIgniter.Features.GuidelinesTest do
   end
 
   describe "mix workbench.install.guidelines" do
-    test "plants the page and lists it in the docs site" do
-      files =
-        with_exdoc(["--url", @url])
-        |> apply_igniter!()
-        |> Map.get(:assigns)
-        |> Map.get(:test_files)
+    test "plants the page it downloaded and lists it in the docs site" do
+      igniter = with_exdoc(["--url", @url])
+      assert igniter.warnings == []
 
-      assert files["guides/coding.md"] =~ "# Coding guidelines"
+      files = igniter |> apply_igniter!() |> Map.get(:assigns) |> Map.get(:test_files)
+
+      assert files["guides/coding.md"] == GuidelinesPage.page()
       # The two lists exdoc keeps, each with the page appended and its
       # own pages untouched.
       assert files["mix.exs"] =~ ~s|{"guides/coding.md", [title: "Coding guidelines"]}|
@@ -40,15 +43,16 @@ defmodule WorkbenchIgniter.Features.GuidelinesTest do
     end
 
     test "warns and plants a placeholder naming the URL when the download fails" do
-      igniter = with_exdoc(["--url", @url])
+      igniter = with_exdoc(["--url", @unreachable])
 
       assert Enum.any?(igniter.warnings, &(&1 =~ "Could not download the coding guidelines"))
 
-      assert igniter
-             |> apply_igniter!()
-             |> Map.get(:assigns)
-             |> Map.get(:test_files)
-             |> Map.get("guides/coding.md") =~ @url
+      files = igniter |> apply_igniter!() |> Map.get(:assigns) |> Map.get(:test_files)
+
+      assert files["guides/coding.md"] =~ "# Coding guidelines"
+      assert files["guides/coding.md"] =~ @unreachable
+      # Listed all the same: `mix docs` finds the file it is told of.
+      assert files["mix.exs"] =~ ~s|{"guides/coding.md", [title: "Coding guidelines"]}|
     end
 
     test "refuses without a URL: it is the page the cartridge installs" do

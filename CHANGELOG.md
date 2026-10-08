@@ -14,6 +14,27 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+### Updated
+
+- **No test of the guidelines cartridge opens a socket.** To see its
+  placeholder planted, its tests and the catalog's handed it a closed
+  port, `http://localhost:1/guide.md` — offline, as their comment
+  said, but not at once: Req retries a transport error three times,
+  waiting 1, 2 and 4 seconds, so every install in a test waited seven
+  seconds and printed six lines of warnings — five installs a run —
+  which on the first pull request's CI read as a loop. What the practice says,
+  read before deciding: a small test has no network at all, and Req's
+  own documentation answers a client's request in the test's process
+  (`plug:`) and turns retries off to assert a transport error. So the
+  download takes its Req options from the application's configuration
+  (`:guidelines_req`, empty outside a test, retries as they were), and
+  `test_helper.exs` answers it by host under `.test`: the page at one
+  address, a refused connection at the other. The test of the page
+  now reads the page it was served and not the placeholder's title,
+  which is what it had been asserting. The `:network` group is as it
+  was, run by name only. The suite's time on a machine with cores to
+  spare is the same, 99 s: the waits ran beside the other tests.
+
 ## v0.19.3 - (2026-10-07)
 
 ### Updated

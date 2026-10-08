@@ -132,3 +132,27 @@ end
 #   network` for them all. No credentials: what needs a key is not in
 #   this group.
 ExUnit.start(exclude: [:exhaustive, :network])
+
+# The guidelines cartridge downloads a page on insert. No test opens a
+# socket for it: the request is answered here, by its host — the page
+# at `guide.test`, a refused connection anywhere else, which is what
+# the cartridge's placeholder is for. Both names are under `.test`,
+# which no resolver answers (RFC 2606). Retries are off: Req's default
+# waits 1, 2 and 4 seconds on a transport error before giving up.
+defmodule WorkbenchIgniter.Test.GuidelinesPage do
+  @moduledoc false
+
+  @page "# House rules\n\nNames say what a thing is.\n"
+
+  def url, do: "http://guide.test/guide.md"
+  def unreachable, do: "http://unreachable.test/guide.md"
+  def page, do: @page
+
+  def call(%Plug.Conn{host: "guide.test"} = conn), do: Req.Test.text(conn, @page)
+  def call(conn), do: Req.Test.transport_error(conn, :econnrefused)
+end
+
+Application.put_env(:workbench_igniter, :guidelines_req,
+  plug: &WorkbenchIgniter.Test.GuidelinesPage.call/1,
+  retry: false
+)

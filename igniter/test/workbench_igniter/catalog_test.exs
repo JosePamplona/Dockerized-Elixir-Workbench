@@ -613,10 +613,11 @@ defmodule WorkbenchIgniter.CatalogTest do
     defp prereqs(_name), do: []
 
     # The arguments an installer cannot do without. guidelines takes the
-    # URL of the page it installs, and gets an unreachable one: the
-    # download fails fast, offline, and its placeholder is planted —
-    # which is the file the mark reads either way.
-    defp args("workbench.install.guidelines"), do: ["--url", "http://localhost:1/guide.md"]
+    # URL of the page it installs, and gets an unreachable one, answered
+    # in `test_helper.exs` with no socket opened: the download fails at
+    # once and its placeholder is planted — which is the file the mark
+    # reads either way.
+    defp args("workbench.install.guidelines"), do: ["--url", "http://unreachable.test/guide.md"]
     # db_admin's --admin has no default.
     defp args("workbench.install.db_admin"), do: ["--admin", "pgadmin"]
     defp args(_task), do: []
@@ -703,7 +704,7 @@ defmodule WorkbenchIgniter.CatalogTest do
          }}
       ],
       # The page is the download; the URL is kept nowhere.
-      "guidelines" => [{~w(--url http://localhost:1/guide.md), %{url: nil}}],
+      "guidelines" => [{~w(--url http://unreachable.test/guide.md), %{url: nil}}],
       "dbschema" => [{~w(--combo auth0_openai), %{combo: "auth0_openai"}}],
       "enhancements" => [
         # graphql: the REST group is not written, so nothing of the

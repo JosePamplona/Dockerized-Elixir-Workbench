@@ -30,6 +30,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   6 px at the sides. The other twenty-four are of 2026-10-05 and show
   no plate; their headers say `12 IN` and v0.17.0 where the new ones
   say `20 IN` and v0.19.2.
+  The legend of the plates is drawn again too
+  (`assets/readme/legend.html`): its page was the plate of one row
+  with *rebuild* on it, and it gains a section for the mark — missing,
+  up to date, behind — with a door among the three, since a door can
+  depend on a file as a page does.
 
 ## v0.19.2 - (2026-10-07)
 

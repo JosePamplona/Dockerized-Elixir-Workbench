@@ -263,11 +263,11 @@ The rail is the state of the workspace at a glance. It stays in view on every ta
 
 Every section folds. A button that cannot be used is still shown, disabled, and its tooltip says why.
 
-The small plates on the rail are a notation the whole console uses, on the Deploy, Logs, Terminal and Docker screens too. The drawing says what kind of address it is, the colour says what the service is for, and the dot says where a cartridge is.
+The small plates on the rail are a notation the whole console uses, on the Deploy, Logs, Terminal and Docker screens too. The drawing says what kind of address it is, the mark on a second row says where its file stands, the colour says what the service is for, and the dot says where a cartridge is.
 
 A cartridge's service gets its colour from the role the cartridge declares, not from its name, so a service the console has never heard of is still drawn correctly.
 
-![The legend of the plates: four drawings for the four kinds of address, seven colours for the roles of a service, and the full or hollow dot of a cartridge](assets/readme/console/legend.png)
+![The legend of the plates: four drawings for the four kinds of address, three marks for where a file stands — missing, up to date, behind —, seven colours for the roles of a service, and the full or hollow dot of a cartridge](assets/readme/console/legend.png)
 
 ### Deploy
 

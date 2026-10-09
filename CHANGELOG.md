@@ -14,6 +14,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+### Updated
+
+- **Two captures of the README, taken again without the author's
+  path.** `assets/readme/console/hero.png` and `rail.png` showed the
+  console's workspace line with the path of the machine they were
+  taken on; they are the same captures with
+  `/home/user/repos/lorem_ipsum` in its place. What the pictures show
+  of the console is unchanged.
+
 ## v0.19.3 - (2026-10-07)
 
 ### Updated

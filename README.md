@@ -12,7 +12,7 @@ The workbench is two things in one repository.
 1. **A portable development environment for Phoenix.** You create a project and run it on `localhost` with nothing installed on the host but Docker: no Elixir, no Erlang, no Node, no database server. The project carries its own Docker files, so a teammate who clones it gets the same environment you have.
 2. **A knowledge base of the Elixir ecosystem, kept as cartridges.** A *cartridge* is one configuration or implementation (static analysis, health probes, clustering, a database admin) packaged together with the papers that explain it: what it installs, the need it answers and why it is designed that way, with sources. Writing a cartridge makes you learn the theory behind it. After that it goes into any future project as one commit, and its papers and the files it wrote stay there to read when you need to remember how it works.
 
-![The console with a project up: the workspace, its deployments, containers and cartridges on the left, the Deploy screen on the right](assets/readme/console/hero.png)
+![The console with a project up: the workspace, its deployments, containers and services on the left, the covers of the cartridges inserted in it on the right](assets/readme/console/hero.png)
 
 It has three parts, and this README presents them in order, so each section only uses what an earlier one explained:
 

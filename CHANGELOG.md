@@ -16,6 +16,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Updated
 
+- **The README's hero shows the cartridges.** `hero.png` was the
+  Deploy screen; it is now the Cartridges screen on the same project,
+  with the covers of the twenty boxes inserted in it — the covers are
+  what a reader of the README has not seen anywhere else. Same window
+  (1440 × 1000), dark ground, jobs tray hidden, and the workspace's
+  path written as `/home/user/repos/lorem_ipsum`. Its alt text says
+  what it shows now.
 - **Two captures of the README, taken again without the author's
   path.** `assets/readme/console/hero.png` and `rail.png` showed the
   console's workspace line with the path of the machine they were

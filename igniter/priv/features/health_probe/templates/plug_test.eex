@@ -15,6 +15,12 @@ defmodule CrashingRepo do
   @moduledoc false
   def query(_sql, _params, _opts), do: raise("pool exhausted")
 end
+
+# What a query does while the pool has no connection to give: it waits.
+defmodule HangingRepo do
+  @moduledoc false
+  def query(_sql, _params, _opts), do: Process.sleep(:infinity)
+end
 <% end %>
 
 describe "GET <%= @path %>/live" do
@@ -48,6 +54,13 @@ describe "GET <%= @path %>/ready" do
 
   test "answers 503 instead of raising when the check crashes" do
     assert probe("<%= @path %>/ready", repo: CrashingRepo).status == 503
+  end
+
+  test "answers 503 within a second when the database does not answer" do
+    {micros, conn} = :timer.tc(fn -> probe("<%= @path %>/ready", repo: HangingRepo) end)
+
+    assert conn.status == 503
+    assert micros < 1_000_000
   end
 
   test "ready?/1 never raises" do

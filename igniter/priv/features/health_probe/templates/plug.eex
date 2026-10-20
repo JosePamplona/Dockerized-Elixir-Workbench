@@ -12,9 +12,14 @@ Two routes, split by what the platform does when one fails:
   out of the balancer, not restarted. <%= @ready_note %>
 
 Mounted first in `<%= @web_module %>.Endpoint`, so a probe never goes
-through `Plug.Static`, `Plug.SSL` (a redirect is not an answer), the
-logger, the parsers or the router: no log noise, no session, no
-telemetry, and the router never sees the path.
+through `Plug.Static`, the logger, the parsers or the router: no log
+noise, no session, no telemetry, and the router never sees the path.
+
+`Plug.SSL` is the exception: `force_ssl` plugs it inside
+`use Phoenix.Endpoint`, before this plug, and it answers a probe in
+plain HTTP with a 301. With `force_ssl` on, both routes must be in its
+`exclude: [paths: ...]` in `config/prod.exs` (the installer put them
+there if it found `force_ssl`): change the prefix here, change it there.
 
 Probes are answered with `Cache-Control: no-store`; nothing in between
 may reuse a verdict.
@@ -23,8 +28,10 @@ may reuse a verdict.
 
 import Plug.Conn
 
-# Readiness has to fail fast: platforms time a probe out at 2-5 s.
-@timeout 1_000
+# Readiness has to answer inside the platform's own timeout: Kubernetes
+# gives up on a probe after 1 s by default. A healthy `SELECT 1` takes
+# a few milliseconds; past this, the 503 is the right answer.
+@timeout 500
 
 @impl Plug
 def init(opts) do
@@ -57,6 +64,20 @@ Whether the application can take traffic — the check behind
 def ready?(nil), do: true
 
 def ready?(repo) do
+  # The query's `:timeout` holds only once a connection is checked out.
+  # With the database down the pool has none, and the call waits in
+  # DBConnection's queue until its CoDel check drops it: two
+  # `:queue_interval`s, about 4 s by default. The task bounds the whole
+  # check, queue included.
+  task = Task.async(fn -> answers?(repo) end)
+
+  case Task.yield(task, @timeout) || Task.shutdown(task, :brutal_kill) do
+    {:ok, answers?} -> answers?
+    _ -> false
+  end
+end
+
+defp answers?(repo) do
   match?({:ok, _}, repo.query("SELECT 1", [], timeout: @timeout))
 rescue
   _ -> false

@@ -96,7 +96,7 @@ defmodule WorkbenchIgniter.CatalogTest do
     end
 
     test "reads the version off the cartridge changelog" do
-      assert %{version: %{version: "0.2.1", date: "2026-09-22"}} =
+      assert %{version: %{version: "0.3.0", date: "2026-10-20"}} =
                Features.entry(Features.HealthProbe)
 
       assert %{version: nil} = Features.entry(Features.Rest)
@@ -114,7 +114,7 @@ defmodule WorkbenchIgniter.CatalogTest do
     # it pays for by the token: no papers, no docs, no menus, no covers.
     test "the brief entry is the words a tool keeps" do
       brief = Catalog.brief(Features.entry(Features.HealthProbe))
-      assert %{name: "health_probe", version: "0.2.1", options: [option]} = brief
+      assert %{name: "health_probe", version: "0.3.0", options: [option]} = brief
 
       assert option == %{
                name: :path,
@@ -534,7 +534,7 @@ defmodule WorkbenchIgniter.CatalogTest do
 
       assert output =~ ~r/^mailer +\S+ +base +You want to see the mail/m
       assert output =~ ~r/^stripe +- +pending +Your users should be able to pay/m
-      assert output =~ ~r/^health_probe +v0\.2\.1 +Your platform polls/m
+      assert output =~ ~r/^health_probe +v0\.3\.0 +Your platform polls/m
       assert output =~ ~r/^test_data +v0\.1\.1 +Your tests need records/m
     end
   end

@@ -107,7 +107,7 @@ defmodule WorkbenchIgniter.Features.HealthProbeTest do
 
     defmodule UpRepo do
       @moduledoc false
-      def query("SELECT 1", [], timeout: 1_000), do: {:ok, %{rows: [[1]]}}
+      def query("SELECT 1", [], timeout: 500), do: {:ok, %{rows: [[1]]}}
     end
 
     defmodule DownRepo do
@@ -123,6 +123,12 @@ defmodule WorkbenchIgniter.Features.HealthProbeTest do
     defmodule GoneRepo do
       @moduledoc false
       def query(_sql, _params, _opts), do: exit(:noproc)
+    end
+
+    # A pool with no connection to give: the caller waits in its queue.
+    defmodule HangingRepo do
+      @moduledoc false
+      def query(_sql, _params, _opts), do: Process.sleep(:infinity)
     end
 
     # The plug as the installer wrote it, compiled under a name of its
@@ -198,6 +204,13 @@ defmodule WorkbenchIgniter.Features.HealthProbeTest do
       end
 
       assert plug.ready?(UpRepo)
+
+      # Bounded as a whole: a check that never returns is a 503 at the
+      # timeout, not a probe the platform abandons.
+      {micros, conn} = :timer.tc(fn -> call(plug, :get, "/health/ready", repo: HangingRepo) end)
+      assert {conn.status, conn.halted} == {503, true}
+      assert micros in 450_000..900_000
+
       # Liveness looks at nothing: the database being down does not restart the container.
       assert call(plug, :get, "/health/live", repo: DownRepo).status == 200
     end
@@ -232,6 +245,128 @@ defmodule WorkbenchIgniter.Features.HealthProbeTest do
       assert_unchanged(again)
       assert_has_notice(again, &(&1 =~ "already installed"))
       assert {%{path: "/status"}, _} = WorkbenchIgniter.Features.HealthProbe.state(again)
+    end
+  end
+
+  # phx.new turns force_ssl on in prod.exs (Phoenix 1.8.2), and Phoenix
+  # plugs Plug.SSL inside `use Phoenix.Endpoint`, before every plug of
+  # the project's: mounted first is not enough. The rod is Plug.SSL
+  # itself, built from the prod.exs the cartridge leaves, and a probe as
+  # a kubelet or a balancer sends it: plain HTTP to the pod's address.
+  describe "force_ssl" do
+    alias WorkbenchIgniter.Grown
+
+    defp prod_exs(igniter), do: igniter.assigns[:test_files]["config/prod.exs"]
+
+    defp with_prod_exs(igniter, fun),
+      do: update_in(igniter.assigns[:test_files]["config/prod.exs"], fun)
+
+    defp force_ssl(prod_exs) do
+      config = Config.Reader.eval!("config/prod.exs", prod_exs, env: :prod)
+      config[:test][TestWeb.Endpoint][:force_ssl]
+    end
+
+    defp redirected?(force_ssl, url) do
+      conn = Plug.Test.conn(:get, url)
+      Plug.SSL.call(conn, Plug.SSL.init(Keyword.put(force_ssl, :log, false))).status == 301
+    end
+
+    # Without assets prod.exs has one `config` for the endpoint; with
+    # them, two — `cache_static_manifest` first, `force_ssl` second.
+    @shapes [~w(ecto), ~w(ecto esbuild tailwind html)]
+
+    test "phx.new's prod.exs redirects a plain-HTTP probe; the cartridge's does not" do
+      born = Grown.born(~w(ecto))
+      assert born |> prod_exs() |> force_ssl() |> redirected?("http://10.0.0.7/health/live")
+
+      for shape <- @shapes,
+          {argv, prefix} <- [{[], "/health"}, {~w(--path /status), "/status"}, {~w(--path /), ""}] do
+        {:ok, grown} = Grown.add(Grown.born(shape), "health_probe", argv)
+        force_ssl = grown |> prod_exs() |> force_ssl()
+
+        refute redirected?(force_ssl, "http://10.0.0.7#{prefix}/live")
+        refute redirected?(force_ssl, "http://10.0.0.7#{prefix}/ready")
+        # Only the probes: the rest of the site still goes to HTTPS, a
+        # path is matched whole, and localhost is still spared.
+        assert redirected?(force_ssl, "http://10.0.0.7/")
+        assert redirected?(force_ssl, "http://10.0.0.7#{prefix}/live/x")
+        refute redirected?(force_ssl, "http://localhost/")
+      end
+    end
+
+    test "the probes go into the block that holds force_ssl, with or without assets" do
+      for shape <- @shapes do
+        born = Grown.born(shape)
+        blocks = length(Regex.scan(~r/^config :test, TestWeb\.Endpoint/m, prod_exs(born)))
+        assert blocks == if("esbuild" in shape, do: 2, else: 1)
+
+        {:ok, grown} = Grown.add(born, "health_probe", [])
+        prod = prod_exs(grown)
+
+        # One force_ssl, the phx.new one, and the paths inside its exclude.
+        assert length(Regex.scan(~r/force_ssl:/, prod)) == 1
+
+        assert prod =~
+                 ~r/force_ssl: \[\n\s+rewrite_on: \[:x_forwarded_proto\],\n\s+exclude: \[\n\s+# paths: \["\/health"\],\n\s+hosts: \["localhost", "127\.0\.0\.1"\],\n\s+paths: \["\/health\/live", "\/health\/ready"\]\n\s+\]/
+
+        if blocks == 2 do
+          assert prod =~
+                   ~s|config :test, TestWeb.Endpoint, cache_static_manifest: "priv/static/cache_manifest.json"\n|
+        end
+      end
+    end
+
+    test "phx.new's commented hint is left where it is" do
+      {:ok, grown} = Grown.add(Grown.born(~w(ecto)), "health_probe", [])
+      assert prod_exs(grown) =~ ~s|# paths: ["/health"],|
+    end
+
+    test "an exclude list the project already has keeps its entries" do
+      born =
+        with_prod_exs(
+          Grown.born(~w(ecto)),
+          &String.replace(&1, ~s|# paths: ["/health"],|, ~s|paths: ["/metrics"],|)
+        )
+
+      {:ok, grown} = Grown.add(born, "health_probe", [])
+      exclude = grown |> prod_exs() |> force_ssl() |> Keyword.fetch!(:exclude)
+
+      assert exclude[:paths] == ["/metrics", "/health/live", "/health/ready"]
+      assert exclude[:hosts] == ["localhost", "127.0.0.1"]
+    end
+
+    test "without an exclude list, Plug.SSL's default hosts are written beside the probes" do
+      born =
+        with_prod_exs(
+          Grown.born(~w(ecto)),
+          &Regex.replace(~r/,\n    exclude: \[.*?\n    \]/s, &1, "")
+        )
+
+      assert force_ssl(prod_exs(born))[:rewrite_on] == [:x_forwarded_proto]
+      refute force_ssl(prod_exs(born))[:exclude]
+
+      {:ok, grown} = Grown.add(born, "health_probe", [])
+      force_ssl = grown |> prod_exs() |> force_ssl()
+
+      assert force_ssl[:exclude][:paths] == ["/health/live", "/health/ready"]
+      assert force_ssl[:exclude][:hosts] == ["localhost", "127.0.0.1"]
+      refute redirected?(force_ssl, "http://localhost/")
+    end
+
+    test "without force_ssl, prod.exs is left as it is" do
+      born =
+        with_prod_exs(
+          Grown.born(~w(ecto)),
+          &Regex.replace(
+            ~r/config :test, TestWeb\.Endpoint,\n  force_ssl: \[.*?\n  \]\n/s,
+            &1,
+            ""
+          )
+        )
+
+      refute prod_exs(born) =~ "force_ssl:"
+      {:ok, grown} = Grown.add(born, "health_probe", [])
+      assert prod_exs(grown) == prod_exs(born)
     end
   end
 

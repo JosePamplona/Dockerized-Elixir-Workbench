@@ -3,7 +3,7 @@ defmodule WorkbenchIgniter.Features.HealthProbe do
   Liveness and readiness probes as a plug mounted first in the endpoint.
 
   Installed on demand with `mix workbench.install.health_probe`
-  (`wb.sh add health_probe`). It is the vanilla counterpart of
+  (`wb.sh add health_probe`). It is the platform's counterpart of
   `health_endpoint`: where that one is a controller behind the router, with
   a JSON body that grows in dev and a Swagger entry, this one is what an
   orchestrator consumes and nothing more.
@@ -12,10 +12,15 @@ defmodule WorkbenchIgniter.Features.HealthProbe do
 
   A probe is called every few seconds per instance for the life of the
   deployment. Placed as the first plug of `MyAppWeb.Endpoint` it is
-  answered before `Plug.Static`, `Plug.SSL`, the logger, the telemetry,
-  the parsers, the session and the router run: no log line per probe, no
-  telemetry event, no session cookie, and no `301` from `force_ssl` when
-  the probe arrives in plain HTTP on the internal port.
+  answered before `Plug.Static`, the logger, the telemetry, the parsers,
+  the session and the router run: no log line per probe, no telemetry
+  event, no session cookie.
+
+  `Plug.SSL` is not among them: `force_ssl`, on in `prod.exs` since
+  Phoenix 1.8.2, plugs it inside `use Phoenix.Endpoint`, ahead of every
+  plug of the project's, and a probe in plain HTTP on the pod's address
+  would get a `301`. When `prod.exs` sets `force_ssl`, the installer
+  lists both routes in its `exclude: [paths: …]` (Plug 1.19).
 
   ## Why two routes
 
@@ -25,7 +30,7 @@ defmodule WorkbenchIgniter.Features.HealthProbe do
 
   * `/live` answers 200 while the VM answers. It touches nothing else:
     restarting the container does not fix a database that is down.
-  * `/ready` runs `SELECT 1` on the repo with a one-second timeout and
+  * `/ready` runs `SELECT 1` on the repo with a 500 ms timeout and
     answers 503 when it fails, so the instance stops receiving traffic
     without being killed.
 
@@ -145,6 +150,7 @@ defmodule WorkbenchIgniter.Features.HealthProbe do
           path: "test/#{web_dir}/plugs/health_test.exs"
         )
         |> mount_first(endpoint, plug)
+        |> exclude_from_force_ssl(app_name, endpoint, path)
     end
   end
 
@@ -196,6 +202,80 @@ defmodule WorkbenchIgniter.Features.HealthProbe do
         :error ->
           # No plug at all in the endpoint: append it, it is still the only one.
           {:ok, Igniter.Code.Common.add_code(zipper, code, placement: :after)}
+      end
+    end)
+  end
+
+  # `use Phoenix.Endpoint` plugs Plug.SSL before any plug of the
+  # project's, so mounting first does not get ahead of `force_ssl`, which
+  # phx.new turns on in prod.exs since Phoenix 1.8.2: a probe in plain
+  # HTTP on the pod's address got a 301. Plug.SSL's own way out (Plug
+  # 1.19) is `exclude: [paths: …]`, matched against the whole path, so
+  # both probes are listed. Without `force_ssl` nothing is written.
+  #
+  # The edit goes into the `config` call that holds `force_ssl`: a
+  # project with assets has two for the endpoint (`cache_static_manifest`
+  # first), and Igniter.Project.Config.configure wrote a nested key into
+  # the first one — right once Config merged them, but away from where a
+  # reader looks (2026-10-20, found live).
+  defp exclude_from_force_ssl(igniter, app_name, endpoint, path) do
+    probes = [path <> "/live", path <> "/ready"]
+    file = "config/prod.exs"
+
+    if Igniter.exists?(igniter, file) do
+      Igniter.update_elixir_file(igniter, file, fn zipper ->
+        with {:ok, call} <-
+               Igniter.Code.Function.move_to_function_call(
+                 zipper,
+                 :config,
+                 3,
+                 &sets_force_ssl?(&1, app_name, endpoint)
+               ),
+             {:ok, opts} <- Igniter.Code.Function.move_to_nth_argument(call, 2) do
+          exclude_probes(opts, probes)
+        else
+          _ -> {:ok, zipper}
+        end
+      end)
+    else
+      igniter
+    end
+  end
+
+  defp sets_force_ssl?(call, app_name, endpoint) do
+    Igniter.Code.Function.argument_equals?(call, 0, app_name) and
+      Igniter.Code.Function.argument_equals?(call, 1, endpoint) and
+      Igniter.Code.Function.argument_matches_predicate?(
+        call,
+        2,
+        &Igniter.Code.Keyword.keyword_has_path?(&1, [:force_ssl])
+      )
+  end
+
+  defp exclude_probes(opts, probes) do
+    if Igniter.Code.Keyword.keyword_has_path?(opts, [:force_ssl, :exclude]) do
+      Igniter.Code.Keyword.put_in_keyword(
+        opts,
+        [:force_ssl, :exclude, :paths],
+        probes,
+        &append_probes(&1, probes)
+      )
+    else
+      # A new `exclude` replaces Plug.SSL's default, so the default
+      # hosts are written back beside the probes.
+      Igniter.Code.Keyword.put_in_keyword(opts, [:force_ssl, :exclude],
+        paths: probes,
+        hosts: ["localhost", "127.0.0.1"]
+      )
+    end
+  end
+
+  # An `exclude: [paths: […]]` the project already has keeps its entries.
+  defp append_probes(zipper, probes) do
+    Enum.reduce_while(probes, {:ok, zipper}, fn probe, {:ok, zipper} ->
+      case Igniter.Code.List.append_new_to_list(zipper, probe) do
+        {:ok, zipper} -> {:cont, {:ok, zipper}}
+        :error -> {:halt, :error}
       end
     end)
   end

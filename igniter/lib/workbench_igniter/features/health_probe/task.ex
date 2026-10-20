@@ -8,19 +8,23 @@ defmodule Mix.Tasks.Workbench.Install.HealthProbe do
   @moduledoc """
   #{@shortdoc}
 
-  The vanilla health check: what a container orchestrator or a load
+  The platform's health check: what a container orchestrator or a load
   balancer consumes, and nothing else. It installs
 
   * `MyAppWeb.Plugs.Health`, answering `GET /health/live` (200 while the
     VM answers) and `GET /health/ready` (200 when the application can
     take traffic, 503 when it cannot — `SELECT 1` on the repo with a
-    one-second timeout)
+    500 ms timeout)
   * its test, in `test/my_app_web/plugs/health_test.exs`
   * `plug MyAppWeb.Plugs.Health` as the first plug of `MyAppWeb.Endpoint`,
-    so a probe never reaches `Plug.Static`, `Plug.SSL`, the logger, the
-    parsers, the session or the router
+    so a probe never reaches `Plug.Static`, the logger, the parsers, the
+    session or the router
+  * both routes in `force_ssl: [exclude: [paths: …]]` in
+    `config/prod.exs`, when it sets `force_ssl`: Phoenix plugs `Plug.SSL`
+    ahead of every plug of the endpoint, and it would answer a probe in
+    plain HTTP with a 301
 
-  No dependency, no config, no router change. When the project has no
+  No dependency, no router change. When the project has no
   `MyApp.Repo` (`phx.new --no-ecto`), `/ready` answers like `/live`.
 
   Re-running it is a no-op: when the plug module already exists nothing
@@ -39,7 +43,7 @@ defmodule Mix.Tasks.Workbench.Install.HealthProbe do
   The same release answers all three; only the platform config differs.
 
       # Kubernetes
-      startupProbe:   { httpGet: { path: /health/ready, port: 4000 }, failureThreshold: 30, periodSeconds: 5 }
+      startupProbe:   { httpGet: { path: /health/live,  port: 4000 }, failureThreshold: 30, periodSeconds: 5 }
       livenessProbe:  { httpGet: { path: /health/live,  port: 4000 }, periodSeconds: 10 }
       readinessProbe: { httpGet: { path: /health/ready, port: 4000 }, periodSeconds: 10, timeoutSeconds: 2 }
 

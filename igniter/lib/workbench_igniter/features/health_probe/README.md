@@ -11,7 +11,7 @@ Install it on demand with
 mix workbench.install.health_probe --path /health
 ```
 
-It is the vanilla counterpart of [health_endpoint](../health_endpoint/):
+It is the platform's counterpart of [health_endpoint](../health_endpoint/):
 that one is a controller behind the router, with a JSON body that grows
 in dev and an entry in the Swagger page; this one answers a probe and
 gets out of the way. Both can coexist —
@@ -25,7 +25,7 @@ routes split by what the platform does when one fails:
 | Route | Answers | On failure the platform… | Checks |
 | --- | --- | --- | --- |
 | `GET /health/live` | 200 while the VM answers | restarts the container | nothing else, on purpose |
-| `GET /health/ready` | 200 when the app can take traffic, 503 when it cannot | takes the instance out of the balancer | `SELECT 1` on `MyApp.Repo`, 1 s timeout |
+| `GET /health/ready` | 200 when the app can take traffic, 503 when it cannot | takes the instance out of the balancer | `SELECT 1` on `MyApp.Repo`, 500 ms timeout |
 
 Every answer carries `Cache-Control: no-store` and a plain-text body
 (`ok` / `unavailable`). Anything that is not a `GET` on one of the two
@@ -40,7 +40,28 @@ with one that raises, and the pass-through.
 `MyAppWeb.Endpoint`, right after the `socket` declarations and before
 `Plug.Static`.
 
-No dependency, no config, no router change. When the project has no
+**Both routes in `force_ssl`'s `exclude: [paths: …]`** in
+`config/prod.exs`, when it sets `force_ssl` (phx.new does since
+Phoenix 1.8.2). Phoenix plugs `Plug.SSL` inside `use Phoenix.Endpoint`,
+ahead of every plug of the project's, so without the exclusion a probe
+in plain HTTP on the pod's address gets a 301 — which Kubernetes counts
+as a pass and Fly.io and an ALB as a failure. Paths are matched whole,
+so both are listed; `localhost` stays excluded as before. Needs Plug
+1.19 or later. Change the prefix in the plug, change it there too.
+
+```elixir
+config :my_app, MyAppWeb.Endpoint,
+  force_ssl: [
+    rewrite_on: [:x_forwarded_proto],
+    exclude: [
+      # paths: ["/health"],
+      hosts: ["localhost", "127.0.0.1"],
+      paths: ["/health/live", "/health/ready"]
+    ]
+  ]
+```
+
+No dependency, no router change. When the project has no
 `MyApp.Repo` (`phx.new --no-ecto`), `/ready` answers like `/live` and
 `ready?/1` is the obvious place to add the checks the app depends on.
 
@@ -53,8 +74,9 @@ No dependency, no config, no router change. When the project has no
 ## Why it is shaped like this
 
 The reasoning — why two routes, why liveness checks nothing, why a plug
-mounted first rather than a controller, why a one-second timeout, and
-where the Elixir guides disagree with the platform documentation — is
+mounted first rather than a controller, why it still has to be excluded
+from `force_ssl`, why a 500 ms timeout, and where the Elixir guides
+disagree with the platform documentation — is
 in [DESIGN.md](DESIGN.md), with the sources it rests on.
 
 ## Wiring the platform
@@ -67,8 +89,8 @@ traffic*, so it is the one that uses both routes.
 # Kubernetes
 containers:
 - name: my_app
-  startupProbe:            # waits for boot and migrations
-    httpGet: { path: /health/ready, port: 4000 }
+  startupProbe:            # waits for boot; a failure restarts, so liveness's route
+    httpGet: { path: /health/live, port: 4000 }
     periodSeconds: 5
     failureThreshold: 30
   livenessProbe:           # restarts only when the VM stops answering
@@ -124,7 +146,7 @@ touched and a notice says so.
 | File | Role |
 | --- | --- |
 | `📁 lib/workbench_igniter/features/health_probe/` | The cartridge: its code and its papers |
-| `├── 📄 health_probe.ex` | The plug, its test, first in the endpoint |
+| `├── 📄 health_probe.ex` | The plug, its test, first in the endpoint, excluded from `force_ssl` |
 | `├── 📄 task.ex` | The Mix task `wb.sh add` runs |
 | `├── 📄 README.md` | What it installs, and how it runs |
 | `├── 📄 NEED.md` | The need, the line the shelf shows |

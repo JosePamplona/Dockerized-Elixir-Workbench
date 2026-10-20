@@ -14,6 +14,27 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+### Fixed
+
+- **health_probe v0.3.0: the probes no longer get a 301 in
+  production.** Mounting the plug first in the endpoint did not put it
+  ahead of `force_ssl`: Phoenix plugs `Plug.SSL` inside
+  `use Phoenix.Endpoint`, and phx.new turns `force_ssl` on in
+  `prod.exs` since Phoenix 1.8.2. Found while reviewing the cartridge's
+  DESIGN paper and measured on `_001`'s prod deployment: from
+  `localhost` both routes answered 200, with the pod's address as
+  `Host` both answered 301, and `/ready` kept answering 301 with the
+  database stopped — a pass for Kubernetes. The installer now lists
+  both routes in `force_ssl`'s `exclude: [paths: …]` (Plug 1.19), the
+  readiness check is bounded at 500 ms as a whole — a `Task`, since the
+  query's own timeout does not cover DBConnection's queue, where a
+  database that is down kept the probe waiting four seconds — and the
+  Kubernetes example points the startup probe at `/live`, as
+  Kubernetes documents it. The DESIGN
+  paper is rewritten on those facts, with the sources read for them,
+  and records the open debate on readiness over a shared database,
+  and how DBConnection's queue decides how long a query waits.
+
 ### Updated
 
 - **The README's hero shows the cartridges.** `hero.png` was the

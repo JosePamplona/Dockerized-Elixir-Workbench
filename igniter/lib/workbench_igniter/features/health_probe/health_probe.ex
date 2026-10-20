@@ -223,22 +223,25 @@ defmodule WorkbenchIgniter.Features.HealthProbe do
     file = "config/prod.exs"
 
     if Igniter.exists?(igniter, file) do
-      Igniter.update_elixir_file(igniter, file, fn zipper ->
-        with {:ok, call} <-
-               Igniter.Code.Function.move_to_function_call(
-                 zipper,
-                 :config,
-                 3,
-                 &sets_force_ssl?(&1, app_name, endpoint)
-               ),
-             {:ok, opts} <- Igniter.Code.Function.move_to_nth_argument(call, 2) do
-          exclude_probes(opts, probes)
-        else
-          _ -> {:ok, zipper}
-        end
-      end)
+      Igniter.update_elixir_file(igniter, file, &exclude_in_block(&1, app_name, endpoint, probes))
     else
       igniter
+    end
+  end
+
+  # No `config` call sets `force_ssl`: the file is left as it is.
+  defp exclude_in_block(zipper, app_name, endpoint, probes) do
+    with {:ok, call} <-
+           Igniter.Code.Function.move_to_function_call(
+             zipper,
+             :config,
+             3,
+             &sets_force_ssl?(&1, app_name, endpoint)
+           ),
+         {:ok, opts} <- Igniter.Code.Function.move_to_nth_argument(call, 2) do
+      exclude_probes(opts, probes)
+    else
+      _ -> {:ok, zipper}
     end
   end
 

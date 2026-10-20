@@ -34,6 +34,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   paper is rewritten on those facts, with the sources read for them,
   and records the open debate on readiness over a shared database,
   and how DBConnection's queue decides how long a query waits.
+- **health_probe passes `mix credo --strict` again.** The `force_ssl`
+  edit of v0.3.0 nested its `with` three deep, inside
+  `update_elixir_file`'s function, inside an `if`. That fails CI. It
+  went unseen because the check's output was piped through `tail`,
+  which hid credo's exit code. The block is now a function of its own;
+  what the cartridge installs is unchanged, and the 25 tests pass.
 - **clustering v0.3.0: the default `DNS_CLUSTER_QUERY` names a
   Service that can exist.** It was `<app>.default.svc.cluster.local`
   with the app name as is. A Kubernetes Service name is an RFC 1123

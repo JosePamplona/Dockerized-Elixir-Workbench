@@ -8,6 +8,20 @@ templates or the environment entry is a minor, a change that breaks a
 project already carrying them (a renamed variable, a node name of a
 different shape) is a major.
 
+## v0.3.1 - (2026-10-20)
+
+### Fixed
+
+- **The DESIGN describes the setup that exists.** §2.7, §3.3 and §3.6
+  still spoke of two setup lines, "opinionated" and "vanilla", which
+  became one on 2026-08-31. Today no setup runs `mix release.init`, so
+  `rel/` comes from this cartridge, from a developer's own
+  `release.init`, or from an adopted project. The conclusions stand
+  with that reason. Two smaller fixes go with it: §5 drops the
+  pending item on the opinionated line's `readme.eex`, which went with
+  the line, and reference [12] drops the file. What the cartridge
+  installs is unchanged.
+
 ## v0.3.0 - (2026-10-20)
 
 ### Fixed

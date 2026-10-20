@@ -40,6 +40,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   went unseen because the check's output was piped through `tail`,
   which hid credo's exit code. The block is now a function of its own;
   what the cartridge installs is unchanged, and the 25 tests pass.
+- **clustering v0.3.1: its DESIGN describes the setup that exists.**
+  §2.7, §3.3 and §3.6 still spoke of two setup lines, which became one
+  on 2026-08-31. No setup runs `mix release.init` today, so `rel/`
+  comes from the cartridge, a developer or an adopted project; the
+  conclusions stand on that reason. The §5 item on the retired line's
+  `readme.eex` is gone with the file.
 - **clustering v0.3.0: the default `DNS_CLUSTER_QUERY` names a
   Service that can exist.** It was `<app>.default.svc.cluster.local`
   with the app name as is. A Kubernetes Service name is an RFC 1123

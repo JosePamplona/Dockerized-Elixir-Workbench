@@ -167,8 +167,10 @@ defmodule WorkbenchIgniter.Features.Clustering do
   # runs — which is why this belongs in the boot script and not in
   # runtime.exs. DNSCluster dials `<basename>@<ip>` for every IP the
   # query resolves, so the basename here must be the release name it
-  # reads back from `node()`. POSIX sh only: the production runner image
-  # has no bash. An externally provided RELEASE_NODE always wins.
+  # reads back from `node()`. POSIX sh only: the release script sources
+  # this file from `#!/bin/sh`, which is dash on the Debian runner, bash
+  # installed or not; the test runs it under dash. An externally provided
+  # RELEASE_NODE always wins.
   @distributed """
   # Workbench clustering: boot as a named distributed node.
   if [ -z "$RELEASE_NODE" ]; then

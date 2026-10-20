@@ -8,6 +8,28 @@ templates or the environment entry is a minor, a change that breaks a
 project already carrying them (a renamed variable, a node name of a
 different shape) is a major.
 
+## v0.2.2 - (2026-10-20)
+
+### Fixed
+
+- **The papers give the right reason for two facts.** "POSIX `sh`
+  only: the production runner image has no bash", in the README and in
+  the code's comment, was wrong: the Debian runner has bash, and the
+  compose healthcheck uses it. The constraint is that the release
+  script sources `env.sh` from `#!/bin/sh`, which is dash there. And
+  the other three `mix release.init` templates do not "have to exist
+  alongside `env.sh.eex`": Mix falls back to its default for each one
+  that is absent; the cartridge writes them because the setup leaves
+  `release.init` to it. What it installs is unchanged.
+
+### Added
+
+- **A test runs the `env.sh` it writes under dash**, the sh of the
+  release's runner image: it exits cleanly, names the node
+  `test@<address>`, and keeps a `RELEASE_NODE` given from outside. A
+  bashism in the block failed it; `dash -n` would have let it through.
+  Skipped where `dash` is not installed.
+
 ## v0.2.1 - (2026-09-22)
 
 ### Fixed

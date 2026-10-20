@@ -1,7 +1,8 @@
 # clustering — Design
 
-*Revision: cartridge v0.2.0 (2026-08-30). Sources consulted on that
-date; quotations are verbatim from the file or page as read then. The
+*Revision: cartridge v0.2.2 (2026-10-20). Sources consulted on
+2026-08-30 unless marked; quotations are verbatim from the file or
+page as read then. The
 mechanism as installed is in the [README](README.md); this paper holds
 the alternatives and the evidence.*
 
@@ -350,10 +351,13 @@ outcome; this is the comparison.
   `:-127.0.0.1`: a container with no resolvable hostname still boots,
   as a node nobody can reach, which is the pre-cartridge state, not a
   crash. POSIX `sh`: the script that sources this file is `#!/bin/sh`
-  (§2.3, point 3) — the README gives "the production runner image has
-  no bash" as the reason, and the runner (`debian:*-slim`) does have
-  bash, which the compose healthcheck relies on; the constraint is the
-  interpreter, and it holds whether or not bash is installed.
+  (§2.3, point 3), which on the runner (`debian:*-slim`) is dash; the
+  image has bash too, which the compose healthcheck relies on, so the
+  constraint is the interpreter, and it holds whether or not bash is
+  installed. A bashism does not even stop the boot: inside the `if`,
+  dash prints `[[: not found` and goes on, and the node boots unnamed
+  (§4). Up to v0.2.1 the README and the code's comment gave "the
+  production runner image has no bash" as the reason.
 
   *What the cartridge does not do:* it does not touch
   `RELEASE_COOKIE`. §3.5.
@@ -373,9 +377,9 @@ the reason to write them is a different one: the vanilla setup line
 skips `mix release.init` and hands the whole job to this cartridge
 (§2.7). Writing the four makes a project on either line carry the same
 `rel/`, and makes the cartridge the `release.init` of the vanilla line
-plus one block, rather than a fifth file beside three missing ones. (The
-README says the three "have to exist alongside `env.sh.eex`"; they do
-not have to, and that sentence is listed in §5.)
+plus one block, rather than a fifth file beside three missing ones. (Up
+to v0.2.1 the README said the three "have to exist alongside
+`env.sh.eex`"; they do not have to.)
 
 Three ways to produce their text:
 
@@ -529,13 +533,24 @@ after a second `compose_task`).
 ## 4. Evaluation
 
 **Unit tests** (`igniter/test/workbench_igniter/features/clustering_test.exs`,
-8 cases on `Igniter.Test.phx_test_project`): the four files are
+11 cases on `Igniter.Test.phx_test_project`): the four files are
 created; three are byte-equal to `Mix.Tasks.Release.Init`'s functions
 and `env.sh.eex` contains `env_text/0` (§3.3); an existing
 `rel/vm.args.eex` is kept; the exports and the `-z "$RELEASE_NODE"`
 guard are present; a pre-existing `env.sh.eex` is appended to, not
 replaced; `DNS_CLUSTER_QUERY` lands in both environment files with the
 Kubernetes default and with `--dns-query`; a second run changes nothing.
+Since v0.2.2 the `env.sh.eex` the cartridge leaves is also *run* under
+dash (`dash -e -c`, the EEx rendered first), checking that it exits
+cleanly with nothing on stderr, exports `RELEASE_DISTRIBUTION=name` and
+`RELEASE_NODE=test@<address>`, and keeps a `RELEASE_NODE` given from
+outside. Run, not parsed: `dash -n` lets `[[ … ]]` and `${v//a/b}`
+through, and both fail only when executed (checked 2026-10-20 on
+Ubuntu 24.04's dash 0.5.12). With `[[` put in the block on purpose the
+test failed with `dash: 23: [[: not found`, and the node came out
+unnamed. CI's `ubuntu-latest` has dash as `/bin/sh` (`Essential: yes`);
+where `dash` is not installed — Fedora's `/bin/sh` is bash — the test
+is skipped with that reason.
 
 **Scaled deployment, earlier** (workspace `test_28`, `lorem_ipsum_8`,
 the run the README's *Seeing it work* draws on): `./wb.sh up --deploy
@@ -631,13 +646,6 @@ assigned.
 
 ## 5. Limitations and open questions
 
-* **The README's reasons, twice imprecise.** "POSIX `sh` only: the
-  production runner image has no bash" — the image has bash; the
-  constraint is that the release script sourcing the file is `sh`
-  (§3.2). "The other three `mix release.init` templates, which have to
-  exist alongside `env.sh.eex`" — they do not have to (§2.3); the
-  reason is the vanilla line's division of labour (§3.3). Both are
-  wording; the mechanism is right.
 * **The opinionated line's README template** still documents
   `RELEASE_DISTRIBUTION`, `RELEASE_NODE` and `DNS_CLUSTER_QUERY` as
   project variables (§2.7) although its `.env` template no longer

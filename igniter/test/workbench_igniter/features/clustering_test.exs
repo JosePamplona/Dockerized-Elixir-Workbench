@@ -49,6 +49,32 @@ defmodule Mix.Tasks.Workbench.Install.ClusteringTest do
       assert env_sh =~ ~s|if [ -z "$RELEASE_NODE" ]; then|
     end
 
+    # The release script is `#!/bin/sh` and sources env.sh with `.`: on
+    # the Debian runner, and on CI's Ubuntu, that is dash, whatever else
+    # the image carries. Run, not parsed: `dash -n` lets `[[ … ]]` and
+    # `${v//a/b}` through, and they fail only when executed.
+    dash = System.find_executable("dash")
+    if !dash, do: @tag(skip: "dash is not installed")
+
+    test "env.sh runs under dash, the sh of the release's runner image" do
+      dash = unquote(dash)
+      env_sh = install() |> apply_igniter!() |> files() |> Map.get("rel/env.sh.eex")
+      script = EEx.eval_string(env_sh, assigns: [release: %{name: :test}])
+      print = ~s|\nprintf '%s %s' "$RELEASE_DISTRIBUTION" "$RELEASE_NODE"|
+
+      run = fn env ->
+        System.cmd(dash, ["-e", "-c", script <> print], env: env, stderr_to_stdout: true)
+      end
+
+      # Named after the release and the container's address; nothing on stderr.
+      assert {out, 0} = run.([{"RELEASE_NAME", "test"}, {"RELEASE_NODE", nil}])
+      assert out =~ ~r/\Aname test@[0-9a-f.:]+\z/
+
+      # A name given from outside is kept.
+      assert {"name app@10.0.0.9", 0} =
+               run.([{"RELEASE_NAME", "test"}, {"RELEASE_NODE", "app@10.0.0.9"}])
+    end
+
     test "appends to an env.sh left by mix release.init" do
       files = %{"rel/env.sh.eex" => "#!/bin/sh\n\n# handmade\n"}
 

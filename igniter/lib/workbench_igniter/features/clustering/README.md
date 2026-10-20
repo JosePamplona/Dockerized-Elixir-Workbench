@@ -56,12 +56,17 @@ The node name carries the container IP, which is unknown until the
 container runs — that is why it belongs here and not in `runtime.exs`.
 DNSCluster dials `<basename>@<ip>` for every IP the query resolves, so
 the basename has to be the release name it reads back from `node()`.
-POSIX `sh` only: the production runner image has no bash. A
-`RELEASE_NODE` provided from outside always wins.
+POSIX `sh` only: the release script that sources this file is
+`#!/bin/sh` — dash on the Debian runner — so bash syntax would break
+the boot even though the image has bash. A `RELEASE_NODE` provided
+from outside always wins.
 
 **`rel/vm.args.eex`, `rel/remote.vm.args.eex`, `rel/env.bat.eex`** — the
-other three `mix release.init` templates, which have to exist alongside
-`env.sh.eex`. They are generated from the *running* Elixir (Mix exposes
+other three `mix release.init` templates. Mix does not need them — each
+falls back to its built-in default when the file is absent — but the
+setup leaves `release.init` to this cartridge, so it writes all four:
+`rel/` is then what `mix release.init` would leave at this Elixir's
+version. They are generated from the *running* Elixir (Mix exposes
 the text of each default as a function of the `release.init` task)
 instead of being copied into this repo and left to drift, and they land
 inside the patch set so they show up in the diff.

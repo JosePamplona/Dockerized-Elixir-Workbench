@@ -34,6 +34,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   paper is rewritten on those facts, with the sources read for them,
   and records the open debate on readiness over a shared database,
   and how DBConnection's queue decides how long a query waits.
+- **clustering v0.2.2: two reasons in its papers were wrong, and the
+  rule they stood for is tested now.** The README and the code's
+  comment said the `env.sh` block is POSIX `sh` because "the production
+  runner image has no bash"; the Debian runner has bash, and the reason
+  is that the release script sources the file from `#!/bin/sh`, which
+  is dash there. The README also said the other three `release.init`
+  templates "have to exist" beside `env.sh.eex`; Mix falls back to its
+  default for each one. A test now runs the `env.sh` the cartridge
+  writes under dash — `dash -n` would let `[[ … ]]` through — and a
+  bashism put in on purpose failed it, with the node booting unnamed.
+  It runs on CI's Ubuntu and is skipped where `dash` is not installed.
 
 ### Updated
 

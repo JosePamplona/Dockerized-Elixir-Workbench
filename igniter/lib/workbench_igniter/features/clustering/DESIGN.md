@@ -1,6 +1,6 @@
 # clustering — Design
 
-*Revision: cartridge v0.2.2 (2026-10-20). Sources consulted on
+*Revision: cartridge v0.3.0 (2026-10-20). Sources consulted on
 2026-08-30 unless marked; quotations are verbatim from the file or
 page as read then. The
 mechanism as installed is in the [README](README.md); this paper holds
@@ -224,6 +224,17 @@ the full `h_addr_list` for `a` and `aaaa` [10]. It is not the C
 library's `getaddrinfo`; it does not go through NSS, `/etc/hosts`, or
 whatever address-selection the libc applies. `DNSCluster` uses nothing
 else (§2.2).
+
+It does read `/etc/resolv.conf`, and `getbyname` "uses resolver option
+`search` that is a list of domain names. If the name to resolve
+contains no dots, it is prepended to each domain name in the search
+list, and they are tried in order. If the name contains dots, it is
+first tried as an absolute name and if that fails, the search list is
+used. If the name has a trailing dot, it is supposed to be an absolute
+name and the search list is not used" (OTP 27.3, `inet_res.erl`,
+read 2026-10-20 [24]). A short name therefore resolves against the
+container's own search domains — which, in a Kubernetes pod, begin
+with `<namespace>.svc.cluster.local` (§3.7, measured in §4).
 
 ### 2.7 What the two setup lines and the entrypoint do
 
@@ -530,6 +541,70 @@ string: the catalog, the installer and the deployment read one mark.
 Re-running is asserted as a no-op by the test suite (`assert_unchanged`
 after a second `compose_task`).
 
+### 3.7 The default query: a headless Service, by a short name
+
+`--dns-query` given, the value goes in as written. Not given, the
+cartridge writes a default, and until v0.3.0 it was
+`<app>.default.svc.cluster.local` built from the app name as is. It
+was wrong twice, and both failures are the silent kind of §5:
+
+1. **No Service could carry the name.** A Kubernetes Service name must
+   be "a valid RFC 1123 label name", one that must "contain at most 63
+   characters", "contain only lowercase alphanumeric characters or
+   '-'", "start with an alphabetic character", "end with an
+   alphanumeric character" [21] [22] — and `phx.new` names a multi-word app with an underscore
+   (`lorem_ipsum`). So the default pointed at a name nobody could
+   create. Fly.io's app names take no underscore either (a Fly.io
+   engineer on its forum, not its docs [23]).
+2. **Nothing said the Service has to be headless.** A normal Service's
+   name "resolves to the cluster IP of the Service"; only a headless
+   one (`.spec.clusterIP: None`) "resolves to the set of IPs of all of
+   the Pods selected by the Service" [16] [21]. Given a normal Service,
+   DNSCluster gets one address, dials `<basename>@<cluster IP>`, finds
+   no node there, and the cluster never forms.
+
+Also, `default` assumed the namespace.
+
+What the cartridge writes since v0.3.0 is **`<app>-headless`**, where
+`<app>` is the app name with `_` turned into `-` (`lorem-ipsum-headless`),
+the same name `wb.sh` already gives the image:
+
+* **A label** a Service can take, wherever the app name has an
+  underscore.
+* **Short, so the namespace is the pod's.** `inet_res` tries a
+  dotless name against the search list first (§2.6), and in a pod the
+  first entry is the pod's own namespace's `svc.cluster.local`. One
+  default serves every namespace, with nothing assumed.
+* **The suffix states the requirement**, and keeps the name apart from
+  the normal Service that takes the traffic — usually named after the
+  app, and the one a bare `lorem-ipsum` would have resolved to its
+  cluster IP.
+
+The other platforms are hints, not defaults. The `.env` entry
+carries, above the one value line, a commented note per platform the
+paper has a source or a run for: Kubernetes (the headless Service,
+§2.8), Fly.io (`<app>.internal`, §2.8) and Compose (a service name or
+a shared alias, §3.4). No hint is a commented `KEY=` line: one
+uncommented next to another would leave two declarations, and the
+last one wins without warning. That meant `EnvFile.entry/4` had to
+write a comment of several lines (each line gets its `#`); its
+one-line callers are unchanged.
+
+Rejected:
+
+* **Hyphens alone, `<app>.default.svc.cluster.local`.** This fixes
+  the label, but leaves both the namespace and the normal-Service
+  trap.
+* **The bare `<app>`.** This works in any namespace, but the normal
+  Service usually carries that name.
+* **No default, the line commented out.** It is honest: there is no
+  cluster until someone decides. But nothing says what is missing.
+  And the line cannot be left empty instead: `""` is truthy in
+  Elixir, and `System.get_env("DNS_CLUSTER_QUERY") || :ignore` would
+  hand DNSCluster `""`.
+* **A `--platform` option.** Each value would be right, but it adds a
+  decision the comment block answers in three lines.
+
 ## 4. Evaluation
 
 **Unit tests** (`igniter/test/workbench_igniter/features/clustering_test.exs`,
@@ -539,7 +614,10 @@ and `env.sh.eex` contains `env_text/0` (§3.3); an existing
 `rel/vm.args.eex` is kept; the exports and the `-z "$RELEASE_NODE"`
 guard are present; a pre-existing `env.sh.eex` is appended to, not
 replaced; `DNS_CLUSTER_QUERY` lands in both environment files with the
-Kubernetes default and with `--dns-query`; a second run changes nothing.
+default and with `--dns-query`, a single declaration under the
+platform hints, which `--dns-query` leaves in place; an app named
+`lorem_ipsum` gets `lorem-ipsum-headless`, checked against the RFC
+1123 label pattern; a second run changes nothing.
 Since v0.2.2 the `env.sh.eex` the cartridge leaves is also *run* under
 dash (`dash -e -c`, the EEx rendered first), checking that it exits
 cleanly with nothing on stderr, exports `RELEASE_DISTRIBUTION=name` and
@@ -562,6 +640,26 @@ after `up` every node listed the other three; the baked
 `lorem_ipsum_8.default.svc.cluster.local` the cartridge had written in
 `.env`. No timestamps or command output were kept from that run.
 
+**The short name, through the search list** (2026-10-20, v0.3.0). The
+check used one Docker network, `claude_probe_dns`, with two `alpine`
+containers aliased `lorem-ipsum-headless.probe.svc.cluster.local`
+(the FQDN a headless Service in namespace `probe` would have). A
+third container ran with `--dns-search probe.svc.cluster.local`, so
+its `resolv.conf` read `search probe.svc.cluster.local`, as a pod's
+does for its namespace:
+
+* On the workbench image (OTP 28),
+  `inet_res:getbyname("lorem-ipsum-headless", a)` returned the FQDN
+  with `[{172,18,0,3},{172,18,0,2}]`, and the absolute name with a
+  trailing dot returned `{error,nxdomain}`.
+* On a project's release image (`lorem-ipsum:0.1.0-prod`),
+  `bin/lorem_ipsum eval
+  'DNSCluster.Resolver.lookup("lorem-ipsum-headless", :a)'` returned
+  `[{172, 18, 0, 3}, {172, 18, 0, 2}]`.
+
+The resolver DNSCluster calls completes the short name from the
+search list, inside the release.
+
 **Scaled deployment, repeated for this paper** — §4.1.
 
 **Not measured:** the `--no-balancer` shape beyond baking it; a project
@@ -571,8 +669,9 @@ fallback of §3.3 (no Elixir at hand lacks the functions); a
 `RELEASE_NODE` supplied from outside the container; behaviour of the
 `hostname -i` line on a container attached to two networks (§3.2
 reasons from the script, not from a run); any platform other than
-Docker Compose on one host — the Kubernetes default of `--dns-query`
-was taken from §2.8, not deployed.
+Docker Compose on one host. The Kubernetes default of `--dns-query`
+comes from §2.8 and §3.7; its search-list resolution was measured on
+Docker (above), not in a cluster.
 
 ### 4.1 The repeated run
 
@@ -751,3 +850,18 @@ Read in full on 2026-08-30 unless marked otherwise.
     `WorkbenchIgniter.Feature.marker_installed?/3`
     (`igniter/lib/workbench_igniter/feature.ex`);
     `igniter/test/workbench_igniter/features/clustering_test.exs`.
+21. Kubernetes, *Service* — the RFC 1123 label rule for a Service's
+    name, and headless Services — `content/en/docs/concepts/services-networking/service.md`
+    of <https://github.com/kubernetes/website>, read 2026-10-20;
+    published at <https://kubernetes.io/docs/concepts/services-networking/service/>.
+    The source file of [16], `dns-pod-service.md` beside it, was read
+    in full the same day.
+22. Kubernetes, *Object Names and IDs* — the RFC 1123 label rules — <https://kubernetes.io/docs/concepts/overview/working-with-objects/names/>,
+    read 2026-10-20.
+23. Fly.io community forum, *App name restrictions* —
+    <https://community.fly.io/t/app-name-restrictions/4487>, read
+    2026-10-20. **A forum thread, not documentation**: lowercase
+    letters, numbers and hyphens; underscores reserved.
+24. Erlang/OTP 27.3, `inet_res.erl`, `getbyname/2` and `getbyname/3` with their docs —
+    `lib/kernel-10.2.3/src/inet_res.erl` of the asdf install, read
+    2026-10-20.

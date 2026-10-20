@@ -34,6 +34,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   paper is rewritten on those facts, with the sources read for them,
   and records the open debate on readiness over a shared database,
   and how DBConnection's queue decides how long a query waits.
+- **clustering v0.3.0: the default `DNS_CLUSTER_QUERY` names a
+  Service that can exist.** It was `<app>.default.svc.cluster.local`
+  with the app name as is. A Kubernetes Service name is an RFC 1123
+  label, so for `lorem_ipsum` no Service could carry it. Nothing said
+  the Service had to be headless either; a normal one answers with its
+  cluster IP. Both failures are silent: the release boots and never
+  finds a peer. The default is `<app>-headless` now (`lorem-ipsum-headless`),
+  short so that `:inet_res` completes it with the pod's own namespace
+  from the search list. That was measured with DNSCluster's resolver in
+  a release image on Docker. `.env` carries commented notes for
+  Kubernetes, Fly.io and Compose above the one value line, and
+  `EnvFile.entry/4` writes a comment of several lines, one `#` each.
+  Found while reviewing the cartridge's DESIGN paper.
 - **clustering v0.2.2: two reasons in its papers were wrong, and the
   rule they stood for is tested now.** The README and the code's
   comment said the `env.sh` block is POSIX `sh` because "the production

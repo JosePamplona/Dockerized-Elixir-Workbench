@@ -93,8 +93,12 @@ defmodule Mix.Tasks.Workbench.Install.ClusteringTest do
       for path <- [".env", ".env.sample"] do
         content = igniter.assigns[:test_files][path]
 
-        assert content =~ "# Cluster discovery, queried by DNSCluster (:prod only)."
-        assert content =~ ~s|DNS_CLUSTER_QUERY="test.default.svc.cluster.local"|
+        assert content =~ "# Cluster discovery, queried by DNSCluster (:prod only): a name that\n"
+        assert content =~ "#               test-headless, in the pod's own namespace\n"
+        assert content =~ "#   Fly.io:     test.internal\n"
+        assert content =~ ~s|DNS_CLUSTER_QUERY="test-headless"|
+        # One declaration: no hint is a line that could be uncommented.
+        assert [_] = Regex.scan(~r/DNS_CLUSTER_QUERY/, content)
       end
     end
 
@@ -108,6 +112,26 @@ defmodule Mix.Tasks.Workbench.Install.ClusteringTest do
         |> Map.get(".env")
 
       assert env =~ ~s|DNS_CLUSTER_QUERY="demo.internal"|
+      # The value is replaced; the hints stay.
+      assert env =~ "#   Fly.io:     test.internal\n"
+    end
+
+    test "an app name with underscores gives a name a Service can take" do
+      files = %{".env" => "PORT=\"4000\"\n"}
+
+      env =
+        phx_test_project(app_name: :lorem_ipsum, files: files)
+        |> Igniter.compose_task("workbench.install.clustering", [])
+        |> apply_igniter!()
+        |> files()
+        |> Map.get(".env")
+
+      assert env =~ ~s|DNS_CLUSTER_QUERY="lorem-ipsum-headless"|
+      assert env =~ "#   Fly.io:     lorem-ipsum.internal\n"
+      # A Service name, Kubernetes' RFC 1123 label: lowercase
+      # alphanumerics and '-', a letter first, 63 at most.
+      [_, name] = Regex.run(~r/DNS_CLUSTER_QUERY="([^"]*)"/, env)
+      assert name =~ ~r/\A[a-z]([-a-z0-9]{0,61}[a-z0-9])?\z/
     end
 
     test "an empty --dns-query is a field left blank: the default goes in" do
@@ -120,7 +144,7 @@ defmodule Mix.Tasks.Workbench.Install.ClusteringTest do
         |> Map.get(".env")
 
       refute env =~ ~s|DNS_CLUSTER_QUERY=""|
-      assert env =~ ~s|DNS_CLUSTER_QUERY="test.default.svc.cluster.local"|
+      assert env =~ ~s|DNS_CLUSTER_QUERY="test-headless"|
     end
 
     test "a --dns-query with a quote is refused, and nothing is written" do

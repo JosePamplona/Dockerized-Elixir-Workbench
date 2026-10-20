@@ -41,4 +41,9 @@ defmodule WorkbenchIgniter.EnvFileTest do
     assert files[".env"] == "# One.\nONE=1\n"
     assert files[".env.sample"] == "# One.\nONE=1\n"
   end
+
+  test "a comment of several lines is commented line by line" do
+    files = test_project() |> EnvFile.entry("One.\n  two\n\nthree", "ONE=1") |> files()
+    assert files[".env"] == "# One.\n#   two\n#\n# three\nONE=1\n"
+  end
 end

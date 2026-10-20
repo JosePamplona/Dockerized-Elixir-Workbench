@@ -8,6 +8,33 @@ templates or the environment entry is a minor, a change that breaks a
 project already carrying them (a renamed variable, a node name of a
 different shape) is a major.
 
+## v0.3.0 - (2026-10-20)
+
+### Fixed
+
+- **The default `DNS_CLUSTER_QUERY` names a Service that can exist.**
+  It was `<app>.default.svc.cluster.local` with the app name as is.
+  A Kubernetes Service name is an RFC 1123 label, so for `lorem_ipsum`
+  it named a Service nobody could create. Nothing said the Service had
+  to be headless either. A normal one answers with its cluster IP, and
+  the cluster never formed, with nothing in the log. The default is
+  `<app>-headless` now, the app name with hyphens
+  (`lorem-ipsum-headless`).
+- **The namespace is the pod's own.** The name is short, and DNSCluster's
+  resolver (`:inet_res`) completes it from the `search` list of
+  `/etc/resolv.conf`; in a pod, the first entry is its own namespace.
+  This was measured in a release image on Docker.
+
+### Added
+
+- **Notes for each platform above the value**, in `.env` and
+  `.env.sample`: the headless Service on Kubernetes, `<app>.internal` on
+  Fly.io, and a service name or shared alias on Compose. They are
+  comments, not commented `KEY=` lines, so the file keeps one
+  declaration. `--dns-query` replaces only the value.
+- **The README shows the headless Service** the default expects, as
+  YAML.
+
 ## v0.2.2 - (2026-10-20)
 
 ### Fixed

@@ -16,6 +16,9 @@ defmodule WorkbenchIgniter.EnvFile do
   `.env.sample`, creating the files when the project has none. A no-op
   when the first variable of `body` is already declared.
 
+  Every line of `comment` becomes a `#` line, so an entry can carry a
+  short note under its first line.
+
   It lets a cartridge own its own variables instead of parking them,
   commented out, in the setup template. Both files receive the very
   same text unless `sample_body` is given — `.env.sample` is meant to
@@ -29,8 +32,19 @@ defmodule WorkbenchIgniter.EnvFile do
 
     [{".env", body}, {".env.sample", sample_body || body}]
     |> Enum.reduce(igniter, fn {path, body}, igniter ->
-      entry = "# #{comment}\n" <> String.trim_trailing(body, "\n") <> "\n"
+      entry = commented(comment) <> String.trim_trailing(body, "\n") <> "\n"
       WorkbenchIgniter.TextFile.append_once(igniter, path, entry, marker)
+    end)
+  end
+
+  # "One.\n  two" -> "# One.\n#   two\n"; a blank line stays a bare "#".
+  defp commented(comment) do
+    comment
+    |> String.trim_trailing("\n")
+    |> String.split("\n")
+    |> Enum.map_join(fn
+      "" -> "#\n"
+      line -> "# " <> line <> "\n"
     end)
   end
 end

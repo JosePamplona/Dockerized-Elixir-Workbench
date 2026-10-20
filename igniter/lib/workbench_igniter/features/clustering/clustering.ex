@@ -62,7 +62,7 @@ defmodule WorkbenchIgniter.Features.Clustering do
   def option_docs do
     [
       dns_query:
-        "Value for `DNS_CLUSTER_QUERY`, the DNS name that resolves to the replica IPs. Defaults to `<app>.default.svc.cluster.local` (Kubernetes); on Fly.io it is usually `<app>.internal`."
+        "Value for `DNS_CLUSTER_QUERY`, the DNS name that resolves to the replica IPs. Defaults to `<app>-headless` (Kubernetes: a headless Service of that name, in the pod's namespace); on Fly.io it is `<app>.internal`. `<app>` is the app name with hyphens."
     ]
   end
 
@@ -81,14 +81,30 @@ defmodule WorkbenchIgniter.Features.Clustering do
   @impl true
   def formats, do: [dns_query: :dns_name]
 
-  # The DNS name, unasked: Kubernetes' for the app.
+  # The DNS name, unasked: a Kubernetes headless Service for the app.
   @impl true
   def detected, do: [:dns_query]
 
   @impl true
   def detect(igniter) do
-    app_name = Igniter.Project.Application.app_name(igniter)
-    {%{dns_query: "#{app_name}.default.svc.cluster.local"}, igniter}
+    {%{dns_query: host(igniter) <> "-headless"}, igniter}
+  end
+
+  # The app name as a DNS label. A Kubernetes Service name is an RFC 1123
+  # label and a Fly.io app name takes no underscore either, so phx.new's
+  # `lorem_ipsum` cannot name one; `lorem-ipsum` can, and is the name
+  # wb.sh already gives the image. The old default,
+  # `lorem_ipsum.default.svc.cluster.local`, pointed at a Service nobody
+  # could create (2026-10-20).
+  #
+  # A short name, no namespace: DNSCluster asks `:inet_res.getbyname/2`,
+  # which tries the `search` list of /etc/resolv.conf — in a pod,
+  # `<namespace>.svc.cluster.local` first — so the name resolves in the
+  # pod's own namespace, whichever it is (measured in the release image,
+  # DESIGN §4). The `-headless` suffix keeps it apart from the normal
+  # Service that takes the traffic, whose name answers with one cluster IP.
+  defp host(igniter) do
+    igniter |> Igniter.Project.Application.app_name() |> to_string() |> String.replace("_", "-")
   end
 
   @doc "Installer body, run by the mix task shell as its `igniter/1`."
@@ -106,9 +122,23 @@ defmodule WorkbenchIgniter.Features.Clustering do
     |> release_templates()
     |> distributed_env_sh()
     |> WorkbenchIgniter.EnvFile.entry(
-      "Cluster discovery, queried by DNSCluster (:prod only).",
+      env_comment(host(igniter)),
       ~s|DNS_CLUSTER_QUERY="#{dns_query}"|
     )
+  end
+
+  # Where the name comes from on each platform the DESIGN has a source
+  # for (§2.8) or a measurement of (§4); the value line stays the only
+  # declaration, so no hint is a `KEY=` that could be uncommented twice.
+  defp env_comment(host) do
+    """
+    Cluster discovery, queried by DNSCluster (:prod only): a name that
+    resolves to the IP of every replica.
+      Kubernetes: a headless Service (clusterIP: None) named
+                  #{host}-headless, in the pod's own namespace
+      Fly.io:     #{host}.internal
+      Compose:    the service name, or a network alias the replicas share
+    """
   end
 
   # --- rel/*.eex --------------------------------------------------------------

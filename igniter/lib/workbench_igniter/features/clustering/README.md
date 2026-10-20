@@ -75,21 +75,46 @@ inside the patch set so they show up in the diff.
 resolves to the replica IPs:
 
 ```
-# Cluster discovery, queried by DNSCluster (:prod only).
-DNS_CLUSTER_QUERY="my_app.default.svc.cluster.local"
+# Cluster discovery, queried by DNSCluster (:prod only): a name that
+# resolves to the IP of every replica.
+#   Kubernetes: a headless Service (clusterIP: None) named
+#               my-app-headless, in the pod's own namespace
+#   Fly.io:     my-app.internal
+#   Compose:    the service name, or a network alias the replicas share
+DNS_CLUSTER_QUERY="my-app-headless"
 ```
 
-Default is the Kubernetes form; on Fly.io it is usually
-`<app>.internal`. The variable is inert in dev — `runtime.exs` only
-reads it under `:prod` — and an unresolvable query is silent: DNSCluster
-logs nothing and simply finds no peers.
+`my-app` is the app name with hyphens: a Kubernetes Service or a Fly.io
+app cannot be named `my_app`. The variable is inert in dev — `runtime.exs`
+only reads it under `:prod` — and an unresolvable query is silent:
+DNSCluster logs nothing and simply finds no peers.
+
+**On Kubernetes, the default needs a headless Service.** A normal
+Service's name answers with one cluster IP, and DNSCluster would dial a
+node that is not there. A headless one answers with every pod's IP:
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app-headless
+spec:
+  clusterIP: None        # headless: the name answers with every pod's IP
+  selector:
+    app: my-app          # the labels of the release's pods
+```
+
+The name is short on purpose. The resolver completes it with the pod's
+own search domains, so it resolves in whichever namespace the pod runs.
+The Service that takes the traffic keeps its own name and stays normal.
 
 ## Options
 
 | Option | Default |
 | --- | --- |
-| `--dns-query` | `<app>.default.svc.cluster.local` |
+| `--dns-query` | `<app>-headless`, the app name with hyphens |
 
+`--dns-query` replaces the value only; the platform notes above it stay.
 An empty `--dns-query` is taken as not given, and gets the default. A
 value carrying a double quote or a line break is refused: it goes
 between the quotes of a `.env` line, and would end it early.

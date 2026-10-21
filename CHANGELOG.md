@@ -12,7 +12,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - `Fixed` for any bug fixes.
 - `Security` to invite users to upgrade in case of vulnerabilities.
 
-## Unreleased
+## v0.19.4 - (2026-10-20)
 
 ### Fixed
 
@@ -86,6 +86,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   taken on; they are the same captures with
   `/home/user/repos/lorem_ipsum` in its place. What the pictures show
   of the console is unchanged.
+- **`CLAUDE.md` names no file outside the repository.** The paths of
+  the author's own notes moved to a gitignored file that Claude Code
+  reads beside it. What stays is the rule an agent needs: some papers
+  cite documents that are not in the repository, and those citations
+  are records.
 
 ## v0.19.3 - (2026-10-07)
 

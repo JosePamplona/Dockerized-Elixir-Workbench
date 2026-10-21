@@ -41,7 +41,7 @@ mix test --only network:ash_hq   # igniter, excluded by default: the ash cartrid
 
 - To read the workspace or the shelf from an agent: `./wb.sh status --json --fast --brief` (tenths of a second, 2 KB) and `./wb.sh catalog --json --brief` (one line, 20 KB). The full contracts are the console's: `status --json` boots Mix in a container (about a minute) and `catalog --json` carries every paper and option doc (130 KB).
 - Export `DOCKER_CONTEXT=default` before `./wb.sh`, `docker compose` or the console's tests. The workspaces run on the native engine, and the shell's `desktop-linux` context shows nothing running.
-- Console on the host: `PORT=<free port> mix phx.server` from `console/`. 4000 is taken, and the user may already have a console on 4123/4125, so check `ss -ltn` first. Run it with the sandbox disabled and stdin from `/dev/null`, or the BEAM dies when it spawns a second child. On boot it rewrites `config.conf`: back that file up first. It reads the catalog once at boot, so restart it after editing a manifest. After editing `console/assets/js/hooks.js`, run `mix esbuild console`.
+- Console on the host: `PORT=<free port> mix phx.server` from `console/`. 4000 is taken, and another console may already be running, so check `ss -ltn` first. Run it with the sandbox disabled and stdin from `/dev/null`, or the BEAM dies when it spawns a second child. On boot it rewrites `config.conf`: back that file up first. It reads the catalog once at boot, so restart it after editing a manifest. After editing `console/assets/js/hooks.js`, run `mix esbuild console`.
 - To see generated code compile in a real project: `MIX_ENV=test mix phx.new <scratch>/probe --no-install` from `igniter/`, copy `igniter/.tool-versions` into it, add `{:workbench_igniter, path: …}`, then run `mix workbench.install.<name> --yes < /dev/null`.
 
 ## Working in this repo safely
@@ -50,12 +50,12 @@ mix test --only network:ash_hq   # igniter, excluded by default: the ash cartrid
 - To test a service cartridge live: rsync a `test_N` to `claude_probe_X` (excluding `_build`/`deps`), `WORKSPACE_PATH=… ./wb.sh -y add X && … bake`, then `docker compose -p claude_probe_X -f … up -d --no-build <services>`. Never `wb.sh up` there.
 - **Never `git stash`**. `core.fileMode` is false, so a pop strips `+x` from `wb.sh` and `assets/design/build.py`, and the console fails with `:eacces` (the fix is `chmod +x`). Compare against HEAD with `git show HEAD:path` or a worktree instead.
 - **Never `git add -A`**. The tree usually carries the user's uncommitted work. Stage named paths, and commit by topic.
-- The console's static maquette (`mock/`) was retired on 2026-09-05 and archived out of git on 2026-09-29 (`_archived/mock/`, in git history until then): never bring it back or reference it as alive.
+- The console's static maquette (`mock/`) was retired on 2026-09-05 and taken out of git on 2026-09-29 (in git history until then): never bring it back or reference it as alive.
 
 ## Papers and records
 
 - The root `CHANGELOG.md` is the record of what was done and why. Each cartridge's own `CHANGELOG.md` versions that box.
-- The release plan (`RELEASE_PLAN.md`), the reference project's script (`SCRIPT.md`, its steps against the shelf) and the reference project's design papers are the author's own and live outside the repository, in `_local/` and `_local/reference/` (gitignored). They were tracked until 2026-09-29 (`reference/` until the 28th), and the CHANGELOG and the cartridges' papers still cite them by name. The `project-design` skill, the author's design process with that project as its example, went with them to `_local/skills/`, out of Claude Code's reach on purpose: it is still being worked on, and comes back to `.claude/skills/` or the home directory when it is done.
+- The CHANGELOG and some cartridges' papers cite documents by name that are not in the repository (the author's own planning and reference papers). Read those citations as records: never recreate those documents or ask for them to be added to the repository.
 - The root README's shelf and its table of pending boxes are generated, between markers, from the catalog: after adding, renaming, versioning or archiving a cartridge run `./wb.sh catalog --json --brief | python3 assets/readme/build.py`, or CI fails. The README is Markdown with two tags only, `<img>` (a width, a side) and `<br>` inside a table's cell; its captures are in `assets/readme/console/`, on the dark ground.
 - A cartridge's README/NEED opens with what the tool solves for anyone. A cartridge never names the collections that pick it.
 - A visual or design question is settled with a standalone HTML page in the repo, never a Claude artifact. The page is deleted once decided, and the CHANGELOG keeps the record.

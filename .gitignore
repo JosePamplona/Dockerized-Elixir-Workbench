@@ -13,6 +13,9 @@
 /_workspaces/
 /_local/
 
+# The author's own notes for Claude Code: they name files outside the repo.
+/CLAUDE.local.md
+
 # Superseded cover artwork: kept beside each cover, never in the repo.
 _archived/
 

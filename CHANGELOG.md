@@ -12,6 +12,32 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - `Fixed` for any bug fixes.
 - `Security` to invite users to upgrade in case of vulnerabilities.
 
+## Unreleased
+
+### Fixed
+
+- **The images build when the host's group is one Debian already has**
+  ([#3](https://github.com/JosePamplona/Dockerized-Elixir-Workbench/issues/3)).
+  Both images are born with the identity of the user who builds them,
+  `id -u`/`id -g` as build arguments, so the files written into the
+  mounted workspace keep the host's ownership. `groupadd --gid 100
+  elixir` stopped the build with `GID '100' already exists`: Debian
+  ships `users` with 100, the primary group of NixOS's and openSUSE's
+  users by default, and macOS's 20 (`staff`) is Debian's `dialout`.
+  `groupadd --non-unique` makes `elixir` a second name for that number,
+  so the `elixir:elixir` that the images and the console's
+  `COPY --chown` name still resolve, and on the host the files carry
+  the user's own group. Reproduced, and the fix verified, on a
+  1000:1000 host with `sg users -c "./wb.sh console"`, which runs it
+  with `users` as the primary group. `useradd` stays strict: the UIDs
+  Debian holds are its system users and root's 0, and an alias of
+  those is not an identity to build with. Giving the identity at run
+  time instead (`--user`, as the console already runs) would end the
+  question, and is left to decide. Changed in both Dockerfiles
+  together, so their shared layers stay shared; workspaces baked
+  before keep their `Dockerfile.local` and build as before on any host
+  whose IDs do not collide.
+
 ## v0.19.4 - (2026-10-20)
 
 ### Fixed

@@ -50,7 +50,10 @@ RUN test -n "${NODE}" || { echo "NODE is required: --build-arg NODE=MAJOR" >&2; 
 
 ARG UID=1000
 ARG GID=1000
-RUN groupadd --gid ${GID} elixir && \
+# --non-unique: the building user's group may already be one of
+# Debian's (GID 100 is `users`, macOS's 20 is `dialout`); `elixir`
+# then names that same number, and the files keep the host's group.
+RUN groupadd --non-unique --gid ${GID} elixir && \
     useradd --uid ${UID} --gid ${GID} --create-home elixir
 
 WORKDIR /app

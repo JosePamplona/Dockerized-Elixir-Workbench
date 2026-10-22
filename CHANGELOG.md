@@ -12,7 +12,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - `Fixed` for any bug fixes.
 - `Security` to invite users to upgrade in case of vulnerabilities.
 
-## Unreleased
+## v0.19.5 - (2026-10-22)
 
 ### Updated
 
@@ -54,6 +54,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   together, so their shared layers stay shared; workspaces baked
   before keep their `Dockerfile.local` and build as before on any host
   whose IDs do not collide.
+- **`wb.sh` names its own version again.** v0.19.4's cut left line 3
+  at `v0.19.3`, and the workbench's version is its image's tag: a
+  v0.19.4 checkout built and ran `…:0.19.3`, as the log in #3 shows.
+  The line says `v0.19.5`, so this cut builds an image of its own, and
+  with it the fix above reaches every machine on its next run.
 
 ## v0.19.4 - (2026-10-20)
 

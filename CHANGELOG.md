@@ -14,6 +14,23 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+### Updated
+
+- **`wb.sh` refuses to run as root.** Root is not a use case: the
+  images take the identity of whoever runs the script, so that the
+  workspace's files are that user's, and as root they would all be
+  root's — the next run without `sudo` could not write them, and the
+  git identity read would be root's. Until now root got as far as the
+  image build and stopped at `groupadd --gid 0` with an error that
+  named nothing of this. The usual way there is `sudo ./wb.sh` for a
+  `permission denied` on Docker's socket, so the message says so: join
+  the `docker` group (the command carries the user's name, off
+  `SUDO_USER`), log in again, and know that the group can do anything
+  root can, as Docker's own page says. Logged in as root (a server, a
+  container), create a user. The check comes before anything is built
+  or written, and `help` still answers. Tested as root in a container,
+  with and without `SUDO_USER`.
+
 ### Fixed
 
 - **The images build when the host's group is one Debian already has**

@@ -2613,6 +2613,25 @@ if [ $# -gt 0 ]; then
   # The invoked command, for messages written before any branch shifts it.
   COMMAND_NAME="$1"
 
+  # Root is not a use case: the images take the identity of whoever
+  # runs this, so that the workspace's files are that user's. As root
+  # they would all be root's, the next run without sudo could not write
+  # them, and the git identity read would be root's. Refused before
+  # anything is built or written; 'help' still answers.
+  if [ "$EUID" -eq 0 ] && [[ "$1" != "help" ]]; then
+    terminate "The workbench does not run as root.\n
+It writes your projects as the user who runs it, so that they stay yours:
+run as root, every file would be root's, and the next run without sudo
+could not write them.\n
+If sudo was for Docker (permission denied on /var/run/docker.sock), join
+the docker group, log in again and run it without sudo:\n
+  sudo usermod -aG docker ${SUDO_USER:-YOUR_USER}\n
+The docker group can do anything root can on this machine:
+${Li}https://docs.docker.com/engine/install/linux-postinstall/${R}\n
+Logged in as root (a server, a container): create a user, and run it as
+that user."
+  fi
+
   if   [[ "$1" == "login" ]]; then
     shift
 
